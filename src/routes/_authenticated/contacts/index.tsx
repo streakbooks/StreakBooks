@@ -215,63 +215,6 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
         </div>
       ) : null}
 
-      <div className="mb-6 max-w-xl rounded-md border p-4">
-        <div className="mb-2 flex items-center justify-between">
-          <Label>Quick add</Label>
-          <Button
-            variant="ghost"
-            size="sm"
-            type="button"
-            onClick={() => setShowAdvanced((v) => !v)}
-          >
-            {showAdvanced ? "Hide" : "More fields"}
-          </Button>
-        </div>
-        <div className="grid gap-2">
-          <Input
-            placeholder="Contact name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            aria-label="Contact name"
-          />
-          <div className="grid gap-2 sm:grid-cols-2">
-            <Select value={newKind} onValueChange={setNewKind}>
-              <SelectTrigger aria-label="Role">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="customer">Customer</SelectItem>
-                <SelectItem value="supplier">Supplier</SelectItem>
-                <SelectItem value="both">Customer & supplier</SelectItem>
-              </SelectContent>
-            </Select>
-            <Input
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              aria-label="Email"
-            />
-          </div>
-          {showAdvanced ? (
-            <Input
-              placeholder="Payment terms (days)"
-              value={terms}
-              inputMode="numeric"
-              aria-invalid={!termsValid}
-              onChange={(e) => setTerms(e.target.value)}
-              aria-label="Payment terms"
-            />
-          ) : null}
-          <Button
-            size="sm"
-            disabled={createM.isPending || !name.trim() || !termsValid || !canManage}
-            title={canManage ? undefined : "You do not have permission to add contacts"}
-            onClick={() => createM.mutate()}
-          >
-            Save contact
-          </Button>
-        </div>
-      </div>
 
       <Tabs
         value={view}

@@ -67,7 +67,13 @@ export const startVoiceSession = createServerFn({ method: "POST" })
     const dailyCost = ((dailyRaw ?? []) as Array<{ estimated_cost_minor: number }>).reduce((sum, row) => sum + Number(row.estimated_cost_minor), 0);
     if (dailyCost >= settings.max_daily_cost_minor) throw new Error("Daily voice cost budget reached.");
 
-    const secretResponse = await fetch(`${config.VOICE_REALTIME_BASE_URL.replace(/\/$/, "")}/realtime/client_secrets`, {
+    // Fail closed until the database-backed, atomic session registrar is deployed.
+    // The current voice tables intentionally grant authenticated users SELECT only.
+    // Never mint a billable provider credential before a durable session and quota
+    // reservation exist; otherwise rate limits and audit evidence can be bypassed.
+    throw new Error("Voice sessions are unavailable until the secure session registrar is deployed.");
+
+    /* const secretResponse = await fetch(`${config.VOICE_REALTIME_BASE_URL.replace(/\/$/, "")}/realtime/client_secrets`, {
       method: "POST",
       headers: { Authorization: `Bearer ${config.OPENAI_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -112,4 +118,5 @@ export const startVoiceSession = createServerFn({ method: "POST" })
       expiresAt,
       ...voicePublicConfig(config),
     };
+    */
   });

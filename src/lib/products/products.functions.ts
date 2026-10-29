@@ -105,6 +105,17 @@ export const upsertProduct = createServerFn({ method: "POST" })
       if (!["service", "product", "non_inventory"].includes(input.kind)) {
         throw new Error("Invalid product kind");
       }
+      // Reject invalid accounting inputs instead of silently changing amounts or tax rates.
+      for (const [label, value] of [["Sales price", input.salesPriceMinor], ["Purchase cost", input.purchaseCostMinor]] as const) {
+        if (value !== undefined && (!Number.isSafeInteger(value) || value < 0)) {
+          throw new Error(`${label} must be a non-negative integer amount in minor currency units`);
+        }
+      }
+      for (const [label, value] of [["Sales tax", input.salesTaxRateBps], ["Purchase tax", input.purchaseTaxRateBps]] as const) {
+        if (value !== undefined && (!Number.isInteger(value) || value < 0 || value > 10000)) {
+          throw new Error(`${label} rate must be between 0 and 10000 basis points`);
+        }
+      }
       return {
         companyId: assertUuid(input.companyId),
         id: input.id ? assertUuid(input.id) : undefined,
@@ -112,22 +123,16 @@ export const upsertProduct = createServerFn({ method: "POST" })
         code: (input.code ?? "").trim().slice(0, 40) || null,
         name: name.slice(0, 200),
         description: (input.description ?? "").trim().slice(0, 2000) || null,
-        salesPriceMinor: Math.max(0, Math.floor(Number(input.salesPriceMinor) || 0)),
-        purchaseCostMinor: Math.max(0, Math.floor(Number(input.purchaseCostMinor) || 0)),
+        salesPriceMinor: input.salesPriceMinor ?? 0,
+        purchaseCostMinor: input.purchaseCostMinor ?? 0,
         incomeAccountId: input.incomeAccountId
           ? assertUuid(input.incomeAccountId, "income account")
           : null,
         expenseAccountId: input.expenseAccountId
           ? assertUuid(input.expenseAccountId, "expense account")
           : null,
-        salesTaxRateBps: Math.min(
-          10000,
-          Math.max(0, Math.floor(Number(input.salesTaxRateBps) || 0)),
-        ),
-        purchaseTaxRateBps: Math.min(
-          10000,
-          Math.max(0, Math.floor(Number(input.purchaseTaxRateBps) || 0)),
-        ),
+        salesTaxRateBps: input.salesTaxRateBps ?? 0,
+        purchaseTaxRateBps: input.purchaseTaxRateBps ?? 0,
         unit: ((input.unit ?? "each").trim() || "each").slice(0, 40),
         isActive: input.isActive !== false,
       };

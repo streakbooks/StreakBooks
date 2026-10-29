@@ -38,7 +38,7 @@ const initial = {
   deliveryCountry: "", salesTaxInclusive: "default", purchaseTaxInclusive: "default",
 };
 type FormState = typeof initial;
-function NewContact() {
+export function NewContact({ initialKind = "customer", embedded = false, onSaved }: { initialKind?: "customer" | "supplier"; embedded?: boolean; onSaved?: () => void } = {}) {
   const { company } = useActiveCompany();
   const companyId = company?.id;
   const canManage = useCanDo("contacts.manage");
@@ -47,7 +47,7 @@ function NewContact() {
   const save = useServerFn(upsertContact);
   const savePerson = useServerFn(upsertContactPerson);
   const [section, setSection] = useState<Section>("identity");
-  const [form, setForm] = useState<FormState>(initial);
+  const [form, setForm] = useState<FormState>({ ...initial, kind: initialKind });
   const [people, setPeople] = useState<Person[]>([]);
   const set = (key: keyof FormState, value: string) => setForm((prev) => ({ ...prev, [key]: value }));
   const field = (key: keyof FormState, label: string, placeholder = "") => (
@@ -105,7 +105,8 @@ function NewContact() {
       await qc.invalidateQueries({ queryKey: ["contacts-summary", companyId] });
       if (failures.length) toast.warning("Contact saved, but some people could not be added. Review the People tab.");
       else toast.success("Contact created");
-      void navigate({ to: "/contacts/$contactId", params: { contactId: id } });
+      if (onSaved) onSaved();
+      else void navigate({ to: "/contacts/$contactId", params: { contactId: id } });
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
@@ -113,8 +114,8 @@ function NewContact() {
   const activeIndex = sections.findIndex(([id]) => id === section);
   return (
     <>
-      <PageHeader title="New contact" description="Create a shared customer or supplier profile with accounting defaults."
-        actions={<Button variant="outline" asChild><Link to="/contacts">Back to directory</Link></Button>} />
+      {!embedded && <PageHeader title="New contact" description="Create a shared customer or supplier profile with accounting defaults."
+        actions={<Button variant="outline" asChild><Link to="/contacts">Back to directory</Link></Button>} />}
       <div className="overflow-hidden rounded-xl border bg-card">
         <div className="border-b px-6 py-4">
           <h2 className="text-lg font-semibold">Contact workspace</h2>

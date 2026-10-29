@@ -7,7 +7,7 @@ import {
   type ComponentType,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
-import { useRouteContext } from "@tanstack/react-router";
+import { useNavigate, useRouteContext } from "@tanstack/react-router";
 import {
   Calculator,
   ChevronRight,
@@ -89,6 +89,7 @@ const MENU_ORDER = [
 
 export function CreateNewMenu() {
   const { user } = useRouteContext({ from: "/_authenticated" });
+  const navigate = useNavigate();
   const { company } = useActiveCompany();
   const role = company?.role;
   const menuId = useId();
@@ -144,6 +145,10 @@ export function CreateNewMenu() {
     setPanelError(null);
     flyoverDirty.current = false;
     setFlyoverId(action.id);
+    // Keep the creation flyover mounted in the app shell while showing the relevant directory behind it.
+    if (action.id === "customer" || action.id === "supplier") {
+      void navigate({ to: "/contacts", search: { view: action.id === "supplier" ? "suppliers" : "customers" } });
+    }
     void loadCreatePanel(action.id)
       .then((Loaded) => setPanel(() => Loaded))
       .catch((error: unknown) => {

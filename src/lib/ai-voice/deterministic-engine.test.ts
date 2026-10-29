@@ -16,7 +16,18 @@ describe("deterministic voice command interpreter", () => {
     if (path === null) expect(result.kind).toBe("unsupported");
     else {
       expect(result.kind).toBe("matched");
-      if (result.kind === "matched") expect(result.command.destination).toBe(path);
+      if (result.kind === "matched") {
+        expect(result.command.intent).toBe("navigate");
+        if (result.command.intent === "navigate") expect(result.command.destination).toBe(path);
+      }
+    }
+  });
+  it("matches accounting review without financial mutation", () => {
+    const result = parseDeterministicCommand("Show reconciliation exceptions");
+    expect(result.kind).toBe("matched");
+    if (result.kind === "matched") {
+      expect(result.command.intent).toBe("review");
+      expect(result.command.requiredPermission).toBe("banking.view");
     }
   });
   it("never executes text as SQL, code or external navigation", () => {

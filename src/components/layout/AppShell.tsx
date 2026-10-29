@@ -18,6 +18,7 @@ import { CompanySwitcher } from "@/components/layout/CompanySwitcher";
 import { GlobalSearch } from "@/components/layout/GlobalSearch";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { CreateNewMenu } from "@/components/create-new/CreateNewMenu";
+import { VoiceAssistant } from "@/components/ai-voice/VoiceAssistant";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -349,6 +350,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </div>
 
+          {import.meta.env.VITE_VOICE_ASSISTANT_ENABLED === "true" ? <VoiceAssistant /> : null}
           <CreateNewMenu />
           <ThemeToggle />
           <UserMenu />

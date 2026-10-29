@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -29,6 +29,9 @@ import { TableCard } from "@/components/common/table-card";
 import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/_authenticated/contacts/")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    view: search.view === "suppliers" ? "suppliers" : search.view === "customers" ? "customers" : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Contacts — LinkBooks" },
@@ -60,7 +63,9 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
   const fetchSummary = useServerFn(getContactsDirectorySummary);
   const exportFn = useServerFn(exportContactsCsv);
 
-  const [view, setView] = useState("all");
+  const { view: requestedView } = Route.useSearch();
+  const [view, setView] = useState(requestedView ?? "all");
+  useEffect(() => { if (requestedView) setView(requestedView); }, [requestedView]);
   const [page, setPage] = useState(0);
   const [q, setQ] = useState("");
   const kindForApi = useMemo(() => {
@@ -212,7 +217,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
             <EmptyState
               icon={Users}
               title="No contacts"
-              description="Add a contact above or import a CSV."
+              description="Use New contact to create a contact, or import a CSV."
             />
           ) : (
             <TableCard>

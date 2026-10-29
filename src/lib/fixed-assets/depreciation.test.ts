@@ -243,6 +243,7 @@ describe("accounting integrity regression cases", () => {
   it("rejects unsafe and fractional disposal amounts", () => {
     expect(() => disposalOutcome(Number.MAX_SAFE_INTEGER + 1, 0, 0)).toThrow();
     expect(() => disposalOutcome(100, 0.5, 0)).toThrow();
+    expect(() => disposalOutcome(1, 0, Number.MAX_SAFE_INTEGER)).toThrow(/safe minor-unit/);
     expect(() => depreciationLines(1.5, "expense", "acc", "Invalid")).toThrow();
   });
 });

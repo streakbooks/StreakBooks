@@ -16,8 +16,10 @@ export const NavigationCommand = z.object({
   riskLevel: z.literal(1),
 });
 export type NavigationCommand = z.infer<typeof NavigationCommand>;
+export const ReviewCommand = z.object({ version: z.literal(1), intent: z.literal("review"), review: z.enum(["duplicates", "reconcile", "unusual"]), requiredPermission: z.literal("banking.view"), riskLevel: z.literal(1) });
+export type ReviewCommand = z.infer<typeof ReviewCommand>;
 export type ParseResult =
-  | { kind: "matched"; command: NavigationCommand }
+  | { kind: "matched"; command: NavigationCommand | ReviewCommand }
   | { kind: "ambiguous"; candidates: string[] }
   | { kind: "unsupported"; message: string };
 
@@ -61,6 +63,21 @@ export function parseDeterministicCommand(transcript: string): ParseResult {
   if (transcript.length > 1000) return { kind: "unsupported", message: "Command is too long." };
   const text = normalize(transcript);
   if (!text) return { kind: "unsupported", message: "Enter a command." };
+  const reviews: Record<string, "duplicates" | "reconcile" | "unusual"> = {
+    "find possible duplicate bank transactions": "duplicates",
+    "show possible duplicate bank transactions": "duplicates",
+    "review duplicate bank transactions": "duplicates",
+    "show reconciliation exceptions": "reconcile",
+    "review reconciliation exceptions": "reconcile",
+    "show uncategorised bank transactions": "reconcile",
+    "show uncategorized bank transactions": "reconcile",
+    "show unusual account movements": "unusual",
+    "review unusual account movements": "unusual",
+  };
+  const review = reviews[text];
+  if (review) return { kind: "matched", command: ReviewCommand.parse({
+    version: 1, intent: "review", review, requiredPermission: "banking.view", riskLevel: 1,
+  }) };
   const prefix = prefixes.find((p) => text.startsWith(p + " "));
   if (!prefix) return { kind: "unsupported", message: "This command is not supported yet. Try 'Open sales' or 'Show reports'." };
   const subject = text.slice(prefix.length).trim().replace(/^(the|my)\s+/, "");

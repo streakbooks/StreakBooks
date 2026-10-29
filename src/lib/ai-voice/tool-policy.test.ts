@@ -36,6 +36,15 @@ describe("voice tool security policy", () => {
     expect(() => assertVoiceExecutionAllowed(write, permissions, { clicked: true, reauthenticated: false }, true)).toThrow(/Re-authentication/);
     expect(() => assertVoiceExecutionAllowed(write, permissions, { clicked: true, reauthenticated: true }, true)).not.toThrow();
   });
+  it("requires confirmation for tier-one writes as well", () => {
+    const draft = defineVoiceTool({
+      name: "create_draft_invoice", description: "Create a draft", input: z.object({}),
+      output: z.object({}), riskTier: 1, permission: "sales.draft",
+      idempotency: "required", auditEventType: "ai.draft",
+    });
+    expect(() => assertVoiceExecutionAllowed(draft, ["ai.use", "sales.draft"], null, false)).toThrow(/On-screen/);
+    expect(() => assertVoiceExecutionAllowed(draft, ["ai.use", "sales.draft"], { clicked: true, reauthenticated: false }, false)).not.toThrow();
+  });
   it("rejects non-idempotent write descriptors", () => {
     expect(() => defineVoiceTool({
       name: "unsafe_write",

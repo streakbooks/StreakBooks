@@ -1,14 +1,13 @@
 import { useMemo, useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Users, Download, Upload, Settings2 } from "lucide-react";
+import { Download, Upload, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
 import {
   listContacts,
-  upsertContact,
   getContactsDirectorySummary,
   exportContactsCsv,
 } from "@/lib/contacts/contacts.functions";
@@ -17,15 +16,7 @@ import { friendlyAuthError } from "@/lib/auth-helpers";
 import { PageHeader, ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -65,22 +56,13 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
   const companyId = company?.id;
   const currency = company?.base_currency ?? "GBP";
   const qc = useQueryClient();
-  const navigate = useNavigate();
-  const canManage = useCanDo("contacts.manage");
   const fetch = useServerFn(listContacts);
-  const upsert = useServerFn(upsertContact);
   const fetchSummary = useServerFn(getContactsDirectorySummary);
   const exportFn = useServerFn(exportContactsCsv);
 
   const [view, setView] = useState("all");
   const [page, setPage] = useState(0);
   const [q, setQ] = useState("");
-  const [name, setName] = useState("");
-  const [newKind, setNewKind] = useState(initialKind);
-  const [email, setEmail] = useState("");
-  const [terms, setTerms] = useState("30");
-  const [showAdvanced, setShowAdvanced] = useState(false);
-
   const kindForApi = useMemo(() => {
     if (view === "customers") return "customers";
     if (view === "suppliers") return "suppliers";
@@ -108,32 +90,6 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
     queryKey: ["contacts-summary", companyId],
     enabled: Boolean(companyId),
     queryFn: () => fetchSummary({ data: { companyId: companyId! } }),
-  });
-
-  // "0" days (due on receipt) is valid; only a blank/invalid entry falls back to the default.
-  const termsDays = terms.trim() === "" ? 30 : Number(terms);
-  const termsValid = Number.isInteger(termsDays) && termsDays >= 0 && termsDays <= 3650;
-
-  const createM = useMutation({
-    mutationFn: () =>
-      upsert({
-        data: {
-          companyId: companyId!,
-          name,
-          kind: newKind,
-          email,
-          paymentTermsDays: termsDays,
-        },
-      }),
-    onSuccess: async (res) => {
-      await qc.invalidateQueries({ queryKey: ["contacts", companyId] });
-      await qc.invalidateQueries({ queryKey: ["contacts-summary", companyId] });
-      toast.success("Contact saved");
-      setName("");
-      setEmail("");
-      void navigate({ to: "/contacts/$contactId", params: { contactId: res.id } });
-    },
-    onError: (e) => toast.error(friendlyAuthError(e)),
   });
 
   const exportM = useMutation({

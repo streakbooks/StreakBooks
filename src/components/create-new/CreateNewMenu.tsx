@@ -147,7 +147,7 @@ export function CreateNewMenu() {
     setFlyoverId(action.id);
     // Keep the creation flyover mounted in the app shell while showing the relevant directory behind it.
     if (action.id === "customer" || action.id === "supplier") {
-      void navigate({ to: "/contacts", search: { view: action.id === "supplier" ? "suppliers" : "customers" } });
+      void navigate({ to: action.id === "supplier" ? "/purchases" : "/sales" });
     }
     void loadCreatePanel(action.id)
       .then((Loaded) => setPanel(() => Loaded))

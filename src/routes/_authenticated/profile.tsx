@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { supabase } from "@/integrations/supabase/client";
+import { SecuritySettingsCard } from "@/components/auth/SecuritySettingsCard";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
@@ -118,6 +119,7 @@ function ProfilePage() {
           </Card>
 
           <ChangePasswordCard />
+          <SecuritySettingsCard />
         </div>
       )}
     </div>

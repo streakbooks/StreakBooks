@@ -4,10 +4,11 @@ import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/auth/PasswordInput";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { friendlyAuthError, validatePassword } from "@/lib/auth-helpers";
+import { needsMfaStepUp } from "@/lib/auth-session";
 
 export const Route = createFileRoute("/reset-password")({
   ssr: false,
@@ -51,10 +52,13 @@ function ResetPasswordPage() {
       if (event === "PASSWORD_RECOVERY") setStatus("ready");
     });
 
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
       if (!active) return;
       if (hashError) setStatus("invalid");
-      else if (data.session || isRecovery) setStatus("ready");
+      else if (data.session && (await needsMfaStepUp())) {
+        // Changing the password on an MFA account needs the second factor first.
+        navigate({ to: "/auth/mfa", search: { redirect: "/reset-password" }, replace: true });
+      } else if (data.session || isRecovery) setStatus("ready");
       else setStatus("invalid");
     });
 
@@ -62,7 +66,7 @@ function ResetPasswordPage() {
       active = false;
       sub.subscription.unsubscribe();
     };
-  }, []);
+  }, [navigate]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -134,9 +138,8 @@ function ResetPasswordPage() {
 
           <div className="space-y-2">
             <Label htmlFor="new-password">New password</Label>
-            <Input
+            <PasswordInput
               id="new-password"
-              type="password"
               autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -154,9 +157,8 @@ function ResetPasswordPage() {
 
           <div className="space-y-2">
             <Label htmlFor="confirm-password">Confirm new password</Label>
-            <Input
+            <PasswordInput
               id="confirm-password"
-              type="password"
               autoComplete="new-password"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}

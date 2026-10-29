@@ -31,6 +31,9 @@ import { Route as AuthenticatedRecurringJournalsRouteImport } from './routes/_au
 import { Route as AuthenticatedSalesRouteRouteImport } from './routes/_authenticated/sales/route'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedTaxRouteImport } from './routes/_authenticated/tax'
+import { Route as AuthCallbackRouteImport } from './routes/auth_.callback'
+import { Route as AuthMfaRouteImport } from './routes/auth_.mfa'
+import { Route as AuthSsoRouteImport } from './routes/auth_.sso'
 import { Route as AuthenticatedBankingIndexRouteImport } from './routes/_authenticated/banking/index'
 import { Route as AuthenticatedBankingCashCodingRouteImport } from './routes/_authenticated/banking/cash-coding'
 import { Route as AuthenticatedBankingFeedsRouteImport } from './routes/_authenticated/banking/feeds'
@@ -46,6 +49,7 @@ import { Route as AuthenticatedContactsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedContactsContactIdRouteImport } from './routes/_authenticated/contacts/$contactId'
 import { Route as AuthenticatedContactsDuplicatesRouteImport } from './routes/_authenticated/contacts/duplicates'
 import { Route as AuthenticatedContactsImportRouteImport } from './routes/_authenticated/contacts/import'
+import { Route as AuthenticatedContactsNewRouteImport } from './routes/_authenticated/contacts/new'
 import { Route as AuthenticatedContactsSettingsRouteImport } from './routes/_authenticated/contacts/settings'
 import { Route as AuthenticatedDocumentsBrandingRouteImport } from './routes/_authenticated/documents.branding'
 import { Route as AuthenticatedPurchasesIndexRouteImport } from './routes/_authenticated/purchases/index'
@@ -216,6 +220,21 @@ const AuthenticatedTaxRoute = AuthenticatedTaxRouteImport.update({
   path: '/tax',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth_/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthMfaRoute = AuthMfaRouteImport.update({
+  id: '/auth_/mfa',
+  path: '/auth/mfa',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthSsoRoute = AuthSsoRouteImport.update({
+  id: '/auth_/sso',
+  path: '/auth/sso',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedBankingIndexRoute =
   AuthenticatedBankingIndexRouteImport.update({
     id: '/',
@@ -304,6 +323,12 @@ const AuthenticatedContactsImportRoute =
   AuthenticatedContactsImportRouteImport.update({
     id: '/contacts/import',
     path: '/contacts/import',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedContactsNewRoute =
+  AuthenticatedContactsNewRouteImport.update({
+    id: '/contacts/new',
+    path: '/contacts/new',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedContactsSettingsRoute =
@@ -651,6 +676,9 @@ export interface FileRoutesByFullPath {
   '/recurring-journals': typeof AuthenticatedRecurringJournalsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/tax': typeof AuthenticatedTaxRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/auth/mfa': typeof AuthMfaRoute
+  '/auth/sso': typeof AuthSsoRoute
   '/banking/cash-coding': typeof AuthenticatedBankingCashCodingRoute
   '/banking/feeds': typeof AuthenticatedBankingFeedsRoute
   '/banking/import': typeof AuthenticatedBankingImportRoute
@@ -663,6 +691,7 @@ export interface FileRoutesByFullPath {
   '/contacts/$contactId': typeof AuthenticatedContactsContactIdRoute
   '/contacts/duplicates': typeof AuthenticatedContactsDuplicatesRoute
   '/contacts/import': typeof AuthenticatedContactsImportRoute
+  '/contacts/new': typeof AuthenticatedContactsNewRoute
   '/contacts/settings': typeof AuthenticatedContactsSettingsRoute
   '/documents/branding': typeof AuthenticatedDocumentsBrandingRoute
   '/purchases/employee-expenses': typeof AuthenticatedPurchasesEmployeeExpensesRoute
@@ -739,6 +768,9 @@ export interface FileRoutesByTo {
   '/recurring-journals': typeof AuthenticatedRecurringJournalsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/tax': typeof AuthenticatedTaxRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/auth/mfa': typeof AuthMfaRoute
+  '/auth/sso': typeof AuthSsoRoute
   '/': typeof AuthenticatedIndexRoute
   '/banking/cash-coding': typeof AuthenticatedBankingCashCodingRoute
   '/banking/feeds': typeof AuthenticatedBankingFeedsRoute
@@ -752,6 +784,7 @@ export interface FileRoutesByTo {
   '/contacts/$contactId': typeof AuthenticatedContactsContactIdRoute
   '/contacts/duplicates': typeof AuthenticatedContactsDuplicatesRoute
   '/contacts/import': typeof AuthenticatedContactsImportRoute
+  '/contacts/new': typeof AuthenticatedContactsNewRoute
   '/contacts/settings': typeof AuthenticatedContactsSettingsRoute
   '/documents/branding': typeof AuthenticatedDocumentsBrandingRoute
   '/purchases/employee-expenses': typeof AuthenticatedPurchasesEmployeeExpensesRoute
@@ -830,6 +863,9 @@ export interface FileRoutesById {
   '/_authenticated/recurring-journals': typeof AuthenticatedRecurringJournalsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/tax': typeof AuthenticatedTaxRoute
+  '/auth_/callback': typeof AuthCallbackRoute
+  '/auth_/mfa': typeof AuthMfaRoute
+  '/auth_/sso': typeof AuthSsoRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/banking/cash-coding': typeof AuthenticatedBankingCashCodingRoute
   '/_authenticated/banking/feeds': typeof AuthenticatedBankingFeedsRoute
@@ -843,6 +879,7 @@ export interface FileRoutesById {
   '/_authenticated/contacts/$contactId': typeof AuthenticatedContactsContactIdRoute
   '/_authenticated/contacts/duplicates': typeof AuthenticatedContactsDuplicatesRoute
   '/_authenticated/contacts/import': typeof AuthenticatedContactsImportRoute
+  '/_authenticated/contacts/new': typeof AuthenticatedContactsNewRoute
   '/_authenticated/contacts/settings': typeof AuthenticatedContactsSettingsRoute
   '/_authenticated/documents/branding': typeof AuthenticatedDocumentsBrandingRoute
   '/_authenticated/purchases/employee-expenses': typeof AuthenticatedPurchasesEmployeeExpensesRoute
@@ -925,6 +962,9 @@ export interface FileRouteTypes {
     | '/recurring-journals'
     | '/settings'
     | '/tax'
+    | '/auth/callback'
+    | '/auth/mfa'
+    | '/auth/sso'
     | '/banking/cash-coding'
     | '/banking/feeds'
     | '/banking/import'
@@ -937,6 +977,7 @@ export interface FileRouteTypes {
     | '/contacts/$contactId'
     | '/contacts/duplicates'
     | '/contacts/import'
+    | '/contacts/new'
     | '/contacts/settings'
     | '/documents/branding'
     | '/purchases/employee-expenses'
@@ -1013,6 +1054,9 @@ export interface FileRouteTypes {
     | '/recurring-journals'
     | '/settings'
     | '/tax'
+    | '/auth/callback'
+    | '/auth/mfa'
+    | '/auth/sso'
     | '/'
     | '/banking/cash-coding'
     | '/banking/feeds'
@@ -1026,6 +1070,7 @@ export interface FileRouteTypes {
     | '/contacts/$contactId'
     | '/contacts/duplicates'
     | '/contacts/import'
+    | '/contacts/new'
     | '/contacts/settings'
     | '/documents/branding'
     | '/purchases/employee-expenses'
@@ -1103,6 +1148,9 @@ export interface FileRouteTypes {
     | '/_authenticated/recurring-journals'
     | '/_authenticated/settings'
     | '/_authenticated/tax'
+    | '/auth_/callback'
+    | '/auth_/mfa'
+    | '/auth_/sso'
     | '/_authenticated/'
     | '/_authenticated/banking/cash-coding'
     | '/_authenticated/banking/feeds'
@@ -1116,6 +1164,7 @@ export interface FileRouteTypes {
     | '/_authenticated/contacts/$contactId'
     | '/_authenticated/contacts/duplicates'
     | '/_authenticated/contacts/import'
+    | '/_authenticated/contacts/new'
     | '/_authenticated/contacts/settings'
     | '/_authenticated/documents/branding'
     | '/_authenticated/purchases/employee-expenses'
@@ -1180,6 +1229,9 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
+  AuthMfaRoute: typeof AuthMfaRoute
+  AuthSsoRoute: typeof AuthSsoRoute
   ShareInvoiceTokenRoute: typeof ShareInvoiceTokenRoute
 }
 
@@ -1339,6 +1391,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTaxRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/auth_/callback': {
+      id: '/auth_/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth_/mfa': {
+      id: '/auth_/mfa'
+      path: '/auth/mfa'
+      fullPath: '/auth/mfa'
+      preLoaderRoute: typeof AuthMfaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth_/sso': {
+      id: '/auth_/sso'
+      path: '/auth/sso'
+      fullPath: '/auth/sso'
+      preLoaderRoute: typeof AuthSsoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/banking/': {
       id: '/_authenticated/banking/'
       path: '/'
@@ -1442,6 +1515,13 @@ declare module '@tanstack/react-router' {
       path: '/contacts/import'
       fullPath: '/contacts/import'
       preLoaderRoute: typeof AuthenticatedContactsImportRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/contacts/new': {
+      id: '/_authenticated/contacts/new'
+      path: '/contacts/new'
+      fullPath: '/contacts/new'
+      preLoaderRoute: typeof AuthenticatedContactsNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/contacts/settings': {
@@ -2078,6 +2158,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedContactsContactIdRoute: typeof AuthenticatedContactsContactIdRoute
   AuthenticatedContactsDuplicatesRoute: typeof AuthenticatedContactsDuplicatesRoute
   AuthenticatedContactsImportRoute: typeof AuthenticatedContactsImportRoute
+  AuthenticatedContactsNewRoute: typeof AuthenticatedContactsNewRoute
   AuthenticatedContactsSettingsRoute: typeof AuthenticatedContactsSettingsRoute
   AuthenticatedDocumentsBrandingRoute: typeof AuthenticatedDocumentsBrandingRoute
   AuthenticatedReportsReportIdRoute: typeof AuthenticatedReportsReportIdRoute
@@ -2111,6 +2192,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedContactsContactIdRoute: AuthenticatedContactsContactIdRoute,
   AuthenticatedContactsDuplicatesRoute: AuthenticatedContactsDuplicatesRoute,
   AuthenticatedContactsImportRoute: AuthenticatedContactsImportRoute,
+  AuthenticatedContactsNewRoute: AuthenticatedContactsNewRoute,
   AuthenticatedContactsSettingsRoute: AuthenticatedContactsSettingsRoute,
   AuthenticatedDocumentsBrandingRoute: AuthenticatedDocumentsBrandingRoute,
   AuthenticatedReportsReportIdRoute: AuthenticatedReportsReportIdRoute,
@@ -2129,6 +2211,9 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
+  AuthMfaRoute: AuthMfaRoute,
+  AuthSsoRoute: AuthSsoRoute,
   ShareInvoiceTokenRoute: ShareInvoiceTokenRoute,
 }
 export const routeTree = rootRouteImport

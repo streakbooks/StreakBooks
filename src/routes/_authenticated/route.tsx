@@ -1,11 +1,18 @@
 import { useEffect } from "react";
-import { createFileRoute, Outlet, redirect, useNavigate, useRouterState } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Outlet,
+  redirect,
+  useNavigate,
+  useRouterState,
+} from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/layout/AppShell";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { ErrorState } from "@/components/common/states";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { needsMfaStepUp } from "@/lib/auth-session";
 
 /**
  * Every LinkBooks application page lives under this gate. The session lives in
@@ -24,6 +31,9 @@ export const Route = createFileRoute("/_authenticated")({
         to: "/auth",
         search: { redirect: location.href },
       });
+    }
+    if (await needsMfaStepUp()) {
+      throw redirect({ to: "/auth/mfa", search: { redirect: location.href } });
     }
     return { user: data.user };
   },

@@ -79,6 +79,7 @@ function FilesPage() {
   const deleteFolder = useServerFn(deleteDocumentFolder);
   const moveFile = useServerFn(moveDocumentToFolder);
   const [folderId, setFolderId] = useState<string | null>(null);
+  const [unfiledOnly, setUnfiledOnly] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [showNewFolder, setShowNewFolder] = useState(false);
 
@@ -148,7 +149,7 @@ function FilesPage() {
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
   const filesQ = useQuery({
-    queryKey: ["company-files", companyId, debounced, type, folderId, page],
+    queryKey: ["company-files", companyId, debounced, type, folderId, unfiledOnly, page],
     enabled: Boolean(companyId),
     placeholderData: keepPreviousData,
     queryFn: () =>
@@ -158,6 +159,7 @@ function FilesPage() {
           search: debounced,
           entityType: type,
           folderId,
+          unfiledOnly,
           page,
           pageSize: PAGE_SIZE,
         },
@@ -173,7 +175,7 @@ function FilesPage() {
           entityType: "company",
           entityId: companyId!,
           register: register as never,
-          folderId,
+          folderId: unfiledOnly ? null : folderId,
         });
       }
       return files.length;
@@ -292,8 +294,9 @@ function FilesPage() {
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Folder className="size-4" />
-            <button type="button" className="text-sm underline" onClick={() => { setFolderId(null); setPage(0); }}>All files</button>
-            {breadcrumbs.map((crumb) => <button type="button" key={crumb.id} className="text-sm underline" onClick={() => { setFolderId(crumb.id); setPage(0); }}>/ {crumb.name}</button>)}
+            <button type="button" className="text-sm underline" onClick={() => { setFolderId(null); setUnfiledOnly(false); setPage(0); }}>All files</button>
+            <button type="button" className="text-sm underline" aria-current={unfiledOnly ? "page" : undefined} onClick={() => { setFolderId(null); setUnfiledOnly(true); setPage(0); }}>Unfiled</button>
+            {breadcrumbs.map((crumb) => <button type="button" key={crumb.id} className="text-sm underline" onClick={() => { setFolderId(crumb.id); setUnfiledOnly(false); setPage(0); }}>/ {crumb.name}</button>)}
           </div>
           {canUpload ? <Button size="sm" variant="outline" onClick={() => setShowNewFolder((v) => !v)}><FolderPlus className="mr-2 size-4" />New folder</Button> : null}
         </div>
@@ -304,8 +307,8 @@ function FilesPage() {
         </form> : null}
         {foldersQ.isError ? <p role="alert" className="text-sm text-destructive">Folder loading failed: {friendlyAuthError(foldersQ.error)}. Apply the document folders migration if it is pending.</p> : null}
         <div className="flex flex-wrap gap-2">
-          {activeFolder?.parent_id ? <Button size="sm" variant="outline" onClick={() => { setFolderId(activeFolder.parent_id); setPage(0); }}>Parent folder</Button> : null}
-          {folders.filter((f) => f.parent_id === folderId).map((folder) => <Button key={folder.id} size="sm" variant="outline" onClick={() => { setFolderId(folder.id); setPage(0); }}><Folder className="mr-2 size-4" />{folder.name}</Button>)}
+          {activeFolder?.parent_id ? <Button size="sm" variant="outline" onClick={() => { setFolderId(activeFolder.parent_id); setUnfiledOnly(false); setPage(0); }}>Parent folder</Button> : null}
+          {folders.filter((f) => !unfiledOnly && f.parent_id === folderId).map((folder) => <Button key={folder.id} size="sm" variant="outline" onClick={() => { setFolderId(folder.id); setUnfiledOnly(false); setPage(0); }}><Folder className="mr-2 size-4" />{folder.name}</Button>)}
         </div>
         {activeFolder && canUpload ? <div className="mt-3 flex gap-2">
           <Button size="sm" variant="ghost" onClick={() => { const name = window.prompt("Rename folder", activeFolder.name); if (name && name.trim() !== activeFolder.name) renameFolderM.mutate({ id: activeFolder.id, name, parentId: activeFolder.parent_id }); }}><Pencil className="mr-1 size-4" />Rename</Button>

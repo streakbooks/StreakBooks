@@ -10,11 +10,14 @@ These rules apply to every LinkBooks task, code change, bug fix, feature, refact
 ## Git: always finish on main and push
 
 - Treat `main` as the required delivery branch. Before editing, inspect the current branch, working tree, recent commits, and repository state.
+- Before starting implementation, fetch the latest remote refs and safely pull/integrate `origin/main` into the working branch using a fast-forward when possible. Do not overwrite uncommitted local work. If the working tree is dirty or the branch diverged, preserve changes and resolve safely before proceeding.
+- Immediately before committing and pushing, fetch `origin/main` again and reconcile any upstream changes safely. Re-run relevant checks after integration. Never push a stale branch over newer remote work.
 - Preserve all existing user changes. Never discard, overwrite, reset, or revert unrelated work just to get a clean tree.
 - Make the requested implementation completely; do not stop at a plan, mockup, UI-only change, or partial implementation when the task requires working code.
 - Run the relevant tests, type checks, lint/build checks, and other available validation before committing. Fix failures caused by your changes.
 - Review the final diff and ensure no secrets, credentials, private keys, environment files, generated junk, or unrelated changes are included.
-- After a task is implemented and validated, create a descriptive Git commit and push the commit to `origin/main`. Do not leave completed work uncommitted or only on a local branch.
+- After a task is implemented and validated, create a descriptive Git commit and push the commit to `origin/main` without requiring a separate routine user confirmation. Do not leave completed work uncommitted or only on a local branch.
+- The former local-first / explicit pre-push approval workflow is superseded. When working through a remote GitHub connector rather than a local clone, use current `main` file/blob SHAs and safe conditional writes; do not claim to have pulled or tested a user's Windows localhost.
 - If working on a feature branch, preserve the branch and its changes, then integrate them into `main` safely; do not force-push or rewrite shared history. Respect branch protection and required checks.
 - Never use `git push --force`, destructive resets, or history rewriting to make a push succeed.
 - If commit or push fails because of authentication, network access, conflicts, branch protection, or permissions, diagnose safely and report the exact blocker and next action. Never claim a commit or push succeeded unless the command confirms it.

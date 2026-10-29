@@ -47,7 +47,7 @@ export const startVoiceSession = createServerFn({ method: "POST" })
 
     const now = new Date();
     const hourAgo = new Date(now.getTime() - 3600_000).toISOString();
-    const today = new Intl.DateTimeFormat("en-CA", { timeZone: "UTC", year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+    const today = now.toISOString().slice(0, 10);
     const { count, error: quotaError } = await supabase
       .from("ai_voice_sessions" as never)
       .select("id" as never, { count: "exact", head: true })
@@ -59,12 +59,12 @@ export const startVoiceSession = createServerFn({ method: "POST" })
     }
     const { data: dailyRaw, error: dailyError } = await supabase
       .from("ai_voice_usage" as never)
-      .select("cost_minor" as never)
+      .select("estimated_cost_minor" as never)
       .eq("company_id" as never, companyId as never)
-      .gte("created_at" as never, today as never)
+      .gte("measured_at" as never, today as never)
       .limit(1000);
     if (dailyError) throw new Error("Unable to verify the daily voice budget.");
-    const dailyCost = ((dailyRaw ?? []) as Array<{ cost_minor: number }>).reduce((sum, row) => sum + Number(row.cost_minor), 0);
+    const dailyCost = ((dailyRaw ?? []) as Array<{ estimated_cost_minor: number }>).reduce((sum, row) => sum + Number(row.estimated_cost_minor), 0);
     if (dailyCost >= settings.max_daily_cost_minor) throw new Error("Daily voice cost budget reached.");
 
     const secretResponse = await fetch(`${config.VOICE_REALTIME_BASE_URL.replace(/\/$/, "")}/realtime/client_secrets`, {

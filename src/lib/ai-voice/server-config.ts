@@ -21,8 +21,8 @@ export function getVoiceServerConfig(env: Record<string, string | undefined> = p
     throw new Error("Voice service is not configured: " + missing);
   }
   const url = new URL(parsed.data.VOICE_REALTIME_BASE_URL);
-  if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash) {
-    throw new Error("Voice provider URL must be an HTTPS origin/path without credentials or query");
+  if (url.protocol !== "https:" || url.hostname !== "api.openai.com" || url.port || url.username || url.password || url.search || url.hash || (url.pathname !== "/v1" && url.pathname !== "/v1/")) {
+    throw new Error("Voice provider URL must be https://api.openai.com/v1");
   }
   return parsed.data;
 }

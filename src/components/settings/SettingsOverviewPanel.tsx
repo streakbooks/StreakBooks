@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { categoryMeta, type SettingsCategory } from "@/lib/settings/registry";
+import { Building2, ReceiptText, Workflow, ShieldCheck, ChevronRight } from "lucide-react";
 
 type Props = {
   companyId: string;
@@ -42,6 +44,35 @@ export function SettingsOverviewPanel({ companyId, onNavigate }: Props) {
 
   return (
     <div className="space-y-4">
+      <div className="space-y-2">
+        <h2 className="text-xl font-semibold tracking-tight">What would you like to configure?</h2>
+        <p className="text-sm text-muted-foreground">Choose a category or search for a setting. Your existing configuration and permissions are preserved.</p>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        {([
+          { title: "Business & accounting", description: "Organisation, financial controls, tax, currencies and access", icon: Building2, ids: ["organisation", "accounting", "tax", "currencies", "users"] },
+          { title: "Sales & operations", description: "Invoices, bills, banking, inventory and customer records", icon: ReceiptText, ids: ["sales", "purchases", "banking", "products", "contacts", "dimensions", "expenses"] },
+          { title: "Documents & automation", description: "Templates, files, workflows, notifications and connections", icon: Workflow, ids: ["documents", "automation", "integrations", "notifications", "portals"] },
+          { title: "Reporting & governance", description: "Reports, audit, migration, firm tools and subscription", icon: ShieldCheck, ids: ["reports", "audit", "import_migration", "accountant", "subscription", "fixed_assets", "features"] },
+        ] as Array<{ title: string; description: string; icon: typeof Building2; ids: SettingsCategory[] }>).map((group) => (
+          <Card key={group.title} className="h-full">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2"><group.icon className="size-5 text-primary" /><CardTitle className="text-base">{group.title}</CardTitle></div>
+              <CardDescription>{group.description}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-1">
+              {group.ids.map((id) => {
+                const meta = categoryMeta.find((c) => c.id === id);
+                if (!meta) return null;
+                return <button key={id} type="button" onClick={() => onNavigate(id)} className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring">
+                  <span>{meta.label}</span><ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+                </button>;
+              })}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      <div className="pt-2"><h2 className="text-lg font-semibold">Organisation health</h2><p className="text-sm text-muted-foreground">Configuration issues and external services, shown separately from everyday settings.</p></div>
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Setup status</CardTitle>

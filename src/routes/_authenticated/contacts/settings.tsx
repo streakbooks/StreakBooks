@@ -103,7 +103,7 @@ function ContactSettingsPage() {
         description="Numbering, defaults, groups and tags for this organisation."
         actions={
           <Button variant="outline" size="sm" asChild>
-            <Link to="/contacts">Back to directory</Link>
+            <Link to="/contacts" search={{ view: undefined }}>Back to directory</Link>
           </Button>
         }
       />

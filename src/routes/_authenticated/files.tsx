@@ -292,7 +292,7 @@ function FilesPage() {
           <div className="flex items-center gap-2">
             <Folder className="size-4" />
             <button type="button" className="text-sm underline" onClick={() => { setFolderId(null); setPage(0); }}>All files</button>
-            {breadcrumbs.map((crumb) => <button type="button" key={crumb.id} className="text-sm underline" onClick={() => { setFolderId(crumb.id); setPage(0); }}>/ {crumb.name}</button>)
+            {breadcrumbs.map((crumb) => <button type="button" key={crumb.id} className="text-sm underline" onClick={() => { setFolderId(crumb.id); setPage(0); }}>/ {crumb.name}</button>)}
           </div>
           {canUpload ? <Button size="sm" variant="outline" onClick={() => setShowNewFolder((v) => !v)}><FolderPlus className="mr-2 size-4" />New folder</Button> : null}
         </div>

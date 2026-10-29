@@ -350,7 +350,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </div>
 
-          {import.meta.env.VITE_VOICE_ASSISTANT_ENABLED === "true" ? <VoiceAssistant /> : null}
+          {import.meta.env['VITE_VOICE_ASSISTANT_ENABLED'] === "true" ? <VoiceAssistant /> : null}
           <CreateNewMenu />
           <ThemeToggle />
           <UserMenu />

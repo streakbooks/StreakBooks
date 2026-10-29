@@ -51,7 +51,7 @@ function Customers() {
   return (
     <>
       <PageHeader title="Customers" description="Shared contact records. Full hub at Contacts."
-        actions={<Button variant="outline" size="sm" asChild><Link to="/contacts">Open Contacts</Link></Button>} />
+        actions={<Button variant="outline" size="sm" asChild><Link to="/contacts" search={{ view: undefined }}>Open Contacts</Link></Button>} />
       <div className="mb-6 grid max-w-lg gap-2 rounded-md border p-4">
         <Label>New customer</Label>
         <Input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />

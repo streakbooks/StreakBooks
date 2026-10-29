@@ -125,6 +125,7 @@ function FixedAssetsPage() {
     return !term || [a.asset_number, a.name, a.description ?? "", a.notes ?? ""].some((value) => value.toLocaleLowerCase().includes(term));
   });
   const activeAssets = d.assets.filter((a) => a.status === "active");
+  const hasUnreconciledDemoAssets = d.assets.some((a) => a.asset_number.startsWith("FA-DEMO-") && a.notes?.includes("without a matching acquisition journal"));
   const accumulatedOf = (a: FixedAssetRow) =>
     register.data?.rows.find((r) => r.asset_id === a.id)?.accumulated_minor ??
     a.opening_accumulated_minor;
@@ -149,6 +150,15 @@ function FixedAssetsPage() {
           </>
         }
       />
+      {hasUnreconciledDemoAssets ? (
+        <Alert>
+          <AlertDescription>
+            This organisation contains sample fixed assets without matching acquisition journals.
+            These are for interface evaluation only. Depreciation posting and disposal are disabled
+            until the demo opening ledger is reconciled; do not rely on the register for financial reporting.
+          </AlertDescription>
+        </Alert>
+      ) : null}
       <Tabs defaultValue="register">
         <TabsList>
           <TabsTrigger value="register">Register</TabsTrigger>
@@ -217,7 +227,7 @@ function FixedAssetsPage() {
               currency={currency}
               accumulatedOf={accumulatedOf}
               canManage={canManage}
-              canPost={canPost}
+              canPost={canPost && !hasUnreconciledDemoAssets}
               companyId={companyId}
               onEdit={(a) => setDialog({ kind: "asset", editing: a, fromBillLine: null })}
               onDispose={(a) => setDialog({ kind: "dispose", asset: a })}
@@ -235,7 +245,7 @@ function FixedAssetsPage() {
             currency={currency}
             assets={d.assets}
             lastRunThrough={d.lastRunThrough}
-            canPost={canPost}
+            canPost={canPost && !hasUnreconciledDemoAssets}
           />
         </TabsContent>
 

@@ -20,3 +20,5 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      - name: Production dependency security gate
+        run: npm audit --omit=dev --audit-level=high

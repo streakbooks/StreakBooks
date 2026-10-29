@@ -14,8 +14,8 @@ describe("Realtime server configuration", () => {
     expect(() => getVoiceServerConfig({ ...valid, VOICE_REALTIME_MODEL: "" })).toThrow(/not configured/);
   });
   it("rejects unsafe endpoints and unbounded quotas", () => {
-    expect(() => getVoiceServerConfig({ ...valid, VOICE_REALTIME_BASE_URL: "http://example.com" })).toThrow(/HTTPS/);
-    expect(() => getVoiceServerConfig({ ...valid, VOICE_REALTIME_BASE_URL: "https://u:p@example.com" })).toThrow(/HTTPS/);
+    expect(() => getVoiceServerConfig({ ...valid, VOICE_REALTIME_BASE_URL: "http://example.com" })).toThrow(/https:\/\/api\.openai\.com\/v1/);
+    expect(() => getVoiceServerConfig({ ...valid, VOICE_REALTIME_BASE_URL: "https://u:p@example.com" })).toThrow(/https:\/\/api\.openai\.com\/v1/);
     expect(() => getVoiceServerConfig({ ...valid, VOICE_MAX_SESSION_SECONDS: "999999" })).toThrow(/not configured/);
   });
   it("never exposes the server key in the public config", () => {

@@ -69,6 +69,12 @@ export function VoiceAssistant() {
     if (!transcript || !allowed || requestInFlight.current) return;
     const generation = companyGeneration.current;
     setText(""); setInterim("");
+    if (draftRef.current?.status === "review" && /^(done|close preview|discard|new command)$/i.test(transcript)) {
+      draftRef.current = null;
+      setDraft(null);
+      setHistory((rows) => [...rows.slice(-48), { source: "User", text: transcript }, { source: "LinkBooks", text: "Unsaved preview closed. No financial records were changed." }]);
+      return;
+    }
     if (draftRef.current) {
       const result = advanceDraft(draftRef.current, transcript);
       draftRef.current = result.state.status === "cancelled" ? null : result.state;
@@ -164,7 +170,7 @@ export function VoiceAssistant() {
         <button type="button" disabled={!enabled || listening || !speechAvailable} onClick={start} className="rounded border px-3 py-2 text-sm">Speak</button>
         <button type="button" disabled={!listening} onClick={stop} className="rounded border px-3 py-2 text-sm">Stop</button>
       </div>
-      {draft && <p role="status" className="text-xs">Draft preview: {draft.status}. Say cancel to discard. Nothing is saved.</p>}
+      {draft && <div className="my-2 flex items-center justify-between gap-2"><p role="status" className="text-xs">Draft preview: {draft.status}. Nothing is saved.</p><button type="button" className="rounded border px-2 py-1 text-xs" onClick={() => { draftRef.current = null; setDraft(null); }}>Discard preview</button></div>}
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
       {interim && <p aria-live="polite" className="text-sm italic">Recognizing: {interim}</p>}
       <div role="log" aria-label="Command transcript" aria-live="polite" className="min-h-0 flex-1 space-y-2 overflow-y-auto rounded border p-3 text-sm">

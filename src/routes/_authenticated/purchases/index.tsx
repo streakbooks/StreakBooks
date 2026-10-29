@@ -45,7 +45,7 @@ function PurchasesOverview() {
   const cards = [
     { label: "Outstanding bills", amount: preferred?.outstandingMinor ?? 0, hint: `${preferred?.openCount ?? 0} unpaid bills`, to: "/purchases/bills?tab=to_pay" },
     { label: "Overdue", amount: preferred?.overdueMinor ?? 0, hint: `${preferred?.overdueCount ?? 0} overdue bills`, to: "/purchases/bills?tab=to_pay&overdueOnly=true" },
-    { label: "Due in 7 days", amount: preferred?.dueSoonMinor ?? 0, hint: `${preferred?.dueSoonCount ?? 0} upcoming bills`, to: "/purchases/bills?tab=to_pay&dateField=due_date&from=${overview.asOf}&to=${new Date(Date.parse(overview.asOf + "T00:00:00Z") + 7 * 86400000).toISOString().slice(0, 10)}" },
+    { label: "Due in 7 days", amount: preferred?.dueSoonMinor ?? 0, hint: `${preferred?.dueSoonCount ?? 0} upcoming bills`, to: `/purchases/bills?tab=to_pay&dateField=due_date&from=${overview.asOf}&to=${new Date(Date.parse(overview.asOf + "T00:00:00Z") + 7 * 86400000).toISOString().slice(0, 10)}` },
   ];
   return (
     <>

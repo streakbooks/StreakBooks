@@ -1,0 +1,43 @@
+---
+description: LinkBooks mandatory Git and Supabase delivery workflow
+alwaysApply: true
+---
+
+# Mandatory Git, Main Branch, and Supabase Workflow
+
+These rules apply to every LinkBooks task, code change, bug fix, feature, refactor, configuration change, and database change.
+
+## Git: always finish on main and push
+
+- Treat `main` as the required delivery branch. Before editing, inspect the current branch, working tree, recent commits, and repository state.
+- Preserve all existing user changes. Never discard, overwrite, reset, or revert unrelated work just to get a clean tree.
+- Make the requested implementation completely; do not stop at a plan, mockup, UI-only change, or partial implementation when the task requires working code.
+- Run the relevant tests, type checks, lint/build checks, and other available validation before committing. Fix failures caused by your changes.
+- Review the final diff and ensure no secrets, credentials, private keys, environment files, generated junk, or unrelated changes are included.
+- After a task is implemented and validated, create a descriptive Git commit and push the commit to `origin/main`. Do not leave completed work uncommitted or only on a local branch.
+- If working on a feature branch, preserve the branch and its changes, then integrate them into `main` safely; do not force-push or rewrite shared history. Respect branch protection and required checks.
+- Never use `git push --force`, destructive resets, or history rewriting to make a push succeed.
+- If commit or push fails because of authentication, network access, conflicts, branch protection, or permissions, diagnose safely and report the exact blocker and next action. Never claim a commit or push succeeded unless the command confirms it.
+- After pushing, verify that `main` points to the expected commit and report the commit hash, changed files, validation results, and push status.
+
+## Supabase: implement and verify required changes
+
+- Inspect the existing Supabase schema, SQL functions/RPCs, Row Level Security (RLS) policies, triggers, indexes, storage policies, Edge Functions, app data access, and migration history before deciding whether a Supabase change is required.
+- If the requested feature or fix needs a Supabase change, implement the database/backend change as well as the frontend. Do not leave it as TODO text, a UI-only workaround, or an unapplied SQL snippet.
+- Keep database migrations and related SQL in the repository under the project's existing Supabase migration conventions. Use the Supabase CLI's current help/docs to determine the correct migration workflow; do not invent migration filenames or assume commands.
+- Keep repository migrations, generated database types, application code, and the actual Supabase environment in sync. Apply required migrations to the intended connected Supabase project when authorized access is available, then verify the result with appropriate SQL/test queries and check Supabase security/performance advisors.
+- If Supabase access or credentials are unavailable, still prepare and validate the repository migration where possible, but explicitly report what could not be applied or verified. Never claim the live database was changed unless confirmed.
+- Protect tenant isolation and accounting integrity. Enable RLS on exposed tables and create policies based on the actual organisation/company access model. Check authorization for every read/write path, including RPCs, views, storage, and Edge Functions. Never expose service-role or secret keys in client code.
+- For LinkBooks accounting data, preserve double-entry balancing, immutable posted entries, reversal-based corrections, idempotency, period locks, currency/minor-unit precision, reconciliation integrity, and audit history. Do not bypass accounting controls to make a test pass.
+- Do not run destructive production SQL, drop/replace data, reset a database, weaken RLS, or make irreversible changes without explaining the impact and obtaining explicit confirmation where needed. Prefer backward-compatible migrations and safe, reversible changes.
+- After schema/security changes, run relevant tests and Supabase security/performance advisors; fix findings introduced by the change. Verify the live result when connected.
+
+## Required completion report
+
+At the end of each task, state:
+1. What changed across frontend, backend, database, and migrations.
+2. Tests and validation run, including failures or limitations.
+3. Git commit hash and whether the commit was pushed to `origin/main`.
+4. Supabase project/environment changed, migration applied, verification performed, and any remaining blocker.
+
+Do not mark a task complete while required implementation, validation, commit, push, or authorized Supabase application remains outstanding. Be transparent about anything blocked by missing access or approval.

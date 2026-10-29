@@ -34,6 +34,7 @@ export function VoiceAssistant() {
   const draftRef = useRef<DraftState | null>(null);
   const [error, setError] = useState("");
   const [speechAvailable, setSpeechAvailable] = useState(false);
+  const [speechLanguage, setSpeechLanguage] = useState("en-GB");
   const recognition = useRef<BrowserRecognition | null>(null);
   const allowed = Boolean(company && roleHasPermission(company.role, "ai.use"));
 
@@ -46,6 +47,7 @@ export function VoiceAssistant() {
 
   useEffect(() => {
     setSpeechAvailable(Boolean((window as SpeechWindow).SpeechRecognition || (window as SpeechWindow).webkitSpeechRecognition));
+    setSpeechLanguage(navigator.language || "en-GB");
     return () => stop();
   }, [stop]);
   useEffect(() => { stop(); setHistory([]); setEnabled(false); draftRef.current = null; setDraft(null); }, [company?.id, stop]);
@@ -101,7 +103,7 @@ export function VoiceAssistant() {
     try {
       const instance = new Constructor();
       recognition.current = instance;
-      instance.lang = navigator.language || "en-GB";
+      instance.lang = speechLanguage;
       instance.continuous = false;
       instance.interimResults = true;
       instance.onresult = (event) => {
@@ -139,6 +141,7 @@ export function VoiceAssistant() {
       }} /> Enable voice controls for this session</label>
       <p role="status" className="text-xs">{listening ? "Microphone active — listening" : "Microphone off"} · {speechAvailable ? "Browser speech recognition available" : "Speech unavailable; text commands supported"}</p>
       <p className="text-xs text-muted-foreground">Browser speech recognition may use a cloud service. Do not dictate private financial data unless you trust your browser's provider.</p>
+      <label className="my-2 block text-xs">Recognition language <select aria-label="Recognition language" className="rounded border bg-background p-1" value={speechLanguage} onChange={(event) => setSpeechLanguage(event.target.value)}><option value="en-GB">English (UK)</option><option value="en-US">English (US)</option><option value="en-IN">English (India)</option><option value="hi-IN">Hindi (India) — English command phrases only</option></select></label>
       <div className="my-2 flex gap-2">
         <button type="button" disabled={!enabled || listening || !speechAvailable} onClick={start} className="rounded border px-3 py-2 text-sm">Speak</button>
         <button type="button" disabled={!listening} onClick={stop} className="rounded border px-3 py-2 text-sm">Stop</button>

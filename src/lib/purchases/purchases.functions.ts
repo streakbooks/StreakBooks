@@ -703,6 +703,79 @@ export const getBillsWorkspaceSummary = createServerFn({ method: "GET" })
     };
   });
 
+/** Purchases overview: complete payable aging and a small upcoming-bills preview.
+ * Uses the same persisted bill balances and permission boundary as the bills workspace.
+ * All money is grouped by original bill currency; no implicit FX conversion.
+ */
+export const getPurchasesOverview = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "purchases.view");
+    const today = new Date().toISOString().slice(0, 10);
+    const inDays = (days: number) => {
+      const d = new Date(today + "T00:00:00.000Z");
+      d.setUTCDate(d.getUTCDate() + days);
+      return d.toISOString().slice(0, 10);
+    };
+    type Row = {
+      id: string; bill_number: string | null; supplier_invoice_number: string | null;
+      due_date: string | null; status: string; total_minor: number;
+      amount_paid_minor: number; amount_credited_minor: number;
+      currency_code: string | null; contacts: { name: string } | { name: string }[] | null;
+    };
+    const rows: Row[] = [];
+    const PAGE = 1000;
+    for (let offset = 0; ; offset += PAGE) {
+      const { data: page, error } = await context.supabase
+        .from("purchase_bills" as never)
+        .select("id, bill_number, supplier_invoice_number, due_date, status, total_minor, amount_paid_minor, amount_credited_minor, currency_code, contacts(name)" as never)
+        .eq("company_id" as never, data.companyId as never)
+        .in("status" as never, ["authorised", "partly_paid"] as never)
+        .order("id" as never)
+        .range(offset, offset + PAGE - 1);
+      if (error) throw new Error(error.message);
+      const chunk = (page ?? []) as unknown as Row[];
+      rows.push(...chunk);
+      if (chunk.length < PAGE) break;
+    }
+    const currencies = new Map<string, {
+      currency: string; outstandingMinor: number; overdueMinor: number;
+      dueSoonMinor: number; laterMinor: number; undatedMinor: number;
+      overdueCount: number; dueSoonCount: number; openCount: number;
+    }>();
+    const upcoming: Array<{
+      id: string; supplier: string; reference: string; dueDate: string | null;
+      currency: string; outstandingMinor: number; overdue: boolean;
+    }> = [];
+    for (const row of rows) {
+      const balance = Math.max(0, Number(row.total_minor) - Number(row.amount_paid_minor) - Number(row.amount_credited_minor));
+      if (!Number.isSafeInteger(balance) || balance <= 0) continue;
+      const currency = (row.currency_code ?? "GBP").toUpperCase();
+      const entry = currencies.get(currency) ?? {
+        currency, outstandingMinor: 0, overdueMinor: 0, dueSoonMinor: 0,
+        laterMinor: 0, undatedMinor: 0, overdueCount: 0, dueSoonCount: 0, openCount: 0,
+      };
+      entry.outstandingMinor += balance;
+      entry.openCount += 1;
+      if (!row.due_date) entry.undatedMinor += balance;
+      else if (row.due_date < today) { entry.overdueMinor += balance; entry.overdueCount += 1; }
+      else if (row.due_date <= inDays(7)) { entry.dueSoonMinor += balance; entry.dueSoonCount += 1; }
+      else entry.laterMinor += balance;
+      currencies.set(currency, entry);
+      const contact = Array.isArray(row.contacts) ? row.contacts[0] : row.contacts;
+      upcoming.push({
+        id: row.id, supplier: contact?.name ?? "Supplier",
+        reference: row.supplier_invoice_number || row.bill_number || "—",
+        dueDate: row.due_date, currency, outstandingMinor: balance,
+        overdue: Boolean(row.due_date && row.due_date < today),
+      });
+    }
+    upcoming.sort((a, b) => (a.dueDate ?? "9999-12-31").localeCompare(b.dueDate ?? "9999-12-31"));
+    return { currencies: [...currencies.values()].sort((a, b) => a.currency.localeCompare(b.currency)),
+      upcoming: upcoming.slice(0, 8), asOf: today };
+  });
+
 export const submitBillForApproval = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { companyId: string; billId: string; comment?: string }) => ({

@@ -200,6 +200,7 @@ export const getFixedAsset = createServerFn({ method: "GET" })
           .from("asset_depreciation_entries" as never)
           .select("id, period_end, amount_minor, journal_id" as never)
           .eq("asset_id" as never, data.assetId as never)
+          .eq("company_id" as never, data.companyId as never)
           .order("period_end" as never)
           .range(from, to) as unknown as PromiseLike<
           PageResult<{ id: string; period_end: string; amount_minor: number; journal_id: string }>

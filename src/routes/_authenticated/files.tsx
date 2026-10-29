@@ -173,6 +173,7 @@ function FilesPage() {
           entityType: "company",
           entityId: companyId!,
           register: register as never,
+          folderId,
         });
       }
       return files.length;

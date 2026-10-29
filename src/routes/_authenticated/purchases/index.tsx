@@ -33,7 +33,7 @@ function PurchasesOverview() {
   if (isPending || (companyId && (summaryQ.isPending || overviewQ.isPending))) return <LoadingState />;
   if (!companyId) return <EmptyState title="No organisation" description="Create an organisation first." />;
   if (summaryQ.isError || overviewQ.isError) {
-    return <ErrorState message="Could not load purchasing information. Please try again." />;
+    return <ErrorState description="Could not load purchasing information. Please try again." onRetry={() => { void summaryQ.refetch(); void overviewQ.refetch(); }} />;
   }
   const summary = summaryQ.data!;
   const overview = overviewQ.data!;

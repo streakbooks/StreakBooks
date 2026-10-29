@@ -1,0 +1,23 @@
+name: LinkBooks Voice Safety Checks
+on:
+  pull_request:
+  push:
+    branches:
+      - feature/documents-folder-upload-fix
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Voice unit tests
+        run: npx vitest run src/lib/ai-voice
+      - name: Production build
+        run: npm run build

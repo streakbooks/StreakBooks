@@ -99,7 +99,7 @@ export function CreateNewMenu() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [prefs, setPrefs] = useState<CreatePrefs>({ favourites: [], recent: [] });
   const [flyoverId, setFlyoverId] = useState<string | null>(null);
-  const [Panel, setPanel] = useState<ComponentType | null>(null);
+  const [Panel, setPanel] = useState<ComponentType<{ onCompleted?: () => void }> | null>(null);
   const [panelError, setPanelError] = useState<string | null>(null);
   // Set by any edit inside the flyover, so closing an untouched form does not ask to discard (U-14).
   const flyoverDirty = useRef(false);
@@ -323,7 +323,7 @@ export function CreateNewMenu() {
                 <Loader2 className="size-6 animate-spin text-muted-foreground" />
               </div>
             ) : null}
-            {Panel ? <Panel /> : null}
+            {Panel ? <Panel onCompleted={closeFlyover} /> : null}
           </div>
           <div className="flex shrink-0 justify-end border-t border-border px-6 py-4">
             <Button type="button" variant="ghost" size="sm" onClick={closeFlyover}>

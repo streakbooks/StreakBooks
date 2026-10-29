@@ -40,7 +40,9 @@ export function assertExecutionProposal(
   if (proposal.actorId !== session.actorId || proposal.organisationId !== session.organisationId) {
     throw new Error("Voice proposal does not belong to the signed-in actor and organisation");
   }
+  if (!Number.isSafeInteger(session.now) || session.now <= 0) throw new Error("Invalid server clock");
   if (proposal.expiresAt <= session.now) throw new Error("Voice proposal has expired");
+  if (proposal.expiresAt - session.now > 300) throw new Error("Voice proposal expiry window exceeds five minutes");
   if (proposal.riskTier === 4) throw new Error("High-risk actions are not available through voice");
   if (proposal.riskTier === 1) return;
   if (!session.serverVerifiedDigest) throw new Error("Server-side confirmation record is required");
@@ -49,6 +51,7 @@ export function assertExecutionProposal(
       evidence.confirmedBy !== session.actorId ||
       evidence.confirmedOrganisation !== session.organisationId ||
       evidence.confirmedAt > session.now ||
+      session.now - evidence.confirmedAt > 300 ||
       evidence.confirmedAt > proposal.expiresAt) {
     throw new Error("Voice confirmation is invalid or mismatched");
   }

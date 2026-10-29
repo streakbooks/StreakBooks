@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2 } from "lucide-react";
+import { Download, Loader2, Search } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
@@ -75,6 +75,8 @@ function FixedAssetsPage() {
   const pageFn = useServerFn(getAssetRegisterPage);
   const registerFn = useServerFn(getFixedAssetRegister);
   const [dialog, setDialog] = useState<Dialogs>(null);
+  const [assetSearch, setAssetSearch] = useState("");
+  const [assetStatus, setAssetStatus] = useState<"all" | "active" | "disposed">("all");
   const today = useMemo(() => todayIso(), []);
 
   const page = useQuery({
@@ -117,6 +119,12 @@ function FixedAssetsPage() {
     );
   }
   const currency = d.currency;
+  const visibleAssets = d.assets.filter((a) => {
+    if (assetStatus !== "all" && a.status !== assetStatus) return false;
+    const term = assetSearch.trim().toLocaleLowerCase();
+    return !term || [a.asset_number, a.name, a.description ?? "", a.notes ?? ""].some((value) => value.toLocaleLowerCase().includes(term));
+  });
+  const activeAssets = d.assets.filter((a) => a.status === "active");
   const accumulatedOf = (a: FixedAssetRow) =>
     register.data?.rows.find((r) => r.asset_id === a.id)?.accumulated_minor ??
     a.opening_accumulated_minor;
@@ -149,6 +157,19 @@ function FixedAssetsPage() {
         </TabsList>
 
         <TabsContent value="register" className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {[
+              { label: "Active assets", value: String(activeAssets.length) },
+              { label: "Original cost", value: fmt.amount(activeAssets.reduce((sum, a) => sum + a.cost_minor, 0), currency) },
+              { label: "Accumulated depreciation", value: register.data ? fmt.amount(activeAssets.reduce((sum, a) => sum + accumulatedOf(a), 0), currency) : "Loading…" },
+              { label: "Net book value", value: register.data ? fmt.amount(activeAssets.reduce((sum, a) => sum + a.cost_minor - accumulatedOf(a), 0), currency) : "Loading…" },
+            ].map((metric) => (
+              <div key={metric.label} className="rounded-lg border bg-card p-4">
+                <p className="text-sm text-muted-foreground">{metric.label}</p>
+                <p className="mt-1 text-xl font-semibold tabular-nums">{metric.value}</p>
+              </div>
+            ))}
+          </div>
           <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
@@ -166,14 +187,33 @@ function FixedAssetsPage() {
               Capitalise from a bill
             </Button>
           </div>
+          {d.assets.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative min-w-[220px] flex-1">
+                <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input aria-label="Search fixed assets" className="pl-9" placeholder="Search asset number, name, description or notes" value={assetSearch} onChange={(event) => setAssetSearch(event.target.value)} />
+              </div>
+              <select aria-label="Filter asset status" className="h-9 rounded-md border bg-background px-3 text-sm" value={assetStatus} onChange={(event) => setAssetStatus(event.target.value as "all" | "active" | "disposed")}>
+                <option value="all">All statuses</option>
+                <option value="active">Active</option>
+                <option value="disposed">Disposed</option>
+              </select>
+              <Button size="sm" variant="outline" onClick={() => exportAssetRegisterCsv(visibleAssets, accumulatedOf)}>
+                <Download className="mr-2 size-4" /> Export CSV
+              </Button>
+              <span className="text-xs text-muted-foreground">{visibleAssets.length} of {d.assets.length} assets</span>
+            </div>
+          ) : null}
           {d.assets.length === 0 ? (
             <EmptyState
               title="No fixed assets"
               description="Add an asset, or capitalise a line from a posted bill."
             />
+          ) : visibleAssets.length === 0 ? (
+            <EmptyState title="No matching assets" description="Try a different search or status filter." />
           ) : (
             <RegisterTable
-              assets={d.assets}
+              assets={visibleAssets}
               currency={currency}
               accumulatedOf={accumulatedOf}
               canManage={canManage}
@@ -302,6 +342,28 @@ function FixedAssetsPage() {
       ) : null}
     </>
   );
+}
+
+/** Export the current register view without exposing records outside the selected organisation. */
+function exportAssetRegisterCsv(assets: FixedAssetRow[], accumulatedOf: (asset: FixedAssetRow) => number) {
+  const escapeCell = (value: string | number | null) => {
+    const raw = String(value ?? "");
+    // Prevent spreadsheet formula injection when CSV is opened in Excel or similar applications.
+    const safe = /^[\\s]*[=+@-]/.test(raw) && typeof value === "string" ? "'" + raw : raw;
+    return '"' + safe.replace(/"/g, '""') + '"';
+  };
+  const headers = ["Asset number", "Name", "Status", "Purchase date", "Depreciation start", "Method", "Cost (minor units)", "Accumulated (minor units)", "Net book value (minor units)", "Depreciated through"];
+  const rows = assets.map((asset) => {
+    const accumulated = accumulatedOf(asset);
+    return [asset.asset_number, asset.name, asset.status, asset.purchase_date, asset.depreciation_start_date, asset.depreciation_method, asset.cost_minor, accumulated, asset.status === "disposed" ? 0 : asset.cost_minor - accumulated, asset.depreciated_through];
+  });
+  const csv = [headers, ...rows].map((row) => row.map(escapeCell).join(",")).join("\r\n");
+  const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = "linkbooks-fixed-assets.csv";
+  anchor.click();
+  URL.revokeObjectURL(url);
 }
 
 function RegisterTable({

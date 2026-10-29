@@ -109,6 +109,45 @@ function SalesOverview() {
         </div>
       )}
 
+      {overviewQ.data && !overviewQ.isError && (
+        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          <section className="rounded-xl border bg-card p-5">
+            <h2 className="mb-1 text-base font-semibold">Money coming in</h2>
+            <p className="mb-4 text-xs text-muted-foreground">Open invoice balances due within 7 and 30 days, by original currency. Overdue invoices are excluded.</p>
+            {overviewQ.data.byCurrency.length === 0 && <p className="text-sm text-muted-foreground">No outstanding invoices.</p>}
+            {overviewQ.data.byCurrency.map((c) => (
+              <div key={c.currency_code} className="mb-4 space-y-2 border-b pb-3 last:border-0">
+                <p className="text-sm font-semibold">{c.currency_code} · {c.openCount} open invoices</p>
+                <div className="flex justify-between text-sm"><span>Due in 7 days</span><strong>{money(c.dueNext7Minor, c.currency_code)}</strong></div>
+                <div className="flex justify-between text-sm"><span>Due in 30 days</span><strong>{money(c.dueNext30Minor, c.currency_code)}</strong></div>
+                {c.undatedMinor > 0 && <div className="flex justify-between text-sm"><span>Due date missing</span><strong>{money(c.undatedMinor, c.currency_code)}</strong></div>}
+              </div>
+            ))}
+            <Button variant="outline" size="sm" asChild><Link to="/sales/invoices">View invoices</Link></Button>
+          </section>
+          <section className="rounded-xl border bg-card p-5">
+            <h2 className="mb-1 text-base font-semibold">Receivables aging</h2>
+            <p className="mb-4 text-xs text-muted-foreground">Outstanding invoice balances grouped by days past due. Values are not currency-converted.</p>
+            {overviewQ.data.byCurrency.length === 0 && <p className="text-sm text-muted-foreground">No outstanding invoices.</p>}
+            {overviewQ.data.byCurrency.map((c) => (
+              <div key={c.currency_code} className="mb-4 space-y-2 border-b pb-3 last:border-0">
+                <p className="text-sm font-semibold">{c.currency_code}</p>
+                {([
+                  ["Current", c.awaitingMinor],
+                  ["1–30 days overdue", c.aging1to30Minor],
+                  ["31–60 days overdue", c.aging31to60Minor],
+                  ["61–90 days overdue", c.aging61to90Minor],
+                  ["Over 90 days overdue", c.agingOver90Minor],
+                ] as const).map(([label, amount]) => (
+                  <div key={label} className="flex justify-between gap-3 text-sm"><span>{label}</span><strong className="tabular-nums">{money(amount, c.currency_code)}</strong></div>
+                ))}
+              </div>
+            ))}
+            <Button variant="outline" size="sm" asChild><Link to="/sales/invoices">Review receivables</Link></Button>
+          </section>
+        </div>
+      )}
+
       <h2 className="mt-8 mb-3 text-sm font-medium text-muted-foreground">Recent invoices</h2>
       {invoicesQ.isPending ? (
         <LoadingState />

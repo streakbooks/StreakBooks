@@ -21,3 +21,5 @@ jobs:
         run: npx vitest run src/lib/ai-voice
       - name: Production build
         run: npm run build
+      - name: Audit runtime dependencies
+        run: npm audit --omit=dev --audit-level=high

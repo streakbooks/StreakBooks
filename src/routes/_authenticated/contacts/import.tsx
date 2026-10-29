@@ -52,7 +52,7 @@ function ContactImportPage() {
         description="Upload a CSV. Existing contacts with the same name are skipped by default."
         actions={
           <Button variant="outline" size="sm" asChild>
-            <Link to="/contacts">Directory</Link>
+            <Link to="/contacts" search={{ view: undefined }}>Directory</Link>
           </Button>
         }
       />

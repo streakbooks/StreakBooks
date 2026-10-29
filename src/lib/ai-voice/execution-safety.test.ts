@@ -29,6 +29,7 @@ describe("four-tier voice proposal safety", () => {
   });
   it("requires server-verified on-screen confirmation", () => {
     expect(() => assertExecutionProposal(proposal, confirmation, { ...session, serverVerifiedDigest: null })).toThrow(/Server-side/);
+    expect(() => assertExecutionProposal({ ...proposal, payloadDigest: "b".repeat(64) }, confirmation, session)).toThrow(/proposed payload/);
     expect(() => assertExecutionProposal(proposal, { ...confirmation, proposalDigest: "b".repeat(64) }, session)).toThrow(/mismatched/);
     expect(() => assertExecutionProposal(proposal, confirmation, session)).not.toThrow();
   });

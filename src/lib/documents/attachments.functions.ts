@@ -105,6 +105,7 @@ export const registerAttachment = createServerFn({ method: "POST" })
       storagePath: string;
       fileName: string;
       contentType?: string;
+      folderId?: string | null;
     }) => {
       const base = entityInput(input);
       const parts = parseStoragePath(input.storagePath ?? "");
@@ -125,6 +126,7 @@ export const registerAttachment = createServerFn({ method: "POST" })
         contentType: (input.contentType ?? "").trim().slice(0, 120) || null,
         folder: input.storagePath.slice(0, input.storagePath.lastIndexOf("/")),
         objectName: parts.file,
+        folderId: input.folderId ? assertUuid(input.folderId, "folder") : null,
       };
     },
   )
@@ -166,6 +168,7 @@ export const registerAttachment = createServerFn({ method: "POST" })
         content_type: data.contentType,
         size_bytes: size,
         uploaded_by: context.userId,
+        folder_id: data.folderId,
       } as never)
       .select("id" as never)
       .single();

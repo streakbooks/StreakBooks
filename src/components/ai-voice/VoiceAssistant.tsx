@@ -36,6 +36,9 @@ export function VoiceAssistant() {
   const [speechAvailable, setSpeechAvailable] = useState(false);
   const [speechLanguage, setSpeechLanguage] = useState("en-GB");
   const recognition = useRef<BrowserRecognition | null>(null);
+  const requestInFlight = useRef(false);
+  const companyGeneration = useRef(0);
+  const finalSpeechHandled = useRef(false);
   const allowed = Boolean(company && roleHasPermission(company.role, "ai.use"));
 
   const stop = useCallback(() => {
@@ -50,7 +53,7 @@ export function VoiceAssistant() {
     setSpeechLanguage(navigator.language || "en-GB");
     return () => stop();
   }, [stop]);
-  useEffect(() => { stop(); setHistory([]); setEnabled(false); draftRef.current = null; setDraft(null); }, [company?.id, stop]);
+  useEffect(() => { companyGeneration.current += 1; stop(); setHistory([]); setEnabled(false); draftRef.current = null; setDraft(null); }, [company?.id, stop]);
   useEffect(() => {
     const listener = (event: KeyboardEvent) => {
       if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === "v") {
@@ -63,7 +66,8 @@ export function VoiceAssistant() {
 
   const execute = useCallback(async (input: string) => {
     const transcript = input.trim();
-    if (!transcript) return;
+    if (!transcript || !allowed || requestInFlight.current) return;
+    const generation = companyGeneration.current;
     setText(""); setInterim("");
     if (draftRef.current) {
       const result = advanceDraft(draftRef.current, transcript);
@@ -73,24 +77,34 @@ export function VoiceAssistant() {
       return;
     }
     if (/^(start|create|prepare) (a |an )?(sales invoice|supplier bill) (preview|draft)$/i.test(transcript)) {
-      const result = beginDraft(/supplier bill/i.test(transcript) ? "supplier_bill" : "sales_invoice");
+      const kind = /supplier bill/i.test(transcript) ? "supplier_bill" : "sales_invoice";
+      if (!company || !roleHasPermission(company.role, kind === "sales_invoice" ? "sales.draft" : "purchases.draft")) {
+        setError("You do not have permission to prepare this type of draft.");
+        return;
+      }
+      const result = beginDraft(kind);
       draftRef.current = result.state;
       setDraft(result.state);
       setHistory((rows) => [...rows.slice(-48), { source: "User", text: transcript }, { source: "LinkBooks", text: result.response }]);
       return;
     }
+    requestInFlight.current = true;
     try {
       const result = await executeOnServer({ data: { transcript } });
+      if (generation !== companyGeneration.current) return;
       setHistory((rows) => [...rows.slice(-48), { source: "User", text: transcript }, { source: "LinkBooks", text: result.message }]);
       if (result.status === "ok" && result.destination) {
         await navigate({ to: result.destination as never });
       }
     } catch (cause) {
+      if (generation !== companyGeneration.current) return;
       const message = cause instanceof Error ? cause.message : "Command could not be authorised.";
       setHistory((rows) => [...rows.slice(-48), { source: "User", text: transcript }, { source: "LinkBooks", text: message }]);
       setError(message);
+    } finally {
+      requestInFlight.current = false;
     }
-  }, [executeOnServer, navigate]);
+  }, [allowed, company, executeOnServer, navigate]);
 
   const executeRef = useRef(execute);
   useEffect(() => { executeRef.current = execute; }, [execute]);
@@ -103,6 +117,7 @@ export function VoiceAssistant() {
     try {
       const instance = new Constructor();
       recognition.current = instance;
+      finalSpeechHandled.current = false;
       instance.lang = speechLanguage;
       instance.continuous = false;
       instance.interimResults = true;
@@ -111,7 +126,10 @@ export function VoiceAssistant() {
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const result = event.results[i];
           if (!result) continue;
-          if (result.isFinal) void executeRef.current(result[0].transcript);
+          if (result.isFinal && !finalSpeechHandled.current) {
+            finalSpeechHandled.current = true;
+            void executeRef.current(result[0].transcript);
+          }
           else partial += result[0].transcript;
         }
         setInterim(partial);

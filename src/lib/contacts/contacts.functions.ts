@@ -227,6 +227,14 @@ export const upsertContact = createServerFn({ method: "POST" })
       deliveryAddressLine1?: string;
       deliveryCity?: string;
       deliveryCountry?: string;
+      billingAddressLine2?: string;
+      deliveryAddressLine2?: string;
+      deliveryRegion?: string;
+      deliveryPostal?: string;
+      defaultSalesAccountId?: string | null;
+      defaultPurchaseAccountId?: string | null;
+      salesTaxInclusive?: boolean | null;
+      purchaseTaxInclusive?: boolean | null;
     }) => {
       const name = (input.name ?? "").trim();
       if (!name) throw new Error("Contact name is required");
@@ -261,6 +269,14 @@ export const upsertContact = createServerFn({ method: "POST" })
         deliveryAddressLine1: (input.deliveryAddressLine1 ?? "").trim().slice(0, 200) || null,
         deliveryCity: (input.deliveryCity ?? "").trim().slice(0, 100) || null,
         deliveryCountry: (input.deliveryCountry ?? "").trim().slice(0, 100) || null,
+        billingAddressLine2: (input.billingAddressLine2 ?? "").trim().slice(0, 200) || null,
+        deliveryAddressLine2: (input.deliveryAddressLine2 ?? "").trim().slice(0, 200) || null,
+        deliveryRegion: (input.deliveryRegion ?? "").trim().slice(0, 100) || null,
+        deliveryPostal: (input.deliveryPostal ?? "").trim().slice(0, 40) || null,
+        defaultSalesAccountId: input.defaultSalesAccountId ? assertUuid(input.defaultSalesAccountId) : null,
+        defaultPurchaseAccountId: input.defaultPurchaseAccountId ? assertUuid(input.defaultPurchaseAccountId) : null,
+        salesTaxInclusive: input.salesTaxInclusive ?? null,
+        purchaseTaxInclusive: input.purchaseTaxInclusive ?? null,
       };
     },
   )
@@ -320,6 +336,14 @@ export const upsertContact = createServerFn({ method: "POST" })
       delivery_address_line1: data.deliveryAddressLine1,
       delivery_city: data.deliveryCity,
       delivery_country: data.deliveryCountry,
+      billing_address_line2: data.billingAddressLine2,
+      delivery_address_line2: data.deliveryAddressLine2,
+      delivery_region: data.deliveryRegion,
+      delivery_postal: data.deliveryPostal,
+      default_sales_account_id: data.defaultSalesAccountId,
+      default_purchase_account_id: data.defaultPurchaseAccountId,
+      sales_tax_inclusive: data.salesTaxInclusive,
+      purchase_tax_inclusive: data.purchaseTaxInclusive,
       updated_at: new Date().toISOString(),
     };
 

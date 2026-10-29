@@ -28,6 +28,11 @@ export const executeDeterministicVoiceCommand = createServerFn({ method: "POST" 
       destination: null,
     };
     await assertCompanyPermission(supabase, companyId, parsed.command.requiredPermission);
+    if (parsed.command.intent === "review") {
+      const contextData = await buildCompanyAiContext(supabase, companyId, 12000);
+      const block = contextData.calculatedBlocks.find((item) => item.kind === parsed.command.review);
+      return { status: "ok" as const, message: `${block?.title ?? "Review"} (limited sample):\\n${block?.body ?? "No data available."}`, destination: null };
+    }
     // Server-side resolve and validate that the destination is permitted in this organisation.
     const { data: company, error: companyError } = await supabase.from("companies")
       .select("id").eq("id", companyId).maybeSingle();

@@ -97,15 +97,15 @@ export async function loadCreatePanel(id: string): Promise<ComponentType> {
       return m.InboxPanel;
     }
     case "customer": {
-      const m = await import("@/routes/_authenticated/contacts/index");
-      return function CustomerPanel() {
-        return <m.ContactsPage initialKind="customer" />;
+      const m = await import("@/routes/_authenticated/contacts/new");
+      return function CustomerPanel({ onCompleted }: { onCompleted?: () => void }) {
+        return <m.NewContact initialKind="customer" embedded onSaved={onCompleted} />;
       };
     }
     case "supplier": {
-      const m = await import("@/routes/_authenticated/contacts/index");
-      return function SupplierPanel() {
-        return <m.ContactsPage initialKind="supplier" />;
+      const m = await import("@/routes/_authenticated/contacts/new");
+      return function SupplierPanel({ onCompleted }: { onCompleted?: () => void }) {
+        return <m.NewContact initialKind="supplier" embedded onSaved={onCompleted} />;
       };
     }
     case "product": {

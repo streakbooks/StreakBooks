@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Download, Loader2, Trash2, Upload } from "lucide-react";
+import { Download, FileText, Loader2, Trash2, Upload, ArrowUpDown, X } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
@@ -77,6 +77,9 @@ function FilesPage() {
   const [type, setType] = useState("all");
   const [page, setPage] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [sort, setSort] = useState<"newest" | "oldest" | "name" | "largest">("newest");
+  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [dragActive, setDragActive] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
@@ -172,6 +175,13 @@ function FilesPage() {
 
   const data = filesQ.data;
   const pages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
+  const sortedFiles = [...(data?.files ?? [])].sort((a, b) => {
+    if (sort === "oldest") return a.created_at.localeCompare(b.created_at);
+    if (sort === "name") return a.file_name.localeCompare(b.file_name);
+    if (sort === "largest") return (b.size_bytes ?? 0) - (a.size_bytes ?? 0);
+    return b.created_at.localeCompare(a.created_at);
+  });
+  const selected = data?.files.find((file) => file.id === selectedFile) ?? null;
 
   return (
     <>
@@ -211,6 +221,16 @@ function FilesPage() {
           {error}
         </p>
       ) : null}
+      <div
+        className={`mb-4 rounded-lg border border-dashed p-4 text-sm transition-colors ${dragActive ? "border-primary bg-primary/5" : "border-border"}`}
+        onDragOver={(e) => { if (!canUpload) return; e.preventDefault(); setDragActive(true); }}
+        onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragActive(false); }}
+        onDrop={(e) => { if (!canUpload) return; e.preventDefault(); setDragActive(false); onPick(e.dataTransfer.files); }}
+      >
+        <div className="flex items-center gap-2"><Upload className="size-4" />
+          {canUpload ? "Drop files here or use Upload files. Maximum 20 MB per file." : "Files available to your organisation."}
+        </div>
+      </div>
       <div className="mb-4 flex flex-wrap gap-3">
         <Input
           className="w-64"
@@ -238,7 +258,37 @@ function FilesPage() {
             ))}
           </SelectContent>
         </Select>
+        <Select value={sort} onValueChange={(v) => setSort(v as typeof sort)}>
+          <SelectTrigger className="w-48" aria-label="Sort files"><ArrowUpDown className="mr-2 size-4" /><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="newest">Newest first</SelectItem>
+            <SelectItem value="oldest">Oldest first</SelectItem>
+            <SelectItem value="name">File name A–Z</SelectItem>
+            <SelectItem value="largest">Largest first</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
+
+      {selected ? (
+        <section aria-label="Selected file details" className="mb-4 rounded-lg border bg-card p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex min-w-0 items-start gap-3">
+              <FileText className="mt-1 size-5 shrink-0 text-muted-foreground" />
+              <div className="min-w-0 space-y-1">
+                <h2 className="break-all font-semibold">{selected.file_name}</h2>
+                <p className="text-sm text-muted-foreground">Attached to: {selected.entityLabel}{selected.entityRef ? ` · ${selected.entityRef}` : ""}</p>
+                <p className="text-sm text-muted-foreground">Size: {formatFileSize(selected.size_bytes)} · Uploaded: {fmt.dateTime(selected.created_at)}</p>
+                <p className="text-sm text-muted-foreground">Type: {selected.content_type || "Unknown"}</p>
+                {selected.entityPath && selected.entity_type !== "company" ? <a className="text-sm underline" href={selected.entityPath}>Open linked record</a> : null}
+              </div>
+            </div>
+            <Button size="icon" variant="ghost" aria-label="Close file details" onClick={() => setSelectedFile(null)}><X className="size-4" /></Button>
+          </div>
+          <div className="mt-3 flex gap-2">
+            <Button size="sm" variant="outline" disabled={downloadM.isPending} onClick={() => downloadM.mutate(selected.id)}><Download className="mr-1 size-4" />Download</Button>
+          </div>
+        </section>
+      ) : null}
 
       {filesQ.isPending ? (
         <LoadingState />
@@ -272,7 +322,7 @@ function FilesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filesQ.data.files.map((f) => {
+              {sortedFiles.map((f) => {
                 const manageable = (
                   f.entity_type in ATTACHMENT_ENTITIES
                     ? ATTACHMENT_ENTITIES[f.entity_type as keyof typeof ATTACHMENT_ENTITIES].manage
@@ -280,7 +330,7 @@ function FilesPage() {
                 ).some((p) => can(p));
                 return (
                   <TableRow key={f.id}>
-                    <TableCell className="max-w-xs truncate font-medium">{f.file_name}</TableCell>
+                    <TableCell className="max-w-xs"><button type="button" className="max-w-xs truncate text-left font-medium hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" onClick={() => setSelectedFile(f.id)} aria-label={`View details for ${f.file_name}`}>{f.file_name}</button></TableCell>
                     <TableCell>
                       {f.entityPath && f.entity_type !== "company" ? (
                         <a href={f.entityPath} className="underline">

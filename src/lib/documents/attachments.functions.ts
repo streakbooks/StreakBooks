@@ -28,10 +28,11 @@ export type AttachmentRow = {
   created_at: string;
   uploaded_by: string | null;
   storage_bucket: string | null;
+  folder_id: string | null;
 };
 
 const COLUMNS =
-  "id, entity_type, entity_id, file_name, content_type, size_bytes, created_at, uploaded_by, storage_bucket";
+  "id, entity_type, entity_id, file_name, content_type, size_bytes, created_at, uploaded_by, storage_bucket, folder_id";
 
 /** View or manage, matching ATTACHMENT_ENTITIES. Any listed permission is enough. */
 export async function assertEntityAccess(
@@ -311,10 +312,12 @@ export const listCompanyFiles = createServerFn({ method: "GET" })
       entityType?: string;
       page?: number;
       pageSize?: number;
+      folderId?: string | null;
     }) => ({
       companyId: assertUuid(input.companyId),
       search: (input.search ?? "").trim().slice(0, 80),
       entityType: input.entityType && input.entityType !== "all" ? input.entityType : null,
+      folderId: input.folderId ? assertUuid(input.folderId) : null,
       page: Math.max(0, Math.floor(Number(input.page) || 0)),
       pageSize: Math.min(100, Math.max(5, Math.floor(Number(input.pageSize) || 25))),
     }),
@@ -327,6 +330,7 @@ export const listCompanyFiles = createServerFn({ method: "GET" })
       .select(COLUMNS as never, { count: "exact" })
       .eq("company_id" as never, data.companyId as never);
     if (data.entityType) q = q.eq("entity_type" as never, data.entityType as never);
+    if (data.folderId) q = q.eq("folder_id" as never, data.folderId as never);
     if (data.search)
       q = q.ilike("file_name" as never, `%${escapeLikeLiteral(data.search)}%` as never);
     const from = data.page * data.pageSize;

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Download, FileText, Loader2, Trash2, Upload, ArrowUpDown, X } from "lucide-react";
+import { Download, FileText, Loader2, Trash2, Upload, ArrowUpDown, X, FolderPlus, Folder, Pencil, FolderInput } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
@@ -21,6 +21,7 @@ import {
   formatFileSize,
   validateUpload,
 } from "@/lib/documents/attachments";
+import { listDocumentFolders, createDocumentFolder, updateDocumentFolder, deleteDocumentFolder, moveDocumentToFolder } from "@/lib/documents/folders.functions";
 import { downloadBase64, uploadCompanyDocument } from "@/lib/documents/upload-client";
 import { openSignedDownload } from "@/lib/documents/ui";
 import { friendlyAuthError } from "@/lib/auth-helpers";
@@ -71,6 +72,14 @@ function FilesPage() {
   const fetchDownload = useServerFn(getAttachmentDownload);
   const remove = useServerFn(deleteAttachment);
   const inputRef = useRef<HTMLInputElement>(null);
+  const getFolders = useServerFn(listDocumentFolders);
+  const createFolder = useServerFn(createDocumentFolder);
+  const updateFolder = useServerFn(updateDocumentFolder);
+  const deleteFolder = useServerFn(deleteDocumentFolder);
+  const moveFile = useServerFn(moveDocumentToFolder);
+  const [folderId, setFolderId] = useState<string | null>(null);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [showNewFolder, setShowNewFolder] = useState(false);
 
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
@@ -92,8 +101,52 @@ function FilesPage() {
 
   const canUpload = ATTACHMENT_ENTITIES.company.manage.some((p) => can(p));
 
+  const foldersQ = useQuery({
+    queryKey: ["document-folders", companyId],
+    enabled: Boolean(companyId),
+    queryFn: () => getFolders({ data: { companyId: companyId! } }),
+  });
+  type FolderRow = { id: string; name: string; parent_id: string | null };
+  const folders = (foldersQ.data ?? []) as FolderRow[];
+  const activeFolder = folders.find((f) => f.id === folderId);
+  const folderM = useMutation({
+    mutationFn: async (name: string) => createFolder({ data: { companyId: companyId!, name, parentId: folderId } }),
+    onSuccess: async () => {
+      setNewFolderName(""); setShowNewFolder(false);
+      await queryClient.invalidateQueries({ queryKey: ["document-folders", companyId] });
+      toast.success("Folder created");
+    },
+    onError: (e) => toast.error(friendlyAuthError(e)),
+  });
+  const renameFolderM = useMutation({
+    mutationFn: async ({ id, name, parentId }: { id: string; name: string; parentId: string | null }) =>
+      updateFolder({ data: { companyId: companyId!, folderId: id, name, parentId } }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["document-folders", companyId] });
+      toast.success("Folder updated");
+    },
+    onError: (e) => toast.error(friendlyAuthError(e)),
+  });
+  const removeFolderM = useMutation({
+    mutationFn: (id: string) => deleteFolder({ data: { companyId: companyId!, folderId: id } }),
+    onSuccess: async () => {
+      setFolderId(null);
+      await queryClient.invalidateQueries({ queryKey: ["document-folders", companyId] });
+      toast.success("Empty folder deleted");
+    },
+    onError: (e) => toast.error(friendlyAuthError(e)),
+  });
+  const moveM = useMutation({
+    mutationFn: ({ attachmentId, targetId }: { attachmentId: string; targetId: string | null }) =>
+      moveFile({ data: { companyId: companyId!, attachmentId, folderId: targetId } }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["company-files", companyId] });
+      toast.success("File moved");
+    },
+    onError: (e) => toast.error(friendlyAuthError(e)),
+  });
   const filesQ = useQuery({
-    queryKey: ["company-files", companyId, debounced, type, page],
+    queryKey: ["company-files", companyId, debounced, type, folderId, page],
     enabled: Boolean(companyId),
     placeholderData: keepPreviousData,
     queryFn: () =>
@@ -102,6 +155,7 @@ function FilesPage() {
           companyId: companyId!,
           search: debounced,
           entityType: type,
+          folderId,
           page,
           pageSize: PAGE_SIZE,
         },
@@ -231,6 +285,31 @@ function FilesPage() {
           {canUpload ? "Drop files here or use Upload files. Maximum 20 MB per file." : "Files available to your organisation."}
         </div>
       </div>
+      <section aria-label="Document folders" className="mb-4 rounded-lg border p-4">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Folder className="size-4" />
+            <button type="button" className="text-sm underline" onClick={() => { setFolderId(null); setPage(0); }}>All files</button>
+            {activeFolder ? <span className="text-sm text-muted-foreground">/ {activeFolder.name}</span> : null}
+          </div>
+          {canUpload ? <Button size="sm" variant="outline" onClick={() => setShowNewFolder((v) => !v)}><FolderPlus className="mr-2 size-4" />New folder</Button> : null}
+        </div>
+        {showNewFolder ? <form className="mb-3 flex gap-2" onSubmit={(e) => { e.preventDefault(); if (newFolderName.trim()) folderM.mutate(newFolderName); }}>
+          <Input aria-label="New folder name" placeholder="Folder name" maxLength={120} value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)} />
+          <Button type="submit" size="sm" disabled={folderM.isPending || !newFolderName.trim()}>Create</Button>
+          <Button type="button" size="sm" variant="ghost" onClick={() => setShowNewFolder(false)}>Cancel</Button>
+        </form> : null}
+        {foldersQ.isError ? <p role="alert" className="text-sm text-destructive">Folder loading failed: {friendlyAuthError(foldersQ.error)}. Apply the document folders migration if it is pending.</p> : null}
+        <div className="flex flex-wrap gap-2">
+          {activeFolder?.parent_id ? <Button size="sm" variant="outline" onClick={() => { setFolderId(activeFolder.parent_id); setPage(0); }}>Parent folder</Button> : null}
+          {folders.filter((f) => f.parent_id === folderId).map((folder) => <Button key={folder.id} size="sm" variant="outline" onClick={() => { setFolderId(folder.id); setPage(0); }}><Folder className="mr-2 size-4" />{folder.name}</Button>)}
+        </div>
+        {activeFolder && canUpload ? <div className="mt-3 flex gap-2">
+          <Button size="sm" variant="ghost" onClick={() => { const name = window.prompt("Rename folder", activeFolder.name); if (name && name.trim() !== activeFolder.name) renameFolderM.mutate({ id: activeFolder.id, name, parentId: activeFolder.parent_id }); }}><Pencil className="mr-1 size-4" />Rename</Button>
+          <Button size="sm" variant="ghost" onClick={() => { const parentId = window.prompt("Move to parent folder ID (leave blank for root)", activeFolder.parent_id ?? ""); if (parentId !== null) renameFolderM.mutate({ id: activeFolder.id, name: activeFolder.name, parentId: parentId.trim() || null }); }}>Move folder</Button>
+          <Button size="sm" variant="ghost" disabled={removeFolderM.isPending} onClick={() => { if (window.confirm("Delete this empty folder?")) removeFolderM.mutate(activeFolder.id); }}><Trash2 className="mr-1 size-4" />Delete empty folder</Button>
+        </div> : null}
+      </section>
       <div className="mb-4 flex flex-wrap gap-3">
         <Input
           className="w-64"
@@ -316,6 +395,7 @@ function FilesPage() {
               <TableRow>
                 <TableHead>File</TableHead>
                 <TableHead>Attached to</TableHead>
+                <TableHead>Folder</TableHead>
                 <TableHead className="text-right">Size</TableHead>
                 <TableHead>Added</TableHead>
                 <TableHead className="w-24" />
@@ -340,6 +420,15 @@ function FilesPage() {
                       ) : (
                         <span className="text-muted-foreground">{f.entityLabel}</span>
                       )}
+                    </TableCell>
+                    <TableCell>
+                      {manageable ? <Select value={f.folder_id ?? "unfiled"} onValueChange={(v) => moveM.mutate({ attachmentId: f.id, targetId: v === "unfiled" ? null : v })}>
+                        <SelectTrigger className="w-40" aria-label={`Move ${f.file_name} to folder`}><FolderInput className="mr-1 size-4" /><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="unfiled">Unfiled</SelectItem>
+                          {folders.map((folder) => <SelectItem key={folder.id} value={folder.id}>{folder.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select> : (folders.find((folder) => folder.id === f.folder_id)?.name ?? "Unfiled")}
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
                       {f.size_bytes != null ? formatFileSize(f.size_bytes) : "—"}

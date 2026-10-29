@@ -59,6 +59,9 @@ function SalesOverview() {
         actions={
           <>
             <Button variant="outline" size="sm" asChild>
+              <Link to="/contacts/new" search={{ kind: "customer" }}>New customer</Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
               <Link to="/sales/receipts/new">Record receipt</Link>
             </Button>
             <Button size="sm" asChild>

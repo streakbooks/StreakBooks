@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { executeDeterministicVoiceCommand } from "@/lib/ai-voice/deterministic.functions";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { roleHasPermission } from "@/lib/permissions";
-import { parseDeterministicCommand, supportedNavigationCommands } from "@/lib/ai-voice/deterministic-engine";
+import { supportedNavigationCommands } from "@/lib/ai-voice/deterministic-engine";
 
 type RecognitionResult = { isFinal: boolean; 0: { transcript: string } };
 type RecognitionEvent = { resultIndex: number; results: ArrayLike<RecognitionResult> };
@@ -20,6 +22,7 @@ type Entry = { source: "User" | "LinkBooks"; text: string };
 export function VoiceAssistant() {
   const { company } = useActiveCompany();
   const navigate = useNavigate();
+  const executeOnServer = useServerFn(executeDeterministicVoiceCommand);
   const [open, setOpen] = useState(false);
   const [enabled, setEnabled] = useState(false);
   const [listening, setListening] = useState(false);
@@ -53,25 +56,22 @@ export function VoiceAssistant() {
     return () => window.removeEventListener("keydown", listener);
   }, []);
 
-  const execute = useCallback((input: string) => {
+  const execute = useCallback(async (input: string) => {
     const transcript = input.trim();
     if (!transcript) return;
-    const result = parseDeterministicCommand(transcript);
-    let response: string;
-    if (result.kind === "matched") {
-      // Navigation is the only enabled operation. No financial mutations occur.
-      if (!allowed || result.command.requiredPermission !== "company.view") {
-        response = "You do not have permission to navigate using voice.";
-      } else {
-        response = "Opening " + result.command.label + ".";
-        void navigate({ to: result.command.destination as never });
-      }
-    } else if (result.kind === "ambiguous") {
-      response = "Please clarify: " + result.candidates.join(" or ") + ".";
-    } else response = result.message;
-    setHistory((rows) => [...rows.slice(-48), { source: "User", text: transcript }, { source: "LinkBooks", text: response }]);
     setText(""); setInterim("");
-  }, [allowed, navigate]);
+    try {
+      const result = await executeOnServer({ data: { transcript } });
+      setHistory((rows) => [...rows.slice(-48), { source: "User", text: transcript }, { source: "LinkBooks", text: result.message }]);
+      if (result.status === "ok" && result.destination) {
+        await navigate({ to: result.destination as never });
+      }
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : "Command could not be authorised.";
+      setHistory((rows) => [...rows.slice(-48), { source: "User", text: transcript }, { source: "LinkBooks", text: message }]);
+      setError(message);
+    }
+  }, [executeOnServer, navigate]);
 
   const executeRef = useRef(execute);
   useEffect(() => { executeRef.current = execute; }, [execute]);
@@ -92,7 +92,7 @@ export function VoiceAssistant() {
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const result = event.results[i];
           if (!result) continue;
-          if (result.isFinal) executeRef.current(result[0].transcript);
+          if (result.isFinal) void executeRef.current(result[0].transcript);
           else partial += result[0].transcript;
         }
         setInterim(partial);
@@ -132,7 +132,7 @@ export function VoiceAssistant() {
         {history.length === 0 && <p className="text-muted-foreground">Try “Open sales”, “Show reports”, or “Go to banking”.</p>}
         {history.map((entry, index) => <p key={index}><strong>{entry.source}:</strong> {entry.text}</p>)}
       </div>
-      <form className="mt-3 flex gap-2" onSubmit={(event) => { event.preventDefault(); execute(text); }}>
+      <form className="mt-3 flex gap-2" onSubmit={(event) => { event.preventDefault(); void execute(text); }}>
         <input aria-label="Type a voice command" className="min-w-0 flex-1 rounded border bg-background px-2 py-2 text-sm" value={text} onChange={(event) => setText(event.target.value)} placeholder="Open sales" />
         <button type="submit" disabled={!text.trim()} className="rounded border px-3 py-2 text-sm">Run</button>
       </form>

@@ -215,7 +215,7 @@ export const getSalesOverview = createServerFn({ method: "GET" })
     if (dErr) throw new Error(dErr.message);
 
     const open = await fetchAllPages<{
-      due_date: string;
+      due_date: string | null;
       currency_code: string;
       total_minor: number;
       amount_paid_minor: number;
@@ -232,7 +232,7 @@ export const getSalesOverview = createServerFn({ method: "GET" })
           .order("id" as never)
           .range(from, to) as unknown as PromiseLike<{
           data: Array<{
-            due_date: string;
+            due_date: string | null;
             currency_code: string;
             total_minor: number;
             amount_paid_minor: number;
@@ -244,14 +244,24 @@ export const getSalesOverview = createServerFn({ method: "GET" })
 
     const by = new Map<
       string,
-      { awaitingMinor: number; overdueMinor: number; overdueCount: number }
+      { awaitingMinor: number; overdueMinor: number; overdueCount: number; openCount: number; dueNext7Minor: number; dueNext30Minor: number; undatedMinor: number; aging1to30Minor: number; aging31to60Minor: number; aging61to90Minor: number; agingOver90Minor: number }
     >();
     for (const r of open) {
       const out =
         Number(r.total_minor) - Number(r.amount_paid_minor) - Number(r.amount_credited_minor);
       if (out <= 0) continue;
-      const s = by.get(r.currency_code) ?? { awaitingMinor: 0, overdueMinor: 0, overdueCount: 0 };
-      if (r.due_date < today) {
+      const s = by.get(r.currency_code) ?? { awaitingMinor: 0, overdueMinor: 0, overdueCount: 0, openCount: 0, dueNext7Minor: 0, dueNext30Minor: 0, undatedMinor: 0, aging1to30Minor: 0, aging31to60Minor: 0, aging61to90Minor: 0, agingOver90Minor: 0 };
+      s.openCount += 1;
+      const days = r.due_date ? Math.round((Date.parse(r.due_date + "T00:00:00Z") - Date.parse(today + "T00:00:00Z")) / 86400000) : null;
+      if (days === null || !Number.isFinite(days)) s.undatedMinor += out;
+      else if (days >= 0) {
+        if (days <= 7) s.dueNext7Minor += out;
+        if (days <= 30) s.dueNext30Minor += out;
+      } else if (days >= -30) s.aging1to30Minor += out;
+      else if (days >= -60) s.aging31to60Minor += out;
+      else if (days >= -90) s.aging61to90Minor += out;
+      else s.agingOver90Minor += out;
+      if (r.due_date && r.due_date < today) {
         s.overdueMinor += out;
         s.overdueCount += 1;
       } else {

@@ -45,7 +45,9 @@ export function assertExecutionProposal(
   if (proposal.expiresAt - session.now > 300) throw new Error("Voice proposal expiry window exceeds five minutes");
   if (proposal.riskTier === 4) throw new Error("High-risk actions are not available through voice");
   if (proposal.riskTier === 1) return;
-  if (!session.serverVerifiedDigest) throw new Error("Server-side confirmation record is required");
+  if (!session.serverVerifiedDigest || session.serverVerifiedDigest !== proposal.payloadDigest) {
+    throw new Error("Server-side confirmation record must match the proposed payload");
+  }
   const evidence = ConfirmationEvidence.parse(evidenceInput);
   if (evidence.proposalDigest !== session.serverVerifiedDigest ||
       evidence.confirmedBy !== session.actorId ||

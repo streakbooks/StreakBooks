@@ -15,9 +15,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/contacts/new")({
+  validateSearch: (search: Record<string, unknown>) => ({ kind: search.kind === "supplier" ? "supplier" as const : "customer" as const }),
   head: () => ({ meta: [{ title: "New contact — LinkBooks" }] }),
-  component: NewContact,
+  component: NewContactRoute,
 });
+
+function NewContactRoute() {
+  const { kind } = Route.useSearch();
+  return <NewContact initialKind={kind} />;
+}
 
 const sections = [
   ["identity", "Contact details"],

@@ -277,7 +277,7 @@ function ContactDetail() {
               {archived ? "Restore" : "Archive"}
             </Button>
             <Button variant="outline" size="sm" asChild>
-              <Link to="/contacts">Directory</Link>
+              <Link to="/contacts" search={{ view: undefined }}>Directory</Link>
             </Button>
           </div>
         }

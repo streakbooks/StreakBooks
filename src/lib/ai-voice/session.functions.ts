@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
-import { getVoiceServerConfig, voicePublicConfig } from "@/lib/ai-voice/server-config";
+import { getVoiceServerConfig } from "@/lib/ai-voice/server-config";
 
 const StartRequest = z.object({
   consentVersion: z.string().min(1).max(80),
@@ -73,50 +73,4 @@ export const startVoiceSession = createServerFn({ method: "POST" })
     // reservation exist; otherwise rate limits and audit evidence can be bypassed.
     throw new Error("Voice sessions are unavailable until the secure session registrar is deployed.");
 
-    /* const secretResponse = await fetch(`${config.VOICE_REALTIME_BASE_URL.replace(/\/$/, "")}/realtime/client_secrets`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${config.OPENAI_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        session: {
-          type: "realtime",
-          model: config.VOICE_REALTIME_MODEL,
-          audio: {
-            output: { voice: config.VOICE_REALTIME_VOICE },
-            input: { turn_detection: { type: "server_vad", interrupt_response: true } },
-          },
-          instructions: "You are LinkBooks voice navigation assistant. Never claim to have read financial records or completed transactions. No accounting tools are available in this session. Explain that accounting actions require the LinkBooks UI.",
-          tools: [],
-        },
-      }),
-      signal: AbortSignal.timeout(12000),
-    });
-    if (!secretResponse.ok) throw new Error(`Realtime session creation failed (${secretResponse.status}).`);
-    const payload = z.object({
-      value: z.string().min(1),
-      expires_at: z.number().optional(),
-    }).passthrough().parse(await secretResponse.json());
-
-    const expiresAt = new Date(now.getTime() + Math.min(settings.max_session_seconds, config.VOICE_MAX_SESSION_SECONDS) * 1000).toISOString();
-    const { data: session, error: insertError } = await supabase
-      .from("ai_voice_sessions" as never)
-      .insert({
-        company_id: companyId,
-        user_id: userId,
-        model_id: config.VOICE_REALTIME_MODEL,
-        locale: data.locale,
-        state: "connecting",
-        consent_version: data.consentVersion,
-        expires_at: expiresAt,
-      } as never)
-      .select("id" as never)
-      .single();
-    if (insertError || !session) throw new Error("Could not register the voice session.");
-    return {
-      sessionId: (session as { id: string }).id,
-      clientSecret: payload.value,
-      clientSecretExpiresAt: payload.expires_at ?? null,
-      expiresAt,
-      ...voicePublicConfig(config),
-    };
-    */
   });

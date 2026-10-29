@@ -1,6 +1,5 @@
 import { cn } from "@/lib/utils";
 import { categoryMeta, type SettingsCategory } from "@/lib/settings/registry";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
@@ -51,7 +50,7 @@ export function SettingsNav({ section, onSelect, showDemo, filter }: Props) {
       else {
         const init: Record<string, boolean> = {};
         GROUPS.forEach((g) => {
-          init[g.label] = true;
+          init[g.label] = g.label === "Start";
         });
         setOpen(init);
       }
@@ -114,16 +113,8 @@ export function SettingsNav({ section, onSelect, showDemo, filter }: Props) {
                       : "text-foreground/90 hover:bg-muted",
                   )}
                 >
-                  <span className="truncate">{c.label}</span>
-                  {c.availability === "unavailable" ? (
-                    <Badge variant="outline" className="ml-1 shrink-0 text-[10px]">
-                      Soon
-                    </Badge>
-                  ) : c.availability === "partial" ? (
-                    <Badge variant="secondary" className="ml-1 shrink-0 text-[10px]">
-                      Partial
-                    </Badge>
-                  ) : null}
+                  <span className="min-w-0 truncate" title={c.label}>{c.label}</span>
+
                 </button>
               ))}
             </CollapsibleContent>

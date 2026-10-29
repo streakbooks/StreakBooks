@@ -2,13 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
+import { validateFolderName } from "@/lib/documents/folder-tree";
 
-const cleanName = (name: string) => {
-  const value = name.trim();
-  if (!value || value.length > 120 || /[\x00-\x1f\x7f]/.test(value))
-    throw new Error("Folder name must contain 1–120 printable characters");
-  return value;
-};
 const manage = async (supabase: Parameters<typeof assertCompanyPermission>[0], companyId: string) => {
   // Match the existing company-attachment manage permission set.
   for (const permission of ["sales.draft", "purchases.draft", "accounting.post"] as const) {
@@ -31,7 +26,7 @@ export const listDocumentFolders = createServerFn({ method: "GET" })
 export const createDocumentFolder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((v: { companyId: string; name: string; parentId?: string | null }) => ({
-    companyId: assertUuid(v.companyId), name: cleanName(v.name),
+    companyId: assertUuid(v.companyId), name: validateFolderName(v.name),
     parentId: v.parentId ? assertUuid(v.parentId) : null,
   }))
   .handler(async ({ data, context }) => {
@@ -45,7 +40,7 @@ export const createDocumentFolder = createServerFn({ method: "POST" })
 export const updateDocumentFolder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((v: { companyId: string; folderId: string; name: string; parentId?: string | null }) => ({
-    companyId: assertUuid(v.companyId), folderId: assertUuid(v.folderId), name: cleanName(v.name),
+    companyId: assertUuid(v.companyId), folderId: assertUuid(v.folderId), name: validateFolderName(v.name),
     parentId: v.parentId ? assertUuid(v.parentId) : null,
   }))
   .handler(async ({ data, context }) => {

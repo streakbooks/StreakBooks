@@ -165,6 +165,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
         description="One directory for customers and suppliers — shared with sales, purchases and statements."
         actions={
           <div className="flex flex-wrap gap-2">
+            <Button size="sm" asChild><Link to="/contacts/new">New contact</Link></Button>
             <Button variant="outline" size="sm" asChild>
               <Link to="/contacts/import">
                 <Upload className="mr-1 size-4" /> Import

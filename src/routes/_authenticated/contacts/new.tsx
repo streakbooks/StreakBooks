@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/contacts/new")({
-  validateSearch: (search: Record<string, unknown>) => ({ kind: search.kind === "supplier" ? "supplier" as const : "customer" as const }),
+  validateSearch: (search: Record<string, unknown>) => ({ kind: search['kind'] === "supplier" ? "supplier" as const : "customer" as const }),
   head: () => ({ meta: [{ title: "New contact — LinkBooks" }] }),
   component: NewContactRoute,
 });
@@ -121,7 +121,7 @@ export function NewContact({ initialKind = "customer", embedded = false, onSaved
   return (
     <>
       {!embedded && <PageHeader title="New contact" description="Create a shared customer or supplier profile with accounting defaults."
-        actions={<Button variant="outline" asChild><Link to="/contacts">Back to directory</Link></Button>} />}
+        actions={<Button variant="outline" asChild><Link to="/contacts" search={{ view: undefined }}>Back to directory</Link></Button>} />}
       <div className="overflow-hidden rounded-xl border bg-card">
         <div className="border-b px-6 py-4">
           <h2 className="text-lg font-semibold">Contact workspace</h2>

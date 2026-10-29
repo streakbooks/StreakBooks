@@ -53,7 +53,8 @@ function PurchasesOverview() {
         title="Purchases"
         description="Your supplier balances, upcoming payments and bills requiring attention."
         actions={<>
-          <Button variant="outline" size="sm" asChild><Link to="/purchases/expenses/new">New expense</Link></Button>
+          <Button variant="outline" size="sm" asChild><Link to="/contacts/new" search={{ kind: "supplier" }}>New supplier</Link></Button>
+          
           <Button size="sm" asChild><Link to="/purchases/bills/new">New bill</Link></Button>
         </>}
       />

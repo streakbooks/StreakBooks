@@ -39,10 +39,10 @@ export function assertVoiceExecutionAllowed(
   if (!grantedPermissions.includes("ai.use") || !grantedPermissions.includes(tool.permission)) {
     throw new Error("Permission denied for this voice action");
   }
-  if (tool.riskTier === 2 && !confirmation?.clicked) {
+  if (tool.riskTier > 0 && !confirmation?.clicked) {
     throw new Error("On-screen confirmation is required");
   }
-  if (tool.riskTier === 2 && requiresStepUp && !confirmation?.reauthenticated) {
+  if (tool.riskTier > 0 && requiresStepUp && !confirmation?.reauthenticated) {
     throw new Error("Re-authentication is required");
   }
 }

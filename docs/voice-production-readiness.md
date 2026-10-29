@@ -18,6 +18,13 @@ Passing unit tests, typecheck, and build does not certify financial safety.
 - [ ] Investigate Supabase security-advisor warnings and npm high/critical dependency advisories, with documented remediations.
 - [ ] Verify rollback, monitoring, incident response and backups before controlled feature-flag rollout.
 
+## Verified release blockers (2026-10-29)
+
+- The voice safety workflow failed the runtime dependency audit: **Vite 8.1.5** (high severity) and **Zod 3.x** (high severity). The audit proposes Vite 8.3.5 and Zod 4.6.7; these are outside the current declared ranges and Zod 4 is a breaking API change. Upgrade with lockfile regeneration and full compatibility tests; do **not** use blind `npm audit fix --force` on production.
+- The production build emits `.vercel/output`, indicating a Vercel-compatible build target, **not proof of an active Vercel deployment or verified hosting access**.
+- The connected Supabase project has not been classified as staging or production; no migrations or financial test writes may be performed there.
+- A complete financial write gateway, durable proposal storage and single-use idempotency remain unimplemented.
+
 ## Explicit deployment rules
 
 1. Never apply schema changes or synthetic transactions to an unclassified Supabase project.

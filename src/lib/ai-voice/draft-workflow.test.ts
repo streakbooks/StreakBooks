@@ -24,7 +24,16 @@ describe("guided accounting draft preview", () => {
     expect(result.state.status).toBe("cancelled");
     expect(result.response).toContain("No accounting record was saved");
   });
-  it("rejects out-of-range dates without crashing", () => {\n    let result = beginDraft("sales_invoice");\n    for (const value of ["Customer", "INV-1", "25.00"]) result = advanceDraft(result.state, value);\n    for (const date of ["9999-99-99", "2026-02-30", "0000-00-00"]) {\n      const invalid = advanceDraft(result.state, date);\n      expect(invalid.state.status).toBe("collecting");\n      expect(invalid.response).toMatch(/valid YYYY-MM-DD/);\n    }\n  });\n  it("rejects invalid dates and amounts", () => {
+  it("rejects out-of-range dates without crashing", () => {
+    let result = beginDraft("sales_invoice");
+    for (const value of ["Customer", "INV-1", "25.00"]) result = advanceDraft(result.state, value);
+    for (const date of ["9999-99-99", "2026-02-30", "0000-00-00"]) {
+      const invalid = advanceDraft(result.state, date);
+      expect(invalid.state.status).toBe("collecting");
+      expect(invalid.response).toMatch(/valid YYYY-MM-DD/);
+    }
+  });
+  it("rejects invalid dates and amounts", () => {
     let result = beginDraft("sales_invoice");
     for (const value of ["A", "INV-1"]) result = advanceDraft(result.state, value);
     expect(advanceDraft(result.state, "-5").state.step).toBe("amount_minor");

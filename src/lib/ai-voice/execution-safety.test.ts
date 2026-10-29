@@ -7,7 +7,7 @@ const digest = "a".repeat(64);
 const proposal = {
   version: 1 as const, toolName: "create_invoice_draft", organisationId, actorId,
   riskTier: 2 as const, payloadDigest: digest,
-  idempotencyKey: "33333333-3333-4333-8333-333333333333", expiresAt: 2000,
+  idempotencyKey: "33333333-3333-4333-8333-333333333333", expiresAt: 1200,
 };
 const session = { actorId, organisationId, now: 1000, serverVerifiedDigest: digest };
 const confirmation = {
@@ -22,6 +22,10 @@ describe("four-tier voice proposal safety", () => {
   it("rejects expired and unsupported high-risk proposals", () => {
     expect(() => assertExecutionProposal({ ...proposal, expiresAt: 999 }, confirmation, session)).toThrow(/expired/);
     expect(() => assertExecutionProposal({ ...proposal, riskTier: 4 }, confirmation, session)).toThrow(/High-risk/);
+  });
+  it("rejects excessively long expiry and stale confirmations", () => {
+    expect(() => assertExecutionProposal({ ...proposal, expiresAt: 1400 }, confirmation, session)).toThrow(/five minutes/);
+    expect(() => assertExecutionProposal(proposal, { ...confirmation, confirmedAt: 699 }, session)).toThrow(/mismatched/);
   });
   it("requires server-verified on-screen confirmation", () => {
     expect(() => assertExecutionProposal(proposal, confirmation, { ...session, serverVerifiedDigest: null })).toThrow(/Server-side/);

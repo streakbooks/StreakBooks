@@ -22,6 +22,7 @@ import {
   validateUpload,
 } from "@/lib/documents/attachments";
 import { listDocumentFolders, createDocumentFolder, updateDocumentFolder, deleteDocumentFolder, moveDocumentToFolder } from "@/lib/documents/folders.functions";
+import { folderAncestors, possibleParentFolders } from "@/lib/documents/folder-tree";
 import { downloadBase64, uploadCompanyDocument } from "@/lib/documents/upload-client";
 import { openSignedDownload } from "@/lib/documents/ui";
 import { friendlyAuthError } from "@/lib/auth-helpers";
@@ -109,6 +110,7 @@ function FilesPage() {
   type FolderRow = { id: string; name: string; parent_id: string | null };
   const folders = (foldersQ.data ?? []) as FolderRow[];
   const activeFolder = folders.find((f) => f.id === folderId);
+  const breadcrumbs = folderAncestors(folders, folderId);
   const folderM = useMutation({
     mutationFn: async (name: string) => createFolder({ data: { companyId: companyId!, name, parentId: folderId } }),
     onSuccess: async () => {
@@ -290,7 +292,7 @@ function FilesPage() {
           <div className="flex items-center gap-2">
             <Folder className="size-4" />
             <button type="button" className="text-sm underline" onClick={() => { setFolderId(null); setPage(0); }}>All files</button>
-            {activeFolder ? <span className="text-sm text-muted-foreground">/ {activeFolder.name}</span> : null}
+            {breadcrumbs.map((crumb) => <button type="button" key={crumb.id} className="text-sm underline" onClick={() => { setFolderId(crumb.id); setPage(0); }}>/ {crumb.name}</button>)
           </div>
           {canUpload ? <Button size="sm" variant="outline" onClick={() => setShowNewFolder((v) => !v)}><FolderPlus className="mr-2 size-4" />New folder</Button> : null}
         </div>
@@ -306,7 +308,13 @@ function FilesPage() {
         </div>
         {activeFolder && canUpload ? <div className="mt-3 flex gap-2">
           <Button size="sm" variant="ghost" onClick={() => { const name = window.prompt("Rename folder", activeFolder.name); if (name && name.trim() !== activeFolder.name) renameFolderM.mutate({ id: activeFolder.id, name, parentId: activeFolder.parent_id }); }}><Pencil className="mr-1 size-4" />Rename</Button>
-          <Button size="sm" variant="ghost" onClick={() => { const parentId = window.prompt("Move to parent folder ID (leave blank for root)", activeFolder.parent_id ?? ""); if (parentId !== null) renameFolderM.mutate({ id: activeFolder.id, name: activeFolder.name, parentId: parentId.trim() || null }); }}>Move folder</Button>
+          <Select value={activeFolder.parent_id ?? "root"} onValueChange={(v) => renameFolderM.mutate({ id: activeFolder.id, name: activeFolder.name, parentId: v === "root" ? null : v })}>
+            <SelectTrigger className="w-48" aria-label="Move current folder to"><FolderInput className="mr-1 size-4" /><SelectValue placeholder="Move folder to" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="root">Root</SelectItem>
+              {possibleParentFolders(folders, activeFolder.id).map((f) => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
           <Button size="sm" variant="ghost" disabled={removeFolderM.isPending} onClick={() => { if (window.confirm("Delete this empty folder?")) removeFolderM.mutate(activeFolder.id); }}><Trash2 className="mr-1 size-4" />Delete empty folder</Button>
         </div> : null}
       </section>

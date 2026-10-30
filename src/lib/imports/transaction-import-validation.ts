@@ -71,18 +71,18 @@ export function prepareTransactionCsv(
     const documentNumber = (v[kind === "sales" ? "invoice_number" : "bill_number"] ?? "").trim();
     const contactName = (v[kind === "sales" ? "customer" : "supplier"] ?? "").trim();
     const documentDate = date(v[kind === "sales" ? "invoice_date" : "bill_date"] ?? "", sourceRow, "document date");
-    const dueDate = date(v.due_date ?? "", sourceRow, "due date");
+    const dueDate = date(v["due_date"] ?? "", sourceRow, "due date");
     if (dueDate < documentDate) throw new Error(`Row ${sourceRow}: due date precedes document date`);
     if (documentNumber.length > 80 || contactName.length > 200) {
       throw new Error(`Row ${sourceRow}: document number or contact name too long`);
     }
-    const accountCode = (v.account_code ?? "").trim();
+    const accountCode = (v["account_code"] ?? "").trim();
     if (accountCode.length > 40 || !/^[A-Za-z0-9._-]+$/.test(accountCode)) {
       throw new Error(`Row ${sourceRow}: invalid account code`);
     }
-    const description = (v.description ?? "").trim();
+    const description = (v["description"] ?? "").trim();
     if (description.length > 500) throw new Error(`Row ${sourceRow}: description too long`);
-    const quantityText = v.quantity ?? "";
+    const quantityText = v["quantity"] ?? "";
     if (!/^(0|[1-9]\d*)(\.\d{1,4})?$/.test(quantityText)) {
       throw new Error(`Row ${sourceRow}: quantity must be a non-negative decimal (max 4 places)`);
     }
@@ -90,11 +90,11 @@ export function prepareTransactionCsv(
     if (!Number.isSafeInteger(Math.round(quantity * 10000)) || quantity <= 0) {
       throw new Error(`Row ${sourceRow}: quantity must be positive and within the safe range`);
     }
-    const unitPriceMinor = price(v.unit_price ?? "", currency, sourceRow);
+    const unitPriceMinor = price(v["unit_price"] ?? "", currency, sourceRow);
     if (quantity * unitPriceMinor > Number.MAX_SAFE_INTEGER) {
       throw new Error(`Row ${sourceRow}: extended line amount exceeds safe integer range`);
     }
-    const taxCode = kind === "sales" ? (v.tax_code ?? "").trim() || null : null;
+    const taxCode = kind === "sales" ? (v["tax_code"] ?? "").trim() || null : null;
     if (taxCode && taxCode.length > 80) throw new Error(`Row ${sourceRow}: tax code too long`);
     const line: TransactionImportLine = {
       sourceRow, documentNumber, contactName, documentDate, dueDate,

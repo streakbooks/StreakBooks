@@ -1,0 +1,25 @@
+{
+  "reviewedOn": "2026-10-30",
+  "trialDays": 14,
+  "trialPlan": "growth",
+  "cardRequired": false,
+  "annualFreeMonths": 2,
+  "plans": [
+    { "code": "starter", "monthlyUsd": 1200, "yearlyUsd": 12000 },
+    { "code": "growth", "monthlyUsd": 3000, "yearlyUsd": 30000 },
+    { "code": "pro", "monthlyUsd": 6000, "yearlyUsd": 60000 },
+    { "code": "practice", "monthlyUsd": 9900, "yearlyUsd": 99000 }
+  ],
+  "regionalNeedsReview": {
+    "rule": "GBP nearest pound of USD times 0.79. AUD times 1.52. NZD times 1.66. INR times 84, rounded toward a 99 price.",
+    "starter": { "GBP": 900, "AUD": 1800, "NZD": 2000, "INR": 99900 }
+  },
+  "addonsUsd": {
+    "extra_user": 600,
+    "extra_company": 400,
+    "ai_pack": 1000,
+    "voice_pack": 1500,
+    "storage_10gb": 500,
+    "managed_bookkeeping": 0
+  }
+}

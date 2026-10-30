@@ -21,6 +21,7 @@ import {
   type OfferRule,
   type PlanCode,
 } from "@/lib/billing/pricing";
+import { assertRazorpayTestKey, assertStripeTestKey } from "@/lib/billing/provider-keys";
 
 type Client = SupabaseClient<Database>;
 
@@ -171,6 +172,7 @@ type OfferRow = {
   max_redemptions: number | null;
   redemption_count: number;
   is_active: boolean;
+  duration_months?: number | null;
 };
 
 function toOfferRule(row: OfferRow): OfferRule {
@@ -195,6 +197,7 @@ function toOfferRule(row: OfferRow): OfferRule {
       row.amount_currency && isBillingCurrency(row.amount_currency) ? row.amount_currency : null,
     extraTrialDays: row.extra_trial_days,
     extraFreeMonths: row.extra_free_months,
+    durationMonths: row.duration_months ?? null,
     intervals,
     planCodes: row.plan_codes == null ? "any" : (planCodes ?? []),
     startsOn: row.starts_on,
@@ -246,6 +249,13 @@ function assertInterval(value: string): BillingInterval {
   return value;
 }
 
+const LOCAL_ORIGINS = [
+  "http://127.0.0.1:8080",
+  "http://localhost:8080",
+  "http://127.0.0.1:3000",
+  "http://localhost:3000",
+];
+
 function assertOrigin(origin: string): string {
   let url: URL;
   try {
@@ -256,16 +266,33 @@ function assertOrigin(origin: string): string {
   if (url.protocol !== "https:" && url.protocol !== "http:")
     throw new Error("The return address is not valid.");
   if (url.username || url.password) throw new Error("The return address is not valid.");
+  const allowed = new Set(LOCAL_ORIGINS);
+  for (const key of ["APP_ORIGIN", "SITE_URL", "VITE_SITE_URL"] as const) {
+    const value = process.env[key];
+    if (!value) continue;
+    try {
+      allowed.add(new URL(value).origin);
+    } catch {
+      // Ignore a malformed configured origin.
+    }
+  }
+  if (!allowed.has(url.origin)) throw new Error("The return address is not allowed.");
   return url.origin;
 }
 
 async function assertOperator(supabase: Client): Promise<void> {
-  const { data, error } = await supabase.rpc("is_billing_operator" as never);
+  const { data, error } = await supabase.rpc("platform_role" as never);
   if (error) {
-    if (missingTable(error)) throw new Error(MIGRATION_MESSAGE);
+    if (missingTable(error)) {
+      throw new Error(
+        "Platform billing is not available until migration 20261030140000 is applied.",
+      );
+    }
     throw new Error(error.message);
   }
-  if (!data) throw new Error("Only a billing operator can change plans, trials and promo codes.");
+  if (data !== "platform_owner" && data !== "platform_finance") {
+    throw new Error("Only platform billing staff can change plans, trials and promo codes.");
+  }
 }
 
 const EMPTY_SETTINGS = {
@@ -305,7 +332,7 @@ export const getBillingOverview = createServerFn({ method: "GET" })
         .select("*" as never)
         .eq("company_id" as never, data.companyId as never)
         .maybeSingle(),
-      supabase.rpc("is_billing_operator" as never),
+      supabase.rpc("platform_role" as never),
     ]);
     if (
       missingTable(settingsRes.error) ||
@@ -361,16 +388,22 @@ export const getBillingOverview = createServerFn({ method: "GET" })
     } | null;
     const planName =
       plans.find((plan) => plan.code === sub?.plan_code)?.name ?? sub?.plan_code ?? "";
-    const access = sub
-      ? subscriptionAccess({
-          status: sub.status,
-          trialEndsAt: sub.trial_ends_at,
-          currentPeriodEnd: sub.current_period_end,
-          now: new Date(),
-          graceDays: settings.pastDueGraceDays,
-        })
-      : "full";
-    const isOperator = operatorRes.error ? false : Boolean(operatorRes.data);
+    const access = company.is_demo
+      ? "full"
+      : sub
+        ? subscriptionAccess({
+            status: sub.status,
+            trialEndsAt: sub.trial_ends_at,
+            currentPeriodEnd: sub.current_period_end,
+            now: new Date(),
+            graceDays: settings.pastDueGraceDays,
+          })
+        : "read_only";
+    const platformRole = operatorRes.error ? null : String(operatorRes.data ?? "");
+    const isOperator =
+      platformRole === "platform_owner" ||
+      platformRole === "platform_finance" ||
+      platformRole === "platform_support";
     const offers = isOperator ? await listOfferRows(supabase) : [];
     const usage = await usageCounts(supabase, data.companyId);
 
@@ -534,8 +567,8 @@ export const createBillingCheckout = createServerFn({ method: "POST" })
       data.interval,
       data.offerCode,
     );
-    if (priced.quote.dueMinor < 1)
-      throw new Error("The amount due must be at least one minor unit.");
+    if (priced.quote.recurringMinor < 1)
+      throw new Error("The recurring price must be at least one minor unit.");
 
     const { data: inserted, error: insertError } = await supabase
       .from("billing_checkouts" as never)
@@ -545,7 +578,7 @@ export const createBillingCheckout = createServerFn({ method: "POST" })
         billing_interval: data.interval,
         provider: data.provider,
         currency: priced.currency,
-        unit_amount_minor: priced.quote.dueMinor,
+        unit_amount_minor: priced.quote.recurringMinor,
         offer_code: priced.quote.offerCode,
         created_by: userId,
       } as never)
@@ -564,7 +597,9 @@ export const createBillingCheckout = createServerFn({ method: "POST" })
       planName: priced.planName,
       interval: data.interval,
       currency: priced.currency,
-      unitAmountMinor: priced.quote.dueMinor,
+      unitAmountMinor: priced.quote.recurringMinor,
+      discountMinor: priced.quote.discountMinor,
+      promoDurationMonths: priced.quote.promoDurationMonths,
       successUrl: `${data.origin}/settings?section=subscription&checkout=success`,
       cancelUrl: `${data.origin}/settings?section=subscription&checkout=cancel`,
       trialEndUnix: trialEndUnixOrNull(sub?.trial_ends_at ?? null, new Date()),
@@ -573,7 +608,8 @@ export const createBillingCheckout = createServerFn({ method: "POST" })
       data.provider === "stripe"
         ? await openStripeCheckout(draft)
         : await openRazorpayCheckout(draft);
-    const { error: updateError } = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error: updateError } = await supabaseAdmin
       .from("billing_checkouts" as never)
       .update({ provider_session_id: session.id } as never)
       .eq("id" as never, checkoutId as never);
@@ -643,6 +679,34 @@ function requirePlanCode(value: string | undefined): PlanCode {
   return value;
 }
 
+async function createStripeIntroCoupon(
+  secret: string,
+  draft: Parameters<typeof stripeCheckoutBody>[0],
+): Promise<string | null> {
+  const months = draft.promoDurationMonths ?? 0;
+  const discount = draft.discountMinor ?? 0;
+  if (months < 1 || discount < 1) return null;
+  const body = new URLSearchParams();
+  body.set("duration", "repeating");
+  body.set("duration_in_months", String(months));
+  body.set("amount_off", String(discount));
+  body.set("currency", draft.currency.toLowerCase());
+  body.set("name", "LinkBooks intro offer");
+  const response = await fetch("https://api.stripe.com/v1/coupons", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${secret}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body,
+  });
+  const payload = (await response.json()) as { id?: string; error?: { message?: string } };
+  if (!response.ok || !payload.id) {
+    throw new Error(payload.error?.message ?? "Stripe could not create the intro coupon.");
+  }
+  return payload.id;
+}
+
 async function openStripeCheckout(draft: Parameters<typeof stripeCheckoutBody>[0]) {
   const secret = process.env["STRIPE_SECRET_KEY"];
   if (!secret) {
@@ -650,13 +714,17 @@ async function openStripeCheckout(draft: Parameters<typeof stripeCheckoutBody>[0
       "Stripe is not configured. Add STRIPE_SECRET_KEY on the server. The free trial does not need a card.",
     );
   }
+  assertStripeTestKey(secret);
+  const body = stripeCheckoutBody(draft);
+  const couponId = await createStripeIntroCoupon(secret, draft);
+  if (couponId) body.set("discounts[0][coupon]", couponId);
   const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${secret}`,
       "Content-Type": "application/x-www-form-urlencoded",
     },
-    body: stripeCheckoutBody(draft),
+    body,
   });
   const payload = (await response.json()) as {
     id?: string;
@@ -677,6 +745,7 @@ async function openRazorpayCheckout(draft: Parameters<typeof razorpayPlanBody>[0
       "Razorpay is not configured. Add RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET on the server. The free trial does not need a card.",
     );
   }
+  assertRazorpayTestKey(key);
   const auth = `Basic ${Buffer.from(`${key}:${secret}`).toString("base64")}`;
   const planResponse = await fetch("https://api.razorpay.com/v1/plans", {
     method: "POST",

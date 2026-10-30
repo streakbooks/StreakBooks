@@ -1,9 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import {
-  assertCompanyMember,
-  assertCompanyPermission,
-} from "@/lib/assert-company-access";
+import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
 import { getAiPublicStatus, getAiServerConfig } from "@/lib/ai/config";
 import { buildCompanyAiContext } from "@/lib/ai/context";
@@ -19,14 +16,7 @@ import { postJournal } from "@/lib/accounting/posting-engine";
 import { assertLinesBalance } from "@/lib/accounting/money";
 
 export type AiIntent =
-  | "ask"
-  | "explain"
-  | "categorise"
-  | "draft"
-  | "duplicates"
-  | "reconcile"
-  | "unusual"
-  | "navigate";
+  "ask" | "explain" | "categorise" | "draft" | "duplicates" | "reconcile" | "unusual" | "navigate";
 
 const INTENTS: AiIntent[] = [
   "ask",
@@ -39,9 +29,55 @@ const INTENTS: AiIntent[] = [
   "navigate",
 ];
 
+function allowanceMissing(error: { code?: string; message?: string }): boolean {
+  return (
+    error.code === "42883" ||
+    error.code === "PGRST202" ||
+    /assert_billing_allowance|record_billing_usage/i.test(error.message ?? "")
+  );
+}
+
+async function assertAiAllowance(
+  supabase: {
+    rpc: (
+      fn: string,
+      args: Record<string, unknown>,
+    ) => PromiseLike<{ error: { code?: string; message: string } | null }>;
+  },
+  companyId: string,
+): Promise<void> {
+  const { error } = await supabase.rpc("assert_billing_allowance", {
+    _company_id: companyId,
+    _metric: "ai_queries",
+    _adding: 1,
+  });
+  if (!error || allowanceMissing(error)) return;
+  throw new Error(error.message);
+}
+
+async function recordAiAllowance(
+  supabase: {
+    rpc: (
+      fn: string,
+      args: Record<string, unknown>,
+    ) => PromiseLike<{ error: { code?: string; message: string } | null }>;
+  },
+  companyId: string,
+): Promise<void> {
+  const { error } = await supabase.rpc("record_billing_usage", {
+    _company_id: companyId,
+    _metric: "ai_queries",
+    _adding: 1,
+  });
+  if (error && !allowanceMissing(error)) throw new Error(error.message);
+}
+
 async function recordUsage(
   supabase: {
-    rpc: (fn: string, args: Record<string, unknown>) => Promise<{ error: { message: string } | null }>;
+    rpc: (
+      fn: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ error: { message: string } | null }>;
   },
   args: {
     companyId: string;
@@ -75,9 +111,7 @@ export const getAiAssistantStatus = createServerFn({ method: "GET" })
 export const runAiAssistant = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { companyId: string; intent: string; message: string }) => {
-    const intent = INTENTS.includes(input.intent as AiIntent)
-      ? (input.intent as AiIntent)
-      : "ask";
+    const intent = INTENTS.includes(input.intent as AiIntent) ? (input.intent as AiIntent) : "ask";
     const message = sanitizeUntrustedText(input.message, 4_000);
     if (!message.text.trim()) throw new Error("Enter a question or request");
     return {
@@ -90,6 +124,7 @@ export const runAiAssistant = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "ai.use");
     await assertCompanyMember(context.supabase, data.companyId);
+    await assertAiAllowance(context.supabase as never, data.companyId);
 
     // Cross-tenant denial: never accept a companyId the user cannot access (already enforced).
     const cfg = getAiServerConfig();
@@ -113,11 +148,7 @@ export const runAiAssistant = createServerFn({ method: "POST" })
       );
     }
 
-    const ctx = await buildCompanyAiContext(
-      context.supabase,
-      data.companyId,
-      cfg.maxContextChars,
-    );
+    const ctx = await buildCompanyAiContext(context.supabase, data.companyId, cfg.maxContextChars);
 
     // Local-only intents: calculated facts, no provider required
     if (
@@ -264,6 +295,7 @@ export const runAiAssistant = createServerFn({ method: "POST" })
       estimatedTokens: result.estimatedTokens,
       latencyMs: result.latencyMs,
     });
+    await recordAiAllowance(context.supabase as never, data.companyId);
 
     return {
       mode: "model" as const,
@@ -288,7 +320,9 @@ export const listAiSuggestions = createServerFn({ method: "GET" })
     await assertCompanyPermission(context.supabase, data.companyId, "ai.use");
     const { data: rows, error } = await context.supabase
       .from("ai_suggestions" as never)
-      .select("id, intent, status, title, summary, validation_errors, created_at, applied_journal_id" as never)
+      .select(
+        "id, intent, status, title, summary, validation_errors, created_at, applied_journal_id" as never,
+      )
       .eq("company_id" as never, data.companyId as never)
       .order("created_at" as never, { ascending: false })
       .limit(30);
@@ -392,13 +426,16 @@ export const applyAiSuggestion = createServerFn({ method: "POST" })
       .eq("id" as never, data.suggestionId as never)
       .eq("company_id" as never, data.companyId as never);
 
-    await context.supabase.rpc("record_audit_event" as never, {
-      _company_id: data.companyId,
-      _action: "ai.suggestion_applied",
-      _entity_type: "ai_suggestion",
-      _entity_id: data.suggestionId,
-      _details: { journal_id: posted.journalId },
-    } as never);
+    await context.supabase.rpc(
+      "record_audit_event" as never,
+      {
+        _company_id: data.companyId,
+        _action: "ai.suggestion_applied",
+        _entity_type: "ai_suggestion",
+        _entity_id: data.suggestionId,
+        _details: { journal_id: posted.journalId },
+      } as never,
+    );
 
     return { journalId: posted.journalId };
   });

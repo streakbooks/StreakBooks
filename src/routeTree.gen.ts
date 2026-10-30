@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedAccountantRouteImport } from './routes/_authenticated/accountant'
@@ -21,8 +22,8 @@ import { Route as AuthenticatedBankingRouteRouteImport } from './routes/_authent
 import { Route as AuthenticatedFilesRouteImport } from './routes/_authenticated/files'
 import { Route as AuthenticatedFirmRouteImport } from './routes/_authenticated/firm'
 import { Route as AuthenticatedFixedAssetsRouteImport } from './routes/_authenticated/fixed-assets'
-import { Route as AuthenticatedImportsRouteImport } from './routes/_authenticated/imports'
 import { Route as AuthenticatedHelpRouteImport } from './routes/_authenticated/help'
+import { Route as AuthenticatedImportsRouteImport } from './routes/_authenticated/imports'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedProductsServicesRouteImport } from './routes/_authenticated/products-services'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
@@ -53,6 +54,7 @@ import { Route as AuthenticatedContactsImportRouteImport } from './routes/_authe
 import { Route as AuthenticatedContactsNewRouteImport } from './routes/_authenticated/contacts/new'
 import { Route as AuthenticatedContactsSettingsRouteImport } from './routes/_authenticated/contacts/settings'
 import { Route as AuthenticatedDocumentsBrandingRouteImport } from './routes/_authenticated/documents.branding'
+import { Route as AuthenticatedPlatformBillingRouteImport } from './routes/_authenticated/platform.billing'
 import { Route as AuthenticatedPurchasesIndexRouteImport } from './routes/_authenticated/purchases/index'
 import { Route as AuthenticatedPurchasesEmployeeExpensesRouteImport } from './routes/_authenticated/purchases/employee-expenses'
 import { Route as AuthenticatedPurchasesRecurringRouteImport } from './routes/_authenticated/purchases/recurring'
@@ -120,6 +122,11 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -168,15 +175,14 @@ const AuthenticatedFixedAssetsRoute =
     path: '/fixed-assets',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedImportsRoute =
-  AuthenticatedImportsRouteImport.update({
-    id: '/imports',
-    path: '/imports',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedHelpRoute = AuthenticatedHelpRouteImport.update({
   id: '/help',
   path: '/help',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedImportsRoute = AuthenticatedImportsRouteImport.update({
+  id: '/imports',
+  path: '/imports',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
@@ -348,6 +354,12 @@ const AuthenticatedDocumentsBrandingRoute =
   AuthenticatedDocumentsBrandingRouteImport.update({
     id: '/documents/branding',
     path: '/documents/branding',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPlatformBillingRoute =
+  AuthenticatedPlatformBillingRouteImport.update({
+    id: '/platform/billing',
+    path: '/platform/billing',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedPurchasesIndexRoute =
@@ -665,6 +677,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/pricing': typeof PricingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/banking': typeof AuthenticatedBankingRouteRouteWithChildren
   '/purchases': typeof AuthenticatedPurchasesRouteRouteWithChildren
@@ -675,8 +688,8 @@ export interface FileRoutesByFullPath {
   '/files': typeof AuthenticatedFilesRoute
   '/firm': typeof AuthenticatedFirmRoute
   '/fixed-assets': typeof AuthenticatedFixedAssetsRoute
-  '/imports': typeof AuthenticatedImportsRoute
   '/help': typeof AuthenticatedHelpRoute
+  '/imports': typeof AuthenticatedImportsRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/products-services': typeof AuthenticatedProductsServicesRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -702,6 +715,7 @@ export interface FileRoutesByFullPath {
   '/contacts/new': typeof AuthenticatedContactsNewRoute
   '/contacts/settings': typeof AuthenticatedContactsSettingsRoute
   '/documents/branding': typeof AuthenticatedDocumentsBrandingRoute
+  '/platform/billing': typeof AuthenticatedPlatformBillingRoute
   '/purchases/employee-expenses': typeof AuthenticatedPurchasesEmployeeExpensesRoute
   '/purchases/recurring': typeof AuthenticatedPurchasesRecurringRoute
   '/purchases/settings': typeof AuthenticatedPurchasesSettingsRoute
@@ -761,6 +775,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/pricing': typeof PricingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/accountant': typeof AuthenticatedAccountantRoute
   '/accounting': typeof AuthenticatedAccountingRoute
@@ -768,8 +783,8 @@ export interface FileRoutesByTo {
   '/files': typeof AuthenticatedFilesRoute
   '/firm': typeof AuthenticatedFirmRoute
   '/fixed-assets': typeof AuthenticatedFixedAssetsRoute
-  '/imports': typeof AuthenticatedImportsRoute
   '/help': typeof AuthenticatedHelpRoute
+  '/imports': typeof AuthenticatedImportsRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/products-services': typeof AuthenticatedProductsServicesRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -796,6 +811,7 @@ export interface FileRoutesByTo {
   '/contacts/new': typeof AuthenticatedContactsNewRoute
   '/contacts/settings': typeof AuthenticatedContactsSettingsRoute
   '/documents/branding': typeof AuthenticatedDocumentsBrandingRoute
+  '/platform/billing': typeof AuthenticatedPlatformBillingRoute
   '/purchases/employee-expenses': typeof AuthenticatedPurchasesEmployeeExpensesRoute
   '/purchases/recurring': typeof AuthenticatedPurchasesRecurringRoute
   '/purchases/settings': typeof AuthenticatedPurchasesSettingsRoute
@@ -854,6 +870,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/pricing': typeof PricingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/banking': typeof AuthenticatedBankingRouteRouteWithChildren
   '/_authenticated/purchases': typeof AuthenticatedPurchasesRouteRouteWithChildren
@@ -864,8 +881,8 @@ export interface FileRoutesById {
   '/_authenticated/files': typeof AuthenticatedFilesRoute
   '/_authenticated/firm': typeof AuthenticatedFirmRoute
   '/_authenticated/fixed-assets': typeof AuthenticatedFixedAssetsRoute
-  '/_authenticated/imports': typeof AuthenticatedImportsRoute
   '/_authenticated/help': typeof AuthenticatedHelpRoute
+  '/_authenticated/imports': typeof AuthenticatedImportsRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/products-services': typeof AuthenticatedProductsServicesRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
@@ -892,6 +909,7 @@ export interface FileRoutesById {
   '/_authenticated/contacts/new': typeof AuthenticatedContactsNewRoute
   '/_authenticated/contacts/settings': typeof AuthenticatedContactsSettingsRoute
   '/_authenticated/documents/branding': typeof AuthenticatedDocumentsBrandingRoute
+  '/_authenticated/platform/billing': typeof AuthenticatedPlatformBillingRoute
   '/_authenticated/purchases/employee-expenses': typeof AuthenticatedPurchasesEmployeeExpensesRoute
   '/_authenticated/purchases/recurring': typeof AuthenticatedPurchasesRecurringRoute
   '/_authenticated/purchases/settings': typeof AuthenticatedPurchasesSettingsRoute
@@ -954,6 +972,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/forgot-password'
+    | '/pricing'
     | '/reset-password'
     | '/banking'
     | '/purchases'
@@ -964,8 +983,8 @@ export interface FileRouteTypes {
     | '/files'
     | '/firm'
     | '/fixed-assets'
-    | '/imports'
     | '/help'
+    | '/imports'
     | '/onboarding'
     | '/products-services'
     | '/profile'
@@ -991,6 +1010,7 @@ export interface FileRouteTypes {
     | '/contacts/new'
     | '/contacts/settings'
     | '/documents/branding'
+    | '/platform/billing'
     | '/purchases/employee-expenses'
     | '/purchases/recurring'
     | '/purchases/settings'
@@ -1050,6 +1070,7 @@ export interface FileRouteTypes {
   to:
     | '/auth'
     | '/forgot-password'
+    | '/pricing'
     | '/reset-password'
     | '/accountant'
     | '/accounting'
@@ -1057,8 +1078,8 @@ export interface FileRouteTypes {
     | '/files'
     | '/firm'
     | '/fixed-assets'
-    | '/imports'
     | '/help'
+    | '/imports'
     | '/onboarding'
     | '/products-services'
     | '/profile'
@@ -1085,6 +1106,7 @@ export interface FileRouteTypes {
     | '/contacts/new'
     | '/contacts/settings'
     | '/documents/branding'
+    | '/platform/billing'
     | '/purchases/employee-expenses'
     | '/purchases/recurring'
     | '/purchases/settings'
@@ -1142,6 +1164,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/forgot-password'
+    | '/pricing'
     | '/reset-password'
     | '/_authenticated/banking'
     | '/_authenticated/purchases'
@@ -1152,8 +1175,8 @@ export interface FileRouteTypes {
     | '/_authenticated/files'
     | '/_authenticated/firm'
     | '/_authenticated/fixed-assets'
-    | '/_authenticated/imports'
     | '/_authenticated/help'
+    | '/_authenticated/imports'
     | '/_authenticated/onboarding'
     | '/_authenticated/products-services'
     | '/_authenticated/profile'
@@ -1180,6 +1203,7 @@ export interface FileRouteTypes {
     | '/_authenticated/contacts/new'
     | '/_authenticated/contacts/settings'
     | '/_authenticated/documents/branding'
+    | '/_authenticated/platform/billing'
     | '/_authenticated/purchases/employee-expenses'
     | '/_authenticated/purchases/recurring'
     | '/_authenticated/purchases/settings'
@@ -1241,6 +1265,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
+  PricingRoute: typeof PricingRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthMfaRoute: typeof AuthMfaRoute
@@ -1269,6 +1294,13 @@ declare module '@tanstack/react-router' {
       path: '/forgot-password'
       fullPath: '/forgot-password'
       preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -1334,18 +1366,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFixedAssetsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/imports': {
-      id: '/_authenticated/imports'
-      path: '/imports'
-      fullPath: '/imports'
-      preLoaderRoute: typeof AuthenticatedImportsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/help': {
       id: '/_authenticated/help'
       path: '/help'
       fullPath: '/help'
       preLoaderRoute: typeof AuthenticatedHelpRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/imports': {
+      id: '/_authenticated/imports'
+      path: '/imports'
+      fullPath: '/imports'
+      preLoaderRoute: typeof AuthenticatedImportsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/onboarding': {
@@ -1556,6 +1588,13 @@ declare module '@tanstack/react-router' {
       path: '/documents/branding'
       fullPath: '/documents/branding'
       preLoaderRoute: typeof AuthenticatedDocumentsBrandingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/platform/billing': {
+      id: '/_authenticated/platform/billing'
+      path: '/platform/billing'
+      fullPath: '/platform/billing'
+      preLoaderRoute: typeof AuthenticatedPlatformBillingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/purchases/': {
@@ -2165,8 +2204,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFilesRoute: typeof AuthenticatedFilesRoute
   AuthenticatedFirmRoute: typeof AuthenticatedFirmRoute
   AuthenticatedFixedAssetsRoute: typeof AuthenticatedFixedAssetsRoute
-  AuthenticatedImportsRoute: typeof AuthenticatedImportsRoute
   AuthenticatedHelpRoute: typeof AuthenticatedHelpRoute
+  AuthenticatedImportsRoute: typeof AuthenticatedImportsRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedProductsServicesRoute: typeof AuthenticatedProductsServicesRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
@@ -2182,6 +2221,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedContactsNewRoute: typeof AuthenticatedContactsNewRoute
   AuthenticatedContactsSettingsRoute: typeof AuthenticatedContactsSettingsRoute
   AuthenticatedDocumentsBrandingRoute: typeof AuthenticatedDocumentsBrandingRoute
+  AuthenticatedPlatformBillingRoute: typeof AuthenticatedPlatformBillingRoute
   AuthenticatedReportsReportIdRoute: typeof AuthenticatedReportsReportIdRoute
   AuthenticatedBudgetsIndexRoute: typeof AuthenticatedBudgetsIndexRoute
   AuthenticatedContactsIndexRoute: typeof AuthenticatedContactsIndexRoute
@@ -2200,8 +2240,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedFilesRoute: AuthenticatedFilesRoute,
   AuthenticatedFirmRoute: AuthenticatedFirmRoute,
   AuthenticatedFixedAssetsRoute: AuthenticatedFixedAssetsRoute,
-  AuthenticatedImportsRoute: AuthenticatedImportsRoute,
   AuthenticatedHelpRoute: AuthenticatedHelpRoute,
+  AuthenticatedImportsRoute: AuthenticatedImportsRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedProductsServicesRoute: AuthenticatedProductsServicesRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
@@ -2217,6 +2257,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedContactsNewRoute: AuthenticatedContactsNewRoute,
   AuthenticatedContactsSettingsRoute: AuthenticatedContactsSettingsRoute,
   AuthenticatedDocumentsBrandingRoute: AuthenticatedDocumentsBrandingRoute,
+  AuthenticatedPlatformBillingRoute: AuthenticatedPlatformBillingRoute,
   AuthenticatedReportsReportIdRoute: AuthenticatedReportsReportIdRoute,
   AuthenticatedBudgetsIndexRoute: AuthenticatedBudgetsIndexRoute,
   AuthenticatedContactsIndexRoute: AuthenticatedContactsIndexRoute,
@@ -2232,6 +2273,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
+  PricingRoute: PricingRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AuthMfaRoute: AuthMfaRoute,

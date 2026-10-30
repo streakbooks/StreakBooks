@@ -8,6 +8,8 @@ export type CheckoutDraft = {
   interval: BillingInterval;
   currency: BillingCurrency;
   unitAmountMinor: number;
+  discountMinor?: number;
+  promoDurationMonths?: number | null;
   successUrl: string;
   cancelUrl: string;
   /** Unix seconds. Omit when the remaining trial is under 48 hours. */
@@ -31,9 +33,15 @@ export function stripeCheckoutBody(draft: CheckoutDraft): URLSearchParams {
   body.set("metadata[checkout_id]", draft.checkoutId);
   body.set("metadata[company_id]", draft.companyId);
   body.set("metadata[plan_code]", draft.planCode);
+  body.set("metadata[currency]", draft.currency);
+  body.set("metadata[billing_interval]", draft.interval);
+  body.set("metadata[unit_amount]", String(draft.unitAmountMinor));
   body.set("subscription_data[metadata][checkout_id]", draft.checkoutId);
   body.set("subscription_data[metadata][company_id]", draft.companyId);
   body.set("subscription_data[metadata][plan_code]", draft.planCode);
+  body.set("subscription_data[metadata][currency]", draft.currency);
+  body.set("subscription_data[metadata][billing_interval]", draft.interval);
+  body.set("subscription_data[metadata][unit_amount]", String(draft.unitAmountMinor));
   if (draft.trialEndUnix != null) {
     body.set("subscription_data[trial_end]", String(draft.trialEndUnix));
   }
@@ -53,6 +61,9 @@ export function razorpayPlanBody(draft: CheckoutDraft): Record<string, unknown> 
       checkout_id: draft.checkoutId,
       company_id: draft.companyId,
       plan_code: draft.planCode,
+      currency: draft.currency,
+      billing_interval: draft.interval,
+      unit_amount: String(draft.unitAmountMinor),
     },
   };
 }
@@ -69,6 +80,9 @@ export function razorpaySubscriptionBody(
       checkout_id: draft.checkoutId,
       company_id: draft.companyId,
       plan_code: draft.planCode,
+      currency: draft.currency,
+      billing_interval: draft.interval,
+      unit_amount: String(draft.unitAmountMinor),
     },
     ...(draft.trialEndUnix != null ? { start_at: draft.trialEndUnix } : {}),
   };

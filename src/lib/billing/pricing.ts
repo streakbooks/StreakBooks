@@ -18,15 +18,15 @@
  * in the database so they can change without a release.
  */
 
-export const BILLING_CURRENCIES = ["GBP", "USD", "INR"] as const;
+export const BILLING_CURRENCIES = ["USD", "GBP", "AUD", "NZD", "INR"] as const;
 export type BillingCurrency = (typeof BILLING_CURRENCIES)[number];
 
-export const PLAN_CODES = ["starter", "standard", "premium", "practice"] as const;
+export const PLAN_CODES = ["starter", "growth", "pro", "practice", "standard", "premium"] as const;
 export type PlanCode = (typeof PLAN_CODES)[number];
 
-export const DEFAULT_TRIAL_DAYS = 30;
+export const DEFAULT_TRIAL_DAYS = 14;
 export const DEFAULT_ANNUAL_FREE_MONTHS = 2;
-export const DEFAULT_TRIAL_PLAN: PlanCode = "standard";
+export const DEFAULT_TRIAL_PLAN: PlanCode = "growth";
 export const DEFAULT_GRACE_DAYS = 7;
 
 export type PlanLimits = {
@@ -53,7 +53,7 @@ export const CATALOG: readonly CatalogPlan[] = [
     name: "Starter",
     audience: "Sole traders",
     summary: "Full double-entry books for a one-person business.",
-    monthly: { GBP: 1200, USD: 1500, INR: 49900 },
+    monthly: { USD: 1200, GBP: 900, AUD: 1800, NZD: 2000, INR: 99900 },
     limits: { users: 2, invoicesPerMonth: 20, billsPerMonth: 5, multiCurrency: false },
     highlights: [
       "Quotes, invoices, bills, VAT and reports",
@@ -63,11 +63,11 @@ export const CATALOG: readonly CatalogPlan[] = [
     ],
   },
   {
-    code: "standard",
-    name: "Standard",
+    code: "growth",
+    name: "Growth",
     audience: "Growing businesses",
-    summary: "Unlimited documents, multi-currency and projects.",
-    monthly: { GBP: 2900, USD: 3500, INR: 149900 },
+    summary: "The plan most businesses start on after the trial.",
+    monthly: { USD: 3000, GBP: 2400, AUD: 4600, NZD: 5000, INR: 249900 },
     limits: { users: 5, invoicesPerMonth: null, billsPerMonth: null, multiCurrency: true },
     highlights: [
       "Everything in Starter",
@@ -78,11 +78,11 @@ export const CATALOG: readonly CatalogPlan[] = [
     ],
   },
   {
-    code: "premium",
-    name: "Premium",
+    code: "pro",
+    name: "Pro",
     audience: "Established businesses",
-    summary: "More seats, fixed assets, budgets and expense approvals.",
-    monthly: { GBP: 4900, USD: 5900, INR: 299900 },
+    summary: "Inventory, projects, budgeting and API access.",
+    monthly: { USD: 6000, GBP: 4700, AUD: 9100, NZD: 10000, INR: 499900 },
     limits: { users: 10, invoicesPerMonth: null, billsPerMonth: null, multiCurrency: true },
     highlights: [
       "Everything in Standard",
@@ -96,7 +96,7 @@ export const CATALOG: readonly CatalogPlan[] = [
     name: "Practice",
     audience: "Accountants",
     summary: "Firm tools and a larger team on the same ledger.",
-    monthly: { GBP: 9900, USD: 11900, INR: 599900 },
+    monthly: { USD: 9900, GBP: 7800, AUD: 15000, NZD: 16400, INR: 829900 },
     limits: { users: 25, invoicesPerMonth: null, billsPerMonth: null, multiCurrency: true },
     highlights: ["Everything in Premium", "25 users", "Accountant and firm workspace"],
   },
@@ -115,6 +115,8 @@ export type OfferRule = {
   amountCurrency: BillingCurrency | null;
   extraTrialDays: number;
   extraFreeMonths: number;
+  /** How many billing periods a percent or amount offer lasts. Null means the first period only. */
+  durationMonths: number | null;
   intervals: BillingInterval[] | "any";
   planCodes: PlanCode[] | "any";
   startsOn: string | null;
@@ -141,6 +143,9 @@ export type PriceQuote = {
   listMinor: number;
   discountMinor: number;
   dueMinor: number;
+  /** Provider recurring price. Promos do not change this. */
+  recurringMinor: number;
+  promoDurationMonths: number | null;
   freeMonths: number;
   trialDays: number;
   offerCode: string | null;
@@ -202,8 +207,12 @@ export function quotePrice(input: QuoteInput): PriceQuote {
   } else if (offer?.kind === "extra_free_months" && input.interval === "year") {
     discountMinor = listMinor - adjustedList;
   }
-  const dueMinor =
+  const introMinor =
     offer?.kind === "extra_free_months" ? adjustedList : adjustedList - discountMinor;
+  const recurringMinor =
+    offer?.kind === "percent" || offer?.kind === "amount" ? adjustedList : introMinor;
+  const promoDurationMonths =
+    offer?.kind === "percent" || offer?.kind === "amount" ? (offer.durationMonths ?? 1) : null;
   const trialDays =
     input.trialDays + (offer?.kind === "extra_trial_days" ? offer.extraTrialDays : 0);
   return {
@@ -211,7 +220,9 @@ export function quotePrice(input: QuoteInput): PriceQuote {
     interval: input.interval,
     listMinor: offer?.kind === "extra_free_months" ? listMinor : adjustedList,
     discountMinor,
-    dueMinor,
+    dueMinor: introMinor,
+    recurringMinor,
+    promoDurationMonths,
     freeMonths: input.interval === "year" ? freeMonths : 0,
     trialDays,
     offerCode: offer?.code ?? null,
@@ -273,7 +284,10 @@ export function subscriptionAccess(input: SubscriptionAccessInput): "full" | "re
   if (input.status === "trialing") {
     return input.trialEndsAt != null && Date.parse(input.trialEndsAt) > now ? "full" : "read_only";
   }
-  if (input.status === "active" || input.status === "cancelled") {
+  if (input.status === "cancelled" || input.status === "paused" || input.status === "expired") {
+    return "read_only";
+  }
+  if (input.status === "active") {
     if (input.currentPeriodEnd == null) return "full";
     return Date.parse(input.currentPeriodEnd) > now ? "full" : "read_only";
   }

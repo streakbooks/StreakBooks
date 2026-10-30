@@ -25,6 +25,7 @@ function offer(partial: Partial<OfferRule> & Pick<OfferRule, "kind" | "code">): 
     amountCurrency: null,
     extraTrialDays: 0,
     extraFreeMonths: 0,
+    durationMonths: null,
     intervals: "any",
     planCodes: "any",
     startsOn: null,
@@ -39,19 +40,19 @@ function offer(partial: Partial<OfferRule> & Pick<OfferRule, "kind" | "code">): 
 describe("catalog prices", () => {
   it("undercuts Xero, QuickBooks and FreshBooks standing monthly prices", () => {
     const starter = CATALOG.find((plan) => plan.code === "starter");
-    const standard = CATALOG.find((plan) => plan.code === "standard");
-    const premium = CATALOG.find((plan) => plan.code === "premium");
-    expect(starter?.monthly.USD).toBe(1500);
-    expect(standard?.monthly.USD).toBe(3500);
-    expect(premium?.monthly.USD).toBe(5900);
+    const growth = CATALOG.find((plan) => plan.code === "growth");
+    const pro = CATALOG.find((plan) => plan.code === "pro");
+    expect(starter?.monthly.USD).toBe(1200);
+    expect(growth?.monthly.USD).toBe(3000);
+    expect(pro?.monthly.USD).toBe(6000);
     expect(starter!.monthly.USD).toBeLessThan(23_00);
-    expect(standard!.monthly.USD).toBeLessThan(59_00);
-    expect(premium!.monthly.USD).toBeLessThan(97_00);
+    expect(growth!.monthly.USD).toBeLessThan(59_00);
+    expect(pro!.monthly.USD).toBeLessThan(97_00);
   });
 
   it("bills India in rupees under the QuickBooks India display prices", () => {
     const starter = CATALOG.find((plan) => plan.code === "starter");
-    expect(starter?.monthly.INR).toBe(49900);
+    expect(starter?.monthly.INR).toBe(99900);
     expect(formatMinor(49900, "INR")).toContain("499");
   });
 
@@ -96,6 +97,8 @@ describe("quotePrice", () => {
       planCode: "starter",
     });
     expect(quote.dueMinor).toBe(1200);
+    expect(quote.recurringMinor).toBe(1500);
+    expect(quote.promoDurationMonths).toBe(1);
     expect(quote.discountMinor).toBe(300);
     expect(quote.offerCode).toBe("LAUNCH20");
 

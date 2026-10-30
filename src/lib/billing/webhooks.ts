@@ -53,11 +53,17 @@ async function applyStripe(raw: string, header: string | null): Promise<void> {
   if (event.type === "invoice.payment_failed") {
     const subscriptionId = stringValue(object["subscription"]);
     if (subscriptionId) await markProviderStatus("stripe", subscriptionId, "past_due");
+    const { sendBillingNotice } = await import("@/lib/billing/notices");
+    await sendBillingNotice({
+      to: null,
+      subject: "LinkBooks payment failed",
+      text: "A subscription payment failed. The organisation becomes read-only after the grace period. Existing reports stay available.",
+    });
     return;
   }
   if (event.type === "customer.subscription.deleted") {
     const subscriptionId = stringValue(object["id"]);
-    if (subscriptionId) await markProviderStatus("stripe", subscriptionId, "expired");
+    if (subscriptionId) await markProviderStatus("stripe", subscriptionId, "cancelled");
     return;
   }
   if (event.type === "customer.subscription.updated") {
@@ -85,6 +91,10 @@ async function completeStripeCheckout(session: Record<string, unknown>): Promise
       interval = stripeInterval(subscription);
     }
   }
+  const planCode = metadataValue(session, "plan_code");
+  const currency = metadataValue(session, "currency");
+  const billedInterval = metadataValue(session, "billing_interval") ?? interval;
+  const unitAmount = Number(metadataValue(session, "unit_amount"));
   await activateCheckout(checkoutId, {
     status: "active",
     provider: "stripe",
@@ -92,7 +102,10 @@ async function completeStripeCheckout(session: Record<string, unknown>): Promise
     provider_subscription_id: subscriptionId,
     current_period_end: periodEnd,
     cancel_at_period_end: cancelAtPeriodEnd,
-    ...(interval ? { billing_interval: interval } : {}),
+    ...(planCode ? { plan_code: planCode } : {}),
+    ...(currency ? { currency } : {}),
+    ...(billedInterval ? { billing_interval: billedInterval } : {}),
+    ...(Number.isInteger(unitAmount) && unitAmount > 0 ? { unit_amount_minor: unitAmount } : {}),
     updated_at: new Date().toISOString(),
   });
 }
@@ -101,11 +114,14 @@ async function syncStripeSubscription(subscription: Record<string, unknown>): Pr
   const subscriptionId = stringValue(subscription["id"]);
   if (!subscriptionId) return;
   const stripeStatus = stringValue(subscription["status"]);
-  const status =
-    stripeStatus === "past_due" || stripeStatus === "unpaid"
+  const paused =
+    subscription["pause_collection"] != null && subscription["pause_collection"] !== false;
+  const status = paused
+    ? "paused"
+    : stripeStatus === "past_due" || stripeStatus === "unpaid"
       ? "past_due"
       : stripeStatus === "canceled"
-        ? "expired"
+        ? "cancelled"
         : "active";
   await markProviderStatus("stripe", subscriptionId, status, {
     current_period_end: unixToIso(subscription["current_period_end"]),
@@ -129,12 +145,20 @@ async function applyRazorpay(raw: string, header: string | null): Promise<void> 
   const status = razorpayStatus(event.event);
   if (!checkoutId || !status) return;
   const periodEnd = unixToIso(entity["current_end"]) ?? unixToIso(entity["end_at"]);
+  const planCode = notesValue(entity, "plan_code");
+  const currency = notesValue(entity, "currency");
+  const billedInterval = notesValue(entity, "billing_interval");
+  const unitAmount = Number(notesValue(entity, "unit_amount"));
   await activateCheckout(checkoutId, {
     status,
     provider: "razorpay",
     provider_subscription_id: stringValue(entity["id"]),
     current_period_end: periodEnd,
     cancel_at_period_end: status === "cancelled",
+    ...(planCode ? { plan_code: planCode } : {}),
+    ...(currency ? { currency } : {}),
+    ...(billedInterval ? { billing_interval: billedInterval } : {}),
+    ...(Number.isInteger(unitAmount) && unitAmount > 0 ? { unit_amount_minor: unitAmount } : {}),
     updated_at: new Date().toISOString(),
   });
 }
@@ -229,17 +253,13 @@ async function markProviderStatus(
 
 async function incrementOffer(code: string): Promise<void> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin
-    .from("billing_offers" as never)
-    .select("redemption_count" as never)
-    .eq("code" as never, code as never)
-    .maybeSingle();
-  if (error || !data) return;
-  const count = (data as { redemption_count: number }).redemption_count ?? 0;
-  await supabaseAdmin
-    .from("billing_offers" as never)
-    .update({ redemption_count: count + 1 } as never)
-    .eq("code" as never, code as never);
+  const { error } = await supabaseAdmin.rpc(
+    "redeem_billing_offer" as never,
+    { _code: code } as never,
+  );
+  if (!error) return;
+  if (error.code === "42883" || error.code === "PGRST202") return;
+  throw new Error(error.message);
 }
 
 function stringValue(value: unknown): string | null {

@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { listPublicBillingPlans } from "@/lib/billing/platform.functions";
-import { formatMinor, type BillingCurrency } from "@/lib/billing/pricing";
+import { formatMinor } from "@/lib/billing/pricing";
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({
@@ -37,8 +37,6 @@ type PublicPlan = {
   prices: PriceRow[] | null;
 };
 
-const CURRENCIES: BillingCurrency[] = ["USD", "GBP", "AUD", "NZD", "INR"];
-
 function PricingPage() {
   const load = useServerFn(listPublicBillingPlans);
   const query = useQuery({
@@ -47,7 +45,9 @@ function PricingPage() {
     retry: false,
   });
   const [interval, setInterval] = useState<"month" | "year">("month");
-  const [currency, setCurrency] = useState<BillingCurrency>("USD");
+  const currency = query.data?.currency ?? "USD";
+  const region = query.data?.country ?? "US";
+  const locationSource = query.data?.source ?? "fallback";
   const [signedIn, setSignedIn] = useState(false);
   const plans = (Array.isArray(query.data?.plans) ? query.data.plans : []) as PublicPlan[];
 
@@ -99,21 +99,11 @@ function PricingPage() {
             Yearly, 2 months free
           </button>
         </div>
-        <label className="text-sm">
-          Currency{" "}
-          <select
-            className="rounded-md border bg-transparent px-2 py-1"
-            value={currency}
-            aria-label="Currency"
-            onChange={(event) => setCurrency(event.target.value as BillingCurrency)}
-          >
-            {CURRENCIES.map((code) => (
-              <option key={code} value={code}>
-                {code}
-              </option>
-            ))}
-          </select>
-        </label>
+        <p className="self-center text-sm text-muted-foreground" role="status">
+          {locationSource === "fallback"
+            ? "Prices shown in USD because your region could not be detected."
+            : `Prices automatically shown in ${currency} for ${new Intl.DisplayNames(["en"], { type: "region" }).of(region) ?? region}.`}
+        </p>
       </div>
       {query.isLoading ? <p>Loading plans…</p> : null}
       {query.isError ? (

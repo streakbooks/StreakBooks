@@ -76,9 +76,25 @@ export function SubscriptionPanel({
   const [showPromo, setShowPromo] = useState(false);
   const [quotes, setQuotes] = useState<Record<string, PriceQuote>>({});
   const [target, setTarget] = useState<BillingPlanView | null>(null);
+  const [checkoutCountry, setCheckoutCountry] = useState("");
   const [intent, setIntent] = useState<"subscribe" | "switch">("subscribe");
   const openedFromLink = useRef(false);
   const data = overview.data;
+  const checkoutQuote = useQuery({
+    queryKey: ["billing-country-quote", companyId, target?.code, interval, appliedCode, checkoutCountry],
+    enabled: Boolean(target && intent === "subscribe" && checkoutCountry && data?.ready),
+    queryFn: () =>
+      preview({
+        data: {
+          companyId,
+          planCode: target!.code,
+          interval,
+          offerCode: appliedCode,
+          billingCountry: checkoutCountry,
+        },
+      }),
+    retry: false,
+  });
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -111,6 +127,7 @@ export function SubscriptionPanel({
     const paid = paidSubscription(data.subscription);
     if (paid && data.subscription?.planCode === plan.code) return;
     setIntent(paid ? "switch" : "subscribe");
+    setCheckoutCountry("");
     setTarget(plan);
   }
 
@@ -253,6 +270,11 @@ export function SubscriptionPanel({
           companyName={data.companyName}
           busy={checkout.isPending}
           serverError={checkout.error instanceof Error ? checkout.error.message : null}
+          providers={data.providers}
+          quote={checkoutQuote.data ?? null}
+          quoteLoading={checkoutQuote.isFetching}
+          quoteError={checkoutQuote.error instanceof Error ? checkoutQuote.error.message : null}
+          onCountryChange={setCheckoutCountry}
           onBack={() => setTarget(null)}
           onPay={(billing, method, copy) =>
             checkout.mutate({ planCode: target.code, method, billing, copy })

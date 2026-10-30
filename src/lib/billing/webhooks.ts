@@ -22,7 +22,11 @@ export async function handleBillingWebhook(request: Request): Promise<Response> 
     if (url.pathname === "/api/billing/stripe") {
       await applyStripe(raw, request.headers.get("stripe-signature"));
     } else if (url.pathname === "/api/billing/razorpay") {
-      await applyRazorpay(raw, request.headers.get("x-razorpay-signature"));
+      await applyRazorpay(
+        raw,
+        request.headers.get("x-razorpay-signature"),
+        request.headers.get("x-razorpay-event-id"),
+      );
     } else {
       return new Response("Not found", { status: 404 });
     }
@@ -45,35 +49,66 @@ async function applyStripe(raw: string, header: string | null): Promise<void> {
   if (!event.id || !event.type) throw new Error("Stripe event is malformed.");
   const fresh = await beginEvent("stripe", event.id, event.type, null);
   if (!fresh) return;
-  const object = event.data?.object ?? {};
-  if (event.type === "checkout.session.completed") {
-    await completeStripeCheckout(object);
-    return;
+  try {
+    const object = event.data?.object ?? {};
+    if (
+      event.type === "checkout.session.completed" ||
+      event.type === "checkout.session.async_payment_succeeded"
+    ) {
+      await completeStripeCheckout(object);
+    } else if (event.type === "invoice.paid") {
+      const subscriptionId = stripeInvoiceSubscriptionId(object);
+      if (subscriptionId) {
+        await completePaidStripeInvoice(subscriptionId);
+        await applyScheduledPlan("stripe", subscriptionId);
+      }
+    } else if (event.type === "invoice.payment_failed") {
+      const subscriptionId = stripeInvoiceSubscriptionId(object);
+      if (subscriptionId) await markProviderStatus("stripe", subscriptionId, "past_due");
+      const { sendBillingNotice } = await import("@/lib/billing/notices");
+      await sendBillingNotice({
+        to: null,
+        subject: "LinkBooks payment failed",
+        text: "A subscription payment failed. The organisation becomes read-only after the grace period. Existing reports stay available.",
+      });
+    } else if (event.type === "customer.subscription.deleted") {
+      const subscriptionId = stringValue(object["id"]);
+      if (subscriptionId) await markProviderStatus("stripe", subscriptionId, "cancelled");
+    } else if (event.type === "customer.subscription.updated") {
+      await syncStripeSubscription(object);
+    }
+  } catch (error) {
+    await clearFailedEvent("stripe", event.id);
+    throw error;
   }
-  if (event.type === "invoice.paid") {
-    const subscriptionId = stringValue(object["subscription"]);
-    if (subscriptionId) await applyScheduledPlan("stripe", subscriptionId);
-    return;
-  }
-  if (event.type === "invoice.payment_failed") {
-    const subscriptionId = stringValue(object["subscription"]);
-    if (subscriptionId) await markProviderStatus("stripe", subscriptionId, "past_due");
-    const { sendBillingNotice } = await import("@/lib/billing/notices");
-    await sendBillingNotice({
-      to: null,
-      subject: "LinkBooks payment failed",
-      text: "A subscription payment failed. The organisation becomes read-only after the grace period. Existing reports stay available.",
-    });
-    return;
-  }
-  if (event.type === "customer.subscription.deleted") {
-    const subscriptionId = stringValue(object["id"]);
-    if (subscriptionId) await markProviderStatus("stripe", subscriptionId, "cancelled");
-    return;
-  }
-  if (event.type === "customer.subscription.updated") {
-    await syncStripeSubscription(object);
-  }
+}
+
+export function mayActivateStripeCheckout(
+  paymentStatus: string | null,
+  subscriptionStatus: string | null,
+): boolean {
+  return (
+    (paymentStatus === "paid" && (subscriptionStatus === "active" || subscriptionStatus === "trialing")) ||
+    (paymentStatus === "no_payment_required" && subscriptionStatus === "trialing")
+  );
+}
+
+async function readStripeSubscription(subscriptionId: string): Promise<Record<string, unknown>> {
+  const secret = process.env["STRIPE_SECRET_KEY"];
+  if (!secret) throw new Error("Stripe API secret is not configured.");
+  const response = await fetch(`https://api.stripe.com/v1/subscriptions/${encodeURIComponent(subscriptionId)}`, {
+    headers: { Authorization: `Bearer ${secret}` },
+  });
+  if (!response.ok) throw new Error(`Stripe subscription lookup failed (${response.status}).`);
+  return (await response.json()) as Record<string, unknown>;
+}
+
+function stripeInvoiceSubscriptionId(invoice: Record<string, unknown>): string | null {
+  const legacy = stringValue(invoice["subscription"]);
+  if (legacy) return legacy;
+  const parent = invoice["parent"] as Record<string, unknown> | undefined;
+  const details = parent?.["subscription_details"] as Record<string, unknown> | undefined;
+  return stringValue(details?.["subscription"]);
 }
 
 async function completeStripeCheckout(session: Record<string, unknown>): Promise<void> {
@@ -81,38 +116,44 @@ async function completeStripeCheckout(session: Record<string, unknown>): Promise
   const subscriptionId = stringValue(session["subscription"]);
   const customerId = stringValue(session["customer"]);
   if (!checkoutId || !subscriptionId) return;
-  const secret = process.env["STRIPE_SECRET_KEY"];
-  let periodEnd: string | null = null;
-  let cancelAtPeriodEnd = false;
-  let interval: string | undefined;
-  if (secret) {
-    const response = await fetch(`https://api.stripe.com/v1/subscriptions/${subscriptionId}`, {
-      headers: { Authorization: `Bearer ${secret}` },
-    });
-    if (response.ok) {
-      const subscription = (await response.json()) as Record<string, unknown>;
-      periodEnd = unixToIso(subscription["current_period_end"]);
-      cancelAtPeriodEnd = subscription["cancel_at_period_end"] === true;
-      interval = stripeInterval(subscription);
-    }
-  }
-  const planCode = metadataValue(session, "plan_code");
-  const currency = metadataValue(session, "currency");
-  const billedInterval = metadataValue(session, "billing_interval") ?? interval;
-  const unitAmount = Number(metadataValue(session, "unit_amount"));
+  const subscription = await readStripeSubscription(subscriptionId);
+  const status = stringValue(subscription["status"]);
+  if (!mayActivateStripeCheckout(stringValue(session["payment_status"]), status)) return;
   await activateCheckout(checkoutId, {
-    status: "active",
+    status: status === "trialing" ? "trialing" : "active",
     provider: "stripe",
     provider_customer_id: customerId,
     provider_subscription_id: subscriptionId,
-    current_period_end: periodEnd,
-    cancel_at_period_end: cancelAtPeriodEnd,
-    ...(planCode ? { plan_code: planCode } : {}),
-    ...(currency ? { currency } : {}),
-    ...(billedInterval ? { billing_interval: billedInterval } : {}),
-    ...(Number.isInteger(unitAmount) && unitAmount > 0 ? { unit_amount_minor: unitAmount } : {}),
+    current_period_end: unixToIso(subscription["current_period_end"]),
+    cancel_at_period_end: subscription["cancel_at_period_end"] === true,
     updated_at: new Date().toISOString(),
   });
+}
+
+async function completePaidStripeInvoice(subscriptionId: string): Promise<void> {
+  const subscription = await readStripeSubscription(subscriptionId);
+  if (subscription["status"] !== "active" && subscription["status"] !== "trialing") return;
+  const checkoutId = metadataValue(subscription, "checkout_id");
+  if (checkoutId) {
+    await activateCheckout(checkoutId, {
+      status: subscription["status"] === "trialing" ? "trialing" : "active",
+      provider: "stripe",
+      provider_customer_id: stringValue(subscription["customer"]),
+      provider_subscription_id: subscriptionId,
+      current_period_end: unixToIso(subscription["current_period_end"]),
+      cancel_at_period_end: subscription["cancel_at_period_end"] === true,
+      updated_at: new Date().toISOString(),
+    });
+  }
+  await markProviderStatus(
+    "stripe",
+    subscriptionId,
+    subscription["status"] === "trialing" ? "trialing" : "active",
+    {
+    current_period_end: unixToIso(subscription["current_period_end"]),
+    cancel_at_period_end: subscription["cancel_at_period_end"] === true,
+    },
+  );
 }
 
 async function syncStripeSubscription(subscription: Record<string, unknown>): Promise<void> {
@@ -123,18 +164,27 @@ async function syncStripeSubscription(subscription: Record<string, unknown>): Pr
     subscription["pause_collection"] != null && subscription["pause_collection"] !== false;
   const status = paused
     ? "paused"
-    : stripeStatus === "past_due" || stripeStatus === "unpaid"
+    : stripeStatus === "past_due" || stripeStatus === "unpaid" || stripeStatus === "incomplete"
       ? "past_due"
-      : stripeStatus === "canceled"
+      : stripeStatus === "canceled" || stripeStatus === "incomplete_expired"
         ? "cancelled"
-        : "active";
+        : stripeStatus === "trialing"
+          ? "trialing"
+          : stripeStatus === "active"
+            ? "active"
+            : null;
+  if (!status) return;
   await markProviderStatus("stripe", subscriptionId, status, {
     current_period_end: unixToIso(subscription["current_period_end"]),
     cancel_at_period_end: subscription["cancel_at_period_end"] === true,
   });
 }
 
-async function applyRazorpay(raw: string, header: string | null): Promise<void> {
+async function applyRazorpay(
+  raw: string,
+  header: string | null,
+  eventIdHeader: string | null,
+): Promise<void> {
   const secret = process.env["RAZORPAY_WEBHOOK_SECRET"] ?? "";
   verifyRazorpaySignature(raw, header, secret);
   const event = JSON.parse(raw) as {
@@ -142,30 +192,49 @@ async function applyRazorpay(raw: string, header: string | null): Promise<void> 
     payload?: { subscription?: { entity?: Record<string, unknown> } };
   };
   if (!event.event) throw new Error("Razorpay event is malformed.");
-  const entity = event.payload?.subscription?.entity ?? {};
-  const eventId = stringValue(entity["id"]) ? `${event.event}:${stringValue(entity["id"])}` : null;
-  const fresh = await beginEvent("razorpay", eventId, event.event, null);
+  // The subscription ID repeats for every renewal. Only the provider's unique
+  // x-razorpay-event-id header can safely deduplicate delivery attempts.
+  if (!eventIdHeader || !/^[a-zA-Z0-9_-]{8,160}$/.test(eventIdHeader)) {
+    throw new Error("Razorpay event id is malformed.");
+  }
+  const fresh = await beginEvent("razorpay", eventIdHeader, event.event, null);
   if (!fresh) return;
-  const checkoutId = notesValue(entity, "checkout_id");
-  const status = razorpayStatus(event.event);
-  if (!checkoutId || !status) return;
-  const periodEnd = unixToIso(entity["current_end"]) ?? unixToIso(entity["end_at"]);
-  const planCode = notesValue(entity, "plan_code");
-  const currency = notesValue(entity, "currency");
-  const billedInterval = notesValue(entity, "billing_interval");
-  const unitAmount = Number(notesValue(entity, "unit_amount"));
-  await activateCheckout(checkoutId, {
-    status,
-    provider: "razorpay",
-    provider_subscription_id: stringValue(entity["id"]),
-    current_period_end: periodEnd,
-    cancel_at_period_end: status === "cancelled",
-    ...(planCode ? { plan_code: planCode } : {}),
-    ...(currency ? { currency } : {}),
-    ...(billedInterval ? { billing_interval: billedInterval } : {}),
-    ...(Number.isInteger(unitAmount) && unitAmount > 0 ? { unit_amount_minor: unitAmount } : {}),
-    updated_at: new Date().toISOString(),
-  });
+  try {
+    const entity = event.payload?.subscription?.entity ?? {};
+    const checkoutId = notesValue(entity, "checkout_id");
+    const subscriptionId = stringValue(entity["id"]);
+    const status = razorpayStatus(event.event);
+    if (!status || !subscriptionId) return;
+    const periodEnd = unixToIso(entity["current_end"]) ?? unixToIso(entity["end_at"]);
+    if (status === "active") {
+      // Only an authorised or charged subscription grants paid access.
+      if (checkoutId) {
+        await activateCheckout(checkoutId, {
+          status,
+          provider: "razorpay",
+          provider_subscription_id: subscriptionId,
+          current_period_end: periodEnd,
+          cancel_at_period_end: false,
+          updated_at: new Date().toISOString(),
+        });
+      }
+      // Renewals reuse the same checkout and update the existing subscription.
+      await markProviderStatus("razorpay", subscriptionId, "active", {
+        current_period_end: periodEnd,
+        cancel_at_period_end: false,
+      });
+    } else {
+      // Pending/halted/cancelled events may modify an already activated
+      // subscription, but must never turn an open checkout into paid access.
+      await markProviderStatus("razorpay", subscriptionId, status, {
+        current_period_end: periodEnd,
+        cancel_at_period_end: status === "cancelled",
+      });
+    }
+  } catch (error) {
+    await clearFailedEvent("razorpay", eventIdHeader);
+    throw error;
+  }
 }
 
 function razorpayStatus(event: string): string | null {
@@ -199,6 +268,16 @@ async function beginEvent(
   throw new Error(error.message);
 }
 
+async function clearFailedEvent(provider: string, eventId: string): Promise<void> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { error } = await supabaseAdmin
+    .from("billing_events" as never)
+    .delete()
+    .eq("provider" as never, provider as never)
+    .eq("event_id" as never, eventId as never);
+  if (error) throw new Error(error.message);
+}
+
 async function activateCheckout(checkoutId: string, patch: AdminUpdate): Promise<void> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: checkout, error } = await supabaseAdmin
@@ -218,7 +297,8 @@ async function activateCheckout(checkoutId: string, patch: AdminUpdate): Promise
     offer_code: string | null;
     status: string;
   } | null;
-  if (!row) return;
+  if (!row || row.status !== "open") return;
+  // A completed checkout must never overwrite a later plan change on renewal.
   const { error: subError } = await supabaseAdmin.from("company_subscriptions" as never).upsert(
     {
       company_id: row.company_id,

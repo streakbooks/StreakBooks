@@ -1,4 +1,4 @@
-import { countries } from "@/lib/company-constants";
+import { isBillingCountry } from "@/lib/billing/billing-countries";
 import type { BillingCurrency, BillingInterval } from "@/lib/billing/pricing";
 
 /** Presentment currency for a payer's country. Countries without a local price use USD. */
@@ -15,7 +15,7 @@ export function checkoutCurrencyForCountry(country: string): BillingCurrency {
 export function billingCountryFromLocale(locale: string | undefined): string {
   const region = locale?.split("-").pop()?.toUpperCase() ?? "";
   if (region.length !== 2) return "";
-  return countries.some((item) => item.code === region) ? region : "";
+  return isBillingCountry(region) ? region : "";
 }
 
 export type CheckoutBilling = {
@@ -43,113 +43,66 @@ export type CheckoutBillingInput = {
   country?: string;
 };
 
-export type PayMethodId = "card" | "upi" | "neft" | "ach" | "bacs" | "becs" | "nz_bank";
+export type PayMethodId = "card" | "upi" | "emandate";
+
+export type PaymentProviderAvailability = { stripe: boolean; razorpay: boolean };
 
 export type PayMethodChoice = {
   id: PayMethodId;
   title: string;
   detail: string;
   provider: "stripe" | "razorpay";
-  /** Empty when Razorpay hosts the method. */
-  stripeTypes: string[];
   available: boolean;
   reason: string | null;
 };
 
-const PAY_METHODS: {
-  id: PayMethodId;
-  title: string;
-  detail: string;
-  provider: "stripe" | "razorpay";
-  stripeTypes: string[];
-  currency: BillingCurrency | null;
-  unavailable: string;
-}[] = [
-  {
-    id: "card",
-    title: "Credit or debit card",
-    detail:
-      "Visa, Mastercard, American Express and other cards. Apple Pay and Google Pay appear on the secure page when the device supports them.",
-    provider: "stripe",
-    stripeTypes: ["card"],
-    currency: null,
-    unavailable: "",
-  },
-  {
-    id: "upi",
-    title: "UPI",
-    detail: "Google Pay, PhonePe, Paytm and other UPI apps. A card is not required.",
-    provider: "razorpay",
-    stripeTypes: [],
-    currency: "INR",
-    unavailable: "Available when the billing country is India.",
-  },
-  {
-    id: "neft",
-    title: "Netbanking and NEFT",
-    detail:
-      "Indian bank transfer, including NEFT, RTGS, IMPS and netbanking. A card is not required.",
-    provider: "razorpay",
-    stripeTypes: [],
-    currency: "INR",
-    unavailable: "Available when the billing country is India.",
-  },
-  {
-    id: "ach",
-    title: "US bank account",
-    detail: "ACH debit from a US bank account. A card is not required.",
-    provider: "stripe",
-    stripeTypes: ["us_bank_account"],
-    currency: "USD",
-    unavailable: "Available when the billing country is the United States or Canada.",
-  },
-  {
-    id: "bacs",
-    title: "UK bank account",
-    detail: "Bacs Direct Debit from a UK bank account. A card is not required.",
-    provider: "stripe",
-    stripeTypes: ["bacs_debit"],
-    currency: "GBP",
-    unavailable: "Available when the billing country is the United Kingdom.",
-  },
-  {
-    id: "becs",
-    title: "Australian bank account",
-    detail: "BECS Direct Debit from an Australian bank account. A card is not required.",
-    provider: "stripe",
-    stripeTypes: ["au_becs_debit"],
-    currency: "AUD",
-    unavailable: "Available when the billing country is Australia.",
-  },
-  {
-    id: "nz_bank",
-    title: "New Zealand bank account",
-    detail: "Direct debit from a New Zealand bank account. A card is not required.",
-    provider: "stripe",
-    stripeTypes: ["nz_bank_account"],
-    currency: "NZD",
-    unavailable: "Available when the billing country is New Zealand.",
-  },
-];
-
-export function isPayMethodId(value: string | undefined): value is PayMethodId {
-  return PAY_METHODS.some((method) => method.id === value);
+/**
+ * Show only integrations that can start a real recurring subscription.
+ * Stripe Checkout selects the eligible wallets and local methods dynamically,
+ * based on the customer's country and the merchant's enabled Stripe methods.
+ * Razorpay subscriptions support Indian UPI AutoPay and e-mandate where enabled.
+ */
+export function paymentMethodsFor(
+  country: string,
+  providers: PaymentProviderAvailability = { stripe: true, razorpay: true },
+): PayMethodChoice[] {
+  if (!isBillingCountry(country)) return [];
+  const india = country.toUpperCase() === "IN";
+  const methods: PayMethodChoice[] = [
+    {
+      id: "card",
+      title: "Cards, wallets and other eligible local methods",
+      detail: "Secure Stripe Checkout shows the payment methods supported for this subscription and your location. Availability varies.",
+      provider: "stripe",
+      available: providers.stripe,
+      reason: providers.stripe ? null : "Stripe checkout is not configured.",
+    },
+  ];
+  if (india) {
+    methods.push(
+      {
+        id: "upi",
+        title: "UPI AutoPay",
+        detail: "Authorise recurring payments through an eligible UPI app on Razorpay.",
+        provider: "razorpay",
+        available: providers.razorpay,
+        reason: providers.razorpay ? null : "Razorpay checkout is not configured.",
+      },
+      {
+        id: "emandate",
+        title: "Indian bank e-mandate",
+        detail: "Authorise recurring bank debits on Razorpay through an eligible bank. This is not an ordinary NEFT transfer.",
+        provider: "razorpay",
+        available: providers.razorpay,
+        reason: providers.razorpay ? null : "Razorpay checkout is not configured.",
+      },
+    );
+  }
+  return methods;
 }
 
-/** Methods a subscription can renew with. Card works in every billing currency. */
-export function paymentMethodsFor(currency: BillingCurrency): PayMethodChoice[] {
-  return PAY_METHODS.map((method) => {
-    const available = method.currency == null || method.currency === currency;
-    return {
-      id: method.id,
-      title: method.title,
-      detail: method.detail,
-      provider: method.provider,
-      stripeTypes: method.stripeTypes,
-      available,
-      reason: available ? null : method.unavailable,
-    };
-  });
+export function isPayMethodId(value: string | undefined): value is PayMethodId {
+  return value === "card" || value === "upi" || value === "emandate";
 }
 
 export function parseCheckoutBilling(input: CheckoutBillingInput | undefined): CheckoutBilling {
@@ -165,7 +118,7 @@ export function parseCheckoutBilling(input: CheckoutBillingInput | undefined): C
   const postalCode = (input?.postalCode ?? "").trim().slice(0, 20);
   if (postalCode.length < 2) throw new Error("Enter the postal code.");
   const country = (input?.country ?? "").trim().toUpperCase();
-  if (!countries.some((item) => item.code === country))
+  if (!isBillingCountry(country))
     throw new Error("Choose a billing country.");
   return {
     email,
@@ -196,7 +149,6 @@ export type CheckoutDraft = {
   trialEndUnix: number | null;
   billing?: CheckoutBilling;
   customerId?: string;
-  paymentMethodTypes?: string[];
   payMethod?: string;
 };
 
@@ -221,9 +173,6 @@ export function stripeCheckoutBody(draft: CheckoutDraft): URLSearchParams {
   body.set("metadata[billing_interval]", draft.interval);
   body.set("metadata[unit_amount]", String(draft.unitAmountMinor));
   if (draft.payMethod) body.set("metadata[pay_method]", draft.payMethod);
-  draft.paymentMethodTypes?.forEach((type, index) => {
-    body.set(`payment_method_types[${index}]`, type);
-  });
   if (draft.customerId) {
     body.set("customer", draft.customerId);
     body.set("customer_update[name]", "auto");

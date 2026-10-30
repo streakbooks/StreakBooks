@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
+import { isBillingCountry } from "@/lib/billing/billing-countries";
 import { assertUuid } from "@/lib/company-validation";
 import {
   checkoutCurrencyForCountry,
@@ -498,11 +499,12 @@ async function listOfferRows(supabase: Client): Promise<BillingOfferView[]> {
 export const previewBillingQuote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (input: { companyId: string; planCode: string; interval: string; offerCode?: string }) => ({
+    (input: { companyId: string; planCode: string; interval: string; offerCode?: string; billingCountry?: string }) => ({
       companyId: assertUuid(input?.companyId),
       planCode: requirePlanCode(input?.planCode),
       interval: assertInterval(input?.interval),
       offerCode: (input?.offerCode ?? "").trim().slice(0, 40),
+      billingCountry: input?.billingCountry ? requireBillingCountry(input.billingCountry) : null,
     }),
   )
   .handler(async ({ data, context }) => {
@@ -514,6 +516,7 @@ export const previewBillingQuote = createServerFn({ method: "POST" })
       data.planCode,
       data.interval,
       data.offerCode,
+      data.billingCountry ? checkoutCurrencyForCountry(data.billingCountry) : undefined,
     );
     return priced.quote;
   });
@@ -570,12 +573,23 @@ export const createBillingCheckout = createServerFn({ method: "POST" })
       data.offerCode,
       checkoutCurrencyForCountry(data.billing.country),
     );
-    const method = paymentMethodsFor(priced.currency).find((item) => item.id === data.method);
+    const method = paymentMethodsFor(data.billing.country, providerFlags()).find(
+      (item) => item.id === data.method,
+    );
     if (!method?.available) {
       throw new Error(method?.reason ?? "That payment method is not available for this currency.");
     }
     if (priced.quote.recurringMinor < 1)
       throw new Error("The recurring price must be at least one minor unit.");
+    // Do not open a second paid subscription for the same organisation.
+    const existing = await loadSubscription(supabase, data.companyId);
+    if (
+      existing &&
+      (existing.provider === "stripe" || existing.provider === "razorpay") &&
+      ["active", "trialing", "past_due", "paused"].includes(existing.status)
+    ) {
+      throw new Error("This organisation already has a payment subscription. Use Manage billing to change it.");
+    }
 
     const { data: inserted, error: insertError } = await supabase
       .from("billing_checkouts" as never)
@@ -596,7 +610,7 @@ export const createBillingCheckout = createServerFn({ method: "POST" })
       throw new Error(insertError.message);
     }
     const checkoutId = (inserted as { id: string }).id;
-    const sub = await loadSubscription(supabase, data.companyId);
+    const sub = existing;
     const draft = {
       checkoutId,
       companyId: data.companyId,
@@ -611,7 +625,6 @@ export const createBillingCheckout = createServerFn({ method: "POST" })
       cancelUrl: `${data.origin}/settings?section=subscription&checkout=cancel`,
       trialEndUnix: trialEndUnixOrNull(sub?.trial_ends_at ?? null, new Date()),
       billing: data.billing,
-      paymentMethodTypes: method.stripeTypes,
       payMethod: method.id,
     };
     const session =
@@ -627,6 +640,12 @@ export const createBillingCheckout = createServerFn({ method: "POST" })
     return { url: session.url, provider: method.provider };
   });
 
+function requireBillingCountry(country: string): string {
+  const code = country.trim().toUpperCase();
+  if (!isBillingCountry(code)) throw new Error("Choose a valid billing country.");
+  return code;
+}
+
 function requirePayMethod(value: string | undefined): PayMethodId {
   if (!isPayMethodId(value)) throw new Error("Choose a payment method.");
   return value;
@@ -635,11 +654,11 @@ function requirePayMethod(value: string | undefined): PayMethodId {
 async function loadSubscription(supabase: Client, companyId: string) {
   const { data, error } = await supabase
     .from("company_subscriptions" as never)
-    .select("trial_ends_at, status" as never)
+    .select("trial_ends_at, status, provider" as never)
     .eq("company_id" as never, companyId as never)
     .maybeSingle();
   if (error) return null;
-  return data as { trial_ends_at: string | null; status: string } | null;
+  return data as { trial_ends_at: string | null; status: string; provider: string } | null;
 }
 
 async function priceSelection(
@@ -769,6 +788,7 @@ async function openStripeCheckout(draft: Parameters<typeof stripeCheckoutBody>[0
     method: "POST",
     headers: {
       Authorization: `Bearer ${secret}`,
+      "Idempotency-Key": `linkbooks-checkout-${draft.checkoutId}`,
       "Content-Type": "application/x-www-form-urlencoded",
     },
     body,

@@ -111,7 +111,7 @@ const defs: ImportDefinition[] = [
     field("rate", "Rate", true, "10", "Percentage rate"),
     field("country", "Country", true, "AU", "Tax jurisdiction"),
   ] },
-  { module: "projects", documentType: "Projects", writeStatus: "not_implemented", fields: [
+  { module: "projects", documentType: "Projects", writeStatus: "implemented", fields: [
     field("project_code", "Project Code", true, "PRJ-001", "Unique project reference"),
     field("name", "Name", true, "Example Project", "Project name"),
     field("customer", "Customer", false, "Example Customer", "Existing customer"),

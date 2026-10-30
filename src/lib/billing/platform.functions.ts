@@ -61,6 +61,9 @@ export const getPlatformBilling = createServerFn({ method: "GET" })
 export const bootstrapPlatformOwner = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    if (context.claims?.aal !== "aal2") {
+      throw new Error("Verified two-step authentication is required to initialize the platform owner.");
+    }
     const emailClaim = (context.claims as { email?: unknown }).email;
     const email = typeof emailClaim === "string" ? emailClaim : "";
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

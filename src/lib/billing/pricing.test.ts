@@ -276,26 +276,24 @@ describe("currency and checkout payload", () => {
     expect(checkoutCurrencyForCountry("CA")).toBe("USD");
     expect(checkoutCurrencyForCountry("GB")).toBe("GBP");
     expect(checkoutCurrencyForCountry("AU")).toBe("AUD");
+    expect(checkoutCurrencyForCountry("FR")).toBe("USD");
+    expect(billingCountryFromLocale("fr-FR")).toBe("FR");
     expect(billingCountryFromLocale("en-IN")).toBe("IN");
     expect(billingCountryFromLocale("en")).toBe("");
     expect(billingCountryFromLocale(undefined)).toBe("");
   });
 
-  it("keeps card optional and limits bank methods to the charge currency", () => {
-    const gbp = paymentMethodsFor("GBP");
-    expect(gbp.find((method) => method.id === "card")?.available).toBe(true);
-    expect(gbp.find((method) => method.id === "bacs")?.available).toBe(true);
-    expect(gbp.find((method) => method.id === "upi")?.available).toBe(false);
-    expect(gbp.find((method) => method.id === "neft")?.available).toBe(false);
-    expect(
-      paymentMethodsFor("INR")
-        .filter((method) => method.available)
-        .map((method) => method.id),
-    ).toEqual(["card", "upi", "neft"]);
-    expect(paymentMethodsFor("USD").find((method) => method.id === "ach")?.available).toBe(true);
+  it("offers only configured recurring methods in the actual billing country", () => {
+    const uk = paymentMethodsFor("GB", { stripe: true, razorpay: true });
+    expect(uk.filter((method) => method.available).map((method) => method.id)).toEqual(["card"]);
+    expect(paymentMethodsFor("CA").map((method) => method.id)).toEqual(["card"]);
+    expect(paymentMethodsFor("IN").map((method) => method.id)).toEqual(["card", "upi", "emandate"]);
+    expect(paymentMethodsFor("IN", { stripe: false, razorpay: true }).filter((m) => m.available).map((m) => m.id)).toEqual(["upi", "emandate"]);
+    expect(paymentMethodsFor("IN", { stripe: false, razorpay: false }).every((m) => !m.available)).toBe(true);
+    expect(paymentMethodsFor("ZZ")).toEqual([]);
   });
 
-  it("sends Stripe the selected method and the saved billing customer", () => {
+  it("uses automatic Stripe eligible methods and never submits removed payment_method_types", () => {
     const body = stripeCheckoutBody({
       checkoutId: "chk_1",
       companyId: "co_1",
@@ -308,13 +306,12 @@ describe("currency and checkout payload", () => {
       cancelUrl: "https://app.example/cancel",
       trialEndUnix: null,
       customerId: "cus_1",
-      paymentMethodTypes: ["bacs_debit"],
-      payMethod: "bacs",
+      payMethod: "card",
     });
-    expect(body.get("payment_method_types[0]")).toBe("bacs_debit");
+    expect(body.get("payment_method_types[0]")).toBeNull();
     expect(body.get("customer")).toBe("cus_1");
     expect(body.get("billing_address_collection")).toBe("auto");
-    expect(body.get("metadata[pay_method]")).toBe("bacs");
+    expect(body.get("metadata[pay_method]")).toBe("card");
   });
 
   it("requires a billing name and address before checkout", () => {
@@ -331,6 +328,7 @@ describe("currency and checkout payload", () => {
     });
     expect(billing.country).toBe("GB");
     expect(billing.name).toBe("Alex Stone");
+    expect(parseCheckoutBilling({ ...billing, country: "FR" } as never).country).toBe("FR");
   });
 });
 

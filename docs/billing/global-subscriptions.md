@@ -1,17 +1,19 @@
 # Global subscription checkout — implementation and launch gates
 
-Status: implementation branch, **not certified for live payment acceptance**. Updated 30 October 2026.
+Status: automatic localization implemented in PR #34, **not certified for live payment acceptance**. Updated 30 October 2026.
 
 ## Scope
 
 - LinkBooks subscription payments **to the LinkBooks platform** (not a connected
   organisation's sales-invoice collections, which require a separate provider integration).
-- Contact and billing address recorded before checkout. ISO 3166-1 alpha-2 billing countries
-  in a dedicated billing selector, independent of the initial six accounting launch markets.
+- Contact and billing address collected before checkout. The public pricing page uses
+  trusted Vercel geolocation; the authenticated checkout uses organisation country.
+  Both display local price/currency automatically with NO country selector.
 - Presentment currencies: INR India; GBP United Kingdom; AUD Australia; NZD New Zealand;
   USD United States, Canada and currently other countries. No FX rate conversion is implied.
-- Server generates final quoted price for the selected billing country and optional promotion.
-  In the UI, the price shown in the order summary must match the country-specific quote.
+- Server generates final quoted price for the resolved billing country and optional promotion.
+  The price in the order summary must match the country-specific quote; unrecognised
+  locations receive a disclosed USD fallback. Browser changes cannot override region.
 - Stripe Checkout for customers in eligible countries. Payment method selection is dynamic
   based on account configuration, country, payment amount and subscription compatibility.
   Stripe may show cards, wallets and other local payment methods; no particular method
@@ -31,9 +33,9 @@ Status: implementation branch, **not certified for live payment acceptance**. Up
 
 | Gate | Status / evidence required |
 | --- | --- |
-| Global billing-country selector | Implemented in this branch; CI pending |
+| Automatic billing-region detection (no selector) | PR #34 implementation; CI and deployed smoke tests required |
 | Server-side provider and country validation | Implemented in this branch; CI pending |
-| Country-specific price quote in UI | Implemented in this branch; CI pending |
+| Country-specific price quote in UI | PR #34 implementation; CI and deployed smoke tests required |
 | Stripe dynamic checkout compatibility | Implemented in this branch; live provider smoke test pending |
 | Stripe async payment activation safety | Improved in this branch; webhook integration exercise pending |
 | Razorpay webhook event ID and activation | Improved in this branch; real sandbox events pending |

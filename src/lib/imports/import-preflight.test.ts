@@ -11,6 +11,14 @@ describe("import preflight", () => {
   it("rejects malformed quoted CSV", () => {
     expect(() => parseImportCsv('name\n"unclosed')).toThrow("Unclosed");
   });
+  it("rejects embedded and trailing quote corruption", () => {
+    expect(() => parseImportCsv('name\\nAc"me')).toThrow("Unexpected quote");
+    expect(() => parseImportCsv('name\\n"Acme"extra')).toThrow("after closing");
+    expect(() => parseImportCsv('name\\n"Acme""extra')).toThrow("Unclosed");
+  });
+  it("accepts quoted delimiters and adjacent quoted cells", () => {
+    expect(parseImportCsv('a,b\\n"x,y","z"')).toEqual([["a", "b"], ["x,y", "z"]]);
+  });
   it("detects missing required columns and values", () => {
     const missing = previewImportCsv("email\nperson@example.com\n", contacts);
     expect(missing.issues).toContainEqual({ row: 1, field: "name", message: "Required column is missing: name" });

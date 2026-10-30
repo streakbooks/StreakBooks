@@ -34,6 +34,6 @@ describe("fixed asset CSV field-mapping wizard", () => {
     expect(() => fixedAssetSourceHeaders("A,a\n1,2")).toThrow(/Duplicate source column/);
   });
   it("rejects mismatched row widths before any record can be written", () => {
-    expect(() => mapFixedAssetCsv("Asset Code,Description\nONE", {})).toThrow(/column count/);
+    expect(() => mapFixedAssetCsv(fields.map((f) => f.label).join(",") + "\nONE", {})).toThrow(/column count/);
   });
 });

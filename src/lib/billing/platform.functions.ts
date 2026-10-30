@@ -1,4 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getRequestHeader, setResponseHeader } from "@tanstack/react-start/server";
+import { resolveBillingRegion } from "@/lib/billing/region";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { mayBootstrapPlatformOwner } from "@/lib/billing/platform-access";
 
@@ -81,17 +83,20 @@ export const bootstrapPlatformOwner = createServerFn({ method: "POST" })
   });
 
 export const listPublicBillingPlans = createServerFn({ method: "GET" }).handler(async () => {
+  // Region is request-specific: never cache one visitor\u0027s price for another.
+  setResponseHeader("Cache-Control", "private, no-store");
+  const region = resolveBillingRegion({ visitorCountry: getRequestHeader("x-vercel-ip-country") });
   const url = process.env["SUPABASE_URL"];
   const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
-  if (!url || !key) return { ready: false as const, plans: [] };
+  if (!url || !key) return { ready: false as const, plans: [], ...region };
   const { createClient } = await import("@supabase/supabase-js");
   const client = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
   const { data, error } = await client.rpc("list_public_billing_plans" as never);
   if (error) {
     if (error.code === "42883" || error.code === "PGRST202" || error.code === "42P01") {
-      return { ready: false as const, plans: [] };
+      return { ready: false as const, plans: [], ...region };
     }
     throw new Error(error.message);
   }
-  return { ready: true as const, plans: data ?? [] };
+  return { ready: true as const, plans: data ?? [], ...region };
 });

@@ -75,8 +75,8 @@ function Customers() {
                 <TableCell>
                   <Link to="/contacts/$contactId" params={{ contactId: c.id }} className="underline-offset-2 hover:underline">{c.name}</Link>
                 </TableCell>
-                <TableCell>{c.email ?? "—"}</TableCell>
-                <TableCell>{c.payment_terms_days}d</TableCell>
+                <TableCell><Link to="/contacts/$contactId" params={{ contactId: c.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{c.email ?? "—"}</Link></TableCell>
+                <TableCell><Link to="/contacts/$contactId" params={{ contactId: c.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{c.payment_terms_days}d</Link></TableCell>
               </TableRow>
             ))}
           </TableBody>

@@ -112,13 +112,13 @@ function CreditNotesList() {
                         {fmt.date(c.credit_date)}
                       </Link>
                     </TableCell>
-                    <TableCell>{c.contacts?.name ?? "—"}</TableCell>
+                    <TableCell><Link to="/purchases/credit-notes/$creditNoteId" params={{ creditNoteId: c.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{c.contacts?.name ?? "—"}</Link></TableCell>
                     <TableCell>
-                      <StatusBadge status={c.status} />
+                      <Link to="/purchases/credit-notes/$creditNoteId" params={{ creditNoteId: c.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"><StatusBadge status={c.status} /></Link>
                     </TableCell>
-                    <TableCell className="money">{fmt.money(c.total_minor, currency)}</TableCell>
+                    <TableCell className="money"><Link to="/purchases/credit-notes/$creditNoteId" params={{ creditNoteId: c.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{fmt.money(c.total_minor, currency)}</Link></TableCell>
                     <TableCell className="money">
-                      {fmt.money(c.amount_allocated_minor, currency)}
+                      <Link to="/purchases/credit-notes/$creditNoteId" params={{ creditNoteId: c.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{fmt.money(c.amount_allocated_minor, currency)}</Link>
                     </TableCell>
                   </TableRow>
                 ))}

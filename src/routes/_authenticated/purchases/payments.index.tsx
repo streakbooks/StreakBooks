@@ -112,14 +112,14 @@ function PaymentsList() {
               <TableBody>
                 {list.filtered.map((p) => (
                   <TableRow key={p.id}>
-                    <TableCell>{fmt.date(p.payment_date)}</TableCell>
-                    <TableCell>{p.contacts?.name ?? "—"}</TableCell>
+                    <TableCell><Link to="/purchases/payments/$paymentId" params={{ paymentId: p.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{fmt.date(p.payment_date)}</Link></TableCell>
+                    <TableCell><Link to="/purchases/payments/$paymentId" params={{ paymentId: p.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{p.contacts?.name ?? "—"}</Link></TableCell>
                     <TableCell>
-                      <StatusBadge status={p.status} />
+                      <Link to="/purchases/payments/$paymentId" params={{ paymentId: p.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"><StatusBadge status={p.status} /></Link>
                     </TableCell>
-                    <TableCell className="money">{fmt.money(p.amount_minor, currency)}</TableCell>
+                    <TableCell className="money"><Link to="/purchases/payments/$paymentId" params={{ paymentId: p.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{fmt.money(p.amount_minor, currency)}</Link></TableCell>
                     <TableCell className="money">
-                      {fmt.money(p.unallocated_minor, currency)}
+                      <Link to="/purchases/payments/$paymentId" params={{ paymentId: p.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{fmt.money(p.unallocated_minor, currency)}</Link>
                     </TableCell>
                   </TableRow>
                 ))}

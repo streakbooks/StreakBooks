@@ -36,7 +36,6 @@ export const getPlatformBilling = createServerFn({ method: "GET" })
     const role = await requirePlatformRole(context.supabase as never, [
       "platform_owner",
       "platform_finance",
-      "platform_support",
     ]);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const [versions, prices, costs] = await Promise.all([

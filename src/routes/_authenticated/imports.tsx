@@ -110,7 +110,7 @@ function ImportCentre() {
   return (
     <div className="space-y-5">
       <PageHeader title={scopedModule ? `${scopedModule === "fixed_assets" ? "Fixed assets" : scopedModule.charAt(0).toUpperCase() + scopedModule.slice(1)} imports` : "Data import centre"} description={scopedModule ? "Import records for this module. Validate and review before saving; posting requires explicit authorisation." : "Organisation-wide data management: download templates, inspect files and validate before saving."} />
-      {scopedModule && <p className="text-sm text-muted-foreground">Only {scopedModule.replace("_", " ")} import types are shown here. For organisation-wide migrations, open the <Link to="/imports" search={{}} className="underline">full Data Import Centre</Link>.</p>}
+      {scopedModule && <p className="text-sm text-muted-foreground">Only {scopedModule.replace("_", " ")} import types are shown here. For organisation-wide migrations, open the <Link to="/imports" search={{ module: undefined }} className="underline">full Data Import Centre</Link>.</p>}
       <div className="rounded-xl border p-5 space-y-4">
         <label className="block text-sm font-medium" htmlFor="import-kind">Import type</label>
         <select id="import-kind" className="w-full rounded-md border bg-background p-2" value={selected} onChange={(e) => { setSelected(Number(e.target.value)); setCsv(""); setFileName(""); setImportResult(null); setProjectResult(null); setSalesResult(null); setBillResult(null); }}>

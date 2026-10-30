@@ -45,8 +45,8 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 
 export const Route = createFileRoute("/_authenticated/contacts/$contactId")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    tab: ["overview", "edit", "people", "groups", "activity"].includes(String(search.tab)) ? String(search.tab) : "overview",
+  validateSearch: (search: Record<string, unknown>): { tab?: string } => ({
+    tab: ["overview", "edit", "people", "groups", "activity"].includes(String(search["tab"])) ? String(search["tab"]) : "overview",
   }),
   head: () => ({ meta: [{ title: "Contact — LinkBooks" }] }),
   component: ContactDetail,

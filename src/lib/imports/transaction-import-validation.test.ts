@@ -32,6 +32,6 @@ describe("Sales and Purchases import preflight (non-posting)", () => {
   });
   it("rejects zero quantity and invalid CSV without writes", () => {
     expect(() => prepareTransactionCsv(`${sales}\nI-1,Acme,2026-10-01,2026-10-31,4000,Test,0,1,`, "sales", "USD")).toThrow(/positive/);
-    expect(() => prepareTransactionCsv(`Invoice Number,Customer\nI-1,Acme`, "sales", "USD")).toThrow(/required column/);
+    expect(() => prepareTransactionCsv(`Invoice Number,Customer\nI-1,Acme`, "sales", "USD")).toThrow(/required column is missing/i);
   });
 });

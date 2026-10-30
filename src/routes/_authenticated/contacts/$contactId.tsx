@@ -567,11 +567,10 @@ function ContactDetail() {
                           {i.invoice_date}
                         </Link>
                       </TableCell>
-                      <TableCell>{i.invoice_number ?? "—"}</TableCell>
-                      <TableCell>{i.status}</TableCell>
+                      <TableCell><Link to="/sales/invoices/$invoiceId" params={{ invoiceId: i.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" aria-label={`Open invoice ${i.invoice_number ?? i.id}: ${i.invoice_number ?? "—"}`}>{i.invoice_number ?? "—"}</Link></TableCell>
+                      <TableCell><Link to="/sales/invoices/$invoiceId" params={{ invoiceId: i.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" aria-label={`Open invoice ${i.invoice_number ?? i.id}: ${i.status}`}>{i.status}</Link></TableCell>
                       <TableCell className="text-right">
-                        {fromMinorUnits(i.total_minor, i.currency_code ?? currency)}{" "}
-                        {i.currency_code ?? ""}
+                        <Link to="/sales/invoices/$invoiceId" params={{ invoiceId: i.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" aria-label={`Open invoice ${i.invoice_number ?? i.id}: ${`${fromMinorUnits(i.total_minor, i.currency_code ?? currency)} ${i.currency_code ?? ""}`}`}>{`${fromMinorUnits(i.total_minor, i.currency_code ?? currency)} ${i.currency_code ?? ""}`}</Link>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -608,11 +607,10 @@ function ContactDetail() {
                           {b.bill_date}
                         </Link>
                       </TableCell>
-                      <TableCell>{b.bill_number ?? "—"}</TableCell>
-                      <TableCell>{b.status}</TableCell>
+                      <TableCell><Link to="/purchases/bills/$billId" params={{ billId: b.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" aria-label={`Open bill ${b.bill_number ?? b.id}: ${b.bill_number ?? "—"}`}>{b.bill_number ?? "—"}</Link></TableCell>
+                      <TableCell><Link to="/purchases/bills/$billId" params={{ billId: b.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" aria-label={`Open bill ${b.bill_number ?? b.id}: ${b.status}`}>{b.status}</Link></TableCell>
                       <TableCell className="text-right">
-                        {fromMinorUnits(b.total_minor, b.currency_code ?? currency)}{" "}
-                        {b.currency_code ?? ""}
+                        <Link to="/purchases/bills/$billId" params={{ billId: b.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" aria-label={`Open bill ${b.bill_number ?? b.id}: ${`${fromMinorUnits(b.total_minor, b.currency_code ?? currency)} ${b.currency_code ?? ""}`}`}>{`${fromMinorUnits(b.total_minor, b.currency_code ?? currency)} ${b.currency_code ?? ""}`}</Link>
                       </TableCell>
                     </TableRow>
                   ))}

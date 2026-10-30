@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ArrowLeft, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -74,11 +74,14 @@ export function CheckoutForm({
   }));
   const [method, setMethod] = useState<PayMethodId>("card");
   const [error, setError] = useState("");
+  const initialCountryApplied = useRef(false);
   const currency = billing.country ? checkoutCurrencyForCountry(billing.country) : null;
   const dueMinor = quote && quote.currency === currency ? quote.dueMinor : null;
   const available = paymentMethodsFor(billing.country, providers).filter((item) => item.available);
 
   useEffect(() => {
+    if (initialCountryApplied.current) return;
+    initialCountryApplied.current = true;
     const region = billingCountryFromLocale(window.navigator.language);
     if (!region) return;
     setBilling((current) => (current.country ? current : { ...current, country: region }));

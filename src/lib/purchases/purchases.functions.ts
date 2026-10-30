@@ -1,4 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
+import { prepareTransactionCsv } from "@/lib/imports/transaction-import-validation";
+import { isRateEffective } from "@/lib/tax/tax-math";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
@@ -1171,10 +1173,7 @@ export const checkDuplicateSupplierBill = createServerFn({ method: "GET" })
     return { duplicate: true as const, matches };
   });
 
-export const saveBillDraft = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: {
+function parseBillDraftInput(input: {
       companyId: string;
       billId?: string;
       contactId: string;
@@ -1198,7 +1197,7 @@ export const saveBillDraft = createServerFn({ method: "POST" })
         country?: string;
       };
       lines: BillLineIn[];
-    }) => {
+    } ) {
       if (
         !/^\d{4}-\d{2}-\d{2}$/.test(input.billDate) ||
         !/^\d{4}-\d{2}-\d{2}$/.test(input.dueDate)
@@ -1258,9 +1257,12 @@ export const saveBillDraft = createServerFn({ method: "POST" })
           supplierAddress: input.supplierAddress !== undefined,
         },
       };
-    },
-  )
-  .handler(async ({ data, context }) => {
+    }
+
+async function saveBillDraftCore(
+  data: ReturnType<typeof parseBillDraftInput>,
+  context: { supabase: Parameters<typeof assertCompanyPermission>[0]; userId: string },
+) {
     const { supabase, userId } = context;
     await assertCompanyPermission(supabase, data.companyId, "purchases.draft");
     if (
@@ -1531,7 +1533,12 @@ export const saveBillDraft = createServerFn({ method: "POST" })
       supplier_name: (supplierRow as { name?: string } | null)?.name ?? "",
     });
     return { id: billId };
-  });
+}
+
+export const saveBillDraft = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(parseBillDraftInput)
+  .handler(async ({ data, context }) => saveBillDraftCore(data, context));
 
 export async function authoriseBillInternal(
   supabase: Parameters<typeof assertCompanyPermission>[0],
@@ -4946,4 +4953,168 @@ export const getSupplierIntelligence = createServerFn({ method: "GET" })
       payments: paymentRows,
       openOrders: orders ?? [],
     };
+  });
+
+
+/**
+ * Purchase bill CSV import using existing draft and AP posting services.
+ * Server resolves every referenced customer/account/tax code before any writes.
+ * A supplier-invoice unique index prevents concurrent duplicates. This batch
+ * is not atomic: each imported bill is reported individually.
+ */
+export const importPurchaseBillsCsv = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; csvText: string; authorise?: boolean }) => {
+    if (typeof input?.csvText !== "string" || input.csvText.length > 5 * 1024 * 1024) {
+      throw new Error("Invalid CSV or file exceeds 5 MB");
+    }
+    return {
+      companyId: assertUuid(input.companyId),
+      csvText: input.csvText,
+      authorise: input.authorise === true,
+    };
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await assertCompanyPermission(supabase, data.companyId, "purchases.draft");
+    if (data.authorise) await assertCompanyPermission(supabase, data.companyId, "purchases.authorise");
+    const { data: org, error: orgError } = await supabase
+      .from("companies" as never)
+      .select("base_currency" as never)
+      .eq("id" as never, data.companyId as never)
+      .single();
+    if (orgError) throw new Error(orgError.message);
+    const currency = (org as { base_currency: string } | null)?.base_currency;
+    if (!currency) throw new Error("Organisation base currency is missing");
+    const docs = prepareTransactionCsv(data.csvText, "purchases", currency);
+
+    const accounts = new Map<string, string>();
+    for (const code of new Set(docs.flatMap((d) => d.lines.map((l) => l.accountCode)))) {
+      const { data: rows, error } = await supabase
+        .from("accounts" as never)
+        .select("id, account_type, system_key, is_active, is_postable, archived_at" as never)
+        .eq("company_id" as never, data.companyId as never)
+        .eq("code" as never, code as never)
+        .limit(2);
+      if (error) throw new Error(error.message);
+      const available = (rows ?? []) as Array<{
+        id: string; account_type: string; system_key: string | null; is_active: boolean;
+        is_postable: boolean; archived_at: string | null;
+      }>;
+      const row = available[0];
+      if (available.length !== 1 || !row || !row.is_active || !row.is_postable || row.archived_at ||
+        !["asset", "expense"].includes(row.account_type) || row.system_key) {
+        throw new Error(`Account ${code} must be one active postable expense or non-control asset account`);
+      }
+      accounts.set(code, row.id);
+    }
+
+    const suppliers = new Map<string, string>();
+    for (const name of new Set(docs.map((d) => d.contactName))) {
+      const { data: rows, error } = await supabase
+        .from("contacts" as never)
+        .select("id" as never)
+        .eq("company_id" as never, data.companyId as never)
+        .eq("name" as never, name as never)
+        .in("kind" as never, ["supplier", "both"] as never)
+        .eq("is_active" as never, true as never)
+        .limit(2);
+      if (error) throw new Error(error.message);
+      if ((rows ?? []).length !== 1) {
+        throw new Error(`Supplier "${name}" must match exactly one active supplier in this organisation`);
+      }
+      suppliers.set(name, ((rows ?? []) as Array<{ id: string }>)[0]!.id);
+    }
+
+    // Tax rates must be resolved against the bill date, never trusted from CSV.
+    type TaxRow = {
+      id: string; code: string; tax_rates: {
+        rate_bps: number; effective_from: string; effective_to: string | null; is_active: boolean;
+      } | null;
+    };
+    const taxesByDate = new Map<string, Map<string, { id: string; rateBps: number }>>();
+    for (const doc of docs) {
+      if (!taxesByDate.has(doc.documentDate)) {
+        const { data: rows, error } = await supabase
+          .from("tax_codes" as never)
+          .select("id, code, tax_rates(rate_bps, effective_from, effective_to, is_active)" as never)
+          .eq("company_id" as never, data.companyId as never)
+          .eq("is_active" as never, true as never)
+          .in("applies_to" as never, ["purchases", "both"] as never);
+        if (error) throw new Error(error.message);
+        taxesByDate.set(doc.documentDate, new Map(
+          ((rows ?? []) as unknown as TaxRow[])
+            .filter((r) => r.tax_rates && isRateEffective(r.tax_rates, doc.documentDate))
+            .map((r) => [r.code, { id: r.id, rateBps: r.tax_rates!.rate_bps }]),
+        ));
+      }
+      for (const line of doc.lines) {
+        if (line.taxCode && !taxesByDate.get(doc.documentDate)!.has(line.taxCode)) {
+          throw new Error(`Row ${line.sourceRow}: purchase tax code ${line.taxCode} is unavailable on ${doc.documentDate}`);
+        }
+      }
+    }
+
+    const outcome: {
+      createdDrafts: number; authorised: number; skipped: number; failed: number;
+      errors: Array<{ row: number; number: string; draftId: string | null; message: string }>;
+      auditError: string | null;
+    } = { createdDrafts: 0, authorised: 0, skipped: 0, failed: 0, errors: [], auditError: null };
+    for (const doc of docs) {
+      let draftId: string | null = null;
+      try {
+        const { data: existing, error: duplicateError } = await supabase
+          .from("purchase_bills" as never)
+          .select("id" as never)
+          .eq("company_id" as never, data.companyId as never)
+          .eq("contact_id" as never, suppliers.get(doc.contactName)! as never)
+          .ilike("supplier_invoice_number" as never, escapeLikeTerm(doc.documentNumber) as never)
+          .neq("status" as never, "void" as never)
+          .limit(1);
+        if (duplicateError) throw new Error(duplicateError.message);
+        if ((existing ?? []).length) { outcome.skipped++; continue; }
+        const input = parseBillDraftInput({
+          companyId: data.companyId,
+          contactId: suppliers.get(doc.contactName)!,
+          supplierInvoiceNumber: doc.documentNumber,
+          billDate: doc.documentDate,
+          dueDate: doc.dueDate,
+          currencyCode: currency,
+          taxCalculation: "exclusive",
+          lines: doc.lines.map((l) => ({
+            description: l.description,
+            accountId: accounts.get(l.accountCode)!,
+            quantity: l.quantity,
+            unitPriceMinor: l.unitPriceMinor,
+            taxCodeId: l.taxCode ? taxesByDate.get(doc.documentDate)!.get(l.taxCode)!.id : null,
+            taxRateBps: l.taxCode ? taxesByDate.get(doc.documentDate)!.get(l.taxCode)!.rateBps : 0,
+          })),
+        });
+        const saved = await saveBillDraftCore(input, context);
+        draftId = saved.id;
+        outcome.createdDrafts++;
+        if (data.authorise) {
+          await authoriseBillInternal(supabase, userId, data.companyId, saved.id);
+          outcome.authorised++;
+        }
+      } catch (error) {
+        outcome.failed++;
+        outcome.errors.push({
+          row: doc.lines[0]!.sourceRow, number: doc.documentNumber, draftId,
+          message: error instanceof Error ? error.message : "Bill import failed",
+        });
+      }
+    }
+    if (outcome.createdDrafts > 0) {
+      const { error } = await supabase.rpc("record_audit_event" as never, {
+        _company_id: data.companyId,
+        _action: "purchases.bills.import",
+        _entity_type: "purchase_bills",
+        _entity_id: null,
+        _details: { source: "csv", drafts: outcome.createdDrafts, authorised: outcome.authorised,
+          skipped: outcome.skipped, failed: outcome.failed },
+      } as never);
+      if (error) outcome.auditError = error.message;
+    }
+    return outcome;
   });

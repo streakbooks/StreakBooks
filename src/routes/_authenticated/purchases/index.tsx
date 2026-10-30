@@ -53,7 +53,7 @@ function PurchasesOverview() {
         title="Purchases"
         description="Your supplier balances, upcoming payments and bills requiring attention."
         actions={<>
-          <Button variant="outline" size="sm" asChild><Link to="/imports">Import</Link></Button>
+          <Button variant="outline" size="sm" asChild><Link to="/imports" search={{ module: "purchases" }}>Import bills</Link></Button>
           <Button variant="outline" size="sm" asChild><Link to="/contacts/new" search={{ kind: "supplier" }}>New supplier</Link></Button>
           
           <Button variant="outline" size="sm" asChild><Link to="/purchases/expenses/new">New expense</Link></Button>

@@ -18,12 +18,16 @@ export type GlobalSearchHit = {
   currency?: string;
 };
 
+export type SearchCategory = "all" | GlobalSearchHit["entity"];
+
 export const globalSearch = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; q: string }) => {
+  .inputValidator((input: { companyId: string; q: string; category?: SearchCategory }) => {
     const q = (input.q ?? "").trim().slice(0, 80);
     if (q.length < 2) throw new Error("Type at least 2 characters");
-    return { companyId: assertUuid(input.companyId), q };
+    const categories = ["all", "contact", "invoice", "bill", "account", "product", "journal"];
+    const category: SearchCategory = input.category && categories.includes(input.category) ? input.category : "all";
+    return { companyId: assertUuid(input.companyId), q, category };
   })
   .handler(async ({ data, context }): Promise<GlobalSearchHit[]> => {
     await assertCompanyMember(context.supabase, data.companyId);
@@ -201,5 +205,5 @@ export const globalSearch = createServerFn({ method: "GET" })
       });
     }
 
-    return hits.slice(0, 40);
+    return hits.filter((hit) => data.category === "all" || hit.entity === data.category).slice(0, 40);
   });

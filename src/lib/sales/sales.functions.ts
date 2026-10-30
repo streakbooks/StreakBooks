@@ -1327,14 +1327,14 @@ export const importSalesInvoicesCsv = createServerFn({ method: "POST" })
     for (const code of new Set(docs.flatMap((d) => d.lines.map((l) => l.accountCode)))) {
       const { data: rows, error } = await supabase
         .from("accounts" as never)
-        .select("id, is_active, is_postable, archived_at" as never)
+        .select("id, account_type, is_active, is_postable, archived_at" as never)
         .eq("company_id" as never, data.companyId as never)
         .eq("code" as never, code as never)
         .limit(2);
       if (error) throw new Error(error.message);
-      const available = (rows ?? []) as Array<{ id: string; is_active: boolean; is_postable: boolean; archived_at: string | null }>;
-      if (available.length !== 1 || !available[0]!.is_active || !available[0]!.is_postable || available[0]!.archived_at) {
-        throw new Error(`Account ${code} must resolve to one active postable account in this organisation`);
+      const available = (rows ?? []) as Array<{ id: string; account_type: string; is_active: boolean; is_postable: boolean; archived_at: string | null }>;
+      if (available.length !== 1 || !available[0]!.is_active || !available[0]!.is_postable || available[0]!.archived_at || available[0]!.account_type !== "income") {
+        throw new Error(`Account ${code} must resolve to one active postable income account in this organisation`);
       }
       accounts.set(code, available[0]!.id);
     }

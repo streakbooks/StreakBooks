@@ -126,6 +126,9 @@ function ContactDetail() {
   const [personEmail, setPersonEmail] = useState("");
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [transactionSearch, setTransactionSearch] = useState("");
+  const [transactionStatus, setTransactionStatus] = useState("all");
+  const [transactionSort, setTransactionSort] = useState("newest");
 
   useEffect(() => {
     if (!c) return;
@@ -536,6 +539,39 @@ function ContactDetail() {
             />
           ) : (
             <>
+              <div className="mb-4 flex flex-wrap items-end gap-3" aria-label="Transaction filters">
+                <div className="min-w-48 flex-1 space-y-1">
+                  <Label htmlFor="contact-transaction-search">Search transactions</Label>
+                  <Input id="contact-transaction-search" placeholder="Number, status, date or amount" value={transactionSearch} onChange={(e) => setTransactionSearch(e.target.value)} />
+                </div>
+                <div className="w-40 space-y-1">
+                  <Label>Status</Label>
+                  <Select value={transactionStatus} onValueChange={setTransactionStatus}>
+                    <SelectTrigger aria-label="Filter transaction status"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All statuses</SelectItem>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="awaiting">Awaiting</SelectItem>
+                      <SelectItem value="paid">Paid</SelectItem>
+                      <SelectItem value="partly">Partly paid</SelectItem>
+                      <SelectItem value="overdue">Overdue</SelectItem>
+                      <SelectItem value="void">Void</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="w-40 space-y-1">
+                  <Label>Sort</Label>
+                  <Select value={transactionSort} onValueChange={setTransactionSort}>
+                    <SelectTrigger aria-label="Sort transactions"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="newest">Newest first</SelectItem>
+                      <SelectItem value="oldest">Oldest first</SelectItem>
+                      <SelectItem value="highest">Highest total</SelectItem>
+                      <SelectItem value="lowest">Lowest total</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
               <h3 className="mb-2 text-sm text-muted-foreground">Sales invoices</h3>
               <Table>
                 <TableHeader>
@@ -556,7 +592,16 @@ function ContactDetail() {
                       total_minor: number;
                       currency_code?: string | null;
                     }>
-                  ).map((i) => (
+                  ).filter((row) => {
+                    const query = transactionSearch.trim().toLowerCase();
+                    const searchable = [row.invoice_number ?? "", row.invoice_date, row.status, fromMinorUnits(row.total_minor, row.currency_code ?? currency)].join(" ").toLowerCase();
+                    const status = row.status.toLowerCase().replace(/[\\s_-]/g, "");
+                    return (!query || searchable.includes(query)) && (transactionStatus === "all" || status.includes(transactionStatus));
+                  }).sort((a, b) => {
+                    if (transactionSort === "highest") return b.total_minor - a.total_minor;
+                    if (transactionSort === "lowest") return a.total_minor - b.total_minor;
+                    return transactionSort === "oldest" ? a.invoice_date.localeCompare(b.invoice_date) : b.invoice_date.localeCompare(a.invoice_date);
+                  }).map((i) => (
                     <TableRow key={i.id}>
                       <TableCell>
                         <Link
@@ -596,7 +641,16 @@ function ContactDetail() {
                       total_minor: number;
                       currency_code?: string | null;
                     }>
-                  ).map((b) => (
+                  ).filter((row) => {
+                    const query = transactionSearch.trim().toLowerCase();
+                    const searchable = [row.bill_number ?? "", row.bill_date, row.status, fromMinorUnits(row.total_minor, row.currency_code ?? currency)].join(" ").toLowerCase();
+                    const status = row.status.toLowerCase().replace(/[\\s_-]/g, "");
+                    return (!query || searchable.includes(query)) && (transactionStatus === "all" || status.includes(transactionStatus));
+                  }).sort((a, b) => {
+                    if (transactionSort === "highest") return b.total_minor - a.total_minor;
+                    if (transactionSort === "lowest") return a.total_minor - b.total_minor;
+                    return transactionSort === "oldest" ? a.bill_date.localeCompare(b.bill_date) : b.bill_date.localeCompare(a.bill_date);
+                  }).map((b) => (
                     <TableRow key={b.id}>
                       <TableCell>
                         <Link

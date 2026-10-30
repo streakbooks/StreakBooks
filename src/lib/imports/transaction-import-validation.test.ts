@@ -34,4 +34,17 @@ describe("Sales and Purchases import preflight (non-posting)", () => {
     expect(() => prepareTransactionCsv(`${sales}\nI-1,Acme,2026-10-01,2026-10-31,4000,Test,0,1,`, "sales", "USD")).toThrow(/positive/);
     expect(() => prepareTransactionCsv(`Invoice Number,Customer\nI-1,Acme`, "sales", "USD")).toThrow(/required column is missing/i);
   });
+  it("groups invoice numbers case-insensitively for retry protection", () => {
+    const docs = prepareTransactionCsv(`${sales}\nI-1,Acme,2026-10-01,2026-10-31,4000,A,1,1,\ni-1,Acme,2026-10-01,2026-10-31,4000,B,1,2,`, "sales", "USD");
+    expect(docs).toHaveLength(1);
+    expect(docs[0]!.lines).toHaveLength(2);
+  });
+  it("keeps identical bill numbers for different suppliers separate", () => {
+    const docs = prepareTransactionCsv(`${bills}\nB-1,Alpha,2026-10-01,2026-10-31,6000,A,1,1\nB-1,Beta,2026-10-01,2026-10-31,6000,B,1,1`, "purchases", "USD");
+    expect(docs).toHaveLength(2);
+  });
+  it("rejects a zero-value bill", () => {
+    expect(() => prepareTransactionCsv(`${bills}\nB-0,Alpha,2026-10-01,2026-10-31,6000,A,1,0`, "purchases", "USD")).toThrow(/no monetary value/);
+  });
+
 });

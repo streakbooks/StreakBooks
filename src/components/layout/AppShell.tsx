@@ -6,8 +6,9 @@ import {
   useRouter,
   useRouterState,
 } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
-import { ChevronRight, LogOut, Menu, PanelLeftClose, PanelLeftOpen, UserRound } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { ChevronRight, LogOut, Menu, PanelLeftClose, PanelLeftOpen, ShieldCheck, UserRound } from "lucide-react";
 import { NAV_GROUPS, navItems, type NavItem } from "@/lib/nav";
 import { buildBreadcrumbs } from "@/lib/breadcrumbs";
 import { cn } from "@/lib/utils";
@@ -19,6 +20,7 @@ import { GlobalSearch } from "@/components/layout/GlobalSearch";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { CreateNewMenu } from "@/components/create-new/CreateNewMenu";
 import { BillingAccessBanner } from "@/components/billing/BillingAccessBanner";
+import { getPlatformAdminIdentity } from "@/lib/platform-admin/platform-admin.functions";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -38,6 +40,13 @@ function UserMenu() {
   const { user } = useRouteContext({ from: "/_authenticated" });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const loadPlatformIdentity = useServerFn(getPlatformAdminIdentity);
+  const platformIdentity = useQuery({
+    queryKey: ["platform-admin-identity"],
+    queryFn: () => loadPlatformIdentity(),
+    retry: false,
+    staleTime: 60_000,
+  });
   const fullName = (user.user_metadata?.["full_name"] as string | undefined) ?? "";
 
   async function handleSignOut() {
@@ -64,6 +73,14 @@ function UserMenu() {
           <div className="truncate text-xs text-muted-foreground">{user.email}</div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        {platformIdentity.data?.role ? (
+          <DropdownMenuItem asChild>
+            <Link to="/platform-admin">
+              <ShieldCheck className="size-4" />
+              Platform Control
+            </Link>
+          </DropdownMenuItem>
+        ) : null}
         <DropdownMenuItem asChild>
           <Link to="/profile">
             <UserRound className="size-4" />
@@ -241,7 +258,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     select: (s) => {
       const path = s.location.pathname;
       const match = navItems.find((n) => (n.to === "/" ? path === "/" : path.startsWith(n.to)));
-      return match?.label ?? "LinkBooks";
+      return path.startsWith("/platform-admin") ? "Platform Control" : match?.label ?? "LinkBooks";
     },
   });
 

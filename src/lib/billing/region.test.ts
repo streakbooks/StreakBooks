@@ -34,4 +34,4 @@ describe("automatic subscription billing region", () => {
     expect(() => assertCheckoutRegion("IN", "US")).toThrow(/billing region has changed/i);
     expect(() => assertCheckoutRegion("us", "US")).not.toThrow();
   });
-}
+});

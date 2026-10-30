@@ -100,14 +100,21 @@ export function prepareTransactionCsv(
       sourceRow, documentNumber, contactName, documentDate, dueDate,
       accountCode, description, quantity, unitPriceMinor, taxCode,
     };
-    const prior = documents.get(documentNumber);
+    const key = kind === "sales" ? documentNumber.toLocaleLowerCase("en-US")
+      : JSON.stringify([contactName.toLocaleLowerCase("en-US"), documentNumber.toLocaleLowerCase("en-US")]);
+    const prior = documents.get(key);
     if (prior) {
       if (prior.contactName !== contactName || prior.documentDate !== documentDate || prior.dueDate !== dueDate) {
         throw new Error(`Row ${sourceRow}: conflicting header for document ${documentNumber}`);
       }
       prior.lines.push(line);
     } else {
-      documents.set(documentNumber, { documentNumber, contactName, documentDate, dueDate, lines: [line] });
+      documents.set(key, { documentNumber, contactName, documentDate, dueDate, lines: [line] });
+    }
+  }
+  for (const doc of documents.values()) {
+    if (!doc.lines.some((line) => line.unitPriceMinor > 0)) {
+      throw new Error(`Row ${doc.lines[0]!.sourceRow}: document ${doc.documentNumber} has no monetary value`);
     }
   }
   return [...documents.values()];

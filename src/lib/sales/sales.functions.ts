@@ -1378,7 +1378,7 @@ export const importSalesInvoicesCsv = createServerFn({ method: "POST" })
           .from("sales_invoices" as never)
           .select("id" as never)
           .eq("company_id" as never, data.companyId as never)
-          .ilike("invoice_number" as never, doc.documentNumber as never)
+          .ilike("invoice_number" as never, escapeLikeLiteral(doc.documentNumber) as never)
           .neq("status" as never, "void" as never)
           .limit(1);
         if (existingError) throw new Error(existingError.message);

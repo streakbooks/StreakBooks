@@ -137,7 +137,7 @@ export function CreateNewMenu() {
   }
 
   function openAction(action: CreateAction) {
-    if (!actionIsRunnable(action, role)) return;
+    if (!actionIsRunnable(action, role, company?.permissions)) return;
     persist(rememberAction(prefs, action.id));
     setMenuOpen(false);
     setQuery("");
@@ -224,7 +224,9 @@ export function CreateNewMenu() {
             <div className="flex items-start justify-between gap-4 px-5 pt-5">
               <div>
                 <h2 className="text-lg font-semibold tracking-tight">Create new</h2>
-                <p className="text-sm text-muted-foreground">Choose an action to open its flyover</p>
+                <p className="text-sm text-muted-foreground">
+                  Choose an action to open its flyover
+                </p>
               </div>
               <button
                 type="button"
@@ -241,7 +243,9 @@ export function CreateNewMenu() {
                   ref={searchRef}
                   value={query}
                   aria-label="Search create actions"
-                  aria-activedescendant={results[activeIndex] ? `${menuId}-${results[activeIndex].id}` : undefined}
+                  aria-activedescendant={
+                    results[activeIndex] ? `${menuId}-${results[activeIndex].id}` : undefined
+                  }
                   placeholder="Search transactions and actions..."
                   className="h-11 rounded-xl pr-10"
                   onChange={(event) => setQuery(event.target.value)}
@@ -258,6 +262,7 @@ export function CreateNewMenu() {
                     icon={Star}
                     actions={favouriteActions}
                     role={role}
+                    permissions={company?.permissions}
                     prefs={prefs}
                     onOpen={openAction}
                     onToggle={(id) => persist(toggleFavourite(prefs, id))}
@@ -267,6 +272,7 @@ export function CreateNewMenu() {
                     icon={Clock}
                     actions={recentActions}
                     role={role}
+                    permissions={company?.permissions}
                     prefs={prefs}
                     onOpen={openAction}
                     onToggle={(id) => persist(toggleFavourite(prefs, id))}
@@ -281,6 +287,7 @@ export function CreateNewMenu() {
                     icon={icon}
                     actions={results.filter((action) => action.group === group)}
                     role={role}
+                    permissions={company?.permissions}
                     prefs={prefs}
                     activeId={results[activeIndex]?.id}
                     menuId={menuId}
@@ -346,6 +353,7 @@ function ActionCard({
   icon: Icon,
   actions,
   role,
+  permissions,
   prefs,
   activeId,
   menuId,
@@ -356,6 +364,7 @@ function ActionCard({
   icon: LucideIcon;
   actions: CreateAction[];
   role: string | null | undefined;
+  permissions?: readonly string[] | undefined;
   prefs: CreatePrefs;
   activeId?: string | undefined;
   menuId?: string;
@@ -371,8 +380,8 @@ function ActionCard({
       </h3>
       <ul>
         {actions.map((action) => {
-          const runnable = actionIsRunnable(action, role);
-          const allowed = permissionsForRole(role).includes(action.permission);
+          const runnable = actionIsRunnable(action, role, permissions);
+          const allowed = (permissions ?? permissionsForRole(role)).includes(action.permission);
           const reason = allowed
             ? (action.blocker ?? "This action is unavailable.")
             : "You do not have permission for this action.";
@@ -380,10 +389,7 @@ function ActionCard({
             <li key={`${title}-${action.id}`}>
               <div
                 id={menuId ? `${menuId}-${action.id}` : undefined}
-                className={cn(
-                  "flex items-center rounded-lg",
-                  activeId === action.id && "bg-muted",
-                )}
+                className={cn("flex items-center rounded-lg", activeId === action.id && "bg-muted")}
               >
                 <button
                   type="button"
@@ -398,12 +404,21 @@ function ActionCard({
                 </button>
                 <button
                   type="button"
-                  aria-label={prefs.favourites.includes(action.id) ? `Unfavourite ${action.label}` : `Favourite ${action.label}`}
+                  aria-label={
+                    prefs.favourites.includes(action.id)
+                      ? `Unfavourite ${action.label}`
+                      : `Favourite ${action.label}`
+                  }
                   aria-pressed={prefs.favourites.includes(action.id)}
                   className="rounded-md p-2 text-muted-foreground hover:text-foreground"
                   onClick={() => onToggle(action.id)}
                 >
-                  <Star className={cn("size-3.5", prefs.favourites.includes(action.id) && "fill-current text-foreground")} />
+                  <Star
+                    className={cn(
+                      "size-3.5",
+                      prefs.favourites.includes(action.id) && "fill-current text-foreground",
+                    )}
+                  />
                 </button>
               </div>
             </li>

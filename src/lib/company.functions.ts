@@ -27,6 +27,7 @@ export type CompanySummary = {
   locale?: string | null;
   date_format?: string | null;
   role: CompanyRole;
+  permissions?: Permission[];
 };
 
 export type CompanyContext = {
@@ -43,22 +44,9 @@ export const getCompanyContext = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<CompanyContext> => {
     const { supabase, userId } = context;
 
-    const { data: memberships, error } = await supabase
-      .from("company_members")
-      .select(
-        "role, companies!inner(id, name, legal_name, country_code, base_currency, fiscal_year_end_month, fiscal_year_end_day, timezone, is_demo, archived_at)",
-      )
-      .eq("user_id", userId)
-      .eq("status", "active");
+    const { data: rows, error } = await supabase.rpc("platform_company_context" as never);
     if (error) throw new Error(error.message);
-
-    const companies: CompanySummary[] = (memberships ?? [])
-      .map((m) => ({
-        ...(m.companies as Omit<CompanySummary, "role">),
-        role: m.role as CompanyRole,
-      }))
-      .filter((c) => !c.archived_at)
-      .sort((a, b) => Number(a.is_demo) - Number(b.is_demo) || a.name.localeCompare(b.name));
+    const companies = (rows ?? []) as unknown as CompanySummary[];
 
     // locale / date_format are display preferences (U-08); a failure here must not block the app.
     if (companies.length > 0) {
@@ -299,24 +287,9 @@ export const getActiveCompanyPermissions = createServerFn({ method: "GET" })
       permissions: Permission[];
     }> => {
       const { supabase, userId } = context;
-      const { data: memberships, error } = await supabase
-        .from("company_members")
-        .select("role, companies!inner(id, archived_at, is_demo)")
-        .eq("user_id", userId)
-        .eq("status", "active");
+      const { data: rows, error } = await supabase.rpc("platform_company_context" as never);
       if (error) throw new Error(error.message);
-
-      const companies = (memberships ?? [])
-        .map((m) => {
-          const c = m.companies as { id: string; archived_at: string | null; is_demo: boolean };
-          return {
-            id: c.id,
-            archived_at: c.archived_at,
-            is_demo: c.is_demo,
-            role: m.role as CompanyRole,
-          };
-        })
-        .filter((c) => !c.archived_at);
+      const companies = (rows ?? []) as unknown as CompanySummary[];
 
       const { data: profile } = await supabase
         .from("profiles")
@@ -335,7 +308,7 @@ export const getActiveCompanyPermissions = createServerFn({ method: "GET" })
       return {
         companyId: active.id,
         role: active.role,
-        permissions: [...permissionsForRole(active.role)],
+        permissions: active.permissions ?? [...permissionsForRole(active.role)],
       };
     },
   );

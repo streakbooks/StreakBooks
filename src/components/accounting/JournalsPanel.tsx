@@ -74,7 +74,9 @@ export function JournalsPanel({
   const fetchJournals = useServerFn(listJournals);
   const fetchDetail = useServerFn(getJournalDetail);
   const reverse = useServerFn(reversePostedJournal);
-  const canReverse = roleHasPermission(company?.role ?? "read_only", "journals.manual");
+  const canReverse =
+    company?.permissions?.includes("journals.manual") ??
+    roleHasPermission(company?.role ?? "read_only", "journals.manual");
 
   const [search, setSearch] = useState("");
   const [source, setSource] = useState("");

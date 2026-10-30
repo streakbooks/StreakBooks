@@ -47,10 +47,16 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function AuthenticatedLayout() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  if (pathname === "/platform" || pathname.startsWith("/platform/")) return <Outlet />;
+  return <CompanyLayout />;
+}
+
+function CompanyLayout() {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { data, isPending, isError, error, refetch } = useActiveCompany();
-  const onOnboarding = pathname.startsWith("/onboarding");
+  const onOnboarding = pathname.startsWith("/onboarding") || pathname === "/profile";
 
   useEffect(() => {
     if (isPending || isError) return;

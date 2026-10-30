@@ -7,7 +7,7 @@ import { toCsv } from "@/lib/sales/csv";
 const fields = getImportDefinition("fixed_assets", "Asset register").fields;
 const data: Record<string, string> = {
   asset_code: "OLD-123", description: "Imported laptop", acquisition_date: "2024-01-02",
-  cost: "1250.00", accumulated_depreciation: "250.00", asset_account_code: "1500",
+  cost: "1250.00", accumulated_depreciation: "250.00", opening_depreciation_through: "2026-09-30", depreciation_start_date: "2026-10-01", asset_account_code: "1500",
   accumulated_account_code: "1590", expense_account_code: "7000",
   depreciation_method: "straight_line", useful_life_months: "24",
 };

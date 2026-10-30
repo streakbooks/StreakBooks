@@ -65,7 +65,7 @@ export const Route = createFileRoute("/_authenticated/banking/import")({
 const NONE = "none";
 const MAX_FILE_CHARS = 5_000_000;
 function downloadBankTemplate() {
-  const csv = "Date,Description,Amount,Payee,Reference,Bank Transaction ID,Running Balance\r\n2026-10-01,Example payment,125.00,Example Customer,INV-1001,BANK-0001,\r\n";
+  const csv = ["Date,Description,Amount,Payee,Reference,Bank Transaction ID,Running Balance", "2026-10-01,Example payment,125.00,Example Customer,INV-1001,BANK-0001,"].join("\r\n") + "\r\n";
   const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
   const link = document.createElement("a");
   link.href = url;

@@ -1,6 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const hasAccount = Boolean(process.env.E2E_EMAIL && process.env.E2E_PASSWORD);
+const hasAccount = Boolean(
+  (process.env.E2E_EMAIL && process.env.E2E_PASSWORD) || process.env.E2E_PLATFORM_STORAGE_STATE,
+);
 
 /**
  * Authenticated LookupSelect checks. They sign in through /auth.

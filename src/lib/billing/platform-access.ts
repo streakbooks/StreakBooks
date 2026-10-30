@@ -23,7 +23,7 @@ export function canSubmitPlatformDraft(role: PlatformRole | null): boolean {
 }
 
 export function canRefund(role: PlatformRole | null): boolean {
-  return role === "platform_owner" || role === "platform_support" || role === "platform_finance";
+  return role === "platform_owner" || role === "platform_finance";
 }
 
 /** Organisation roles never pass. */

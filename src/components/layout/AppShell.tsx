@@ -31,6 +31,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { PlatformAnnouncements } from "@/components/platform/PlatformAnnouncements";
 
 const COLLAPSE_KEY = "linkbooks-sidebar-collapsed";
 
@@ -68,6 +69,12 @@ function UserMenu() {
           <Link to="/profile">
             <UserRound className="size-4" />
             Profile
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/platform" search={{ section: "overview" }}>
+            <UserRound className="size-4" />
+            Platform control centre
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={handleSignOut}>
@@ -355,6 +362,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <UserMenu />
         </header>
 
+        <PlatformAnnouncements companyId={company?.id ?? null} />
         {company?.id ? <BillingAccessBanner companyId={company.id} /> : null}
         {!isPending && isDemo ? (
           <div

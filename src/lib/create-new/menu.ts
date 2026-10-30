@@ -1,16 +1,19 @@
 import { permissionsForRole } from "@/lib/permissions";
-import {
-  CREATE_ACTIONS,
-  CREATE_GROUP_LABEL,
-  type CreateAction,
-} from "@/lib/create-new/registry";
+import { CREATE_ACTIONS, CREATE_GROUP_LABEL, type CreateAction } from "@/lib/create-new/registry";
 
-export function actionIsRunnable(action: CreateAction, role: string | null | undefined): boolean {
+export function actionIsRunnable(
+  action: CreateAction,
+  role: string | null | undefined,
+  permissions?: readonly string[],
+): boolean {
   if (action.availability !== "ready") return false;
-  return permissionsForRole(role).includes(action.permission);
+  return (permissions ?? permissionsForRole(role)).includes(action.permission);
 }
 
-export function searchCreateActions(query: string, role: string | null | undefined): CreateAction[] {
+export function searchCreateActions(
+  query: string,
+  role: string | null | undefined,
+): CreateAction[] {
   const needle = query.trim().toLowerCase();
   return CREATE_ACTIONS.filter((action) => {
     if (!needle) return true;

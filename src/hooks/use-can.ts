@@ -12,7 +12,7 @@ import { useActiveCompany } from "@/hooks/use-active-company";
  */
 export function useCan() {
   const { company } = useActiveCompany();
-  const granted = permissionsForRole(company?.role);
+  const granted = company?.permissions ?? permissionsForRole(company?.role);
   const can = (permission: Permission): boolean => granted.includes(permission);
   return { can, role: company?.role ?? null, ready: Boolean(company) };
 }

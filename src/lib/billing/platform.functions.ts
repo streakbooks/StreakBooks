@@ -2,7 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeader, setResponseHeader } from "@tanstack/react-start/server";
 import { resolveBillingRegion } from "@/lib/billing/region";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { mayBootstrapPlatformOwner } from "@/lib/billing/platform-access";
 
 type Role = "platform_owner" | "platform_finance" | "platform_support";
 
@@ -38,7 +37,7 @@ export const getPlatformBilling = createServerFn({ method: "GET" })
       "platform_finance",
       "platform_support",
     ]);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = context.supabase;
     const [versions, prices, costs] = await Promise.all([
       supabaseAdmin
         .from("plan_versions" as never)
@@ -60,26 +59,10 @@ export const getPlatformBilling = createServerFn({ method: "GET" })
 
 export const bootstrapPlatformOwner = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const emailClaim = (context.claims as { email?: unknown }).email;
-    const email = typeof emailClaim === "string" ? emailClaim : "";
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { count, error } = await supabaseAdmin
-      .from("platform_roles" as never)
-      .select("user_id" as never, { count: "exact", head: true } as never)
-      .eq("role" as never, "platform_owner" as never);
-    if (error) throw new Error(error.message);
-    if (!mayBootstrapPlatformOwner(email, process.env["PLATFORM_OWNER_EMAIL"], count ?? 0)) {
-      throw new Error(
-        "Platform owner bootstrap is limited to the configured email, and only once.",
-      );
-    }
-    const { error: insertError } = await supabaseAdmin.from("platform_roles" as never).insert({
-      user_id: context.userId,
-      role: "platform_owner",
-    } as never);
-    if (insertError) throw new Error(insertError.message);
-    return { ok: true as const };
+  .handler(async () => {
+    throw new Error(
+      "Platform owners require privileged database provisioning. Online self-promotion is disabled.",
+    );
   });
 
 export const listPublicBillingPlans = createServerFn({ method: "GET" }).handler(async () => {
@@ -90,7 +73,9 @@ export const listPublicBillingPlans = createServerFn({ method: "GET" }).handler(
   const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
   if (!url || !key) return { ready: false as const, plans: [], ...region };
   const { createClient } = await import("@supabase/supabase-js");
-  const client = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+  const client = createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
   const { data, error } = await client.rpc("list_public_billing_plans" as never);
   if (error) {
     if (error.code === "42883" || error.code === "PGRST202" || error.code === "42P01") {

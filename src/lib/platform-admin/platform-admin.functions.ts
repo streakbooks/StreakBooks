@@ -189,11 +189,12 @@ export const updatePlatformPlanVisibility = createServerFn({ method: "POST" })
 
 export const updatePlatformStaff = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { userId: string; role: "platform_finance" | "platform_support" | null; reason: string }) => ({
-    userId: assertUuid(input?.userId),
-    role: input?.role === "platform_finance" || input?.role === "platform_support" ? input.role : null,
-    reason: validateReason(input?.reason),
-  }))
+  .inputValidator((input: { userId: string; role: "platform_finance" | "platform_support" | null; reason: string }) => {
+    if (input?.role !== null && input?.role !== "platform_finance" && input?.role !== "platform_support") {
+      throw new Error("Only platform finance or support roles may be delegated.");
+    }
+    return { userId: assertUuid(input?.userId), role: input.role, reason: validateReason(input?.reason) };
+  })
   .handler(async ({ data, context }) => {
     await requirePlatformScope(context.supabase, context.claims, "manage");
     if (data.userId === context.userId) throw new Error("You cannot modify your own platform role.");

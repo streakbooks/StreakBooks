@@ -38,6 +38,24 @@ BEGIN
     '[{"external_code":"legacy-1","payload":{"name":"Laptop","cost_minor":100000}}]'::jsonb);
   IF (_result->>'skipped')::int<>1 THEN RAISE EXCEPTION 'Case-only duplicate not recognised'; END IF;
 
+  -- The same tenant's references are visible but other tenants cannot read them via RLS.
+  SELECT count(*) INTO _n FROM public.fixed_asset_import_refs;
+  IF _n<>2 THEN RAISE EXCEPTION 'Own import references are not readable'; END IF;
+  PERFORM set_config('request.jwt.claim.sub', '33333333-3333-4333-8333-333333333333', true);
+  SELECT count(*) INTO _n FROM public.fixed_asset_import_refs;
+  IF _n<>0 THEN RAISE EXCEPTION 'RLS exposed another organisation import reference'; END IF;
+  PERFORM set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+
+  -- Reject duplicate references in the same batch before saving anything.
+  BEGIN
+    PERFORM public.import_fixed_asset_register(_id,
+      '[{"external_code":"DUPLICATE-1","payload":{"name":"Chair","cost_minor":100}},
+        {"external_code":"duplicate-1","payload":{"name":"Desk","cost_minor":200}}]'::jsonb);
+    RAISE EXCEPTION 'BAD: duplicate external references in the same file were accepted';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM NOT LIKE '%Duplicate asset reference in CSV%' THEN RAISE; END IF;
+  END;
+
   -- Existing external code with different value MUST fail without changing assets.
   BEGIN
     PERFORM public.import_fixed_asset_register(_id,

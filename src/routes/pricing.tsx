@@ -1,7 +1,9 @@
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 import { listPublicBillingPlans } from "@/lib/billing/platform.functions";
 import { formatMinor, type BillingCurrency } from "@/lib/billing/pricing";
 
@@ -46,7 +48,14 @@ function PricingPage() {
   });
   const [interval, setInterval] = useState<"month" | "year">("month");
   const [currency, setCurrency] = useState<BillingCurrency>("USD");
+  const [signedIn, setSignedIn] = useState(false);
   const plans = (Array.isArray(query.data?.plans) ? query.data.plans : []) as PublicPlan[];
+
+  useEffect(() => {
+    void supabase.auth.getSession().then(({ data }) => {
+      setSignedIn(Boolean(data.session));
+    });
+  }, []);
 
   return (
     <main className="mx-auto max-w-6xl space-y-8 px-4 py-10">
@@ -133,6 +142,27 @@ function PricingPage() {
               {price?.needsReview ? (
                 <p className="text-xs text-muted-foreground">Regional price pending review.</p>
               ) : null}
+              {signedIn ? (
+                <Button type="button" asChild>
+                  <Link
+                    to="/settings"
+                    search={{ section: "subscription", plan: plan.code, interval }}
+                  >
+                    Subscribe
+                  </Link>
+                </Button>
+              ) : (
+                <Button type="button" asChild>
+                  <Link
+                    to="/auth"
+                    search={{
+                      redirect: `/settings?section=subscription&plan=${plan.code}&interval=${interval}`,
+                    }}
+                  >
+                    Subscribe
+                  </Link>
+                </Button>
+              )}
             </article>
           );
         })}

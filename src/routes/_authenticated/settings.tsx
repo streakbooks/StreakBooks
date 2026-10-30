@@ -103,10 +103,17 @@ const CONFIG_SECTIONS: SettingsCategory[] = [
 const UNAVAILABLE_SECTIONS: SettingsCategory[] = ["portals", "fixed_assets"];
 
 export const Route = createFileRoute("/_authenticated/settings")({
-  validateSearch: (search: Record<string, unknown>): { section: string } => {
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { section: string; plan?: string; interval?: "month" | "year" } => {
     const raw = search["section"];
+    const plan = typeof search["plan"] === "string" && search["plan"].length > 0 ? search["plan"] : undefined;
+    const interval =
+      search["interval"] === "month" || search["interval"] === "year" ? search["interval"] : undefined;
     return {
       section: typeof raw === "string" && raw.length > 0 ? raw : "overview",
+      ...(plan ? { plan } : {}),
+      ...(interval ? { interval } : {}),
     };
   },
   head: () => ({
@@ -155,7 +162,7 @@ function SettingsPage() {
 
 function SettingsForCompany({ companyId }: { companyId: string }) {
   const navigate = useNavigate({ from: "/settings" });
-  const { section: sectionRaw } = Route.useSearch();
+  const { section: sectionRaw, plan, interval } = Route.useSearch();
   const section = (sectionRaw || "overview") as SettingsCategory;
   const [navFilter, setNavFilter] = useState("");
   const [cmdOpen, setCmdOpen] = useState(false);
@@ -437,7 +444,13 @@ function SettingsForCompany({ companyId }: { companyId: string }) {
           {section === "features" ? (
             <SettingsFeatureManager companyId={companyId} canEdit={canEdit} />
           ) : null}
-          {section === "subscription" ? <SubscriptionPanel companyId={companyId} /> : null}
+          {section === "subscription" ? (
+            <SubscriptionPanel
+              companyId={companyId}
+              {...(plan ? { initialPlan: plan } : {})}
+              {...(interval ? { initialInterval: interval } : {})}
+            />
+          ) : null}
           {UNAVAILABLE_SECTIONS.includes(section) && sectionMeta ? (
             <SettingsUnavailablePanel meta={sectionMeta} />
           ) : null}

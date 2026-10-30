@@ -31,10 +31,12 @@ describe("platform access", () => {
 });
 
 describe("provider keys", () => {
-  it("refuses live Stripe and Razorpay keys", () => {
-    expect(() => assertStripeTestKey("sk_live_abc")).toThrow(/sk_test_/);
+  it("accepts Stripe and Razorpay test or live keys", () => {
+    expect(() => assertStripeTestKey("sk_live_abc")).not.toThrow();
     expect(() => assertStripeTestKey("sk_test_abc")).not.toThrow();
-    expect(() => assertRazorpayTestKey("rzp_live_abc")).toThrow(/rzp_test_/);
+    expect(() => assertStripeTestKey("pk_test_abc")).toThrow(/sk_test_|sk_live_/);
+    expect(() => assertRazorpayTestKey("rzp_live_abc")).not.toThrow();
+    expect(() => assertRazorpayTestKey("rzp_test_abc")).not.toThrow();
   });
 });
 

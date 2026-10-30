@@ -28,7 +28,15 @@ import {
 
 const billingKey = (companyId: string) => ["billing-overview", companyId] as const;
 
-export function SubscriptionPanel({ companyId }: { companyId: string }) {
+export function SubscriptionPanel({
+  companyId,
+  initialPlan,
+  initialInterval,
+}: {
+  companyId: string;
+  initialPlan?: string;
+  initialInterval?: BillingInterval;
+}) {
   const fetchOverview = useServerFn(getBillingOverview);
   const preview = useServerFn(previewBillingQuote);
   const startCheckout = useServerFn(createBillingCheckout);
@@ -38,7 +46,7 @@ export function SubscriptionPanel({ companyId }: { companyId: string }) {
     queryKey: billingKey(companyId),
     queryFn: () => fetchOverview({ data: { companyId } }),
   });
-  const [interval, setInterval] = useState<BillingInterval>("month");
+  const [interval, setInterval] = useState<BillingInterval>(initialInterval ?? "month");
   const [offerCode, setOfferCode] = useState("");
   const [appliedCode, setAppliedCode] = useState("");
   const [quotes, setQuotes] = useState<Record<string, PriceQuote>>({});
@@ -89,7 +97,7 @@ export function SubscriptionPanel({ companyId }: { companyId: string }) {
   }
 
   const checkout = useMutation({
-    mutationFn: (input: { planCode: string; provider: "stripe" | "razorpay" }) =>
+    mutationFn: (input: { planCode: string; provider: "stripe" | "razorpay"; copy?: boolean }) =>
       startCheckout({
         data: {
           companyId,
@@ -100,7 +108,14 @@ export function SubscriptionPanel({ companyId }: { companyId: string }) {
           offerCode: appliedCode,
         },
       }),
-    onSuccess: (result) => {
+    onSuccess: (result, input) => {
+      if (input.copy) {
+        void navigator.clipboard.writeText(result.url).then(
+          () => toast.success("Payment link copied. Send it to the person who will pay."),
+          () => toast.message(result.url),
+        );
+        return;
+      }
       window.location.assign(result.url);
     },
     onError: (error) => {
@@ -147,6 +162,12 @@ export function SubscriptionPanel({ companyId }: { companyId: string }) {
 
   return (
     <div className="space-y-6">
+      {initialPlan ? (
+        <p className="text-sm">
+          Continue to pay for {initialPlan}. Pay with card opens Stripe. Pay with Razorpay opens the
+          India checkout. Copy card payment link gives a link you can send.
+        </p>
+      ) : null}
       <SubscriptionStatus data={data} />
       <div className="flex flex-wrap items-end gap-3">
         <div className="inline-flex rounded-md border p-1">
@@ -212,6 +233,9 @@ export function SubscriptionPanel({ companyId }: { companyId: string }) {
               current={data.subscription?.planCode === plan.code}
               busy={checkout.isPending || planChange.isPending}
               onCheckout={(provider) => checkout.mutate({ planCode: plan.code, provider })}
+              onCopyLink={(provider) =>
+                checkout.mutate({ planCode: plan.code, provider, copy: true })
+              }
               {...(data.subscription && !data.isDemo
                 ? { onChangePlan: () => planChange.mutate(plan.code) }
                 : {})}
@@ -302,6 +326,7 @@ function PlanCard({
   current,
   busy,
   onCheckout,
+  onCopyLink,
   onChangePlan,
 }: {
   plan: BillingPlanView;
@@ -311,6 +336,7 @@ function PlanCard({
   current: boolean;
   busy: boolean;
   onCheckout: (provider: "stripe" | "razorpay") => void;
+  onCopyLink: (provider: "stripe" | "razorpay") => void;
   onChangePlan?: () => void;
 }) {
   const list = listAmount(plan.monthlyMinor, interval, overview.settings.annualFreeMonths);
@@ -344,25 +370,30 @@ function PlanCard({
         </ul>
         {overview.isDemo ? null : (
           <div className="flex flex-col gap-2">
-            {overview.providers.stripe ? (
-              <Button type="button" disabled={busy} onClick={() => onCheckout("stripe")}>
-                Pay with card
-              </Button>
-            ) : null}
-            {overview.providers.razorpay ? (
-              <Button
-                type="button"
-                variant="outline"
-                disabled={busy}
-                onClick={() => onCheckout("razorpay")}
-              >
-                Pay with Razorpay
-              </Button>
-            ) : null}
+            <Button type="button" disabled={busy} onClick={() => onCheckout("stripe")}>
+              Pay with card
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={busy}
+              onClick={() => onCheckout("razorpay")}
+            >
+              Pay with Razorpay
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={busy}
+              onClick={() => onCopyLink("stripe")}
+            >
+              Copy card payment link
+            </Button>
             {!overview.providers.stripe && !overview.providers.razorpay ? (
               <p className="text-xs text-muted-foreground">
-                Card checkout is waiting for STRIPE_SECRET_KEY, or RAZORPAY_KEY_ID and
-                RAZORPAY_KEY_SECRET. The trial does not need a card.
+                The buttons open Stripe or Razorpay. Add STRIPE_SECRET_KEY, or RAZORPAY_KEY_ID and
+                RAZORPAY_KEY_SECRET, on the server. Use sk_test_ or sk_live_, and rzp_test_ or
+                rzp_live_.
               </p>
             ) : null}
             {onChangePlan && !current ? (

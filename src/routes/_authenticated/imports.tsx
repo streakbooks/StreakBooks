@@ -8,6 +8,8 @@ import { friendlyAuthError } from "@/lib/auth-helpers";
 import { importProductsCsv, type ProductsImportResult } from "@/lib/imports/products-import.functions";
 import { importProjectsCsv, type ProjectsImportResult } from "@/lib/imports/projects-import.functions";
 import { prepareBudgetImportCsv } from "@/lib/imports/budget-import";
+import { prepareFixedAssetsCsv } from "@/lib/imports/fixed-assets-import";
+import { importFixedAssetRegisterCsv, type FixedAssetCsvImportResult } from "@/lib/fixed-assets/fixed-assets.functions";
 import { importBudgetLinesCsv, listBudgets } from "@/lib/budgets/budgets.functions";
 import { importSalesInvoicesCsv } from "@/lib/sales/sales.functions";
 import { importPurchaseBillsCsv } from "@/lib/purchases/purchases.functions";
@@ -52,6 +54,8 @@ function ImportCentre() {
   const [budgetId, setBudgetId] = useState("");
   const [budgetMode, setBudgetMode] = useState<"merge" | "replace">("merge");
   const [budgetResult, setBudgetResult] = useState<{ stored: number; accounts: number; budgetId: string; auditError: string | null } | null>(null);
+  const [fixedAssetResult, setFixedAssetResult] = useState<FixedAssetCsvImportResult | null>(null);
+  const [assetImportAcknowledged, setAssetImportAcknowledged] = useState(false);
 
   const { company } = useActiveCompany();
   const canManageProducts = useCanDo("products.manage");
@@ -66,6 +70,7 @@ function ImportCentre() {
   const importSales = useServerFn(importSalesInvoicesCsv);
   const importBills = useServerFn(importPurchaseBillsCsv);
   const importBudgetLines = useServerFn(importBudgetLinesCsv);
+  const importAssets = useServerFn(importFixedAssetRegisterCsv);
   const fetchBudgets = useServerFn(listBudgets);
   const isBudgetImport = (definitions[selected] ?? definitions[0])?.module === "budgets";
   const budgetsQ = useQuery({
@@ -125,10 +130,20 @@ function ImportCentre() {
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
+  const assetImport = useMutation({
+    mutationFn: () => importAssets({ data: { companyId: company!.id, csvText: csv } }),
+    onSuccess: async (result) => {
+      setFixedAssetResult(result);
+      await queryClient.invalidateQueries({ queryKey: ["fixed-assets", company!.id] });
+      toast.success(`Imported ${result.created} assets; skipped ${result.skipped} identical references.`);
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
   const definition = definitions[selected] ?? definitions[0]!;
   const preview = useMemo(() => {
     if (!csv) return null;
-    try { if (definition.module === "budgets") prepareBudgetImportCsv(csv, company?.base_currency ?? "USD"); return { result: previewImportCsv(csv, definition, { maxRows: ["products", "projects", "budgets"].includes(definition.module) ? 250 : 10_000, uniqueBy: ["products", "projects"].includes(definition.module) ? definition.fields.slice(0, 1).map((f) => f.key) : [] }), error: "" }; }
+    try { if (definition.module === "budgets") prepareBudgetImportCsv(csv, company?.base_currency ?? "USD");
+      if (definition.module === "fixed_assets") prepareFixedAssetsCsv(csv, company?.base_currency ?? "USD"); return { result: previewImportCsv(csv, definition, { maxRows: definition.module === "fixed_assets" ? 100 : ["products", "projects", "budgets"].includes(definition.module) ? 250 : 10_000, uniqueBy: ["products", "projects"].includes(definition.module) ? definition.fields.slice(0, 1).map((f) => f.key) : [] }), error: "" }; }
     catch (error) { return { result: null, error: error instanceof Error ? error.message : "Invalid CSV" }; }
   }, [csv, definition, company?.base_currency]);
   return (
@@ -137,7 +152,7 @@ function ImportCentre() {
       {scopedModule && <p className="text-sm text-muted-foreground">Only {scopedModule.replace("_", " ")} import types are shown here. For organisation-wide migrations, open the <Link to="/imports" search={{ module: undefined }} className="underline">full Data Import Centre</Link>.</p>}
       <div className="rounded-xl border p-5 space-y-4">
         <label className="block text-sm font-medium" htmlFor="import-kind">Import type</label>
-        <select id="import-kind" className="w-full rounded-md border bg-background p-2" value={selected} onChange={(e) => { setSelected(Number(e.target.value)); setCsv(""); setFileName(""); setImportResult(null); setProjectResult(null); setSalesResult(null); setBillResult(null); setBudgetResult(null); }}>
+        <select id="import-kind" className="w-full rounded-md border bg-background p-2" value={selected} onChange={(e) => { setSelected(Number(e.target.value)); setCsv(""); setFileName(""); setImportResult(null); setProjectResult(null); setSalesResult(null); setBillResult(null); setBudgetResult(null); setFixedAssetResult(null); setAssetImportAcknowledged(false); }}>
           {definitions.map((item, i) => <option key={item.module + item.documentType} value={i}>{item.module.replaceAll("_", " ")} — {item.documentType}</option>)}
         </select>
         <div className="flex flex-wrap gap-2">
@@ -154,6 +169,8 @@ function ImportCentre() {
           setSalesResult(null);
           setBillResult(null);
           setBudgetResult(null);
+          setFixedAssetResult(null);
+          setAssetImportAcknowledged(false);
           setFileName(file.name);
           void file.text().then(setCsv).catch(() => { setCsv(""); setFileName("Could not read file"); });
         }} />
@@ -278,9 +295,31 @@ function ImportCentre() {
             </div>}
           </div>
         )}
+        {definition.module === "fixed_assets" && (
+          <div className="space-y-3 rounded-lg border p-3">
+            <p className="text-sm">Import a fixed asset register with external reference tracking. Every row must supply its financial accounts and depreciation terms. The importer checks them in your organisation and saves the entire batch in one database transaction; identical external references are skipped on retries, while conflicting reimports are rejected.</p>
+            <p className="text-sm font-medium">Register import only. This does not post opening cost, accumulated depreciation or acquisition journals. Verify opening general ledger balances separately to avoid double counting.</p>
+            <label className="flex items-start gap-2 text-sm">
+              <input type="checkbox" checked={assetImportAcknowledged} onChange={(e) => setAssetImportAcknowledged(e.currentTarget.checked)} />
+              I understand these are fixed asset register entries only, and I will reconcile opening ledger balances separately.
+            </label>
+            <Button type="button"
+              disabled={!company || !canManageProjects || !assetImportAcknowledged || !preview?.result || preview.result.issues.length > 0 || assetImport.isPending}
+              onClick={() => {
+                if (window.confirm("Import this entire fixed asset register into the selected organisation? No journals will be posted; existing external references will be checked for conflicts.")) assetImport.mutate();
+              }}>
+              {assetImport.isPending ? "Importing asset register…" : "Import fixed asset register"}
+            </Button>
+            {!canManageProjects && <p className="text-sm text-destructive">You need accounts.manage permission to import assets.</p>}
+            {fixedAssetResult && <div role="status" className="space-y-1 text-sm">
+              <p>Created: {fixedAssetResult.created}; skipped identical imports: {fixedAssetResult.skipped}.</p>
+              {fixedAssetResult.assets.map((asset) => <p key={asset.asset_id}>Reference {asset.external_code}: asset ID {asset.asset_id}</p>)}
+            </div>}
+          </div>
+        )}
         <p className="text-sm text-muted-foreground">
           {definition.writeStatus === "implemented"
-            ? definition.module === "products" || definition.module === "projects" || definition.module === "budgets"
+            ? ["products", "projects", "budgets", "fixed_assets"].includes(definition.module)
               ? "A validated import writer is available above. Explicit confirmation is required; budgets do not post ledger entries."
               : "An existing module-specific import workflow is available. Validation here is read-only; use the module workflow to save records."
             : definition.module === "sales" && definition.documentType === "Invoices"

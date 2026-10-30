@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { prepareFixedAssetsCsv } from "@/lib/imports/fixed-assets-import";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
@@ -385,6 +386,92 @@ export const saveFixedAsset = createServerFn({ method: "POST" })
       ASSET_MIGRATION,
     );
     return { id };
+  });
+
+export type FixedAssetCsvImportResult = {
+  created: number;
+  skipped: number;
+  assets: Array<{ external_code: string; asset_id: string }>;
+};
+
+/**
+ * Atomic register-only import, backed by import_fixed_asset_register in the migration.
+ * This does NOT post opening balances, AP, tax or depreciation journal entries.
+ */
+export const importFixedAssetRegisterCsv = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: { companyId: string; csvText: string }) => {
+    if (typeof input?.csvText !== "string" || input.csvText.length > 5 * 1024 * 1024) {
+      throw new Error("Invalid asset CSV or file exceeds 5 MB");
+    }
+    return { companyId: companyIdOf(input), csvText: input.csvText };
+  })
+  .handler(async ({ data, context }): Promise<FixedAssetCsvImportResult> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "accounts.manage");
+    const sb = context.supabase as unknown as Sb;
+    const [meta, accounts, typesResult] = await Promise.all([
+      loadCompanyMeta(sb, data.companyId),
+      loadAccountMetas(sb, data.companyId),
+      sb.from("asset_types" as never)
+        .select("id, name, is_active" as never)
+        .eq("company_id" as never, data.companyId as never)
+        .limit(500),
+    ]);
+    if (typesResult.error) throw new Error(typesResult.error.message);
+    const assets = prepareFixedAssetsCsv(data.csvText, meta.baseCurrency);
+    const byCode = new Map<string, typeof accounts[number]>();
+    for (const account of accounts) {
+      const code = account.code.toLocaleLowerCase("en-US");
+      if (byCode.has(code)) throw new Error("Ambiguous chart-of-accounts code " + account.code);
+      byCode.set(code, account);
+    }
+    const activeTypes = new Map<string, string>();
+    for (const type of (typesResult.data ?? []) as Array<{ id: string; name: string; is_active: boolean }>) {
+      if (!type.is_active) continue;
+      const name = type.name.toLocaleLowerCase("en-US");
+      if (activeTypes.has(name)) throw new Error("Ambiguous asset type: " + type.name);
+      activeTypes.set(name, type.id);
+    }
+    const resolve = (code: string, kind: "asset" | "expense", row: number) => {
+      const account = byCode.get(code.toLocaleLowerCase("en-US"));
+      if (!account || !account.is_active || !account.is_postable || account.is_control || account.account_type !== kind) {
+        throw new Error("Row " + row + ": " + code + " must match one active, non-control " + kind + " account");
+      }
+      return account.id;
+    };
+    const rows = assets.map((a) => {
+      const assetTypeId = a.assetTypeName ? activeTypes.get(a.assetTypeName.toLocaleLowerCase("en-US")) : null;
+      if (a.assetTypeName && !assetTypeId) {
+        throw new Error("Row " + a.sourceRow + ": asset type " + a.assetTypeName + " was not found in this organisation");
+      }
+      return {
+        external_code: a.externalCode,
+        payload: {
+          asset_type_id: assetTypeId,
+          name: a.name,
+          description: null,
+          notes: "Imported asset reference: " + a.externalCode,
+          purchase_date: a.purchaseDate,
+          depreciation_start_date: a.depreciationStartDate,
+          cost_minor: a.costMinor,
+          residual_minor: a.residualMinor,
+          opening_accumulated_minor: a.openingAccumulatedMinor,
+          depreciation_method: a.method,
+          useful_life_months: a.usefulLifeMonths,
+          annual_rate_bps: a.annualRateBps,
+          asset_account_id: resolve(a.assetAccountCode, "asset", a.sourceRow),
+          accumulated_account_id: resolve(a.accumulatedAccountCode, "asset", a.sourceRow),
+          expense_account_id: resolve(a.expenseAccountCode, "expense", a.sourceRow),
+          source_bill_id: null,
+          source_bill_line_id: null,
+        },
+      };
+    });
+    return await callRpc<FixedAssetCsvImportResult>(
+      sb, "import_fixed_asset_register",
+      { _company_id: data.companyId, _rows: rows },
+      "Fixed asset import requires database migration 20261030153000_fixed_asset_register_csv_import.",
+    );
   });
 
 export const deleteFixedAsset = createServerFn({ method: "POST" })

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -45,12 +45,17 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 
 export const Route = createFileRoute("/_authenticated/contacts/$contactId")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    tab: ["overview", "edit", "people", "groups", "activity"].includes(String(search.tab)) ? String(search.tab) : "overview",
+  }),
   head: () => ({ meta: [{ title: "Contact — LinkBooks" }] }),
   component: ContactDetail,
 });
 
 function ContactDetail() {
   const { contactId } = Route.useParams();
+  const { tab } = Route.useSearch();
+  const navigate = useNavigate({ from: Route.fullPath });
   const { company } = useActiveCompany();
   const companyId = company?.id;
   const currency = company?.base_currency ?? "GBP";
@@ -309,7 +314,7 @@ function ContactDetail() {
         </div>
       ) : null}
 
-      <Tabs defaultValue="overview">
+      <Tabs value={tab} onValueChange={(nextTab) => { void navigate({ search: { tab: nextTab }, replace: true, resetScroll: false }); }}>
         <TabsList className="flex h-auto flex-wrap">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="edit">Edit</TabsTrigger>

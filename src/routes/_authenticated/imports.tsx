@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
@@ -7,6 +7,8 @@ import { useCanDo } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { importProductsCsv, type ProductsImportResult } from "@/lib/imports/products-import.functions";
 import { importProjectsCsv, type ProjectsImportResult } from "@/lib/imports/projects-import.functions";
+import { prepareBudgetImportCsv } from "@/lib/imports/budget-import";
+import { importBudgetLinesCsv, listBudgets } from "@/lib/budgets/budgets.functions";
 import { importSalesInvoicesCsv } from "@/lib/sales/sales.functions";
 import { importPurchaseBillsCsv } from "@/lib/purchases/purchases.functions";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -47,6 +49,9 @@ function ImportCentre() {
   const [authoriseImportedInvoices, setAuthoriseImportedInvoices] = useState(false);
   const [billResult, setBillResult] = useState<{ createdDrafts: number; authorised: number; skipped: number; failed: number; auditError: string | null; errors: Array<{ row: number; number: string; draftId: string | null; message: string }> } | null>(null);
   const [authoriseImportedBills, setAuthoriseImportedBills] = useState(false);
+  const [budgetId, setBudgetId] = useState("");
+  const [budgetMode, setBudgetMode] = useState<"merge" | "replace">("merge");
+  const [budgetResult, setBudgetResult] = useState<{ stored: number; accounts: number; budgetId: string; auditError: string | null } | null>(null);
 
   const { company } = useActiveCompany();
   const canManageProducts = useCanDo("products.manage");
@@ -60,6 +65,14 @@ function ImportCentre() {
   const importProjects = useServerFn(importProjectsCsv);
   const importSales = useServerFn(importSalesInvoicesCsv);
   const importBills = useServerFn(importPurchaseBillsCsv);
+  const importBudgetLines = useServerFn(importBudgetLinesCsv);
+  const fetchBudgets = useServerFn(listBudgets);
+  const isBudgetImport = (definitions[selected] ?? definitions[0])?.module === "budgets";
+  const budgetsQ = useQuery({
+    queryKey: ["budgets", company?.id],
+    enabled: Boolean(company?.id && isBudgetImport),
+    queryFn: () => fetchBudgets({ data: { companyId: company!.id } }),
+  });
   const queryClient = useQueryClient();
   const productImport = useMutation({
     mutationFn: () => importProducts({ data: { companyId: company!.id, csvText: csv } }),
@@ -101,19 +114,30 @@ function ImportCentre() {
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
+  const budgetImport = useMutation({
+    mutationFn: () => importBudgetLines({ data: { companyId: company!.id, budgetId, csvText: csv, mode: budgetMode } }),
+    onSuccess: async (result) => {
+      setBudgetResult(result);
+      await queryClient.invalidateQueries({ queryKey: ["budget", company!.id, budgetId] });
+      await queryClient.invalidateQueries({ queryKey: ["budgets", company!.id] });
+      if (result.auditError) toast.warning("Budget saved, but audit logging failed. Review the audit log.");
+      else toast.success(`Imported ${result.accounts} budget accounts and ${result.stored} monthly amounts.`);
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
   const definition = definitions[selected] ?? definitions[0]!;
   const preview = useMemo(() => {
     if (!csv) return null;
-    try { return { result: previewImportCsv(csv, definition, { maxRows: ["products", "projects"].includes(definition.module) ? 250 : 10_000, uniqueBy: ["products", "projects"].includes(definition.module) ? definition.fields.slice(0, 1).map((f) => f.key) : [] }), error: "" }; }
+    try { if (definition.module === "budgets") prepareBudgetImportCsv(csv, company?.base_currency ?? "USD"); return { result: previewImportCsv(csv, definition, { maxRows: ["products", "projects", "budgets"].includes(definition.module) ? 250 : 10_000, uniqueBy: ["products", "projects"].includes(definition.module) ? definition.fields.slice(0, 1).map((f) => f.key) : [] }), error: "" }; }
     catch (error) { return { result: null, error: error instanceof Error ? error.message : "Invalid CSV" }; }
-  }, [csv, definition]);
+  }, [csv, definition, company?.base_currency]);
   return (
     <div className="space-y-5">
       <PageHeader title={scopedModule ? `${scopedModule === "fixed_assets" ? "Fixed assets" : scopedModule.charAt(0).toUpperCase() + scopedModule.slice(1)} imports` : "Data import centre"} description={scopedModule ? "Import records for this module. Validate and review before saving; posting requires explicit authorisation." : "Organisation-wide data management: download templates, inspect files and validate before saving."} />
       {scopedModule && <p className="text-sm text-muted-foreground">Only {scopedModule.replace("_", " ")} import types are shown here. For organisation-wide migrations, open the <Link to="/imports" search={{ module: undefined }} className="underline">full Data Import Centre</Link>.</p>}
       <div className="rounded-xl border p-5 space-y-4">
         <label className="block text-sm font-medium" htmlFor="import-kind">Import type</label>
-        <select id="import-kind" className="w-full rounded-md border bg-background p-2" value={selected} onChange={(e) => { setSelected(Number(e.target.value)); setCsv(""); setFileName(""); setImportResult(null); setProjectResult(null); setSalesResult(null); setBillResult(null); }}>
+        <select id="import-kind" className="w-full rounded-md border bg-background p-2" value={selected} onChange={(e) => { setSelected(Number(e.target.value)); setCsv(""); setFileName(""); setImportResult(null); setProjectResult(null); setSalesResult(null); setBillResult(null); setBudgetResult(null); }}>
           {definitions.map((item, i) => <option key={item.module + item.documentType} value={i}>{item.module.replaceAll("_", " ")} — {item.documentType}</option>)}
         </select>
         <div className="flex flex-wrap gap-2">
@@ -129,6 +153,7 @@ function ImportCentre() {
           setProjectResult(null);
           setSalesResult(null);
           setBillResult(null);
+          setBudgetResult(null);
           setFileName(file.name);
           void file.text().then(setCsv).catch(() => { setCsv(""); setFileName("Could not read file"); });
         }} />
@@ -223,10 +248,40 @@ function ImportCentre() {
             </div>}
           </div>
         )}
+        {definition.module === "budgets" && (
+          <div className="space-y-3 rounded-lg border p-3">
+            <p className="text-sm">Import twelve fiscal months into an existing budget. This updates the planning budget only; it never posts to the general ledger. Account codes must match active income or expense accounts in this organisation. Import is validated before one atomic budget-lines RPC.</p>
+            <label className="block text-sm font-medium" htmlFor="budget-import-target">Target budget</label>
+            <select id="budget-import-target" className="w-full rounded-md border bg-background p-2" value={budgetId} onChange={(e) => { setBudgetId(e.target.value); setBudgetResult(null); }}>
+              <option value="">Select an existing budget</option>
+              {(budgetsQ.data?.budgets ?? []).map((budget) => <option key={budget.id} value={budget.id}>{budget.name} — FY from {budget.fiscal_year_start}</option>)}
+            </select>
+            {budgetsQ.isError && <p className="text-sm text-destructive">Could not load budgets. Check access and try again.</p>}
+            {!budgetsQ.data?.budgets.length && !budgetsQ.isPending && <p className="text-sm">No budgets found. <Link to="/budgets" className="underline">Create a budget</Link> before importing lines.</p>}
+            <label className="block text-sm font-medium" htmlFor="budget-import-mode">How should imported amounts affect the existing budget?</label>
+            <select id="budget-import-mode" className="w-full rounded-md border bg-background p-2" value={budgetMode} onChange={(e) => setBudgetMode(e.target.value as "merge" | "replace")}>
+              <option value="merge">Merge: update only imported account-month combinations</option>
+              <option value="replace">Replace: overwrite all existing budget amounts for this budget</option>
+            </select>
+            <Button type="button" disabled={!company || !canManageProjects || !budgetId || !preview?.result || preview.result.issues.length > 0 || preview.result.duplicates.length > 0 || budgetImport.isPending || budgetsQ.isError}
+              onClick={() => {
+                if (window.confirm(budgetMode === "replace"
+                  ? "REPLACE all existing amounts in this budget with the uploaded CSV? This will overwrite any budget lines not included in the file."
+                  : "Merge the validated monthly budget values into the selected budget? This changes budget planning data but not the general ledger.")) budgetImport.mutate();
+              }}>
+              {budgetImport.isPending ? "Importing budget…" : budgetMode === "replace" ? "Replace budget with CSV" : "Merge budget CSV"}
+            </Button>
+            {!canManageProjects && <p className="text-sm text-destructive">You need accounts.manage permission to import budget lines.</p>}
+            {budgetResult && <div role="status" className="space-y-1 text-sm">
+              <p>Imported budget accounts: {budgetResult.accounts}; monthly amounts stored: {budgetResult.stored}.</p>
+              {budgetResult.auditError && <p className="text-destructive">Audit logging failed: {budgetResult.auditError}. Review the audit log.</p>}
+            </div>}
+          </div>
+        )}
         <p className="text-sm text-muted-foreground">
           {definition.writeStatus === "implemented"
-            ? definition.module === "products" || definition.module === "projects"
-              ? "Master-data writes are available here after validation and explicit confirmation."
+            ? definition.module === "products" || definition.module === "projects" || definition.module === "budgets"
+              ? "A validated import writer is available above. Explicit confirmation is required; budgets do not post ledger entries."
               : "An existing module-specific import workflow is available. Validation here is read-only; use the module workflow to save records."
             : definition.module === "sales" && definition.documentType === "Invoices"
               ? "Invoice drafting and optional AR posting are available above; receipts and credit notes require separate workflows."

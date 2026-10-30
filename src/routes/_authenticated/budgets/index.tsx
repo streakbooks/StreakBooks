@@ -90,11 +90,16 @@ function BudgetsPage() {
         title="Budgets"
         description="Plan income and expenses by account and month for a financial year, then compare with actuals."
         actions={
-          <Button asChild variant="outline" size="sm">
-            <Link to="/reports/$reportId" params={{ reportId: "budget-vs-actual" }}>
-              Budget versus Actual report
-            </Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline" size="sm">
+              <Link to="/imports" search={{ module: "budgets" }}>Import budget CSV</Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/reports/$reportId" params={{ reportId: "budget-vs-actual" }}>
+                Budget versus Actual report
+              </Link>
+            </Button>
+          </div>
         }
       />
 

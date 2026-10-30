@@ -6,7 +6,7 @@ import { sanitiseSearchTerm } from "@/lib/search/sanitise";
 
 export type GlobalSearchHit = {
   id: string;
-  entity: "contact" | "invoice" | "bill" | "account" | "product" | "journal";
+  entity: "contact" | "invoice" | "bill" | "account" | "product" | "journal" | "bank_transaction";
   title: string;
   subtitle: string;
   /** Route path of the specific record (never a list page when a detail page exists). */
@@ -25,7 +25,7 @@ export const globalSearch = createServerFn({ method: "GET" })
   .inputValidator((input: { companyId: string; q: string; category?: SearchCategory }) => {
     const q = (input.q ?? "").trim().slice(0, 80);
     if (q.length < 2) throw new Error("Type at least 2 characters");
-    const categories = ["all", "contact", "invoice", "bill", "account", "product", "journal"];
+    const categories = ["all", "contact", "invoice", "bill", "account", "product", "journal", "bank_transaction"];
     const category: SearchCategory = input.category && categories.includes(input.category) ? input.category : "all";
     return { companyId: assertUuid(input.companyId), q, category };
   })
@@ -37,6 +37,43 @@ export const globalSearch = createServerFn({ method: "GET" })
     const hits: GlobalSearchHit[] = [];
     const companyId = data.companyId;
     const sb = context.supabase;
+
+    // Search actual imported bank transactions, not a navigation shortcut.
+    // Both paths remain scoped to the authenticated organisation and its RLS policies.
+    if (data.category === "all" || data.category === "bank_transaction") {
+      const fields = "id, txn_date, amount_minor, description, external_id, reference, payee, status";
+      const oldFields = "id, txn_date, amount_minor, description, external_id, status";
+      const oldFilter = `description.ilike."${like}",external_id.ilike."${like}"`;
+      const fullFilter = `${oldFilter},reference.ilike."${like}",payee.ilike."${like}"`;
+      const queryBank = (columns: string, filter: string) =>
+        sb.from("bank_transactions" as never)
+          .select(columns as never)
+          .eq("company_id" as never, companyId as never)
+          .or(filter as never)
+          .order("txn_date" as never, { ascending: false })
+          .limit(8);
+      let bankResult = await queryBank(fields, fullFilter);
+      // Older organisations may not have the optional payee/reference columns.
+      if (bankResult.error?.code === "42703" || bankResult.error?.code === "PGRST204") {
+        bankResult = await queryBank(oldFields, oldFilter);
+      }
+      if (bankResult.error) throw new Error(bankResult.error.message);
+      for (const row of (bankResult.data ?? []) as unknown as Array<{
+        id: string; txn_date: string; amount_minor: number; description: string | null;
+        external_id: string | null; reference?: string | null; payee?: string | null; status: string;
+      }>) {
+        hits.push({
+          id: row.id,
+          entity: "bank_transaction",
+          title: row.payee || row.description || row.reference || row.external_id || "Bank transaction",
+          subtitle: [row.txn_date, row.reference, row.status].filter(Boolean).join(" · "),
+          href: "/banking/transactions",
+          search: { q: row.reference || row.external_id || row.description || row.payee || safe, statusGroup: "all" },
+          amount_minor: row.amount_minor,
+        });
+      }
+      if (data.category === "bank_transaction") return hits;
+    }
 
     // Contacts first: their ids let invoices and bills be found by customer / supplier name.
     const contactsRes = await sb

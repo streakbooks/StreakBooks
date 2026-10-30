@@ -145,10 +145,15 @@ async function completePaidStripeInvoice(subscriptionId: string): Promise<void> 
       updated_at: new Date().toISOString(),
     });
   }
-  await markProviderStatus("stripe", subscriptionId, "active", {
+  await markProviderStatus(
+    "stripe",
+    subscriptionId,
+    subscription["status"] === "trialing" ? "trialing" : "active",
+    {
     current_period_end: unixToIso(subscription["current_period_end"]),
     cancel_at_period_end: subscription["cancel_at_period_end"] === true,
-  });
+    },
+  );
 }
 
 async function syncStripeSubscription(subscription: Record<string, unknown>): Promise<void> {
@@ -203,14 +208,20 @@ async function applyRazorpay(
     const periodEnd = unixToIso(entity["current_end"]) ?? unixToIso(entity["end_at"]);
     if (status === "active") {
       // Only an authorised or charged subscription grants paid access.
-      if (!checkoutId) return;
-      await activateCheckout(checkoutId, {
-        status,
-        provider: "razorpay",
-        provider_subscription_id: subscriptionId,
+      if (checkoutId) {
+        await activateCheckout(checkoutId, {
+          status,
+          provider: "razorpay",
+          provider_subscription_id: subscriptionId,
+          current_period_end: periodEnd,
+          cancel_at_period_end: false,
+          updated_at: new Date().toISOString(),
+        });
+      }
+      // Renewals reuse the same checkout and update the existing subscription.
+      await markProviderStatus("razorpay", subscriptionId, "active", {
         current_period_end: periodEnd,
         cancel_at_period_end: false,
-        updated_at: new Date().toISOString(),
       });
     } else {
       // Pending/halted/cancelled events may modify an already activated
@@ -286,7 +297,8 @@ async function activateCheckout(checkoutId: string, patch: AdminUpdate): Promise
     offer_code: string | null;
     status: string;
   } | null;
-  if (!row) return;
+  if (!row || row.status !== "open") return;
+  // A completed checkout must never overwrite a later plan change on renewal.
   const { error: subError } = await supabaseAdmin.from("company_subscriptions" as never).upsert(
     {
       company_id: row.company_id,

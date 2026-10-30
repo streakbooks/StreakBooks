@@ -11,6 +11,7 @@ export type AssetImportRow = {
   depreciationStartDate: string;
   costMinor: number;
   openingAccumulatedMinor: number;
+  openingDepreciationThrough: string | null;
   residualMinor: number;
   method: DepreciationMethod;
   usefulLifeMonths: number | null;
@@ -68,6 +69,17 @@ export function prepareFixedAssetsCsv(csvText: string, currency: string): AssetI
     const costMinor = money(v["cost"] ?? "", currency, sourceRow, "Cost");
     const openingAccumulatedMinor = money(v["accumulated_depreciation"] || "0", currency, sourceRow, "Accumulated depreciation");
     const residualMinor = money(v["residual_value"] || "0", currency, sourceRow, "Residual value");
+    const cutoffText = (v["opening_depreciation_through"] ?? "").trim();
+    const openingDepreciationThrough = cutoffText ? actualDate(cutoffText, sourceRow, "Opening depreciation through") : null;
+    if (openingAccumulatedMinor > 0 && !openingDepreciationThrough) {
+      throw new Error("Row " + sourceRow + ": Opening Depreciation Through is required when bringing forward accumulated depreciation");
+    }
+    if (openingDepreciationThrough && openingDepreciationThrough < purchaseDate) {
+      throw new Error("Row " + sourceRow + ": opening depreciation cutoff cannot precede acquisition");
+    }
+    if (openingDepreciationThrough && openingDepreciationThrough >= depreciationStartDate) {
+      throw new Error("Row " + sourceRow + ": next depreciation start must be after the opening depreciation cutoff");
+    }
     const method = (v["depreciation_method"] ?? "").trim() as DepreciationMethod;
     if (!["straight_line", "reducing_balance", "none"].includes(method)) throw new Error("Row " + sourceRow + ": invalid depreciation method");
     const lifeRaw = (v["useful_life_months"] ?? "").trim();
@@ -92,7 +104,7 @@ export function prepareFixedAssetsCsv(csvText: string, currency: string): AssetI
     const assetTypeName = (v["asset_type"] ?? "").trim() || null;
     if (assetTypeName && assetTypeName.length > 160) throw new Error("Row " + sourceRow + ": asset type is too long");
     out.push({ sourceRow, externalCode, name, purchaseDate, depreciationStartDate, costMinor,
-      openingAccumulatedMinor, residualMinor, method, usefulLifeMonths, annualRateBps,
+      openingAccumulatedMinor, openingDepreciationThrough, residualMinor, method, usefulLifeMonths, annualRateBps,
       assetAccountCode, accumulatedAccountCode, expenseAccountCode, assetTypeName });
   }
   return out;

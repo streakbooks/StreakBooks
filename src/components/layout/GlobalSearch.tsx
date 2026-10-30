@@ -48,6 +48,7 @@ export function GlobalSearch({ className }: { className?: string }) {
   const [q, setQ] = useState("");
   const [debounced, setDebounced] = useState("");
   const [category, setCategory] = useState<SearchCategory>("all");
+  const [showAllFilters, setShowAllFilters] = useState(false);
   const anchorRef = useRef<HTMLButtonElement>(null);
   const [position, setPosition] = useState({ top: 72, left: 12, width: 520 });
   useEffect(() => {
@@ -104,6 +105,7 @@ export function GlobalSearch({ className }: { className?: string }) {
     setQ("");
     setDebounced("");
     setCategory("all");
+    setShowAllFilters(false);
   }
 
   function goAction(a: PaletteAction) {
@@ -172,12 +174,13 @@ export function GlobalSearch({ className }: { className?: string }) {
             <div className="border-b px-3 py-2.5" aria-label="Search category filters">
               <div className="mb-2 flex items-center justify-between">
                 <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground"><SlidersHorizontal className="size-3.5" /> Search within</span>
+                <button type="button" aria-expanded={showAllFilters} className="text-xs text-primary hover:underline" onClick={() => setShowAllFilters((v) => !v)}>{showAllFilters ? "Fewer filters" : "All filters"}</button>
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {([
                   ["all", "All"], ["invoice", "Invoices"], ["bill", "Bills"], ["contact", "Contacts"],
                   ["account", "Accounts"], ["product", "Products"], ["journal", "Journals"], ["bank_transaction", "Bank transactions"],
-                ] as const).map(([id, label]) => (
+                ] as const).slice(0, showAllFilters ? undefined : 4).map(([id, label]) => (
                   <button key={id} type="button" aria-pressed={category === id}
                     onClick={() => setCategory(id)}
                     className={cn("rounded-full border px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-primary",

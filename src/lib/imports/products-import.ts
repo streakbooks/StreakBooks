@@ -42,9 +42,9 @@ export function prepareProductsCsv(csvText: string, currency: string): ProductIm
   if (!preview.records.length) throw new Error("CSV has no product rows");
   const seen = new Set<string>();
   return preview.records.map(({ sourceRow, values }) => {
-    const code = values.sku ?? "";
-    const name = values.name ?? "";
-    const kind = (values.type ?? "").toLowerCase();
+    const code = values["sku"] ?? "";
+    const name = values["name"] ?? "";
+    const kind = (values["type"] ?? "").toLowerCase();
     if (!SKU.test(code)) throw new Error(`Row ${sourceRow}: SKU must contain 1–40 letters, digits, dots, underscores or hyphens`);
     const key = code.toLowerCase();
     if (seen.has(key)) throw new Error(`Row ${sourceRow}: Duplicate SKU ${code} in file`);
@@ -56,8 +56,8 @@ export function prepareProductsCsv(csvText: string, currency: string): ProductIm
       code,
       name,
       kind: kind as ProductImportRow["kind"],
-      salesPriceMinor: amountInMinor(values.sale_price ?? "", currency, sourceRow, "Sale price"),
-      purchaseCostMinor: amountInMinor(values.purchase_price ?? "", currency, sourceRow, "Purchase price"),
+      salesPriceMinor: amountInMinor(values["sale_price"] ?? "", currency, sourceRow, "Sale price"),
+      purchaseCostMinor: amountInMinor(values["purchase_price"] ?? "", currency, sourceRow, "Purchase price"),
     };
   });
 }

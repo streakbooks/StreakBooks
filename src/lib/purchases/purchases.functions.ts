@@ -1540,7 +1540,7 @@ export const saveBillDraft = createServerFn({ method: "POST" })
   .inputValidator(parseBillDraftInput)
   .handler(async ({ data, context }) => saveBillDraftCore(data, context));
 
-async function authoriseBillInternal(
+export async function authoriseBillInternal(
   supabase: Parameters<typeof assertCompanyPermission>[0],
   userId: string,
   companyId: string,

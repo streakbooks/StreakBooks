@@ -16,6 +16,10 @@ import {
   type BillingPlanView,
 } from "@/lib/billing/billing.functions";
 import {
+  changeOrganisationPlan,
+  openBillingPortal,
+} from "@/lib/billing/subscription-actions.functions";
+import {
   formatMinor,
   listAmount,
   type BillingInterval,
@@ -28,6 +32,8 @@ export function SubscriptionPanel({ companyId }: { companyId: string }) {
   const fetchOverview = useServerFn(getBillingOverview);
   const preview = useServerFn(previewBillingQuote);
   const startCheckout = useServerFn(createBillingCheckout);
+  const changePlan = useServerFn(changeOrganisationPlan);
+  const openPortal = useServerFn(openBillingPortal);
   const overview = useQuery({
     queryKey: billingKey(companyId),
     queryFn: () => fetchOverview({ data: { companyId } }),
@@ -99,6 +105,31 @@ export function SubscriptionPanel({ companyId }: { companyId: string }) {
     },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : "Checkout could not be started.");
+    },
+  });
+  const planChange = useMutation({
+    mutationFn: (planCode: string) => changePlan({ data: { companyId, planCode, interval } }),
+    onSuccess: (result) => {
+      toast.success(
+        result.applies === "immediate"
+          ? "The upgrade is active. Stripe prorates the current period when a card subscription exists."
+          : "The downgrade starts at the end of the current period. Existing records stay available.",
+      );
+      void overview.refetch();
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "The plan could not be changed.");
+    },
+  });
+  const portal = useMutation({
+    mutationFn: () => openPortal({ data: { companyId, origin: window.location.origin } }),
+    onSuccess: (result) => {
+      window.location.assign(result.url);
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "The payment portal could not be opened.",
+      );
     },
   });
 
@@ -179,8 +210,11 @@ export function SubscriptionPanel({ companyId }: { companyId: string }) {
               interval={interval}
               quote={quotes[plan.code] ?? null}
               current={data.subscription?.planCode === plan.code}
-              busy={checkout.isPending}
+              busy={checkout.isPending || planChange.isPending}
               onCheckout={(provider) => checkout.mutate({ planCode: plan.code, provider })}
+              {...(data.subscription && !data.isDemo
+                ? { onChangePlan: () => planChange.mutate(plan.code) }
+                : {})}
             />
           ))}
       </div>
@@ -199,6 +233,16 @@ export function SubscriptionPanel({ companyId }: { companyId: string }) {
             Organisation owners choose a plan here. Price, feature and promo changes are made in the
             platform billing console, which is limited to platform staff.
           </p>
+          {data.subscription?.provider === "stripe" ? (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={portal.isPending}
+              onClick={() => portal.mutate()}
+            >
+              Payment method and invoices
+            </Button>
+          ) : null}
           {data.isOperator ? (
             <Button type="button" variant="outline" asChild>
               <Link to="/platform/billing">Open platform billing</Link>
@@ -258,6 +302,7 @@ function PlanCard({
   current,
   busy,
   onCheckout,
+  onChangePlan,
 }: {
   plan: BillingPlanView;
   overview: BillingOverview;
@@ -266,6 +311,7 @@ function PlanCard({
   current: boolean;
   busy: boolean;
   onCheckout: (provider: "stripe" | "razorpay") => void;
+  onChangePlan?: () => void;
 }) {
   const list = listAmount(plan.monthlyMinor, interval, overview.settings.annualFreeMonths);
   const due = quote?.dueMinor ?? list;
@@ -318,6 +364,11 @@ function PlanCard({
                 Card checkout is waiting for STRIPE_SECRET_KEY, or RAZORPAY_KEY_ID and
                 RAZORPAY_KEY_SECRET. The trial does not need a card.
               </p>
+            ) : null}
+            {onChangePlan && !current ? (
+              <Button type="button" variant="outline" disabled={busy} onClick={onChangePlan}>
+                Change to this plan
+              </Button>
             ) : null}
           </div>
         )}

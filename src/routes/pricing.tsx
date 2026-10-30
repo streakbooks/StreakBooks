@@ -42,6 +42,7 @@ function PricingPage() {
   const query = useQuery({
     queryKey: ["public-billing-plans"],
     queryFn: () => load(),
+    retry: false,
   });
   const [interval, setInterval] = useState<"month" | "year">("month");
   const [currency, setCurrency] = useState<BillingCurrency>("USD");

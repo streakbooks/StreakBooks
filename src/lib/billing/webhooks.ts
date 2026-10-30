@@ -50,6 +50,11 @@ async function applyStripe(raw: string, header: string | null): Promise<void> {
     await completeStripeCheckout(object);
     return;
   }
+  if (event.type === "invoice.paid") {
+    const subscriptionId = stringValue(object["subscription"]);
+    if (subscriptionId) await applyScheduledPlan("stripe", subscriptionId);
+    return;
+  }
   if (event.type === "invoice.payment_failed") {
     const subscriptionId = stringValue(object["subscription"]);
     if (subscriptionId) await markProviderStatus("stripe", subscriptionId, "past_due");
@@ -234,6 +239,59 @@ async function activateCheckout(checkoutId: string, patch: AdminUpdate): Promise
       .eq("id" as never, checkoutId as never);
     if (row.offer_code) await incrementOffer(row.offer_code);
   }
+}
+
+async function applyScheduledPlan(provider: string, providerSubscriptionId: string): Promise<void> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from("company_subscriptions" as never)
+    .select("company_id, scheduled_plan_code, scheduled_at, currency, billing_interval" as never)
+    .eq("provider" as never, provider as never)
+    .eq("provider_subscription_id" as never, providerSubscriptionId as never)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  const row = data as {
+    company_id: string;
+    scheduled_plan_code: string | null;
+    scheduled_at: string | null;
+    currency: string;
+    billing_interval: string;
+  } | null;
+  if (!row?.scheduled_plan_code) return;
+  if (row.scheduled_at && Date.parse(row.scheduled_at) > Date.now()) return;
+  const { data: version } = await supabaseAdmin
+    .from("plan_versions" as never)
+    .select("id" as never)
+    .eq("plan_code" as never, row.scheduled_plan_code as never)
+    .eq("status" as never, "published" as never)
+    .order("version_no" as never, { ascending: false } as never)
+    .limit(1)
+    .maybeSingle();
+  const versionId = (version as { id: string } | null)?.id ?? null;
+  let amount: number | null = null;
+  if (versionId) {
+    const { data: price } = await supabaseAdmin
+      .from("plan_prices" as never)
+      .select("amount_minor" as never)
+      .eq("version_id" as never, versionId as never)
+      .eq("currency" as never, row.currency as never)
+      .eq("billing_interval" as never, row.billing_interval as never)
+      .maybeSingle();
+    amount = (price as { amount_minor: number } | null)?.amount_minor ?? null;
+  }
+  const { error: updateError } = await supabaseAdmin
+    .from("company_subscriptions" as never)
+    .update({
+      plan_code: row.scheduled_plan_code,
+      price_version_id: versionId,
+      ...(amount != null ? { unit_amount_minor: amount } : {}),
+      scheduled_plan_code: null,
+      scheduled_at: null,
+      grandfathered: false,
+      updated_at: new Date().toISOString(),
+    } as never)
+    .eq("company_id" as never, row.company_id as never);
+  if (updateError) throw new Error(updateError.message);
 }
 
 async function markProviderStatus(

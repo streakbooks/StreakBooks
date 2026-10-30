@@ -21,6 +21,7 @@ import {
   type OfferRule,
   type PlanCode,
 } from "@/lib/billing/pricing";
+import { assertDiscountCap, assertPriceFloor } from "@/lib/billing/provider-actions";
 import { assertRazorpayTestKey, assertStripeTestKey } from "@/lib/billing/provider-keys";
 
 type Client = SupabaseClient<Database>;
@@ -849,6 +850,9 @@ export const saveBillingPlan = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     await assertOperator(supabase);
+    assertPriceFloor("GBP", "month", data.monthlyGbp);
+    assertPriceFloor("USD", "month", data.monthlyUsd);
+    assertPriceFloor("INR", "month", data.monthlyInr);
     const { error } = await supabase
       .from("billing_plans" as never)
       .update({
@@ -900,13 +904,8 @@ export const saveBillingOffer = createServerFn({ method: "POST" })
 export const claimBillingOperator = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(() => ({}))
-  .handler(async ({ context }) => {
-    const { supabase, userId } = context;
-    const { error } = await supabase
-      .from("billing_operators" as never)
-      .insert({ user_id: userId } as never);
-    if (error) throw new Error(error.message);
-    return { ok: true as const };
+  .handler(async () => {
+    throw new Error("Platform access is granted by the platform owner, not from an organisation.");
   });
 
 function minor(value: number, label: string): number {
@@ -956,6 +955,7 @@ function normaliseOfferInput(
   const extraFreeMonths = Math.round(Number(input?.extraFreeMonths ?? 0));
   if (percentBps < 0 || percentBps > 10_000)
     throw new Error("Percent offers use 0 to 10000 basis points.");
+  if (kind === "percent") assertDiscountCap(percentBps);
   if (amountMinor < 0) throw new Error("Amount offers cannot be negative.");
   if (extraTrialDays < 0 || extraTrialDays > 365)
     throw new Error("Extra trial days must be from 0 to 365.");

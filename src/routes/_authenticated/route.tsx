@@ -51,14 +51,16 @@ function AuthenticatedLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { data, isPending, isError, error, refetch } = useActiveCompany();
   const onOnboarding = pathname.startsWith("/onboarding");
+  // Platform staff may not belong to any customer organisation.
+  const onPlatformOperations = pathname.startsWith("/platform-admin") || pathname.startsWith("/platform/billing");
 
   useEffect(() => {
     if (isPending || isError) return;
     const count = data?.companies.length ?? 0;
-    if (count === 0 && !onOnboarding) {
+    if (count === 0 && !onOnboarding && !onPlatformOperations) {
       void navigate({ to: "/onboarding", replace: true });
     }
-  }, [data?.companies.length, isError, isPending, navigate, onOnboarding]);
+  }, [data?.companies.length, isError, isPending, navigate, onOnboarding, onPlatformOperations]);
 
   if (isPending) {
     return (

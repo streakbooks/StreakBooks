@@ -11,7 +11,7 @@ import { prepareBudgetImportCsv } from "@/lib/imports/budget-import";
 import { prepareFixedAssetsCsv } from "@/lib/imports/fixed-assets-import";
 import { fixedAssetSourceHeaders, mapFixedAssetCsv, type FixedAssetColumnMapping } from "@/lib/imports/fixed-assets-header-mapping";
 import { fromMinorUnits } from "@/lib/accounting/money";
-import { importFixedAssetRegisterCsv, type FixedAssetCsvImportResult } from "@/lib/fixed-assets/fixed-assets.functions";
+import { importFixedAssetRegisterCsv, getFixedAssetImportAvailability, type FixedAssetCsvImportResult } from "@/lib/fixed-assets/fixed-assets.functions";
 import { importBudgetLinesCsv, listBudgets } from "@/lib/budgets/budgets.functions";
 import { importSalesInvoicesCsv } from "@/lib/sales/sales.functions";
 import { importPurchaseBillsCsv } from "@/lib/purchases/purchases.functions";
@@ -84,6 +84,13 @@ function ImportCentre() {
   const importBudgetLines = useServerFn(importBudgetLinesCsv);
   const importAssets = useServerFn(importFixedAssetRegisterCsv);
   const fetchBudgets = useServerFn(listBudgets);
+  const checkAssetImport = useServerFn(getFixedAssetImportAvailability);
+  const isAssetImport = (definitions[selected] ?? definitions[0])?.module === "fixed_assets";
+  const assetReadyQ = useQuery({
+    queryKey: ["fixed-asset-import-availability", company?.id],
+    enabled: Boolean(company?.id && isAssetImport),
+    queryFn: () => checkAssetImport({ data: { companyId: company!.id } }),
+  });
   const isBudgetImport = (definitions[selected] ?? definitions[0])?.module === "budgets";
   const budgetsQ = useQuery({
     queryKey: ["budgets", company?.id],
@@ -317,6 +324,8 @@ function ImportCentre() {
         {definition.module === "fixed_assets" && (
           <div className="space-y-4 rounded-lg border p-4">
             <h3 className="text-base font-semibold">Import fixed assets — review before saving</h3>
+            {assetReadyQ.data?.available === false && <p role="alert" className="text-sm text-destructive">{assetReadyQ.data.reason} Your accounting data has not been modified.</p>}
+            {assetReadyQ.isError && <p role="alert" className="text-sm text-destructive">Cannot verify fixed-asset import availability. Check your organisation permissions and connection.</p>}
             <p className="text-sm">1. Download the sample CSV and field guide above. 2. Upload an asset register. 3. Match your columns and review every financial field. 4. Confirm to create register records.</p>
             <p className="text-sm">External asset references are retained in the audit mapping. Your registered assets receive LinkBooks asset numbers. This batch does not change existing assets or create accounting journals.</p>
             {csv && (
@@ -381,7 +390,7 @@ function ImportCentre() {
               I understand these are fixed asset register entries only, and I will reconcile opening ledger balances separately.
             </label>
             <Button type="button"
-              disabled={!company || !canManageProjects || !assetImportAcknowledged || !assetRows?.length || !preview?.result || preview.result.issues.length > 0 || assetImport.isPending}
+              disabled={!company || !canManageProjects || !assetReadyQ.data?.available || !assetImportAcknowledged || !assetRows?.length || !preview?.result || preview.result.issues.length > 0 || assetImport.isPending}
               onClick={() => {
                 if (window.confirm("Import this entire fixed asset register into the selected organisation? No journals will be posted; existing external references will be checked for conflicts.")) assetImport.mutate();
               }}>

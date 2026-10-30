@@ -9,6 +9,8 @@ import { importProductsCsv, type ProductsImportResult } from "@/lib/imports/prod
 import { importProjectsCsv, type ProjectsImportResult } from "@/lib/imports/projects-import.functions";
 import { prepareBudgetImportCsv } from "@/lib/imports/budget-import";
 import { prepareFixedAssetsCsv } from "@/lib/imports/fixed-assets-import";
+import { fixedAssetSourceHeaders, mapFixedAssetCsv, type FixedAssetColumnMapping } from "@/lib/imports/fixed-assets-header-mapping";
+import { fromMinorUnits } from "@/lib/accounting/money";
 import { importFixedAssetRegisterCsv, type FixedAssetCsvImportResult } from "@/lib/fixed-assets/fixed-assets.functions";
 import { importBudgetLinesCsv, listBudgets } from "@/lib/budgets/budgets.functions";
 import { importSalesInvoicesCsv } from "@/lib/sales/sales.functions";
@@ -56,6 +58,16 @@ function ImportCentre() {
   const [budgetResult, setBudgetResult] = useState<{ stored: number; accounts: number; budgetId: string; auditError: string | null } | null>(null);
   const [fixedAssetResult, setFixedAssetResult] = useState<FixedAssetCsvImportResult | null>(null);
   const [assetImportAcknowledged, setAssetImportAcknowledged] = useState(false);
+  const [assetFieldMapping, setAssetFieldMapping] = useState<FixedAssetColumnMapping>({});
+  const assetSourceHeaders = useMemo(() => {
+    if (!csv) return [];
+    try { return fixedAssetSourceHeaders(csv); } catch { return []; }
+  }, [csv]);
+  const assetMapped = useMemo(() => {
+    if (!csv) return { csv: "", error: "" };
+    try { return { csv: mapFixedAssetCsv(csv, assetFieldMapping), error: "" }; }
+    catch (error) { return { csv: "", error: error instanceof Error ? error.message : "Invalid field mapping" }; }
+  }, [csv, assetFieldMapping]);
 
   const { company } = useActiveCompany();
   const canManageProducts = useCanDo("products.manage");
@@ -131,7 +143,7 @@ function ImportCentre() {
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
   const assetImport = useMutation({
-    mutationFn: () => importAssets({ data: { companyId: company!.id, csvText: csv } }),
+    mutationFn: () => importAssets({ data: { companyId: company!.id, csvText: assetMapped.csv } }),
     onSuccess: async (result) => {
       setFixedAssetResult(result);
       await queryClient.invalidateQueries({ queryKey: ["fixed-assets", company!.id] });
@@ -142,17 +154,23 @@ function ImportCentre() {
   const definition = definitions[selected] ?? definitions[0]!;
   const preview = useMemo(() => {
     if (!csv) return null;
+    if (definition.module === "fixed_assets" && assetMapped.error) return { result: null, error: assetMapped.error };
+    const effectiveCsv = definition.module === "fixed_assets" ? assetMapped.csv : csv;
     try { if (definition.module === "budgets") prepareBudgetImportCsv(csv, company?.base_currency ?? "USD");
-      if (definition.module === "fixed_assets") prepareFixedAssetsCsv(csv, company?.base_currency ?? "USD"); return { result: previewImportCsv(csv, definition, { maxRows: definition.module === "fixed_assets" ? 100 : ["products", "projects", "budgets"].includes(definition.module) ? 250 : 10_000, uniqueBy: ["products", "projects"].includes(definition.module) ? definition.fields.slice(0, 1).map((f) => f.key) : [] }), error: "" }; }
+      if (definition.module === "fixed_assets") prepareFixedAssetsCsv(effectiveCsv, company?.base_currency ?? "USD"); return { result: previewImportCsv(effectiveCsv, definition, { maxRows: definition.module === "fixed_assets" ? 100 : ["products", "projects", "budgets"].includes(definition.module) ? 250 : 10_000, uniqueBy: ["products", "projects"].includes(definition.module) ? definition.fields.slice(0, 1).map((f) => f.key) : [] }), error: "" }; }
     catch (error) { return { result: null, error: error instanceof Error ? error.message : "Invalid CSV" }; }
-  }, [csv, definition, company?.base_currency]);
+  }, [csv, definition, company?.base_currency, assetMapped]);
+  const assetRows = useMemo(() => {
+    if (definition.module !== "fixed_assets" || !assetMapped.csv || preview?.error || preview?.result?.issues.length) return null;
+    try { return prepareFixedAssetsCsv(assetMapped.csv, company?.base_currency ?? "USD"); } catch { return null; }
+  }, [definition.module, assetMapped.csv, company?.base_currency, preview?.error, preview?.result?.issues.length]);
   return (
     <div className="space-y-5">
       <PageHeader title={scopedModule ? `${scopedModule === "fixed_assets" ? "Fixed assets" : scopedModule.charAt(0).toUpperCase() + scopedModule.slice(1)} imports` : "Data import centre"} description={scopedModule ? "Import records for this module. Validate and review before saving; posting requires explicit authorisation." : "Organisation-wide data management: download templates, inspect files and validate before saving."} />
       {scopedModule && <p className="text-sm text-muted-foreground">Only {scopedModule.replace("_", " ")} import types are shown here. For organisation-wide migrations, open the <Link to="/imports" search={{ module: undefined }} className="underline">full Data Import Centre</Link>.</p>}
       <div className="rounded-xl border p-5 space-y-4">
         <label className="block text-sm font-medium" htmlFor="import-kind">Import type</label>
-        <select id="import-kind" className="w-full rounded-md border bg-background p-2" value={selected} onChange={(e) => { setSelected(Number(e.target.value)); setCsv(""); setFileName(""); setImportResult(null); setProjectResult(null); setSalesResult(null); setBillResult(null); setBudgetResult(null); setFixedAssetResult(null); setAssetImportAcknowledged(false); }}>
+        <select id="import-kind" className="w-full rounded-md border bg-background p-2" value={selected} onChange={(e) => { setSelected(Number(e.target.value)); setCsv(""); setFileName(""); setImportResult(null); setProjectResult(null); setSalesResult(null); setBillResult(null); setBudgetResult(null); setFixedAssetResult(null); setAssetImportAcknowledged(false); setAssetFieldMapping({}); }}>
           {definitions.map((item, i) => <option key={item.module + item.documentType} value={i}>{item.module.replaceAll("_", " ")} — {item.documentType}</option>)}
         </select>
         <div className="flex flex-wrap gap-2">
@@ -171,6 +189,7 @@ function ImportCentre() {
           setBudgetResult(null);
           setFixedAssetResult(null);
           setAssetImportAcknowledged(false);
+          setAssetFieldMapping({});
           setFileName(file.name);
           void file.text().then(setCsv).catch(() => { setCsv(""); setFileName("Could not read file"); });
         }} />
@@ -296,15 +315,73 @@ function ImportCentre() {
           </div>
         )}
         {definition.module === "fixed_assets" && (
-          <div className="space-y-3 rounded-lg border p-3">
-            <p className="text-sm">Import a fixed asset register with external reference tracking. Every row must supply its financial accounts and depreciation terms. The importer checks them in your organisation and saves the entire batch in one database transaction; identical external references are skipped on retries, while conflicting reimports are rejected.</p>
-            <p className="text-sm font-medium">Register import only. This does not post opening cost, accumulated depreciation or acquisition journals. Verify opening general ledger balances separately to avoid double counting.</p>
+          <div className="space-y-4 rounded-lg border p-4">
+            <h3 className="text-base font-semibold">Import fixed assets — review before saving</h3>
+            <p className="text-sm">1. Download the sample CSV and field guide above. 2. Upload an asset register. 3. Match your columns and review every financial field. 4. Confirm to create register records.</p>
+            <p className="text-sm">External asset references are retained in the audit mapping. Your registered assets receive LinkBooks asset numbers. This batch does not change existing assets or create accounting journals.</p>
+            {csv && (
+              <div className="space-y-3">
+                <h4 className="text-sm font-semibold">Match columns from your file</h4>
+                <p className="text-xs text-muted-foreground">Headers matching the LinkBooks template are selected automatically. For other systems, choose the source column for each field. Every required field must be mapped.</p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {definition.fields.map((field) => {
+                    const automatic = assetSourceHeaders.find((h) => h.toLocaleLowerCase("en-US") === field.label.toLocaleLowerCase("en-US")) ?? "";
+                    const selectedColumn = assetFieldMapping[field.key] ?? automatic;
+                    return (
+                      <label key={field.key} className="space-y-1 text-xs">
+                        <span className="font-medium">{field.label}{field.required ? " *" : ""}</span>
+                        <select className="w-full rounded-md border bg-background p-2 text-sm" value={selectedColumn}
+                          onChange={(e) => { setAssetFieldMapping((current) => ({ ...current, [field.key]: e.target.value })); setFixedAssetResult(null); setAssetImportAcknowledged(false); }}>
+                          <option value="">{field.required ? "Select required column" : "Not supplied"}</option>
+                          {assetSourceHeaders.map((header) => <option key={header} value={header}>{header}</option>)}
+                        </select>
+                      </label>
+                    );
+                  })}
+                </div>
+                {assetMapped.error && <p role="alert" className="text-sm text-destructive">{assetMapped.error}</p>}
+              </div>
+            )}
+            {assetRows && assetRows.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold">Validated asset preview ({assetRows.length} records)</h4>
+                <div className="overflow-x-auto rounded-md border">
+                  <table className="w-full min-w-[850px] text-left text-xs">
+                    <thead className="bg-muted/50">
+                      <tr>{["CSV row", "External reference", "Asset", "Purchased", "Method", "Cost", "Opening depreciation", "Net book value"].map((h) => <th key={h} className="p-2">{h}</th>)}</tr>
+                    </thead>
+                    <tbody>
+                      {assetRows.slice(0, 25).map((a) => (
+                        <tr key={a.externalCode} className="border-t">
+                          <td className="p-2">{a.sourceRow}</td>
+                          <td className="p-2">{a.externalCode}</td>
+                          <td className="p-2">{a.name}</td>
+                          <td className="p-2">{a.purchaseDate}</td>
+                          <td className="p-2">{a.method.replaceAll("_", " ")}</td>
+                          <td className="p-2 tabular-nums">{fromMinorUnits(a.costMinor, company?.base_currency ?? "USD")}</td>
+                          <td className="p-2 tabular-nums">{fromMinorUnits(a.openingAccumulatedMinor, company?.base_currency ?? "USD")}</td>
+                          <td className="p-2 tabular-nums">{fromMinorUnits(a.costMinor - a.openingAccumulatedMinor, company?.base_currency ?? "USD")}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {assetRows.length > 25 && <p className="text-xs text-muted-foreground">Showing the first 25 of {assetRows.length} assets; the server validates every row before saving.</p>}
+                <div className="flex flex-wrap gap-4 text-sm">
+                  <span>Gross cost: <strong className="tabular-nums">{fromMinorUnits(assetRows.reduce((sum, a) => sum + BigInt(a.costMinor), 0n), company?.base_currency ?? "USD")}</strong></span>
+                  <span>Opening depreciation: <strong className="tabular-nums">{fromMinorUnits(assetRows.reduce((sum, a) => sum + BigInt(a.openingAccumulatedMinor), 0n), company?.base_currency ?? "USD")}</strong></span>
+                  <span>Net book value: <strong className="tabular-nums">{fromMinorUnits(assetRows.reduce((sum, a) => sum + BigInt(a.costMinor - a.openingAccumulatedMinor), 0n), company?.base_currency ?? "USD")}</strong></span>
+                </div>
+              </div>
+            )}
+            <p className="text-sm">All mapped GL account codes must resolve to active accounts in this organisation. Each row supplies a depreciation method, valuation, residual amount, and the remaining useful life or declining-balance rate where applicable.</p>
+            <p className="text-sm font-medium">Register-only import: historical acquisition cost and opening accumulated depreciation must be reconciled to existing opening GL balances. This import will not create purchase, opening-balance or depreciation journals.</p>
             <label className="flex items-start gap-2 text-sm">
               <input type="checkbox" checked={assetImportAcknowledged} onChange={(e) => setAssetImportAcknowledged(e.currentTarget.checked)} />
               I understand these are fixed asset register entries only, and I will reconcile opening ledger balances separately.
             </label>
             <Button type="button"
-              disabled={!company || !canManageProjects || !assetImportAcknowledged || !preview?.result || preview.result.issues.length > 0 || assetImport.isPending}
+              disabled={!company || !canManageProjects || !assetImportAcknowledged || !assetRows?.length || !preview?.result || preview.result.issues.length > 0 || assetImport.isPending}
               onClick={() => {
                 if (window.confirm("Import this entire fixed asset register into the selected organisation? No journals will be posted; existing external references will be checked for conflicts.")) assetImport.mutate();
               }}>
@@ -312,7 +389,7 @@ function ImportCentre() {
             </Button>
             {!canManageProjects && <p className="text-sm text-destructive">You need accounts.manage permission to import assets.</p>}
             {fixedAssetResult && <div role="status" className="space-y-1 text-sm">
-              <p>Created: {fixedAssetResult.created}; skipped identical imports: {fixedAssetResult.skipped}.</p>
+              <p>Created: {fixedAssetResult.created}; skipped identical imports: {fixedAssetResult.skipped}. <Link to="/fixed-assets" className="underline">Return to fixed asset register</Link>.</p>
               {fixedAssetResult.assets.map((asset) => <p key={asset.asset_id}>Reference {asset.external_code}: asset ID {asset.asset_id}</p>)}
             </div>}
           </div>

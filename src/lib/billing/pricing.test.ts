@@ -328,7 +328,15 @@ describe("currency and checkout payload", () => {
     });
     expect(billing.country).toBe("GB");
     expect(billing.name).toBe("Alex Stone");
-    expect(parseCheckoutBilling({ ...billing, country: "FR" } as never).country).toBe("FR");
+    expect(parseCheckoutBilling({
+      email: "a@b.co",
+      firstName: "Alex",
+      lastName: "Stone",
+      line1: "1 Rue de Rivoli",
+      city: "Paris",
+      postalCode: "75001",
+      country: "FR",
+    }).country).toBe("FR");
   });
 });
 

@@ -67,6 +67,11 @@ export const bootstrapPlatformOwner = createServerFn({ method: "POST" })
     const emailClaim = (context.claims as { email?: unknown }).email;
     const email = typeof emailClaim === "string" ? emailClaim : "";
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: verifiedAccount, error: accountError } = await supabaseAdmin.auth.admin.getUserById(context.userId);
+    if (accountError || !verifiedAccount.user?.email_confirmed_at ||
+        verifiedAccount.user.email?.trim().toLowerCase() !== email.trim().toLowerCase()) {
+      throw new Error("A confirmed owner email address is required for platform initialization.");
+    }
     const { count, error } = await supabaseAdmin
       .from("platform_roles" as never)
       .select("user_id" as never, { count: "exact", head: true } as never)

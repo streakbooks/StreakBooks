@@ -9,7 +9,7 @@ This is an evidence-based progress snapshot, **not** a completion certificate. U
 | Accounting | Existing chart-of-accounts import | `src/lib/accounting/account-import.ts`; journal and opening-balance imports are not covered. |
 | Budgets | Existing monthly-budget CSV support | `src/lib/budgets/budget-csv.ts`; live permission/integration verification outstanding. |
 | Products & Services | **Catalogue import merged in PR #19** | `src/lib/imports/products-import.functions.ts`, server permission `products.manage`, exact minor units, active-SKU unique index, audit-event error reporting. **Non-posting catalogue; not stock valuation.** |
-| Projects | **New writer in PR #21, pending CI/merge** | `src/lib/imports/projects-import.functions.ts`, server `accounts.manage`, exact customer resolution, company-scoped unique code, audit-event error reporting. **Non-posting master data.** |
+| Projects | **Master-data writer merged in PR #21** | `src/lib/imports/projects-import.functions.ts`, server `accounts.manage`, exact customer resolution, company-scoped unique code, audit-event error reporting. **Non-posting master data.** |
 | Sales | Not implemented | Invoices and payments need domain-service-backed draft/authorise workflows, tax, AR control and posting tests. |
 | Purchases | Not implemented | Bills and payments need domain-service-backed workflows, tax, AP control and posting tests. |
 | Fixed Assets | Not implemented | Asset register imports must use asset domain rules, depreciation and opening-balance reconciliation. |
@@ -22,12 +22,13 @@ This is an evidence-based progress snapshot, **not** a completion certificate. U
 - PR #17: merged; route-tree fix and shared Import Centre.
 - PR #18: merged after successful CI; malformed CSV quoting rejected.
 - PR #19: merged after successful typecheck, unit tests and build; product catalogue writer.
-- PR #21: project writer under CI review; do not mark merged until verified.
+- PR #21: merged after successful typecheck, unit tests and build; project master-data writer.
 - Existing GitHub CI runs `npm ci`, `npm run typecheck`, `npm test`, `npm run build`.
 - PR #20 proposes adding repository-wide lint. Its initial run found **2,952 baseline lint problems (2,935 errors, 17 warnings)**. It remains unmerged; lint is **not** a passing repository-wide gate.
 - Read-only live Supabase inspection confirmed `products` RLS, permission-based write policy, case-insensitive active-SKU unique index and `record_audit_event` RPC. No production test imports were written.
-- Read-only journal check found 38 posted journals, 0 unbalanced, 0 with fewer than two lines, 0 nonpositive and 0 cross-organisation journal lines at inspection time. **This is not a full AR/AP, tax, inventory or multi-currency accounting integrity audit.**
-- Earlier `docs/audit/ACCOUNTING_RECONCILIATION.md` identifies an AP-control/subledger mismatch requiring investigation.
+- Read-only journal check found 38 posted journals, 0 unbalanced, 0 with fewer than two lines, 0 nonpositive and 0 cross-organisation journal lines at inspection time. **This is not a full tax, inventory or multi-currency accounting integrity audit.**
+- A fresh **read-only AR aggregate** check found AR GL/open posted invoice balances of 480,000/480,000 minor units in each of the two organisations (zero aggregate differences). This is not a per-customer, per-period or FX reconciliation.
+- Earlier `docs/audit/ACCOUNTING_RECONCILIATION.md` identified an AP-control/subledger mismatch. A fresh **read-only aggregate** check found AP GL/open posted bill balances of 0/0 and 1,000/1,000 minor units in the two organisations (no aggregate difference). This does **not** prove every supplier, period, FX or credit allocation reconciles; a complete AP subledger test is still required.
 
 ## Remaining release gates
 

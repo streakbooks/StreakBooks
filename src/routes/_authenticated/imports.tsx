@@ -1,4 +1,11 @@
 import { useMemo, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { useActiveCompany } from "@/hooks/use-active-company";
+import { useCanDo } from "@/hooks/use-can";
+import { friendlyAuthError } from "@/lib/auth-helpers";
+import { importProductsCsv, type ProductsImportResult } from "@/lib/imports/products-import.functions";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { IMPORT_DEFINITIONS, importTemplateCsv, importFieldDictionaryCsv } from "@/lib/imports/import-definitions";
 import { previewImportCsv } from "@/lib/imports/import-preflight";
@@ -22,10 +29,25 @@ function ImportCentre() {
   const [selected, setSelected] = useState(0);
   const [csv, setCsv] = useState("");
   const [fileName, setFileName] = useState("");
+  const [importResult, setImportResult] = useState<ProductsImportResult | null>(null);
+  const { company } = useActiveCompany();
+  const canManageProducts = useCanDo("products.manage");
+  const importProducts = useServerFn(importProductsCsv);
+  const queryClient = useQueryClient();
+  const productImport = useMutation({
+    mutationFn: () => importProducts({ data: { companyId: company!.id, csvText: csv } }),
+    onSuccess: async (result) => {
+      setImportResult(result);
+      await queryClient.invalidateQueries({ queryKey: ["products", company!.id] });
+      if (result.failed || result.auditError) toast.warning("Import completed with issues; review the result below.");
+      else toast.success(`Imported ${result.created} products; skipped ${result.skipped} existing SKUs.`);
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
   const definition = IMPORT_DEFINITIONS[selected]!;
   const preview = useMemo(() => {
     if (!csv) return null;
-    try { return { result: previewImportCsv(csv, definition, { uniqueBy: definition.fields.slice(0, 1).map((f) => f.key) }), error: "" }; }
+    try { return { result: previewImportCsv(csv, definition, { maxRows: definition.module === "products" ? 250 : 10_000, uniqueBy: definition.fields.slice(0, 1).map((f) => f.key) }), error: "" }; }
     catch (error) { return { result: null, error: error instanceof Error ? error.message : "Invalid CSV" }; }
   }, [csv, definition]);
   return (
@@ -33,7 +55,7 @@ function ImportCentre() {
       <PageHeader title="Data import centre" description="Download templates, inspect files and validate data before any accounting records are created." />
       <div className="rounded-xl border p-5 space-y-4">
         <label className="block text-sm font-medium" htmlFor="import-kind">Import type</label>
-        <select id="import-kind" className="w-full rounded-md border bg-background p-2" value={selected} onChange={(e) => { setSelected(Number(e.target.value)); setCsv(""); setFileName(""); }}>
+        <select id="import-kind" className="w-full rounded-md border bg-background p-2" value={selected} onChange={(e) => { setSelected(Number(e.target.value)); setCsv(""); setFileName(""); setImportResult(null); }}>
           {IMPORT_DEFINITIONS.map((item, i) => <option key={item.module + item.documentType} value={i}>{item.module.replaceAll("_", " ")} — {item.documentType}</option>)}
         </select>
         <div className="flex flex-wrap gap-2">
@@ -45,6 +67,7 @@ function ImportCentre() {
           const file = e.currentTarget.files?.[0];
           if (!file) return;
           if (file.size > 5 * 1024 * 1024) { setCsv(""); setFileName("File exceeds 5 MB"); return; }
+          setImportResult(null);
           setFileName(file.name);
           void file.text().then(setCsv).catch(() => { setCsv(""); setFileName("Could not read file"); });
         }} />
@@ -55,9 +78,30 @@ function ImportCentre() {
           {preview.result.issues.slice(0, 30).map((issue, i) => <p key={i} className="text-sm text-destructive">Row {issue.row}: {issue.message}</p>)}
           {preview.result.issues.length > 30 && <p className="text-sm">Additional issues exist. Correct the source file before importing.</p>}
         </div>}
+        {definition.module === "products" && (
+          <div className="space-y-3 rounded-lg border p-3">
+            <p className="text-sm">Catalogue import only: creates non-inventory product and service records. It does not create stock balances, COGS, invoices or journal entries. Existing active SKUs are skipped, including case-insensitive matches. A database error can produce a partial import.</p>
+            <Button type="button" disabled={!company || !canManageProducts || !preview?.result || preview.result.issues.length > 0 || preview.result.duplicates.length > 0 || productImport.isPending}
+              onClick={() => {
+                if (window.confirm("Import validated catalogue rows into this organisation? Existing active SKUs will be skipped.")) productImport.mutate();
+              }}>
+              {productImport.isPending ? "Importing…" : "Import products and services"}
+            </Button>
+            {!canManageProducts && <p className="text-sm text-destructive">You need products.manage permission to import.</p>}
+            {importResult && (
+              <div role="status" className="space-y-1 text-sm">
+                <p>Created: {importResult.created}; skipped existing SKUs: {importResult.skipped}; failed: {importResult.failed}.</p>
+                {importResult.errors.map((error, i) => <p key={i} className="text-destructive">Row {error.row}: {error.message}</p>)}
+                {importResult.auditError && <p className="text-destructive">Audit recording failed: {importResult.auditError}. Review the audit log before relying on this import.</p>}
+              </div>
+            )}
+          </div>
+        )}
         <p className="text-sm text-muted-foreground">
           {definition.writeStatus === "implemented"
-            ? "An existing module-specific import workflow is available. Validation here is read-only; use the module workflow to save records."
+            ? definition.module === "products"
+              ? "Product catalogue writes are available here after validation and explicit confirmation."
+              : "An existing module-specific import workflow is available. Validation here is read-only; use the module workflow to save records."
             : "Import writing is not yet available for this document type. This page validates CSV only and does not create records or post journals."}
         </p>
         {definition.module === "banking" && <Button asChild><Link to="/banking/import">Open Banking importer</Link></Button>}

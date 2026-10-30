@@ -67,7 +67,7 @@ const defs: ImportDefinition[] = [
     field("quantity", "Quantity", true, "1", "Line quantity"),
     field("unit_price", "Unit Price", true, "50.00", "Price excluding tax unless configured otherwise"),
   ] },
-  { module: "products", documentType: "Products and services", writeStatus: "not_implemented", fields: [
+  { module: "products", documentType: "Products and services", writeStatus: "implemented", fields: [
     field("sku", "SKU", true, "ITEM-001", "Unique item code"),
     field("name", "Name", true, "Example Item", "Item name"),
     field("type", "Type", true, "service", "Product or service"),

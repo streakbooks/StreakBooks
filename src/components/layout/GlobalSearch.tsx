@@ -152,9 +152,28 @@ export function GlobalSearch({ className }: { className?: string }) {
             <CommandInput
               value={q}
               onValueChange={setQ}
-              placeholder="Type to search — e.g. an invoice number, a supplier or “new bill”"
+              placeholder="Search records, contacts, references…"
             />
-            <CommandList>
+            <div className="border-b px-3 py-2.5" aria-label="Search category filters">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground"><SlidersHorizontal className="size-3.5" /> Search within</span>
+                <button type="button" className="text-xs text-primary hover:underline" onClick={() => setShowAllFilters((v) => !v)}>{showAllFilters ? "Fewer filters" : "All filters"}</button>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {([
+                  ["all", "All"], ["invoice", "Invoices"], ["bill", "Bills"], ["contact", "Contacts"],
+                  ["account", "Accounts"], ["product", "Products"], ["journal", "Journals"],
+                ] as const).slice(0, showAllFilters ? undefined : 4).map(([id, label]) => (
+                  <button key={id} type="button" aria-pressed={category === id}
+                    onClick={() => setCategory(id)}
+                    className={cn("rounded-full border px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-primary",
+                      category === id ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-accent")}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <CommandList className="max-h-[min(55vh,420px)]">
               {searchQ.isFetching ? (
                 <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
                   <Loader2 className="size-4 animate-spin" /> Searching…

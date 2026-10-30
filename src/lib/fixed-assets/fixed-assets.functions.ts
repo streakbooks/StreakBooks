@@ -388,6 +388,26 @@ export const saveFixedAsset = createServerFn({ method: "POST" })
     return { id };
   });
 
+/** Check that the atomic CSV import migration and its tenant-scoped mapping table are deployed. */
+export const getFixedAssetImportAvailability = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .handler(async ({ data, context }) => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    const { error } = await context.supabase
+      .from("fixed_asset_import_refs" as never)
+      .select("asset_id" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .limit(0);
+    if (error) {
+      if (error.code === "42P01" || error.code === "PGRST205" || error.code === "PGRST200") {
+        return { available: false as const, reason: "The fixed asset CSV import database migration has not been deployed." };
+      }
+      throw new Error(error.message);
+    }
+    return { available: true as const, reason: null as string | null };
+  });
+
 export type FixedAssetCsvImportResult = {
   created: number;
   skipped: number;

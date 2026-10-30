@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Package, Plus, Archive } from "lucide-react";
@@ -274,10 +274,15 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
         title="Products & Services"
         description="Catalogue defaults for sales and purchase lines. Stock valuation is not enabled — this is a non-inventory catalogue."
         actions={
-          <Button size="sm" onClick={openCreate} disabled={!canManage}>
-            <Plus className="size-4" />
-            New item
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" asChild>
+              <Link to="/imports" search={{ module: "products" }}>Import catalogue CSV</Link>
+            </Button>
+            <Button size="sm" onClick={openCreate} disabled={!canManage}>
+              <Plus className="size-4" />
+              New item
+            </Button>
+          </div>
         }
       />
 

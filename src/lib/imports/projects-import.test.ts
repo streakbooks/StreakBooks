@@ -16,7 +16,7 @@ describe("projects CSV import validation", () => {
   it("rejects invalid codes, overlong names, missing columns and empty files", () => {
     expect(() => prepareProjectsCsv(`${header}\nPR 1,One,,`)).toThrow(/code/i);
     expect(() => prepareProjectsCsv(`${header}\nPR-1,${"a".repeat(161)},,`)).toThrow(/name/i);
-    expect(() => prepareProjectsCsv("Project Code,Name\nPR-1,One")).toThrow(/required column/i);
+    expect(() => prepareProjectsCsv("Name\nOne")).toThrow(/required column/i);
     expect(() => prepareProjectsCsv(header)).toThrow(/no project/i);
   });
 });

@@ -538,7 +538,7 @@ function AccountSummary({
         ) : null}
         {data.isOperator ? (
           <Button type="button" variant="ghost" size="sm" asChild>
-            <Link to="/platform/billing">Platform billing</Link>
+            <Link to="/platform-admin">Platform control</Link>
           </Button>
         ) : null}
       </div>

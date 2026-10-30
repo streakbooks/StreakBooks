@@ -451,7 +451,7 @@ export const importFixedAssetRegisterCsv = createServerFn({ method: "POST" })
           name: a.name,
           description: null,
           // Case-insensitive external references must create identical payloads on retries.
-          notes: "Imported asset reference: " + a.externalCode.toLocaleUpperCase("en-US"),
+          notes: "Imported asset reference: " + a.externalCode.toLocaleUpperCase("en-US") + (a.openingDepreciationThrough ? "; opening depreciation through " + a.openingDepreciationThrough : ""),
           purchase_date: a.purchaseDate,
           depreciation_start_date: a.depreciationStartDate,
           cost_minor: a.costMinor,

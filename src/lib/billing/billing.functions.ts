@@ -411,7 +411,7 @@ export const getBillingOverview = createServerFn({ method: "GET" })
     return {
       ready: true,
       message: company.is_demo
-        ? "Demo organisations are complimentary. Billing does not change the ledger."
+        ? "Demo organisations keep the same ledger. Use Pay with card or Razorpay on a plan to subscribe."
         : access === "read_only"
           ? "This trial or subscription has ended. Reports stay available. Choose a plan to post again."
           : null,
@@ -554,13 +554,6 @@ export const createBillingCheckout = createServerFn({ method: "POST" })
     if (!data.provider) throw new Error("Choose Stripe or Razorpay.");
     const { supabase, userId } = context;
     await assertCompanyPermission(supabase, data.companyId, "billing.manage");
-    const { data: company, error: companyError } = await supabase
-      .from("companies")
-      .select("is_demo")
-      .eq("id", data.companyId)
-      .maybeSingle();
-    if (companyError) throw new Error(companyError.message);
-    if (company?.is_demo) throw new Error("Demo organisations are not billed.");
     const priced = await priceSelection(
       supabase,
       data.companyId,

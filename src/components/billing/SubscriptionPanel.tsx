@@ -357,6 +357,35 @@ function PlanCard({
             {interval === "year" ? "per year" : "per month"}
           </span>
         </p>
+        <div className="flex flex-col gap-2">
+          <Button type="button" disabled={busy} onClick={() => onCheckout("stripe")}>
+            Pay with card
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={busy}
+            onClick={() => onCheckout("razorpay")}
+          >
+            Pay with Razorpay
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={busy}
+            onClick={() => onCopyLink("stripe")}
+          >
+            Copy card payment link
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={busy}
+            onClick={() => onCopyLink("razorpay")}
+          >
+            Copy Razorpay payment link
+          </Button>
+        </div>
         {quote && quote.discountMinor > 0 ? (
           <p className="text-xs text-muted-foreground">
             List {formatMinor(quote.listMinor, overview.currency)} with {quote.offerCode}
@@ -368,41 +397,11 @@ function PlanCard({
             <li key={line}>{line}</li>
           ))}
         </ul>
-        {overview.isDemo ? null : (
-          <div className="flex flex-col gap-2">
-            <Button type="button" disabled={busy} onClick={() => onCheckout("stripe")}>
-              Pay with card
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={busy}
-              onClick={() => onCheckout("razorpay")}
-            >
-              Pay with Razorpay
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              disabled={busy}
-              onClick={() => onCopyLink("stripe")}
-            >
-              Copy card payment link
-            </Button>
-            {!overview.providers.stripe && !overview.providers.razorpay ? (
-              <p className="text-xs text-muted-foreground">
-                The buttons open Stripe or Razorpay. Add STRIPE_SECRET_KEY, or RAZORPAY_KEY_ID and
-                RAZORPAY_KEY_SECRET, on the server. Use sk_test_ or sk_live_, and rzp_test_ or
-                rzp_live_.
-              </p>
-            ) : null}
-            {onChangePlan && !current ? (
-              <Button type="button" variant="outline" disabled={busy} onClick={onChangePlan}>
-                Change to this plan
-              </Button>
-            ) : null}
-          </div>
-        )}
+        {onChangePlan && !current ? (
+          <Button type="button" variant="outline" disabled={busy} onClick={onChangePlan}>
+            Change to this plan
+          </Button>
+        ) : null}
       </CardContent>
     </Card>
   );

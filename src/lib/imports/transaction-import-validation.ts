@@ -94,7 +94,7 @@ export function prepareTransactionCsv(
     if (quantity * unitPriceMinor > Number.MAX_SAFE_INTEGER) {
       throw new Error(`Row ${sourceRow}: extended line amount exceeds safe integer range`);
     }
-    const taxCode = kind === "sales" ? (v["tax_code"] ?? "").trim() || null : null;
+    const taxCode = (v["tax_code"] ?? "").trim() || null;
     if (taxCode && taxCode.length > 80) throw new Error(`Row ${sourceRow}: tax code too long`);
     const line: TransactionImportLine = {
       sourceRow, documentNumber, contactName, documentDate, dueDate,

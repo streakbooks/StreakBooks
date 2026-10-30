@@ -197,17 +197,29 @@ async function applyRazorpay(
   try {
     const entity = event.payload?.subscription?.entity ?? {};
     const checkoutId = notesValue(entity, "checkout_id");
+    const subscriptionId = stringValue(entity["id"]);
     const status = razorpayStatus(event.event);
-    if (!checkoutId || !status) return;
+    if (!status || !subscriptionId) return;
     const periodEnd = unixToIso(entity["current_end"]) ?? unixToIso(entity["end_at"]);
-    await activateCheckout(checkoutId, {
-      status,
-      provider: "razorpay",
-      provider_subscription_id: stringValue(entity["id"]),
-      current_period_end: periodEnd,
-      cancel_at_period_end: status === "cancelled",
-      updated_at: new Date().toISOString(),
-    });
+    if (status === "active") {
+      // Only an authorised or charged subscription grants paid access.
+      if (!checkoutId) return;
+      await activateCheckout(checkoutId, {
+        status,
+        provider: "razorpay",
+        provider_subscription_id: subscriptionId,
+        current_period_end: periodEnd,
+        cancel_at_period_end: false,
+        updated_at: new Date().toISOString(),
+      });
+    } else {
+      // Pending/halted/cancelled events may modify an already activated
+      // subscription, but must never turn an open checkout into paid access.
+      await markProviderStatus("razorpay", subscriptionId, status, {
+        current_period_end: periodEnd,
+        cancel_at_period_end: status === "cancelled",
+      });
+    }
   } catch (error) {
     await clearFailedEvent("razorpay", eventIdHeader);
     throw error;

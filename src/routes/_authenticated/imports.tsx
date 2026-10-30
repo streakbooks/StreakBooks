@@ -47,7 +47,7 @@ function ImportCentre() {
   const definition = IMPORT_DEFINITIONS[selected]!;
   const preview = useMemo(() => {
     if (!csv) return null;
-    try { return { result: previewImportCsv(csv, definition, { uniqueBy: definition.fields.slice(0, 1).map((f) => f.key) }), error: "" }; }
+    try { return { result: previewImportCsv(csv, definition, { maxRows: definition.module === "products" ? 250 : 10_000, uniqueBy: definition.fields.slice(0, 1).map((f) => f.key) }), error: "" }; }
     catch (error) { return { result: null, error: error instanceof Error ? error.message : "Invalid CSV" }; }
   }, [csv, definition]);
   return (

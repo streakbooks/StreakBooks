@@ -58,6 +58,7 @@ function SalesOverview() {
         description="Quotes, invoices, receipts and credit notes post through the shared ledger."
         actions={
           <>
+            <Button variant="outline" size="sm" asChild><Link to="/imports">Import</Link></Button>
             <Button variant="outline" size="sm" asChild>
               <Link to="/contacts/new" search={{ kind: "customer" }}>New customer</Link>
             </Button>

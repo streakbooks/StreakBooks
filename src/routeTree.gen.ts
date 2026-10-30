@@ -21,6 +21,7 @@ import { Route as AuthenticatedBankingRouteRouteImport } from './routes/_authent
 import { Route as AuthenticatedFilesRouteImport } from './routes/_authenticated/files'
 import { Route as AuthenticatedFirmRouteImport } from './routes/_authenticated/firm'
 import { Route as AuthenticatedFixedAssetsRouteImport } from './routes/_authenticated/fixed-assets'
+import { Route as AuthenticatedImportsRouteImport } from './routes/_authenticated/imports'
 import { Route as AuthenticatedHelpRouteImport } from './routes/_authenticated/help'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedProductsServicesRouteImport } from './routes/_authenticated/products-services'
@@ -165,6 +166,12 @@ const AuthenticatedFixedAssetsRoute =
   AuthenticatedFixedAssetsRouteImport.update({
     id: '/fixed-assets',
     path: '/fixed-assets',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedImportsRoute =
+  AuthenticatedImportsRouteImport.update({
+    id: '/imports',
+    path: '/imports',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedHelpRoute = AuthenticatedHelpRouteImport.update({
@@ -668,6 +675,7 @@ export interface FileRoutesByFullPath {
   '/files': typeof AuthenticatedFilesRoute
   '/firm': typeof AuthenticatedFirmRoute
   '/fixed-assets': typeof AuthenticatedFixedAssetsRoute
+  '/imports': typeof AuthenticatedImportsRoute
   '/help': typeof AuthenticatedHelpRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/products-services': typeof AuthenticatedProductsServicesRoute
@@ -760,6 +768,7 @@ export interface FileRoutesByTo {
   '/files': typeof AuthenticatedFilesRoute
   '/firm': typeof AuthenticatedFirmRoute
   '/fixed-assets': typeof AuthenticatedFixedAssetsRoute
+  '/imports': typeof AuthenticatedImportsRoute
   '/help': typeof AuthenticatedHelpRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/products-services': typeof AuthenticatedProductsServicesRoute
@@ -855,6 +864,7 @@ export interface FileRoutesById {
   '/_authenticated/files': typeof AuthenticatedFilesRoute
   '/_authenticated/firm': typeof AuthenticatedFirmRoute
   '/_authenticated/fixed-assets': typeof AuthenticatedFixedAssetsRoute
+  '/_authenticated/imports': typeof AuthenticatedImportsRoute
   '/_authenticated/help': typeof AuthenticatedHelpRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/products-services': typeof AuthenticatedProductsServicesRoute
@@ -954,6 +964,7 @@ export interface FileRouteTypes {
     | '/files'
     | '/firm'
     | '/fixed-assets'
+    | '/imports'
     | '/help'
     | '/onboarding'
     | '/products-services'
@@ -1046,6 +1057,7 @@ export interface FileRouteTypes {
     | '/files'
     | '/firm'
     | '/fixed-assets'
+    | '/imports'
     | '/help'
     | '/onboarding'
     | '/products-services'
@@ -1140,6 +1152,7 @@ export interface FileRouteTypes {
     | '/_authenticated/files'
     | '/_authenticated/firm'
     | '/_authenticated/fixed-assets'
+    | '/_authenticated/imports'
     | '/_authenticated/help'
     | '/_authenticated/onboarding'
     | '/_authenticated/products-services'
@@ -1319,6 +1332,13 @@ declare module '@tanstack/react-router' {
       path: '/fixed-assets'
       fullPath: '/fixed-assets'
       preLoaderRoute: typeof AuthenticatedFixedAssetsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/imports': {
+      id: '/_authenticated/imports'
+      path: '/imports'
+      fullPath: '/imports'
+      preLoaderRoute: typeof AuthenticatedImportsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/help': {
@@ -2145,6 +2165,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFilesRoute: typeof AuthenticatedFilesRoute
   AuthenticatedFirmRoute: typeof AuthenticatedFirmRoute
   AuthenticatedFixedAssetsRoute: typeof AuthenticatedFixedAssetsRoute
+  AuthenticatedImportsRoute: typeof AuthenticatedImportsRoute
   AuthenticatedHelpRoute: typeof AuthenticatedHelpRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedProductsServicesRoute: typeof AuthenticatedProductsServicesRoute
@@ -2179,6 +2200,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedFilesRoute: AuthenticatedFilesRoute,
   AuthenticatedFirmRoute: AuthenticatedFirmRoute,
   AuthenticatedFixedAssetsRoute: AuthenticatedFixedAssetsRoute,
+  AuthenticatedImportsRoute: AuthenticatedImportsRoute,
   AuthenticatedHelpRoute: AuthenticatedHelpRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedProductsServicesRoute: AuthenticatedProductsServicesRoute,

@@ -260,7 +260,7 @@ function PlatformAdmin() {
         billing.isPending ? <LoadingState /> : billing.isError ? <Notice error={billing.error} /> : billing.data ? (
           <div className="space-y-6">
             <Card><CardHeader><CardTitle>Plan catalogue</CardTitle>
-              <CardDescription>Visibility affects customer-facing plan discovery. Existing subscriptions are not cancelled. Only platform owners can change visibility.</CardDescription>
+              <CardDescription>Visibility affects customer-facing plan discovery. Existing subscriptions are not cancelled. Only platform owners can change visibility. <Link to="/platform/billing" className="underline">Manage versioned plans and localized prices</Link>.</CardDescription>
             </CardHeader><CardContent><div className="overflow-x-auto">
               <Table><TableHeader><TableRow>
                 <TableHead>Plan</TableHead><TableHead>USD / month</TableHead><TableHead>Seats</TableHead>
@@ -394,7 +394,7 @@ function PlatformAdmin() {
 
       <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
         <span className="flex items-center gap-1"><ShieldCheck className="size-4" /> Server-verified role, MFA and database-enforced authorisation</span>
-        <Button size="sm" variant="outline" onClick={() => queryClient.invalidateQueries({ queryKey: ["platform-admin"] })}>
+        <Button size="sm" variant="outline" onClick={() => queryClient.invalidateQueries({ predicate: (query) => typeof query.queryKey[0] === "string" && query.queryKey[0].startsWith("platform-admin-") })}>
           <RefreshCw className="mr-2 size-4" /> Refresh data
         </Button>
       </div>

@@ -2,10 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Search } from "lucide-react";
+import { Loader2, Search, SlidersHorizontal } from "lucide-react";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useFormat } from "@/hooks/use-format";
-import { globalSearch, type GlobalSearchHit } from "@/lib/search/global-search.functions";
+import { globalSearch, type GlobalSearchHit, type SearchCategory } from "@/lib/search/global-search.functions";
 import {
   buildPaletteActions,
   filterPaletteActions,
@@ -47,6 +47,8 @@ export function GlobalSearch({ className }: { className?: string }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [debounced, setDebounced] = useState("");
+  const [category, setCategory] = useState<SearchCategory>("all");
+  const [showAllFilters, setShowAllFilters] = useState(false);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -65,17 +67,17 @@ export function GlobalSearch({ className }: { className?: string }) {
   }, [q]);
 
   const searchQ = useQuery({
-    queryKey: ["global-search", companyId, debounced],
+    queryKey: ["global-search", companyId, debounced, category],
     enabled: Boolean(companyId) && debounced.length >= 2 && open,
-    queryFn: () => runSearch({ data: { companyId: companyId!, q: debounced } }),
+    queryFn: () => runSearch({ data: { companyId: companyId!, q: debounced, category } }),
     staleTime: 15_000,
   });
 
   const allActions = useMemo(() => buildPaletteActions(), []);
   const actions = useMemo(
     () =>
-      q.trim() === "" ? suggestedPaletteActions(allActions) : filterPaletteActions(allActions, q),
-    [allActions, q],
+      category !== "all" ? [] : q.trim() === "" ? suggestedPaletteActions(allActions) : filterPaletteActions(allActions, q),
+    [allActions, q, category],
   );
   const [isMac, setIsMac] = useState(false);
   useEffect(() => {
@@ -88,6 +90,7 @@ export function GlobalSearch({ className }: { className?: string }) {
     setOpen(false);
     setQ("");
     setDebounced("");
+    setCategory("all");
   }
 
   function goAction(a: PaletteAction) {

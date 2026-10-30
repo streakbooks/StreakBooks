@@ -6,13 +6,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
+  billingCountryFromLocale,
+  checkoutCurrencyForCountry,
   parseCheckoutBilling,
   paymentMethodsFor,
   type CheckoutBillingInput,
   type PayMethodId,
 } from "@/lib/billing/checkout-payload";
 import { countries } from "@/lib/company-constants";
-import { formatMinor, type BillingCurrency, type BillingInterval } from "@/lib/billing/pricing";
+import {
+  formatMinor,
+  listAmount,
+  type BillingCurrency,
+  type BillingInterval,
+} from "@/lib/billing/pricing";
 import { cn } from "@/lib/utils";
 
 const EMPTY_BILLING: Required<CheckoutBillingInput> = {
@@ -25,18 +32,15 @@ const EMPTY_BILLING: Required<CheckoutBillingInput> = {
   city: "",
   state: "",
   postalCode: "",
-  country: "GB",
+  country: "",
 };
 
 export function CheckoutForm({
   planName,
   interval,
-  currency,
-  dueMinor,
-  listMinor,
-  offerCode,
+  monthly,
+  annualFreeMonths,
   companyName,
-  countryCode,
   busy,
   serverError,
   onBack,
@@ -44,27 +48,35 @@ export function CheckoutForm({
 }: {
   planName: string;
   interval: BillingInterval;
-  currency: BillingCurrency;
-  dueMinor: number;
-  listMinor: number | null;
-  offerCode: string | null;
+  monthly: Record<BillingCurrency, number>;
+  annualFreeMonths: number;
   companyName: string;
-  countryCode: string;
   busy: boolean;
   serverError: string | null;
   onBack: () => void;
   onPay: (billing: CheckoutBillingInput, method: PayMethodId, copy: boolean) => void;
 }) {
-  const methods = paymentMethodsFor(currency);
-  const available = methods.filter((method) => method.available);
-  const elsewhere = methods.filter((method) => !method.available);
   const [billing, setBilling] = useState<Required<CheckoutBillingInput>>(() => ({
     ...EMPTY_BILLING,
     company: companyName,
-    country: countries.some((item) => item.code === countryCode) ? countryCode : "GB",
   }));
-  const [method, setMethod] = useState<PayMethodId>(available[0]?.id ?? "card");
+  const [method, setMethod] = useState<PayMethodId>("card");
   const [error, setError] = useState("");
+  const currency = billing.country ? checkoutCurrencyForCountry(billing.country) : null;
+  const dueMinor = currency ? listAmount(monthly[currency], interval, annualFreeMonths) : null;
+  const available = (currency ? paymentMethodsFor(currency) : [])
+    .filter((item) => item.available)
+    .sort((left, right) => Number(left.id === "card") - Number(right.id === "card"));
+
+  useEffect(() => {
+    const region = billingCountryFromLocale(window.navigator.language);
+    if (!region) return;
+    setBilling((current) => (current.country ? current : { ...current, country: region }));
+    const local = paymentMethodsFor(checkoutCurrencyForCountry(region)).find(
+      (item) => item.available && item.id !== "card",
+    );
+    if (local) setMethod(local.id);
+  }, []);
 
   useEffect(() => {
     void supabase.auth.getUser().then(({ data }) => {
@@ -73,6 +85,21 @@ export function CheckoutForm({
       setBilling((current) => (current.email ? current : { ...current, email }));
     });
   }, []);
+
+  function chooseCountry(value: string) {
+    setBilling((current) => ({ ...current, country: value }));
+    setError("");
+    if (!value) return;
+    const choices = paymentMethodsFor(checkoutCurrencyForCountry(value)).filter(
+      (item) => item.available,
+    );
+    setMethod(
+      (current) =>
+        choices.find((item) => item.id === current)?.id ??
+        choices.find((item) => item.id !== "card")?.id ??
+        "card",
+    );
+  }
 
   function update(field: keyof CheckoutBillingInput, value: string) {
     setBilling((current) => ({ ...current, [field]: value }));
@@ -196,8 +223,9 @@ export function CheckoutForm({
                   className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                   aria-label="Billing country"
                   value={billing.country}
-                  onChange={(event) => update("country", event.target.value)}
+                  onChange={(event) => chooseCountry(event.target.value)}
                 >
+                  <option value="">Choose a country</option>
                   {countries.map((item) => (
                     <option key={item.code} value={item.code}>
                       {item.name}
@@ -211,51 +239,46 @@ export function CheckoutForm({
           <section className="space-y-3 rounded-xl border bg-card p-5">
             <h2 className="text-base font-semibold">Pay with</h2>
             <p className="text-sm text-muted-foreground">
-              A card is optional. Choose UPI, bank transfer or a local bank debit when it is
-              available for this currency. Card numbers, UPI IDs and bank details are entered on the
-              secure payment page. LinkBooks does not store them.
+              The price and the methods follow the billing country, the same way other global
+              software does. A card works everywhere and is optional where a local method is
+              offered. Card numbers, UPI IDs and bank details are entered on the secure payment
+              page. LinkBooks does not store them.
             </p>
-            <RadioGroup
-              value={method}
-              onValueChange={(value) => {
-                if (available.some((item) => item.id === value)) setMethod(value as PayMethodId);
-              }}
-              className="gap-2"
-              aria-label="Payment method"
-            >
-              {available.map((item) => {
-                const selected = method === item.id;
-                return (
-                  <label
-                    key={item.id}
-                    className={cn(
-                      "flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-3",
-                      selected && "border-primary bg-primary/5",
-                    )}
-                  >
-                    <RadioGroupItem value={item.id} className="mt-0.5" />
-                    <span>
-                      <span className="block text-sm font-medium">{item.title}</span>
-                      <span className="mt-0.5 block text-xs text-muted-foreground">
-                        {item.detail}
+            {currency ? (
+              <RadioGroup
+                value={method}
+                onValueChange={(value) => {
+                  if (available.some((item) => item.id === value)) setMethod(value as PayMethodId);
+                }}
+                className="gap-2"
+                aria-label="Payment method"
+              >
+                {available.map((item) => {
+                  const selected = method === item.id;
+                  return (
+                    <label
+                      key={item.id}
+                      className={cn(
+                        "flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-3",
+                        selected && "border-primary bg-primary/5",
+                      )}
+                    >
+                      <RadioGroupItem value={item.id} className="mt-0.5" />
+                      <span>
+                        <span className="block text-sm font-medium">{item.title}</span>
+                        <span className="mt-0.5 block text-xs text-muted-foreground">
+                          {item.detail}
+                        </span>
                       </span>
-                    </span>
-                  </label>
-                );
-              })}
-            </RadioGroup>
-            {elsewhere.length > 0 ? (
-              <details className="text-sm text-muted-foreground">
-                <summary className="cursor-pointer">Methods for other currencies</summary>
-                <ul className="mt-2 space-y-1">
-                  {elsewhere.map((item) => (
-                    <li key={item.id}>
-                      <span className="text-foreground">{item.title}.</span> {item.reason}
-                    </li>
-                  ))}
-                </ul>
-              </details>
-            ) : null}
+                    </label>
+                  );
+                })}
+              </RadioGroup>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Choose a billing country to see the price and the local payment methods.
+              </p>
+            )}
           </section>
         </form>
 
@@ -264,26 +287,25 @@ export function CheckoutForm({
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between gap-3">
               <dt className="text-muted-foreground">{planName}</dt>
-              <dd>{formatMinor(dueMinor, currency)}</dd>
+              <dd>{currency && dueMinor != null ? formatMinor(dueMinor, currency) : "—"}</dd>
             </div>
             <div className="flex justify-between gap-3">
               <dt className="text-muted-foreground">Billing</dt>
-              <dd>{interval === "year" ? "Yearly" : "Monthly"}</dd>
+              <dd>
+                {interval === "year" ? "Yearly" : "Monthly"}
+                {currency ? ` · ${currency}` : ""}
+              </dd>
             </div>
-            {listMinor != null && offerCode ? (
-              <div className="flex justify-between gap-3">
-                <dt className="text-muted-foreground">Promo {offerCode}</dt>
-                <dd>List {formatMinor(listMinor, currency)}</dd>
-              </div>
-            ) : null}
             <div className="flex justify-between gap-3 border-t pt-2 text-base font-semibold">
               <dt>Due at checkout</dt>
-              <dd>{formatMinor(dueMinor, currency)}</dd>
+              <dd>{currency && dueMinor != null ? formatMinor(dueMinor, currency) : "—"}</dd>
             </div>
           </dl>
           <p className="text-xs text-muted-foreground">
-            Local tax is not collected on this checkout. The subscription renews until it is
-            cancelled. Nothing is charged until you confirm on the secure payment page.
+            {billing.country === "CA" ? "Canada is charged in US dollars. " : ""}
+            India uses rupees, with UPI and NEFT. The United States uses dollars. The United
+            Kingdom, Australia and New Zealand use their own currencies and bank debit. Local tax is
+            not collected here. The organisation's books are unchanged.
           </p>
           {error || serverError ? (
             <p className="text-sm text-destructive">{error || serverError}</p>

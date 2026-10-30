@@ -1,6 +1,23 @@
 import { countries } from "@/lib/company-constants";
 import type { BillingCurrency, BillingInterval } from "@/lib/billing/pricing";
 
+/** Presentment currency for a payer's country. Countries without a local price use USD. */
+export function checkoutCurrencyForCountry(country: string): BillingCurrency {
+  const code = country.trim().toUpperCase();
+  if (code === "IN") return "INR";
+  if (code === "GB") return "GBP";
+  if (code === "AU") return "AUD";
+  if (code === "NZ") return "NZD";
+  return "USD";
+}
+
+/** Region from a locale tag, when it is one of the launch countries. */
+export function billingCountryFromLocale(locale: string | undefined): string {
+  const region = locale?.split("-").pop()?.toUpperCase() ?? "";
+  if (region.length !== 2) return "";
+  return countries.some((item) => item.code === region) ? region : "";
+}
+
 export type CheckoutBilling = {
   email: string;
   name: string;
@@ -65,7 +82,7 @@ const PAY_METHODS: {
     provider: "razorpay",
     stripeTypes: [],
     currency: "INR",
-    unavailable: "Available when the organisation is billed in INR.",
+    unavailable: "Available when the billing country is India.",
   },
   {
     id: "neft",
@@ -75,7 +92,7 @@ const PAY_METHODS: {
     provider: "razorpay",
     stripeTypes: [],
     currency: "INR",
-    unavailable: "Available when the organisation is billed in INR.",
+    unavailable: "Available when the billing country is India.",
   },
   {
     id: "ach",
@@ -84,7 +101,7 @@ const PAY_METHODS: {
     provider: "stripe",
     stripeTypes: ["us_bank_account"],
     currency: "USD",
-    unavailable: "Available when the organisation is billed in USD.",
+    unavailable: "Available when the billing country is the United States or Canada.",
   },
   {
     id: "bacs",
@@ -93,7 +110,7 @@ const PAY_METHODS: {
     provider: "stripe",
     stripeTypes: ["bacs_debit"],
     currency: "GBP",
-    unavailable: "Available when the organisation is billed in GBP.",
+    unavailable: "Available when the billing country is the United Kingdom.",
   },
   {
     id: "becs",
@@ -102,7 +119,7 @@ const PAY_METHODS: {
     provider: "stripe",
     stripeTypes: ["au_becs_debit"],
     currency: "AUD",
-    unavailable: "Available when the organisation is billed in AUD.",
+    unavailable: "Available when the billing country is Australia.",
   },
   {
     id: "nz_bank",
@@ -111,7 +128,7 @@ const PAY_METHODS: {
     provider: "stripe",
     stripeTypes: ["nz_bank_account"],
     currency: "NZD",
-    unavailable: "Available when the organisation is billed in NZD.",
+    unavailable: "Available when the billing country is New Zealand.",
   },
 ];
 

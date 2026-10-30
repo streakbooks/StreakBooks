@@ -32,6 +32,8 @@ import {
 import {
   formatMinor,
   listAmount,
+  planByCode,
+  type BillingCurrency,
   type BillingInterval,
   type PriceQuote,
 } from "@/lib/billing/pricing";
@@ -246,12 +248,9 @@ export function SubscriptionPanel({
         <CheckoutForm
           planName={target.name}
           interval={interval}
-          currency={data.currency}
-          dueMinor={due}
-          listMinor={quote && quote.discountMinor > 0 ? quote.listMinor : null}
-          offerCode={quote && quote.discountMinor > 0 ? quote.offerCode : null}
+          monthly={monthlyPrices(target)}
+          annualFreeMonths={data.settings.annualFreeMonths}
           companyName={data.companyName}
-          countryCode={data.countryCode}
           busy={checkout.isPending}
           serverError={checkout.error instanceof Error ? checkout.error.message : null}
           onBack={() => setTarget(null)}
@@ -329,6 +328,17 @@ export function SubscriptionPanel({
       </Dialog>
     </div>
   );
+}
+
+function monthlyPrices(plan: BillingPlanView): Record<BillingCurrency, number> {
+  const catalog = planByCode(plan.code)?.monthly;
+  return {
+    USD: plan.monthlyUsd,
+    GBP: plan.monthlyGbp,
+    INR: plan.monthlyInr,
+    AUD: catalog?.AUD ?? plan.monthlyGbp,
+    NZD: catalog?.NZD ?? plan.monthlyGbp,
+  };
 }
 
 function PlanPicker({

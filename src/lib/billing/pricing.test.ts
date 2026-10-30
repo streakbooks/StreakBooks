@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  billingCountryFromLocale,
+  checkoutCurrencyForCountry,
   parseCheckoutBilling,
   paymentMethodsFor,
   stripeCheckoutBody,
@@ -266,6 +268,17 @@ describe("currency and checkout payload", () => {
     expect(trialEndUnixOrNull("2026-11-15T12:00:00.000Z", NOW)).toBe(
       Math.floor(Date.parse("2026-11-15T12:00:00.000Z") / 1000),
     );
+  });
+
+  it("prices checkout from the billing country and does not assume the United Kingdom", () => {
+    expect(checkoutCurrencyForCountry("IN")).toBe("INR");
+    expect(checkoutCurrencyForCountry("US")).toBe("USD");
+    expect(checkoutCurrencyForCountry("CA")).toBe("USD");
+    expect(checkoutCurrencyForCountry("GB")).toBe("GBP");
+    expect(checkoutCurrencyForCountry("AU")).toBe("AUD");
+    expect(billingCountryFromLocale("en-IN")).toBe("IN");
+    expect(billingCountryFromLocale("en")).toBe("");
+    expect(billingCountryFromLocale(undefined)).toBe("");
   });
 
   it("keeps card optional and limits bank methods to the charge currency", () => {

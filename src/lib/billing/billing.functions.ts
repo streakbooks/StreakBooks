@@ -5,6 +5,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
 import {
+  checkoutCurrencyForCountry,
   isPayMethodId,
   parseCheckoutBilling,
   paymentMethodsFor,
@@ -20,6 +21,7 @@ import {
   billingCurrencyForCompany,
   isBillingCurrency,
   isPlanCode,
+  planByCode,
   quotePrice,
   subscriptionAccess,
   type BillingCurrency,
@@ -142,7 +144,8 @@ type PlanRow = {
 function monthlyMinor(plan: PlanRow, currency: BillingCurrency): number {
   if (currency === "USD") return plan.monthly_usd;
   if (currency === "INR") return plan.monthly_inr;
-  return plan.monthly_gbp;
+  if (currency === "GBP") return plan.monthly_gbp;
+  return planByCode(plan.code)?.monthly[currency] ?? plan.monthly_gbp;
 }
 
 function toPlanView(plan: PlanRow, currency: BillingCurrency): BillingPlanView {
@@ -565,6 +568,7 @@ export const createBillingCheckout = createServerFn({ method: "POST" })
       data.planCode,
       data.interval,
       data.offerCode,
+      checkoutCurrencyForCountry(data.billing.country),
     );
     const method = paymentMethodsFor(priced.currency).find((item) => item.id === data.method);
     if (!method?.available) {
@@ -644,6 +648,7 @@ async function priceSelection(
   planCode: PlanCode,
   interval: BillingInterval,
   offerCode: string,
+  currencyOverride?: BillingCurrency,
 ) {
   const { data: company, error: companyError } = await supabase
     .from("companies")
@@ -652,7 +657,7 @@ async function priceSelection(
     .maybeSingle();
   if (companyError) throw new Error(companyError.message);
   if (!company) throw new Error("Company not found or you do not have access.");
-  const currency = billingCurrencyForCompany(company.base_currency);
+  const currency = currencyOverride ?? billingCurrencyForCompany(company.base_currency);
   const { data: plan, error: planError } = await supabase
     .from("billing_plans" as never)
     .select("*" as never)

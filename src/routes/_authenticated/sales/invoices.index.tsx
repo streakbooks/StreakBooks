@@ -177,16 +177,16 @@ function InvoicesList() {
                           {inv.invoice_number ?? inv.id.slice(0, 8)}
                         </Link>
                       </TableCell>
-                      <TableCell>{fmt.date(inv.invoice_date)}</TableCell>
-                      <TableCell>{fmt.date(inv.due_date)}</TableCell>
-                      <TableCell>{inv.contacts?.name ?? "—"}</TableCell>
+                      <TableCell><Link to="/sales/invoices/$invoiceId" params={{ invoiceId: inv.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{fmt.date(inv.invoice_date)}</Link></TableCell>
+                      <TableCell><Link to="/sales/invoices/$invoiceId" params={{ invoiceId: inv.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{fmt.date(inv.due_date)}</Link></TableCell>
+                      <TableCell><Link to="/sales/invoices/$invoiceId" params={{ invoiceId: inv.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{inv.contacts?.name ?? "—"}</Link></TableCell>
                       <TableCell>
-                        <StatusBadge status={isOverdue ? "overdue" : inv.status} />
+                        <Link to="/sales/invoices/$invoiceId" params={{ invoiceId: inv.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"><StatusBadge status={isOverdue ? "overdue" : inv.status} /></Link>
                       </TableCell>
                       <TableCell className="money">
-                        {fmt.money(inv.total_minor, inv.currency_code)}
+                        <Link to="/sales/invoices/$invoiceId" params={{ invoiceId: inv.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{fmt.money(inv.total_minor, inv.currency_code)}</Link>
                       </TableCell>
-                      <TableCell className="money">{fmt.money(out, inv.currency_code)}</TableCell>
+                      <TableCell className="money"><Link to="/sales/invoices/$invoiceId" params={{ invoiceId: inv.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{fmt.money(out, inv.currency_code)}</Link></TableCell>
                     </TableRow>
                   );
                 })}

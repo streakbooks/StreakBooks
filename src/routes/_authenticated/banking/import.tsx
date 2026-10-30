@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2 } from "lucide-react";
+import { Download, Loader2, UploadCloud } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { fromMinorUnits } from "@/lib/accounting/money";
@@ -64,6 +64,15 @@ export const Route = createFileRoute("/_authenticated/banking/import")({
 
 const NONE = "none";
 const MAX_FILE_CHARS = 5_000_000;
+function downloadBankTemplate() {
+  const csv = ["Date,Description,Amount,Payee,Reference,Bank Transaction ID,Running Balance", "2026-10-01,Example payment,125.00,Example Customer,INV-1001,BANK-0001,"].join("\r\n") + "\r\n";
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "linkbooks-bank-transactions-template.csv";
+  link.click();
+  URL.revokeObjectURL(url);
+}
 
 const storageKey = (companyId: string, bankAccountId: string) =>
   `linkbooks.bankImportMapping.${companyId}.${bankAccountId}`;
@@ -139,6 +148,27 @@ function ImportCsv() {
   const [mapping, setMapping] = useState<ImportMapping | null>(null);
   const [mappingSource, setMappingSource] = useState<"guess" | "saved">("guess");
   const [includeDuplicates, setIncludeDuplicates] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const [fileError, setFileError] = useState("");
+  async function loadCsvFile(file: File) {
+    setFileError("");
+    if (!/\\.(csv|txt)$/i.test(file.name)) {
+      setFileError("Unsupported format. Please export a CSV file; OFX, QFX, QBO, QIF and PDF are not yet supported.");
+      return;
+    }
+    if (file.size > MAX_FILE_CHARS) {
+      setFileError("File is too large (maximum 5 MB). Split it by date range.");
+      return;
+    }
+    const text = await file.text();
+    if (!text.trim()) {
+      setFileError("The selected file is empty.");
+      return;
+    }
+    setFilename(file.name);
+    setCsvText(text);
+    setIncludeDuplicates(false);
+  }
 
   const accountsQ = useQuery({
     queryKey: ["bank-accounts", companyId],
@@ -276,44 +306,65 @@ function ImportCsv() {
   return (
     <>
       <PageHeader
-        title="Import statement (CSV)"
-        description="Choose the file, check how its columns map, review the preview, then import. Likely duplicates are shown for you to confirm, never dropped silently."
+        title="Import bank transactions"
+        description="Upload a statement, map fields, review errors and duplicates, then confirm the import."
       />
-      <div className="mb-6 grid max-w-2xl gap-3">
+      <div className="mb-6 flex flex-wrap gap-2" aria-label="Import steps">
+        {["1. Upload", "2. Map fields", "3. Review", "4. Import"].map((step, i) => (
+          <span key={step} className={`rounded-full border px-3 py-1.5 text-xs font-medium ${(csvText ? (mapped ? 2 : 1) : 0) === i ? "border-primary bg-primary/10 text-primary" : "text-muted-foreground"}`}>{step}</span>
+        ))}
+      </div>
+      <section className="mb-6 max-w-3xl space-y-5 rounded-lg border bg-card p-5">
+        <div className="space-y-2">
+          <h2 className="font-semibold">Prepare your bank statement</h2>
+          <p className="text-sm text-muted-foreground">
+            Export a CSV from your bank or use the LinkBooks template. Import one bank account at a time.
+            Positive amounts are money received and negative amounts are money spent.
+          </p>
+          <Button type="button" size="sm" variant="outline" onClick={downloadBankTemplate}>
+            <Download className="mr-2 size-4" /> Download CSV template
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            Columns: Date, Description, Amount, Payee, Reference, Bank Transaction ID and optional Running Balance.
+            Use YYYY-MM-DD dates. Remove the example row before importing.
+          </p>
+        </div>
         <div className="space-y-1">
           <Label>Bank account</Label>
-          <BankLookup
-            ariaLabel="Bank account"
-            accounts={accountsQ.data ?? []}
-            value={bankAccountId}
-            onChange={setBankAccountId}
-            companyId={companyId}
-            placeholder="Select account"
-            allowClear={false}
-          />
+          <BankLookup ariaLabel="Bank account" accounts={accountsQ.data ?? []}
+            value={bankAccountId} onChange={setBankAccountId}
+            companyId={companyId} placeholder="Select account" allowClear={false} />
         </div>
-        <div className="space-y-1">
-          <Label htmlFor="csv-file">CSV file</Label>
-          <input
-            id="csv-file"
-            type="file"
-            accept=".csv,.txt,text/csv"
-            className="block text-sm"
-            onChange={async (e) => {
-              const f = e.target.files?.[0];
-              if (!f) return;
-              const text = await f.text();
-              if (text.length > MAX_FILE_CHARS) {
-                toast.error("This file is too large (max about 5 MB). Split it by date range.");
-                return;
-              }
-              setFilename(f.name);
-              setCsvText(text);
-              setIncludeDuplicates(false);
+        <div className="space-y-2">
+          <Label htmlFor="csv-file">Statement file</Label>
+          <label htmlFor="csv-file"
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={(e) => { e.preventDefault(); setDragOver(false); }}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragOver(false);
+              const file = e.dataTransfer.files[0];
+              if (file) void loadCsvFile(file);
             }}
-          />
+            className={`flex min-h-40 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-5 text-center ${dragOver ? "border-primary bg-primary/5" : "border-border hover:bg-muted/30"}`}>
+            <UploadCloud className="size-8 text-muted-foreground" />
+            <span className="text-sm font-medium">Drag and drop your file or click to browse</span>
+            <span className="text-xs text-muted-foreground">CSV or TXT · Maximum 5 MB</span>
+            <span className="rounded-md border bg-background px-3 py-1.5 text-sm">{csvText ? filename : "Choose file"}</span>
+          </label>
+          <input id="csv-file" type="file" accept=".csv,.txt,text/csv,text/plain"
+            className="sr-only" onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) void loadCsvFile(file);
+              e.currentTarget.value = "";
+            }} />
+          {fileError ? <p role="alert" className="text-sm text-destructive">{fileError}</p> : null}
+          <p className="text-xs text-muted-foreground">
+            OFX, QFX, QBO, QIF and PDF uploads are not supported yet. Export CSV instead.
+            Imported statement lines remain uncategorised until coded or reconciled.
+          </p>
         </div>
-      </div>
+      </section>
 
       {parsed && mapping ? (
         <section className="mb-6 space-y-4">

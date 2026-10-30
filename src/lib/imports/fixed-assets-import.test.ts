@@ -45,6 +45,6 @@ describe("fixed asset CSV full-file preflight (no writes)", () => {
   });
   it("limits batch size and rejects malformed CSV without writes", () => {
     expect(() => prepareFixedAssetsCsv(makeCsv(...Array.from({length:101},(_,i)=>({asset_code:"REF-"+i}))),"USD")).toThrow(/maximum import rows/);
-    expect(() => prepareFixedAssetsCsv("Asset Code,Description\nX,A","USD")).toThrow(/required column/);
+    expect(() => prepareFixedAssetsCsv("Asset Code,Description\nX,A","USD")).toThrow(/required column/i);
   });
 });

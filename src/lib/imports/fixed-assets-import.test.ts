@@ -11,10 +11,10 @@ const defaults: Record<string, string> = {
   depreciation_method: "straight_line", useful_life_months: "36", annual_rate_percent: "",
   residual_value: "100.00", depreciation_start_date: "2025-04-01", asset_type: "",
 };
-const makeCsv = (...overrides: Array<Record<string,string>>) => toCsv([
+const makeCsv = (...overrides: Array<Record<string,string>>) => toCsv(
   definition.fields.map(f => f.label),
-  ...overrides.map(o => definition.fields.map(f => ({ ...defaults, ...o })[f.key] ?? "")),
-]);
+  overrides.map(o => definition.fields.map(f => ({ ...defaults, ...o })[f.key] ?? "")),
+);
 
 describe("fixed asset CSV full-file preflight (no writes)", () => {
   it("validates account codes, opening depreciation and monthly terms", () => {

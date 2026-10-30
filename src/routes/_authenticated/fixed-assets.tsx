@@ -129,9 +129,6 @@ function FixedAssetsPage() {
         actions={
           <>
             <Button asChild variant="outline" size="sm">
-              <Link to="/imports" search={{ module: "fixed_assets" }}>Import asset register</Link>
-            </Button>
-            <Button asChild variant="outline" size="sm">
               <Link to="/reports/$reportId" params={{ reportId: "fixed-asset-register" }}>
                 Register report
               </Link>
@@ -167,6 +164,9 @@ function FixedAssetsPage() {
               onClick={() => setDialog({ kind: "bill-lines" })}
             >
               Capitalise from a bill
+            </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link to="/imports" search={{ module: "fixed_assets" }}>Import fixed assets</Link>
             </Button>
           </div>
           {d.assets.length === 0 ? (

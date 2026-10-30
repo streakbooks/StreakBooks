@@ -14,9 +14,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { CheckoutForm } from "@/components/billing/CheckoutForm";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   createBillingCheckout,
   getBillingOverview,
@@ -24,6 +24,7 @@ import {
   type BillingOverview,
   type BillingPlanView,
 } from "@/lib/billing/billing.functions";
+import type { CheckoutBillingInput, PayMethodId } from "@/lib/billing/checkout-payload";
 import {
   changeOrganisationPlan,
   openBillingPortal,
@@ -38,21 +39,6 @@ import { cn } from "@/lib/utils";
 
 const billingKey = (companyId: string) => ["billing-overview", companyId] as const;
 
-type Gateway = "stripe" | "razorpay";
-
-const GATEWAYS: { id: Gateway; title: string; detail: string }[] = [
-  {
-    id: "stripe",
-    title: "Card",
-    detail: "Visa, Mastercard and other cards. Processed by Stripe.",
-  },
-  {
-    id: "razorpay",
-    title: "Razorpay",
-    detail: "UPI, cards and netbanking.",
-  },
-];
-
 function paidSubscription(sub: BillingOverview["subscription"]): boolean {
   if (!sub) return false;
   if (sub.provider !== "stripe" && sub.provider !== "razorpay") return false;
@@ -62,20 +48,6 @@ function paidSubscription(sub: BillingOverview["subscription"]): boolean {
     sub.status === "past_due" ||
     sub.status === "paused"
   );
-}
-
-function preferredGateway(
-  currency: string,
-  providers: BillingOverview["providers"],
-): Gateway | null {
-  if (currency === "INR") {
-    if (providers.razorpay) return "razorpay";
-    if (providers.stripe) return "stripe";
-    return null;
-  }
-  if (providers.stripe) return "stripe";
-  if (providers.razorpay) return "razorpay";
-  return null;
 }
 
 export function SubscriptionPanel({
@@ -103,7 +75,6 @@ export function SubscriptionPanel({
   const [quotes, setQuotes] = useState<Record<string, PriceQuote>>({});
   const [target, setTarget] = useState<BillingPlanView | null>(null);
   const [intent, setIntent] = useState<"subscribe" | "switch">("subscribe");
-  const [gateway, setGateway] = useState<Gateway>("stripe");
   const openedFromLink = useRef(false);
   const data = overview.data;
 
@@ -125,7 +96,6 @@ export function SubscriptionPanel({
     const paid = paidSubscription(data.subscription);
     if (paid && data.subscription?.planCode === plan.code) return;
     setIntent(paid ? "switch" : "subscribe");
-    setGateway(preferredGateway(data.currency, data.providers) ?? "stripe");
     setTarget(plan);
   }, [data, initialPlan]);
 
@@ -139,7 +109,6 @@ export function SubscriptionPanel({
     const paid = paidSubscription(data.subscription);
     if (paid && data.subscription?.planCode === plan.code) return;
     setIntent(paid ? "switch" : "subscribe");
-    setGateway(preferredGateway(data.currency, data.providers) ?? "stripe");
     setTarget(plan);
   }
 
@@ -178,18 +147,28 @@ export function SubscriptionPanel({
   }
 
   const checkout = useMutation({
-    mutationFn: (input: { planCode: string; provider: Gateway; copy?: boolean }) =>
+    mutationFn: (input: {
+      planCode: string;
+      method: PayMethodId;
+      billing: CheckoutBillingInput;
+      copy?: boolean;
+    }) =>
       startCheckout({
         data: {
           companyId,
           planCode: input.planCode,
           interval,
-          provider: input.provider,
+          method: input.method,
           origin: window.location.origin,
           offerCode: appliedCode,
+          billing: input.billing,
         },
       }),
     onSuccess: (result, input) => {
+      if (!result.url) {
+        toast.error("Checkout did not return a payment page.");
+        return;
+      }
       if (input.copy) {
         void navigator.clipboard.writeText(result.url).then(
           () => toast.success("Payment link copied."),
@@ -248,18 +227,12 @@ export function SubscriptionPanel({
     );
   }
 
-  const available = GATEWAYS.filter((method) => data.providers[method.id]);
-  const selected = available.find((method) => method.id === gateway) ?? available[0] ?? null;
   const busy = checkout.isPending || planChange.isPending;
   const quote = target ? (quotes[target.code] ?? null) : null;
   const due = target
     ? (quote?.dueMinor ?? listAmount(target.monthlyMinor, interval, data.settings.annualFreeMonths))
     : 0;
-
-  function continueCheckout() {
-    if (!target || intent !== "subscribe" || !selected) return;
-    checkout.mutate({ planCode: target.code, provider: selected.id });
-  }
+  const checkingOut = target != null && intent === "subscribe";
 
   return (
     <div className="space-y-8">
@@ -269,6 +242,124 @@ export function SubscriptionPanel({
         onPortal={() => portal.mutate()}
       />
 
+      {checkingOut && target ? (
+        <CheckoutForm
+          planName={target.name}
+          interval={interval}
+          currency={data.currency}
+          dueMinor={due}
+          listMinor={quote && quote.discountMinor > 0 ? quote.listMinor : null}
+          offerCode={quote && quote.discountMinor > 0 ? quote.offerCode : null}
+          companyName={data.companyName}
+          countryCode={data.countryCode}
+          busy={checkout.isPending}
+          serverError={checkout.error instanceof Error ? checkout.error.message : null}
+          onBack={() => setTarget(null)}
+          onPay={(billing, method, copy) =>
+            checkout.mutate({ planCode: target.code, method, billing, copy })
+          }
+        />
+      ) : (
+        <PlanPicker
+          data={data}
+          interval={interval}
+          quotes={quotes}
+          appliedCode={appliedCode}
+          showPromo={showPromo}
+          offerCode={offerCode}
+          busy={busy}
+          onInterval={chooseInterval}
+          onOfferCode={setOfferCode}
+          onShowPromo={() => setShowPromo(true)}
+          onApply={() => void applyCode()}
+          onChoose={openPlan}
+        />
+      )}
+
+      <Dialog
+        open={target !== null && intent === "switch"}
+        onOpenChange={(open) => {
+          if (!open && !busy) setTarget(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          {target ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>Switch to {target.name}</DialogTitle>
+                <DialogDescription>
+                  An upgrade applies now. A downgrade starts when the current period ends. Card
+                  subscriptions are prorated. Records already posted stay available.
+                </DialogDescription>
+              </DialogHeader>
+              <dl className="space-y-2 rounded-lg border bg-muted/30 px-4 py-3 text-sm">
+                <div className="flex justify-between gap-4">
+                  <dt className="text-muted-foreground">Plan</dt>
+                  <dd className="font-medium">{target.name}</dd>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-muted-foreground">Billing</dt>
+                  <dd className="font-medium">{interval === "year" ? "Yearly" : "Monthly"}</dd>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-muted-foreground">Price</dt>
+                  <dd className="font-medium">{formatMinor(due, data.currency)}</dd>
+                </div>
+              </dl>
+              <DialogFooter className="gap-2 sm:gap-0">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  disabled={busy}
+                  onClick={() => setTarget(null)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => planChange.mutate(target.code)}
+                >
+                  {planChange.isPending ? "Updating…" : "Confirm switch"}
+                </Button>
+              </DialogFooter>
+            </>
+          ) : null}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function PlanPicker({
+  data,
+  interval,
+  quotes,
+  appliedCode,
+  showPromo,
+  offerCode,
+  busy,
+  onInterval,
+  onOfferCode,
+  onShowPromo,
+  onApply,
+  onChoose,
+}: {
+  data: BillingOverview;
+  interval: BillingInterval;
+  quotes: Record<string, PriceQuote>;
+  appliedCode: string;
+  showPromo: boolean;
+  offerCode: string;
+  busy: boolean;
+  onInterval: (interval: BillingInterval) => void;
+  onOfferCode: (code: string) => void;
+  onShowPromo: () => void;
+  onApply: () => void;
+  onChoose: (plan: BillingPlanView) => void;
+}) {
+  return (
+    <>
       <div className="flex flex-col items-center gap-3">
         <div
           className="inline-flex rounded-full border bg-muted/40 p-1"
@@ -280,7 +371,7 @@ export function SubscriptionPanel({
             size="sm"
             className="rounded-full"
             variant={interval === "month" ? "default" : "ghost"}
-            onClick={() => chooseInterval("month")}
+            onClick={() => onInterval("month")}
           >
             Monthly
           </Button>
@@ -289,7 +380,7 @@ export function SubscriptionPanel({
             size="sm"
             className="rounded-full"
             variant={interval === "year" ? "default" : "ghost"}
-            onClick={() => chooseInterval("year")}
+            onClick={() => onInterval("year")}
           >
             Yearly
             {data.settings.annualFreeMonths > 0 ? " · 2 months free" : ""}
@@ -300,7 +391,7 @@ export function SubscriptionPanel({
             className="flex flex-wrap items-end justify-center gap-2"
             onSubmit={(event) => {
               event.preventDefault();
-              void applyCode();
+              onApply();
             }}
           >
             <div className="space-y-1">
@@ -310,7 +401,7 @@ export function SubscriptionPanel({
               <Input
                 id="promo-code"
                 value={offerCode}
-                onChange={(event) => setOfferCode(event.target.value.toUpperCase())}
+                onChange={(event) => onOfferCode(event.target.value.toUpperCase())}
                 placeholder="Promo code"
                 className="w-40"
                 autoComplete="off"
@@ -324,7 +415,7 @@ export function SubscriptionPanel({
           <button
             type="button"
             className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-            onClick={() => setShowPromo(true)}
+            onClick={onShowPromo}
           >
             {appliedCode ? `Promo ${appliedCode} applied` : "Add promo code"}
           </button>
@@ -342,7 +433,7 @@ export function SubscriptionPanel({
               interval={interval}
               quote={quotes[plan.code] ?? null}
               busy={busy}
-              onChoose={() => openPlan(plan)}
+              onChoose={() => onChoose(plan)}
             />
           ))}
       </div>
@@ -353,99 +444,7 @@ export function SubscriptionPanel({
         {data.settings.trialPlanCode.replace(/^./, (letter) => letter.toUpperCase())} trial with no
         card. The ledger is the same on every plan.
       </p>
-
-      <Dialog
-        open={target !== null}
-        onOpenChange={(open) => {
-          if (!open && !busy) setTarget(null);
-        }}
-      >
-        <DialogContent className="sm:max-w-md">
-          {target ? (
-            <>
-              <DialogHeader>
-                <DialogTitle>
-                  {intent === "switch" ? `Switch to ${target.name}` : `Subscribe to ${target.name}`}
-                </DialogTitle>
-                <DialogDescription>
-                  {intent === "switch"
-                    ? "An upgrade applies now. A downgrade starts when the current period ends. Card subscriptions are prorated. Records already posted stay available."
-                    : "You continue on a secure payment page. Nothing is charged until you confirm there."}
-                </DialogDescription>
-              </DialogHeader>
-
-              <dl className="space-y-2 rounded-lg border bg-muted/30 px-4 py-3 text-sm">
-                <div className="flex justify-between gap-4">
-                  <dt className="text-muted-foreground">Plan</dt>
-                  <dd className="font-medium">{target.name}</dd>
-                </div>
-                <div className="flex justify-between gap-4">
-                  <dt className="text-muted-foreground">Billing</dt>
-                  <dd className="font-medium">{interval === "year" ? "Yearly" : "Monthly"}</dd>
-                </div>
-                <div className="flex justify-between gap-4">
-                  <dt className="text-muted-foreground">
-                    {intent === "switch" ? "Price" : "Due at checkout"}
-                  </dt>
-                  <dd className="font-medium">{formatMinor(due, data.currency)}</dd>
-                </div>
-                {quote && quote.discountMinor > 0 ? (
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-muted-foreground">Promo {quote.offerCode}</dt>
-                    <dd>List {formatMinor(quote.listMinor, data.currency)}</dd>
-                  </div>
-                ) : null}
-              </dl>
-
-              {intent === "subscribe" ? (
-                <PaymentChoices
-                  methods={available}
-                  gateway={selected?.id ?? gateway}
-                  recommended={preferredGateway(data.currency, data.providers)}
-                  onChange={setGateway}
-                />
-              ) : null}
-
-              <DialogFooter className="gap-2 sm:gap-0">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  disabled={busy}
-                  onClick={() => setTarget(null)}
-                >
-                  Cancel
-                </Button>
-                {intent === "subscribe" && selected ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={busy}
-                    onClick={() =>
-                      checkout.mutate({ planCode: target.code, provider: selected.id, copy: true })
-                    }
-                  >
-                    Copy link
-                  </Button>
-                ) : null}
-                {intent === "switch" ? (
-                  <Button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => planChange.mutate(target.code)}
-                  >
-                    {planChange.isPending ? "Updating…" : "Confirm switch"}
-                  </Button>
-                ) : (
-                  <Button type="button" disabled={busy || !selected} onClick={continueCheckout}>
-                    {checkout.isPending ? "Opening checkout…" : "Continue to payment"}
-                  </Button>
-                )}
-              </DialogFooter>
-            </>
-          ) : null}
-        </DialogContent>
-      </Dialog>
-    </div>
+    </>
   );
 }
 
@@ -595,73 +594,6 @@ function PlanCard({
         ))}
       </ul>
     </article>
-  );
-}
-
-function PaymentChoices({
-  methods,
-  gateway,
-  recommended,
-  onChange,
-}: {
-  methods: { id: Gateway; title: string; detail: string }[];
-  gateway: Gateway;
-  recommended: Gateway | null;
-  onChange: (gateway: Gateway) => void;
-}) {
-  if (methods.length === 0) {
-    return (
-      <p className="rounded-lg border border-dashed px-4 py-3 text-sm text-muted-foreground">
-        Online checkout is not turned on for this server yet. The trial and the ledger keep working.
-        An administrator adds the payment keys, then Continue to payment opens a real checkout.
-      </p>
-    );
-  }
-  if (methods.length === 1) {
-    const only = methods[0];
-    if (!only) return null;
-    return (
-      <p className="text-sm text-muted-foreground">
-        Payment is taken by {only.id === "stripe" ? "Stripe" : "Razorpay"}. {only.detail}
-      </p>
-    );
-  }
-  return (
-    <div className="space-y-2">
-      <p className="text-sm font-medium">Payment method</p>
-      <RadioGroup
-        value={gateway}
-        onValueChange={(value) => {
-          if (value === "stripe" || value === "razorpay") onChange(value);
-        }}
-        className="gap-2"
-        aria-label="Payment method"
-      >
-        {methods.map((method) => {
-          const selected = gateway === method.id;
-          return (
-            <label
-              key={method.id}
-              className={cn(
-                "flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-3",
-                selected && "border-primary bg-primary/5",
-              )}
-            >
-              <RadioGroupItem value={method.id} className="mt-0.5" />
-              <span className="min-w-0 flex-1">
-                <span className="flex items-center gap-2 text-sm font-medium">
-                  {method.title}
-                  {recommended === method.id ? (
-                    <span className="text-xs font-normal text-muted-foreground">Recommended</span>
-                  ) : null}
-                </span>
-                <span className="mt-0.5 block text-xs text-muted-foreground">{method.detail}</span>
-              </span>
-            </label>
-          );
-        })}
-      </RadioGroup>
-    </div>
   );
 }
 

@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { stripeCheckoutBody, trialEndUnixOrNull } from "@/lib/billing/checkout-payload";
+import {
+  parseCheckoutBilling,
+  paymentMethodsFor,
+  stripeCheckoutBody,
+  trialEndUnixOrNull,
+} from "@/lib/billing/checkout-payload";
 import {
   CATALOG,
   billingCurrencyForCompany,
@@ -261,6 +266,58 @@ describe("currency and checkout payload", () => {
     expect(trialEndUnixOrNull("2026-11-15T12:00:00.000Z", NOW)).toBe(
       Math.floor(Date.parse("2026-11-15T12:00:00.000Z") / 1000),
     );
+  });
+
+  it("keeps card optional and limits bank methods to the charge currency", () => {
+    const gbp = paymentMethodsFor("GBP");
+    expect(gbp.find((method) => method.id === "card")?.available).toBe(true);
+    expect(gbp.find((method) => method.id === "bacs")?.available).toBe(true);
+    expect(gbp.find((method) => method.id === "upi")?.available).toBe(false);
+    expect(gbp.find((method) => method.id === "neft")?.available).toBe(false);
+    expect(
+      paymentMethodsFor("INR")
+        .filter((method) => method.available)
+        .map((method) => method.id),
+    ).toEqual(["card", "upi", "neft"]);
+    expect(paymentMethodsFor("USD").find((method) => method.id === "ach")?.available).toBe(true);
+  });
+
+  it("sends Stripe the selected method and the saved billing customer", () => {
+    const body = stripeCheckoutBody({
+      checkoutId: "chk_1",
+      companyId: "co_1",
+      planCode: "growth",
+      planName: "Growth",
+      interval: "month",
+      currency: "GBP",
+      unitAmountMinor: 2400,
+      successUrl: "https://app.example/ok",
+      cancelUrl: "https://app.example/cancel",
+      trialEndUnix: null,
+      customerId: "cus_1",
+      paymentMethodTypes: ["bacs_debit"],
+      payMethod: "bacs",
+    });
+    expect(body.get("payment_method_types[0]")).toBe("bacs_debit");
+    expect(body.get("customer")).toBe("cus_1");
+    expect(body.get("billing_address_collection")).toBe("auto");
+    expect(body.get("metadata[pay_method]")).toBe("bacs");
+  });
+
+  it("requires a billing name and address before checkout", () => {
+    expect(() => parseCheckoutBilling({ email: "a@b.co" })).toThrow(/billing name/);
+    const billing = parseCheckoutBilling({
+      email: "a@b.co",
+      firstName: "Alex",
+      lastName: "Stone",
+      company: "Example Ltd",
+      line1: "1 High Street",
+      city: "London",
+      postalCode: "SW1A 1AA",
+      country: "gb",
+    });
+    expect(billing.country).toBe("GB");
+    expect(billing.name).toBe("Alex Stone");
   });
 });
 

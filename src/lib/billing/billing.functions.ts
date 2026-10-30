@@ -5,10 +5,16 @@ import type { Database } from "@/integrations/supabase/types";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
 import {
+  isPayMethodId,
+  parseCheckoutBilling,
+  paymentMethodsFor,
   razorpayPlanBody,
   razorpaySubscriptionBody,
   stripeCheckoutBody,
   trialEndUnixOrNull,
+  type CheckoutBilling,
+  type CheckoutBillingInput,
+  type PayMethodId,
 } from "@/lib/billing/checkout-payload";
 import {
   billingCurrencyForCompany,
@@ -65,6 +71,7 @@ export type BillingOverview = {
   ready: boolean;
   message: string | null;
   companyName: string;
+  countryCode: string;
   isDemo: boolean;
   currency: BillingCurrency;
   access: "full" | "read_only";
@@ -311,7 +318,7 @@ export const getBillingOverview = createServerFn({ method: "GET" })
     await assertCompanyMember(supabase, data.companyId);
     const { data: company, error: companyError } = await supabase
       .from("companies")
-      .select("name, is_demo, base_currency")
+      .select("name, is_demo, base_currency, country_code")
       .eq("id", data.companyId)
       .maybeSingle();
     if (companyError) throw new Error(companyError.message);
@@ -344,6 +351,7 @@ export const getBillingOverview = createServerFn({ method: "GET" })
         ready: false,
         message: MIGRATION_MESSAGE,
         companyName: company.name,
+        countryCode: company.country_code,
         isDemo: company.is_demo,
         currency,
         access: "full",
@@ -416,6 +424,7 @@ export const getBillingOverview = createServerFn({ method: "GET" })
           ? "This trial or subscription has ended. Reports stay available. Choose a plan to post again."
           : null,
       companyName: company.name,
+      countryCode: company.country_code,
       isDemo: company.is_demo,
       currency,
       access,
@@ -533,25 +542,21 @@ export const createBillingCheckout = createServerFn({ method: "POST" })
       companyId: string;
       planCode: string;
       interval: string;
-      provider: string;
+      method: string;
       origin: string;
       offerCode?: string;
+      billing?: CheckoutBillingInput;
     }) => ({
       companyId: assertUuid(input?.companyId),
       planCode: requirePlanCode(input?.planCode),
       interval: assertInterval(input?.interval),
-      provider:
-        input?.provider === "razorpay"
-          ? "razorpay"
-          : input?.provider === "stripe"
-            ? "stripe"
-            : null,
+      method: requirePayMethod(input?.method),
       origin: assertOrigin(input?.origin ?? ""),
       offerCode: (input?.offerCode ?? "").trim().slice(0, 40),
+      billing: parseCheckoutBilling(input?.billing),
     }),
   )
   .handler(async ({ data, context }) => {
-    if (!data.provider) throw new Error("Choose Stripe or Razorpay.");
     const { supabase, userId } = context;
     await assertCompanyPermission(supabase, data.companyId, "billing.manage");
     const priced = await priceSelection(
@@ -561,6 +566,10 @@ export const createBillingCheckout = createServerFn({ method: "POST" })
       data.interval,
       data.offerCode,
     );
+    const method = paymentMethodsFor(priced.currency).find((item) => item.id === data.method);
+    if (!method?.available) {
+      throw new Error(method?.reason ?? "That payment method is not available for this currency.");
+    }
     if (priced.quote.recurringMinor < 1)
       throw new Error("The recurring price must be at least one minor unit.");
 
@@ -570,7 +579,7 @@ export const createBillingCheckout = createServerFn({ method: "POST" })
         company_id: data.companyId,
         plan_code: data.planCode,
         billing_interval: data.interval,
-        provider: data.provider,
+        provider: method.provider,
         currency: priced.currency,
         unit_amount_minor: priced.quote.recurringMinor,
         offer_code: priced.quote.offerCode,
@@ -597,9 +606,12 @@ export const createBillingCheckout = createServerFn({ method: "POST" })
       successUrl: `${data.origin}/settings?section=subscription&checkout=success`,
       cancelUrl: `${data.origin}/settings?section=subscription&checkout=cancel`,
       trialEndUnix: trialEndUnixOrNull(sub?.trial_ends_at ?? null, new Date()),
+      billing: data.billing,
+      paymentMethodTypes: method.stripeTypes,
+      payMethod: method.id,
     };
     const session =
-      data.provider === "stripe"
+      method.provider === "stripe"
         ? await openStripeCheckout(draft)
         : await openRazorpayCheckout(draft);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -608,8 +620,13 @@ export const createBillingCheckout = createServerFn({ method: "POST" })
       .update({ provider_session_id: session.id } as never)
       .eq("id" as never, checkoutId as never);
     if (updateError) throw new Error(updateError.message);
-    return { url: session.url, provider: data.provider };
+    return { url: session.url, provider: method.provider };
   });
+
+function requirePayMethod(value: string | undefined): PayMethodId {
+  if (!isPayMethodId(value)) throw new Error("Choose a payment method.");
+  return value;
+}
 
 async function loadSubscription(supabase: Client, companyId: string) {
   const { data, error } = await supabase
@@ -701,15 +718,46 @@ async function createStripeIntroCoupon(
   return payload.id;
 }
 
+async function createStripeCustomer(
+  secret: string,
+  billing: CheckoutBilling | undefined,
+): Promise<string | null> {
+  if (!billing) return null;
+  const body = new URLSearchParams();
+  body.set("email", billing.email);
+  body.set("name", billing.name);
+  if (billing.company) body.set("metadata[company]", billing.company);
+  body.set("address[line1]", billing.line1);
+  if (billing.line2) body.set("address[line2]", billing.line2);
+  body.set("address[city]", billing.city);
+  if (billing.state) body.set("address[state]", billing.state);
+  body.set("address[postal_code]", billing.postalCode);
+  body.set("address[country]", billing.country);
+  const response = await fetch("https://api.stripe.com/v1/customers", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${secret}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body,
+  });
+  const payload = (await response.json()) as { id?: string; error?: { message?: string } };
+  if (!response.ok || !payload.id) {
+    throw new Error(payload.error?.message ?? "Stripe could not save the billing address.");
+  }
+  return payload.id;
+}
+
 async function openStripeCheckout(draft: Parameters<typeof stripeCheckoutBody>[0]) {
   const secret = process.env["STRIPE_SECRET_KEY"];
   if (!secret) {
     throw new Error(
-      "Stripe is not configured. Add STRIPE_SECRET_KEY on the server. The free trial does not need a card.",
+      "Card and bank checkout needs STRIPE_SECRET_KEY on the server. The free trial does not need a payment method.",
     );
   }
   assertStripeTestKey(secret);
-  const body = stripeCheckoutBody(draft);
+  const customerId = await createStripeCustomer(secret, draft.billing);
+  const body = stripeCheckoutBody(customerId ? { ...draft, customerId } : draft);
   const couponId = await createStripeIntroCoupon(secret, draft);
   if (couponId) body.set("discounts[0][coupon]", couponId);
   const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {
@@ -736,7 +784,7 @@ async function openRazorpayCheckout(draft: Parameters<typeof razorpayPlanBody>[0
   const secret = process.env["RAZORPAY_KEY_SECRET"];
   if (!key || !secret) {
     throw new Error(
-      "Razorpay is not configured. Add RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET on the server. The free trial does not need a card.",
+      "UPI and NEFT need RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET on the server. The free trial does not need a payment method.",
     );
   }
   assertRazorpayTestKey(key);

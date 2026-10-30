@@ -14,7 +14,7 @@ import {
   type PayMethodId,
   type PaymentProviderAvailability,
 } from "@/lib/billing/checkout-payload";
-import { billingCountries } from "@/lib/billing/billing-countries";
+import { billingCountries, isBillingCountry } from "@/lib/billing/billing-countries";
 import {
   formatMinor,
   listAmount,
@@ -43,6 +43,7 @@ export function CheckoutForm({
   monthly,
   annualFreeMonths,
   companyName,
+  defaultCountry,
   busy,
   serverError,
   providers,
@@ -58,6 +59,7 @@ export function CheckoutForm({
   monthly: Record<BillingCurrency, number>;
   annualFreeMonths: number;
   companyName: string;
+  defaultCountry: string;
   busy: boolean;
   serverError: string | null;
   providers: PaymentProviderAvailability;
@@ -82,7 +84,9 @@ export function CheckoutForm({
   useEffect(() => {
     if (initialCountryApplied.current) return;
     initialCountryApplied.current = true;
-    const region = billingCountryFromLocale(window.navigator.language);
+    const region = isBillingCountry(defaultCountry)
+      ? defaultCountry.trim().toUpperCase()
+      : billingCountryFromLocale(window.navigator.language);
     if (!region) return;
     setBilling((current) => (current.country ? current : { ...current, country: region }));
     onCountryChange(region);

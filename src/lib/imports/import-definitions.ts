@@ -82,7 +82,7 @@ const defs: ImportDefinition[] = [
     field("description", "Description", false, "", "Account description"),
     field("parent_code", "Parent Code", false, "", "Parent account"),
   ] },
-  { module: "fixed_assets", documentType: "Asset register", writeStatus: "not_implemented", fields: [
+  { module: "fixed_assets", documentType: "Asset register", writeStatus: "implemented", fields: [
     field("asset_code", "Asset Code", true, "FA-001", "Unique asset reference"),
     field("description", "Description", true, "Laptop", "Asset description"),
     field("acquisition_date", "Acquisition Date", true, "2026-10-01", "Acquisition date"),

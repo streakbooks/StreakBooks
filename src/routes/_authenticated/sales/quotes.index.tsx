@@ -170,14 +170,14 @@ function QuotesList() {
                           {qt.quote_number ?? qt.id.slice(0, 8)}
                         </Link>
                       </TableCell>
-                      <TableCell>{fmt.date(qt.quote_date)}</TableCell>
-                      <TableCell>{qt.expiry_date ? fmt.date(qt.expiry_date) : "—"}</TableCell>
-                      <TableCell>{qt.contacts?.name ?? "—"}</TableCell>
+                      <TableCell><Link to="/sales/quotes/$quoteId" params={{ quoteId: qt.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{fmt.date(qt.quote_date)}</Link></TableCell>
+                      <TableCell><Link to="/sales/quotes/$quoteId" params={{ quoteId: qt.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{qt.expiry_date ? fmt.date(qt.expiry_date) : "—"}</Link></TableCell>
+                      <TableCell><Link to="/sales/quotes/$quoteId" params={{ quoteId: qt.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{qt.contacts?.name ?? "—"}</Link></TableCell>
                       <TableCell>
-                        <StatusBadge status={qt.status} />
+                        <Link to="/sales/quotes/$quoteId" params={{ quoteId: qt.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"><StatusBadge status={qt.status} /></Link>
                       </TableCell>
                       <TableCell className="money">
-                        {fmt.money(qt.total_minor, qt.currency_code)}
+                        <Link to="/sales/quotes/$quoteId" params={{ quoteId: qt.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{fmt.money(qt.total_minor, qt.currency_code)}</Link>
                       </TableCell>
                       <TableCell className="space-x-2 text-right">
                         {can.ok ? (

@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { prepareBudgetImportCsv } from "@/lib/imports/budget-import";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
@@ -241,6 +242,65 @@ export const saveBudgetLines = createServerFn({ method: "POST" })
       BUDGET_MIGRATION,
     );
     return { stored: num(stored) };
+  });
+
+/**
+ * Import an entire CSV into an existing budget using the SAME atomic save_budget_lines
+ * database RPC as the budget editor. This updates budget plans, NEVER the general ledger.
+ * Resolve and validate all account codes before the sole write; no partial per-row inserts.
+ */
+export const importBudgetLinesCsv = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: { companyId: string; budgetId: string; csvText: string; mode: "merge" | "replace" }) => {
+    if (typeof input?.csvText !== "string" || input.csvText.length > 5 * 1024 * 1024) {
+      throw new Error("Invalid budget CSV or file exceeds 5 MB");
+    }
+    if (input.mode !== "merge" && input.mode !== "replace") throw new Error("Choose merge or replace mode");
+    return { companyId: companyIdOf(input), budgetId: assertUuid(input.budgetId, "budget"), csvText: input.csvText, mode: input.mode };
+  })
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "accounts.manage");
+    const sb = context.supabase as unknown as Sb;
+    const [budget, company, accounts] = await Promise.all([
+      loadBudgetHead(sb, data.companyId, data.budgetId),
+      loadCompanyMeta(sb, data.companyId),
+      budgetAccounts(sb, data.companyId),
+    ]);
+    const parsed = prepareBudgetImportCsv(data.csvText, company.baseCurrency);
+    const accountByCode = new Map<string, BudgetAccount>();
+    for (const account of accounts) {
+      const key = account.code.toLocaleLowerCase("en-US");
+      if (accountByCode.has(key)) {
+        throw new Error(`Account code ${account.code} is ambiguous; resolve duplicate account codes before import`);
+      }
+      accountByCode.set(key, account);
+    }
+    const lines: Array<{ account_id: string; period_month: string; amount_minor: number }> = [];
+    const months = fiscalMonthStarts(budget.fiscal_year_start);
+    for (const row of parsed) {
+      const account = accountByCode.get(row.accountCode.toLocaleLowerCase("en-US"));
+      if (!account) {
+        throw new Error(`Row ${row.sourceRow}: account ${row.accountCode} must match an active, postable income or expense account`);
+      }
+      row.months.forEach((amount, i) => {
+        if (data.mode === "replace" && amount === 0) return;
+        lines.push({ account_id: account.id, period_month: months[i]!, amount_minor: amount });
+      });
+    }
+    const stored = await callRpc<number>(
+      sb,
+      "save_budget_lines",
+      { _budget_id: data.budgetId, _lines: lines, _mode: data.mode },
+      BUDGET_MIGRATION,
+    );
+    const { error: auditError } = await context.supabase.rpc("record_audit_event" as never, {
+      _company_id: data.companyId,
+      _action: "budgets.csv_import",
+      _entity_type: "budget",
+      _entity_id: data.budgetId,
+      _details: { source: "csv", account_count: parsed.length, line_count: lines.length, mode: data.mode },
+    } as never);
+    return { stored: num(stored), accounts: parsed.length, budgetId: data.budgetId, auditError: auditError?.message ?? null };
   });
 
 export const deleteBudget = createServerFn({ method: "POST" })

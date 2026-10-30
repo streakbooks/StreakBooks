@@ -6,10 +6,10 @@ import { toCsv } from "@/lib/sales/csv";
 const definition = getImportDefinition("fixed_assets", "Asset register");
 const defaults: Record<string, string> = {
   asset_code: "OLD-001", description: "Office laptop", acquisition_date: "2025-04-01",
-  cost: "1200.00", accumulated_depreciation: "200.00",
+  cost: "1200.00", accumulated_depreciation: "200.00", opening_depreciation_through: "2026-09-30",
   asset_account_code: "1500", accumulated_account_code: "1590", expense_account_code: "7000",
   depreciation_method: "straight_line", useful_life_months: "36", annual_rate_percent: "",
-  residual_value: "100.00", depreciation_start_date: "2025-04-01", asset_type: "",
+  residual_value: "100.00", depreciation_start_date: "2026-10-01", asset_type: "",
 };
 const makeCsv = (...overrides: Array<Record<string,string>>) => toCsv(
   definition.fields.map(f => f.label),
@@ -37,6 +37,11 @@ describe("fixed asset CSV full-file preflight (no writes)", () => {
     expect(() => prepareFixedAssetsCsv(makeCsv({acquisition_date:"2026-02-30"}),"USD")).toThrow(/calendar date/);
     expect(() => prepareFixedAssetsCsv(makeCsv({cost:"123.999"}),"USD")).toThrow(/precision/);
     expect(() => prepareFixedAssetsCsv(makeCsv({accumulated_depreciation:"1150.00",residual_value:"100.00"}),"USD")).toThrow(/exceed cost/);
+  });
+  it("prevents imported opening depreciation from being charged a second time", () => {
+    expect(() => prepareFixedAssetsCsv(makeCsv({ opening_depreciation_through: "" }), "USD")).toThrow(/required when bringing forward/);
+    expect(() => prepareFixedAssetsCsv(makeCsv({ depreciation_start_date: "2026-09-01" }), "USD")).toThrow(/after the opening depreciation cutoff/);
+    expect(() => prepareFixedAssetsCsv(makeCsv({ opening_depreciation_through: "2025-03-01" }), "USD")).toThrow(/cutoff cannot precede acquisition/);
   });
   it("requires explicit depreciation terms and distinct GL accounts", () => {
     expect(() => prepareFixedAssetsCsv(makeCsv({useful_life_months:""}),"USD")).toThrow(/useful life/);

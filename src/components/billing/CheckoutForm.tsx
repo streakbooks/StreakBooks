@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { ArrowLeft, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
-  billingCountryFromLocale,
   checkoutCurrencyForCountry,
   parseCheckoutBilling,
   paymentMethodsFor,
@@ -14,7 +13,7 @@ import {
   type PayMethodId,
   type PaymentProviderAvailability,
 } from "@/lib/billing/checkout-payload";
-import { billingCountries, isBillingCountry } from "@/lib/billing/billing-countries";
+import { billingCountries } from "@/lib/billing/billing-countries";
 import {
   formatMinor,
   listAmount,
@@ -50,7 +49,6 @@ export function CheckoutForm({
   quote,
   quoteLoading,
   quoteError,
-  onCountryChange,
   onBack,
   onPay,
 }: {
@@ -66,34 +64,26 @@ export function CheckoutForm({
   quote: PriceQuote | null;
   quoteLoading: boolean;
   quoteError: string | null;
-  onCountryChange: (country: string) => void;
   onBack: () => void;
   onPay: (billing: CheckoutBillingInput, method: PayMethodId, copy: boolean) => void;
 }) {
   const [billing, setBilling] = useState<Required<CheckoutBillingInput>>(() => ({
     ...EMPTY_BILLING,
     company: companyName,
+    country: defaultCountry,
   }));
   const [method, setMethod] = useState<PayMethodId>("card");
   const [error, setError] = useState("");
-  const initialCountryApplied = useRef(false);
-  const currency = billing.country ? checkoutCurrencyForCountry(billing.country) : null;
+  const currency = checkoutCurrencyForCountry(defaultCountry);
   const dueMinor = quote && quote.currency === currency ? quote.dueMinor : null;
-  const available = paymentMethodsFor(billing.country, providers).filter((item) => item.available);
+  const available = paymentMethodsFor(defaultCountry, providers).filter((item) => item.available);
 
   useEffect(() => {
-    if (initialCountryApplied.current) return;
-    initialCountryApplied.current = true;
-    const region = isBillingCountry(defaultCountry)
-      ? defaultCountry.trim().toUpperCase()
-      : billingCountryFromLocale(window.navigator.language);
-    if (!region) return;
-    setBilling((current) => (current.country ? current : { ...current, country: region }));
-    onCountryChange(region);
-    const choices = paymentMethodsFor(region, providers).filter((item) => item.available);
-    const local = choices.find((item) => item.id !== "card");
-    setMethod(local?.id ?? choices[0]?.id ?? "card");
-  }, [onCountryChange, providers]);
+    // Country comes from the server, not an editable country picker or browser locale.
+    setBilling((current) => ({ ...current, country: defaultCountry }));
+    const choices = paymentMethodsFor(defaultCountry, providers).filter((item) => item.available);
+    setMethod(choices.find((item) => item.id === "upi")?.id ?? choices[0]?.id ?? "card");
+  }, [defaultCountry, providers.stripe, providers.razorpay]);
 
   useEffect(() => {
     void supabase.auth.getUser().then(({ data }) => {
@@ -102,20 +92,6 @@ export function CheckoutForm({
       setBilling((current) => (current.email ? current : { ...current, email }));
     });
   }, []);
-
-  function chooseCountry(value: string) {
-    setBilling((current) => ({ ...current, country: value }));
-    setError("");
-    onCountryChange(value);
-    if (!value) return;
-    const choices = paymentMethodsFor(value, providers).filter((item) => item.available);
-    setMethod(
-      (current) =>
-        choices.find((item) => item.id === current)?.id ??
-        choices.find((item) => item.id !== "card")?.id ??
-        "card",
-    );
-  }
 
   function update(field: keyof CheckoutBillingInput, value: string) {
     setBilling((current) => ({ ...current, [field]: value }));
@@ -237,22 +213,12 @@ export function CheckoutForm({
                   onChange={(event) => update("postalCode", event.target.value)}
                 />
               </Field>
-              <Field label="Country" id="bill-country">
-                <select
-                  id="bill-country"
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                  aria-label="Billing country"
-                  value={billing.country}
-                  onChange={(event) => chooseCountry(event.target.value)}
-                >
-                  <option value="">Choose a country</option>
-                  {billingCountries.map((item) => (
-                    <option key={item.code} value={item.code}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-              </Field>
+              <div className="space-y-1" aria-label="Billing region">
+                <p className="text-sm font-medium">Billing region</p>
+                <p className="rounded-md border border-input bg-muted/30 px-3 py-2 text-sm">
+                  {billingCountries.find((item) => item.code === defaultCountry)?.name ?? defaultCountry} · {currency}
+                </p>
+              </div>
             </div>
           </section>
 
@@ -296,7 +262,7 @@ export function CheckoutForm({
               </RadioGroup>
             ) : (
               <p className="text-sm text-muted-foreground">
-                Choose a billing country to see available payment options.
+                Local payment methods will appear when an eligible processor is configured.
               </p>
             )}
             {currency && available.length === 0 ? (
@@ -332,7 +298,7 @@ export function CheckoutForm({
             </p>
           ) : null}
           <p className="text-xs text-muted-foreground">
-            The final billing currency follows the selected country; other markets currently use USD.
+            The billing currency follows your organisation region; markets without a supported local price currently use USD.
             Tax collection is not configured. Tax obligations must be reviewed before going live.
             Payment methods will be confirmed by the hosted provider.
           </p>

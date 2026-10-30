@@ -1,12 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getRequestHeader } from "@tanstack/react-start/server";
+import { assertCheckoutRegion, resolveBillingRegion } from "@/lib/billing/region";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
-import { isBillingCountry } from "@/lib/billing/billing-countries";
 import { assertUuid } from "@/lib/company-validation";
 import {
-  checkoutCurrencyForCountry,
   isPayMethodId,
   parseCheckoutBilling,
   paymentMethodsFor,
@@ -19,7 +19,6 @@ import {
   type PayMethodId,
 } from "@/lib/billing/checkout-payload";
 import {
-  billingCurrencyForCompany,
   isBillingCurrency,
   isPlanCode,
   planByCode,
@@ -327,7 +326,11 @@ export const getBillingOverview = createServerFn({ method: "GET" })
       .maybeSingle();
     if (companyError) throw new Error(companyError.message);
     if (!company) throw new Error("Company not found or you do not have access.");
-    const currency = billingCurrencyForCompany(company.base_currency);
+    const region = resolveBillingRegion({
+      organisationCountry: company.country_code,
+      visitorCountry: getRequestHeader("x-vercel-ip-country"),
+    });
+    const currency = region.currency;
 
     const [settingsRes, plansRes, subRes, operatorRes] = await Promise.all([
       supabase
@@ -355,7 +358,7 @@ export const getBillingOverview = createServerFn({ method: "GET" })
         ready: false,
         message: MIGRATION_MESSAGE,
         companyName: company.name,
-        countryCode: company.country_code,
+        countryCode: region.country,
         isDemo: company.is_demo,
         currency,
         access: "full",
@@ -428,7 +431,7 @@ export const getBillingOverview = createServerFn({ method: "GET" })
           ? "This trial or subscription has ended. Reports stay available. Choose a plan to post again."
           : null,
       companyName: company.name,
-      countryCode: company.country_code,
+      countryCode: region.country,
       isDemo: company.is_demo,
       currency,
       access,
@@ -499,12 +502,11 @@ async function listOfferRows(supabase: Client): Promise<BillingOfferView[]> {
 export const previewBillingQuote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (input: { companyId: string; planCode: string; interval: string; offerCode?: string; billingCountry?: string }) => ({
+    (input: { companyId: string; planCode: string; interval: string; offerCode?: string }) => ({
       companyId: assertUuid(input?.companyId),
       planCode: requirePlanCode(input?.planCode),
       interval: assertInterval(input?.interval),
       offerCode: (input?.offerCode ?? "").trim().slice(0, 40),
-      billingCountry: input?.billingCountry ? requireBillingCountry(input.billingCountry) : null,
     }),
   )
   .handler(async ({ data, context }) => {
@@ -516,7 +518,6 @@ export const previewBillingQuote = createServerFn({ method: "POST" })
       data.planCode,
       data.interval,
       data.offerCode,
-      data.billingCountry ? checkoutCurrencyForCountry(data.billingCountry) : undefined,
     );
     return priced.quote;
   });
@@ -571,9 +572,9 @@ export const createBillingCheckout = createServerFn({ method: "POST" })
       data.planCode,
       data.interval,
       data.offerCode,
-      checkoutCurrencyForCountry(data.billing.country),
     );
-    const method = paymentMethodsFor(data.billing.country, providerFlags()).find(
+    assertCheckoutRegion(data.billing.country, priced.country);
+    const method = paymentMethodsFor(priced.country, providerFlags()).find(
       (item) => item.id === data.method,
     );
     if (!method?.available) {
@@ -640,12 +641,6 @@ export const createBillingCheckout = createServerFn({ method: "POST" })
     return { url: session.url, provider: method.provider };
   });
 
-function requireBillingCountry(country: string): string {
-  const code = country.trim().toUpperCase();
-  if (!isBillingCountry(code)) throw new Error("Choose a valid billing country.");
-  return code;
-}
-
 function requirePayMethod(value: string | undefined): PayMethodId {
   if (!isPayMethodId(value)) throw new Error("Choose a payment method.");
   return value;
@@ -667,16 +662,19 @@ async function priceSelection(
   planCode: PlanCode,
   interval: BillingInterval,
   offerCode: string,
-  currencyOverride?: BillingCurrency,
 ) {
   const { data: company, error: companyError } = await supabase
     .from("companies")
-    .select("base_currency")
+    .select("country_code")
     .eq("id", companyId)
     .maybeSingle();
   if (companyError) throw new Error(companyError.message);
   if (!company) throw new Error("Company not found or you do not have access.");
-  const currency = currencyOverride ?? billingCurrencyForCompany(company.base_currency);
+  const region = resolveBillingRegion({
+    organisationCountry: company.country_code,
+    visitorCountry: getRequestHeader("x-vercel-ip-country"),
+  });
+  const currency = region.currency;
   const { data: plan, error: planError } = await supabase
     .from("billing_plans" as never)
     .select("*" as never)
@@ -706,7 +704,7 @@ async function priceSelection(
     now: new Date(),
     planCode,
   });
-  return { quote, currency, planName: row.name };
+  return { quote, currency, country: region.country, planName: row.name };
 }
 
 function requirePlanCode(value: string | undefined): PlanCode {

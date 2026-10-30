@@ -114,7 +114,7 @@ function ImportCentre() {
       <div className="rounded-xl border p-5 space-y-4">
         <label className="block text-sm font-medium" htmlFor="import-kind">Import type</label>
         <select id="import-kind" className="w-full rounded-md border bg-background p-2" value={selected} onChange={(e) => { setSelected(Number(e.target.value)); setCsv(""); setFileName(""); setImportResult(null); setProjectResult(null); setSalesResult(null); setBillResult(null); }}>
-          {IMPORT_DEFINITIONS.map((item, i) => <option key={item.module + item.documentType} value={i}>{item.module.replaceAll("_", " ")} — {item.documentType}</option>)}
+          {definitions.map((item, i) => <option key={item.module + item.documentType} value={i}>{item.module.replaceAll("_", " ")} — {item.documentType}</option>)}
         </select>
         <div className="flex flex-wrap gap-2">
           <Button type="button" variant="outline" onClick={() => saveCsv(importTemplateCsv(definition), definition.module + "-template.csv")}>Download template</Button>

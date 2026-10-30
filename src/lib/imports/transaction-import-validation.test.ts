@@ -34,4 +34,22 @@ describe("Sales and Purchases import preflight (non-posting)", () => {
     expect(() => prepareTransactionCsv(`${sales}\nI-1,Acme,2026-10-01,2026-10-31,4000,Test,0,1,`, "sales", "USD")).toThrow(/positive/);
     expect(() => prepareTransactionCsv(`Invoice Number,Customer\nI-1,Acme`, "sales", "USD")).toThrow(/required column is missing/i);
   });
+  it("merges case-only invoice identifiers consistently with the database unique index", () => {
+    const csv = `${sales}\nINV-9,Acme,2026-10-01,2026-10-31,4000,First,1,1.00,\ninv-9,Acme,2026-10-01,2026-10-31,4000,Second,1,2.00,`;
+    const docs = prepareTransactionCsv(csv, "sales", "USD");
+    expect(docs).toHaveLength(1);
+    expect(docs[0]?.lines).toHaveLength(2);
+  });
+  it("allows the same supplier reference for separate suppliers", () => {
+    const csv = `${bills}\nB-5,Supplier One,2026-10-01,2026-10-31,6000,First,1,5.00\nB-5,Supplier Two,2026-10-01,2026-10-31,6000,Second,1,6.00`;
+    const docs = prepareTransactionCsv(csv, "purchases", "USD");
+    expect(docs).toHaveLength(2);
+  });
+  it("rejects zero-value documents before any account or contact writes", () => {
+    expect(() => prepareTransactionCsv(
+      `${sales}\nINV-0,Acme,2026-10-01,2026-10-31,4000,Test,1,0.00,`,
+      "sales", "USD",
+    )).toThrow(/no monetary value/);
+  });
+
 });

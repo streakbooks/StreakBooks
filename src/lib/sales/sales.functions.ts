@@ -1,4 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
+import { prepareTransactionCsv } from "@/lib/imports/transaction-import-validation";
+import { loadSalesTaxCodes } from "@/lib/sales/tax-codes";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
@@ -1282,4 +1284,151 @@ export const convertQuoteToInvoice = createServerFn({ method: "POST" })
       lines,
     });
     return { invoiceId: saved.id };
+  });
+
+
+/**
+ * CSV-to-invoice domain import. Drafts use saveInvoiceDraftCore and optional AR
+ * posting uses authoriseInvoiceCore. Never inserts journals from CSV.
+ * Repeated external numbers are skipped; the database's company-scoped,
+ * case-insensitive unique invoice-number index protects concurrent writers.
+ *
+ * Import is per-document (NOT atomic across the entire batch). Failures are
+ * returned with source row and draft ID so a partially-posted draft can be
+ * inspected without generating a duplicate.
+ */
+export const importSalesInvoicesCsv = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; csvText: string; authorise?: boolean }) => {
+    if (typeof input?.csvText !== "string" || input.csvText.length > 5 * 1024 * 1024) {
+      throw new Error("Invalid CSV or file exceeds 5 MB");
+    }
+    return {
+      companyId: assertUuid(input.companyId),
+      csvText: input.csvText,
+      authorise: input.authorise === true,
+    };
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "sales.draft");
+    if (data.authorise) await assertCompanyPermission(supabase, data.companyId, "sales.authorise");
+    const defaults = await loadCompanyDefaults(supabase, data.companyId);
+    const docs = prepareTransactionCsv(data.csvText, "sales", defaults.baseCurrency);
+    // Do not silently truncate the external identifier supplied in CSV.
+    for (const doc of docs) {
+      if (doc.documentNumber.length > 40) {
+        throw new Error(`Row ${doc.lines[0]!.sourceRow}: invoice number exceeds 40 characters`);
+      }
+    }
+
+    // Resolve ALL references before writing any invoice.
+    const accounts = new Map<string, string>();
+    for (const code of new Set(docs.flatMap((d) => d.lines.map((l) => l.accountCode)))) {
+      const { data: rows, error } = await supabase
+        .from("accounts" as never)
+        .select("id, account_type, is_active, is_postable, archived_at" as never)
+        .eq("company_id" as never, data.companyId as never)
+        .eq("code" as never, code as never)
+        .limit(2);
+      if (error) throw new Error(error.message);
+      const available = (rows ?? []) as Array<{ id: string; account_type: string; is_active: boolean; is_postable: boolean; archived_at: string | null }>;
+      if (available.length !== 1 || !available[0]!.is_active || !available[0]!.is_postable || available[0]!.archived_at || available[0]!.account_type !== "income") {
+        throw new Error(`Account ${code} must resolve to one active postable income account in this organisation`);
+      }
+      accounts.set(code, available[0]!.id);
+    }
+    const contacts = new Map<string, string>();
+    for (const name of new Set(docs.map((d) => d.contactName))) {
+      const { data: rows, error } = await supabase
+        .from("contacts" as never)
+        .select("id" as never)
+        .eq("company_id" as never, data.companyId as never)
+        .eq("name" as never, name as never)
+        .in("kind" as never, ["customer", "both"] as never)
+        .eq("is_active" as never, true as never)
+        .limit(2);
+      if (error) throw new Error(error.message);
+      if ((rows ?? []).length !== 1) throw new Error(`Customer "${name}" must match exactly one active customer in this organisation`);
+      contacts.set(name, ((rows ?? []) as Array<{ id: string }>)[0]!.id);
+    }
+    const codesByDate = new Map<string, Map<string, string>>();
+    for (const doc of docs) {
+      if (!codesByDate.has(doc.documentDate)) {
+        const codes = await loadSalesTaxCodes(supabase, data.companyId, doc.documentDate);
+        codesByDate.set(doc.documentDate, new Map(codes.map((c) => [c.code, c.id])));
+      }
+      for (const line of doc.lines) {
+        if (line.taxCode && !codesByDate.get(doc.documentDate)!.has(line.taxCode)) {
+          throw new Error(`Row ${line.sourceRow}: tax code ${line.taxCode} is not available for sales on ${doc.documentDate}`);
+        }
+      }
+    }
+
+    const outcome: {
+      createdDrafts: number; authorised: number; skipped: number; failed: number;
+      errors: Array<{ row: number; number: string; draftId: string | null; message: string }>;
+      auditError: string | null;
+    } = { createdDrafts: 0, authorised: 0, skipped: 0, failed: 0, errors: [], auditError: null };
+
+    for (const doc of docs) {
+      let draftId: string | null = null;
+      try {
+        const { data: existing, error: existingError } = await supabase
+          .from("sales_invoices" as never)
+          .select("id" as never)
+          .eq("company_id" as never, data.companyId as never)
+          .ilike("invoice_number" as never, escapeLikeLiteral(doc.documentNumber) as never)
+          .neq("status" as never, "void" as never)
+          .limit(1);
+        if (existingError) throw new Error(existingError.message);
+        if ((existing ?? []).length) { outcome.skipped++; continue; }
+
+        const input = parseInvoiceDraftInput({
+          companyId: data.companyId,
+          contactId: contacts.get(doc.contactName)!,
+          invoiceNumber: doc.documentNumber,
+          invoiceDate: doc.documentDate,
+          dueDate: doc.dueDate,
+          currencyCode: defaults.baseCurrency,
+          lines: doc.lines.map((l) => ({
+            description: l.description,
+            accountId: accounts.get(l.accountCode)!,
+            quantity: l.quantity,
+            unitPriceMinor: l.unitPriceMinor,
+            taxCodeId: l.taxCode ? codesByDate.get(doc.documentDate)!.get(l.taxCode)! : null,
+          })),
+        });
+        const saved = await saveInvoiceDraftCore(context, input);
+        draftId = saved.id;
+        outcome.createdDrafts++;
+        if (data.authorise) {
+          await authoriseInvoiceCore(context, data.companyId, saved.id);
+          outcome.authorised++;
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Invoice import failed";
+        // Concurrent duplicate numbers are blocked by the unique index.
+        // The importer reports this as a failure if the domain save cannot confirm
+        // whether another actor created the invoice.
+        outcome.failed++;
+        outcome.errors.push({
+          row: doc.lines[0]!.sourceRow, number: doc.documentNumber, draftId, message,
+        });
+      }
+    }
+    if (outcome.createdDrafts > 0) {
+      const { error } = await supabase.rpc("record_audit_event" as never, {
+        _company_id: data.companyId,
+        _action: "sales.invoices.import",
+        _entity_type: "sales_invoices",
+        _entity_id: null,
+        _details: {
+          source: "csv", drafts: outcome.createdDrafts,
+          authorised: outcome.authorised, skipped: outcome.skipped, failed: outcome.failed,
+        },
+      } as never);
+      if (error) outcome.auditError = error.message;
+    }
+    return outcome;
   });

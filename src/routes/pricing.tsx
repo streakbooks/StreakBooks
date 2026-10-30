@@ -106,6 +106,9 @@ function PricingPage() {
         </label>
       </div>
       {query.isLoading ? <p>Loading plans…</p> : null}
+      {query.isError ? (
+        <p>{query.error instanceof Error ? query.error.message : "Plans could not be loaded."}</p>
+      ) : null}
       {query.data?.ready === false ? (
         <p>Published prices appear here after the billing migration is applied.</p>
       ) : null}

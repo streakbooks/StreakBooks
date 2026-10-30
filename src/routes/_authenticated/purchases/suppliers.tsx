@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2 } from "lucide-react";
@@ -145,10 +145,10 @@ function SuppliersPage() {
               }>
             ).map((s) => (
               <TableRow key={s.id}>
-                <TableCell>{s.name}</TableCell>
-                <TableCell>{s.email ?? "—"}</TableCell>
-                <TableCell>{s.payment_terms_days} days</TableCell>
-                <TableCell>{s.tax_number ?? "—"}</TableCell>
+                <TableCell><Link to="/contacts/$contactId" params={{ contactId: s.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{s.name}</Link></TableCell>
+                <TableCell><Link to="/contacts/$contactId" params={{ contactId: s.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{s.email ?? "—"}</Link></TableCell>
+                <TableCell><Link to="/contacts/$contactId" params={{ contactId: s.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{s.payment_terms_days} days</Link></TableCell>
+                <TableCell><Link to="/contacts/$contactId" params={{ contactId: s.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{s.tax_number ?? "—"}</Link></TableCell>
               </TableRow>
             ))}
           </TableBody>

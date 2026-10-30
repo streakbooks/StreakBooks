@@ -1171,10 +1171,7 @@ export const checkDuplicateSupplierBill = createServerFn({ method: "GET" })
     return { duplicate: true as const, matches };
   });
 
-export const saveBillDraft = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: {
+function parseBillDraftInput(input: {
       companyId: string;
       billId?: string;
       contactId: string;
@@ -1198,7 +1195,7 @@ export const saveBillDraft = createServerFn({ method: "POST" })
         country?: string;
       };
       lines: BillLineIn[];
-    }) => {
+    } ) {
       if (
         !/^\d{4}-\d{2}-\d{2}$/.test(input.billDate) ||
         !/^\d{4}-\d{2}-\d{2}$/.test(input.dueDate)
@@ -1258,9 +1255,12 @@ export const saveBillDraft = createServerFn({ method: "POST" })
           supplierAddress: input.supplierAddress !== undefined,
         },
       };
-    },
-  )
-  .handler(async ({ data, context }) => {
+    }
+
+async function saveBillDraftCore(
+  data: ReturnType<typeof parseBillDraftInput>,
+  context: { supabase: Parameters<typeof assertCompanyPermission>[0]; userId: string },
+) {
     const { supabase, userId } = context;
     await assertCompanyPermission(supabase, data.companyId, "purchases.draft");
     if (
@@ -1531,9 +1531,14 @@ export const saveBillDraft = createServerFn({ method: "POST" })
       supplier_name: (supplierRow as { name?: string } | null)?.name ?? "",
     });
     return { id: billId };
-  });
+}
 
-export async function authoriseBillInternal(
+export const saveBillDraft = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(parseBillDraftInput)
+  .handler(async ({ data, context }) => saveBillDraftCore(data, context));
+
+async function authoriseBillInternal(
   supabase: Parameters<typeof assertCompanyPermission>[0],
   userId: string,
   companyId: string,

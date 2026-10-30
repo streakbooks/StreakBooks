@@ -129,6 +129,9 @@ function FixedAssetsPage() {
         actions={
           <>
             <Button asChild variant="outline" size="sm">
+              <Link to="/imports" search={{ module: "fixed_assets" }}>Import asset register</Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
               <Link to="/reports/$reportId" params={{ reportId: "fixed-asset-register" }}>
                 Register report
               </Link>

@@ -55,6 +55,7 @@ import { Route as AuthenticatedContactsNewRouteImport } from './routes/_authenti
 import { Route as AuthenticatedContactsSettingsRouteImport } from './routes/_authenticated/contacts/settings'
 import { Route as AuthenticatedDocumentsBrandingRouteImport } from './routes/_authenticated/documents.branding'
 import { Route as AuthenticatedPlatformBillingRouteImport } from './routes/_authenticated/platform.billing'
+import { Route as AuthenticatedPlatformAdminRouteImport } from './routes/_authenticated/platform-admin'
 import { Route as AuthenticatedPurchasesIndexRouteImport } from './routes/_authenticated/purchases/index'
 import { Route as AuthenticatedPurchasesEmployeeExpensesRouteImport } from './routes/_authenticated/purchases/employee-expenses'
 import { Route as AuthenticatedPurchasesRecurringRouteImport } from './routes/_authenticated/purchases/recurring'
@@ -360,6 +361,12 @@ const AuthenticatedPlatformBillingRoute =
   AuthenticatedPlatformBillingRouteImport.update({
     id: '/platform/billing',
     path: '/platform/billing',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPlatformAdminRoute =
+  AuthenticatedPlatformAdminRouteImport.update({
+    id: '/platform-admin',
+    path: '/platform-admin',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedPurchasesIndexRoute =
@@ -716,6 +723,7 @@ export interface FileRoutesByFullPath {
   '/contacts/settings': typeof AuthenticatedContactsSettingsRoute
   '/documents/branding': typeof AuthenticatedDocumentsBrandingRoute
   '/platform/billing': typeof AuthenticatedPlatformBillingRoute
+  '/platform-admin': typeof AuthenticatedPlatformAdminRoute
   '/purchases/employee-expenses': typeof AuthenticatedPurchasesEmployeeExpensesRoute
   '/purchases/recurring': typeof AuthenticatedPurchasesRecurringRoute
   '/purchases/settings': typeof AuthenticatedPurchasesSettingsRoute
@@ -812,6 +820,7 @@ export interface FileRoutesByTo {
   '/contacts/settings': typeof AuthenticatedContactsSettingsRoute
   '/documents/branding': typeof AuthenticatedDocumentsBrandingRoute
   '/platform/billing': typeof AuthenticatedPlatformBillingRoute
+  '/platform-admin': typeof AuthenticatedPlatformAdminRoute
   '/purchases/employee-expenses': typeof AuthenticatedPurchasesEmployeeExpensesRoute
   '/purchases/recurring': typeof AuthenticatedPurchasesRecurringRoute
   '/purchases/settings': typeof AuthenticatedPurchasesSettingsRoute
@@ -910,6 +919,7 @@ export interface FileRoutesById {
   '/_authenticated/contacts/settings': typeof AuthenticatedContactsSettingsRoute
   '/_authenticated/documents/branding': typeof AuthenticatedDocumentsBrandingRoute
   '/_authenticated/platform/billing': typeof AuthenticatedPlatformBillingRoute
+  '/_authenticated/platform-admin': typeof AuthenticatedPlatformAdminRoute
   '/_authenticated/purchases/employee-expenses': typeof AuthenticatedPurchasesEmployeeExpensesRoute
   '/_authenticated/purchases/recurring': typeof AuthenticatedPurchasesRecurringRoute
   '/_authenticated/purchases/settings': typeof AuthenticatedPurchasesSettingsRoute
@@ -1204,6 +1214,7 @@ export interface FileRouteTypes {
     | '/_authenticated/contacts/settings'
     | '/_authenticated/documents/branding'
     | '/_authenticated/platform/billing'
+    | '/_authenticated/platform-admin'
     | '/_authenticated/purchases/employee-expenses'
     | '/_authenticated/purchases/recurring'
     | '/_authenticated/purchases/settings'
@@ -1595,6 +1606,13 @@ declare module '@tanstack/react-router' {
       path: '/platform/billing'
       fullPath: '/platform/billing'
       preLoaderRoute: typeof AuthenticatedPlatformBillingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/platform-admin': {
+      id: '/_authenticated/platform-admin'
+      path: '/platform-admin'
+      fullPath: '/platform-admin'
+      preLoaderRoute: typeof AuthenticatedPlatformAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/purchases/': {
@@ -2222,6 +2240,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedContactsSettingsRoute: typeof AuthenticatedContactsSettingsRoute
   AuthenticatedDocumentsBrandingRoute: typeof AuthenticatedDocumentsBrandingRoute
   AuthenticatedPlatformBillingRoute: typeof AuthenticatedPlatformBillingRoute
+  AuthenticatedPlatformAdminRoute: typeof AuthenticatedPlatformAdminRoute
   AuthenticatedReportsReportIdRoute: typeof AuthenticatedReportsReportIdRoute
   AuthenticatedBudgetsIndexRoute: typeof AuthenticatedBudgetsIndexRoute
   AuthenticatedContactsIndexRoute: typeof AuthenticatedContactsIndexRoute
@@ -2258,6 +2277,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedContactsSettingsRoute: AuthenticatedContactsSettingsRoute,
   AuthenticatedDocumentsBrandingRoute: AuthenticatedDocumentsBrandingRoute,
   AuthenticatedPlatformBillingRoute: AuthenticatedPlatformBillingRoute,
+  AuthenticatedPlatformAdminRoute: AuthenticatedPlatformAdminRoute,
   AuthenticatedReportsReportIdRoute: AuthenticatedReportsReportIdRoute,
   AuthenticatedBudgetsIndexRoute: AuthenticatedBudgetsIndexRoute,
   AuthenticatedContactsIndexRoute: AuthenticatedContactsIndexRoute,

@@ -40,7 +40,7 @@ export const importProjectsCsv = createServerFn({ method: "POST" })
       if ((contacts ?? []).length !== 1) {
         throw new Error(`Row ${row.sourceRow}: Customer "${row.customer}" must match exactly one active customer in this organisation`);
       }
-      contactIds.set(row.customer, (contacts![0] as { id: string }).id);
+      contactIds.set(row.customer, ((contacts ?? []) as Array<{ id: string }>)[0]!.id);
     }
 
     const result: ProjectsImportResult = { created: 0, skipped: 0, failed: 0, errors: [], auditError: null };

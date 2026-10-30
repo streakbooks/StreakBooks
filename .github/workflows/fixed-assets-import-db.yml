@@ -1,0 +1,84 @@
+name: Fixed asset import — isolated PostgreSQL checks
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/lib/imports/fixed-assets-import.ts'
+      - 'src/lib/imports/fixed-assets-import.test.ts'
+      - 'src/lib/fixed-assets/fixed-assets.functions.ts'
+      - 'supabase/migrations/20261030153000_fixed_asset_register_csv_import.sql'
+      - 'tests/integration/fixed-assets-import-*.sql'
+      - '.github/workflows/fixed-assets-import-db.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/20261030153000_fixed_asset_register_csv_import.sql'
+      - 'tests/integration/fixed-assets-import-*.sql'
+      - '.github/workflows/fixed-assets-import-db.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  fixed-assets-postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_only_postgres
+          POSTGRES_DB: linkbooks_import_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d linkbooks_import_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 15
+    env:
+      PGPASSWORD: test_only_postgres
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGDATABASE: linkbooks_import_test
+    steps:
+      - uses: actions/checkout@v4
+      - name: PostgreSQL client
+        run: |
+          if ! command -v psql >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y postgresql-client
+          fi
+      - name: Apply test fixture and proposed asset migration
+        run: |
+          psql -v ON_ERROR_STOP=1 -f tests/integration/fixed-assets-import-fixture.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261030153000_fixed_asset_register_csv_import.sql
+      - name: Verify account isolation, atomicity and idempotency
+        run: psql -v ON_ERROR_STOP=1 -f tests/integration/fixed-assets-import-security.sql
+      - name: Test two concurrent identical imports
+        run: |
+          cat > /tmp/asset-race.sql <<'SQL'
+          \set ON_ERROR_STOP on
+          BEGIN;
+          SET LOCAL ROLE authenticated;
+          SET LOCAL request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+          SELECT public.import_fixed_asset_register('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+            '[{"external_code":"CONCURRENT-1","payload":{"name":"Vehicle","cost_minor":400000}}]'::jsonb);
+          COMMIT;
+          SQL
+          psql -f /tmp/asset-race.sql > /tmp/asset-race-1.log 2>&1 &
+          p1=$!
+          psql -f /tmp/asset-race.sql > /tmp/asset-race-2.log 2>&1 &
+          p2=$!
+          wait "$p1"
+          wait "$p2"
+          cat /tmp/asset-race-1.log
+          cat /tmp/asset-race-2.log
+          count=$(psql -At -c "SELECT count(*) FROM public.fixed_assets WHERE name = 'Vehicle'")
+          if [ "$count" != "1" ]; then
+            echo "Expected one asset after concurrent imports; found: $count" >&2
+            exit 1
+          fi
+          echo "PASS: concurrent same-reference import resulted in one asset"

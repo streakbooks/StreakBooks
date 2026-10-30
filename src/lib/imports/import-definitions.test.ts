@@ -25,7 +25,7 @@ describe("shared import definitions", () => {
 
   it("does not misrepresent unavailable domain writers", () => {
     expect(getImportDefinition("sales", "Invoices").writeStatus).toBe("not_implemented");
-    expect(getImportDefinition("fixed_assets", "Asset register").writeStatus).toBe("not_implemented");
+    expect(getImportDefinition("fixed_assets", "Asset register").writeStatus).toBe("implemented");
     expect(() => getImportDefinition("sales", "Nonexistent")).toThrow("Unknown import definition");
   });
 });

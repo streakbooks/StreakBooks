@@ -30,6 +30,7 @@ const ENTITY_LABEL: Record<GlobalSearchHit["entity"], string> = {
   account: "Accounts",
   product: "Products & services",
   journal: "Journals",
+  bank_transaction: "Bank transactions",
 };
 
 /**
@@ -177,7 +178,7 @@ export function GlobalSearch({ className }: { className?: string }) {
               <div className="flex flex-wrap gap-1.5">
                 {([
                   ["all", "All"], ["invoice", "Invoices"], ["bill", "Bills"], ["contact", "Contacts"],
-                  ["account", "Accounts"], ["product", "Products"], ["journal", "Journals"],
+                  ["account", "Accounts"], ["product", "Products"], ["journal", "Journals"], ["bank_transaction", "Bank transactions"],
                 ] as const).slice(0, showAllFilters ? undefined : 4).map(([id, label]) => (
                   <button key={id} type="button" aria-pressed={category === id}
                     onClick={() => setCategory(id)}

@@ -9,8 +9,7 @@ import { globalSearch, type GlobalSearchHit, type SearchCategory } from "@/lib/s
 import {
   buildPaletteActions,
   filterPaletteActions,
-  suggestedPaletteActions,
-  type PaletteAction,
+    type PaletteAction,
 } from "@/lib/search/palette-items";
 import { Button } from "@/components/ui/button";
 import {
@@ -90,7 +89,7 @@ export function GlobalSearch({ className }: { className?: string }) {
   const allActions = useMemo(() => buildPaletteActions(), []);
   const actions = useMemo(
     () =>
-      category !== "all" ? [] : q.trim() === "" ? suggestedPaletteActions(allActions) : filterPaletteActions(allActions, q),
+      category !== "all" || q.trim() === "" ? [] : filterPaletteActions(allActions, q),
     [allActions, q, category],
   );
   const [isMac, setIsMac] = useState(false);
@@ -124,7 +123,7 @@ export function GlobalSearch({ className }: { className?: string }) {
     .map((e) => ({ entity: e, items: hits.filter((h) => h.entity === e) }))
     .filter((g) => g.items.length > 0);
   const typed = q.trim().length >= 2;
-  const nothing = typed && groups.length === 0 && hitGroups.length === 0 && !searchQ.isFetching;
+  const nothing = typed && groups.length === 0 && hitGroups.length === 0 && !searchQ.isFetching && !searchQ.isError;
 
   return (
     <>
@@ -158,13 +157,14 @@ export function GlobalSearch({ className }: { className?: string }) {
       </Button>
 
       <Dialog open={open} onOpenChange={(v) => (v ? setOpen(true) : close())}>
-        <DialogContent className="overflow-hidden rounded-xl p-0 shadow-2xl" style={{ top: position.top, left: position.left, width: position.width, maxWidth: "calc(100vw - 24px)", transform: "none" }}>
+        <DialogContent className="!translate-x-0 !translate-y-0 overflow-hidden rounded-xl p-0 shadow-2xl data-[state=open]:slide-in-from-top-1" style={{ position: "fixed", top: position.top, left: position.left, width: position.width, maxWidth: "calc(100vw - 24px)", maxHeight: `calc(100dvh - ${position.top + 12}px)`, transform: "none", display: "block" }}>
           <DialogTitle className="sr-only">Search</DialogTitle>
           <DialogDescription className="sr-only">
             Search records, pages and reports. Use the arrow keys and Enter.
           </DialogDescription>
-          <Command shouldFilter={false} label="Search">
+          <Command shouldFilter={false} label="Search" className="max-h-full">
             <CommandInput
+              autoFocus
               value={q}
               onValueChange={setQ}
               placeholder="Search records, contacts, references…"
@@ -188,7 +188,7 @@ export function GlobalSearch({ className }: { className?: string }) {
                 ))}
               </div>
             </div>
-            <CommandList className="max-h-[min(55vh,420px)]">
+            <CommandList className="max-h-[min(45vh,340px)]">
               {searchQ.isFetching ? (
                 <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
                   <Loader2 className="size-4 animate-spin" /> Searching…
@@ -232,9 +232,9 @@ export function GlobalSearch({ className }: { className?: string }) {
                 </CommandGroup>
               ))}
               {!typed ? (
-                <div className="border-t px-3 py-2.5 text-xs text-muted-foreground">
-                  Type 2+ characters to search invoices, bills, contacts and accounts. Use ↑ ↓ to
-                  move and Enter to open.
+                <div className="border-t px-3 py-3 text-sm text-muted-foreground">
+                  Start typing to search {category === "all" ? "invoices, bills, contacts and more" : ENTITY_LABEL[category] ?? "records"}.
+                  <span className="mt-1 block text-xs">Select a filter above to narrow results. Press Enter on a result to open it.</span>
                 </div>
               ) : null}
             </CommandList>

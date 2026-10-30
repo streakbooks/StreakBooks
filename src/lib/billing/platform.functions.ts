@@ -81,8 +81,12 @@ export const bootstrapPlatformOwner = createServerFn({ method: "POST" })
   });
 
 export const listPublicBillingPlans = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin.rpc("list_public_billing_plans" as never);
+  const url = process.env["SUPABASE_URL"];
+  const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
+  if (!url || !key) return { ready: false as const, plans: [] };
+  const { createClient } = await import("@supabase/supabase-js");
+  const client = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+  const { data, error } = await client.rpc("list_public_billing_plans" as never);
   if (error) {
     if (error.code === "42883" || error.code === "PGRST202" || error.code === "42P01") {
       return { ready: false as const, plans: [] };

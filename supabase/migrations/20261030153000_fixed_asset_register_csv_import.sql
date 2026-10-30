@@ -54,6 +54,9 @@ BEGIN
      OR jsonb_array_length(_rows) > 100 THEN
     RAISE EXCEPTION 'Provide between 1 and 100 fixed asset rows';
   END IF;
+  IF octet_length(_rows::TEXT) > 5 * 1024 * 1024 THEN
+    RAISE EXCEPTION 'Fixed asset batch exceeds 5 MB';
+  END IF;
 
   -- Serialise imports by organisation to ensure concurrent retries are deterministic.
   PERFORM pg_advisory_xact_lock(hashtext('fixed_asset_import:' || _company_id::TEXT));

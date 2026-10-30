@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Mail, Printer } from "lucide-react";
@@ -229,7 +229,7 @@ export function Statements() {
                       <TableRow key={`${l.type}-${l.id}-${l.date}`}>
                         <TableCell>{l.date}</TableCell>
                         <TableCell className="capitalize">{l.type.replace("_", " ")}</TableCell>
-                        <TableCell>{l.reference ?? l.id.slice(0, 8)}</TableCell>
+                        <TableCell>{l.type === "invoice" ? <Link to="/sales/invoices/$invoiceId" params={{ invoiceId: l.id }} className="underline-offset-2 hover:underline focus-visible:underline">{l.reference ?? l.id.slice(0, 8)}</Link> : l.type === "receipt" ? <Link to="/sales/receipts/$receiptId" params={{ receiptId: l.id }} className="underline-offset-2 hover:underline focus-visible:underline">{l.reference ?? l.id.slice(0, 8)}</Link> : l.type === "credit_note" ? <Link to="/sales/credit-notes/$creditNoteId" params={{ creditNoteId: l.id }} className="underline-offset-2 hover:underline focus-visible:underline">{l.reference ?? l.id.slice(0, 8)}</Link> : l.reference ?? l.id.slice(0, 8)}</TableCell>
                         <TableCell className="text-right">
                           {l.debit_minor ? money(l.debit_minor, c.currency_code) : "—"}
                         </TableCell>

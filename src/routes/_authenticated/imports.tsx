@@ -59,15 +59,16 @@ function ImportCentre() {
   const [fixedAssetResult, setFixedAssetResult] = useState<FixedAssetCsvImportResult | null>(null);
   const [assetImportAcknowledged, setAssetImportAcknowledged] = useState(false);
   const [assetFieldMapping, setAssetFieldMapping] = useState<FixedAssetColumnMapping>({});
+  const isFixedAssetSelected = (definitions[selected] ?? definitions[0])?.module === "fixed_assets";
   const assetSourceHeaders = useMemo(() => {
-    if (!csv) return [];
+    if (!csv || !isFixedAssetSelected) return [];
     try { return fixedAssetSourceHeaders(csv); } catch { return []; }
-  }, [csv]);
+  }, [csv, isFixedAssetSelected]);
   const assetMapped = useMemo(() => {
-    if (!csv) return { csv: "", error: "" };
+    if (!csv || !isFixedAssetSelected) return { csv: "", error: "" };
     try { return { csv: mapFixedAssetCsv(csv, assetFieldMapping), error: "" }; }
     catch (error) { return { csv: "", error: error instanceof Error ? error.message : "Invalid field mapping" }; }
-  }, [csv, assetFieldMapping]);
+  }, [csv, assetFieldMapping, isFixedAssetSelected]);
 
   const { company } = useActiveCompany();
   const canManageProducts = useCanDo("products.manage");
@@ -85,7 +86,7 @@ function ImportCentre() {
   const importAssets = useServerFn(importFixedAssetRegisterCsv);
   const fetchBudgets = useServerFn(listBudgets);
   const checkAssetImport = useServerFn(getFixedAssetImportAvailability);
-  const isAssetImport = (definitions[selected] ?? definitions[0])?.module === "fixed_assets";
+  const isAssetImport = isFixedAssetSelected;
   const assetReadyQ = useQuery({
     queryKey: ["fixed-asset-import-availability", company?.id],
     enabled: Boolean(company?.id && isAssetImport),

@@ -7,6 +7,7 @@ import { useCanDo } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { importProductsCsv, type ProductsImportResult } from "@/lib/imports/products-import.functions";
 import { importProjectsCsv, type ProjectsImportResult } from "@/lib/imports/projects-import.functions";
+import { importSalesInvoicesCsv } from "@/lib/sales/sales.functions";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { IMPORT_DEFINITIONS, importTemplateCsv, importFieldDictionaryCsv } from "@/lib/imports/import-definitions";
 import { previewImportCsv } from "@/lib/imports/import-preflight";
@@ -32,11 +33,16 @@ function ImportCentre() {
   const [fileName, setFileName] = useState("");
   const [importResult, setImportResult] = useState<ProductsImportResult | null>(null);
   const [projectResult, setProjectResult] = useState<ProjectsImportResult | null>(null);
+  const [salesResult, setSalesResult] = useState<{ createdDrafts: number; authorised: number; skipped: number; failed: number; auditError: string | null; errors: Array<{ row: number; number: string; draftId: string | null; message: string }> } | null>(null);
+  const [authoriseImportedInvoices, setAuthoriseImportedInvoices] = useState(false);
   const { company } = useActiveCompany();
   const canManageProducts = useCanDo("products.manage");
   const canManageProjects = useCanDo("accounts.manage");
+  const canDraftSales = useCanDo("sales.draft");
+  const canAuthoriseSales = useCanDo("sales.authorise");
   const importProducts = useServerFn(importProductsCsv);
   const importProjects = useServerFn(importProjectsCsv);
+  const importSales = useServerFn(importSalesInvoicesCsv);
   const queryClient = useQueryClient();
   const productImport = useMutation({
     mutationFn: () => importProducts({ data: { companyId: company!.id, csvText: csv } }),
@@ -58,6 +64,16 @@ function ImportCentre() {
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
+  const salesImport = useMutation({
+    mutationFn: () => importSales({ data: { companyId: company!.id, csvText: csv, authorise: authoriseImportedInvoices } }),
+    onSuccess: async (result) => {
+      setSalesResult(result);
+      await queryClient.invalidateQueries({ queryKey: ["sales-invoices", company!.id] });
+      if (result.failed || result.auditError) toast.warning("Invoice import has issues. Review the results.");
+      else toast.success(`Created ${result.createdDrafts} invoice drafts; authorised ${result.authorised}; skipped ${result.skipped}.`);
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
   const definition = IMPORT_DEFINITIONS[selected]!;
   const preview = useMemo(() => {
     if (!csv) return null;
@@ -69,7 +85,7 @@ function ImportCentre() {
       <PageHeader title="Data import centre" description="Download templates, inspect files and validate data before any accounting records are created." />
       <div className="rounded-xl border p-5 space-y-4">
         <label className="block text-sm font-medium" htmlFor="import-kind">Import type</label>
-        <select id="import-kind" className="w-full rounded-md border bg-background p-2" value={selected} onChange={(e) => { setSelected(Number(e.target.value)); setCsv(""); setFileName(""); setImportResult(null); setProjectResult(null); }}>
+        <select id="import-kind" className="w-full rounded-md border bg-background p-2" value={selected} onChange={(e) => { setSelected(Number(e.target.value)); setCsv(""); setFileName(""); setImportResult(null); setProjectResult(null); setSalesResult(null); }}>
           {IMPORT_DEFINITIONS.map((item, i) => <option key={item.module + item.documentType} value={i}>{item.module.replaceAll("_", " ")} — {item.documentType}</option>)}
         </select>
         <div className="flex flex-wrap gap-2">
@@ -83,6 +99,7 @@ function ImportCentre() {
           if (file.size > 5 * 1024 * 1024) { setCsv(""); setFileName("File exceeds 5 MB"); return; }
           setImportResult(null);
           setProjectResult(null);
+          setSalesResult(null);
           setFileName(file.name);
           void file.text().then(setCsv).catch(() => { setCsv(""); setFileName("Could not read file"); });
         }} />
@@ -131,12 +148,37 @@ function ImportCentre() {
             )}
           </div>
         )}
+        {definition.module === "sales" && definition.documentType === "Invoices" && (
+          <div className="space-y-3 rounded-lg border p-3">
+            <p className="text-sm">Import invoice lines as real drafts through LinkBooks Sales services. Optionally authorise and post AR journals after creating each draft. Existing non-void invoice numbers are not imported again. Import is per-invoice: failures can leave a saved draft requiring review. Receipts and credit notes are not included in this import.</p>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={authoriseImportedInvoices} onChange={(e) => setAuthoriseImportedInvoices(e.currentTarget.checked)} disabled={!canAuthoriseSales} />
+              Authorise invoices and post accounts receivable journals
+            </label>
+            <Button type="button" disabled={!company || !canDraftSales || (authoriseImportedInvoices && !canAuthoriseSales) || !preview?.result || preview.result.issues.length > 0 || salesImport.isPending}
+              onClick={() => {
+                if (window.confirm(authoriseImportedInvoices
+                  ? "Create invoices and post accounts receivable journals? This changes your financial records."
+                  : "Create invoice drafts from this CSV? No journals will be posted.")) salesImport.mutate();
+              }}>
+              {salesImport.isPending ? "Importing invoices…" : authoriseImportedInvoices ? "Import and authorise invoices" : "Import invoice drafts"}
+            </Button>
+            {!canDraftSales && <p className="text-sm text-destructive">You need sales.draft permission to import invoices.</p>}
+            {salesResult && <div role="status" className="space-y-1 text-sm">
+              <p>Created drafts: {salesResult.createdDrafts}; authorised: {salesResult.authorised}; skipped: {salesResult.skipped}; failed: {salesResult.failed}.</p>
+              {salesResult.errors.map((issue, i) => <p key={i} className="text-destructive">Row {issue.row}, invoice {issue.number}: {issue.message}{issue.draftId ? ` (draft ID: ${issue.draftId})` : ""}</p>)}
+              {salesResult.auditError && <p className="text-destructive">Audit recording failed: {salesResult.auditError}.</p>}
+            </div>}
+          </div>
+        )}
         <p className="text-sm text-muted-foreground">
           {definition.writeStatus === "implemented"
             ? definition.module === "products" || definition.module === "projects"
               ? "Master-data writes are available here after validation and explicit confirmation."
               : "An existing module-specific import workflow is available. Validation here is read-only; use the module workflow to save records."
-            : "Import writing is not yet available for this document type. This page validates CSV only and does not create records or post journals."}
+            : definition.module === "sales" && definition.documentType === "Invoices"
+              ? "Invoice drafting and optional AR posting are available above; receipts and credit notes require separate workflows."
+              : "Import writing is not yet available for this document type. This page validates CSV only and does not create records or post journals."}
         </p>
         {definition.module === "banking" && <Button asChild><Link to="/banking/import">Open Banking importer</Link></Button>}
         {definition.module === "contacts" && <Button asChild><Link to="/contacts/import">Open Contacts importer</Link></Button>}

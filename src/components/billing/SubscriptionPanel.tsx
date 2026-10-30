@@ -268,6 +268,7 @@ export function SubscriptionPanel({
           monthly={monthlyPrices(target)}
           annualFreeMonths={data.settings.annualFreeMonths}
           companyName={data.companyName}
+          defaultCountry={data.countryCode}
           busy={checkout.isPending}
           serverError={checkout.error instanceof Error ? checkout.error.message : null}
           providers={data.providers}

@@ -411,7 +411,7 @@ export const getBillingOverview = createServerFn({ method: "GET" })
     return {
       ready: true,
       message: company.is_demo
-        ? "Demo organisations keep the same ledger. Use Pay with card or Razorpay on a plan to subscribe."
+        ? "Demo organisations keep the same ledger. Subscribe on a plan when you want a paid subscription."
         : access === "read_only"
           ? "This trial or subscription has ended. Reports stay available. Choose a plan to post again."
           : null,

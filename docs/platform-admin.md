@@ -21,12 +21,12 @@ The platform owner must be provisioned by the existing one-time \`bootstrapPlatf
 
 ## Deployment checklist
 1. Review and merge the feature PR only after CI/unit/typecheck and preview environment smoke tests.
-2. Confirm \`supabase/migrations/20261030191100_platform_super_admin.sql\` was applied. Its actions already ran successfully in the connected project. Coordinate migration-history reconciliation with any migration tooling; do not replay the same change blindly.
+2. Confirm \`20261030191100_platform_super_admin.sql\` and \`20261030192100_public_billing_visibility.sql\` are applied. Both have been applied to the connected project. Coordinate migration history with deployment tooling; do not replay blindly.
 3. Configure server-side \`PLATFORM_OWNER_EMAIL\`, \`SUPABASE_URL\`, \`SUPABASE_PUBLISHABLE_KEY\`, \`SUPABASE_SERVICE_ROLE_KEY\`. Never use VITE_ for the service-role key.
 4. Complete verified email and two-step verification for the chosen owner. Visit \`/platform/billing\` once to bootstrap, then \`/platform-admin\`.
 5. Test owner, finance, support, ordinary company owner, and anonymous sessions: permitted and forbidden views.
 6. Test plan visibility updates and staff role changes with audit reasons, invalid IDs, expired session, AAL1 session, and concurrent operations. Ensure active subscriptions continue unaffected.
-7. Verify country-specific checkout and versioned pricing independently. The new catalogue visibility action does not publish a versioned price or update an existing provider subscription.
+7. Verify country-specific checkout and versioned pricing independently. The catalogue visibility action filters the public versioned plan list but does not publish a versioned price or update existing provider subscriptions.
 8. Confirm no secrets, personal financial records, provider tokens, or payment card data appear in client payloads or logs.
 9. Load test pagination, count queries, backend functions, 1,000 concurrent users, query indices and tenant isolation before production launch.
 10. Review existing Supabase security advisor warnings, notably several pre-existing publicly executable SECURITY DEFINER functions, and remediate in separate audited migrations.

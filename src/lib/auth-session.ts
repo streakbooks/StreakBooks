@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { safeRedirect } from "@/lib/auth-helpers";
+import { safeRedirect, type OAuthProviderId } from "@/lib/auth-helpers";
 
 const NEXT_KEY = "lb.auth.next";
 
@@ -24,6 +24,47 @@ export function takeNext(): string {
     return safeRedirect(value);
   } catch {
     return "/";
+  }
+}
+
+export type SignInMethodId = "password" | "email_link" | "phone" | "sso" | OAuthProviderId;
+
+const LAST_METHOD_KEY = "lb.auth.lastMethod";
+const PENDING_METHOD_KEY = "lb.auth.pendingMethod";
+
+/** Device-local hint only ("Last used" badge); never used for authorisation. */
+export function rememberLastMethod(method: SignInMethodId): void {
+  try {
+    window.localStorage.setItem(LAST_METHOD_KEY, method);
+  } catch {
+    // Non-essential.
+  }
+}
+
+export function readLastMethod(): SignInMethodId | null {
+  try {
+    return (window.localStorage.getItem(LAST_METHOD_KEY) as SignInMethodId | null) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Redirect-based methods only count once the callback confirms a session. */
+export function rememberPendingMethod(method: SignInMethodId): void {
+  try {
+    window.sessionStorage.setItem(PENDING_METHOD_KEY, method);
+  } catch {
+    // Non-essential.
+  }
+}
+
+export function commitPendingMethod(): void {
+  try {
+    const method = window.sessionStorage.getItem(PENDING_METHOD_KEY) as SignInMethodId | null;
+    window.sessionStorage.removeItem(PENDING_METHOD_KEY);
+    if (method) rememberLastMethod(method);
+  } catch {
+    // Non-essential.
   }
 }
 

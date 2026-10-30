@@ -14,7 +14,7 @@ import {
   safeRedirect,
   ssoDomainFrom,
 } from "@/lib/auth-helpers";
-import { authCallbackUrl, rememberNext } from "@/lib/auth-session";
+import { authCallbackUrl, rememberNext, rememberPendingMethod } from "@/lib/auth-session";
 
 export const Route = createFileRoute("/auth_/sso")({
   validateSearch: (search: Record<string, unknown>): { redirect?: string | undefined } => ({
@@ -52,6 +52,7 @@ function SsoPage() {
     }
     setBusy(true);
     rememberNext(destination);
+    rememberPendingMethod("sso");
     const { data, error: ssoError } = await supabase.auth.signInWithSSO({
       domain,
       options: { redirectTo: authCallbackUrl(), ...captcha.options },
@@ -69,7 +70,7 @@ function SsoPage() {
     <AuthLayout
       title="Sign in with company SSO"
       subtitle="Use your organisation's identity provider (Okta, Microsoft Entra ID, Google Workspace and other SAML 2.0 providers)."
-      footer={
+      headerAction={
         <Link
           to="/auth"
           search={{ redirect: search.redirect }}

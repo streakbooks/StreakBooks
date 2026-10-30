@@ -11,8 +11,10 @@
 #   GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET
 #   LINKEDIN_CLIENT_ID / LINKEDIN_CLIENT_SECRET
 #   CAPTCHA_PROVIDER=turnstile|hcaptcha / CAPTCHA_SECRET
-#   TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_MESSAGE_SERVICE_SID
+#   TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_VERIFY_SERVICE_SID (Twilio Verify, preferred)
+#     or TWILIO_MESSAGE_SERVICE_SID (Programmable Messaging)
 #   SMTP_HOST / SMTP_PORT / SMTP_USER / SMTP_PASS / SMTP_SENDER_EMAIL [/ SMTP_SENDER_NAME]
+#   EXTRA_REDIRECT_URLS (comma-separated, e.g. preview deployment URL patterns)
 #
 # OAuth callback URL to register with each provider:
 #   https://<project-ref>.supabase.co/auth/v1/callback
@@ -47,10 +49,11 @@ cfg = {
     "site_url": app,
     "uri_allow_list": ",".join([
         f"{app}/**",
-        "https://linkbooks-*-paxaris.vercel.app/**",
         "http://localhost:8080/**",
         "http://localhost:8081/**",
         "http://127.0.0.1:8080/**",
+        # e.g. preview deployment patterns, comma-separated
+        *[u.strip() for u in (e("EXTRA_REDIRECT_URLS") or "").split(",") if u.strip()],
     ]),
     "password_min_length": 8,
     "password_required_characters": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ:0123456789",
@@ -77,7 +80,15 @@ if e("CAPTCHA_PROVIDER") in ("turnstile", "hcaptcha") and e("CAPTCHA_SECRET"):
     cfg["security_captcha_provider"] = e("CAPTCHA_PROVIDER")
     cfg["security_captcha_secret"] = e("CAPTCHA_SECRET")
 
-if e("TWILIO_ACCOUNT_SID") and e("TWILIO_AUTH_TOKEN") and e("TWILIO_MESSAGE_SERVICE_SID"):
+if e("TWILIO_ACCOUNT_SID") and e("TWILIO_AUTH_TOKEN") and e("TWILIO_VERIFY_SERVICE_SID"):
+    cfg.update({
+        "external_phone_enabled": True,
+        "sms_provider": "twilio_verify",
+        "sms_twilio_verify_account_sid": e("TWILIO_ACCOUNT_SID"),
+        "sms_twilio_verify_auth_token": e("TWILIO_AUTH_TOKEN"),
+        "sms_twilio_verify_message_service_sid": e("TWILIO_VERIFY_SERVICE_SID"),
+    })
+elif e("TWILIO_ACCOUNT_SID") and e("TWILIO_AUTH_TOKEN") and e("TWILIO_MESSAGE_SERVICE_SID"):
     cfg.update({
         "external_phone_enabled": True,
         "sms_provider": "twilio",

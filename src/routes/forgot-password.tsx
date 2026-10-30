@@ -49,10 +49,13 @@ function ForgotPasswordPage() {
           ? "We'll email you a secure link, or text a code to the mobile number on your account."
           : "We'll email you a secure link to choose a new password."
       }
-      footer={
-        <Link to="/auth" className="font-medium text-primary hover:underline">
-          Back to sign in
-        </Link>
+      headerAction={
+        <>
+          Remembered it?{" "}
+          <Link to="/auth" className="font-medium text-primary underline-offset-4 hover:underline">
+            Sign in
+          </Link>
+        </>
       }
     >
       {phoneEnabled ? (

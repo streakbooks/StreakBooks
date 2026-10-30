@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { needsMfaStepUp, takeNext } from "@/lib/auth-session";
+import { commitPendingMethod, needsMfaStepUp, takeNext } from "@/lib/auth-session";
 
 /** Landing page for OAuth, SAML SSO, email confirmation and email sign-in links. */
 export const Route = createFileRoute("/auth_/callback")({
@@ -66,6 +66,7 @@ function AuthCallbackPage() {
         return;
       }
 
+      commitPendingMethod();
       const next = takeNext();
       if (await needsMfaStepUp()) {
         navigate({ to: "/auth/mfa", search: { redirect: next }, replace: true });

@@ -10,7 +10,12 @@ import {
   isAuthMethodEnabled,
   type OAuthProviderId,
 } from "@/lib/auth-helpers";
-import { authCallbackUrl, rememberNext } from "@/lib/auth-session";
+import {
+  authCallbackUrl,
+  readLastMethod,
+  rememberNext,
+  rememberPendingMethod,
+} from "@/lib/auth-session";
 
 const ICONS: Record<OAuthProviderId, React.ReactNode> = {
   google: (
@@ -58,9 +63,21 @@ const ICONS: Record<OAuthProviderId, React.ReactNode> = {
   ),
 };
 
-const SCOPES: Partial<Record<OAuthProviderId, string>> = {
-  azure: "email openid profile",
+const OPTIONS: Partial<
+  Record<OAuthProviderId, { scopes?: string; queryParams?: Record<string, string> }>
+> = {
+  // Let people pick between personal and work accounts instead of silently reusing one.
+  google: { queryParams: { prompt: "select_account" } },
+  azure: { scopes: "email openid profile", queryParams: { prompt: "select_account" } },
 };
+
+function LastUsed() {
+  return (
+    <span className="absolute -top-2 right-3 rounded-full border border-primary/30 bg-background px-1.5 py-px text-[10px] font-medium text-primary">
+      Last used
+    </span>
+  );
+}
 
 /** OAuth / SSO entry points. Renders nothing when no provider is configured. */
 export function SocialSignIn({
@@ -72,6 +89,7 @@ export function SocialSignIn({
 }) {
   const [pending, setPending] = useState<OAuthProviderId | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [lastUsed] = useState(readLastMethod);
   const ssoEnabled = isAuthMethodEnabled("sso");
 
   if (enabledSocialProviders.length === 0 && !ssoEnabled) return null;
@@ -80,10 +98,15 @@ export function SocialSignIn({
     setError(null);
     setPending(provider);
     rememberNext(destination);
-    const scopes = SCOPES[provider];
+    rememberPendingMethod(provider);
+    const { scopes, queryParams } = OPTIONS[provider] ?? {};
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: authCallbackUrl(), ...(scopes ? { scopes } : {}) },
+      options: {
+        redirectTo: authCallbackUrl(),
+        ...(scopes ? { scopes } : {}),
+        ...(queryParams ? { queryParams } : {}),
+      },
     });
     if (oauthError) {
       setPending(null);
@@ -91,39 +114,67 @@ export function SocialSignIn({
     }
   }
 
+  const [primary, ...others] = enabledSocialProviders;
+  const verb = mode === "signin" ? "Continue" : "Sign up";
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {error ? (
         <Alert variant="destructive" role="alert">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       ) : null}
-      <div className="grid gap-2">
-        {enabledSocialProviders.map((p) => (
+      <div className="grid gap-2.5">
+        {primary ? (
           <Button
-            key={p.id}
             type="button"
             variant="outline"
-            className="w-full justify-center gap-2"
+            className="relative h-11 w-full justify-center gap-2.5 text-[15px] font-medium shadow-sm"
             disabled={pending !== null}
-            onClick={() => start(p.id)}
+            onClick={() => start(primary.id)}
           >
-            {pending === p.id ? <Loader2 className="size-4 animate-spin" /> : ICONS[p.id]}
-            {mode === "signin" ? "Continue" : "Sign up"} with {p.label}
+            {pending === primary.id ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              ICONS[primary.id]
+            )}
+            {verb} with {primary.label}
+            {lastUsed === primary.id ? <LastUsed /> : null}
           </Button>
-        ))}
+        ) : null}
+        {others.length > 0 ? (
+          <div className={others.length === 1 ? "grid" : "grid grid-cols-2 gap-2.5"}>
+            {others.map((p) => (
+              <Button
+                key={p.id}
+                type="button"
+                variant="outline"
+                className="relative h-10 justify-center gap-2"
+                disabled={pending !== null}
+                onClick={() => start(p.id)}
+                aria-label={`${verb} with ${p.label}`}
+              >
+                {pending === p.id ? <Loader2 className="size-4 animate-spin" /> : ICONS[p.id]}
+                {p.label}
+                {lastUsed === p.id ? <LastUsed /> : null}
+              </Button>
+            ))}
+          </div>
+        ) : null}
         {ssoEnabled ? (
-          <Button asChild type="button" variant="outline" className="w-full justify-center gap-2">
+          <Button asChild variant="ghost" className="relative h-10 w-full justify-center gap-2">
             <Link to="/auth/sso" search={{ redirect: destination }}>
               <KeyRound className="size-4" aria-hidden />
-              Continue with company SSO
+              Sign in with SSO
+              {lastUsed === "sso" ? <LastUsed /> : null}
             </Link>
           </Button>
         ) : null}
       </div>
-      <div className="relative py-1 text-center text-xs uppercase text-muted-foreground">
-        <span className="absolute inset-x-0 top-1/2 h-px bg-border" aria-hidden />
-        <span className="relative bg-background px-2">or</span>
+      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+        <span className="h-px flex-1 bg-border" aria-hidden />
+        or continue with email
+        <span className="h-px flex-1 bg-border" aria-hidden />
       </div>
     </div>
   );

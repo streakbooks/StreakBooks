@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -49,6 +49,20 @@ export function GlobalSearch({ className }: { className?: string }) {
   const [debounced, setDebounced] = useState("");
   const [category, setCategory] = useState<SearchCategory>("all");
   const [showAllFilters, setShowAllFilters] = useState(false);
+  const anchorRef = useRef<HTMLButtonElement>(null);
+  const [position, setPosition] = useState({ top: 72, left: 12, width: 520 });
+  useEffect(() => {
+    if (!open) return;
+    const reposition = () => {
+      const rect = anchorRef.current?.getBoundingClientRect();
+      const width = Math.min(560, window.innerWidth - 24);
+      const left = rect ? Math.max(12, Math.min(rect.right - width, window.innerWidth - width - 12)) : 12;
+      setPosition({ top: rect ? rect.bottom + 8 : 64, left, width });
+    };
+    reposition();
+    window.addEventListener("resize", reposition);
+    return () => window.removeEventListener("resize", reposition);
+  }, [open]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -117,6 +131,7 @@ export function GlobalSearch({ className }: { className?: string }) {
       {/* Desktop: looks like the old search box, opens the palette */}
       <button
         type="button"
+        ref={anchorRef}
         onClick={() => setOpen(true)}
         aria-label={`Search (${shortcut})`}
         aria-keyshortcuts="Control+K Meta+K"
@@ -143,7 +158,7 @@ export function GlobalSearch({ className }: { className?: string }) {
       </Button>
 
       <Dialog open={open} onOpenChange={(v) => (v ? setOpen(true) : close())}>
-        <DialogContent className="overflow-hidden p-0">
+        <DialogContent className="overflow-hidden rounded-xl p-0 shadow-2xl" style={{ top: position.top, left: position.left, width: position.width, maxWidth: "calc(100vw - 24px)", transform: "none" }}>
           <DialogTitle className="sr-only">Search</DialogTitle>
           <DialogDescription className="sr-only">
             Search records, pages and reports. Use the arrow keys and Enter.

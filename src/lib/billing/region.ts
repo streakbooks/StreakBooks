@@ -7,8 +7,8 @@ import { checkoutCurrencyForCountry } from "@/lib/billing/checkout-payload";
  * is an initial hint, never proof of legal tax residency.
  */
 export function resolveBillingRegion(input: {
-  visitorCountry?: string | null;
-  organisationCountry?: string | null;
+  visitorCountry?: string | null | undefined;
+  organisationCountry?: string | null | undefined;
 }) {
   const organisation = normaliseCountry(input.organisationCountry);
   const visitor = normaliseCountry(input.visitorCountry);

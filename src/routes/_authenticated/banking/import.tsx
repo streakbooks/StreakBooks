@@ -6,6 +6,7 @@ import { Download, Loader2, UploadCloud } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { fromMinorUnits } from "@/lib/accounting/money";
+import { getImportDefinition, importTemplateCsv, importFieldDictionaryCsv } from "@/lib/imports/import-definitions";
 import { listBankAccounts, listStatementImports } from "@/lib/banking/banking.functions";
 import {
   AMOUNT_MODES,
@@ -64,14 +65,19 @@ export const Route = createFileRoute("/_authenticated/banking/import")({
 
 const NONE = "none";
 const MAX_FILE_CHARS = 5_000_000;
-function downloadBankTemplate() {
-  const csv = ["Date,Description,Amount,Payee,Reference,Bank Transaction ID,Running Balance", "2026-10-01,Example payment,125.00,Example Customer,INV-1001,BANK-0001,"].join("\r\n") + "\r\n";
-  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+function downloadImportCsv(content: string, filename: string) {
+  const url = URL.createObjectURL(new Blob(["\\uFEFF", content], { type: "text/csv;charset=utf-8" }));
   const link = document.createElement("a");
   link.href = url;
-  link.download = "linkbooks-bank-transactions-template.csv";
+  link.download = filename;
   link.click();
   URL.revokeObjectURL(url);
+}
+function downloadBankTemplate() {
+  downloadImportCsv(importTemplateCsv(getImportDefinition("banking", "Bank transactions")), "linkbooks-bank-transactions-template.csv");
+}
+function downloadBankDictionary() {
+  downloadImportCsv(importFieldDictionaryCsv(getImportDefinition("banking", "Bank transactions")), "linkbooks-bank-import-field-guide.csv");
 }
 
 const storageKey = (companyId: string, bankAccountId: string) =>

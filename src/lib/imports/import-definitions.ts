@@ -88,6 +88,7 @@ const defs: ImportDefinition[] = [
     field("acquisition_date", "Acquisition Date", true, "2026-10-01", "Acquisition date"),
     field("cost", "Cost", true, "1200.00", "Original cost"),
     field("accumulated_depreciation", "Accumulated Depreciation", false, "0.00", "Opening accumulated depreciation; not reposted to the ledger"),
+    field("opening_depreciation_through", "Opening Depreciation Through", false, "2026-09-30", "Required for assets with brought-forward accumulated depreciation; last day represented by the opening amount"),
     field("asset_account_code", "Asset Account Code", true, "1500", "Existing fixed asset account, type asset"),
     field("accumulated_account_code", "Accumulated Depreciation Account Code", true, "1590", "Existing accumulated depreciation account, type asset"),
     field("expense_account_code", "Depreciation Expense Account Code", true, "7000", "Existing depreciation expense account"),

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -10,12 +10,16 @@ import { importProjectsCsv, type ProjectsImportResult } from "@/lib/imports/proj
 import { importSalesInvoicesCsv } from "@/lib/sales/sales.functions";
 import { importPurchaseBillsCsv } from "@/lib/purchases/purchases.functions";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { IMPORT_DEFINITIONS, importTemplateCsv, importFieldDictionaryCsv } from "@/lib/imports/import-definitions";
+import { IMPORT_DEFINITIONS, importTemplateCsv, importFieldDictionaryCsv, type ImportModule } from "@/lib/imports/import-definitions";
 import { previewImportCsv } from "@/lib/imports/import-preflight";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/common/states";
 
 export const Route = createFileRoute("/_authenticated/imports")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    module: typeof search["module"] === "string" && IMPORT_DEFINITIONS.some((item) => item.module === search["module"])
+      ? search["module"] as ImportModule : undefined,
+  }),
   component: ImportCentre,
 });
 
@@ -29,7 +33,12 @@ function saveCsv(text: string, name: string) {
 }
 
 function ImportCentre() {
+  const { module: scopedModule } = Route.useSearch();
   const [selected, setSelected] = useState(0);
+  const definitions = useMemo(() => scopedModule
+    ? IMPORT_DEFINITIONS.filter((item) => item.module === scopedModule)
+    : IMPORT_DEFINITIONS, [scopedModule]);
+  useEffect(() => { setSelected(0); setCsv(""); setFileName(""); }, [scopedModule]);
   const [csv, setCsv] = useState("");
   const [fileName, setFileName] = useState("");
   const [importResult, setImportResult] = useState<ProductsImportResult | null>(null);
@@ -92,7 +101,7 @@ function ImportCentre() {
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
-  const definition = IMPORT_DEFINITIONS[selected]!;
+  const definition = definitions[selected] ?? definitions[0]!;
   const preview = useMemo(() => {
     if (!csv) return null;
     try { return { result: previewImportCsv(csv, definition, { maxRows: ["products", "projects"].includes(definition.module) ? 250 : 10_000, uniqueBy: ["products", "projects"].includes(definition.module) ? definition.fields.slice(0, 1).map((f) => f.key) : [] }), error: "" }; }
@@ -100,11 +109,12 @@ function ImportCentre() {
   }, [csv, definition]);
   return (
     <div className="space-y-5">
-      <PageHeader title="Data import centre" description="Download templates, inspect files and validate data before any accounting records are created." />
+      <PageHeader title={scopedModule ? `${scopedModule === "fixed_assets" ? "Fixed assets" : scopedModule.charAt(0).toUpperCase() + scopedModule.slice(1)} imports` : "Data import centre"} description={scopedModule ? "Import records for this module. Validate and review before saving; posting requires explicit authorisation." : "Organisation-wide data management: download templates, inspect files and validate before saving."} />
+      {scopedModule && <p className="text-sm text-muted-foreground">Only {scopedModule.replace("_", " ")} import types are shown here. For organisation-wide migrations, open the <Link to="/imports" search={{ module: undefined }} className="underline">full Data Import Centre</Link>.</p>}
       <div className="rounded-xl border p-5 space-y-4">
         <label className="block text-sm font-medium" htmlFor="import-kind">Import type</label>
         <select id="import-kind" className="w-full rounded-md border bg-background p-2" value={selected} onChange={(e) => { setSelected(Number(e.target.value)); setCsv(""); setFileName(""); setImportResult(null); setProjectResult(null); setSalesResult(null); setBillResult(null); }}>
-          {IMPORT_DEFINITIONS.map((item, i) => <option key={item.module + item.documentType} value={i}>{item.module.replaceAll("_", " ")} — {item.documentType}</option>)}
+          {definitions.map((item, i) => <option key={item.module + item.documentType} value={i}>{item.module.replaceAll("_", " ")} — {item.documentType}</option>)}
         </select>
         <div className="flex flex-wrap gap-2">
           <Button type="button" variant="outline" onClick={() => saveCsv(importTemplateCsv(definition), definition.module + "-template.csv")}>Download template</Button>

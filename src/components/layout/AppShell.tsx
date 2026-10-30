@@ -18,6 +18,7 @@ import { CompanySwitcher } from "@/components/layout/CompanySwitcher";
 import { GlobalSearch } from "@/components/layout/GlobalSearch";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { CreateNewMenu } from "@/components/create-new/CreateNewMenu";
+import { BillingAccessBanner } from "@/components/billing/BillingAccessBanner";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -354,6 +355,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <UserMenu />
         </header>
 
+        {company?.id ? <BillingAccessBanner companyId={company.id} /> : null}
         {!isPending && isDemo ? (
           <div
             role="status"

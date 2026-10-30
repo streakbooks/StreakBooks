@@ -69,6 +69,7 @@ import { SettingsFeatureManager } from "@/components/settings/SettingsFeatureMan
 import { SettingsAccountingLocksPanel } from "@/components/settings/SettingsAccountingLocksPanel";
 import { SettingsCategoryConfigPanel } from "@/components/settings/SettingsCategoryConfigPanel";
 import { SettingsUnavailablePanel } from "@/components/settings/SettingsUnavailablePanel";
+import { SubscriptionPanel } from "@/components/billing/SubscriptionPanel";
 import { SettingsCommandPalette } from "@/components/settings/SettingsCommandPalette";
 import { maxFiscalYearEndDay, formatDocumentNumberPreview } from "@/lib/settings/dimension-helpers";
 
@@ -99,11 +100,7 @@ const CONFIG_SECTIONS: SettingsCategory[] = [
   "accountant",
 ];
 
-const UNAVAILABLE_SECTIONS: SettingsCategory[] = [
-  "subscription",
-  "portals",
-  "fixed_assets",
-];
+const UNAVAILABLE_SECTIONS: SettingsCategory[] = ["portals", "fixed_assets"];
 
 export const Route = createFileRoute("/_authenticated/settings")({
   validateSearch: (search: Record<string, unknown>): { section: string } => {
@@ -440,6 +437,7 @@ function SettingsForCompany({ companyId }: { companyId: string }) {
           {section === "features" ? (
             <SettingsFeatureManager companyId={companyId} canEdit={canEdit} />
           ) : null}
+          {section === "subscription" ? <SubscriptionPanel companyId={companyId} /> : null}
           {UNAVAILABLE_SECTIONS.includes(section) && sectionMeta ? (
             <SettingsUnavailablePanel meta={sectionMeta} />
           ) : null}

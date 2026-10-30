@@ -58,6 +58,7 @@ export const ROLE_PERMISSION_MATRIX: Record<CompanyRole, readonly Permission[]> 
     "company.settings.edit",
     "members.view",
     "members.manage",
+    "billing.manage",
     "accounting.view",
     "accounting.post",
     "audit.view",

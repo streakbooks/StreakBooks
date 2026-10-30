@@ -214,9 +214,9 @@ export const categoryMeta: CategoryMeta[] = [
   {
     id: "subscription",
     label: "Subscription & Usage",
-    description: "Plan, seats and entitlements.",
-    synonyms: ["billing", "plan", "seats", "quota"],
-    availability: "unavailable",
+    description: "Plan, seats, trial, promo codes and payment.",
+    synonyms: ["billing", "plan", "seats", "quota", "stripe", "razorpay", "trial"],
+    availability: "partial",
   },
   {
     id: "demo",

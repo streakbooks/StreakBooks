@@ -3,7 +3,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
 import { sanitiseSearchTerm } from "@/lib/search/sanitise";
-import { minorAmountCandidates, searchOrFilter } from "@/lib/search/search-query";
+import { bankMoneyFilter, documentMoneyFilter, parseMoneySearch, searchOrFilter } from "@/lib/search/search-query";
 
 export type GlobalSearchHit = {
   id: string;
@@ -25,7 +25,7 @@ export const globalSearch = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { companyId: string; q: string; category?: SearchCategory; limit?: number }) => {
     const q = (input.q ?? "").trim().slice(0, 80);
-    if (q.length < 2 && !minorAmountCandidates(q).length) throw new Error("Type at least 2 characters or an amount");
+    if (q.length < 2 && !parseMoneySearch(q)) throw new Error("Type at least 2 characters or an amount");
     const categories = ["all", "contact", "invoice", "bill", "account", "product", "journal", "bank_transaction"];
     const category: SearchCategory = input.category && categories.includes(input.category) ? input.category : "all";
     return { companyId: assertUuid(input.companyId), q, category, limit: Math.min(36, Math.max(12, Math.round(input.limit ?? 12))) };
@@ -33,18 +33,101 @@ export const globalSearch = createServerFn({ method: "GET" })
   .handler(async ({ data, context }): Promise<GlobalSearchHit[]> => {
     await assertCompanyMember(context.supabase, data.companyId);
     const safe = sanitiseSearchTerm(data.q);
-    if (safe.length < 2 && !minorAmountCandidates(data.q).length) return [];
+    if (safe.length < 2 && !parseMoneySearch(data.q)) return [];
     const limit = data.limit;
     const hits: GlobalSearchHit[] = [];
     const companyId = data.companyId;
     const sb = context.supabase;
+
+    // Numeric-only searches are *exact money* searches. Do not mix text ILIKE
+    // with amount predicates or guess several currency precisions for one row.
+    const money = parseMoneySearch(data.q);
+    if (money) {
+      if (data.category === "all" || data.category === "bank_transaction") {
+        const accountResult = await sb.from("bank_accounts" as never)
+          .select("id, currency_code" as never)
+          .eq("company_id" as never, companyId as never);
+        if (accountResult.error) throw new Error(accountResult.error.message);
+        const bankFilter = bankMoneyFilter(money, (accountResult.data ?? []) as unknown as Array<{
+          id: string; currency_code: string;
+        }>);
+        if (bankFilter) {
+          const columns = "id, bank_account_id, txn_date, amount_minor, description, external_id, reference, payee, status, bank_accounts(currency_code)";
+          const legacyColumns = "id, bank_account_id, txn_date, amount_minor, description, external_id, status, bank_accounts(currency_code)";
+          const run = (select: string) => sb.from("bank_transactions" as never)
+            .select(select as never)
+            .eq("company_id" as never, companyId as never)
+            .or(bankFilter as never)
+            .order("txn_date" as never, { ascending: false })
+            .limit(limit);
+          let result = await run(columns);
+          if (result.error?.code === "42703" || result.error?.code === "PGRST204") {
+            result = await run(legacyColumns);
+          }
+          if (result.error) throw new Error(result.error.message);
+          for (const row of (result.data ?? []) as unknown as Array<{
+            id: string; txn_date: string; amount_minor: number; description: string | null;
+            external_id: string | null; reference?: string | null; payee?: string | null;
+            status: string; bank_accounts: { currency_code: string } | null;
+          }>) {
+            hits.push({
+              id: row.id, entity: "bank_transaction",
+              title: row.payee || row.description || row.reference || row.external_id || "Bank transaction",
+              subtitle: [row.txn_date, row.reference, row.status].filter(Boolean).join(" · "),
+              href: "/banking/transactions",
+              search: { transactionId: row.id, statusGroup: "all" },
+              amount_minor: row.amount_minor,
+              ...(row.bank_accounts?.currency_code ? { currency: row.bank_accounts.currency_code } : {}),
+            });
+          }
+        }
+      }
+      const documentFilter = documentMoneyFilter(money);
+      if (documentFilter && (data.category === "all" || data.category === "invoice")) {
+        const result = await sb.from("sales_invoices" as never)
+          .select("id, invoice_number, status, total_minor, currency_code, memo, contacts(name)" as never)
+          .eq("company_id" as never, companyId as never)
+          .or(documentFilter as never)
+          .order("created_at" as never, { ascending: false })
+          .limit(limit);
+        if (result.error) throw new Error(result.error.message);
+        for (const row of (result.data ?? []) as unknown as Array<{
+          id: string; invoice_number: string | null; status: string; total_minor: number;
+          currency_code: string; memo: string | null; contacts: { name: string } | null;
+        }>) {
+          hits.push({ id: row.id, entity: "invoice", title: row.invoice_number ?? "Invoice (draft)",
+            subtitle: [row.contacts?.name, row.status, row.memo].filter(Boolean).join(" · "),
+            href: "/sales/invoices/" + row.id, amount_minor: row.total_minor, currency: row.currency_code });
+        }
+      }
+      if (documentFilter && (data.category === "all" || data.category === "bill")) {
+        const result = await sb.from("purchase_bills" as never)
+          .select("id, bill_number, supplier_invoice_number, status, total_minor, currency_code, memo, contacts(name)" as never)
+          .eq("company_id" as never, companyId as never)
+          .or(documentFilter as never)
+          .order("created_at" as never, { ascending: false })
+          .limit(limit);
+        if (result.error) throw new Error(result.error.message);
+        for (const row of (result.data ?? []) as unknown as Array<{
+          id: string; bill_number: string | null; supplier_invoice_number: string | null;
+          status: string; total_minor: number; currency_code: string; memo: string | null;
+          contacts: { name: string } | null;
+        }>) {
+          hits.push({ id: row.id, entity: "bill",
+            title: row.supplier_invoice_number ?? row.bill_number ?? "Bill (draft)",
+            subtitle: [row.contacts?.name, row.bill_number, row.status, row.memo].filter(Boolean).join(" · "),
+            href: "/purchases/bills/" + row.id, amount_minor: row.total_minor, currency: row.currency_code });
+        }
+      }
+      return hits;
+    }
 
     // Search actual imported bank transactions, not a navigation shortcut.
     // Both paths remain scoped to the authenticated organisation and its RLS policies.
     if (data.category === "all" || data.category === "bank_transaction") {
       const fields = "id, bank_account_id, txn_date, amount_minor, description, external_id, reference, payee, status, bank_accounts(currency_code)";
       const oldFields = "id, bank_account_id, txn_date, amount_minor, description, external_id, status, bank_accounts(currency_code)";
-      const opts = { amountField: "amount_minor", dateFields: ["txn_date"], bankAmount: true };
+      const opts = { dateFields: ["txn_date"] };
       const oldFilter = searchOrFilter(["description", "external_id"], data.q, opts);
       const fullFilter = searchOrFilter(["description", "external_id", "reference", "payee"], data.q, opts);
       const queryBank = (columns: string, filter: string) =>
@@ -104,7 +187,7 @@ export const globalSearch = createServerFn({ method: "GET" })
           "id, invoice_number, status, total_minor, currency_code, memo, contacts(name)" as never,
         )
         .eq("company_id" as never, companyId as never)
-        .or((searchOrFilter(["invoice_number", "memo"], data.q, { amountField: "total_minor", dateFields: ["invoice_date", "due_date"] }) + byContact) as never)
+        .or((searchOrFilter(["invoice_number", "memo"], data.q, { dateFields: ["invoice_date", "due_date"] }) + byContact) as never)
         .order("created_at" as never, { ascending: false } as never)
         .limit(limit),
       sb
@@ -114,7 +197,7 @@ export const globalSearch = createServerFn({ method: "GET" })
         )
         .eq("company_id" as never, companyId as never)
         .or(
-          (searchOrFilter(["bill_number", "supplier_invoice_number", "memo"], data.q, { amountField: "total_minor", dateFields: ["bill_date", "due_date"] }) + byContact) as never,
+          (searchOrFilter(["bill_number", "supplier_invoice_number", "memo"], data.q, { dateFields: ["bill_date", "due_date"] }) + byContact) as never,
         )
         .order("created_at" as never, { ascending: false } as never)
         .limit(limit),

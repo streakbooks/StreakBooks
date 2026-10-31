@@ -1049,3 +1049,8 @@
   --sidebar-active-border: #d0e3fa;
   --sidebar-active-indicator: #d0e3fa;
 }
+
+/* Persistent voice target remains visible when focus moves to assistant controls. */
+[data-voice-active="true"] { outline: 2px solid var(--primary); outline-offset: 3px; }
+
+.voice-signal[data-wake="on"] .voice-signal-pill { border-color: var(--primary); }

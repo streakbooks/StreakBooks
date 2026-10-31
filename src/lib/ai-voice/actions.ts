@@ -117,11 +117,14 @@ export function parseFormAction(input: string): FormAction | null {
 }
 
 /** Strict dates: no locale-dependent numeric guesses or Date.parse rollover. */
-export function spokenDate(input: string, today: string): string | null {
+export function spokenDate(input: string, today: string, dateFormat?: string): string | null {
   const text = cleanSpeech(input)
     .toLowerCase()
-    .replace(/,/g, "")
-    .replace(/(\d)(st|nd|rd|th)\b/g, "$1");
+    .replace(/,/g, " ")
+    .replace(/(\d)(st|nd|rd|th)\b/g, "$1")
+    .replace(/([a-z])(?=\d)|(\d)(?=[a-z])/g, "$1$2 ")
+    .replace(/\s+/g, " ")
+    .trim();
   let year: number, month: number, day: number;
   let match: RegExpExecArray | null;
   if (
@@ -142,7 +145,14 @@ export function spokenDate(input: string, today: string): string | null {
   }
   if ((match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text)))
     [year, month, day] = [Number(match[1]), Number(match[2]), Number(match[3])];
-  else {
+  else if ((match = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(text))) {
+    if (dateFormat !== "DD/MM/YYYY" && dateFormat !== "MM/DD/YYYY") return null;
+    year = Number(match[3]);
+    [day, month] =
+      dateFormat === "DD/MM/YYYY"
+        ? [Number(match[1]), Number(match[2])]
+        : [Number(match[2]), Number(match[1])];
+  } else {
     const months = [
       "january",
       "february",

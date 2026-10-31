@@ -1,12 +1,14 @@
 "use client";
 
+import { useVoiceSession } from "@/components/ai-voice/voice-context";
+
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { computeTaxLineRounded } from "@/lib/sales/line-math-rounded";
 import type { TaxTreatment } from "@/lib/sales/line-helpers";
 import type { SalesTaxCode } from "@/lib/sales/tax-codes";
 import { bpsToPercentString, percentStringToBps } from "@/components/sales/sales-form-utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { VoiceInput as Input } from "@/components/ai-voice/voice-fields";
 import { Label } from "@/components/ui/label";
 import { EntityCombobox, type EntityOption } from "@/components/common/EntityCombobox";
 import {
@@ -86,6 +88,7 @@ export function SalesDocumentLines({
   baseCurrency,
 }: Props) {
   const { can } = useCan();
+  const voice = useVoiceSession();
   const canProduct = Boolean(companyId) && can("products.manage") && !disabled;
   const canAccount = Boolean(companyId) && can("accounts.manage") && !disabled;
   const canTax = Boolean(companyId) && can("tax.settings") && !disabled;
@@ -204,6 +207,13 @@ export function SalesDocumentLines({
               <span className="text-xs text-muted-foreground">Description</span>
               <Input
                 placeholder="Description"
+                voiceField={{
+                  key: "description",
+                  label: "Description",
+                  aliases: [],
+                  line: idx,
+                  order: 100 + idx * 100 + 10,
+                }}
                 value={line.description}
                 disabled={disabled}
                 onChange={(e) => update(idx, { description: e.target.value })}
@@ -214,6 +224,13 @@ export function SalesDocumentLines({
               <EntityCombobox
                 aria-label={`Line ${idx + 1} account`}
                 options={accountOptions}
+                voiceField={{
+                  key: "accountId",
+                  label: "Account",
+                  aliases: ["revenue account", "expense account", "expense asset account"],
+                  line: idx,
+                  order: 100 + idx * 100 + 50,
+                }}
                 value={line.accountId}
                 onChange={(v) => update(idx, { accountId: v })}
                 placeholder="Account"
@@ -239,6 +256,13 @@ export function SalesDocumentLines({
             <div className="sm:col-span-2 space-y-1">
               <span className="text-xs text-muted-foreground">Qty</span>
               <Input
+                voiceField={{
+                  key: "quantity",
+                  label: "Quantity",
+                  aliases: ["qty"],
+                  line: idx,
+                  order: 100 + idx * 100 + 20,
+                }}
                 value={line.quantity}
                 disabled={disabled}
                 onChange={(e) => update(idx, { quantity: e.target.value })}
@@ -248,6 +272,13 @@ export function SalesDocumentLines({
             <div className="sm:col-span-2 space-y-1">
               <span className="text-xs text-muted-foreground">Price</span>
               <Input
+                voiceField={{
+                  key: "unitPrice",
+                  label: "Unit price",
+                  aliases: ["price"],
+                  line: idx,
+                  order: 100 + idx * 100 + 30,
+                }}
                 value={line.unitPrice}
                 disabled={disabled}
                 onChange={(e) => update(idx, { unitPrice: e.target.value })}
@@ -257,6 +288,13 @@ export function SalesDocumentLines({
             <div className="sm:col-span-2 space-y-1">
               <span className="text-xs text-muted-foreground">Discount (amount)</span>
               <Input
+                voiceField={{
+                  key: "discount",
+                  label: "Discount",
+                  aliases: [],
+                  line: idx,
+                  order: 100 + idx * 100 + 40,
+                }}
                 value={line.discount}
                 disabled={disabled}
                 onChange={(e) => update(idx, { discount: e.target.value })}
@@ -268,6 +306,13 @@ export function SalesDocumentLines({
               <EntityCombobox
                 aria-label={`Line ${idx + 1} tax code`}
                 options={taxOptions}
+                voiceField={{
+                  key: "taxCodeId",
+                  label: "Tax",
+                  aliases: ["tax rate", "tax code"],
+                  line: idx,
+                  order: 100 + idx * 100 + 60,
+                }}
                 value={line.taxCodeId || NO_CODE}
                 onChange={(v) => {
                   if (!v || v === NO_CODE) update(idx, { taxCodeId: "" });
@@ -314,7 +359,10 @@ export function SalesDocumentLines({
                 variant="ghost"
                 size="sm"
                 disabled={disabled || lines.length <= 1}
-                onClick={() => onChange(lines.filter((_, i) => i !== idx))}
+                onClick={() => {
+                  voice?.clearField();
+                  onChange(lines.filter((_, i) => i !== idx));
+                }}
               >
                 Remove
               </Button>
@@ -327,7 +375,10 @@ export function SalesDocumentLines({
         variant="outline"
         size="sm"
         disabled={disabled}
-        onClick={() => onChange([...lines, emptySalesLine()])}
+        onClick={() => {
+          voice?.clearField();
+          onChange([...lines, emptySalesLine()]);
+        }}
       >
         Add line
       </Button>

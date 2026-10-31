@@ -5,12 +5,62 @@ Signal is a persistent browser voice assistant for the company workspace. Enable
 header and choose **Start assistant**. It never activates the microphone on load.
 **Ctrl+Shift+Space** starts/stops it; the visible square Stop control remains
 available while the panel is minimised. Escape minimises the panel and leaves the
-session active. Say “stop listening” to deactivate it by voice.
+session active. Say “stop listening” to deactivate command recognition. If wake detection was explicitly armed, this returns to local wake detection; otherwise the microphone is released.
 
 Signal uses the browser’s Web Speech API and predefined English rules. It uses no
 LLM, generative AI, paid AI API or new API keys. It is a bounded command system,
 not an unrestricted conversational model. Typed commands use the same dispatcher
 without requiring microphone support.
+
+## Custom wake phrases (Phase 15)
+
+In **Settings → Automation → Personal wake phrase**, choose a phrase such as “Hey
+LinkBooks”, “Hello LinkBooks” or “Hey Luna”, save it, then click **Enroll phrase**.
+Repeat the same phrase three times in a quiet room, pausing between repetitions.
+Enable the setting and click **Arm wake detection**. Enabling alone never starts
+capture; each new page/session requires an explicit Arm click. The assistant panel
+also exposes these settings. They are personal to your account, organisation and
+browser; they are not organisation-wide voice recordings.
+
+The separate on-device acoustic matcher listens for the enrolled sound, without
+speech-to-text in standby. After detection, pause for Signal's listening animation
+before speaking commands. The wake capture releases its microphone before browser
+command recognition starts. Multiple commands work until you stop. **Stop all
+microphones** stops both stages; the header square also stops wake detection while
+inactive. Hidden pages pause detection. Delete wake profile removes local acoustic
+templates. No raw audio is retained or uploaded by the wake stage.
+
+This is a personal enrolled matcher: changes of voice/microphone/noise can cause
+misses or similar-sounding false activations. It is not authentication. Manual
+activation remains available. Chromium's real audio pipeline is tested with spoken
+WAV input; physical-microphone/human accuracy and other browser/OS combinations
+have not been certified. See [engine assessment and privacy details](voice-wake-engine-assessment.md).
+
+## Field-by-field entry
+
+On an invoice, quote, sales credit note or new bill, say “go to description”, “go
+to supplier” (or customer), “go to date”, “go to reference”, “next field” or
+“previous field”. The selected control is focused and highlighted; record dropdowns
+open normally. Say the field's value next. Text replaces the selected field and
+preserves the recognised case and punctuation. Browser transcription itself may
+alter punctuation. “Clear this field” clears text/numeric/date entry, subject to
+normal form validation; record selections use their normal controls.
+
+Use “dictate Open invoices” to enter literal text that sounds like a command.
+Navigation, save and other recognised command phrases remain reserved controls.
+With several line fields, specify “go to line 2 description” or choose a numbered
+result. Select unit price separately from calculated line total. Record names
+match loaded, eligible options and ambiguous names require a choice. No record is
+invented. Intentional focus changes and line additions/removal/reordering invalidate
+old field targets. Unsupported fields still use the usual keyboard and mouse UI.
+
+Dates accept “15 October 2026”, “15th October 2026”, “October 15, 2026” and ISO.
+Numeric dates such as “15/10/2026” use the company's configured `DD/MM/YYYY` or
+`MM/DD/YYYY` order with a four-digit year. Invalid calendar dates are rejected.
+Purchases tab labels, including purchase orders, recurring, employee expenses,
+statements and settings, are shared with voice navigation. Shared names such as
+credit notes use the current Sales/Purchases module; “open purchases credit notes”
+is explicit from anywhere.
 
 ## Continuous workflow
 
@@ -52,7 +102,7 @@ platform-admin/auth surfaces do not host a company voice session.
 
 - Dates accept full English month names with a year, ISO dates, today, tomorrow and
   next weekday. Relative dates use the form’s company-local reference day.
-  Ambiguous numeric dates and invalid calendar dates prompt for clarification.
+  Numeric dates use the company’s configured date order. Invalid or unconfigured numeric dates prompt for clarification.
 - Amounts use exact decimal strings and the existing currency minor-unit helpers.
   Explicit currency must match the form. “$”/“dollars”, excessive decimal precision,
   negative/zero amounts and out-of-range values prompt for clearer input/manual review.

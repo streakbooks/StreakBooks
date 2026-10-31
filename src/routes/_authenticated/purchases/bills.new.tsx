@@ -1,3 +1,4 @@
+import { VoiceFields } from "@/components/ai-voice/voice-fields";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -90,7 +91,7 @@ import {
 import { BillWorkspaceLayout } from "@/components/purchases/BillWorkspaceLayout";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { VoiceInput as Input } from "@/components/ai-voice/voice-fields";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -1234,7 +1235,7 @@ export function NewBill({
     number: supplierInvoiceNumber,
     lines,
   };
-  useVoiceForm(
+  const voiceToken = useVoiceForm(
     companyId && !isTemplate
       ? {
           companyId,
@@ -1250,6 +1251,7 @@ export function NewBill({
             !settingsQ.isPending,
           busy: mutation.isPending,
           today,
+          dateFormat: company?.date_format ?? "DD/MM/YYYY",
           contacts: suppliers,
           accounts: expenseAccounts.map((a) => ({ id: a.id, name: `${a.code} ${a.name}` })),
           taxes: taxCodes.map((t) => ({
@@ -1270,7 +1272,10 @@ export function NewBill({
             }
             if (patch.currency !== undefined) setCurrencyCode(patch.currency);
             if (patch.memo !== undefined) setMemo(patch.memo);
-            if (patch.number !== undefined) setSupplierInvoiceNumber(patch.number);
+            if (patch.number !== undefined) {
+              setSupplierInvoiceNumber(patch.number);
+              setAcknowledgeDuplicate(false);
+            }
           },
           updateLines: (next) =>
             setLines(next.map((line) => ({ ...emptyPurchaseLine(), ...line }))),
@@ -1414,7 +1419,7 @@ export function NewBill({
   );
 
   return (
-    <>
+    <VoiceFields token={voiceToken}>
       <BillWorkspaceLayout
         companyId={companyId}
         contactId={contactId || null}
@@ -1714,16 +1719,17 @@ export function NewBill({
       <div className="grid gap-3">
         <div className="space-y-1.5">
           <Label>Supplier</Label>
-          <EntityCombobox
-            options={supplierOptions}
-            value={contactId}
-            onChange={onSupplierChange}
-            placeholder="Search suppliers"
-            searchPlaceholder="Search suppliers…"
-            allowClear={false}
-            onAddNew={() => setQuickSupplierOpen(true)}
-            addNewLabel="+ Add new supplier…"
-          />
+            <EntityCombobox
+              voiceField={{ key: "contactId", label: "Supplier", order: 10 }}
+              options={supplierOptions}
+              value={contactId}
+              onChange={onSupplierChange}
+              placeholder="Search suppliers"
+              searchPlaceholder="Search suppliers…"
+              allowClear={false}
+              onAddNew={() => setQuickSupplierOpen(true)}
+              addNewLabel="+ Add new supplier…"
+            />
           <button
             type="button"
             className="text-xs text-primary underline-offset-2 hover:underline"
@@ -1782,14 +1788,20 @@ export function NewBill({
         <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-4">
           <div className="space-y-2">
             <Label>Bill date</Label>
-            <Input
-              type="date"
-              value={billDate}
-              onChange={(e) => {
-                setBillDate(e.target.value);
-                applyDueFromTerms(e.target.value, paymentTermId);
-              }}
-            />
+              <Input
+                type="date"
+                voiceField={{
+                  key: "date",
+                  label: "Bill date",
+                  aliases: ["date"],
+                  order: 20,
+                }}
+                value={billDate}
+                onChange={(e) => {
+                  setBillDate(e.target.value);
+                  applyDueFromTerms(e.target.value, paymentTermId);
+                }}
+              />
           </div>
           <div className="space-y-2">
             <Label>Payment terms</Label>
@@ -1816,14 +1828,20 @@ export function NewBill({
                 <span className="ml-2 text-xs font-normal text-amber-700">(manual override)</span>
               ) : null}
             </Label>
-            <Input
-              type="date"
-              value={dueDate}
-              onChange={(e) => {
-                setDueDate(e.target.value);
-                setDueDateManualOverride(true);
-              }}
-            />
+              <Input
+                type="date"
+                voiceField={{
+                  key: "dueDate",
+                  label: "Due date",
+                  aliases: ["expiry date"],
+                  order: 30,
+                }}
+                value={dueDate}
+                onChange={(e) => {
+                  setDueDate(e.target.value);
+                  setDueDateManualOverride(true);
+                }}
+              />
             {dueDateManualOverride ? (
               <Button
                 type="button"
@@ -1840,18 +1858,38 @@ export function NewBill({
           </div>
           <div className="space-y-2">
             <Label>Supplier invoice #</Label>
-            <Input
-              value={supplierInvoiceNumber}
-              onChange={(e) => {
-                setSupplierInvoiceNumber(e.target.value);
-                setAcknowledgeDuplicate(false);
-              }}
-              placeholder="Supplier reference"
-            />
+              <Input
+                voiceField={{
+                  key: "number",
+                  label: "Supplier invoice number",
+                  aliases: [
+                    "reference",
+                    "invoice number",
+                    "supplier reference",
+                    "reference number",
+                  ],
+                  order: 40,
+                }}
+                value={supplierInvoiceNumber}
+                onChange={(e) => {
+                  setSupplierInvoiceNumber(e.target.value);
+                  setAcknowledgeDuplicate(false);
+                }}
+                placeholder="Supplier reference"
+              />
           </div>
           <div className="space-y-2">
             <Label>Memo / internal reference</Label>
-            <Input value={memo} onChange={(e) => setMemo(e.target.value)} />
+              <Input
+                voiceField={{
+                  key: "memo",
+                  label: "Memo",
+                  aliases: ["internal reference", "customer message"],
+                  order: 50,
+                }}
+                value={memo}
+                onChange={(e) => setMemo(e.target.value)}
+              />
           </div>
           <div className="space-y-2">
             <Label>Currency</Label>
@@ -2940,6 +2978,6 @@ export function NewBill({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </VoiceFields>
   );
 }

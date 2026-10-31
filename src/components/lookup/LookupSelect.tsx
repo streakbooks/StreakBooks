@@ -1,5 +1,8 @@
 "use client";
 
+import { useVoiceField } from "@/components/ai-voice/field-context";
+import type { VoiceFieldSpec } from "@/lib/ai-voice/fields";
+
 import { useEffect, useId, useMemo, useReducer, useRef } from "react";
 import type { KeyboardEvent, ReactNode } from "react";
 import { Check, ChevronsUpDown, Loader2, Plus, X } from "lucide-react";
@@ -32,6 +35,7 @@ export type LookupCreateContext = {
 };
 
 export type LookupSelectProps = {
+  voiceField?: VoiceFieldSpec | undefined;
   options: LookupOption[];
   value: string;
   onChange: (id: string) => void;
@@ -69,6 +73,7 @@ export type LookupSelectProps = {
 };
 
 export function LookupSelect({
+  voiceField,
   options,
   value,
   onChange,
@@ -109,6 +114,15 @@ export function LookupSelect({
   const pinnedRef = useRef<LookupOption | null>(null);
   const keyboardNav = useRef(false);
   const suppressOpen = useRef(false);
+  const voice = useVoiceField(
+    voiceField,
+    disabled,
+    () => {
+      triggerRef.current?.focus();
+      dispatch({ type: "open" });
+    },
+    () => dispatch({ type: "activate" }),
+  );
   const query = controlledSearch ?? ui.query;
   const showCreate = canOfferCreate(canCreate, Boolean(onCreate || renderCreate));
 
@@ -228,6 +242,7 @@ export function LookupSelect({
       >
         <PopoverTrigger asChild>
           <Button
+            {...voice}
             ref={triggerRef}
             id={id}
             type="button"
@@ -264,6 +279,7 @@ export function LookupSelect({
         >
           <div className="border-b bg-background p-2">
             <input
+              {...voice}
               ref={searchRef}
               type="search"
               value={query}

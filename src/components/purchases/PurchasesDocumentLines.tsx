@@ -1,10 +1,12 @@
 "use client";
 
+import { useVoiceSession } from "@/components/ai-voice/voice-context";
+
 import { Trash2, ChevronUp, ChevronDown, GripVertical } from "lucide-react";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { computeBillTotals, type TaxCalculationMode } from "@/lib/purchases/bill-form-helpers";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { VoiceInput as Input } from "@/components/ai-voice/voice-fields";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { EntityCombobox, type EntityOption } from "@/components/common/EntityCombobox";
@@ -182,6 +184,7 @@ export function PurchasesDocumentLines({
   baseCurrency,
 }: Props) {
   const { can } = useCan();
+  const voice = useVoiceSession();
   const col = (key: LineColumnKey) => {
     if (visibleColumns) return visibleColumns.includes(key);
     if (key === "class") return showClass;
@@ -257,6 +260,7 @@ export function PurchasesDocumentLines({
   };
 
   const moveLine = (idx: number, dir: -1 | 1) => {
+    voice?.clearField();
     const j = idx + dir;
     if (j < 0 || j >= lines.length) return;
     const next = [...lines];
@@ -267,6 +271,7 @@ export function PurchasesDocumentLines({
   };
 
   const addMultiple = (n: number) => {
+    voice?.clearField();
     onChange([...lines, ...Array.from({ length: n }, () => emptyPurchaseLine())]);
   };
 
@@ -276,6 +281,7 @@ export function PurchasesDocumentLines({
   };
   const onDrop = (e: React.DragEvent, toIdx: number) => {
     e.preventDefault();
+    voice?.clearField();
     const fromIdx = Number(e.dataTransfer.getData("text/plain"));
     if (!Number.isInteger(fromIdx) || fromIdx === toIdx || fromIdx < 0 || fromIdx >= lines.length) {
       return;
@@ -313,6 +319,7 @@ export function PurchasesDocumentLines({
         <div className="flex flex-wrap gap-1">
           <Select
             onValueChange={(v) => {
+              voice?.clearField();
               if (v === "1") onChange([...lines, emptyPurchaseLine()]);
               else if (v === "dup") {
                 const last = lines[lines.length - 1] ?? emptyPurchaseLine();
@@ -490,6 +497,13 @@ export function PurchasesDocumentLines({
                     <td className="p-1 min-w-[160px]">
                       <Input
                         aria-label={`Line ${idx + 1} description`}
+                        voiceField={{
+                          key: "description",
+                          label: "Description",
+                          aliases: [],
+                          line: idx,
+                          order: 100 + idx * 100 + 10,
+                        }}
                         value={line.description}
                         onChange={(e) => update(idx, { description: e.target.value })}
                         placeholder="Description"
@@ -501,6 +515,13 @@ export function PurchasesDocumentLines({
                     <td className="p-1">
                       <Input
                         aria-label={`Line ${idx + 1} quantity`}
+                        voiceField={{
+                          key: "quantity",
+                          label: "Quantity",
+                          aliases: ["qty"],
+                          line: idx,
+                          order: 100 + idx * 100 + 20,
+                        }}
                         value={line.quantity}
                         onChange={(e) => update(idx, { quantity: e.target.value })}
                         inputMode="decimal"
@@ -512,6 +533,13 @@ export function PurchasesDocumentLines({
                     <td className="p-1">
                       <Input
                         aria-label={`Line ${idx + 1} unit price`}
+                        voiceField={{
+                          key: "unitPrice",
+                          label: "Unit price",
+                          aliases: ["price"],
+                          line: idx,
+                          order: 100 + idx * 100 + 30,
+                        }}
                         value={line.unitPrice}
                         onChange={(e) => update(idx, { unitPrice: e.target.value })}
                         inputMode="decimal"
@@ -523,6 +551,13 @@ export function PurchasesDocumentLines({
                     <td className="p-1">
                       <Input
                         aria-label={`Line ${idx + 1} discount`}
+                        voiceField={{
+                          key: "discount",
+                          label: "Discount",
+                          aliases: [],
+                          line: idx,
+                          order: 100 + idx * 100 + 40,
+                        }}
                         value={line.discount}
                         onChange={(e) => update(idx, { discount: e.target.value })}
                         inputMode="decimal"
@@ -535,6 +570,13 @@ export function PurchasesDocumentLines({
                       <EntityCombobox
                         aria-label={`Line ${idx + 1} account`}
                         options={accountOptions}
+                        voiceField={{
+                          key: "accountId",
+                          label: "Account",
+                          aliases: ["revenue account", "expense account", "expense asset account"],
+                          line: idx,
+                          order: 100 + idx * 100 + 50,
+                        }}
                         value={line.accountId}
                         onChange={(v) => update(idx, { accountId: v })}
                         placeholder="Account"
@@ -575,6 +617,17 @@ export function PurchasesDocumentLines({
                                   keywords: t.name,
                                 })),
                               ]
+                        }
+                        voiceField={
+                          taxCalculation === "none"
+                            ? undefined
+                            : {
+                                key: "taxCodeId",
+                                label: "Tax",
+                                aliases: ["tax rate", "tax code"],
+                                line: idx,
+                                order: 100 + idx * 100 + 60,
+                              }
                         }
                         value={taxCalculation === "none" ? "__none__" : line.taxCodeId || "__bps__"}
                         onChange={(v) => {
@@ -718,7 +771,10 @@ export function PurchasesDocumentLines({
                         size="icon"
                         className="size-7 text-destructive"
                         disabled={lines.length <= 1}
-                        onClick={() => onChange(lines.filter((_, i) => i !== idx))}
+                        onClick={() => {
+                          voice?.clearField();
+                          onChange(lines.filter((_, i) => i !== idx));
+                        }}
                         aria-label={`Delete line ${idx + 1}`}
                       >
                         <Trash2 className="size-3.5" />

@@ -1,19 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 
-const items = [
-  { to: "/purchases", label: "Overview", exact: true },
-  { to: "/purchases/bills", label: "Bills" },
-  { to: "/purchases/expenses", label: "Expenses" },
-  { to: "/purchases/suppliers", label: "Suppliers" },
-  { to: "/purchases/payments", label: "Payments" },
-  { to: "/purchases/credit-notes", label: "Credit notes" },
-  { to: "/purchases/orders", label: "Purchase orders" },
-  { to: "/purchases/recurring", label: "Recurring" },
-  { to: "/purchases/employee-expenses", label: "Employee expenses" },
-  { to: "/purchases/statements", label: "Statements" },
-  { to: "/purchases/settings", label: "Settings" },
-] as const;
+import { PURCHASES_SECTIONS as items } from "@/lib/document-sections";
 
 export function PurchasesSubnav() {
   return (

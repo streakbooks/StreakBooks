@@ -1,3 +1,4 @@
+import { PURCHASES_SECTIONS, SALES_SECTIONS } from "@/lib/document-sections";
 import { navItems } from "@/lib/nav";
 import type { Permission } from "@/lib/permissions";
 
@@ -169,7 +170,7 @@ const PREFIXES = [
   "switch to",
 ];
 
-export function parseDeterministicCommand(transcript: string): ParseResult {
+export function parseDeterministicCommand(transcript: string, location = ""): ParseResult {
   const unsupported: ParseResult = {
     kind: "unsupported",
     message: "Command not recognised. Try “open invoices” or “create invoice”.",
@@ -187,6 +188,39 @@ export function parseDeterministicCommand(transcript: string): ParseResult {
       .slice(prefix.length)
       .trim()
       .replace(/^(the|my)\s+/, "");
+    const sections = [
+      ...PURCHASES_SECTIONS.map((item) => ({
+        ...item,
+        module: "purchases",
+        permission: "purchases.view" as const,
+      })),
+      ...SALES_SECTIONS.map((item) => ({
+        ...item,
+        module: "sales",
+        permission: "sales.view" as const,
+      })),
+    ];
+    const section =
+      sections.find(
+        (item) =>
+          subject === `${item.module} ${item.label.toLowerCase()}` ||
+          (location.startsWith(`/${item.module}`) && subject === item.label.toLowerCase()),
+      ) ??
+      sections.find(
+        (item) =>
+          !["overview", "settings", "recurring", "statements", "credit notes"].includes(
+            item.label.toLowerCase(),
+          ) && subject === item.label.toLowerCase(),
+      );
+    if (section)
+      return {
+        kind: "matched",
+        command: {
+          destination: section.to,
+          label: section.label,
+          requiredPermission: section.permission,
+        },
+      };
     const command = [...VOICE_COMMANDS, ...EXTRA_NAV, ...MODULE_NAV].find((entry) =>
       entry.phrases.some((phrase) => subject === phrase),
     );

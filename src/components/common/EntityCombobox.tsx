@@ -1,5 +1,7 @@
 "use client";
 
+import type { VoiceFieldSpec } from "@/lib/ai-voice/fields";
+
 import type { ComponentProps } from "react";
 import { LookupSelect } from "@/components/lookup/LookupSelect";
 import type { LookupOption } from "@/lib/lookup/types";
@@ -14,6 +16,7 @@ export type EntityOption = {
 };
 
 type Props = {
+  voiceField?: VoiceFieldSpec | undefined;
   options: EntityOption[];
   value: string;
   onChange: (value: string) => void;
@@ -51,6 +54,7 @@ type Props = {
  * Implemented on LookupSelect so search, grouping, keyboard and create behaviour stay consistent.
  */
 export function EntityCombobox({
+  voiceField,
   options,
   value,
   onChange,
@@ -92,6 +96,7 @@ export function EntityCombobox({
 
   return (
     <LookupSelect
+      voiceField={voiceField}
       options={lookupOptions}
       value={value}
       onChange={onChange}

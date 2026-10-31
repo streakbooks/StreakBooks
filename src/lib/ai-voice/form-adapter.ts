@@ -28,6 +28,7 @@ export type VoiceFormAdapter = {
   ready: boolean;
   busy: boolean;
   today: string;
+  dateFormat?: string;
   draft: VoiceDraft;
   contacts: VoiceOption[];
   accounts: VoiceOption[];

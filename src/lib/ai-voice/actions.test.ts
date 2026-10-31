@@ -78,3 +78,16 @@ describe("accounting values", () => {
     expect(spokenMoney("KWD 12.123", "KWD")).toEqual({ value: "12.123", currency: "KWD" });
   });
 });
+
+describe("company-configured numeric dates", () => {
+  it("uses the exact configured order and validates the calendar", () => {
+    expect(spokenDate("October15,2026", "2026-10-31")).toBe("2026-10-15");
+    expect(spokenDate("15/10/2026", "2026-10-31", "DD/MM/YYYY")).toBe("2026-10-15");
+    expect(spokenDate("10/15/2026", "2026-10-31", "MM/DD/YYYY")).toBe("2026-10-15");
+    expect(spokenDate("10/11/2026", "2026-10-31", "DD/MM/YYYY")).toBe("2026-11-10");
+    expect(spokenDate("10/11/2026", "2026-10-31", "MM/DD/YYYY")).toBe("2026-10-11");
+    expect(spokenDate("15/10/2026", "2026-10-31", "MM/DD/YYYY")).toBeNull();
+    expect(spokenDate("31/02/2026", "2026-10-31", "DD/MM/YYYY")).toBeNull();
+    expect(spokenDate("10/11/26", "2026-10-31", "DD/MM/YYYY")).toBeNull();
+  });
+});

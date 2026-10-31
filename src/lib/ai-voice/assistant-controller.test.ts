@@ -316,3 +316,90 @@ describe("persistent assistant lifecycle and workflows", () => {
     expect(controller.getSnapshot().active).toBe(true);
   });
 });
+
+describe("registered field editing", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    Speech.sessions = [];
+  });
+  afterEach(() => vi.useRealTimers());
+  it("targets only the selected field, preserves literal text and reserves action commands", async () => {
+    const s = setup();
+    s.update({
+      lines: [
+        {
+          description: "",
+          accountId: "",
+          quantity: "1",
+          unitPrice: "0",
+          discount: "0",
+          taxRateBps: "0",
+          taxCodeId: "",
+        },
+      ],
+    });
+    const focus = vi.fn();
+    s.controller.registerField({
+      id: "description",
+      token: "form",
+      key: "description",
+      label: "Description",
+      order: 100,
+      line: 0,
+      focus,
+    });
+    await s.controller.submit("go to description");
+    expect(focus).toHaveBeenCalledOnce();
+    await s.controller.submit("Work, Exact CASE.");
+    expect(s.form().draft.lines[0]!.description).toBe("Work, Exact CASE.");
+    await s.controller.submit("delete invoice");
+    expect(s.form().draft.lines[0]!.description).toBe("Work, Exact CASE.");
+    await s.controller.submit("dictate Open invoices");
+    expect(s.form().draft.lines[0]!.description).toBe("Open invoices");
+    expect(s.navigate).not.toHaveBeenCalled();
+    s.controller.unregisterField("description");
+    await s.controller.submit("Another value");
+    expect(s.form().draft.lines[0]!.description).toBe("Open invoices");
+    s.controller.dispose();
+  });
+  it("clarifies matching line fields and cancels targets on route changes", async () => {
+    const s = setup(),
+      focus = vi.fn();
+    for (const line of [0, 1])
+      s.controller.registerField({
+        id: `desc-${line}`,
+        token: "form",
+        key: "description",
+        label: "Description",
+        order: line,
+        line,
+        focus,
+      });
+    await s.controller.submit("go to description");
+    expect(s.controller.getSnapshot().choices).toHaveLength(2);
+    expect(focus).not.toHaveBeenCalled();
+    await s.controller.submit("2");
+    expect(s.controller.getSnapshot().field?.id).toBe("desc-1");
+    s.controller.locationChanged("/contacts");
+    expect(s.controller.getSnapshot().field).toBeNull();
+    s.controller.dispose();
+  });
+  it("cannot start recognition after cancellation of an activation handoff", async () => {
+    const s = setup();
+    let release!: () => void;
+    s.controller.setStartGate(
+      () =>
+        new Promise<void>((resolve) => {
+          release = resolve;
+        }),
+    );
+    s.controller.start();
+    s.controller.stop();
+    release();
+    await Promise.resolve();
+    await vi.advanceTimersByTimeAsync(100);
+    expect(Speech.sessions).toHaveLength(0);
+    expect(s.controller.getSnapshot().active).toBe(false);
+    s.controller.dispose();
+  });
+});

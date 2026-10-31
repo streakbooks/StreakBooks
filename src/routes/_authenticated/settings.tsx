@@ -975,10 +975,13 @@ function SettingsForCompany({ companyId }: { companyId: string }) {
           <UsersAccessPanel companyId={companyId} />
         </TabsContent>
 
-        <TabsContent value="automation" className="mt-4 space-y-4">
-          <SettingsAutomationPanel companyId={companyId} canEdit={canEdit} />
+              <TabsContent value="automation" className="mt-4 space-y-4">
+                <SettingsAutomationPanel
+                  companyId={companyId}
+                  canEdit={canEdit}
+                />
                 <WakeSettings />
-        </TabsContent>
+              </TabsContent>
 
         <TabsContent value="integrations" className="mt-4">
           <SettingsIntegrationsPanel />

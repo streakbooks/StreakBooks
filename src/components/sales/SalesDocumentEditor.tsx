@@ -645,7 +645,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
           <div className="space-y-2">
             <Label>Currency</Label>
             <VoiceSelect
-              voiceField={{ key: "currency", label: "Currency", order: 60 }}
+              voiceField={{ key: "currency", label: "Currency", order: 50 }}
               className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
               value={currency}
               disabled={sourceLocked}
@@ -680,7 +680,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
               key: "memo",
               label: "Memo",
               aliases: ["internal reference", "customer message"],
-              order: 50,
+              order: 60,
             }}
             value={memo}
             onChange={(e) => setMemo(e.target.value)}

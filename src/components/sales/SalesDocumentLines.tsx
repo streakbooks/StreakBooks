@@ -229,7 +229,7 @@ export function SalesDocumentLines({
                   label: "Account",
                   aliases: ["revenue account", "expense account", "expense asset account"],
                   line: idx,
-                  order: 100 + idx * 100 + 50,
+                  order: 100 + idx * 100 + 20,
                 }}
                 value={line.accountId}
                 onChange={(v) => update(idx, { accountId: v })}
@@ -261,7 +261,7 @@ export function SalesDocumentLines({
                   label: "Quantity",
                   aliases: ["qty"],
                   line: idx,
-                  order: 100 + idx * 100 + 20,
+                  order: 100 + idx * 100 + 30,
                 }}
                 value={line.quantity}
                 disabled={disabled}
@@ -277,7 +277,7 @@ export function SalesDocumentLines({
                   label: "Unit price",
                   aliases: ["price"],
                   line: idx,
-                  order: 100 + idx * 100 + 30,
+                  order: 100 + idx * 100 + 40,
                 }}
                 value={line.unitPrice}
                 disabled={disabled}
@@ -293,7 +293,7 @@ export function SalesDocumentLines({
                   label: "Discount",
                   aliases: [],
                   line: idx,
-                  order: 100 + idx * 100 + 40,
+                  order: 100 + idx * 100 + 50,
                 }}
                 value={line.discount}
                 disabled={disabled}

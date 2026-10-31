@@ -100,6 +100,7 @@ export const getCommunicationsStatus = createServerFn({ method: "GET" })
       demoBlocked: company.is_demo,
       recipient: destination,
       canEdit,
+      userId: context.userId,
       timezone: company.timezone || "UTC",
       history,
       // Readiness is NOT delivery verification. A successful real test is required.

@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
-import { readEmailConfig, sendViaResend } from "@/lib/documents/email-provider.server";
+import { checkResendDomain, readEmailConfig, sendViaResend } from "@/lib/documents/email-provider.server";
 import { escapeHtml } from "@/lib/documents/email-templates";
 import { configuredSender, loadCommunicationConfig } from "@/lib/notifications/communication-settings.server";
 import { inQuietHours } from "@/lib/notifications/communication-rules";
@@ -86,6 +86,7 @@ export const getCommunicationsStatus = createServerFn({ method: "GET" })
       currentRecipient(context.supabase).catch(() => null),
     ]);
     const cfg = readEmailConfig();
+    const domainCheck = cfg.configured ? await checkResendDomain(cfg) : null;
     const { data: perm } = await context.supabase.rpc("has_company_permission" as never, {
       _company_id: data.companyId, _permission: "company.settings.edit",
     } as never);
@@ -94,6 +95,7 @@ export const getCommunicationsStatus = createServerFn({ method: "GET" })
     if (canEdit) history = await recentCompanyEmailHistory(context.supabase, data.companyId);
     return {
       configured: cfg.configured,
+      domainCheck,
       provider: "resend" as const,
       verifiedSender: cfg.configured ? cfg.from : null,
       missingConfiguration: cfg.configured ? [] : cfg.missing,

@@ -28,6 +28,7 @@ export async function sendViaResend(
   try {
     const res = await fetchImpl("https://api.resend.com/emails", {
       method: "POST",
+      signal: AbortSignal.timeout(15000),
       headers: {
         Authorization: `Bearer ${config.apiKey}`,
         "Content-Type": "application/json",
@@ -72,6 +73,7 @@ export async function checkResendDomain(
   try {
     const res = await fetchImpl("https://api.resend.com/domains", {
       method: "GET",
+      signal: AbortSignal.timeout(6000),
       headers: { Authorization: `Bearer ${config.apiKey}` },
     });
     if (!res.ok) return {

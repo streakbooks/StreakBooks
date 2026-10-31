@@ -115,7 +115,8 @@ export const sendCommunicationsTest = createServerFn({ method: "POST" })
     const db = context.supabase;
     await assertCompanyPermission(db, data.companyId, "company.settings.edit");
     const company = await companyInfo(db, data.companyId);
-    if (company.is_demo) throw new Error("The demo company cannot send messages to real recipients.");
+    // Safe in Demo Company: test messages go ONLY to the current verified account email.
+    // Demo invoices/customer digests remain blocked.
     const cfg = readEmailConfig();
     if (!cfg.configured) throw new Error("Email provider is not configured: " + cfg.missing.join(", "));
     const destination = await currentRecipient(db);

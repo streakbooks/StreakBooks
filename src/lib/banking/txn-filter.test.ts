@@ -53,6 +53,12 @@ describe("applyTxnFilter", () => {
     expect(calls).toEqual([]);
   });
 
+  it("limits an exact global-search result by transaction ID", () => {
+    const { chain, calls } = recorder();
+    applyTxnFilter(chain, normaliseTxnFilter({ transactionId: "abc-123", statusGroup: "all" }));
+    expect(calls).toEqual([["eq", "id", "abc-123"]]);
+  });
+
   it("maps status groups to IN lists", () => {
     const a = recorder();
     applyTxnFilter(a.chain, normaliseTxnFilter({ statusGroup: "unreconciled" }));

@@ -108,6 +108,7 @@ export function SettingsCommunicationsPanel({ companyId, canEdit }: { companyId:
           <AlertDescription className="space-y-1">
             <p>Transport: {status.data.provider === "resend" ? "Resend" : status.data.provider}.</p>
             {status.data.verifiedSender && <p>Server-controlled sender: {status.data.verifiedSender}</p>}
+            {status.data.domainCheck && <p>Sender domain {status.data.domainCheck.domain}: <strong>{status.data.domainCheck.state}</strong> — {status.data.domainCheck.detail}</p>}
             {!status.data.configured && <p>Server configuration required: {status.data.missingConfiguration.join(", ")}. Store secrets in the server environment, never in this page.</p>}
             {status.data.demoBlocked && <p>Demo safeguard: only a test email to your own verified address is allowed. Customer document emails and financial digests remain disabled.</p>}
             {status.data.recentSuccessfulTest && <p>Provider accepted a previous test message: {new Date(status.data.recentSuccessfulTest).toLocaleString()}. Check your inbox for actual delivery.</p>}

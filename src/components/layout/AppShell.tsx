@@ -9,6 +9,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { ChevronRight, LogOut, Menu, PanelLeftClose, PanelLeftOpen, UserRound } from "lucide-react";
 import { NAV_GROUPS, navItems, type NavItem } from "@/lib/nav";
+import { activeNavItem, activeNavLabel } from "@/lib/nav-active";
 import { buildBreadcrumbs } from "@/lib/breadcrumbs";
 import { cn } from "@/lib/utils";
 import { initialsFrom } from "@/lib/auth-helpers";
@@ -114,10 +115,12 @@ function Brand({ collapsed }: { collapsed?: boolean }) {
 function NavLink({
   item,
   collapsed,
+  active,
   onNavigate,
 }: {
   item: NavItem;
   collapsed: boolean;
+  active: boolean;
   onNavigate?: (() => void) | undefined;
 }) {
   const link = (
@@ -127,16 +130,14 @@ function NavLink({
       onClick={onNavigate}
       activeOptions={{ exact: item.to === "/" }}
       aria-label={collapsed ? item.label : undefined}
+      aria-current={active ? "page" : undefined}
+      data-active={active ? "true" : undefined}
       className={cn(
-        "group relative flex min-h-9 items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground/85 outline-none transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring pointer-coarse:min-h-11",
+        "lb-nav-link group relative flex min-h-10 items-center gap-3 rounded-lg border border-transparent px-3 py-2 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar pointer-coarse:min-h-11",
         collapsed && "justify-center px-0",
       )}
-      activeProps={{
-        className:
-          "bg-sidebar-accent text-sidebar-accent-foreground before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:rounded-full before:bg-sidebar-primary",
-      }}
     >
-      <item.icon className="size-4 shrink-0" aria-hidden />
+      <item.icon className={cn("size-4 shrink-0", active && "drop-shadow-[0_0_5px_rgba(140,205,255,0.32)]")} aria-hidden />
       {collapsed ? null : <span className="truncate">{item.label}</span>}
     </Link>
   );
@@ -156,6 +157,8 @@ function NavList({
   collapsed?: boolean;
   onNavigate?: () => void;
 }) {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const activeTo = activeNavItem(pathname)?.to ?? null;
   const main = NAV_GROUPS.filter((g) => g.id !== "footer");
   const footer = NAV_GROUPS.filter((g) => g.id === "footer");
   const renderGroup = (g: (typeof NAV_GROUPS)[number], index: number) => {
@@ -183,7 +186,13 @@ function NavList({
         ) : null}
         <div className="space-y-0.5">
           {items.map((item) => (
-            <NavLink key={item.to} item={item} collapsed={collapsed} onNavigate={onNavigate} />
+            <NavLink
+              key={item.to}
+              item={item}
+              collapsed={collapsed}
+              active={item.to === activeTo}
+              onNavigate={onNavigate}
+            />
           ))}
         </div>
       </div>
@@ -257,11 +266,7 @@ function AppShellLayout({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const { company, isPending } = useActiveCompany();
   const title = useRouterState({
-    select: (s) => {
-      const path = s.location.pathname;
-      const match = navItems.find((n) => (n.to === "/" ? path === "/" : path.startsWith(n.to)));
-      return match?.label ?? "LinkBooks";
-    },
+    select: (s) => activeNavLabel(s.location.pathname),
   });
 
   // Read the saved sidebar state after mount so server and first client render agree.
@@ -293,7 +298,7 @@ function AppShellLayout({ children }: { children: ReactNode }) {
       <aside
         aria-label="Sidebar"
         className={cn(
-          "fixed inset-y-0 left-0 z-40 hidden flex-col bg-sidebar transition-[width] duration-200 print:hidden lg:flex",
+          "lb-premium-sidebar fixed inset-y-0 left-0 z-40 hidden flex-col bg-sidebar transition-[width] duration-200 print:hidden lg:flex",
           collapsed ? "w-[4.5rem]" : "w-64",
         )}
       >
@@ -348,7 +353,7 @@ function AppShellLayout({ children }: { children: ReactNode }) {
                 <Menu className="size-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-72 border-0 bg-sidebar p-0">
+            <SheetContent side="left" className="lb-premium-sidebar w-72 border-0 bg-sidebar p-0">
               <SheetTitle className="sr-only">Navigation</SheetTitle>
               <div className="flex h-full flex-col">
                 <div className="flex h-14 shrink-0 items-center px-4">

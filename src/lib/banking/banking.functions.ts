@@ -272,6 +272,7 @@ export const listBankTransactions = createServerFn({ method: "GET" })
     (input: {
       companyId: string;
       bankAccountId?: string;
+      transactionId?: string;
       status?: string;
       /** unreconciled = uncategorised + matched; all = no status filter */
       statusGroup?: string;
@@ -285,6 +286,7 @@ export const listBankTransactions = createServerFn({ method: "GET" })
       companyId: assertUuid(input.companyId),
       filter: normaliseTxnFilter({
         bankAccountId: input.bankAccountId ? assertUuid(input.bankAccountId) : null,
+        transactionId: input.transactionId ? assertUuid(input.transactionId) : null,
         status: input.status ?? null,
         statusGroup: input.statusGroup ?? null,
         q: input.q ?? null,

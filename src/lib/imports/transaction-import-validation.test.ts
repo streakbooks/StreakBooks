@@ -64,4 +64,31 @@ describe("Sales and Purchases import preflight (non-posting)", () => {
     )).toThrow(/no monetary value/);
   });
 
+
+  it("uses the real Sales half-up and Purchases truncation rules for fractional quantities", () => {
+    const salesCsv = `${sales}\nROUND-1,Acme,2026-10-01,2026-10-31,4000,Half cent,0.5,0.01,`;
+    const billCsv = `${bills}\nROUND-1,Acme,2026-10-01,2026-10-31,6000,Half cent,0.5,0.01`;
+    // Sales posts one minor unit; Purchases truncates to zero. A zero-value
+    // bill must not be created as a misleading draft that cannot be posted.
+    expect(prepareTransactionCsv(salesCsv, "sales", "USD")).toHaveLength(1);
+    expect(() => prepareTransactionCsv(billCsv, "purchases", "USD")).toThrow(/no monetary value/);
+  });
+
+  it.each(["sales", "purchases"] as const)(
+    "rejects aggregate %s document totals that overflow safe integer range",
+    (kind) => {
+      const header = kind === "sales" ? sales : bills;
+      const number = kind === "sales" ? "INV-BIG" : "BILL-BIG";
+      const account = kind === "sales" ? "4000" : "6000";
+      const tax = kind === "sales" ? "," : "";
+      const line = `${number},Acme,2026-10-01,2026-10-31,${account},Large,1,50000000000000.00${tax}`;
+      expect(() => prepareTransactionCsv(`${header}\n${line}\n${line}`, kind, "USD"))
+        .toThrow(/document .* total exceeds safe integer range/);
+    },
+  );
+
+  it("does not aggregate amounts across separate documents", () => {
+    const csv = `${sales}\nINV-A,Acme,2026-10-01,2026-10-31,4000,Large,1,50000000000000.00,\nINV-B,Acme,2026-10-01,2026-10-31,4000,Large,1,50000000000000.00,`;
+    expect(prepareTransactionCsv(csv, "sales", "USD")).toHaveLength(2);
+  });
 });

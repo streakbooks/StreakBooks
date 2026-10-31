@@ -55,6 +55,7 @@ type Search = {
   statusGroup?: string;
   q?: string;
   bankAccountId?: string;
+  transactionId?: string;
   dateFrom?: string;
   dateTo?: string;
   direction?: string;
@@ -79,6 +80,8 @@ export const Route = createFileRoute("/_authenticated/banking/transactions")({
     if (q) out.q = q;
     const bankAccountId = str("bankAccountId");
     if (bankAccountId) out.bankAccountId = bankAccountId;
+    const transactionId = str("transactionId");
+    if (transactionId && /^[a-f\d]{8}-[a-f\d]{4}-[1-8][a-f\d]{3}-[89ab][a-f\d]{3}-[a-f\d]{12}$/i.test(transactionId)) out.transactionId = transactionId;
     const dateFrom = str("dateFrom");
     if (dateFrom && ISO.test(dateFrom)) out.dateFrom = dateFrom;
     const dateTo = str("dateTo");
@@ -127,6 +130,7 @@ function BankTransactions() {
     void navigate({
       search: ((prev: Search) => {
         const next: Record<string, unknown> = { ...prev, ...patch };
+        if (!("transactionId" in patch)) delete next["transactionId"];
         if (!keepPage && !("page" in patch)) delete next["page"];
         for (const k of Object.keys(next))
           if (next[k] === undefined || next[k] === "") delete next[k];
@@ -144,6 +148,7 @@ function BankTransactions() {
 
   const filterKey = [
     search.bankAccountId,
+    search.transactionId,
     status,
     statusGroup,
     search.q,
@@ -181,6 +186,7 @@ function BankTransactions() {
         data: {
           companyId: companyId!,
           ...(search.bankAccountId ? { bankAccountId: search.bankAccountId } : {}),
+          ...(search.transactionId ? { transactionId: search.transactionId } : {}),
           ...(statusGroup ? { statusGroup } : status && status !== ALL ? { status } : {}),
           ...(search.q ? { q: search.q } : {}),
           ...(search.dateFrom ? { dateFrom: search.dateFrom } : {}),
@@ -357,6 +363,15 @@ function BankTransactions() {
           </>
         }
       />
+
+      {search.transactionId ? (
+        <div className="mb-3 flex items-center gap-3 text-sm text-muted-foreground" role="status">
+          <span>Showing the bank transaction selected from global search.</span>
+          <Button variant="outline" size="sm" onClick={() => setSearch({ transactionId: undefined, statusGroup: "all" })}>
+            Show all transactions
+          </Button>
+        </div>
+      ) : null}
 
       <div className="mb-4 flex flex-wrap items-end gap-2">
         <LookupSelect

@@ -179,10 +179,10 @@ export const categoryMeta: CategoryMeta[] = [
   {
     id: "users",
     label: "Users & Security",
-    description: "Roles, invitations, MFA and access policies.",
+    description: "Duty roles, tailored access, invitations and suspension. Enforced in the database.",
     synonyms: ["roles", "mfa", "sso", "permissions", "invite", "privacy"],
     legacyTab: "users",
-    availability: "partial",
+    availability: "live",
   },
   {
     id: "integrations",

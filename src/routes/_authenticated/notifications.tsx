@@ -7,6 +7,7 @@ import { useCan } from "@/hooks/use-can";
 import { useActionNotifications, safeNotificationPath, type ActionNotification } from "@/hooks/use-action-notifications";
 import { supabase } from "@/integrations/supabase/client";
 import { notify } from "@/lib/notify";
+import { filterActionNotifications } from "@/lib/notifications/notification-utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -50,19 +51,7 @@ function ActionCenterPage() {
   const [bulkError, setBulkError] = useState<string | null>(null);
   const rows = inbox.data ?? [];
 
-  const filtered = useMemo(() => {
-    const needle = search.trim().toLowerCase();
-    return rows.filter((n) => {
-      if (category !== "all" && n.category !== category) return false;
-      if (needle && !(`${n.title} ${n.body}`.toLowerCase().includes(needle))) return false;
-      if (view === "unread") return !n.read_at && !n.archived_at && !n.resolved_at;
-      if (view === "action") return !n.archived_at && !n.resolved_at;
-      if (view === "critical") return n.priority === "critical" && !n.archived_at && !n.resolved_at;
-      if (view === "completed") return !!n.resolved_at && !n.archived_at;
-      if (view === "archived") return !!n.archived_at;
-      return true;
-    });
-  }, [rows, category, search, view]);
+  const filtered = useMemo(() => filterActionNotifications(rows, { view, category, search }), [rows, view, category, search]);
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageRows = filtered.slice(Math.min(page, pageCount - 1) * PAGE_SIZE, (Math.min(page, pageCount - 1) + 1) * PAGE_SIZE);
   const onView = (next: View) => { setView(next); setPage(0); setSelected([]); };

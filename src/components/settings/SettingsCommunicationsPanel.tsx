@@ -79,7 +79,7 @@ export function SettingsCommunicationsPanel({ companyId, canEdit }: { companyId:
   });
   const savingBlocked = !canEdit || save.isPending || config.isPending || config.isError;
   const providerReady = Boolean(status.data?.configured);
-  const canTest = Boolean(providerReady && status.data?.canEdit && status.data?.recipient);
+  const canTest = Boolean(providerReady && status.data?.canSend && status.data?.recipient);
   const canDigest = Boolean(canTest && !status.data?.demoBlocked);
   const set = <K extends keyof Config>(key: K, value: Config[K]) => setDoc((old) => ({ ...old, [key]: value }));
   return (
@@ -174,6 +174,9 @@ export function SettingsCommunicationsPanel({ companyId, canEdit }: { companyId:
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-sm">Recipient: <strong>{status.data?.recipient ?? "No verified email on your account"}</strong></p>
+          {status.data?.canEdit && !status.data.canSend && (
+            <p role="alert" className="text-sm text-destructive">Email delivery requires company document-management permission to record an audit trail.</p>
+          )}
           <div className="flex flex-wrap gap-2">
             <Button size="sm" disabled={!canTest || test.isPending || digest.isPending}
               onClick={() => test.mutate()}><Send className="mr-1 size-4" />{test.isPending ? "Sending test…" : "Send test email"}</Button>

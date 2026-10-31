@@ -2,6 +2,7 @@
 
 import { useVoiceSession } from "@/components/ai-voice/voice-context";
 
+import { isPurchaseTaxCode } from "@/lib/purchases/tax-code-eligibility";
 import { Trash2, ChevronUp, ChevronDown, GripVertical } from "lucide-react";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { computeBillTotals, type TaxCalculationMode } from "@/lib/purchases/bill-form-helpers";
@@ -308,9 +309,7 @@ export function PurchasesDocumentLines({
     }
   })();
 
-  const purchaseTaxCodes = taxCodes.filter(
-    (t) => !t.appliesTo || t.appliesTo === "purchases" || t.appliesTo === "both",
-  );
+  const purchaseTaxCodes = taxCodes.filter(isPurchaseTaxCode);
 
   return (
     <div className="space-y-3">

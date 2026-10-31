@@ -1,3 +1,4 @@
+import { isPurchaseTaxCode } from "@/lib/purchases/tax-code-eligibility";
 import { VoiceFields } from "@/components/ai-voice/voice-fields";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
@@ -1254,7 +1255,7 @@ export function NewBill({
           dateFormat: company?.date_format ?? "DD/MM/YYYY",
           contacts: suppliers,
           accounts: expenseAccounts.map((a) => ({ id: a.id, name: `${a.code} ${a.name}` })),
-          taxes: taxCodes.map((t) => ({
+          taxes: (taxCalculation === "none" ? [] : taxCodes.filter(isPurchaseTaxCode)).map((t) => ({
             id: t.id,
             name: `${t.code} ${t.name}`,
             rateBps: t.rateBps,

@@ -442,6 +442,8 @@ test("Purchases field-by-field workflow preserves focus, exact dictation and con
   await say(page, "125.50");
   await say(page, "go to account");
   await say(page, "Consulting expense");
+  await say(page, "set tax code to Sales only");
+  await expect(page.getByTestId("assistant-message")).toContainText("No matching record");
   await say(page, "go to tax");
   await say(page, "Zero rate");
   await say(page, "save bill");

@@ -73,7 +73,7 @@ export const globalSearch = createServerFn({ method: "GET" })
           href: "/banking/transactions",
           search: { transactionId: row.id, statusGroup: "all" },
           amount_minor: row.amount_minor,
-          currency: row.bank_accounts?.currency_code,
+          ...(row.bank_accounts?.currency_code ? { currency: row.bank_accounts.currency_code } : {}),
         });
       }
       if (data.category === "bank_transaction") return hits;

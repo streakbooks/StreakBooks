@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS public.action_notifications (
   archived_at timestamptz,
   resolved_at timestamptz,
   CONSTRAINT action_notifications_event_key_nonempty CHECK (length(event_key) BETWEEN 1 AND 240),
-  CONSTRAINT action_notifications_target_path_safe CHECK (target_path IS NULL OR target_path ~ '^/[a-zA-Z0-9/_?=&.%-]*,
+  CONSTRAINT action_notifications_target_path_safe CHECK (target_path IS NULL OR target_path ~ '^/[a-zA-Z0-9/_?=&.%-]*$'),
   CONSTRAINT action_notifications_unique_event UNIQUE (company_id, recipient_user_id, event_key)
 );
 CREATE INDEX IF NOT EXISTS action_notifications_inbox_idx

@@ -21,6 +21,7 @@ import { Route as AuthenticatedAccountingRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAiAssistantRouteImport } from './routes/_authenticated/ai-assistant'
 import { Route as AuthenticatedBankingRouteRouteImport } from './routes/_authenticated/banking/route'
 import { Route as AuthenticatedFilesRouteImport } from './routes/_authenticated/files'
+import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedFirmRouteImport } from './routes/_authenticated/firm'
 import { Route as AuthenticatedFixedAssetsRouteImport } from './routes/_authenticated/fixed-assets'
 import { Route as AuthenticatedHelpRouteImport } from './routes/_authenticated/help'
@@ -190,6 +191,11 @@ const AuthenticatedBankingRouteRoute =
 const AuthenticatedFilesRoute = AuthenticatedFilesRouteImport.update({
   id: '/files',
   path: '/files',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedNotificationsRoute = AuthenticatedNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedFirmRoute = AuthenticatedFirmRouteImport.update({
@@ -830,6 +836,7 @@ export interface FileRoutesByFullPath {
   '/accounting': typeof AuthenticatedAccountingRoute
   '/ai-assistant': typeof AuthenticatedAiAssistantRoute
   '/files': typeof AuthenticatedFilesRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/firm': typeof AuthenticatedFirmRoute
   '/fixed-assets': typeof AuthenticatedFixedAssetsRoute
   '/help': typeof AuthenticatedHelpRoute
@@ -946,6 +953,7 @@ export interface FileRoutesByTo {
   '/accounting': typeof AuthenticatedAccountingRoute
   '/ai-assistant': typeof AuthenticatedAiAssistantRoute
   '/files': typeof AuthenticatedFilesRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/firm': typeof AuthenticatedFirmRoute
   '/fixed-assets': typeof AuthenticatedFixedAssetsRoute
   '/help': typeof AuthenticatedHelpRoute
@@ -1066,6 +1074,7 @@ export interface FileRoutesById {
   '/_authenticated/accounting': typeof AuthenticatedAccountingRoute
   '/_authenticated/ai-assistant': typeof AuthenticatedAiAssistantRoute
   '/_authenticated/files': typeof AuthenticatedFilesRoute
+  '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/firm': typeof AuthenticatedFirmRoute
   '/_authenticated/fixed-assets': typeof AuthenticatedFixedAssetsRoute
   '/_authenticated/help': typeof AuthenticatedHelpRoute
@@ -1191,6 +1200,7 @@ export interface FileRouteTypes {
     | '/accounting'
     | '/ai-assistant'
     | '/files'
+    | '/notifications'
     | '/firm'
     | '/fixed-assets'
     | '/help'
@@ -1307,6 +1317,7 @@ export interface FileRouteTypes {
     | '/accounting'
     | '/ai-assistant'
     | '/files'
+    | '/notifications'
     | '/firm'
     | '/fixed-assets'
     | '/help'
@@ -1426,6 +1437,7 @@ export interface FileRouteTypes {
     | '/_authenticated/accounting'
     | '/_authenticated/ai-assistant'
     | '/_authenticated/files'
+    | '/_authenticated/notifications'
     | '/_authenticated/firm'
     | '/_authenticated/fixed-assets'
     | '/_authenticated/help'
@@ -1632,6 +1644,13 @@ declare module '@tanstack/react-router' {
       path: '/files'
       fullPath: '/files'
       preLoaderRoute: typeof AuthenticatedFilesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/notifications': {
+      id: '/_authenticated/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/firm': {
@@ -2656,6 +2675,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountingRoute: typeof AuthenticatedAccountingRoute
   AuthenticatedAiAssistantRoute: typeof AuthenticatedAiAssistantRoute
   AuthenticatedFilesRoute: typeof AuthenticatedFilesRoute
+  AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedFirmRoute: typeof AuthenticatedFirmRoute
   AuthenticatedFixedAssetsRoute: typeof AuthenticatedFixedAssetsRoute
   AuthenticatedHelpRoute: typeof AuthenticatedHelpRoute
@@ -2693,6 +2713,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountingRoute: AuthenticatedAccountingRoute,
   AuthenticatedAiAssistantRoute: AuthenticatedAiAssistantRoute,
   AuthenticatedFilesRoute: AuthenticatedFilesRoute,
+  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedFirmRoute: AuthenticatedFirmRoute,
   AuthenticatedFixedAssetsRoute: AuthenticatedFixedAssetsRoute,
   AuthenticatedHelpRoute: AuthenticatedHelpRoute,

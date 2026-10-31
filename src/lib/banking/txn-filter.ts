@@ -4,6 +4,7 @@
  */
 export type TxnFilter = {
   bankAccountId: string | null;
+  transactionId: string | null;
   status: string | null;
   /** unreconciled = uncategorised + matched; posted = matched + reconciled */
   statusGroup: string | null;
@@ -17,6 +18,7 @@ const ISO = /^\d{4}-\d{2}-\d{2}$/;
 
 export function normaliseTxnFilter(input: {
   bankAccountId?: string | null;
+  transactionId?: string | null;
   status?: string | null;
   statusGroup?: string | null;
   q?: string | null;
@@ -36,6 +38,7 @@ export function normaliseTxnFilter(input: {
   if (dateFrom && dateTo && dateFrom > dateTo) throw new Error("'From' date is after 'To' date");
   return {
     bankAccountId: clean(input.bankAccountId),
+    transactionId: clean(input.transactionId),
     status: clean(input.status),
     statusGroup: clean(input.statusGroup),
     q: clean(input.q)?.slice(0, 120) ?? null,
@@ -65,6 +68,7 @@ interface FilterChain {
 export function applyTxnFilter<Q>(query: Q, f: TxnFilter, extras = true): Q {
   let q = query as unknown as FilterChain;
   if (f.bankAccountId) q = q.eq("bank_account_id" as never, f.bankAccountId as never);
+  if (f.transactionId) q = q.eq("id" as never, f.transactionId as never);
   if (f.statusGroup === "unreconciled")
     q = q.in("status" as never, ["uncategorised", "matched"] as never);
   else if (f.statusGroup === "posted")

@@ -48,6 +48,7 @@ export function GlobalSearch({ className }: { className?: string }) {
   const [q, setQ] = useState("");
   const [debounced, setDebounced] = useState("");
   const [category, setCategory] = useState<SearchCategory>("all");
+  const [resultLimit, setResultLimit] = useState(12);
   const [showAllFilters, setShowAllFilters] = useState(false);
   const anchorRef = useRef<HTMLButtonElement>(null);
   const [position, setPosition] = useState({ top: 72, left: 12, width: 520 });
@@ -81,9 +82,9 @@ export function GlobalSearch({ className }: { className?: string }) {
   }, [q]);
 
   const searchQ = useQuery({
-    queryKey: ["global-search", companyId, debounced, category],
-    enabled: Boolean(companyId) && debounced.length >= 2 && open,
-    queryFn: () => runSearch({ data: { companyId: companyId!, q: debounced, category } }),
+    queryKey: ["global-search", companyId, debounced, category, resultLimit],
+    enabled: Boolean(companyId) && (debounced.length >= 2 || /^[0-9]$/.test(debounced)) && open,
+    queryFn: () => runSearch({ data: { companyId: companyId!, q: debounced, category, limit: resultLimit } }),
     staleTime: 15_000,
   });
 
@@ -105,6 +106,7 @@ export function GlobalSearch({ className }: { className?: string }) {
     setQ("");
     setDebounced("");
     setCategory("all");
+    setResultLimit(12);
     setShowAllFilters(false);
   }
 
@@ -124,7 +126,8 @@ export function GlobalSearch({ className }: { className?: string }) {
   const hitGroups = (Object.keys(ENTITY_LABEL) as GlobalSearchHit["entity"][])
     .map((e) => ({ entity: e, items: hits.filter((h) => h.entity === e) }))
     .filter((g) => g.items.length > 0);
-  const typed = q.trim().length >= 2;
+  const typed = q.trim().length >= 2 || /^[0-9]$/.test(q.trim());
+  const canLoadMore = resultLimit < 36 && hitGroups.some((g) => g.items.length >= resultLimit);
   const nothing = typed && groups.length === 0 && hitGroups.length === 0 && !searchQ.isFetching && !searchQ.isError;
 
   return (
@@ -168,8 +171,8 @@ export function GlobalSearch({ className }: { className?: string }) {
             <CommandInput
               autoFocus
               value={q}
-              onValueChange={setQ}
-              placeholder="Search records, contacts, references…"
+              onValueChange={(value) => { setQ(value); setResultLimit(12); }}
+              placeholder="Search amount, invoice number, contact, reference…"
             />
             <div className="border-b px-3 py-2.5" aria-label="Search category filters">
               <div className="mb-2 flex items-center justify-between">
@@ -182,7 +185,7 @@ export function GlobalSearch({ className }: { className?: string }) {
                   ["account", "Accounts"], ["product", "Products"], ["journal", "Journals"], ["bank_transaction", "Bank transactions"],
                 ] as const).slice(0, showAllFilters ? undefined : 4).map(([id, label]) => (
                   <button key={id} type="button" aria-pressed={category === id}
-                    onClick={() => setCategory(id)}
+                    onClick={() => { setCategory(id); setResultLimit(12); }}
                     className={cn("rounded-full border px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-primary",
                       category === id ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-accent")}>
                     {label}
@@ -233,9 +236,16 @@ export function GlobalSearch({ className }: { className?: string }) {
                   ))}
                 </CommandGroup>
               ))}
+              {canLoadMore ? (
+                <div className="border-t px-3 py-2 text-center">
+                  <button type="button" className="text-xs font-medium text-primary hover:underline" onClick={() => setResultLimit(36)}>
+                    Show more matching records
+                  </button>
+                </div>
+              ) : null}
               {!typed ? (
                 <div className="border-t px-3 py-3 text-sm text-muted-foreground">
-                  Start typing to search {category === "all" ? "invoices, bills, contacts and more" : ENTITY_LABEL[category] ?? "records"}.
+                  Start typing to search by amount, date, number, name or reference in {category === "all" ? "all records" : ENTITY_LABEL[category] ?? "records"}.
                   <span className="mt-1 block text-xs">Select a filter above to narrow results. Press Enter on a result to open it.</span>
                 </div>
               ) : null}

@@ -23,15 +23,6 @@ async function companyInfo(db: Db, companyId: string) {
   return data as { name: string; is_demo: boolean; timezone: string };
 }
 
-async function assertCompanyEmailAuditPermission(db: Db, companyId: string): Promise<void> {
-  const { data, error } = await db.rpc("can_access_attachment" as never, {
-    _company_id: companyId,
-    _entity_type: "company",
-    _action: "manage",
-  } as never);
-  if (error || !data) throw new Error("Your role cannot send audited company emails. Ask an administrator for document-management permission.");
-}
-
 async function currentRecipient(db: Db): Promise<string> {
   const { data, error } = await db.auth.getUser();
   if (error || !data.user?.email) throw new Error("Your account has no verified email address for delivery");
@@ -53,24 +44,17 @@ async function recentCompanyEmailHistory(db: Db, companyId: string): Promise<His
 
 async function recordCompanyEmail(db: Db, info: {
   companyId: string; template: "notification_test" | "notification_digest";
-  recipient: string; subject: string; status: "sent" | "failed";
+  subject: string; status: "sent" | "failed";
   providerMessageId: string | null; error: string | null;
 }) {
-  const { error } = await db.rpc("record_email_outbox" as never, {
-    payload: {
-      company_id: info.companyId,
-      entity_type: "company",
-      entity_id: info.companyId,
-      template: info.template,
-      to: [info.recipient],
-      subject: info.subject,
-      provider: "resend",
-      provider_message_id: info.providerMessageId,
-      status: info.status,
-      error: info.error,
-    },
+  const { error } = await db.rpc("record_communication_delivery" as never, {
+    _company_id: info.companyId,
+    _template: info.template,
+    _subject: info.subject,
+    _status: info.status,
+    _provider_message_id: info.providerMessageId,
+    _error: info.error,
   } as never);
-  // Do not silently claim an audited delivery when no audit row exists.
   if (error) throw new Error("Email provider responded, but delivery history could not be recorded: " + error.message);
 }
 
@@ -100,11 +84,8 @@ export const getCommunicationsStatus = createServerFn({ method: "GET" })
       _company_id: data.companyId, _permission: "company.settings.edit",
     } as never);
     const canEdit = Boolean(perm);
-    const { data: canAudit } = await context.supabase.rpc("can_access_attachment" as never, {
-      _company_id: data.companyId, _entity_type: "company", _action: "manage",
-    } as never);
-    let history: HistoryRow[] = [];
-    if (canEdit) history = await recentCompanyEmailHistory(context.supabase, data.companyId);
+    let history: HistoryRow[] = await recentCompanyEmailHistory(context.supabase, data.companyId);
+    if (!canEdit) history = history.filter((r) => r.sent_by === context.userId);
     return {
       configured: cfg.configured,
       domainCheck,
@@ -114,7 +95,8 @@ export const getCommunicationsStatus = createServerFn({ method: "GET" })
       demoBlocked: company.is_demo,
       recipient: destination,
       canEdit,
-      canSend: canEdit && Boolean(canAudit),
+      canSend: canEdit,
+      canDigest: !company.is_demo,
       userId: context.userId,
       timezone: company.timezone || "UTC",
       history,
@@ -129,7 +111,6 @@ export const sendCommunicationsTest = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const db = context.supabase;
     await assertCompanyPermission(db, data.companyId, "company.settings.edit");
-    await assertCompanyEmailAuditPermission(db, data.companyId);
     const company = await companyInfo(db, data.companyId);
     // Safe in Demo Company: test messages go ONLY to the current verified account email.
     // Demo invoices/customer digests remain blocked.
@@ -147,7 +128,7 @@ export const sendCommunicationsTest = createServerFn({ method: "POST" })
     });
     await recordCompanyEmail(db, {
       companyId: data.companyId, template: "notification_test",
-      recipient: destination, subject, status: result.ok ? "sent" : "failed",
+      subject, status: result.ok ? "sent" : "failed",
       providerMessageId: result.ok ? result.messageId : null,
       error: result.ok ? null : result.error,
     });
@@ -160,8 +141,7 @@ export const sendCommunicationsDigest = createServerFn({ method: "POST" })
   .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     const db = context.supabase;
-    await assertCompanyPermission(db, data.companyId, "company.settings.edit");
-    await assertCompanyEmailAuditPermission(db, data.companyId);
+    await assertCompanyMember(db, data.companyId);
     const company = await companyInfo(db, data.companyId);
     if (company.is_demo) throw new Error("The demo company cannot send messages to real recipients.");
     const cfg = readEmailConfig();
@@ -199,7 +179,7 @@ export const sendCommunicationsDigest = createServerFn({ method: "POST" })
     });
     await recordCompanyEmail(db, {
       companyId: data.companyId, template: "notification_digest",
-      recipient: destination, subject, status: result.ok ? "sent" : "failed",
+      subject, status: result.ok ? "sent" : "failed",
       providerMessageId: result.ok ? result.messageId : null,
       error: result.ok ? null : result.error,
     });

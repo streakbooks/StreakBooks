@@ -49,6 +49,8 @@ BEGIN
      OR length(coalesce(_instructions,'')) > 2000 THEN
     RAISE EXCEPTION 'Invalid document request';
   END IF;
+  -- Serialize concurrent requests by one sender before duplicate/rate checks.
+  PERFORM pg_advisory_xact_lock(hashtext('doc_request:'||_company_id::text||':'||auth.uid()::text));
   IF (SELECT count(*) FROM public.action_document_requests r
         WHERE r.company_id=_company_id AND r.requested_by=auth.uid()
           AND r.created_at>now()-interval '24 hours') >= 50 THEN

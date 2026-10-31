@@ -1252,7 +1252,11 @@ export function NewBill({
           today,
           contacts: suppliers,
           accounts: expenseAccounts.map((a) => ({ id: a.id, name: `${a.code} ${a.name}` })),
-          taxes: taxCodes.map((t) => ({ id: t.id, name: `${t.code} ${t.name}`, rateBps: t.rateBps })),
+          taxes: taxCodes.map((t) => ({
+            id: t.id,
+            name: `${t.code} ${t.name}`,
+            rateBps: t.rateBps,
+          })),
           currencies: enabledCurrencies,
           selectContact: onSupplierChange,
           update: (patch) => {
@@ -1268,7 +1272,8 @@ export function NewBill({
             if (patch.memo !== undefined) setMemo(patch.memo);
             if (patch.number !== undefined) setSupplierInvoiceNumber(patch.number);
           },
-          updateLines: (next) => setLines(next.map((line) => ({ ...emptyPurchaseLine(), ...line }))),
+          updateLines: (next) =>
+            setLines(next.map((line) => ({ ...emptyPurchaseLine(), ...line }))),
           validate: () => {
             const errors = validateVoiceDraft(voiceDraft, true);
             if (dupQ.isFetching) errors.push("Wait for the duplicate supplier bill check.");

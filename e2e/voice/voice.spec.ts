@@ -278,6 +278,20 @@ test("manual edits invalidate the reviewed save details", async ({ page }) => {
   ).toBe(0);
 });
 
+test("linked credit-note customer and currency locks also apply to voice", async ({ page }) => {
+  await page.goto("/sales/credit-notes/linked");
+  await activate(page);
+  await say(page, "select customer ABC Services");
+  await expect(page.getByTestId("assistant-message")).toContainText("customer cannot be changed");
+  await say(page, "set currency to USD");
+  await expect(page.getByTestId("assistant-message")).toContainText("must keep the source invoice");
+  expect(
+    await page.evaluate(
+      () => window.voiceServer.calls.filter((call) => call.name.startsWith("save")).length,
+    ),
+  ).toBe(0);
+});
+
 test("recognition endings recover, and minimising or mouse navigation keeps activation", async ({
   page,
 }) => {

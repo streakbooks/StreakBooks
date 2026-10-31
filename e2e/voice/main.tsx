@@ -47,6 +47,22 @@ export function Destination() {
         <SalesDocumentEditor kind="invoice" />
       ) : path === "/sales/quotes/new" ? (
         <SalesDocumentEditor kind="quote" />
+      ) : path === "/sales/credit-notes/linked" ? (
+        <SalesDocumentEditor
+          kind="credit_note"
+          existing={{
+            id: "00000000-0000-4000-8000-000000000098",
+            contactId: "00000000-0000-4000-8000-000000000001",
+            date: "2026-10-31",
+            secondDate: null,
+            number: "CR-LOCK",
+            memo: null,
+            currencyCode: "GBP",
+            fxRateToBase: 1,
+            sourceInvoiceId: "00000000-0000-4000-8000-000000000097",
+            lines: [],
+          }}
+        />
       ) : path === "/sales/credit-notes/new" ? (
         <SalesDocumentEditor kind="credit_note" />
       ) : path === "/purchases/bills/new" ? (

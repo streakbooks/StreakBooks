@@ -441,11 +441,24 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
             rateBps: t.rate_bps,
           })),
           currencies: currencyOptions(base, currency ? [currency] : []),
-          selectContact: onCustomerChange,
+          selectContact: (id) => {
+            if (sourceLocked) {
+              if (id !== contactId)
+                throw new Error(
+                  "This credit note is linked to an invoice. Its customer cannot be changed here.",
+                );
+              return;
+            }
+            onCustomerChange(id);
+          },
           update: (patch) => {
             if (patch.date !== undefined) setDocDate(patch.date);
             if (patch.dueDate !== undefined) setSecondDate(patch.dueDate);
-            if (patch.currency !== undefined) setCurrency(patch.currency);
+            if (patch.currency !== undefined) {
+              if (sourceLocked && patch.currency !== currency)
+                throw new Error("This credit note must keep the source invoice’s currency.");
+              setCurrency(patch.currency);
+            }
             if (patch.memo !== undefined) setMemo(patch.memo);
             if (patch.number !== undefined) setNumber(patch.number);
           },

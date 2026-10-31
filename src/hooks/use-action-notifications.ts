@@ -57,7 +57,7 @@ export function useActionNotifications(companyId: string | null, userId: string,
   });
   const unreadQuery = useQuery({
     queryKey: ["action-notifications-unread", companyId],
-    enabled: Boolean(companyId),
+    enabled: Boolean(companyId) && inbox.isSuccess,
     refetchInterval: 60_000,
     queryFn: async () => {
       const { count, error } = await supabase

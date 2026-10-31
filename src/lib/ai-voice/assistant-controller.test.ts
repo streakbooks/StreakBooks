@@ -403,3 +403,31 @@ describe("registered field editing", () => {
     s.controller.dispose();
   });
 });
+
+it("accepts repeated Next field speech in distinct turns while retaining duplicate-final guards", async () => {
+  vi.useFakeTimers();
+  Speech.sessions = [];
+  const s = setup();
+  try {
+    for (const [i, key] of ["date", "memo", "number"].entries())
+      s.controller.registerField({
+        id: key,
+        token: "form",
+        key: key as "date" | "memo" | "number",
+        label: key,
+        order: i,
+        focus: () => {},
+      });
+    s.controller.start();
+    await vi.advanceTimersByTimeAsync(0);
+    latest().result("next field");
+    await vi.advanceTimersByTimeAsync(350);
+    expect(s.controller.getSnapshot().field?.id).toBe("date");
+    latest().result("next field");
+    await vi.advanceTimersByTimeAsync(350);
+    expect(s.controller.getSnapshot().field?.id).toBe("memo");
+  } finally {
+    s.controller.dispose();
+    vi.useRealTimers();
+  }
+});

@@ -487,6 +487,10 @@ for (const noun of ["invoice", "quote", "credit note"])
     await expect(page.locator('[data-voice-active="true"]')).toHaveValue("");
     await say(page, "previous field");
     await expect(page.getByTestId("voice-field-status")).toContainText("Number");
+    await say(page, "next field");
+    await say(page, "next field");
+    await expect(page.getByTestId("voice-field-status")).toContainText("Currency");
+    await say(page, "go to reference");
     await say(page, "Ref-Case-2026");
     await expect(page.locator('[data-voice-active="true"]')).toHaveValue("Ref-Case-2026");
     await say(page, "go to customer");

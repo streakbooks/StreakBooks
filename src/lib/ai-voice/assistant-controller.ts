@@ -81,7 +81,6 @@ export class AssistantController {
   private foreground = true;
   private online = true;
   private inFlight = false;
-  private lastSpeech = { text: "", at: 0 };
   private lastLine: { token: string; index: number } | null = null;
   private location = "";
   private pendingContact: {
@@ -403,7 +402,6 @@ export class AssistantController {
       return;
     }
     this.failureCount = 0;
-    this.lastSpeech = { text: "", at: 0 };
     this.set({ active: true, phase: "initializing", message: "Connecting the microphone…" });
     this.listen(0);
   }
@@ -499,12 +497,8 @@ export class AssistantController {
           if (!current()) return;
           this.cancelMic = null;
           this.failureCount = 0;
-          const normalized = cleanSpeech(text).toLowerCase();
-          if (normalized === this.lastSpeech.text && Date.now() - this.lastSpeech.at < 2000) {
-            this.listen();
-            return;
-          }
-          this.lastSpeech = { text: normalized, at: Date.now() };
+          // The adapter and turn identity reject duplicate finals within a turn.
+          // Identical text in a new turn can be intentional (e.g. repeated Next field).
           void this.submit(text);
         },
         onMessage: () => {},

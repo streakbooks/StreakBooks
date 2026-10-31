@@ -263,6 +263,14 @@ export class WakeController {
     }
   }
   async arm() {
+    if (!this.assistant.recognitionSupported()) {
+      this.fail(
+        new Error(
+          "Browser command speech recognition is unavailable. Use text commands or normal controls.",
+        ),
+      );
+      return;
+    }
     if (!this.available || !this.snapshot.enabled || !this.profile) return;
     this.assistant.stop();
     this.set({ armed: true });

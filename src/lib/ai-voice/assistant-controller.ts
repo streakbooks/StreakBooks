@@ -384,6 +384,9 @@ export class AssistantController {
         });
     } else this.beginStart();
   }
+  recognitionSupported() {
+    return Boolean(this.deps.recognition());
+  }
   private beginStart() {
     if (this.snapshot.active || !this.permitted) return;
     if (this.inFlight) {
@@ -393,7 +396,7 @@ export class AssistantController {
       });
       return;
     }
-    if (!this.deps.recognition()) {
+    if (!this.recognitionSupported()) {
       this.set({
         phase: "error",
         message:

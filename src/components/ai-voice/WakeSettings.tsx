@@ -1,6 +1,7 @@
 import { useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { browserRecognition } from "@/lib/ai-voice/browser-recognition";
 import { wakeCaptureSupported } from "@/lib/ai-voice/wake-capture";
 import { useWakeController, useWakeSnapshot } from "./wake-context";
 import type { WakeController } from "@/lib/ai-voice/wake-controller";
@@ -13,7 +14,8 @@ function PersonalWakeSettings({ wake }: { wake: WakeController }) {
     id = useId();
   const [phrase, setPhrase] = useState(state.phrase);
   useEffect(() => setPhrase(state.phrase), [state.phrase]);
-  const supported = wakeCaptureSupported();
+  const commandsSupported = Boolean(browserRecognition());
+  const supported = wakeCaptureSupported() && commandsSupported;
   return (
     <section
       aria-label="Personal wake phrase settings"
@@ -59,6 +61,11 @@ function PersonalWakeSettings({ wake }: { wake: WakeController }) {
           Enable wake detection
         </label>
       </div>
+      {!commandsSupported ? (
+        <p role="alert">
+          Browser command speech recognition is unavailable. Use text commands or normal controls.
+        </p>
+      ) : null}
       {!supported ? (
         <p role="alert">
           Local wake detection is unsupported here. Use manual activation. HTTPS, microphone access,

@@ -18,6 +18,7 @@ import { CompanySwitcher } from "@/components/layout/CompanySwitcher";
 import { GlobalSearch } from "@/components/layout/GlobalSearch";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { CreateNewMenu } from "@/components/create-new/CreateNewMenu";
+import { VoiceAssistant } from "@/components/ai-voice/VoiceAssistant";
 import { BillingAccessBanner } from "@/components/billing/BillingAccessBanner";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -357,6 +358,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </div>
 
+          <VoiceAssistant />
           <CreateNewMenu />
           <ThemeToggle />
           <UserMenu />

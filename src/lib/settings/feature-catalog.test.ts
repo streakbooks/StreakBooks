@@ -4,6 +4,17 @@ import { FEATURE_CATALOG, computeFeatureState } from "./feature-catalog";
 describe("feature state engine", () => {
   const classes = FEATURE_CATALOG.find((f) => f.key === "classes")!;
 
+  it("offers browser voice navigation without provider configuration and keeps it off until enabled", () => {
+    const voice = FEATURE_CATALOG.find((f) => f.key === "voice_commands")!;
+    expect(computeFeatureState(voice, { enabled: false, canEdit: true }).state).toBe(
+      "available_disabled",
+    );
+    expect(computeFeatureState(voice, { enabled: true, canEdit: true }).state).toBe(
+      "enabled_operational",
+    );
+    expect(voice.requiresConfigCategory).toBeUndefined();
+  });
+
   it("marks unavailable features honestly", () => {
     const portals = FEATURE_CATALOG.find((f) => f.key === "portals")!;
     const s = computeFeatureState(portals, { enabled: true, canEdit: true });

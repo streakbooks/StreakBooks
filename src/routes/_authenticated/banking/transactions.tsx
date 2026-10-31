@@ -364,6 +364,15 @@ function BankTransactions() {
         }
       />
 
+      {search.transactionId ? (
+        <div className="mb-3 flex items-center gap-3 text-sm text-muted-foreground" role="status">
+          <span>Showing the bank transaction selected from global search.</span>
+          <Button variant="outline" size="sm" onClick={() => setSearch({ transactionId: undefined, statusGroup: "all" })}>
+            Show all transactions
+          </Button>
+        </div>
+      ) : null}
+
       <div className="mb-4 flex flex-wrap items-end gap-2">
         <LookupSelect
           className="w-48"

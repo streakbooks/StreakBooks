@@ -162,11 +162,14 @@ GRANT ALL ON public.action_notification_refresh_state TO service_role;
 CREATE OR REPLACE FUNCTION public.refresh_action_notifications(_company_id uuid)
 RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path=public
 AS $$
-DECLARE _uid uuid := auth.uid(); _affected integer:=0; _n integer;
+DECLARE _uid uuid := auth.uid(); _affected integer:=0; _n integer; _today date;
 BEGIN
   IF _uid IS NULL OR NOT public.is_company_member(_company_id) THEN
     RAISE EXCEPTION 'Not a member of this organisation';
   END IF;
+  -- Due dates are evaluated in the organisation's configured local time zone.
+  SELECT (now() AT TIME ZONE coalesce(nullif(c.timezone,''),'UTC'))::date
+    INTO _today FROM public.companies c WHERE c.id=_company_id;
   -- Serialize requests for one recipient and scan at most once per 30 seconds.
   PERFORM pg_advisory_xact_lock(hashtext(_company_id::text || ':' || _uid::text));
   INSERT INTO public.action_notification_refresh_state(company_id,recipient_user_id,last_refreshed_at)
@@ -181,9 +184,9 @@ BEGIN
     INSERT INTO public.action_notifications
       (company_id,recipient_user_id,event_key,category,priority,title,body,entity_type,entity_id,target_path)
     SELECT _company_id,_uid,'bill_approval:'||b.id::text,'bill_approval',
-      CASE WHEN b.due_date<current_date-14 THEN 'critical'
-           WHEN b.due_date<current_date THEN 'high'
-           WHEN b.due_date<=current_date+7 THEN 'medium' ELSE 'low' END,
+      CASE WHEN b.due_date<_today-14 THEN 'critical'
+           WHEN b.due_date<_today THEN 'high'
+           WHEN b.due_date<=_today+7 THEN 'medium' ELSE 'low' END,
       left('Bill '||coalesce(nullif(b.bill_number,''),b.id::text)||' awaiting approval',180),
       'Review this supplier bill before it is authorised.',
       'purchase_bill',b.id,'/purchases/bills/'||b.id::text
@@ -205,15 +208,15 @@ BEGIN
     INSERT INTO public.action_notifications
       (company_id,recipient_user_id,event_key,category,priority,title,body,entity_type,entity_id,target_path)
     SELECT _company_id,_uid,'overdue_invoice:'||i.id::text,'overdue_invoice',
-      CASE WHEN i.due_date<current_date-90 THEN 'critical'
-           WHEN i.due_date<current_date-30 THEN 'high'
-           WHEN i.due_date<current_date-7 THEN 'medium' ELSE 'low' END,
+      CASE WHEN i.due_date<_today-90 THEN 'critical'
+           WHEN i.due_date<_today-30 THEN 'high'
+           WHEN i.due_date<_today-7 THEN 'medium' ELSE 'low' END,
       left('Invoice '||coalesce(nullif(i.invoice_number,''),i.id::text)||' overdue',180),
       'Invoice remains unpaid after its due date. Review before sending a reminder.',
       'sales_invoice',i.id,'/sales/invoices/'||i.id::text
     FROM public.sales_invoices i
     WHERE i.company_id=_company_id AND i.status IN ('authorised','partly_paid')
-      AND i.posted_journal_id IS NOT NULL AND i.due_date<current_date
+      AND i.posted_journal_id IS NOT NULL AND i.due_date<_today
       AND i.total_minor - coalesce(i.amount_paid_minor,0)-coalesce(i.amount_credited_minor,0)>0
     ORDER BY i.due_date,i.id LIMIT 300
     ON CONFLICT (company_id,recipient_user_id,event_key) DO UPDATE SET
@@ -288,7 +291,7 @@ BEGIN
       OR (n.category='overdue_invoice' AND NOT EXISTS (
        SELECT 1 FROM public.sales_invoices i WHERE i.company_id=_company_id AND i.id=n.entity_id
          AND i.status IN ('authorised','partly_paid') AND i.posted_journal_id IS NOT NULL
-         AND i.due_date<current_date AND
+         AND i.due_date<_today AND
            i.total_minor-coalesce(i.amount_paid_minor,0)-coalesce(i.amount_credited_minor,0)>0))
       OR (n.category='bank_reconciliation' AND NOT EXISTS (
        SELECT 1 FROM public.bank_transactions t JOIN public.bank_accounts a

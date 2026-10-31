@@ -54,9 +54,10 @@ export function minorAmountForCurrency(query: MoneySearch, code: string): number
 
 /** PostgREST OR expression matching currency and amount together. */
 export function documentMoneyFilter(query: MoneySearch, amountColumn = "total_minor"): string {
+  const signed = (minor: number) => query.sign === "negative" ? -minor : minor;
   if (query.currency) {
     const minor = minorAmountForCurrency(query, query.currency);
-    return minor === null ? "" : "and(currency_code.eq." + query.currency + "," + amountColumn + ".eq." + minor + ")";
+    return minor === null ? "" : "and(currency_code.eq." + query.currency + "," + amountColumn + ".eq." + signed(minor) + ")";
   }
   const exceptions = Object.entries(DEFAULT_CURRENCY_DECIMALS)
     .filter(([, places]) => places !== 2);
@@ -67,11 +68,11 @@ export function documentMoneyFilter(query: MoneySearch, amountColumn = "total_mi
     const currencyFilter = excluded.length
       ? "currency_code.not.in.(" + excluded.join(",") + ")"
       : "currency_code.not.is.null";
-    clauses.push("and(" + currencyFilter + "," + amountColumn + ".eq." + defaultMinor + ")");
+    clauses.push("and(" + currencyFilter + "," + amountColumn + ".eq." + signed(defaultMinor) + ")");
   }
   for (const [code] of exceptions) {
     const minor = minorAmountForCurrency(query, code);
-    if (minor !== null) clauses.push("and(currency_code.eq." + code + "," + amountColumn + ".eq." + minor + ")");
+    if (minor !== null) clauses.push("and(currency_code.eq." + code + "," + amountColumn + ".eq." + signed(minor) + ")");
   }
   return clauses.join(",");
 }

@@ -49,6 +49,8 @@ describe("exact global search monetary matching", () => {
       { id: "gbp-bank", currency_code: "GBP" },
       { id: "usd-bank", currency_code: "USD" },
     ])).toBe("and(bank_account_id.in.(gbp-bank),amount_minor.in.(-5000))");
+    expect(documentMoneyFilter(parseMoneySearch("-GBP 50.00")!))
+      .toBe("and(currency_code.eq.GBP,total_minor.eq.-5000)");
     expect(minorAmountForCurrency(parseMoneySearch("GBP 50.00")!, "USD")).toBeNull();
     expect(parseMoneySearch("USD £50.00")).toBeNull();
     expect(parseMoneySearch("GBP -50.00")!.sign).toBe("negative");

@@ -7,6 +7,7 @@ import { getOrganisationConfig, upsertOrganisationConfig } from "@/lib/settings/
 import { getCommunicationsStatus, sendCommunicationsTest, sendCommunicationsDigest } from "@/lib/notifications/communications.functions";
 import { notificationsConfigSchema } from "@/lib/settings/registry";
 import { NotificationPreferences } from "@/components/notifications/NotificationPreferences";
+import { DigestPreferences } from "@/components/notifications/DigestPreferences";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { notify } from "@/lib/notify";
 import { Button } from "@/components/ui/button";
@@ -165,7 +166,11 @@ export function SettingsCommunicationsPanel({ companyId, canEdit }: { companyId:
             onClick={() => save.mutate()}>{save.isPending ? "Saving…" : "Save communication settings"}</Button>
         </CardContent>
       </Card>
-      {status.data?.userId && <NotificationPreferences companyId={companyId} userId={status.data.userId} />}
+      {status.data?.userId && <>
+        <NotificationPreferences companyId={companyId} userId={status.data.userId} />
+        {!status.data.demoBlocked && <DigestPreferences companyId={companyId} userId={status.data.userId}
+          timezone={status.data.timezone} providerConfigured={status.data.configured} />}
+      </>}
       <Card>
         <CardHeader><CardTitle className="flex items-center gap-2 text-base"><Mail className="size-4" />Email delivery & on-demand digests</CardTitle>
           <CardDescription>
@@ -174,9 +179,6 @@ export function SettingsCommunicationsPanel({ companyId, canEdit }: { companyId:
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-sm">Recipient: <strong>{status.data?.recipient ?? "No verified email on your account"}</strong></p>
-          {status.data?.canEdit && !status.data.canSend && (
-            <p role="alert" className="text-sm text-destructive">Email delivery requires company document-management permission to record an audit trail.</p>
-          )}
           <div className="flex flex-wrap gap-2">
             <Button size="sm" disabled={!canTest || test.isPending || digest.isPending}
               onClick={() => test.mutate()}><Send className="mr-1 size-4" />{test.isPending ? "Sending test…" : "Send test email"}</Button>

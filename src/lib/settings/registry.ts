@@ -179,7 +179,8 @@ export const categoryMeta: CategoryMeta[] = [
   {
     id: "users",
     label: "Users & Security",
-    description: "Duty roles, tailored access, invitations and suspension. Enforced in the database.",
+    description:
+      "Duty roles, tailored access, invitations and suspension. Enforced in the database.",
     synonyms: ["roles", "mfa", "sso", "permissions", "invite", "privacy"],
     legacyTab: "users",
     availability: "live",
@@ -238,7 +239,7 @@ export const categoryMeta: CategoryMeta[] = [
     label: "Customer & Supplier Portals",
     description: "Client and supplier self-service portals.",
     synonyms: ["portal", "client login", "pay online"],
-    availability: "unavailable",
+    availability: "partial",
   },
   {
     id: "fixed_assets",

@@ -1,5 +1,6 @@
 import {
   LayoutDashboard,
+  Bell,
   Landmark,
   ReceiptText,
   ShoppingCart,
@@ -91,6 +92,13 @@ export const navItems: NavItem[] = [
     icon: BookOpen,
     group: "accounting",
     description: "Chart of accounts, journals, ledger",
+  },
+  {
+    label: "Action Center",
+    to: "/notifications",
+    icon: Bell,
+    group: "tools",
+    description: "Actionable approvals, overdue invoices, bank and document alerts",
   },
   {
     label: "Files",

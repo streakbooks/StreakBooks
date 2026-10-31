@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as PortalRouteRouteImport } from './routes/portal/route'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
@@ -20,6 +21,7 @@ import { Route as AuthenticatedAccountingRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAiAssistantRouteImport } from './routes/_authenticated/ai-assistant'
 import { Route as AuthenticatedBankingRouteRouteImport } from './routes/_authenticated/banking/route'
 import { Route as AuthenticatedFilesRouteImport } from './routes/_authenticated/files'
+import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedFirmRouteImport } from './routes/_authenticated/firm'
 import { Route as AuthenticatedFixedAssetsRouteImport } from './routes/_authenticated/fixed-assets'
 import { Route as AuthenticatedHelpRouteImport } from './routes/_authenticated/help'
@@ -37,6 +39,9 @@ import { Route as AuthenticatedTaxRouteImport } from './routes/_authenticated/ta
 import { Route as AuthCallbackRouteImport } from './routes/auth_.callback'
 import { Route as AuthMfaRouteImport } from './routes/auth_.mfa'
 import { Route as AuthSsoRouteImport } from './routes/auth_.sso'
+import { Route as PortalIndexRouteImport } from './routes/portal/index'
+import { Route as PortalAppRouteRouteImport } from './routes/portal/app/route'
+import { Route as PortalLoginRouteImport } from './routes/portal/login'
 import { Route as AuthenticatedBankingIndexRouteImport } from './routes/_authenticated/banking/index'
 import { Route as AuthenticatedBankingCashCodingRouteImport } from './routes/_authenticated/banking/cash-coding'
 import { Route as AuthenticatedBankingFeedsRouteImport } from './routes/_authenticated/banking/feeds'
@@ -60,6 +65,7 @@ import { Route as AuthenticatedPlatformIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedPlatformBillingRouteImport } from './routes/_authenticated/platform.billing'
 import { Route as AuthenticatedPurchasesIndexRouteImport } from './routes/_authenticated/purchases/index'
 import { Route as AuthenticatedPurchasesEmployeeExpensesRouteImport } from './routes/_authenticated/purchases/employee-expenses'
+import { Route as AuthenticatedPurchasesPortalInboxRouteImport } from './routes/_authenticated/purchases/portal-inbox'
 import { Route as AuthenticatedPurchasesRecurringRouteImport } from './routes/_authenticated/purchases/recurring'
 import { Route as AuthenticatedPurchasesSettingsRouteImport } from './routes/_authenticated/purchases/settings'
 import { Route as AuthenticatedPurchasesStatementsRouteImport } from './routes/_authenticated/purchases/statements'
@@ -72,6 +78,20 @@ import { Route as AuthenticatedSalesRecurringRouteImport } from './routes/_authe
 import { Route as AuthenticatedSalesRemindersRouteImport } from './routes/_authenticated/sales/reminders'
 import { Route as AuthenticatedSalesSettingsRouteImport } from './routes/_authenticated/sales/settings'
 import { Route as AuthenticatedSalesStatementsRouteImport } from './routes/_authenticated/sales/statements'
+import { Route as PortalAppIndexRouteImport } from './routes/portal/app/index'
+import { Route as PortalAppBankRouteImport } from './routes/portal/app/bank'
+import { Route as PortalAppBillsRouteImport } from './routes/portal/app/bills'
+import { Route as PortalAppCreditsRouteImport } from './routes/portal/app/credits'
+import { Route as PortalAppDocumentsRouteImport } from './routes/portal/app/documents'
+import { Route as PortalAppInvoicesRouteImport } from './routes/portal/app/invoices'
+import { Route as PortalAppMessagesRouteImport } from './routes/portal/app/messages'
+import { Route as PortalAppOrdersRouteImport } from './routes/portal/app/orders'
+import { Route as PortalAppPaymentsRouteImport } from './routes/portal/app/payments'
+import { Route as PortalAppRemittancesRouteImport } from './routes/portal/app/remittances'
+import { Route as PortalAppSecurityRouteImport } from './routes/portal/app/security'
+import { Route as PortalAppStatementRouteImport } from './routes/portal/app/statement'
+import { Route as PortalInviteTokenRouteImport } from './routes/portal/invite.$token'
+import { Route as PortalPayIntentIdRouteImport } from './routes/portal/pay.$intentId'
 import { Route as ShareInvoiceTokenRouteImport } from './routes/share.invoice.$token'
 import { Route as AuthenticatedBankingJournalJournalIdRouteImport } from './routes/_authenticated/banking/journal.$journalId'
 import { Route as AuthenticatedBankingReconciliationReportSessionIdRouteImport } from './routes/_authenticated/banking/reconciliation-report.$sessionId'
@@ -102,6 +122,7 @@ import { Route as AuthenticatedSalesQuotesNewRouteImport } from './routes/_authe
 import { Route as AuthenticatedSalesReceiptsIndexRouteImport } from './routes/_authenticated/sales/receipts.index'
 import { Route as AuthenticatedSalesReceiptsReceiptIdRouteImport } from './routes/_authenticated/sales/receipts.$receiptId'
 import { Route as AuthenticatedSalesReceiptsNewRouteImport } from './routes/_authenticated/sales/receipts.new'
+import { Route as PortalAppInvoicesInvoiceIdRouteImport } from './routes/portal/app/invoices.$invoiceId'
 import { Route as AuthenticatedDocumentsPrintKindIdRouteImport } from './routes/_authenticated/documents.print.$kind.$id'
 import { Route as AuthenticatedPurchasesBillsBillIdEditRouteImport } from './routes/_authenticated/purchases/bills.$billId.edit'
 import { Route as AuthenticatedSalesCreditNotesCreditNoteIdIndexRouteImport } from './routes/_authenticated/sales/credit-notes.$creditNoteId.index'
@@ -123,6 +144,11 @@ const AuthRoute = AuthRouteImport.update({
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   id: '/forgot-password',
   path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalRouteRoute = PortalRouteRouteImport.update({
+  id: '/portal',
+  path: '/portal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PricingRoute = PricingRouteImport.update({
@@ -165,6 +191,11 @@ const AuthenticatedBankingRouteRoute =
 const AuthenticatedFilesRoute = AuthenticatedFilesRouteImport.update({
   id: '/files',
   path: '/files',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedNotificationsRoute = AuthenticatedNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedFirmRoute = AuthenticatedFirmRouteImport.update({
@@ -255,6 +286,21 @@ const AuthSsoRoute = AuthSsoRouteImport.update({
   id: '/auth_/sso',
   path: '/auth/sso',
   getParentRoute: () => rootRouteImport,
+} as any)
+const PortalIndexRoute = PortalIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PortalRouteRoute,
+} as any)
+const PortalAppRouteRoute = PortalAppRouteRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => PortalRouteRoute,
+} as any)
+const PortalLoginRoute = PortalLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => PortalRouteRoute,
 } as any)
 const AuthenticatedBankingIndexRoute =
   AuthenticatedBankingIndexRouteImport.update({
@@ -394,6 +440,12 @@ const AuthenticatedPurchasesEmployeeExpensesRoute =
     path: '/employee-expenses',
     getParentRoute: () => AuthenticatedPurchasesRouteRoute,
   } as any)
+const AuthenticatedPurchasesPortalInboxRoute =
+  AuthenticatedPurchasesPortalInboxRouteImport.update({
+    id: '/portal-inbox',
+    path: '/portal-inbox',
+    getParentRoute: () => AuthenticatedPurchasesRouteRoute,
+  } as any)
 const AuthenticatedPurchasesRecurringRoute =
   AuthenticatedPurchasesRecurringRouteImport.update({
     id: '/recurring',
@@ -465,6 +517,76 @@ const AuthenticatedSalesStatementsRoute =
     path: '/statements',
     getParentRoute: () => AuthenticatedSalesRouteRoute,
   } as any)
+const PortalAppIndexRoute = PortalAppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PortalAppRouteRoute,
+} as any)
+const PortalAppBankRoute = PortalAppBankRouteImport.update({
+  id: '/bank',
+  path: '/bank',
+  getParentRoute: () => PortalAppRouteRoute,
+} as any)
+const PortalAppBillsRoute = PortalAppBillsRouteImport.update({
+  id: '/bills',
+  path: '/bills',
+  getParentRoute: () => PortalAppRouteRoute,
+} as any)
+const PortalAppCreditsRoute = PortalAppCreditsRouteImport.update({
+  id: '/credits',
+  path: '/credits',
+  getParentRoute: () => PortalAppRouteRoute,
+} as any)
+const PortalAppDocumentsRoute = PortalAppDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => PortalAppRouteRoute,
+} as any)
+const PortalAppInvoicesRoute = PortalAppInvoicesRouteImport.update({
+  id: '/invoices',
+  path: '/invoices',
+  getParentRoute: () => PortalAppRouteRoute,
+} as any)
+const PortalAppMessagesRoute = PortalAppMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => PortalAppRouteRoute,
+} as any)
+const PortalAppOrdersRoute = PortalAppOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => PortalAppRouteRoute,
+} as any)
+const PortalAppPaymentsRoute = PortalAppPaymentsRouteImport.update({
+  id: '/payments',
+  path: '/payments',
+  getParentRoute: () => PortalAppRouteRoute,
+} as any)
+const PortalAppRemittancesRoute = PortalAppRemittancesRouteImport.update({
+  id: '/remittances',
+  path: '/remittances',
+  getParentRoute: () => PortalAppRouteRoute,
+} as any)
+const PortalAppSecurityRoute = PortalAppSecurityRouteImport.update({
+  id: '/security',
+  path: '/security',
+  getParentRoute: () => PortalAppRouteRoute,
+} as any)
+const PortalAppStatementRoute = PortalAppStatementRouteImport.update({
+  id: '/statement',
+  path: '/statement',
+  getParentRoute: () => PortalAppRouteRoute,
+} as any)
+const PortalInviteTokenRoute = PortalInviteTokenRouteImport.update({
+  id: '/invite/$token',
+  path: '/invite/$token',
+  getParentRoute: () => PortalRouteRoute,
+} as any)
+const PortalPayIntentIdRoute = PortalPayIntentIdRouteImport.update({
+  id: '/pay/$intentId',
+  path: '/pay/$intentId',
+  getParentRoute: () => PortalRouteRoute,
+} as any)
 const ShareInvoiceTokenRoute = ShareInvoiceTokenRouteImport.update({
   id: '/share/invoice/$token',
   path: '/share/invoice/$token',
@@ -644,6 +766,12 @@ const AuthenticatedSalesReceiptsNewRoute =
     path: '/receipts/new',
     getParentRoute: () => AuthenticatedSalesRouteRoute,
   } as any)
+const PortalAppInvoicesInvoiceIdRoute =
+  PortalAppInvoicesInvoiceIdRouteImport.update({
+    id: '/$invoiceId',
+    path: '/$invoiceId',
+    getParentRoute: () => PortalAppInvoicesRoute,
+  } as any)
 const AuthenticatedDocumentsPrintKindIdRoute =
   AuthenticatedDocumentsPrintKindIdRouteImport.update({
     id: '/documents/print/$kind/$id',
@@ -695,6 +823,7 @@ const AuthenticatedSalesQuotesQuoteIdEditRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
+  '/portal': typeof PortalRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/pricing': typeof PricingRoute
@@ -702,10 +831,12 @@ export interface FileRoutesByFullPath {
   '/banking': typeof AuthenticatedBankingRouteRouteWithChildren
   '/purchases': typeof AuthenticatedPurchasesRouteRouteWithChildren
   '/sales': typeof AuthenticatedSalesRouteRouteWithChildren
+  '/portal/app': typeof PortalAppRouteRouteWithChildren
   '/accountant': typeof AuthenticatedAccountantRoute
   '/accounting': typeof AuthenticatedAccountingRoute
   '/ai-assistant': typeof AuthenticatedAiAssistantRoute
   '/files': typeof AuthenticatedFilesRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/firm': typeof AuthenticatedFirmRoute
   '/fixed-assets': typeof AuthenticatedFixedAssetsRoute
   '/help': typeof AuthenticatedHelpRoute
@@ -721,6 +852,8 @@ export interface FileRoutesByFullPath {
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/mfa': typeof AuthMfaRoute
   '/auth/sso': typeof AuthSsoRoute
+  '/portal/login': typeof PortalLoginRoute
+  '/portal/': typeof PortalIndexRoute
   '/banking/cash-coding': typeof AuthenticatedBankingCashCodingRoute
   '/banking/feeds': typeof AuthenticatedBankingFeedsRoute
   '/banking/import': typeof AuthenticatedBankingImportRoute
@@ -739,6 +872,7 @@ export interface FileRoutesByFullPath {
   '/invite/$token': typeof AuthenticatedInviteTokenRoute
   '/platform/billing': typeof AuthenticatedPlatformBillingRoute
   '/purchases/employee-expenses': typeof AuthenticatedPurchasesEmployeeExpensesRoute
+  '/purchases/portal-inbox': typeof AuthenticatedPurchasesPortalInboxRoute
   '/purchases/recurring': typeof AuthenticatedPurchasesRecurringRoute
   '/purchases/settings': typeof AuthenticatedPurchasesSettingsRoute
   '/purchases/statements': typeof AuthenticatedPurchasesStatementsRoute
@@ -749,6 +883,19 @@ export interface FileRoutesByFullPath {
   '/sales/reminders': typeof AuthenticatedSalesRemindersRoute
   '/sales/settings': typeof AuthenticatedSalesSettingsRoute
   '/sales/statements': typeof AuthenticatedSalesStatementsRoute
+  '/portal/app/bank': typeof PortalAppBankRoute
+  '/portal/app/bills': typeof PortalAppBillsRoute
+  '/portal/app/credits': typeof PortalAppCreditsRoute
+  '/portal/app/documents': typeof PortalAppDocumentsRoute
+  '/portal/app/invoices': typeof PortalAppInvoicesRouteWithChildren
+  '/portal/app/messages': typeof PortalAppMessagesRoute
+  '/portal/app/orders': typeof PortalAppOrdersRoute
+  '/portal/app/payments': typeof PortalAppPaymentsRoute
+  '/portal/app/remittances': typeof PortalAppRemittancesRoute
+  '/portal/app/security': typeof PortalAppSecurityRoute
+  '/portal/app/statement': typeof PortalAppStatementRoute
+  '/portal/invite/$token': typeof PortalInviteTokenRoute
+  '/portal/pay/$intentId': typeof PortalPayIntentIdRoute
   '/share/invoice/$token': typeof ShareInvoiceTokenRoute
   '/banking/': typeof AuthenticatedBankingIndexRoute
   '/budgets/': typeof AuthenticatedBudgetsIndexRoute
@@ -757,6 +904,7 @@ export interface FileRoutesByFullPath {
   '/purchases/': typeof AuthenticatedPurchasesIndexRoute
   '/reports/': typeof AuthenticatedReportsIndexRoute
   '/sales/': typeof AuthenticatedSalesIndexRoute
+  '/portal/app/': typeof PortalAppIndexRoute
   '/banking/journal/$journalId': typeof AuthenticatedBankingJournalJournalIdRoute
   '/banking/reconciliation-report/$sessionId': typeof AuthenticatedBankingReconciliationReportSessionIdRoute
   '/purchases/bills/$billId': typeof AuthenticatedPurchasesBillsBillIdRouteWithChildren
@@ -777,6 +925,7 @@ export interface FileRoutesByFullPath {
   '/sales/quotes/new': typeof AuthenticatedSalesQuotesNewRoute
   '/sales/receipts/$receiptId': typeof AuthenticatedSalesReceiptsReceiptIdRoute
   '/sales/receipts/new': typeof AuthenticatedSalesReceiptsNewRoute
+  '/portal/app/invoices/$invoiceId': typeof PortalAppInvoicesInvoiceIdRoute
   '/purchases/bills/': typeof AuthenticatedPurchasesBillsIndexRoute
   '/purchases/credit-notes/': typeof AuthenticatedPurchasesCreditNotesIndexRoute
   '/purchases/expenses/': typeof AuthenticatedPurchasesExpensesIndexRoute
@@ -804,6 +953,7 @@ export interface FileRoutesByTo {
   '/accounting': typeof AuthenticatedAccountingRoute
   '/ai-assistant': typeof AuthenticatedAiAssistantRoute
   '/files': typeof AuthenticatedFilesRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/firm': typeof AuthenticatedFirmRoute
   '/fixed-assets': typeof AuthenticatedFixedAssetsRoute
   '/help': typeof AuthenticatedHelpRoute
@@ -818,7 +968,9 @@ export interface FileRoutesByTo {
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/mfa': typeof AuthMfaRoute
   '/auth/sso': typeof AuthSsoRoute
+  '/portal/login': typeof PortalLoginRoute
   '/': typeof AuthenticatedIndexRoute
+  '/portal': typeof PortalIndexRoute
   '/banking/cash-coding': typeof AuthenticatedBankingCashCodingRoute
   '/banking/feeds': typeof AuthenticatedBankingFeedsRoute
   '/banking/import': typeof AuthenticatedBankingImportRoute
@@ -837,6 +989,7 @@ export interface FileRoutesByTo {
   '/invite/$token': typeof AuthenticatedInviteTokenRoute
   '/platform/billing': typeof AuthenticatedPlatformBillingRoute
   '/purchases/employee-expenses': typeof AuthenticatedPurchasesEmployeeExpensesRoute
+  '/purchases/portal-inbox': typeof AuthenticatedPurchasesPortalInboxRoute
   '/purchases/recurring': typeof AuthenticatedPurchasesRecurringRoute
   '/purchases/settings': typeof AuthenticatedPurchasesSettingsRoute
   '/purchases/statements': typeof AuthenticatedPurchasesStatementsRoute
@@ -847,6 +1000,19 @@ export interface FileRoutesByTo {
   '/sales/reminders': typeof AuthenticatedSalesRemindersRoute
   '/sales/settings': typeof AuthenticatedSalesSettingsRoute
   '/sales/statements': typeof AuthenticatedSalesStatementsRoute
+  '/portal/app/bank': typeof PortalAppBankRoute
+  '/portal/app/bills': typeof PortalAppBillsRoute
+  '/portal/app/credits': typeof PortalAppCreditsRoute
+  '/portal/app/documents': typeof PortalAppDocumentsRoute
+  '/portal/app/invoices': typeof PortalAppInvoicesRouteWithChildren
+  '/portal/app/messages': typeof PortalAppMessagesRoute
+  '/portal/app/orders': typeof PortalAppOrdersRoute
+  '/portal/app/payments': typeof PortalAppPaymentsRoute
+  '/portal/app/remittances': typeof PortalAppRemittancesRoute
+  '/portal/app/security': typeof PortalAppSecurityRoute
+  '/portal/app/statement': typeof PortalAppStatementRoute
+  '/portal/invite/$token': typeof PortalInviteTokenRoute
+  '/portal/pay/$intentId': typeof PortalPayIntentIdRoute
   '/share/invoice/$token': typeof ShareInvoiceTokenRoute
   '/banking': typeof AuthenticatedBankingIndexRoute
   '/budgets': typeof AuthenticatedBudgetsIndexRoute
@@ -855,6 +1021,7 @@ export interface FileRoutesByTo {
   '/purchases': typeof AuthenticatedPurchasesIndexRoute
   '/reports': typeof AuthenticatedReportsIndexRoute
   '/sales': typeof AuthenticatedSalesIndexRoute
+  '/portal/app': typeof PortalAppIndexRoute
   '/banking/journal/$journalId': typeof AuthenticatedBankingJournalJournalIdRoute
   '/banking/reconciliation-report/$sessionId': typeof AuthenticatedBankingReconciliationReportSessionIdRoute
   '/purchases/bills/$billId': typeof AuthenticatedPurchasesBillsBillIdRouteWithChildren
@@ -872,6 +1039,7 @@ export interface FileRoutesByTo {
   '/sales/quotes/new': typeof AuthenticatedSalesQuotesNewRoute
   '/sales/receipts/$receiptId': typeof AuthenticatedSalesReceiptsReceiptIdRoute
   '/sales/receipts/new': typeof AuthenticatedSalesReceiptsNewRoute
+  '/portal/app/invoices/$invoiceId': typeof PortalAppInvoicesInvoiceIdRoute
   '/purchases/bills': typeof AuthenticatedPurchasesBillsIndexRoute
   '/purchases/credit-notes': typeof AuthenticatedPurchasesCreditNotesIndexRoute
   '/purchases/expenses': typeof AuthenticatedPurchasesExpensesIndexRoute
@@ -893,6 +1061,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/portal': typeof PortalRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/pricing': typeof PricingRoute
@@ -900,10 +1069,12 @@ export interface FileRoutesById {
   '/_authenticated/banking': typeof AuthenticatedBankingRouteRouteWithChildren
   '/_authenticated/purchases': typeof AuthenticatedPurchasesRouteRouteWithChildren
   '/_authenticated/sales': typeof AuthenticatedSalesRouteRouteWithChildren
+  '/portal/app': typeof PortalAppRouteRouteWithChildren
   '/_authenticated/accountant': typeof AuthenticatedAccountantRoute
   '/_authenticated/accounting': typeof AuthenticatedAccountingRoute
   '/_authenticated/ai-assistant': typeof AuthenticatedAiAssistantRoute
   '/_authenticated/files': typeof AuthenticatedFilesRoute
+  '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/firm': typeof AuthenticatedFirmRoute
   '/_authenticated/fixed-assets': typeof AuthenticatedFixedAssetsRoute
   '/_authenticated/help': typeof AuthenticatedHelpRoute
@@ -919,7 +1090,9 @@ export interface FileRoutesById {
   '/auth_/callback': typeof AuthCallbackRoute
   '/auth_/mfa': typeof AuthMfaRoute
   '/auth_/sso': typeof AuthSsoRoute
+  '/portal/login': typeof PortalLoginRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/portal/': typeof PortalIndexRoute
   '/_authenticated/banking/cash-coding': typeof AuthenticatedBankingCashCodingRoute
   '/_authenticated/banking/feeds': typeof AuthenticatedBankingFeedsRoute
   '/_authenticated/banking/import': typeof AuthenticatedBankingImportRoute
@@ -938,6 +1111,7 @@ export interface FileRoutesById {
   '/_authenticated/invite/$token': typeof AuthenticatedInviteTokenRoute
   '/_authenticated/platform/billing': typeof AuthenticatedPlatformBillingRoute
   '/_authenticated/purchases/employee-expenses': typeof AuthenticatedPurchasesEmployeeExpensesRoute
+  '/_authenticated/purchases/portal-inbox': typeof AuthenticatedPurchasesPortalInboxRoute
   '/_authenticated/purchases/recurring': typeof AuthenticatedPurchasesRecurringRoute
   '/_authenticated/purchases/settings': typeof AuthenticatedPurchasesSettingsRoute
   '/_authenticated/purchases/statements': typeof AuthenticatedPurchasesStatementsRoute
@@ -948,6 +1122,19 @@ export interface FileRoutesById {
   '/_authenticated/sales/reminders': typeof AuthenticatedSalesRemindersRoute
   '/_authenticated/sales/settings': typeof AuthenticatedSalesSettingsRoute
   '/_authenticated/sales/statements': typeof AuthenticatedSalesStatementsRoute
+  '/portal/app/bank': typeof PortalAppBankRoute
+  '/portal/app/bills': typeof PortalAppBillsRoute
+  '/portal/app/credits': typeof PortalAppCreditsRoute
+  '/portal/app/documents': typeof PortalAppDocumentsRoute
+  '/portal/app/invoices': typeof PortalAppInvoicesRouteWithChildren
+  '/portal/app/messages': typeof PortalAppMessagesRoute
+  '/portal/app/orders': typeof PortalAppOrdersRoute
+  '/portal/app/payments': typeof PortalAppPaymentsRoute
+  '/portal/app/remittances': typeof PortalAppRemittancesRoute
+  '/portal/app/security': typeof PortalAppSecurityRoute
+  '/portal/app/statement': typeof PortalAppStatementRoute
+  '/portal/invite/$token': typeof PortalInviteTokenRoute
+  '/portal/pay/$intentId': typeof PortalPayIntentIdRoute
   '/share/invoice/$token': typeof ShareInvoiceTokenRoute
   '/_authenticated/banking/': typeof AuthenticatedBankingIndexRoute
   '/_authenticated/budgets/': typeof AuthenticatedBudgetsIndexRoute
@@ -956,6 +1143,7 @@ export interface FileRoutesById {
   '/_authenticated/purchases/': typeof AuthenticatedPurchasesIndexRoute
   '/_authenticated/reports/': typeof AuthenticatedReportsIndexRoute
   '/_authenticated/sales/': typeof AuthenticatedSalesIndexRoute
+  '/portal/app/': typeof PortalAppIndexRoute
   '/_authenticated/banking/journal/$journalId': typeof AuthenticatedBankingJournalJournalIdRoute
   '/_authenticated/banking/reconciliation-report/$sessionId': typeof AuthenticatedBankingReconciliationReportSessionIdRoute
   '/_authenticated/purchases/bills/$billId': typeof AuthenticatedPurchasesBillsBillIdRouteWithChildren
@@ -976,6 +1164,7 @@ export interface FileRoutesById {
   '/_authenticated/sales/quotes/new': typeof AuthenticatedSalesQuotesNewRoute
   '/_authenticated/sales/receipts/$receiptId': typeof AuthenticatedSalesReceiptsReceiptIdRoute
   '/_authenticated/sales/receipts/new': typeof AuthenticatedSalesReceiptsNewRoute
+  '/portal/app/invoices/$invoiceId': typeof PortalAppInvoicesInvoiceIdRoute
   '/_authenticated/purchases/bills/': typeof AuthenticatedPurchasesBillsIndexRoute
   '/_authenticated/purchases/credit-notes/': typeof AuthenticatedPurchasesCreditNotesIndexRoute
   '/_authenticated/purchases/expenses/': typeof AuthenticatedPurchasesExpensesIndexRoute
@@ -998,6 +1187,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/portal'
     | '/auth'
     | '/forgot-password'
     | '/pricing'
@@ -1005,10 +1195,12 @@ export interface FileRouteTypes {
     | '/banking'
     | '/purchases'
     | '/sales'
+    | '/portal/app'
     | '/accountant'
     | '/accounting'
     | '/ai-assistant'
     | '/files'
+    | '/notifications'
     | '/firm'
     | '/fixed-assets'
     | '/help'
@@ -1024,6 +1216,8 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/auth/mfa'
     | '/auth/sso'
+    | '/portal/login'
+    | '/portal/'
     | '/banking/cash-coding'
     | '/banking/feeds'
     | '/banking/import'
@@ -1042,6 +1236,7 @@ export interface FileRouteTypes {
     | '/invite/$token'
     | '/platform/billing'
     | '/purchases/employee-expenses'
+    | '/purchases/portal-inbox'
     | '/purchases/recurring'
     | '/purchases/settings'
     | '/purchases/statements'
@@ -1052,6 +1247,19 @@ export interface FileRouteTypes {
     | '/sales/reminders'
     | '/sales/settings'
     | '/sales/statements'
+    | '/portal/app/bank'
+    | '/portal/app/bills'
+    | '/portal/app/credits'
+    | '/portal/app/documents'
+    | '/portal/app/invoices'
+    | '/portal/app/messages'
+    | '/portal/app/orders'
+    | '/portal/app/payments'
+    | '/portal/app/remittances'
+    | '/portal/app/security'
+    | '/portal/app/statement'
+    | '/portal/invite/$token'
+    | '/portal/pay/$intentId'
     | '/share/invoice/$token'
     | '/banking/'
     | '/budgets/'
@@ -1060,6 +1268,7 @@ export interface FileRouteTypes {
     | '/purchases/'
     | '/reports/'
     | '/sales/'
+    | '/portal/app/'
     | '/banking/journal/$journalId'
     | '/banking/reconciliation-report/$sessionId'
     | '/purchases/bills/$billId'
@@ -1080,6 +1289,7 @@ export interface FileRouteTypes {
     | '/sales/quotes/new'
     | '/sales/receipts/$receiptId'
     | '/sales/receipts/new'
+    | '/portal/app/invoices/$invoiceId'
     | '/purchases/bills/'
     | '/purchases/credit-notes/'
     | '/purchases/expenses/'
@@ -1107,6 +1317,7 @@ export interface FileRouteTypes {
     | '/accounting'
     | '/ai-assistant'
     | '/files'
+    | '/notifications'
     | '/firm'
     | '/fixed-assets'
     | '/help'
@@ -1121,7 +1332,9 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/auth/mfa'
     | '/auth/sso'
+    | '/portal/login'
     | '/'
+    | '/portal'
     | '/banking/cash-coding'
     | '/banking/feeds'
     | '/banking/import'
@@ -1140,6 +1353,7 @@ export interface FileRouteTypes {
     | '/invite/$token'
     | '/platform/billing'
     | '/purchases/employee-expenses'
+    | '/purchases/portal-inbox'
     | '/purchases/recurring'
     | '/purchases/settings'
     | '/purchases/statements'
@@ -1150,6 +1364,19 @@ export interface FileRouteTypes {
     | '/sales/reminders'
     | '/sales/settings'
     | '/sales/statements'
+    | '/portal/app/bank'
+    | '/portal/app/bills'
+    | '/portal/app/credits'
+    | '/portal/app/documents'
+    | '/portal/app/invoices'
+    | '/portal/app/messages'
+    | '/portal/app/orders'
+    | '/portal/app/payments'
+    | '/portal/app/remittances'
+    | '/portal/app/security'
+    | '/portal/app/statement'
+    | '/portal/invite/$token'
+    | '/portal/pay/$intentId'
     | '/share/invoice/$token'
     | '/banking'
     | '/budgets'
@@ -1158,6 +1385,7 @@ export interface FileRouteTypes {
     | '/purchases'
     | '/reports'
     | '/sales'
+    | '/portal/app'
     | '/banking/journal/$journalId'
     | '/banking/reconciliation-report/$sessionId'
     | '/purchases/bills/$billId'
@@ -1175,6 +1403,7 @@ export interface FileRouteTypes {
     | '/sales/quotes/new'
     | '/sales/receipts/$receiptId'
     | '/sales/receipts/new'
+    | '/portal/app/invoices/$invoiceId'
     | '/purchases/bills'
     | '/purchases/credit-notes'
     | '/purchases/expenses'
@@ -1195,6 +1424,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_authenticated'
+    | '/portal'
     | '/auth'
     | '/forgot-password'
     | '/pricing'
@@ -1202,10 +1432,12 @@ export interface FileRouteTypes {
     | '/_authenticated/banking'
     | '/_authenticated/purchases'
     | '/_authenticated/sales'
+    | '/portal/app'
     | '/_authenticated/accountant'
     | '/_authenticated/accounting'
     | '/_authenticated/ai-assistant'
     | '/_authenticated/files'
+    | '/_authenticated/notifications'
     | '/_authenticated/firm'
     | '/_authenticated/fixed-assets'
     | '/_authenticated/help'
@@ -1221,7 +1453,9 @@ export interface FileRouteTypes {
     | '/auth_/callback'
     | '/auth_/mfa'
     | '/auth_/sso'
+    | '/portal/login'
     | '/_authenticated/'
+    | '/portal/'
     | '/_authenticated/banking/cash-coding'
     | '/_authenticated/banking/feeds'
     | '/_authenticated/banking/import'
@@ -1240,6 +1474,7 @@ export interface FileRouteTypes {
     | '/_authenticated/invite/$token'
     | '/_authenticated/platform/billing'
     | '/_authenticated/purchases/employee-expenses'
+    | '/_authenticated/purchases/portal-inbox'
     | '/_authenticated/purchases/recurring'
     | '/_authenticated/purchases/settings'
     | '/_authenticated/purchases/statements'
@@ -1250,6 +1485,19 @@ export interface FileRouteTypes {
     | '/_authenticated/sales/reminders'
     | '/_authenticated/sales/settings'
     | '/_authenticated/sales/statements'
+    | '/portal/app/bank'
+    | '/portal/app/bills'
+    | '/portal/app/credits'
+    | '/portal/app/documents'
+    | '/portal/app/invoices'
+    | '/portal/app/messages'
+    | '/portal/app/orders'
+    | '/portal/app/payments'
+    | '/portal/app/remittances'
+    | '/portal/app/security'
+    | '/portal/app/statement'
+    | '/portal/invite/$token'
+    | '/portal/pay/$intentId'
     | '/share/invoice/$token'
     | '/_authenticated/banking/'
     | '/_authenticated/budgets/'
@@ -1258,6 +1506,7 @@ export interface FileRouteTypes {
     | '/_authenticated/purchases/'
     | '/_authenticated/reports/'
     | '/_authenticated/sales/'
+    | '/portal/app/'
     | '/_authenticated/banking/journal/$journalId'
     | '/_authenticated/banking/reconciliation-report/$sessionId'
     | '/_authenticated/purchases/bills/$billId'
@@ -1278,6 +1527,7 @@ export interface FileRouteTypes {
     | '/_authenticated/sales/quotes/new'
     | '/_authenticated/sales/receipts/$receiptId'
     | '/_authenticated/sales/receipts/new'
+    | '/portal/app/invoices/$invoiceId'
     | '/_authenticated/purchases/bills/'
     | '/_authenticated/purchases/credit-notes/'
     | '/_authenticated/purchases/expenses/'
@@ -1299,6 +1549,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  PortalRouteRoute: typeof PortalRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   PricingRoute: typeof PricingRoute
@@ -1330,6 +1581,13 @@ declare module '@tanstack/react-router' {
       path: '/forgot-password'
       fullPath: '/forgot-password'
       preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal': {
+      id: '/portal'
+      path: '/portal'
+      fullPath: '/portal'
+      preLoaderRoute: typeof PortalRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pricing': {
@@ -1386,6 +1644,13 @@ declare module '@tanstack/react-router' {
       path: '/files'
       fullPath: '/files'
       preLoaderRoute: typeof AuthenticatedFilesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/notifications': {
+      id: '/_authenticated/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/firm': {
@@ -1506,6 +1771,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/auth/sso'
       preLoaderRoute: typeof AuthSsoRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/portal/': {
+      id: '/portal/'
+      path: '/'
+      fullPath: '/portal/'
+      preLoaderRoute: typeof PortalIndexRouteImport
+      parentRoute: typeof PortalRouteRoute
+    }
+    '/portal/app': {
+      id: '/portal/app'
+      path: '/app'
+      fullPath: '/portal/app'
+      preLoaderRoute: typeof PortalAppRouteRouteImport
+      parentRoute: typeof PortalRouteRoute
+    }
+    '/portal/login': {
+      id: '/portal/login'
+      path: '/login'
+      fullPath: '/portal/login'
+      preLoaderRoute: typeof PortalLoginRouteImport
+      parentRoute: typeof PortalRouteRoute
     }
     '/_authenticated/banking/': {
       id: '/_authenticated/banking/'
@@ -1668,6 +1954,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPurchasesEmployeeExpensesRouteImport
       parentRoute: typeof AuthenticatedPurchasesRouteRoute
     }
+    '/_authenticated/purchases/portal-inbox': {
+      id: '/_authenticated/purchases/portal-inbox'
+      path: '/portal-inbox'
+      fullPath: '/purchases/portal-inbox'
+      preLoaderRoute: typeof AuthenticatedPurchasesPortalInboxRouteImport
+      parentRoute: typeof AuthenticatedPurchasesRouteRoute
+    }
     '/_authenticated/purchases/recurring': {
       id: '/_authenticated/purchases/recurring'
       path: '/recurring'
@@ -1751,6 +2044,104 @@ declare module '@tanstack/react-router' {
       fullPath: '/sales/statements'
       preLoaderRoute: typeof AuthenticatedSalesStatementsRouteImport
       parentRoute: typeof AuthenticatedSalesRouteRoute
+    }
+    '/portal/app/': {
+      id: '/portal/app/'
+      path: '/'
+      fullPath: '/portal/app/'
+      preLoaderRoute: typeof PortalAppIndexRouteImport
+      parentRoute: typeof PortalAppRouteRoute
+    }
+    '/portal/app/bank': {
+      id: '/portal/app/bank'
+      path: '/bank'
+      fullPath: '/portal/app/bank'
+      preLoaderRoute: typeof PortalAppBankRouteImport
+      parentRoute: typeof PortalAppRouteRoute
+    }
+    '/portal/app/bills': {
+      id: '/portal/app/bills'
+      path: '/bills'
+      fullPath: '/portal/app/bills'
+      preLoaderRoute: typeof PortalAppBillsRouteImport
+      parentRoute: typeof PortalAppRouteRoute
+    }
+    '/portal/app/credits': {
+      id: '/portal/app/credits'
+      path: '/credits'
+      fullPath: '/portal/app/credits'
+      preLoaderRoute: typeof PortalAppCreditsRouteImport
+      parentRoute: typeof PortalAppRouteRoute
+    }
+    '/portal/app/documents': {
+      id: '/portal/app/documents'
+      path: '/documents'
+      fullPath: '/portal/app/documents'
+      preLoaderRoute: typeof PortalAppDocumentsRouteImport
+      parentRoute: typeof PortalAppRouteRoute
+    }
+    '/portal/app/invoices': {
+      id: '/portal/app/invoices'
+      path: '/invoices'
+      fullPath: '/portal/app/invoices'
+      preLoaderRoute: typeof PortalAppInvoicesRouteImport
+      parentRoute: typeof PortalAppRouteRoute
+    }
+    '/portal/app/messages': {
+      id: '/portal/app/messages'
+      path: '/messages'
+      fullPath: '/portal/app/messages'
+      preLoaderRoute: typeof PortalAppMessagesRouteImport
+      parentRoute: typeof PortalAppRouteRoute
+    }
+    '/portal/app/orders': {
+      id: '/portal/app/orders'
+      path: '/orders'
+      fullPath: '/portal/app/orders'
+      preLoaderRoute: typeof PortalAppOrdersRouteImport
+      parentRoute: typeof PortalAppRouteRoute
+    }
+    '/portal/app/payments': {
+      id: '/portal/app/payments'
+      path: '/payments'
+      fullPath: '/portal/app/payments'
+      preLoaderRoute: typeof PortalAppPaymentsRouteImport
+      parentRoute: typeof PortalAppRouteRoute
+    }
+    '/portal/app/remittances': {
+      id: '/portal/app/remittances'
+      path: '/remittances'
+      fullPath: '/portal/app/remittances'
+      preLoaderRoute: typeof PortalAppRemittancesRouteImport
+      parentRoute: typeof PortalAppRouteRoute
+    }
+    '/portal/app/security': {
+      id: '/portal/app/security'
+      path: '/security'
+      fullPath: '/portal/app/security'
+      preLoaderRoute: typeof PortalAppSecurityRouteImport
+      parentRoute: typeof PortalAppRouteRoute
+    }
+    '/portal/app/statement': {
+      id: '/portal/app/statement'
+      path: '/statement'
+      fullPath: '/portal/app/statement'
+      preLoaderRoute: typeof PortalAppStatementRouteImport
+      parentRoute: typeof PortalAppRouteRoute
+    }
+    '/portal/invite/$token': {
+      id: '/portal/invite/$token'
+      path: '/invite/$token'
+      fullPath: '/portal/invite/$token'
+      preLoaderRoute: typeof PortalInviteTokenRouteImport
+      parentRoute: typeof PortalRouteRoute
+    }
+    '/portal/pay/$intentId': {
+      id: '/portal/pay/$intentId'
+      path: '/pay/$intentId'
+      fullPath: '/portal/pay/$intentId'
+      preLoaderRoute: typeof PortalPayIntentIdRouteImport
+      parentRoute: typeof PortalRouteRoute
     }
     '/share/invoice/$token': {
       id: '/share/invoice/$token'
@@ -1962,6 +2353,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSalesReceiptsNewRouteImport
       parentRoute: typeof AuthenticatedSalesRouteRoute
     }
+    '/portal/app/invoices/$invoiceId': {
+      id: '/portal/app/invoices/$invoiceId'
+      path: '/$invoiceId'
+      fullPath: '/portal/app/invoices/$invoiceId'
+      preLoaderRoute: typeof PortalAppInvoicesInvoiceIdRouteImport
+      parentRoute: typeof PortalAppInvoicesRoute
+    }
     '/_authenticated/documents/print/$kind/$id': {
       id: '/_authenticated/documents/print/$kind/$id'
       path: '/documents/print/$kind/$id'
@@ -2076,6 +2474,7 @@ const AuthenticatedPurchasesBillsBillIdRouteWithChildren =
 
 interface AuthenticatedPurchasesRouteRouteChildren {
   AuthenticatedPurchasesEmployeeExpensesRoute: typeof AuthenticatedPurchasesEmployeeExpensesRoute
+  AuthenticatedPurchasesPortalInboxRoute: typeof AuthenticatedPurchasesPortalInboxRoute
   AuthenticatedPurchasesRecurringRoute: typeof AuthenticatedPurchasesRecurringRoute
   AuthenticatedPurchasesSettingsRoute: typeof AuthenticatedPurchasesSettingsRoute
   AuthenticatedPurchasesStatementsRoute: typeof AuthenticatedPurchasesStatementsRoute
@@ -2102,6 +2501,8 @@ const AuthenticatedPurchasesRouteRouteChildren: AuthenticatedPurchasesRouteRoute
   {
     AuthenticatedPurchasesEmployeeExpensesRoute:
       AuthenticatedPurchasesEmployeeExpensesRoute,
+    AuthenticatedPurchasesPortalInboxRoute:
+      AuthenticatedPurchasesPortalInboxRoute,
     AuthenticatedPurchasesRecurringRoute: AuthenticatedPurchasesRecurringRoute,
     AuthenticatedPurchasesSettingsRoute: AuthenticatedPurchasesSettingsRoute,
     AuthenticatedPurchasesStatementsRoute:
@@ -2274,6 +2675,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountingRoute: typeof AuthenticatedAccountingRoute
   AuthenticatedAiAssistantRoute: typeof AuthenticatedAiAssistantRoute
   AuthenticatedFilesRoute: typeof AuthenticatedFilesRoute
+  AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedFirmRoute: typeof AuthenticatedFirmRoute
   AuthenticatedFixedAssetsRoute: typeof AuthenticatedFixedAssetsRoute
   AuthenticatedHelpRoute: typeof AuthenticatedHelpRoute
@@ -2311,6 +2713,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountingRoute: AuthenticatedAccountingRoute,
   AuthenticatedAiAssistantRoute: AuthenticatedAiAssistantRoute,
   AuthenticatedFilesRoute: AuthenticatedFilesRoute,
+  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedFirmRoute: AuthenticatedFirmRoute,
   AuthenticatedFixedAssetsRoute: AuthenticatedFixedAssetsRoute,
   AuthenticatedHelpRoute: AuthenticatedHelpRoute,
@@ -2343,8 +2746,74 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface PortalAppInvoicesRouteChildren {
+  PortalAppInvoicesInvoiceIdRoute: typeof PortalAppInvoicesInvoiceIdRoute
+}
+
+const PortalAppInvoicesRouteChildren: PortalAppInvoicesRouteChildren = {
+  PortalAppInvoicesInvoiceIdRoute: PortalAppInvoicesInvoiceIdRoute,
+}
+
+const PortalAppInvoicesRouteWithChildren =
+  PortalAppInvoicesRoute._addFileChildren(PortalAppInvoicesRouteChildren)
+
+interface PortalAppRouteRouteChildren {
+  PortalAppBankRoute: typeof PortalAppBankRoute
+  PortalAppBillsRoute: typeof PortalAppBillsRoute
+  PortalAppCreditsRoute: typeof PortalAppCreditsRoute
+  PortalAppDocumentsRoute: typeof PortalAppDocumentsRoute
+  PortalAppInvoicesRoute: typeof PortalAppInvoicesRouteWithChildren
+  PortalAppMessagesRoute: typeof PortalAppMessagesRoute
+  PortalAppOrdersRoute: typeof PortalAppOrdersRoute
+  PortalAppPaymentsRoute: typeof PortalAppPaymentsRoute
+  PortalAppRemittancesRoute: typeof PortalAppRemittancesRoute
+  PortalAppSecurityRoute: typeof PortalAppSecurityRoute
+  PortalAppStatementRoute: typeof PortalAppStatementRoute
+  PortalAppIndexRoute: typeof PortalAppIndexRoute
+}
+
+const PortalAppRouteRouteChildren: PortalAppRouteRouteChildren = {
+  PortalAppBankRoute: PortalAppBankRoute,
+  PortalAppBillsRoute: PortalAppBillsRoute,
+  PortalAppCreditsRoute: PortalAppCreditsRoute,
+  PortalAppDocumentsRoute: PortalAppDocumentsRoute,
+  PortalAppInvoicesRoute: PortalAppInvoicesRouteWithChildren,
+  PortalAppMessagesRoute: PortalAppMessagesRoute,
+  PortalAppOrdersRoute: PortalAppOrdersRoute,
+  PortalAppPaymentsRoute: PortalAppPaymentsRoute,
+  PortalAppRemittancesRoute: PortalAppRemittancesRoute,
+  PortalAppSecurityRoute: PortalAppSecurityRoute,
+  PortalAppStatementRoute: PortalAppStatementRoute,
+  PortalAppIndexRoute: PortalAppIndexRoute,
+}
+
+const PortalAppRouteRouteWithChildren = PortalAppRouteRoute._addFileChildren(
+  PortalAppRouteRouteChildren,
+)
+
+interface PortalRouteRouteChildren {
+  PortalAppRouteRoute: typeof PortalAppRouteRouteWithChildren
+  PortalLoginRoute: typeof PortalLoginRoute
+  PortalIndexRoute: typeof PortalIndexRoute
+  PortalInviteTokenRoute: typeof PortalInviteTokenRoute
+  PortalPayIntentIdRoute: typeof PortalPayIntentIdRoute
+}
+
+const PortalRouteRouteChildren: PortalRouteRouteChildren = {
+  PortalAppRouteRoute: PortalAppRouteRouteWithChildren,
+  PortalLoginRoute: PortalLoginRoute,
+  PortalIndexRoute: PortalIndexRoute,
+  PortalInviteTokenRoute: PortalInviteTokenRoute,
+  PortalPayIntentIdRoute: PortalPayIntentIdRoute,
+}
+
+const PortalRouteRouteWithChildren = PortalRouteRoute._addFileChildren(
+  PortalRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  PortalRouteRoute: PortalRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   PricingRoute: PricingRoute,

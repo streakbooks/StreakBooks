@@ -29,6 +29,7 @@ import {
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { categoryMeta, type SettingsCategory } from "@/lib/settings/registry";
 import { ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { PortalSettingsPanel } from "@/components/portals/staff-panels";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -94,7 +95,7 @@ const CONFIG_SECTIONS: SettingsCategory[] = [
   "accountant",
 ];
 
-const UNAVAILABLE_SECTIONS: SettingsCategory[] = ["portals", "fixed_assets"];
+const UNAVAILABLE_SECTIONS: SettingsCategory[] = ["fixed_assets"];
 
 export const Route = createFileRoute("/_authenticated/settings")({
   validateSearch: (
@@ -437,6 +438,9 @@ function SettingsForCompany({ companyId }: { companyId: string }) {
               {...(plan ? { initialPlan: plan } : {})}
               {...(interval ? { initialInterval: interval } : {})}
             />
+          ) : null}
+          {section === "portals" ? (
+            <PortalSettingsPanel companyId={companyId} canEdit={canEdit} />
           ) : null}
           {UNAVAILABLE_SECTIONS.includes(section) && sectionMeta ? (
             <SettingsUnavailablePanel meta={sectionMeta} />

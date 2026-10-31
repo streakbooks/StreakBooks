@@ -9,6 +9,7 @@ export const PURCHASES_SECTIONS = [
   { to: "/purchases/recurring", label: "Recurring" },
   { to: "/purchases/employee-expenses", label: "Employee expenses" },
   { to: "/purchases/statements", label: "Statements" },
+  { to: "/purchases/portal-inbox", label: "Portal inbox" },
   { to: "/purchases/settings", label: "Settings" },
 ] as const;
 

@@ -176,7 +176,7 @@ export const FEATURE_CATALOG: FeatureDefinition[] = [
     key: "portals",
     label: "Portals",
     description: "Customer and supplier portals.",
-    implementation: "unavailable",
+    implementation: "available",
     consumerModules: ["portals"],
     preservesHistory: true,
   },

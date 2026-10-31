@@ -55,6 +55,13 @@ export default {
         const { handleBillingWebhook } = await import("./lib/billing/webhooks");
         return handleBillingWebhook(request);
       }
+      if (
+        request.method === "POST" &&
+        (pathname === "/api/portals/stripe" || pathname === "/api/portals/razorpay")
+      ) {
+        const { handlePortalWebhook } = await import("./lib/portals/portal-webhooks");
+        return handlePortalWebhook(request);
+      }
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);

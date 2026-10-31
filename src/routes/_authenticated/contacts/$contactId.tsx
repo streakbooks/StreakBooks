@@ -22,6 +22,7 @@ import { friendlyAuthError } from "@/lib/auth-helpers";
 import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
 import { DocumentRecordPanel } from "@/components/documents/DocumentRecordPanel";
+import { ContactPortalPanel } from "@/components/portals/staff-panels";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -46,7 +47,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 export const Route = createFileRoute("/_authenticated/contacts/$contactId")({
   validateSearch: (search: Record<string, unknown>): { tab?: string } => ({
-    tab: ["overview", "edit", "people", "groups", "activity"].includes(String(search["tab"])) ? String(search["tab"]) : "overview",
+    tab: ["overview", "edit", "people", "groups", "activity", "portal"].includes(String(search["tab"])) ? String(search["tab"]) : "overview",
   }),
   head: () => ({ meta: [{ title: "Contact — LinkBooks" }] }),
   component: ContactDetail,
@@ -321,6 +322,7 @@ function ContactDetail() {
           <TabsTrigger value="people">People</TabsTrigger>
           <TabsTrigger value="groups">Groups & tags</TabsTrigger>
           <TabsTrigger value="activity">Transactions</TabsTrigger>
+          <TabsTrigger value="portal">Portal</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-4 space-y-3 text-sm">
@@ -532,6 +534,17 @@ function ContactDetail() {
               Create groups and tags under Contacts → Settings.
             </p>
           </div>
+        </TabsContent>
+
+        <TabsContent value="portal" className="mt-4">
+          {companyId ? (
+            <ContactPortalPanel
+              companyId={companyId}
+              contactId={contactId}
+              isCustomer={isCustomer}
+              isSupplier={isSupplier}
+            />
+          ) : null}
         </TabsContent>
 
         <TabsContent value="activity" className="mt-4">

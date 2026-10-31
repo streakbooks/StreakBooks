@@ -12,6 +12,7 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "test:voice": "playwright test --config playwright.voice.config.ts",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
   },

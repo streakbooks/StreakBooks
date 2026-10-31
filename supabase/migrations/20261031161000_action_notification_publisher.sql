@@ -9,8 +9,7 @@ CREATE OR REPLACE FUNCTION public.publish_action_notification(
 AS $$
 DECLARE _id uuid;
 BEGIN
-  IF current_setting('request.jwt.claim.role', true) IS DISTINCT FROM 'service_role'
-     AND auth.role() IS DISTINCT FROM 'service_role' THEN
+  IF current_user <> 'service_role' THEN
     RAISE EXCEPTION 'Trusted event producer required';
   END IF;
   IF NOT EXISTS (

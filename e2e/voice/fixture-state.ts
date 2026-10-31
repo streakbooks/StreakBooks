@@ -4,6 +4,7 @@ import { permissionsForRole, type Permission } from "@/lib/permissions";
 import { computeFeatureState, FEATURE_CATALOG } from "@/lib/settings/feature-catalog";
 
 type FixtureState = {
+  userId: string;
   companyId: string | null;
   permissions: readonly Permission[];
   enabled: boolean;
@@ -15,6 +16,7 @@ declare global {
   }
 }
 let state: FixtureState = {
+  userId: "fixture-user",
   companyId: "company-a",
   permissions: permissionsForRole("owner"),
   enabled: true,
@@ -41,8 +43,15 @@ export function useActiveCompany() {
     () => state,
   );
   return {
+    userId: current.userId,
     company: current.companyId
-      ? { id: current.companyId, role: "owner", permissions: current.permissions }
+      ? {
+          id: current.companyId,
+          role: "owner",
+          permissions: current.permissions,
+          base_currency: "GBP",
+          timezone: "UTC",
+        }
       : null,
   };
 }

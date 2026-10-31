@@ -20,6 +20,7 @@ import { GlobalSearch } from "@/components/layout/GlobalSearch";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { CreateNewMenu } from "@/components/create-new/CreateNewMenu";
 import { VoiceAssistant } from "@/components/ai-voice/VoiceAssistant";
+import { VoiceProvider } from "@/components/ai-voice/VoiceProvider";
 import { BillingAccessBanner } from "@/components/billing/BillingAccessBanner";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -251,6 +252,16 @@ function Breadcrumbs() {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const { user } = useRouteContext({ from: "/_authenticated" });
+  return (
+    <VoiceProvider userId={user.id}>
+      <AppShellLayout>{children}</AppShellLayout>
+    </VoiceProvider>
+  );
+}
+
+function AppShellLayout({ children }: { children: ReactNode }) {
+  const { user } = useRouteContext({ from: "/_authenticated" });
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const { company, isPending } = useActiveCompany();
@@ -390,6 +401,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         ) : null}
 
         <main
+          key={`${user.id}:${company?.id ?? ""}`}
           id="main-content"
           tabIndex={-1}
           className={cn(

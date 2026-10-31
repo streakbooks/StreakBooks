@@ -9,6 +9,8 @@ export type BrowserRecognition = {
   onresult: ((event: RecognitionEvent) => void) | null;
   onerror: ((event: { error: string }) => void) | null;
   onend: (() => void) | null;
+  onspeechstart?: (() => void) | null;
+  onspeechend?: (() => void) | null;
   start(): void;
   abort(): void;
 };
@@ -53,6 +55,9 @@ export function startSpeechCommand(
     onListening(): void;
     onTranscript(transcript: string): void;
     onMessage(message: string): void;
+    onBoundary?(reason: string): void;
+    onSpeech?(): void;
+    onTranscribing?(): void;
   },
 ): () => void {
   let active = true;
@@ -63,6 +68,7 @@ export function startSpeechCommand(
     clearTimeout(timeout);
     if (!recognition) return;
     recognition.onstart = recognition.onresult = recognition.onerror = recognition.onend = null;
+    recognition.onspeechstart = recognition.onspeechend = null;
     try {
       recognition.abort();
     } catch {
@@ -70,10 +76,11 @@ export function startSpeechCommand(
     }
     recognition = undefined;
   };
-  const finish = (message: string) => {
+  const finish = (message: string, reason: string) => {
     if (!active) return;
     cancel();
-    callbacks.onMessage(message);
+    if (callbacks.onBoundary) callbacks.onBoundary(reason);
+    else callbacks.onMessage(message);
   };
   try {
     recognition = new Constructor();
@@ -83,6 +90,12 @@ export function startSpeechCommand(
     recognition.maxAlternatives = 1;
     recognition.onstart = () => {
       if (active) callbacks.onListening();
+    };
+    recognition.onspeechstart = () => {
+      if (active) callbacks.onSpeech?.();
+    };
+    recognition.onspeechend = () => {
+      if (active) callbacks.onTranscribing?.();
     };
     recognition.onresult = (event) => {
       if (!active) return;
@@ -95,15 +108,17 @@ export function startSpeechCommand(
         return;
       }
     };
-    recognition.onerror = (event) => finish(recognitionError(event.error));
-    recognition.onend = () => finish("No command heard. Click Start listening to try again.");
+    recognition.onerror = (event) => finish(recognitionError(event.error), event.error);
+    recognition.onend = () =>
+      finish("No command heard. Click Start listening to try again.", "end");
     timeout = setTimeout(
-      () => finish("Listening timed out. Click Start listening to try again."),
+      () => finish("Listening timed out. Click Start listening to try again.", "timeout"),
       15_000,
     );
     recognition.start();
   } catch (cause) {
-    finish(recognitionError(cause instanceof Error ? cause.name : "unknown"));
+    const reason = cause instanceof Error ? cause.name : "unknown";
+    finish(recognitionError(reason), reason);
   }
   return cancel;
 }

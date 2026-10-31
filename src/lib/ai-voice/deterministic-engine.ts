@@ -1,3 +1,4 @@
+import { navItems } from "@/lib/nav";
 import type { Permission } from "@/lib/permissions";
 
 // Adapted from 6cc0612 / 5b797f8 on feature/documents-folder-upload-fix.
@@ -59,7 +60,81 @@ export const VOICE_COMMANDS = [
   phrases: readonly string[];
 }[];
 
+const modulePermission: Record<string, Permission> = {
+  "/banking": "banking.view",
+  "/sales": "sales.view",
+  "/purchases": "purchases.view",
+  "/reports": "reports.view",
+  "/accounting": "accounting.view",
+  "/budgets": "accounting.view",
+  "/fixed-assets": "accounting.view",
+  "/tax": "accounting.view",
+  "/ai-assistant": "ai.use",
+};
+const MODULE_NAV = navItems.map((item) => ({
+  destination: item.to,
+  label: item.label,
+  requiredPermission: modulePermission[item.to] ?? "company.view",
+  phrases: [item.label.toLowerCase(), item.label.toLowerCase().replace("&", "and")],
+}));
+const EXTRA_NAV = [
+  {
+    destination: "/sales/customers",
+    label: "Customers",
+    requiredPermission: "sales.view",
+    phrases: ["customers"],
+  },
+  {
+    destination: "/purchases/suppliers",
+    label: "Suppliers",
+    requiredPermission: "purchases.view",
+    phrases: ["suppliers", "vendors"],
+  },
+  {
+    destination: "/purchases/payments",
+    label: "Supplier payments",
+    requiredPermission: "purchases.view",
+    phrases: ["payments", "supplier payments"],
+  },
+  {
+    destination: "/purchases/expenses",
+    label: "Expenses",
+    requiredPermission: "purchases.view",
+    phrases: ["expenses"],
+  },
+  {
+    destination: "/banking/reconcile",
+    label: "Bank reconciliation",
+    requiredPermission: "banking.view",
+    phrases: ["bank reconciliation", "reconciliation"],
+  },
+  {
+    destination: "/accounting",
+    label: "Chart of accounts",
+    requiredPermission: "accounting.view",
+    phrases: ["chart of accounts", "journal entries", "journals", "general ledger"],
+  },
+] as const;
+
 const FORMS = [
+  {
+    destination: "/sales/quotes/new",
+    label: "New quote form",
+    requiredPermission: "sales.draft",
+    phrases: ["quote", "estimate"],
+  },
+  {
+    destination: "/sales/credit-notes/new",
+    label: "New sales credit note",
+    requiredPermission: "sales.draft",
+    phrases: ["sales credit note", "credit note"],
+  },
+  {
+    destination: "/purchases/expenses/new",
+    label: "New expense form",
+    requiredPermission: "expenses.submit",
+    phrases: ["expense"],
+  },
   {
     destination: "/sales/invoices/new",
     label: "New invoice form",
@@ -74,7 +149,7 @@ const FORMS = [
   },
 ] as const;
 
-export type VoiceDestination = (typeof VOICE_COMMANDS | typeof FORMS)[number]["destination"];
+export type VoiceDestination = string;
 export type NavigationCommand = {
   destination: VoiceDestination;
   label: string;
@@ -112,7 +187,7 @@ export function parseDeterministicCommand(transcript: string): ParseResult {
       .slice(prefix.length)
       .trim()
       .replace(/^(the|my)\s+/, "");
-    const command = VOICE_COMMANDS.find((entry) =>
+    const command = [...VOICE_COMMANDS, ...EXTRA_NAV, ...MODULE_NAV].find((entry) =>
       entry.phrases.some((phrase) => subject === phrase),
     );
     if (command) return { kind: "matched", command };

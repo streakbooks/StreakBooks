@@ -9,9 +9,8 @@ CREATE OR REPLACE FUNCTION public.publish_action_notification(
 AS $$
 DECLARE _id uuid;
 BEGIN
-  IF current_user <> 'service_role' THEN
-    RAISE EXCEPTION 'Trusted event producer required';
-  END IF;
+  -- SECURITY DEFINER changes current_user to the function owner. The executable
+  -- privilege is restricted to service_role below; do not check current_user here.
   IF NOT EXISTS (
     SELECT 1 FROM public.company_members m
     WHERE m.company_id = _company_id AND m.user_id = _recipient_user_id
@@ -27,7 +26,8 @@ BEGIN
     _title, _body, _entity_type, _entity_id, _target_path
   )
   ON CONFLICT (company_id, recipient_user_id, event_key)
-  DO UPDATE SET id = public.action_notifications.id
+  DO UPDATE SET title = EXCLUDED.title, body = EXCLUDED.body,
+                priority = EXCLUDED.priority, target_path = EXCLUDED.target_path
   RETURNING id INTO _id;
   RETURN _id;
 END;

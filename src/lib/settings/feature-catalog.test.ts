@@ -16,8 +16,8 @@ describe("feature state engine", () => {
   });
 
   it("marks unavailable features honestly", () => {
-    const portals = FEATURE_CATALOG.find((f) => f.key === "portals")!;
-    const s = computeFeatureState(portals, { enabled: true, canEdit: true });
+    const timeTracking = FEATURE_CATALOG.find((f) => f.key === "time_tracking")!;
+    const s = computeFeatureState(timeTracking, { enabled: true, canEdit: true });
     expect(s.state).toBe("unavailable");
     expect(s.enabled).toBe(false);
   });

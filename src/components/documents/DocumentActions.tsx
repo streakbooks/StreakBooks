@@ -13,6 +13,7 @@ import {
   getPrintableDocument,
   revokeInvoiceShareLinks,
 } from "@/lib/documents/documents.functions";
+import { deliverInvoiceToPortal } from "@/lib/portals/portals.functions";
 import {
   defaultTemplateFor,
   renderEmail,
@@ -41,6 +42,7 @@ export function DocumentActions({ kind, id }: { kind: DocumentKind; id: string }
   const fetchDelivery = useServerFn(getDocumentDelivery);
   const createLink = useServerFn(createInvoiceShareLink);
   const revokeLinks = useServerFn(revokeInvoiceShareLinks);
+  const deliverPortal = useServerFn(deliverInvoiceToPortal);
   const [emailOpen, setEmailOpen] = useState(false);
   const [reminder, setReminder] = useState(false);
   const [lastLink, setLastLink] = useState<string | null>(null);
@@ -65,6 +67,18 @@ export function DocumentActions({ kind, id }: { kind: DocumentKind; id: string }
       setLastLink(r.url);
       await refreshDelivery();
       toast.success("Online link created");
+    },
+    onError: (e) => toast.error(friendlyAuthError(e)),
+  });
+  const portalM = useMutation({
+    mutationFn: () => deliverPortal({ data: { companyId: companyId!, invoiceId: id } }),
+    onSuccess: (result) => {
+      const outcome = result as { emailed?: { sent?: boolean } };
+      toast.success(
+        outcome.emailed?.sent
+          ? "Delivered to the portal and emailed"
+          : "Delivered to the portal. Email was not sent.",
+      );
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
@@ -184,6 +198,17 @@ export function DocumentActions({ kind, id }: { kind: DocumentKind; id: string }
                 <Link2 className="mr-1 size-4" />
               )}
               Create online link
+            </Button>
+          ) : null}
+          {kind === "sales_invoice" && sendable && canSend ? (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={portalM.isPending}
+              onClick={() => portalM.mutate()}
+            >
+              {portalM.isPending ? <Loader2 className="mr-1 size-4 animate-spin" /> : null}
+              Deliver to portal
             </Button>
           ) : null}
         </div>

@@ -170,7 +170,12 @@ BEGIN
     ORDER BY b.submitted_for_approval_at DESC NULLS LAST, b.id LIMIT 300
     ON CONFLICT (company_id,recipient_user_id,event_key) DO UPDATE SET
       title=EXCLUDED.title,body=EXCLUDED.body,priority=EXCLUDED.priority,
-      target_path=EXCLUDED.target_path,resolved_at=NULL;
+      target_path=EXCLUDED.target_path,resolved_at=NULL
+    WHERE public.action_notifications.resolved_at IS NOT NULL
+      OR public.action_notifications.title IS DISTINCT FROM EXCLUDED.title
+      OR public.action_notifications.body IS DISTINCT FROM EXCLUDED.body
+      OR public.action_notifications.priority IS DISTINCT FROM EXCLUDED.priority
+      OR public.action_notifications.target_path IS DISTINCT FROM EXCLUDED.target_path;
     GET DIAGNOSTICS _n=ROW_COUNT; _affected:=_affected+_n;
   END IF;
 
@@ -189,7 +194,12 @@ BEGIN
     ORDER BY i.due_date,i.id LIMIT 300
     ON CONFLICT (company_id,recipient_user_id,event_key) DO UPDATE SET
       title=EXCLUDED.title,body=EXCLUDED.body,priority=EXCLUDED.priority,
-      target_path=EXCLUDED.target_path,resolved_at=NULL;
+      target_path=EXCLUDED.target_path,resolved_at=NULL
+    WHERE public.action_notifications.resolved_at IS NOT NULL
+      OR public.action_notifications.title IS DISTINCT FROM EXCLUDED.title
+      OR public.action_notifications.body IS DISTINCT FROM EXCLUDED.body
+      OR public.action_notifications.priority IS DISTINCT FROM EXCLUDED.priority
+      OR public.action_notifications.target_path IS DISTINCT FROM EXCLUDED.target_path;
     GET DIAGNOSTICS _n=ROW_COUNT; _affected:=_affected+_n;
   END IF;
 
@@ -209,7 +219,12 @@ BEGIN
     ORDER BY count(*) DESC,a.id LIMIT 100
     ON CONFLICT (company_id,recipient_user_id,event_key) DO UPDATE SET
       title=EXCLUDED.title,body=EXCLUDED.body,priority=EXCLUDED.priority,
-      target_path=EXCLUDED.target_path,resolved_at=NULL;
+      target_path=EXCLUDED.target_path,resolved_at=NULL
+    WHERE public.action_notifications.resolved_at IS NOT NULL
+      OR public.action_notifications.title IS DISTINCT FROM EXCLUDED.title
+      OR public.action_notifications.body IS DISTINCT FROM EXCLUDED.body
+      OR public.action_notifications.priority IS DISTINCT FROM EXCLUDED.priority
+      OR public.action_notifications.target_path IS DISTINCT FROM EXCLUDED.target_path;
     GET DIAGNOSTICS _n=ROW_COUNT; _affected:=_affected+_n;
   END IF;
 
@@ -225,7 +240,12 @@ BEGIN
     ORDER BY r.created_at DESC,r.id LIMIT 300
     ON CONFLICT (company_id,recipient_user_id,event_key) DO UPDATE SET
       title=EXCLUDED.title,body=EXCLUDED.body,priority=EXCLUDED.priority,
-      target_path=EXCLUDED.target_path,resolved_at=NULL;
+      target_path=EXCLUDED.target_path,resolved_at=NULL
+    WHERE public.action_notifications.resolved_at IS NOT NULL
+      OR public.action_notifications.title IS DISTINCT FROM EXCLUDED.title
+      OR public.action_notifications.body IS DISTINCT FROM EXCLUDED.body
+      OR public.action_notifications.priority IS DISTINCT FROM EXCLUDED.priority
+      OR public.action_notifications.target_path IS DISTINCT FROM EXCLUDED.target_path;
     GET DIAGNOSTICS _n=ROW_COUNT; _affected:=_affected+_n;
   END IF;
 

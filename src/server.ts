@@ -55,6 +55,13 @@ export default {
         const { handleBillingWebhook } = await import("./lib/billing/webhooks");
         return handleBillingWebhook(request);
       }
+      if (
+        request.method === "POST" &&
+        (pathname === "/api/portals/stripe" || pathname === "/api/portals/razorpay")
+      ) {
+        const { handlePortalWebhook } = await import("./lib/portals/portal-webhooks");
+        return handlePortalWebhook(request);
+      }
       if (pathname === "/api/communications/digest-cron") {
         if (request.method !== "POST") return new Response("Method Not Allowed", { status: 405 });
         const { authenticateCronRequest } = await import("./integrations/supabase/cron-auth");

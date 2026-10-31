@@ -6,6 +6,7 @@ import {
   useNavigate,
   useRouterState,
 } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/layout/AppShell";
@@ -13,6 +14,7 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { ErrorState } from "@/components/common/states";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { needsMfaStepUp } from "@/lib/auth-session";
+import { listPortalAccess } from "@/lib/portals/portals.functions";
 
 /**
  * Every LinkBooks application page lives under this gate. The session lives in
@@ -56,6 +58,7 @@ function CompanyLayout() {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { data, isPending, isError, error, refetch } = useActiveCompany();
+  const fetchPortalAccess = useServerFn(listPortalAccess);
   const onOnboarding =
     pathname.startsWith("/onboarding") ||
     pathname === "/profile" ||
@@ -65,9 +68,19 @@ function CompanyLayout() {
     if (isPending || isError) return;
     const count = data?.companies.length ?? 0;
     if (count === 0 && !onOnboarding) {
-      void navigate({ to: "/onboarding", replace: true });
+      void fetchPortalAccess()
+        .then((rows) => {
+          const memberships = Array.isArray(rows) ? rows : [];
+          void navigate({
+            to: memberships.length > 0 ? "/portal/app" : "/onboarding",
+            replace: true,
+          });
+        })
+        .catch(() => {
+          void navigate({ to: "/onboarding", replace: true });
+        });
     }
-  }, [data?.companies.length, isError, isPending, navigate, onOnboarding]);
+  }, [data?.companies.length, fetchPortalAccess, isError, isPending, navigate, onOnboarding]);
 
   if (isPending) {
     return (

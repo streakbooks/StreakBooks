@@ -61,6 +61,7 @@ import { SettingsOverviewPanel } from "@/components/settings/SettingsOverviewPan
 import { SettingsFeatureManager } from "@/components/settings/SettingsFeatureManager";
 import { SettingsAccountingLocksPanel } from "@/components/settings/SettingsAccountingLocksPanel";
 import { SettingsCategoryConfigPanel } from "@/components/settings/SettingsCategoryConfigPanel";
+import { SettingsCommunicationsPanel } from "@/components/settings/SettingsCommunicationsPanel";
 import { SettingsUnavailablePanel } from "@/components/settings/SettingsUnavailablePanel";
 import { SubscriptionPanel } from "@/components/billing/SubscriptionPanel";
 import { SettingsCommandPalette } from "@/components/settings/SettingsCommandPalette";
@@ -88,7 +89,6 @@ const CONFIG_SECTIONS: SettingsCategory[] = [
   "reports",
   "contacts",
   "expenses",
-  "notifications",
   "import_migration",
   "accountant",
 ];
@@ -439,6 +439,9 @@ function SettingsForCompany({ companyId }: { companyId: string }) {
           ) : null}
           {UNAVAILABLE_SECTIONS.includes(section) && sectionMeta ? (
             <SettingsUnavailablePanel meta={sectionMeta} />
+          ) : null}
+          {section === "notifications" ? (
+            <SettingsCommunicationsPanel companyId={companyId} canEdit={canEdit} />
           ) : null}
           {CONFIG_SECTIONS.includes(section) ? (
             <SettingsCategoryConfigPanel

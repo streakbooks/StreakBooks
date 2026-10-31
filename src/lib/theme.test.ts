@@ -64,7 +64,7 @@ describe("appearance modes and palettes", () => {
     expect(light["--money-in"]).toBeUndefined();
     expect(dark["--success"]).toBeUndefined();
     for (const [name, value] of Object.entries(light)) {
-      expect(name).toMatch(/^--[a-z-]+$/);
+      expect(name).toMatch(/^--[a-z0-9-]+$/);
       expect(value).toMatch(/^#[0-9a-f]{6}$/i);
     }
   });

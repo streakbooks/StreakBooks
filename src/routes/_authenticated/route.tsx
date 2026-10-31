@@ -56,7 +56,10 @@ function CompanyLayout() {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { data, isPending, isError, error, refetch } = useActiveCompany();
-  const onOnboarding = pathname.startsWith("/onboarding") || pathname === "/profile";
+  const onOnboarding =
+    pathname.startsWith("/onboarding") ||
+    pathname === "/profile" ||
+    pathname.startsWith("/invite/");
 
   useEffect(() => {
     if (isPending || isError) return;

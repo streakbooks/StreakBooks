@@ -5,11 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Search } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany, companyContextKey } from "@/hooks/use-active-company";
-import {
-  getCompanyDetails,
-  listCompanyMembers,
-  updateCompany,
-} from "@/lib/company.functions";
+import { getCompanyDetails, updateCompany } from "@/lib/company.functions";
 import {
   createExchangeRate,
   getOrgExtendedSettings,
@@ -18,7 +14,6 @@ import {
   setEnabledCurrencies,
   updateDocumentSequence,
   updateLocalization,
-  updateMemberRole,
   upsertBranding,
   voidExchangeRate,
 } from "@/lib/settings/org-settings.functions";
@@ -27,10 +22,8 @@ import {
   countries,
   currencies,
   months,
-  roleLabels,
   taxRegimes,
   timezones,
-  type CompanyRole,
 } from "@/lib/company-constants";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { categoryMeta, type SettingsCategory } from "@/lib/settings/registry";
@@ -61,8 +54,8 @@ import { SettingsDimensionsPanel } from "@/components/settings/SettingsDimension
 import {
   SettingsAutomationPanel,
   SettingsIntegrationsPanel,
-  SettingsInvitationsPanel,
 } from "@/components/settings/SettingsGovernanceExtras";
+import { UsersAccessPanel } from "@/components/settings/UsersAccessPanel";
 import { SettingsNav } from "@/components/settings/SettingsNav";
 import { SettingsOverviewPanel } from "@/components/settings/SettingsOverviewPanel";
 import { SettingsFeatureManager } from "@/components/settings/SettingsFeatureManager";
@@ -184,7 +177,6 @@ function SettingsForCompany({ companyId }: { companyId: string }) {
 
   const fetchDetails = useServerFn(getCompanyDetails);
   const saveCompany = useServerFn(updateCompany);
-  const fetchMembers = useServerFn(listCompanyMembers);
   const fetchExtended = useServerFn(getOrgExtendedSettings);
   const saveLocalization = useServerFn(updateLocalization);
   const saveBranding = useServerFn(upsertBranding);
@@ -192,7 +184,6 @@ function SettingsForCompany({ companyId }: { companyId: string }) {
   const saveCurrencies = useServerFn(setEnabledCurrencies);
   const addRate = useServerFn(createExchangeRate);
   const voidRate = useServerFn(voidExchangeRate);
-  const changeRole = useServerFn(updateMemberRole);
   const doDemoReset = useServerFn(resetDemoCompany);
   const fetchAudit = useServerFn(listCompanyAuditEvents);
   const queryClient = useQueryClient();
@@ -200,11 +191,6 @@ function SettingsForCompany({ companyId }: { companyId: string }) {
   const detailsQuery = useQuery({
     queryKey: ["company-details", companyId],
     queryFn: () => fetchDetails({ data: { companyId } }),
-  });
-
-  const membersQuery = useQuery({
-    queryKey: ["company-members", companyId],
-    queryFn: () => fetchMembers({ data: { companyId } }),
   });
 
   const extendedQuery = useQuery({
@@ -981,81 +967,7 @@ function SettingsForCompany({ companyId }: { companyId: string }) {
         </TabsContent>
 
         <TabsContent value="users" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Users and roles</CardTitle>
-              <CardDescription>
-                Least-privilege roles. Last owner is protected. Permissions are enforced server-side.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {membersQuery.isPending ? (
-                <LoadingState rows={3} />
-              ) : membersQuery.isError ? (
-                <ErrorState
-                  title="Could not load members"
-                  description={friendlyAuthError(membersQuery.error)}
-                  onRetry={() => membersQuery.refetch()}
-                />
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {(membersQuery.data ?? []).map((m) => (
-                      <TableRow key={m.user_id}>
-                        <TableCell>
-                          {m.full_name || "—"}
-                          {m.is_you ? " (you)" : ""}
-                        </TableCell>
-                        <TableCell>{m.email || "—"}</TableCell>
-                        <TableCell>
-                          {canEdit && !m.is_you ? (
-                            <Select
-                              value={m.role}
-                              onValueChange={(role) =>
-                                changeRole({
-                                  data: { companyId, userId: m.user_id, role: role as CompanyRole },
-                                })
-                                  .then(async () => {
-                                    await queryClient.invalidateQueries({
-                                      queryKey: ["company-members", companyId],
-                                    });
-                                    toast.success("Role updated");
-                                  })
-                                  .catch((e) => toast.error(friendlyAuthError(e)))
-                              }
-                            >
-                              <SelectTrigger className="w-40">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {(Object.keys(roleLabels) as CompanyRole[]).map((r) => (
-                                  <SelectItem key={r} value={r}>
-                                    {roleLabels[r]}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            roleLabels[m.role] ?? m.role
-                          )}
-                        </TableCell>
-                        <TableCell className="capitalize">{m.status}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-              <SettingsInvitationsPanel companyId={companyId} canEdit={canEdit} />
-            </CardContent>
-          </Card>
+          <UsersAccessPanel companyId={companyId} />
         </TabsContent>
 
         <TabsContent value="automation" className="mt-4 space-y-4">

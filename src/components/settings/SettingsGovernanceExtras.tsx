@@ -7,20 +7,13 @@ import {
   getWorkflowSettings,
   upsertWorkflowSettings,
 } from "@/lib/settings/workflow-settings.functions";
-import {
-  createCompanyInvitation,
-  listCompanyInvitations,
-  revokeCompanyInvitation,
-} from "@/lib/settings/org-settings.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import type { CompanyRole } from "@/lib/company-constants";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 
 type Props = { companyId: string; canEdit: boolean };
@@ -181,117 +174,3 @@ function IntegrationRow({
   );
 }
 
-export function SettingsInvitationsPanel({ companyId, canEdit }: Props) {
-  const qc = useQueryClient();
-  const fetch = useServerFn(listCompanyInvitations);
-  const create = useServerFn(createCompanyInvitation);
-  const revoke = useServerFn(revokeCompanyInvitation);
-  const [email, setEmail] = useState("");
-  const [role, setRole] = useState<CompanyRole>("staff");
-  const [lastToken, setLastToken] = useState<string | null>(null);
-
-  const q = useQuery({
-    queryKey: ["company-invitations", companyId],
-    enabled: canEdit,
-    queryFn: () => fetch({ data: { companyId } }),
-  });
-
-  if (!canEdit) {
-    return (
-      <Alert>
-        <AlertTitle>Members</AlertTitle>
-        <AlertDescription>You need members.manage to invite users.</AlertDescription>
-      </Alert>
-    );
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Invitations</CardTitle>
-        <CardDescription>
-          Invitations are stored with expiry and role. Outbound email is not configured — tokens are
-          shown once for manual sharing. Statuses are truthful (pending / expired / accepted).
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <Alert>
-          <AlertTitle>Email delivery unavailable</AlertTitle>
-          <AlertDescription>
-            LinkBooks will not claim an invitation was emailed until a real provider is connected.
-          </AlertDescription>
-        </Alert>
-        <div className="grid gap-2 sm:grid-cols-3">
-          <Input
-            placeholder="colleague@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <Select value={role} onValueChange={(v) => setRole(v as CompanyRole)}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="admin">Admin</SelectItem>
-              <SelectItem value="accountant">Accountant</SelectItem>
-              <SelectItem value="bookkeeper">Bookkeeper</SelectItem>
-              <SelectItem value="staff">Staff</SelectItem>
-              <SelectItem value="read_only">Read only</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button
-            size="sm"
-            disabled={!email.trim()}
-            onClick={async () => {
-              try {
-                const res = await create({ data: { companyId, email, role } });
-                setLastToken(res.inviteToken);
-                setEmail("");
-                await qc.invalidateQueries({ queryKey: ["company-invitations", companyId] });
-                toast.message(res.message);
-              } catch (e) {
-                toast.error(friendlyAuthError(e));
-              }
-            }}
-          >
-            Create invitation
-          </Button>
-        </div>
-        {lastToken ? (
-          <p className="break-all rounded-md border bg-muted/40 p-2 text-xs">
-            One-time invite token (copy now): <code>{lastToken}</code>
-          </p>
-        ) : null}
-        <ul className="space-y-2 text-sm">
-          {((q.data ?? []) as Array<{ id: string; email: string; role: string; status: string }>).map(
-            (inv) => (
-              <li key={inv.id} className="flex items-center justify-between gap-2 border-b py-1">
-                <span>
-                  {inv.email} · {inv.role}{" "}
-                  <Badge variant="outline">{inv.status}</Badge>
-                </span>
-                {inv.status === "pending" || inv.status === "expired" ? (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={async () => {
-                      try {
-                        await revoke({ data: { companyId, invitationId: inv.id } });
-                        await qc.invalidateQueries({ queryKey: ["company-invitations", companyId] });
-                        toast.success("Invitation revoked");
-                      } catch (e) {
-                        toast.error(friendlyAuthError(e));
-                      }
-                    }}
-                  >
-                    Revoke
-                  </Button>
-                ) : null}
-              </li>
-            ),
-          )}
-        </ul>
-      </CardContent>
-    </Card>
-  );
-}

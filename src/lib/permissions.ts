@@ -1,9 +1,10 @@
 import type { CompanyRole } from "@/lib/company-constants";
 
 /**
- * Permission keys used by the app. Database `role_permissions` is the
- * authoritative store; this catalogue mirrors the intended seed for UI hints
- * and unit tests. RLS still uses `has_company_permission` in Postgres.
+ * Permission keys used by the app. Database `role_permissions` plus
+ * `member_permission_adjustments` is the authority. This catalogue mirrors the
+ * role seed for UI hints and unit tests. `has_company_permission` applies
+ * grants and denials, and ignores adjustments on the owner role.
  */
 export const PERMISSIONS = [
   "company.view",

@@ -6,6 +6,7 @@ import {
 } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
 import type { CompanyRole } from "@/lib/company-constants";
+import { normaliseAdjustments, type AccessAdjustment } from "@/lib/access-catalogue";
 
 const DOCUMENT_TYPES = [
   "sales_invoice",
@@ -383,12 +384,16 @@ export const updateMemberRole = createServerFn({ method: "POST" })
       if ((count ?? 0) <= 1) throw new Error("Cannot remove the last owner");
     }
 
-    const { error } = await context.supabase
+    const { data: updated, error } = await context.supabase
       .from("company_members")
       .update({ role: data.role })
       .eq("company_id", data.companyId)
-      .eq("user_id", data.userId);
+      .eq("user_id", data.userId)
+      .select("user_id");
     if (error) throw new Error(error.message);
+    if (!updated || updated.length === 0) {
+      throw new Error("That person's role could not be changed.");
+    }
 
     await audit(context.supabase as never, data.companyId, "members.role_change", "company_member", data.userId, {
       from: target.role,
@@ -506,13 +511,25 @@ export const listCompanyInvitations = createServerFn({ method: "GET" })
 
 export const createCompanyInvitation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; email: string; role: CompanyRole }) => {
-    const email = (input.email ?? "").trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("Enter a valid email");
-    const allowed: CompanyRole[] = ["admin", "accountant", "bookkeeper", "staff", "read_only"];
-    if (!allowed.includes(input.role)) throw new Error("Cannot invite as owner via invitation");
-    return { companyId: assertUuid(input.companyId), email: email.slice(0, 160), role: input.role };
-  })
+  .inputValidator(
+    (input: {
+      companyId: string;
+      email: string;
+      role: CompanyRole;
+      adjustments?: AccessAdjustment[];
+    }) => {
+      const email = (input.email ?? "").trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("Enter a valid email");
+      const allowed: CompanyRole[] = ["admin", "accountant", "bookkeeper", "staff", "read_only"];
+      if (!allowed.includes(input.role)) throw new Error("Ownership is transferred by an owner, not by invitation");
+      return {
+        companyId: assertUuid(input.companyId),
+        email: email.slice(0, 160),
+        role: input.role,
+        adjustments: normaliseAdjustments(input.role, input.adjustments ?? []),
+      };
+    },
+  )
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "members.manage");
     const tokenBytes = crypto.getRandomValues(new Uint8Array(32));
@@ -520,35 +537,24 @@ export const createCompanyInvitation = createServerFn({ method: "POST" })
     const tokenHash = await sha256Hex(token);
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
-    const { data: row, error } = await context.supabase
-      .from("company_invitations" as never)
-      .insert({
-        company_id: data.companyId,
-        email: data.email,
-        role: data.role,
-        token_hash: tokenHash,
-        expires_at: expiresAt,
-        invited_by: context.userId,
-      } as never)
-      .select("id")
-      .single();
+    const { data: id, error } = await context.supabase.rpc("issue_company_invitation" as never, {
+      _company_id: data.companyId,
+      _email: data.email,
+      _role: data.role,
+      _token_hash: tokenHash,
+      _expires_at: expiresAt,
+      _adjustments: data.adjustments,
+    } as never);
     if (error) throw new Error(error.message);
-    const id = (row as { id: string }).id;
-    await audit(context.supabase as never, data.companyId, "members.invite", "company_invitation", id, {
-      email: data.email,
-      role: data.role,
-      email_sent: false,
-      reason: "No outbound email provider configured",
-    });
     return {
-      id,
+      id: String(id),
       email: data.email,
       role: data.role,
       expiresAt,
       inviteToken: token,
       emailDelivery: "unavailable" as const,
       message:
-        "Invitation recorded. Outbound email is not configured — share the invite token manually.",
+        "Invitation recorded. Outbound email is not configured — copy the link and send it to them.",
     };
   });
 
@@ -560,21 +566,11 @@ export const revokeCompanyInvitation = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "members.manage");
-    const { error } = await context.supabase
-      .from("company_invitations" as never)
-      .delete()
-      .eq("id" as never, data.invitationId as never)
-      .eq("company_id" as never, data.companyId as never)
-      .is("accepted_at" as never, null as never);
+    const { error } = await context.supabase.rpc("revoke_company_invitation" as never, {
+      _company_id: data.companyId,
+      _invitation_id: data.invitationId,
+    } as never);
     if (error) throw new Error(error.message);
-    await audit(
-      context.supabase as never,
-      data.companyId,
-      "members.invite_revoke",
-      "company_invitation",
-      data.invitationId,
-      {},
-    );
     return { ok: true };
   });
 

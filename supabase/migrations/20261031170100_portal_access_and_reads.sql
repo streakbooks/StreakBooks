@@ -1,5 +1,5 @@
 -- Portal invitations, settings, and customer/supplier reads.
--- Depends on 20261031160000_customer_supplier_portals.sql.
+-- Depends on 20261031170000_customer_supplier_portals.sql.
 
 CREATE OR REPLACE FUNCTION public.portal_my_access(payload JSONB)
 RETURNS JSONB

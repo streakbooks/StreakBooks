@@ -4,7 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertUuid } from "@/lib/company-validation";
 import { callSalesRpc, requireRpc, type SalesClient } from "@/lib/sales/rpc";
 
-const MIGRATION = "20261031160000_customer_supplier_portals.sql";
+const MIGRATION = "20261031170000_customer_supplier_portals.sql";
 
 type PortalJson = null | boolean | number | string | PortalJson[] | { [key: string]: PortalJson };
 

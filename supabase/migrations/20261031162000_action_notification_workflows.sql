@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS public.action_document_requests (
 );
 CREATE INDEX IF NOT EXISTS action_document_requests_recipient_idx
  ON public.action_document_requests (company_id, requested_from, created_at DESC) WHERE completed_at IS NULL AND cancelled_at IS NULL;
+CREATE INDEX IF NOT EXISTS action_document_requests_sender_rate_idx
+ ON public.action_document_requests (company_id, requested_by, created_at DESC);
 ALTER TABLE public.action_document_requests ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS action_document_requests_read ON public.action_document_requests;
 CREATE POLICY action_document_requests_read ON public.action_document_requests
@@ -46,6 +48,17 @@ BEGIN
   IF _subject IS NULL OR length(btrim(_subject)) NOT BETWEEN 3 AND 160
      OR length(coalesce(_instructions,'')) > 2000 THEN
     RAISE EXCEPTION 'Invalid document request';
+  END IF;
+  IF (SELECT count(*) FROM public.action_document_requests r
+        WHERE r.company_id=_company_id AND r.requested_by=auth.uid()
+          AND r.created_at>now()-interval '24 hours') >= 50 THEN
+    RAISE EXCEPTION 'Document request limit reached; try again later';
+  END IF;
+  IF EXISTS (SELECT 1 FROM public.action_document_requests r
+       WHERE r.company_id=_company_id AND r.requested_by=auth.uid()
+         AND r.requested_from=_requested_from AND r.subject=btrim(_subject)
+         AND r.created_at>now()-interval '5 minutes') THEN
+    RAISE EXCEPTION 'A similar document request was recently sent';
   END IF;
   INSERT INTO public.action_document_requests
    (company_id, requested_by, requested_from, subject, instructions)

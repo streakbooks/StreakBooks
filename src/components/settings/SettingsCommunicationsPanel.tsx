@@ -80,7 +80,7 @@ export function SettingsCommunicationsPanel({ companyId, canEdit }: { companyId:
   const savingBlocked = !canEdit || save.isPending || config.isPending || config.isError;
   const providerReady = Boolean(status.data?.configured);
   const canTest = Boolean(providerReady && status.data?.canSend && status.data?.recipient);
-  const canDigest = Boolean(canTest && !status.data?.demoBlocked);
+  const canDigest = Boolean(providerReady && status.data?.canDigest && status.data?.recipient);
   const set = <K extends keyof Config>(key: K, value: Config[K]) => setDoc((old) => ({ ...old, [key]: value }));
   return (
     <section className="space-y-4" aria-label="Notifications and communications settings">
@@ -196,7 +196,7 @@ export function SettingsCommunicationsPanel({ companyId, canEdit }: { companyId:
           </Alert>
         </CardContent>
       </Card>
-      {status.data?.canEdit && (
+      {status.data && (
         <Card>
           <CardHeader><CardTitle className="text-base">Actual email delivery attempts</CardTitle>
             <CardDescription>Accepted or rejected messages returned by the configured provider; not sample or simulated history.</CardDescription></CardHeader>

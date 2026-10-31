@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { prepareTransactionCsv } from "@/lib/imports/transaction-import-validation";
+import { isExactTransactionImportRetry } from "@/lib/imports/transaction-import-retry";
 import { isRateEffective } from "@/lib/tax/tax-math";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
@@ -5065,14 +5066,50 @@ export const importPurchaseBillsCsv = createServerFn({ method: "POST" })
       try {
         const { data: existing, error: duplicateError } = await supabase
           .from("purchase_bills" as never)
-          .select("id" as never)
+          .select("id, status, contact_id, bill_date, due_date, currency_code, memo" as never)
           .eq("company_id" as never, data.companyId as never)
           .eq("contact_id" as never, suppliers.get(doc.contactName)! as never)
           .ilike("supplier_invoice_number" as never, escapeLikeTerm(doc.documentNumber) as never)
           .neq("status" as never, "void" as never)
           .limit(1);
         if (duplicateError) throw new Error(duplicateError.message);
-        if ((existing ?? []).length) { outcome.skipped++; continue; }
+        if ((existing ?? []).length) {
+          const prior = (existing as unknown as Array<{
+            id: string; status: string; contact_id: string; bill_date: string;
+            due_date: string; currency_code: string; memo: string | null;
+          }>)[0]!;
+          const { data: priorLines, error: priorLinesError } = await supabase
+            .from("purchase_bill_lines" as never)
+            .select("description, account_id, quantity, unit_price_minor, tax_code_id, discount_minor, product_id" as never)
+            .eq("company_id" as never, data.companyId as never)
+            .eq("bill_id" as never, prior.id as never)
+            .order("line_no" as never);
+          if (priorLinesError) throw new Error(priorLinesError.message);
+          const sameSource = isExactTransactionImportRetry({
+            contactId: suppliers.get(doc.contactName)!,
+            documentDate: doc.documentDate, dueDate: doc.dueDate,
+            currencyCode: currency,
+            lines: doc.lines.map((line) => ({
+              description: line.description, accountId: accounts.get(line.accountCode)!,
+              quantity: line.quantity, unitPriceMinor: line.unitPriceMinor,
+              taxCodeId: line.taxCode ? taxesByDate.get(doc.documentDate)!.get(line.taxCode)!.id : null,
+            })),
+          }, {
+            contact_id: prior.contact_id, document_date: prior.bill_date,
+            due_date: prior.due_date, currency_code: prior.currency_code,
+            memo: prior.memo,
+            lines: (priorLines ?? []) as never,
+          });
+          if (!sameSource) {
+            throw new Error("Supplier invoice number already exists with different header or lines; review the existing bill");
+          }
+          if (data.authorise && (prior.status === "draft" || prior.status === "awaiting_approval")) {
+            draftId = prior.id;
+            throw new Error("Matching bill draft already exists but is not authorised; review and authorise it manually");
+          }
+          outcome.skipped++;
+          continue;
+        }
         const input = parseBillDraftInput({
           companyId: data.companyId,
           contactId: suppliers.get(doc.contactName)!,

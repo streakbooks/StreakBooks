@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { prepareTransactionCsv } from "@/lib/imports/transaction-import-validation";
+import { isExactTransactionImportRetry } from "@/lib/imports/transaction-import-retry";
 import { loadSalesTaxCodes } from "@/lib/sales/tax-codes";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
@@ -1376,13 +1377,51 @@ export const importSalesInvoicesCsv = createServerFn({ method: "POST" })
       try {
         const { data: existing, error: existingError } = await supabase
           .from("sales_invoices" as never)
-          .select("id" as never)
+          .select("id, status, contact_id, invoice_date, due_date, currency_code, memo" as never)
           .eq("company_id" as never, data.companyId as never)
           .ilike("invoice_number" as never, escapeLikeLiteral(doc.documentNumber) as never)
           .neq("status" as never, "void" as never)
           .limit(1);
         if (existingError) throw new Error(existingError.message);
-        if ((existing ?? []).length) { outcome.skipped++; continue; }
+        if ((existing ?? []).length) {
+          const prior = (existing as unknown as Array<{
+            id: string; status: string; contact_id: string; invoice_date: string;
+            due_date: string; currency_code: string; memo: string | null;
+          }>)[0]!;
+          const { data: priorLines, error: priorLinesError } = await supabase
+            .from("sales_invoice_lines" as never)
+            .select("description, account_id, quantity, unit_price_minor, tax_code_id, discount_minor, product_id" as never)
+            .eq("company_id" as never, data.companyId as never)
+            .eq("invoice_id" as never, prior.id as never)
+            .order("line_order" as never);
+          if (priorLinesError) throw new Error(priorLinesError.message);
+          const sameSource = isExactTransactionImportRetry({
+            contactId: contacts.get(doc.contactName)!,
+            documentDate: doc.documentDate, dueDate: doc.dueDate,
+            currencyCode: defaults.baseCurrency,
+            lines: doc.lines.map((line) => ({
+              description: line.description, accountId: accounts.get(line.accountCode)!,
+              quantity: line.quantity, unitPriceMinor: line.unitPriceMinor,
+              taxCodeId: line.taxCode ? codesByDate.get(doc.documentDate)!.get(line.taxCode)! : null,
+            })),
+          }, {
+            contact_id: prior.contact_id, document_date: prior.invoice_date,
+            due_date: prior.due_date, currency_code: prior.currency_code,
+            memo: prior.memo,
+            lines: (priorLines ?? []) as never,
+          });
+          if (!sameSource) {
+            throw new Error("Invoice number already exists with different header or lines; review the existing invoice");
+          }
+          // Do not silently treat a failed previous authorisation as completed.
+          // Manual review is safer than posting a potentially edited existing draft.
+          if (data.authorise && prior.status === "draft") {
+            draftId = prior.id;
+            throw new Error("Matching draft already exists but is not authorised; review and authorise it manually");
+          }
+          outcome.skipped++;
+          continue;
+        }
 
         const input = parseInvoiceDraftInput({
           companyId: data.companyId,

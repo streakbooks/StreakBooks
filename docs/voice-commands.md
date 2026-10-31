@@ -1,93 +1,136 @@
-# Browser voice commands
+# LinkBooks Signal
 
-An administrator can enable **Voice commands** in **Settings → Features** for an
-organisation. It is off by default. The microphone button then appears in the
-application header for members with `company.view`. No AI provider, API key,
-generative model, or paid AI API is used by this feature.
+Signal is a persistent browser voice assistant for the company workspace. Enable
+**Settings → Features → Voice commands**, then open the Signal control in the
+header and choose **Start assistant**. It never activates the microphone on load.
+**Ctrl+Shift+Space** starts/stops it; the visible square Stop control remains
+available while the panel is minimised. Escape minimises the panel and leaves the
+session active. Say “stop listening” to deactivate it by voice.
 
-Click the microphone button, read the browser speech disclosure, then click
-**Start listening**. Allow microphone access when the browser asks. Say one
-English command. **Stop**, closing the dialog (including Escape), changing page,
-company or permissions, disabling the feature, or hiding the tab cancels the
-session and discards pending speech results. Listening ends after the first final
-result, including an unknown or denied command, or after 15 seconds. It never
-restarts automatically. Normal keyboard and mouse controls remain available.
+Signal uses the browser’s Web Speech API and predefined English rules. It uses no
+LLM, generative AI, paid AI API or new API keys. It is a bounded command system,
+not an unrestricted conversational model. Typed commands use the same dispatcher
+without requiring microphone support.
 
-| Command           | Existing destination   | Required permission, in addition to `company.view` |
-| ----------------- | ---------------------- | -------------------------------------------------- |
-| open dashboard    | `/`                    | none                                               |
-| open invoices     | `/sales/invoices`      | `sales.view`                                       |
-| open bills        | `/purchases/bills`     | `purchases.view`                                   |
-| open banking      | `/banking`             | `banking.view`                                     |
-| open contacts     | `/contacts`            | none (the directory uses membership access)        |
-| create invoice    | `/sales/invoices/new`  | `sales.view`, `sales.draft`                        |
-| create bill       | `/purchases/bills/new` | `purchases.view`, `purchases.draft`                |
-| open sales        | `/sales`               | `sales.view`                                       |
-| open purchases    | `/purchases`           | `purchases.view`                                   |
-| open reports      | `/reports`             | `reports.view`                                     |
-| open fixed assets | `/fixed-assets`        | `accounting.view`                                  |
+## Continuous workflow
 
-Navigation also accepts “show”, “go to”, “navigate to”, “take me to”, “view”,
-“display”, and “switch to”. “New invoice” and “open new invoice” open the same
-blank invoice form. Matching ignores case, whitespace, sentence punctuation and
-Unicode width, but requires a complete predefined phrase. Additional clauses,
-arbitrary URLs, dictating invoice contents, and financial actions are rejected.
-Creation commands open the existing form only; the user must fill it in and use
-its usual save/authorise controls. Voice code has no financial mutation handlers.
+1. “Create a new invoice” (or “create an invoice for ABC Limited”).
+2. “Select customer ABC.” If several names match, choose a numbered result or say
+   its full name. No customer is invented or silently selected from ambiguous names.
+3. “Set invoice date to October 31, 2026.”
+4. “Add consulting services for GBP 1500.”
+5. “Use account Consulting income.”
+6. “Set tax code to Standard VAT” (use a code available in the form).
+7. “Set due date to November 15, 2026.”
+8. “Change that to GBP 1800.” This targets the last edited line of this form.
+9. “Save invoice.” Review the contact, dates, currency, accounts, quantity, prices,
+   discounts and tax on screen, then click **Confirm save**. Saying “yes” does not
+   save a document. Save confirmations expire after two minutes.
+10. Continue with another command, then stop Signal explicitly.
 
-## Browser and permission limitations
+The same structured editing interface is connected to the existing invoice,
+quote, sales credit-note and new-bill editors, including their Create-new flyovers.
+Recurring bill templates are excluded. Forms retain their existing validation,
+notes/attachment handling and save handlers. The assistant never calls an
+“authorise” variant of a save handler.
 
-- Requires HTTPS or localhost and a browser exposing `SpeechRecognition` or
-  `webkitSpeechRecognition`. Support varies by browser, OS, settings and language.
-  Unsupported browsers display an explanation and keep normal controls usable.
-- Recognition is configured for English (`en-GB`). Accents, noise and the browser
-  service can affect accuracy. There is no fuzzy matching or conversational mode.
-- **Browser speech recognition may require internet access** and may send audio
-  to the browser vendor's speech service. This is not an offline guarantee. The
-  app does not record audio or persist transcripts; the last recognised phrase is
-  kept only in component memory and cleared when its context unmounts.
-- Permission denial includes site-setting recovery instructions. Missing
-  microphones, network errors, no speech, unsupported language and timeouts have
-  separate messages. Each retry requires another click.
-- UI checks use the same server-resolved company permissions (and existing role
-  fallback) as `useCan`. Existing authenticated routes, server functions and RLS
-  still enforce access to the destination's data. There is no new authorization
-  endpoint or requirement for `ai.use`. Feature lookup errors hide the control.
+Additional commands include “add another item”, “remove the second line item”,
+“set line 2 amount to 250”, “set quantity to 2”, “set discount to 15”, “set memo
+to …”, “set invoice number to …”, “set currency to USD”, “use the previous
+customer”, “go back”, and “show me the invoice again” for the last confirmed save.
+“Cancel this invoice” cancels the pending voice action; it does not delete or
+silently clear the form. Use the normal form controls to discard the document.
 
-## Earlier work reused
+Navigation comes from the shared sidebar catalog, with specific invoice/bill
+lists, customer/supplier lists, expenses, payments and reconciliation destinations.
+Examples: “open dashboard”, “open invoices”, “open bills”, “open banking”, “open
+contacts”, “open reports”, “open chart of accounts”, “open settings”. Every current
+sidebar destination has an automated navigation check. The application’s separate
+platform-admin/auth surfaces do not host a company voice session.
 
-Repository-wide branch, commit, PR and source searches found earlier work in
-`feature/documents-folder-upload-fix` (the branch of draft PR #5, whose title is
-about Files). Relevant commits include `ed44d57` (navigation), `6cc0612`
-(deterministic allowlist), `5b797f8` (browser recognition replacing paid Realtime),
-and `481e560` (stale company and duplicate-final guards). These files are absent
-from `main`.
+## Values, permissions and confirmation
 
-This implementation adapts the same `ai-voice` component/module locations,
-normalisation, navigation prefixes, aliases and cancellation pattern. It points
-invoice/bill commands at the specific list routes, adds blank-form destinations,
-and uses each module's permissions. It does not import the branch's Realtime
-credential code, server reviews, multi-turn draft previews or mutation proposals.
-The existing organisation feature catalog now reports browser voice commands as
-available and needs no provider configuration.
+- Dates accept full English month names with a year, ISO dates, today, tomorrow and
+  next weekday. Relative dates use the form’s company-local reference day.
+  Ambiguous numeric dates and invalid calendar dates prompt for clarification.
+- Amounts use exact decimal strings and the existing currency minor-unit helpers.
+  Explicit currency must match the form. “$”/“dollars”, excessive decimal precision,
+  negative/zero amounts and out-of-range values prompt for clearer input/manual review.
+  Currency changes with existing amounts require manual review in the form.
+- Accounts and tax codes come from the active editor’s eligible records. Newly
+  dictated lines need an account; the user reviews the form’s tax treatment before
+  saving. Tax-code selection uses that code’s real rate. No accounts/rates are invented.
+- Current company permissions are checked before dispatch. Each editor registers
+  its permission and state. Existing authenticated server functions and database RLS
+  remain authoritative for all reads and writes.
+- Draft saves use the existing domain handlers after a revision-bound on-screen
+  confirmation and local validation. Editing the form, changing its identity or
+  navigating away cancels the confirmation. Server validation still runs at save time.
+- Voice-triggered posting, authorisation, sending, payments, refunds, record deletion
+  and bulk execution are not exposed. Use the existing manual review, confirmation,
+  approval and server-authorised controls for those operations.
+- Submission locks, consumed revisions and recognition-turn generations prevent
+  duplicate callbacks, overlapping commands and double confirmation. A failed or
+  ambiguous save response is never retried automatically; that mounted form’s voice
+  save is blocked until the user checks the document list and resolves it manually.
+- A server-authenticated audit marker records confirmed voice draft saves with user,
+  module, record, action identifier and result. It verifies permission, company and
+  draft status; it stores no raw transcript/audio. Audit-marker failure is reported
+  as a warning about an already saved draft and never triggers another save.
 
-## Verification
+## Recognition and privacy
 
-- `npm run typecheck`, `npm test`, `npm run build`, and `npm run lint` are the
-  repository checks. CI's existing verification job runs typecheck, tests and build.
-- `npm run test:voice` runs a separate Playwright suite using the production
-  `VoiceAssistant` and `VoiceControl`, real React Query and TanStack navigation,
-  deterministic browser speech events, and fixture company/feature responses.
-  It needs no account, API keys, external speech service or financial data. CI
-  installs Chromium and runs this suite. For a local system Chromium, set
-  `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to its executable path.
-- Unit coverage includes matching, compound/mutating command rejection, module
-  permissions, microphone cleanup, queued and duplicate final results, browser
-  errors, no speech, timeout and synchronous permission rejection. Browser coverage
-  includes the requested routes, explicit start, Stop/Escape, unsupported browsers,
-  retry, permission/feature/company changes and ordinary keyboard/mouse navigation.
-- The browser fixture verifies route selection, not authenticated destination data
-  loading or actual recognition accuracy. Before release, manually check microphone
-  permission, spoken English commands and recognition connectivity on supported
-  desktop/mobile browsers with an authorised account. Do not save financial records
-  during these navigation checks.
+Browser speech recognition **may require internet access** and send audio to the
+browser vendor. HTTPS/localhost and a supporting browser exposing
+`SpeechRecognition` or `webkitSpeechRecognition` are required. English (`en-GB`)
+is configured; browser, OS, accent and noise affect accuracy. Universal browser
+support and offline recognition are not promised.
+
+A recognition turn ends after a final result or 15 seconds. The activated session
+reconnects without another user click. Transient failures use bounded backoff;
+permission denial, unavailable microphones/language or repeated failures stop with
+an explanation. Hiding the tab or going offline pauses recognition without losing
+activation; returning/going online resumes it. Signing out, changing company/user,
+changing permissions, disabling the feature or unmounting the workspace terminates
+it. There is one recogniser at a time, and queued callbacks from old turns/scopes
+are discarded.
+
+Session context exists only in memory. The latest recognised phrase is displayed,
+not logged or persisted. Scope changes clear pending commands, remembered contacts
+and saved-record references. Form identity is checked before contextual edits; an
+old form’s line/customer context cannot be applied to a different form implicitly.
+No spoken response/TTS is enabled, so the assistant cannot hear its own responses.
+
+## Integration boundaries and release checks
+
+Navigation is integrated across the sidebar catalog. Structured form editing and
+confirmed draft saving are integrated in the four editors listed above; contact
+record editing, expenses, payments, journals, reconciliation actions, recurring
+workflows and arbitrary report/table filters continue through their normal UI.
+Future modules can register typed adapters through `useVoiceForm`; they are not
+claimed integrated until a handler and tests exist.
+
+The current form owns its unsaved field values, notes and files. The voice session
+and its last confirmed record survive navigation, but leaving an unsaved editor
+uses that editor’s normal discard/persistence behaviour. Signal does not restore
+an entire unsaved editor after it unmounts or a page refresh, and does not apply an
+old draft to a new form. Save a draft before leaving a workflow you need to resume.
+
+Existing draft-create APIs do not accept a general durable idempotency key. The
+assistant therefore fails closed after an uncertain response instead of claiming
+exactly-once delivery or retrying a possible creation. Durable retries across
+reloads/devices require a future transactional server idempotency facility.
+
+Automated browser checks use the real editors and navigation with simulated speech
+and fixture domain API responses. They verify state changes, payloads, confirmation,
+recovery and navigation, not live Supabase writes or real microphone accuracy.
+Before production rollout, use an authorised test account to verify actual speech,
+permission prompts, server rejection/locked periods, audit activity, and a controlled
+invoice/bill draft save on supported desktop/mobile browsers. No browser credentials
+or microphone recording were available to automate those live checks here.
+
+Run `npm run typecheck`, `npm test`, `npm run build`, and `npm run test:voice`.
+The last command has a dedicated Chromium CI job. A system Chromium can be selected
+with `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`. Repository-wide lint has a documented
+pre-existing backlog; lint the changed feature separately and compare source-wide
+results against main. No dependency or database migration is added by Signal.

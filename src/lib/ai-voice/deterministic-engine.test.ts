@@ -1,8 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { canNavigateByVoice, parseDeterministicCommand } from "./deterministic-engine";
 import { permissionsForRole } from "@/lib/permissions";
+import { navItems } from "@/lib/nav";
 
 describe("deterministic voice navigation", () => {
+  it("routes every current module through the shared navigation catalog", () => {
+    for (const item of navItems)
+      expect(parseDeterministicCommand(`open ${item.label}`)).toMatchObject({
+        kind: "matched",
+        command: { destination: item.to },
+      });
+  });
   it.each([
     ["open dashboard", "/", "company.view"],
     ["open invoices", "/sales/invoices", "sales.view"],

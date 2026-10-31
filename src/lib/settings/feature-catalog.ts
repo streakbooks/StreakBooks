@@ -133,7 +133,7 @@ export const FEATURE_CATALOG: FeatureDefinition[] = [
   {
     key: "voice_commands",
     label: "Voice commands",
-    description: "Browser speech navigation and form opening. No AI provider or API key required.",
+    description: "Persistent browser voice navigation and guided drafts. No AI provider or API key required.",
     implementation: "available",
     consumerModules: ["automation"],
     preservesHistory: true,

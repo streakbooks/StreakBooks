@@ -46,6 +46,10 @@ import { listCustomers, upsertCustomer } from "@/lib/sales/sales.functions";
 import { toMinorUnits, fromMinorUnits } from "@/lib/accounting/money";
 import { convertMinorToBase } from "@/lib/accounting/fx";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { useVoiceForm } from "@/components/ai-voice/voice-context";
+import { validateVoiceDraft } from "@/lib/ai-voice/form-adapter";
+import { recordVoiceDraftOutcome } from "@/lib/ai-voice/voice-audit.functions";
+import { todayInTimezone } from "@/lib/sales/dates";
 import type { RecurringTemplateDocument } from "@/lib/purchases/recurring-template";
 import {
   legacyFrequencyForColumn,
@@ -248,6 +252,7 @@ export function NewBill({
   const doUpsertDimCategory = useServerFn(upsertTrackingCategory);
   const doUpsertCustomer = useServerFn(upsertCustomer);
   const saveDraft = useServerFn(saveBillDraft);
+  const recordVoiceSave = useServerFn(recordVoiceDraftOutcome);
   const authorise = useServerFn(authoriseBill);
   const checkDup = useServerFn(checkDuplicateSupplierBill);
   const doUpsertSupplier = useServerFn(upsertSupplier);
@@ -264,7 +269,7 @@ export function NewBill({
 
   const companyId = company?.id;
   const baseCurrency = company?.base_currency ?? "GBP";
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayInTimezone(company?.timezone);
 
   const suppliersQ = useQuery({
     queryKey: ["suppliers", companyId],
@@ -1220,6 +1225,82 @@ export function NewBill({
     [suppliers],
   );
 
+  const voiceDraft = {
+    contactId,
+    date: billDate,
+    dueDate,
+    currency: currencyCode,
+    memo,
+    number: supplierInvoiceNumber,
+    lines,
+  };
+  useVoiceForm(
+    companyId && !isTemplate
+      ? {
+          companyId,
+          module: "bill",
+          permission: "purchases.draft",
+          draft: voiceDraft,
+          revision: JSON.stringify([billId, snapshot(), fxRate]),
+          ready:
+            defaultsApplied &&
+            !suppliersQ.isPending &&
+            !accountsQ.isPending &&
+            !orgQ.isPending &&
+            !settingsQ.isPending,
+          busy: mutation.isPending,
+          today,
+          contacts: suppliers,
+          accounts: expenseAccounts.map((a) => ({ id: a.id, name: `${a.code} ${a.name}` })),
+          taxes: taxCodes.map((t) => ({ id: t.id, name: `${t.code} ${t.name}`, rateBps: t.rateBps })),
+          currencies: enabledCurrencies,
+          selectContact: onSupplierChange,
+          update: (patch) => {
+            if (patch.date !== undefined) {
+              setBillDate(patch.date);
+              applyDueFromTerms(patch.date, paymentTermId);
+            }
+            if (patch.dueDate !== undefined) {
+              setDueDate(patch.dueDate);
+              setDueDateManualOverride(true);
+            }
+            if (patch.currency !== undefined) setCurrencyCode(patch.currency);
+            if (patch.memo !== undefined) setMemo(patch.memo);
+            if (patch.number !== undefined) setSupplierInvoiceNumber(patch.number);
+          },
+          updateLines: (next) => setLines(next.map((line) => ({ ...emptyPurchaseLine(), ...line }))),
+          validate: () => {
+            const errors = validateVoiceDraft(voiceDraft, true);
+            if (dupQ.isFetching) errors.push("Wait for the duplicate supplier bill check.");
+            if (dupQ.data?.duplicate && !acknowledgeDuplicate)
+              errors.push("Review the possible duplicate bill and acknowledge it in the form.");
+            if (currencyCode !== baseCurrency && !(Number(fxRate) > 0))
+              errors.push("Review the exchange rate in the form.");
+            return errors;
+          },
+          saveDraft: async () => {
+            const result = await mutation.mutateAsync("draft");
+            try {
+              await recordVoiceSave({
+                data: {
+                  companyId,
+                  module: "bill",
+                  recordId: result.id,
+                  actionId: crypto.randomUUID(),
+                },
+              });
+            } catch {
+              return {
+                id: result.id,
+                warning:
+                  "Draft saved, but its voice audit marker could not be recorded. Review the document activity.",
+              };
+            }
+            return { id: result.id };
+          },
+        }
+      : null,
+  );
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (suppliersQ.isPending || accountsQ.isPending) return <LoadingState />;
 

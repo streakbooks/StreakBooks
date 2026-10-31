@@ -24,6 +24,9 @@ import { getWorkflowSettings } from "@/lib/settings/workflow-settings.functions"
 import { addDaysIso } from "@/lib/sales/line-helpers";
 import { toMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { useVoiceForm } from "@/components/ai-voice/voice-context";
+import { validateVoiceDraft } from "@/lib/ai-voice/form-adapter";
+import { recordVoiceDraftOutcome } from "@/lib/ai-voice/voice-audit.functions";
 import { PageHeader, LoadingState, EmptyState } from "@/components/common/states";
 import { EntityCombobox } from "@/components/common/EntityCombobox";
 import { ContactCreateForm } from "@/components/lookup/create-forms";
@@ -126,6 +129,9 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
   const saveQuote = useServerFn(saveQuoteDraft);
   const saveCredit = useServerFn(saveCreditNoteDraft);
   const authoriseCredit = useServerFn(authoriseCreditNote);
+  const recordVoiceSave = useServerFn(recordVoiceDraftOutcome);
+  const savingRef = useRef(false);
+  const voiceSaveWarning = useRef<string | undefined>(undefined);
 
   const enabled = Boolean(companyId);
   const customersQ = useQuery({
@@ -291,68 +297,75 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
 
   const mutation = useMutation({
     mutationFn: async (alsoAuthorise: boolean) => {
-      setFormError(null);
-      if (!companyId) throw new Error("No organisation");
-      if (!contactId) throw new Error("Choose a customer");
-      if (!docDate) throw new Error(`${copy.dateLabel} is required`);
-      const fx = isForeign ? Number(fxRate) : 1;
-      if (isForeign && !(fx > 0)) throw new Error(`Enter the exchange rate to ${base}`);
-      const payloadLines = lines.map((l) => lineFormToInput(l, currency));
-      const common = {
-        companyId,
-        contactId,
-        memo,
-        currencyCode: currency,
-        fxRateToBase: fx,
-        lines: payloadLines,
-      };
-
-      if (kind === "invoice") {
-        if (!secondDate) throw new Error("Due date is required");
-        const data = {
-          ...common,
-          ...(savedId ? { invoiceId: savedId } : {}),
-          invoiceDate: docDate,
-          dueDate: secondDate,
-          invoiceNumber: number,
+      if (savingRef.current) throw new Error("Save already in progress");
+      savingRef.current = true;
+      voiceSaveWarning.current = undefined;
+      try {
+        setFormError(null);
+        if (!companyId) throw new Error("No organisation");
+        if (!contactId) throw new Error("Choose a customer");
+        if (!docDate) throw new Error(`${copy.dateLabel} is required`);
+        const fx = isForeign ? Number(fxRate) : 1;
+        if (isForeign && !(fx > 0)) throw new Error(`Enter the exchange rate to ${base}`);
+        const payloadLines = lines.map((l) => lineFormToInput(l, currency));
+        const common = {
+          companyId,
+          contactId,
+          memo,
+          currencyCode: currency,
+          fxRateToBase: fx,
+          lines: payloadLines,
         };
-        if (alsoAuthorise) {
-          const r = await saveAndAuthorise({ data });
-          return { id: r.id, authoriseError: r.authoriseError, authorised: !r.authoriseError };
+
+        if (kind === "invoice") {
+          if (!secondDate) throw new Error("Due date is required");
+          const data = {
+            ...common,
+            ...(savedId ? { invoiceId: savedId } : {}),
+            invoiceDate: docDate,
+            dueDate: secondDate,
+            invoiceNumber: number,
+          };
+          if (alsoAuthorise) {
+            const r = await saveAndAuthorise({ data });
+            return { id: r.id, authoriseError: r.authoriseError, authorised: !r.authoriseError };
+          }
+          const r = await saveInvoice({ data });
+          return { id: r.id, authoriseError: null as string | null, authorised: false };
         }
-        const r = await saveInvoice({ data });
-        return { id: r.id, authoriseError: null as string | null, authorised: false };
-      }
-      if (kind === "quote") {
-        const r = await saveQuote({
+        if (kind === "quote") {
+          const r = await saveQuote({
+            data: {
+              ...common,
+              ...(savedId ? { quoteId: savedId } : {}),
+              quoteDate: docDate,
+              expiryDate: secondDate,
+              quoteNumber: number,
+            },
+          });
+          return { id: r.id, authoriseError: null as string | null, authorised: false };
+        }
+        const r = await saveCredit({
           data: {
             ...common,
-            ...(savedId ? { quoteId: savedId } : {}),
-            quoteDate: docDate,
-            expiryDate: secondDate,
-            quoteNumber: number,
+            ...(savedId ? { creditNoteId: savedId } : {}),
+            creditDate: docDate,
+            creditNumber: number,
+            ...(sourceInvoiceId ? { invoiceId: sourceInvoiceId } : {}),
           },
         });
-        return { id: r.id, authoriseError: null as string | null, authorised: false };
-      }
-      const r = await saveCredit({
-        data: {
-          ...common,
-          ...(savedId ? { creditNoteId: savedId } : {}),
-          creditDate: docDate,
-          creditNumber: number,
-          ...(sourceInvoiceId ? { invoiceId: sourceInvoiceId } : {}),
-        },
-      });
-      if (alsoAuthorise) {
-        try {
-          await authoriseCredit({ data: { companyId, creditNoteId: r.id } });
-          return { id: r.id, authoriseError: null as string | null, authorised: true };
-        } catch (e) {
-          return { id: r.id, authoriseError: friendlyAuthError(e), authorised: false };
+        if (alsoAuthorise) {
+          try {
+            await authoriseCredit({ data: { companyId, creditNoteId: r.id } });
+            return { id: r.id, authoriseError: null as string | null, authorised: true };
+          } catch (e) {
+            return { id: r.id, authoriseError: friendlyAuthError(e), authorised: false };
+          }
         }
+        return { id: r.id, authoriseError: null as string | null, authorised: false };
+      } finally {
+        savingRef.current = false;
       }
-      return { id: r.id, authoriseError: null as string | null, authorised: false };
     },
     onSuccess: async (res) => {
       // Keep the id: a retry after an authorise failure updates THIS draft, never creates another.
@@ -361,6 +374,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
         await recordRef.current?.flush(res.id);
       } catch (e) {
         const msg = friendlyAuthError(e);
+        voiceSaveWarning.current = `Draft saved, but notes or files could not be stored: ${msg}`;
         setFormError(`Saved, but notes or files could not be stored: ${msg}`);
         toast.error("Saved, but notes or files could not be stored");
         return;
@@ -393,6 +407,79 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
       toast.error(msg);
     },
   });
+
+  const voiceDraft = {
+    contactId,
+    date: docDate,
+    dueDate: secondDate,
+    currency,
+    memo,
+    number,
+    lines,
+  };
+  useVoiceForm(
+    companyId
+      ? {
+          companyId,
+          module: kind,
+          permission: "sales.draft",
+          draft: voiceDraft,
+          revision: JSON.stringify([savedId, voiceDraft, sourceInvoiceId, fxRate]),
+          ready:
+            defaultsApplied &&
+            !customersQ.isPending &&
+            !accountsQ.isPending &&
+            !configQ.isPending &&
+            !settingsQ.isPending,
+          busy: mutation.isPending,
+          today,
+          contacts: customers,
+          accounts: incomeAccounts.map((a) => ({ id: a.id, name: `${a.code} ${a.name}` })),
+          taxes: (config?.taxCodes ?? []).map((t) => ({
+            id: t.id,
+            name: `${t.code} ${t.name}`,
+            rateBps: t.rate_bps,
+          })),
+          currencies: currencyOptions(base, currency ? [currency] : []),
+          selectContact: onCustomerChange,
+          update: (patch) => {
+            if (patch.date !== undefined) setDocDate(patch.date);
+            if (patch.dueDate !== undefined) setSecondDate(patch.dueDate);
+            if (patch.currency !== undefined) setCurrency(patch.currency);
+            if (patch.memo !== undefined) setMemo(patch.memo);
+            if (patch.number !== undefined) setNumber(patch.number);
+          },
+          updateLines: (next) => setLines(next.map((line) => ({ ...emptySalesLine(), ...line }))),
+          validate: () => [
+            ...validateVoiceDraft(voiceDraft, kind === "invoice"),
+            ...(isForeign && !(Number(fxRate) > 0) ? ["Enter the exchange rate in the form."] : []),
+          ],
+          saveDraft: async () => {
+            const result = await mutation.mutateAsync(false);
+            try {
+              await recordVoiceSave({
+                data: {
+                  companyId,
+                  module: kind,
+                  recordId: result.id,
+                  actionId: crypto.randomUUID(),
+                },
+              });
+            } catch {
+              return {
+                id: result.id,
+                warning:
+                  "Draft saved, but its voice audit marker could not be recorded. Review the document activity.",
+              };
+            }
+            return {
+              id: result.id,
+              ...(voiceSaveWarning.current ? { warning: voiceSaveWarning.current } : {}),
+            };
+          },
+        }
+      : null,
+  );
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (

@@ -334,3 +334,161 @@
 [data-density="compact"] th {
   height: 2rem;
 }
+
+/* Original Signal identity: three offset light fins, designed in CSS; no image assets. */
+.voice-signal {
+  position: relative;
+  flex-shrink: 0;
+}
+.voice-signal-pill {
+  display: flex;
+  align-items: center;
+  border: 1px solid color-mix(in oklab, var(--primary) 22%, var(--border));
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow: 0 2px 12px color-mix(in oklab, var(--primary) 6%, transparent);
+}
+.voice-signal-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 9px 4px 4px;
+  border-radius: 14px;
+  text-align: left;
+  min-height: 38px;
+  cursor: pointer;
+}
+.voice-signal-trigger:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+.voice-signal-core {
+  width: 32px;
+  height: 30px;
+  position: relative;
+  display: block;
+  isolation: isolate;
+}
+.voice-signal-core::before {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 40% 60% 65% 35%;
+  background: radial-gradient(ellipse, #38bdf860, #818cf830 50%, transparent 75%);
+  filter: blur(5px);
+}
+.voice-signal-core i {
+  position: absolute;
+  width: 8px;
+  height: 22px;
+  top: 4px;
+  left: 6px;
+  transform: skew(-18deg);
+  border-radius: 2px 7px 2px 7px;
+  background: linear-gradient(165deg, #a5b4fc, #6366f1 70%, #312e81);
+  box-shadow: 0 0 7px #818cf84a;
+}
+.voice-signal-core i:nth-child(2) {
+  left: 13px;
+  height: 26px;
+  top: 1px;
+  background: linear-gradient(160deg, #cffafe, #22d3ee 60%, #0e7490);
+}
+.voice-signal-core i:nth-child(3) {
+  left: 21px;
+  height: 17px;
+  top: 7px;
+  background: linear-gradient(160deg, #fde68a, #f59e0b 75%, #92400e);
+}
+.voice-signal-name {
+  display: flex;
+  flex-direction: column;
+  font-size: 10px;
+  line-height: 1.2;
+  color: var(--muted-foreground);
+}
+.voice-signal-name strong {
+  color: var(--foreground);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+.voice-signal-panel {
+  position: absolute;
+  z-index: 45;
+  top: calc(100% + 12px);
+  right: 0;
+  width: min(350px, calc(100vw - 24px));
+  max-height: min(78dvh, 660px);
+  overflow-y: auto;
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid color-mix(in oklab, var(--primary) 20%, var(--border));
+  border-radius: 18px;
+  background: var(--card);
+  color: var(--foreground);
+  box-shadow:
+    0 16px 48px #0f172a22,
+    0 0 24px #6366f10b;
+}
+.voice-signal[data-phase="listening"] i,
+.voice-signal[data-phase="speech_detected"] i {
+  animation: signal-fins 1.8s ease-in-out infinite alternate;
+}
+.voice-signal[data-phase="speech_detected"] i {
+  animation-duration: 0.45s;
+}
+.voice-signal[data-phase="listening"] i:nth-child(2) {
+  animation-delay: 0.25s;
+}
+.voice-signal[data-phase="listening"] i:nth-child(3) {
+  animation-delay: 0.5s;
+}
+.voice-signal[data-phase="executing"] .voice-signal-core,
+.voice-signal[data-phase="recovering"] .voice-signal-core {
+  animation: signal-breathe 1.5s ease-in-out infinite alternate;
+}
+.voice-signal[data-phase="awaiting_confirmation"] .voice-signal-pill {
+  border-color: #d97706;
+}
+@keyframes signal-fins {
+  from {
+    transform: skew(-18deg) scaleY(0.65);
+    opacity: 0.65;
+  }
+  to {
+    transform: skew(-18deg) scaleY(1);
+    opacity: 1;
+  }
+}
+@keyframes signal-breathe {
+  from {
+    opacity: 0.45;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (max-width: 639px) {
+  .voice-signal-name {
+    display: none;
+  }
+  .voice-signal-trigger {
+    padding-right: 5px;
+    gap: 2px;
+  }
+  .voice-signal-panel {
+    position: fixed;
+    top: 66px;
+    right: 12px;
+    max-height: calc(100dvh - 82px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .voice-signal *,
+  .voice-signal *::before {
+    animation: none !important;
+    transition: none !important;
+  }
+}

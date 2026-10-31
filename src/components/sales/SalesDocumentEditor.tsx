@@ -1,5 +1,7 @@
 "use client";
 
+import { VoiceFields, VoiceSelect } from "@/components/ai-voice/voice-fields";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -47,7 +49,7 @@ import {
   type DocumentRecordHandle,
 } from "@/components/documents/DocumentRecordPanel";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { VoiceInput as Input } from "@/components/ai-voice/voice-fields";
 import { Label } from "@/components/ui/label";
 
 export type SalesDocKind = "invoice" | "quote" | "credit_note";
@@ -295,6 +297,16 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
     }
   };
 
+  const onDocumentDateChange = (date: string) => {
+    setDocDate(date);
+    if (kind === "invoice") {
+      const customer = customers.find((c) => c.id === contactId);
+      const terms =
+        customer?.payment_terms_days ?? settingsQ.data?.sales_default_payment_terms_days ?? 30;
+      setSecondDate(addDaysIso(date, terms));
+    }
+  };
+
   const mutation = useMutation({
     mutationFn: async (alsoAuthorise: boolean) => {
       if (savingRef.current) throw new Error("Save already in progress");
@@ -417,7 +429,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
     number,
     lines,
   };
-  useVoiceForm(
+  const voiceToken = useVoiceForm(
     companyId
       ? {
           companyId,
@@ -433,6 +445,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
             !settingsQ.isPending,
           busy: mutation.isPending,
           today,
+          dateFormat: company?.date_format ?? "DD/MM/YYYY",
           contacts: customers,
           accounts: incomeAccounts.map((a) => ({ id: a.id, name: `${a.code} ${a.name}` })),
           taxes: (config?.taxCodes ?? []).map((t) => ({
@@ -452,7 +465,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
             onCustomerChange(id);
           },
           update: (patch) => {
-            if (patch.date !== undefined) setDocDate(patch.date);
+            if (patch.date !== undefined) onDocumentDateChange(patch.date);
             if (patch.dueDate !== undefined) setSecondDate(patch.dueDate);
             if (patch.currency !== undefined) {
               if (sourceLocked && patch.currency !== currency)
@@ -514,7 +527,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
   const title = savedId || existing ? copy.editTitle : copy.newTitle;
 
   return (
-    <>
+    <VoiceFields token={voiceToken}>
       <PageHeader
         title={title}
         description={
@@ -539,6 +552,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
         <div className="space-y-2">
           <Label>Customer</Label>
           <EntityCombobox
+            voiceField={{ key: "contactId", label: "Customer", order: 10 }}
             aria-label="Customer"
             options={customerOptions}
             value={contactId}
@@ -586,16 +600,14 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
             <Label>{copy.dateLabel}</Label>
             <Input
               type="date"
-              value={docDate}
-              onChange={(e) => {
-                setDocDate(e.target.value);
-                if (kind === "invoice") {
-                  const c = customers.find((x) => x.id === contactId);
-                  const terms =
-                    c?.payment_terms_days ?? settingsQ.data?.sales_default_payment_terms_days ?? 30;
-                  setSecondDate(addDaysIso(e.target.value, terms));
-                }
+              voiceField={{
+                key: "date",
+                label: "Document date",
+                aliases: ["date", "invoice date", "quote date", "credit note date"],
+                order: 20,
               }}
+              value={docDate}
+              onChange={(e) => onDocumentDateChange(e.target.value)}
             />
           </div>
           {copy.secondLabel ? (
@@ -603,6 +615,12 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
               <Label>{copy.secondLabel}</Label>
               <Input
                 type="date"
+                voiceField={{
+                  key: "dueDate",
+                  label: "Due date",
+                  aliases: ["expiry date"],
+                  order: 30,
+                }}
                 value={secondDate}
                 onChange={(e) => setSecondDate(e.target.value)}
               />
@@ -611,6 +629,12 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
           <div className="space-y-2">
             <Label>{copy.numberLabel}</Label>
             <Input
+              voiceField={{
+                key: "number",
+                label: "Number",
+                aliases: ["reference", "invoice number", "supplier reference", "reference number"],
+                order: 40,
+              }}
               value={number}
               onChange={(e) => setNumber(e.target.value)}
               placeholder="Leave blank to auto-number"
@@ -620,7 +644,8 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-2">
             <Label>Currency</Label>
-            <select
+            <VoiceSelect
+              voiceField={{ key: "currency", label: "Currency", order: 50 }}
               className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
               value={currency}
               disabled={sourceLocked}
@@ -632,7 +657,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
                   {c === base ? " (base)" : ""}
                 </option>
               ))}
-            </select>
+            </VoiceSelect>
           </div>
           {isForeign ? (
             <div className="space-y-2">
@@ -650,7 +675,16 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
         </div>
         <div className="space-y-2">
           <Label>Memo / customer message</Label>
-          <Input value={memo} onChange={(e) => setMemo(e.target.value)} />
+          <Input
+            voiceField={{
+              key: "memo",
+              label: "Memo",
+              aliases: ["internal reference", "customer message"],
+              order: 60,
+            }}
+            value={memo}
+            onChange={(e) => setMemo(e.target.value)}
+          />
         </div>
         <SalesDocumentLines
           lines={lines}
@@ -688,7 +722,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
           ) : null}
         </div>
       </div>
-    </>
+    </VoiceFields>
   );
 }
 

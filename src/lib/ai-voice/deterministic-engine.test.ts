@@ -93,3 +93,22 @@ describe("deterministic voice navigation", () => {
     ).toBe(false);
   });
 });
+
+it("uses module context for shared tab names and respects existing permission checks", () => {
+  expect(parseDeterministicCommand("open credit notes", "/purchases/bills/new")).toMatchObject({
+    kind: "matched",
+    command: { destination: "/purchases/credit-notes", requiredPermission: "purchases.view" },
+  });
+  expect(parseDeterministicCommand("open credit notes", "/sales")).toMatchObject({
+    kind: "matched",
+    command: { destination: "/sales/credit-notes", requiredPermission: "sales.view" },
+  });
+  expect(parseDeterministicCommand("open purchase orders")).toMatchObject({
+    kind: "matched",
+    command: { destination: "/purchases/orders" },
+  });
+  expect(parseDeterministicCommand("open purchases statements", "/")).toMatchObject({
+    kind: "matched",
+    command: { destination: "/purchases/statements" },
+  });
+});

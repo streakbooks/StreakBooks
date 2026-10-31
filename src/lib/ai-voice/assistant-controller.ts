@@ -1,3 +1,4 @@
+import { fieldMatches, type RegisteredVoiceField } from "./fields";
 import type { Permission } from "@/lib/permissions";
 import {
   startSpeechCommand,
@@ -43,6 +44,7 @@ export type AssistantSnapshot = {
   choices: VoiceOption[];
   confirmation: Confirmation | null;
   form: string | null;
+  field: { id: string; label: string } | null;
 };
 type Dependencies = {
   recognition(): RecognitionConstructor | undefined;
@@ -61,9 +63,11 @@ export class AssistantController {
     choices: [],
     confirmation: null,
     form: null,
+    field: null,
   };
   private listeners = new Set<() => void>();
   private forms = new Map<string, VoiceFormAdapter>();
+  private fields = new Map<string, RegisteredVoiceField>();
   private permissions: readonly Permission[] = [];
   private scope = "";
   private companyId = "";
@@ -77,7 +81,6 @@ export class AssistantController {
   private foreground = true;
   private online = true;
   private inFlight = false;
-  private lastSpeech = { text: "", at: 0 };
   private lastLine: { token: string; index: number } | null = null;
   private location = "";
   private pendingContact: {
@@ -111,6 +114,150 @@ export class AssistantController {
   }
   private get form(): VoiceFormAdapter | undefined {
     return [...this.forms.values()].filter((form) => form.companyId === this.companyId).at(-1);
+  }
+
+  registerField(field: RegisteredVoiceField) {
+    this.fields.set(field.id, field);
+  }
+  unregisterField(id: string) {
+    this.fields.delete(id);
+    if (this.snapshot.field?.id === id) this.clearField();
+  }
+  clearField() {
+    this.fields.get(this.snapshot.field?.id ?? "")?.close?.();
+    if (this.snapshot.field) this.set({ field: null });
+  }
+  fieldFocused(id: string) {
+    const field = this.fields.get(id);
+    if (field?.token !== this.form?.token || !field) return;
+    if (this.snapshot.field?.id !== id) {
+      this.fields.get(this.snapshot.field?.id ?? "")?.close?.();
+      this.clearPending();
+      this.set({
+        field: {
+          id,
+          label: field.line === undefined ? field.label : `Line ${field.line + 1} ${field.label}`,
+        },
+      });
+    }
+  }
+  private focusField(query: string) {
+    const form = this.getEditable();
+    const fields = [...this.fields.values()]
+      .filter((f) => f.token === form.token)
+      .sort((a, b) => a.order - b.order);
+    const index = fields.findIndex((f) => f.id === this.snapshot.field?.id);
+    const matches =
+      query === "next" || query === "previous"
+        ? [
+            fields[
+              index < 0
+                ? query === "next"
+                  ? 0
+                  : fields.length - 1
+                : index + (query === "next" ? 1 : -1)
+            ],
+          ].filter((f): f is RegisteredVoiceField => !!f)
+        : fields.filter((f) => fieldMatches(query, f));
+    if (!matches.length)
+      throw new Error(
+        "That editable field is not available here. Choose a visible field or use Next field / Previous field.",
+      );
+    const focus = (id: string) => {
+      const field = this.fields.get(id);
+      if (!field || field.token !== this.form?.token)
+        throw new Error("That field is no longer available.");
+      this.fieldFocused(id);
+      field.focus();
+      this.set({
+        message: `${this.snapshot.field?.label} selected. Say its value, or say “dictate” followed by literal text. Values replace the field; nothing is saved.`,
+      });
+    };
+    if (matches.length === 1) focus(matches[0]!.id);
+    else {
+      this.clarification = {
+        token: form.token,
+        revision: form.revision,
+        apply: async (id) => focus(id),
+      };
+      this.set({
+        choices: matches.map((f) => ({ id: f.id, name: `Line ${(f.line ?? 0) + 1} ${f.label}` })),
+        message: "Which line’s field? Say its number or choose a result.",
+        phase: "awaiting_clarification",
+      });
+    }
+  }
+  private async dictateField(value: string, clear = false) {
+    const form = this.getEditable();
+    const field = this.fields.get(this.snapshot.field?.id ?? "");
+    if (!field || field.token !== form.token)
+      throw new Error("Select a field first. Say “go to description” or “next field”.");
+    const { key, line } = field;
+    if (key === "contactId" || key === "accountId" || key === "taxCodeId") {
+      if (clear) throw new Error("Use the field’s normal clear control for record selections.");
+      const options =
+        key === "contactId" ? form.contacts : key === "accountId" ? form.accounts : form.taxes;
+      this.choose(form, value, options, (id) => {
+        if (key === "contactId") form.selectContact(id);
+        else {
+          if (line === undefined || !form.draft.lines[line])
+            throw new Error("Select a line first.");
+          form.updateLines(
+            form.draft.lines.map((l, i) =>
+              i === line
+                ? {
+                    ...l,
+                    [key]: id,
+                    ...(key === "taxCodeId"
+                      ? { taxRateBps: String(form.taxes.find((t) => t.id === id)?.rateBps ?? 0) }
+                      : {}),
+                  }
+                : l,
+            ),
+          );
+        }
+        field.close?.();
+      });
+      return;
+    }
+    let parsed = clear ? "" : value;
+    if (!clear && (key === "date" || key === "dueDate")) {
+      const date = spokenDate(value, form.today, form.dateFormat);
+      if (!date)
+        throw new Error(
+          `Give a valid full date. Numeric dates use ${form.dateFormat ?? "the company date format"}.`,
+        );
+      if (key === "dueDate" && date < form.draft.date)
+        throw new Error("Due date cannot be before the document date.");
+      parsed = date;
+    }
+    if (!clear && (key === "unitPrice" || key === "discount")) {
+      const amount =
+        value === "0" && key === "discount"
+          ? { value: "0" }
+          : spokenMoney(value, form.draft.currency);
+      if ("error" in amount) throw new Error(amount.error);
+      parsed = amount.value;
+    }
+    if (
+      !clear &&
+      key === "quantity" &&
+      (!/^\d+(?:\.\d{1,6})?$/.test(value) || !(Number(value) > 0))
+    )
+      throw new Error("Give a positive numeric quantity.");
+    if (key === "currency") {
+      if (clear) throw new Error("Choose an enabled currency.");
+      await this.executeForm({ id: "field.set", field: "currency", value });
+      return;
+    }
+    if (line !== undefined) {
+      if (!form.draft.lines[line]) throw new Error("That line changed. Select the field again.");
+      form.updateLines(form.draft.lines.map((l, i) => (i === line ? { ...l, [key]: parsed } : l)));
+      this.lastLine = { token: form.token, index: line };
+    } else form.update({ [key]: parsed });
+    this.set({
+      message: `${field.label} ${clear ? "cleared" : "updated"}. Continue dictating to this field or choose the next field. Nothing saved.`,
+    });
   }
 
   setScope(scope: string, companyId: string, permissions: readonly Permission[], enabled: boolean) {
@@ -183,12 +330,14 @@ export class AssistantController {
   unregister(token: string) {
     if (!this.forms.has(token)) return;
     this.forms.delete(token);
+    if (this.fields.get(this.snapshot.field?.id ?? "")?.token === token) this.clearField();
     if (this.snapshot.confirmation?.token === token || this.clarification?.token === token)
       this.clearPending("The form closed. That pending action was cancelled.");
     if (this.lastLine?.token === token) this.lastLine = null;
     this.set({ form: this.form?.module ?? null });
   }
   locationChanged(location?: string) {
+    this.clearField();
     this.clearPending();
     this.lastLine = null;
     if (location !== undefined) {
@@ -210,7 +359,35 @@ export class AssistantController {
       ...(message ? { message } : {}),
     });
   }
+  private startGate: (() => Promise<void>) | null = null;
+  private starting = false;
+  setStartGate(gate: (() => Promise<void>) | null) {
+    this.startGate = gate;
+  }
   start() {
+    if (this.startGate) {
+      if (this.starting || this.snapshot.active || !this.permitted) return;
+      this.starting = true;
+      const generation = this.generation;
+      void this.startGate()
+        .then(() => {
+          if (generation === this.generation) this.beginStart();
+        })
+        .catch(() => {
+          this.set({
+            phase: "error",
+            message: "Could not release wake detection. Stop all microphones and try again.",
+          });
+        })
+        .finally(() => {
+          this.starting = false;
+        });
+    } else this.beginStart();
+  }
+  recognitionSupported() {
+    return Boolean(this.deps.recognition());
+  }
+  private beginStart() {
     if (this.snapshot.active || !this.permitted) return;
     if (this.inFlight) {
       this.set({
@@ -219,7 +396,7 @@ export class AssistantController {
       });
       return;
     }
-    if (!this.deps.recognition()) {
+    if (!this.recognitionSupported()) {
       this.set({
         phase: "error",
         message:
@@ -228,11 +405,11 @@ export class AssistantController {
       return;
     }
     this.failureCount = 0;
-    this.lastSpeech = { text: "", at: 0 };
     this.set({ active: true, phase: "initializing", message: "Connecting the microphone…" });
     this.listen(0);
   }
   stop(message = "Signal is off. Microphone released.") {
+    this.clearField();
     this.generation++;
     this.turn++;
     clearTimeout(this.restart);
@@ -323,12 +500,8 @@ export class AssistantController {
           if (!current()) return;
           this.cancelMic = null;
           this.failureCount = 0;
-          const normalized = cleanSpeech(text).toLowerCase();
-          if (normalized === this.lastSpeech.text && Date.now() - this.lastSpeech.at < 2000) {
-            this.listen();
-            return;
-          }
-          this.lastSpeech = { text: normalized, at: Date.now() };
+          // The adapter and turn identity reject duplicate finals within a turn.
+          // Identical text in a new turn can be intentional (e.g. repeated Next field).
           void this.submit(text);
         },
         onMessage: () => {},
@@ -405,6 +578,30 @@ export class AssistantController {
         this.clearPending("Pending action cancelled. Your unsaved form is unchanged.");
         return;
       }
+      const focusQuery = /^(?:go to|focus|select field|enter) (.+?)(?: field)?$/i.exec(text)?.[1];
+      const direction = /^(next|previous) field$/i.exec(text)?.[1]?.toLowerCase();
+      if (
+        direction ||
+        (focusQuery &&
+          this.form &&
+          [...this.fields.values()].some(
+            (f) => f.token === this.form?.token && fieldMatches(focusQuery, f),
+          ))
+      ) {
+        this.clearPending();
+        this.focusField(direction ?? focusQuery!);
+        return;
+      }
+      if (/^clear (?:this|the current) field$/i.test(text)) {
+        this.clearPending();
+        await this.dictateField("", true);
+        return;
+      }
+      if (/^dictate /i.test(input.trim())) {
+        this.clearPending();
+        await this.dictateField(input.trim().slice(8));
+        return;
+      }
       if (this.clarification) {
         const pending = this.clarification,
           form = this.form;
@@ -425,7 +622,7 @@ export class AssistantController {
         if (
           !this.snapshot.choices.length &&
           !parseFormAction(text) &&
-          parseDeterministicCommand(text).kind === "unsupported"
+          parseDeterministicCommand(text, this.location).kind === "unsupported"
         ) {
           this.clearPending();
           await pending.apply(text);
@@ -440,6 +637,7 @@ export class AssistantController {
         navigationText
           .replace(/^(create|open) (?:a )?new /i, "$1 ")
           .replace(/^create (?:a|an) /i, "create "),
+        this.location,
       );
       if (navigation.kind === "matched") {
         this.clearPending();
@@ -485,6 +683,16 @@ export class AssistantController {
       }
       const action = parseFormAction(text);
       if (!action) {
+        if (
+          this.snapshot.field &&
+          !/^(?:pay|post|approve|authori[sz]e|send|refund|delete|void|submit|open|create|go to|set|change|save|next|previous|enter|focus)\b/i.test(
+            text,
+          )
+        ) {
+          this.clearPending();
+          await this.dictateField(input.trim());
+          return;
+        }
         this.set({
           message: /^(?:pay|post|approve|authori[sz]e|send|refund|delete|void|submit)/i.test(text)
             ? "Use this record’s normal review and confirmation controls for posting, sending, payments, refunds or deletion. Signal cannot execute those actions."
@@ -637,11 +845,11 @@ export class AssistantController {
       return;
     }
     if (action.id === "date.set") {
-      const date = spokenDate(action.value, form.today);
+      const date = spokenDate(action.value, form.today, form.dateFormat);
       if (!date) {
         this.askForValue(
           form,
-          "Which date? Use a full month name and year, YYYY-MM-DD, today, tomorrow or next Friday.",
+          "Which date? Use the company’s configured numeric date format, a full month name and year, YYYY-MM-DD, today or tomorrow.",
           (value) => this.executeForm({ ...action, value }),
         );
         return;

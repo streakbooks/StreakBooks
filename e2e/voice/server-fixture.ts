@@ -57,7 +57,17 @@ export async function call(name: string, args: unknown[]) {
   window.voiceServer.calls.push({ name, data });
   if (["listCustomers", "listSuppliers"].includes(name)) return contacts;
   if (name === "listAccounts") return accounts;
-  if (name === "listTaxCodes") return [tax];
+  if (name === "listTaxCodes")
+    return [
+      tax,
+      {
+        ...tax,
+        id: "00000000-0000-4000-8000-000000000022",
+        code: "SALES",
+        name: "Sales only",
+        applies_to: "sales",
+      },
+    ];
   if (name === "getSalesDocumentConfig")
     return {
       baseCurrency: "GBP",

@@ -1,3 +1,4 @@
+import { WakeSettings } from "@/components/ai-voice/WakeSettings";
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -974,9 +975,13 @@ function SettingsForCompany({ companyId }: { companyId: string }) {
           <UsersAccessPanel companyId={companyId} />
         </TabsContent>
 
-        <TabsContent value="automation" className="mt-4 space-y-4">
-          <SettingsAutomationPanel companyId={companyId} canEdit={canEdit} />
-        </TabsContent>
+              <TabsContent value="automation" className="mt-4 space-y-4">
+                <SettingsAutomationPanel
+                  companyId={companyId}
+                  canEdit={canEdit}
+                />
+                <WakeSettings />
+              </TabsContent>
 
         <TabsContent value="integrations" className="mt-4">
           <SettingsIntegrationsPanel />

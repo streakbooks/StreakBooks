@@ -1,3 +1,4 @@
+import { PURCHASES_SECTIONS, SALES_SECTIONS } from "@/lib/document-sections";
 import { createRoot } from "react-dom/client";
 import { QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -75,6 +76,8 @@ const root = createRootRoute({ component: Layout });
 const paths = [
   ...new Set([
     ...navItems.map((item) => item.to),
+    ...PURCHASES_SECTIONS.map((item) => item.to),
+    ...SALES_SECTIONS.map((item) => item.to),
     "/sales/invoices/$invoiceId",
     "/purchases/bills/$billId",
     "/sales/quotes/new",

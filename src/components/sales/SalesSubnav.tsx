@@ -1,18 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 
-const items = [
-  { to: "/sales", label: "Overview", exact: true },
-  { to: "/sales/invoices", label: "Invoices" },
-  { to: "/sales/quotes", label: "Quotes" },
-  { to: "/sales/receipts", label: "Receipts" },
-  { to: "/sales/credit-notes", label: "Credit notes" },
-  { to: "/sales/customers", label: "Customers" },
-  { to: "/sales/recurring", label: "Recurring" },
-  { to: "/sales/statements", label: "Statements" },
-  { to: "/sales/reminders", label: "Reminders" },
-  { to: "/sales/settings", label: "Settings" },
-] as const;
+import { SALES_SECTIONS as items } from "@/lib/document-sections";
 
 export function SalesSubnav() {
   return (

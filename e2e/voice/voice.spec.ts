@@ -1,3 +1,4 @@
+import { PURCHASES_SECTIONS } from "../../src/lib/document-sections";
 import { expect, test, type Page } from "@playwright/test";
 import type {
   BrowserRecognition,
@@ -243,7 +244,7 @@ test("clarification keeps the current amount/date action and rejects an uncertai
   await expect(page.getByTestId("assistant-message")).toContainText("Which currency");
   await say(page, "GBP 1500");
   await say(page, "use account Consulting income");
-  await say(page, "set due date to 03/04/2026");
+  await say(page, "set due date to 31/02/2026");
   await expect(page.getByTestId("assistant-message")).toContainText("Which date");
   await say(page, "November 15, 2026");
   await say(page, "save invoice");
@@ -410,3 +411,116 @@ test("mobile prefixed API, reduced motion and non-modal controls", async ({ page
   await say(page, "open contacts");
   await expect(page).toHaveURL(/contacts$/);
 });
+
+test("Purchases field-by-field workflow preserves focus, exact dictation and confirmed draft save", async ({
+  page,
+}) => {
+  await activate(page);
+  await say(page, "open purchases");
+  await say(page, "open bills");
+  await say(page, "create bill");
+  await say(page, "go to description");
+  const description = page.locator('[data-voice-field][data-voice-active="true"]');
+  await expect(description).toBeFocused();
+  await say(page, "Quarterly Consulting, Phase TWO.");
+  await expect(description).toHaveValue("Quarterly Consulting, Phase TWO.");
+  await say(page, "go to supplier");
+  await expect(page.getByRole("listbox")).toBeVisible();
+  await say(page, "ABC");
+  await expect(page.getByRole("list", { name: "Matching records" })).toBeVisible();
+  await say(page, "1");
+  await expect(page.getByRole("listbox")).toHaveCount(0);
+  await say(page, "go to date");
+  await say(page, "15/10/2026");
+  await expect(page.locator('input[type="date"]').first()).toHaveValue("2026-10-15");
+  await say(page, "go to supplier reference");
+  await say(page, "SUP-Phase-TWO-2026");
+  await say(page, "go to quantity");
+  await say(page, "2");
+  await say(page, "next field");
+  await expect(page.getByTestId("voice-field-status")).toContainText("Unit price");
+  await say(page, "125.50");
+  await say(page, "go to account");
+  await say(page, "Consulting expense");
+  await say(page, "set tax code to Sales only");
+  await expect(page.getByTestId("assistant-message")).toContainText("No matching record");
+  await say(page, "go to tax");
+  await say(page, "Zero rate");
+  await say(page, "save bill");
+  await expect(page.getByLabel("Draft save confirmation")).toContainText(
+    "Quarterly Consulting, Phase TWO.",
+  );
+  expect(
+    await page.evaluate(
+      () => window.voiceServer.calls.filter((c) => c.name === "saveBillDraft").length,
+    ),
+  ).toBe(0);
+  await page.getByRole("button", { name: "Confirm save", exact: true }).click();
+  await expect(page).toHaveURL(/purchases\/bills\/00000000-0000-4000-8000-000000000099$/);
+  expect(
+    await page.evaluate(
+      () => window.voiceServer.calls.find((c) => c.name === "saveBillDraft")?.data,
+    ),
+  ).toMatchObject({
+    billDate: "2026-10-15",
+    supplierInvoiceNumber: "SUP-Phase-TWO-2026",
+    lines: [
+      { description: "Quarterly Consulting, Phase TWO.", quantity: 2, unitPriceMinor: 12550 },
+    ],
+  });
+});
+for (const noun of ["invoice", "quote", "credit note"])
+  test(`field controls in ${noun} retain exact text and honor intentional focus`, async ({
+    page,
+  }) => {
+    await activate(page);
+    await say(page, `create ${noun}`);
+    await say(page, "enter description");
+    await say(page, "Original Work, CASE Preserved.");
+    await expect(page.locator('[data-voice-active="true"]')).toHaveValue(
+      "Original Work, CASE Preserved.",
+    );
+    await say(page, "go to memo");
+    await say(page, "dictate Open invoices");
+    await expect(page.locator('[data-voice-active="true"]')).toHaveValue("Open invoices");
+    await say(page, "clear this field");
+    await expect(page.locator('[data-voice-active="true"]')).toHaveValue("");
+    await say(page, "previous field");
+    await expect(page.getByTestId("voice-field-status")).toContainText("Currency");
+    await say(page, "next field");
+    await say(page, "next field");
+    await expect(page.getByTestId("voice-field-status")).toContainText("Description");
+    await say(page, "go to reference");
+    await say(page, "Ref-Case-2026");
+    await expect(page.locator('[data-voice-active="true"]')).toHaveValue("Ref-Case-2026");
+    await say(page, "go to customer");
+    await expect(page.getByRole("listbox")).toBeVisible();
+    await say(page, "ABC Limited");
+    await say(page, "go to date");
+    await say(page, "15th October 2026");
+    await expect(page.locator('input[type="date"]').first()).toHaveValue("2026-10-15");
+    // Normal mouse and keyboard focus change the registered target without overwriting another field.
+    const desc = page.getByPlaceholder("Description", { exact: true });
+    await desc.click();
+    await say(page, "Updated by deliberate focus");
+    await expect(desc).toHaveValue("Updated by deliberate focus");
+    await page.getByRole("button", { name: "Add line", exact: true }).click();
+    await expect(page.getByPlaceholder("Description", { exact: true })).toHaveCount(2);
+    await expect(page.getByTestId("voice-field-status")).toHaveCount(0);
+    await say(page, "go to description");
+    await expect(page.getByRole("list", { name: "Matching records" })).toBeVisible();
+    await say(page, "2");
+    await say(page, "Second line only");
+    await expect(page.getByPlaceholder("Description", { exact: true }).nth(1)).toHaveValue(
+      "Second line only",
+    );
+    await expect(desc.first()).toHaveValue("Updated by deliberate focus");
+  });
+
+for (const item of PURCHASES_SECTIONS)
+  test(`Purchases tab label: ${item.label}`, async ({ page }) => {
+    await activate(page);
+    await say(page, "open purchases");
+    await say(page, `open ${item.label}`);
+    await expect(page).toHaveURL(`http://127.0.0.1:8081${item.to}`);
+  });

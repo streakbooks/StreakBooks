@@ -18,4 +18,5 @@ export function useVoiceForm(adapter: Omit<VoiceFormAdapter, "token"> | null) {
     else session?.unregister(token);
   });
   useLayoutEffect(() => () => session?.unregister(token), [session, token]);
+  return token;
 }

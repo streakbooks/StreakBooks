@@ -1,3 +1,6 @@
+import { WakeSettings } from "./WakeSettings";
+import { useWakeSnapshot } from "./wake-context";
+import type { WakeController } from "@/lib/ai-voice/wake-controller";
 import { useEffect, useId, useState } from "react";
 import { ChevronDown, Mic, Square, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,25 +23,45 @@ const LABELS: Record<AssistantPhase, string> = {
 };
 export function VoiceControl({
   session,
+  wake,
   expanded,
   onExpandedChange,
 }: {
   session: AssistantController;
+  wake: WakeController;
   expanded: boolean;
   onExpandedChange(value: boolean): void;
 }) {
   const state = useVoiceSnapshot(session);
+  const standby = useWakeSnapshot(wake);
+  const wakeMic = ["arming", "watching", "enrolling"].includes(standby.status);
+  const label = state.active
+    ? LABELS[state.phase]
+    : wakeMic
+      ? standby.status === "enrolling"
+        ? "Enrolling"
+        : "Wake mic on"
+      : LABELS[state.phase];
   const [text, setText] = useState("");
   const panelId = useId();
   useEffect(() => {
-    if (state.confirmation || state.choices.length || state.phase === "error")
+    if (
+      state.confirmation ||
+      state.choices.length ||
+      state.phase === "error" ||
+      standby.status === "error"
+    )
       onExpandedChange(true);
-  }, [state.confirmation, state.choices.length, state.phase, onExpandedChange]);
+  }, [state.confirmation, state.choices.length, state.phase, standby.status, onExpandedChange]);
   const available = Boolean(browserRecognition());
   const secure = typeof window !== "undefined" && window.isSecureContext;
   if (!state.available) return null;
   return (
-    <div className="voice-signal print:hidden" data-phase={state.phase}>
+    <div
+      className="voice-signal print:hidden"
+      data-phase={state.phase}
+      data-wake={wakeMic ? "on" : "off"}
+    >
       <div className="voice-signal-pill">
         <button
           type="button"
@@ -55,7 +78,7 @@ export function VoiceControl({
           </span>
           <span className="voice-signal-name">
             <strong>Signal</strong>
-            <span>{LABELS[state.phase]}</span>
+            <span>{label}</span>
           </span>
           <ChevronDown aria-hidden className="size-3" />
         </button>
@@ -69,11 +92,25 @@ export function VoiceControl({
           >
             <Square className="size-3" aria-hidden />
           </Button>
+        ) : wakeMic ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label="Stop wake detection"
+            onClick={() => wake.disarm()}
+          >
+            <Square className="size-3" aria-hidden />
+          </Button>
         ) : null}
       </div>
       <span role="status" aria-live="polite" aria-atomic="true" className="sr-only">
         {state.message}{" "}
-        {state.active ? `Assistant active. ${LABELS[state.phase]}.` : "Microphone off."}
+        {state.active
+          ? `Assistant active. ${LABELS[state.phase]}.`
+          : wakeMic
+            ? standby.message
+            : "Microphone off."}
       </span>
       {expanded ? (
         <section
@@ -108,6 +145,12 @@ export function VoiceControl({
           <p className="text-sm font-medium" data-testid="assistant-message">
             {state.message}
           </p>
+          {state.field ? (
+            <p className="text-sm" data-testid="voice-field-status">
+              Editing: {state.field.label}. Say a value or “next field”. Use “dictate …” for literal
+              text that sounds like a command.
+            </p>
+          ) : null}
           {state.heard ? (
             <p className="break-words text-xs text-muted-foreground">Heard: “{state.heard}”</p>
           ) : null}
@@ -137,7 +180,11 @@ export function VoiceControl({
               </Button>
             )}
             <span className="self-center text-xs text-muted-foreground">
-              {state.active ? LABELS[state.phase] : "Microphone off"}
+              {state.active
+                ? LABELS[state.phase]
+                : wakeMic
+                  ? "Wake microphone on"
+                  : "Microphone off"}
             </span>
           </div>
           {state.choices.length ? (
@@ -214,6 +261,13 @@ export function VoiceControl({
               Run
             </Button>
           </form>
+          {!state.active && standby.armed ? <p className="text-xs">{standby.message}</p> : null}
+          <details>
+            <summary className="cursor-pointer text-xs">Wake phrase settings</summary>
+            <div className="mt-2">
+              <WakeSettings />
+            </div>
+          </details>
           <details className="text-xs text-muted-foreground">
             <summary className="cursor-pointer">Commands and privacy</summary>
             <div className="mt-2 space-y-2">
@@ -232,7 +286,9 @@ export function VoiceControl({
           <p className="text-[11px] leading-relaxed text-muted-foreground">
             Browser speech recognition may require internet access and send audio to your browser’s
             speech provider. Signal stays active across pages; hidden tabs pause it. No raw audio or
-            conversation history is stored. Ctrl+Shift+Space starts or stops it.
+            conversation history is stored. Wake templates stay on this browser only. “Stop
+            listening” returns to wake detection when armed; Stop all microphones disables both
+            stages for the session. Ctrl+Shift+Space starts or stops it.
           </p>
         </section>
       ) : null}

@@ -153,7 +153,7 @@ export const THEME_INIT_SCRIPT =
   "var dark=mode==='dark'||(mode==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);" +
   "var el=document.documentElement;el.classList.toggle('dark',dark);" +
   "var p=localStorage.getItem(" + JSON.stringify(PALETTE_STORAGE_KEY) + ");" +
-  "var allowed=" + JSON.stringify(PALETTE_OPTIONS.map((v) => v.id).concat("custom")) + ";" +
+  "var allowed=" + JSON.stringify([...PALETTE_OPTIONS.map((v) => v.id), "custom"]) + ";" +
   "if(allowed.indexOf(p)<0)p='classic';el.setAttribute('data-linkbooks-palette',p);" +
   "if(p==='custom'){" +
   "var saved;try{saved=JSON.parse(localStorage.getItem(" + JSON.stringify(CUSTOM_PALETTE_STORAGE_KEY) + "));}catch(_){}" +

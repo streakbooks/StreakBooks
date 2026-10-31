@@ -54,8 +54,10 @@ END;
 $$;
 REVOKE ALL ON FUNCTION public.record_communication_delivery(uuid,text,text,text,text,text)
   FROM PUBLIC, anon;
+-- This audit API is intentionally NOT callable by browser-authenticated clients.
+-- Email delivery logs must be written by a trusted server using the service role.
 GRANT EXECUTE ON FUNCTION public.record_communication_delivery(uuid,text,text,text,text,text)
-  TO authenticated;
+  TO service_role;
 
 DROP POLICY IF EXISTS communication_own_outbox_read ON public.email_outbox;
 CREATE POLICY communication_own_outbox_read ON public.email_outbox

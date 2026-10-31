@@ -127,7 +127,7 @@ export const sendCommunicationsTest = createServerFn({ method: "POST" })
     const text = `This is a test of LinkBooks email delivery for ${company.name}. No financial records have been changed.`;
     const html = `<p>${escapeHtml(text)}</p>`;
     const result = await sendViaResend({ ...cfg, from: sender.from }, {
-      to: [destination], subject, text, html, replyTo: sender.replyTo,
+      to: [destination], subject, text, html, ...(sender.replyTo ? { replyTo: sender.replyTo } : {}),
     });
     await recordCompanyEmail(db, {
       companyId: data.companyId, template: "notification_test",
@@ -173,7 +173,7 @@ export const sendCommunicationsDigest = createServerFn({ method: "POST" })
       alerts.map((a) => `<li><strong>${escapeHtml(a.title)}</strong> (${escapeHtml(a.priority)})<p>${escapeHtml(a.body)}</p></li>`).join("")
     }</ol><p>Sign in to LinkBooks to review or act. This email never approves or posts financial documents.</p>`;
     const result = await sendViaResend({ ...cfg, from: sender.from }, {
-      to: [destination], subject, html, text, replyTo: sender.replyTo,
+      to: [destination], subject, html, text, ...(sender.replyTo ? { replyTo: sender.replyTo } : {}),
     });
     await recordCompanyEmail(db, {
       companyId: data.companyId, template: "notification_digest",

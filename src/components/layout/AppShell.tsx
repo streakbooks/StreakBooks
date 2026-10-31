@@ -376,7 +376,7 @@ function AppShellLayout({ children }: { children: ReactNode }) {
           </div>
 
           <VoiceAssistant />
-          <NotificationBell companyId={company?.id ?? null} />
+          <NotificationBell companyId={company?.id ?? null} userId={user.id} />
           <CreateNewMenu />
           <ThemeToggle />
           <UserMenu />

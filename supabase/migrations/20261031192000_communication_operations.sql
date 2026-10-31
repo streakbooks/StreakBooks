@@ -53,8 +53,9 @@ BEGIN
  IF _kind='test_email' AND NOT public.has_company_permission(_company_id,'company.settings.edit') THEN
    RAISE EXCEPTION 'Not permitted to send test messages';
  END IF;
- IF EXISTS (SELECT 1 FROM public.companies WHERE id=_company_id AND is_demo) THEN
-   RAISE EXCEPTION 'Email delivery is disabled for demo organisations';
+ IF _kind='digest_manual'
+    AND EXISTS (SELECT 1 FROM public.companies WHERE id=_company_id AND is_demo) THEN
+   RAISE EXCEPTION 'Demo financial digests are disabled';
  END IF;
  -- Test mail: one per five-minute window. Manual digest: one per hour.
  _window := CASE WHEN _kind='test_email'

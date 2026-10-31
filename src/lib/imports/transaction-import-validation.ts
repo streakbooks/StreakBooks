@@ -1,4 +1,6 @@
 import { decimalPlacesFor, toMinorUnits } from "@/lib/accounting/money";
+import { extendedAmountMinor } from "@/lib/sales/line-math-rounded";
+import { computeLineAmounts } from "@/lib/purchases/line-math";
 import { getImportDefinition } from "./import-definitions";
 import { previewImportCsv } from "./import-preflight";
 
@@ -48,6 +50,17 @@ function price(value: string, currency: string, row: number): number {
 }
 
 /**
+ * Apply the SAME quantity rounding as the authorised Sales/Purchases engines.
+ * Sales rounds half-up, whereas Purchases currently truncates extended minor units.
+ * Do not estimate financial limits using floating-point multiplication.
+ */
+function lineValueMinor(kind: TransactionImportKind, line: Pick<TransactionImportLine, "quantity" | "unitPriceMinor">): bigint {
+  return kind === "sales"
+    ? extendedAmountMinor(line.quantity, line.unitPriceMinor)
+    : computeLineAmounts({ quantity: line.quantity, unit_price_minor: line.unitPriceMinor, tax_rate_bps: 0 }).net_minor;
+}
+
+/**
  * Full-file, read-only validation for invoice/bill line imports.
  *
  * This does NOT post documents. An authenticated server writer must still resolve
@@ -91,7 +104,7 @@ export function prepareTransactionCsv(
       throw new Error(`Row ${sourceRow}: quantity must be positive and within the safe range`);
     }
     const unitPriceMinor = price(v["unit_price"] ?? "", currency, sourceRow);
-    if (quantity * unitPriceMinor > Number.MAX_SAFE_INTEGER) {
+    if (lineValueMinor(kind, { quantity, unitPriceMinor }) > BigInt(Number.MAX_SAFE_INTEGER)) {
       throw new Error(`Row ${sourceRow}: extended line amount exceeds safe integer range`);
     }
     const taxCode = (v["tax_code"] ?? "").trim() || null;
@@ -112,9 +125,18 @@ export function prepareTransactionCsv(
       documents.set(key, { documentNumber, contactName, documentDate, dueDate, lines: [line] });
     }
   }
+  // A document can overflow even when each individual line fits in a safe JS integer.
+  // Validate the whole file BEFORE any domain writer can create a partial import.
   for (const doc of documents.values()) {
-    if (!doc.lines.some((line) => line.unitPriceMinor > 0)) {
-      throw new Error(`Row ${doc.lines[0]!.sourceRow}: document ${doc.documentNumber} has no monetary value`);
+    let documentMinor = 0n;
+    for (const line of doc.lines) {
+      documentMinor += lineValueMinor(kind, line);
+      if (documentMinor > BigInt(Number.MAX_SAFE_INTEGER)) {
+        throw new Error(`Row ${line.sourceRow}: document ${doc.documentNumber} total exceeds safe integer range`);
+      }
+    }
+    if (documentMinor === 0n) {
+      throw new Error(`Row ${doc.lines[0]!.sourceRow}: document ${doc.documentNumber} has no monetary value after line rounding`);
     }
   }
   return [...documents.values()];

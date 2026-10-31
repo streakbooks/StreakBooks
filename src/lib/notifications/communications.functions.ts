@@ -11,7 +11,7 @@ type Db = Parameters<typeof assertCompanyMember>[0];
 type HistoryRow = {
   id: string; template: string; to_addresses: string[]; subject: string;
   status: "sent" | "failed"; error: string | null; created_at: string;
-  provider_message_id: string | null;
+  provider_message_id: string | null; sent_by: string | null;
 };
 type AlertRow = { title: string; body: string; priority: string; target_path: string | null };
 
@@ -33,7 +33,7 @@ async function currentRecipient(db: Db): Promise<string> {
 
 async function recentCompanyEmailHistory(db: Db, companyId: string): Promise<HistoryRow[]> {
   const { data, error } = await db.from("email_outbox" as never)
-    .select("id,template,to_addresses,subject,status,error,created_at,provider_message_id" as never)
+    .select("id,template,to_addresses,subject,status,error,created_at,provider_message_id,sent_by" as never)
     .eq("company_id" as never, companyId as never)
     .eq("entity_type" as never, "company" as never)
     .order("created_at" as never, { ascending: false })

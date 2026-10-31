@@ -88,7 +88,7 @@ for (const [phrase, destination] of [
     await expect(
       page.getByRole("heading", { name: `Destination: ${destination}`, exact: true }),
     ).toBeVisible();
-    expect(await page.evaluate(() => window.voiceSpeech.aborts)).toBe(1);
+    await expect.poll(() => page.evaluate(() => window.voiceSpeech.aborts)).toBe(1);
     // A duplicate final already queued by the browser must not navigate again.
     await page.evaluate(() =>
       window.voiceSpeech.queuedResult?.({
@@ -161,7 +161,7 @@ test("Stop and Escape discard queued speech", async ({ page }) => {
     }),
   );
   await expect(page).toHaveURL("http://127.0.0.1:8081/");
-  expect(await page.evaluate(() => window.voiceSpeech.aborts)).toBe(2);
+  await expect.poll(() => page.evaluate(() => window.voiceSpeech.aborts)).toBe(2);
 });
 
 test("read-only permissions allow invoices but block creation", async ({ page }) => {

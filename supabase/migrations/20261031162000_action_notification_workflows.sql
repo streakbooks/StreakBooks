@@ -38,7 +38,9 @@ BEGIN
   END IF;
   IF _requested_from IS NULL OR _requested_from = auth.uid()
      OR NOT EXISTS (SELECT 1 FROM public.company_members
-         WHERE company_id=_company_id AND user_id=_requested_from AND status='active') THEN
+         WHERE company_id=_company_id AND user_id=_requested_from AND status='active'
+         AND EXISTS (SELECT 1 FROM public.role_permissions rp
+           WHERE rp.role=company_members.role AND rp.permission IN ('sales.draft','purchases.draft','accounting.post'))) THEN
     RAISE EXCEPTION 'Choose another active team member';
   END IF;
   IF _subject IS NULL OR length(btrim(_subject)) NOT BETWEEN 3 AND 160
@@ -115,6 +117,8 @@ BEGIN
     FROM public.company_members m
     LEFT JOIN public.profiles p ON p.id=m.user_id
     WHERE m.company_id=_company_id AND m.status='active' AND m.user_id<>auth.uid()
+      AND EXISTS (SELECT 1 FROM public.role_permissions rp
+        WHERE rp.role=m.role AND rp.permission IN ('sales.draft','purchases.draft','accounting.post'))
     ORDER BY 2,1;
 END;
 $$;

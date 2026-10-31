@@ -26,8 +26,7 @@ export type ActionNotification = {
 export const notificationQueryKey = (companyId: string | null, limit = 100) =>
   ["action-notifications", companyId, limit] as const;
 
-export const safeNotificationPath = (path: string | null) =>
-  path && /^\/(?!\/)[a-zA-Z0-9/_?=&.%-]*$/.test(path) ? path : null;
+export { safeNotificationPath } from "@/lib/notifications/notification-utils";
 
 /**
  * Notifications are user-owned and read through company + recipient RLS.

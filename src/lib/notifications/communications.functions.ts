@@ -23,6 +23,15 @@ async function companyInfo(db: Db, companyId: string) {
   return data as { name: string; is_demo: boolean; timezone: string };
 }
 
+async function assertCompanyEmailAuditPermission(db: Db, companyId: string): Promise<void> {
+  const { data, error } = await db.rpc("can_access_attachment" as never, {
+    _company_id: companyId,
+    _entity_type: "company",
+    _action: "manage",
+  } as never);
+  if (error || !data) throw new Error("Your role cannot send audited company emails. Ask an administrator for document-management permission.");
+}
+
 async function currentRecipient(db: Db): Promise<string> {
   const { data, error } = await db.auth.getUser();
   if (error || !data.user?.email) throw new Error("Your account has no verified email address for delivery");
@@ -91,6 +100,9 @@ export const getCommunicationsStatus = createServerFn({ method: "GET" })
       _company_id: data.companyId, _permission: "company.settings.edit",
     } as never);
     const canEdit = Boolean(perm);
+    const { data: canAudit } = await context.supabase.rpc("can_access_attachment" as never, {
+      _company_id: data.companyId, _entity_type: "company", _action: "manage",
+    } as never);
     let history: HistoryRow[] = [];
     if (canEdit) history = await recentCompanyEmailHistory(context.supabase, data.companyId);
     return {
@@ -102,6 +114,7 @@ export const getCommunicationsStatus = createServerFn({ method: "GET" })
       demoBlocked: company.is_demo,
       recipient: destination,
       canEdit,
+      canSend: canEdit && Boolean(canAudit),
       userId: context.userId,
       timezone: company.timezone || "UTC",
       history,
@@ -116,6 +129,7 @@ export const sendCommunicationsTest = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const db = context.supabase;
     await assertCompanyPermission(db, data.companyId, "company.settings.edit");
+    await assertCompanyEmailAuditPermission(db, data.companyId);
     const company = await companyInfo(db, data.companyId);
     // Safe in Demo Company: test messages go ONLY to the current verified account email.
     // Demo invoices/customer digests remain blocked.
@@ -147,6 +161,7 @@ export const sendCommunicationsDigest = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const db = context.supabase;
     await assertCompanyPermission(db, data.companyId, "company.settings.edit");
+    await assertCompanyEmailAuditPermission(db, data.companyId);
     const company = await companyInfo(db, data.companyId);
     if (company.is_demo) throw new Error("The demo company cannot send messages to real recipients.");
     const cfg = readEmailConfig();

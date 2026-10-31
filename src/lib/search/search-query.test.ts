@@ -5,7 +5,7 @@ describe("global search amount queries", () => {
   it("finds exact 0, 2 and 3 decimal currency values", () => {
     expect(minorAmountCandidates("1250")).toEqual([1250, 125000, 1250000]);
     expect(minorAmountCandidates("1,250.50")).toEqual([125050, 1250500]);
-    expect(minorAmountCandidates("₹1,25,000.00")).toEqual([12500000, 125000000]);
+    expect(minorAmountCandidates("₹1,25,000.00")).toEqual([125000, 12500000, 125000000]);
     expect(minorAmountCandidates("KWD 2.125")).toEqual([2125]);
   });
   it("preserves signs and never rounds an invalid value", () => {

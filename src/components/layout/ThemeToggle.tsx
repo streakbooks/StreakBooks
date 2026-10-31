@@ -3,7 +3,7 @@ import { Check, Monitor, Moon, Palette, RotateCcw, SlidersHorizontal, Sun } from
 import { useTheme } from "@/hooks/use-theme";
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuRadioGroup,
   DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -74,9 +74,9 @@ export function ThemeToggle() {
           </div>
           <div className="grid grid-cols-2 gap-2 p-0.5" role="group" aria-label="Choose a colour palette">
             {PALETTE_OPTIONS.map((item) => (
-              <button key={item.id} type="button" aria-pressed={palette === item.id}
+              <DropdownMenuItem key={item.id} aria-current={palette === item.id ? "true" : undefined}
                 aria-label={item.name + ": " + item.description}
-                onClick={() => setPalette(item.id)}
+                onSelect={(e) => { e.preventDefault(); setPalette(item.id); }}
                 className={cn(
                   "group relative rounded-lg border bg-card p-2 text-left outline-none transition-all hover:border-primary/60 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring",
                   palette === item.id ? "border-primary ring-2 ring-primary/30" : "border-border",
@@ -97,23 +97,23 @@ export function ThemeToggle() {
                   {palette === item.id ? <Check aria-hidden className="size-3.5 shrink-0 text-primary" /> : null}
                 </div>
                 <div className="mt-0.5 truncate text-[11px] text-muted-foreground">{item.description}</div>
-              </button>
+              </DropdownMenuItem>
             ))}
           </div>
           <DropdownMenuSeparator className="my-3" />
-          <button type="button"
+          <DropdownMenuItem
             className={cn(
               "flex w-full items-center gap-2 rounded-lg border px-3 py-2.5 text-left text-sm outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring",
               palette === "custom" ? "border-primary bg-primary/5" : "border-border",
             )}
-            onClick={() => setCustomizeOpen(true)}>
+            onSelect={() => setCustomizeOpen(true)}>
             <SlidersHorizontal className="size-4 shrink-0 text-primary" />
             <span className="flex-1">
               <span className="block font-semibold">Create your own palette</span>
               <span className="block text-xs text-muted-foreground">Accent, sidebar and canvas colours</span>
             </span>
             {palette === "custom" ? <Check className="size-4 text-primary" aria-hidden /> : null}
-          </button>
+          </DropdownMenuItem>
           <p className="mt-2 px-1 text-[11px] text-muted-foreground">
             Appearance is saved in this browser. Financial status colours remain consistent.
           </p>

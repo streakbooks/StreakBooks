@@ -185,10 +185,15 @@ export const sendCommunicationsDigest = createServerFn({ method: "POST" })
     const sender = configuredSender(cfg.from, saved);
     const subject = `LinkBooks action summary — ${company.name} (${alerts.length} items)`;
     const list = alerts.map((item, i) => `${i + 1}. [${item.priority.toUpperCase()}] ${item.title}\n${item.body}`);
-    const text = `Outstanding LinkBooks actions for ${company.name}:\n\n${list.join("\n\n")}\n\nSign in to LinkBooks to review or act. Financial actions are never performed by this email.`;
+    // Never derive an outbound login link from untrusted request Host headers.
+    const configuredBase = (process.env["APP_BASE_URL"] ?? "").trim();
+    const verifiedBase = /^https:\/\/[^\s<>]+$/i.test(configuredBase)
+      ? configuredBase.replace(/\/+$/, "") : null;
+    const inboxLink = verifiedBase ? `${verifiedBase}/notifications` : null;
+    const text = `Outstanding LinkBooks actions for ${company.name}:\n\n${list.join("\n\n")}\n\n${inboxLink ? "Open the Action Center: " + inboxLink : "Sign in to LinkBooks to review or act."}\nFinancial actions are never performed by this email.`;
     const html = `<h2>LinkBooks action summary — ${escapeHtml(company.name)}</h2><ol>${
       alerts.map((a) => `<li><strong>${escapeHtml(a.title)}</strong> (${escapeHtml(a.priority)})<p>${escapeHtml(a.body)}</p></li>`).join("")
-    }</ol><p>Sign in to LinkBooks to review or act. This email never approves or posts financial documents.</p>`;
+    }</ol><p>${inboxLink ? `<a href="${escapeHtml(inboxLink)}">Open your Action Center</a>` : "Sign in to LinkBooks to review or act."} This email never approves or posts financial documents.</p>`;
     const result = await sendViaResend({ ...cfg, from: sender.from }, {
       to: [destination], subject, html, text, ...(sender.replyTo ? { replyTo: sender.replyTo } : {}),
     });

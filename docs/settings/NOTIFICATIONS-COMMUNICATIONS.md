@@ -43,3 +43,41 @@ Never put credentials in `VITE_*` client variables, `organisation_config`, the r
 ## Security model
 
 User input cannot override the authenticated test recipient or Resend's verified sender address. Email sending is authenticated and permission-checked on the server; provider keys remain server-only. RLS governs digest source rows and per-user notification preferences. Sender status does not imply successful mailbox delivery.
+
+## Scheduled email digest worker (release gate)
+
+The worker is implemented at `POST /api/communications/digest-cron` and is
+**not automatically scheduled** by merely deploying this code. Configure a
+trusted hourly scheduler in the hosting platform to POST with the header
+`Authorization: Bearer <LOVABLE_CRON_SECRET>`. The server validates this
+secret in constant time and never exposes it to the browser. Set
+`LOVABLE_CRON_SECRET` (and optionally
+`LOVABLE_CRON_SECRET_PREVIOUS` during rotation) in server environment only.
+
+Required server environment variables:
+`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
+`RESEND_API_KEY`, `EMAIL_FROM`, and `LOVABLE_CRON_SECRET`.
+Verify the sender domain with Resend DNS. Never place any of these secrets in
+`VITE_*` variables. Enable the scheduler only after the migrations
+`communication_delivery_audit` and `communication_scheduled_digests`
+have been applied and tested.
+
+The scheduled worker is opt-in (off by default), skips demo organisations,
+respects the company's timezone and quiet hours, rechecks membership, category
+preferences, permissions and the underlying accounting record, and records
+provider acceptance or failure. It uses a unique database claim to prevent
+duplicate deliveries for the same company/user/local day. Provider acceptance
+is **not proof of mailbox delivery**.
+
+### Release acceptance checklist
+
+- [ ] Confirm CI typecheck, unit tests, production build and browser tests pass
+- [ ] Apply and verify all pending migrations, with matching version history
+- [ ] Confirm no authenticated client can write or forge delivery history
+- [ ] Verify sender domain in Resend and test receipt in a real inbox
+- [ ] Verify authenticated scheduler returns 200; bad token returns 401
+- [ ] Confirm scheduled opt-in, opt-out, timezone, quiet hours and idempotency
+- [ ] Confirm billing/financial posting is unchanged
+- [ ] Grant Vercel project access to the Git author and verify actual deployment
+
+**Settings availability must remain Partial until these checks pass.**

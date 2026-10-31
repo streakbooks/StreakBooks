@@ -34,6 +34,7 @@ import {
 import { loadCustomerStatement } from "@/lib/sales/sales-statements.functions";
 import { fetchAllPages } from "@/lib/sales/fetch-all";
 import { isMissingRpc, type SalesClient } from "@/lib/sales/rpc";
+import { configuredSender, loadCommunicationConfig } from "@/lib/notifications/communication-settings.server";
 import { isIsoDateString } from "@/lib/sales/list-filters";
 
 type Db = SalesClient;
@@ -508,12 +509,14 @@ async function sendOne(db: Db, input: SendInput): Promise<SendEmailResult> {
   }
 
   const rendered = renderEmail(input.template, email);
-  const result = await sendViaResend(cfg, {
+  const communication = await loadCommunicationConfig(db, input.companyId);
+  const sender = configuredSender(cfg.from, communication);
+  const result = await sendViaResend({ ...cfg, from: sender.from }, {
     to: input.to,
     subject: rendered.subject,
     html: rendered.html,
     text: rendered.text,
-    replyTo: branding.email,
+    replyTo: sender.replyTo ?? branding.email,
   });
 
   let recordWarning: string | null = null;

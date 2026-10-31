@@ -161,7 +161,9 @@ BEGIN
     INSERT INTO public.action_notifications
       (company_id,recipient_user_id,event_key,category,priority,title,body,entity_type,entity_id,target_path)
     SELECT _company_id,_uid,'bill_approval:'||b.id::text,'bill_approval',
-      CASE WHEN b.due_date<current_date THEN 'high' ELSE 'medium' END,
+      CASE WHEN b.due_date<current_date-14 THEN 'critical'
+           WHEN b.due_date<current_date THEN 'high'
+           WHEN b.due_date<=current_date+7 THEN 'medium' ELSE 'low' END,
       left('Bill '||coalesce(nullif(b.bill_number,''),b.id::text)||' awaiting approval',180),
       'Review this supplier bill before it is authorised.',
       'purchase_bill',b.id,'/purchases/bills/'||b.id::text
@@ -183,7 +185,9 @@ BEGIN
     INSERT INTO public.action_notifications
       (company_id,recipient_user_id,event_key,category,priority,title,body,entity_type,entity_id,target_path)
     SELECT _company_id,_uid,'overdue_invoice:'||i.id::text,'overdue_invoice',
-      CASE WHEN i.due_date < current_date - 30 THEN 'high' ELSE 'medium' END,
+      CASE WHEN i.due_date<current_date-90 THEN 'critical'
+           WHEN i.due_date<current_date-30 THEN 'high'
+           WHEN i.due_date<current_date-7 THEN 'medium' ELSE 'low' END,
       left('Invoice '||coalesce(nullif(i.invoice_number,''),i.id::text)||' overdue',180),
       'Invoice remains unpaid after its due date. Review before sending a reminder.',
       'sales_invoice',i.id,'/sales/invoices/'||i.id::text
@@ -207,7 +211,9 @@ BEGIN
     INSERT INTO public.action_notifications
       (company_id,recipient_user_id,event_key,category,priority,title,body,entity_type,entity_id,target_path)
     SELECT _company_id,_uid,'bank_reconciliation:'||a.id::text,'bank_reconciliation',
-      CASE WHEN count(*)>=100 THEN 'high' ELSE 'medium' END,
+      CASE WHEN count(*)>=1000 THEN 'critical'
+           WHEN count(*)>=100 THEN 'high'
+           WHEN count(*)>=10 THEN 'medium' ELSE 'low' END,
       left('Bank review: '||a.name,180),
       count(*)::text||' bank transactions still need categorisation or reconciliation.',
       'bank_account',a.id,'/banking/reconcile'
@@ -231,7 +237,10 @@ BEGIN
   IF public.can_access_attachment(_company_id,'company','view') THEN
     INSERT INTO public.action_notifications
       (company_id,recipient_user_id,event_key,category,priority,title,body,entity_type,entity_id,target_path)
-    SELECT _company_id,_uid,'document_request:'||r.id::text,'document_request','medium',
+    SELECT _company_id,_uid,'document_request:'||r.id::text,'document_request',
+      CASE WHEN r.created_at<now()-interval '30 days' THEN 'critical'
+           WHEN r.created_at<now()-interval '7 days' THEN 'high'
+           WHEN r.created_at<now()-interval '2 days' THEN 'medium' ELSE 'low' END,
       left('Document requested: '||r.subject,180),
       left(r.instructions,2000),'action_document_request',r.id,'/files'
     FROM public.action_document_requests r

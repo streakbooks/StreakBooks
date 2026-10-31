@@ -35,7 +35,6 @@ export const globalSearch = createServerFn({ method: "GET" })
     const safe = sanitiseSearchTerm(data.q);
     if (safe.length < 2 && !minorAmountCandidates(data.q).length) return [];
     const limit = data.limit;
-    const like = `%${safe}%`;
     const hits: GlobalSearchHit[] = [];
     const companyId = data.companyId;
     const sb = context.supabase;

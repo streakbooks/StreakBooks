@@ -138,14 +138,22 @@
   --chart-4: oklch(0.58 0.17 25);
   --chart-5: oklch(0.55 0.12 300);
 
-  --sidebar: oklch(0.24 0.04 258);
-  --sidebar-foreground: oklch(0.86 0.015 255);
-  --sidebar-primary: oklch(0.68 0.14 250);
-  --sidebar-primary-foreground: oklch(0.16 0.03 255);
-  --sidebar-accent: oklch(0.31 0.045 258);
-  --sidebar-accent-foreground: oklch(0.99 0.004 255);
-  --sidebar-border: oklch(0.33 0.04 258);
-  --sidebar-ring: oklch(0.68 0.14 250);
+  /* Premium navigation palette: midnight navy and restrained sapphire. */
+  --sidebar: #101d32;
+  --sidebar-top: #132640;
+  --sidebar-bottom: #0c182b;
+  --sidebar-foreground: #cbd8eb;
+  --sidebar-primary: #78b9ff;
+  --sidebar-primary-foreground: #09192c;
+  --sidebar-accent: #203450;
+  --sidebar-accent-foreground: #f7fbff;
+  --sidebar-border: #354661;
+  --sidebar-ring: #91caff;
+  --sidebar-active: #194b8c;
+  --sidebar-active-strong: #1e61b1;
+  --sidebar-active-foreground: #ffffff;
+  --sidebar-active-border: #568bca;
+  --sidebar-active-indicator: #9cdbff;
 }
 
 .dark {
@@ -196,14 +204,22 @@
   --chart-4: oklch(0.7 0.16 25);
   --chart-5: oklch(0.72 0.12 300);
 
-  --sidebar: oklch(0.2 0.03 258);
-  --sidebar-foreground: oklch(0.86 0.015 255);
-  --sidebar-primary: oklch(0.72 0.14 250);
-  --sidebar-primary-foreground: oklch(0.16 0.03 255);
-  --sidebar-accent: oklch(0.28 0.03 258);
-  --sidebar-accent-foreground: oklch(0.98 0.005 250);
-  --sidebar-border: oklch(1 0 0 / 11%);
-  --sidebar-ring: oklch(0.72 0.14 250);
+  /* Preserve the same polished navigation hierarchy in dark mode. */
+  --sidebar: #0b172a;
+  --sidebar-top: #10223b;
+  --sidebar-bottom: #091426;
+  --sidebar-foreground: #d2def0;
+  --sidebar-primary: #83c2ff;
+  --sidebar-primary-foreground: #09192c;
+  --sidebar-accent: #1b304c;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #344b68;
+  --sidebar-ring: #91caff;
+  --sidebar-active: #17467f;
+  --sidebar-active-strong: #1f60ab;
+  --sidebar-active-foreground: #ffffff;
+  --sidebar-active-border: #568bca;
+  --sidebar-active-indicator: #9cdbff;
 }
 
 @layer base {
@@ -333,4 +349,54 @@
 }
 [data-density="compact"] th {
   height: 2rem;
+}
+
+
+/*
+ * LinkBooks premium module navigator.
+ * Keep selection in one location: data-active is derived from the current URL
+ * for desktop, collapsed and mobile navigation. No copied vendor UI assets.
+ */
+.lb-premium-sidebar {
+  background: linear-gradient(166deg, var(--sidebar-top) 0%, var(--sidebar) 42%, var(--sidebar-bottom) 100%);
+  color: var(--sidebar-foreground);
+}
+
+.lb-nav-link {
+  color: var(--sidebar-foreground);
+  transition: background-color 150ms ease, color 150ms ease, box-shadow 150ms ease;
+}
+
+.lb-nav-link:not([data-active="true"]):hover {
+  background-color: var(--sidebar-accent);
+  color: var(--sidebar-accent-foreground);
+}
+
+.lb-nav-link[data-active="true"] {
+  background: linear-gradient(105deg, var(--sidebar-active), var(--sidebar-active-strong));
+  border-color: var(--sidebar-active-border);
+  color: var(--sidebar-active-foreground);
+  font-weight: 650;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12), 0 5px 15px rgb(0 0 0 / 0.2);
+}
+
+.lb-nav-link[data-active="true"]::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--sidebar-active-indicator);
+}
+
+.lb-nav-link[data-active="true"]:hover {
+  filter: brightness(1.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lb-nav-link {
+    transition: none;
+  }
 }

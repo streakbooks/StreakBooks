@@ -146,6 +146,17 @@ DROP POLICY IF EXISTS action_notifications_read ON public.action_notifications;
 CREATE POLICY action_notifications_read ON public.action_notifications FOR SELECT TO authenticated
  USING (recipient_user_id=(select auth.uid()) AND public.can_read_action_notification(company_id,category));
 
+-- Per-recipient refresh throttle prevents repeated expensive scans from browser retries.
+CREATE TABLE IF NOT EXISTS public.action_notification_refresh_state (
+ company_id uuid NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
+ recipient_user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+ last_refreshed_at timestamptz NOT NULL DEFAULT now(),
+ PRIMARY KEY (company_id, recipient_user_id)
+);
+ALTER TABLE public.action_notification_refresh_state ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.action_notification_refresh_state FROM PUBLIC,anon,authenticated;
+GRANT ALL ON public.action_notification_refresh_state TO service_role;
+
 -- On-demand materialization gives accurate alerts even without a scheduler.
 -- A scheduler can also invoke the same business predicates through an approved service-worker later.
 CREATE OR REPLACE FUNCTION public.refresh_action_notifications(_company_id uuid)
@@ -156,6 +167,15 @@ BEGIN
   IF _uid IS NULL OR NOT public.is_company_member(_company_id) THEN
     RAISE EXCEPTION 'Not a member of this organisation';
   END IF;
+  -- Serialize requests for one recipient and scan at most once per 30 seconds.
+  PERFORM pg_advisory_xact_lock(hashtext(_company_id::text || ':' || _uid::text));
+  INSERT INTO public.action_notification_refresh_state(company_id,recipient_user_id,last_refreshed_at)
+  VALUES (_company_id,_uid,now())
+  ON CONFLICT (company_id,recipient_user_id) DO UPDATE
+    SET last_refreshed_at=EXCLUDED.last_refreshed_at
+    WHERE public.action_notification_refresh_state.last_refreshed_at < now()-interval '30 seconds';
+  GET DIAGNOSTICS _n=ROW_COUNT;
+  IF _n=0 THEN RETURN 0; END IF;
 
   IF public.has_company_permission(_company_id,'purchases.authorise') THEN
     INSERT INTO public.action_notifications

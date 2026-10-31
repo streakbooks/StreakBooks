@@ -7,6 +7,7 @@ import { useCan } from "@/hooks/use-can";
 import { useActionNotifications, safeNotificationPath, type ActionNotification } from "@/hooks/use-action-notifications";
 import { supabase } from "@/integrations/supabase/client";
 import { notify } from "@/lib/notify";
+import { NotificationPreferences } from "@/components/notifications/NotificationPreferences";
 import { filterActionNotifications } from "@/lib/notifications/notification-utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -151,6 +152,7 @@ function ActionCenterPage() {
           )}
         </div>
       )}
+      <NotificationPreferences companyId={companyId} userId={user.id} />
       <DocumentRequests companyId={companyId} userId={user.id} />
     </div>
   );

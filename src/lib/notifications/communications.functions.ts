@@ -47,13 +47,17 @@ async function recordCompanyEmail(db: Db, info: {
   subject: string; status: "sent" | "failed";
   providerMessageId: string | null; error: string | null;
 }) {
-  const { error } = await db.rpc("record_communication_delivery" as never, {
-    _company_id: info.companyId,
-    _template: info.template,
-    _subject: info.subject,
-    _status: info.status,
-    _provider_message_id: info.providerMessageId,
-    _error: info.error,
+  const { data: auth, error: authError } = await db.auth.getUser();
+  if (authError || !auth.user?.id || !auth.user.email_confirmed_at || !auth.user.email) {
+    throw new Error("Verified user required for delivery audit");
+  }
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { error } = await supabaseAdmin.from("email_outbox" as never).insert({
+    company_id: info.companyId, entity_type: "company", entity_id: info.companyId,
+    template: info.template, to_addresses: [auth.user.email],
+    subject: info.subject, provider: "resend",
+    provider_message_id: info.providerMessageId, status: info.status,
+    error: info.error, sent_by: auth.user.id,
   } as never);
   if (error) throw new Error("Email provider responded, but delivery history could not be recorded: " + error.message);
 }

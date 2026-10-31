@@ -22,15 +22,22 @@ export async function runScheduledDigests(now = new Date()): Promise<{
   const provider = readEmailConfig();
   if (!provider.configured) throw new Error("Resend provider not configured");
   const db = supabaseAdmin;
-  // Limited batch; future runs pick up remaining subscriptions. Avoid logging personal data.
-  const { data: preferences, error: preferencesError } = await db
-    .from("communication_digest_preferences" as never)
-    .select("company_id,user_id,frequency,weekday,hour_local" as never)
-    .neq("frequency" as never, "off" as never)
-    .limit(250);
-  if (preferencesError) throw new Error(preferencesError.message);
+  // Page through subscriptions in a stable order: a fixed first-250 limit
+  // would starve every subscriber beyond that batch indefinitely.
   const summary = { inspected: 0, accepted: 0, failed: 0, skipped: 0 };
-  for (const pref of (preferences ?? []) as ScheduleRow[]) {
+  const pageSize = 250;
+  for (let offset = 0; ; offset += pageSize) {
+    const { data: preferences, error: preferencesError } = await db
+      .from("communication_digest_preferences" as never)
+      .select("company_id,user_id,frequency,weekday,hour_local" as never)
+      .neq("frequency" as never, "off" as never)
+      .order("company_id" as never, { ascending: true })
+      .order("user_id" as never, { ascending: true })
+      .range(offset, offset + pageSize - 1);
+    if (preferencesError) throw new Error(preferencesError.message);
+    const page = (preferences ?? []) as ScheduleRow[];
+    if (page.length === 0) break;
+    for (const pref of page) {
     summary.inspected++;
     try {
       const { data: company, error: companyError } = await db
@@ -104,6 +111,8 @@ export async function runScheduledDigests(now = new Date()): Promise<{
         error: error instanceof Error ? error.message : "Unknown error",
       });
     }
+    }
+    if (page.length < pageSize) break;
   }
   return summary;
 }

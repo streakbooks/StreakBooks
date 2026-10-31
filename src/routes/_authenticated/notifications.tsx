@@ -182,8 +182,17 @@ function NotificationRow({ item: n, selected, onSelect, busy, change }: {
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {path && <Button size="sm" variant="outline" asChild><a href={path}>
-              {n.category === "document_request" ? "Upload document" : "Review and act"} <ArrowUpRight className="ml-1 size-3" />
+              {n.category === "document_request" ? "Upload document" :
+                n.category === "bill_approval" ? "Review bill" :
+                n.category === "overdue_invoice" ? "Review invoice" :
+                n.category === "bank_reconciliation" ? "Reconcile bank" : "Review and act"}
+              <ArrowUpRight className="ml-1 size-3" />
             </a></Button>}
+            {n.category === "overdue_invoice" && !n.resolved_at && (
+              <Button size="sm" variant="outline" asChild><a href="/sales/reminders">
+                Open reminder center <ArrowUpRight className="ml-1 size-3" />
+              </a></Button>
+            )}
             <Button size="sm" variant="ghost" disabled={busy} onClick={() => change(!n.read_at, undefined)}>
               <Check className="mr-1 size-3" />{n.read_at ? "Mark unread" : "Mark read"}
             </Button>

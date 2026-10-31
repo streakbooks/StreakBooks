@@ -18,6 +18,7 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { CompanySwitcher } from "@/components/layout/CompanySwitcher";
 import { GlobalSearch } from "@/components/layout/GlobalSearch";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { NotificationBell } from "@/components/layout/NotificationBell";
 import { CreateNewMenu } from "@/components/create-new/CreateNewMenu";
 import { VoiceAssistant } from "@/components/ai-voice/VoiceAssistant";
 import { VoiceProvider } from "@/components/ai-voice/VoiceProvider";
@@ -375,6 +376,7 @@ function AppShellLayout({ children }: { children: ReactNode }) {
           </div>
 
           <VoiceAssistant />
+          <NotificationBell companyId={company?.id ?? null} />
           <CreateNewMenu />
           <ThemeToggle />
           <UserMenu />

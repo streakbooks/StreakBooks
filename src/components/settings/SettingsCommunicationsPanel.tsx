@@ -78,8 +78,9 @@ export function SettingsCommunicationsPanel({ companyId, canEdit }: { companyId:
     onError: (error) => notify.error(error, "Digest could not be sent"),
   });
   const savingBlocked = !canEdit || save.isPending || config.isPending || config.isError;
-  const providerReady = Boolean(status.data?.configured && !status.data?.demoBlocked);
-  const canSend = Boolean(providerReady && status.data?.canEdit && status.data?.recipient);
+  const providerReady = Boolean(status.data?.configured);
+  const canTest = Boolean(providerReady && status.data?.canEdit && status.data?.recipient);
+  const canDigest = Boolean(canTest && !status.data?.demoBlocked);
   const set = <K extends keyof Config>(key: K, value: Config[K]) => setDoc((old) => ({ ...old, [key]: value }));
   return (
     <section className="space-y-4" aria-label="Notifications and communications settings">
@@ -102,14 +103,13 @@ export function SettingsCommunicationsPanel({ companyId, canEdit }: { companyId:
       {status.data && (
         <Alert variant={providerReady ? "default" : "destructive"}>
           {providerReady ? <CheckCircle2 className="size-4" /> : <AlertTriangle className="size-4" />}
-          <AlertTitle>{status.data.demoBlocked
-            ? "Email sending disabled in Demo Company"
-            : status.data.configured ? "Email provider configured — delivery verification available" : "Email provider not configured"}</AlertTitle>
+          <AlertTitle>{status.data.configured
+            ? "Email provider configured — delivery verification available" : "Email provider not configured"}</AlertTitle>
           <AlertDescription className="space-y-1">
             <p>Transport: {status.data.provider === "resend" ? "Resend" : status.data.provider}.</p>
             {status.data.verifiedSender && <p>Server-controlled sender: {status.data.verifiedSender}</p>}
             {!status.data.configured && <p>Server configuration required: {status.data.missingConfiguration.join(", ")}. Store secrets in the server environment, never in this page.</p>}
-            {status.data.demoBlocked && <p>Sample organisations cannot email real recipients.</p>}
+            {status.data.demoBlocked && <p>Demo safeguard: only a test email to your own verified address is allowed. Customer document emails and financial digests remain disabled.</p>}
             {status.data.recentSuccessfulTest && <p>Provider accepted a previous test message: {new Date(status.data.recentSuccessfulTest).toLocaleString()}. Check your inbox for actual delivery.</p>}
             <p>Sender-domain DNS verification and mailbox delivery must be completed with the provider. Configured does not mean verified.</p>
           </AlertDescription>
@@ -174,9 +174,9 @@ export function SettingsCommunicationsPanel({ companyId, canEdit }: { companyId:
         <CardContent className="space-y-3">
           <p className="text-sm">Recipient: <strong>{status.data?.recipient ?? "No verified email on your account"}</strong></p>
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" disabled={!canSend || test.isPending || digest.isPending}
+            <Button size="sm" disabled={!canTest || test.isPending || digest.isPending}
               onClick={() => test.mutate()}><Send className="mr-1 size-4" />{test.isPending ? "Sending test…" : "Send test email"}</Button>
-            <Button size="sm" variant="outline" disabled={!canSend || digest.isPending || test.isPending}
+            <Button size="sm" variant="outline" disabled={!canDigest || digest.isPending || test.isPending}
               onClick={() => digest.mutate()}><Clock className="mr-1 size-4" />{digest.isPending ? "Sending digest…" : "Email my Action Center digest now"}</Button>
           </div>
           <p className="text-xs text-muted-foreground">

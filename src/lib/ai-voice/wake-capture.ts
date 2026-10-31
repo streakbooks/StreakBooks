@@ -34,6 +34,7 @@ export async function captureWakeAudio(
     stream?.getTracks().forEach((t) => t.stop());
     if (context && context.state !== "closed" && !closing) closing = context.close();
   };
+  let stage = "microphone access";
   signal.addEventListener("abort", stop, { once: true });
   try {
     stream = await navigator.mediaDevices.getUserMedia({
@@ -48,7 +49,11 @@ export async function captureWakeAudio(
       stop();
       throw new DOMException("Cancelled", "AbortError");
     }
-    context = new AudioContext({ sampleRate: 16000 });
+    stage = "audio processing setup";
+    // Use the device/browser rate. The acoustic worker resamples to 16 kHz itself;
+    // forcing a context rate can reject otherwise supported microphone devices.
+    context = new AudioContext();
+    stage = "audio processor loading";
     await context.audioWorklet.addModule(new URL("./wake-capture.worklet.js", import.meta.url));
     if (signal.aborted) {
       stop();
@@ -65,8 +70,10 @@ export async function captureWakeAudio(
       else if (e.data.type === "template") onTemplate(e.data.template as AcousticTemplate);
     };
     worker.postMessage({ type: "init", rate: context.sampleRate, profile });
+    stage = "audio processor setup";
     node = new AudioWorkletNode(context, "linkbooks-wake-capture");
     node.port.onmessage = (e) => worker?.postMessage({ type: "pcm", pcm: e.data as Float32Array });
+    stage = "microphone connection";
     context.createMediaStreamSource(stream).connect(node);
     // Connect silent output so worklet processing stays live. No microphone playback.
     const mute = context.createGain();
@@ -84,6 +91,7 @@ export async function captureWakeAudio(
         { once: true },
       ),
     );
+    stage = "audio processing start";
     await context.resume();
     return async () => {
       signal.removeEventListener("abort", stop);
@@ -93,6 +101,14 @@ export async function captureWakeAudio(
   } catch (error) {
     signal.removeEventListener("abort", stop);
     stop();
-    throw error;
+    if (
+      error instanceof Error &&
+      ["AbortError", "NotAllowedError", "SecurityError", "NotFoundError"].includes(error.name)
+    )
+      throw error;
+    throw new Error(
+      `Wake ${stage} failed: ${error instanceof Error ? error.message : "unsupported audio operation"}. Use manual activation or another supported browser.`,
+      { cause: error },
+    );
   }
 }

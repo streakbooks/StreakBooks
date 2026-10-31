@@ -58,7 +58,7 @@ async function launch(audio: string, storageState?: StorageState) {
   const browser = await chromium.launch({
     ...(process.env["PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH"]
       ? { executablePath: process.env["PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH"] }
-      : {}),
+      : { channel: "chromium" }),
     args: [
       "--use-fake-device-for-media-stream",
       `--use-file-for-fake-audio-capture=${resolve(`e2e/voice/audio/${audio}.wav`)}`,

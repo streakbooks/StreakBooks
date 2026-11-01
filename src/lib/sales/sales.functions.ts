@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
-import { prepareTransactionCsv } from "@/lib/imports/transaction-import-validation";
-import { isExactTransactionImportRetry } from "@/lib/imports/transaction-import-retry";
+import { prepareTransactionCsv, validateResolvedTransactionTotals } from "@/lib/imports/transaction-import-validation";
+import { classifyTransactionImportRetry, isExactTransactionImportRetry } from "@/lib/imports/transaction-import-retry";
 import { loadSalesTaxCodes } from "@/lib/sales/tax-codes";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
@@ -15,6 +15,7 @@ import {
   isIsoDate,
   sortLines,
   loadCompanyDefaults,
+  loadTaxTreatment,
   normaliseCurrencyAndFx,
   optionalIsoDate,
   prepareSalesLines,
@@ -1354,16 +1355,27 @@ export const importSalesInvoicesCsv = createServerFn({ method: "POST" })
       contacts.set(name, ((rows ?? []) as Array<{ id: string }>)[0]!.id);
     }
     const codesByDate = new Map<string, Map<string, string>>();
+    const ratesByDate = new Map<string, Map<string, number>>();
     for (const doc of docs) {
       if (!codesByDate.has(doc.documentDate)) {
         const codes = await loadSalesTaxCodes(supabase, data.companyId, doc.documentDate);
         codesByDate.set(doc.documentDate, new Map(codes.map((c) => [c.code, c.id])));
+        ratesByDate.set(doc.documentDate, new Map(codes.map((c) => [c.code, c.rate_bps])));
       }
       for (const line of doc.lines) {
         if (line.taxCode && !codesByDate.get(doc.documentDate)!.has(line.taxCode)) {
           throw new Error(`Row ${line.sourceRow}: tax code ${line.taxCode} is not available for sales on ${doc.documentDate}`);
         }
       }
+    }
+
+    // Validate resolved net, tax and gross totals for ALL documents before
+    // writing any draft. The CSV-only check cannot know effective tax rates.
+    const treatment = await loadTaxTreatment(supabase, data.companyId);
+    for (const doc of docs) {
+      validateResolvedTransactionTotals(doc, "sales", doc.lines.map((line) =>
+        line.taxCode ? ratesByDate.get(doc.documentDate)!.get(line.taxCode)! : 0,
+      ), treatment);
     }
 
     const outcome: {
@@ -1377,7 +1389,7 @@ export const importSalesInvoicesCsv = createServerFn({ method: "POST" })
       try {
         const { data: existing, error: existingError } = await supabase
           .from("sales_invoices" as never)
-          .select("id, status, contact_id, invoice_date, due_date, currency_code, memo" as never)
+          .select("id, status, contact_id, invoice_date, due_date, currency_code, memo, posted_journal_id" as never)
           .eq("company_id" as never, data.companyId as never)
           .ilike("invoice_number" as never, escapeLikeLiteral(doc.documentNumber) as never)
           .neq("status" as never, "void" as never)
@@ -1387,6 +1399,7 @@ export const importSalesInvoicesCsv = createServerFn({ method: "POST" })
           const prior = (existing as unknown as Array<{
             id: string; status: string; contact_id: string; invoice_date: string;
             due_date: string; currency_code: string; memo: string | null;
+            posted_journal_id: string | null;
           }>)[0]!;
           const { data: priorLines, error: priorLinesError } = await supabase
             .from("sales_invoice_lines" as never)
@@ -1413,11 +1426,13 @@ export const importSalesInvoicesCsv = createServerFn({ method: "POST" })
           if (!sameSource) {
             throw new Error("Invoice number already exists with different header or lines; review the existing invoice");
           }
-          // Do not silently treat a failed previous authorisation as completed.
-          // Manual review is safer than posting a potentially edited existing draft.
-          if (data.authorise && prior.status === "draft") {
+          const disposition = classifyTransactionImportRetry(prior.status, prior.posted_journal_id, data.authorise);
+          if (disposition === "manual_authorisation") {
             draftId = prior.id;
             throw new Error("Matching draft already exists but is not authorised; review and authorise it manually");
+          }
+          if (disposition === "invalid") {
+            throw new Error("Existing invoice has an inconsistent status or missing posting journal; review and reconcile before retrying");
           }
           outcome.skipped++;
           continue;

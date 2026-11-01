@@ -585,7 +585,14 @@ export class AssistantController {
         this.clearPending("Pending action cancelled. Your unsaved form is unchanged.");
         return;
       }
-      const focusQuery = /^(?:go to|focus(?: on)?|select field|select the field|enter|click on|move to) (.+?)(?: field)?$/i.exec(text)?.[1];
+      // A bare "choose supplier" opens the registered lookup instead of guessing a record.
+      if (/^(?:choose|select|pick|find|search for|open) (?:a |the )?(?:supplier|vendor|customer|payment terms?|terms)$/i.test(text)) {
+        this.clearPending();
+        const subject = /terms/i.test(text) ? "payment terms" : /customer/i.test(text) ? "customer" : "supplier";
+        this.focusField(subject);
+        return;
+      }
+      const focusQuery = /^(?:go to|focus(?: on)?|select field|select the field|enter|click on|move to|choose) (.+?)(?: field)?$/i.exec(text)?.[1];
       const direction = /^(?:(?:go to|move to|focus on|select|jump to) (?:the )?)?(next|previous|prev) (?:field|input|tab)$/i.exec(text)?.[1]?.toLowerCase().replace("prev", "previous");
       if (
         direction ||

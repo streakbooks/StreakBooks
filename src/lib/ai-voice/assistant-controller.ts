@@ -599,7 +599,7 @@ export class AssistantController {
       }
       if (/^(?:dictate|input text|enter text|type text|input value|enter value|type value|fill in) /i.test(text)) {
         this.clearPending();
-        await this.dictateField(input.trim().replace(/^(?:dictate|input text|enter text|type text|input value|enter value|type value|fill in)\\s+/i, ""));
+        await this.dictateField(input.trim().replace(/^(?:dictate|input text|enter text|type text|input value|enter value|type value|fill in)\s+/i, ""));
         return;
       }
       if (this.clarification) {

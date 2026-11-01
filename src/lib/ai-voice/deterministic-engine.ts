@@ -168,6 +168,14 @@ const PREFIXES = [
   "view",
   "display",
   "switch to",
+  "take me to",
+  "bring up",
+  "pull up",
+  "head to",
+  "jump to",
+  "show me",
+  "i want to see",
+  "i need to see",
 ];
 
 export function parseDeterministicCommand(transcript: string, location = ""): ParseResult {
@@ -181,7 +189,10 @@ export function parseDeterministicCommand(transcript: string, location = ""): Pa
     .normalize("NFKC")
     .replace(/[.,!?]+/g, " ")
     .replace(/\s+/g, " ")
-    .trim();
+    .trim()
+    .replace(/^(?:(?:please|kindly) |(?:can|could|would) you (?:please )?)/, "")
+    .replace(/ please$/, "");
+  if (/\\b(?:and then|then| or )\\b|[;\\/]/.test(text) || /^(?:do not|don\\u0027t|never)\\b/.test(text)) return unsupported;
   const prefix = PREFIXES.find((candidate) => text.startsWith(candidate + " "));
   if (prefix) {
     const subject = text

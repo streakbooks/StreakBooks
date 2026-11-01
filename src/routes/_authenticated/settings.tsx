@@ -1,3 +1,4 @@
+import { ModuleSettingsLinks } from "@/components/settings/ModuleSettingsLinks";
 import { WakeSettings } from "@/components/ai-voice/WakeSettings";
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
@@ -426,6 +427,7 @@ function SettingsForCompany({ companyId }: { companyId: string }) {
         </aside>
 
         <div className="min-w-0 space-y-4">
+          <ModuleSettingsLinks category={section} central />
           {section === "overview" ? (
             <SettingsOverviewPanel companyId={companyId} onNavigate={selectSection} />
           ) : null}

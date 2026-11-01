@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import type { StatementCurrency } from "@/lib/sales/statement";
 import type { DocumentBranding, PrintDocument } from "@/lib/documents/types";
 import { formatMoney } from "@/lib/format/format";
@@ -127,13 +128,30 @@ export function CustomerStatementSheet({
                     <td>
                       {l.type === "void" || !interactive ? (
                         (l.reference ?? l.id.slice(0, 8))
-                      ) : (
-                        <a
+                      ) : l.type === "invoice" ? (
+                        <Link
                           className="underline"
-                          href={`/sales/${l.type === "invoice" ? "invoices" : l.type === "receipt" ? "receipts" : "credit-notes"}/${encodeURIComponent(l.id)}`}
+                          to="/sales/invoices/$invoiceId"
+                          params={{ invoiceId: l.id }}
                         >
                           {l.reference ?? l.id.slice(0, 8)}
-                        </a>
+                        </Link>
+                      ) : l.type === "receipt" ? (
+                        <Link
+                          className="underline"
+                          to="/sales/receipts/$receiptId"
+                          params={{ receiptId: l.id }}
+                        >
+                          {l.reference ?? l.id.slice(0, 8)}
+                        </Link>
+                      ) : (
+                        <Link
+                          className="underline"
+                          to="/sales/credit-notes/$creditNoteId"
+                          params={{ creditNoteId: l.id }}
+                        >
+                          {l.reference ?? l.id.slice(0, 8)}
+                        </Link>
                       )}
                     </td>
                     <td className="num">{l.debit_minor ? m(l.debit_minor) : "—"}</td>

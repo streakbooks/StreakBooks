@@ -103,6 +103,8 @@ describe("document themes", () => {
         dateFormat: null,
       }),
     );
+    expect(themePreview({ ...base, taxNumber: "GB123" }).title).toBe("Tax invoice");
+    expect(themePreview({ ...base, taxNumber: null }).title).toBe("Invoice");
     expect(html).toContain("20%");
     expect(html).not.toContain("20%%");
     expect(html).not.toMatch(/Payment terms:.*Payment terms:/);

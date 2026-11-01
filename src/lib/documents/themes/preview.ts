@@ -88,7 +88,12 @@ export function themePreview(
     { baseCurrency: "GBP", companyTaxNumber: branding.taxNumber },
   );
   doc.kind = kind === "customer_statement" ? "sales_invoice" : (kind as DocumentKind);
-  doc.title = kind === "customer_statement" ? "Customer statement" : DOCUMENT_KIND_LABEL[doc.kind];
+  doc.title =
+    kind === "sales_invoice"
+      ? doc.title
+      : kind === "customer_statement"
+        ? "Customer statement"
+        : DOCUMENT_KIND_LABEL[doc.kind];
   doc.party.roleLabel =
     kind.startsWith("purchase_") || kind === "supplier_remittance" ? "Supplier" : "Bill to";
   if (kind === "sales_quote") {

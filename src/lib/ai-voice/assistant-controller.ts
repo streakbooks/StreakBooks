@@ -585,6 +585,33 @@ export class AssistantController {
         this.clearPending("Pending action cancelled. Your unsaved form is unchanged.");
         return;
       }
+      const scrollCommand = /^(?:(?:please )?(?:scroll|move|go) (up|down|left|right)(?: (?:a little|a bit|more|one page|half a page))?|page (up|down)|(?:scroll|go) to (?:the )?(top|bottom))$/i.exec(text);
+      if (scrollCommand) {
+        const direction = (scrollCommand[1] ?? scrollCommand[2] ?? scrollCommand[3] ?? "").toLowerCase();
+        const horizontal = direction === "left" || direction === "right";
+        const sign = direction === "up" || direction === "left" || direction === "top" ? -1 : 1;
+        const target = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        let node = target?.parentElement ?? null;
+        let scroller: HTMLElement | null = null;
+        while (node) {
+          const style = window.getComputedStyle(node);
+          const overflow = horizontal ? style.overflowX : style.overflowY;
+          const size = horizontal ? node.scrollWidth - node.clientWidth : node.scrollHeight - node.clientHeight;
+          if (size > 4 && /auto|scroll/.test(overflow)) { scroller = node; break; }
+          node = node.parentElement;
+        }
+        const amount = direction === "top" || direction === "bottom" ? 100000 : /a little|a bit/i.test(text) ? 160 : Math.round((horizontal ? window.innerWidth : window.innerHeight) * (/half a page/i.test(text) ? 0.45 : 0.75));
+        const options = { behavior: "smooth" as const, ...(horizontal ? { left: sign * amount } : { top: sign * amount }) };
+        if (scroller) scroller.scrollBy(options);
+        else window.scrollBy(options);
+        this.set({ message: "Scrolled " + direction + ". Signal remains active." });
+        return;
+      }
+      if (/^(?:enter|input|type|dictate|write|fill in)(?: the)? (?:text|value|data)(?: here| now)?$/i.test(text)) {
+        if (!this.snapshot.field) throw new Error("Choose a bill field first, such as go to memo, then say enter text.");
+        this.set({ message: "Ready for " + this.snapshot.field.label + ". Say the text or value now. Nothing is saved yet." });
+        return;
+      }
       // A bare "choose supplier" opens the registered lookup instead of guessing a record.
       if (/^(?:choose|select|pick|find|search for|open) (?:a |the )?(?:supplier|vendor|customer|payment terms?|terms)$/i.test(text)) {
         this.clearPending();
@@ -611,9 +638,9 @@ export class AssistantController {
         await this.dictateField("", true);
         return;
       }
-      if (/^(?:dictate|input text|enter text|type text|input value|enter value|type value|fill in) /i.test(text)) {
+      if (/^(?:dictate|input text|enter text|type text|input value|enter value|type value|fill in|write|write text|fill|type|input|enter) /i.test(text)) {
         this.clearPending();
-        await this.dictateField(input.trim().replace(/^(?:dictate|input text|enter text|type text|input value|enter value|type value|fill in)\s+/i, ""));
+        await this.dictateField(input.trim().replace(/^(?:dictate|input text|enter text|type text|input value|enter value|type value|fill in|write|write text|fill|type|input|enter)\s+/i, ""));
         return;
       }
       if (this.clarification) {

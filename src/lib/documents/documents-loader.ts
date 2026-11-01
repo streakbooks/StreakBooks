@@ -49,6 +49,8 @@ export type CompanyDocContext = {
   timezone: string;
   today: string;
   isDemo: boolean;
+  appearanceParty?: Row | null | undefined;
+  appearanceProvenance?: string | undefined;
 };
 
 async function one(
@@ -90,15 +92,38 @@ async function many(
 }
 
 /** Company, branding (with a signed logo URL) and locale settings. */
-export async function loadCompanyDocContext(db: Db, companyId: string): Promise<CompanyDocContext> {
-  const company = await one(
+export async function loadCompanyDocContext(
+  db: Db,
+  companyId: string,
+  source?: { kind: DocumentKind; id: string },
+  themeKind?: string,
+): Promise<CompanyDocContext> {
+  let company = await one(
     db,
     "companies",
     "name, legal_name, base_currency, timezone, locale, date_format, invoice_footer, document_theme_color, is_demo",
     { id: companyId },
   );
   if (!company) throw new Error("Organisation not found");
-  const branding = await one(db, "company_branding", "*", { company_id: companyId });
+  let branding = await one(db, "company_branding", "*", { company_id: companyId });
+  let appearanceParty: Row | null | undefined;
+  let appearanceProvenance: string | undefined;
+  if (source || themeKind) {
+    const r = await db.rpc(
+      (source ? "get_document_appearance" : "get_document_theme_context") as never,
+      {
+        _company_id: companyId,
+        _kind: source?.kind ?? themeKind,
+        ...(source ? { _document_id: source.id } : {}),
+      } as never,
+    );
+    if (r.error) throw new Error(r.error.message);
+    const a = r.data as { company: Row; branding: Row; party: Row | null; provenance: string };
+    company = { ...company, ...a.company };
+    branding = a.branding;
+    appearanceParty = a.provenance === "draft" ? undefined : a.party;
+    appearanceProvenance = a.provenance;
+  }
 
   let logoUrl: string | null = null;
   const logoPath =
@@ -114,6 +139,8 @@ export async function loadCompanyDocContext(db: Db, companyId: string): Promise<
   const timezone = String(company["timezone"] ?? "UTC");
   return {
     company,
+    appearanceParty,
+    appearanceProvenance,
     branding: mapBranding(company, branding, logoUrl),
     rawBranding: branding,
     locale: String(company["locale"] ?? "en-GB"),
@@ -131,7 +158,7 @@ export function mapContextFrom(ctx: CompanyDocContext): MapContext {
 }
 
 /** Load one document and map it. Throws "… not found" when it is not in the company. */
-export async function loadPrintDocument(
+async function loadMappedPrintDocument(
   db: Db,
   companyId: string,
   kind: DocumentKind,
@@ -149,7 +176,7 @@ export async function loadPrintDocument(
       return mapSalesInvoice(
         row,
         (row["sales_invoice_lines"] as Row[]) ?? [],
-        (row["contacts"] as Row) ?? null,
+        ctx.appearanceParty ?? (row["contacts"] as Row) ?? null,
         mapCtx,
       );
     }
@@ -164,7 +191,7 @@ export async function loadPrintDocument(
       return mapSalesCreditNote(
         row,
         (row["sales_credit_note_lines"] as Row[]) ?? [],
-        (row["contacts"] as Row) ?? null,
+        ctx.appearanceParty ?? (row["contacts"] as Row) ?? null,
         mapCtx,
       );
     }
@@ -174,7 +201,7 @@ export async function loadPrintDocument(
       return mapSalesQuote(
         row,
         (row["sales_quote_lines"] as Row[]) ?? [],
-        (row["contacts"] as Row) ?? null,
+        ctx.appearanceParty ?? (row["contacts"] as Row) ?? null,
         mapCtx,
       );
     }
@@ -212,7 +239,7 @@ export async function loadPrintDocument(
       return mapSalesReceipt(
         row,
         allocations,
-        (row["contacts"] as Row) ?? null,
+        ctx.appearanceParty ?? (row["contacts"] as Row) ?? null,
         ((row["accounts"] as Row | null)?.["name"] as string | undefined) ?? null,
         mapCtx,
       );
@@ -223,7 +250,7 @@ export async function loadPrintDocument(
       return mapPurchaseBill(
         row,
         (row["purchase_bill_lines"] as Row[]) ?? [],
-        (row["contacts"] as Row) ?? null,
+        ctx.appearanceParty ?? (row["contacts"] as Row) ?? null,
         mapCtx,
       );
     }
@@ -233,7 +260,7 @@ export async function loadPrintDocument(
       return mapPurchaseOrder(
         row,
         (row["purchase_order_lines"] as Row[]) ?? [],
-        (row["contacts"] as Row) ?? null,
+        ctx.appearanceParty ?? (row["contacts"] as Row) ?? null,
         mapCtx,
       );
     }
@@ -248,7 +275,7 @@ export async function loadPrintDocument(
       return mapPurchaseCreditNote(
         row,
         (row["purchase_credit_note_lines"] as Row[]) ?? [],
-        (row["contacts"] as Row) ?? null,
+        ctx.appearanceParty ?? (row["contacts"] as Row) ?? null,
         mapCtx,
       );
     }
@@ -278,10 +305,21 @@ export async function loadPrintDocument(
             amountMinor: Number(a["amount_minor"] ?? 0),
           };
         }),
-        (row["contacts"] as Row) ?? null,
+        ctx.appearanceParty ?? (row["contacts"] as Row) ?? null,
         ((row["accounts"] as Row | null)?.["name"] as string | undefined) ?? null,
         mapCtx,
       );
     }
   }
+}
+
+export async function loadPrintDocument(
+  db: Db,
+  companyId: string,
+  kind: DocumentKind,
+  id: string,
+  ctx: CompanyDocContext,
+): Promise<PrintDocument> {
+  const doc = await loadMappedPrintDocument(db, companyId, kind, id, ctx);
+  return { ...doc, notes: doc.notes ?? ctx.branding.defaultNotes };
 }

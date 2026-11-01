@@ -1,12 +1,13 @@
+import { CustomerStatementSheet } from "@/components/documents/CustomerStatementSheet";
+import { mapBranding } from "@/lib/documents/mappers";
 import { useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Mail, Printer } from "lucide-react";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { listCustomers } from "@/lib/sales/sales.functions";
 import { getCustomerStatement } from "@/lib/sales/sales-statements.functions";
-import { money } from "@/components/sales/sales-form-utils";
 import { useCan } from "@/hooks/use-can";
 import { useFormat } from "@/hooks/use-format";
 import { getDocumentBranding, getDocumentDelivery } from "@/lib/documents/documents.functions";
@@ -18,14 +19,6 @@ import { ContactLookup } from "@/components/lookup";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/sales/statements")({
   head: () => ({ meta: [{ title: "Customer statements — LinkBooks" }] }),
@@ -69,7 +62,7 @@ export function Statements() {
   const brandingQ = useQuery({
     queryKey: ["document-branding", companyId],
     enabled: Boolean(companyId),
-    queryFn: () => fetchBranding({ data: { companyId: companyId! } }),
+    queryFn: () => fetchBranding({ data: { companyId: companyId!, kind: "customer_statement" } }),
   });
   const deliveryQ = useQuery({
     queryKey: ["document-delivery", companyId, "customer_statement", contactId],
@@ -140,129 +133,18 @@ export function Statements() {
       ) : stmtQ.isError ? (
         <ErrorState title="Could not load statement" description={friendlyAuthError(stmtQ.error)} />
       ) : (
-        <div className="space-y-6 print:space-y-3">
-          <div className="flex items-start gap-4">
-            {brandingQ.data?.branding.logoUrl ? (
-              <img
-                src={brandingQ.data.branding.logoUrl}
-                alt="Company logo"
-                className="max-h-14 max-w-[180px] object-contain"
-              />
-            ) : null}
-            <div>
-              <h2 className="text-lg font-semibold">
-                {brandingQ.data?.branding.displayName ?? company?.name ?? "Organisation"}
-              </h2>
-              {(brandingQ.data?.branding.addressLines ?? []).map((l, i) => (
-                <p key={i} className="text-sm text-muted-foreground">
-                  {l}
-                </p>
-              ))}
-              {brandingQ.data?.branding.taxNumber ? (
-                <p className="text-sm text-muted-foreground">
-                  Tax no. {brandingQ.data.branding.taxNumber}
-                </p>
-              ) : null}
-              <p className="mt-1 text-sm text-muted-foreground">
-                Statement for {customerName}
-                {stmtQ.data.from || stmtQ.data.to
-                  ? ` · ${stmtQ.data.from ?? "start"} to ${stmtQ.data.to ?? "today"}`
-                  : ""}
-              </p>
-            </div>
+        <div className="space-y-6">
+          <div className="overflow-auto">
+            <CustomerStatementSheet
+              statement={stmtQ.data}
+              customerName={customerName}
+              branding={
+                brandingQ.data?.branding ?? mapBranding({ name: company?.name }, null, null)
+              }
+              locale={brandingQ.data?.locale ?? "en-GB"}
+              dateFormat={brandingQ.data?.dateFormat ?? null}
+            />
           </div>
-          {stmtQ.data.currencies.length === 0 ? (
-            <EmptyState title="No activity" description="No posted activity for this customer." />
-          ) : null}
-          {stmtQ.data.currencies.map((c) => {
-            const pos = stmtQ.data.position.find((p) => p.currency_code === c.currency_code);
-            return (
-              <section key={c.currency_code} className="space-y-2">
-                <h3 className="text-sm font-medium">{c.currency_code}</h3>
-                <div className="flex flex-wrap gap-4 text-sm">
-                  <span>
-                    Opening balance{" "}
-                    <strong>{money(c.opening_balance_minor, c.currency_code)}</strong>
-                  </span>
-                  <span>
-                    Closing balance{" "}
-                    <strong>{money(c.closing_balance_minor, c.currency_code)}</strong>
-                  </span>
-                  {pos ? (
-                    <>
-                      <span>
-                        Invoices outstanding today{" "}
-                        <strong>{money(pos.outstandingMinor, c.currency_code)}</strong>
-                      </span>
-                      <span>
-                        Unapplied credits{" "}
-                        <strong>{money(pos.unappliedCreditMinor, c.currency_code)}</strong>
-                      </span>
-                      <span>
-                        Unallocated receipts{" "}
-                        <strong>{money(pos.unappliedReceiptMinor, c.currency_code)}</strong>
-                      </span>
-                    </>
-                  ) : null}
-                </div>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Reference</TableHead>
-                      <TableHead className="text-right">Debit</TableHead>
-                      <TableHead className="text-right">Credit</TableHead>
-                      <TableHead className="text-right">Balance</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-muted-foreground">
-                        Opening balance
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {money(c.opening_balance_minor, c.currency_code)}
-                      </TableCell>
-                    </TableRow>
-                    {c.lines.map((l) => (
-                      <TableRow key={`${l.type}-${l.id}-${l.date}`}>
-                        <TableCell>{l.date}</TableCell>
-                        <TableCell className="capitalize">{l.type.replace("_", " ")}</TableCell>
-                        <TableCell>{l.type === "invoice" ? <Link to="/sales/invoices/$invoiceId" params={{ invoiceId: l.id }} className="underline-offset-2 hover:underline focus-visible:underline">{l.reference ?? l.id.slice(0, 8)}</Link> : l.type === "receipt" ? <Link to="/sales/receipts/$receiptId" params={{ receiptId: l.id }} className="underline-offset-2 hover:underline focus-visible:underline">{l.reference ?? l.id.slice(0, 8)}</Link> : l.type === "credit_note" ? <Link to="/sales/credit-notes/$creditNoteId" params={{ creditNoteId: l.id }} className="underline-offset-2 hover:underline focus-visible:underline">{l.reference ?? l.id.slice(0, 8)}</Link> : l.reference ?? l.id.slice(0, 8)}</TableCell>
-                        <TableCell className="text-right">
-                          {l.debit_minor ? money(l.debit_minor, c.currency_code) : "—"}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {l.credit_minor ? money(l.credit_minor, c.currency_code) : "—"}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {money(l.balance_minor, c.currency_code)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {c.lines.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center text-muted-foreground">
-                          No posted activity in this period.
-                        </TableCell>
-                      </TableRow>
-                    ) : null}
-                  </TableBody>
-                </Table>
-              </section>
-            );
-          })}
-          <p className="text-xs text-muted-foreground">
-            Opening balance is everything owed before the start date. Each currency is shown on its
-            own and never added to another.
-          </p>
-          {brandingQ.data?.branding.bankDetails ? (
-            <p className="whitespace-pre-line text-xs">
-              <span className="font-semibold">Payment details:</span>{" "}
-              {brandingQ.data.branding.bankDetails}
-            </p>
-          ) : null}
           {deliveryQ.data && !deliveryQ.data.emailConfigured ? (
             <p className="text-xs text-muted-foreground print:hidden">
               Email sending is not configured. Download the PDF, copy the link, or use your own

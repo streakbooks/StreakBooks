@@ -54,6 +54,7 @@ export function documentAppPath(kind: DocumentKind, id: string): string {
 }
 
 export type DocumentBranding = {
+  layout?: import("./themes/contracts").ThemeConfig | undefined;
   /** Trading name if set, otherwise the company name. */
   displayName: string;
   legalName: string | null;
@@ -88,6 +89,7 @@ export type PrintTaxRow = { rateBps: number; netMinor: number; taxMinor: number 
 export type PrintMark = "PAID" | "VOID" | "DRAFT";
 
 export type PrintParty = {
+  shippingAddressLines?: string[];
   /** Label printed above the party block, e.g. "Bill to", "Supplier". */
   roleLabel: string;
   name: string;

@@ -11,6 +11,7 @@ import { getBrandingSettings, saveBrandingSettings } from "@/lib/documents/docum
 import { safeAccentColor, textToLines } from "@/lib/documents/helpers";
 import type { DocumentBranding, PrintDocument } from "@/lib/documents/types";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { DocumentThemes } from "@/components/documents/DocumentThemes";
 import { DocumentSheet } from "@/components/documents/DocumentSheet";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -63,6 +64,11 @@ const EMPTY: FormState = {
 
 function BrandingPage() {
   const { company } = useActiveCompany();
+  return <BrandingWorkspace key={company?.id ?? "none"} />;
+}
+
+function BrandingWorkspace() {
+  const { company } = useActiveCompany();
   const companyId = company?.id;
   const { can } = useCan();
   const canEdit = can("company.settings.edit");
@@ -102,6 +108,12 @@ function BrandingPage() {
     setLoaded(true);
   }, [q.data, loaded]);
 
+  useEffect(
+    () => () => {
+      if (logoPreview?.startsWith("blob:")) URL.revokeObjectURL(logoPreview);
+    },
+    [logoPreview],
+  );
   const set = (k: keyof FormState) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
 
   const saveM = useMutation({
@@ -168,195 +180,228 @@ function BrandingPage() {
   return (
     <>
       <PageHeader
-        title="Document branding"
+        title="Invoice themes & branding"
         description="Logo, colours, address, tax and bank details printed on invoices, credit notes, quotes, statements and other documents."
       />
-      {q.data.extendedFieldsAvailable === false ? (
-        <Alert className="mb-4">
-          <AlertTitle>Database update needed</AlertTitle>
-          <AlertDescription>
-            Address, tax number, bank details and logo upload need migration 20261025200000. Ask an
-            administrator to apply the latest migrations before saving.
-          </AlertDescription>
-        </Alert>
-      ) : null}
-      {!canEdit ? (
-        <p className="mb-4 text-sm text-muted-foreground">
-          You can view branding but only an administrator can change it.
+      <div className="mb-8">
+        <DocumentThemes
+          companyId={companyId}
+          base={
+            buildPreview(
+              {
+                tradingName: q.data.tradingName,
+                letterheadLine: q.data.letterheadLine,
+                invoiceEmail: q.data.invoiceEmail,
+                invoicePhone: q.data.invoicePhone,
+                addressText: q.data.addressText,
+                taxNumber: q.data.taxNumber,
+                bankDetails: q.data.bankDetails,
+                paymentInstructions: q.data.paymentInstructions,
+                defaultNotes: q.data.defaultNotes,
+                accentColor: q.data.accentColor,
+                footerText: q.data.footerText,
+              },
+              q.data.logoPreviewUrl,
+              company?.name ?? "",
+            ).branding
+          }
+          canEdit={canEdit}
+        />
+      </div>
+      <details className="rounded-xl border p-4">
+        <summary className="cursor-pointer font-semibold">Organisation branding fallback</summary>
+        <p className="my-3 text-sm text-muted-foreground">
+          Used by documents without a specific theme. Saving affects drafts and future documents.
         </p>
-      ) : null}
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,420px)_1fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Logo</Label>
-              <div className="flex items-center gap-3">
-                {logoPreview ? (
-                  <img
-                    src={logoPreview}
-                    alt="Current logo"
-                    className="max-h-14 max-w-[160px] object-contain"
-                  />
-                ) : (
-                  <span className="text-xs text-muted-foreground">No logo</span>
-                )}
-                {canEdit ? (
-                  <>
-                    <input
-                      ref={fileRef}
-                      type="file"
-                      hidden
-                      accept={Object.keys(LOGO_TYPES).join(",")}
-                      aria-label="Choose a logo image"
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) uploadM.mutate(f);
-                        e.target.value = "";
-                      }}
+        {q.data.extendedFieldsAvailable === false ? (
+          <Alert className="mb-4">
+            <AlertTitle>Database update needed</AlertTitle>
+            <AlertDescription>
+              Address, tax number, bank details and logo upload need migration 20261025200000. Ask
+              an administrator to apply the latest migrations before saving.
+            </AlertDescription>
+          </Alert>
+        ) : null}
+        {!canEdit ? (
+          <p className="mb-4 text-sm text-muted-foreground">
+            You can view branding but only an administrator can change it.
+          </p>
+        ) : null}
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,420px)_1fr]">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Logo</Label>
+                <div className="flex items-center gap-3">
+                  {logoPreview ? (
+                    <img
+                      src={logoPreview}
+                      alt="Current logo"
+                      className="max-h-14 max-w-[160px] object-contain"
                     />
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={uploadM.isPending}
-                      onClick={() => fileRef.current?.click()}
-                    >
-                      {uploadM.isPending ? <Loader2 className="mr-1 size-4 animate-spin" /> : null}
-                      {logoPreview ? "Replace" : "Upload logo"}
-                    </Button>
-                    {logoPreview ? (
+                  ) : (
+                    <span className="text-xs text-muted-foreground">No logo</span>
+                  )}
+                  {canEdit ? (
+                    <>
+                      <input
+                        ref={fileRef}
+                        type="file"
+                        hidden
+                        accept={Object.keys(LOGO_TYPES).join(",")}
+                        aria-label="Choose a logo image"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) uploadM.mutate(f);
+                          e.target.value = "";
+                        }}
+                      />
                       <Button
                         size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          setLogoPath(null);
-                          setLogoPreview(null);
-                        }}
+                        variant="outline"
+                        disabled={uploadM.isPending}
+                        onClick={() => fileRef.current?.click()}
                       >
-                        Remove
+                        {uploadM.isPending ? (
+                          <Loader2 className="mr-1 size-4 animate-spin" />
+                        ) : null}
+                        {logoPreview ? "Replace" : "Upload logo"}
                       </Button>
-                    ) : null}
-                  </>
-                ) : null}
+                      {logoPreview ? (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setLogoPath(null);
+                            setLogoPreview(null);
+                          }}
+                        >
+                          Remove
+                        </Button>
+                      ) : null}
+                    </>
+                  ) : null}
+                </div>
+                <p className="text-xs text-muted-foreground">PNG, JPEG, WebP or GIF, up to 2 MB.</p>
               </div>
-              <p className="text-xs text-muted-foreground">PNG, JPEG, WebP or GIF, up to 2 MB.</p>
-            </div>
-            <Field
-              label="Trading name"
-              value={form.tradingName}
-              onChange={set("tradingName")}
-              disabled={!canEdit}
-            />
-            <Field
-              label="Letterhead line"
-              value={form.letterheadLine}
-              onChange={set("letterheadLine")}
-              disabled={!canEdit}
-            />
-            <Area
-              label="Address"
-              rows={3}
-              value={form.addressText}
-              onChange={set("addressText")}
-              disabled={!canEdit}
-            />
-            <Field
-              label="Tax / VAT number"
-              value={form.taxNumber}
-              onChange={set("taxNumber")}
-              disabled={!canEdit}
-            />
-            <p className="-mt-2 text-xs text-muted-foreground">
-              Documents are titled “Tax invoice” only when a tax number is set.
-            </p>
-            <Field
-              label="Invoice email"
-              value={form.invoiceEmail}
-              onChange={set("invoiceEmail")}
-              disabled={!canEdit}
-            />
-            <Field
-              label="Invoice phone"
-              value={form.invoicePhone}
-              onChange={set("invoicePhone")}
-              disabled={!canEdit}
-            />
-            <Area
-              label="Bank details"
-              rows={3}
-              value={form.bankDetails}
-              onChange={set("bankDetails")}
-              disabled={!canEdit}
-            />
-            <Area
-              label="Payment instructions"
-              rows={2}
-              value={form.paymentInstructions}
-              onChange={set("paymentInstructions")}
-              disabled={!canEdit}
-            />
-            <Area
-              label="Default notes"
-              rows={2}
-              value={form.defaultNotes}
-              onChange={set("defaultNotes")}
-              disabled={!canEdit}
-            />
-            <Area
-              label="Footer text"
-              rows={2}
-              value={form.footerText}
-              onChange={set("footerText")}
-              disabled={!canEdit}
-            />
-            <div className="space-y-2">
-              <Label htmlFor="accent">Accent colour</Label>
-              <div className="flex items-center gap-3">
-                <input
-                  id="accent"
-                  type="color"
-                  value={safeAccentColor(form.accentColor)}
-                  disabled={!canEdit}
-                  onChange={(e) => set("accentColor")(e.target.value.toUpperCase())}
-                  className="h-9 w-14 cursor-pointer rounded border border-input bg-background p-1"
-                />
-                <Input
-                  className="w-28"
-                  value={form.accentColor}
-                  disabled={!canEdit}
-                  onChange={(e) => set("accentColor")(e.target.value)}
-                  aria-label="Accent colour hex"
-                />
-              </div>
-            </div>
-            {error ? (
-              <p role="alert" className="text-sm text-destructive">
-                {error}
+              <Field
+                label="Trading name"
+                value={form.tradingName}
+                onChange={set("tradingName")}
+                disabled={!canEdit}
+              />
+              <Field
+                label="Letterhead line"
+                value={form.letterheadLine}
+                onChange={set("letterheadLine")}
+                disabled={!canEdit}
+              />
+              <Area
+                label="Address"
+                rows={3}
+                value={form.addressText}
+                onChange={set("addressText")}
+                disabled={!canEdit}
+              />
+              <Field
+                label="Tax / VAT number"
+                value={form.taxNumber}
+                onChange={set("taxNumber")}
+                disabled={!canEdit}
+              />
+              <p className="-mt-2 text-xs text-muted-foreground">
+                Documents are titled “Tax invoice” only when a tax number is set.
               </p>
-            ) : null}
-            {canEdit ? (
-              <Button disabled={saveM.isPending} onClick={() => saveM.mutate()}>
-                {saveM.isPending ? <Loader2 className="mr-1 size-4 animate-spin" /> : null}
-                Save branding
-              </Button>
-            ) : null}
-          </CardContent>
-        </Card>
+              <Field
+                label="Invoice email"
+                value={form.invoiceEmail}
+                onChange={set("invoiceEmail")}
+                disabled={!canEdit}
+              />
+              <Field
+                label="Invoice phone"
+                value={form.invoicePhone}
+                onChange={set("invoicePhone")}
+                disabled={!canEdit}
+              />
+              <Area
+                label="Bank details"
+                rows={3}
+                value={form.bankDetails}
+                onChange={set("bankDetails")}
+                disabled={!canEdit}
+              />
+              <Area
+                label="Payment instructions"
+                rows={2}
+                value={form.paymentInstructions}
+                onChange={set("paymentInstructions")}
+                disabled={!canEdit}
+              />
+              <Area
+                label="Default notes"
+                rows={2}
+                value={form.defaultNotes}
+                onChange={set("defaultNotes")}
+                disabled={!canEdit}
+              />
+              <Area
+                label="Footer text"
+                rows={2}
+                value={form.footerText}
+                onChange={set("footerText")}
+                disabled={!canEdit}
+              />
+              <div className="space-y-2">
+                <Label htmlFor="accent">Accent colour</Label>
+                <div className="flex items-center gap-3">
+                  <input
+                    id="accent"
+                    type="color"
+                    value={safeAccentColor(form.accentColor)}
+                    disabled={!canEdit}
+                    onChange={(e) => set("accentColor")(e.target.value.toUpperCase())}
+                    className="h-9 w-14 cursor-pointer rounded border border-input bg-background p-1"
+                  />
+                  <Input
+                    className="w-28"
+                    value={form.accentColor}
+                    disabled={!canEdit}
+                    onChange={(e) => set("accentColor")(e.target.value)}
+                    aria-label="Accent colour hex"
+                  />
+                </div>
+              </div>
+              {error ? (
+                <p role="alert" className="text-sm text-destructive">
+                  {error}
+                </p>
+              ) : null}
+              {canEdit ? (
+                <Button disabled={saveM.isPending} onClick={() => saveM.mutate()}>
+                  {saveM.isPending ? <Loader2 className="mr-1 size-4 animate-spin" /> : null}
+                  Save branding
+                </Button>
+              ) : null}
+            </CardContent>
+          </Card>
 
-        <div>
-          <p className="mb-2 text-xs text-muted-foreground">
-            Preview with sample data (not a real document).
-          </p>
-          <DocumentSheet
-            document={preview.document}
-            branding={preview.branding}
-            locale="en-GB"
-            dateFormat={null}
-          />
+          <div>
+            <p className="mb-2 text-xs text-muted-foreground">
+              Preview with sample data (not a real document).
+            </p>
+            <DocumentSheet
+              document={preview.document}
+              branding={preview.branding}
+              locale="en-GB"
+              dateFormat={null}
+            />
+          </div>
         </div>
-      </div>
+      </details>
     </>
   );
 }

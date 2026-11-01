@@ -40,3 +40,22 @@ test("create deadlines, protect self review and read-only work, export evidence 
   await expect(page.getByRole("status")).not.toContainText("View only client");
   expect(errors).toEqual([]);
 });
+
+test("a bulk version conflict clears stale selections before retry", async ({ page }) => {
+  page.on("dialog", (dialog) => dialog.accept());
+  await page.goto("/");
+  const selected = page.getByRole("checkbox", {
+    name: "Select Reconcile October bank for Writable client",
+    exact: true,
+  });
+  await selected.check();
+  await page.getByLabel("Bulk work action", { exact: true }).selectOption("in_progress");
+  await page.getByLabel("Bulk evidence note", { exact: true }).fill("Simulate version conflict");
+  await page.getByRole("button", { name: "Apply to selected work" }).click();
+  await expect(page.getByRole("alert")).toContainText("Task changed");
+  await expect(selected).not.toBeChecked();
+  await expect(page.getByRole("button", { name: "Apply to selected work" })).toBeDisabled();
+  await selected.check();
+  await page.getByRole("button", { name: "Refresh work", exact: true }).click();
+  await expect(selected).not.toBeChecked();
+});

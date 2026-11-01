@@ -147,7 +147,14 @@ export function PracticeWorkBoardView({
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" disabled={busy} onClick={onRefresh}>
+          <Button
+            variant="outline"
+            disabled={busy}
+            onClick={() => {
+              setSelection({});
+              onRefresh();
+            }}
+          >
             Refresh work
           </Button>
           <Button variant="outline" onClick={exportCsv}>
@@ -424,6 +431,7 @@ export function PracticeWorkBoardView({
               setSelection({});
               setBulkNote("");
             } catch (e) {
+              setSelection({});
               setError(friendlyAuthError(e));
             }
           }}

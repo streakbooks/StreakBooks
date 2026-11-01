@@ -68,6 +68,8 @@ function Fixture() {
         }));
       }}
       onBulk={async (input) => {
+        if (input.note === "Simulate version conflict")
+          throw new Error("Task changed. Refresh before retrying");
         setWorkspace((w) => ({
           ...w,
           tasks: w.tasks.map((t) =>

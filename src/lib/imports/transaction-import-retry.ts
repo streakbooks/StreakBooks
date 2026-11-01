@@ -88,3 +88,34 @@ export function classifyTransactionImportRetry(
   }
   return "invalid";
 }
+
+/**
+ * Verify a persisted posting journal before declaring a CSV retry complete.
+ * A non-null posted_journal_id alone is not proof: it could reference a
+ * different organisation/document, a draft journal, or a legacy seed entry
+ * without source provenance. Reject such cases for manual reconciliation.
+ */
+export type PostedImportJournal = {
+  id: string;
+  company_id: string;
+  status: string;
+  source_type: string;
+  source_id: string | null;
+};
+
+export function isVerifiedTransactionImportJournal(
+  expected: {
+    companyId: string;
+    documentId: string;
+    journalId: string;
+    sourceType: "sales_invoice" | "purchase_bill";
+  },
+  journal: PostedImportJournal | null,
+): boolean {
+  return journal !== null &&
+    journal.id === expected.journalId &&
+    journal.company_id === expected.companyId &&
+    journal.status === "posted" &&
+    journal.source_type === expected.sourceType &&
+    journal.source_id === expected.documentId;
+}

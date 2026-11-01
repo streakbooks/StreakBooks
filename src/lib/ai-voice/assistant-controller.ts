@@ -198,8 +198,14 @@ export class AssistantController {
       const options =
         key === "contactId" ? form.contacts : key === "paymentTermId" ? (form.paymentTerms ?? []) : key === "accountId" ? form.accounts : form.taxes;
       this.choose(form, value, options, (id) => {
-        if (key === "contactId") form.selectContact(id);
-        else if (key === "paymentTermId") form.selectPaymentTerm?.(id);
+        if (key === "contactId") {
+          form.selectContact(id);
+          if (form.module === "bill") this.focusField("bill date");
+        }
+        else if (key === "paymentTermId") {
+          form.selectPaymentTerm?.(id);
+          if (form.module === "bill") this.focusField("due date");
+        }
         else {
           if (line === undefined || !form.draft.lines[line])
             throw new Error("Select a line first.");
@@ -834,6 +840,7 @@ export class AssistantController {
         this.previousContact = draft.contactId || this.lastContact;
         this.lastContact = id;
         form.selectContact(id);
+        if (form.module === "bill") this.focusField("bill date");
       });
       return;
     }

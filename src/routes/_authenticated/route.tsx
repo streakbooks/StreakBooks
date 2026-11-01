@@ -1,3 +1,4 @@
+import { validateSettingsPanelSearch } from "@/lib/settings/panels";
 import { useEffect } from "react";
 import {
   createFileRoute,
@@ -26,6 +27,7 @@ import { listPortalAccess } from "@/lib/portals/portals.functions";
  */
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
+  validateSearch: validateSettingsPanelSearch,
   beforeLoad: async ({ location }) => {
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) {

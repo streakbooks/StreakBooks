@@ -34,6 +34,7 @@ export function ModuleSubnav({
       </div>
       <SettingsDestinationLink
         destination={settings}
+        mode="route"
         ariaLabel={`${label} settings`}
         className="ml-2 inline-flex shrink-0 items-center gap-1.5 self-stretch rounded-t-md border-b-2 border-transparent bg-card px-3 py-2 text-sm font-medium text-foreground hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
       >

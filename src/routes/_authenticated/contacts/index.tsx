@@ -1,3 +1,4 @@
+import {SettingsDestinationLink} from "@/components/settings/ModuleSettingsLinks";
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -141,9 +142,9 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
               <Download className="mr-1 size-4" /> Export
             </Button>
             <Button variant="outline" size="sm" asChild>
-              <Link to="/contacts/settings">
+              <SettingsDestinationLink destination={{to:"/contacts/settings"}}>
                 <Settings2 className="mr-1 size-4" /> Settings
-              </Link>
+              </SettingsDestinationLink>
             </Button>
             <Button variant="outline" size="sm" asChild>
               <Link to="/contacts/duplicates">Duplicates</Link>

@@ -1,6 +1,6 @@
 # Module settings navigation
 
-The existing settings pages remain the source of truth. This change adds navigation links only; it does not alter settings persistence, accounting behaviour, integrations, permissions or database schema.
+The existing settings pages remain the source of truth. Settings now open in the originating workspace using reusable forms. Settings persistence, accounting behaviour, integrations, permissions and database schema are unchanged.
 
 ## Paths users can follow
 
@@ -10,16 +10,17 @@ The existing settings pages remain the source of truth. This change adds navigat
 - Banking keeps a visible Settings link beside its scrollable workspace tabs.
 - Accounting, products, reports, budgets, tax, contacts, projects, files, fixed assets, accountant tools, firm tools and AI have contextual links to their existing relevant configuration screens. Existing Contacts overview settings access is reused.
 
-Sales, Purchases and Banking keep Settings outside the horizontal tab scroller, so it stays available on narrow screens. Invoice branding retains its canonical `/documents/branding` URL. The optional validated `from=purchases` navigation context changes its return link, breadcrumb and selected sidebar module; it does not grant permissions or affect any settings values.
+Sales, Purchases and Banking keep Settings outside the horizontal tab scroller, so it stays available on narrow screens. Contextual links use an allowlisted `settingsPanel` query parameter on the current path. Nested links maintain a bounded `settingsTrail`; Back returns to the parent panel and then the source screen. Source query filters survive opening and closing panels. Background workspace content stays mounted and hidden, preserving unsaved business drafts while a panel is open. Refresh restores the active panel; it does not persist unsaved drafts across a reload. Direct canonical settings URLs continue to work, including `/documents/branding`. The optional validated `from=purchases` navigation context changes its return link, breadcrumb and selected sidebar module; it does not grant permissions or affect any settings values.
 
 Shared links are defined in `src/lib/settings/module-navigation.ts`. Reusable cards and shortcuts are in `ModuleSettingsLinks.tsx`; the Sales/Purchases tab layout uses `ModuleSubnav.tsx`. Settings search includes invoice branding, templates, PDF and numbering under Sales and purchase themes/remittances under Purchases. Add future module navigation here instead of duplicating settings forms.
 
-## Verification
+## Shared defaults and verification
 
-- TypeScript and production build passed.
-- Full regression: 157 test files / 1,199 tests passed.
-- Direct-route ownership and breadcrumb tests cover sales branding, purchase context and invalid-origin fallback.
-- Isolated Chromium verification at 390 px and 1280 px confirmed visible Settings links, active state, sales/purchase theme navigation, browser Back, numbering and central sales/report settings destinations. Linked paths were checked against the registered route inventory; there were no browser page errors. This checks the actual navigation components with isolated target pages, not an authenticated whole-application acceptance run.
-- Changed-file ESLint passed. The central `settings.tsx` file retains its existing formatting-only Prettier findings; its code checks passed with that formatting rule disabled. Only one import and one component insertion changed in that large file, avoiding an unrelated full-file reformat.
+Supplier defaults embeds purchase payment terms and purchase policies alongside shared contact numbering, groups and tags. Customer defaults embeds sales defaults with the same shared contact fields. These views do not silently change the organisation's default contact role. Canonical Contacts settings still offers the global contact defaults.
+
+- TypeScript and production build passed; 158 test files / 1,204 tests passed.
+- Five routing tests cover source filters, nested navigation, cycles, query validation and transactional-route separation.
+- Isolated Chromium verification with production links, panel frame and surface passed source-path retention, nested Back, browser history, refresh, central category retention and preservation of an unsaved background draft at 390 px. Detail bodies were fixtures; authenticated backend persistence was not browser-tested.
+- Extracted content/forms and panel routing passed ESLint. The central settings page retains its pre-existing formatting findings.
 
 No database migrations or new external credentials are required. Existing server authorisation and RLS continue to govern viewing and saving settings.

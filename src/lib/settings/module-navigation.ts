@@ -1,5 +1,7 @@
+import type { SettingsPanelId } from "./panels";
 import type { SettingsCategory } from "./registry";
 export type SettingsDestination = {
+  panel?: SettingsPanelId;
   to: string;
   section?: SettingsCategory;
   from?: "sales" | "purchases";
@@ -26,6 +28,7 @@ export const MODULE_SETTINGS_LINKS: Partial<Record<SettingsCategory, SettingsLin
     },
     {
       label: "Customer defaults",
+      panel: "customer-defaults",
       description: "Contact numbering, payment terms, groups and tags.",
       to: "/contacts/settings",
     },
@@ -51,6 +54,7 @@ export const MODULE_SETTINGS_LINKS: Partial<Record<SettingsCategory, SettingsLin
     },
     {
       label: "Supplier defaults",
+      panel: "supplier-defaults",
       description: "Contact numbering, payment terms, groups and tags.",
       to: "/contacts/settings",
     },

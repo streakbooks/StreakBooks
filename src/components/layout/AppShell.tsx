@@ -1,3 +1,6 @@
+import { SettingsSurface } from "@/components/settings/SettingsSurface";
+import { InPlaceSettingsPanel } from "@/components/settings/InPlaceSettingsPanel";
+import { parseSettingsPanel, panelLabel } from "@/lib/settings/panels";
 import { WorkspaceSettingsShortcut } from "@/components/settings/ModuleSettingsLinks";
 import { useEffect, useState, type ReactNode } from "react";
 import {
@@ -232,7 +235,31 @@ function Breadcrumbs() {
   const brandingOrigin = useRouterState({
     select: (s) => (s.location.search as Record<string, unknown>)["from"],
   });
-  const crumbs = buildBreadcrumbs(pathname, brandingOrigin);
+  const settingsPanel = useRouterState({
+    select: (s) =>
+      parseSettingsPanel((s.location.search as Record<string, unknown>)["settingsPanel"]),
+  });
+  const ownerSection = useRouterState({
+    select: (s) => (s.location.search as Record<string, unknown>)["section"],
+  });
+  const baseCrumbs = buildBreadcrumbs(pathname, brandingOrigin);
+  const crumbs = settingsPanel
+    ? [
+        ...baseCrumbs.map((c) => ({ ...c, current: false })),
+        {
+          label: panelLabel(
+            settingsPanel,
+            pathname.startsWith("/purchases")
+              ? "purchases"
+              : typeof ownerSection === "string"
+                ? ownerSection
+                : undefined,
+          ),
+          to: pathname + "?settingsPanel=" + settingsPanel,
+          current: true,
+        },
+      ]
+    : baseCrumbs;
   if (crumbs.length === 0) return null;
   const known = (path: string) =>
     Object.prototype.hasOwnProperty.call(router.routesByPath, path) ||
@@ -244,7 +271,15 @@ function Breadcrumbs() {
           <li key={c.to} className="flex min-w-0 items-center gap-1">
             {i > 0 ? <ChevronRight className="size-3.5 shrink-0" aria-hidden /> : null}
             {!c.current && known(c.to) ? (
-              <Link to={c.to as never} className="truncate rounded-sm hover:text-foreground">
+              <Link
+                to={c.to}
+                search={(previous: Record<string, unknown>) => ({
+                  ...previous,
+                  settingsPanel: undefined,
+                  settingsTrail: undefined,
+                })}
+                className="truncate rounded-sm hover:text-foreground"
+              >
                 {c.label}
               </Link>
             ) : (
@@ -273,6 +308,10 @@ export function AppShell({ children }: { children: ReactNode }) {
 
 function AppShellLayout({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const settingsPanel = useRouterState({
+    select: (s) =>
+      parseSettingsPanel((s.location.search as Record<string, unknown>)["settingsPanel"]),
+  });
   const { user } = useRouteContext({ from: "/_authenticated" });
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -422,8 +461,13 @@ function AppShellLayout({ children }: { children: ReactNode }) {
             "mx-auto w-full max-w-[1400px] px-4 py-6 outline-none md:px-6 md:py-8 print:max-w-none print:p-0",
           )}
         >
-          <WorkspaceSettingsShortcut pathname={pathname} />
-          {children}
+          <SettingsSurface
+            active={Boolean(settingsPanel && pathname !== "/settings")}
+            detail={settingsPanel ? <InPlaceSettingsPanel panel={settingsPanel} /> : null}
+          >
+            <WorkspaceSettingsShortcut pathname={pathname} />
+            {children}
+          </SettingsSurface>
         </main>
       </div>
     </div>

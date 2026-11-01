@@ -1,7 +1,11 @@
+import {openSettingsPanel} from "@/lib/settings/panels";
+import {SettingsDestinationLink} from "@/components/settings/ModuleSettingsLinks";
+import {InPlaceSettingsPanel} from "@/components/settings/InPlaceSettingsPanel";
+import {parseSettingsPanel} from "@/lib/settings/panels";
 import { ModuleSettingsLinks } from "@/components/settings/ModuleSettingsLinks";
 import { WakeSettings } from "@/components/ai-voice/WakeSettings";
 import { useEffect, useMemo, useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Search } from "lucide-react";
@@ -156,14 +160,19 @@ function SettingsPage() {
   return <SettingsForCompany companyId={companyId} />;
 }
 
-function SettingsForCompany({ companyId }: { companyId: string }) {
-  const navigate = useNavigate({ from: "/settings" });
-  const { section: sectionRaw, plan, interval } = Route.useSearch();
+export function SettingsForCompany({ companyId, embeddedSection }: { companyId: string;embeddedSection?:SettingsCategory }) {
+  const navigate = useNavigate();
+  const currentSearch=useRouterState({select:s=>s.location.search}) as Record<string,unknown>;
+  const sectionRaw=embeddedSection ?? (typeof currentSearch['section']==='string'?currentSearch['section']:'overview');
+  const plan=typeof currentSearch['plan']==='string'?currentSearch['plan']:undefined;
+  const interval=currentSearch['interval']==='month'||currentSearch['interval']==='year'?currentSearch['interval']:undefined;
+  const detail=embeddedSection?undefined:parseSettingsPanel(currentSearch['settingsPanel']);
   const section = (sectionRaw || "overview") as SettingsCategory;
   const [navFilter, setNavFilter] = useState("");
   const [cmdOpen, setCmdOpen] = useState(false);
 
   useEffect(() => {
+    if(embeddedSection)return;
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "k") {
         e.preventDefault();
@@ -172,10 +181,11 @@ function SettingsForCompany({ companyId }: { companyId: string }) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [embeddedSection]);
 
   const selectSection = (id: string) => {
-    void navigate({ search: { section: id } });
+    if(embeddedSection){void navigate({to:window.location.pathname,search:(previous:Record<string,unknown>)=>openSettingsPanel(previous,`category:${id}` as import('@/lib/settings/panels').SettingsPanelId)});return;}
+    void navigate({ to:"/settings",search: { section: id } });
   };
 
   const fetchDetails = useServerFn(getCompanyDetails);
@@ -392,7 +402,7 @@ function SettingsForCompany({ companyId }: { companyId: string }) {
 
   return (
     <>
-      <PageHeader
+      {!embeddedSection && <PageHeader
         title="Settings Centre"
         description="Organisation configuration — search settings with Ctrl/Cmd+Shift+K (Ctrl/Cmd+K searches everything). Preferences never override posting, period locks or journal immutability."
         actions={
@@ -402,16 +412,16 @@ function SettingsForCompany({ companyId }: { companyId: string }) {
             <kbd className="ml-2 hidden rounded border px-1 text-[10px] sm:inline">⌘⇧K</kbd>
           </Button>
         }
-      />
+      />}
 
-      <SettingsCommandPalette
+      {!embeddedSection && <SettingsCommandPalette
         open={cmdOpen}
         onOpenChange={setCmdOpen}
         onSelectSection={selectSection}
-      />
+      />}
 
-      <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
-        <aside className="space-y-3 lg:sticky lg:top-4 lg:self-start">
+      <div className={embeddedSection?"":"grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]"}>
+        {!embeddedSection && <aside className="space-y-3 lg:sticky lg:top-4 lg:self-start">
           <Input
             value={navFilter}
             onChange={(e) => setNavFilter(e.target.value)}
@@ -424,10 +434,11 @@ function SettingsForCompany({ companyId }: { companyId: string }) {
             showDemo={isDemo}
             filter={navFilter}
           />
-        </aside>
+        </aside>}
 
         <div className="min-w-0 space-y-4">
-          <ModuleSettingsLinks category={section} central />
+          {detail?<InPlaceSettingsPanel panel={detail} insideCentre/>:<>
+          {!embeddedSection && <ModuleSettingsLinks category={section} central />}
           {section === "overview" ? (
             <SettingsOverviewPanel companyId={companyId} onNavigate={selectSection} />
           ) : null}
@@ -452,6 +463,7 @@ function SettingsForCompany({ companyId }: { companyId: string }) {
               companyId={companyId}
               category={section}
               canEdit={canEdit}
+              showModuleLinks={!embeddedSection}
             />
           ) : null}
 
@@ -463,7 +475,7 @@ function SettingsForCompany({ companyId }: { companyId: string }) {
                 if (entry) selectSection(entry[0]);
               }}
             >
-              <TabsList className="flex h-auto flex-wrap gap-1">
+              <TabsList className={embeddedSection?"hidden":"flex h-auto flex-wrap gap-1"}>
                 <TabsTrigger value="organisation">Organisation</TabsTrigger>
                 <TabsTrigger value="financial">Financial</TabsTrigger>
                 <TabsTrigger value="dimensions">Dimensions</TabsTrigger>
@@ -757,9 +769,9 @@ function SettingsForCompany({ companyId }: { companyId: string }) {
               <CardDescription>
                 Letterhead and contact details for customer-facing documents. Logo upload, accent colour,
                 address, tax number, bank details and footer are on the{" "}
-                <a className="underline" href="/documents/branding">
+                <SettingsDestinationLink className="underline" destination={{to:"/documents/branding"}}>
                   document branding page
-                </a>
+                </SettingsDestinationLink>
                 .
               </CardDescription>
             </CardHeader>
@@ -1092,6 +1104,7 @@ function SettingsForCompany({ companyId }: { companyId: string }) {
         ) : null}
       </Tabs>
           ) : null}
+          </>}
         </div>
       </div>
     </>

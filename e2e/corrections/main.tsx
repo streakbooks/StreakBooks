@@ -7,12 +7,14 @@ import type {
   CorrectionLine,
   CorrectionBatch,
   CorrectionPlan,
+  CorrectionFilter,
 } from "../../src/lib/accounting/corrections/contracts";
 import "../../src/styles.css";
 const company = "00000000-0000-4000-8000-000000000001",
   a = "00000000-0000-4000-8000-000000000002",
   target = "00000000-0000-4000-8000-000000000003",
   lineId = "00000000-0000-4000-8000-000000000004",
+  bsTarget = "00000000-0000-4000-8000-000000000009",
   journal = "00000000-0000-4000-8000-000000000005";
 const line: CorrectionLine = {
   id: lineId,
@@ -36,14 +38,23 @@ const line: CorrectionLine = {
   credit_minor: "0",
   fingerprint: "a".repeat(32),
   blocked_reason: null,
+  metadata: {
+    line_amount: "10000",
+    document_total: "12000",
+    tax_rate: ["20.00"],
+    bank_account: ["Example bank"],
+    reconciled_date: "2026-10-31",
+  },
 };
 function Fixture() {
+  const [lastFilters, setLastFilters] = useState<CorrectionFilter | null>(null);
   const [history, setHistory] = useState<CorrectionBatch[]>([]),
     [keys, setKeys] = useState<string[]>([]);
   const batches = useRef(new Map<string, CorrectionBatch>());
   const lastPlan = useRef<CorrectionPlan | null>(null);
   return (
     <main className="mx-auto max-w-6xl p-5">
+      <output aria-label="Submitted search filters">{JSON.stringify(lastFilters)}</output>
       <TransactionCorrectionsView
         companyId={company}
         setup={{
@@ -54,6 +65,7 @@ function Fixture() {
           accounts: [
             { id: a, code: "6000", name: "Operating costs", type: "expense", eligible: true },
             { id: target, code: "6200", name: "Office expenses", type: "expense", eligible: true },
+            { id: bsTarget, code: "1200", name: "Prepaid costs", type: "asset", eligible: true },
           ],
         }}
         busy={false}
@@ -62,24 +74,28 @@ function Fixture() {
         historyError=""
         onHistoryPage={() => {}}
         onHistoryRefresh={() => {}}
-        onSearch={async (filters) => ({
-          rows:
-            filters.page === 0
-              ? [
-                  line,
-                  {
-                    ...line,
-                    id: "00000000-0000-4000-8000-000000000006",
-                    journal_number: "124",
-                    currency: "USD",
-                    base_gross_minor: "12500",
-                    blocked_reason: "Foreign-currency corrections require the source workflow",
-                  },
-                ]
-              : [],
-          has_more: false,
-          page: filters.page,
-        })}
+        onSearch={async (filters) => {
+          setLastFilters(filters);
+          return {
+            rows:
+              filters.page === 0
+                ? [
+                    line,
+                    {
+                      ...line,
+                      id: "00000000-0000-4000-8000-000000000006",
+                      journal_number: "124",
+                      currency: "USD",
+                      base_gross_minor: "12500",
+                      metadata: { ...line.metadata, line_amount: "12500", document_total: "15000" },
+                      blocked_reason: "Foreign-currency corrections require the source workflow",
+                    },
+                  ]
+                : [],
+            has_more: false,
+            page: filters.page,
+          };
+        }}
         onPreview={async (input) => {
           const plan: CorrectionPlan = {
             company_id: company,
@@ -109,10 +125,15 @@ function Fixture() {
             adjustment_date: input.date,
             reason: input.reason,
             target: {
-              id: target,
-              code: "6200",
-              name: "Office expenses",
+              id: input.targetId,
+              code: input.targetId === bsTarget ? "1200" : "6200",
+              name: input.targetId === bsTarget ? "Prepaid costs" : "Office expenses",
               updated_at: "2026-11-01T00:00:00Z",
+            },
+            impact: {
+              profit_change_minor: input.targetId === bsTarget ? "10000" : "0",
+              cross_statement_lines: input.targetId === bsTarget ? 1 : 0,
+              account_changes: [],
             },
             preview_hash: "b".repeat(32),
           };

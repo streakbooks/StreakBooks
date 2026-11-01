@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   correctionFilter,
+  searchCondition,
+  conditionFields,
   correctionInput,
   correctionSelection,
   decimalFilterToMinor,
@@ -91,5 +93,61 @@ describe("transaction correction contracts", () => {
         { debit_minor: "0", credit_minor: "2500" },
       ]),
     ).toBe(12500n);
+  });
+});
+
+describe("advanced search conditions", () => {
+  const base = { from: "2026-10-01", to: "2026-10-31" };
+  it("supports both statements and combines bounded conditions", () => {
+    expect(Object.keys(conditionFields)).toHaveLength(23);
+    const f = correctionFilter.parse({
+      ...base,
+      scope: "balance_sheet",
+      match: "any",
+      conditions: [
+        { field: "account_type", operator: "is", value: "equity" },
+        {
+          field: "line_amount",
+          operator: "between",
+          value: "9007199254740993",
+          value_to: "9007199254740994",
+        },
+      ],
+    });
+    expect(f.scope).toBe("balance_sheet");
+    expect(f.conditions[1]?.value).toBe("9007199254740993");
+    expect(correctionFilter.parse(base).scope).toBe("all");
+  });
+  it("rejects unsupported fields, operators, values and excessive predicates", () => {
+    for (const condition of [
+      { field: "sql", operator: "is", value: "1" },
+      { field: "account_name", operator: "gte", value: "A" },
+      { field: "line_amount", operator: "contains", value: "1" },
+      { field: "line_amount", operator: "between", value: "1.5", value_to: "2.5" },
+      { field: "line_amount", operator: "between", value: "200", value_to: "100" },
+      { field: "date", operator: "is", value: "2026-02-30" },
+      { field: "date", operator: "between", value: "2026-11-02", value_to: "2026-11-01" },
+      { field: "tax_rate", operator: "is", value: "100.01" },
+      { field: "tax_rate", operator: "is", value: "20.123" },
+      { field: "contact", operator: "contains", value: "" },
+    ])
+      expect(searchCondition.safeParse(condition).success).toBe(false);
+    expect(
+      correctionFilter.safeParse({
+        ...base,
+        conditions: Array(31).fill({ field: "contact", operator: "empty" }),
+      }).success,
+    ).toBe(false);
+  });
+  it("accepts missing metadata and exact tax rates without requiring empty operator values", () => {
+    expect(searchCondition.safeParse({ field: "contact", operator: "empty" }).success).toBe(true);
+    expect(
+      searchCondition.safeParse({
+        field: "tax_rate",
+        operator: "between",
+        value: "0",
+        value_to: "20.25",
+      }).success,
+    ).toBe(true);
   });
 });

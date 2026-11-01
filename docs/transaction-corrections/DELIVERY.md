@@ -6,9 +6,9 @@
 
 Before this change, Linkbooks supported manual journals, source-document correction workflows and whole-account merges, but had no selective transaction-line reclassification workspace. Account merging changes the treatment of an entire account and is not a substitute for correcting selected transactions.
 
-The delivered workspace is available at **Accounting → Transaction corrections**, with a shortcut from Accountant tools. It moves selected **income and expense GL amounts** between ordinary P&L accounts, preserving the original posted lines and source documents. It records traceable adjustment journals, a before/after plan, actor, reason and undo evidence.
+The delivered workspace is available at **Accounting → Transaction corrections**, with a shortcut from Accountant tools. It searches **all financial-statement account classes** and moves selected GL amounts between eligible ordinary income, expense, asset, liability and equity accounts, preserving the original posted lines and source documents. It records traceable adjustment journals, a before/after plan, actor, reason and undo evidence.
 
-This is not full Xero/QBO feature parity. It does not rewrite source invoices/bills, change tax codes, contacts, classes, locations, projects or inventory valuations, or change bank/AR/AP/control/balance-sheet legs. Source-document, cash-basis, dimension and operational reports may retain original source coding; the correction affects GL account reporting. Use the source workflow for those other changes. No unsupported option or dummy control is shown.
+This is not full Xero/QBO feature parity. It does not rewrite source invoices/bills, change tax codes, contacts, classes, locations, projects or inventory valuations, or change bank/AR/AP/control/asset-lifecycle legs. Ordinary balance-sheet reclassification and moves between P&L and balance sheet are supported. Source-document, cash-basis, dimension and operational reports may retain original source coding; the correction affects GL account reporting. Use the source workflow for those other changes. No unsupported option or dummy control is shown.
 
 ## Reference review
 
@@ -16,12 +16,12 @@ This is not full Xero/QBO feature parity. It does not rewrite source invoices/bi
 
 ## Workflow
 
-1. Search posted P&L lines by date range, current account, source type, description/memo/reference/contact, and minimum/maximum gross amount in company base currency. Foreign source amounts and their exact ledger base equivalents are shown separately. Base equivalents use the existing Postgres FX rounding routine, rather than comparing minor units of different currencies. Results page 200 lines, with explicit disabled reasons for ineligible rows. Amounts use their source currency’s reference precision, including excluded foreign rows.
+1. Search all statements, P&L only, or balance sheet only by date range, current account, source type, description/memo/reference/contact, and minimum/maximum gross amount in company base currency. Add up to 30 conditions with AND/OR matching. Foreign source amounts and their exact ledger base equivalents are shown separately. Base equivalents use the existing Postgres FX rounding routine, rather than comparing minor units of different currencies. Results page 200 lines, with explicit disabled reasons for ineligible rows. Amounts use their source currency’s reference precision, including excluded foreign rows.
 2. Select up to 100 eligible lines for one destination account. Selection totals show gross magnitude, so credit notes do not cancel debit lines in the displayed selection value. Changing search criteria or page clears selection.
-3. Choose an active ordinary income/expense destination and a documented reason. Posting policies:
+3. Choose an active ordinary income/expense/asset/liability/equity destination and a documented reason. Posting policies:
    - **Original dates:** one correction journal per original posting date. Each date needs an open fiscal period and must pass the existing organisation lock policy.
    - **Open adjustment date:** one chosen date on or after all selected transactions. It affects account classification in that later period and does not restate an earlier locked period.
-4. Preview exact source accounts, amounts, destination and posting dates. The server validates the complete batch, recomputes source fingerprints, checks permissions/MFA and produces a plan hash. Editing the destination, policy, date, reason or selection clears the preview and acknowledgment.
+4. Preview exact source accounts, amounts, destination, posting dates, net debit movement per account and change in profit. A move between P&L and balance sheet requires an additional explicit financial-impact acknowledgment. The server validates the complete batch, recomputes source fingerprints, checks permissions/MFA and produces a plan hash. Editing the destination, policy, date, reason or selection clears the preview and acknowledgment.
 5. Review and acknowledge actual ledger posting. Download the plan when report-export permission is granted, then confirm posting. A stable request reference survives response loss for safe exact retries.
 6. Inspect history, source-line identifiers, correction journal links and CSV evidence. Undo requires an explicit date/reason and posts reversing journals through the existing reversal service. Undo does not delete the original batch or its journals.
 
@@ -31,11 +31,11 @@ Evidence CSVs include stable source-line IDs, currency, exact debit/credit amoun
 
 For a source expense debit of GBP 100.00 in account A moved to B:
 
-| Posting | Account A | Account B |
-|---|---:|---:|
-| Original | Debit 100.00 | — |
-| Correction | Credit 100.00 | Debit 100.00 |
-| Result | Nil for this selected amount | Debit 100.00 |
+| Posting    |                    Account A |    Account B |
+| ---------- | ---------------------------: | -----------: |
+| Original   |                 Debit 100.00 |            — |
+| Correction |                Credit 100.00 | Debit 100.00 |
+| Result     | Nil for this selected amount | Debit 100.00 |
 
 A source credit uses the opposite direction. Each selected line contributes an equal offset and replacement; journals balance even when debit and credit selections mix. No money is recalculated through floating point. Minor amounts cross the new API as strings and use BigInt for display/filter math. Each batch is capped at 9,007,199,254,740,991 gross minor units to stay within the application’s supported monetary range.
 
@@ -46,7 +46,7 @@ Original-date mode preserves classification by original date. Adjustment-date an
 - `accounting.view` reads the workspace and company-scoped history; both `journals.manual` and `accounting.post` are required for preview/apply/undo. No new role escalation or user-metadata authorization is introduced.
 - Verified MFA factors require AAL2. RPCs independently authorize their company; history/manifests have RLS and restrictive MFA policies. Anonymous execution and direct authenticated writes to manifest tables are revoked.
 - Source amounts and account identities are loaded by the database. The client cannot submit replacement debit/credit amounts. Source fingerprints detect changed financial state; preview hashes detect a changed plan. Hashes are change detection, not authorization tokens.
-- System-key/control/header/inactive/archived accounts, seeded rounding and depreciation accounts, foreign-currency postings/accounts, unsupported generated sources and pending/failed auto-reversal journals are excluded. Seeded ordinary P&L accounts remain usable even when their chart-structure `is_locked` flag is set; that flag does not prohibit ordinary postings.
+- System-key/control/header/inactive/archived accounts, seeded rounding and depreciation accounts, foreign-currency postings/accounts, unsupported generated sources and pending/failed auto-reversal journals are excluded. Bank-linked accounts and asset/accumulated-depreciation accounts in the asset register are protected even if chart metadata is incomplete. Seeded ordinary accounts remain usable even when their chart-structure `is_locked` flag is set; that flag does not prohibit ordinary postings.
 - One active correction per source line is enforced by a unique partial index. Apply/undo serialize per company, lock source journals and relevant chart/period/policy rows, and repeat eligibility/lock checks before using the existing `post_journal` engine. Any error rolls back the entire batch.
 - Exact retries return the existing batch; reusing a request reference with different parameters is rejected. An exact retry after undo returns the historical undone batch rather than silently posting again.
 - A source journal with active corrections cannot be reversed. Undo all its active correction batches before voiding/reversing the source. This deliberately prevents orphaned classification entries.
@@ -60,12 +60,14 @@ Applied to the connected Linkbooks database `ipxflpzfcqwtenodbxwc`, with reposit
 - `20261101112845_transaction_corrections.sql`
 - `20261101113351_transaction_correction_guards.sql`
 - `20261101115232_transaction_correction_search_amounts.sql`
+- `20261101121500_advanced_transaction_search.sql`
+- `20261101121945_correction_source_references.sql`
 
 Only schema changes were retained. All ledger/security test records were synthetic and enclosed in a transaction that rolled back. No real company’s journals or documents were reclassified during development.
 
 ## Verification
 
-The real database suite is `supabase/tests/transaction_corrections.sql`. It exercises the shared posting engine under the authenticated role and verifies:
+The real database suites are `supabase/tests/transaction_corrections.sql` and `supabase/tests/advanced_transaction_search.sql`. It exercises the shared posting engine under the authenticated role and verifies:
 
 - Balanced GL movement and restoration after undo; exact preservation of original posted line identities/accounts/counts.
 - Both debit and credit corrections, multiple original posting dates, and explicit current-period adjustments.
@@ -89,7 +91,31 @@ The correction browser suite is included in GitHub verification. The isolated UI
 
 ## Final check results
 
-- 156 unit-test files / 1,186 tests passed.
-- Five correction browser tests passed, including source-currency display, evidence export contents and exact retry references.
-- Authenticated database posting/security assertions passed; synthetic ledger records and users rolled back.
+- 156 unit-test files / 1,189 tests passed.
+- Eight correction browser tests passed, including source-currency display, evidence export contents, exact retry references, condition submission, statement selection and cross-statement acknowledgment.
+- Authenticated database posting/security assertions passed, including P&L-to-asset profit impact, liability-to-equity credit signs, AND/OR and actual source/tax/bank/reconciliation metadata; synthetic ledger records and users rolled back.
 - TypeScript, changed-file ESLint and production build passed. Existing framework deprecation warnings remain.
+
+## Advanced search semantics
+
+The condition builder has 23 fields:
+
+| Area        | Fields                                                                                                   |
+| ----------- | -------------------------------------------------------------------------------------------------------- |
+| Transaction | Source type, journal status, source document status, date, reference, description, memo                  |
+| Chart       | Account type, code, name, subtype                                                                        |
+| Amounts     | Exact base-currency line amount and document total, debit/credit side, source currency                   |
+| People      | Contact name, entered-by user ID, posted-by user ID                                                      |
+| Banking     | Bank account name, latest completion date among active completed reconciliation sessions for the journal |
+| Tax         | Source-account tax code and tax rate                                                                     |
+| Review      | Eligible/blocked correction state                                                                        |
+
+Text comparisons support case-insensitive equality, inequality, literal contains/not-contains and missing/present values. Amount/date/rate comparisons support equality, inequality, minimum, maximum and ordered ranges. Global date, statement, account and basic filters always apply; AND/OR combines the additional conditions only. Repeating conditions with OR matches several accounts/types/statuses. Missing metadata does not satisfy ordinary negative comparisons; use the explicit empty/present operators. Unknown fields/operators and invalid ranges fail even when the search has no rows. There is no dynamic SQL or client-supplied column expression.
+
+Line amounts and document totals use company base currency with the shared FX rounding service. For invoices/bills/credit notes/money documents, total means source gross total; bank transactions use absolute statement amount; manual/generated journals use the sum of journal debits. Tax metadata comes from sales invoice, purchase bill and sales-credit source lines allocated to the searched account; several rates/codes can match one aggregated GL line. Other sources without stored tax-code/rate lineage remain empty rather than inferred. Tax filters do not change tax.
+
+Result CSVs export the visible page, including exact source/base amounts, available metadata and exclusion reasons. Posting-plan evidence also includes the batch profit effect and number of cross-statement lines. Both downloads respect report-export permission. Reference/contact enrichment now covers credit notes, money documents and coded bank transactions as well as invoices and bills.
+
+A representative tax-condition query plan on the connected database completed in 39.661 ms (61.074 ms planning, 2,098 shared buffer hits, zero physical reads). This is a limited existing-ledger measurement, not a large-ledger or concurrency benchmark. Existing company/journal/account indexes support correlation; the query is company/date scoped and pages 200 rows.
+
+The current release remains an additive ledger correction tool. Bulk source tax/contact/class/location/project recoding, cash-basis recoding and foreign-currency recoding are outstanding capabilities; this delivery must not be represented as full Xero/QBO parity or a completed audit of every Linkbooks workflow.

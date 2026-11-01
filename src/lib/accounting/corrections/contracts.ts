@@ -39,8 +39,95 @@ export const correctionInput = z
   );
 export type CorrectionInput = z.infer<typeof correctionInput>;
 export type ApplyInput = CorrectionInput & { requestKey: string; previewHash: string };
+export const conditionFields = {
+  source_type: { label: "Transaction type", kind: "text" },
+  journal_status: { label: "Journal status", kind: "text" },
+  source_status: { label: "Source document status", kind: "text" },
+  account_type: { label: "Account type", kind: "text" },
+  account_code: { label: "Account code", kind: "text" },
+  account_name: { label: "Account name", kind: "text" },
+  subtype: { label: "Account subtype", kind: "text" },
+  currency: { label: "Currency", kind: "text" },
+  description: { label: "Line description", kind: "text" },
+  memo: { label: "Journal memo", kind: "text" },
+  reference: { label: "Document reference", kind: "text" },
+  contact: { label: "Contact name", kind: "text" },
+  entered_by: { label: "Entered by (user ID)", kind: "text" },
+  posted_by: { label: "Posted by (user ID)", kind: "text" },
+  side: { label: "Debit or credit", kind: "text" },
+  eligibility: { label: "Correction eligibility", kind: "text" },
+  line_amount: { label: "Line amount (base currency)", kind: "money" },
+  document_total: { label: "Document total (base currency)", kind: "money" },
+  date: { label: "Transaction date", kind: "date" },
+  reconciled_date: { label: "Reconciliation completion date", kind: "date" },
+  bank_account: { label: "Bank account name", kind: "text" },
+  tax_code: { label: "Source account tax code", kind: "text" },
+  tax_rate: { label: "Source account tax rate (%)", kind: "rate" },
+} as const;
+export type ConditionField = keyof typeof conditionFields;
+export const conditionOperators = {
+  is: "is",
+  is_not: "is not",
+  contains: "contains",
+  not_contains: "does not contain",
+  gte: "at least / on or after",
+  lte: "at most / on or before",
+  between: "between",
+  empty: "is empty",
+  not_empty: "is not empty",
+} as const;
+export type ConditionOperator = keyof typeof conditionOperators;
+export function operatorsFor(field: ConditionField): ConditionOperator[] {
+  return conditionFields[field].kind === "text"
+    ? ["is", "is_not", "contains", "not_contains", "empty", "not_empty"]
+    : ["is", "is_not", "gte", "lte", "between", "empty", "not_empty"];
+}
+export const searchCondition = z
+  .object({
+    field: z.enum(Object.keys(conditionFields) as [ConditionField, ...ConditionField[]]),
+    operator: z.enum(
+      Object.keys(conditionOperators) as [ConditionOperator, ...ConditionOperator[]],
+    ),
+    value: z.string().trim().max(200).default(""),
+    value_to: z.string().trim().max(200).default(""),
+  })
+  .strict()
+  .superRefine((c, ctx) => {
+    const issue = (message: string) => ctx.addIssue({ code: z.ZodIssueCode.custom, message });
+    if (!operatorsFor(c.field).includes(c.operator)) issue("Operator does not support this field");
+    if (["empty", "not_empty"].includes(c.operator)) return;
+    const values = c.operator === "between" ? [c.value, c.value_to] : [c.value];
+    const kind = conditionFields[c.field].kind;
+    for (const value of values) {
+      if (!value) issue("Enter each condition value");
+      if (kind === "date" && !realDate.safeParse(value).success)
+        issue("Choose a real calendar date");
+      if (kind === "money" && !minor.safeParse(value).success)
+        issue("Amount must be exact non-negative minor units");
+      if (kind === "rate" && (!/^\d{1,3}(\.\d{1,2})?$/.test(value) || Number(value) > 100))
+        issue("Tax rate must be from 0 to 100 with at most two decimals");
+    }
+    if (c.operator === "between") {
+      if (kind === "date" && c.value > c.value_to) issue("Condition range is reversed");
+      if (
+        (kind === "money" || kind === "rate") &&
+        /^\d+(\.\d+)?$/.test(c.value) &&
+        /^\d+(\.\d+)?$/.test(c.value_to) &&
+        (kind === "money"
+          ? /^\d+$/.test(c.value) &&
+            /^\d+$/.test(c.value_to) &&
+            BigInt(c.value) > BigInt(c.value_to)
+          : Number(c.value) > Number(c.value_to))
+      )
+        issue("Condition range is reversed");
+    }
+  });
+export type SearchCondition = z.infer<typeof searchCondition>;
 export const correctionFilter = z
   .object({
+    scope: z.enum(["all", "profit_loss", "balance_sheet"]).default("all"),
+    match: z.enum(["all", "any"]).default("all"),
+    conditions: z.array(searchCondition).max(30).default([]),
     from: realDate,
     to: realDate,
     account_id: z.string().uuid().nullable().default(null),
@@ -94,6 +181,7 @@ export type CorrectionLine = {
   credit_minor: string;
   fingerprint: string;
   blocked_reason: string | null;
+  metadata?: Record<string, string | string[] | null>;
 };
 export type CorrectionSearch = { rows: CorrectionLine[]; has_more: boolean; page: number };
 export type CorrectionPlanRow = {
@@ -125,6 +213,17 @@ export type CorrectionPlan = {
   adjustment_date: string | null;
   reason: string;
   target: { id: string; code: string; name: string; updated_at: string };
+  impact?: {
+    profit_change_minor: string;
+    cross_statement_lines: number;
+    account_changes: Array<{
+      id: string;
+      code: string;
+      name: string;
+      type: string;
+      debit_change_minor: string;
+    }>;
+  };
   preview_hash: string;
 };
 export type CorrectionBatch = {

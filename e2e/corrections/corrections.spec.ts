@@ -99,3 +99,76 @@ test("report-export denial disables evidence downloads", async ({ page }) => {
     page.getByText("CSV evidence downloads require report-export permission."),
   ).toBeVisible();
 });
+
+test("advanced conditions submit scope, OR logic and exact base amounts", async ({ page }) => {
+  await page.goto("/");
+  await page.getByLabel("Correction statement", { exact: true }).selectOption("balance_sheet");
+  await expect(
+    page.getByLabel("Correction source account", { exact: true }).locator("option"),
+  ).toHaveText(["All accounts in the selected statement", "1200 · Prepaid costs"]);
+  await page.getByRole("button", { name: "Add condition", exact: true }).click();
+  await page.getByLabel("Condition 1 field", { exact: true }).selectOption("line_amount");
+  await page.getByLabel("Condition 1 operator", { exact: true }).selectOption("between");
+  await page.getByLabel("Condition 1 value", { exact: true }).fill("100.01");
+  await page.getByLabel("Condition 1 upper value", { exact: true }).fill("200.02");
+  await page.getByRole("button", { name: "Add condition", exact: true }).click();
+  await page.getByLabel("Condition 2 field", { exact: true }).selectOption("reconciled_date");
+  await page.getByLabel("Condition 2 operator", { exact: true }).selectOption("empty");
+  await expect(page.getByLabel("Condition 2 value", { exact: true })).toHaveCount(0);
+  await page.getByLabel("Condition matching", { exact: true }).selectOption("any");
+  await page.getByRole("button", { name: "Find posted lines", exact: true }).click();
+  const filters = JSON.parse(
+    (await page.getByLabel("Submitted search filters", { exact: true }).textContent())!,
+  );
+  expect(filters.scope).toBe("balance_sheet");
+  expect(filters.match).toBe("any");
+  expect(filters.conditions[0]).toEqual({
+    field: "line_amount",
+    operator: "between",
+    value: "10001",
+    value_to: "20002",
+  });
+  expect(filters.conditions[1].operator).toBe("empty");
+  await page.getByRole("button", { name: "Remove condition 1", exact: true }).click();
+  await expect(page.getByLabel("Condition 1 field", { exact: true })).toHaveValue(
+    "reconciled_date",
+  );
+  await page.getByRole("button", { name: "Clear conditions", exact: true }).click();
+  await expect(page.getByLabel("Condition 1 field", { exact: true })).toHaveCount(0);
+});
+test("cross-statement corrections require review of profit impact", async ({ page }) => {
+  page.on("dialog", (dialog) => dialog.accept());
+  await page.goto("/");
+  await plan(page);
+  await page
+    .getByLabel("Correction destination account", { exact: true })
+    .selectOption("00000000-0000-4000-8000-000000000009");
+  await page.getByRole("button", { name: "Preview correction", exact: true }).click();
+  await expect(page.getByLabel("Financial statement impact", { exact: true })).toContainText(
+    "Profit change: GBP 100.00",
+  );
+  await page.getByLabel("Acknowledge correction posting", { exact: true }).check();
+  await expect(
+    page.getByRole("button", { name: "Post correction batch", exact: true }),
+  ).toBeDisabled();
+  await page.getByLabel("Acknowledge financial statement change", { exact: true }).check();
+  await expect(
+    page.getByRole("button", { name: "Post correction batch", exact: true }),
+  ).toBeEnabled();
+  await page.getByRole("button", { name: "Post correction batch", exact: true }).click();
+  await expect(page.locator('p[role="status"]')).toContainText("recorded (applied)");
+});
+test("search results export exact source and base amounts", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Find posted lines", exact: true }).click();
+  const downloading = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export current results", exact: true }).click();
+  const file = await downloading;
+  const report = parseImportCsv(await readFile((await file.path())!, "utf8"));
+  expect(file.suggestedFilename()).toBe("linkbooks-transaction-search.csv");
+  expect(report[2]![report[0]!.indexOf("Base amount")]).toBe("125.00");
+  expect(report[2]![report[0]!.indexOf("Currency")]).toBe("USD");
+  expect(report[2]![report[0]!.indexOf("Line amount (base currency)")]).toBe("125.00");
+  expect(report[2]![report[0]!.indexOf("Document total (base currency)")]).toBe("150.00");
+  expect(report[2]![report[0]!.indexOf("Exclusion reason")]).toContain("Foreign-currency");
+});

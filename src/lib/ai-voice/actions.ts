@@ -121,8 +121,11 @@ export function spokenDate(input: string, today: string, dateFormat?: string): s
   const text = cleanSpeech(input)
     .toLowerCase()
     .replace(/,/g, " ")
-    .replace(/(\d)(st|nd|rd|th)\b/g, "$1")
-    .replace(/([a-z])(?=\d)|(\d)(?=[a-z])/g, "$1$2 ")
+    .replace(/\b(?:the|of)\b/g, " ")
+    .replace(/\b(\d{1,2})(?:st|nd|rd|th)\b/g, "$1")
+    .replace(/\bsept\b/g, "sep")
+    .replace(/\b(?:twenty twenty six)\b/g, "2026")
+    .replace(/(\d)(?=[a-z])|([a-z])(?=\d)/g, "$1$2 ")
     .replace(/\s+/g, " ")
     .trim();
   let year: number, month: number, day: number;
@@ -143,9 +146,9 @@ export function spokenDate(input: string, today: string, dateFormat?: string): s
     date.setUTCDate(date.getUTCDate() + offset);
     return date.toISOString().slice(0, 10);
   }
-  if ((match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text)))
+  if ((match = /^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})$/.exec(text)))
     [year, month, day] = [Number(match[1]), Number(match[2]), Number(match[3])];
-  else if ((match = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(text))) {
+  else if ((match = /^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/.exec(text))) {
     if (dateFormat !== "DD/MM/YYYY" && dateFormat !== "MM/DD/YYYY") return null;
     year = Number(match[3]);
     [day, month] =
@@ -170,7 +173,8 @@ export function spokenDate(input: string, today: string, dateFormat?: string): s
     match = /^(?:(\w+) (\d{1,2})|(\d{1,2}) (\w+)) (\d{4})$/.exec(text);
     if (!match) return null;
     year = Number(match[5]);
-    month = months.indexOf(match[1] ?? match[4] ?? "") + 1;
+    const spokenMonth = match[1] ?? match[4] ?? "";
+    month = months.findIndex((name) => name === spokenMonth || name.slice(0, 3) === spokenMonth.replace(/\.$/, "")) + 1;
     day = Number(match[2] ?? match[3]);
   }
   if (year < 1900 || year > 2200 || month < 1 || month > 12 || day < 1 || day > 31) return null;

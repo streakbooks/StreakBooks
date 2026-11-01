@@ -1,3 +1,4 @@
+import { TransactionCorrections } from "@/components/accounting/corrections/TransactionCorrections";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -29,6 +30,7 @@ const ACCOUNTING_TABS = [
   "close",
   "conversion",
   "fx",
+  "corrections",
 ] as const;
 type AccountingTab = (typeof ACCOUNTING_TABS)[number];
 type AccountingSearch = { tab?: AccountingTab | undefined; journal?: string | undefined };
@@ -135,6 +137,7 @@ export function AccountingWorkspace({
         <TabsList className="flex-wrap">
           <TabsTrigger value="coa">Chart of accounts</TabsTrigger>
           <TabsTrigger value="industry">Industry library</TabsTrigger>
+          <TabsTrigger value="corrections">Transaction corrections</TabsTrigger>
           <TabsTrigger value="journals">Journals</TabsTrigger>
           <TabsTrigger value="post">Post manual journal</TabsTrigger>
           <TabsTrigger value="periods">Financial years</TabsTrigger>
@@ -149,6 +152,10 @@ export function AccountingWorkspace({
 
         <TabsContent value="industry" className="mt-4">
           <IndustryCoaPanel companyId={companyId} />
+        </TabsContent>
+
+        <TabsContent value="corrections" className="mt-4">
+          <TransactionCorrections key={companyId} companyId={companyId} />
         </TabsContent>
 
         <TabsContent value="journals" className="mt-4">

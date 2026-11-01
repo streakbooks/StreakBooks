@@ -168,7 +168,7 @@ export const FEATURE_CATALOG: FeatureDefinition[] = [
     key: "fixed_assets",
     label: "Fixed assets",
     description: "Asset register and depreciation.",
-    implementation: "unavailable",
+    implementation: "available",
     consumerModules: ["fixed_assets"],
     preservesHistory: true,
   },

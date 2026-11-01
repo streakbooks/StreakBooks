@@ -69,7 +69,7 @@ export function parseFormAction(input: string): FormAction | null {
     action = { id: "contact.select", query: match[1] };
   if (
     (match =
-      /^(?:set|change|make) (?:the )?(?:(?:invoice|bill|quote|credit) )?(due date|expiry date|date) (?:to )?(.+)$/i.exec(
+      /^(?:set|change|make|enter|input|type|update|put) (?:the )?(?:(?:invoice|bill|quote|credit) )?(due date|expiry date|date) (?:to|as|is|for)? ?(.+)$/i.exec(
         text,
       ))
   )
@@ -124,7 +124,14 @@ export function spokenDate(input: string, today: string, dateFormat?: string): s
     .replace(/\b(?:the|of)\b/g, " ")
     .replace(/\b(\d{1,2})(?:st|nd|rd|th)\b/g, "$1")
     .replace(/\bsept\b/g, "sep")
-    .replace(/\b(?:twenty twenty six)\b/g, "2026")
+    .replace(/\b(twenty twenty (?:four|five|six|seven|eight|nine))\b/g, (_, words: string) => {
+      const last = words.split(" ").at(-1);
+      return String(2020 + ["four", "five", "six", "seven", "eight", "nine"].indexOf(last!) + 4);
+    })
+    .replace(/\b(two thousand (?:twenty )?(?:four|five|six|seven|eight|nine))\b/g, (_, words: string) => {
+      const last = words.split(" ").at(-1);
+      return String((words.includes("twenty") ? 2020 : 2000) + ["four", "five", "six", "seven", "eight", "nine"].indexOf(last!) + 4);
+    })
     .replace(/(\d)(?=[a-z])|([a-z])(?=\d)/g, "$1$2 ")
     .replace(/\s+/g, " ")
     .trim();

@@ -192,3 +192,13 @@ The last command has a dedicated Chromium CI job. A system Chromium can be selec
 with `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`. Repository-wide lint has a documented
 pre-existing backlog; lint the changed feature separately and compare source-wide
 results against main. No dependency or database migration is added by Signal.
+
+## Additional professional bill commands
+
+- Scroll the workspace: `scroll up`, `scroll down`, `scroll left`, `scroll right`, `page down`, `page up`, `scroll to top`, `scroll to bottom`, or `scroll down a little`. Signal scrolls the nearest scrollable container around the focused element when possible, otherwise the page. It does not move the operating-system mouse cursor.
+- Field selection: `go to supplier`, `choose supplier`, `go to bill date`, `go to payment terms`, `go to due date`, `go to supplier invoice number`, `go to memo`, `next tab`, `previous field`. When an editable bill is open, `next tab` means the next registered field; outside an editor, Sales/Purchases tab navigation remains available.
+- Dictation: `enter text`, `input text`, `type value`, `dictate` prompts for the next utterance after a field is focused. `input text Monthly services` enters the supplied text immediately. For supplier, terms, account and tax lookups, text is matched to loaded options and ambiguity requires an explicit choice.
+- Dates: `set bill date to April 14 2026`, `enter bill date April 14 2026`, `input due date as May 15 2026`, `April 14 twenty twenty six`, full month names, abbreviations and configured numeric formats. Calendar-invalid and ambiguous dates are rejected.
+- Draft: `save draft` and `save bill` request a review; saving still requires pressing Confirm save on screen. Voice never authorises, posts or pays a bill.
+
+Only registered, permitted document fields and supported navigation destinations are voice-controllable; Signal does not blindly click arbitrary visible controls.

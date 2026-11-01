@@ -7,6 +7,9 @@ describe("structured voice form actions", () => {
     ["choose customer ABC", "contact.select"],
     ["Set the invoice date to October 31, 2026.", "date.set"],
     ["make the due date next Friday", "date.set"],
+    ["enter bill date April 14 2026", "date.set"],
+    ["input due date as May 15 2026", "date.set"],
+    ["update date to April 14 2026", "date.set"],
     ["add consulting services for 1,500.00", "line.add"],
     ["change that to 1800", "line.amount"],
     ["set line 2 price to 12.55", "line.amount"],
@@ -50,6 +53,8 @@ describe("accounting values", () => {
   it.each([
     ["October 31, 2026", "2026-10-31"],
     ["April 14 2026", "2026-04-14"],
+    ["April 14 twenty twenty six", "2026-04-14"],
+    ["April 14 two thousand twenty six", "2026-04-14"],
     ["14 April 2026", "2026-04-14"],
     ["the 14th of April 2026", "2026-04-14"],
     ["Apr 14, 2026", "2026-04-14"],

@@ -210,7 +210,7 @@ export function parseDeterministicCommand(transcript: string, location = ""): Pa
       requiredPermission: module === "purchases" ? "purchases.view" : "sales.view",
     } };
   }
-  const prefix = PREFIXES.find((candidate) => text.startsWith(candidate + " "));
+  const prefix = [...PREFIXES].sort((a, b) => b.length - a.length).find((candidate) => text.startsWith(candidate + " "));
   if (prefix) {
     const subject = text
       .slice(prefix.length)

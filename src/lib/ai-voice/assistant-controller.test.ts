@@ -477,3 +477,32 @@ describe("guided bill voice field workflow", () => {
     expect(focused).toContain("Due date");
   });
 });
+
+describe("professional Signal commands", () => {
+  it("accepts start dictation without overwriting a bill field", async () => {
+    const { controller, form } = setup();
+    form().module = "bill";
+    form().permission = "purchases.draft";
+    controller.registerField({
+      id: "form:memo:header", token: "form", key: "memo",
+      label: "Memo", order: 50, focus: () => {},
+    });
+    await controller.submit("go to memo");
+    await controller.submit("enter text");
+    expect(controller.getSnapshot().message).toContain("Ready for Memo");
+    await controller.submit("monthly accounting services");
+    expect(form().draft.memo).toBe("monthly accounting services");
+  });
+  it("recognizes explicit text entry and preserves save confirmation", async () => {
+    const { controller, form, saveDraft } = setup();
+    controller.registerField({
+      id: "form:memo:header", token: "form", key: "memo",
+      label: "Memo", order: 50, focus: () => {},
+    });
+    await controller.submit("go to memo");
+    await controller.submit("input text Monthly bookkeeping");
+    expect(form().draft.memo).toBe("Monthly bookkeeping");
+    await controller.submit("save draft");
+    expect(saveDraft).not.toHaveBeenCalled();
+  });
+});

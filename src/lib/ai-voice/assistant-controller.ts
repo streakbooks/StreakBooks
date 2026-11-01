@@ -193,12 +193,13 @@ export class AssistantController {
     if (!field || field.token !== form.token)
       throw new Error("Select a field first. Say “go to description” or “next field”.");
     const { key, line } = field;
-    if (key === "contactId" || key === "accountId" || key === "taxCodeId") {
+    if (key === "contactId" || key === "accountId" || key === "taxCodeId" || key === "paymentTermId") {
       if (clear) throw new Error("Use the field’s normal clear control for record selections.");
       const options =
-        key === "contactId" ? form.contacts : key === "accountId" ? form.accounts : form.taxes;
+        key === "contactId" ? form.contacts : key === "paymentTermId" ? (form.paymentTerms ?? []) : key === "accountId" ? form.accounts : form.taxes;
       this.choose(form, value, options, (id) => {
         if (key === "contactId") form.selectContact(id);
+        else if (key === "paymentTermId") form.selectPaymentTerm?.(id);
         else {
           if (line === undefined || !form.draft.lines[line])
             throw new Error("Select a line first.");
@@ -578,8 +579,8 @@ export class AssistantController {
         this.clearPending("Pending action cancelled. Your unsaved form is unchanged.");
         return;
       }
-      const focusQuery = /^(?:go to|focus(?: on)?|select field|select the field|enter|click on) (.+?)(?: field)?$/i.exec(text)?.[1];
-      const direction = /^(?:(?:go to|move to|focus on|select) (?:the )?)?(next|previous) (?:field|input)$/i.exec(text)?.[1]?.toLowerCase();
+      const focusQuery = /^(?:go to|focus(?: on)?|select field|select the field|enter|click on|move to) (.+?)(?: field)?$/i.exec(text)?.[1];
+      const direction = /^(?:(?:go to|move to|focus on|select|jump to) (?:the )?)?(next|previous|prev) (?:field|input|tab)$/i.exec(text)?.[1]?.toLowerCase().replace("prev", "previous");
       if (
         direction ||
         (focusQuery &&

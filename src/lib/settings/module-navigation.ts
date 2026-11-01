@@ -41,12 +41,6 @@ export const MODULE_SETTINGS_LINKS: Partial<Record<SettingsCategory, SettingsLin
   ],
   purchases: [
     {
-      label: "Purchase document themes",
-      from: "purchases",
-      description: "Themes for purchase orders, supplier credits and remittance advice.",
-      to: "/documents/branding",
-    },
-    {
       label: "Document numbering",
       description: "Bill, purchase order and supplier credit number sequences.",
       to: "/settings",

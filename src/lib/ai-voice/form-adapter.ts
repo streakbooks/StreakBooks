@@ -31,6 +31,8 @@ export type VoiceFormAdapter = {
   dateFormat?: string;
   draft: VoiceDraft;
   contacts: VoiceOption[];
+  paymentTerms?: VoiceOption[];
+  selectPaymentTerm?(id: string): void;
   accounts: VoiceOption[];
   taxes: VoiceOption[];
   currencies: string[];

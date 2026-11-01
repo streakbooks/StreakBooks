@@ -82,6 +82,18 @@ export function VoiceControl({
           </span>
           <ChevronDown aria-hidden className="size-3" />
         </button>
+        {!state.active && !wakeMic && available && secure ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            aria-label="Start Signal listening"
+            title="Start Signal listening"
+            onClick={() => { onExpandedChange(true); session.start(); }}
+          >
+            <Mic className="size-4" aria-hidden />
+          </Button>
+        ) : null}
         {state.active ? (
           <Button
             type="button"
@@ -147,7 +159,7 @@ export function VoiceControl({
           </p>
           {state.field ? (
             <p className="text-sm" data-testid="voice-field-status">
-              Editing: {state.field.label}. Say a value or “next field”. Use “dictate …” for literal
+              Editing: {state.field.label}. Say a value, “next tab” or “next field”. Use “dictate …” for literal
               text that sounds like a command.
             </p>
           ) : null}

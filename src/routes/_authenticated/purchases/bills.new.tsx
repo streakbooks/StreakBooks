@@ -1254,6 +1254,11 @@ export function NewBill({
           today,
           dateFormat: company?.date_format ?? "DD/MM/YYYY",
           contacts: suppliers,
+          paymentTerms: terms.map((t) => ({ id: t.id, name: t.name })),
+          selectPaymentTerm: (id) => {
+            setPaymentTermId(id);
+            applyDueFromTerms(billDate, id);
+          },
           accounts: expenseAccounts.map((a) => ({ id: a.id, name: `${a.code} ${a.name}` })),
           taxes: (taxCalculation === "none" ? [] : taxCodes.filter(isPurchaseTaxCode)).map((t) => ({
             id: t.id,
@@ -1721,7 +1726,7 @@ export function NewBill({
         <div className="space-y-1.5">
           <Label>Supplier</Label>
             <EntityCombobox
-              voiceField={{ key: "contactId", label: "Supplier", order: 10 }}
+              voiceField={{ key: "contactId", label: "Supplier", aliases: ["vendor", "supplier name", "supplier dropdown", "supplier list", "contact", "choose supplier"], order: 10 }}
               options={supplierOptions}
               value={contactId}
               onChange={onSupplierChange}
@@ -1794,7 +1799,7 @@ export function NewBill({
                 voiceField={{
                   key: "date",
                   label: "Bill date",
-                  aliases: ["date"],
+                  aliases: ["date", "bill date", "invoice date", "document date", "transaction date"],
                   order: 20,
                 }}
                 value={billDate}
@@ -1807,6 +1812,7 @@ export function NewBill({
           <div className="space-y-2">
             <Label>Payment terms</Label>
             <EntityCombobox
+              voiceField={{ key: "paymentTermId", label: "Payment terms", aliases: ["payment term", "terms", "net payment terms", "terms dropdown", "payment terms list"], order: 25 }}
               options={terms.map((t) => ({
                 value: t.id,
                 label: t.name,
@@ -1834,7 +1840,7 @@ export function NewBill({
                 voiceField={{
                   key: "dueDate",
                   label: "Due date",
-                  aliases: ["expiry date"],
+                  aliases: ["expiry date", "payment due date", "due", "due date"],
                   order: 30,
                 }}
                 value={dueDate}
@@ -1868,6 +1874,8 @@ export function NewBill({
                     "invoice number",
                     "supplier reference",
                     "reference number",
+                    "bill number",
+                    "supplier invoice",
                   ],
                   order: 40,
                 }}
@@ -1885,7 +1893,7 @@ export function NewBill({
                 voiceField={{
                   key: "memo",
                   label: "Memo",
-                  aliases: ["internal reference", "customer message"],
+                  aliases: ["internal reference", "customer message", "notes", "narration", "bill memo"],
                   order: 50,
                 }}
                 value={memo}

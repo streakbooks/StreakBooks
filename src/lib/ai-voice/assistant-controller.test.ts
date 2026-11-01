@@ -431,3 +431,78 @@ it("accepts repeated Next field speech in distinct turns while retaining duplica
     vi.useRealTimers();
   }
 });
+
+describe("guided bill voice field workflow", () => {
+  it("selects a supplier, closes its lookup and focuses the bill date", async () => {
+    const { controller, form } = setup();
+    const focused: string[] = [];
+    form().module = "bill";
+    form().permission = "purchases.draft";
+    form().contacts = [{ id: "vendor", name: "Northwind Supplies" }];
+    for (const [key, label, order] of [
+      ["contactId", "Supplier", 10],
+      ["date", "Bill date", 20],
+      ["paymentTermId", "Payment terms", 25],
+      ["dueDate", "Due date", 30],
+    ] as const) {
+      controller.registerField({
+        id: "form:" + key + ":header", token: "form", key, label, order,
+        focus: () => focused.push(label),
+        close: () => focused.push("closed " + label),
+      });
+    }
+    await controller.submit("choose supplier");
+    expect(focused).toContain("Supplier");
+    await controller.submit("select supplier Northwind Supplies");
+    expect(form().draft.contactId).toBe("vendor");
+    expect(focused).toContain("Bill date");
+    await controller.submit("next tab");
+    expect(focused).toContain("Payment terms");
+  });
+
+  it("selects bill payment terms and advances to due date", async () => {
+    const { controller, form } = setup();
+    const focused: string[] = [];
+    form().module = "bill";
+    form().permission = "purchases.draft";
+    const selectPaymentTerm = vi.fn();
+    form().paymentTerms = [{ id: "net30", name: "Net 30" }];
+    form().selectPaymentTerm = selectPaymentTerm;
+    controller.registerField({
+      id: "form:dueDate:header", token: "form", key: "dueDate",
+      label: "Due date", order: 30, focus: () => focused.push("Due date"),
+    });
+    await controller.submit("choose payment terms Net 30");
+    expect(selectPaymentTerm).toHaveBeenCalledWith("net30");
+    expect(focused).toContain("Due date");
+  });
+});
+
+describe("professional Signal commands", () => {
+  it("accepts start dictation without overwriting a bill field", async () => {
+    const { controller, form } = setup();
+    form().module = "bill";
+    form().permission = "purchases.draft";
+    controller.registerField({
+      id: "form:memo:header", token: "form", key: "memo",
+      label: "Memo", order: 50, focus: () => {},
+    });
+    await controller.submit("go to memo");
+    await controller.submit("enter text");
+    expect(controller.getSnapshot().message).toContain("Ready for Memo");
+    await controller.submit("monthly accounting services");
+    expect(form().draft.memo).toBe("monthly accounting services");
+  });
+  it("recognizes explicit text entry and preserves save confirmation", async () => {
+    const { controller, form, saveDraft } = setup();
+    controller.registerField({
+      id: "form:memo:header", token: "form", key: "memo",
+      label: "Memo", order: 50, focus: () => {},
+    });
+    await controller.submit("go to memo");
+    await controller.submit("input text Monthly bookkeeping");
+    expect(form().draft.memo).toBe("Monthly bookkeeping");
+    await controller.submit("save draft");
+    expect(saveDraft).not.toHaveBeenCalled();
+  });
+});

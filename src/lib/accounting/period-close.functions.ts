@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
+import { assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
 import { ensureFiscalPeriodForDate } from "@/lib/accounting/posting-engine";
 import { findControlAccountIds } from "@/lib/accounting/control-accounts";
@@ -16,6 +16,9 @@ const ISO = /^\d{4}-\d{2}-\d{2}$/;
 
 function isoDate(v: unknown, label: string): string {
   if (typeof v !== "string" || !ISO.test(v)) throw new Error(`${label} must be YYYY-MM-DD`);
+  const date = new Date(`${v}T00:00:00Z`);
+  if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== v)
+    throw new Error(`${label} must be a real date`);
   return v;
 }
 
@@ -84,7 +87,7 @@ export const getPeriodCloseFacts = createServerFn({ method: "GET" })
     periodEnd: isoDate(input?.periodEnd, "Period end"),
   }))
   .handler(async ({ data, context }): Promise<PeriodCloseFacts> => {
-    await assertCompanyMember(context.supabase, data.companyId);
+    await assertCompanyPermission(context.supabase, data.companyId, "accounting.view");
     const sb = context.supabase as unknown as Sb;
     const meta = await loadCompanyMeta(sb, data.companyId);
     const accounts = await loadAccountMetas(sb, data.companyId);
@@ -126,13 +129,14 @@ export const getPeriodCloseFacts = createServerFn({ method: "GET" })
       openingBalanceMinor = Number(net);
     }
 
-    // Tax returns exist only once migration 20261024130200 is applied; absence means "not used".
+    // Missing tax evidence is an error; only an explicitly inactive regime is not applicable.
     let taxReturn: PeriodCloseFacts["taxReturn"] = null;
-    const { data: ts } = await context.supabase
+    const { data: ts, error: taxSettingsError } = await context.supabase
       .from("company_tax_settings" as never)
       .select("tax_regime" as never)
       .eq("company_id" as never, data.companyId as never)
       .maybeSingle();
+    if (taxSettingsError) throw new Error(taxSettingsError.message);
     const regime = (ts as { tax_regime?: string } | null)?.tax_regime ?? "none";
     if (regime !== "none") {
       const { data: filed, error } = await context.supabase
@@ -140,15 +144,17 @@ export const getPeriodCloseFacts = createServerFn({ method: "GET" })
         .select("id" as never)
         .eq("company_id" as never, data.companyId as never)
         .eq("status" as never, "filed" as never)
+        .lte("period_start" as never, data.periodEnd as never)
         .gte("period_end" as never, data.periodEnd as never)
         .limit(1);
-      if (!error) taxReturn = { applicable: true, filed: (filed ?? []).length > 0 };
+      if (error) throw new Error(error.message);
+      taxReturn = { applicable: true, filed: (filed ?? []).length > 0 };
     }
 
     let yearEnd: PeriodCloseFacts["yearEnd"] = null;
     const fy = fiscalYearContaining(data.periodEnd, meta.fyEndMonth, meta.fyEndDay);
     if (fy.end === data.periodEnd) {
-      const { data: closing } = await context.supabase
+      const { data: closing, error: closingError } = await context.supabase
         .from("journals" as never)
         .select("id" as never)
         .eq("company_id" as never, data.companyId as never)
@@ -157,6 +163,7 @@ export const getPeriodCloseFacts = createServerFn({ method: "GET" })
           `year_end_close:${data.companyId}:${data.periodEnd}` as never,
         )
         .maybeSingle();
+      if (closingError) throw new Error(closingError.message);
       yearEnd = { fyEnd: data.periodEnd, closed: Boolean(closing) };
     }
 

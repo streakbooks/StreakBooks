@@ -1,0 +1,74 @@
+-- Transactional fixture: all synthetic users, companies, work and audits roll back.
+BEGIN;
+DO $$
+DECLARE u1 uuid:=gen_random_uuid(); u2 uuid:=gen_random_uuid(); u3 uuid:=gen_random_uuid(); c1 uuid:=gen_random_uuid(); c2 uuid:=gen_random_uuid();
+BEGIN
+ INSERT INTO auth.users(id,email,raw_user_meta_data) VALUES(u1,'practice-test-'||u1||'@example.invalid','{}'),(u2,'practice-test-'||u2||'@example.invalid','{}'),(u3,'practice-test-'||u3||'@example.invalid','{}');
+ INSERT INTO auth.mfa_factors(id,user_id,factor_type,status,created_at,updated_at) VALUES(gen_random_uuid(),u1,'totp','verified',now(),now());
+ INSERT INTO public.companies(id,name,country_code,base_currency,fiscal_year_end_month,fiscal_year_end_day,timezone,created_by)
+ VALUES(c1,'Practice isolated test A','GB','GBP',12,31,'UTC',u1),(c2,'Practice isolated test B','GB','GBP',12,31,'UTC',u2);
+ PERFORM set_config('linkbooks.trusted','on',true);
+ INSERT INTO public.company_members(company_id,user_id,role) VALUES(c1,u1,'owner'),(c1,u2,'accountant'),(c2,u2,'owner') ON CONFLICT(company_id,user_id) DO NOTHING;
+ PERFORM set_config('linkbooks.trusted','off',true);
+ PERFORM set_config('test.practice_u1',u1::text,true);PERFORM set_config('test.practice_u2',u2::text,true);PERFORM set_config('test.practice_u3',u3::text,true);
+ PERFORM set_config('test.practice_c1',c1::text,true);PERFORM set_config('test.practice_c2',c2::text,true);
+ PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',u1,'aal','aal2','role','authenticated')::text,true);
+END $$;
+SET LOCAL ROLE authenticated;
+DO $$
+DECLARE c uuid:=current_setting('test.practice_c1')::uuid; foreign_c uuid:=current_setting('test.practice_c2')::uuid;
+ t jsonb; t2 jsonb; count_before integer; fid uuid; u1 uuid:=current_setting('test.practice_u1')::uuid; u2 uuid:=current_setting('test.practice_u2')::uuid; u3 uuid:=current_setting('test.practice_u3')::uuid;
+BEGIN
+ IF public.create_month_end_work(c,'2026-10-31','2026-11-07')<>6 THEN RAISE EXCEPTION 'Template missing rows'; END IF;
+ IF public.create_month_end_work(c,'2026-10-31','2026-11-07')<>0 THEN RAISE EXCEPTION 'Template is not idempotent'; END IF;
+ t:=public.save_practice_task(c,jsonb_build_object('title','Client filing deadline','kind','deadline','due_date','2026-11-07'));
+ t:=public.save_practice_task(c,jsonb_build_object('id',t->>'id','version',1,'status','in_progress','note','Source evidence received'));
+ t:=public.save_practice_task(c,jsonb_build_object('id',t->>'id','version',2,'status','ready','note','Source reconciled; supporting reports reviewed'));
+ BEGIN PERFORM public.save_practice_task(c,jsonb_build_object('id',t->>'id','version',3,'status','completed','note','Self review attempt')); RAISE EXCEPTION 'TEST: self review accepted';
+ EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE 'A different accountant%' THEN RAISE; END IF; END;
+ BEGIN PERFORM public.save_practice_task(c,jsonb_build_object('id',t->>'id','version',2,'status','in_progress','note','Old version'));
+  RAISE EXCEPTION 'TEST: stale version accepted'; EXCEPTION WHEN serialization_failure THEN NULL; END;
+ BEGIN PERFORM public.save_practice_task(foreign_c,jsonb_build_object('title','Forbidden','kind','deadline','due_date','2026-11-07'));
+  RAISE EXCEPTION 'TEST: other tenant write accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ IF EXISTS(SELECT 1 FROM public.practice_tasks WHERE company_id=foreign_c) THEN RAISE EXCEPTION 'Cross tenant read'; END IF;
+ BEGIN INSERT INTO public.practice_tasks(company_id,title,kind,due_date,created_by) VALUES(c,'Direct write','deadline','2026-11-07',u1);
+  RAISE EXCEPTION 'TEST: direct write accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ BEGIN PERFORM public.save_practice_task(c,jsonb_build_object('title','Bad assignee','kind','deadline','due_date','2026-11-07','assignee_id',u3));
+  RAISE EXCEPTION 'TEST: foreign assignee accepted'; EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE 'Assignee must%' THEN RAISE; END IF; END;
+ SELECT count(*) INTO count_before FROM public.practice_tasks WHERE company_id=c;
+ t2:=public.save_practice_task(c,jsonb_build_object('title','Second deadline','kind','deadline','due_date','2026-11-07'));
+ BEGIN PERFORM public.bulk_practice_tasks(jsonb_build_array(jsonb_build_object('id',t2->>'id','company_id',c,'version',1),jsonb_build_object('id',t->>'id','company_id',c,'version',1)),'in_progress','Bulk evidence');
+  RAISE EXCEPTION 'TEST: stale bulk accepted'; EXCEPTION WHEN serialization_failure THEN NULL; END;
+ IF (SELECT status FROM public.practice_tasks WHERE id=(t2->>'id')::uuid)<>'todo' THEN RAISE EXCEPTION 'Partial bulk update'; END IF;
+ PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',u2,'aal','aal2','role','authenticated')::text,true);
+ t:=public.save_practice_task(c,jsonb_build_object('id',t->>'id','version',3,'status','completed','note','Independent reviewer inspected supporting reports'));
+ IF t->>'status'<>'completed' OR t->>'reviewed_by'<>u2::text THEN RAISE EXCEPTION 'Review did not complete'; END IF;
+ PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',u1,'aal','aal2','role','authenticated')::text,true);
+ fid:=public.create_practice_firm('Isolated test practice');
+ BEGIN PERFORM public.manage_practice_client(fid,foreign_c,'full',NULL);
+  RAISE EXCEPTION 'TEST: null revoke bypassed company authorization'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ IF NOT EXISTS(SELECT 1 FROM public.firms WHERE id=fid) THEN RAISE EXCEPTION 'Firm bootstrap invisible'; END IF;
+ INSERT INTO public.firm_members(firm_id,user_id,role) VALUES(fid,u2,'member'),(fid,u3,'member');
+ PERFORM public.manage_practice_client(fid,c,'view',false);
+ BEGIN UPDATE public.firm_client_links SET revoked_at=now() WHERE firm_id=fid AND company_id=c;
+  RAISE EXCEPTION 'TEST: direct grant mutation accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ IF (SELECT role FROM public.company_members WHERE company_id=c AND user_id=u2)<>'accountant' THEN RAISE EXCEPTION 'Independent role overwritten'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM public.company_members WHERE company_id=c AND user_id=u3 AND role='read_only') THEN RAISE EXCEPTION 'Firm grant missing'; END IF;
+ PERFORM public.manage_practice_client(fid,c,NULL,true);
+ IF NOT EXISTS(SELECT 1 FROM public.company_members WHERE company_id=c AND user_id=u2 AND role='accountant') THEN RAISE EXCEPTION 'Independent access deleted'; END IF;
+ IF EXISTS(SELECT 1 FROM public.company_members WHERE company_id=c AND user_id=u3) THEN RAISE EXCEPTION 'Managed access not revoked'; END IF;
+ IF has_function_privilege('anon','public.save_practice_task(uuid,jsonb)','EXECUTE') THEN RAISE EXCEPTION 'Anonymous write access'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM public.audit_events WHERE company_id=c AND action='practice.task_update') THEN RAISE EXCEPTION 'Audit evidence missing'; END IF;
+ PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',u1,'aal','aal1','role','authenticated')::text,true);
+ BEGIN PERFORM public.save_practice_task(c,jsonb_build_object('title','Weak session','kind','deadline','due_date','2026-11-07'));
+  RAISE EXCEPTION 'TEST: verified MFA factor accepted aal1'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ IF EXISTS(SELECT 1 FROM public.practice_tasks WHERE company_id=c) THEN RAISE EXCEPTION 'Weak MFA session read tasks'; END IF;
+ PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',u1,'aal','aal2','role','authenticated')::text,true);
+ UPDATE public.company_members SET status='suspended' WHERE company_id=c AND user_id=u2;
+ PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',u2,'aal','aal2','role','authenticated')::text,true);
+ BEGIN PERFORM public.save_practice_task(c,jsonb_build_object('title','Suspended writer','kind','deadline','due_date','2026-11-07'));
+  RAISE EXCEPTION 'TEST: suspended member write'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ IF EXISTS(SELECT 1 FROM public.practice_tasks WHERE company_id=c) THEN RAISE EXCEPTION 'Suspended member read tasks'; END IF;
+END $$;
+ROLLBACK;
+SELECT 'practice_workflows: all transactional assertions passed; fixtures rolled back' AS result;

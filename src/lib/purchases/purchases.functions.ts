@@ -5029,16 +5029,16 @@ export const importPurchaseBillsCsv = createServerFn({ method: "POST" })
 
     // Tax rates must be resolved against the bill date, never trusted from CSV.
     type TaxRow = {
-      id: string; code: string; tax_rates: {
+      id: string; code: string; treatment: string | null; tax_rates: {
         rate_bps: number; effective_from: string; effective_to: string | null; is_active: boolean;
       } | null;
     };
-    const taxesByDate = new Map<string, Map<string, { id: string; rateBps: number }>>();
+    const taxesByDate = new Map<string, Map<string, { id: string; rateBps: number; treatment: string | null }>>();
     for (const doc of docs) {
       if (!taxesByDate.has(doc.documentDate)) {
         const { data: rows, error } = await supabase
           .from("tax_codes" as never)
-          .select("id, code, tax_rates(rate_bps, effective_from, effective_to, is_active)" as never)
+          .select("id, code, treatment, tax_rates(rate_bps, effective_from, effective_to, is_active)" as never)
           .eq("company_id" as never, data.companyId as never)
           .eq("is_active" as never, true as never)
           .in("applies_to" as never, ["purchases", "both"] as never);
@@ -5046,7 +5046,7 @@ export const importPurchaseBillsCsv = createServerFn({ method: "POST" })
         taxesByDate.set(doc.documentDate, new Map(
           ((rows ?? []) as unknown as TaxRow[])
             .filter((r) => r.tax_rates && isRateEffective(r.tax_rates, doc.documentDate))
-            .map((r) => [r.code, { id: r.id, rateBps: r.tax_rates!.rate_bps }]),
+            .map((r) => [r.code, { id: r.id, rateBps: r.tax_rates!.rate_bps, treatment: r.treatment }]),
         ));
       }
       for (const line of doc.lines) {
@@ -5060,7 +5060,12 @@ export const importPurchaseBillsCsv = createServerFn({ method: "POST" })
     // is written; line-only CSV preflight cannot know the effective tax rates.
     for (const doc of docs) {
       validateResolvedTransactionTotals(doc, "purchases", doc.lines.map((line) =>
-        line.taxCode ? taxesByDate.get(doc.documentDate)!.get(line.taxCode)!.rateBps : 0,
+        // Reverse-charge bills carry no supplier tax; retain the real rate
+        // in the draft for buyer self-assessment but validate payable at 0.
+        line.taxCode
+          ? taxesByDate.get(doc.documentDate)!.get(line.taxCode)!.treatment === "reverse_charge"
+            ? 0 : taxesByDate.get(doc.documentDate)!.get(line.taxCode)!.rateBps
+          : 0,
       ));
     }
 

@@ -695,6 +695,17 @@ export class AssistantController {
         this.set({ message: "The saved draft is open." });
         return;
       }
+      const termQuery = /^(?:select|choose|use|set|pick) (?:the )?(?:payment terms?|terms) (?:to )?(.+)$/i.exec(text)?.[1];
+      if (termQuery && this.form?.module === "bill") {
+        const form = this.getEditable();
+        if (!form.selectPaymentTerm) throw new Error("Payment terms are unavailable on this bill.");
+        this.clearPending();
+        this.choose(form, termQuery, form.paymentTerms ?? [], (id) => {
+          form.selectPaymentTerm?.(id);
+          this.focusField("due date");
+        });
+        return;
+      }
       const action = parseFormAction(text);
       if (!action) {
         if (

@@ -281,4 +281,3 @@ BEGIN
   RETURN _result || jsonb_build_object('company',_appearance->'company','branding',_appearance->'branding','customer',coalesce(_appearance->'party','{}')-'email'-'phone');
 END;
 $$;
-

@@ -30,4 +30,3 @@ BEGIN
  END LOOP;
 END $$;
 REVOKE ALL ON FUNCTION private.validate_document_theme(uuid,jsonb) FROM PUBLIC,anon,authenticated;
-

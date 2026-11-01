@@ -15,6 +15,13 @@ describe("feature state engine", () => {
     expect(voice.requiresConfigCategory).toBeUndefined();
   });
 
+  it("exposes the implemented fixed asset register in the feature manager", () => {
+    const assets = FEATURE_CATALOG.find((f) => f.key === "fixed_assets")!;
+    expect(computeFeatureState(assets, { enabled: true, canEdit: true }).state).toBe(
+      "enabled_operational",
+    );
+  });
+
   it("marks unavailable features honestly", () => {
     const timeTracking = FEATURE_CATALOG.find((f) => f.key === "time_tracking")!;
     const s = computeFeatureState(timeTracking, { enabled: true, canEdit: true });

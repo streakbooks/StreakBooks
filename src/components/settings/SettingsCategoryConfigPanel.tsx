@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { SettingsDestinationLink } from "./ModuleSettingsLinks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -21,9 +21,15 @@ type Props = {
   companyId: string;
   category: SettingsCategory;
   canEdit: boolean;
+  showModuleLinks?: boolean;
 };
 
-export function SettingsCategoryConfigPanel({ companyId, category, canEdit }: Props) {
+export function SettingsCategoryConfigPanel({
+  companyId,
+  category,
+  canEdit,
+  showModuleLinks = true,
+}: Props) {
   const meta = categoryMeta.find((c) => c.id === category);
   const qc = useQueryClient();
   const fetch = useServerFn(getOrganisationConfig);
@@ -67,11 +73,13 @@ export function SettingsCategoryConfigPanel({ companyId, category, canEdit }: Pr
         <AlertDescription>{meta.description}</AlertDescription>
       </Alert>
 
-      {meta.moduleLinks?.length ? (
+      {showModuleLinks && meta.moduleLinks?.length ? (
         <div className="flex flex-wrap gap-2">
           {meta.moduleLinks.map((l) => (
             <Button key={l.to} size="sm" variant="outline" asChild>
-              <Link to={l.to}>{l.label}</Link>
+              <SettingsDestinationLink destination={{ to: l.to }}>
+                {l.label}
+              </SettingsDestinationLink>
             </Button>
           ))}
         </div>
@@ -90,7 +98,9 @@ export function SettingsCategoryConfigPanel({ companyId, category, canEdit }: Pr
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Configuration</CardTitle>
-          <CardDescription>Persisted via organisation_config with optimistic concurrency.</CardDescription>
+          <CardDescription>
+            Persisted via organisation_config with optimistic concurrency.
+          </CardDescription>
         </CardHeader>
         <CardContent className="grid max-w-xl gap-3">
           {Object.keys(doc).length === 0 ? (

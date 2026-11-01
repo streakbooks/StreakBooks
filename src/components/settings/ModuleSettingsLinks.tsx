@@ -1,5 +1,6 @@
-import { Link } from "@tanstack/react-router";
-import { ArrowUpRight, Settings2 } from "lucide-react";
+import { panelForDestination, openSettingsPanel } from "@/lib/settings/panels";
+import { Link, useRouterState } from "@tanstack/react-router";
+import { ChevronRight, Settings2 } from "lucide-react";
 import {
   MODULE_SETTINGS_LINKS,
   workspaceSettingsFor,
@@ -11,21 +12,27 @@ export function SettingsDestinationLink({
   children,
   className,
   ariaLabel,
+  mode = "panel",
 }: {
   destination: SettingsDestination;
   children: React.ReactNode;
   className?: string;
   ariaLabel?: string;
+  mode?: "panel" | "route";
 }) {
+  const location = useRouterState({ select: (s) => s.location });
+  const panel = mode === "panel" ? panelForDestination(destination) : undefined;
   return (
     <Link
-      to={destination.to}
+      to={panel ? location.pathname : destination.to}
       search={
-        destination.section
-          ? { section: destination.section }
-          : destination.from
-            ? { from: destination.from }
-            : {}
+        panel
+          ? (previous: Record<string, unknown>) => openSettingsPanel(previous, panel)
+          : destination.section
+            ? { section: destination.section }
+            : destination.from
+              ? { from: destination.from }
+              : {}
       }
       className={className}
       aria-label={ariaLabel}
@@ -62,7 +69,7 @@ export function ModuleSettingsLinks({
               <span className="block text-sm font-semibold">{link.label}</span>
               <span className="mt-1 block text-sm text-muted-foreground">{link.description}</span>
             </span>
-            <ArrowUpRight
+            <ChevronRight
               className="mt-0.5 size-4 shrink-0 text-muted-foreground group-hover:text-primary"
               aria-hidden
             />

@@ -67,11 +67,17 @@ const EMPTY: FormState = {
 
 function BrandingPage() {
   const { company } = useActiveCompany();
-  return <BrandingWorkspace key={company?.id ?? "none"} />;
+  const { from } = Route.useSearch();
+  return <BrandingWorkspace key={company?.id ?? "none"} origin={from} />;
 }
 
-function BrandingWorkspace() {
-  const { from } = Route.useSearch();
+export function BrandingWorkspace({
+  embedded = false,
+  origin: from = "sales",
+}: {
+  embedded?: boolean;
+  origin?: "sales" | "purchases";
+}) {
   const { company } = useActiveCompany();
   const companyId = company?.id;
   const { can } = useCan();
@@ -183,19 +189,23 @@ function BrandingWorkspace() {
 
   return (
     <>
-      <PageHeader
-        title={
-          from === "purchases" ? "Purchase document themes & branding" : "Invoice themes & branding"
-        }
-        actions={
-          <Button variant="outline" asChild>
-            <Link to={from === "purchases" ? "/purchases/settings" : "/sales/settings"}>
-              Back to {from === "purchases" ? "purchases" : "sales"} settings
-            </Link>
-          </Button>
-        }
-        description="Logo, colours, address, tax and bank details printed on invoices, credit notes, quotes, statements and other documents."
-      />
+      {!embedded && (
+        <PageHeader
+          title={
+            from === "purchases"
+              ? "Purchase document themes & branding"
+              : "Invoice themes & branding"
+          }
+          actions={
+            <Button variant="outline" asChild>
+              <Link to={from === "purchases" ? "/purchases/settings" : "/sales/settings"}>
+                Back to {from === "purchases" ? "purchases" : "sales"} settings
+              </Link>
+            </Button>
+          }
+          description="Logo, colours, address, tax and bank details printed on invoices, credit notes, quotes, statements and other documents."
+        />
+      )}
       <div className="mb-8">
         <DocumentThemes
           companyId={companyId}

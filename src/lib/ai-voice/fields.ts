@@ -1,6 +1,7 @@
 /** Explicit editor contracts. Field discovery never depends on DOM text or synthetic clicks. */
 export type VoiceFieldKey =
   | "contactId"
+  | "paymentTermId"
   | "date"
   | "dueDate"
   | "number"

@@ -62,3 +62,29 @@ export function isExactTransactionImportRetry(
       (prior!.product_id ?? null) === null;
   });
 }
+
+/**
+ * A matching CSV is not a completed posting. A paid/authorised invoice or
+ * bill without its posting journal must never be silently skipped on retry.
+ * Likewise a draft carrying a journal is an inconsistent accounting state.
+ *
+ * This is a read-only guard; retrying an unposted draft with authorisation
+ * requested requires manual review rather than silently authorising a
+ * possibly edited document.
+ */
+export type TransactionImportRetryDisposition = "skip" | "manual_authorisation" | "invalid";
+
+export function classifyTransactionImportRetry(
+  status: string,
+  postedJournalId: string | null,
+  requestedAuthorisation: boolean,
+): TransactionImportRetryDisposition {
+  if (status === "draft" || status === "awaiting_approval") {
+    if (postedJournalId) return "invalid";
+    return requestedAuthorisation ? "manual_authorisation" : "skip";
+  }
+  if (status === "authorised" || status === "partly_paid" || status === "paid") {
+    return postedJournalId ? "skip" : "invalid";
+  }
+  return "invalid";
+}

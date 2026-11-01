@@ -595,7 +595,7 @@ export class AssistantController {
       const focusQuery = /^(?:go to|focus(?: on)?|select field|select the field|enter|click on|move to|choose) (.+?)(?: field)?$/i.exec(text)?.[1];
       const direction = /^(?:(?:go to|move to|focus on|select|jump to) (?:the )?)?(next|previous|prev) (?:field|input|tab)$/i.exec(text)?.[1]?.toLowerCase().replace("prev", "previous");
       if (
-        direction ||
+        (direction && (this.form || !/\\btab\\b/i.test(text))) ||
         (focusQuery &&
           this.form &&
           [...this.fields.values()].some(

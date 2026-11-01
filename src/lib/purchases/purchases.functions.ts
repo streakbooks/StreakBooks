@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { prepareTransactionCsv, validateResolvedTransactionTotals } from "@/lib/imports/transaction-import-validation";
-import { classifyTransactionImportRetry, isExactTransactionImportRetry } from "@/lib/imports/transaction-import-retry";
+import { classifyTransactionImportRetry, isExactTransactionImportRetry, isVerifiedTransactionImportJournal } from "@/lib/imports/transaction-import-retry";
 import { isRateEffective } from "@/lib/tax/tax-math";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
@@ -5124,6 +5124,21 @@ export const importPurchaseBillsCsv = createServerFn({ method: "POST" })
           }
           if (disposition === "invalid") {
             throw new Error("Existing bill has an inconsistent status or missing posting journal; review and reconcile before retrying");
+          }
+          if (prior.posted_journal_id) {
+            const { data: linkedJournal, error: journalError } = await supabase
+              .from("journals" as never)
+              .select("id, company_id, status, source_type, source_id" as never)
+              .eq("id" as never, prior.posted_journal_id as never)
+              .eq("company_id" as never, data.companyId as never)
+              .maybeSingle();
+            if (journalError) throw new Error(journalError.message);
+            if (!isVerifiedTransactionImportJournal({
+              companyId: data.companyId, documentId: prior.id,
+              journalId: prior.posted_journal_id, sourceType: "purchase_bill",
+            }, (linkedJournal ?? null) as never)) {
+              throw new Error("Existing bill posting journal cannot be verified against this organisation and bill; reconcile manually");
+            }
           }
           outcome.skipped++;
           continue;

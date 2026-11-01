@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifyTransactionImportRetry, isExactTransactionImportRetry, type ExpectedImportRetry, type StoredImportRetry } from "./transaction-import-retry";
+import { classifyTransactionImportRetry, isExactTransactionImportRetry, isVerifiedTransactionImportJournal, type ExpectedImportRetry, type StoredImportRetry } from "./transaction-import-retry";
 
 const expected: ExpectedImportRetry = {
   contactId: "contact-a",
@@ -78,4 +78,42 @@ describe("AR/AP import retry posting-state guard (non-posting)", () => {
     "never silently skips %s statuses",
     (status) => expect(classifyTransactionImportRetry(status, "journal-id", true)).toBe("invalid"),
   );
+});
+
+describe("AR/AP import retry journal provenance guard (read-only)", () => {
+  const expectedJournal = {
+    companyId: "company-a", documentId: "invoice-a",
+    journalId: "journal-a", sourceType: "sales_invoice" as const,
+  };
+  const journal = {
+    id: "journal-a", company_id: "company-a", status: "posted",
+    source_type: "sales_invoice", source_id: "invoice-a",
+  };
+  it("accepts only a posted journal linked to the exact organisation and document", () => {
+    expect(isVerifiedTransactionImportJournal(expectedJournal, journal)).toBe(true);
+    expect(isVerifiedTransactionImportJournal(
+      { ...expectedJournal, documentId: "other" }, journal,
+    )).toBe(false);
+    expect(isVerifiedTransactionImportJournal(expectedJournal, null)).toBe(false);
+  });
+  it("rejects cross-organisation, wrong journal, wrong source type and unposted links", () => {
+    for (const patch of [
+      { company_id: "company-b" },
+      { id: "journal-b" },
+      { source_type: "purchase_bill" },
+      { status: "draft" },
+      { source_id: "invoice-b" },
+    ]) {
+      expect(isVerifiedTransactionImportJournal(expectedJournal, { ...journal, ...patch })).toBe(false);
+    }
+  });
+  it("does not treat legacy source-less demo journals as verified imports", () => {
+    expect(isVerifiedTransactionImportJournal(expectedJournal, { ...journal, source_id: null })).toBe(false);
+  });
+  it("also validates purchase-bill journal provenance", () => {
+    expect(isVerifiedTransactionImportJournal(
+      { ...expectedJournal, documentId: "bill-a", sourceType: "purchase_bill" },
+      { ...journal, source_type: "purchase_bill", source_id: "bill-a" },
+    )).toBe(true);
+  });
 });

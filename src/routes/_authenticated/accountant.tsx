@@ -1,3 +1,6 @@
+import { PeriodClosePanel } from "@/components/accounting/PeriodClosePanel";
+import { PracticeWorkBoard } from "@/components/accountant/PracticeWorkBoard";
+import { useCanDo } from "@/hooks/use-can";
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -37,23 +40,31 @@ export const Route = createFileRoute("/_authenticated/accountant")({
   head: () => ({
     meta: [{ title: "Accountant tools — LinkBooks" }],
   }),
-  component: AccountantTools,
+  component: AccountantPage,
 });
 
+function AccountantPage() {
+  const { company } = useActiveCompany();
+  return <AccountantTools key={company?.id ?? "none"} />;
+}
+
 function AccountantTools() {
+  const canAdjust = useCanDo("tax.settings");
+  const [showPeriodClose, setShowPeriodClose] = useState(false);
   const { company, isPending } = useActiveCompany();
   const companyId = company?.id;
   const currency = company?.base_currency ?? "GBP";
   const today = new Date().toISOString().slice(0, 10);
+  const [asOf, setAsOf] = useState(today);
   const qc = useQueryClient();
   const fetch = useServerFn(getAccountantChecklist);
   const fetchAccounts = useServerFn(listAccounts);
   const doAdjust = useServerFn(postTaxAdjustment);
 
   const query = useQuery({
-    queryKey: ["accountant-checklist", companyId],
+    queryKey: ["accountant-checklist", companyId, asOf],
     enabled: Boolean(companyId),
-    queryFn: () => fetch({ data: { companyId: companyId! } }),
+    queryFn: () => fetch({ data: { companyId: companyId!, asOf } }),
   });
   const accountsQ = useQuery({
     queryKey: ["accounts", companyId],
@@ -119,6 +130,22 @@ function AccountantTools() {
         title="Accountant tools"
         description="Period-end checklist, journal review, reconciliation queues and tax adjustments."
       />
+      <PracticeWorkBoard key={companyId} companyId={companyId} />
+      <div className="my-6 space-y-4">
+        <Button variant="outline" onClick={() => setShowPeriodClose((value) => !value)}>
+          {showPeriodClose ? "Hide financial close checks" : "Open financial close checks"}
+        </Button>
+        {showPeriodClose && <PeriodClosePanel key={companyId} companyId={companyId} />}
+      </div>
+      <label className="mb-4 block max-w-xs text-sm">
+        Review balances and queues through
+        <Input
+          aria-label="Checklist as of"
+          type="date"
+          value={asOf}
+          onChange={(e) => setAsOf(e.target.value)}
+        />
+      </label>
       {query.isPending ? (
         <LoadingState />
       ) : query.isError ? (
@@ -136,7 +163,11 @@ function AccountantTools() {
               count={query.data!.draftInvoices}
               href="/sales/invoices"
             />
-            <CheckCard title="Draft bills" count={query.data!.draftBills} href="/purchases/bills" />
+            <CheckCard
+              title="Draft / awaiting approval bills"
+              count={query.data!.draftBills}
+              href="/purchases/bills"
+            />
             <CheckCard
               title="Uncategorised bank"
               count={query.data!.uncategorisedBank}
@@ -160,7 +191,8 @@ function AccountantTools() {
           <Alert className="mb-3">
             <AlertDescription>
               Posts a single balanced <code>tax_adjustment</code> journal via the shared posting
-              engine. Idempotent by adjustment key. Not a filed return.
+              engine. Use a unique adjustment reference to prevent duplicate posting. This does not
+              file a return.
             </AlertDescription>
           </Alert>
           <div className="mb-8 grid max-w-xl gap-3 rounded-md border p-4">
@@ -170,7 +202,7 @@ function AccountantTools() {
                 <Input type="date" value={adjDate} onChange={(e) => setAdjDate(e.target.value)} />
               </div>
               <div className="space-y-1">
-                <Label>Idempotency key</Label>
+                <Label>Adjustment reference</Label>
                 <Input value={adjKey} onChange={(e) => setAdjKey(e.target.value)} />
               </div>
             </div>
@@ -229,8 +261,11 @@ function AccountantTools() {
             </div>
             <Button
               size="sm"
-              disabled={adjustM.isPending || !taxAcc || !offsetAcc || !amount}
-              onClick={() => adjustM.mutate()}
+              disabled={!canAdjust || adjustM.isPending || !taxAcc || !offsetAcc || !amount}
+              onClick={() => {
+                if (window.confirm("Post this tax adjustment to the active organisation’s ledger?"))
+                  adjustM.mutate();
+              }}
             >
               Post tax adjustment
             </Button>

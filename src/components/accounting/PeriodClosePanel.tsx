@@ -1,3 +1,4 @@
+import { useCanDo } from "@/hooks/use-can";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -53,6 +54,8 @@ const WORD: Record<CloseCheckStatus, string> = {
 
 /** AC-09: one place to check, optionally close the year, and lock a period. */
 export function PeriodClosePanel({ companyId }: { companyId: string }) {
+  const canLock = useCanDo("periods.lock");
+  const canPostClose = useCanDo("journals.manual");
   const qc = useQueryClient();
   const f = useFormat();
   const fetchPeriods = useServerFn(listPeriods);
@@ -295,7 +298,10 @@ export function PeriodClosePanel({ companyId }: { companyId: string }) {
                     I have reviewed this journal and want to post it.
                   </Label>
                 </div>
-                <Button disabled={!confirmClose || close.isPending} onClick={() => close.mutate()}>
+                <Button
+                  disabled={!canPostClose || !confirmClose || close.isPending}
+                  onClick={() => close.mutate()}
+                >
                   {close.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
                   Post closing journal
                 </Button>
@@ -326,7 +332,15 @@ export function PeriodClosePanel({ companyId }: { companyId: string }) {
           ) : null}
           <Button
             variant="outline"
-            disabled={!summary || lock.isPending || (needsAck && !ack)}
+            disabled={
+              !canLock ||
+              !summary ||
+              facts.isError ||
+              ar.isError ||
+              ap.isError ||
+              lock.isPending ||
+              (needsAck && !ack)
+            }
             onClick={() => lock.mutate()}
           >
             {lock.isPending ? <Loader2 className="size-4 animate-spin" /> : null}

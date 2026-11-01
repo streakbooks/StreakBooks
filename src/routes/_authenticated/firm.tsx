@@ -1,5 +1,8 @@
+import { PracticeWorkBoard } from "@/components/accountant/PracticeWorkBoard";
+import { setActiveCompany } from "@/lib/company.functions";
+import { useCanDo } from "@/hooks/use-can";
 import { useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -44,6 +47,9 @@ export const Route = createFileRoute("/_authenticated/firm")({
 function FirmPage() {
   const { company } = useActiveCompany();
   const qc = useQueryClient();
+  const navigate = useNavigate();
+  const switchCompany = useServerFn(setActiveCompany);
+  const canLinkCompany = useCanDo("company.settings.edit");
   const fetchFirms = useServerFn(listMyFirms);
   const doCreate = useServerFn(createFirm);
   const fetchClients = useServerFn(listFirmClients);
@@ -69,7 +75,11 @@ function FirmPage() {
     queryFn: () => fetchClients({ data: { firmId } }),
   });
 
-  const activityCompany = activityCompanyId || clientsQ.data?.[0]?.company_id || "";
+  const firmAdmin =
+    firmsQ.data?.some((f) => f.firmId === firmId && ["owner", "admin"].includes(f.role)) ?? false;
+  const activityCompany = clientsQ.data?.some((c) => c.company_id === activityCompanyId)
+    ? activityCompanyId
+    : clientsQ.data?.[0]?.company_id || "";
 
   const activityQ = useQuery({
     queryKey: ["firm-client-activity", firmId, activityCompany],
@@ -96,16 +106,32 @@ function FirmPage() {
     },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["firm-clients", firmId] });
-      toast.success("Client linked — firm members receive company membership");
+      await qc.invalidateQueries({ queryKey: ["practice-work"] });
+      toast.success("Client linked. Existing organisation roles were preserved.");
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
 
   const revokeM = useMutation({
     mutationFn: (companyId: string) => doRevoke({ data: { firmId, companyId } }),
-    onSuccess: async () => {
+    onSuccess: async (result) => {
       await qc.invalidateQueries({ queryKey: ["firm-clients", firmId] });
-      toast.success("Client access revoked");
+      await qc.invalidateQueries({ queryKey: ["practice-work"] });
+      if (result.retained)
+        toast.warning(
+          "Firm link revoked. Existing or independently modified organisation access was retained; review Users & Access.",
+        );
+      else toast.success("Firm link and its managed grants revoked");
+    },
+    onError: (e) => toast.error(friendlyAuthError(e)),
+  });
+
+  const openClient = useMutation({
+    mutationFn: (companyId: string) => switchCompany({ data: { companyId } }),
+    onSuccess: async () => {
+      await qc.cancelQueries();
+      qc.clear();
+      await navigate({ to: "/accountant" });
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
@@ -114,19 +140,21 @@ function FirmPage() {
     <>
       <PageHeader
         title="Firm & clients"
-        description="Practice management: link organisations you administer so firm members can switch into client books."
+        description="Review client work, manage deadlines and coordinate month-end preparation and independent sign-off."
       />
       <Alert className="mb-6">
         <AlertDescription>
           Linking requires you to be owner/admin of the active organisation. Revoking removes
-          firm-granted memberships (read_only / bookkeeper / accountant). Owner memberships are not
-          deleted by revoke.
+          memberships created and tracked by this workflow. Independent, modified and legacy access
+          is preserved. Review Users & Access for retained memberships.
         </AlertDescription>
       </Alert>
 
       <div className="mb-8 grid max-w-lg gap-3 rounded-md border p-4">
-        <Label>Create firm</Label>
+        <Label htmlFor="firm-name">Create firm</Label>
         <Input
+          id="firm-name"
+          maxLength={120}
           placeholder="Firm name"
           value={firmName}
           onChange={(e) => setFirmName(e.target.value)}
@@ -157,7 +185,10 @@ function FirmPage() {
               ariaLabel="Active firm"
               allowClear={false}
               value={firmId}
-              onChange={setSelectedFirmId}
+              onChange={(id) => {
+                setSelectedFirmId(id);
+                setActivityCompanyId("");
+              }}
               searchPlaceholder="Search firm"
               options={(firmsQ.data ?? []).map((f) => ({
                 id: f.firmId,
@@ -186,7 +217,7 @@ function FirmPage() {
             </Select>
             <Button
               size="sm"
-              disabled={linkM.isPending || !company?.id}
+              disabled={linkM.isPending || !company?.id || !firmAdmin || !canLinkCompany}
               onClick={() => linkM.mutate()}
             >
               Link client
@@ -225,8 +256,23 @@ function FirmPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        disabled={revokeM.isPending}
-                        onClick={() => revokeM.mutate(c.company_id)}
+                        disabled={openClient.isPending}
+                        onClick={() => openClient.mutate(c.company_id)}
+                      >
+                        Open books
+                      </Button>{" "}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={revokeM.isPending || !firmAdmin}
+                        onClick={() => {
+                          if (
+                            window.confirm(
+                              "Revoke this firm link and its tracked access grants? Independent and legacy memberships will be retained for separate review.",
+                            )
+                          )
+                            revokeM.mutate(c.company_id);
+                        }}
                       >
                         Revoke
                       </Button>
@@ -236,6 +282,7 @@ function FirmPage() {
               </TableBody>
             </Table>
           )}
+          <PracticeWorkBoard key={firmId} firmId={firmId} />
           <p className="mt-4 text-sm text-muted-foreground">
             Switch into a client via the company switcher once membership is granted. Multi-org
             users always see the active organisation name in the header.{" "}

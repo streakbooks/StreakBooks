@@ -620,7 +620,7 @@ export class AssistantController {
         return;
       }
       const focusQuery = /^(?:go to|focus(?: on)?|select field|select the field|enter|click on|move to|choose|open|show|expand) (?:the )?(.+?)(?: field| dropdown| list| selector)?$/i.exec(text)?.[1];
-      const direction = /^(?:(?:go to|move to|focus on|select|jump to) (?:the )?)?(next|previous|prev) (?:field|input|tab)$/i.exec(text)?.[1]?.toLowerCase().replace("prev", "previous");
+      const direction = /^(?:(?:go to|move to|focus on|select|jump to) (?:the )?)?(next|previous|prev) (?:field|input|tab)$/i.exec(text)?.[1]?.toLowerCase().replace(/^prev$/, "previous");
       if (
         (direction && (this.form || !/\\btab\\b/i.test(text))) ||
         (focusQuery &&

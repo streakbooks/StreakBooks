@@ -506,3 +506,15 @@ describe("professional Signal commands", () => {
     expect(saveDraft).not.toHaveBeenCalled();
   });
 });
+
+
+it.each(["previous field", "prev field", "go to previous field"])("moves backward for %s without corrupting the direction", async (command) => {
+  const { controller } = setup();
+  try {
+    for (const [order, key] of ["date", "memo"].entries())
+      controller.registerField({ id: key, token: "form", key: key as "date" | "memo", label: key, order, focus: () => {} });
+    await controller.submit("go to memo");
+    await controller.submit(command);
+    expect(controller.getSnapshot().field?.id).toBe("date");
+  } finally { controller.dispose(); }
+});

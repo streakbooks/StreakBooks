@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2 } from "lucide-react";
@@ -22,6 +22,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 export const Route = createFileRoute("/_authenticated/documents/branding")({
+  validateSearch: (input: Record<string, unknown>) => ({
+    from: input["from"] === "purchases" ? ("purchases" as const) : ("sales" as const),
+  }),
   head: () => ({ meta: [{ title: "Document branding — LinkBooks" }] }),
   component: BrandingPage,
 });
@@ -68,6 +71,7 @@ function BrandingPage() {
 }
 
 function BrandingWorkspace() {
+  const { from } = Route.useSearch();
   const { company } = useActiveCompany();
   const companyId = company?.id;
   const { can } = useCan();
@@ -180,7 +184,16 @@ function BrandingWorkspace() {
   return (
     <>
       <PageHeader
-        title="Invoice themes & branding"
+        title={
+          from === "purchases" ? "Purchase document themes & branding" : "Invoice themes & branding"
+        }
+        actions={
+          <Button variant="outline" asChild>
+            <Link to={from === "purchases" ? "/purchases/settings" : "/sales/settings"}>
+              Back to {from === "purchases" ? "purchases" : "sales"} settings
+            </Link>
+          </Button>
+        }
         description="Logo, colours, address, tax and bank details printed on invoices, credit notes, quotes, statements and other documents."
       />
       <div className="mb-8">

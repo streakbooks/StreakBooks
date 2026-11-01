@@ -1,3 +1,4 @@
+import { ModuleSettingsLinks } from "@/components/settings/ModuleSettingsLinks";
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -33,7 +34,7 @@ function SalesSettingsPage() {
     <>
       <PageHeader
         title="Sales settings"
-        description="Defaults for payment terms, quotes and invoice notes. Document sequences are managed in Settings → Documents."
+        description="Payment terms, quotes and invoice notes, with quick access to branding, numbering and other sales settings."
         actions={
           <Button variant="outline" size="sm" asChild>
             <Link to="/settings" search={{ section: "overview" }}>
@@ -42,7 +43,8 @@ function SalesSettingsPage() {
           </Button>
         }
       />
-      <SalesSettingsForm companyId={company.id} />
+      <ModuleSettingsLinks category="sales" />
+      <SalesSettingsForm key={company.id} companyId={company.id} />
     </>
   );
 }
@@ -82,7 +84,8 @@ function SalesSettingsForm({ companyId }: { companyId: string }) {
       };
       if (q.data) {
         data.purchasesDefaultPaymentTermsDays = q.data.purchases_default_payment_terms_days;
-        if (q.data.purchases_default_notes) data.purchasesDefaultNotes = q.data.purchases_default_notes;
+        if (q.data.purchases_default_notes)
+          data.purchasesDefaultNotes = q.data.purchases_default_notes;
         data.purchasesRequirePo = q.data.purchases_require_po;
         data.bankingCsvDateFormat = q.data.banking_csv_date_format;
         data.accountingRequireJournalMemo = q.data.accounting_require_journal_memo;
@@ -102,7 +105,9 @@ function SalesSettingsForm({ companyId }: { companyId: string }) {
     <Card className="max-w-xl">
       <CardHeader>
         <CardTitle className="text-base">Sales defaults</CardTitle>
-        <CardDescription>Applies to new documents — does not rewrite posted history.</CardDescription>
+        <CardDescription>
+          Applies to new documents — does not rewrite posted history.
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid gap-1">
@@ -123,7 +128,11 @@ function SalesSettingsForm({ companyId }: { companyId: string }) {
         </div>
         <div className="grid gap-1">
           <Label>Payment instructions</Label>
-          <Textarea value={instructions} onChange={(e) => setInstructions(e.target.value)} rows={3} />
+          <Textarea
+            value={instructions}
+            onChange={(e) => setInstructions(e.target.value)}
+            rows={3}
+          />
         </div>
         <Button onClick={() => mut.mutate()} disabled={mut.isPending}>
           {mut.isPending ? "Saving…" : "Save sales settings"}

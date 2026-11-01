@@ -1,3 +1,4 @@
+import { ModuleSettingsLinks } from "@/components/settings/ModuleSettingsLinks";
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -33,7 +34,7 @@ function PurchasesSettingsPage() {
     <>
       <PageHeader
         title="Purchases settings"
-        description="Defaults for supplier terms and bill policies. Sequences live under Settings → Documents."
+        description="Supplier terms and bill policies, with quick access to document themes, numbering and other purchase settings."
         actions={
           <Button variant="outline" size="sm" asChild>
             <Link to="/settings" search={{ section: "overview" }}>
@@ -42,7 +43,8 @@ function PurchasesSettingsPage() {
           </Button>
         }
       />
-      <PurchasesSettingsForm companyId={company.id} />
+      <ModuleSettingsLinks category="purchases" />
+      <PurchasesSettingsForm key={company.id} companyId={company.id} />
     </>
   );
 }

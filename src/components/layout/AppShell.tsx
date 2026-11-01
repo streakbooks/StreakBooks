@@ -1,3 +1,4 @@
+import { WorkspaceSettingsShortcut } from "@/components/settings/ModuleSettingsLinks";
 import { useEffect, useState, type ReactNode } from "react";
 import {
   Link,
@@ -138,7 +139,10 @@ function NavLink({
         collapsed && "justify-center px-0",
       )}
     >
-      <item.icon className={cn("size-4 shrink-0", active && "drop-shadow-[0_0_5px_rgba(140,205,255,0.32)]")} aria-hidden />
+      <item.icon
+        className={cn("size-4 shrink-0", active && "drop-shadow-[0_0_5px_rgba(140,205,255,0.32)]")}
+        aria-hidden
+      />
       {collapsed ? null : <span className="truncate">{item.label}</span>}
     </Link>
   );
@@ -159,7 +163,10 @@ function NavList({
   onNavigate?: () => void;
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const activeTo = activeNavItem(pathname)?.to ?? null;
+  const brandingOrigin = useRouterState({
+    select: (s) => (s.location.search as Record<string, unknown>)["from"],
+  });
+  const activeTo = activeNavItem(pathname, brandingOrigin)?.to ?? null;
   const main = NAV_GROUPS.filter((g) => g.id !== "footer");
   const footer = NAV_GROUPS.filter((g) => g.id === "footer");
   const renderGroup = (g: (typeof NAV_GROUPS)[number], index: number) => {
@@ -222,7 +229,10 @@ function SidebarFooter({ isDemo, collapsed }: { isDemo: boolean; collapsed?: boo
 function Breadcrumbs() {
   const router = useRouter();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const crumbs = buildBreadcrumbs(pathname);
+  const brandingOrigin = useRouterState({
+    select: (s) => (s.location.search as Record<string, unknown>)["from"],
+  });
+  const crumbs = buildBreadcrumbs(pathname, brandingOrigin);
   if (crumbs.length === 0) return null;
   const known = (path: string) =>
     Object.prototype.hasOwnProperty.call(router.routesByPath, path) ||
@@ -262,12 +272,14 @@ export function AppShell({ children }: { children: ReactNode }) {
 }
 
 function AppShellLayout({ children }: { children: ReactNode }) {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { user } = useRouteContext({ from: "/_authenticated" });
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const { company, isPending } = useActiveCompany();
   const title = useRouterState({
-    select: (s) => activeNavLabel(s.location.pathname),
+    select: (s) =>
+      activeNavLabel(s.location.pathname, (s.location.search as Record<string, unknown>)["from"]),
   });
 
   // Read the saved sidebar state after mount so server and first client render agree.
@@ -410,6 +422,7 @@ function AppShellLayout({ children }: { children: ReactNode }) {
             "mx-auto w-full max-w-[1400px] px-4 py-6 outline-none md:px-6 md:py-8 print:max-w-none print:p-0",
           )}
         >
+          <WorkspaceSettingsShortcut pathname={pathname} />
           {children}
         </main>
       </div>

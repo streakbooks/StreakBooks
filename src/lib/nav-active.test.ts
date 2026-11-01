@@ -18,6 +18,7 @@ describe("sidebar selection from the URL", () => {
     ["/banking/cash-coding", "Banking"],
     ["/banking/rules", "Banking"],
     ["/sales/invoices/123", "Sales"],
+    ["/documents/branding", "Sales"],
     ["/sales/credit-notes/123", "Sales"],
     ["/purchases/bills/123/edit", "Purchases"],
     ["/purchases/suppliers", "Purchases"],
@@ -30,8 +31,21 @@ describe("sidebar selection from the URL", () => {
     expect(activeNavLabel(url)).toBe(label);
   });
 
+  it("keeps purchase theme navigation in the purchase workspace", () => {
+    expect(activeNavLabel("/documents/branding", "purchases")).toBe("Purchases");
+    expect(activeNavLabel("/documents/branding", "invalid")).toBe("Sales");
+  });
   it("does not incorrectly select the dashboard or another module by prefix", () => {
-    for (const url of ["/contact", "/contactless", "/salesforce", "/reports-archive", "/settings-old", "/projects", "/imports", "/platform"]) {
+    for (const url of [
+      "/contact",
+      "/contactless",
+      "/salesforce",
+      "/reports-archive",
+      "/settings-old",
+      "/projects",
+      "/imports",
+      "/platform",
+    ]) {
       expect(activeNavItem(url)).toBeNull();
       expect(activeNavLabel(url)).toBe("LinkBooks");
     }
@@ -42,7 +56,9 @@ describe("sidebar selection from the URL", () => {
 
   it("chooses only one active module for every known route", () => {
     for (const item of navItems) {
-      const selected = navItems.filter((nav) => activeNavItem(item.to + (item.to === "/" ? "" : "/detail"))?.to === nav.to);
+      const selected = navItems.filter(
+        (nav) => activeNavItem(item.to + (item.to === "/" ? "" : "/detail"))?.to === nav.to,
+      );
       expect(selected.length).toBe(1);
     }
   });

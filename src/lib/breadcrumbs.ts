@@ -27,7 +27,28 @@ function humanize(segment: string): string {
  * Record ids become "Details". The dashboard has no trail. The last crumb is always `current`;
  * the caller decides which of the others are linkable (only paths that are real routes).
  */
-export function buildBreadcrumbs(pathname: string): Breadcrumb[] {
+export function buildBreadcrumbs(pathname: string, brandingOrigin?: unknown): Breadcrumb[] {
+  if (pathname.split(/[?#]/, 1)[0]?.replace(/\/+$/, "") === "/documents/branding")
+    return [
+      {
+        label: brandingOrigin === "purchases" ? "Purchases" : "Sales",
+        to: brandingOrigin === "purchases" ? "/purchases" : "/sales",
+        current: false,
+      },
+      {
+        label: "Settings",
+        to: brandingOrigin === "purchases" ? "/purchases/settings" : "/sales/settings",
+        current: false,
+      },
+      {
+        label:
+          brandingOrigin === "purchases"
+            ? "Purchase document themes & branding"
+            : "Invoice themes & branding",
+        to: "/documents/branding",
+        current: true,
+      },
+    ];
   const segments = pathname.split("/").filter(Boolean);
   if (segments.length === 0) return [];
   const crumbs: Breadcrumb[] = [];

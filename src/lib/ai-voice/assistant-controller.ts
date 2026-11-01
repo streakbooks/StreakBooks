@@ -193,12 +193,19 @@ export class AssistantController {
     if (!field || field.token !== form.token)
       throw new Error("Select a field first. Say “go to description” or “next field”.");
     const { key, line } = field;
-    if (key === "contactId" || key === "accountId" || key === "taxCodeId") {
+    if (key === "contactId" || key === "accountId" || key === "taxCodeId" || key === "paymentTermId") {
       if (clear) throw new Error("Use the field’s normal clear control for record selections.");
       const options =
-        key === "contactId" ? form.contacts : key === "accountId" ? form.accounts : form.taxes;
+        key === "contactId" ? form.contacts : key === "paymentTermId" ? (form.paymentTerms ?? []) : key === "accountId" ? form.accounts : form.taxes;
       this.choose(form, value, options, (id) => {
-        if (key === "contactId") form.selectContact(id);
+        if (key === "contactId") {
+          form.selectContact(id);
+          if (form.module === "bill") this.focusField("bill date");
+        }
+        else if (key === "paymentTermId") {
+          form.selectPaymentTerm?.(id);
+          if (form.module === "bill") this.focusField("due date");
+        }
         else {
           if (line === undefined || !form.draft.lines[line])
             throw new Error("Select a line first.");
@@ -578,10 +585,17 @@ export class AssistantController {
         this.clearPending("Pending action cancelled. Your unsaved form is unchanged.");
         return;
       }
-      const focusQuery = /^(?:go to|focus(?: on)?|select field|select the field|enter|click on) (.+?)(?: field)?$/i.exec(text)?.[1];
-      const direction = /^(?:(?:go to|move to|focus on|select) (?:the )?)?(next|previous) (?:field|input)$/i.exec(text)?.[1]?.toLowerCase();
+      // A bare "choose supplier" opens the registered lookup instead of guessing a record.
+      if (/^(?:choose|select|pick|find|search for|open) (?:a |the )?(?:supplier|vendor|customer|payment terms?|terms)$/i.test(text)) {
+        this.clearPending();
+        const subject = /terms/i.test(text) ? "payment terms" : /customer/i.test(text) ? "customer" : "supplier";
+        this.focusField(subject);
+        return;
+      }
+      const focusQuery = /^(?:go to|focus(?: on)?|select field|select the field|enter|click on|move to|choose) (.+?)(?: field)?$/i.exec(text)?.[1];
+      const direction = /^(?:(?:go to|move to|focus on|select|jump to) (?:the )?)?(next|previous|prev) (?:field|input|tab)$/i.exec(text)?.[1]?.toLowerCase().replace("prev", "previous");
       if (
-        direction ||
+        (direction && (this.form || !/\\btab\\b/i.test(text))) ||
         (focusQuery &&
           this.form &&
           [...this.fields.values()].some(
@@ -679,6 +693,17 @@ export class AssistantController {
           );
         await this.deps.navigate(this.lastRecord.destination as VoiceDestination);
         this.set({ message: "The saved draft is open." });
+        return;
+      }
+      const termQuery = /^(?:select|choose|use|set|pick) (?:the )?(?:payment terms?|terms) (?:to )?(.+)$/i.exec(text)?.[1];
+      if (termQuery && this.form?.module === "bill") {
+        const form = this.getEditable();
+        if (!form.selectPaymentTerm) throw new Error("Payment terms are unavailable on this bill.");
+        this.clearPending();
+        this.choose(form, termQuery, form.paymentTerms ?? [], (id) => {
+          form.selectPaymentTerm?.(id);
+          this.focusField("due date");
+        });
         return;
       }
       const action = parseFormAction(text);
@@ -833,6 +858,7 @@ export class AssistantController {
         this.previousContact = draft.contactId || this.lastContact;
         this.lastContact = id;
         form.selectContact(id);
+        if (form.module === "bill") this.focusField("bill date");
       });
       return;
     }

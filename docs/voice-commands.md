@@ -36,6 +36,14 @@ activation remains available. Chromium's real audio pipeline is tested with spok
 WAV input; physical-microphone/human accuracy and other browser/OS combinations
 have not been certified. See [engine assessment and privacy details](voice-wake-engine-assessment.md).
 
+## Guided bill entry and quick activation
+
+Use the microphone button beside the Signal pill for one-click activation after browser permission is granted. Wake-phrase recognition still requires explicit enrollment and arming; browser security prevents silent microphone activation on page load. The assistant shows its current listening state and the last recognized phrase.
+
+On the new bill editor, say “choose supplier” to open the supplier lookup, or “select supplier Northwind Supplies” to choose an exact, loaded supplier. A successful supplier selection advances focus to Bill date. “Next tab”, “next field” and “previous tab” move among the registered fields **inside the current document**, including Bill date, Payment terms and Due date. Say “choose payment terms Net 30” to select an available payment term and advance to Due date. Ambiguous suppliers or terms require an explicit choice; no unlisted supplier is invented. The selected field is outlined and scrolled into view. Browser applications cannot move the operating-system mouse pointer.
+
+Outside a document editor, “next tab” and “previous tab” continue to navigate Sales/Purchases section tabs. No voice commands post, authorise or pay bills.
+
 ## Field-by-field entry
 
 On an invoice, quote, sales credit note or new bill, say “go to description”, “go

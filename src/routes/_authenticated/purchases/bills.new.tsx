@@ -1254,6 +1254,11 @@ export function NewBill({
           today,
           dateFormat: company?.date_format ?? "DD/MM/YYYY",
           contacts: suppliers,
+          paymentTerms: terms.map((t) => ({ id: t.id, name: t.name })),
+          selectPaymentTerm: (id) => {
+            setPaymentTermId(id);
+            applyDueFromTerms(billDate, id);
+          },
           accounts: expenseAccounts.map((a) => ({ id: a.id, name: `${a.code} ${a.name}` })),
           taxes: (taxCalculation === "none" ? [] : taxCodes.filter(isPurchaseTaxCode)).map((t) => ({
             id: t.id,
@@ -1807,6 +1812,7 @@ export function NewBill({
           <div className="space-y-2">
             <Label>Payment terms</Label>
             <EntityCombobox
+              voiceField={{ key: "paymentTermId", label: "Payment terms", aliases: ["payment term", "terms", "net payment terms"], order: 25 }}
               options={terms.map((t) => ({
                 value: t.id,
                 label: t.name,

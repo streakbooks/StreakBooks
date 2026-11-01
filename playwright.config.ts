@@ -10,7 +10,13 @@ const hasAccount = Boolean(
  */
 export default defineConfig({
   testDir: "./e2e",
-  testIgnore: ["**/voice/**", "**/migration/**", "**/practice/**", "**/corrections/**"],
+  testIgnore: [
+    "**/voice/**",
+    "**/migration/**",
+    "**/practice/**",
+    "**/corrections/**",
+    "**/themes/**",
+  ],
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
   retries: 0,

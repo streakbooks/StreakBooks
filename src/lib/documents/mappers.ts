@@ -3,6 +3,7 @@
  * model used by the on-screen sheet, the print stylesheet and the e-mail templates.
  * No I/O: the server function loads rows, these functions shape them.
  */
+import { layoutFromBranding } from "./themes/contracts";
 import {
   addressLines,
   buildTaxSummary,
@@ -47,6 +48,10 @@ export function mapBranding(
 ): DocumentBranding {
   const name = str(company?.["name"]) ?? "Your company";
   return {
+    layout:
+      branding && ("font_family" in branding || "page_size" in branding)
+        ? layoutFromBranding(branding)
+        : undefined,
     displayName: str(branding?.["trading_name"]) ?? name,
     legalName:
       str(company?.["legal_name"]) && str(company?.["legal_name"]) !== name

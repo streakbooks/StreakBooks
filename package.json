@@ -17,7 +17,8 @@
     "test:voice": "playwright test --config playwright.voice.config.ts",
     "test:wake": "playwright test --config playwright.wake.config.ts",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:themes": "playwright test --config playwright.themes.config.ts"
   },
   "overrides": {
     "rolldown": "1.2.1"

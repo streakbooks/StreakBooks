@@ -72,6 +72,12 @@ function PrintDocumentPage() {
           {DOCUMENT_KIND_LABEL[doc.kind].toLowerCase()}
         </Button>
         <div className="flex items-center gap-3">
+          {query.data.appearanceProvenance === "legacy_baseline" && (
+            <p className="text-xs text-muted-foreground">
+              Appearance preserved from the branding rollout; earlier designs cannot be
+              reconstructed.
+            </p>
+          )}
           <p className="hidden text-xs text-muted-foreground sm:block">
             In the print window choose “Save as PDF” as the destination to download a PDF.
           </p>

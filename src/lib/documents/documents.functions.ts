@@ -68,7 +68,10 @@ export const getPrintableDocument = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     await assertCompanyPermission(supabase, data.companyId, viewPermissionFor(data.kind));
-    const ctx = await loadCompanyDocContext(supabase, data.companyId);
+    const ctx = await loadCompanyDocContext(supabase, data.companyId, {
+      kind: data.kind,
+      id: data.id,
+    });
     const document = await loadPrintDocument(supabase, data.companyId, data.kind, data.id, ctx);
     return {
       document,
@@ -76,15 +79,19 @@ export const getPrintableDocument = createServerFn({ method: "GET" })
       locale: ctx.locale,
       dateFormat: ctx.dateFormat,
       today: ctx.today,
+      appearanceProvenance: ctx.appearanceProvenance,
     };
   });
 
 export const getDocumentBranding = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
+  .inputValidator((input: { companyId: string; kind?: "customer_statement" }) => ({
+    companyId: assertUuid(input.companyId),
+    kind: input.kind === "customer_statement" ? input.kind : undefined,
+  }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
-    const ctx = await loadCompanyDocContext(context.supabase, data.companyId);
+    const ctx = await loadCompanyDocContext(context.supabase, data.companyId, undefined, data.kind);
     return {
       branding: ctx.branding,
       locale: ctx.locale,
@@ -182,15 +189,7 @@ export const saveBrandingSettings = createServerFn({ method: "POST" })
     const { supabase } = context;
     await assertCompanyPermission(supabase, data.companyId, "company.settings.edit");
 
-    const existing = await supabase
-      .from("company_branding" as never)
-      .select("logo_path" as never)
-      .eq("company_id" as never, data.companyId as never)
-      .maybeSingle();
-    const previousLogo = (existing.data as { logo_path?: string | null } | null)?.logo_path ?? null;
-
-    const row: Record<string, unknown> = {
-      company_id: data.companyId,
+    const values = {
       trading_name: data.tradingName,
       letterhead_line: data.letterheadLine,
       invoice_email: data.invoiceEmail,
@@ -200,34 +199,15 @@ export const saveBrandingSettings = createServerFn({ method: "POST" })
       bank_details: data.bankDetails,
       payment_instructions: data.paymentInstructions,
       default_notes: data.defaultNotes,
-      updated_at: new Date().toISOString(),
+      accent_color: data.accentColor,
+      footer_text: data.footerText,
+      ...(data.logoPath !== undefined ? { logo_path: data.logoPath } : {}),
     };
-    if (data.logoPath !== undefined) row["logo_path"] = data.logoPath;
-
-    const { error } = await supabase
-      .from("company_branding" as never)
-      .upsert(row as never, { onConflict: "company_id" });
-    if (error) {
-      if (error.code === "42703" || error.code === "PGRST204") throw new Error(MIGRATION_HINT);
-      throw new Error(error.message);
-    }
-    const { error: cErr } = await supabase
-      .from("companies" as never)
-      .update({ document_theme_color: data.accentColor, invoice_footer: data.footerText } as never)
-      .eq("id" as never, data.companyId as never);
-    if (cErr) throw new Error(cErr.message);
-
-    // Remove the replaced logo object (best effort; the new path is already saved).
-    if (data.logoPath !== undefined && previousLogo && previousLogo !== data.logoPath) {
-      await supabase.storage.from("org-logos").remove([previousLogo]);
-    }
-    await rpcClient(supabase).rpc("record_audit_event", {
+    const r = await rpcClient(supabase).rpc("save_document_branding", {
       _company_id: data.companyId,
-      _action: "settings.branding",
-      _entity_type: "company",
-      _entity_id: data.companyId,
-      _details: {},
+      _values: values,
     });
+    if (r.error) throw new Error(r.error.message ?? "Branding could not be saved");
     return { ok: true as const };
   });
 
@@ -384,7 +364,11 @@ type SendInput = {
 
 async function sendOne(db: Db, input: SendInput): Promise<SendEmailResult> {
   const { readEmailConfig, sendViaResend } = await import("@/lib/documents/email-provider.server");
-  const ctx = await loadCompanyDocContext(db, input.companyId);
+  const ctx = await loadCompanyDocContext(
+    db,
+    input.companyId,
+    input.kind === "customer_statement" ? undefined : { kind: input.kind, id: input.id },
+  );
   const cfg = readEmailConfig();
   if (!cfg.configured) {
     return {
@@ -712,6 +696,7 @@ export const getSharedInvoice = createServerFn({ method: "GET" })
       r.customer,
       { baseCurrency, companyTaxNumber: branding.taxNumber },
     );
+    document.notes ??= branding.defaultNotes;
     // Never expose internal identifiers or contact details beyond what the printed invoice shows.
     document.partyEmail = null;
     document.partyId = null;

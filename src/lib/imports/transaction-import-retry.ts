@@ -62,3 +62,60 @@ export function isExactTransactionImportRetry(
       (prior!.product_id ?? null) === null;
   });
 }
+
+/**
+ * A matching CSV is not a completed posting. A paid/authorised invoice or
+ * bill without its posting journal must never be silently skipped on retry.
+ * Likewise a draft carrying a journal is an inconsistent accounting state.
+ *
+ * This is a read-only guard; retrying an unposted draft with authorisation
+ * requested requires manual review rather than silently authorising a
+ * possibly edited document.
+ */
+export type TransactionImportRetryDisposition = "skip" | "manual_authorisation" | "invalid";
+
+export function classifyTransactionImportRetry(
+  status: string,
+  postedJournalId: string | null,
+  requestedAuthorisation: boolean,
+): TransactionImportRetryDisposition {
+  if (status === "draft" || status === "awaiting_approval") {
+    if (postedJournalId) return "invalid";
+    return requestedAuthorisation ? "manual_authorisation" : "skip";
+  }
+  if (status === "authorised" || status === "partly_paid" || status === "paid") {
+    return postedJournalId ? "skip" : "invalid";
+  }
+  return "invalid";
+}
+
+/**
+ * Verify a persisted posting journal before declaring a CSV retry complete.
+ * A non-null posted_journal_id alone is not proof: it could reference a
+ * different organisation/document, a draft journal, or a legacy seed entry
+ * without source provenance. Reject such cases for manual reconciliation.
+ */
+export type PostedImportJournal = {
+  id: string;
+  company_id: string;
+  status: string;
+  source_type: string;
+  source_id: string | null;
+};
+
+export function isVerifiedTransactionImportJournal(
+  expected: {
+    companyId: string;
+    documentId: string;
+    journalId: string;
+    sourceType: "sales_invoice" | "purchase_bill";
+  },
+  journal: PostedImportJournal | null,
+): boolean {
+  return journal !== null &&
+    journal.id === expected.journalId &&
+    journal.company_id === expected.companyId &&
+    journal.status === "posted" &&
+    journal.source_type === expected.sourceType &&
+    journal.source_id === expected.documentId;
+}

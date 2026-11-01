@@ -1,5 +1,6 @@
 import { decimalPlacesFor, toMinorUnits } from "@/lib/accounting/money";
-import { extendedAmountMinor } from "@/lib/sales/line-math-rounded";
+import { computeTaxLineRounded, extendedAmountMinor } from "@/lib/sales/line-math-rounded";
+import type { TaxTreatment } from "@/lib/tax/tax-math";
 import { computeLineAmounts } from "@/lib/purchases/line-math";
 import { getImportDefinition } from "./import-definitions";
 import { previewImportCsv } from "./import-preflight";
@@ -58,6 +59,56 @@ function lineValueMinor(kind: TransactionImportKind, line: Pick<TransactionImpor
   return kind === "sales"
     ? extendedAmountMinor(line.quantity, line.unitPriceMinor)
     : computeLineAmounts({ quantity: line.quantity, unit_price_minor: line.unitPriceMinor, tax_rate_bps: 0 }).net_minor;
+}
+
+/**
+ * After organisation-scoped tax-code resolution, validate the *actual* line
+ * and document totals before saving the first draft. The generic CSV preflight
+ * cannot know tax rates or whether Sales prices are tax-inclusive.
+ *
+ * Uses the same minor-unit rounding as the Sales and Purchases domain engines.
+ * No database writes occur here. An importer must call this for EVERY document
+ * before entering its document-writing loop.
+ */
+export function validateResolvedTransactionTotals(
+  document: TransactionImportDocument,
+  kind: TransactionImportKind,
+  taxRatesBps: readonly number[],
+  treatment: TaxTreatment = "exclusive",
+): { subtotalMinor: bigint; taxMinor: bigint; totalMinor: bigint } {
+  if (taxRatesBps.length !== document.lines.length) {
+    throw new Error(`Document ${document.documentNumber}: tax-rate mapping is incomplete`);
+  }
+  const max = BigInt(Number.MAX_SAFE_INTEGER);
+  let subtotalMinor = 0n;
+  let taxMinor = 0n;
+  let totalMinor = 0n;
+  for (const [index, line] of document.lines.entries()) {
+    const taxRateBps = taxRatesBps[index]!;
+    const amounts = kind === "sales"
+      ? computeTaxLineRounded({
+          quantity: line.quantity, unit_price_minor: line.unitPriceMinor,
+          tax_rate_bps: taxRateBps, treatment,
+        })
+      : computeLineAmounts({
+          quantity: line.quantity, unit_price_minor: line.unitPriceMinor,
+          tax_rate_bps: taxRateBps, treatment: "exclusive",
+        });
+    subtotalMinor += amounts.net_minor;
+    taxMinor += amounts.tax_minor;
+    totalMinor += amounts.gross_minor;
+    for (const [label, amount] of [
+      ["subtotal", subtotalMinor], ["tax", taxMinor], ["total", totalMinor],
+    ] as const) {
+      if (amount < 0n || amount > max) {
+        throw new Error(`Row ${line.sourceRow}: document ${document.documentNumber} ${label} exceeds safe integer range`);
+      }
+    }
+  }
+  if (totalMinor <= 0n) {
+    throw new Error(`Row ${document.lines[0]?.sourceRow ?? 1}: document ${document.documentNumber} has no monetary value after tax rounding`);
+  }
+  return { subtotalMinor, taxMinor, totalMinor };
 }
 
 /**

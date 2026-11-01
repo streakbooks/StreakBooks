@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isExactTransactionImportRetry, type ExpectedImportRetry, type StoredImportRetry } from "./transaction-import-retry";
+import { classifyTransactionImportRetry, isExactTransactionImportRetry, type ExpectedImportRetry, type StoredImportRetry } from "./transaction-import-retry";
 
 const expected: ExpectedImportRetry = {
   contactId: "contact-a",
@@ -56,4 +56,26 @@ describe("Sales/Purchases CSV import idempotent retry comparison (non-posting)",
       ...stored, lines: [{ ...stored.lines[0]!, product_id: "item-a" }, stored.lines[1]!],
     })).toBe(false);
   });
+});
+
+describe("AR/AP import retry posting-state guard (non-posting)", () => {
+  it.each(["authorised", "partly_paid", "paid"])(
+    "requires a real posted journal for %s documents",
+    (status) => {
+      expect(classifyTransactionImportRetry(status, null, false)).toBe("invalid");
+      expect(classifyTransactionImportRetry(status, "journal-id", true)).toBe("skip");
+    },
+  );
+  it.each(["draft", "awaiting_approval"])(
+    "allows draft-only %s retries but requires review before requested posting",
+    (status) => {
+      expect(classifyTransactionImportRetry(status, null, false)).toBe("skip");
+      expect(classifyTransactionImportRetry(status, null, true)).toBe("manual_authorisation");
+      expect(classifyTransactionImportRetry(status, "journal-id", false)).toBe("invalid");
+    },
+  );
+  it.each(["void", "cancelled", "unknown", ""])(
+    "never silently skips %s statuses",
+    (status) => expect(classifyTransactionImportRetry(status, "journal-id", true)).toBe("invalid"),
+  );
 });

@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
-import { prepareTransactionCsv } from "@/lib/imports/transaction-import-validation";
-import { isExactTransactionImportRetry } from "@/lib/imports/transaction-import-retry";
+import { prepareTransactionCsv, validateResolvedTransactionTotals } from "@/lib/imports/transaction-import-validation";
+import { classifyTransactionImportRetry, isExactTransactionImportRetry } from "@/lib/imports/transaction-import-retry";
 import { isRateEffective } from "@/lib/tax/tax-math";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
@@ -5029,16 +5029,16 @@ export const importPurchaseBillsCsv = createServerFn({ method: "POST" })
 
     // Tax rates must be resolved against the bill date, never trusted from CSV.
     type TaxRow = {
-      id: string; code: string; tax_rates: {
+      id: string; code: string; treatment: string | null; tax_rates: {
         rate_bps: number; effective_from: string; effective_to: string | null; is_active: boolean;
       } | null;
     };
-    const taxesByDate = new Map<string, Map<string, { id: string; rateBps: number }>>();
+    const taxesByDate = new Map<string, Map<string, { id: string; rateBps: number; treatment: string | null }>>();
     for (const doc of docs) {
       if (!taxesByDate.has(doc.documentDate)) {
         const { data: rows, error } = await supabase
           .from("tax_codes" as never)
-          .select("id, code, tax_rates(rate_bps, effective_from, effective_to, is_active)" as never)
+          .select("id, code, treatment, tax_rates(rate_bps, effective_from, effective_to, is_active)" as never)
           .eq("company_id" as never, data.companyId as never)
           .eq("is_active" as never, true as never)
           .in("applies_to" as never, ["purchases", "both"] as never);
@@ -5046,7 +5046,7 @@ export const importPurchaseBillsCsv = createServerFn({ method: "POST" })
         taxesByDate.set(doc.documentDate, new Map(
           ((rows ?? []) as unknown as TaxRow[])
             .filter((r) => r.tax_rates && isRateEffective(r.tax_rates, doc.documentDate))
-            .map((r) => [r.code, { id: r.id, rateBps: r.tax_rates!.rate_bps }]),
+            .map((r) => [r.code, { id: r.id, rateBps: r.tax_rates!.rate_bps, treatment: r.treatment }]),
         ));
       }
       for (const line of doc.lines) {
@@ -5054,6 +5054,19 @@ export const importPurchaseBillsCsv = createServerFn({ method: "POST" })
           throw new Error(`Row ${line.sourceRow}: purchase tax code ${line.taxCode} is unavailable on ${doc.documentDate}`);
         }
       }
+    }
+
+    // Resolve and validate all tax-inclusive document totals before any bill
+    // is written; line-only CSV preflight cannot know the effective tax rates.
+    for (const doc of docs) {
+      validateResolvedTransactionTotals(doc, "purchases", doc.lines.map((line) =>
+        // Reverse-charge bills carry no supplier tax; retain the real rate
+        // in the draft for buyer self-assessment but validate payable at 0.
+        line.taxCode
+          ? taxesByDate.get(doc.documentDate)!.get(line.taxCode)!.treatment === "reverse_charge"
+            ? 0 : taxesByDate.get(doc.documentDate)!.get(line.taxCode)!.rateBps
+          : 0,
+      ));
     }
 
     const outcome: {
@@ -5066,7 +5079,7 @@ export const importPurchaseBillsCsv = createServerFn({ method: "POST" })
       try {
         const { data: existing, error: duplicateError } = await supabase
           .from("purchase_bills" as never)
-          .select("id, status, contact_id, bill_date, due_date, currency_code, memo" as never)
+          .select("id, status, contact_id, bill_date, due_date, currency_code, memo, posted_journal_id" as never)
           .eq("company_id" as never, data.companyId as never)
           .eq("contact_id" as never, suppliers.get(doc.contactName)! as never)
           .ilike("supplier_invoice_number" as never, escapeLikeTerm(doc.documentNumber) as never)
@@ -5077,6 +5090,7 @@ export const importPurchaseBillsCsv = createServerFn({ method: "POST" })
           const prior = (existing as unknown as Array<{
             id: string; status: string; contact_id: string; bill_date: string;
             due_date: string; currency_code: string; memo: string | null;
+            posted_journal_id: string | null;
           }>)[0]!;
           const { data: priorLines, error: priorLinesError } = await supabase
             .from("purchase_bill_lines" as never)
@@ -5103,9 +5117,13 @@ export const importPurchaseBillsCsv = createServerFn({ method: "POST" })
           if (!sameSource) {
             throw new Error("Supplier invoice number already exists with different header or lines; review the existing bill");
           }
-          if (data.authorise && (prior.status === "draft" || prior.status === "awaiting_approval")) {
+          const disposition = classifyTransactionImportRetry(prior.status, prior.posted_journal_id, data.authorise);
+          if (disposition === "manual_authorisation") {
             draftId = prior.id;
             throw new Error("Matching bill draft already exists but is not authorised; review and authorise it manually");
+          }
+          if (disposition === "invalid") {
+            throw new Error("Existing bill has an inconsistent status or missing posting journal; review and reconcile before retrying");
           }
           outcome.skipped++;
           continue;

@@ -578,8 +578,8 @@ export class AssistantController {
         this.clearPending("Pending action cancelled. Your unsaved form is unchanged.");
         return;
       }
-      const focusQuery = /^(?:go to|focus|select field|enter) (.+?)(?: field)?$/i.exec(text)?.[1];
-      const direction = /^(next|previous) field$/i.exec(text)?.[1]?.toLowerCase();
+      const focusQuery = /^(?:go to|focus(?: on)?|select field|select the field|enter|click on) (.+?)(?: field)?$/i.exec(text)?.[1];
+      const direction = /^(?:(?:go to|move to|focus on|select) (?:the )?)?(next|previous) (?:field|input)$/i.exec(text)?.[1]?.toLowerCase();
       if (
         direction ||
         (focusQuery &&
@@ -597,9 +597,9 @@ export class AssistantController {
         await this.dictateField("", true);
         return;
       }
-      if (/^dictate /i.test(input.trim())) {
+      if (/^(?:dictate|input text|enter text|type text|input value|enter value|type value|fill in) /i.test(text)) {
         this.clearPending();
-        await this.dictateField(input.trim().slice(8));
+        await this.dictateField(input.trim().replace(/^(?:dictate|input text|enter text|type text|input value|enter value|type value|fill in)\s+/i, ""));
         return;
       }
       if (this.clarification) {

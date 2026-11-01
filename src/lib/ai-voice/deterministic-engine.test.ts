@@ -112,3 +112,39 @@ it("uses module context for shared tab names and respects existing permission ch
     command: { destination: "/purchases/statements" },
   });
 });
+
+describe("natural Signal commands", () => {
+  it.each([
+    ["please open the bill page", "/purchases/bills"],
+    ["could you show me the invoices tab", "/sales/invoices"],
+    ["bring up supplier bills", "/purchases/bills"],
+    ["pull up the invoice list", "/sales/invoices"],
+    ["head to reports", "/reports"],
+    ["open bill", "/purchases/bills"],
+    ["start a new invoice", "/sales/invoices/new"],
+    ["prepare a new bill", "/purchases/bills/new"],
+  ])("understands %s", (phrase, destination) => {
+    expect(parseDeterministicCommand(phrase)).toMatchObject({
+      kind: "matched", command: { destination },
+    });
+  });
+  it.each([
+    ["go to next tab", "/purchases/bills", "/purchases/expenses"],
+    ["previous tab", "/purchases/bills", "/purchases"],
+    ["switch to next tab", "/sales/invoices", "/sales/quotes"],
+    ["go to previous section", "/sales/quotes", "/sales/invoices"],
+  ])("switches sections for %s", (phrase, location, destination) => {
+    expect(parseDeterministicCommand(phrase, location)).toMatchObject({
+      kind: "matched", command: { destination },
+    });
+  });
+  it.each([
+    ["next tab", "/"],
+    ["previous tab", "/purchases"],
+    ["next tab", "/purchases/settings"],
+    ["please open bills then delete everything", "/purchases"],
+    ["open bills or invoices", "/purchases"],
+  ])("rejects unsafe or unavailable %s", (phrase, location) => {
+    expect(parseDeterministicCommand(phrase, location).kind).toBe("unsupported");
+  });
+});

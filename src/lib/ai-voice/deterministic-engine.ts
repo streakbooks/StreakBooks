@@ -15,13 +15,13 @@ export const VOICE_COMMANDS = [
     destination: "/sales/invoices",
     label: "Invoices",
     requiredPermission: "sales.view",
-    phrases: ["invoices", "sales invoices", "customer invoices"],
+    phrases: ["invoices", "invoice", "sales invoices", "customer invoices", "invoice list"],
   },
   {
     destination: "/purchases/bills",
     label: "Bills",
     requiredPermission: "purchases.view",
-    phrases: ["bills", "supplier bills"],
+    phrases: ["bills", "bill", "supplier bills", "bill list", "purchase bills"],
   },
   {
     destination: "/banking",
@@ -168,6 +168,14 @@ const PREFIXES = [
   "view",
   "display",
   "switch to",
+  "take me to",
+  "bring up",
+  "pull up",
+  "head to",
+  "jump to",
+  "show me",
+  "i want to see",
+  "i need to see",
 ];
 
 export function parseDeterministicCommand(transcript: string, location = ""): ParseResult {
@@ -181,13 +189,35 @@ export function parseDeterministicCommand(transcript: string, location = ""): Pa
     .normalize("NFKC")
     .replace(/[.,!?]+/g, " ")
     .replace(/\s+/g, " ")
-    .trim();
-  const prefix = PREFIXES.find((candidate) => text.startsWith(candidate + " "));
+    .trim()
+    .replace(/^(?:(?:please|kindly) |(?:can|could|would) you (?:please )?)/, "")
+    .replace(/ please$/, "");
+  if (/\b(?:and then|then|or)\b|[;\/]/.test(text) || /^(?:do not|don't|never)\b/.test(text)) return unsupported;
+  // Switch between actual Sales/Purchases navigation sections, never browser tabs.
+  const tabDirection = /^(?:(?:go to|open|switch to|show|move to) (?:the )?)?(next|previous|prev) (?:tab|section)$/.exec(text)?.[1];
+  if (tabDirection) {
+    const module = location.startsWith("/purchases") ? "purchases" : location.startsWith("/sales") ? "sales" : null;
+    if (!module) return unsupported;
+    const sections = module === "purchases" ? PURCHASES_SECTIONS : SALES_SECTIONS;
+    const current = sections.reduce((best, item, index) =>
+      (location === item.to || location.startsWith(item.to + "/")) && item.to.length > (sections[best]?.to.length ?? -1)
+        ? index : best, -1);
+    const next = current + (tabDirection === "next" ? 1 : -1);
+    if (current < 0 || next < 0 || next >= sections.length) return unsupported;
+    return { kind: "matched", command: {
+      destination: sections[next]!.to,
+      label: sections[next]!.label,
+      requiredPermission: module === "purchases" ? "purchases.view" : "sales.view",
+    } };
+  }
+  const prefix = [...PREFIXES].sort((a, b) => b.length - a.length).find((candidate) => text.startsWith(candidate + " "));
   if (prefix) {
     const subject = text
       .slice(prefix.length)
       .trim()
-      .replace(/^(the|my)\s+/, "");
+      .replace(/^(the|my|our)\s+/, "")
+      .replace(/\s+(?:page|screen|tab|section|list)$/, "")
+      .replace(/^(?:all|list of)\s+/, "");
     const sections = [
       ...PURCHASES_SECTIONS.map((item) => ({
         ...item,
@@ -226,7 +256,7 @@ export function parseDeterministicCommand(transcript: string, location = ""): Pa
     );
     if (command) return { kind: "matched", command };
   }
-  const formSubject = /^(?:create|new|open new)\s+(?:(?:a|an)\s+)?(.+)$/.exec(text)?.[1];
+  const formSubject = /^(?:create|new|open new|start|prepare|make|add new)\s+(?:(?:a|an)\s+)?(?:new\s+)?(.+)$/.exec(text)?.[1];
   const form = FORMS.find((entry) => entry.phrases.some((phrase) => formSubject === phrase));
   return form ? { kind: "matched", command: form } : unsupported;
 }

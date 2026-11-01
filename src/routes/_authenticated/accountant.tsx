@@ -130,6 +130,13 @@ function AccountantTools() {
         title="Accountant tools"
         description="Period-end checklist, journal review, reconciliation queues and tax adjustments."
       />
+      <div className="mb-4">
+        <Button variant="outline" asChild>
+          <Link to="/accounting" search={{ tab: "corrections" }}>
+            Open transaction corrections
+          </Link>
+        </Button>
+      </div>
       <PracticeWorkBoard key={companyId} companyId={companyId} />
       <div className="my-6 space-y-4">
         <Button variant="outline" onClick={() => setShowPeriodClose((value) => !value)}>

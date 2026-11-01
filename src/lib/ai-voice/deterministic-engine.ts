@@ -192,7 +192,7 @@ export function parseDeterministicCommand(transcript: string, location = ""): Pa
     .trim()
     .replace(/^(?:(?:please|kindly) |(?:can|could|would) you (?:please )?)/, "")
     .replace(/ please$/, "");
-  if (/\\b(?:and then|then| or )\\b|[;\\/]/.test(text) || /^(?:do not|don\\u0027t|never)\\b/.test(text)) return unsupported;
+  if (/\b(?:and then|then|or)\b|[;\/]/.test(text) || /^(?:do not|don't|never)\b/.test(text)) return unsupported;
   // Switch between actual Sales/Purchases navigation sections, never browser tabs.
   const tabDirection = /^(?:(?:go to|open|switch to|show|move to) (?:the )?)?(next|previous|prev) (?:tab|section)$/.exec(text)?.[1];
   if (tabDirection) {
@@ -215,7 +215,9 @@ export function parseDeterministicCommand(transcript: string, location = ""): Pa
     const subject = text
       .slice(prefix.length)
       .trim()
-      .replace(/^(the|my)\s+/, "");
+      .replace(/^(the|my|our)\s+/, "")
+      .replace(/\s+(?:page|screen|tab|section|list)$/, "")
+      .replace(/^(?:all|list of)\s+/, "");
     const sections = [
       ...PURCHASES_SECTIONS.map((item) => ({
         ...item,
@@ -254,7 +256,7 @@ export function parseDeterministicCommand(transcript: string, location = ""): Pa
     );
     if (command) return { kind: "matched", command };
   }
-  const formSubject = /^(?:create|new|open new)\s+(?:(?:a|an)\s+)?(.+)$/.exec(text)?.[1];
+  const formSubject = /^(?:create|new|open new|start|prepare|make|add new)\s+(?:(?:a|an)\s+)?(?:new\s+)?(.+)$/.exec(text)?.[1];
   const form = FORMS.find((entry) => entry.phrases.some((phrase) => formSubject === phrase));
   return form ? { kind: "matched", command: form } : unsupported;
 }

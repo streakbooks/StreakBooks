@@ -273,11 +273,12 @@ function Breadcrumbs() {
             {!c.current && known(c.to) ? (
               <Link
                 to={c.to}
-                search={(previous: Record<string, unknown>) => ({
-                  ...previous,
-                  settingsPanel: undefined,
-                  settingsTrail: undefined,
-                })}
+                search={(previous: Record<string, unknown>) => {
+                  const next = { ...previous };
+                  delete next["settingsPanel"];
+                  delete next["settingsTrail"];
+                  return next;
+                }}
                 className="truncate rounded-sm hover:text-foreground"
               >
                 {c.label}

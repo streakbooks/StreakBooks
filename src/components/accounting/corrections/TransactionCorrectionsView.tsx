@@ -4,6 +4,9 @@ import { Link } from "@tanstack/react-router";
 import { format } from "date-fns";
 import {
   correctionFilter,
+  conditionFields,
+  type SearchCondition,
+  type ConditionField,
   correctionInput,
   decimalFilterToMinor,
   exactMoney,
@@ -21,6 +24,8 @@ import { friendlyAuthError } from "@/lib/auth-helpers";
 import { toCsv } from "@/lib/sales/csv";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
+import { CorrectionConditions } from "./CorrectionConditions";
 
 type PostRequest = { input: CorrectionInput; requestKey: string; previewHash: string };
 type Props = {
@@ -72,6 +77,10 @@ export function TransactionCorrectionsView({
     [query, setQuery] = useState(""),
     [min, setMin] = useState(""),
     [max, setMax] = useState("");
+  const [scope, setScope] = useState<CorrectionFilter["scope"]>("all");
+  const [match, setMatch] = useState<"all" | "any">("all");
+  const [conditions, setConditions] = useState<SearchCondition[]>([]);
+  const [crossAck, setCrossAck] = useState(false);
   const [result, setResult] = useState<CorrectionSearch | null>(null),
     [searched, setSearched] = useState<CorrectionFilter | null>(null),
     [selection, setSelection] = useState<Record<string, CorrectionLine>>({});
@@ -91,6 +100,7 @@ export function TransactionCorrectionsView({
   const clearReview = () => {
     setReview(null);
     setAck(false);
+    setCrossAck(false);
   };
   const changeFilter = (callback: () => void) => {
     callback();
@@ -106,6 +116,21 @@ export function TransactionCorrectionsView({
       const filters = old
         ? { ...old, page }
         : correctionFilter.parse({
+            scope,
+            match,
+            conditions: conditions.map((c) =>
+              conditionFields[c.field].kind === "money" &&
+              !["empty", "not_empty"].includes(c.operator)
+                ? {
+                    ...c,
+                    value: decimalFilterToMinor(c.value, setup.decimals) ?? "",
+                    value_to:
+                      c.operator === "between"
+                        ? (decimalFilterToMinor(c.value_to, setup.decimals) ?? "")
+                        : "",
+                  }
+                : c,
+            ),
             from,
             to,
             account_id: account || null,
@@ -150,6 +175,8 @@ export function TransactionCorrectionsView({
           "Undone by",
           "Undone at",
           "Undo journals",
+          "Batch profit change",
+          "Cross-statement line count",
         ],
         plan.rows.map((r) => [
           companyId,
@@ -175,6 +202,8 @@ export function TransactionCorrectionsView({
           batch?.undone_by ?? "",
           batch?.undone_at ?? "",
           batch?.undo_journal_ids?.join("; ") ?? "",
+          plan.impact ? exactMoney(plan.impact.profit_change_minor, setup.decimals) : "",
+          plan.impact?.cross_statement_lines.toString() ?? "",
         ]),
       ),
       "linkbooks-transaction-correction.csv",
@@ -185,9 +214,9 @@ export function TransactionCorrectionsView({
       <div className="rounded-xl border bg-card p-5">
         <h2 className="text-xl font-semibold">Transaction corrections</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Move selected income and expense amounts between GL accounts through traceable correction
-          journals. Original invoices, bills, tax calculations, contacts and tracking details retain
-          their original data.
+          Search profit-and-loss and balance-sheet transactions, then move eligible amounts between
+          GL accounts through traceable correction journals. Original invoices, bills, tax
+          calculations, contacts and tracking details retain their original data.
         </p>
         <p className="mt-2 text-sm">
           Choose original posting dates to preserve historical account reporting, or an open
@@ -253,12 +282,20 @@ export function TransactionCorrectionsView({
               value={account}
               onChange={(e) => changeFilter(() => setAccount(e.target.value))}
             >
-              <option value="">All income and expense accounts</option>
-              {setup.accounts.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.code} · {a.name}
-                </option>
-              ))}
+              <option value="">All accounts in the selected statement</option>
+              {setup.accounts
+                .filter(
+                  (a) =>
+                    scope === "all" ||
+                    (scope === "profit_loss"
+                      ? ["income", "expense"].includes(a.type)
+                      : ["asset", "liability", "equity"].includes(a.type)),
+                )
+                .map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.code} · {a.name}
+                  </option>
+                ))}
             </select>
           </label>
           <label className="text-sm">
@@ -317,6 +354,33 @@ export function TransactionCorrectionsView({
             />
           </label>
         </fieldset>
+        <label className="block text-sm">
+          Financial statement
+          <select
+            aria-label="Correction statement"
+            disabled={busy}
+            className="ml-2 rounded border bg-background p-2"
+            value={scope}
+            onChange={(e) =>
+              changeFilter(() => {
+                setScope(e.target.value as CorrectionFilter["scope"]);
+                setAccount("");
+              })
+            }
+          >
+            <option value="all">All financial statements</option>
+            <option value="profit_loss">Profit and loss</option>
+            <option value="balance_sheet">Balance sheet</option>
+          </select>
+        </label>
+        <CorrectionConditions
+          conditions={conditions}
+          match={match}
+          currency={setup.currency}
+          disabled={busy}
+          onChange={(c) => changeFilter(() => setConditions(c))}
+          onMatch={(m) => changeFilter(() => setMatch(m))}
+        />
         <Button type="submit" disabled={busy}>
           Find posted lines
         </Button>
@@ -331,10 +395,65 @@ export function TransactionCorrectionsView({
         {searched && (
           <p className="text-xs text-muted-foreground">
             Last search: {searched.from} through {searched.to}. Page {result ? result.page + 1 : 1};
-            up to 200 lines per page. Changing search criteria clears the selection. Bank,
-            balance-sheet and tax-control legs are outside this account-correction workspace.
+            up to 200 lines per page. Changing search criteria clears the selection. Protected
+            control, bank and asset-lifecycle accounts remain visible with their exclusion reason.
           </p>
         )}
+        <Button
+          type="button"
+          variant="outline"
+          disabled={busy || !setup.can_export || !result?.rows.length}
+          onClick={() => {
+            if (!result) return;
+            download(
+              toCsv(
+                [
+                  "Line ID",
+                  "Journal",
+                  "Date",
+                  "Account",
+                  "Type",
+                  "Reference",
+                  "Contact",
+                  "Currency",
+                  "Debit",
+                  "Credit",
+                  "Base currency",
+                  "Base amount",
+                  "Exclusion reason",
+                  ...Object.values(conditionFields).map((f) => f.label),
+                ],
+                result.rows.map((r) => [
+                  r.id,
+                  r.journal_number,
+                  r.journal_date,
+                  `${r.account_code} ${r.account_name}`,
+                  r.source_type,
+                  r.source_reference,
+                  r.contact_name ?? "",
+                  r.currency,
+                  exactMoney(r.debit_minor, r.currency_decimals),
+                  exactMoney(r.credit_minor, r.currency_decimals),
+                  setup.currency,
+                  exactMoney(r.base_gross_minor, setup.decimals),
+                  r.blocked_reason ?? "",
+                  ...Object.keys(conditionFields).map((k) => {
+                    const value = r.metadata?.[k];
+                    return Array.isArray(value)
+                      ? value.join("; ")
+                      : typeof value === "string" &&
+                          conditionFields[k as ConditionField].kind === "money"
+                        ? exactMoney(value, setup.decimals)
+                        : (value ?? "");
+                  }),
+                ]),
+              ),
+              "linkbooks-transaction-search.csv",
+            );
+          }}
+        >
+          Export current results
+        </Button>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -442,7 +561,7 @@ export function TransactionCorrectionsView({
                   <td colSpan={6} className="p-6 text-center text-muted-foreground">
                     {result
                       ? "No posted lines match this search."
-                      : "Search for posted income and expense lines to begin."}
+                      : "Search for transaction lines across the financial statements to begin."}
                   </td>
                 </tr>
               )}
@@ -588,6 +707,40 @@ export function TransactionCorrectionsView({
             journals · {money(review.plan.gross_minor)} gross moved to {review.plan.target.code} ·{" "}
             {review.plan.target.name}
           </p>
+          {review.plan.impact && (
+            <div
+              className="space-y-2 rounded border p-3 text-sm"
+              aria-label="Financial statement impact"
+            >
+              <p className="font-medium">
+                Profit change: {money(review.plan.impact.profit_change_minor)}
+              </p>
+              <p>
+                {review.plan.impact.cross_statement_lines} lines move between profit and loss and
+                balance sheet.
+              </p>
+              <ul>
+                {review.plan.impact.account_changes.map((a) => (
+                  <li key={a.id}>
+                    {a.code} · {a.name} ({a.type}): {money(a.debit_change_minor)} net debit change
+                  </li>
+                ))}
+              </ul>
+              {!!review.plan.impact.cross_statement_lines && (
+                <label className="flex items-start gap-2">
+                  <input
+                    type="checkbox"
+                    aria-label="Acknowledge financial statement change"
+                    disabled={busy}
+                    checked={crossAck}
+                    onChange={(e) => setCrossAck(e.target.checked)}
+                  />
+                  I reviewed the effect on profit, assets, liabilities and equity, including any
+                  resulting tax review.
+                </label>
+              )}
+            </div>
+          )}
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -643,7 +796,12 @@ export function TransactionCorrectionsView({
               Download posting plan
             </Button>
             <Button
-              disabled={busy || !ack || !setup.can_apply}
+              disabled={
+                busy ||
+                !ack ||
+                !setup.can_apply ||
+                (!!review.plan.impact?.cross_statement_lines && !crossAck)
+              }
               onClick={async () => {
                 if (!window.confirm("Post this correction batch to the general ledger?")) return;
                 setError("");

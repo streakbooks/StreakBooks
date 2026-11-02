@@ -8,12 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
-type Props = {
-  companyId: string;
-  onNavigate: (section: string) => void;
-};
+type Props = { companyId: string };
 
-export function SettingsOverviewPanel({ companyId, onNavigate }: Props) {
+export function SettingsOverviewPanel({ companyId }: Props) {
   const fetch = useServerFn(getSettingsOverview);
   const q = useQuery({
     queryKey: ["settings-overview", companyId],
@@ -73,12 +70,8 @@ export function SettingsOverviewPanel({ companyId, onNavigate }: Props) {
               <AlertDescription className="flex flex-wrap items-center justify-between gap-2">
                 <span>{w.message}</span>
                 {w.href?.includes("section=") ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => onNavigate(w.href!.split("section=")[1] ?? "overview")}
-                  >
-                    Open
+                  <Button size="sm" variant="outline" asChild>
+                    <Link to="/settings" search={{ section: w.href!.split("section=")[1]?.split("&")[0] ?? "overview" }}>Open</Link>
                   </Button>
                 ) : null}
               </AlertDescription>
@@ -98,8 +91,8 @@ export function SettingsOverviewPanel({ companyId, onNavigate }: Props) {
                 {name}
               </Badge>
             ))}
-            <Button size="sm" variant="secondary" onClick={() => onNavigate("features")}>
-              Feature Manager
+            <Button size="sm" variant="secondary" asChild>
+              <Link to="/settings" search={{ section: "features" }}>Feature Manager</Link>
             </Button>
           </CardContent>
         </Card>
@@ -130,11 +123,11 @@ export function SettingsOverviewPanel({ companyId, onNavigate }: Props) {
           <CardTitle className="text-base">Quick access</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
-          <Button size="sm" variant="outline" onClick={() => onNavigate("accounting")}>
-            Lock dates
+          <Button size="sm" variant="outline" asChild>
+            <Link to="/settings" search={{ section: "accounting" }}>Lock dates</Link>
           </Button>
-          <Button size="sm" variant="outline" onClick={() => onNavigate("features")}>
-            Feature Manager
+          <Button size="sm" variant="outline" asChild>
+            <Link to="/settings" search={{ section: "features" }}>Feature Manager</Link>
           </Button>
           <Button size="sm" variant="outline" asChild>
             <Link to="/accounting">Accounting periods</Link>

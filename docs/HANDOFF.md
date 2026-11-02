@@ -1,5 +1,9 @@
 # Handoff
 
+## P0 evidence
+
+Typecheck exit 0. Lint 0 errors and 23 warnings. Vitest 163 files, 1279 tests, all passed. Production build exit 0. Playwright had no seeded platform_owner: `e2e/superadmin-journeys.spec.ts` 2 passed and 2 skipped. Migration history is BLOCKED: Docker is not installed, and the only other Supabase project is LeadOrbit. READY-TO-APPLY and not applied: `20261102170000`, `20261102180000`, `20261102180100`, and the start-month backfill in `docs/superadmin/start-month-backfill.md`.
+
 - P0.1: typecheck exit 0, lint 0 errors and 23 warnings, 1279 unit tests passed, production build exit 0.
 - P0.2: `sk_live_` and `rzp_live_` are refused unless `LINKBOOKS_ALLOW_LIVE_PAYMENT_KEYS=true`. 15 provider-key tests passed.
 - P0.3 BLOCKED: Playwright Chromium installed; public quote tests passed 2, grant/revoke skipped. Need Docker Desktop or Podman on PATH to seed a local platform_owner.

@@ -99,6 +99,9 @@ function PricingPage() {
             Yearly, 2 months free
           </button>
         </div>
+        <Button type="button" variant="outline" asChild>
+          <Link to="/pricing/builder">Build a quote</Link>
+        </Button>
         <p className="self-center text-sm text-muted-foreground" role="status">
           {locationSource === "fallback"
             ? "Prices shown in USD because your region could not be detected."

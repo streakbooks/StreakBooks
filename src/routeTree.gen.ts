@@ -21,11 +21,11 @@ import { Route as AuthenticatedAccountingRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAiAssistantRouteImport } from './routes/_authenticated/ai-assistant'
 import { Route as AuthenticatedBankingRouteRouteImport } from './routes/_authenticated/banking/route'
 import { Route as AuthenticatedFilesRouteImport } from './routes/_authenticated/files'
-import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedFirmRouteImport } from './routes/_authenticated/firm'
 import { Route as AuthenticatedFixedAssetsRouteImport } from './routes/_authenticated/fixed-assets'
 import { Route as AuthenticatedHelpRouteImport } from './routes/_authenticated/help'
 import { Route as AuthenticatedImportsRouteImport } from './routes/_authenticated/imports'
+import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedPlatformRouteImport } from './routes/_authenticated/platform'
 import { Route as AuthenticatedProductsServicesRouteImport } from './routes/_authenticated/products-services'
@@ -42,6 +42,7 @@ import { Route as AuthSsoRouteImport } from './routes/auth_.sso'
 import { Route as PortalIndexRouteImport } from './routes/portal/index'
 import { Route as PortalAppRouteRouteImport } from './routes/portal/app/route'
 import { Route as PortalLoginRouteImport } from './routes/portal/login'
+import { Route as PricingBuilderRouteImport } from './routes/pricing_.builder'
 import { Route as AuthenticatedBankingIndexRouteImport } from './routes/_authenticated/banking/index'
 import { Route as AuthenticatedBankingCashCodingRouteImport } from './routes/_authenticated/banking/cash-coding'
 import { Route as AuthenticatedBankingFeedsRouteImport } from './routes/_authenticated/banking/feeds'
@@ -193,11 +194,6 @@ const AuthenticatedFilesRoute = AuthenticatedFilesRouteImport.update({
   path: '/files',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedNotificationsRoute = AuthenticatedNotificationsRouteImport.update({
-  id: '/notifications',
-  path: '/notifications',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedFirmRoute = AuthenticatedFirmRouteImport.update({
   id: '/firm',
   path: '/firm',
@@ -219,6 +215,12 @@ const AuthenticatedImportsRoute = AuthenticatedImportsRouteImport.update({
   path: '/imports',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedNotificationsRoute =
+  AuthenticatedNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
@@ -301,6 +303,11 @@ const PortalLoginRoute = PortalLoginRouteImport.update({
   id: '/login',
   path: '/login',
   getParentRoute: () => PortalRouteRoute,
+} as any)
+const PricingBuilderRoute = PricingBuilderRouteImport.update({
+  id: '/pricing_/builder',
+  path: '/pricing/builder',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedBankingIndexRoute =
   AuthenticatedBankingIndexRouteImport.update({
@@ -836,11 +843,11 @@ export interface FileRoutesByFullPath {
   '/accounting': typeof AuthenticatedAccountingRoute
   '/ai-assistant': typeof AuthenticatedAiAssistantRoute
   '/files': typeof AuthenticatedFilesRoute
-  '/notifications': typeof AuthenticatedNotificationsRoute
   '/firm': typeof AuthenticatedFirmRoute
   '/fixed-assets': typeof AuthenticatedFixedAssetsRoute
   '/help': typeof AuthenticatedHelpRoute
   '/imports': typeof AuthenticatedImportsRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/platform': typeof AuthenticatedPlatformRouteWithChildren
   '/products-services': typeof AuthenticatedProductsServicesRoute
@@ -853,6 +860,7 @@ export interface FileRoutesByFullPath {
   '/auth/mfa': typeof AuthMfaRoute
   '/auth/sso': typeof AuthSsoRoute
   '/portal/login': typeof PortalLoginRoute
+  '/pricing/builder': typeof PricingBuilderRoute
   '/portal/': typeof PortalIndexRoute
   '/banking/cash-coding': typeof AuthenticatedBankingCashCodingRoute
   '/banking/feeds': typeof AuthenticatedBankingFeedsRoute
@@ -953,11 +961,11 @@ export interface FileRoutesByTo {
   '/accounting': typeof AuthenticatedAccountingRoute
   '/ai-assistant': typeof AuthenticatedAiAssistantRoute
   '/files': typeof AuthenticatedFilesRoute
-  '/notifications': typeof AuthenticatedNotificationsRoute
   '/firm': typeof AuthenticatedFirmRoute
   '/fixed-assets': typeof AuthenticatedFixedAssetsRoute
   '/help': typeof AuthenticatedHelpRoute
   '/imports': typeof AuthenticatedImportsRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/products-services': typeof AuthenticatedProductsServicesRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -969,6 +977,7 @@ export interface FileRoutesByTo {
   '/auth/mfa': typeof AuthMfaRoute
   '/auth/sso': typeof AuthSsoRoute
   '/portal/login': typeof PortalLoginRoute
+  '/pricing/builder': typeof PricingBuilderRoute
   '/': typeof AuthenticatedIndexRoute
   '/portal': typeof PortalIndexRoute
   '/banking/cash-coding': typeof AuthenticatedBankingCashCodingRoute
@@ -1074,11 +1083,11 @@ export interface FileRoutesById {
   '/_authenticated/accounting': typeof AuthenticatedAccountingRoute
   '/_authenticated/ai-assistant': typeof AuthenticatedAiAssistantRoute
   '/_authenticated/files': typeof AuthenticatedFilesRoute
-  '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/firm': typeof AuthenticatedFirmRoute
   '/_authenticated/fixed-assets': typeof AuthenticatedFixedAssetsRoute
   '/_authenticated/help': typeof AuthenticatedHelpRoute
   '/_authenticated/imports': typeof AuthenticatedImportsRoute
+  '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/platform': typeof AuthenticatedPlatformRouteWithChildren
   '/_authenticated/products-services': typeof AuthenticatedProductsServicesRoute
@@ -1091,6 +1100,7 @@ export interface FileRoutesById {
   '/auth_/mfa': typeof AuthMfaRoute
   '/auth_/sso': typeof AuthSsoRoute
   '/portal/login': typeof PortalLoginRoute
+  '/pricing_/builder': typeof PricingBuilderRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/portal/': typeof PortalIndexRoute
   '/_authenticated/banking/cash-coding': typeof AuthenticatedBankingCashCodingRoute
@@ -1200,11 +1210,11 @@ export interface FileRouteTypes {
     | '/accounting'
     | '/ai-assistant'
     | '/files'
-    | '/notifications'
     | '/firm'
     | '/fixed-assets'
     | '/help'
     | '/imports'
+    | '/notifications'
     | '/onboarding'
     | '/platform'
     | '/products-services'
@@ -1217,6 +1227,7 @@ export interface FileRouteTypes {
     | '/auth/mfa'
     | '/auth/sso'
     | '/portal/login'
+    | '/pricing/builder'
     | '/portal/'
     | '/banking/cash-coding'
     | '/banking/feeds'
@@ -1317,11 +1328,11 @@ export interface FileRouteTypes {
     | '/accounting'
     | '/ai-assistant'
     | '/files'
-    | '/notifications'
     | '/firm'
     | '/fixed-assets'
     | '/help'
     | '/imports'
+    | '/notifications'
     | '/onboarding'
     | '/products-services'
     | '/profile'
@@ -1333,6 +1344,7 @@ export interface FileRouteTypes {
     | '/auth/mfa'
     | '/auth/sso'
     | '/portal/login'
+    | '/pricing/builder'
     | '/'
     | '/portal'
     | '/banking/cash-coding'
@@ -1437,11 +1449,11 @@ export interface FileRouteTypes {
     | '/_authenticated/accounting'
     | '/_authenticated/ai-assistant'
     | '/_authenticated/files'
-    | '/_authenticated/notifications'
     | '/_authenticated/firm'
     | '/_authenticated/fixed-assets'
     | '/_authenticated/help'
     | '/_authenticated/imports'
+    | '/_authenticated/notifications'
     | '/_authenticated/onboarding'
     | '/_authenticated/platform'
     | '/_authenticated/products-services'
@@ -1454,6 +1466,7 @@ export interface FileRouteTypes {
     | '/auth_/mfa'
     | '/auth_/sso'
     | '/portal/login'
+    | '/pricing_/builder'
     | '/_authenticated/'
     | '/portal/'
     | '/_authenticated/banking/cash-coding'
@@ -1557,6 +1570,7 @@ export interface RootRouteChildren {
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthMfaRoute: typeof AuthMfaRoute
   AuthSsoRoute: typeof AuthSsoRoute
+  PricingBuilderRoute: typeof PricingBuilderRoute
   ShareInvoiceTokenRoute: typeof ShareInvoiceTokenRoute
 }
 
@@ -1646,13 +1660,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFilesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/notifications': {
-      id: '/_authenticated/notifications'
-      path: '/notifications'
-      fullPath: '/notifications'
-      preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/firm': {
       id: '/_authenticated/firm'
       path: '/firm'
@@ -1679,6 +1686,13 @@ declare module '@tanstack/react-router' {
       path: '/imports'
       fullPath: '/imports'
       preLoaderRoute: typeof AuthenticatedImportsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/notifications': {
+      id: '/_authenticated/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/onboarding': {
@@ -1792,6 +1806,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/portal/login'
       preLoaderRoute: typeof PortalLoginRouteImport
       parentRoute: typeof PortalRouteRoute
+    }
+    '/pricing_/builder': {
+      id: '/pricing_/builder'
+      path: '/pricing/builder'
+      fullPath: '/pricing/builder'
+      preLoaderRoute: typeof PricingBuilderRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/banking/': {
       id: '/_authenticated/banking/'
@@ -2675,11 +2696,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountingRoute: typeof AuthenticatedAccountingRoute
   AuthenticatedAiAssistantRoute: typeof AuthenticatedAiAssistantRoute
   AuthenticatedFilesRoute: typeof AuthenticatedFilesRoute
-  AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedFirmRoute: typeof AuthenticatedFirmRoute
   AuthenticatedFixedAssetsRoute: typeof AuthenticatedFixedAssetsRoute
   AuthenticatedHelpRoute: typeof AuthenticatedHelpRoute
   AuthenticatedImportsRoute: typeof AuthenticatedImportsRoute
+  AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedPlatformRoute: typeof AuthenticatedPlatformRouteWithChildren
   AuthenticatedProductsServicesRoute: typeof AuthenticatedProductsServicesRoute
@@ -2713,11 +2734,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountingRoute: AuthenticatedAccountingRoute,
   AuthenticatedAiAssistantRoute: AuthenticatedAiAssistantRoute,
   AuthenticatedFilesRoute: AuthenticatedFilesRoute,
-  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedFirmRoute: AuthenticatedFirmRoute,
   AuthenticatedFixedAssetsRoute: AuthenticatedFixedAssetsRoute,
   AuthenticatedHelpRoute: AuthenticatedHelpRoute,
   AuthenticatedImportsRoute: AuthenticatedImportsRoute,
+  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedPlatformRoute: AuthenticatedPlatformRouteWithChildren,
   AuthenticatedProductsServicesRoute: AuthenticatedProductsServicesRoute,
@@ -2821,6 +2842,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthCallbackRoute: AuthCallbackRoute,
   AuthMfaRoute: AuthMfaRoute,
   AuthSsoRoute: AuthSsoRoute,
+  PricingBuilderRoute: PricingBuilderRoute,
   ShareInvoiceTokenRoute: ShareInvoiceTokenRoute,
 }
 export const routeTree = rootRouteImport

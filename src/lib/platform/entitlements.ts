@@ -166,10 +166,10 @@ export function rolloutBucket(organisationId: string, featureKey: string): numbe
 }
 
 export function rolloutIncludes(input: RolloutInput): { included: boolean; reason: string } {
-  if (input.mode === "killed") return { included: false, reason: "Global kill switch." };
   if (input.endsAt && Date.parse(input.endsAt) <= input.now.getTime()) {
-    return { included: false, reason: "Rollout has ended." };
+    return { included: true, reason: "Rollout has ended and no longer gates the feature." };
   }
+  if (input.mode === "killed") return { included: false, reason: "Global kill switch." };
   if (input.mode === "scheduled") {
     if (input.startsAt && Date.parse(input.startsAt) > input.now.getTime()) {
       return { included: false, reason: "Rollout has not started." };

@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { FEATURE_DEPENDENCIES } from "./feature-registry";
 import {
@@ -146,12 +147,25 @@ describe("entitlement resolution", () => {
     );
     expect(rolloutIncludes({ ...base, mode: "killed" }).included).toBe(false);
     expect(
+      rolloutIncludes({ ...base, mode: "killed", endsAt: "2026-11-01T00:00:00.000Z" }).included,
+    ).toBe(true);
+    expect(
       rolloutIncludes({ ...base, mode: "scheduled", startsAt: "2026-11-03T00:00:00.000Z" })
         .included,
     ).toBe(false);
     expect(rolloutIncludes({ ...base, mode: "allowlist", allowlist: ["org-1"] }).included).toBe(
       true,
     );
+  });
+
+  it("records the bucket the database function must reproduce", () => {
+    const organisationId = "11111111-1111-1111-1111-111111111111";
+    const featureKey = "ai_queries";
+    const sql = readFileSync("supabase/migrations/20261102130000_rollout_enforcement.sql", "utf8");
+    expect(sql).toContain(
+      `-- golden ${organisationId}:${featureKey}=${rolloutBucket(organisationId, featureKey)}`,
+    );
+    expect(sql).toContain("source') NOT IN ('plan', 'default')");
   });
 
   it("never deletes accounting data when a feature is removed", () => {

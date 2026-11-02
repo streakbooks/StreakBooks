@@ -6,8 +6,9 @@ Date: 2 November 2026. Branch: `feat/superadmin-control-centre`.
 
 Executed on 2 November 2026 from `d:\Apps\LinkBooks`:
 
-- `npx vitest run src/lib/platform --reporter=dot` — 4 files, 28 tests, passed.
-- `npx tsc --noEmit --pretty false` — exit 0.
+- `npx vitest run src/lib/platform src/lib/billing/plan-quote.test.ts --reporter=dot` — 5 files, 32 tests, passed.
+- `npx tsc --noEmit --pretty false` — exit 0 after the quote route and rollout migration.
+- Browser check of `http://localhost:8080/pricing/builder`: published plans loaded; Growth quoted at US$30 monthly and US$300 yearly with no charge; a selected add-on stayed unpriced because the entitlement migration is not applied. `/platform` was not walked (needs a platform owner and a second approver).
 - `npx eslint` on `src/lib/platform`, `PlatformOverview.tsx`, `PlatformApprovals.tsx` and `platform.index.tsx` — exit 0 after Prettier.
 
 Production build, browser sign-in, RLS SQL suites and the live database were not run.
@@ -20,7 +21,7 @@ Production build, browser sign-in, RLS SQL suites and the live database were not
 - p95 latency was not measured.
 - Postgres RLS suites in `tests/integration/platform-*.sql` were not re-run.
 - The `md5` audit chain was not executed. It detects a break in new rows. A database superuser can still replace the trigger. It is not WORM storage.
-- Percentage, allowlist, region, trial and scheduled rollouts are enforced by `rolloutIncludes` in TypeScript. The database enforces `feature_rollouts.mode = 'killed'` only.
+- `supabase/migrations/20261102130000_rollout_enforcement.sql` is not applied. Percentage, allowlist, internal, trial, region and scheduled rollouts gate plan and catalogue defaults only after that migration.
 - Tax basis points are an operator setting. They are not a filing position.
 
 ## Capability labels
@@ -33,6 +34,6 @@ Production build, browser sign-in, RLS SQL suites and the live database were not
 | Approvals inbox | IMPLEMENTED, blocked on migration apply | `src/components/platform/PlatformApprovals.tsx` |
 | Revenue empty vs forbidden | IMPLEMENTED in UI; SQL field blocked on apply | `PlatformOverview.tsx`, `revenueState` |
 | Provider price sync | BLOCKED | Test-mode secret key and a test customer |
-| Customer plan builder page | MISSING | Quote function exists; no public route |
+| Customer plan builder page | IMPLEMENTED as a quote only | `src/routes/pricing_.builder.tsx`. It does not charge or grant a feature. |
 | Batches C–H new surfaces | MISSING | Existing `/platform` sections remain |
 | Status page, SMS, e-signature, BI | NOT APPLICABLE until a vendor is connected | `docs/decisions/002-commodity-operations-tools.md` |

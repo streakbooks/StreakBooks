@@ -16,12 +16,16 @@ Date: 2 November 2026. Branch: `feat/superadmin-control-centre`. Do not merge un
 - Cursor rule: `.cursor/rules/linkbooks-superadmin.mdc`.
 - Audit hash-chain trigger in the migration, using `md5`, not applied.
 
+## Completed since the first handoff
+
+- Customer quote route `/pricing/builder`. It calls `list_live_feature_prices` and `quoteFeature` through `quoteCustomerPlan`. When add-on prices are not on the database yet, it prices the published base plan only and refuses to price selected features. It does not charge a card or write an entitlement. Browser check on the local app: Growth quoted at US$30 monthly and US$300 yearly; a selected white-label quantity was left unpriced.
+- Database rollout enforcement in `supabase/migrations/20261102130000_rollout_enforcement.sql`. Active percentage, allowlist, internal, trial, region and scheduled rollouts can deny a plan or catalogue default. See `docs/decisions/005-rollout-windows.md`.
+
 ## Outstanding
 
-- Apply the migration on a non-production database and re-run `tests/integration/platform-security.sql` plus a grant/revoke/kill-switch case.
-- Customer plan builder route that calls `list_live_feature_prices` and `quoteFeature`.
-- Enforce percentage, allowlist, region, trial and schedule rollouts inside `winning_entitlements`.
+- Apply both entitlement migrations on a non-production database and re-run `tests/integration/platform-security.sql` plus a grant, revoke, percentage rollout and kill-switch case.
 - Usage overage invoices, reconciliation, historical MRR snapshots.
+- Attach a quoted add-on to a subscription. That stays blocked until a test-mode provider can create the line item. Do not grant the feature for free from the public quote page.
 - Batches C–H beyond the control plane that already shipped in October 2026. Do not add buttons for them until the RPC exists.
 - Browser walkthrough of `/platform` with an MFA platform owner and a second user for approvals.
 
@@ -34,4 +38,4 @@ Date: 2 November 2026. Branch: `feat/superadmin-control-centre`. Do not merge un
 
 ## Next action
 
-Say "Continue from docs/HANDOFF.md" to add the customer quote route and the database rollout enforcement, still on this branch, still without merging.
+Say "Continue from docs/HANDOFF.md" to store historical MRR movements and a usage-overage calculation, still on this branch, still without merging or calling a payment provider.

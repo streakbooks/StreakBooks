@@ -49,7 +49,10 @@ describe("managed services desk", () => {
       closeServiceCase({ role: "platform_support", status: "closed", reason: "Done" }),
     ).toThrow(/no longer open/);
     const sql = readFileSync(
-      new URL("../../../supabase/migrations/20261102580000_service_case_close.sql", import.meta.url),
+      new URL(
+        "../../../supabase/migrations/20261102580000_service_case_close.sql",
+        import.meta.url,
+      ),
       "utf8",
     );
     expect(sql).toContain("platform_service_cases_one_open");

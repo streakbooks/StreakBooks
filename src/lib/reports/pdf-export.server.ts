@@ -60,9 +60,12 @@ export async function exportReportPdf(doc: ReportDocument): Promise<Uint8Array> 
       for (const lineText of wrap(part.text, font, fs, size[0] - margin * 2)) {
         const width = font.widthOfTextAtSize(lineText, fs);
         const alignment = doc.presentation?.headerAlignment ?? "left";
-        const x = alignment === "center"
-          ? (size[0] - width) / 2
-          : alignment === "right" ? size[0] - margin - width : margin;
+        const x =
+          alignment === "center"
+            ? (size[0] - width) / 2
+            : alignment === "right"
+              ? size[0] - margin - width
+              : margin;
         text(lineText, x, y, fs);
         y -= part.title ? 21 : 13;
       }
@@ -92,7 +95,12 @@ export async function exportReportPdf(doc: ReportDocument): Promise<Uint8Array> 
         );
         y -= 19;
         let max = 1;
-        const labelHeading = wrap(section.labelHeader ?? "Account / measure", font, 8, labelWidth - 8);
+        const labelHeading = wrap(
+          section.labelHeader ?? "Account / measure",
+          font,
+          8,
+          labelWidth - 8,
+        );
         max = Math.max(max, labelHeading.length);
         labelHeading.forEach((l, j) => text(l, margin + 2, y - j * 10, 8));
         columns.forEach((c, i) => {
@@ -101,12 +109,13 @@ export async function exportReportPdf(doc: ReportDocument): Promise<Uint8Array> 
           ls.forEach((l, j) => text(l, margin + labelWidth + i * valueWidth + 4, y - j * 10, 8));
         });
         y -= max * 10 + 6;
-        if (doc.presentation?.reportBorders !== "none") page.drawLine({
-          start: { x: margin, y },
-          end: { x: size[0] - margin, y },
-          thickness: 1,
-          color: line,
-        });
+        if (doc.presentation?.reportBorders !== "none")
+          page.drawLine({
+            start: { x: margin, y },
+            end: { x: size[0] - margin, y },
+            thickness: 1,
+            color: line,
+          });
         y -= 14;
       }
       tableHeader();
@@ -117,10 +126,13 @@ export async function exportReportPdf(doc: ReportDocument): Promise<Uint8Array> 
           const isNumber = /^-?\\d+(?:\\.\\d+)?$/.test(value);
           const lines = isNumber ? [rendered] : wrap(rendered, font, 8, valueWidth - 8);
           if (isNumber && font.widthOfTextAtSize(rendered, 8) > valueWidth - 8)
-            throw new Error("A financial amount exceeds the column width; use fewer columns or landscape pages");
+            throw new Error(
+              "A financial amount exceeds the column width; use fewer columns or landscape pages",
+            );
           return { lines, negative: row.negativeRed && value.startsWith("-") };
         });
-        const height = Math.max(1, labels.length, ...displayCells.map((cell) => cell.lines.length)) * 12 + 8;
+        const height =
+          Math.max(1, labels.length, ...displayCells.map((cell) => cell.lines.length)) * 12 + 8;
         if (height > size[1] - 250)
           throw new Error("A report row is too long for the selected page size");
         if (y - height < margin + 35) {
@@ -150,13 +162,26 @@ export async function exportReportPdf(doc: ReportDocument): Promise<Uint8Array> 
         });
         y -= height;
         if (doc.presentation?.reportBorders === "all") {
-          page.drawLine({ start: { x: margin, y: y + 8 }, end: { x: size[0] - margin, y: y + 8 }, thickness: 0.3, color: line });
+          page.drawLine({
+            start: { x: margin, y: y + 8 },
+            end: { x: size[0] - margin, y: y + 8 },
+            thickness: 0.3,
+            color: line,
+          });
           for (let columnIndex = 0; columnIndex <= columns.length; columnIndex++) {
             const x = margin + labelWidth + columnIndex * valueWidth;
-            page.drawLine({ start: { x, y: y + 8 }, end: { x, y: y + height + 8 }, thickness: 0.3, color: line });
+            page.drawLine({
+              start: { x, y: y + 8 },
+              end: { x, y: y + height + 8 },
+              thickness: 0.3,
+              color: line,
+            });
           }
         }
-        if (doc.presentation?.reportBorders !== "none" && ["subtotal", "total", "group"].includes(row.kind))
+        if (
+          doc.presentation?.reportBorders !== "none" &&
+          ["subtotal", "total", "group"].includes(row.kind)
+        )
           page.drawLine({
             start: { x: margin, y: y + 8 },
             end: { x: size[0] - margin, y: y + 8 },
@@ -188,7 +213,12 @@ export async function exportReportPdf(doc: ReportDocument): Promise<Uint8Array> 
     const foot = `${doc.footer || "LinkBooks"}  •  Page ${i + 1} of ${pages.length}`;
     const footerWidth = font.widthOfTextAtSize(foot, 7);
     const footerAlign = doc.presentation?.footerAlignment ?? "left";
-    const footerX = footerAlign === "center" ? (size[0] - footerWidth) / 2 : footerAlign === "right" ? size[0] - margin - footerWidth : margin;
+    const footerX =
+      footerAlign === "center"
+        ? (size[0] - footerWidth) / 2
+        : footerAlign === "right"
+          ? size[0] - margin - footerWidth
+          : margin;
     p.drawText(foot, { x: footerX, y: 22, font, size: 7, color: muted });
     p.drawText(`Snapshot: ${doc.capturedAt}`, { x: margin, y: 12, font, size: 6, color: muted });
   });

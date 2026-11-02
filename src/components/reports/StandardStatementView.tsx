@@ -110,11 +110,15 @@ export function StandardStatementView({
               id="statement-accounting-method"
               className="flex h-9 rounded-md border border-input bg-background px-3 text-sm shadow-xs focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
               value={ctx.search.basis ?? "accrual"}
-              onChange={(e) => ctx.setSearch({ basis: e.target.value === "accrual" ? undefined : e.target.value })}
+              onChange={(e) =>
+                ctx.setSearch({ basis: e.target.value === "accrual" ? undefined : e.target.value })
+              }
               aria-describedby="statement-cash-note"
             >
               <option value="accrual">Accrual</option>
-              <option value="cash" disabled>Cash — not available yet</option>
+              <option value="cash" disabled>
+                Cash — not available yet
+              </option>
             </select>
             <p id="statement-cash-note" className="max-w-48 text-xs text-muted-foreground">
               Cash basis requires payment-allocation reporting and is not supported yet.
@@ -160,11 +164,13 @@ export function StandardStatementView({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            {([
-              ["pdf", "PDF document"],
-              ["xlsx", "Excel workbook (.xlsx)"],
-              ["csv", "CSV data (.csv)"],
-            ] as const).map(([format, label]) => (
+            {(
+              [
+                ["pdf", "PDF document"],
+                ["xlsx", "Excel workbook (.xlsx)"],
+                ["csv", "CSV data (.csv)"],
+              ] as const
+            ).map(([format, label]) => (
               <DropdownMenuItem key={format} onSelect={() => exporting.mutate(format)}>
                 {label}
               </DropdownMenuItem>

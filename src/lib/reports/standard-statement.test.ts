@@ -56,8 +56,11 @@ describe("standard statement controls and accounting parity", () => {
     });
     const doc = build(settings);
     expect(doc.presentation).toMatchObject({
-      showCompanyName: false, headerOrder: "title-first", headerAlignment: "right",
-      bandedRows: true, reportBorders: "all",
+      showCompanyName: false,
+      headerOrder: "title-first",
+      headerAlignment: "right",
+      bandedRows: true,
+      reportBorders: "all",
     });
     const parts = reportHeaderParts(doc).map((part) => part.text);
     expect(parts).toContain("P&L");
@@ -70,7 +73,9 @@ describe("standard statement controls and accounting parity", () => {
     expect(workbook.worksheets[0]!.getCell("A2").value).toBe("");
     expect(workbook.worksheets[0]!.getCell("D3").value).toContain("Prepared");
     expect(workbook.worksheets[0]!.getCell("A8").fill).toBeDefined();
-    expect(workbook.worksheets[0]!.headerFooter.oddFooter).toContain("&CInternal financial statement");
+    expect(workbook.worksheets[0]!.headerFooter.oddFooter).toContain(
+      "&CInternal financial statement",
+    );
     expect((await PDFDocument.load(await exportReportPdf(doc))).getPageCount()).toBeGreaterThan(0);
   });
 

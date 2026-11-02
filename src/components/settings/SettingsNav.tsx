@@ -118,10 +118,12 @@ export function SettingsNav({ section, embedded = false, showDemo, filter }: Pro
                 <Link
                   key={c.id}
                   to={embedded ? pathname : "/settings"}
-                  search={embedded
-                    ? ((previous: Record<string, unknown>) =>
-                        openSettingsPanel(previous, `category:${c.id}` as SettingsPanelId))
-                    : { section: c.id }}
+                  search={
+                    embedded
+                      ? (previous: Record<string, unknown>) =>
+                          openSettingsPanel(previous, `category:${c.id}` as SettingsPanelId)
+                      : { section: c.id }
+                  }
                   className={cn(
                     "flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm transition-colors",
                     section === c.id

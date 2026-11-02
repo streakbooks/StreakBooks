@@ -397,7 +397,9 @@ function AnalysisRowFilters({ ctx, label }: { ctx: ReportCtx; label: string }) {
   return (
     <div className="flex flex-wrap items-end gap-3">
       <div className="space-y-1">
-        <label htmlFor="analysis-report-search" className="text-sm font-medium">Find {label}</label>
+        <label htmlFor="analysis-report-search" className="text-sm font-medium">
+          Find {label}
+        </label>
         <Input
           id="analysis-report-search"
           value={ctx.search.term ?? ""}
@@ -415,7 +417,12 @@ function AnalysisRowFilters({ ctx, label }: { ctx: ReportCtx; label: string }) {
         Hide zero net amounts
       </label>
       {(ctx.search.term || ctx.search.nonZero) && (
-        <Button type="button" size="sm" variant="ghost" onClick={() => ctx.setSearch({ term: undefined, nonZero: undefined })}>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          onClick={() => ctx.setSearch({ term: undefined, nonZero: undefined })}
+        >
           Clear filters
         </Button>
       )}
@@ -428,9 +435,10 @@ function filterAnalysisRows<T extends { net_minor: number }>(
   field: (row: T) => string,
 ): T[] {
   const term = (search.term ?? "").trim().toLocaleLowerCase();
-  return rows.filter((row) =>
-    (!term || field(row).toLocaleLowerCase().includes(term)) &&
-    (!search.nonZero || row.net_minor !== 0),
+  return rows.filter(
+    (row) =>
+      (!term || field(row).toLocaleLowerCase().includes(term)) &&
+      (!search.nonZero || row.net_minor !== 0),
   );
 }
 
@@ -518,7 +526,11 @@ export function SalesByItemView({ ctx }: { ctx: ReportCtx }) {
   });
   const d = q.data;
   type Row = NonNullable<typeof d>["rows"][number];
-  const filteredRows = d ? filterAnalysisRows(d.rows, ctx.search, (r) => [r.item_code ?? "", r.item_name ?? "No item"].join(" ")) : [];
+  const filteredRows = d
+    ? filterAnalysisRows(d.rows, ctx.search, (r) =>
+        [r.item_code ?? "", r.item_name ?? "No item"].join(" "),
+      )
+    : [];
   const m = (v: number) => fmt.amount(v, ctx.currency);
   const cols: Col<Row>[] = [
     { header: "Code", cell: (r) => r.item_code ?? "", csv: (r) => r.item_code ?? "" },
@@ -571,7 +583,9 @@ export function SalesByItemView({ ctx }: { ctx: ReportCtx }) {
         emptyTitle="No sales"
         emptyDescription="No posted invoice lines fall in this period."
       >
-        {d ? <RowsTable rows={filteredRows} cols={cols} rowKey={(r) => r.product_id ?? "none"} /> : null}
+        {d ? (
+          <RowsTable rows={filteredRows} cols={cols} rowKey={(r) => r.product_id ?? "none"} />
+        ) : null}
       </ReportPane>
     </ReportShell>
   );

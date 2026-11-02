@@ -71,7 +71,14 @@ export function SettingsOverviewPanel({ companyId }: Props) {
                 <span>{w.message}</span>
                 {w.href?.includes("section=") ? (
                   <Button size="sm" variant="outline" asChild>
-                    <Link to="/settings" search={{ section: w.href!.split("section=")[1]?.split("&")[0] ?? "overview" }}>Open</Link>
+                    <Link
+                      to="/settings"
+                      search={{
+                        section: w.href!.split("section=")[1]?.split("&")[0] ?? "overview",
+                      }}
+                    >
+                      Open
+                    </Link>
                   </Button>
                 ) : null}
               </AlertDescription>
@@ -92,7 +99,9 @@ export function SettingsOverviewPanel({ companyId }: Props) {
               </Badge>
             ))}
             <Button size="sm" variant="secondary" asChild>
-              <Link to="/settings" search={{ section: "features" }}>Feature Manager</Link>
+              <Link to="/settings" search={{ section: "features" }}>
+                Feature Manager
+              </Link>
             </Button>
           </CardContent>
         </Card>
@@ -124,10 +133,14 @@ export function SettingsOverviewPanel({ companyId }: Props) {
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
           <Button size="sm" variant="outline" asChild>
-            <Link to="/settings" search={{ section: "accounting" }}>Lock dates</Link>
+            <Link to="/settings" search={{ section: "accounting" }}>
+              Lock dates
+            </Link>
           </Button>
           <Button size="sm" variant="outline" asChild>
-            <Link to="/settings" search={{ section: "features" }}>Feature Manager</Link>
+            <Link to="/settings" search={{ section: "features" }}>
+              Feature Manager
+            </Link>
           </Button>
           <Button size="sm" variant="outline" asChild>
             <Link to="/accounting">Accounting periods</Link>

@@ -16,12 +16,10 @@ export function ReportDirectory({
   from: string;
   to: string;
 }) {
-  const sections = REPORT_CATEGORIES
-    .map((category) => ({
-      ...category,
-      rows: reports.filter((report) => report.category === category.id),
-    }))
-    .filter((section) => section.rows.length > 0);
+  const sections = REPORT_CATEGORIES.map((category) => ({
+    ...category,
+    rows: reports.filter((report) => report.category === category.id),
+  })).filter((section) => section.rows.length > 0);
 
   return (
     <div className="grid items-start gap-4 lg:grid-cols-2">
@@ -32,9 +30,7 @@ export function ReportDirectory({
           className="min-w-0 overflow-hidden rounded-xl border bg-card shadow-xs"
         >
           <details open className="group">
-            <summary
-              className="flex cursor-pointer list-none items-center justify-between gap-3 border-b bg-muted/30 px-4 py-3 focus-visible:outline-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden"
-            >
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 border-b bg-muted/30 px-4 py-3 focus-visible:outline-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden">
               <span className="min-w-0">
                 <span id={`directory-${section.id}`} className="block font-semibold">
                   {section.label}
@@ -43,7 +39,10 @@ export function ReportDirectory({
                   {section.rows.length} {section.rows.length === 1 ? "report" : "reports"}
                 </span>
               </span>
-              <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden="true" />
+              <ChevronDown
+                className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
+                aria-hidden="true"
+              />
             </summary>
             <div className="divide-y divide-border/70">
               {section.rows.map((report) =>
@@ -63,12 +62,20 @@ export function ReportDirectory({
                     to={report.linkTo}
                     className="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/40 focus-visible:outline-2 focus-visible:outline-ring"
                   >
-                    <FileText className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                    <FileText
+                      className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                      aria-hidden="true"
+                    />
                     <span className="min-w-0 flex-1">
                       <span className="block text-sm font-medium">{report.title}</span>
-                      <span className="block text-xs leading-relaxed text-muted-foreground">{report.description}</span>
+                      <span className="block text-xs leading-relaxed text-muted-foreground">
+                        {report.description}
+                      </span>
                     </span>
-                    <ArrowUpRight className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                    <ArrowUpRight
+                      className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                      aria-hidden="true"
+                    />
                   </Link>
                 ) : (
                   <Link
@@ -78,12 +85,20 @@ export function ReportDirectory({
                     search={{ from, to }}
                     className="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/40 focus-visible:outline-2 focus-visible:outline-ring"
                   >
-                    <FileText className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                    <FileText
+                      className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                      aria-hidden="true"
+                    />
                     <span className="min-w-0 flex-1">
                       <span className="block text-sm font-medium">{report.title}</span>
-                      <span className="block text-xs leading-relaxed text-muted-foreground">{report.description}</span>
+                      <span className="block text-xs leading-relaxed text-muted-foreground">
+                        {report.description}
+                      </span>
                     </span>
-                    <ArrowUpRight className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                    <ArrowUpRight
+                      className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                      aria-hidden="true"
+                    />
                   </Link>
                 ),
               )}

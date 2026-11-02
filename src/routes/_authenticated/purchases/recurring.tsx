@@ -183,9 +183,36 @@ function RecurringTransactionsPage() {
 
       <Tabs value={view} className="mb-4">
         <TabsList onKeyDown={handleNativeTabKeyDown}>
-          <Link className={nativeTabLinkClass} role="tab" aria-selected={view === "schedules"} data-state={view === "schedules" ? "active" : "inactive"} to="/purchases/recurring" search={(prev) => ({ ...prev, view: "schedules" as const, page: 0 }) as never}>Schedules</Link>
-          <Link className={nativeTabLinkClass} role="tab" aria-selected={view === "exceptions"} data-state={view === "exceptions" ? "active" : "inactive"} to="/purchases/recurring" search={(prev) => ({ ...prev, view: "exceptions" as const, page: 0 }) as never}>Exception centre</Link>
-          <Link className={nativeTabLinkClass} role="tab" aria-selected={view === "forecast"} data-state={view === "forecast" ? "active" : "inactive"} to="/purchases/recurring" search={(prev) => ({ ...prev, view: "forecast" as const, page: 0 }) as never}>Forecast (90d)</Link>
+          <Link
+            className={nativeTabLinkClass}
+            role="tab"
+            aria-selected={view === "schedules"}
+            data-state={view === "schedules" ? "active" : "inactive"}
+            to="/purchases/recurring"
+            search={(prev) => ({ ...prev, view: "schedules" as const, page: 0 }) as never}
+          >
+            Schedules
+          </Link>
+          <Link
+            className={nativeTabLinkClass}
+            role="tab"
+            aria-selected={view === "exceptions"}
+            data-state={view === "exceptions" ? "active" : "inactive"}
+            to="/purchases/recurring"
+            search={(prev) => ({ ...prev, view: "exceptions" as const, page: 0 }) as never}
+          >
+            Exception centre
+          </Link>
+          <Link
+            className={nativeTabLinkClass}
+            role="tab"
+            aria-selected={view === "forecast"}
+            data-state={view === "forecast" ? "active" : "inactive"}
+            to="/purchases/recurring"
+            search={(prev) => ({ ...prev, view: "forecast" as const, page: 0 }) as never}
+          >
+            Forecast (90d)
+          </Link>
         </TabsList>
       </Tabs>
 
@@ -322,16 +349,49 @@ function RecurringTransactionsPage() {
                       return (
                         <TableRow key={row.id} className="hover:bg-muted/50">
                           <TableCell>
-                            <Link to="/purchases/recurring" search={(prev) => ({ ...prev, id: legacyId, tab: "details" }) as never} className="font-medium underline-offset-2 hover:underline">{row.name}</Link>
+                            <Link
+                              to="/purchases/recurring"
+                              search={(prev) =>
+                                ({ ...prev, id: legacyId, tab: "details" }) as never
+                              }
+                              className="font-medium underline-offset-2 hover:underline"
+                            >
+                              {row.name}
+                            </Link>
                           </TableCell>
                           <TableCell>
-                            <Link to="/purchases/recurring" search={(prev) => ({ ...prev, id: legacyId, tab: "details" }) as never} className="underline-offset-2 hover:underline">{row.contacts?.name ?? "—"}</Link>
+                            <Link
+                              to="/purchases/recurring"
+                              search={(prev) =>
+                                ({ ...prev, id: legacyId, tab: "details" }) as never
+                              }
+                              className="underline-offset-2 hover:underline"
+                            >
+                              {row.contacts?.name ?? "—"}
+                            </Link>
                           </TableCell>
                           <TableCell>
-                            <Link to="/purchases/recurring" search={(prev) => ({ ...prev, id: legacyId, tab: "details" }) as never} className="underline-offset-2 hover:underline">{sched?.next_occurrence_date ?? "—"}</Link>
+                            <Link
+                              to="/purchases/recurring"
+                              search={(prev) =>
+                                ({ ...prev, id: legacyId, tab: "details" }) as never
+                              }
+                              className="underline-offset-2 hover:underline"
+                            >
+                              {sched?.next_occurrence_date ?? "—"}
+                            </Link>
                           </TableCell>
                           <TableCell className="max-w-[180px] truncate text-destructive">
-                            <Link to="/purchases/recurring" search={(prev) => ({ ...prev, id: legacyId, tab: "details" }) as never} className="underline-offset-2 hover:underline">{sched?.last_error ?? (sched?.is_paused || !row.is_active ? "Paused" : "Active")}</Link>
+                            <Link
+                              to="/purchases/recurring"
+                              search={(prev) =>
+                                ({ ...prev, id: legacyId, tab: "details" }) as never
+                              }
+                              className="underline-offset-2 hover:underline"
+                            >
+                              {sched?.last_error ??
+                                (sched?.is_paused || !row.is_active ? "Paused" : "Active")}
+                            </Link>
                           </TableCell>
                           <TableCell className="text-right">
                             <Button

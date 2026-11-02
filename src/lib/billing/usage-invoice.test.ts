@@ -48,7 +48,10 @@ describe("usage overage invoice", () => {
     expect(guard).toContain("An unpriced draft has no amount");
     expect(guard).toContain("posted', false");
     const quantity = readFileSync(
-      new URL("../../../supabase/migrations/20261102400000_usage_draft_quantity.sql", import.meta.url),
+      new URL(
+        "../../../supabase/migrations/20261102400000_usage_draft_quantity.sql",
+        import.meta.url,
+      ),
       "utf8",
     );
     expect(quantity).toContain("Usage inside the included quantity is zero");

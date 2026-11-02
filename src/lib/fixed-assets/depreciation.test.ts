@@ -197,7 +197,6 @@ describe("disposal", () => {
   });
 });
 
-
 describe("accounting integrity regression cases", () => {
   it("conserves cost across a residual value and opening depreciation", () => {
     const asset = sl({
@@ -243,7 +242,9 @@ describe("accounting integrity regression cases", () => {
   it("rejects unsafe and fractional disposal amounts", () => {
     expect(() => disposalOutcome(Number.MAX_SAFE_INTEGER + 1, 0, 0)).toThrow();
     expect(() => disposalOutcome(100, 0.5, 0)).toThrow();
-    expect(disposalOutcome(1, 0, Number.MAX_SAFE_INTEGER).gainLossMinor).toBe(Number.MAX_SAFE_INTEGER - 1);
+    expect(disposalOutcome(1, 0, Number.MAX_SAFE_INTEGER).gainLossMinor).toBe(
+      Number.MAX_SAFE_INTEGER - 1,
+    );
     expect(() => depreciationLines(1.5, "expense", "acc", "Invalid")).toThrow();
   });
 });

@@ -102,13 +102,16 @@ export function PlatformOverview({ allowedSections }: { allowedSections: readonl
                   </strong>
                 </>
               );
-              const style = "rounded-xl border bg-card p-5 text-left shadow-sm transition hover:border-primary focus-visible:outline-2 focus-visible:outline-primary";
+              const style =
+                "rounded-xl border bg-card p-5 text-left shadow-sm transition hover:border-primary focus-visible:outline-2 focus-visible:outline-primary";
               return allowedSections.includes(section) ? (
                 <Link key={title} to="/platform" search={{ section }} className={style}>
                   {content}
                 </Link>
               ) : (
-                <div key={title} className={style}>{content}</div>
+                <div key={title} className={style}>
+                  {content}
+                </div>
               );
             })}
           </div>

@@ -14,10 +14,16 @@ async function signIn(page: Page, destination: string) {
 /** Native links preserve the source workspace on modifier-click and expose real href targets. */
 test.describe("Native browser navigation across LinkBooks", () => {
   test.beforeEach(() => {
-    test.skip(!email || !password, "Provide an authorised E2E test account; authentication is not bypassed.");
+    test.skip(
+      !email || !password,
+      "Provide an authorised E2E test account; authentication is not bypassed.",
+    );
   });
 
-  test("sidebar navigation exposes real browser URLs and supports Ctrl+Click", async ({ page, context }) => {
+  test("sidebar navigation exposes real browser URLs and supports Ctrl+Click", async ({
+    page,
+    context,
+  }) => {
     await signIn(page, "/");
     const menu = page.getByRole("navigation", { name: "Main" });
     const sales = menu.getByRole("link", { name: "Sales", exact: true });
@@ -32,7 +38,10 @@ test.describe("Native browser navigation across LinkBooks", () => {
     await newPage.close();
   });
 
-  test("accounting subnavigation uses hyperlinks for URL-addressable tabs", async ({ page, context }) => {
+  test("accounting subnavigation uses hyperlinks for URL-addressable tabs", async ({
+    page,
+    context,
+  }) => {
     await signIn(page, "/accounting");
     const journals = page.getByRole("tab", { name: "Journals", exact: true });
     await expect(journals).toHaveAttribute("href", /tab=journals/);
@@ -50,7 +59,10 @@ test.describe("Native browser navigation across LinkBooks", () => {
   test("bill workflow navigation and Files breadcrumbs are native links", async ({ page }) => {
     await signIn(page, "/purchases/bills");
     const workflow = page.getByRole("navigation", { name: "Bill workflow" });
-    await expect(workflow.getByRole("link", { name: /Drafts/ })).toHaveAttribute("href", /tab=drafts/);
+    await expect(workflow.getByRole("link", { name: /Drafts/ })).toHaveAttribute(
+      "href",
+      /tab=drafts/,
+    );
     const drafts = workflow.getByRole("link", { name: /Drafts/ });
     await drafts.click();
     await expect(page).toHaveURL(/tab=drafts/);
@@ -59,9 +71,13 @@ test.describe("Native browser navigation across LinkBooks", () => {
     await expect(page.getByRole("link", { name: "All files" })).toHaveAttribute("href", /\/files/);
   });
 
-  test("document and banking native links do not suppress their browser context menu", async ({ page }) => {
+  test("document and banking native links do not suppress their browser context menu", async ({
+    page,
+  }) => {
     await signIn(page, "/banking/transactions");
-    const link = page.getByRole("navigation", { name: "Banking sections" }).getByRole("link", { name: /All transactions/ });
+    const link = page
+      .getByRole("navigation", { name: "Banking sections" })
+      .getByRole("link", { name: /All transactions/ });
     await expect(link).toHaveAttribute("href", /\/banking\/transactions/);
     const defaultAllowed = await link.evaluate((element) => {
       const event = new MouseEvent("contextmenu", { bubbles: true, cancelable: true, button: 2 });
@@ -73,7 +89,10 @@ test.describe("Native browser navigation across LinkBooks", () => {
 
 test.describe("deep links in authenticated module workspaces", () => {
   test.beforeEach(() => {
-    test.skip(!email || !password, "Authorised test account required for live LinkBooks navigation.");
+    test.skip(
+      !email || !password,
+      "Authorised test account required for live LinkBooks navigation.",
+    );
   });
 
   test("every main menu entry is a native anchor with a same-origin URL", async ({ page }) => {
@@ -84,14 +103,19 @@ test.describe("deep links in authenticated module workspaces", () => {
     for (const link of await items.all()) {
       const href = await link.getAttribute("href");
       expect(href, `Missing target on ${await link.innerText()}`).toMatch(/^\//);
-      const allowsDefault = await link.evaluate((a) => a.dispatchEvent(
-        new MouseEvent("contextmenu", { bubbles: true, cancelable: true, button: 2 }),
-      ));
+      const allowsDefault = await link.evaluate((a) =>
+        a.dispatchEvent(
+          new MouseEvent("contextmenu", { bubbles: true, cancelable: true, button: 2 }),
+        ),
+      );
       expect(allowsDefault).toBe(true);
     }
   });
 
-  test("Reports Centre all eleven sections retain native new-tab navigation", async ({ page, context }) => {
+  test("Reports Centre all eleven sections retain native new-tab navigation", async ({
+    page,
+    context,
+  }) => {
     await signIn(page, "/reports?tab=home");
     const tabs = page.getByRole("tablist", { name: "Reporting modules" });
     await expect(tabs.getByRole("tab")).toHaveCount(11);
@@ -104,19 +128,36 @@ test.describe("deep links in authenticated module workspaces", () => {
     await expect(popup).toHaveURL(/tab=standard/);
     expect(page.url()).toBe(source);
     await popup.reload();
-    await expect(popup.getByRole("tab", { name: "Standard reports" })).toHaveAttribute("aria-selected", "true");
+    await expect(popup.getByRole("tab", { name: "Standard reports" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
     await popup.close();
   });
 
-  test("tax, contacts and banking subsection links retain browser context menus", async ({ page }) => {
+  test("tax, contacts and banking subsection links retain browser context menus", async ({
+    page,
+  }) => {
     await signIn(page, "/tax");
-    await expect(page.getByRole("tab", { name: "GL mappings" })).toHaveAttribute("href", /tab=mappings/);
+    await expect(page.getByRole("tab", { name: "GL mappings" })).toHaveAttribute(
+      "href",
+      /tab=mappings/,
+    );
     await page.goto("/contacts");
-    await expect(page.getByRole("tab", { name: "Suppliers" })).toHaveAttribute("href", /view=suppliers/);
+    await expect(page.getByRole("tab", { name: "Suppliers" })).toHaveAttribute(
+      "href",
+      /view=suppliers/,
+    );
     await page.goto("/banking");
     const banking = page.getByRole("navigation", { name: "Banking sections" });
-    await expect(banking.getByRole("link", { name: "All transactions" })).toHaveAttribute("href", /transactions/);
-    await expect(banking.getByRole("link", { name: "Reconcile" })).toHaveAttribute("href", /reconcile/);
+    await expect(banking.getByRole("link", { name: "All transactions" })).toHaveAttribute(
+      "href",
+      /transactions/,
+    );
+    await expect(banking.getByRole("link", { name: "Reconcile" })).toHaveAttribute(
+      "href",
+      /reconcile/,
+    );
   });
 
   test("Links to bill details preserve full document paths across reload", async ({ page }) => {

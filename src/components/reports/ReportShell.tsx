@@ -11,7 +11,12 @@ import { downloadReportFile } from "@/lib/reports/download";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import { sourceLabel, sourceTarget } from "@/lib/reports/links";
 import type { ReportSearch } from "@/lib/reports/search";
 import type { ReportPresentation } from "@/lib/reports/report-document";
@@ -91,26 +96,27 @@ export function ReportShell({
     mutationFn: (format: "pdf" | "xlsx" | "csv") => {
       const csv = getCsv?.();
       if (!csv) throw new Error("Load the report before exporting");
-      return exportFn({ data: {
-        companyId: ctx.companyId,
-        reportId: ctx.reportId ?? title,
-        title,
-        companyName: ctx.companyName,
-        currency: ctx.currency,
-        from: ctx.from,
-        to: ctx.to,
-        basis: csv.basis ?? basis ?? "",
-        headers: csv.headers,
-        rows: csv.rows.map((row) => row.map((cell) => cell == null ? "" : String(cell))),
-        format,
-      } });
+      return exportFn({
+        data: {
+          companyId: ctx.companyId,
+          reportId: ctx.reportId ?? title,
+          title,
+          companyName: ctx.companyName,
+          currency: ctx.currency,
+          from: ctx.from,
+          to: ctx.to,
+          basis: csv.basis ?? basis ?? "",
+          headers: csv.headers,
+          rows: csv.rows.map((row) => row.map((cell) => (cell == null ? "" : String(cell)))),
+          format,
+        },
+      });
     },
     onSuccess: downloadReportFile,
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
   const period =
     mode === "asof" ? `As at ${fmt.date(ctx.to)}` : `${fmt.date(ctx.from)} to ${fmt.date(ctx.to)}`;
-
 
   return (
     <div className="report-shell space-y-4">
@@ -121,29 +127,52 @@ export function ReportShell({
         </Button>
       </div>
       {/* Shared report header: identical on screen, print and PDF */}
-      <header className="print:mb-4" style={{ textAlign: headerPresentation?.headerAlignment ?? "center" }}>
+      <header
+        className="print:mb-4"
+        style={{ textAlign: headerPresentation?.headerAlignment ?? "center" }}
+      >
         {(() => {
-          const company = headerPresentation?.showCompanyName === false ? null : (
-            <p key="company" className="text-sm text-muted-foreground">{ctx.companyName}</p>
+          const company =
+            headerPresentation?.showCompanyName === false ? null : (
+              <p key="company" className="text-sm text-muted-foreground">
+                {ctx.companyName}
+              </p>
+            );
+          const titleLine =
+            headerPresentation?.showReportTitle === false ? null : (
+              <h1 key="title" className="text-2xl font-semibold tracking-tight">
+                {title}
+              </h1>
+            );
+          return headerPresentation?.headerOrder === "title-first" ? (
+            <>
+              {titleLine}
+              {company}
+            </>
+          ) : (
+            <>
+              {company}
+              {titleLine}
+            </>
           );
-          const titleLine = headerPresentation?.showReportTitle === false ? null : (
-            <h1 key="title" className="text-2xl font-semibold tracking-tight">{title}</h1>
-          );
-          return headerPresentation?.headerOrder === "title-first"
-            ? <>{titleLine}{company}</>
-            : <>{company}{titleLine}</>;
         })()}
         {headerPresentation?.showReportPeriod !== false && (
-          <p className="text-sm text-muted-foreground">{period} · {ctx.currency}</p>
+          <p className="text-sm text-muted-foreground">
+            {period} · {ctx.currency}
+          </p>
         )}
         {basis ? <p className="text-xs text-muted-foreground">{basis}</p> : null}
         {capturedAt && !Number.isNaN(Date.parse(capturedAt)) && (
           <>
             {headerPresentation?.showDatePrepared && (
-              <p className="text-xs text-muted-foreground">Prepared: {new Date(capturedAt).toISOString().slice(0, 10)}</p>
+              <p className="text-xs text-muted-foreground">
+                Prepared: {new Date(capturedAt).toISOString().slice(0, 10)}
+              </p>
             )}
             {headerPresentation?.showTimePrepared && (
-              <p className="text-xs text-muted-foreground">Prepared time: {new Date(capturedAt).toISOString().slice(11, 19)} UTC</p>
+              <p className="text-xs text-muted-foreground">
+                Prepared time: {new Date(capturedAt).toISOString().slice(11, 19)} UTC
+              </p>
             )}
           </>
         )}
@@ -225,16 +254,27 @@ export function ReportShell({
           {getCsv && !hidePrint && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button size="sm" variant="outline" disabled={!canExport || fileExport.isPending} aria-label="Download report">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={!canExport || fileExport.isPending}
+                  aria-label="Download report"
+                >
                   <Download className="mr-2 size-4" aria-hidden="true" />
                   {fileExport.isPending ? "Preparing…" : "Download"}
                   <ChevronDown className="ml-2 size-4" aria-hidden="true" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={() => fileExport.mutate("pdf")}>PDF document (.pdf)</DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => fileExport.mutate("xlsx")}>Excel workbook (.xlsx)</DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => fileExport.mutate("csv")}>CSV data (.csv)</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => fileExport.mutate("pdf")}>
+                  PDF document (.pdf)
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => fileExport.mutate("xlsx")}>
+                  Excel workbook (.xlsx)
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => fileExport.mutate("csv")}>
+                  CSV data (.csv)
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           )}

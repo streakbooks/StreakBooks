@@ -109,7 +109,9 @@ export function ReportingHome({
         <div className="flex justify-between">
           <h3 className="text-lg font-semibold">Favourite saved reports</h3>
           <Button size="sm" variant="ghost" asChild>
-            <Link to="/reports" search={{ tab: "custom", from, to }}>Open custom library</Link>
+            <Link to="/reports" search={{ tab: "custom", from, to }}>
+              Open custom library
+            </Link>
           </Button>
         </div>
         {saved.isPending ? (

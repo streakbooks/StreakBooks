@@ -127,15 +127,105 @@ export function AccountingWorkspace({
 
       <Tabs value={tab}>
         <TabsList onKeyDown={handleNativeTabKeyDown} className="flex-wrap">
-          <Link className={nativeTabLinkClass} role="tab" aria-selected={tab === "coa"} data-state={tab === "coa" ? "active" : "inactive"} to="/accounting" search={{ tab: "coa" }} resetScroll={false}>Chart of accounts</Link>
-          <Link className={nativeTabLinkClass} role="tab" aria-selected={tab === "industry"} data-state={tab === "industry" ? "active" : "inactive"} to="/accounting" search={{ tab: "industry" }} resetScroll={false}>Industry library</Link>
-          <Link className={nativeTabLinkClass} role="tab" aria-selected={tab === "corrections"} data-state={tab === "corrections" ? "active" : "inactive"} to="/accounting" search={{ tab: "corrections" }} resetScroll={false}>Transaction corrections</Link>
-          <Link className={nativeTabLinkClass} role="tab" aria-selected={tab === "journals"} data-state={tab === "journals" ? "active" : "inactive"} to="/accounting" search={{ tab: "journals" }} resetScroll={false}>Journals</Link>
-          <Link className={nativeTabLinkClass} role="tab" aria-selected={tab === "post"} data-state={tab === "post" ? "active" : "inactive"} to="/accounting" search={{ tab: "post" }} resetScroll={false}>Post manual journal</Link>
-          <Link className={nativeTabLinkClass} role="tab" aria-selected={tab === "periods"} data-state={tab === "periods" ? "active" : "inactive"} to="/accounting" search={{ tab: "periods" }} resetScroll={false}>Financial years</Link>
-          <Link className={nativeTabLinkClass} role="tab" aria-selected={tab === "close"} data-state={tab === "close" ? "active" : "inactive"} to="/accounting" search={{ tab: "close" }} resetScroll={false}>Period close</Link>
-          <Link className={nativeTabLinkClass} role="tab" aria-selected={tab === "conversion"} data-state={tab === "conversion" ? "active" : "inactive"} to="/accounting" search={{ tab: "conversion" }} resetScroll={false}>Opening balances</Link>
-          <Link className={nativeTabLinkClass} role="tab" aria-selected={tab === "fx"} data-state={tab === "fx" ? "active" : "inactive"} to="/accounting" search={{ tab: "fx" }} resetScroll={false}>FX &amp; reversals</Link>
+          <Link
+            className={nativeTabLinkClass}
+            role="tab"
+            aria-selected={tab === "coa"}
+            data-state={tab === "coa" ? "active" : "inactive"}
+            to="/accounting"
+            search={{ tab: "coa" }}
+            resetScroll={false}
+          >
+            Chart of accounts
+          </Link>
+          <Link
+            className={nativeTabLinkClass}
+            role="tab"
+            aria-selected={tab === "industry"}
+            data-state={tab === "industry" ? "active" : "inactive"}
+            to="/accounting"
+            search={{ tab: "industry" }}
+            resetScroll={false}
+          >
+            Industry library
+          </Link>
+          <Link
+            className={nativeTabLinkClass}
+            role="tab"
+            aria-selected={tab === "corrections"}
+            data-state={tab === "corrections" ? "active" : "inactive"}
+            to="/accounting"
+            search={{ tab: "corrections" }}
+            resetScroll={false}
+          >
+            Transaction corrections
+          </Link>
+          <Link
+            className={nativeTabLinkClass}
+            role="tab"
+            aria-selected={tab === "journals"}
+            data-state={tab === "journals" ? "active" : "inactive"}
+            to="/accounting"
+            search={{ tab: "journals" }}
+            resetScroll={false}
+          >
+            Journals
+          </Link>
+          <Link
+            className={nativeTabLinkClass}
+            role="tab"
+            aria-selected={tab === "post"}
+            data-state={tab === "post" ? "active" : "inactive"}
+            to="/accounting"
+            search={{ tab: "post" }}
+            resetScroll={false}
+          >
+            Post manual journal
+          </Link>
+          <Link
+            className={nativeTabLinkClass}
+            role="tab"
+            aria-selected={tab === "periods"}
+            data-state={tab === "periods" ? "active" : "inactive"}
+            to="/accounting"
+            search={{ tab: "periods" }}
+            resetScroll={false}
+          >
+            Financial years
+          </Link>
+          <Link
+            className={nativeTabLinkClass}
+            role="tab"
+            aria-selected={tab === "close"}
+            data-state={tab === "close" ? "active" : "inactive"}
+            to="/accounting"
+            search={{ tab: "close" }}
+            resetScroll={false}
+          >
+            Period close
+          </Link>
+          <Link
+            className={nativeTabLinkClass}
+            role="tab"
+            aria-selected={tab === "conversion"}
+            data-state={tab === "conversion" ? "active" : "inactive"}
+            to="/accounting"
+            search={{ tab: "conversion" }}
+            resetScroll={false}
+          >
+            Opening balances
+          </Link>
+          <Link
+            className={nativeTabLinkClass}
+            role="tab"
+            aria-selected={tab === "fx"}
+            data-state={tab === "fx" ? "active" : "inactive"}
+            to="/accounting"
+            search={{ tab: "fx" }}
+            resetScroll={false}
+          >
+            FX &amp; reversals
+          </Link>
         </TabsList>
 
         <TabsContent value="coa" className="mt-4">

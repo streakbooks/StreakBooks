@@ -72,7 +72,9 @@ export async function exportReportXlsx(doc: ReportDocument): Promise<Uint8Array>
     if (p) {
       for (const rowIndex of [1, 2, 3, 4])
         sheet.getRow(rowIndex).alignment = { horizontal: p.headerAlignment };
-      sheet.views = [{ state: "frozen", ySplit: 6, xSplit: 1, showGridLines: p.reportBorders === "all" }];
+      sheet.views = [
+        { state: "frozen", ySplit: 6, xSplit: 1, showGridLines: p.reportBorders === "all" },
+      ];
     }
     sheet.addRow([section.title]);
     sheet.addRow([section.labelHeader ?? "Account", ...section.columns]);
@@ -93,7 +95,9 @@ export async function exportReportXlsx(doc: ReportDocument): Promise<Uint8Array>
       ]);
       if (row.kind !== "account") data.font = { bold: true };
       if (doc.presentation?.bandedRows && rowIndex % 2 === 1 && row.kind !== "heading") {
-        data.eachCell((cell) => { cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF5F7FA" } }; });
+        data.eachCell((cell) => {
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF5F7FA" } };
+        });
       }
       if (doc.presentation?.reportBorders === "all")
         data.eachCell((cell) => {
@@ -142,7 +146,12 @@ export async function exportReportXlsx(doc: ReportDocument): Promise<Uint8Array>
     sheet.getColumn(1).width = 46;
     for (let i = 2; i <= section.columns.length + 1; i++) sheet.getColumn(i).width = 22;
     sheet.views = [{ state: "frozen", ySplit: 6, xSplit: 1 }];
-    const footerLocation = doc.presentation?.footerAlignment === "center" ? "&C" : doc.presentation?.footerAlignment === "right" ? "&R" : "&L";
+    const footerLocation =
+      doc.presentation?.footerAlignment === "center"
+        ? "&C"
+        : doc.presentation?.footerAlignment === "right"
+          ? "&R"
+          : "&L";
     const pageLocation = footerLocation === "&R" ? "&L" : "&R";
     sheet.headerFooter.oddFooter = footerLocation + doc.footer + pageLocation + "Page &P of &N";
   });

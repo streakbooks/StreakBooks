@@ -377,26 +377,49 @@ export function StandardReportControls({
                 <Choice
                   label="Header layout"
                   value={draft.headerOrder}
-                  onChange={(value) => patch({ headerOrder: value as StandardSettings["headerOrder"] })}
-                  options={[["company-first", "Company name first"], ["title-first", "Report title first"]]}
+                  onChange={(value) =>
+                    patch({ headerOrder: value as StandardSettings["headerOrder"] })
+                  }
+                  options={[
+                    ["company-first", "Company name first"],
+                    ["title-first", "Report title first"],
+                  ]}
                 />
                 <Choice
                   label="Header alignment"
                   value={draft.headerAlignment}
-                  onChange={(value) => patch({ headerAlignment: value as StandardSettings["headerAlignment"] })}
-                  options={[["left", "Left"], ["center", "Center"], ["right", "Right"]]}
+                  onChange={(value) =>
+                    patch({ headerAlignment: value as StandardSettings["headerAlignment"] })
+                  }
+                  options={[
+                    ["left", "Left"],
+                    ["center", "Center"],
+                    ["right", "Right"],
+                  ]}
                 />
                 <Choice
                   label="Footer alignment"
                   value={draft.footerAlignment}
-                  onChange={(value) => patch({ footerAlignment: value as StandardSettings["footerAlignment"] })}
-                  options={[["left", "Left"], ["center", "Center"], ["right", "Right"]]}
+                  onChange={(value) =>
+                    patch({ footerAlignment: value as StandardSettings["footerAlignment"] })
+                  }
+                  options={[
+                    ["left", "Left"],
+                    ["center", "Center"],
+                    ["right", "Right"],
+                  ]}
                 />
                 <Choice
                   label="Report gridlines"
                   value={draft.reportBorders}
-                  onChange={(value) => patch({ reportBorders: value as StandardSettings["reportBorders"] })}
-                  options={[["default", "Standard"], ["all", "All cells"], ["none", "None"]]}
+                  onChange={(value) =>
+                    patch({ reportBorders: value as StandardSettings["reportBorders"] })
+                  }
+                  options={[
+                    ["default", "Standard"],
+                    ["all", "All cells"],
+                    ["none", "None"],
+                  ]}
                 />
               </div>
               <div className="grid gap-3 sm:grid-cols-2">

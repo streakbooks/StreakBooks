@@ -4,8 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { notify } from "@/lib/notify";
 
 export type ActionCategory =
-  | "bill_approval" | "overdue_invoice" | "bank_reconciliation"
-  | "document_request" | "system";
+  "bill_approval" | "overdue_invoice" | "bank_reconciliation" | "document_request" | "system";
 export type ActionPriority = "low" | "medium" | "high" | "critical";
 export type ActionNotification = {
   id: string;
@@ -45,13 +44,18 @@ export function useActionNotifications(companyId: string | null, userId: string,
     enabled: Boolean(companyId),
     refetchInterval: 60_000,
     queryFn: async (): Promise<ActionNotification[]> => {
-      const { error: refreshError } = await supabase.rpc("refresh_action_notifications" as never, {
-        _company_id: companyId,
-      } as never);
+      const { error: refreshError } = await supabase.rpc(
+        "refresh_action_notifications" as never,
+        {
+          _company_id: companyId,
+        } as never,
+      );
       if (refreshError) throw refreshError;
       const { data, error } = await supabase
         .from("action_notifications" as never)
-        .select("id,company_id,title,body,category,priority,target_path,entity_type,entity_id,created_at,read_at,archived_at,resolved_at" as never)
+        .select(
+          "id,company_id,title,body,category,priority,target_path,entity_type,entity_id,created_at,read_at,archived_at,resolved_at" as never,
+        )
         .eq("company_id" as never, companyId as never)
         .order("created_at" as never, { ascending: false })
         .limit(limit);
@@ -81,21 +85,41 @@ export function useActionNotifications(companyId: string | null, userId: string,
       .channel(`action-center:${companyId}:${userId}:${++realtimeChannelSequence}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "action_notifications", filter: `recipient_user_id=eq.${userId}` },
+        {
+          event: "*",
+          schema: "public",
+          table: "action_notifications",
+          filter: `recipient_user_id=eq.${userId}`,
+        },
         () => {
           void client.invalidateQueries({ queryKey: ["action-notifications", companyId] });
           void client.invalidateQueries({ queryKey: ["action-notifications-unread", companyId] });
         },
       )
       .subscribe();
-    return () => { void supabase.removeChannel(channel); };
+    return () => {
+      void supabase.removeChannel(channel);
+    };
   }, [client, companyId, userId]);
 
   const changeState = useMutation({
-    mutationFn: async ({ id, read, archive }: { id: string; read?: boolean; archive?: boolean }) => {
-      const { data, error } = await supabase.rpc("set_action_notification_state" as never, {
-        _notification_id: id, _mark_read: read ?? null, _archive: archive ?? null,
-      } as never);
+    mutationFn: async ({
+      id,
+      read,
+      archive,
+    }: {
+      id: string;
+      read?: boolean;
+      archive?: boolean;
+    }) => {
+      const { data, error } = await supabase.rpc(
+        "set_action_notification_state" as never,
+        {
+          _notification_id: id,
+          _mark_read: read ?? null,
+          _archive: archive ?? null,
+        } as never,
+      );
       if (error) throw error;
       if (!data) throw new Error("This notification is unavailable or access was denied");
     },
@@ -105,5 +129,10 @@ export function useActionNotifications(companyId: string | null, userId: string,
     },
     onError: (error) => notify.error(error, "Could not update notification"),
   });
-  return { inbox, unreadQuery, changeState, refresh: () => client.invalidateQueries({ queryKey: ["action-notifications", companyId] }) };
+  return {
+    inbox,
+    unreadQuery,
+    changeState,
+    refresh: () => client.invalidateQueries({ queryKey: ["action-notifications", companyId] }),
+  };
 }

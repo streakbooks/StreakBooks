@@ -41,7 +41,9 @@ import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/_authenticated/tax")({
   validateSearch: (raw: Record<string, unknown>): { tab?: string | undefined } => ({
-    tab: ["registration", "returns", "rates", "codes", "mappings", "packs"].includes(String(raw["tab"]))
+    tab: ["registration", "returns", "rates", "codes", "mappings", "packs"].includes(
+      String(raw["tab"]),
+    )
       ? String(raw["tab"])
       : undefined,
   }),
@@ -229,12 +231,72 @@ function TaxConfigPage() {
 
       <Tabs value={activeTab}>
         <TabsList onKeyDown={handleNativeTabKeyDown} className="mb-4 flex h-auto flex-wrap">
-          <Link className={nativeTabLinkClass} role="tab" aria-selected={activeTab === "registration"} data-state={activeTab === "registration" ? "active" : "inactive"} to="/tax" search={{ tab: "registration" }} resetScroll={false}>Registration</Link>
-          <Link className={nativeTabLinkClass} role="tab" aria-selected={activeTab === "returns"} data-state={activeTab === "returns" ? "active" : "inactive"} to="/tax" search={{ tab: "returns" }} resetScroll={false}>Returns</Link>
-          <Link className={nativeTabLinkClass} role="tab" aria-selected={activeTab === "rates"} data-state={activeTab === "rates" ? "active" : "inactive"} to="/tax" search={{ tab: "rates" }} resetScroll={false}>Rates</Link>
-          <Link className={nativeTabLinkClass} role="tab" aria-selected={activeTab === "codes"} data-state={activeTab === "codes" ? "active" : "inactive"} to="/tax" search={{ tab: "codes" }} resetScroll={false}>Codes</Link>
-          <Link className={nativeTabLinkClass} role="tab" aria-selected={activeTab === "mappings"} data-state={activeTab === "mappings" ? "active" : "inactive"} to="/tax" search={{ tab: "mappings" }} resetScroll={false}>GL mappings</Link>
-          <Link className={nativeTabLinkClass} role="tab" aria-selected={activeTab === "packs"} data-state={activeTab === "packs" ? "active" : "inactive"} to="/tax" search={{ tab: "packs" }} resetScroll={false}>Country packs</Link>
+          <Link
+            className={nativeTabLinkClass}
+            role="tab"
+            aria-selected={activeTab === "registration"}
+            data-state={activeTab === "registration" ? "active" : "inactive"}
+            to="/tax"
+            search={{ tab: "registration" }}
+            resetScroll={false}
+          >
+            Registration
+          </Link>
+          <Link
+            className={nativeTabLinkClass}
+            role="tab"
+            aria-selected={activeTab === "returns"}
+            data-state={activeTab === "returns" ? "active" : "inactive"}
+            to="/tax"
+            search={{ tab: "returns" }}
+            resetScroll={false}
+          >
+            Returns
+          </Link>
+          <Link
+            className={nativeTabLinkClass}
+            role="tab"
+            aria-selected={activeTab === "rates"}
+            data-state={activeTab === "rates" ? "active" : "inactive"}
+            to="/tax"
+            search={{ tab: "rates" }}
+            resetScroll={false}
+          >
+            Rates
+          </Link>
+          <Link
+            className={nativeTabLinkClass}
+            role="tab"
+            aria-selected={activeTab === "codes"}
+            data-state={activeTab === "codes" ? "active" : "inactive"}
+            to="/tax"
+            search={{ tab: "codes" }}
+            resetScroll={false}
+          >
+            Codes
+          </Link>
+          <Link
+            className={nativeTabLinkClass}
+            role="tab"
+            aria-selected={activeTab === "mappings"}
+            data-state={activeTab === "mappings" ? "active" : "inactive"}
+            to="/tax"
+            search={{ tab: "mappings" }}
+            resetScroll={false}
+          >
+            GL mappings
+          </Link>
+          <Link
+            className={nativeTabLinkClass}
+            role="tab"
+            aria-selected={activeTab === "packs"}
+            data-state={activeTab === "packs" ? "active" : "inactive"}
+            to="/tax"
+            search={{ tab: "packs" }}
+            resetScroll={false}
+          >
+            Country packs
+          </Link>
         </TabsList>
 
         <TabsContent value="registration" className="space-y-4">

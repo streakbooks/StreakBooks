@@ -477,9 +477,7 @@ export function SettingsForCompany({
           ) : (
             <>
               {!embeddedSection && <ModuleSettingsLinks category={section} central />}
-              {section === "overview" ? (
-                <SettingsOverviewPanel companyId={companyId} />
-              ) : null}
+              {section === "overview" ? <SettingsOverviewPanel companyId={companyId} /> : null}
               {section === "features" ? (
                 <SettingsFeatureManager companyId={companyId} canEdit={canEdit} />
               ) : null}
@@ -510,18 +508,111 @@ export function SettingsForCompany({
 
               {showLegacy ? (
                 <Tabs value={legacyTab}>
-                  <TabsList onKeyDown={handleNativeTabKeyDown} className={embeddedSection ? "hidden" : "flex h-auto flex-wrap gap-1"}>
-                    <Link className={nativeTabLinkClass} role="tab" aria-selected={legacyTab === "organisation"} data-state={legacyTab === "organisation" ? "active" : "inactive"} to="/settings" search={{ section: "organisation" }}>Organisation</Link>
-                    <Link className={nativeTabLinkClass} role="tab" aria-selected={legacyTab === "financial"} data-state={legacyTab === "financial" ? "active" : "inactive"} to="/settings" search={{ section: "accounting" }}>Financial</Link>
-                    <Link className={nativeTabLinkClass} role="tab" aria-selected={legacyTab === "dimensions"} data-state={legacyTab === "dimensions" ? "active" : "inactive"} to="/settings" search={{ section: "dimensions" }}>Dimensions</Link>
-                    <Link className={nativeTabLinkClass} role="tab" aria-selected={legacyTab === "documents"} data-state={legacyTab === "documents" ? "active" : "inactive"} to="/settings" search={{ section: "documents" }}>Documents</Link>
-                    <Link className={nativeTabLinkClass} role="tab" aria-selected={legacyTab === "currencies"} data-state={legacyTab === "currencies" ? "active" : "inactive"} to="/settings" search={{ section: "currencies" }}>Currencies</Link>
-                    <Link className={nativeTabLinkClass} role="tab" aria-selected={legacyTab === "users"} data-state={legacyTab === "users" ? "active" : "inactive"} to="/settings" search={{ section: "users" }}>Users</Link>
-                    <Link className={nativeTabLinkClass} role="tab" aria-selected={legacyTab === "automation"} data-state={legacyTab === "automation" ? "active" : "inactive"} to="/settings" search={{ section: "automation" }}>Automation</Link>
-                    <Link className={nativeTabLinkClass} role="tab" aria-selected={legacyTab === "integrations"} data-state={legacyTab === "integrations" ? "active" : "inactive"} to="/settings" search={{ section: "integrations" }}>Integrations</Link>
-                    <Link className={nativeTabLinkClass} role="tab" aria-selected={legacyTab === "audit"} data-state={legacyTab === "audit" ? "active" : "inactive"} to="/settings" search={{ section: "audit" }}>Audit</Link>
+                  <TabsList
+                    onKeyDown={handleNativeTabKeyDown}
+                    className={embeddedSection ? "hidden" : "flex h-auto flex-wrap gap-1"}
+                  >
+                    <Link
+                      className={nativeTabLinkClass}
+                      role="tab"
+                      aria-selected={legacyTab === "organisation"}
+                      data-state={legacyTab === "organisation" ? "active" : "inactive"}
+                      to="/settings"
+                      search={{ section: "organisation" }}
+                    >
+                      Organisation
+                    </Link>
+                    <Link
+                      className={nativeTabLinkClass}
+                      role="tab"
+                      aria-selected={legacyTab === "financial"}
+                      data-state={legacyTab === "financial" ? "active" : "inactive"}
+                      to="/settings"
+                      search={{ section: "accounting" }}
+                    >
+                      Financial
+                    </Link>
+                    <Link
+                      className={nativeTabLinkClass}
+                      role="tab"
+                      aria-selected={legacyTab === "dimensions"}
+                      data-state={legacyTab === "dimensions" ? "active" : "inactive"}
+                      to="/settings"
+                      search={{ section: "dimensions" }}
+                    >
+                      Dimensions
+                    </Link>
+                    <Link
+                      className={nativeTabLinkClass}
+                      role="tab"
+                      aria-selected={legacyTab === "documents"}
+                      data-state={legacyTab === "documents" ? "active" : "inactive"}
+                      to="/settings"
+                      search={{ section: "documents" }}
+                    >
+                      Documents
+                    </Link>
+                    <Link
+                      className={nativeTabLinkClass}
+                      role="tab"
+                      aria-selected={legacyTab === "currencies"}
+                      data-state={legacyTab === "currencies" ? "active" : "inactive"}
+                      to="/settings"
+                      search={{ section: "currencies" }}
+                    >
+                      Currencies
+                    </Link>
+                    <Link
+                      className={nativeTabLinkClass}
+                      role="tab"
+                      aria-selected={legacyTab === "users"}
+                      data-state={legacyTab === "users" ? "active" : "inactive"}
+                      to="/settings"
+                      search={{ section: "users" }}
+                    >
+                      Users
+                    </Link>
+                    <Link
+                      className={nativeTabLinkClass}
+                      role="tab"
+                      aria-selected={legacyTab === "automation"}
+                      data-state={legacyTab === "automation" ? "active" : "inactive"}
+                      to="/settings"
+                      search={{ section: "automation" }}
+                    >
+                      Automation
+                    </Link>
+                    <Link
+                      className={nativeTabLinkClass}
+                      role="tab"
+                      aria-selected={legacyTab === "integrations"}
+                      data-state={legacyTab === "integrations" ? "active" : "inactive"}
+                      to="/settings"
+                      search={{ section: "integrations" }}
+                    >
+                      Integrations
+                    </Link>
+                    <Link
+                      className={nativeTabLinkClass}
+                      role="tab"
+                      aria-selected={legacyTab === "audit"}
+                      data-state={legacyTab === "audit" ? "active" : "inactive"}
+                      to="/settings"
+                      search={{ section: "audit" }}
+                    >
+                      Audit
+                    </Link>
                     {isDemo ? (
-                      <Link className={nativeTabLinkClass} role="tab" aria-selected={legacyTab === "demo"} data-state={legacyTab === "demo" ? "active" : "inactive"} to="/settings" search={{ section: "demo" }}>Demo</Link>
+                      <Link
+                        className={nativeTabLinkClass}
+                        role="tab"
+                        aria-selected={legacyTab === "demo"}
+                        data-state={legacyTab === "demo" ? "active" : "inactive"}
+                        to="/settings"
+                        search={{ section: "demo" }}
+                      >
+                        Demo
+                      </Link>
                     ) : null}
                   </TabsList>
 

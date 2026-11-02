@@ -9,7 +9,7 @@ import {
   Outlet,
   Link,
 } from "@tanstack/react-router";
-import { nativeTabLinkClass } from "../../src/lib/navigation/native-tab";
+import { nativeTabLinkClass, handleNativeTabKeyDown } from "../../src/lib/navigation/native-tab";
 import { REPORTING_TABS, parseReportingCentreSearch } from "../../src/lib/reports/centre-search";
 import "../../src/styles.css";
 
@@ -65,7 +65,7 @@ const accounting = createRoute({
     return (
       <section>
         <h1>Accounting workspace</h1>
-        <nav aria-label="Accounting tabs" role="tablist" className="flex gap-2">
+        <nav aria-label="Accounting tabs" role="tablist" onKeyDown={handleNativeTabKeyDown} className="flex gap-2">
           {accountingTabs.map((tab) => (
             <Link
               key={tab} to="/accounting" search={{ tab }} role="tab"
@@ -91,7 +91,7 @@ const reports = createRoute({
     return (
       <section>
         <h1>Reports Centre</h1>
-        <nav aria-label="Reporting modules" role="tablist" className="flex flex-wrap gap-2">
+        <nav aria-label="Reporting modules" role="tablist" onKeyDown={handleNativeTabKeyDown} className="flex flex-wrap gap-2">
           {REPORTING_TABS.map((id) => (
             <Link
               key={id} to="/reports" search={{ ...search, tab: id, pack: undefined }}

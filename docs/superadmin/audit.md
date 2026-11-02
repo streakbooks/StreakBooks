@@ -47,16 +47,16 @@ Hidden or unfinished product areas (status page, BI warehouse, SMS, e-signature,
 
 | ID | Severity | Finding | Status |
 | --- | --- | --- | --- |
-| SA-001 | High | Revenue card used one sentence for an empty result and a missing `billing.view` permission. | Fixed in the UI for both old and new payloads. `revenueState` is added in the unapplied migration. |
+| SA-001 | High | Revenue card used one sentence for an empty result and a missing `billing.view` permission. | Fixed in the UI. `revenueState` is applied. The signed-in overview showed an empty result, not a permissions error. |
 | SA-002 | Medium | Snapshot time used `toLocaleString()` with no zone label. Date inputs are UTC calendar days and looked like local dates. | Fixed in `PlatformOverview` via `formatConsoleInstant` and `formatUtcDay`. |
-| SA-003 | High | MRR used `round(numeric, 2)` on integer minor units, which is not an integer division by 12. | Fixed in the unapplied overview function. Integer formula is tested in `revenue-metrics.ts`. Live RPC still uses the old formula until the migration is applied. |
-| SA-004 | High | `get_entitlements` only reflected the plan version. A grant, revoke, add-on, trial, suspension or kill switch could not change one business. | Resolver and tables are in the repo. Not applied to the database. |
+| SA-003 | High | MRR used `round(numeric, 2)` on integer minor units, which is not an integer division by 12. | Integer formula is applied and tested in `revenue-metrics.ts`. |
+| SA-004 | High | `get_entitlements` only reflected the plan version. A grant, revoke, add-on, trial, suspension or kill switch could not change one business. | Resolver and tables are applied. A live grant was not saved during the smoke check. |
 | SA-005 | Medium | Feature dependencies could be hardcoded per screen. | Server table `feature_dependencies` plus `FEATURE_DEPENDENCIES`. UI modules must not redeclare them. |
-| SA-006 | Medium | Audit rows were append-only but not hash-chained. A superuser can still alter them. | `md5` chain trigger is in the migration. Not applied. Not a WORM store. |
-| SA-007 | High | No second-person gate for a global kill switch. | `platform_set_entitlement` queues kill switches and global changes. Self-approval is rejected. Not applied. |
+| SA-006 | Medium | Audit rows were append-only but not hash-chained. A superuser can still alter them. | `md5` chain trigger is applied with `20261102120000`. It is not a WORM store. |
+| SA-007 | High | No second-person gate for a global kill switch. | `platform_set_entitlement` is applied. Kill switches and global changes wait for a second person. That second person was not used. |
 | SA-008 | Low | Integrations and API screens do not prove provider health. | Still true. Do not show them as connected. |
 | SA-009 | Medium | Historical MRR, cohorts, LTV and fees are not stored. Current snapshot cannot reconstruct them. | MRR movements and a start-month count are in the repo. Existing subscriptions are not backfilled, so they stay out of a month. LTV and fees are still not stored. Do not invent those charts. |
-| SA-010 | Low | Browser acceptance of `/platform` needs an MFA platform session. | One signed-in session opened overview, businesses, subscriptions, features and integrations. Approvals was absent. Billing was not opened. A second approver was not used. |
+| SA-010 | Low | Browser acceptance of `/platform` needs an MFA platform session. | One signed-in session opened overview, businesses, subscriptions, features, integrations and approvals. Billing was not opened. A second approver was not used. No feature was granted or revoked. |
 
 ## Performance
 

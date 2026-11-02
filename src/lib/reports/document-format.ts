@@ -9,10 +9,11 @@ export function displayDocumentValue(
   const [whole, decimals] = abs.split(".");
   const grouped =
     whole!.replace(/\B(?=(\d{3})+(?!\d))/g, ",") + (decimals !== undefined ? `.${decimals}` : "");
+  const withUnit = grouped + (row.format === "percent" ? "%" : "");
   const formatted = negative
     ? row.negative === "minus"
-      ? `-${grouped}`
-      : `(${grouped})`
-    : grouped;
-  return formatted + (row.format === "percent" ? "%" : "");
+      ? `-${withUnit}`
+      : `(${withUnit})`
+    : withUnit;
+  return formatted;
 }

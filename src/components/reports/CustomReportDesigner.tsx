@@ -210,9 +210,9 @@ export function CustomReportDesigner({
                   onChange={(e) => patchRow({ formula: e.target.value })}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Use [row_id], numbers, + − × / and parentheses. For a percentage, divide the
-                  amounts and choose Percent below. A zero denominator is reported as a validation
-                  error.
+                  Use [row_id], numbers in the report currency, + − × / and parentheses. For a
+                  percentage, divide the amounts and choose Percent below. A zero denominator is
+                  reported as a validation error.
                 </p>
               </div>
             )}

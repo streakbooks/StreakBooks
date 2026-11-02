@@ -4,6 +4,7 @@ import ExcelJS from "exceljs";
 import { buildReportDocument, PACK_REPORTS } from "./report-document";
 import { exportReportPdf, exportReportXlsx, exportReportCsv } from "./document-export.server";
 import { reportingFactsFixture } from "./__fixtures__/facts";
+import { starterDefinition } from "./custom-definition";
 import { displayDocumentValue } from "./document-format";
 
 describe("financial report documents and real export files", () => {
@@ -19,6 +20,20 @@ describe("financial report documents and real export files", () => {
     expect(cash.rows[0]!.values).toEqual(["0.00", "150.00", "40.00", "0.00", "110.00"]);
     const indirect = doc.sections.at(-1)!;
     expect(indirect.rows.at(-1)!.values).toEqual(["110.00"]);
+  });
+  it("renders custom monetary constants and percentage ratios from minor-unit ledger facts", () => {
+    const facts = reportingFactsFixture();
+    facts.customColumns = [
+      { id: "current", from: facts.from, to: facts.to, balances: facts.period },
+    ];
+    const definition = starterDefinition();
+    definition.rows[2]!.formula = "[revenue] - [expenses] + 100";
+    const doc = buildReportDocument(facts, {
+      name: definition.title,
+      config: { _builder: definition },
+    });
+    expect(doc.sections[0]!.rows[2]!.values).toEqual(["210.00"]);
+    expect(doc.sections[0]!.rows[3]!.values).toEqual(["140.00"]);
   });
   it("does not silently export unreconciled cash or balance sheets", () => {
     const facts = reportingFactsFixture();
@@ -85,6 +100,21 @@ describe("financial report documents and real export files", () => {
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load((await exportReportXlsx(doc)) as unknown as ExcelJS.Buffer);
     expect(workbook.worksheets[0]!.getSheetValues().flat().join(" ")).toContain(doc.notes);
+  });
+  it("keeps negative percentage values and presentation consistent in preview and Excel", async () => {
+    const doc = buildReportDocument(reportingFactsFixture(), {
+      name: "Negative ratio",
+      config: { reports: ["profit-and-loss"] },
+    });
+    const row = doc.sections[0]!.rows[0]!;
+    row.values = ["-73.33"];
+    row.format = "percent";
+    row.negative = "parentheses";
+    expect(displayDocumentValue(row.values[0]!, row)).toBe("(73.33%)");
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load((await exportReportXlsx(doc)) as unknown as ExcelJS.Buffer);
+    expect(workbook.worksheets[0]!.getCell("B7").value).toBe(-0.7333);
+    expect(workbook.worksheets[0]!.getCell("B7").numFmt).toBe("0.00%;(0.00%)");
   });
   it("formats negatives, percentages and large values without floating-point conversion", () => {
     expect(displayDocumentValue("-100.25", { negative: "parentheses", format: "money" })).toBe(

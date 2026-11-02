@@ -194,6 +194,7 @@ export function buildReportDocument(
       builder,
       f.accounts,
       f.customColumns.map((c) => c.balances),
+      decimalPlacesFor(currency),
     );
     const visible = builder.columns.map((c, i) => ({ c, i })).filter((x) => !x.c.hidden);
     doc.sections = [
@@ -211,15 +212,7 @@ export function buildReportDocument(
           negative: r.negative,
           values: visible.map(({ i }) => {
             const value = r.values[i]!;
-            return r.format === "money"
-              ? decimalValue(
-                  {
-                    n: value.n,
-                    d: (BigInt(value.d) * 10n ** BigInt(decimalPlacesFor(currency))).toString(),
-                  },
-                  r.decimals,
-                )
-              : decimalValue(value, r.decimals, r.format === "percent" ? 100n : 1n);
+            return decimalValue(value, r.decimals, r.format === "percent" ? 100n : 1n);
           }),
         })),
       },

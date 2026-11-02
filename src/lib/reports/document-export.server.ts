@@ -68,13 +68,11 @@ export async function exportReportXlsx(doc: ReportDocument): Promise<Uint8Array>
       row.values.forEach((value, i) => {
         const cell = data.getCell(i + 2);
         const decimals = value.split(".")[1]?.length ?? 0;
-        cell.numFmt =
-          (row.format === "percent"
-            ? "0" + (decimals ? "." + "0".repeat(decimals) : "") + "%"
-            : "#,##0" + (decimals ? "." + "0".repeat(decimals) : "")) +
-          (row.negative === "minus"
-            ? ""
-            : ";(#,##0" + (decimals ? "." + "0".repeat(decimals) : "") + ")");
+        const format =
+          (row.format === "percent" ? "0" : "#,##0") +
+          (decimals ? "." + "0".repeat(decimals) : "") +
+          (row.format === "percent" ? "%" : "");
+        cell.numFmt = format + (row.negative === "minus" ? "" : `;(${format})`);
       });
     }
     sheet.addRow([doc.notes]);

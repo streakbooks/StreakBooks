@@ -138,7 +138,11 @@ export function executeCustomReport(
   definition: CustomDefinition,
   accounts: ReportAccount[],
   columns: AccountBalance[][],
+  currencyDecimals = 2,
 ): CustomResultRow[] {
+  if (!Number.isInteger(currencyDecimals) || currencyDecimals < 0 || currencyDecimals > 6)
+    throw new Error("Unsupported currency precision");
+  const unit = 10n ** BigInt(currencyDecimals);
   const def = customDefinitionSchema.parse(definition);
   if (columns.length !== def.columns.length)
     throw new Error("Report column data does not match configuration");
@@ -171,7 +175,7 @@ export function executeCustomReport(
           const creditNormal =
             row.sign === "credit" ||
             (row.sign === "natural" && ["income", "liability", "equity"].includes(a.account_type));
-          result = add(result, fraction(creditNormal ? credit - debit : debit - credit));
+          result = add(result, fraction(creditNormal ? credit - debit : debit - credit, unit));
         }
       }
       if (row.kind === "group")

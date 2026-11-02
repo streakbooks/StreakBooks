@@ -19,8 +19,24 @@ const balances = [
 describe("custom report execution", () => {
   it("reconciles account selection, formulas and margins to ledger facts", () => {
     const rows = executeCustomReport(starterDefinition(), accounts, [balances]);
-    expect(rows[2]!.values[0]).toEqual({ n: "11000", d: "1" });
+    expect(rows[2]!.values[0]).toEqual({ n: "110", d: "1" });
     expect(rows[3]!.values[0]).toEqual({ n: "11", d: "15" });
+  });
+  it("interprets monetary constants in report currency units for two-, zero- and three-decimal currencies", () => {
+    const def = starterDefinition();
+    def.rows[2]!.formula = "[revenue] - [expenses] + 100";
+    expect(executeCustomReport(def, accounts, [balances])[2]!.values[0]).toEqual({
+      n: "210",
+      d: "1",
+    });
+    expect(executeCustomReport(def, accounts, [balances], 0)[2]!.values[0]).toEqual({
+      n: "11100",
+      d: "1",
+    });
+    expect(executeCustomReport(def, accounts, [balances], 3)[2]!.values[0]).toEqual({
+      n: "111",
+      d: "1",
+    });
   });
   it("sums nested groups, respects output order and calculates hidden dependencies", () => {
     const def = starterDefinition();
@@ -36,7 +52,7 @@ describe("custom report execution", () => {
     });
     const rows = executeCustomReport(def, accounts, [balances]);
     expect(rows.map((r) => r.id)).toEqual(["expenses", "net", "subtotal"]);
-    expect(rows.at(-1)!.values[0]!.n).toBe("11000");
+    expect(rows.at(-1)!.values[0]!.n).toBe("110");
   });
   it("never silently selects an account from another tenant", () => {
     const def = starterDefinition();

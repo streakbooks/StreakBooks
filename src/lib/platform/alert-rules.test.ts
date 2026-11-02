@@ -37,5 +37,21 @@ describe("admin alert rules", () => {
     );
     expect(sql).toContain("READY-TO-APPLY");
     expect(sql).toContain("private.require_platform('notifications.manage')");
+    expect(() =>
+      createAlertRule({
+        role: "platform_owner",
+        name: "Failed webhooks",
+        threshold: 3,
+        reason: "Watch",
+        exists: true,
+      }),
+    ).toThrow(/already exists/);
+    const once = readFileSync(
+      new URL("../../../supabase/migrations/20261102540000_alert_name_once.sql", import.meta.url),
+      "utf8",
+    );
+    expect(once).toContain("platform_alert_rules_name_key");
+    expect(once).toContain("That alert already exists");
+    expect(once).toContain("require_platform('notifications.manage')");
   });
 });

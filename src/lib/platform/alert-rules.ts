@@ -5,6 +5,7 @@ export function createAlertRule(input: {
   name: string;
   threshold: number;
   reason: string;
+  exists?: boolean;
 }): {
   stored: false;
   firesOnMissing: false;
@@ -22,6 +23,7 @@ export function createAlertRule(input: {
     throw new Error("Threshold must be a whole number");
   }
   if (reason.length < 3) throw new Error("A reason is required");
+  if (input.exists) throw new Error("That alert already exists");
   return {
     stored: false,
     firesOnMissing: false,

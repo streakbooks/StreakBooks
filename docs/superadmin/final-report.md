@@ -17,7 +17,7 @@ The work extends the existing platform permissions, `platform_log`, entitlements
 | Playwright grant and revoke | Skipped. Public quote tests passed, 2. |
 | Audit hash | Detects one edited row. Rewriting every later row still verifies. |
 | Jobs, config promotion, sandbox requests | The recorded decision does not execute a job, copy settings, or create a company. |
-| Webhook deliveries | The list exists. No writer inserts delivery rows yet. |
+| Webhook deliveries | `20261102350000` can record an outcome and is not applied. The live handler does not call it. |
 | AI spend | A missing unit price stays null. The read was not applied. |
 | Full unit suite | 192 files, 1349 tests, all passed, after the platform files. Typecheck then failed on `audit-chain.ts` index access and that error is fixed in the following commit. |
 

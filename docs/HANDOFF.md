@@ -2,7 +2,7 @@
 
 ## P0 evidence
 
-Typecheck exit 0. Lint 0 errors and 23 warnings. Vitest 163 files, 1279 tests, all passed. Production build exit 0. Playwright had no seeded platform_owner: `e2e/superadmin-journeys.spec.ts` 2 passed and 2 skipped. Migration history is BLOCKED: Docker is not installed, and the only other Supabase project is LeadOrbit. READY-TO-APPLY and not applied: `20261102170000`, `20261102180000`, `20261102180100`, `20261102190000`, `20261102200000`, `20261102210000`, `20261102220000`, and the start-month backfill in `docs/superadmin/start-month-backfill.md`.
+Typecheck exit 0. Lint 0 errors and 23 warnings. Vitest 163 files, 1279 tests, all passed. Production build exit 0. Playwright had no seeded platform_owner: `e2e/superadmin-journeys.spec.ts` 2 passed and 2 skipped. Migration history is BLOCKED: Docker is not installed, and the only other Supabase project is LeadOrbit. READY-TO-APPLY and not applied: `20261102170000`, `20261102180000`, `20261102180100`, `20261102190000`, `20261102200000`, `20261102210000`, `20261102220000`, `20261102230000`, and the start-month backfill in `docs/superadmin/start-month-backfill.md`.
 
 - P0.1: typecheck exit 0, lint 0 errors and 23 warnings, 1279 unit tests passed, production build exit 0.
 - P0.2: `sk_live_` and `rzp_live_` are refused unless `LINKBOOKS_ALLOW_LIVE_PAYMENT_KEYS=true`. 15 provider-key tests passed.
@@ -27,7 +27,8 @@ Typecheck exit 0. Lint 0 errors and 23 warnings. Vitest 163 files, 1279 tests, a
 - Batch D: data export stays on the existing `platform_export` function. The authorisation and audit test passed, 1. No second export path was added.
 - Batch D: closure tests passed, 3. `20261102220000` archives after a second decision and was not applied. It does not delete ledger rows.
 - Batches E–H: ledger integrity stays on `ledger_health_check` for company members. Tests passed, 2. Platform staff are not given ledger amounts.
-- Hosted gate BLOCKED: `20261102170000`, `20261102180000`, `20261102180100`, `20261102190000`, `20261102200000`, `20261102210000`, `20261102220000`, and the start-month backfill are READY-TO-APPLY. Nothing further was applied. Write `BACKUP CONFIRMED` in this file to release them.
+- Batches E–H: AI governance tests passed, 3. `20261102230000` reads the existing cap and kill switch and was not applied. A missing unit price stays null. No provider call.
+- Hosted gate BLOCKED: `20261102170000`, `20261102180000`, `20261102180100`, `20261102190000`, `20261102200000`, `20261102210000`, `20261102220000`, `20261102230000`, and the start-month backfill are READY-TO-APPLY. Nothing further was applied. Write `BACKUP CONFIRMED` in this file to release them.
 
 ## NEEDS FROM OWNER
 

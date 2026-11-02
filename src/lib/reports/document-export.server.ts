@@ -18,7 +18,7 @@ export function exportReportCsv(doc: ReportDocument): string {
       [doc.header],
       ...doc.sections.flatMap((s) => [
         [s.title],
-        ["Account", ...s.columns],
+        [s.labelHeader ?? "Account", ...s.columns],
         ...s.rows.map((r) => [
           r.label,
           ...r.values.map((v, i) => documentCsvValue(v, documentCellStyle(r, s, i))),
@@ -75,7 +75,7 @@ export async function exportReportXlsx(doc: ReportDocument): Promise<Uint8Array>
       sheet.views = [{ state: "frozen", ySplit: 6, xSplit: 1, showGridLines: p.reportBorders === "all" }];
     }
     sheet.addRow([section.title]);
-    sheet.addRow(["Account", ...section.columns]);
+    sheet.addRow([section.labelHeader ?? "Account", ...section.columns]);
     for (const [rowIndex, row] of section.rows.entries()) {
       const data = sheet.addRow([
         row.label,

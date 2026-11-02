@@ -18,6 +18,7 @@ import type { SummaryRow } from "@/lib/reports/executive-summary";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -389,6 +390,50 @@ export function GlSummaryView({ ctx }: { ctx: ReportCtx }) {
   );
 }
 
+/** Live, URL-persisted filters for aggregated sales and purchases reports.
+ * Export and on-screen subtotals use the same filtered data, not hidden records.
+ */
+function AnalysisRowFilters({ ctx, label }: { ctx: ReportCtx; label: string }) {
+  return (
+    <div className="flex flex-wrap items-end gap-3">
+      <div className="space-y-1">
+        <label htmlFor="analysis-report-search" className="text-sm font-medium">Find {label}</label>
+        <Input
+          id="analysis-report-search"
+          value={ctx.search.term ?? ""}
+          placeholder={`Search ${label}…`}
+          onChange={(e) => ctx.setSearch({ term: e.target.value || undefined })}
+          className="w-48"
+        />
+      </div>
+      <label className="flex min-h-9 items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={ctx.search.nonZero === true}
+          onChange={(e) => ctx.setSearch({ nonZero: e.target.checked ? true : undefined })}
+        />
+        Hide zero net amounts
+      </label>
+      {(ctx.search.term || ctx.search.nonZero) && (
+        <Button type="button" size="sm" variant="ghost" onClick={() => ctx.setSearch({ term: undefined, nonZero: undefined })}>
+          Clear filters
+        </Button>
+      )}
+    </div>
+  );
+}
+function filterAnalysisRows<T extends { net_minor: number }>(
+  rows: T[],
+  search: ReportCtx["search"],
+  field: (row: T) => string,
+): T[] {
+  const term = (search.term ?? "").trim().toLocaleLowerCase();
+  return rows.filter((row) =>
+    (!term || field(row).toLocaleLowerCase().includes(term)) &&
+    (!search.nonZero || row.net_minor !== 0),
+  );
+}
+
 /* ------------------------------------------------------------------ */
 /* Sales by contact / item, purchases by supplier                      */
 /* ------------------------------------------------------------------ */
@@ -402,6 +447,7 @@ export function SalesByContactView({ ctx }: { ctx: ReportCtx }) {
   });
   const d = q.data;
   type Row = NonNullable<typeof d>["rows"][number];
+  const filteredRows = d ? filterAnalysisRows(d.rows, ctx.search, (r) => r.contact_name) : [];
   const m = (v: number) => fmt.amount(v, ctx.currency);
   const cols: Col<Row>[] = [
     { header: "Customer", cell: (r) => r.contact_name, csv: (r) => r.contact_name },
@@ -447,8 +493,9 @@ export function SalesByContactView({ ctx }: { ctx: ReportCtx }) {
       title="Sales by Contact"
       ctx={ctx}
       mode="range"
+      extraControls={<AnalysisRowFilters ctx={ctx} label="customers" />}
       basis="Posted invoices less credit notes, in base currency by invoice date"
-      getCsv={() => (d ? csvFor(d.rows, cols) : null)}
+      getCsv={() => (d ? csvFor(filteredRows, cols) : null)}
     >
       <ReportPane
         query={q}
@@ -456,7 +503,7 @@ export function SalesByContactView({ ctx }: { ctx: ReportCtx }) {
         emptyTitle="No sales"
         emptyDescription="No posted invoices fall in this period."
       >
-        {d ? <RowsTable rows={d.rows} cols={cols} rowKey={(r) => r.contact_id} /> : null}
+        {d ? <RowsTable rows={filteredRows} cols={cols} rowKey={(r) => r.contact_id} /> : null}
       </ReportPane>
     </ReportShell>
   );
@@ -471,6 +518,7 @@ export function SalesByItemView({ ctx }: { ctx: ReportCtx }) {
   });
   const d = q.data;
   type Row = NonNullable<typeof d>["rows"][number];
+  const filteredRows = d ? filterAnalysisRows(d.rows, ctx.search, (r) => [r.item_code ?? "", r.item_name ?? "No item"].join(" ")) : [];
   const m = (v: number) => fmt.amount(v, ctx.currency);
   const cols: Col<Row>[] = [
     { header: "Code", cell: (r) => r.item_code ?? "", csv: (r) => r.item_code ?? "" },
@@ -513,8 +561,9 @@ export function SalesByItemView({ ctx }: { ctx: ReportCtx }) {
       title="Sales by Item"
       ctx={ctx}
       mode="range"
+      extraControls={<AnalysisRowFilters ctx={ctx} label="items" />}
       basis="Posted invoice lines less credit-note lines, in base currency. Quantities are summed as entered."
-      getCsv={() => (d ? csvFor(d.rows, cols) : null)}
+      getCsv={() => (d ? csvFor(filteredRows, cols) : null)}
     >
       <ReportPane
         query={q}
@@ -522,7 +571,7 @@ export function SalesByItemView({ ctx }: { ctx: ReportCtx }) {
         emptyTitle="No sales"
         emptyDescription="No posted invoice lines fall in this period."
       >
-        {d ? <RowsTable rows={d.rows} cols={cols} rowKey={(r) => r.product_id ?? "none"} /> : null}
+        {d ? <RowsTable rows={filteredRows} cols={cols} rowKey={(r) => r.product_id ?? "none"} /> : null}
       </ReportPane>
     </ReportShell>
   );
@@ -537,6 +586,7 @@ export function PurchasesBySupplierView({ ctx }: { ctx: ReportCtx }) {
   });
   const d = q.data;
   type Row = NonNullable<typeof d>["rows"][number];
+  const filteredRows = d ? filterAnalysisRows(d.rows, ctx.search, (r) => r.contact_name) : [];
   const m = (v: number) => fmt.amount(v, ctx.currency);
   const cols: Col<Row>[] = [
     { header: "Supplier", cell: (r) => r.contact_name, csv: (r) => r.contact_name },
@@ -582,8 +632,9 @@ export function PurchasesBySupplierView({ ctx }: { ctx: ReportCtx }) {
       title="Purchases by Supplier"
       ctx={ctx}
       mode="range"
+      extraControls={<AnalysisRowFilters ctx={ctx} label="suppliers" />}
       basis="Posted bills less credit notes, in base currency by bill date. Direct expenses are not included."
-      getCsv={() => (d ? csvFor(d.rows, cols) : null)}
+      getCsv={() => (d ? csvFor(filteredRows, cols) : null)}
     >
       <ReportPane
         query={q}
@@ -591,7 +642,7 @@ export function PurchasesBySupplierView({ ctx }: { ctx: ReportCtx }) {
         emptyTitle="No purchases"
         emptyDescription="No posted bills fall in this period."
       >
-        {d ? <RowsTable rows={d.rows} cols={cols} rowKey={(r) => r.contact_id} /> : null}
+        {d ? <RowsTable rows={filteredRows} cols={cols} rowKey={(r) => r.contact_id} /> : null}
       </ReportPane>
     </ReportShell>
   );

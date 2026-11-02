@@ -17,6 +17,7 @@ Typecheck exit 0. Lint 0 errors and 23 warnings. Vitest 163 files, 1279 tests, a
 - Batch B: missing fees and lifetime value stay unavailable, not zero. Tests passed, 3. Provider reconciliation BLOCKED until a test-mode secret and provider events exist.
 - Batch C: break-glass tests passed, 4. `20261102190000` is READY-TO-APPLY and was not applied.
 - Batch C: step-up allows only `aal2`. Tests passed, 2. The applied `platform_can` already requires `aal2`.
+- Batch C: an empty admin IP allowlist stays closed. Tests passed, 2. No hosted change.
 - Hosted gate BLOCKED: `20261102170000`, `20261102180000`, `20261102180100`, and the start-month backfill are READY-TO-APPLY. Nothing was applied. Write `BACKUP CONFIRMED` in this file to release them.
 
 ## NEEDS FROM OWNER

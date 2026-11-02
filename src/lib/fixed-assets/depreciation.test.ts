@@ -196,3 +196,54 @@ describe("disposal", () => {
     expect(() => disposalOutcome(100, 0, -1)).toThrow();
   });
 });
+
+
+describe("accounting integrity regression cases", () => {
+  it("conserves cost across a residual value and opening depreciation", () => {
+    const asset = sl({
+      costMinor: 1_000_001,
+      residualMinor: 100_001,
+      openingAccumulatedMinor: 200_000,
+      usefulLifeMonths: 37,
+    });
+    const rows = buildSchedule(asset, "2026-04-20");
+    const posted = rows.reduce((sum, row) => sum + row.amountMinor, 0);
+    expect(posted + asset.openingAccumulatedMinor + asset.residualMinor).toBe(asset.costMinor);
+    expect(rows.at(-1)?.netBookValueMinor).toBe(asset.residualMinor);
+    expect(rows.every((row) => row.netBookValueMinor >= asset.residualMinor)).toBe(true);
+  });
+
+  it("handles a zero depreciable base without inventing expenses", () => {
+    const asset = sl({ costMinor: 5_000, residualMinor: 5_000, usefulLifeMonths: 24 });
+    expect(buildSchedule(asset, "2026-01-01").every((row) => row.amountMinor === 0)).toBe(true);
+    expect(monthlyDepreciation(asset, 1, 0)).toBe(0);
+  });
+
+  it("balances disposal journals across gains, losses, and zero proceeds", () => {
+    const accounts = {
+      assetAccountId: "asset",
+      accumulatedAccountId: "acc",
+      proceedsAccountId: "bank",
+      gainLossAccountId: "gain-loss",
+    };
+    for (const cost of [1, 101, 10_000, 1_000_000]) {
+      for (const accumulated of [0, Math.floor(cost / 2), cost]) {
+        for (const proceeds of [0, 1, cost, cost * 2]) {
+          const outcome = disposalOutcome(cost, accumulated, proceeds);
+          const lines = disposalLines(outcome, accounts, "Disposal regression");
+          expect(lines.reduce((sum, line) => sum + line.debit_minor, 0)).toBe(
+            lines.reduce((sum, line) => sum + line.credit_minor, 0),
+          );
+          expect(lines.every((line) => line.debit_minor >= 0 && line.credit_minor >= 0)).toBe(true);
+        }
+      }
+    }
+  });
+
+  it("rejects unsafe and fractional disposal amounts", () => {
+    expect(() => disposalOutcome(Number.MAX_SAFE_INTEGER + 1, 0, 0)).toThrow();
+    expect(() => disposalOutcome(100, 0.5, 0)).toThrow();
+    expect(disposalOutcome(1, 0, Number.MAX_SAFE_INTEGER).gainLossMinor).toBe(Number.MAX_SAFE_INTEGER - 1);
+    expect(() => depreciationLines(1.5, "expense", "acc", "Invalid")).toThrow();
+  });
+});

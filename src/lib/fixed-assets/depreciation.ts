@@ -185,12 +185,16 @@ export function disposalOutcome(
   }
   if (accumulatedMinor > costMinor) throw new Error("Accumulated depreciation exceeds cost.");
   const nbv = costMinor - accumulatedMinor;
+  const gainLossMinor = proceedsMinor - nbv;
+  if (!Number.isSafeInteger(gainLossMinor)) {
+    throw new Error("Disposal gain or loss exceeds the safe minor-unit integer range.");
+  }
   return {
     costMinor,
     accumulatedMinor,
     netBookValueMinor: nbv,
     proceedsMinor,
-    gainLossMinor: proceedsMinor - nbv,
+    gainLossMinor,
   };
 }
 

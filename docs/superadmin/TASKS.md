@@ -6,7 +6,7 @@ Work top to bottom. A task is done only when its tests have run and the box is t
 
 ## NEEDS FROM OWNER
 
-- [ ] BACKUP CONFIRMED in `docs/HANDOFF.md` before any hosted apply
+- [x] BACKUP CONFIRMED in `docs/HANDOFF.md` before any hosted apply (restore-verified, 2 November 2026)
 - [ ] Test-mode payment secret in `.env.local` (`STRIPE_SECRET_KEY=sk_test_...` or Razorpay test keys) for provider calls
 - [ ] Second platform user with `approvals.manage` for the kill-switch approval walkthrough
 - [ ] Install Docker Desktop or Podman and put it on PATH. Needed to seed a local platform_owner and to reconcile migration history off production. A separate empty staging Supabase project is the alternative for history reconciliation only.
@@ -22,10 +22,10 @@ Work top to bottom. A task is done only when its tests have run and the box is t
 
 ## Hosted database gate
 
-- [ ] BLOCKED: READY-TO-APPLY `20261102170000`. Apply only after `BACKUP CONFIRMED` is written in `docs/HANDOFF.md`.
-- [ ] BLOCKED: READY-TO-APPLY `20261102180000` and `20261102180100`. Apply only after `BACKUP CONFIRMED` is written in `docs/HANDOFF.md`.
+- [x] Applied `20261102170000`.
+- [x] Applied `20261102180000` and `20261102180100`; `20261103000200` completes the anon revoke.
 - [ ] BLOCKED: start-month backfill SQL is in `docs/superadmin/start-month-backfill.md`. Apply only after `BACKUP CONFIRMED` is written in `docs/HANDOFF.md`.
-- [ ] BLOCKED: READY-TO-APPLY `20261102190000` through `20261102610000`. Apply only after `BACKUP CONFIRMED` is written in `docs/HANDOFF.md`.
+- [x] Applied `20261102190000` through `20261103000000`, plus `20261103000100` (MFA policy coverage).
 
 ## Batch A
 

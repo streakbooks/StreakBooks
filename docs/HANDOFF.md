@@ -1,3 +1,39 @@
+# Hosted apply — 2 November 2026 (evening)
+
+BACKUP CONFIRMED. Before any hosted change, a logical backup of project
+`ipxflpzfcqwtenodbxwc` was taken with `supabase db dump --linked` (roles, public/private
+schema, auth+storage schema, all data incl. 26 auth tables) and kept off-repo on the
+owner's machine (`~/LinkBooks-backups/20261102-2121-pre-superadmin/`, SHA256SUMS
+alongside). It was restored into a disposable `supabase/postgres:17.11.0.003` container:
+222/222 tables, storage policies 9/9, and every user/app table row count matched live
+(only `auth.schema_migrations`/`storage.migrations` bookkeeping is excluded by the dump,
+and one `report_open_events` row was written after the dump). Restore caveat: function
+EXECUTE grants for `anon` do not round-trip into the stock image; after any restore,
+re-run `20261103000200_revoke_anon_definer_execute.sql`.
+
+Rehearsal: the 62 unrecorded migrations from `20261102042056` onward were applied in
+order to that restored copy. 53 applied cleanly; 9 reporting migrations failed only with
+"already exists" (already live under other versions). Data row counts were unchanged.
+
+Hosted result (owner instruction to complete and merge):
+- The 53 were applied to the hosted project, each in its own transaction, 53/53 OK.
+  All 62 versions are recorded in `supabase_migrations.schema_migrations`.
+- `20261103000100_mfa_policies_superadmin_tables.sql`: aal2 restrictive policy now on
+  all 204 RLS tables (0 uncovered).
+- `20261103000200_revoke_anon_definer_execute.sql`: `20261102180000` revoked from
+  PUBLIC only, so 28 definer functions stayed executable by `anon` through Supabase's
+  direct grant. Now only `get_shared_invoice`, `list_public_billing_plans` and
+  `list_live_feature_prices` are anon-executable.
+- Advisors after apply: no ERROR findings; `function_search_path_mutable` 0;
+  `anon_security_definer_function_executable` 3 (the intended public functions).
+- Not applied: the start-month backfill in `docs/superadmin/start-month-backfill.md`
+  (data update; still a proposal).
+
+Still open: test-mode provider credentials, a real second platform approver, an
+independent human review of PR #66, and Vercel deploys (blocked by team membership).
+
+---
+
 # Current continuation — 2 November 2026
 
 This section supersedes the historical handoff below. Work remains on

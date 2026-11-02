@@ -48,7 +48,15 @@ lazily. This does **not** prove every pending RPC, full Supabase migration histo
 Auth HTTP flow, hosted schema equivalence or restored-backup recovery. Browser
 component tests are not a real hosted second-user walkthrough.
 
-## Unapplied and blocked
+## Hosted state (updated 2 November 2026, evening)
+
+Backup taken and restore-verified, then all pending migrations through
+`20261103000000` applied and recorded on the hosted project, plus
+`20261103000100` (MFA policy coverage) and `20261103000200` (anon EXECUTE revoke).
+Evidence and caveats: [HANDOFF.md](../HANDOFF.md#hosted-apply--2-november-2026-evening).
+The section below is the earlier, superseded state.
+
+## Unapplied and blocked (superseded)
 
 `20261103000000_supervised_support_workflow.sql` is **UNAPPLIED HOSTED**. All 43
 Cursor migrations `20261102190000` through `20261102610000` were executed only in

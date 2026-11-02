@@ -52,7 +52,7 @@ Work top to bottom. A task is done only when its tests have run and the box is t
 - [x] Webhook delivery history
 - [x] Backup visibility
 - [x] Data export
-- [ ] Closure workflow
+- [x] Closure workflow
 
 ## Batches E–H
 

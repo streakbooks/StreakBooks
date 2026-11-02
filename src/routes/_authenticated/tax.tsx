@@ -1,4 +1,4 @@
-import { nativeTabLinkClass } from "@/lib/navigation/native-tab";
+import { nativeTabLinkClass, handleNativeTabKeyDown } from "@/lib/navigation/native-tab";
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -228,7 +228,7 @@ function TaxConfigPage() {
       </Alert>
 
       <Tabs value={activeTab}>
-        <TabsList className="mb-4 flex h-auto flex-wrap">
+        <TabsList onKeyDown={handleNativeTabKeyDown} className="mb-4 flex h-auto flex-wrap">
           <Link className={nativeTabLinkClass} role="tab" aria-selected={activeTab === "registration"} data-state={activeTab === "registration" ? "active" : "inactive"} to="/tax" search={{ tab: "registration" }} resetScroll={false}>Registration</Link>
           <Link className={nativeTabLinkClass} role="tab" aria-selected={activeTab === "returns"} data-state={activeTab === "returns" ? "active" : "inactive"} to="/tax" search={{ tab: "returns" }} resetScroll={false}>Returns</Link>
           <Link className={nativeTabLinkClass} role="tab" aria-selected={activeTab === "rates"} data-state={activeTab === "rates" ? "active" : "inactive"} to="/tax" search={{ tab: "rates" }} resetScroll={false}>Rates</Link>

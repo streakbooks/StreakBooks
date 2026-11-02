@@ -20,7 +20,9 @@
     "typecheck": "tsc --noEmit",
     "test:themes": "playwright test --config playwright.themes.config.ts",
     "test:reporting": "playwright test --config playwright.reporting.config.ts",
-    "check:lookups": "node scripts/check-lookup-architecture.mjs"
+    "test:navigation": "playwright test --config playwright.navigation.config.ts",
+    "check:lookups": "node scripts/check-lookup-architecture.mjs",
+    "check:navigation": "node scripts/check-native-navigation.mjs"
   },
   "overrides": {
     "rolldown": "1.2.1"

@@ -1,5 +1,5 @@
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
-import { nativeTabLinkClass } from "@/lib/navigation/native-tab";
+import { nativeTabLinkClass, handleNativeTabKeyDown } from "@/lib/navigation/native-tab";
 import { openSettingsPanel } from "@/lib/settings/panels";
 import { SettingsDestinationLink } from "@/components/settings/ModuleSettingsLinks";
 import { InPlaceSettingsPanel } from "@/components/settings/InPlaceSettingsPanel";
@@ -507,7 +507,7 @@ export function SettingsForCompany({
 
               {showLegacy ? (
                 <Tabs value={legacyTab}>
-                  <TabsList className={embeddedSection ? "hidden" : "flex h-auto flex-wrap gap-1"}>
+                  <TabsList onKeyDown={handleNativeTabKeyDown} className={embeddedSection ? "hidden" : "flex h-auto flex-wrap gap-1"}>
                     <Link className={nativeTabLinkClass} role="tab" aria-selected={legacyTab === "organisation"} data-state={legacyTab === "organisation" ? "active" : "inactive"} to="/settings" search={{ section: "organisation" }}>Organisation</Link>
                     <Link className={nativeTabLinkClass} role="tab" aria-selected={legacyTab === "financial"} data-state={legacyTab === "financial" ? "active" : "inactive"} to="/settings" search={{ section: "accounting" }}>Financial</Link>
                     <Link className={nativeTabLinkClass} role="tab" aria-selected={legacyTab === "dimensions"} data-state={legacyTab === "dimensions" ? "active" : "inactive"} to="/settings" search={{ section: "dimensions" }}>Dimensions</Link>

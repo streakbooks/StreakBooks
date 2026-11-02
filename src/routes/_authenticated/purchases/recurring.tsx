@@ -1,4 +1,4 @@
-import { nativeTabLinkClass } from "@/lib/navigation/native-tab";
+import { nativeTabLinkClass, handleNativeTabKeyDown } from "@/lib/navigation/native-tab";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -182,7 +182,7 @@ function RecurringTransactionsPage() {
       />
 
       <Tabs value={view} className="mb-4">
-        <TabsList>
+        <TabsList onKeyDown={handleNativeTabKeyDown}>
           <Link className={nativeTabLinkClass} role="tab" aria-selected={view === "schedules"} data-state={view === "schedules" ? "active" : "inactive"} to="/purchases/recurring" search={(prev) => ({ ...prev, view: "schedules" as const, page: 0 }) as never}>Schedules</Link>
           <Link className={nativeTabLinkClass} role="tab" aria-selected={view === "exceptions"} data-state={view === "exceptions" ? "active" : "inactive"} to="/purchases/recurring" search={(prev) => ({ ...prev, view: "exceptions" as const, page: 0 }) as never}>Exception centre</Link>
           <Link className={nativeTabLinkClass} role="tab" aria-selected={view === "forecast"} data-state={view === "forecast" ? "active" : "inactive"} to="/purchases/recurring" search={(prev) => ({ ...prev, view: "forecast" as const, page: 0 }) as never}>Forecast (90d)</Link>

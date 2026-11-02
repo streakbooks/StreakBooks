@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { ReportingModelSelect } from "./ReportingModelSelect";
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
@@ -67,11 +68,15 @@ export function ReportPacksWorkspace({
   from,
   to,
   filter = "all",
+  selectedPackId = null,
+  onSelectPack,
 }: {
   companyId: string;
   from: string;
   to: string;
   filter?: "all" | "drafts" | "published" | "archived";
+  selectedPackId?: string | null;
+  onSelectPack?: (id: string | null) => void;
 }) {
   const client = useQueryClient(),
     fetch = useServerFn(getReportingWorkspace),
@@ -114,8 +119,9 @@ export function ReportPacksWorkspace({
     ),
     [reviewer, setReviewer] = useState(""),
     [preparer, setPreparer] = useState("");
-  const [previewId, setPreviewId] = useState<string | null>(null),
-    [note, setNote] = useState(""),
+  const previewId = selectedPackId;
+  const setPreviewId = onSelectPack ?? (() => {});
+  const [note, setNote] = useState(""),
     [delivery, setDelivery] = useState<ReportingPack | null>(null),
     [editingSchedule, setEditingSchedule] = useState<Record<string, unknown> | null>(null);
   const selected = useQuery({
@@ -260,12 +266,13 @@ export function ReportPacksWorkspace({
                 return (
                   <tr key={p.id} className="border-t">
                     <td className="p-3">
-                      <button
-                        className="font-medium hover:underline"
-                        onClick={() => setPreviewId(p.id)}
+                      <Link
+                        to="/reports"
+                        search={(prev) => ({ ...prev, tab: prev.tab === "drafts" || prev.tab === "published" || prev.tab === "archived" ? prev.tab : "packs", pack: p.id }) as never}
+                        className="font-medium underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-ring"
                       >
                         {p.name}
-                      </button>
+                      </Link>
                       <p className="text-xs text-muted-foreground">Revision {p.version}</p>
                     </td>
                     <td className="whitespace-nowrap p-3">
@@ -287,8 +294,10 @@ export function ReportPacksWorkspace({
                     </td>
                     <td className="p-3">
                       <div className="flex flex-wrap gap-1">
-                        <Button size="sm" variant="ghost" onClick={() => setPreviewId(p.id)}>
-                          Open
+                        <Button size="sm" variant="ghost" asChild>
+                          <Link to="/reports" search={(prev) => ({ ...prev, pack: p.id }) as never}>
+                            Open
+                          </Link>
                         </Button>
                         {canPrepare &&
                           owns &&

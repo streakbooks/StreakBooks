@@ -41,6 +41,7 @@ describe("provider fees", () => {
     );
     expect(sql).toContain("READY-TO-APPLY");
     expect(sql).toContain("fee_minor integer NOT NULL");
+    expect(sql).toContain("That provider charge already has a fee");
     expect(sql).not.toContain("stripe.com");
   });
 });

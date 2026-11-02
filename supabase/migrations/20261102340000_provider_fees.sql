@@ -47,6 +47,12 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM public.companies WHERE id = _company_id) THEN
     RAISE EXCEPTION 'That business was not found';
   END IF;
+  IF EXISTS (
+    SELECT 1 FROM public.billing_provider_fees
+    WHERE provider = _provider AND provider_charge_id = trim(_provider_charge_id)
+  ) THEN
+    RAISE EXCEPTION 'That provider charge already has a fee';
+  END IF;
   INSERT INTO public.billing_provider_fees (
     company_id, provider, provider_charge_id, currency, gross_minor, fee_minor, created_by
   ) VALUES (

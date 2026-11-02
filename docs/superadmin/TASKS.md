@@ -27,7 +27,7 @@ Work top to bottom. A task is done only when its tests have run and the box is t
 ## Batch A
 
 - [x] Attach a quote to a subscription
-- [ ] Second-approver flow end to end
+- [ ] Second-approver flow end to end. Decision tests passed. Live walkthrough BLOCKED until a second platform user with `approvals.manage` exists.
 - [ ] Mid-cycle add and remove with proration (BLOCKED without a test key)
 
 ## Batch B

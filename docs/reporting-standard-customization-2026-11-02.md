@@ -59,3 +59,8 @@ Still incomplete: cash-basis P&L/BS recognition, tracking/customer/product/depar
 Final implementation checkpoint before integrating newer main: **179 files / 1,424 unit tests, 15 reporting browser scenarios, TypeScript, production build, changed-source lint and 131 shared lookup declarations / zero violations pass**. Worker version **9** is ACTIVE with renderer bundle SHA-256 `4a711802b44a3156660155df788ad4b692403080c4d0c527831afdefad144800`. Customizations are encoded compactly with an explicit link-size limit; oversized notes/selections show a validation message instead of creating an unreliable URL. Read-only report capture uses POST to avoid putting the API payload into a second request URL.
 
 Review also verified historical BS default dates, the old six-date BS view, core statement access while customization is frozen, saving the default standard configuration, and saved document titles. Newer main contains separate native-navigation improvements; those are integrated without discarding this work and require a fresh validation checkpoint.
+
+
+## Combined-main verification
+
+Integrated main `4996511` without conflicts or history rewriting. The combined branch passes **179 files / 1,425 unit tests**, TypeScript, production build, changed-source lint, the native navigation source audit (23 files / 11 report tabs), 131 shared lookup declarations / zero violations, and all **five native-navigation browser scenarios**. Standard-report component-browser coverage contains **15 scenarios**. Live PostgreSQL and real file evidence are described above; no production email delivery or full authenticated acceptance certification is implied.

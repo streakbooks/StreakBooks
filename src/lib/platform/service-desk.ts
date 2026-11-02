@@ -5,6 +5,7 @@ export function openServiceCase(input: {
   companyId: string;
   subject: string;
   reason: string;
+  alreadyOpen?: boolean;
 }): {
   status: "open";
   ledgerAttached: false;
@@ -18,10 +19,34 @@ export function openServiceCase(input: {
   if (input.companyId.trim().length === 0) throw new Error("Choose a business");
   if (subject.length < 3) throw new Error("Name the case");
   if (reason.length < 3) throw new Error("A reason is required");
+  if (input.alreadyOpen) throw new Error("That case is already open");
   return {
     status: "open",
     ledgerAttached: false,
     subject,
     audit: { action: "service_case.open", reason },
+  };
+}
+
+export function closeServiceCase(input: {
+  role: PlatformRoleName;
+  status: "open" | "closed";
+  reason: string;
+}): {
+  status: "closed";
+  ledgerAttached: false;
+  deleted: false;
+  audit: { action: "service_case.close"; reason: string };
+} {
+  if (!platformRoleAllows(input.role, "support.manage"))
+    throw new Error("Platform permission required");
+  if (input.status !== "open") throw new Error("That case is no longer open");
+  const reason = input.reason.trim();
+  if (reason.length < 3) throw new Error("A reason is required");
+  return {
+    status: "closed",
+    ledgerAttached: false,
+    deleted: false,
+    audit: { action: "service_case.close", reason },
   };
 }

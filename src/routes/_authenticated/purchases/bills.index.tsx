@@ -625,7 +625,7 @@ function BillsWorkspace() {
               <Link
                 key={t.id}
                 to="/purchases/bills"
-                search={(previous) => ({ ...previous, tab: t.id, page: 0 })}
+                search={(previous) => ({ ...previous, tab: t.id, page: 0 }) as never}
                 className={cn(
                   "inline-flex shrink-0 items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                   active

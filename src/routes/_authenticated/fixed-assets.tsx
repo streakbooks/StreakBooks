@@ -1,3 +1,4 @@
+import { nativeTabLinkClass } from "@/lib/navigation/native-tab";
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -51,6 +52,9 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/fixed-assets")({
+  validateSearch: (raw: Record<string, unknown>): { tab?: string | undefined } => ({
+    tab: ["register", "depreciation", "types"].includes(String(raw["tab"])) ? String(raw["tab"]) : undefined,
+  }),
   head: () => ({ meta: [{ title: "Fixed assets — LinkBooks" }] }),
   component: FixedAssetsPage,
 });
@@ -67,6 +71,8 @@ type Dialogs =
 function FixedAssetsPage() {
   const { company } = useActiveCompany();
   const companyId = company?.id;
+  const { tab: requestedTab } = Route.useSearch();
+  const tab = requestedTab ?? "register";
   const fmt = useFormat();
   const canManage = useCanDo("accounts.manage");
   const canPostEntries = useCanDo("accounting.post");
@@ -141,11 +147,11 @@ function FixedAssetsPage() {
           </>
         }
       />
-      <Tabs defaultValue="register">
+      <Tabs value={tab}>
         <TabsList>
-          <TabsTrigger value="register">Register</TabsTrigger>
-          <TabsTrigger value="depreciation">Run depreciation</TabsTrigger>
-          <TabsTrigger value="types">Asset types</TabsTrigger>
+          <Link className={nativeTabLinkClass} role="tab" aria-selected={tab === "register"} data-state={tab === "register" ? "active" : "inactive"} to="/fixed-assets" search={{ tab: "register" }}>Register</Link>
+          <Link className={nativeTabLinkClass} role="tab" aria-selected={tab === "depreciation"} data-state={tab === "depreciation" ? "active" : "inactive"} to="/fixed-assets" search={{ tab: "depreciation" }}>Run depreciation</Link>
+          <Link className={nativeTabLinkClass} role="tab" aria-selected={tab === "types"} data-state={tab === "types" ? "active" : "inactive"} to="/fixed-assets" search={{ tab: "types" }}>Asset types</Link>
         </TabsList>
 
         <TabsContent value="register" className="space-y-4">

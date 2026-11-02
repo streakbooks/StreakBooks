@@ -132,7 +132,18 @@ function NavLink({
     <Link
       to={item.to}
       {...(item.to === "/settings" ? { search: { section: "overview" } } : {})}
-      onClick={onNavigate}
+      onClick={(event) => {
+        // A modified click opens another tab/window and must not dismiss this workspace.
+        if (
+          event.button === 0 &&
+          !event.ctrlKey &&
+          !event.metaKey &&
+          !event.shiftKey &&
+          !event.altKey
+        ) {
+          onNavigate?.();
+        }
+      }}
       activeOptions={{ exact: item.to === "/" }}
       aria-label={collapsed ? item.label : undefined}
       aria-current={active ? "page" : undefined}

@@ -1,6 +1,6 @@
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useMemo, useState } from "react";
-import { createFileRoute, useRouteContext } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouteContext } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Archive,
@@ -36,6 +36,10 @@ import {
 } from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/notifications")({
+  validateSearch: (raw: Record<string, unknown>): { view?: View | undefined } => ({
+    view: ["all", "unread", "action", "critical", "completed", "archived"].includes(String(raw["view"]))
+      ? raw["view"] as View : undefined,
+  }),
   head: () => ({ meta: [{ title: "Action Center — LinkBooks" }] }),
   component: ActionCenterPage,
 });
@@ -67,7 +71,7 @@ function ActionCenterPage() {
     user.id,
     500,
   );
-  const [view, setView] = useState<View>("action");
+  const view = Route.useSearch().view ?? "action";
   const [category, setCategory] = useState("all");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
@@ -85,8 +89,8 @@ function ActionCenterPage() {
     Math.min(page, pageCount - 1) * PAGE_SIZE,
     (Math.min(page, pageCount - 1) + 1) * PAGE_SIZE,
   );
-  const onView = (next: View) => {
-    setView(next);
+  const onViewNavigate = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
     setPage(0);
     setSelected([]);
   };
@@ -149,13 +153,10 @@ function ActionCenterPage() {
       </div>
       <div className="flex flex-wrap gap-2" role="group" aria-label="Notification views">
         {VIEWS.map((item) => (
-          <Button
-            key={item.key}
-            size="sm"
-            variant={view === item.key ? "default" : "outline"}
-            onClick={() => onView(item.key)}
-          >
-            {item.label}
+          <Button key={item.key} size="sm" variant={view === item.key ? "default" : "outline"} asChild>
+            <Link to="/notifications" search={{ view: item.key }} onClick={onViewNavigate}>
+              {item.label}
+            </Link>
           </Button>
         ))}
       </div>
@@ -310,7 +311,9 @@ function NotificationRow({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             {!n.read_at && <span className="size-2 rounded-full bg-primary" aria-label="Unread" />}
-            <h2 className="font-semibold">{n.title}</h2>
+            <h2 className="font-semibold">
+              {path ? <a href={path} className="underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-ring">{n.title}</a> : n.title}
+            </h2>
             <span className="rounded bg-muted px-2 py-0.5 text-[11px] font-medium uppercase">
               {n.priority}
             </span>

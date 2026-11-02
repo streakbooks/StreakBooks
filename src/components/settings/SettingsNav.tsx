@@ -1,3 +1,5 @@
+import { Link, useRouterState } from "@tanstack/react-router";
+import { openSettingsPanel, type SettingsPanelId } from "@/lib/settings/panels";
 import { cn } from "@/lib/utils";
 import { categoryMeta, type SettingsCategory } from "@/lib/settings/registry";
 import { Badge } from "@/components/ui/badge";
@@ -45,12 +47,13 @@ const NAV_KEY = "linkbooks.settings.nav.open";
 
 type Props = {
   section: string;
-  onSelect: (id: string) => void;
+  embedded?: boolean;
   showDemo: boolean;
   filter?: string;
 };
 
-export function SettingsNav({ section, onSelect, showDemo, filter }: Props) {
+export function SettingsNav({ section, embedded = false, showDemo, filter }: Props) {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [open, setOpen] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -112,10 +115,13 @@ export function SettingsNav({ section, onSelect, showDemo, filter }: Props) {
             </CollapsibleTrigger>
             <CollapsibleContent className="space-y-0.5 pb-2">
               {items.map((c) => (
-                <button
+                <Link
                   key={c.id}
-                  type="button"
-                  onClick={() => onSelect(c.id)}
+                  to={embedded ? pathname : "/settings"}
+                  search={embedded
+                    ? ((previous: Record<string, unknown>) =>
+                        openSettingsPanel(previous, `category:${c.id}` as SettingsPanelId))
+                    : { section: c.id }}
                   className={cn(
                     "flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm transition-colors",
                     section === c.id
@@ -133,7 +139,7 @@ export function SettingsNav({ section, onSelect, showDemo, filter }: Props) {
                       Partial
                     </Badge>
                   ) : null}
-                </button>
+                </Link>
               ))}
             </CollapsibleContent>
           </Collapsible>

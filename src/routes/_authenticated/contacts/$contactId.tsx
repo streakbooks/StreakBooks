@@ -1,5 +1,6 @@
+import { nativeTabLinkClass } from "@/lib/navigation/native-tab";
 import { useEffect, useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -60,7 +61,6 @@ export const Route = createFileRoute("/_authenticated/contacts/$contactId")({
 function ContactDetail() {
   const { contactId } = Route.useParams();
   const { tab } = Route.useSearch();
-  const navigate = useNavigate({ from: Route.fullPath });
   const { company } = useActiveCompany();
   const companyId = company?.id;
   const currency = company?.base_currency ?? "GBP";
@@ -321,19 +321,26 @@ function ContactDetail() {
         </div>
       ) : null}
 
-      <Tabs
-        value={tab}
-        onValueChange={(nextTab) => {
-          void navigate({ search: { tab: nextTab }, replace: true, resetScroll: false });
-        }}
-      >
+      <Tabs value={tab}>
         <TabsList className="flex h-auto flex-wrap">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="edit">Edit</TabsTrigger>
-          <TabsTrigger value="people">People</TabsTrigger>
-          <TabsTrigger value="groups">Groups & tags</TabsTrigger>
-          <TabsTrigger value="activity">Transactions</TabsTrigger>
-          <TabsTrigger value="portal">Portal</TabsTrigger>
+          <Link className={nativeTabLinkClass} role="tab" aria-selected={tab === "overview"} data-state={tab === "overview" ? "active" : "inactive"} to="/contacts/$contactId" params={{ contactId }} search={{ tab: "overview" }} resetScroll={false}>
+              Overview
+            </Link>
+          <Link className={nativeTabLinkClass} role="tab" aria-selected={tab === "edit"} data-state={tab === "edit" ? "active" : "inactive"} to="/contacts/$contactId" params={{ contactId }} search={{ tab: "edit" }} resetScroll={false}>
+              Edit
+            </Link>
+          <Link className={nativeTabLinkClass} role="tab" aria-selected={tab === "people"} data-state={tab === "people" ? "active" : "inactive"} to="/contacts/$contactId" params={{ contactId }} search={{ tab: "people" }} resetScroll={false}>
+              People
+            </Link>
+          <Link className={nativeTabLinkClass} role="tab" aria-selected={tab === "groups"} data-state={tab === "groups" ? "active" : "inactive"} to="/contacts/$contactId" params={{ contactId }} search={{ tab: "groups" }} resetScroll={false}>
+              Groups & tags
+            </Link>
+          <Link className={nativeTabLinkClass} role="tab" aria-selected={tab === "activity"} data-state={tab === "activity" ? "active" : "inactive"} to="/contacts/$contactId" params={{ contactId }} search={{ tab: "activity" }} resetScroll={false}>
+              Transactions
+            </Link>
+          <Link className={nativeTabLinkClass} role="tab" aria-selected={tab === "portal"} data-state={tab === "portal" ? "active" : "inactive"} to="/contacts/$contactId" params={{ contactId }} search={{ tab: "portal" }} resetScroll={false}>
+              Portal
+            </Link>
         </TabsList>
 
         <TabsContent value="overview" className="mt-4 space-y-3 text-sm">

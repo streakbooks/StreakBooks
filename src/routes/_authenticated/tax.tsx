@@ -1,3 +1,4 @@
+import { nativeTabLinkClass } from "@/lib/navigation/native-tab";
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -39,6 +40,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/_authenticated/tax")({
+  validateSearch: (raw: Record<string, unknown>): { tab?: string | undefined } => ({
+    tab: ["registration", "returns", "rates", "codes", "mappings", "packs"].includes(String(raw["tab"]))
+      ? String(raw["tab"])
+      : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Tax configuration — LinkBooks" },
@@ -54,6 +60,7 @@ export const Route = createFileRoute("/_authenticated/tax")({
 function TaxConfigPage() {
   const { company, isPending } = useActiveCompany();
   const companyId = company?.id;
+  const activeTab = Route.useSearch().tab ?? "registration";
   const qc = useQueryClient();
 
   const fetchSettings = useServerFn(getTaxSettings);
@@ -220,14 +227,14 @@ function TaxConfigPage() {
         </AlertDescription>
       </Alert>
 
-      <Tabs defaultValue="registration">
+      <Tabs value={activeTab}>
         <TabsList className="mb-4 flex h-auto flex-wrap">
-          <TabsTrigger value="registration">Registration</TabsTrigger>
-          <TabsTrigger value="returns">Returns</TabsTrigger>
-          <TabsTrigger value="rates">Rates</TabsTrigger>
-          <TabsTrigger value="codes">Codes</TabsTrigger>
-          <TabsTrigger value="mappings">GL mappings</TabsTrigger>
-          <TabsTrigger value="packs">Country packs</TabsTrigger>
+          <Link className={nativeTabLinkClass} role="tab" aria-selected={activeTab === "registration"} data-state={activeTab === "registration" ? "active" : "inactive"} to="/tax" search={{ tab: "registration" }} resetScroll={false}>Registration</Link>
+          <Link className={nativeTabLinkClass} role="tab" aria-selected={activeTab === "returns"} data-state={activeTab === "returns" ? "active" : "inactive"} to="/tax" search={{ tab: "returns" }} resetScroll={false}>Returns</Link>
+          <Link className={nativeTabLinkClass} role="tab" aria-selected={activeTab === "rates"} data-state={activeTab === "rates" ? "active" : "inactive"} to="/tax" search={{ tab: "rates" }} resetScroll={false}>Rates</Link>
+          <Link className={nativeTabLinkClass} role="tab" aria-selected={activeTab === "codes"} data-state={activeTab === "codes" ? "active" : "inactive"} to="/tax" search={{ tab: "codes" }} resetScroll={false}>Codes</Link>
+          <Link className={nativeTabLinkClass} role="tab" aria-selected={activeTab === "mappings"} data-state={activeTab === "mappings" ? "active" : "inactive"} to="/tax" search={{ tab: "mappings" }} resetScroll={false}>GL mappings</Link>
+          <Link className={nativeTabLinkClass} role="tab" aria-selected={activeTab === "packs"} data-state={activeTab === "packs" ? "active" : "inactive"} to="/tax" search={{ tab: "packs" }} resetScroll={false}>Country packs</Link>
         </TabsList>
 
         <TabsContent value="registration" className="space-y-4">

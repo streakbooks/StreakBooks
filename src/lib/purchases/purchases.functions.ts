@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { prepareTransactionCsv, validateResolvedTransactionTotals } from "@/lib/imports/transaction-import-validation";
-import { classifyTransactionImportRetry, isExactTransactionImportRetry, isVerifiedTransactionImportJournal } from "@/lib/imports/transaction-import-retry";
+import { classifyTransactionImportRetry, isExactTransactionImportRetry, isVerifiedTransactionImportJournal, isReconciledTransactionImportJournal } from "@/lib/imports/transaction-import-retry";
 import { isRateEffective } from "@/lib/tax/tax-math";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
@@ -26,6 +26,7 @@ import {
 } from "@/lib/purchases/bill-form-helpers";
 import {
   requireAccountInCompany,
+  requireApControlAccount,
   requireBankAccount,
   loadBankGlAccountIds,
 } from "@/lib/purchases/accounts";
@@ -5058,15 +5059,16 @@ export const importPurchaseBillsCsv = createServerFn({ method: "POST" })
 
     // Resolve and validate all tax-inclusive document totals before any bill
     // is written; line-only CSV preflight cannot know the effective tax rates.
+    const totalsByDocument = new Map<(typeof docs)[number], bigint>();
     for (const doc of docs) {
-      validateResolvedTransactionTotals(doc, "purchases", doc.lines.map((line) =>
+      totalsByDocument.set(doc, validateResolvedTransactionTotals(doc, "purchases", doc.lines.map((line) =>
         // Reverse-charge bills carry no supplier tax; retain the real rate
         // in the draft for buyer self-assessment but validate payable at 0.
         line.taxCode
           ? taxesByDate.get(doc.documentDate)!.get(line.taxCode)!.treatment === "reverse_charge"
             ? 0 : taxesByDate.get(doc.documentDate)!.get(line.taxCode)!.rateBps
           : 0,
-      ));
+      )).totalMinor);
     }
 
     const outcome: {
@@ -5079,7 +5081,7 @@ export const importPurchaseBillsCsv = createServerFn({ method: "POST" })
       try {
         const { data: existing, error: duplicateError } = await supabase
           .from("purchase_bills" as never)
-          .select("id, status, contact_id, bill_date, due_date, currency_code, memo, posted_journal_id" as never)
+          .select("id, status, contact_id, bill_date, due_date, currency_code, memo, total_minor, posted_journal_id" as never)
           .eq("company_id" as never, data.companyId as never)
           .eq("contact_id" as never, suppliers.get(doc.contactName)! as never)
           .ilike("supplier_invoice_number" as never, escapeLikeTerm(doc.documentNumber) as never)
@@ -5090,7 +5092,7 @@ export const importPurchaseBillsCsv = createServerFn({ method: "POST" })
           const prior = (existing as unknown as Array<{
             id: string; status: string; contact_id: string; bill_date: string;
             due_date: string; currency_code: string; memo: string | null;
-            posted_journal_id: string | null;
+            total_minor: number | string; posted_journal_id: string | null;
           }>)[0]!;
           const { data: priorLines, error: priorLinesError } = await supabase
             .from("purchase_bill_lines" as never)
@@ -5138,6 +5140,24 @@ export const importPurchaseBillsCsv = createServerFn({ method: "POST" })
               journalId: prior.posted_journal_id, sourceType: "purchase_bill",
             }, (linkedJournal ?? null) as never)) {
               throw new Error("Existing bill posting journal cannot be verified against this organisation and bill; reconcile manually");
+            }
+            // Verify the actual AP control credit and full GL balance before
+            // accepting an existing posted bill as an idempotent CSV retry.
+            const { data: glLines, error: glError } = await supabase
+              .from("journal_lines" as never)
+              .select("company_id, journal_id, account_id, debit_minor, credit_minor" as never)
+              .eq("company_id" as never, data.companyId as never)
+              .eq("journal_id" as never, prior.posted_journal_id as never)
+              .limit(501);
+            if (glError) throw new Error(glError.message);
+            const ap = await requireApControlAccount(supabase, data.companyId);
+            if (!isReconciledTransactionImportJournal({
+              companyId: data.companyId, journalId: prior.posted_journal_id,
+              controlAccountId: ap.id, controlSide: "credit",
+              expectedTotalMinor: totalsByDocument.get(doc)!,
+              persistedTotalMinor: prior.total_minor,
+            }, (glLines ?? null) as never)) {
+              throw new Error("Existing bill journal is unbalanced or AP control does not match the imported bill total; reconcile manually");
             }
           }
           outcome.skipped++;

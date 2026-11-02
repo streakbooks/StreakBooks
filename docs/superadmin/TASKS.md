@@ -14,14 +14,14 @@ Work top to bottom. A task is done only when its tests have run and the box is t
 - [x] 1. Full suite: typecheck, lint, unit tests, build
 - [x] 2. Reject `sk_live_` unless an explicit production flag is set
 - [ ] 3. BLOCKED: Chromium installed and the two public quote tests passed. Grant and revoke still skip. Install Docker Desktop or Podman on PATH so a local platform_owner can be seeded. Do not seed project ipxflpzfcqwtenodbxwc.
-- [ ] 4. Security-definer audit, search_path, anon revoke, migrations not applied
+- [x] 4. Security-definer audit, search_path, anon revoke, migrations not applied
 - [ ] 5. Reconcile migration history off production
 - [ ] 6. Merge pull request 65 after `verify` and `voice-browser` are green
 
 ## Hosted database gate
 
 - [ ] READY-TO-APPLY then apply `20261102170000` only after BACKUP CONFIRMED
-- [ ] READY-TO-APPLY then apply security-definer migrations only after BACKUP CONFIRMED
+- [ ] READY-TO-APPLY `20261102180000` and `20261102180100`, then apply only after BACKUP CONFIRMED
 - [ ] READY-TO-APPLY then apply start-month backfill only after BACKUP CONFIRMED
 
 ## Batch A

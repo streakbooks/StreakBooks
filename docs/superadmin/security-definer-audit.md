@@ -1,0 +1,269 @@
+# Security-definer audit
+
+Read-only check of project `ipxflpzfcqwtenodbxwc` on 2 November 2026. Nothing here was applied.
+
+271 public security-definer functions. 220 are executable by `authenticated`. 31 are executable by `anon`, through the default public grant. Every security-definer function already has `search_path` in its configuration. The nine functions with a mutable search path are not security definer. Their fix is `20261102180100_function_search_path.sql`.
+
+## Anonymous execute that stays
+
+| Function | Why it stays public |
+| --- | --- |
+| `list_public_billing_plans()` | The public pricing page reads published plans. It returns catalogue rows only. |
+| `list_live_feature_prices()` | The public quote reads published prices. It does not write. |
+| `get_shared_invoice(text)` | The share link is unauthenticated. The function requires a 64-character hex token before it reads one invoice. |
+
+## Anonymous execute removed by 20261102180000
+
+These are trigger functions or RPCs the app calls after sign-in. Direct anonymous execute is not part of the product. The migration revokes the public grant and grants `authenticated` and `service_role`, so signed-in calls and server calls keep working. `authenticated` execute on the other security-definer functions is the existing application surface and is not revoked.
+
+- `public.accounts_write_audit()`
+- `public.attach_company_subscription()`
+- `public.copy_chart_accounts(_source uuid, _target uuid)`
+- `public.count_ai_usage_last_hour(_company_id uuid)`
+- `public.document_attachments_before_insert()`
+- `public.enforce_company_allowance()`
+- `public.enforce_document_quota()`
+- `public.enforce_storage_allowance()`
+- `public.enforce_subscription_posting()`
+- `public.enforce_subscription_seats()`
+- `public.import_chart_accounts(_company_id uuid, _rows jsonb)`
+- `public.journals_assert_lock_dates()`
+- `public.protect_system_accounts()`
+- `public.record_ai_usage(_company_id uuid, _intent text, _status text, _provider text, _model text, _prompt_chars integer, _estimated_tokens integer, _latency_ms integer, _error_code text)`
+- `public.record_audit_event(_company_id uuid, _action text, _entity_type text, _entity_id uuid, _details jsonb)`
+- `public.recurring_claim_occurrence(_company_id uuid, _schedule_id uuid, _scheduled_date date, _document_date date, _template_version_id uuid, _idempotency_key text)`
+- `public.recurring_complete_occurrence(_occurrence_id uuid, _purchase_bill_id uuid, _sales_invoice_id uuid, _failed_message text)`
+- `public.reset_demo_company(_company_id uuid)`
+- `public.seed_country_tax_pack(_company_id uuid, _pack_id text)`
+- `public.seed_default_tax_pack(_company_id uuid)`
+- `public.subscription_allows_posting(_company_id uuid)`
+- `public.trg_fx_purchase_alloc_delete()`
+- `public.trg_fx_purchase_alloc_insert()`
+- `public.trg_fx_purchase_payment_update()`
+- `public.trg_fx_sales_alloc_delete()`
+- `public.trg_fx_sales_alloc_insert()`
+- `public.trg_fx_sales_alloc_update()`
+- `public.void_exchange_rate(_rate_id uuid)`
+
+## Authenticated security-definer functions left unchanged
+
+- `public.accept_company_invitation(_token text)`
+- `public.accept_portal_invite(payload jsonb)`
+- `public.account_balance_as_of(_company_id uuid, _account_id uuid, _as_of date)`
+- `public.account_transactions(_company_id uuid, _account_id uuid, _from date, _to date, _limit integer, _offset integer)`
+- `public.accounts_write_audit()`
+- `public.allocate_document_number(_company_id uuid, _document_type text)`
+- `public.allocate_sales_credit_note(payload jsonb)`
+- `public.apply_transaction_correction(_company_id uuid, _request_key uuid, _preview_hash text, _items jsonb, _target_id uuid, _mode text, _date date, _reason text)`
+- `public.assert_billing_allowance(_company_id uuid, _metric text, _adding bigint)`
+- `public.assert_can_manage_tax_returns(_company_id uuid)`
+- `public.assert_journal_date_unlocked(_company_id uuid, _journal_date date)`
+- `public.attach_company_subscription()`
+- `public.bank_integrity_check(_company_id uuid)`
+- `public.bump_bank_coding_history(_company_id uuid, _payee_normalized text, _description_sample text, _offset_account_id uuid, _direction text)`
+- `public.can_access_attachment(_company_id uuid, _entity_type text, _action text)`
+- `public.can_access_storage_document(_name text, _action text)`
+- `public.can_read_action_notification(_company_id uuid, _category text)`
+- `public.cancel_action_document_request(_request_id uuid)`
+- `public.cancel_auto_reversal(payload jsonb)`
+- `public.cash_movements_by_month(_company_id uuid, _from date, _to date)`
+- `public.claim_communication_send(_company_id uuid, _kind text)`
+- `public.complete_action_document_request(_request_id uuid, _attachment_id uuid)`
+- `public.complete_reconciliation_session(_company_id uuid, _bank_account_id uuid, _statement_date date, _statement_balance_minor bigint, _opening_balance_minor bigint, _bank_transaction_ids uuid[], _journal_line_ids uuid[], _notes text)`
+- `public.copy_chart_accounts(_source uuid, _target uuid)`
+- `public.count_ai_usage_last_hour(_company_id uuid)`
+- `public.create_action_document_request(_company_id uuid, _requested_from uuid, _subject text, _instructions text)`
+- `public.create_bank_transfer(_company_id uuid, _from_bank_account_id uuid, _to_bank_account_id uuid, _transfer_date date, _amount_minor bigint, _currency_code text, _memo text)`
+- `public.create_bank_transfer_fx(payload jsonb)`
+- `public.create_company(_name text, _country_code text, _base_currency text, _fy_end_month smallint, _fy_end_day smallint, _timezone text, _legal_name text)`
+- `public.create_demo_company()`
+- `public.create_invoice_share_link(_company_id uuid, _invoice_id uuid, _expires_in_days integer)`
+- `public.create_month_end_work(_company_id uuid, _period_end date, _due_date date)`
+- `public.create_practice_firm(_name text)`
+- `public.delete_budget(_budget_id uuid)`
+- `public.delete_document_theme(_company_id uuid, _id uuid, _revision integer)`
+- `public.delete_draft_sales_document(payload jsonb)`
+- `public.delete_draft_tax_return(_return_id uuid)`
+- `public.delete_fixed_asset(_asset_id uuid)`
+- `public.delete_report_schedule(_id uuid)`
+- `public.delete_sales_recurring_invoice(payload jsonb)`
+- `public.deliver_invoice_to_portal(payload jsonb)`
+- `public.dispose_fixed_asset(_asset_id uuid, _disposal_date date, _proceeds_minor bigint, _proceeds_account_id uuid, _gain_loss_account_id uuid, _notes text)`
+- `public.document_attachments_before_insert()`
+- `public.enforce_company_allowance()`
+- `public.enforce_document_quota()`
+- `public.enforce_storage_allowance()`
+- `public.enforce_subscription_posting()`
+- `public.enforce_subscription_seats()`
+- `public.ensure_accounting_period_coverage(_company_id uuid, _from date, _to date, _name text)`
+- `public.ensure_fiscal_period_for_date(_company_id uuid, _date date)`
+- `public.file_tax_return(_return_id uuid)`
+- `public.find_correction_lines(_company_id uuid, _filters jsonb)`
+- `public.find_duplicate_contacts(_company_id uuid, _limit integer)`
+- `public.get_document_appearance(_company_id uuid, _kind text, _document_id uuid)`
+- `public.get_document_theme_context(_company_id uuid, _kind text)`
+- `public.get_entitlements(_company_id uuid)`
+- `public.get_portal_settings(payload jsonb)`
+- `public.get_reporting_delivery_status(_company_id uuid)`
+- `public.get_shared_invoice(_token text)`
+- `public.has_company_permission(_company_id uuid, _permission text)`
+- `public.has_company_role(_company_id uuid, _roles company_role[])`
+- `public.import_chart_accounts(_company_id uuid, _rows jsonb)`
+- `public.import_fixed_asset_register(_company_id uuid, _rows jsonb)`
+- `public.invite_portal_user(payload jsonb)`
+- `public.is_billing_operator()`
+- `public.is_company_advisor(_company_id uuid)`
+- `public.is_company_member(_company_id uuid)`
+- `public.is_firm_admin(_firm_id uuid)`
+- `public.is_firm_member(_firm_id uuid)`
+- `public.issue_company_invitation(_company_id uuid, _email text, _role company_role, _token_hash text, _expires_at timestamp with time zone, _adjustments jsonb)`
+- `public.journals_assert_lock_dates()`
+- `public.ledger_balances(_company_id uuid, _from date, _to date, _exclude_year_end_close boolean)`
+- `public.ledger_health_check(payload jsonb)`
+- `public.ledger_monthly_activity(_company_id uuid, _from date, _to date, _exclude_year_end_close boolean)`
+- `public.list_action_document_recipients(_company_id uuid)`
+- `public.list_bank_account_details(_company_id uuid)`
+- `public.list_contact_portal_access(payload jsonb)`
+- `public.list_live_feature_prices()`
+- `public.list_organisation_secret_meta(_company_id uuid)`
+- `public.list_public_billing_plans()`
+- `public.lock_accounting_period(_period_id uuid)`
+- `public.lookup_billing_offer(_code text)`
+- `public.lookup_fx_rate_to_base(_company_id uuid, _from_currency character, _as_of date)`
+- `public.manage_practice_client(_firm_id uuid, _company_id uuid, _access text, _revoke boolean)`
+- `public.match_bank_transaction(_company_id uuid, _bank_transaction_id uuid, _journal_line_ids uuid[])`
+- `public.match_bank_transactions_to_journal_line(_company_id uuid, _bank_transaction_ids uuid[], _journal_line_id uuid)`
+- `public.merge_accounts_dated(payload jsonb)`
+- `public.merge_contacts(_company_id uuid, _survivor_id uuid, _merge_id uuid)`
+- `public.next_journal_number(_company_id uuid)`
+- `public.platform_capture_mrr_movements(_reason text)`
+- `public.platform_decide_approval(_id uuid, _decision text, _reason text)`
+- `public.platform_list_approvals()`
+- `public.platform_reconcile_mrr()`
+- `public.platform_role()`
+- `public.platform_set_entitlement(_feature text, _scope text, _scope_id uuid, _plan_code text, _source text, _effect text, _starts timestamp with time zone, _expires timestamp with time zone, _reason text, _notes text)`
+- `public.platform_set_plan_visibility(_plan_code text, _is_public boolean, _reason text)`
+- `public.platform_set_staff_role(_user_id uuid, _role text, _reason text)`
+- `public.platform_subscription_cohorts()`
+- `public.portal_acknowledge_order(payload jsonb)`
+- `public.portal_attach_provider(payload jsonb)`
+- `public.portal_claim_sandbox(payload jsonb)`
+- `public.portal_create_payment_intent(payload jsonb)`
+- `public.portal_download_file(payload jsonb)`
+- `public.portal_get_invoice(payload jsonb)`
+- `public.portal_home(payload jsonb)`
+- `public.portal_list_alerts(payload jsonb)`
+- `public.portal_list_credits(payload jsonb)`
+- `public.portal_list_files(payload jsonb)`
+- `public.portal_list_invoices(payload jsonb)`
+- `public.portal_list_messages(payload jsonb)`
+- `public.portal_list_notifications(payload jsonb)`
+- `public.portal_list_receipts(payload jsonb)`
+- `public.portal_my_access(payload jsonb)`
+- `public.portal_post_message(payload jsonb)`
+- `public.portal_request_bank_change(payload jsonb)`
+- `public.portal_resolve_alert(payload jsonb)`
+- `public.portal_statement(payload jsonb)`
+- `public.portal_submit_supplier_document(payload jsonb)`
+- `public.portal_supplier_workspace(payload jsonb)`
+- `public.portal_upload_file(payload jsonb)`
+- `public.post_auto_reversing_journal(payload jsonb)`
+- `public.post_conversion_balances(payload jsonb)`
+- `public.post_fx_revaluation(payload jsonb)`
+- `public.post_journal(payload jsonb)`
+- `public.post_money_document(payload jsonb)`
+- `public.post_recurring_journal_now(payload jsonb)`
+- `public.practice_assignees(_company_id uuid)`
+- `public.preview_account_merge(payload jsonb)`
+- `public.preview_company_invitation(_token text)`
+- `public.preview_fx_revaluation(payload jsonb)`
+- `public.preview_transaction_correction(_company_id uuid, _items jsonb, _target_id uuid, _mode text, _date date, _reason text)`
+- `public.process_due_auto_reversals(payload jsonb)`
+- `public.project_profitability(_company_id uuid, _from date, _to date)`
+- `public.protect_system_accounts()`
+- `public.queue_report_delivery(_company_id uuid, _payload jsonb)`
+- `public.record_ai_usage(_company_id uuid, _intent text, _status text, _provider text, _model text, _prompt_chars integer, _estimated_tokens integer, _latency_ms integer, _error_code text)`
+- `public.record_audit_event(_company_id uuid, _action text, _entity_type text, _entity_id uuid, _details jsonb)`
+- `public.record_billing_usage(_company_id uuid, _metric text, _adding bigint)`
+- `public.record_customer_receipt(payload jsonb)`
+- `public.record_email_outbox(payload jsonb)`
+- `public.record_supplier_payment(payload jsonb)`
+- `public.record_supplier_payment_batch(payload jsonb)`
+- `public.recurring_claim_occurrence(_company_id uuid, _schedule_id uuid, _scheduled_date date, _document_date date, _template_version_id uuid, _idempotency_key text)`
+- `public.recurring_complete_occurrence(_occurrence_id uuid, _purchase_bill_id uuid, _sales_invoice_id uuid, _failed_message text)`
+- `public.refresh_action_notifications(_company_id uuid)`
+- `public.remove_sales_credit_allocation(payload jsonb)`
+- `public.replace_purchase_bill_lines(_company_id uuid, _bill_id uuid, _lines jsonb)`
+- `public.report_bank_reconciliation_summary(_company_id uuid, _as_of date)`
+- `public.report_cash_summary(_company_id uuid, _from date, _to date)`
+- `public.report_depreciation_schedule(_company_id uuid, _from date, _to date)`
+- `public.report_fixed_asset_register(_company_id uuid, _as_of date)`
+- `public.report_gl_summary(_company_id uuid, _from date, _to date)`
+- `public.report_purchases_by_supplier(_company_id uuid, _from date, _to date)`
+- `public.report_sales_by_contact(_company_id uuid, _from date, _to date)`
+- `public.report_sales_by_item(_company_id uuid, _from date, _to date)`
+- `public.reset_demo_company(_company_id uuid)`
+- `public.retry_portal_payment_post(payload jsonb)`
+- `public.reverse_conversion_balances(payload jsonb)`
+- `public.reverse_journal(_journal_id uuid, _idempotency_key text)`
+- `public.reverse_journal_on(_journal_id uuid, _reversal_date date, _idempotency_key text)`
+- `public.reverse_supplier_payment(payload jsonb)`
+- `public.revoke_company_invitation(_company_id uuid, _invitation_id uuid)`
+- `public.revoke_invoice_share_links(_company_id uuid, _invoice_id uuid)`
+- `public.revoke_portal_access(payload jsonb)`
+- `public.run_depreciation(_company_id uuid, _period_end date, _preview boolean)`
+- `public.run_due_recurring_journals(payload jsonb)`
+- `public.run_portal_reminders(payload jsonb)`
+- `public.save_asset_type(_company_id uuid, _type_id uuid, _payload jsonb)`
+- `public.save_bank_account_details(payload jsonb)`
+- `public.save_budget(_company_id uuid, _budget_id uuid, _name text, _fiscal_year_start date, _notes text)`
+- `public.save_budget_lines(_budget_id uuid, _lines jsonb, _mode text)`
+- `public.save_document_branding(_company_id uuid, _values jsonb)`
+- `public.save_document_theme(_company_id uuid, _id uuid, _revision integer, _name text, _config jsonb)`
+- `public.save_fixed_asset(_company_id uuid, _asset_id uuid, _payload jsonb)`
+- `public.save_member_adjustments(_company_id uuid, _user_id uuid, _adjustments jsonb)`
+- `public.save_portal_settings(payload jsonb)`
+- `public.save_practice_task(_company_id uuid, _payload jsonb)`
+- `public.save_report_pack(_company_id uuid, _payload jsonb)`
+- `public.save_report_schedule(_company_id uuid, _payload jsonb)`
+- `public.save_sales_document_draft(payload jsonb)`
+- `public.save_tax_return_draft(_company_id uuid, _period_start date, _period_end date, _basis text, _jurisdiction text, _currency text, _net_tax_minor bigint, _summary jsonb, _lines jsonb)`
+- `public.seed_country_tax_pack(_company_id uuid, _pack_id text)`
+- `public.seed_default_accounting_periods(_company_id uuid)`
+- `public.seed_default_chart_of_accounts(_company_id uuid)`
+- `public.seed_default_tax_pack(_company_id uuid)`
+- `public.set_action_notification_state(_notification_id uuid, _mark_read boolean, _archive boolean)`
+- `public.set_document_project(payload jsonb)`
+- `public.set_document_theme_default(_company_id uuid, _kind text, _theme_id uuid)`
+- `public.set_organisation_feature(_company_id uuid, _feature_key text, _enabled boolean, _config jsonb, _reason text, _source text)`
+- `public.set_organisation_lock_policy(_company_id uuid, _lock_date_everyone date, _lock_date_except_advisors date, _conversion_date date, _require_override_reason boolean, _reason text)`
+- `public.set_report_access(_view_id uuid, _level text, _grants jsonb, _firm_id uuid)`
+- `public.set_tax_return_settlement(_return_id uuid, _journal_id uuid)`
+- `public.shares_company_with(_other uuid)`
+- `public.staff_decide_bank_request(payload jsonb)`
+- `public.staff_decide_portal_submission(payload jsonb)`
+- `public.staff_list_bank_requests(payload jsonb)`
+- `public.staff_list_portal_submissions(payload jsonb)`
+- `public.start_company_trial(_company_id uuid, _plan_code text)`
+- `public.subscription_allows_posting(_company_id uuid)`
+- `public.transaction_correction_setup(_company_id uuid)`
+- `public.transition_report_pack(_id uuid, _version integer, _action text, _note text)`
+- `public.trg_fx_purchase_alloc_delete()`
+- `public.trg_fx_purchase_alloc_insert()`
+- `public.trg_fx_purchase_payment_update()`
+- `public.trg_fx_sales_alloc_delete()`
+- `public.trg_fx_sales_alloc_insert()`
+- `public.trg_fx_sales_alloc_update()`
+- `public.unallocate_customer_receipt(payload jsonb)`
+- `public.undo_transaction_correction(_company_id uuid, _batch_id uuid, _date date, _reason text)`
+- `public.unlock_accounting_period(_period_id uuid)`
+- `public.unmatch_bank_transaction(_company_id uuid, _bank_transaction_id uuid, _reason text)`
+- `public.upsert_organisation_config(_company_id uuid, _category text, _document jsonb, _expected_version integer, _reason text, _source text, _request_id text)`
+- `public.void_customer_receipt(payload jsonb)`
+- `public.void_exchange_rate(_rate_id uuid)`
+- `public.void_money_document(payload jsonb)`
+- `public.void_reconciliation_session(_company_id uuid, _session_id uuid, _reason text)`
+- `public.void_sales_credit_note(payload jsonb)`
+- `public.void_sales_invoice(payload jsonb)`
+- `public.write_off_bad_debt(payload jsonb)`
+- `public.write_organisation_secret(_company_id uuid, _secret_key text, _plaintext text)`

@@ -61,7 +61,7 @@ Work top to bottom. A task is done only when its tests have run and the box is t
 - [x] Customer 360
 - [x] Global search
 - [x] Segments and tags
-- [ ] Admin alert rules
+- [x] Admin alert rules
 - [ ] Job console
 - [ ] Incident and release management
 - [ ] Managed services desk

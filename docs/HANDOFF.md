@@ -50,6 +50,7 @@ Typecheck exit 0. Lint 0 errors and 23 warnings. Vitest 163 files, 1279 tests, a
 - Batch B: included usage must be quantity zero. `20261102400000` was not applied. Posting stays blocked.
 - Batch B: reconciliation store tests passed, 2. `20261102410000` stores a match or mismatch and was not applied. A missing provider list is not stored. The live fetch stays BLOCKED.
 - Batch A: proration store tests passed, 2. `20261102420000` stores the integer and was not applied. It cannot record a provider call.
+- Batch C: every unapplied platform function checks `require_platform` or `platform_can`, and every new table enables row level security. Test passed, 1.
 - Hosted gate BLOCKED: `20261102170000` through `20261102420000`, and the start-month backfill, are READY-TO-APPLY. Nothing further was applied. Write `BACKUP CONFIRMED` in this file to release them.
 
 ## NEEDS FROM OWNER

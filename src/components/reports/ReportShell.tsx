@@ -2,10 +2,16 @@ import { useReportActivity } from "@/hooks/use-report-activity";
 import { useCanDo } from "@/hooks/use-can";
 import type { ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Printer } from "lucide-react";
+import { ArrowLeft, Download, ChevronDown } from "lucide-react";
 import { useFormat } from "@/hooks/use-format";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { csvFilename, downloadCsv, toCsv, type CsvCell } from "@/lib/reports/csv";
+import type { CsvCell } from "@/lib/reports/csv";
+import { exportVisibleReport } from "@/lib/reports/visible-export.functions";
+import { downloadReportFile } from "@/lib/reports/download";
+import { useServerFn } from "@tanstack/react-start";
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { sourceLabel, sourceTarget } from "@/lib/reports/links";
 import type { ReportSearch } from "@/lib/reports/search";
 import type { ReportPresentation } from "@/lib/reports/report-document";
@@ -80,25 +86,31 @@ export function ReportShell({
     void navigate({ to: "/reports", search: { tab: "standard", from: ctx.from, to: ctx.to } });
   };
   const canExport = useCanDo("reports.export");
+  const exportFn = useServerFn(exportVisibleReport);
+  const fileExport = useMutation({
+    mutationFn: (format: "pdf" | "xlsx" | "csv") => {
+      const csv = getCsv?.();
+      if (!csv) throw new Error("Load the report before exporting");
+      return exportFn({ data: {
+        companyId: ctx.companyId,
+        reportId: ctx.reportId ?? title,
+        title,
+        companyName: ctx.companyName,
+        currency: ctx.currency,
+        from: ctx.from,
+        to: ctx.to,
+        basis: csv.basis ?? basis ?? "",
+        headers: csv.headers,
+        rows: csv.rows.map((row) => row.map((cell) => cell == null ? "" : String(cell))),
+        format,
+      } });
+    },
+    onSuccess: downloadReportFile,
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
   const period =
     mode === "asof" ? `As at ${fmt.date(ctx.to)}` : `${fmt.date(ctx.from)} to ${fmt.date(ctx.to)}`;
 
-  const onExport = () => {
-    const csv = getCsv?.();
-    if (!csv) return;
-    const text = toCsv(
-      {
-        company: ctx.companyName,
-        report: title,
-        period: mode === "asof" ? `As at ${ctx.to}` : `${ctx.from} to ${ctx.to}`,
-        currency: ctx.currency,
-        basis: csv.basis ?? basis ?? "",
-      },
-      csv.headers,
-      csv.rows,
-    );
-    downloadCsv(csvFilename(title, mode === "asof" ? ctx.to : `${ctx.from}-to-${ctx.to}`), text);
-  };
 
   return (
     <div className="report-shell space-y-4">
@@ -210,15 +222,21 @@ export function ReportShell({
         {extraControls}
         <div className="ml-auto flex flex-wrap gap-2">
           {toolbarActions}
-          {getCsv && canExport ? (
-            <Button size="sm" variant="outline" onClick={onExport}>
-              Export CSV
-            </Button>
-          ) : null}
-          {!hidePrint && (
-            <Button size="sm" variant="outline" disabled={!canExport} onClick={() => window.print()}>
-              <Printer className="mr-1 size-4" aria-hidden="true" /> Print / PDF
-            </Button>
+          {getCsv && !hidePrint && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline" disabled={!canExport || fileExport.isPending} aria-label="Download report">
+                  <Download className="mr-2 size-4" aria-hidden="true" />
+                  {fileExport.isPending ? "Preparing…" : "Download"}
+                  <ChevronDown className="ml-2 size-4" aria-hidden="true" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => fileExport.mutate("pdf")}>PDF document (.pdf)</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => fileExport.mutate("xlsx")}>Excel workbook (.xlsx)</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => fileExport.mutate("csv")}>CSV data (.csv)</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
       </div>

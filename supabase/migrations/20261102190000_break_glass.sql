@@ -4,7 +4,7 @@
 --   DROP FUNCTION IF EXISTS public.platform_revoke_break_glass(uuid, text);
 --   DROP FUNCTION IF EXISTS public.platform_expire_break_glass(uuid);
 --   DROP FUNCTION IF EXISTS public.platform_decide_break_glass(uuid, text, text);
---   DROP FUNCTION IF EXISTS public.platform_request_break_glass(uuid, text, timestamptz, text);
+--   DROP FUNCTION IF EXISTS public.platform_request_break_glass(uuid, text, timestamptz, uuid);
 --   DROP TABLE IF EXISTS public.break_glass_events;
 --   DROP TABLE IF EXISTS public.break_glass_grants;
 

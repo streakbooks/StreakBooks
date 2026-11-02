@@ -60,5 +60,13 @@ describe("break-glass access", () => {
     expect(sql).toContain("READY-TO-APPLY");
     expect(sql).toContain("company_break_glass_log");
     expect(sql).toContain("A second person must decide this request");
+    expect(sql).toContain("platform_request_break_glass(uuid, text, timestamptz, uuid)");
+    const expiry = readFileSync(
+      new URL("../../../supabase/migrations/20261102430000_break_glass_expire_audit.sql", import.meta.url),
+      "utf8",
+    );
+    expect(expiry).toContain("break_glass.expire");
+    expect(expiry).toContain("private.platform_log");
+    expect(expiry).not.toContain("reason");
   });
 });

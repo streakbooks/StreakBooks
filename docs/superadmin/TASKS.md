@@ -32,7 +32,7 @@ Work top to bottom. A task is done only when its tests have run and the box is t
 
 ## Batch B
 
-- [ ] Usage overage invoicing
+- [ ] Usage overage invoicing. Draft tests passed, 3. Posting BLOCKED until a test-mode secret is in `.env.local`.
 - [ ] Provider reconciliation
 - [ ] Fees and net revenue
 - [ ] Lifetime value

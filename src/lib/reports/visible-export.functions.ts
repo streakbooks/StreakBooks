@@ -15,7 +15,7 @@ const requestSchema = z.object({
   from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   basis: z.string().max(300).default(""),
-  headers: z.array(z.string().min(1).max(150)).min(1).max(24),
+  headers: z.array(z.string().min(1).max(150)).min(2).max(24),
   rows: z.array(z.array(text).min(1).max(24)).max(2000),
   format: z.enum(["pdf", "xlsx", "csv"]),
 }).superRefine((v, ctx) => {
@@ -55,6 +55,7 @@ export const exportVisibleReport = createServerFn({ method: "POST" })
       sections: [{
         id: data.reportId,
         title: data.title,
+        labelHeader: data.headers[0],
         columns: data.headers.slice(1),
         rows: data.rows.map((row) => ({
           label: row[0] ?? "",

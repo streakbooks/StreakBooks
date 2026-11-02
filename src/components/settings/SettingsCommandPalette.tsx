@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useEffect, useState, type MouseEvent } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
   CommandDialog,
   CommandEmpty,
@@ -26,6 +26,13 @@ export function SettingsCommandPalette({ open, onOpenChange, onSelectSection }: 
   }, [open]);
 
   const matches = searchSettings(q);
+  const onLinkClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    // Preserve the original command palette on modified/new-tab clicks.
+    event.stopPropagation();
+    if (event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
+      onOpenChange(false);
+    }
+  };
 
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
@@ -46,8 +53,10 @@ export function SettingsCommandPalette({ open, onOpenChange, onSelectSection }: 
                 onOpenChange(false);
               }}
             >
-              <span className="font-medium">{c.label}</span>
-              <span className="ml-2 text-xs text-muted-foreground">{c.availability}</span>
+              <Link to="/settings" search={{ section: c.id }} onClick={onLinkClick} className="flex w-full items-center">
+                <span className="font-medium">{c.label}</span>
+                <span className="ml-2 text-xs text-muted-foreground">{c.availability}</span>
+              </Link>
             </CommandItem>
           ))}
         </CommandGroup>
@@ -67,7 +76,14 @@ export function SettingsCommandPalette({ open, onOpenChange, onSelectSection }: 
                   onOpenChange(false);
                 }}
               >
-                {n.label}
+                <Link
+                  to={n.to as never}
+                  {...(n.to === "/settings" ? { search: { section: "overview" } } : {})}
+                  onClick={onLinkClick}
+                  className="block w-full"
+                >
+                  {n.label}
+                </Link>
               </CommandItem>
             ))}
         </CommandGroup>
@@ -82,7 +98,7 @@ export function SettingsCommandPalette({ open, onOpenChange, onSelectSection }: 
                   onOpenChange(false);
                 }}
               >
-                {c.label}
+                <Link to="/settings" search={{ section: c.id }} onClick={onLinkClick} className="block w-full">{c.label}</Link>
               </CommandItem>
             ))}
           </CommandGroup>

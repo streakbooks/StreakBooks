@@ -36,4 +36,31 @@ describe("stored provider reconciliation", () => {
     expect(sql).toContain("A missing provider list is not stored");
     expect(sql).not.toContain("stripe.com");
   });
+
+  it("rejects a mismatch whose difference is zero", () => {
+    expect(() =>
+      planStoredReconciliation({
+        role: "platform_finance",
+        result: {
+          providerCalled: false,
+          state: "mismatch",
+          unmatchedLocal: [],
+          extraProvider: [],
+          differenceMinor: 0,
+        },
+        reason: "Month end",
+      }),
+    ).toThrow(/zero difference/);
+    const sql = readFileSync(
+      new URL(
+        "../../../supabase/migrations/20261102600000_reconciliation_difference.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    expect(sql).toContain("A mismatch cannot have a zero difference");
+    expect(sql).toContain("difference_minor IS DISTINCT FROM 0");
+    expect(sql).toContain("require_platform('billing.manage')");
+    expect(sql).not.toContain("stripe.com");
+  });
 });

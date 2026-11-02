@@ -3,6 +3,8 @@ import { isReportDate } from "./date-validation";
 import { reportFiltersSchema } from "./report-filters";
 export const standardSettingsSchema = z
   .object({
+    // Fail closed: cash reporting must never return accrual figures under a cash label.
+    basis: z.literal("accrual").default("accrual"),
     group: z.enum(["total", "month", "quarter", "year"]).default("total"),
     compare: z
       .enum(["none", "prior_period", "prior_year", "ytd", "prior_ytd", "custom"])

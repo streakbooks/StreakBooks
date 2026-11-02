@@ -49,7 +49,7 @@ Work top to bottom. A task is done only when its tests have run and the box is t
 
 - [x] Integration health display
 - [x] API key rotation
-- [ ] Webhook delivery history
+- [x] Webhook delivery history
 - [ ] Backup visibility
 - [ ] Data export
 - [ ] Closure workflow

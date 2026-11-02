@@ -15,6 +15,7 @@ Typecheck exit 0. Lint 0 errors and 23 warnings. Vitest 163 files, 1279 tests, a
 - Batch A: mid-cycle proration tests passed, 5. No provider call. BLOCKED until a test-mode secret is in `.env.local`.
 - Batch B: usage overage draft tests passed, 3. Nothing was posted. BLOCKED until a test-mode secret is in `.env.local`.
 - Batch B: missing fees and lifetime value stay unavailable, not zero. Tests passed, 3. Provider reconciliation BLOCKED until a test-mode secret and provider events exist.
+- Batch C: break-glass tests passed, 4. `20261102190000` is READY-TO-APPLY and was not applied.
 - Hosted gate BLOCKED: `20261102170000`, `20261102180000`, `20261102180100`, and the start-month backfill are READY-TO-APPLY. Nothing was applied. Write `BACKUP CONFIRMED` in this file to release them.
 
 ## NEEDS FROM OWNER

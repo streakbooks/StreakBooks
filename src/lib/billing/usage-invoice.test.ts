@@ -54,4 +54,17 @@ describe("usage overage invoice", () => {
     expect(quantity).toContain("Usage inside the included quantity is zero");
     expect(quantity).toContain("quantity = 0");
   });
+
+  it("keeps one unposted draft per business", () => {
+    const sql = readFileSync(
+      new URL("../../../supabase/migrations/20261102550000_usage_draft_one.sql", import.meta.url),
+      "utf8",
+    );
+    expect(sql).toContain("billing_usage_drafts_one_company");
+    expect(sql).toContain("SET status = _status");
+    expect(sql).toContain("'posted', false");
+    expect(sql).toContain("require_platform('billing.manage')");
+    expect(sql).not.toContain("sales_invoices");
+    expect(sql).not.toContain("provider_called = true");
+  });
 });

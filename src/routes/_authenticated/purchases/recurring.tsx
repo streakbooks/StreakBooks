@@ -182,9 +182,9 @@ function RecurringTransactionsPage() {
 
       <Tabs value={view} className="mb-4">
         <TabsList>
-          <TabsTrigger value="schedules" asChild><Link to="/purchases/recurring" search={(prev) => ({ ...prev, view: "schedules", page: 0 })}>Schedules</Link></TabsTrigger>
-          <TabsTrigger value="exceptions" asChild><Link to="/purchases/recurring" search={(prev) => ({ ...prev, view: "exceptions", page: 0 })}>Exception centre</Link></TabsTrigger>
-          <TabsTrigger value="forecast" asChild><Link to="/purchases/recurring" search={(prev) => ({ ...prev, view: "forecast", page: 0 })}>Forecast (90d)</Link></TabsTrigger>
+          <TabsTrigger value="schedules" asChild><Link to="/purchases/recurring" search={(prev) => ({ ...prev, view: "schedules" as const, page: 0 }) as never}>Schedules</Link></TabsTrigger>
+          <TabsTrigger value="exceptions" asChild><Link to="/purchases/recurring" search={(prev) => ({ ...prev, view: "exceptions" as const, page: 0 }) as never}>Exception centre</Link></TabsTrigger>
+          <TabsTrigger value="forecast" asChild><Link to="/purchases/recurring" search={(prev) => ({ ...prev, view: "forecast" as const, page: 0 }) as never}>Forecast (90d)</Link></TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -321,16 +321,16 @@ function RecurringTransactionsPage() {
                       return (
                         <TableRow key={row.id} className="hover:bg-muted/50">
                           <TableCell>
-                            <Link to="/purchases/recurring" search={(prev) => ({ ...prev, id: legacyId, tab: "details" })} className="font-medium underline-offset-2 hover:underline">{row.name}</Link>
+                            <Link to="/purchases/recurring" search={(prev) => ({ ...prev, id: legacyId, tab: "details" }) as never} className="font-medium underline-offset-2 hover:underline">{row.name}</Link>
                           </TableCell>
                           <TableCell>
-                            <Link to="/purchases/recurring" search={(prev) => ({ ...prev, id: legacyId, tab: "details" })} className="underline-offset-2 hover:underline">{row.contacts?.name ?? "—"}</Link>
+                            <Link to="/purchases/recurring" search={(prev) => ({ ...prev, id: legacyId, tab: "details" }) as never} className="underline-offset-2 hover:underline">{row.contacts?.name ?? "—"}</Link>
                           </TableCell>
                           <TableCell>
-                            <Link to="/purchases/recurring" search={(prev) => ({ ...prev, id: legacyId, tab: "details" })} className="underline-offset-2 hover:underline">{sched?.next_occurrence_date ?? "—"}</Link>
+                            <Link to="/purchases/recurring" search={(prev) => ({ ...prev, id: legacyId, tab: "details" }) as never} className="underline-offset-2 hover:underline">{sched?.next_occurrence_date ?? "—"}</Link>
                           </TableCell>
                           <TableCell className="max-w-[180px] truncate text-destructive">
-                            <Link to="/purchases/recurring" search={(prev) => ({ ...prev, id: legacyId, tab: "details" })} className="underline-offset-2 hover:underline">{sched?.last_error ?? (sched?.is_paused || !row.is_active ? "Paused" : "Active")}</Link>
+                            <Link to="/purchases/recurring" search={(prev) => ({ ...prev, id: legacyId, tab: "details" }) as never} className="underline-offset-2 hover:underline">{sched?.last_error ?? (sched?.is_paused || !row.is_active ? "Paused" : "Active")}</Link>
                           </TableCell>
                           <TableCell className="text-right">
                             <Button

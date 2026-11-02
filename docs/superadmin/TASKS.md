@@ -7,13 +7,13 @@ Work top to bottom. A task is done only when its tests have run and the box is t
 - [ ] BACKUP CONFIRMED in `docs/HANDOFF.md` before any hosted apply
 - [ ] Test-mode payment secret in `.env.local` (`STRIPE_SECRET_KEY=sk_test_...` or Razorpay test keys) for provider calls
 - [ ] Second platform user with `approvals.manage` for the kill-switch approval walkthrough
-- [ ] Docker or a separate staging Supabase project for migration-history reconciliation
+- [ ] Install Docker Desktop or Podman and put it on PATH. Needed to seed a local platform_owner and to reconcile migration history off production. A separate empty staging Supabase project is the alternative for history reconciliation only.
 
 ## P0 — Safety and verification
 
 - [x] 1. Full suite: typecheck, lint, unit tests, build
 - [x] 2. Reject `sk_live_` unless an explicit production flag is set
-- [ ] 3. Playwright Chromium plus a local `platform_owner` so grant and revoke run
+- [ ] 3. BLOCKED: Chromium installed and the two public quote tests passed. Grant and revoke still skip. Install Docker Desktop or Podman on PATH so a local platform_owner can be seeded. Do not seed project ipxflpzfcqwtenodbxwc.
 - [ ] 4. Security-definer audit, search_path, anon revoke, migrations not applied
 - [ ] 5. Reconcile migration history off production
 - [ ] 6. Merge pull request 65 after `verify` and `voice-browser` are green

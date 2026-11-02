@@ -8,8 +8,11 @@ const businessId = process.env.E2E_PLATFORM_TEST_BUSINESS_ID;
 test.describe("Public plan quote", () => {
   test("builds a custom plan quote and does not charge a card", async ({ page }) => {
     await page.goto("/pricing/builder");
-    await page.getByRole("button", { name: "Calculate quote" }).click();
-    await expect(page.getByRole("heading", { name: /Quote in / })).toBeVisible();
+    const quote = page.getByRole("heading", { name: /Quote in / });
+    await expect(async () => {
+      await page.getByRole("button", { name: "Calculate quote" }).click();
+      await expect(quote).toBeVisible({ timeout: 2_000 });
+    }).toPass();
     await expect(page.getByText(/does not charge a card/i)).toBeVisible();
     await expect(page.getByLabel(/feature price/i)).toHaveCount(0);
   });

@@ -78,7 +78,6 @@ export function SettingsCommandPalette({ open, onOpenChange, onSelectSection }: 
               >
                 <Link
                   to={n.to as never}
-                  {...(n.to === "/settings" ? { search: { section: "overview" } } : {})}
                   onClick={onLinkClick}
                   className="block w-full"
                 >

@@ -55,14 +55,7 @@ export const Route = createFileRoute("/_authenticated/ai-assistant")({
 });
 
 type Intent =
-  | "ask"
-  | "explain"
-  | "categorise"
-  | "draft"
-  | "duplicates"
-  | "reconcile"
-  | "unusual"
-  | "navigate";
+  "ask" | "explain" | "categorise" | "draft" | "duplicates" | "reconcile" | "unusual" | "navigate";
 
 function AiAssistant() {
   const { company, isPending } = useActiveCompany();
@@ -132,7 +125,9 @@ function AiAssistant() {
         <PageHeader title="AI Assistant" description="Select an organisation first." />
         <Alert>
           <AlertTitle>No organisation</AlertTitle>
-          <AlertDescription>Choose a company in the switcher to use the assistant.</AlertDescription>
+          <AlertDescription>
+            Choose a company in the switcher to use the assistant.
+          </AlertDescription>
         </Alert>
       </>
     );
@@ -181,7 +176,9 @@ function AiAssistant() {
           </CardHeader>
           <CardContent className="space-y-3">
             {!canUse ? (
-              <p className="text-sm text-muted-foreground">Your role cannot use the AI assistant.</p>
+              <p className="text-sm text-muted-foreground">
+                Your role cannot use the AI assistant.
+              </p>
             ) : (
               <>
                 <div className="flex flex-wrap gap-2">
@@ -213,7 +210,11 @@ function AiAssistant() {
                     disabled={askM.isPending || !message.trim()}
                     onClick={() => askM.mutate()}
                   >
-                    {askM.isPending ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+                    {askM.isPending ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="size-4" />
+                    )}
                     Send
                   </Button>
                 </div>
@@ -283,7 +284,9 @@ function AiAssistant() {
                 {facts.map((f) => (
                   <details key={f.kind} className="rounded border p-2 text-sm">
                     <summary className="cursor-pointer font-medium">{f.title}</summary>
-                    <pre className="mt-2 whitespace-pre-wrap text-xs text-muted-foreground">{f.body}</pre>
+                    <pre className="mt-2 whitespace-pre-wrap text-xs text-muted-foreground">
+                      {f.body}
+                    </pre>
                   </details>
                 ))}
               </div>

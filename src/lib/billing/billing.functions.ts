@@ -589,7 +589,9 @@ export const createBillingCheckout = createServerFn({ method: "POST" })
       (existing.provider === "stripe" || existing.provider === "razorpay") &&
       ["active", "trialing", "past_due", "paused"].includes(existing.status)
     ) {
-      throw new Error("This organisation already has a payment subscription. Use Manage billing to change it.");
+      throw new Error(
+        "This organisation already has a payment subscription. Use Manage billing to change it.",
+      );
     }
 
     const { data: inserted, error: insertError } = await supabase

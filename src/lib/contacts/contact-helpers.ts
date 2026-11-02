@@ -42,7 +42,10 @@ export function buildContactsCsv(
 }
 
 export function parseContactsCsv(text: string): { headers: string[]; rows: string[][] } {
-  const lines = text.replace(/^\uFEFF/, "").split(/\r?\n/).filter((l) => l.trim().length > 0);
+  const lines = text
+    .replace(/^\uFEFF/, "")
+    .split(/\r?\n/)
+    .filter((l) => l.trim().length > 0);
   if (lines.length === 0) return { headers: [], rows: [] };
   const parseLine = (line: string): string[] => {
     const out: string[] = [];
@@ -98,19 +101,22 @@ export function contactImportTemplateCsv(): string {
 }
 
 /** Score potential duplicate pair (higher = more likely). */
-export function duplicateScore(a: {
-  name: string;
-  email?: string | null;
-  phone?: string | null;
-  tax_number?: string | null;
-  account_number?: string | null;
-}, b: {
-  name: string;
-  email?: string | null;
-  phone?: string | null;
-  tax_number?: string | null;
-  account_number?: string | null;
-}): { score: number; reasons: string[] } {
+export function duplicateScore(
+  a: {
+    name: string;
+    email?: string | null;
+    phone?: string | null;
+    tax_number?: string | null;
+    account_number?: string | null;
+  },
+  b: {
+    name: string;
+    email?: string | null;
+    phone?: string | null;
+    tax_number?: string | null;
+    account_number?: string | null;
+  },
+): { score: number; reasons: string[] } {
   const reasons: string[] = [];
   let score = 0;
   if (normalizeContactName(a.name) === normalizeContactName(b.name)) {

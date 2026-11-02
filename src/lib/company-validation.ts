@@ -19,17 +19,20 @@ export type CreateCompanyInput = {
 
 export function validateCompanyInput(input: CreateCompanyInput): CreateCompanyInput {
   const name = (input?.name ?? "").trim();
-  if (name.length < 2 || name.length > 160) throw new Error("Enter a company name (2–160 characters).");
+  if (name.length < 2 || name.length > 160)
+    throw new Error("Enter a company name (2–160 characters).");
   const country_code = (input.country_code ?? "").toUpperCase();
   if (!/^[A-Z]{2}$/.test(country_code)) throw new Error("Choose a country.");
   const base_currency = (input.base_currency ?? "").toUpperCase();
   if (!/^[A-Z]{3}$/.test(base_currency)) throw new Error("Choose a base currency.");
   const m = Number(input.fiscal_year_end_month);
   const d = Number(input.fiscal_year_end_day);
-  if (!Number.isInteger(m) || m < 1 || m > 12) throw new Error("Choose a financial year end month.");
+  if (!Number.isInteger(m) || m < 1 || m > 12)
+    throw new Error("Choose a financial year end month.");
   // Leap year so 29 Feb is a valid year-end day.
   const maxDay = new Date(2024, m, 0).getDate();
-  if (!Number.isInteger(d) || d < 1 || d > maxDay) throw new Error("Choose a valid financial year end day.");
+  if (!Number.isInteger(d) || d < 1 || d > maxDay)
+    throw new Error("Choose a valid financial year end day.");
   const timezone = (input.timezone ?? "").trim();
   if (!timezone || timezone.length > 64) throw new Error("Choose a time zone.");
   const legal_name = (input.legal_name ?? "").trim().slice(0, 200);

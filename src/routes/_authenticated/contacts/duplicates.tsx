@@ -66,7 +66,9 @@ function DuplicatesPage() {
         description="Matches use name, email, phone, tax ID and account number. Merges are never automatic."
         actions={
           <Button variant="outline" size="sm" asChild>
-            <Link to="/contacts" search={{ view: undefined }}>Directory</Link>
+            <Link to="/contacts" search={{ view: undefined }}>
+              Directory
+            </Link>
           </Button>
         }
       />

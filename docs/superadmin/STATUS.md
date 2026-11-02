@@ -1,6 +1,6 @@
 # Superadmin status
 
-Date: 2 November 2026. Branch: `main`.
+Date: 2 November 2026. `origin/main` is `7813d20`, which includes `53cc3ec`. Later edits go through a pull request.
 
 ## Evidence
 
@@ -9,8 +9,10 @@ Executed on 2 November 2026 from `d:\Apps\LinkBooks`:
 - `npx vitest run src/lib/platform src/lib/billing/plan-quote.test.ts --reporter=dot` — 6 files, 37 tests, passed. The extra cases cover the subscription last-update label and start-month grouping.
 - `npx tsc --noEmit --pretty false` — exit 0 after the subscription start cohort.
 - Browser check of `http://localhost:8080/platform?section=subscriptions`: the column reads "last update", and start months say they appear after the migration and are not revenue. The listed trial was not edited.
-- Browser check of `http://localhost:8080/pricing/builder`: published plans loaded; Growth quoted at US$30 monthly and US$300 yearly with no charge; a selected add-on stayed unpriced because the entitlement migration is not applied.
-- Browser check of `http://localhost:8080/platform?section=overview` while a platform session was already signed in: the stored-movement check reported that reconciliation appears after the movement migration is applied. The revenue card stayed unseparated because the live overview function does not yet return `revenueState`. Match and mismatch states were not exercised. A second approver was not used.
+- Browser check of `http://localhost:8080/pricing/builder` after the migrations: Growth quoted at US$30 monthly and US$300 yearly. No card was charged. An add-on quantity was not selected in that pass.
+- Browser check of `http://localhost:8080/platform?section=overview`: the revenue card says there is no eligible active subscription with a stored price, and the stored movement check says there is no recognised MRR and no open stored movement. Both are empty results, not a zero balance. Match and mismatch were not exercised. A second approver was not used.
+- Browser check of dashboard, invoice list, invoice INV-V2083 and the new-invoice form on Demo Company. The new invoice was not saved.
+- `npx supabase backups list --project-ref ipxflpzfcqwtenodbxwc` returned point-in-time restore disabled and no backup rows.
 - `npx eslint` on `src/lib/platform`, `PlatformOverview.tsx`, `PlatformApprovals.tsx` and `platform.index.tsx` — exit 0 after Prettier.
 
 Production build, browser sign-in, RLS SQL suites and the live database were not run.
@@ -43,5 +45,7 @@ Production build, browser sign-in, RLS SQL suites and the live database were not
 | Historical MRR movements | IMPLEMENTED | `supabase/migrations/20261102140000_mrr_movements.sql` |
 | MRR reconciliation | IMPLEMENTED | `reconcileMrr`, `platform_reconcile_mrr`, overview “Stored movement check” |
 | Subscription start months | IMPLEMENTED | `subscriptionStartCohorts`, `platform_subscription_cohorts`. Not revenue. |
-| Batches C–H new surfaces | MISSING | Existing `/platform` sections remain |
+| Batch C businesses, users, roles | PARTIAL | Existing `/platform` sections. Approvals is visible after the migration. Second approver not used. |
+| Batch D integrations and recovery | PARTIAL | Existing screens. Backup list empty. |
+| Batches E–H | MISSING | No new surfaces. |
 | Status page, SMS, e-signature, BI | NOT APPLICABLE until a vendor is connected | `docs/decisions/002-commodity-operations-tools.md` |

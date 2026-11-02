@@ -29,7 +29,11 @@ export function SettingsCommandPalette({ open, onOpenChange, onSelectSection }: 
 
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
-      <CommandInput placeholder="Search settings or jump to a module…" value={q} onValueChange={setQ} />
+      <CommandInput
+        placeholder="Search settings or jump to a module…"
+        value={q}
+        onValueChange={setQ}
+      />
       <CommandList>
         <CommandEmpty>No matching settings.</CommandEmpty>
         <CommandGroup heading="Settings">

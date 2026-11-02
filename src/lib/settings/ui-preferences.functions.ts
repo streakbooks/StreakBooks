@@ -177,7 +177,8 @@ export const saveBillsListPrefs = createServerFn({ method: "POST" })
       ...data.prefs,
       visibleColumns:
         data.prefs.visibleColumns ?? prev.visibleColumns ?? DEFAULT_BILLS_LIST_PREFS.visibleColumns,
-      columnOrder: data.prefs.columnOrder ?? prev.columnOrder ?? DEFAULT_BILLS_LIST_PREFS.columnOrder,
+      columnOrder:
+        data.prefs.columnOrder ?? prev.columnOrder ?? DEFAULT_BILLS_LIST_PREFS.columnOrder,
       savedViews: data.prefs.savedViews ?? prev.savedViews ?? [],
     };
     const { error } = await context.supabase.from("user_ui_preferences" as never).upsert(
@@ -215,7 +216,10 @@ export const getBillWorkspacePrefs = createServerFn({ method: "GET" })
       ...(stored ?? {}),
       sidebarWidthPx: Math.min(
         480,
-        Math.max(260, Number(stored?.sidebarWidthPx ?? DEFAULT_BILL_WORKSPACE_PREFS.sidebarWidthPx)),
+        Math.max(
+          260,
+          Number(stored?.sidebarWidthPx ?? DEFAULT_BILL_WORKSPACE_PREFS.sidebarWidthPx),
+        ),
       ),
     } satisfies BillWorkspacePrefs;
   });
@@ -245,7 +249,11 @@ export const saveBillWorkspacePrefs = createServerFn({ method: "POST" })
         480,
         Math.max(
           260,
-          Number(data.prefs.sidebarWidthPx ?? prev.sidebarWidthPx ?? DEFAULT_BILL_WORKSPACE_PREFS.sidebarWidthPx),
+          Number(
+            data.prefs.sidebarWidthPx ??
+              prev.sidebarWidthPx ??
+              DEFAULT_BILL_WORKSPACE_PREFS.sidebarWidthPx,
+          ),
         ),
       ),
     };

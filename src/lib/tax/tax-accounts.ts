@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireAccountByCode, requireAccountInCompany } from "@/lib/purchases/accounts";
 
-type AnyClient = SupabaseClient<any>;
+type AnyClient = SupabaseClient;
 
 /**
  * Resolve output (sales) / input (purchase) tax control accounts.
@@ -16,7 +16,8 @@ export async function resolveOutputTaxAccount(
     .select("output_tax_account_id" as never)
     .eq("company_id" as never, companyId as never)
     .maybeSingle();
-  const mapped = (settings as { output_tax_account_id: string | null } | null)?.output_tax_account_id;
+  const mapped = (settings as { output_tax_account_id: string | null } | null)
+    ?.output_tax_account_id;
   if (mapped) {
     await requireAccountInCompany(supabase, companyId, mapped);
     return { id: mapped, source: "mapping" };

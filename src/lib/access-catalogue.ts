@@ -36,10 +36,26 @@ export const ACCESS_AREAS: readonly AccessArea[] = [
     label: "Organisation",
     description: "The company record, subscription and demo tools.",
     items: [
-      { permission: "company.view", label: "Open this organisation", detail: "Required for every member." },
-      { permission: "company.settings.edit", label: "Edit organisation settings", detail: "Name, financial year, documents and currencies." },
-      { permission: "billing.manage", label: "Manage the subscription", detail: "Plan, trial and billing." },
-      { permission: "demo.reset", label: "Reset the demo organisation", detail: "Demo companies only." },
+      {
+        permission: "company.view",
+        label: "Open this organisation",
+        detail: "Required for every member.",
+      },
+      {
+        permission: "company.settings.edit",
+        label: "Edit organisation settings",
+        detail: "Name, financial year, documents and currencies.",
+      },
+      {
+        permission: "billing.manage",
+        label: "Manage the subscription",
+        detail: "Plan, trial and billing.",
+      },
+      {
+        permission: "demo.reset",
+        label: "Reset the demo organisation",
+        detail: "Demo companies only.",
+      },
     ],
   },
   {
@@ -48,9 +64,21 @@ export const ACCESS_AREAS: readonly AccessArea[] = [
     description: "Who can work in the organisation, and the audit trail.",
     items: [
       { permission: "members.view", label: "View people and roles", detail: "See who has access." },
-      { permission: "members.manage", label: "Invite and manage people", detail: "Change roles, suspend and remove." },
-      { permission: "members.grant_owner", label: "Transfer ownership", detail: "Add or replace a company owner." },
-      { permission: "audit.view", label: "Review audit history", detail: "Administrative and financial events." },
+      {
+        permission: "members.manage",
+        label: "Invite and manage people",
+        detail: "Change roles, suspend and remove.",
+      },
+      {
+        permission: "members.grant_owner",
+        label: "Transfer ownership",
+        detail: "Add or replace a company owner.",
+      },
+      {
+        permission: "audit.view",
+        label: "Review audit history",
+        detail: "Administrative and financial events.",
+      },
     ],
   },
   {
@@ -59,10 +87,26 @@ export const ACCESS_AREAS: readonly AccessArea[] = [
     description: "Quotes, invoices, credit notes and customer payments.",
     items: [
       { permission: "sales.view", label: "View sales", detail: "Lists and documents." },
-      { permission: "sales.draft", label: "Draft sales documents", detail: "Create and edit drafts." },
-      { permission: "sales.authorise", label: "Authorise sales", detail: "Approve documents so they affect the ledger." },
-      { permission: "sales.void", label: "Void sales", detail: "Cancel an authorised sales document." },
-      { permission: "sales.payment", label: "Record customer payments", detail: "Receipts against invoices." },
+      {
+        permission: "sales.draft",
+        label: "Draft sales documents",
+        detail: "Create and edit drafts.",
+      },
+      {
+        permission: "sales.authorise",
+        label: "Authorise sales",
+        detail: "Approve documents so they affect the ledger.",
+      },
+      {
+        permission: "sales.void",
+        label: "Void sales",
+        detail: "Cancel an authorised sales document.",
+      },
+      {
+        permission: "sales.payment",
+        label: "Record customer payments",
+        detail: "Receipts against invoices.",
+      },
     ],
   },
   {
@@ -71,11 +115,31 @@ export const ACCESS_AREAS: readonly AccessArea[] = [
     description: "Bills, purchase orders, supplier payments and expense claims.",
     items: [
       { permission: "purchases.view", label: "View purchases", detail: "Lists and documents." },
-      { permission: "purchases.draft", label: "Draft purchase documents", detail: "Create and edit drafts." },
-      { permission: "purchases.authorise", label: "Authorise purchases", detail: "Approve bills and orders." },
-      { permission: "purchases.payment", label: "Pay suppliers", detail: "Record and batch supplier payments." },
-      { permission: "expenses.submit", label: "Submit expenses", detail: "File a claim for approval." },
-      { permission: "expenses.approve", label: "Approve expenses", detail: "Accept or return a claim." },
+      {
+        permission: "purchases.draft",
+        label: "Draft purchase documents",
+        detail: "Create and edit drafts.",
+      },
+      {
+        permission: "purchases.authorise",
+        label: "Authorise purchases",
+        detail: "Approve bills and orders.",
+      },
+      {
+        permission: "purchases.payment",
+        label: "Pay suppliers",
+        detail: "Record and batch supplier payments.",
+      },
+      {
+        permission: "expenses.submit",
+        label: "Submit expenses",
+        detail: "File a claim for approval.",
+      },
+      {
+        permission: "expenses.approve",
+        label: "Approve expenses",
+        detail: "Accept or return a claim.",
+      },
     ],
   },
   {
@@ -84,10 +148,26 @@ export const ACCESS_AREAS: readonly AccessArea[] = [
     description: "Accounts, imports, coding and reconciliation.",
     items: [
       { permission: "banking.view", label: "View banking", detail: "Accounts and transactions." },
-      { permission: "banking.import", label: "Import bank statements", detail: "Bring statement lines in." },
-      { permission: "banking.categorise", label: "Code bank lines", detail: "Suggest or set an account." },
-      { permission: "banking.reconcile", label: "Reconcile", detail: "Match statement lines to the ledger." },
-      { permission: "banking.feeds.manage", label: "Manage bank feeds", detail: "Connect or disconnect a feed." },
+      {
+        permission: "banking.import",
+        label: "Import bank statements",
+        detail: "Bring statement lines in.",
+      },
+      {
+        permission: "banking.categorise",
+        label: "Code bank lines",
+        detail: "Suggest or set an account.",
+      },
+      {
+        permission: "banking.reconcile",
+        label: "Reconcile",
+        detail: "Match statement lines to the ledger.",
+      },
+      {
+        permission: "banking.feeds.manage",
+        label: "Manage bank feeds",
+        detail: "Connect or disconnect a feed.",
+      },
     ],
   },
   {
@@ -95,15 +175,51 @@ export const ACCESS_AREAS: readonly AccessArea[] = [
     label: "Ledger",
     description: "Journals, the chart of accounts, periods and opening balances.",
     items: [
-      { permission: "accounting.view", label: "View the ledger", detail: "Accounts, journals and balances." },
-      { permission: "accounting.post", label: "Post to the ledger", detail: "Create posted accounting entries." },
-      { permission: "journals.manual", label: "Manual journals", detail: "Draft and post a journal." },
-      { permission: "accounts.manage", label: "Chart of accounts", detail: "Add and edit accounts, assets, budgets and projects." },
-      { permission: "periods.lock", label: "Lock a period", detail: "Stop changes on or before a date." },
-      { permission: "periods.unlock", label: "Unlock a closed period", detail: "Reopen a date that was locked." },
-      { permission: "accounting.conversion.manage", label: "Conversion balances", detail: "Post or reverse opening balances." },
-      { permission: "accounting.conversion.override", label: "Post before the conversion date", detail: "Exception for opening-balance corrections." },
-      { permission: "recurring.auto_authorise", label: "Auto-authorise recurring documents", detail: "Let a schedule authorise without a person." },
+      {
+        permission: "accounting.view",
+        label: "View the ledger",
+        detail: "Accounts, journals and balances.",
+      },
+      {
+        permission: "accounting.post",
+        label: "Post to the ledger",
+        detail: "Create posted accounting entries.",
+      },
+      {
+        permission: "journals.manual",
+        label: "Manual journals",
+        detail: "Draft and post a journal.",
+      },
+      {
+        permission: "accounts.manage",
+        label: "Chart of accounts",
+        detail: "Add and edit accounts, assets, budgets and projects.",
+      },
+      {
+        permission: "periods.lock",
+        label: "Lock a period",
+        detail: "Stop changes on or before a date.",
+      },
+      {
+        permission: "periods.unlock",
+        label: "Unlock a closed period",
+        detail: "Reopen a date that was locked.",
+      },
+      {
+        permission: "accounting.conversion.manage",
+        label: "Conversion balances",
+        detail: "Post or reverse opening balances.",
+      },
+      {
+        permission: "accounting.conversion.override",
+        label: "Post before the conversion date",
+        detail: "Exception for opening-balance corrections.",
+      },
+      {
+        permission: "recurring.auto_authorise",
+        label: "Auto-authorise recurring documents",
+        detail: "Let a schedule authorise without a person.",
+      },
     ],
   },
   {
@@ -111,7 +227,11 @@ export const ACCESS_AREAS: readonly AccessArea[] = [
     label: "Reports",
     description: "Financial statements and exports.",
     items: [
-      { permission: "reports.view", label: "View reports", detail: "Trial balance, profit and loss, balance sheet and the rest." },
+      {
+        permission: "reports.view",
+        label: "View reports",
+        detail: "Trial balance, profit and loss, balance sheet and the rest.",
+      },
       { permission: "reports.export", label: "Export reports", detail: "Download a report." },
     ],
   },
@@ -120,8 +240,16 @@ export const ACCESS_AREAS: readonly AccessArea[] = [
     label: "Contacts, products and tax",
     description: "Records used across sales, purchases and the ledger.",
     items: [
-      { permission: "contacts.manage", label: "Manage contacts", detail: "Customers, suppliers and other contacts." },
-      { permission: "products.manage", label: "Manage products and services", detail: "Items used on documents." },
+      {
+        permission: "contacts.manage",
+        label: "Manage contacts",
+        detail: "Customers, suppliers and other contacts.",
+      },
+      {
+        permission: "products.manage",
+        label: "Manage products and services",
+        detail: "Items used on documents.",
+      },
       { permission: "tax.settings", label: "Tax settings", detail: "Tax codes and registration." },
     ],
   },
@@ -130,8 +258,16 @@ export const ACCESS_AREAS: readonly AccessArea[] = [
     label: "Assistance",
     description: "In-product guidance. Suggestions never post by themselves.",
     items: [
-      { permission: "ai.use", label: "Use assistance", detail: "Ask questions and use voice navigation." },
-      { permission: "ai.apply_suggestion", label: "Apply a suggestion", detail: "Turn a suggestion into a draft the person can still review." },
+      {
+        permission: "ai.use",
+        label: "Use assistance",
+        detail: "Ask questions and use voice navigation.",
+      },
+      {
+        permission: "ai.apply_suggestion",
+        label: "Apply a suggestion",
+        detail: "Turn a suggestion into a draft the person can still review.",
+      },
     ],
   },
 ];
@@ -155,7 +291,8 @@ export function effectivePermissions(
   if (baseline.length === 0 || role === "owner") return baseline;
   const granted = new Set<Permission>(baseline);
   for (const adjustment of adjustments) {
-    if (!isPermission(adjustment.permission) || isRoleLockedPermission(adjustment.permission)) continue;
+    if (!isPermission(adjustment.permission) || isRoleLockedPermission(adjustment.permission))
+      continue;
     if (adjustment.effect === "grant") granted.add(adjustment.permission);
     else granted.delete(adjustment.permission);
   }
@@ -175,7 +312,8 @@ export function normaliseAdjustments(
   const seen = new Set<Permission>();
   const cleaned: AccessAdjustment[] = [];
   for (const adjustment of adjustments) {
-    if (!isPermission(adjustment.permission) || isRoleLockedPermission(adjustment.permission)) continue;
+    if (!isPermission(adjustment.permission) || isRoleLockedPermission(adjustment.permission))
+      continue;
     if (seen.has(adjustment.permission)) continue;
     if (adjustment.effect !== "grant" && adjustment.effect !== "deny") continue;
     seen.add(adjustment.permission);

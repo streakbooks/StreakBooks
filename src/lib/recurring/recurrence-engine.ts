@@ -12,10 +12,7 @@ export type RecurrenceRuleInput = {
 };
 
 /** Next occurrence strictly after `afterDate` (anchor-based via RRULE). */
-export function nextOccurrenceAfter(
-  input: RecurrenceRuleInput,
-  afterDate: string,
-): string | null {
+export function nextOccurrenceAfter(input: RecurrenceRuleInput, afterDate: string): string | null {
   const normalized = normalizeRrule(input.rrule);
   if (normalized === "FREQ=MONTHLY") {
     return nextMonthlyAnchorDate(input.dtstart, afterDate, 1);
@@ -25,9 +22,7 @@ export function nextOccurrenceAfter(
   }
 
   const dtstart = parseUtcDate(input.dtstart);
-  const rule = RRule.fromString(
-    `DTSTART:${formatRruleDtstart(dtstart)}\nRRULE:${normalized}`,
-  );
+  const rule = RRule.fromString(`DTSTART:${formatRruleDtstart(dtstart)}\nRRULE:${normalized}`);
   const after = parseUtcDate(afterDate);
   const next = rule.after(after, false);
   return next ? formatUtcDate(next) : null;
@@ -76,10 +71,7 @@ export function nextFromLegacyFrequency(
   dtstart: string,
   afterDate: string,
 ): string | null {
-  return nextOccurrenceAfter(
-    { dtstart, rrule: legacyFrequencyToRrule(frequency) },
-    afterDate,
-  );
+  return nextOccurrenceAfter({ dtstart, rrule: legacyFrequencyToRrule(frequency) }, afterDate);
 }
 
 export function buildRuleFromLegacy(

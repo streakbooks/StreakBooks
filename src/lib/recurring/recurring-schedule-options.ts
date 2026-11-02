@@ -94,7 +94,7 @@ function parseRecurrence(
   const o = raw as Partial<RecurrenceSpec>;
   const frequency = o.frequency as FrequencyKind;
   const spec: RecurrenceSpec = {
-    startDate: typeof o.startDate === "string" ? o.startDate : fallback.startDate ?? "",
+    startDate: typeof o.startDate === "string" ? o.startDate : (fallback.startDate ?? ""),
     frequency,
     interval: Math.floor(Number(o.interval ?? 1)),
     customUnit: (o.customUnit as CustomUnit | null) ?? null,
@@ -111,7 +111,10 @@ function parseRecurrence(
 }
 
 /** Saved generationPolicy wins. Older templates keep the auto-authorise flag. */
-export function resolveGenerationPolicy(raw: unknown, autoAuthoriseFlag: boolean): GenerationPolicy {
+export function resolveGenerationPolicy(
+  raw: unknown,
+  autoAuthoriseFlag: boolean,
+): GenerationPolicy {
   const parsed = parseScheduleOptions(raw ?? {});
   const explicit = Boolean(raw && typeof raw === "object" && "generationPolicy" in raw);
   if (!explicit) return autoAuthoriseFlag ? "auto_authorise" : "draft";

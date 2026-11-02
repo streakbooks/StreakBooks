@@ -115,11 +115,33 @@ function ExpensesList() {
                         {fmt.date(e.expense_date)}
                       </Link>
                     </TableCell>
-                    <TableCell><Link to="/purchases/expenses/$expenseId" params={{ expenseId: e.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{e.payee_name}</Link></TableCell>
                     <TableCell>
-                      <Link to="/purchases/expenses/$expenseId" params={{ expenseId: e.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"><StatusBadge status={e.status} /></Link>
+                      <Link
+                        to="/purchases/expenses/$expenseId"
+                        params={{ expenseId: e.id }}
+                        className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                      >
+                        {e.payee_name}
+                      </Link>
                     </TableCell>
-                    <TableCell className="money"><Link to="/purchases/expenses/$expenseId" params={{ expenseId: e.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{fmt.money(e.total_minor, currency)}</Link></TableCell>
+                    <TableCell>
+                      <Link
+                        to="/purchases/expenses/$expenseId"
+                        params={{ expenseId: e.id }}
+                        className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                      >
+                        <StatusBadge status={e.status} />
+                      </Link>
+                    </TableCell>
+                    <TableCell className="money">
+                      <Link
+                        to="/purchases/expenses/$expenseId"
+                        params={{ expenseId: e.id }}
+                        className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                      >
+                        {fmt.money(e.total_minor, currency)}
+                      </Link>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

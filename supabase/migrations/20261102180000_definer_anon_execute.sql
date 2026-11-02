@@ -1,0 +1,62 @@
+-- READY-TO-APPLY. Not applied to the hosted project.
+-- Anonymous callers lose direct execute on security-definer functions that are triggers or signed-in RPCs.
+-- Public quote and the token share link stay executable by anon.
+-- Reverse each statement with:
+--   GRANT EXECUTE ON FUNCTION <signature> TO PUBLIC;
+
+REVOKE ALL ON FUNCTION public.accounts_write_audit() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.accounts_write_audit() TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.attach_company_subscription() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.attach_company_subscription() TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.copy_chart_accounts(_source uuid, _target uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.copy_chart_accounts(_source uuid, _target uuid) TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.count_ai_usage_last_hour(_company_id uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.count_ai_usage_last_hour(_company_id uuid) TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.document_attachments_before_insert() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.document_attachments_before_insert() TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.enforce_company_allowance() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.enforce_company_allowance() TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.enforce_document_quota() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.enforce_document_quota() TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.enforce_storage_allowance() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.enforce_storage_allowance() TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.enforce_subscription_posting() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.enforce_subscription_posting() TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.enforce_subscription_seats() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.enforce_subscription_seats() TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.import_chart_accounts(_company_id uuid, _rows jsonb) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.import_chart_accounts(_company_id uuid, _rows jsonb) TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.journals_assert_lock_dates() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.journals_assert_lock_dates() TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.protect_system_accounts() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.protect_system_accounts() TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.record_ai_usage(_company_id uuid, _intent text, _status text, _provider text, _model text, _prompt_chars integer, _estimated_tokens integer, _latency_ms integer, _error_code text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.record_ai_usage(_company_id uuid, _intent text, _status text, _provider text, _model text, _prompt_chars integer, _estimated_tokens integer, _latency_ms integer, _error_code text) TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.record_audit_event(_company_id uuid, _action text, _entity_type text, _entity_id uuid, _details jsonb) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.record_audit_event(_company_id uuid, _action text, _entity_type text, _entity_id uuid, _details jsonb) TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.recurring_claim_occurrence(_company_id uuid, _schedule_id uuid, _scheduled_date date, _document_date date, _template_version_id uuid, _idempotency_key text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.recurring_claim_occurrence(_company_id uuid, _schedule_id uuid, _scheduled_date date, _document_date date, _template_version_id uuid, _idempotency_key text) TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.recurring_complete_occurrence(_occurrence_id uuid, _purchase_bill_id uuid, _sales_invoice_id uuid, _failed_message text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.recurring_complete_occurrence(_occurrence_id uuid, _purchase_bill_id uuid, _sales_invoice_id uuid, _failed_message text) TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.reset_demo_company(_company_id uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.reset_demo_company(_company_id uuid) TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.seed_country_tax_pack(_company_id uuid, _pack_id text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.seed_country_tax_pack(_company_id uuid, _pack_id text) TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.seed_default_tax_pack(_company_id uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.seed_default_tax_pack(_company_id uuid) TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.subscription_allows_posting(_company_id uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.subscription_allows_posting(_company_id uuid) TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.trg_fx_purchase_alloc_delete() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.trg_fx_purchase_alloc_delete() TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.trg_fx_purchase_alloc_insert() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.trg_fx_purchase_alloc_insert() TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.trg_fx_purchase_payment_update() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.trg_fx_purchase_payment_update() TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.trg_fx_sales_alloc_delete() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.trg_fx_sales_alloc_delete() TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.trg_fx_sales_alloc_insert() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.trg_fx_sales_alloc_insert() TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.trg_fx_sales_alloc_update() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.trg_fx_sales_alloc_update() TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.void_exchange_rate(_rate_id uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.void_exchange_rate(_rate_id uuid) TO authenticated, service_role;

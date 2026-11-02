@@ -192,25 +192,43 @@ export function parseDeterministicCommand(transcript: string, location = ""): Pa
     .trim()
     .replace(/^(?:(?:please|kindly) |(?:can|could|would) you (?:please )?)/, "")
     .replace(/ please$/, "");
-  if (/\b(?:and then|then|or)\b|[;\/]/.test(text) || /^(?:do not|don't|never)\b/.test(text)) return unsupported;
+  if (/\b(?:and then|then|or)\b|[;/]/.test(text) || /^(?:do not|don't|never)\b/.test(text))
+    return unsupported;
   // Switch between actual Sales/Purchases navigation sections, never browser tabs.
-  const tabDirection = /^(?:(?:go to|open|switch to|show|move to) (?:the )?)?(next|previous|prev) (?:tab|section)$/.exec(text)?.[1];
+  const tabDirection =
+    /^(?:(?:go to|open|switch to|show|move to) (?:the )?)?(next|previous|prev) (?:tab|section)$/.exec(
+      text,
+    )?.[1];
   if (tabDirection) {
-    const module = location.startsWith("/purchases") ? "purchases" : location.startsWith("/sales") ? "sales" : null;
+    const module = location.startsWith("/purchases")
+      ? "purchases"
+      : location.startsWith("/sales")
+        ? "sales"
+        : null;
     if (!module) return unsupported;
     const sections = module === "purchases" ? PURCHASES_SECTIONS : SALES_SECTIONS;
-    const current = sections.reduce((best, item, index) =>
-      (location === item.to || location.startsWith(item.to + "/")) && item.to.length > (sections[best]?.to.length ?? -1)
-        ? index : best, -1);
+    const current = sections.reduce(
+      (best, item, index) =>
+        (location === item.to || location.startsWith(item.to + "/")) &&
+        item.to.length > (sections[best]?.to.length ?? -1)
+          ? index
+          : best,
+      -1,
+    );
     const next = current + (tabDirection === "next" ? 1 : -1);
     if (current < 0 || next < 0 || next >= sections.length) return unsupported;
-    return { kind: "matched", command: {
-      destination: sections[next]!.to,
-      label: sections[next]!.label,
-      requiredPermission: module === "purchases" ? "purchases.view" : "sales.view",
-    } };
+    return {
+      kind: "matched",
+      command: {
+        destination: sections[next]!.to,
+        label: sections[next]!.label,
+        requiredPermission: module === "purchases" ? "purchases.view" : "sales.view",
+      },
+    };
   }
-  const prefix = [...PREFIXES].sort((a, b) => b.length - a.length).find((candidate) => text.startsWith(candidate + " "));
+  const prefix = [...PREFIXES]
+    .sort((a, b) => b.length - a.length)
+    .find((candidate) => text.startsWith(candidate + " "));
   if (prefix) {
     const subject = text
       .slice(prefix.length)
@@ -256,7 +274,10 @@ export function parseDeterministicCommand(transcript: string, location = ""): Pa
     );
     if (command) return { kind: "matched", command };
   }
-  const formSubject = /^(?:create|new|open new|start|prepare|make|add new)\s+(?:(?:a|an)\s+)?(?:new\s+)?(.+)$/.exec(text)?.[1];
+  const formSubject =
+    /^(?:create|new|open new|start|prepare|make|add new)\s+(?:(?:a|an)\s+)?(?:new\s+)?(.+)$/.exec(
+      text,
+    )?.[1];
   const form = FORMS.find((entry) => entry.phrases.some((phrase) => formSubject === phrase));
   return form ? { kind: "matched", command: form } : unsupported;
 }

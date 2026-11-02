@@ -88,8 +88,8 @@ export function SettingsFeatureManager({ companyId, canEdit }: Props) {
       <Alert>
         <AlertTitle>Universal Feature Manager</AlertTitle>
         <AlertDescription>
-          Each feature has exactly one server-computed state. Unavailable features cannot be turned on.
-          Disabling dimensions preserves historical assignments.
+          Each feature has exactly one server-computed state. Unavailable features cannot be turned
+          on. Disabling dimensions preserves historical assignments.
         </AlertDescription>
       </Alert>
 
@@ -126,7 +126,9 @@ export function SettingsFeatureManager({ companyId, canEdit }: Props) {
                 <span>Modules: {f.consumerModules.join(", ")}</span>
                 {f.state === "enabled_needs_config" ? (
                   <Button size="sm" variant="link" className="h-auto p-0" asChild>
-                    <a href={`/settings?section=${f.key === "late_fees" ? "sales" : f.key === "ai_assistant" ? "automation" : "products"}`}>
+                    <a
+                      href={`/settings?section=${f.key === "late_fees" ? "sales" : f.key === "ai_assistant" ? "automation" : "products"}`}
+                    >
                       Configure
                     </a>
                   </Button>

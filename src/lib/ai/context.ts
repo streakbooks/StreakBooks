@@ -127,13 +127,15 @@ export async function buildCompanyAiContext(
     .map((a) => `${a.code} | ${a.name} | ${a.account_type} | ${a.id}`)
     .join("\n");
 
-  const journals = ((recentJournals ?? []) as Array<{
-    journal_number: number;
-    journal_date: string;
-    memo: string | null;
-    source_type: string;
-    currency_code: string | null;
-  }>)
+  const journals = (
+    (recentJournals ?? []) as Array<{
+      journal_number: number;
+      journal_date: string;
+      memo: string | null;
+      source_type: string;
+      currency_code: string | null;
+    }>
+  )
     .map(
       (j) =>
         `#${j.journal_number} ${j.journal_date} ${j.source_type} ${j.currency_code ?? ""} ${j.memo ?? ""}`,
@@ -162,7 +164,10 @@ export async function buildCompanyAiContext(
         duplicates.length === 0
           ? "None detected in sample."
           : duplicates
-              .map((d) => `${d.txn_date} amount=${d.amount_minor}: ${d.reason} (${d.a_id.slice(0, 8)}… / ${d.b_id.slice(0, 8)}…)`)
+              .map(
+                (d) =>
+                  `${d.txn_date} amount=${d.amount_minor}: ${d.reason} (${d.a_id.slice(0, 8)}… / ${d.b_id.slice(0, 8)}…)`,
+              )
               .join("\n"),
     },
     {

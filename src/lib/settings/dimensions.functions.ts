@@ -16,13 +16,16 @@ async function audit(
   entityId: string | null,
   details: Record<string, unknown>,
 ) {
-  await supabase.rpc("record_audit_event" as never, {
-    _company_id: companyId,
-    _action: action,
-    _entity_type: entityType,
-    _entity_id: entityId,
-    _details: details,
-  } as never);
+  await supabase.rpc(
+    "record_audit_event" as never,
+    {
+      _company_id: companyId,
+      _action: action,
+      _entity_type: entityType,
+      _entity_id: entityId,
+      _details: details,
+    } as never,
+  );
 }
 
 export const listTrackingDimensions = createServerFn({ method: "GET" })
@@ -117,11 +120,18 @@ export const upsertTrackingCategory = createServerFn({ method: "POST" })
         .eq("id" as never, data.id as never)
         .eq("company_id" as never, data.companyId as never);
       if (error) throw new Error(error.message);
-      await audit(context.supabase, data.companyId, "dimension.category.update", "tracking_category", data.id, {
-        name: data.name,
-        kind: data.dimensionKind,
-        is_active: data.isActive,
-      });
+      await audit(
+        context.supabase,
+        data.companyId,
+        "dimension.category.update",
+        "tracking_category",
+        data.id,
+        {
+          name: data.name,
+          kind: data.dimensionKind,
+          is_active: data.isActive,
+        },
+      );
       return { id: data.id };
     }
     const { data: row, error } = await context.supabase
@@ -131,10 +141,17 @@ export const upsertTrackingCategory = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
     const id = (row as { id: string }).id;
-    await audit(context.supabase, data.companyId, "dimension.category.create", "tracking_category", id, {
-      name: data.name,
-      kind: data.dimensionKind,
-    });
+    await audit(
+      context.supabase,
+      data.companyId,
+      "dimension.category.create",
+      "tracking_category",
+      id,
+      {
+        name: data.name,
+        kind: data.dimensionKind,
+      },
+    );
     return { id };
   });
 
@@ -194,7 +211,9 @@ export const upsertTrackingOption = createServerFn({ method: "POST" })
       if (data.id && wouldCreateOptionCycle(selfId, data.parentOptionId, parentById)) {
         throw new Error("Cannot set parent: would create a cycle");
       }
-      const parent = ((allOpts ?? []) as Array<{ id: string }>).find((o) => o.id === data.parentOptionId);
+      const parent = ((allOpts ?? []) as Array<{ id: string }>).find(
+        (o) => o.id === data.parentOptionId,
+      );
       if (!parent) throw new Error("Parent option must belong to the same dimension");
     }
 
@@ -216,10 +235,17 @@ export const upsertTrackingOption = createServerFn({ method: "POST" })
         .eq("id" as never, data.id as never)
         .eq("company_id" as never, data.companyId as never);
       if (error) throw new Error(error.message);
-      await audit(context.supabase, data.companyId, "dimension.option.update", "tracking_option", data.id, {
-        name: data.name,
-        is_active: data.isActive,
-      });
+      await audit(
+        context.supabase,
+        data.companyId,
+        "dimension.option.update",
+        "tracking_option",
+        data.id,
+        {
+          name: data.name,
+          is_active: data.isActive,
+        },
+      );
       return { id: data.id };
     }
 
@@ -230,10 +256,17 @@ export const upsertTrackingOption = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
     const id = (row as { id: string }).id;
-    await audit(context.supabase, data.companyId, "dimension.option.create", "tracking_option", id, {
-      name: data.name,
-      category_id: data.categoryId,
-    });
+    await audit(
+      context.supabase,
+      data.companyId,
+      "dimension.option.create",
+      "tracking_option",
+      id,
+      {
+        name: data.name,
+        category_id: data.categoryId,
+      },
+    );
     return { id };
   });
 
@@ -249,12 +282,10 @@ export const setDocumentTracking = createServerFn({ method: "POST" })
       companyId: assertUuid(input.companyId),
       entityType: (input.entityType ?? "").trim(),
       entityId: assertUuid(input.entityId),
-      assignments: (input.assignments ?? [])
-        .slice(0, 20)
-        .map((a) => ({
-          categoryId: assertUuid(a.categoryId),
-          optionId: assertUuid(a.optionId),
-        })),
+      assignments: (input.assignments ?? []).slice(0, 20).map((a) => ({
+        categoryId: assertUuid(a.categoryId),
+        optionId: assertUuid(a.optionId),
+      })),
     }),
   )
   .handler(async ({ data, context }) => {
@@ -293,15 +324,17 @@ export const setDocumentTracking = createServerFn({ method: "POST" })
       .eq("entity_id" as never, data.entityId as never);
 
     if (data.assignments.length) {
-      const { error } = await context.supabase.from("document_tracking_assignments" as never).insert(
-        data.assignments.map((a) => ({
-          company_id: data.companyId,
-          entity_type: data.entityType,
-          entity_id: data.entityId,
-          category_id: a.categoryId,
-          option_id: a.optionId,
-        })) as never,
-      );
+      const { error } = await context.supabase
+        .from("document_tracking_assignments" as never)
+        .insert(
+          data.assignments.map((a) => ({
+            company_id: data.companyId,
+            entity_type: data.entityType,
+            entity_id: data.entityId,
+            category_id: a.categoryId,
+            option_id: a.optionId,
+          })) as never,
+        );
       if (error) throw new Error(error.message);
     }
     return { ok: true };
@@ -332,12 +365,7 @@ export const getDocumentTracking = createServerFn({ method: "GET" })
 export const reportPnLByDimension = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (input: {
-      companyId: string;
-      categoryId: string;
-      fromDate: string;
-      toDate: string;
-    }) => ({
+    (input: { companyId: string; categoryId: string; fromDate: string; toDate: string }) => ({
       companyId: assertUuid(input.companyId),
       categoryId: assertUuid(input.categoryId),
       fromDate: String(input.fromDate ?? "").slice(0, 10),

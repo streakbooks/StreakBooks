@@ -4,7 +4,9 @@ import { prepareProjectsCsv } from "./projects-import";
 describe("projects CSV import validation", () => {
   const header = "Project Code,Name,Customer,Start date";
   it("accepts projects with optional customer and ISO start date", () => {
-    expect(prepareProjectsCsv(`${header}\nPR-1,New office,Acme,2026-10-01\nPR-2,Internal,,`)).toEqual([
+    expect(
+      prepareProjectsCsv(`${header}\nPR-1,New office,Acme,2026-10-01\nPR-2,Internal,,`),
+    ).toEqual([
       { sourceRow: 2, code: "PR-1", name: "New office", customer: "Acme", startDate: "2026-10-01" },
       { sourceRow: 3, code: "PR-2", name: "Internal", customer: null, startDate: null },
     ]);

@@ -54,7 +54,13 @@ function ProjectsPage() {
       <PageHeader
         title="Projects"
         description={`Profit by project in ${base}, from posted figures. Tag invoices, bills and bank lines to a project from their own screens. Untagged activity is not included.`}
-        actions={<Button asChild variant="outline" size="sm"><Link to="/imports" search={{ module: "projects" }}>Import projects</Link></Button>}
+        actions={
+          <Button asChild variant="outline" size="sm">
+            <Link to="/imports" search={{ module: "projects" }}>
+              Import projects
+            </Link>
+          </Button>
+        }
       />
       <div className="mb-4 flex flex-wrap items-end gap-3">
         <div className="space-y-1">

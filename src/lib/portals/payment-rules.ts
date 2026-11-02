@@ -47,15 +47,18 @@ export function resolvePortalCheckoutMode(input: {
   razorpayKeyId?: string | null | undefined;
   razorpayKeySecret?: string | null | undefined;
   allowSandbox: boolean;
+  allowLiveKeys?: boolean;
 }): { mode: PortalCheckoutMode; livemode: boolean } {
+  const allowLive = input.allowLiveKeys === true;
   const stripe = (input.stripeSecretKey ?? "").trim();
-  if (stripe.startsWith("sk_live_") || stripe.startsWith("sk_test_")) {
+  if (stripe.startsWith("sk_test_") || (allowLive && stripe.startsWith("sk_live_"))) {
     return { mode: "stripe", livemode: stripe.startsWith("sk_live_") };
   }
   const razorId = (input.razorpayKeyId ?? "").trim();
   const razorSecret = (input.razorpayKeySecret ?? "").trim();
-  if (razorId && razorSecret) {
-    return { mode: "razorpay", livemode: razorId.startsWith("rzp_live_") };
+  const razorLive = razorId.startsWith("rzp_live_");
+  if (razorId && razorSecret && (!razorLive || allowLive)) {
+    return { mode: "razorpay", livemode: razorLive };
   }
   if (input.allowSandbox) return { mode: "sandbox", livemode: false };
   return { mode: "instructions", livemode: false };

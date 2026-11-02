@@ -1,6 +1,7 @@
 import type { Permission } from "@/lib/permissions";
 
-export type CreateGroup = "sales" | "purchases" | "banking" | "accounting" | "contacts" | "documents";
+export type CreateGroup =
+  "sales" | "purchases" | "banking" | "accounting" | "contacts" | "documents";
 export type CreateAuditStatus = "REUSABLE" | "PARTIAL" | "MISSING" | "BLOCKED";
 export type CreateWidth = "wide" | "narrow";
 
@@ -31,8 +32,7 @@ export const CREATE_GROUP_LABEL: Record<CreateGroup, string> = {
 };
 
 /** Shown until a signed-in save against the live ledger has been checked. */
-export const CREATE_PENDING_DATABASE =
-  "Unavailable until a signed-in save is verified.";
+export const CREATE_PENDING_DATABASE = "Unavailable until a signed-in save is verified.";
 
 /** Shown on the new journal flyover. Journals on the Accounting page stay available. */
 export const CREATE_PENDING_JOURNAL =

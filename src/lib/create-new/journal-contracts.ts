@@ -236,8 +236,18 @@ export function bankAdjustmentJournal(input: {
   const amount = input.amountMinor;
   if (input.adjustmentType === "interest_income") {
     return assertBalanced([
-      { account_id: input.bankAccountId, description: "Bank interest", debit_minor: amount, credit_minor: 0n },
-      { account_id: input.counterAccountId, description: "Bank interest", debit_minor: 0n, credit_minor: amount },
+      {
+        account_id: input.bankAccountId,
+        description: "Bank interest",
+        debit_minor: amount,
+        credit_minor: 0n,
+      },
+      {
+        account_id: input.counterAccountId,
+        description: "Bank interest",
+        debit_minor: 0n,
+        credit_minor: amount,
+      },
     ]);
   }
   const description = input.adjustmentType === "bank_fee" ? "Bank fee" : "Bank interest expense";

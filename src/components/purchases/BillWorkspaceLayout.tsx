@@ -55,7 +55,8 @@ export function BillWorkspaceLayout({
             <ShowSupplierSummaryButton onClick={() => onSidebarStateChange("open")} />
             {contactId ? (
               <span className="text-xs text-muted-foreground">
-                Compact AP indicator available when a supplier is selected — open the sidebar for full detail.
+                Compact AP indicator available when a supplier is selected — open the sidebar for
+                full detail.
               </span>
             ) : null}
           </div>

@@ -15,10 +15,10 @@ test.describe("Superadmin control centre", () => {
     await expect(page.getByText("MFA verified", { exact: true })).toBeVisible();
     await expect(page).not.toHaveURL(/onboarding/);
   });
-  test("all sixteen navigation sections load without an error state", async ({ page }) => {
+  test("all seventeen navigation sections load without an error state", async ({ page }) => {
     await page.goto("/platform");
     const nav = page.getByRole("navigation", { name: "Platform navigation" });
-    await expect(nav.getByRole("link")).toHaveCount(16);
+    await expect(nav.getByRole("link")).toHaveCount(17);
     const names = await nav.getByRole("link").allTextContents();
     for (const name of names) {
       await nav.getByRole("link", { name, exact: true }).click();

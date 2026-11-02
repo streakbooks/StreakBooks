@@ -145,10 +145,42 @@ function SuppliersPage() {
               }>
             ).map((s) => (
               <TableRow key={s.id}>
-                <TableCell><Link to="/contacts/$contactId" params={{ contactId: s.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{s.name}</Link></TableCell>
-                <TableCell><Link to="/contacts/$contactId" params={{ contactId: s.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{s.email ?? "—"}</Link></TableCell>
-                <TableCell><Link to="/contacts/$contactId" params={{ contactId: s.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{s.payment_terms_days} days</Link></TableCell>
-                <TableCell><Link to="/contacts/$contactId" params={{ contactId: s.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{s.tax_number ?? "—"}</Link></TableCell>
+                <TableCell>
+                  <Link
+                    to="/contacts/$contactId"
+                    params={{ contactId: s.id }}
+                    className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                  >
+                    {s.name}
+                  </Link>
+                </TableCell>
+                <TableCell>
+                  <Link
+                    to="/contacts/$contactId"
+                    params={{ contactId: s.id }}
+                    className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                  >
+                    {s.email ?? "—"}
+                  </Link>
+                </TableCell>
+                <TableCell>
+                  <Link
+                    to="/contacts/$contactId"
+                    params={{ contactId: s.id }}
+                    className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                  >
+                    {s.payment_terms_days} days
+                  </Link>
+                </TableCell>
+                <TableCell>
+                  <Link
+                    to="/contacts/$contactId"
+                    params={{ contactId: s.id }}
+                    className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                  >
+                    {s.tax_number ?? "—"}
+                  </Link>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

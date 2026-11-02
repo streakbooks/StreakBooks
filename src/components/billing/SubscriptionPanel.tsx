@@ -80,7 +80,14 @@ export function SubscriptionPanel({
   const openedFromLink = useRef(false);
   const data = overview.data;
   const checkoutQuote = useQuery({
-    queryKey: ["billing-region-quote", companyId, target?.code, interval, appliedCode, data?.countryCode],
+    queryKey: [
+      "billing-region-quote",
+      companyId,
+      target?.code,
+      interval,
+      appliedCode,
+      data?.countryCode,
+    ],
     enabled: Boolean(target && intent === "subscribe" && data?.ready),
     queryFn: () =>
       preview({

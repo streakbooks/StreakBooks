@@ -71,7 +71,8 @@ export const upsertWorkflowSettings = createServerFn({ method: "POST" })
         Math.floor(Number(input.salesDefaultPaymentTermsDays ?? 30) || 0),
       ),
       salesDefaultNotes: (input.salesDefaultNotes ?? "").trim().slice(0, 2000) || null,
-      salesPaymentInstructions: (input.salesPaymentInstructions ?? "").trim().slice(0, 2000) || null,
+      salesPaymentInstructions:
+        (input.salesPaymentInstructions ?? "").trim().slice(0, 2000) || null,
       salesQuoteValidityDays: Math.min(
         365,
         Math.max(1, Math.floor(Number(input.salesQuoteValidityDays ?? 30) || 30)),
@@ -125,11 +126,13 @@ export const upsertWorkflowSettings = createServerFn({ method: "POST" })
         .eq("company_id" as never, data.companyId as never);
       if (taxErr) console.warn("[workflow settings] tax sync:", taxErr.message);
     } else {
-      const { error: taxErr } = await context.supabase.from("company_tax_settings" as never).insert({
-        company_id: data.companyId,
-        prices_include_tax: data.salesPricesIncludeTax,
-        tax_regime: "none",
-      } as never);
+      const { error: taxErr } = await context.supabase
+        .from("company_tax_settings" as never)
+        .insert({
+          company_id: data.companyId,
+          prices_include_tax: data.salesPricesIncludeTax,
+          tax_regime: "none",
+        } as never);
       if (taxErr) console.warn("[workflow settings] tax insert:", taxErr.message);
     }
     return { ok: true };

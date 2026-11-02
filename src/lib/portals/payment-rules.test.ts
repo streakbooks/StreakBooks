@@ -38,6 +38,16 @@ describe("portal checkout mode", () => {
     expect(
       resolvePortalCheckoutMode({ stripeSecretKey: "sk_live_123", allowSandbox: false }),
     ).toEqual({
+      mode: "instructions",
+      livemode: false,
+    });
+    expect(
+      resolvePortalCheckoutMode({
+        stripeSecretKey: "sk_live_123",
+        allowSandbox: false,
+        allowLiveKeys: true,
+      }),
+    ).toEqual({
       mode: "stripe",
       livemode: true,
     });

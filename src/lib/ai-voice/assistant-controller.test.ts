@@ -446,7 +446,11 @@ describe("guided bill voice field workflow", () => {
       ["dueDate", "Due date", 30],
     ] as const) {
       controller.registerField({
-        id: "form:" + key + ":header", token: "form", key, label, order,
+        id: "form:" + key + ":header",
+        token: "form",
+        key,
+        label,
+        order,
         focus: () => focused.push(label),
         close: () => focused.push("closed " + label),
       });
@@ -469,8 +473,12 @@ describe("guided bill voice field workflow", () => {
     form().paymentTerms = [{ id: "net30", name: "Net 30" }];
     form().selectPaymentTerm = selectPaymentTerm;
     controller.registerField({
-      id: "form:dueDate:header", token: "form", key: "dueDate",
-      label: "Due date", order: 30, focus: () => focused.push("Due date"),
+      id: "form:dueDate:header",
+      token: "form",
+      key: "dueDate",
+      label: "Due date",
+      order: 30,
+      focus: () => focused.push("Due date"),
     });
     await controller.submit("choose payment terms Net 30");
     expect(selectPaymentTerm).toHaveBeenCalledWith("net30");
@@ -484,8 +492,12 @@ describe("professional Signal commands", () => {
     form().module = "bill";
     form().permission = "purchases.draft";
     controller.registerField({
-      id: "form:memo:header", token: "form", key: "memo",
-      label: "Memo", order: 50, focus: () => {},
+      id: "form:memo:header",
+      token: "form",
+      key: "memo",
+      label: "Memo",
+      order: 50,
+      focus: () => {},
     });
     await controller.submit("go to memo");
     await controller.submit("enter text");
@@ -496,8 +508,12 @@ describe("professional Signal commands", () => {
   it("recognizes explicit text entry and preserves save confirmation", async () => {
     const { controller, form, saveDraft } = setup();
     controller.registerField({
-      id: "form:memo:header", token: "form", key: "memo",
-      label: "Memo", order: 50, focus: () => {},
+      id: "form:memo:header",
+      token: "form",
+      key: "memo",
+      label: "Memo",
+      order: 50,
+      focus: () => {},
     });
     await controller.submit("go to memo");
     await controller.submit("input text Monthly bookkeeping");
@@ -507,14 +523,25 @@ describe("professional Signal commands", () => {
   });
 });
 
-
-it.each(["previous field", "prev field", "go to previous field"])("moves backward for %s without corrupting the direction", async (command) => {
-  const { controller } = setup();
-  try {
-    for (const [order, key] of ["date", "memo"].entries())
-      controller.registerField({ id: key, token: "form", key: key as "date" | "memo", label: key, order, focus: () => {} });
-    await controller.submit("go to memo");
-    await controller.submit(command);
-    expect(controller.getSnapshot().field?.id).toBe("date");
-  } finally { controller.dispose(); }
-});
+it.each(["previous field", "prev field", "go to previous field"])(
+  "moves backward for %s without corrupting the direction",
+  async (command) => {
+    const { controller } = setup();
+    try {
+      for (const [order, key] of ["date", "memo"].entries())
+        controller.registerField({
+          id: key,
+          token: "form",
+          key: key as "date" | "memo",
+          label: key,
+          order,
+          focus: () => {},
+        });
+      await controller.submit("go to memo");
+      await controller.submit(command);
+      expect(controller.getSnapshot().field?.id).toBe("date");
+    } finally {
+      controller.dispose();
+    }
+  },
+);

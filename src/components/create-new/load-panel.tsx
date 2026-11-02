@@ -99,13 +99,25 @@ export async function loadCreatePanel(id: string): Promise<ComponentType> {
     case "customer": {
       const m = await import("@/routes/_authenticated/contacts/new");
       return function CustomerPanel({ onCompleted }: { onCompleted?: () => void }) {
-        return <m.NewContact initialKind="customer" embedded {...(onCompleted ? { onSaved: onCompleted } : {})} />;
+        return (
+          <m.NewContact
+            initialKind="customer"
+            embedded
+            {...(onCompleted ? { onSaved: onCompleted } : {})}
+          />
+        );
       };
     }
     case "supplier": {
       const m = await import("@/routes/_authenticated/contacts/new");
       return function SupplierPanel({ onCompleted }: { onCompleted?: () => void }) {
-        return <m.NewContact initialKind="supplier" embedded {...(onCompleted ? { onSaved: onCompleted } : {})} />;
+        return (
+          <m.NewContact
+            initialKind="supplier"
+            embedded
+            {...(onCompleted ? { onSaved: onCompleted } : {})}
+          />
+        );
       };
     }
     case "product": {

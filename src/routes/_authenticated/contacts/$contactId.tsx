@@ -47,7 +47,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 export const Route = createFileRoute("/_authenticated/contacts/$contactId")({
   validateSearch: (search: Record<string, unknown>): { tab?: string } => ({
-    tab: ["overview", "edit", "people", "groups", "activity", "portal"].includes(String(search["tab"])) ? String(search["tab"]) : "overview",
+    tab: ["overview", "edit", "people", "groups", "activity", "portal"].includes(
+      String(search["tab"]),
+    )
+      ? String(search["tab"])
+      : "overview",
   }),
   head: () => ({ meta: [{ title: "Contact — LinkBooks" }] }),
   component: ContactDetail,
@@ -286,7 +290,9 @@ function ContactDetail() {
               {archived ? "Restore" : "Archive"}
             </Button>
             <Button variant="outline" size="sm" asChild>
-              <Link to="/contacts" search={{ view: undefined }}>Directory</Link>
+              <Link to="/contacts" search={{ view: undefined }}>
+                Directory
+              </Link>
             </Button>
           </div>
         }
@@ -315,7 +321,12 @@ function ContactDetail() {
         </div>
       ) : null}
 
-      <Tabs value={tab} onValueChange={(nextTab) => { void navigate({ search: { tab: nextTab }, replace: true, resetScroll: false }); }}>
+      <Tabs
+        value={tab}
+        onValueChange={(nextTab) => {
+          void navigate({ search: { tab: nextTab }, replace: true, resetScroll: false });
+        }}
+      >
         <TabsList className="flex h-auto flex-wrap">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="edit">Edit</TabsTrigger>
@@ -560,12 +571,19 @@ function ContactDetail() {
               <div className="mb-4 flex flex-wrap items-end gap-3" aria-label="Transaction filters">
                 <div className="min-w-48 flex-1 space-y-1">
                   <Label htmlFor="contact-transaction-search">Search transactions</Label>
-                  <Input id="contact-transaction-search" placeholder="Number, status, date or amount" value={transactionSearch} onChange={(e) => setTransactionSearch(e.target.value)} />
+                  <Input
+                    id="contact-transaction-search"
+                    placeholder="Number, status, date or amount"
+                    value={transactionSearch}
+                    onChange={(e) => setTransactionSearch(e.target.value)}
+                  />
                 </div>
                 <div className="w-40 space-y-1">
                   <Label>Status</Label>
                   <Select value={transactionStatus} onValueChange={setTransactionStatus}>
-                    <SelectTrigger aria-label="Filter transaction status"><SelectValue /></SelectTrigger>
+                    <SelectTrigger aria-label="Filter transaction status">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All statuses</SelectItem>
                       <SelectItem value="draft">Draft</SelectItem>
@@ -580,7 +598,9 @@ function ContactDetail() {
                 <div className="w-40 space-y-1">
                   <Label>Sort</Label>
                   <Select value={transactionSort} onValueChange={setTransactionSort}>
-                    <SelectTrigger aria-label="Sort transactions"><SelectValue /></SelectTrigger>
+                    <SelectTrigger aria-label="Sort transactions">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="newest">Newest first</SelectItem>
                       <SelectItem value="oldest">Oldest first</SelectItem>
@@ -610,33 +630,71 @@ function ContactDetail() {
                       total_minor: number;
                       currency_code?: string | null;
                     }>
-                  ).filter((row) => {
-                    const query = transactionSearch.trim().toLowerCase();
-                    const searchable = [row.invoice_number ?? "", row.invoice_date, row.status, fromMinorUnits(row.total_minor, row.currency_code ?? currency)].join(" ").toLowerCase();
-                    const status = row.status.toLowerCase().replace(/[\\s_-]/g, "");
-                    return (!query || searchable.includes(query)) && (transactionStatus === "all" || status.includes(transactionStatus));
-                  }).sort((a, b) => {
-                    if (transactionSort === "highest") return b.total_minor - a.total_minor;
-                    if (transactionSort === "lowest") return a.total_minor - b.total_minor;
-                    return transactionSort === "oldest" ? a.invoice_date.localeCompare(b.invoice_date) : b.invoice_date.localeCompare(a.invoice_date);
-                  }).map((i) => (
-                    <TableRow key={i.id}>
-                      <TableCell>
-                        <Link
-                          to="/sales/invoices/$invoiceId"
-                          params={{ invoiceId: i.id }}
-                          className="underline-offset-2 hover:underline"
-                        >
-                          {i.invoice_date}
-                        </Link>
-                      </TableCell>
-                      <TableCell><Link to="/sales/invoices/$invoiceId" params={{ invoiceId: i.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" aria-label={`Open invoice ${i.invoice_number ?? i.id}: ${i.invoice_number ?? "—"}`}>{i.invoice_number ?? "—"}</Link></TableCell>
-                      <TableCell><Link to="/sales/invoices/$invoiceId" params={{ invoiceId: i.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" aria-label={`Open invoice ${i.invoice_number ?? i.id}: ${i.status}`}>{i.status}</Link></TableCell>
-                      <TableCell className="text-right">
-                        <Link to="/sales/invoices/$invoiceId" params={{ invoiceId: i.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" aria-label={`Open invoice ${i.invoice_number ?? i.id}: ${`${fromMinorUnits(i.total_minor, i.currency_code ?? currency)} ${i.currency_code ?? ""}`}`}>{`${fromMinorUnits(i.total_minor, i.currency_code ?? currency)} ${i.currency_code ?? ""}`}</Link>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  )
+                    .filter((row) => {
+                      const query = transactionSearch.trim().toLowerCase();
+                      const searchable = [
+                        row.invoice_number ?? "",
+                        row.invoice_date,
+                        row.status,
+                        fromMinorUnits(row.total_minor, row.currency_code ?? currency),
+                      ]
+                        .join(" ")
+                        .toLowerCase();
+                      const status = row.status.toLowerCase().replace(/[\\s_-]/g, "");
+                      return (
+                        (!query || searchable.includes(query)) &&
+                        (transactionStatus === "all" || status.includes(transactionStatus))
+                      );
+                    })
+                    .sort((a, b) => {
+                      if (transactionSort === "highest") return b.total_minor - a.total_minor;
+                      if (transactionSort === "lowest") return a.total_minor - b.total_minor;
+                      return transactionSort === "oldest"
+                        ? a.invoice_date.localeCompare(b.invoice_date)
+                        : b.invoice_date.localeCompare(a.invoice_date);
+                    })
+                    .map((i) => (
+                      <TableRow key={i.id}>
+                        <TableCell>
+                          <Link
+                            to="/sales/invoices/$invoiceId"
+                            params={{ invoiceId: i.id }}
+                            className="underline-offset-2 hover:underline"
+                          >
+                            {i.invoice_date}
+                          </Link>
+                        </TableCell>
+                        <TableCell>
+                          <Link
+                            to="/sales/invoices/$invoiceId"
+                            params={{ invoiceId: i.id }}
+                            className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                            aria-label={`Open invoice ${i.invoice_number ?? i.id}: ${i.invoice_number ?? "—"}`}
+                          >
+                            {i.invoice_number ?? "—"}
+                          </Link>
+                        </TableCell>
+                        <TableCell>
+                          <Link
+                            to="/sales/invoices/$invoiceId"
+                            params={{ invoiceId: i.id }}
+                            className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                            aria-label={`Open invoice ${i.invoice_number ?? i.id}: ${i.status}`}
+                          >
+                            {i.status}
+                          </Link>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Link
+                            to="/sales/invoices/$invoiceId"
+                            params={{ invoiceId: i.id }}
+                            className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                            aria-label={`Open invoice ${i.invoice_number ?? i.id}: ${`${fromMinorUnits(i.total_minor, i.currency_code ?? currency)} ${i.currency_code ?? ""}`}`}
+                          >{`${fromMinorUnits(i.total_minor, i.currency_code ?? currency)} ${i.currency_code ?? ""}`}</Link>
+                        </TableCell>
+                      </TableRow>
+                    ))}
                 </TableBody>
               </Table>
               <h3 className="mb-2 mt-6 text-sm text-muted-foreground">Purchase bills</h3>
@@ -659,33 +717,71 @@ function ContactDetail() {
                       total_minor: number;
                       currency_code?: string | null;
                     }>
-                  ).filter((row) => {
-                    const query = transactionSearch.trim().toLowerCase();
-                    const searchable = [row.bill_number ?? "", row.bill_date, row.status, fromMinorUnits(row.total_minor, row.currency_code ?? currency)].join(" ").toLowerCase();
-                    const status = row.status.toLowerCase().replace(/[\\s_-]/g, "");
-                    return (!query || searchable.includes(query)) && (transactionStatus === "all" || status.includes(transactionStatus));
-                  }).sort((a, b) => {
-                    if (transactionSort === "highest") return b.total_minor - a.total_minor;
-                    if (transactionSort === "lowest") return a.total_minor - b.total_minor;
-                    return transactionSort === "oldest" ? a.bill_date.localeCompare(b.bill_date) : b.bill_date.localeCompare(a.bill_date);
-                  }).map((b) => (
-                    <TableRow key={b.id}>
-                      <TableCell>
-                        <Link
-                          to="/purchases/bills/$billId"
-                          params={{ billId: b.id }}
-                          className="underline-offset-2 hover:underline"
-                        >
-                          {b.bill_date}
-                        </Link>
-                      </TableCell>
-                      <TableCell><Link to="/purchases/bills/$billId" params={{ billId: b.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" aria-label={`Open bill ${b.bill_number ?? b.id}: ${b.bill_number ?? "—"}`}>{b.bill_number ?? "—"}</Link></TableCell>
-                      <TableCell><Link to="/purchases/bills/$billId" params={{ billId: b.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" aria-label={`Open bill ${b.bill_number ?? b.id}: ${b.status}`}>{b.status}</Link></TableCell>
-                      <TableCell className="text-right">
-                        <Link to="/purchases/bills/$billId" params={{ billId: b.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" aria-label={`Open bill ${b.bill_number ?? b.id}: ${`${fromMinorUnits(b.total_minor, b.currency_code ?? currency)} ${b.currency_code ?? ""}`}`}>{`${fromMinorUnits(b.total_minor, b.currency_code ?? currency)} ${b.currency_code ?? ""}`}</Link>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  )
+                    .filter((row) => {
+                      const query = transactionSearch.trim().toLowerCase();
+                      const searchable = [
+                        row.bill_number ?? "",
+                        row.bill_date,
+                        row.status,
+                        fromMinorUnits(row.total_minor, row.currency_code ?? currency),
+                      ]
+                        .join(" ")
+                        .toLowerCase();
+                      const status = row.status.toLowerCase().replace(/[\\s_-]/g, "");
+                      return (
+                        (!query || searchable.includes(query)) &&
+                        (transactionStatus === "all" || status.includes(transactionStatus))
+                      );
+                    })
+                    .sort((a, b) => {
+                      if (transactionSort === "highest") return b.total_minor - a.total_minor;
+                      if (transactionSort === "lowest") return a.total_minor - b.total_minor;
+                      return transactionSort === "oldest"
+                        ? a.bill_date.localeCompare(b.bill_date)
+                        : b.bill_date.localeCompare(a.bill_date);
+                    })
+                    .map((b) => (
+                      <TableRow key={b.id}>
+                        <TableCell>
+                          <Link
+                            to="/purchases/bills/$billId"
+                            params={{ billId: b.id }}
+                            className="underline-offset-2 hover:underline"
+                          >
+                            {b.bill_date}
+                          </Link>
+                        </TableCell>
+                        <TableCell>
+                          <Link
+                            to="/purchases/bills/$billId"
+                            params={{ billId: b.id }}
+                            className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                            aria-label={`Open bill ${b.bill_number ?? b.id}: ${b.bill_number ?? "—"}`}
+                          >
+                            {b.bill_number ?? "—"}
+                          </Link>
+                        </TableCell>
+                        <TableCell>
+                          <Link
+                            to="/purchases/bills/$billId"
+                            params={{ billId: b.id }}
+                            className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                            aria-label={`Open bill ${b.bill_number ?? b.id}: ${b.status}`}
+                          >
+                            {b.status}
+                          </Link>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Link
+                            to="/purchases/bills/$billId"
+                            params={{ billId: b.id }}
+                            className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                            aria-label={`Open bill ${b.bill_number ?? b.id}: ${`${fromMinorUnits(b.total_minor, b.currency_code ?? currency)} ${b.currency_code ?? ""}`}`}
+                          >{`${fromMinorUnits(b.total_minor, b.currency_code ?? currency)} ${b.currency_code ?? ""}`}</Link>
+                        </TableCell>
+                      </TableRow>
+                    ))}
                 </TableBody>
               </Table>
             </>

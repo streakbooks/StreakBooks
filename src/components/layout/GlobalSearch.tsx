@@ -5,7 +5,11 @@ import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Search, SlidersHorizontal } from "lucide-react";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useFormat } from "@/hooks/use-format";
-import { globalSearch, type GlobalSearchHit, type SearchCategory } from "@/lib/search/global-search.functions";
+import {
+  globalSearch,
+  type GlobalSearchHit,
+  type SearchCategory,
+} from "@/lib/search/global-search.functions";
 import {
   buildPaletteActions,
   filterPaletteActions,
@@ -57,7 +61,9 @@ export function GlobalSearch({ className }: { className?: string }) {
     const reposition = () => {
       const rect = anchorRef.current?.getBoundingClientRect();
       const width = Math.min(560, window.innerWidth - 24);
-      const left = rect ? Math.max(12, Math.min(rect.right - width, window.innerWidth - width - 12)) : 12;
+      const left = rect
+        ? Math.max(12, Math.min(rect.right - width, window.innerWidth - width - 12))
+        : 12;
       setPosition({ top: rect ? rect.bottom + 8 : 64, left, width });
     };
     reposition();
@@ -84,14 +90,14 @@ export function GlobalSearch({ className }: { className?: string }) {
   const searchQ = useQuery({
     queryKey: ["global-search", companyId, debounced, category, resultLimit],
     enabled: Boolean(companyId) && (debounced.length >= 2 || /^[0-9]$/.test(debounced)) && open,
-    queryFn: () => runSearch({ data: { companyId: companyId!, q: debounced, category, limit: resultLimit } }),
+    queryFn: () =>
+      runSearch({ data: { companyId: companyId!, q: debounced, category, limit: resultLimit } }),
     staleTime: 15_000,
   });
 
   const allActions = useMemo(() => buildPaletteActions(), []);
   const actions = useMemo(
-    () =>
-      category !== "all" || q.trim() === "" ? [] : filterPaletteActions(allActions, q),
+    () => (category !== "all" || q.trim() === "" ? [] : filterPaletteActions(allActions, q)),
     [allActions, q, category],
   );
   const [isMac, setIsMac] = useState(false);
@@ -128,7 +134,12 @@ export function GlobalSearch({ className }: { className?: string }) {
     .filter((g) => g.items.length > 0);
   const typed = q.trim().length >= 2 || /^[0-9]$/.test(q.trim());
   const canLoadMore = resultLimit < 36 && hitGroups.some((g) => g.items.length >= resultLimit);
-  const nothing = typed && groups.length === 0 && hitGroups.length === 0 && !searchQ.isFetching && !searchQ.isError;
+  const nothing =
+    typed &&
+    groups.length === 0 &&
+    hitGroups.length === 0 &&
+    !searchQ.isFetching &&
+    !searchQ.isError;
 
   return (
     <>
@@ -162,7 +173,19 @@ export function GlobalSearch({ className }: { className?: string }) {
       </Button>
 
       <Dialog open={open} onOpenChange={(v) => (v ? setOpen(true) : close())}>
-        <DialogContent className="!translate-x-0 !translate-y-0 overflow-hidden rounded-xl p-0 shadow-2xl data-[state=open]:slide-in-from-top-1" style={{ position: "fixed", top: position.top, left: position.left, width: position.width, maxWidth: "calc(100vw - 24px)", maxHeight: `calc(100dvh - ${position.top + 12}px)`, transform: "none", display: "block" }}>
+        <DialogContent
+          className="!translate-x-0 !translate-y-0 overflow-hidden rounded-xl p-0 shadow-2xl data-[state=open]:slide-in-from-top-1"
+          style={{
+            position: "fixed",
+            top: position.top,
+            left: position.left,
+            width: position.width,
+            maxWidth: "calc(100vw - 24px)",
+            maxHeight: `calc(100dvh - ${position.top + 12}px)`,
+            transform: "none",
+            display: "block",
+          }}
+        >
           <DialogTitle className="sr-only">Search</DialogTitle>
           <DialogDescription className="sr-only">
             Search records, pages and reports. Use the arrow keys and Enter.
@@ -171,26 +194,59 @@ export function GlobalSearch({ className }: { className?: string }) {
             <CommandInput
               autoFocus
               value={q}
-              onValueChange={(value) => { setQ(value); setResultLimit(12); }}
+              onValueChange={(value) => {
+                setQ(value);
+                setResultLimit(12);
+              }}
               placeholder="Search amount, invoice number, contact, reference…"
             />
             <div className="border-b px-3 py-2.5" aria-label="Search category filters">
               <div className="mb-2 flex items-center justify-between">
-                <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground"><SlidersHorizontal className="size-3.5" /> Search within</span>
-                <button type="button" aria-expanded={showAllFilters} className="text-xs text-primary hover:underline" onClick={() => setShowAllFilters((v) => !v)}>{showAllFilters ? "Fewer filters" : "All filters"}</button>
+                <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                  <SlidersHorizontal className="size-3.5" /> Search within
+                </span>
+                <button
+                  type="button"
+                  aria-expanded={showAllFilters}
+                  className="text-xs text-primary hover:underline"
+                  onClick={() => setShowAllFilters((v) => !v)}
+                >
+                  {showAllFilters ? "Fewer filters" : "All filters"}
+                </button>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {([
-                  ["all", "All"], ["invoice", "Invoices"], ["bill", "Bills"], ["contact", "Contacts"],
-                  ["account", "Accounts"], ["product", "Products"], ["journal", "Journals"], ["bank_transaction", "Bank transactions"],
-                ] as const).slice(0, showAllFilters ? undefined : 4).map(([id, label]) => (
-                  <button key={id} type="button" aria-pressed={category === id}
-                    onClick={() => { setCategory(id); setResultLimit(12); }}
-                    className={cn("rounded-full border px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-primary",
-                      category === id ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-accent")}>
-                    {label}
-                  </button>
-                ))}
+                {(
+                  [
+                    ["all", "All"],
+                    ["invoice", "Invoices"],
+                    ["bill", "Bills"],
+                    ["contact", "Contacts"],
+                    ["account", "Accounts"],
+                    ["product", "Products"],
+                    ["journal", "Journals"],
+                    ["bank_transaction", "Bank transactions"],
+                  ] as const
+                )
+                  .slice(0, showAllFilters ? undefined : 4)
+                  .map(([id, label]) => (
+                    <button
+                      key={id}
+                      type="button"
+                      aria-pressed={category === id}
+                      onClick={() => {
+                        setCategory(id);
+                        setResultLimit(12);
+                      }}
+                      className={cn(
+                        "rounded-full border px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-primary",
+                        category === id
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-background hover:bg-accent",
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
               </div>
             </div>
             <CommandList className="max-h-[min(45vh,340px)]">
@@ -238,15 +294,22 @@ export function GlobalSearch({ className }: { className?: string }) {
               ))}
               {canLoadMore ? (
                 <div className="border-t px-3 py-2 text-center">
-                  <button type="button" className="text-xs font-medium text-primary hover:underline" onClick={() => setResultLimit(36)}>
+                  <button
+                    type="button"
+                    className="text-xs font-medium text-primary hover:underline"
+                    onClick={() => setResultLimit(36)}
+                  >
                     Show more matching records
                   </button>
                 </div>
               ) : null}
               {!typed ? (
                 <div className="border-t px-3 py-3 text-sm text-muted-foreground">
-                  Start typing to search by amount, date, number, name or reference in {category === "all" ? "all records" : ENTITY_LABEL[category] ?? "records"}.
-                  <span className="mt-1 block text-xs">Select a filter above to narrow results. Press Enter on a result to open it.</span>
+                  Start typing to search by amount, date, number, name or reference in{" "}
+                  {category === "all" ? "all records" : (ENTITY_LABEL[category] ?? "records")}.
+                  <span className="mt-1 block text-xs">
+                    Select a filter above to narrow results. Press Enter on a result to open it.
+                  </span>
                 </div>
               ) : null}
             </CommandList>

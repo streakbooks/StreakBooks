@@ -1,9 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import {
-  assertCompanyMember,
-  assertCompanyPermission,
-} from "@/lib/assert-company-access";
+import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
 import type { CompanyRole } from "@/lib/company-constants";
 import { normaliseAdjustments, type AccessAdjustment } from "@/lib/access-catalogue";
@@ -20,7 +17,12 @@ const LOCALES = ["en-GB", "en-US", "en-AU", "en-NZ", "en-IE", "en-CA"] as const;
 const DATE_FORMATS = ["DD/MM/YYYY", "MM/DD/YYYY", "YYYY-MM-DD"] as const;
 
 async function audit(
-  supabase: { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ error: { message: string } | null }> },
+  supabase: {
+    rpc: (
+      fn: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ error: { message: string } | null }>;
+  },
   companyId: string,
   action: string,
   entityType: string,
@@ -140,7 +142,8 @@ export const updateLocalization = createServerFn({ method: "POST" })
         ? input.date_format
         : "DD/MM/YYYY";
       const color = (input.document_theme_color ?? "").trim();
-      if (color && !/^#[0-9A-Fa-f]{6}$/.test(color)) throw new Error("Theme colour must be #RRGGBB");
+      if (color && !/^#[0-9A-Fa-f]{6}$/.test(color))
+        throw new Error("Theme colour must be #RRGGBB");
       return {
         companyId: assertUuid(input.companyId),
         locale,
@@ -162,10 +165,17 @@ export const updateLocalization = createServerFn({ method: "POST" })
       } as never)
       .eq("id" as never, data.companyId as never);
     if (error) throw new Error(error.message);
-    await audit(context.supabase as never, data.companyId, "settings.localization", "company", data.companyId, {
-      locale: data.locale,
-      date_format: data.date_format,
-    });
+    await audit(
+      context.supabase as never,
+      data.companyId,
+      "settings.localization",
+      "company",
+      data.companyId,
+      {
+        locale: data.locale,
+        date_format: data.date_format,
+      },
+    );
     return { ok: true };
   });
 
@@ -203,7 +213,14 @@ export const upsertBranding = createServerFn({ method: "POST" })
       { onConflict: "company_id" },
     );
     if (error) throw new Error(error.message);
-    await audit(context.supabase as never, data.companyId, "settings.branding", "company", data.companyId, {});
+    await audit(
+      context.supabase as never,
+      data.companyId,
+      "settings.branding",
+      "company",
+      data.companyId,
+      {},
+    );
     return { ok: true };
   });
 
@@ -246,10 +263,17 @@ export const updateDocumentSequence = createServerFn({ method: "POST" })
       { onConflict: "company_id,document_type" },
     );
     if (error) throw new Error(error.message);
-    await audit(context.supabase as never, data.companyId, "settings.sequence", "document_sequence", null, {
-      document_type: data.document_type,
-      next_number: data.next_number,
-    });
+    await audit(
+      context.supabase as never,
+      data.companyId,
+      "settings.sequence",
+      "document_sequence",
+      null,
+      {
+        document_type: data.document_type,
+        next_number: data.next_number,
+      },
+    );
     return { ok: true };
   });
 
@@ -257,7 +281,11 @@ export const setEnabledCurrencies = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { companyId: string; currencies: string[] }) => ({
     companyId: assertUuid(input.companyId),
-    currencies: [...new Set((input.currencies ?? []).map((c) => c.toUpperCase()).filter((c) => /^[A-Z]{3}$/.test(c)))],
+    currencies: [
+      ...new Set(
+        (input.currencies ?? []).map((c) => c.toUpperCase()).filter((c) => /^[A-Z]{3}$/.test(c)),
+      ),
+    ],
   }))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "company.settings.edit");
@@ -275,12 +303,21 @@ export const setEnabledCurrencies = createServerFn({ method: "POST" })
       .filter((c) => c !== base)
       .map((currency_code) => ({ company_id: data.companyId, currency_code }));
     if (rows.length) {
-      const { error } = await context.supabase.from("company_currencies" as never).insert(rows as never);
+      const { error } = await context.supabase
+        .from("company_currencies" as never)
+        .insert(rows as never);
       if (error) throw new Error(error.message);
     }
-    await audit(context.supabase as never, data.companyId, "settings.currencies", "company", data.companyId, {
-      currencies: data.currencies,
-    });
+    await audit(
+      context.supabase as never,
+      data.companyId,
+      "settings.currencies",
+      "company",
+      data.companyId,
+      {
+        currencies: data.currencies,
+      },
+    );
     return { ok: true };
   });
 
@@ -299,7 +336,8 @@ export const createExchangeRate = createServerFn({ method: "POST" })
       const to = (input.to_currency ?? "").toUpperCase();
       if (!/^[A-Z]{3}$/.test(from) || !/^[A-Z]{3}$/.test(to)) throw new Error("Invalid currency");
       if (from === to) throw new Error("Currencies must differ");
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(input.rate_date ?? "")) throw new Error("rate_date must be YYYY-MM-DD");
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(input.rate_date ?? ""))
+        throw new Error("rate_date must be YYYY-MM-DD");
       const rate = Number(input.rate);
       if (!Number.isFinite(rate) || rate <= 0) throw new Error("Rate must be positive");
       return {
@@ -329,12 +367,19 @@ export const createExchangeRate = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
     const id = (row as { id: string }).id;
-    await audit(context.supabase as never, data.companyId, "exchange_rate.create", "exchange_rate", id, {
-      from: data.from_currency,
-      to: data.to_currency,
-      rate_date: data.rate_date,
-      rate: data.rate,
-    });
+    await audit(
+      context.supabase as never,
+      data.companyId,
+      "exchange_rate.create",
+      "exchange_rate",
+      id,
+      {
+        from: data.from_currency,
+        to: data.to_currency,
+        rate_date: data.rate_date,
+        rate: data.rate,
+      },
+    );
     return { id };
   });
 
@@ -342,9 +387,12 @@ export const voidExchangeRate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { rateId: string }) => ({ rateId: assertUuid(input.rateId, "rate") }))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.rpc("void_exchange_rate" as never, {
-      _rate_id: data.rateId,
-    } as never);
+    const { error } = await context.supabase.rpc(
+      "void_exchange_rate" as never,
+      {
+        _rate_id: data.rateId,
+      } as never,
+    );
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -352,7 +400,14 @@ export const voidExchangeRate = createServerFn({ method: "POST" })
 export const updateMemberRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { companyId: string; userId: string; role: CompanyRole }) => {
-    const allowed: CompanyRole[] = ["owner", "admin", "accountant", "bookkeeper", "staff", "read_only"];
+    const allowed: CompanyRole[] = [
+      "owner",
+      "admin",
+      "accountant",
+      "bookkeeper",
+      "staff",
+      "read_only",
+    ];
     if (!allowed.includes(input.role)) throw new Error("Invalid role");
     return {
       companyId: assertUuid(input.companyId),
@@ -395,10 +450,17 @@ export const updateMemberRole = createServerFn({ method: "POST" })
       throw new Error("That person's role could not be changed.");
     }
 
-    await audit(context.supabase as never, data.companyId, "members.role_change", "company_member", data.userId, {
-      from: target.role,
-      to: data.role,
-    });
+    await audit(
+      context.supabase as never,
+      data.companyId,
+      "members.role_change",
+      "company_member",
+      data.userId,
+      {
+        from: target.role,
+        to: data.role,
+      },
+    );
     return { ok: true };
   });
 
@@ -413,9 +475,12 @@ export const resetDemoCompany = createServerFn({ method: "POST" })
       .eq("id", data.companyId)
       .maybeSingle();
     if (!company?.is_demo) throw new Error("Only Demo Company can be reset");
-    const { error } = await context.supabase.rpc("reset_demo_company" as never, {
-      _company_id: data.companyId,
-    } as never);
+    const { error } = await context.supabase.rpc(
+      "reset_demo_company" as never,
+      {
+        _company_id: data.companyId,
+      } as never,
+    );
     if (error) throw new Error(error.message);
     const { seedDemoCompanyData } = await import("@/lib/demo/seed-demo");
     const seeded = await seedDemoCompanyData(context.supabase, {
@@ -460,15 +525,17 @@ export const listCompanyAuditEvents = createServerFn({ method: "GET" })
     if (data.toDate) q = q.lte("created_at" as never, `${data.toDate}T23:59:59.999Z` as never);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    return ((rows ?? []) as Array<{
-      id: string;
-      action: string;
-      entity_type: string;
-      entity_id: string | null;
-      details: unknown;
-      actor_user_id: string | null;
-      created_at: string;
-    }>).map((r) => ({
+    return (
+      (rows ?? []) as Array<{
+        id: string;
+        action: string;
+        entity_type: string;
+        entity_id: string | null;
+        details: unknown;
+        actor_user_id: string | null;
+        created_at: string;
+      }>
+    ).map((r) => ({
       id: r.id,
       action: r.action,
       entity_type: r.entity_type,
@@ -492,15 +559,17 @@ export const listCompanyInvitations = createServerFn({ method: "GET" })
       .limit(100);
     if (error) throw new Error(error.message);
     const now = Date.now();
-    return ((rows ?? []) as Array<{
-      id: string;
-      email: string;
-      role: string;
-      expires_at: string;
-      accepted_at: string | null;
-      revoked_at: string | null;
-      created_at: string;
-    }>).map((r) => {
+    return (
+      (rows ?? []) as Array<{
+        id: string;
+        email: string;
+        role: string;
+        expires_at: string;
+        accepted_at: string | null;
+        revoked_at: string | null;
+        created_at: string;
+      }>
+    ).map((r) => {
       let status: "pending" | "accepted" | "expired" | "revoked" = "pending";
       if (r.revoked_at) status = "revoked";
       else if (r.accepted_at) status = "accepted";
@@ -521,7 +590,8 @@ export const createCompanyInvitation = createServerFn({ method: "POST" })
       const email = (input.email ?? "").trim().toLowerCase();
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("Enter a valid email");
       const allowed: CompanyRole[] = ["admin", "accountant", "bookkeeper", "staff", "read_only"];
-      if (!allowed.includes(input.role)) throw new Error("Ownership is transferred by an owner, not by invitation");
+      if (!allowed.includes(input.role))
+        throw new Error("Ownership is transferred by an owner, not by invitation");
       return {
         companyId: assertUuid(input.companyId),
         email: email.slice(0, 160),
@@ -537,14 +607,17 @@ export const createCompanyInvitation = createServerFn({ method: "POST" })
     const tokenHash = await sha256Hex(token);
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
-    const { data: id, error } = await context.supabase.rpc("issue_company_invitation" as never, {
-      _company_id: data.companyId,
-      _email: data.email,
-      _role: data.role,
-      _token_hash: tokenHash,
-      _expires_at: expiresAt,
-      _adjustments: data.adjustments,
-    } as never);
+    const { data: id, error } = await context.supabase.rpc(
+      "issue_company_invitation" as never,
+      {
+        _company_id: data.companyId,
+        _email: data.email,
+        _role: data.role,
+        _token_hash: tokenHash,
+        _expires_at: expiresAt,
+        _adjustments: data.adjustments,
+      } as never,
+    );
     if (error) throw new Error(error.message);
     return {
       id: String(id),
@@ -566,10 +639,13 @@ export const revokeCompanyInvitation = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "members.manage");
-    const { error } = await context.supabase.rpc("revoke_company_invitation" as never, {
-      _company_id: data.companyId,
-      _invitation_id: data.invitationId,
-    } as never);
+    const { error } = await context.supabase.rpc(
+      "revoke_company_invitation" as never,
+      {
+        _company_id: data.companyId,
+        _invitation_id: data.invitationId,
+      } as never,
+    );
     if (error) throw new Error(error.message);
     return { ok: true };
   });

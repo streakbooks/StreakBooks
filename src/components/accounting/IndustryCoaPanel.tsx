@@ -100,8 +100,7 @@ export function IndustryCoaPanel({ companyId }: Props) {
   }, [industriesQ.data, industryQ]);
 
   const previewMut = useMutation({
-    mutationFn: () =>
-      fetchPreview({ data: { companyId, industryCodes: selected, level } }),
+    mutationFn: () => fetchPreview({ data: { companyId, industryCodes: selected, level } }),
   });
 
   const applyMut = useMutation({
@@ -153,9 +152,7 @@ export function IndustryCoaPanel({ companyId }: Props) {
   });
 
   function toggleIndustry(code: string) {
-    setSelected((prev) =>
-      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code],
-    );
+    setSelected((prev) => (prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]));
   }
 
   return (
@@ -257,8 +254,12 @@ export function IndustryCoaPanel({ companyId }: Props) {
             <div className="space-y-3 rounded-md border p-4 text-sm">
               <div className="flex flex-wrap gap-2">
                 <Badge variant="secondary">Create {previewMut.data.toCreate.length}</Badge>
-                <Badge variant="outline">Already present {previewMut.data.alreadyPresent.length}</Badge>
-                <Badge variant="outline">Skip controls {previewMut.data.skippedControls.length}</Badge>
+                <Badge variant="outline">
+                  Already present {previewMut.data.alreadyPresent.length}
+                </Badge>
+                <Badge variant="outline">
+                  Skip controls {previewMut.data.skippedControls.length}
+                </Badge>
                 {previewMut.data.conflicts.length > 0 ? (
                   <Badge variant="destructive">Conflicts {previewMut.data.conflicts.length}</Badge>
                 ) : null}
@@ -358,7 +359,9 @@ export function IndustryCoaPanel({ companyId }: Props) {
       <Card>
         <CardHeader>
           <CardTitle>Add new account</CardTitle>
-          <CardDescription>Create a custom account without using the industry library.</CardDescription>
+          <CardDescription>
+            Create a custom account without using the industry library.
+          </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-4">
           <div className="space-y-2">

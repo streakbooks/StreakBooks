@@ -89,7 +89,10 @@ export function VoiceControl({
             size="icon"
             aria-label="Start Signal listening"
             title="Start Signal listening"
-            onClick={() => { onExpandedChange(true); session.start(); }}
+            onClick={() => {
+              onExpandedChange(true);
+              session.start();
+            }}
           >
             <Mic className="size-4" aria-hidden />
           </Button>
@@ -159,8 +162,8 @@ export function VoiceControl({
           </p>
           {state.field ? (
             <p className="text-sm" data-testid="voice-field-status">
-              Editing: {state.field.label}. Say a value, “next tab” or “next field”. Use “dictate …” for literal
-              text that sounds like a command.
+              Editing: {state.field.label}. Say a value, “next tab” or “next field”. Use “dictate …”
+              for literal text that sounds like a command.
             </p>
           ) : null}
           {state.heard ? (

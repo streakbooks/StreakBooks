@@ -106,12 +106,18 @@ export const upsertProduct = createServerFn({ method: "POST" })
         throw new Error("Invalid product kind");
       }
       // Reject invalid accounting inputs instead of silently changing amounts or tax rates.
-      for (const [label, value] of [["Sales price", input.salesPriceMinor], ["Purchase cost", input.purchaseCostMinor]] as const) {
+      for (const [label, value] of [
+        ["Sales price", input.salesPriceMinor],
+        ["Purchase cost", input.purchaseCostMinor],
+      ] as const) {
         if (value !== undefined && (!Number.isSafeInteger(value) || value < 0)) {
           throw new Error(`${label} must be a non-negative integer amount in minor currency units`);
         }
       }
-      for (const [label, value] of [["Sales tax", input.salesTaxRateBps], ["Purchase tax", input.purchaseTaxRateBps]] as const) {
+      for (const [label, value] of [
+        ["Sales tax", input.salesTaxRateBps],
+        ["Purchase tax", input.purchaseTaxRateBps],
+      ] as const) {
         if (value !== undefined && (!Number.isInteger(value) || value < 0 || value > 10000)) {
           throw new Error(`${label} rate must be between 0 and 10000 basis points`);
         }

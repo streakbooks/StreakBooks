@@ -15,8 +15,12 @@ export function readCreatePrefs(storage: Pick<Storage, "getItem">, userId: strin
     if (!raw) return EMPTY;
     const parsed = JSON.parse(raw) as Partial<CreatePrefs>;
     return {
-      favourites: Array.isArray(parsed.favourites) ? parsed.favourites.filter((id) => typeof id === "string") : [],
-      recent: Array.isArray(parsed.recent) ? parsed.recent.filter((id) => typeof id === "string").slice(0, 5) : [],
+      favourites: Array.isArray(parsed.favourites)
+        ? parsed.favourites.filter((id) => typeof id === "string")
+        : [],
+      recent: Array.isArray(parsed.recent)
+        ? parsed.recent.filter((id) => typeof id === "string").slice(0, 5)
+        : [],
     };
   } catch {
     return EMPTY;

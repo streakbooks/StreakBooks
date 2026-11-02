@@ -72,7 +72,8 @@ export function paymentMethodsFor(
     {
       id: "card",
       title: "Cards, wallets and other eligible local methods",
-      detail: "Secure Stripe Checkout shows the payment methods supported for this subscription and your location. Availability varies.",
+      detail:
+        "Secure Stripe Checkout shows the payment methods supported for this subscription and your location. Availability varies.",
       provider: "stripe",
       available: providers.stripe,
       reason: providers.stripe ? null : "Stripe checkout is not configured.",
@@ -91,7 +92,8 @@ export function paymentMethodsFor(
       {
         id: "emandate",
         title: "Indian bank e-mandate",
-        detail: "Authorise recurring bank debits on Razorpay through an eligible bank. This is not an ordinary NEFT transfer.",
+        detail:
+          "Authorise recurring bank debits on Razorpay through an eligible bank. This is not an ordinary NEFT transfer.",
         provider: "razorpay",
         available: providers.razorpay,
         reason: providers.razorpay ? null : "Razorpay checkout is not configured.",
@@ -118,8 +120,7 @@ export function parseCheckoutBilling(input: CheckoutBillingInput | undefined): C
   const postalCode = (input?.postalCode ?? "").trim().slice(0, 20);
   if (postalCode.length < 2) throw new Error("Enter the postal code.");
   const country = (input?.country ?? "").trim().toUpperCase();
-  if (!isBillingCountry(country))
-    throw new Error("Choose a billing country.");
+  if (!isBillingCountry(country)) throw new Error("Choose a billing country.");
   return {
     email,
     name: `${firstName} ${lastName}`,

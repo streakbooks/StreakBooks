@@ -25,25 +25,27 @@ export const listSavedReportViews = createServerFn({ method: "GET" })
 
 export const saveReportView = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: {
-    companyId: string;
-    reportId: string;
-    name: string;
-    config: Record<string, unknown>;
-    isFavourite?: boolean;
-  }) => {
-    const name = (input?.name ?? "").trim();
-    if (!name) throw new Error("View name is required.");
-    const reportId = (input?.reportId ?? "").trim();
-    if (!reportId) throw new Error("reportId is required.");
-    return {
-      companyId: assertUuid(input.companyId),
-      reportId,
-      name,
-      config: input.config ?? {},
-      isFavourite: Boolean(input.isFavourite),
-    };
-  })
+  .inputValidator(
+    (input: {
+      companyId: string;
+      reportId: string;
+      name: string;
+      config: Record<string, unknown>;
+      isFavourite?: boolean;
+    }) => {
+      const name = (input?.name ?? "").trim();
+      if (!name) throw new Error("View name is required.");
+      const reportId = (input?.reportId ?? "").trim();
+      if (!reportId) throw new Error("reportId is required.");
+      return {
+        companyId: assertUuid(input.companyId),
+        reportId,
+        name,
+        config: input.config ?? {},
+        isFavourite: Boolean(input.isFavourite),
+      };
+    },
+  )
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const { data: row, error } = await context.supabase

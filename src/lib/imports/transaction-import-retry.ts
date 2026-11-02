@@ -48,18 +48,21 @@ export function isExactTransactionImportRetry(
     expected.currencyCode !== stored.currency_code ||
     (stored.memo ?? "") !== "" ||
     expected.lines.length !== stored.lines.length
-  ) return false;
+  )
+    return false;
 
   return expected.lines.every((line, index) => {
     const prior = stored.lines[index];
-    return Boolean(prior) &&
+    return (
+      Boolean(prior) &&
       line.description === prior!.description &&
       line.accountId === prior!.account_id &&
       line.quantity === Number(prior!.quantity) &&
       line.unitPriceMinor === Number(prior!.unit_price_minor) &&
       line.taxCodeId === (prior!.tax_code_id ?? null) &&
       Number(prior!.discount_minor ?? 0) === 0 &&
-      (prior!.product_id ?? null) === null;
+      (prior!.product_id ?? null) === null
+    );
   });
 }
 
@@ -112,14 +115,15 @@ export function isVerifiedTransactionImportJournal(
   },
   journal: PostedImportJournal | null,
 ): boolean {
-  return journal !== null &&
+  return (
+    journal !== null &&
     journal.id === expected.journalId &&
     journal.company_id === expected.companyId &&
     journal.status === "posted" &&
     journal.source_type === expected.sourceType &&
-    journal.source_id === expected.documentId;
+    journal.source_id === expected.documentId
+  );
 }
-
 
 /**
  * Read-only GL/subledger guard for a previously posted CSV invoice or bill.
@@ -162,11 +166,12 @@ export function isReconciledTransactionImportJournal(
         line.company_id !== expected.companyId ||
         line.journal_id !== expected.journalId ||
         !line.account_id
-      ) return false;
+      )
+        return false;
       const dr = BigInt(line.debit_minor);
       const cr = BigInt(line.credit_minor);
       // Each posted GL line must be single-sided and positive.
-      if (dr < 0n || cr < 0n || (dr > 0n) === (cr > 0n)) return false;
+      if (dr < 0n || cr < 0n || dr > 0n === cr > 0n) return false;
       debit += dr;
       credit += cr;
       if (line.account_id === expected.controlAccountId) {
@@ -174,7 +179,8 @@ export function isReconciledTransactionImportJournal(
         if (
           (expected.controlSide === "debit" && (dr !== expected.expectedTotalMinor || cr !== 0n)) ||
           (expected.controlSide === "credit" && (cr !== expected.expectedTotalMinor || dr !== 0n))
-        ) return false;
+        )
+          return false;
       }
     }
     return controlCount === 1 && debit === credit;

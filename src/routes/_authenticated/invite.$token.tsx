@@ -19,10 +19,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 export const Route = createFileRoute("/_authenticated/invite/$token")({
   head: () => ({
-    meta: [
-      { title: "Invitation — LinkBooks" },
-      { name: "robots", content: "noindex, nofollow" },
-    ],
+    meta: [{ title: "Invitation — LinkBooks" }, { name: "robots", content: "noindex, nofollow" }],
   }),
   component: InvitePage,
 });

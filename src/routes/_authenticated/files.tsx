@@ -2,7 +2,19 @@ import { useEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Download, FileText, Loader2, Trash2, Upload, ArrowUpDown, X, FolderPlus, Folder, Pencil, FolderInput } from "lucide-react";
+import {
+  Download,
+  FileText,
+  Loader2,
+  Trash2,
+  Upload,
+  ArrowUpDown,
+  X,
+  FolderPlus,
+  Folder,
+  Pencil,
+  FolderInput,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
@@ -21,7 +33,13 @@ import {
   formatFileSize,
   validateUpload,
 } from "@/lib/documents/attachments";
-import { listDocumentFolders, createDocumentFolder, updateDocumentFolder, deleteDocumentFolder, moveDocumentToFolder } from "@/lib/documents/folders.functions";
+import {
+  listDocumentFolders,
+  createDocumentFolder,
+  updateDocumentFolder,
+  deleteDocumentFolder,
+  moveDocumentToFolder,
+} from "@/lib/documents/folders.functions";
 import { folderAncestors, possibleParentFolders } from "@/lib/documents/folder-tree";
 import { downloadBase64, uploadCompanyDocument } from "@/lib/documents/upload-client";
 import { openSignedDownload } from "@/lib/documents/ui";
@@ -112,17 +130,26 @@ function FilesPage() {
   const activeFolder = folders.find((f) => f.id === folderId);
   const breadcrumbs = folderAncestors(folders, folderId);
   const folderM = useMutation({
-    mutationFn: async (name: string) => createFolder({ data: { companyId: companyId!, name, parentId: folderId } }),
+    mutationFn: async (name: string) =>
+      createFolder({ data: { companyId: companyId!, name, parentId: folderId } }),
     onSuccess: async () => {
-      setNewFolderName(""); setShowNewFolder(false);
+      setNewFolderName("");
+      setShowNewFolder(false);
       await queryClient.invalidateQueries({ queryKey: ["document-folders", companyId] });
       toast.success("Folder created");
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
   const renameFolderM = useMutation({
-    mutationFn: async ({ id, name, parentId }: { id: string; name: string; parentId: string | null }) =>
-      updateFolder({ data: { companyId: companyId!, folderId: id, name, parentId } }),
+    mutationFn: async ({
+      id,
+      name,
+      parentId,
+    }: {
+      id: string;
+      name: string;
+      parentId: string | null;
+    }) => updateFolder({ data: { companyId: companyId!, folderId: id, name, parentId } }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["document-folders", companyId] });
       toast.success("Folder updated");
@@ -279,44 +306,177 @@ function FilesPage() {
       ) : null}
       <div
         className={`mb-4 rounded-lg border border-dashed p-4 text-sm transition-colors ${dragActive ? "border-primary bg-primary/5" : "border-border"}`}
-        onDragOver={(e) => { if (!canUpload) return; e.preventDefault(); setDragActive(true); }}
-        onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragActive(false); }}
-        onDrop={(e) => { if (!canUpload) return; e.preventDefault(); setDragActive(false); onPick(e.dataTransfer.files); }}
+        onDragOver={(e) => {
+          if (!canUpload) return;
+          e.preventDefault();
+          setDragActive(true);
+        }}
+        onDragLeave={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragActive(false);
+        }}
+        onDrop={(e) => {
+          if (!canUpload) return;
+          e.preventDefault();
+          setDragActive(false);
+          onPick(e.dataTransfer.files);
+        }}
       >
-        <div className="flex items-center gap-2"><Upload className="size-4" />
-          {canUpload ? "Drop files here or use Upload files. Maximum 20 MB per file." : "Files available to your organisation."}
+        <div className="flex items-center gap-2">
+          <Upload className="size-4" />
+          {canUpload
+            ? "Drop files here or use Upload files. Maximum 20 MB per file."
+            : "Files available to your organisation."}
         </div>
       </div>
       <section aria-label="Document folders" className="mb-4 rounded-lg border p-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Folder className="size-4" />
-            <button type="button" className="text-sm underline" onClick={() => { setFolderId(null); setPage(0); }}>All files</button>
-            {breadcrumbs.map((crumb) => <button type="button" key={crumb.id} className="text-sm underline" onClick={() => { setFolderId(crumb.id); setPage(0); }}>/ {crumb.name}</button>)}
+            <button
+              type="button"
+              className="text-sm underline"
+              onClick={() => {
+                setFolderId(null);
+                setPage(0);
+              }}
+            >
+              All files
+            </button>
+            {breadcrumbs.map((crumb) => (
+              <button
+                type="button"
+                key={crumb.id}
+                className="text-sm underline"
+                onClick={() => {
+                  setFolderId(crumb.id);
+                  setPage(0);
+                }}
+              >
+                / {crumb.name}
+              </button>
+            ))}
           </div>
-          {canUpload ? <Button size="sm" variant="outline" onClick={() => setShowNewFolder((v) => !v)}><FolderPlus className="mr-2 size-4" />New folder</Button> : null}
+          {canUpload ? (
+            <Button size="sm" variant="outline" onClick={() => setShowNewFolder((v) => !v)}>
+              <FolderPlus className="mr-2 size-4" />
+              New folder
+            </Button>
+          ) : null}
         </div>
-        {showNewFolder ? <form className="mb-3 flex gap-2" onSubmit={(e) => { e.preventDefault(); if (newFolderName.trim()) folderM.mutate(newFolderName); }}>
-          <Input aria-label="New folder name" placeholder="Folder name" maxLength={120} value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)} />
-          <Button type="submit" size="sm" disabled={folderM.isPending || !newFolderName.trim()}>Create</Button>
-          <Button type="button" size="sm" variant="ghost" onClick={() => setShowNewFolder(false)}>Cancel</Button>
-        </form> : null}
-        {foldersQ.isError ? <p role="alert" className="text-sm text-destructive">Folder loading failed: {friendlyAuthError(foldersQ.error)}. Apply the document folders migration if it is pending.</p> : null}
+        {showNewFolder ? (
+          <form
+            className="mb-3 flex gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (newFolderName.trim()) folderM.mutate(newFolderName);
+            }}
+          >
+            <Input
+              aria-label="New folder name"
+              placeholder="Folder name"
+              maxLength={120}
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+            />
+            <Button type="submit" size="sm" disabled={folderM.isPending || !newFolderName.trim()}>
+              Create
+            </Button>
+            <Button type="button" size="sm" variant="ghost" onClick={() => setShowNewFolder(false)}>
+              Cancel
+            </Button>
+          </form>
+        ) : null}
+        {foldersQ.isError ? (
+          <p role="alert" className="text-sm text-destructive">
+            Folder loading failed: {friendlyAuthError(foldersQ.error)}. Apply the document folders
+            migration if it is pending.
+          </p>
+        ) : null}
         <div className="flex flex-wrap gap-2">
-          {activeFolder?.parent_id ? <Button size="sm" variant="outline" onClick={() => { setFolderId(activeFolder.parent_id); setPage(0); }}>Parent folder</Button> : null}
-          {folders.filter((f) => f.parent_id === folderId).map((folder) => <Button key={folder.id} size="sm" variant="outline" onClick={() => { setFolderId(folder.id); setPage(0); }}><Folder className="mr-2 size-4" />{folder.name}</Button>)}
+          {activeFolder?.parent_id ? (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setFolderId(activeFolder.parent_id);
+                setPage(0);
+              }}
+            >
+              Parent folder
+            </Button>
+          ) : null}
+          {folders
+            .filter((f) => f.parent_id === folderId)
+            .map((folder) => (
+              <Button
+                key={folder.id}
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setFolderId(folder.id);
+                  setPage(0);
+                }}
+              >
+                <Folder className="mr-2 size-4" />
+                {folder.name}
+              </Button>
+            ))}
         </div>
-        {activeFolder && canUpload ? <div className="mt-3 flex gap-2">
-          <Button size="sm" variant="ghost" onClick={() => { const name = window.prompt("Rename folder", activeFolder.name); if (name && name.trim() !== activeFolder.name) renameFolderM.mutate({ id: activeFolder.id, name, parentId: activeFolder.parent_id }); }}><Pencil className="mr-1 size-4" />Rename</Button>
-          <Select value={activeFolder.parent_id ?? "root"} onValueChange={(v) => renameFolderM.mutate({ id: activeFolder.id, name: activeFolder.name, parentId: v === "root" ? null : v })}>
-            <SelectTrigger className="w-48" aria-label="Move current folder to"><FolderInput className="mr-1 size-4" /><SelectValue placeholder="Move folder to" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="root">Root</SelectItem>
-              {possibleParentFolders(folders, activeFolder.id).map((f) => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Button size="sm" variant="ghost" disabled={removeFolderM.isPending} onClick={() => { if (window.confirm("Delete this empty folder?")) removeFolderM.mutate(activeFolder.id); }}><Trash2 className="mr-1 size-4" />Delete empty folder</Button>
-        </div> : null}
+        {activeFolder && canUpload ? (
+          <div className="mt-3 flex gap-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                const name = window.prompt("Rename folder", activeFolder.name);
+                if (name && name.trim() !== activeFolder.name)
+                  renameFolderM.mutate({
+                    id: activeFolder.id,
+                    name,
+                    parentId: activeFolder.parent_id,
+                  });
+              }}
+            >
+              <Pencil className="mr-1 size-4" />
+              Rename
+            </Button>
+            <Select
+              value={activeFolder.parent_id ?? "root"}
+              onValueChange={(v) =>
+                renameFolderM.mutate({
+                  id: activeFolder.id,
+                  name: activeFolder.name,
+                  parentId: v === "root" ? null : v,
+                })
+              }
+            >
+              <SelectTrigger className="w-48" aria-label="Move current folder to">
+                <FolderInput className="mr-1 size-4" />
+                <SelectValue placeholder="Move folder to" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="root">Root</SelectItem>
+                {possibleParentFolders(folders, activeFolder.id).map((f) => (
+                  <SelectItem key={f.id} value={f.id}>
+                    {f.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={removeFolderM.isPending}
+              onClick={() => {
+                if (window.confirm("Delete this empty folder?"))
+                  removeFolderM.mutate(activeFolder.id);
+              }}
+            >
+              <Trash2 className="mr-1 size-4" />
+              Delete empty folder
+            </Button>
+          </div>
+        ) : null}
       </section>
       <div className="mb-4 flex flex-wrap gap-3">
         <Input
@@ -346,7 +506,10 @@ function FilesPage() {
           </SelectContent>
         </Select>
         <Select value={sort} onValueChange={(v) => setSort(v as typeof sort)}>
-          <SelectTrigger className="w-48" aria-label="Sort files"><ArrowUpDown className="mr-2 size-4" /><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-48" aria-label="Sort files">
+            <ArrowUpDown className="mr-2 size-4" />
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="newest">Newest first</SelectItem>
             <SelectItem value="oldest">Oldest first</SelectItem>
@@ -363,16 +526,43 @@ function FilesPage() {
               <FileText className="mt-1 size-5 shrink-0 text-muted-foreground" />
               <div className="min-w-0 space-y-1">
                 <h2 className="break-all font-semibold">{selected.file_name}</h2>
-                <p className="text-sm text-muted-foreground">Attached to: {selected.entityLabel}{selected.entityRef ? ` · ${selected.entityRef}` : ""}</p>
-                <p className="text-sm text-muted-foreground">Size: {formatFileSize(selected.size_bytes)} · Uploaded: {fmt.dateTime(selected.created_at)}</p>
-                <p className="text-sm text-muted-foreground">Type: {selected.content_type || "Unknown"}</p>
-                {selected.entityPath && selected.entity_type !== "company" ? <a className="text-sm underline" href={selected.entityPath}>Open linked record</a> : null}
+                <p className="text-sm text-muted-foreground">
+                  Attached to: {selected.entityLabel}
+                  {selected.entityRef ? ` · ${selected.entityRef}` : ""}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Size: {formatFileSize(selected.size_bytes)} · Uploaded:{" "}
+                  {fmt.dateTime(selected.created_at)}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Type: {selected.content_type || "Unknown"}
+                </p>
+                {selected.entityPath && selected.entity_type !== "company" ? (
+                  <a className="text-sm underline" href={selected.entityPath}>
+                    Open linked record
+                  </a>
+                ) : null}
               </div>
             </div>
-            <Button size="icon" variant="ghost" aria-label="Close file details" onClick={() => setSelectedFile(null)}><X className="size-4" /></Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-label="Close file details"
+              onClick={() => setSelectedFile(null)}
+            >
+              <X className="size-4" />
+            </Button>
           </div>
           <div className="mt-3 flex gap-2">
-            <Button size="sm" variant="outline" disabled={downloadM.isPending} onClick={() => downloadM.mutate(selected.id)}><Download className="mr-1 size-4" />Download</Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={downloadM.isPending}
+              onClick={() => downloadM.mutate(selected.id)}
+            >
+              <Download className="mr-1 size-4" />
+              Download
+            </Button>
           </div>
         </section>
       ) : null}
@@ -418,7 +608,16 @@ function FilesPage() {
                 ).some((p) => can(p));
                 return (
                   <TableRow key={f.id}>
-                    <TableCell className="max-w-xs"><button type="button" className="max-w-xs truncate text-left font-medium hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" onClick={() => setSelectedFile(f.id)} aria-label={`View details for ${f.file_name}`}>{f.file_name}</button></TableCell>
+                    <TableCell className="max-w-xs">
+                      <button
+                        type="button"
+                        className="max-w-xs truncate text-left font-medium hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                        onClick={() => setSelectedFile(f.id)}
+                        aria-label={`View details for ${f.file_name}`}
+                      >
+                        {f.file_name}
+                      </button>
+                    </TableCell>
                     <TableCell>
                       {f.entityPath && f.entity_type !== "company" ? (
                         <a href={f.entityPath} className="underline">
@@ -430,13 +629,35 @@ function FilesPage() {
                       )}
                     </TableCell>
                     <TableCell>
-                      {manageable ? <Select value={f.folder_id ?? "unfiled"} onValueChange={(v) => moveM.mutate({ attachmentId: f.id, targetId: v === "unfiled" ? null : v })}>
-                        <SelectTrigger className="w-40" aria-label={`Move ${f.file_name} to folder`}><FolderInput className="mr-1 size-4" /><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="unfiled">Unfiled</SelectItem>
-                          {folders.map((folder) => <SelectItem key={folder.id} value={folder.id}>{folder.name}</SelectItem>)}
-                        </SelectContent>
-                      </Select> : (folders.find((folder) => folder.id === f.folder_id)?.name ?? "Unfiled")}
+                      {manageable ? (
+                        <Select
+                          value={f.folder_id ?? "unfiled"}
+                          onValueChange={(v) =>
+                            moveM.mutate({
+                              attachmentId: f.id,
+                              targetId: v === "unfiled" ? null : v,
+                            })
+                          }
+                        >
+                          <SelectTrigger
+                            className="w-40"
+                            aria-label={`Move ${f.file_name} to folder`}
+                          >
+                            <FolderInput className="mr-1 size-4" />
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="unfiled">Unfiled</SelectItem>
+                            {folders.map((folder) => (
+                              <SelectItem key={folder.id} value={folder.id}>
+                                {folder.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        (folders.find((folder) => folder.id === f.folder_id)?.name ?? "Unfiled")
+                      )}
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
                       {f.size_bytes != null ? formatFileSize(f.size_bytes) : "—"}

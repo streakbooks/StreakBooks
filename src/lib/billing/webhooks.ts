@@ -1,3 +1,4 @@
+import { assertStripeTestKey } from "@/lib/billing/provider-keys";
 import { verifyRazorpaySignature, verifyStripeSignature } from "@/lib/billing/signatures";
 
 type AdminUpdate = {
@@ -88,7 +89,8 @@ export function mayActivateStripeCheckout(
   subscriptionStatus: string | null,
 ): boolean {
   return (
-    (paymentStatus === "paid" && (subscriptionStatus === "active" || subscriptionStatus === "trialing")) ||
+    (paymentStatus === "paid" &&
+      (subscriptionStatus === "active" || subscriptionStatus === "trialing")) ||
     (paymentStatus === "no_payment_required" && subscriptionStatus === "trialing")
   );
 }
@@ -96,9 +98,13 @@ export function mayActivateStripeCheckout(
 async function readStripeSubscription(subscriptionId: string): Promise<Record<string, unknown>> {
   const secret = process.env["STRIPE_SECRET_KEY"];
   if (!secret) throw new Error("Stripe API secret is not configured.");
-  const response = await fetch(`https://api.stripe.com/v1/subscriptions/${encodeURIComponent(subscriptionId)}`, {
-    headers: { Authorization: `Bearer ${secret}` },
-  });
+  assertStripeTestKey(secret);
+  const response = await fetch(
+    `https://api.stripe.com/v1/subscriptions/${encodeURIComponent(subscriptionId)}`,
+    {
+      headers: { Authorization: `Bearer ${secret}` },
+    },
+  );
   if (!response.ok) throw new Error(`Stripe subscription lookup failed (${response.status}).`);
   return (await response.json()) as Record<string, unknown>;
 }
@@ -150,8 +156,8 @@ async function completePaidStripeInvoice(subscriptionId: string): Promise<void> 
     subscriptionId,
     subscription["status"] === "trialing" ? "trialing" : "active",
     {
-    current_period_end: unixToIso(subscription["current_period_end"]),
-    cancel_at_period_end: subscription["cancel_at_period_end"] === true,
+      current_period_end: unixToIso(subscription["current_period_end"]),
+      cancel_at_period_end: subscription["cancel_at_period_end"] === true,
     },
   );
 }

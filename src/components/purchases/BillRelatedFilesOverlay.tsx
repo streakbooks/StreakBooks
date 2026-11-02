@@ -158,8 +158,7 @@ export function BillRelatedFilesOverlay({
   });
 
   const deleteM = useMutation({
-    mutationFn: (attachmentId: string) =>
-      doDelete({ data: { companyId, attachmentId } }),
+    mutationFn: (attachmentId: string) => doDelete({ data: { companyId, attachmentId } }),
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["bill", companyId, billId] });
       toast.success("Attachment removed");
@@ -214,9 +213,7 @@ export function BillRelatedFilesOverlay({
                           {a.file_name}
                         </span>
                         <span className="block text-[11px] text-muted-foreground">
-                          {a.created_at
-                            ? new Date(a.created_at).toLocaleString()
-                            : "Attached"}
+                          {a.created_at ? new Date(a.created_at).toLocaleString() : "Attached"}
                           {a.size_bytes != null
                             ? ` · ${Math.max(1, Math.round(a.size_bytes / 1024))} KB`
                             : ""}
@@ -317,11 +314,17 @@ export function BillRelatedFilesOverlay({
                 />
               ) : previewKind === "image" ? (
                 <div className="flex h-[min(70vh,640px)] items-center justify-center overflow-auto p-4">
-                  <img src={previewUrl} alt={previewName} className="max-h-full max-w-full object-contain" />
+                  <img
+                    src={previewUrl}
+                    alt={previewName}
+                    className="max-h-full max-w-full object-contain"
+                  />
                 </div>
               ) : (
                 <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-sm">
-                  <p className="text-muted-foreground">Inline preview is not available for this file type.</p>
+                  <p className="text-muted-foreground">
+                    Inline preview is not available for this file type.
+                  </p>
                   <Button size="sm" asChild>
                     <a href={previewUrl} download={previewName}>
                       Download file
@@ -338,13 +341,7 @@ export function BillRelatedFilesOverlay({
 }
 
 /** Compact header control that opens the related-files layover. */
-export function BillAttachmentsButton({
-  count,
-  onClick,
-}: {
-  count: number;
-  onClick: () => void;
-}) {
+export function BillAttachmentsButton({ count, onClick }: { count: number; onClick: () => void }) {
   return (
     <Button
       type="button"

@@ -1,4 +1,5 @@
 import { parseReportingCentreSearch } from "@/lib/reports/centre-search";
+import { nativeTabLinkClass } from "@/lib/navigation/native-tab";
 import { ReportingFeatureGate } from "@/components/reports/ReportingFeatureGate";
 import { ManagementWorkspace } from "@/components/reports/ManagementWorkspace";
 import { ReportPacksWorkspace } from "@/components/reports/ReportPacksWorkspace";
@@ -6,7 +7,7 @@ import { AdviserReporting } from "@/components/reports/AdviserReporting";
 import { ReportingHome } from "@/components/reports/ReportingHome";
 import { fiscalYearStart, todayIso } from "@/lib/accounting/fiscal-year";
 import { ReportLibrary } from "@/components/reports/ReportLibrary";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsContent } from "@/components/ui/tabs";
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useActiveCompany } from "@/hooks/use-active-company";
@@ -114,20 +115,35 @@ function ReportsCentre() {
           />
         </div>
       </div>
-      <Tabs value={tab} onValueChange={setTab} className="space-y-6">
+      <Tabs value={tab} className="space-y-6">
         <div className="overflow-x-auto">
           <TabsList aria-label="Reporting modules" className="w-max">
-            <TabsTrigger value="home">Reporting home</TabsTrigger>
-            <TabsTrigger value="standard">Standard reports</TabsTrigger>
-            <TabsTrigger value="custom">Custom reports</TabsTrigger>
-            <TabsTrigger value="management">Management reports</TabsTrigger>
-            <TabsTrigger value="packs">Report packs</TabsTrigger>
-            <TabsTrigger value="adviser">Adviser</TabsTrigger>
-            <TabsTrigger value="drafts">Drafts & review</TabsTrigger>
-            <TabsTrigger value="published">Published</TabsTrigger>
-            <TabsTrigger value="archived">Archived</TabsTrigger>
-            <TabsTrigger value="schedules">Scheduled delivery</TabsTrigger>
-            <TabsTrigger value="templates">Templates</TabsTrigger>
+            {([
+              ["home", "Reporting home"],
+              ["standard", "Standard reports"],
+              ["custom", "Custom reports"],
+              ["management", "Management reports"],
+              ["packs", "Report packs"],
+              ["adviser", "Adviser"],
+              ["drafts", "Drafts & review"],
+              ["published", "Published"],
+              ["archived", "Archived"],
+              ["schedules", "Scheduled delivery"],
+              ["templates", "Templates"],
+            ] as const).map(([id, label]) => (
+              <Link
+                key={id}
+                role="tab"
+                aria-selected={tab === id}
+                data-state={tab === id ? "active" : "inactive"}
+                to="/reports"
+                search={{ ...search, tab: id }}
+                className={nativeTabLinkClass}
+                resetScroll={false}
+              >
+                {label}
+              </Link>
+            ))}
           </TabsList>
         </div>
         {tab !== "standard" && (

@@ -504,26 +504,40 @@ export function SettingsForCompany({
               ) : null}
 
               {showLegacy ? (
-                <Tabs
-                  value={legacyTab}
-                  onValueChange={(v) => {
-                    const entry = Object.entries(LEGACY_TAB_BY_SECTION).find(
-                      ([, tab]) => tab === v,
-                    );
-                    if (entry) selectSection(entry[0]);
-                  }}
-                >
+                <Tabs value={legacyTab}>
                   <TabsList className={embeddedSection ? "hidden" : "flex h-auto flex-wrap gap-1"}>
-                    <TabsTrigger value="organisation">Organisation</TabsTrigger>
-                    <TabsTrigger value="financial">Financial</TabsTrigger>
-                    <TabsTrigger value="dimensions">Dimensions</TabsTrigger>
-                    <TabsTrigger value="documents">Documents</TabsTrigger>
-                    <TabsTrigger value="currencies">Currencies</TabsTrigger>
-                    <TabsTrigger value="users">Users</TabsTrigger>
-                    <TabsTrigger value="automation">Automation</TabsTrigger>
-                    <TabsTrigger value="integrations">Integrations</TabsTrigger>
-                    <TabsTrigger value="audit">Audit</TabsTrigger>
-                    {isDemo ? <TabsTrigger value="demo">Demo</TabsTrigger> : null}
+                    <TabsTrigger value="organisation" asChild>
+                      <Link to="/settings" search={{ section: "organisation" }}>Organisation</Link>
+                    </TabsTrigger>
+                    <TabsTrigger value="financial" asChild>
+                      <Link to="/settings" search={{ section: "accounting" }}>Financial</Link>
+                    </TabsTrigger>
+                    <TabsTrigger value="dimensions" asChild>
+                      <Link to="/settings" search={{ section: "dimensions" }}>Dimensions</Link>
+                    </TabsTrigger>
+                    <TabsTrigger value="documents" asChild>
+                      <Link to="/settings" search={{ section: "documents" }}>Documents</Link>
+                    </TabsTrigger>
+                    <TabsTrigger value="currencies" asChild>
+                      <Link to="/settings" search={{ section: "currencies" }}>Currencies</Link>
+                    </TabsTrigger>
+                    <TabsTrigger value="users" asChild>
+                      <Link to="/settings" search={{ section: "users" }}>Users</Link>
+                    </TabsTrigger>
+                    <TabsTrigger value="automation" asChild>
+                      <Link to="/settings" search={{ section: "automation" }}>Automation</Link>
+                    </TabsTrigger>
+                    <TabsTrigger value="integrations" asChild>
+                      <Link to="/settings" search={{ section: "integrations" }}>Integrations</Link>
+                    </TabsTrigger>
+                    <TabsTrigger value="audit" asChild>
+                      <Link to="/settings" search={{ section: "audit" }}>Audit</Link>
+                    </TabsTrigger>
+                    {isDemo ? (
+                      <TabsTrigger value="demo" asChild>
+                        <Link to="/settings" search={{ section: "demo" }}>Demo</Link>
+                      </TabsTrigger>
+                    ) : null}
                   </TabsList>
 
                   {section === "accounting" ? (

@@ -6,12 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,34 +69,33 @@ export function RecurringBillOverlay({
   const detailQ = useQuery({
     queryKey: ["recurring-detail", companyId, recurringBillId],
     enabled: open && Boolean(companyId),
-    queryFn: () =>
-      fetchDetail({ data: { companyId, recurringBillId } }),
+    queryFn: () => fetchDetail({ data: { companyId, recurringBillId } }),
   });
 
   const historyQ = useQuery({
     queryKey: ["recurring-history", companyId, recurringBillId],
     enabled: open && Boolean(companyId),
-    queryFn: () =>
-      fetchHistory({ data: { companyId, recurringBillId } }),
+    queryFn: () => fetchHistory({ data: { companyId, recurringBillId } }),
   });
 
   const previewQ = useQuery({
     queryKey: ["recurring-preview", companyId, recurringBillId],
     enabled: open && Boolean(companyId),
-    queryFn: () =>
-      fetchPreview({ data: { companyId, recurringBillId, count: 12 } }),
+    queryFn: () => fetchPreview({ data: { companyId, recurringBillId, count: 12 } }),
   });
 
-  const bill = detailQ.data?.bill as {
-    name: string;
-    next_due_date: string;
-    frequency: string;
-    auto_authorise: boolean;
-    is_active: boolean;
-    last_error: string | null;
-    template: { lines?: Array<{ description: string }> };
-    contacts: { name: string } | null;
-  } | undefined;
+  const bill = detailQ.data?.bill as
+    | {
+        name: string;
+        next_due_date: string;
+        frequency: string;
+        auto_authorise: boolean;
+        is_active: boolean;
+        last_error: string | null;
+        template: { lines?: Array<{ description: string }> };
+        contacts: { name: string } | null;
+      }
+    | undefined;
 
   const [tab, setTab] = useState(initialTab);
   const [name, setName] = useState("");
@@ -222,7 +216,11 @@ export function RecurringBillOverlay({
               </Alert>
             ) : (
               <>
-                <TabsContent forceMount value="details" className="mt-0 space-y-4 data-[state=inactive]:hidden">
+                <TabsContent
+                  forceMount
+                  value="details"
+                  className="mt-0 space-y-4 data-[state=inactive]:hidden"
+                >
                   {templateQ.data ? (
                     <NewBill
                       key={recurringBillId}
@@ -235,7 +233,11 @@ export function RecurringBillOverlay({
                   )}
                 </TabsContent>
 
-                <TabsContent forceMount value="schedule" className="mt-0 space-y-4 data-[state=inactive]:hidden">
+                <TabsContent
+                  forceMount
+                  value="schedule"
+                  className="mt-0 space-y-4 data-[state=inactive]:hidden"
+                >
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Next occurrence</Label>
@@ -278,7 +280,11 @@ export function RecurringBillOverlay({
                   ) : null}
                 </TabsContent>
 
-                <TabsContent forceMount value="automation" className="mt-0 space-y-4 data-[state=inactive]:hidden">
+                <TabsContent
+                  forceMount
+                  value="automation"
+                  className="mt-0 space-y-4 data-[state=inactive]:hidden"
+                >
                   <div className="flex items-center justify-between">
                     <Label>Auto-authorise (requires recurring.auto_authorise)</Label>
                     <Switch
@@ -291,22 +297,31 @@ export function RecurringBillOverlay({
                   </div>
                   <p className="text-sm text-muted-foreground">
                     Default: save generated documents as <strong>draft</strong>. Email delivery and
-                    payment auto-charge: <strong>Unavailable</strong> (no outbound email / payments).
+                    payment auto-charge: <strong>Unavailable</strong> (no outbound email /
+                    payments).
                   </p>
                 </TabsContent>
 
-                <TabsContent forceMount value="approvals" className="mt-0 data-[state=inactive]:hidden">
+                <TabsContent
+                  forceMount
+                  value="approvals"
+                  className="mt-0 data-[state=inactive]:hidden"
+                >
                   <Alert>
                     <AlertTitle>Bill approval workflow</AlertTitle>
                     <AlertDescription>
                       Generated bills can use Purchases approval when not auto-authorised. Threshold
-                      rules and multi-level approval for templates: configure under Purchases settings
-                      and company roles.
+                      rules and multi-level approval for templates: configure under Purchases
+                      settings and company roles.
                     </AlertDescription>
                   </Alert>
                 </TabsContent>
 
-                <TabsContent forceMount value="attachments" className="mt-0 data-[state=inactive]:hidden">
+                <TabsContent
+                  forceMount
+                  value="attachments"
+                  className="mt-0 data-[state=inactive]:hidden"
+                >
                   <Alert>
                     <AlertTitle>Unavailable</AlertTitle>
                     <AlertDescription>
@@ -315,8 +330,14 @@ export function RecurringBillOverlay({
                   </Alert>
                 </TabsContent>
 
-                <TabsContent forceMount value="history" className="mt-0 data-[state=inactive]:hidden">
-                  <p className="mb-2 text-xs font-medium text-muted-foreground">Template versions</p>
+                <TabsContent
+                  forceMount
+                  value="history"
+                  className="mt-0 data-[state=inactive]:hidden"
+                >
+                  <p className="mb-2 text-xs font-medium text-muted-foreground">
+                    Template versions
+                  </p>
                   <ul className="mb-4 space-y-1 text-sm">
                     {(historyQ.data?.versions ?? []).map(
                       (v: { id: string; version_no: number; created_at: string }) => (
@@ -356,7 +377,11 @@ export function RecurringBillOverlay({
                   </ul>
                 </TabsContent>
 
-                <TabsContent forceMount value="forecast" className="mt-0 data-[state=inactive]:hidden">
+                <TabsContent
+                  forceMount
+                  value="forecast"
+                  className="mt-0 data-[state=inactive]:hidden"
+                >
                   <p className="text-sm text-muted-foreground mb-2">
                     Commitment preview for this schedule (not posted actuals).
                   </p>
@@ -375,10 +400,20 @@ export function RecurringBillOverlay({
           <Button size="sm" disabled={saveM.isPending || !dirty} onClick={() => saveM.mutate()}>
             Save
           </Button>
-          <Button size="sm" variant="secondary" disabled={genM.isPending} onClick={() => genM.mutate()}>
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={genM.isPending}
+            onClick={() => genM.mutate()}
+          >
             Generate now
           </Button>
-          <Button size="sm" variant="outline" disabled={skipM.isPending} onClick={() => skipM.mutate()}>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={skipM.isPending}
+            onClick={() => skipM.mutate()}
+          >
             Skip next
           </Button>
           <Button

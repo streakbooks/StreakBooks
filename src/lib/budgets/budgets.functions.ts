@@ -251,13 +251,26 @@ export const saveBudgetLines = createServerFn({ method: "POST" })
  */
 export const importBudgetLinesCsv = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .validator((input: { companyId: string; budgetId: string; csvText: string; mode: "merge" | "replace" }) => {
-    if (typeof input?.csvText !== "string" || input.csvText.length > 5 * 1024 * 1024) {
-      throw new Error("Invalid budget CSV or file exceeds 5 MB");
-    }
-    if (input.mode !== "merge" && input.mode !== "replace") throw new Error("Choose merge or replace mode");
-    return { companyId: companyIdOf(input), budgetId: assertUuid(input.budgetId, "budget"), csvText: input.csvText, mode: input.mode };
-  })
+  .validator(
+    (input: {
+      companyId: string;
+      budgetId: string;
+      csvText: string;
+      mode: "merge" | "replace";
+    }) => {
+      if (typeof input?.csvText !== "string" || input.csvText.length > 5 * 1024 * 1024) {
+        throw new Error("Invalid budget CSV or file exceeds 5 MB");
+      }
+      if (input.mode !== "merge" && input.mode !== "replace")
+        throw new Error("Choose merge or replace mode");
+      return {
+        companyId: companyIdOf(input),
+        budgetId: assertUuid(input.budgetId, "budget"),
+        csvText: input.csvText,
+        mode: input.mode,
+      };
+    },
+  )
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "accounts.manage");
     const sb = context.supabase as unknown as Sb;
@@ -271,7 +284,9 @@ export const importBudgetLinesCsv = createServerFn({ method: "POST" })
     for (const account of accounts) {
       const key = account.code.toLocaleLowerCase("en-US");
       if (accountByCode.has(key)) {
-        throw new Error(`Account code ${account.code} is ambiguous; resolve duplicate account codes before import`);
+        throw new Error(
+          `Account code ${account.code} is ambiguous; resolve duplicate account codes before import`,
+        );
       }
       accountByCode.set(key, account);
     }
@@ -280,7 +295,9 @@ export const importBudgetLinesCsv = createServerFn({ method: "POST" })
     for (const row of parsed) {
       const account = accountByCode.get(row.accountCode.toLocaleLowerCase("en-US"));
       if (!account) {
-        throw new Error(`Row ${row.sourceRow}: account ${row.accountCode} must match an active, postable income or expense account`);
+        throw new Error(
+          `Row ${row.sourceRow}: account ${row.accountCode} must match an active, postable income or expense account`,
+        );
       }
       row.months.forEach((amount, i) => {
         if (data.mode === "replace" && amount === 0) return;
@@ -293,14 +310,27 @@ export const importBudgetLinesCsv = createServerFn({ method: "POST" })
       { _budget_id: data.budgetId, _lines: lines, _mode: data.mode },
       BUDGET_MIGRATION,
     );
-    const { error: auditError } = await context.supabase.rpc("record_audit_event" as never, {
-      _company_id: data.companyId,
-      _action: "budgets.csv_import",
-      _entity_type: "budget",
-      _entity_id: data.budgetId,
-      _details: { source: "csv", account_count: parsed.length, line_count: lines.length, mode: data.mode },
-    } as never);
-    return { stored: num(stored), accounts: parsed.length, budgetId: data.budgetId, auditError: auditError?.message ?? null };
+    const { error: auditError } = await context.supabase.rpc(
+      "record_audit_event" as never,
+      {
+        _company_id: data.companyId,
+        _action: "budgets.csv_import",
+        _entity_type: "budget",
+        _entity_id: data.budgetId,
+        _details: {
+          source: "csv",
+          account_count: parsed.length,
+          line_count: lines.length,
+          mode: data.mode,
+        },
+      } as never,
+    );
+    return {
+      stored: num(stored),
+      accounts: parsed.length,
+      budgetId: data.budgetId,
+      auditError: auditError?.message ?? null,
+    };
   });
 
 export const deleteBudget = createServerFn({ method: "POST" })

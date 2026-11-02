@@ -211,7 +211,35 @@ function Statements() {
                 <TableRow key={`${l.type}-${l.id}`}>
                   <TableCell>{l.date}</TableCell>
                   <TableCell className="capitalize">{l.type.replace("_", " ")}</TableCell>
-                  <TableCell>{l.type === "bill" ? <Link to="/purchases/bills/$billId" params={{ billId: l.id }} className="underline-offset-2 hover:underline focus-visible:underline">{l.reference ?? l.id.slice(0, 8)}</Link> : l.type === "payment" ? <Link to="/purchases/payments/$paymentId" params={{ paymentId: l.id }} className="underline-offset-2 hover:underline focus-visible:underline">{l.reference ?? l.id.slice(0, 8)}</Link> : l.type === "credit_note" ? <Link to="/purchases/credit-notes/$creditNoteId" params={{ creditNoteId: l.id }} className="underline-offset-2 hover:underline focus-visible:underline">{l.reference ?? l.id.slice(0, 8)}</Link> : l.reference ?? l.id.slice(0, 8)}</TableCell>
+                  <TableCell>
+                    {l.type === "bill" ? (
+                      <Link
+                        to="/purchases/bills/$billId"
+                        params={{ billId: l.id }}
+                        className="underline-offset-2 hover:underline focus-visible:underline"
+                      >
+                        {l.reference ?? l.id.slice(0, 8)}
+                      </Link>
+                    ) : l.type === "payment" ? (
+                      <Link
+                        to="/purchases/payments/$paymentId"
+                        params={{ paymentId: l.id }}
+                        className="underline-offset-2 hover:underline focus-visible:underline"
+                      >
+                        {l.reference ?? l.id.slice(0, 8)}
+                      </Link>
+                    ) : l.type === "credit_note" ? (
+                      <Link
+                        to="/purchases/credit-notes/$creditNoteId"
+                        params={{ creditNoteId: l.id }}
+                        className="underline-offset-2 hover:underline focus-visible:underline"
+                      >
+                        {l.reference ?? l.id.slice(0, 8)}
+                      </Link>
+                    ) : (
+                      (l.reference ?? l.id.slice(0, 8))
+                    )}
+                  </TableCell>
                   <TableCell className="text-right">
                     {l.debit_minor ? fromMinorUnits(l.debit_minor, currency) : "—"}
                   </TableCell>

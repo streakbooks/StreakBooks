@@ -21,6 +21,14 @@ describe("folder-tree", () => {
     expect(possibleParentFolders(folders, "b").map((f) => f.id)).toEqual(["a", "d"]);
   });
   it("terminates safely on malformed cycles", () => {
-    expect(folderAncestors([{ id: "a", name: "A", parent_id: "b" }, { id: "b", name: "B", parent_id: "a" }], "a")).toHaveLength(2);
+    expect(
+      folderAncestors(
+        [
+          { id: "a", name: "A", parent_id: "b" },
+          { id: "b", name: "B", parent_id: "a" },
+        ],
+        "a",
+      ),
+    ).toHaveLength(2);
   });
 });

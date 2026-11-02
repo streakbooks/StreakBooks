@@ -1,6 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
-import { prepareTransactionCsv, validateResolvedTransactionTotals } from "@/lib/imports/transaction-import-validation";
-import { classifyTransactionImportRetry, isExactTransactionImportRetry, isVerifiedTransactionImportJournal, isReconciledTransactionImportJournal } from "@/lib/imports/transaction-import-retry";
+import {
+  prepareTransactionCsv,
+  validateResolvedTransactionTotals,
+} from "@/lib/imports/transaction-import-validation";
+import {
+  classifyTransactionImportRetry,
+  isExactTransactionImportRetry,
+  isVerifiedTransactionImportJournal,
+  isReconciledTransactionImportJournal,
+} from "@/lib/imports/transaction-import-retry";
 import { loadSalesTaxCodes } from "@/lib/sales/tax-codes";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
@@ -1289,7 +1297,6 @@ export const convertQuoteToInvoice = createServerFn({ method: "POST" })
     return { invoiceId: saved.id };
   });
 
-
 /**
  * CSV-to-invoice domain import. Drafts use saveInvoiceDraftCore and optional AR
  * posting uses authoriseInvoiceCore. Never inserts journals from CSV.
@@ -1335,9 +1342,23 @@ export const importSalesInvoicesCsv = createServerFn({ method: "POST" })
         .eq("code" as never, code as never)
         .limit(2);
       if (error) throw new Error(error.message);
-      const available = (rows ?? []) as Array<{ id: string; account_type: string; is_active: boolean; is_postable: boolean; archived_at: string | null }>;
-      if (available.length !== 1 || !available[0]!.is_active || !available[0]!.is_postable || available[0]!.archived_at || available[0]!.account_type !== "income") {
-        throw new Error(`Account ${code} must resolve to one active postable income account in this organisation`);
+      const available = (rows ?? []) as Array<{
+        id: string;
+        account_type: string;
+        is_active: boolean;
+        is_postable: boolean;
+        archived_at: string | null;
+      }>;
+      if (
+        available.length !== 1 ||
+        !available[0]!.is_active ||
+        !available[0]!.is_postable ||
+        available[0]!.archived_at ||
+        available[0]!.account_type !== "income"
+      ) {
+        throw new Error(
+          `Account ${code} must resolve to one active postable income account in this organisation`,
+        );
       }
       accounts.set(code, available[0]!.id);
     }
@@ -1352,7 +1373,10 @@ export const importSalesInvoicesCsv = createServerFn({ method: "POST" })
         .eq("is_active" as never, true as never)
         .limit(2);
       if (error) throw new Error(error.message);
-      if ((rows ?? []).length !== 1) throw new Error(`Customer "${name}" must match exactly one active customer in this organisation`);
+      if ((rows ?? []).length !== 1)
+        throw new Error(
+          `Customer "${name}" must match exactly one active customer in this organisation`,
+        );
       contacts.set(name, ((rows ?? []) as Array<{ id: string }>)[0]!.id);
     }
     const codesByDate = new Map<string, Map<string, string>>();
@@ -1365,7 +1389,9 @@ export const importSalesInvoicesCsv = createServerFn({ method: "POST" })
       }
       for (const line of doc.lines) {
         if (line.taxCode && !codesByDate.get(doc.documentDate)!.has(line.taxCode)) {
-          throw new Error(`Row ${line.sourceRow}: tax code ${line.taxCode} is not available for sales on ${doc.documentDate}`);
+          throw new Error(
+            `Row ${line.sourceRow}: tax code ${line.taxCode} is not available for sales on ${doc.documentDate}`,
+          );
         }
       }
     }
@@ -1375,13 +1401,24 @@ export const importSalesInvoicesCsv = createServerFn({ method: "POST" })
     const treatment = await loadTaxTreatment(supabase, data.companyId);
     const totalsByDocument = new Map<(typeof docs)[number], bigint>();
     for (const doc of docs) {
-      totalsByDocument.set(doc, validateResolvedTransactionTotals(doc, "sales", doc.lines.map((line) =>
-        line.taxCode ? ratesByDate.get(doc.documentDate)!.get(line.taxCode)! : 0,
-      ), treatment).totalMinor);
+      totalsByDocument.set(
+        doc,
+        validateResolvedTransactionTotals(
+          doc,
+          "sales",
+          doc.lines.map((line) =>
+            line.taxCode ? ratesByDate.get(doc.documentDate)!.get(line.taxCode)! : 0,
+          ),
+          treatment,
+        ).totalMinor,
+      );
     }
 
     const outcome: {
-      createdDrafts: number; authorised: number; skipped: number; failed: number;
+      createdDrafts: number;
+      authorised: number;
+      skipped: number;
+      failed: number;
       errors: Array<{ row: number; number: string; draftId: string | null; message: string }>;
       auditError: string | null;
     } = { createdDrafts: 0, authorised: 0, skipped: 0, failed: 0, errors: [], auditError: null };
@@ -1391,50 +1428,82 @@ export const importSalesInvoicesCsv = createServerFn({ method: "POST" })
       try {
         const { data: existing, error: existingError } = await supabase
           .from("sales_invoices" as never)
-          .select("id, status, contact_id, invoice_date, due_date, currency_code, memo, total_minor, posted_journal_id" as never)
+          .select(
+            "id, status, contact_id, invoice_date, due_date, currency_code, memo, total_minor, posted_journal_id" as never,
+          )
           .eq("company_id" as never, data.companyId as never)
           .ilike("invoice_number" as never, escapeLikeLiteral(doc.documentNumber) as never)
           .neq("status" as never, "void" as never)
           .limit(1);
         if (existingError) throw new Error(existingError.message);
         if ((existing ?? []).length) {
-          const prior = (existing as unknown as Array<{
-            id: string; status: string; contact_id: string; invoice_date: string;
-            due_date: string; currency_code: string; memo: string | null;
-            total_minor: number | string; posted_journal_id: string | null;
-          }>)[0]!;
+          const prior = (
+            existing as unknown as Array<{
+              id: string;
+              status: string;
+              contact_id: string;
+              invoice_date: string;
+              due_date: string;
+              currency_code: string;
+              memo: string | null;
+              total_minor: number | string;
+              posted_journal_id: string | null;
+            }>
+          )[0]!;
           const { data: priorLines, error: priorLinesError } = await supabase
             .from("sales_invoice_lines" as never)
-            .select("description, account_id, quantity, unit_price_minor, tax_code_id, discount_minor, product_id" as never)
+            .select(
+              "description, account_id, quantity, unit_price_minor, tax_code_id, discount_minor, product_id" as never,
+            )
             .eq("company_id" as never, data.companyId as never)
             .eq("invoice_id" as never, prior.id as never)
             .order("line_order" as never);
           if (priorLinesError) throw new Error(priorLinesError.message);
-          const sameSource = isExactTransactionImportRetry({
-            contactId: contacts.get(doc.contactName)!,
-            documentDate: doc.documentDate, dueDate: doc.dueDate,
-            currencyCode: defaults.baseCurrency,
-            lines: doc.lines.map((line) => ({
-              description: line.description, accountId: accounts.get(line.accountCode)!,
-              quantity: line.quantity, unitPriceMinor: line.unitPriceMinor,
-              taxCodeId: line.taxCode ? codesByDate.get(doc.documentDate)!.get(line.taxCode)! : null,
-            })),
-          }, {
-            contact_id: prior.contact_id, document_date: prior.invoice_date,
-            due_date: prior.due_date, currency_code: prior.currency_code,
-            memo: prior.memo,
-            lines: (priorLines ?? []) as never,
-          });
+          const sameSource = isExactTransactionImportRetry(
+            {
+              contactId: contacts.get(doc.contactName)!,
+              documentDate: doc.documentDate,
+              dueDate: doc.dueDate,
+              currencyCode: defaults.baseCurrency,
+              lines: doc.lines.map((line) => ({
+                description: line.description,
+                accountId: accounts.get(line.accountCode)!,
+                quantity: line.quantity,
+                unitPriceMinor: line.unitPriceMinor,
+                taxCodeId: line.taxCode
+                  ? codesByDate.get(doc.documentDate)!.get(line.taxCode)!
+                  : null,
+              })),
+            },
+            {
+              contact_id: prior.contact_id,
+              document_date: prior.invoice_date,
+              due_date: prior.due_date,
+              currency_code: prior.currency_code,
+              memo: prior.memo,
+              lines: (priorLines ?? []) as never,
+            },
+          );
           if (!sameSource) {
-            throw new Error("Invoice number already exists with different header or lines; review the existing invoice");
+            throw new Error(
+              "Invoice number already exists with different header or lines; review the existing invoice",
+            );
           }
-          const disposition = classifyTransactionImportRetry(prior.status, prior.posted_journal_id, data.authorise);
+          const disposition = classifyTransactionImportRetry(
+            prior.status,
+            prior.posted_journal_id,
+            data.authorise,
+          );
           if (disposition === "manual_authorisation") {
             draftId = prior.id;
-            throw new Error("Matching draft already exists but is not authorised; review and authorise it manually");
+            throw new Error(
+              "Matching draft already exists but is not authorised; review and authorise it manually",
+            );
           }
           if (disposition === "invalid") {
-            throw new Error("Existing invoice has an inconsistent status or missing posting journal; review and reconcile before retrying");
+            throw new Error(
+              "Existing invoice has an inconsistent status or missing posting journal; review and reconcile before retrying",
+            );
           }
           if (prior.posted_journal_id) {
             const { data: linkedJournal, error: journalError } = await supabase
@@ -1444,11 +1513,20 @@ export const importSalesInvoicesCsv = createServerFn({ method: "POST" })
               .eq("company_id" as never, data.companyId as never)
               .maybeSingle();
             if (journalError) throw new Error(journalError.message);
-            if (!isVerifiedTransactionImportJournal({
-              companyId: data.companyId, documentId: prior.id,
-              journalId: prior.posted_journal_id, sourceType: "sales_invoice",
-            }, (linkedJournal ?? null) as never)) {
-              throw new Error("Existing invoice posting journal cannot be verified against this organisation and invoice; reconcile manually");
+            if (
+              !isVerifiedTransactionImportJournal(
+                {
+                  companyId: data.companyId,
+                  documentId: prior.id,
+                  journalId: prior.posted_journal_id,
+                  sourceType: "sales_invoice",
+                },
+                (linkedJournal ?? null) as never,
+              )
+            ) {
+              throw new Error(
+                "Existing invoice posting journal cannot be verified against this organisation and invoice; reconcile manually",
+              );
             }
             // A valid source link is insufficient: the journal must balance
             // and its AR control debit must equal both CSV and invoice totals.
@@ -1460,13 +1538,22 @@ export const importSalesInvoicesCsv = createServerFn({ method: "POST" })
               .limit(501);
             if (glError) throw new Error(glError.message);
             const ar = await resolveArAccount(supabase as never, data.companyId);
-            if (!isReconciledTransactionImportJournal({
-              companyId: data.companyId, journalId: prior.posted_journal_id,
-              controlAccountId: ar.id, controlSide: "debit",
-              expectedTotalMinor: totalsByDocument.get(doc)!,
-              persistedTotalMinor: prior.total_minor,
-            }, (glLines ?? null) as never)) {
-              throw new Error("Existing invoice journal is unbalanced or AR control does not match the imported invoice total; reconcile manually");
+            if (
+              !isReconciledTransactionImportJournal(
+                {
+                  companyId: data.companyId,
+                  journalId: prior.posted_journal_id,
+                  controlAccountId: ar.id,
+                  controlSide: "debit",
+                  expectedTotalMinor: totalsByDocument.get(doc)!,
+                  persistedTotalMinor: prior.total_minor,
+                },
+                (glLines ?? null) as never,
+              )
+            ) {
+              throw new Error(
+                "Existing invoice journal is unbalanced or AR control does not match the imported invoice total; reconcile manually",
+              );
             }
           }
           outcome.skipped++;
@@ -1502,21 +1589,30 @@ export const importSalesInvoicesCsv = createServerFn({ method: "POST" })
         // whether another actor created the invoice.
         outcome.failed++;
         outcome.errors.push({
-          row: doc.lines[0]!.sourceRow, number: doc.documentNumber, draftId, message,
+          row: doc.lines[0]!.sourceRow,
+          number: doc.documentNumber,
+          draftId,
+          message,
         });
       }
     }
     if (outcome.createdDrafts > 0) {
-      const { error } = await supabase.rpc("record_audit_event" as never, {
-        _company_id: data.companyId,
-        _action: "sales.invoices.import",
-        _entity_type: "sales_invoices",
-        _entity_id: null,
-        _details: {
-          source: "csv", drafts: outcome.createdDrafts,
-          authorised: outcome.authorised, skipped: outcome.skipped, failed: outcome.failed,
-        },
-      } as never);
+      const { error } = await supabase.rpc(
+        "record_audit_event" as never,
+        {
+          _company_id: data.companyId,
+          _action: "sales.invoices.import",
+          _entity_type: "sales_invoices",
+          _entity_id: null,
+          _details: {
+            source: "csv",
+            drafts: outcome.createdDrafts,
+            authorised: outcome.authorised,
+            skipped: outcome.skipped,
+            failed: outcome.failed,
+          },
+        } as never,
+      );
       if (error) outcome.auditError = error.message;
     }
     return outcome;

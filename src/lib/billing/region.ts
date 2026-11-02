@@ -16,7 +16,11 @@ export function resolveBillingRegion(input: {
   return {
     country,
     currency: checkoutCurrencyForCountry(country),
-    source: organisation ? ("organisation" as const) : visitor ? ("visitor" as const) : ("fallback" as const),
+    source: organisation
+      ? ("organisation" as const)
+      : visitor
+        ? ("visitor" as const)
+        : ("fallback" as const),
   };
 }
 

@@ -153,16 +153,50 @@ function CreditNotesList() {
                           {c.credit_number ?? c.id.slice(0, 8)}
                         </Link>
                       </TableCell>
-                      <TableCell><Link to="/sales/credit-notes/$creditNoteId" params={{ creditNoteId: c.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{fmt.date(c.credit_date)}</Link></TableCell>
-                      <TableCell><Link to="/sales/credit-notes/$creditNoteId" params={{ creditNoteId: c.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{c.contacts?.name ?? "—"}</Link></TableCell>
                       <TableCell>
-                        <Link to="/sales/credit-notes/$creditNoteId" params={{ creditNoteId: c.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"><StatusBadge status={c.status} label={creditNoteStatusLabel(c.status)} /></Link>
+                        <Link
+                          to="/sales/credit-notes/$creditNoteId"
+                          params={{ creditNoteId: c.id }}
+                          className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                        >
+                          {fmt.date(c.credit_date)}
+                        </Link>
+                      </TableCell>
+                      <TableCell>
+                        <Link
+                          to="/sales/credit-notes/$creditNoteId"
+                          params={{ creditNoteId: c.id }}
+                          className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                        >
+                          {c.contacts?.name ?? "—"}
+                        </Link>
+                      </TableCell>
+                      <TableCell>
+                        <Link
+                          to="/sales/credit-notes/$creditNoteId"
+                          params={{ creditNoteId: c.id }}
+                          className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                        >
+                          <StatusBadge status={c.status} label={creditNoteStatusLabel(c.status)} />
+                        </Link>
                       </TableCell>
                       <TableCell className="money">
-                        <Link to="/sales/credit-notes/$creditNoteId" params={{ creditNoteId: c.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{fmt.money(c.total_minor, c.currency_code)}</Link>
+                        <Link
+                          to="/sales/credit-notes/$creditNoteId"
+                          params={{ creditNoteId: c.id }}
+                          className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                        >
+                          {fmt.money(c.total_minor, c.currency_code)}
+                        </Link>
                       </TableCell>
                       <TableCell className="money">
-                        <Link to="/sales/credit-notes/$creditNoteId" params={{ creditNoteId: c.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{fmt.money(c.amount_allocated_minor, c.currency_code)}</Link>
+                        <Link
+                          to="/sales/credit-notes/$creditNoteId"
+                          params={{ creditNoteId: c.id }}
+                          className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                        >
+                          {fmt.money(c.amount_allocated_minor, c.currency_code)}
+                        </Link>
                       </TableCell>
                       <TableCell className="money">
                         {fmt.money(

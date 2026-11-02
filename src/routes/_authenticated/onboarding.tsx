@@ -6,12 +6,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { companyContextKey } from "@/hooks/use-active-company";
 import { createCompany, openDemoCompany, setActiveCompany } from "@/lib/company.functions";
-import {
-  countries,
-  currencies,
-  months,
-  timezones,
-} from "@/lib/company-constants";
+import { countries, currencies, months, timezones } from "@/lib/company-constants";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { PageHeader } from "@/components/common/states";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -117,7 +112,9 @@ function OnboardingPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Create organisation</CardTitle>
-          <CardDescription>Owners can invite team members from Settings after creation.</CardDescription>
+          <CardDescription>
+            Owners can invite team members from Settings after creation.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {formError ? (

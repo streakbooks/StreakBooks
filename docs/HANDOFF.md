@@ -1,5 +1,7 @@
 # Handoff
 
+- P0.1: typecheck exit 0, lint 0 errors and 23 warnings, 1279 unit tests passed, production build exit 0.
+
 Date: 2 November 2026. `origin/main` is `7813d20`, which is after `53cc3ec`. Further work goes through a pull request. Do not push `main` directly.
 
 ## Process from here

@@ -38,25 +38,31 @@ export const importProjectsCsv = createServerFn({ method: "POST" })
         .limit(2);
       if (error) throw new Error(error.message);
       if ((contacts ?? []).length !== 1) {
-        throw new Error(`Row ${row.sourceRow}: Customer "${row.customer}" must match exactly one active customer in this organisation`);
+        throw new Error(
+          `Row ${row.sourceRow}: Customer "${row.customer}" must match exactly one active customer in this organisation`,
+        );
       }
       contactIds.set(row.customer, ((contacts ?? []) as Array<{ id: string }>)[0]!.id);
     }
 
-    const result: ProjectsImportResult = { created: 0, skipped: 0, failed: 0, errors: [], auditError: null };
+    const result: ProjectsImportResult = {
+      created: 0,
+      skipped: 0,
+      failed: 0,
+      errors: [],
+      auditError: null,
+    };
     const createdCodes: string[] = [];
     for (const row of rows) {
-      const { error } = await context.supabase
-        .from("projects" as never)
-        .insert({
-          company_id: data.companyId,
-          code: row.code,
-          name: row.name,
-          status: "active",
-          contact_id: row.customer ? contactIds.get(row.customer) : null,
-          start_date: row.startDate,
-          created_by: context.userId,
-        } as never);
+      const { error } = await context.supabase.from("projects" as never).insert({
+        company_id: data.companyId,
+        code: row.code,
+        name: row.name,
+        status: "active",
+        contact_id: row.customer ? contactIds.get(row.customer) : null,
+        start_date: row.startDate,
+        created_by: context.userId,
+      } as never);
       if (!error) {
         result.created++;
         createdCodes.push(row.code);
@@ -69,13 +75,22 @@ export const importProjectsCsv = createServerFn({ method: "POST" })
       }
     }
     if (createdCodes.length) {
-      const { error } = await context.supabase.rpc("record_audit_event" as never, {
-        _company_id: data.companyId,
-        _action: "projects.import",
-        _entity_type: "project",
-        _entity_id: null,
-        _details: { source: "csv", created: result.created, skipped: result.skipped, failed: result.failed, project_codes: createdCodes },
-      } as never);
+      const { error } = await context.supabase.rpc(
+        "record_audit_event" as never,
+        {
+          _company_id: data.companyId,
+          _action: "projects.import",
+          _entity_type: "project",
+          _entity_id: null,
+          _details: {
+            source: "csv",
+            created: result.created,
+            skipped: result.skipped,
+            failed: result.failed,
+            project_codes: createdCodes,
+          },
+        } as never,
+      );
       if (error) result.auditError = error.message;
     }
     return result;

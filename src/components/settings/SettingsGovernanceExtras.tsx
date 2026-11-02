@@ -13,7 +13,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 
 type Props = { companyId: string; canEdit: boolean };
@@ -66,8 +72,8 @@ export function SettingsAutomationPanel({ companyId, canEdit }: Props) {
       <CardHeader>
         <CardTitle className="text-base">Automation & defaults</CardTitle>
         <CardDescription>
-          Organisation-wide workflow defaults. Sales and Purchases module settings remain authoritative
-          for document-specific preferences —{" "}
+          Organisation-wide workflow defaults. Sales and Purchases module settings remain
+          authoritative for document-specific preferences —{" "}
           <Link to="/sales/settings" className="underline">
             Sales settings
           </Link>
@@ -82,11 +88,19 @@ export function SettingsAutomationPanel({ companyId, canEdit }: Props) {
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1">
             <Label>Default sales payment terms (days)</Label>
-            <Input value={salesTerms} disabled={!canEdit} onChange={(e) => setSalesTerms(e.target.value)} />
+            <Input
+              value={salesTerms}
+              disabled={!canEdit}
+              onChange={(e) => setSalesTerms(e.target.value)}
+            />
           </div>
           <div className="space-y-1">
             <Label>Default purchase payment terms (days)</Label>
-            <Input value={purchTerms} disabled={!canEdit} onChange={(e) => setPurchTerms(e.target.value)} />
+            <Input
+              value={purchTerms}
+              disabled={!canEdit}
+              onChange={(e) => setPurchTerms(e.target.value)}
+            />
           </div>
         </div>
         <div className="space-y-1">
@@ -126,7 +140,9 @@ export function SettingsIntegrationsPanel() {
     <Card>
       <CardHeader>
         <CardTitle className="text-base">Integrations</CardTitle>
-        <CardDescription>Connection status for external services used by this organisation.</CardDescription>
+        <CardDescription>
+          Connection status for external services used by this organisation.
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
         <IntegrationRow
@@ -173,4 +189,3 @@ function IntegrationRow({
     </div>
   );
 }
-

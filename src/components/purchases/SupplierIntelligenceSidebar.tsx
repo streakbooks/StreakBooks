@@ -155,10 +155,7 @@ export function SupplierIntelligenceSidebar({
 
   return (
     <aside
-      className={cn(
-        "relative flex shrink-0 flex-col border-l border-border bg-card",
-        className,
-      )}
+      className={cn("relative flex shrink-0 flex-col border-l border-border bg-card", className)}
       style={{ width: widthPx }}
       aria-label="Supplier intelligence"
     >
@@ -198,7 +195,9 @@ export function SupplierIntelligenceSidebar({
       </div>
 
       {!contactId ? (
-        <p className="p-4 text-sm text-muted-foreground">Select a supplier to see balances and history.</p>
+        <p className="p-4 text-sm text-muted-foreground">
+          Select a supplier to see balances and history.
+        </p>
       ) : intelQ.isPending ? (
         <div className="flex flex-1 items-center justify-center p-6">
           <Loader2 className="size-5 animate-spin text-muted-foreground" />
@@ -235,7 +234,8 @@ export function SupplierIntelligenceSidebar({
                   <p className="text-xs text-muted-foreground">Code {contact.account_number}</p>
                 ) : null}
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {[contact?.email, contact?.phone].filter(Boolean).join(" · ") || "No contact details"}
+                  {[contact?.email, contact?.phone].filter(Boolean).join(" · ") ||
+                    "No contact details"}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Currency {contact?.default_currency ?? currency}
@@ -257,7 +257,9 @@ export function SupplierIntelligenceSidebar({
                 </div>
                 <div className="rounded-md bg-muted/50 p-2">
                   <dt className="text-muted-foreground">Open bills</dt>
-                  <dd className="text-sm font-semibold tabular-nums">{intelQ.data!.openBillCount}</dd>
+                  <dd className="text-sm font-semibold tabular-nums">
+                    {intelQ.data!.openBillCount}
+                  </dd>
                 </div>
                 <div className="rounded-md bg-muted/50 p-2">
                   <dt className="text-muted-foreground">Available credits</dt>
@@ -281,18 +283,8 @@ export function SupplierIntelligenceSidebar({
             </TabsContent>
 
             <TabsContent value="bills" className="mt-0 space-y-2">
-              {(intelQ.data!.recentBills as Array<{
-                id: string;
-                bill_number: string | null;
-                bill_date: string;
-                status: string;
-                total_minor: number;
-                amount_paid_minor: number;
-                amount_credited_minor: number;
-              }>).length === 0 ? (
-                <p className="text-muted-foreground">No bills yet.</p>
-              ) : (
-                (intelQ.data!.recentBills as Array<{
+              {(
+                intelQ.data!.recentBills as Array<{
                   id: string;
                   bill_number: string | null;
                   bill_date: string;
@@ -300,9 +292,22 @@ export function SupplierIntelligenceSidebar({
                   total_minor: number;
                   amount_paid_minor: number;
                   amount_credited_minor: number;
-                }>).map((b) => {
-                  const out =
-                    b.total_minor - b.amount_paid_minor - b.amount_credited_minor;
+                }>
+              ).length === 0 ? (
+                <p className="text-muted-foreground">No bills yet.</p>
+              ) : (
+                (
+                  intelQ.data!.recentBills as Array<{
+                    id: string;
+                    bill_number: string | null;
+                    bill_date: string;
+                    status: string;
+                    total_minor: number;
+                    amount_paid_minor: number;
+                    amount_credited_minor: number;
+                  }>
+                ).map((b) => {
+                  const out = b.total_minor - b.amount_paid_minor - b.amount_credited_minor;
                   return (
                     <Link
                       key={b.id}
@@ -329,20 +334,24 @@ export function SupplierIntelligenceSidebar({
             <TabsContent value="credits" className="mt-0 space-y-3">
               <div>
                 <p className="mb-1 text-xs font-medium uppercase text-muted-foreground">Credits</p>
-                {(intelQ.data!.credits as Array<{
-                  id: string;
-                  credit_number: string | null;
-                  credit_date: string;
-                  available_minor: number;
-                }>).length === 0 ? (
-                  <p className="text-muted-foreground">No available credits.</p>
-                ) : (
-                  (intelQ.data!.credits as Array<{
+                {(
+                  intelQ.data!.credits as Array<{
                     id: string;
                     credit_number: string | null;
                     credit_date: string;
                     available_minor: number;
-                  }>).map((c) => (
+                  }>
+                ).length === 0 ? (
+                  <p className="text-muted-foreground">No available credits.</p>
+                ) : (
+                  (
+                    intelQ.data!.credits as Array<{
+                      id: string;
+                      credit_number: string | null;
+                      credit_date: string;
+                      available_minor: number;
+                    }>
+                  ).map((c) => (
                     <Link
                       key={c.id}
                       to="/purchases/credit-notes/$creditNoteId"
@@ -359,24 +368,28 @@ export function SupplierIntelligenceSidebar({
               </div>
               <div>
                 <p className="mb-1 text-xs font-medium uppercase text-muted-foreground">Payments</p>
-                {(intelQ.data!.payments as Array<{
-                  id: string;
-                  payment_date: string;
-                  amount_minor: number;
-                  unallocated_minor: number;
-                  reference: string | null;
-                }>).slice(0, 8).map((p) => (
-                  <div
-                    key={p.id}
-                    className="mb-1 flex justify-between rounded border border-border p-2 text-xs"
-                  >
-                    <span>
-                      {p.payment_date}
-                      {p.reference ? ` · ${p.reference}` : ""}
-                    </span>
-                    <span className="tabular-nums">{money(p.amount_minor)}</span>
-                  </div>
-                ))}
+                {(
+                  intelQ.data!.payments as Array<{
+                    id: string;
+                    payment_date: string;
+                    amount_minor: number;
+                    unallocated_minor: number;
+                    reference: string | null;
+                  }>
+                )
+                  .slice(0, 8)
+                  .map((p) => (
+                    <div
+                      key={p.id}
+                      className="mb-1 flex justify-between rounded border border-border p-2 text-xs"
+                    >
+                      <span>
+                        {p.payment_date}
+                        {p.reference ? ` · ${p.reference}` : ""}
+                      </span>
+                      <span className="tabular-nums">{money(p.amount_minor)}</span>
+                    </div>
+                  ))}
               </div>
             </TabsContent>
 
@@ -483,20 +496,24 @@ export function SupplierIntelligenceSidebar({
 
             <TabsContent value="activity" className="mt-0 space-y-2">
               <p className="text-xs text-muted-foreground">Recent purchases & open orders</p>
-              {(intelQ.data!.openOrders as Array<{
-                id: string;
-                order_number?: string | null;
-                order_date: string;
-                status: string;
-                total_minor: number;
-              }>).length > 0 ? (
-                (intelQ.data!.openOrders as Array<{
+              {(
+                intelQ.data!.openOrders as Array<{
                   id: string;
                   order_number?: string | null;
                   order_date: string;
                   status: string;
                   total_minor: number;
-                }>).map((o) => (
+                }>
+              ).length > 0 ? (
+                (
+                  intelQ.data!.openOrders as Array<{
+                    id: string;
+                    order_number?: string | null;
+                    order_date: string;
+                    status: string;
+                    total_minor: number;
+                  }>
+                ).map((o) => (
                   <div key={o.id} className="rounded border border-border p-2 text-xs">
                     PO {o.order_number ?? o.id.slice(0, 8)} · {o.order_date} · {o.status} ·{" "}
                     {money(o.total_minor)}

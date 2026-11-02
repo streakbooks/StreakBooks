@@ -67,15 +67,24 @@ export function validateRecurrenceSpec(spec: RecurrenceSpec): string | null {
   if (typeof spec.monthDay === "number" && (spec.monthDay < 1 || spec.monthDay > 31)) {
     return "Day of month must be 1–31, the last calendar day, or the last business day";
   }
-  if (spec.endDate && spec.endDate < spec.startDate) return "End date must be on or after the start date";
-  if (spec.maxOccurrences != null && (!Number.isInteger(spec.maxOccurrences) || spec.maxOccurrences < 1)) {
+  if (spec.endDate && spec.endDate < spec.startDate)
+    return "End date must be on or after the start date";
+  if (
+    spec.maxOccurrences != null &&
+    (!Number.isInteger(spec.maxOccurrences) || spec.maxOccurrences < 1)
+  ) {
     return "Occurrence count must be at least 1";
   }
-  if (spec.holidays.some((d) => !/^\d{4}-\d{2}-\d{2}$/.test(d))) return "Holiday dates must be YYYY-MM-DD";
+  if (spec.holidays.some((d) => !/^\d{4}-\d{2}-\d{2}$/.test(d)))
+    return "Holiday dates must be YYYY-MM-DD";
   return null;
 }
 
-export function previewOccurrencesFromSpec(spec: RecurrenceSpec, fromDate: string, count: number): string[] {
+export function previewOccurrencesFromSpec(
+  spec: RecurrenceSpec,
+  fromDate: string,
+  count: number,
+): string[] {
   const error = validateRecurrenceSpec(spec);
   if (error) throw new Error(error);
   const out: string[] = [];
@@ -104,7 +113,8 @@ export function legacyFrequencyForColumn(frequency: FrequencyKind): LegacyFreque
   if (frequency === "monthly") return "monthly";
   if (frequency === "quarterly") return "quarterly";
   if (frequency === "yearly") return "yearly";
-  if (frequency === "weekly" || frequency === "fortnightly" || frequency === "daily") return "weekly";
+  if (frequency === "weekly" || frequency === "fortnightly" || frequency === "daily")
+    return "weekly";
   if (frequency === "half_yearly") return "quarterly";
   return "monthly";
 }

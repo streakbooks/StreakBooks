@@ -244,15 +244,43 @@ export const getSalesOverview = createServerFn({ method: "GET" })
 
     const by = new Map<
       string,
-      { awaitingMinor: number; overdueMinor: number; overdueCount: number; openCount: number; dueNext7Minor: number; dueNext30Minor: number; undatedMinor: number; aging1to30Minor: number; aging31to60Minor: number; aging61to90Minor: number; agingOver90Minor: number }
+      {
+        awaitingMinor: number;
+        overdueMinor: number;
+        overdueCount: number;
+        openCount: number;
+        dueNext7Minor: number;
+        dueNext30Minor: number;
+        undatedMinor: number;
+        aging1to30Minor: number;
+        aging31to60Minor: number;
+        aging61to90Minor: number;
+        agingOver90Minor: number;
+      }
     >();
     for (const r of open) {
       const out =
         Number(r.total_minor) - Number(r.amount_paid_minor) - Number(r.amount_credited_minor);
       if (out <= 0) continue;
-      const s = by.get(r.currency_code) ?? { awaitingMinor: 0, overdueMinor: 0, overdueCount: 0, openCount: 0, dueNext7Minor: 0, dueNext30Minor: 0, undatedMinor: 0, aging1to30Minor: 0, aging31to60Minor: 0, aging61to90Minor: 0, agingOver90Minor: 0 };
+      const s = by.get(r.currency_code) ?? {
+        awaitingMinor: 0,
+        overdueMinor: 0,
+        overdueCount: 0,
+        openCount: 0,
+        dueNext7Minor: 0,
+        dueNext30Minor: 0,
+        undatedMinor: 0,
+        aging1to30Minor: 0,
+        aging31to60Minor: 0,
+        aging61to90Minor: 0,
+        agingOver90Minor: 0,
+      };
       s.openCount += 1;
-      const days = r.due_date ? Math.round((Date.parse(r.due_date + "T00:00:00Z") - Date.parse(today + "T00:00:00Z")) / 86400000) : null;
+      const days = r.due_date
+        ? Math.round(
+            (Date.parse(r.due_date + "T00:00:00Z") - Date.parse(today + "T00:00:00Z")) / 86400000,
+          )
+        : null;
       if (days === null || !Number.isFinite(days)) s.undatedMinor += out;
       else if (days >= 0) {
         if (days <= 7) s.dueNext7Minor += out;

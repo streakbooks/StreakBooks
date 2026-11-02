@@ -46,8 +46,8 @@ export function SettingsOverviewPanel({ companyId, onNavigate }: Props) {
         <CardHeader>
           <CardTitle className="text-base">Setup status</CardTitle>
           <CardDescription>
-            {d.company?.name ?? "Organisation"} · {d.company?.base_currency} ·{" "}
-            {d.memberCount} member{d.memberCount === 1 ? "" : "s"}
+            {d.company?.name ?? "Organisation"} · {d.company?.base_currency} · {d.memberCount}{" "}
+            member{d.memberCount === 1 ? "" : "s"}
             {d.company?.is_demo ? " · Demo" : ""}
           </CardDescription>
         </CardHeader>
@@ -64,7 +64,11 @@ export function SettingsOverviewPanel({ companyId, onNavigate }: Props) {
           {d.warnings.map((w) => (
             <Alert key={w.message} variant={w.severity === "high" ? "destructive" : "default"}>
               <AlertTitle>
-                {w.severity === "high" ? "Security / integrity" : w.severity === "medium" ? "Configuration" : "Info"}
+                {w.severity === "high"
+                  ? "Security / integrity"
+                  : w.severity === "medium"
+                    ? "Configuration"
+                    : "Info"}
               </AlertTitle>
               <AlertDescription className="flex flex-wrap items-center justify-between gap-2">
                 <span>{w.message}</span>
@@ -104,11 +108,16 @@ export function SettingsOverviewPanel({ companyId, onNavigate }: Props) {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Integration health</CardTitle>
-          <CardDescription>Honest connection state — nothing is claimed as live unless wired.</CardDescription>
+          <CardDescription>
+            Honest connection state — nothing is claimed as live unless wired.
+          </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-2 sm:grid-cols-2">
           {d.integrations.map((i) => (
-            <div key={i.name} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
+            <div
+              key={i.name}
+              className="flex items-center justify-between rounded-md border px-3 py-2 text-sm"
+            >
               <span>{i.name}</span>
               <Badge variant="outline">Unavailable</Badge>
             </div>

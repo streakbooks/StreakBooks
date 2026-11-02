@@ -1,7 +1,7 @@
-import {openSettingsPanel} from "@/lib/settings/panels";
-import {SettingsDestinationLink} from "@/components/settings/ModuleSettingsLinks";
-import {InPlaceSettingsPanel} from "@/components/settings/InPlaceSettingsPanel";
-import {parseSettingsPanel} from "@/lib/settings/panels";
+import { openSettingsPanel } from "@/lib/settings/panels";
+import { SettingsDestinationLink } from "@/components/settings/ModuleSettingsLinks";
+import { InPlaceSettingsPanel } from "@/components/settings/InPlaceSettingsPanel";
+import { parseSettingsPanel } from "@/lib/settings/panels";
 import { ModuleSettingsLinks } from "@/components/settings/ModuleSettingsLinks";
 import { WakeSettings } from "@/components/ai-voice/WakeSettings";
 import { useEffect, useMemo, useState } from "react";
@@ -107,9 +107,12 @@ export const Route = createFileRoute("/_authenticated/settings")({
     search: Record<string, unknown>,
   ): { section: string; plan?: string; interval?: "month" | "year" } => {
     const raw = search["section"];
-    const plan = typeof search["plan"] === "string" && search["plan"].length > 0 ? search["plan"] : undefined;
+    const plan =
+      typeof search["plan"] === "string" && search["plan"].length > 0 ? search["plan"] : undefined;
     const interval =
-      search["interval"] === "month" || search["interval"] === "year" ? search["interval"] : undefined;
+      search["interval"] === "month" || search["interval"] === "year"
+        ? search["interval"]
+        : undefined;
     return {
       section: typeof raw === "string" && raw.length > 0 ? raw : "overview",
       ...(plan ? { plan } : {}),
@@ -160,19 +163,33 @@ function SettingsPage() {
   return <SettingsForCompany companyId={companyId} />;
 }
 
-export function SettingsForCompany({ companyId, embeddedSection }: { companyId: string;embeddedSection?:SettingsCategory }) {
+export function SettingsForCompany({
+  companyId,
+  embeddedSection,
+}: {
+  companyId: string;
+  embeddedSection?: SettingsCategory;
+}) {
   const navigate = useNavigate();
-  const currentSearch=useRouterState({select:s=>s.location.search}) as Record<string,unknown>;
-  const sectionRaw=embeddedSection ?? (typeof currentSearch['section']==='string'?currentSearch['section']:'overview');
-  const plan=typeof currentSearch['plan']==='string'?currentSearch['plan']:undefined;
-  const interval=currentSearch['interval']==='month'||currentSearch['interval']==='year'?currentSearch['interval']:undefined;
-  const detail=embeddedSection?undefined:parseSettingsPanel(currentSearch['settingsPanel']);
+  const currentSearch = useRouterState({ select: (s) => s.location.search }) as Record<
+    string,
+    unknown
+  >;
+  const sectionRaw =
+    embeddedSection ??
+    (typeof currentSearch["section"] === "string" ? currentSearch["section"] : "overview");
+  const plan = typeof currentSearch["plan"] === "string" ? currentSearch["plan"] : undefined;
+  const interval =
+    currentSearch["interval"] === "month" || currentSearch["interval"] === "year"
+      ? currentSearch["interval"]
+      : undefined;
+  const detail = embeddedSection ? undefined : parseSettingsPanel(currentSearch["settingsPanel"]);
   const section = (sectionRaw || "overview") as SettingsCategory;
   const [navFilter, setNavFilter] = useState("");
   const [cmdOpen, setCmdOpen] = useState(false);
 
   useEffect(() => {
-    if(embeddedSection)return;
+    if (embeddedSection) return;
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "k") {
         e.preventDefault();
@@ -184,8 +201,18 @@ export function SettingsForCompany({ companyId, embeddedSection }: { companyId: 
   }, [embeddedSection]);
 
   const selectSection = (id: string) => {
-    if(embeddedSection){void navigate({to:window.location.pathname,search:(previous:Record<string,unknown>)=>openSettingsPanel(previous,`category:${id}` as import('@/lib/settings/panels').SettingsPanelId)});return;}
-    void navigate({ to:"/settings",search: { section: id } });
+    if (embeddedSection) {
+      void navigate({
+        to: window.location.pathname,
+        search: (previous: Record<string, unknown>) =>
+          openSettingsPanel(
+            previous,
+            `category:${id}` as import("@/lib/settings/panels").SettingsPanelId,
+          ),
+      });
+      return;
+    }
+    void navigate({ to: "/settings", search: { section: id } });
   };
 
   const fetchDetails = useServerFn(getCompanyDetails);
@@ -402,709 +429,803 @@ export function SettingsForCompany({ companyId, embeddedSection }: { companyId: 
 
   return (
     <>
-      {!embeddedSection && <PageHeader
-        title="Settings Centre"
-        description="Organisation configuration — search settings with Ctrl/Cmd+Shift+K (Ctrl/Cmd+K searches everything). Preferences never override posting, period locks or journal immutability."
-        actions={
-          <Button variant="outline" size="sm" onClick={() => setCmdOpen(true)}>
-            <Search className="mr-1.5 size-3.5" />
-            Search
-            <kbd className="ml-2 hidden rounded border px-1 text-[10px] sm:inline">⌘⇧K</kbd>
-          </Button>
-        }
-      />}
+      {!embeddedSection && (
+        <PageHeader
+          title="Settings Centre"
+          description="Organisation configuration — search settings with Ctrl/Cmd+Shift+K (Ctrl/Cmd+K searches everything). Preferences never override posting, period locks or journal immutability."
+          actions={
+            <Button variant="outline" size="sm" onClick={() => setCmdOpen(true)}>
+              <Search className="mr-1.5 size-3.5" />
+              Search
+              <kbd className="ml-2 hidden rounded border px-1 text-[10px] sm:inline">⌘⇧K</kbd>
+            </Button>
+          }
+        />
+      )}
 
-      {!embeddedSection && <SettingsCommandPalette
-        open={cmdOpen}
-        onOpenChange={setCmdOpen}
-        onSelectSection={selectSection}
-      />}
+      {!embeddedSection && (
+        <SettingsCommandPalette
+          open={cmdOpen}
+          onOpenChange={setCmdOpen}
+          onSelectSection={selectSection}
+        />
+      )}
 
-      <div className={embeddedSection?"":"grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]"}>
-        {!embeddedSection && <aside className="space-y-3 lg:sticky lg:top-4 lg:self-start">
-          <Input
-            value={navFilter}
-            onChange={(e) => setNavFilter(e.target.value)}
-            placeholder="Filter categories…"
-            aria-label="Filter settings categories"
-          />
-          <SettingsNav
-            section={section}
-            onSelect={selectSection}
-            showDemo={isDemo}
-            filter={navFilter}
-          />
-        </aside>}
+      <div className={embeddedSection ? "" : "grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]"}>
+        {!embeddedSection && (
+          <aside className="space-y-3 lg:sticky lg:top-4 lg:self-start">
+            <Input
+              value={navFilter}
+              onChange={(e) => setNavFilter(e.target.value)}
+              placeholder="Filter categories…"
+              aria-label="Filter settings categories"
+            />
+            <SettingsNav
+              section={section}
+              onSelect={selectSection}
+              showDemo={isDemo}
+              filter={navFilter}
+            />
+          </aside>
+        )}
 
         <div className="min-w-0 space-y-4">
-          {detail?<InPlaceSettingsPanel panel={detail} insideCentre/>:<>
-          {!embeddedSection && <ModuleSettingsLinks category={section} central />}
-          {section === "overview" ? (
-            <SettingsOverviewPanel companyId={companyId} onNavigate={selectSection} />
-          ) : null}
-          {section === "features" ? (
-            <SettingsFeatureManager companyId={companyId} canEdit={canEdit} />
-          ) : null}
-          {section === "subscription" ? (
-            <SubscriptionPanel
-              companyId={companyId}
-              {...(plan ? { initialPlan: plan } : {})}
-              {...(interval ? { initialInterval: interval } : {})}
-            />
-          ) : null}
-          {section === "portals" ? (
-            <PortalSettingsPanel companyId={companyId} canEdit={canEdit} />
-          ) : null}
-          {UNAVAILABLE_SECTIONS.includes(section) && sectionMeta ? (
-            <SettingsUnavailablePanel meta={sectionMeta} />
-          ) : null}
-          {CONFIG_SECTIONS.includes(section) ? (
-            <SettingsCategoryConfigPanel
-              companyId={companyId}
-              category={section}
-              canEdit={canEdit}
-              showModuleLinks={!embeddedSection}
-            />
-          ) : null}
-
-          {showLegacy ? (
-            <Tabs
-              value={legacyTab}
-              onValueChange={(v) => {
-                const entry = Object.entries(LEGACY_TAB_BY_SECTION).find(([, tab]) => tab === v);
-                if (entry) selectSection(entry[0]);
-              }}
-            >
-              <TabsList className={embeddedSection?"hidden":"flex h-auto flex-wrap gap-1"}>
-                <TabsTrigger value="organisation">Organisation</TabsTrigger>
-                <TabsTrigger value="financial">Financial</TabsTrigger>
-                <TabsTrigger value="dimensions">Dimensions</TabsTrigger>
-                <TabsTrigger value="documents">Documents</TabsTrigger>
-                <TabsTrigger value="currencies">Currencies</TabsTrigger>
-                <TabsTrigger value="users">Users</TabsTrigger>
-                <TabsTrigger value="automation">Automation</TabsTrigger>
-                <TabsTrigger value="integrations">Integrations</TabsTrigger>
-                <TabsTrigger value="audit">Audit</TabsTrigger>
-                {isDemo ? <TabsTrigger value="demo">Demo</TabsTrigger> : null}
-              </TabsList>
-
-              {section === "accounting" ? (
-                <div className="mt-4">
-                  <SettingsAccountingLocksPanel
-                    companyId={companyId}
-                    canEdit={canEdit}
-                    canLock={canEdit}
-                  />
-                </div>
+          {detail ? (
+            <InPlaceSettingsPanel panel={detail} insideCentre />
+          ) : (
+            <>
+              {!embeddedSection && <ModuleSettingsLinks category={section} central />}
+              {section === "overview" ? (
+                <SettingsOverviewPanel companyId={companyId} onNavigate={selectSection} />
+              ) : null}
+              {section === "features" ? (
+                <SettingsFeatureManager companyId={companyId} canEdit={canEdit} />
+              ) : null}
+              {section === "subscription" ? (
+                <SubscriptionPanel
+                  companyId={companyId}
+                  {...(plan ? { initialPlan: plan } : {})}
+                  {...(interval ? { initialInterval: interval } : {})}
+                />
+              ) : null}
+              {section === "portals" ? (
+                <PortalSettingsPanel companyId={companyId} canEdit={canEdit} />
+              ) : null}
+              {UNAVAILABLE_SECTIONS.includes(section) && sectionMeta ? (
+                <SettingsUnavailablePanel meta={sectionMeta} />
+              ) : null}
+              {CONFIG_SECTIONS.includes(section) ? (
+                <SettingsCategoryConfigPanel
+                  companyId={companyId}
+                  category={section}
+                  canEdit={canEdit}
+                  showModuleLinks={!embeddedSection}
+                />
               ) : null}
 
-        <TabsContent value="organisation" className="mt-4 space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Organisation details</CardTitle>
-              <CardDescription>Legal profile shown on invoices and reports.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="org-name">Organisation name</Label>
-                <Input
-                  id="org-name"
-                  value={name}
-                  disabled={!canEdit || saveMutation.isPending}
-                  onChange={(e) => setName(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="org-legal">Legal name</Label>
-                <Input
-                  id="org-legal"
-                  value={legalName}
-                  disabled={!canEdit || saveMutation.isPending}
-                  onChange={(e) => setLegalName(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="org-country">Country</Label>
-                <Select
-                  value={countryCode}
-                  disabled={!canEdit || saveMutation.isPending}
-                  onValueChange={setCountryCode}
-                >
-                  <SelectTrigger id="org-country">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {countries.map((c) => (
-                      <SelectItem key={c.code} value={c.code}>
-                        {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Tax regime</Label>
-                <Select
-                  value={taxRegime}
-                  disabled={!canEdit || saveMutation.isPending}
-                  onValueChange={setTaxRegime}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {taxRegimes.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>
-                        {t.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="tax-reg">Tax registration number</Label>
-                <Input
-                  id="tax-reg"
-                  value={regNumber}
-                  disabled={!canEdit || saveMutation.isPending}
-                  onChange={(e) => setRegNumber(e.target.value)}
-                />
-              </div>
-              <div className="flex items-center justify-between gap-4 sm:col-span-2">
-                <Label className="font-normal">Prices include tax by default</Label>
-                <Switch
-                  checked={pricesIncludeTax}
-                  disabled={!canEdit || saveMutation.isPending}
-                  onCheckedChange={setPricesIncludeTax}
-                />
-              </div>
-              <div className="sm:col-span-2">
-                {canEdit ? (
-                  <Button size="sm" disabled={saveMutation.isPending} onClick={() => saveMutation.mutate()}>
-                    {saveMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-                    Save changes
-                  </Button>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Only owners and administrators can edit organisation settings.
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Localization</CardTitle>
-              <CardDescription>Display preferences only — ledger dates remain ISO.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Locale</Label>
-                <Select value={locale} disabled={!canEdit} onValueChange={setLocale}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(extendedQuery.data?.locales ?? ["en-GB"]).map((l) => (
-                      <SelectItem key={l} value={l}>
-                        {l}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Date format</Label>
-                <Select value={dateFormat} disabled={!canEdit} onValueChange={setDateFormat}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(extendedQuery.data?.dateFormats ?? ["DD/MM/YYYY"]).map((f) => (
-                      <SelectItem key={f} value={f}>
-                        {f}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Document theme colour</Label>
-                <Input value={themeColor} disabled={!canEdit} onChange={(e) => setThemeColor(e.target.value)} />
-              </div>
-              <div className="space-y-2 sm:col-span-2">
-                <Label>Default invoice footer</Label>
-                <Input
-                  value={invoiceFooter}
-                  disabled={!canEdit}
-                  onChange={(e) => setInvoiceFooter(e.target.value)}
-                />
-              </div>
-              {canEdit ? (
-                <Button size="sm" disabled={localizationM.isPending} onClick={() => localizationM.mutate()}>
-                  Save localization
-                </Button>
-              ) : null}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="financial" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Financial settings</CardTitle>
-              <CardDescription>
-                Base currency, financial year and time zone. Period locks are managed under Accounting.
-                Base currency cannot change after journals are posted.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Base currency</Label>
-                <Select
-                  value={currency}
-                  disabled={!canEdit || saveMutation.isPending}
-                  onValueChange={setCurrency}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {currencies.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Time zone</Label>
-                <Select
-                  value={timezone}
-                  disabled={!canEdit || saveMutation.isPending}
-                  onValueChange={setTimezone}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {timezones.map((tz) => (
-                      <SelectItem key={tz} value={tz}>
-                        {tz}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Financial year end month</Label>
-                <Select
-                  value={fyMonth}
-                  disabled={!canEdit || saveMutation.isPending}
-                  onValueChange={(m) => {
-                    setFyMonth(m);
-                    const max = maxFiscalYearEndDay(Number(m));
-                    if (Number(fyDay) > max) setFyDay(String(max));
+              {showLegacy ? (
+                <Tabs
+                  value={legacyTab}
+                  onValueChange={(v) => {
+                    const entry = Object.entries(LEGACY_TAB_BY_SECTION).find(
+                      ([, tab]) => tab === v,
+                    );
+                    if (entry) selectSection(entry[0]);
                   }}
                 >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {months.map((m, i) => (
-                      <SelectItem key={m} value={String(i + 1)}>
-                        {m}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="fy-day">Financial year end day</Label>
-                <Input
-                  id="fy-day"
-                  type="number"
-                  min={1}
-                  max={maxDay}
-                  value={fyDay}
-                  disabled={!canEdit || saveMutation.isPending}
-                  onChange={(e) => setFyDay(e.target.value)}
-                />
-              </div>
-              <div className="sm:col-span-2 space-y-2 text-sm text-muted-foreground">
-                <p>
-                  Tax rates and codes:{" "}
-                  <Link className="underline" to="/tax">
-                    Tax settings
-                  </Link>
-                  . Accounting periods:{" "}
-                  <Link className="underline" to="/accounting">
-                    Accounting
-                  </Link>
-                  .
-                </p>
-              </div>
-              <div className="sm:col-span-2">
-                {canEdit ? (
-                  <Button size="sm" disabled={saveMutation.isPending} onClick={() => saveMutation.mutate()}>
-                    {saveMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-                    Save financial settings
-                  </Button>
-                ) : null}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                  <TabsList className={embeddedSection ? "hidden" : "flex h-auto flex-wrap gap-1"}>
+                    <TabsTrigger value="organisation">Organisation</TabsTrigger>
+                    <TabsTrigger value="financial">Financial</TabsTrigger>
+                    <TabsTrigger value="dimensions">Dimensions</TabsTrigger>
+                    <TabsTrigger value="documents">Documents</TabsTrigger>
+                    <TabsTrigger value="currencies">Currencies</TabsTrigger>
+                    <TabsTrigger value="users">Users</TabsTrigger>
+                    <TabsTrigger value="automation">Automation</TabsTrigger>
+                    <TabsTrigger value="integrations">Integrations</TabsTrigger>
+                    <TabsTrigger value="audit">Audit</TabsTrigger>
+                    {isDemo ? <TabsTrigger value="demo">Demo</TabsTrigger> : null}
+                  </TabsList>
 
-        <TabsContent value="dimensions" className="mt-4">
-          <SettingsDimensionsPanel companyId={companyId} canEdit={canEdit} currency={baseCurrency} />
-        </TabsContent>
-
-        <TabsContent value="documents" className="mt-4 space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Document branding</CardTitle>
-              <CardDescription>
-                Letterhead and contact details for customer-facing documents. Logo upload, accent colour,
-                address, tax number, bank details and footer are on the{" "}
-                <SettingsDestinationLink className="underline" destination={{to:"/documents/branding"}}>
-                  document branding page
-                </SettingsDestinationLink>
-                .
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Trading name</Label>
-                <Input value={tradingName} disabled={!canEdit} onChange={(e) => setTradingName(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>Letterhead line</Label>
-                <Input value={letterhead} disabled={!canEdit} onChange={(e) => setLetterhead(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>Invoice email</Label>
-                <Input value={invoiceEmail} disabled={!canEdit} onChange={(e) => setInvoiceEmail(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>Invoice phone</Label>
-                <Input value={invoicePhone} disabled={!canEdit} onChange={(e) => setInvoicePhone(e.target.value)} />
-              </div>
-              <div className="space-y-2 sm:col-span-2">
-                <Label>Logo URL</Label>
-                <Input
-                  value={logoUrl}
-                  disabled={!canEdit}
-                  onChange={(e) => setLogoUrl(e.target.value)}
-                  placeholder="https://… (no file upload integration yet)"
-                />
-              </div>
-              {canEdit ? (
-                <Button size="sm" disabled={brandingM.isPending} onClick={() => brandingM.mutate()}>
-                  Save branding
-                </Button>
-              ) : null}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Invoice and bill numbering</CardTitle>
-              <CardDescription>
-                Prefix, next number and zero-padding per document type. Allocation uses a concurrency-safe
-                database function when creating invoices/bills without a manual number. Changing next
-                number never renumbers historical documents.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {extendedQuery.isPending ? (
-                <LoadingState rows={3} />
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Prefix</TableHead>
-                      <TableHead>Next</TableHead>
-                      <TableHead>Padding</TableHead>
-                      <TableHead>Preview</TableHead>
-                      <TableHead />
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {(extendedQuery.data?.sequences ?? []).map((seq) => (
-                      <SequenceRow
-                        key={seq.document_type}
-                        seq={seq}
-                        disabled={!canEdit}
-                        onSave={(patch) =>
-                          saveSequence({
-                            data: { companyId, ...seq, ...patch },
-                          }).then(async () => {
-                            await queryClient.invalidateQueries({ queryKey: ["org-extended", companyId] });
-                            toast.success("Sequence updated");
-                          })
-                        }
+                  {section === "accounting" ? (
+                    <div className="mt-4">
+                      <SettingsAccountingLocksPanel
+                        companyId={companyId}
+                        canEdit={canEdit}
+                        canLock={canEdit}
                       />
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+                    </div>
+                  ) : null}
 
-        <TabsContent value="currencies" className="mt-4 space-y-4">
-          <Alert>
-            <AlertTitle>FX policy</AlertTitle>
-            <AlertDescription>
-              Rates are append-only. Posted journals keep their snapshot{" "}
-              <code className="text-xs">fx_rate_to_base</code>. Void a rate to stop new lookups —
-              historical journals are never rewritten. See{" "}
-              <span className="font-medium">docs/settings-fx-firm/FX_ACCOUNTING_POLICY.md</span>.
-            </AlertDescription>
-          </Alert>
+                  <TabsContent value="organisation" className="mt-4 space-y-4">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Organisation details</CardTitle>
+                        <CardDescription>
+                          Legal profile shown on invoices and reports.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="org-name">Organisation name</Label>
+                          <Input
+                            id="org-name"
+                            value={name}
+                            disabled={!canEdit || saveMutation.isPending}
+                            onChange={(e) => setName(e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="org-legal">Legal name</Label>
+                          <Input
+                            id="org-legal"
+                            value={legalName}
+                            disabled={!canEdit || saveMutation.isPending}
+                            onChange={(e) => setLegalName(e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="org-country">Country</Label>
+                          <Select
+                            value={countryCode}
+                            disabled={!canEdit || saveMutation.isPending}
+                            onValueChange={setCountryCode}
+                          >
+                            <SelectTrigger id="org-country">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {countries.map((c) => (
+                                <SelectItem key={c.code} value={c.code}>
+                                  {c.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Tax regime</Label>
+                          <Select
+                            value={taxRegime}
+                            disabled={!canEdit || saveMutation.isPending}
+                            onValueChange={setTaxRegime}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {taxRegimes.map((t) => (
+                                <SelectItem key={t.value} value={t.value}>
+                                  {t.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2 sm:col-span-2">
+                          <Label htmlFor="tax-reg">Tax registration number</Label>
+                          <Input
+                            id="tax-reg"
+                            value={regNumber}
+                            disabled={!canEdit || saveMutation.isPending}
+                            onChange={(e) => setRegNumber(e.target.value)}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between gap-4 sm:col-span-2">
+                          <Label className="font-normal">Prices include tax by default</Label>
+                          <Switch
+                            checked={pricesIncludeTax}
+                            disabled={!canEdit || saveMutation.isPending}
+                            onCheckedChange={setPricesIncludeTax}
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          {canEdit ? (
+                            <Button
+                              size="sm"
+                              disabled={saveMutation.isPending}
+                              onClick={() => saveMutation.mutate()}
+                            >
+                              {saveMutation.isPending ? (
+                                <Loader2 className="size-4 animate-spin" />
+                              ) : null}
+                              Save changes
+                            </Button>
+                          ) : (
+                            <p className="text-sm text-muted-foreground">
+                              Only owners and administrators can edit organisation settings.
+                            </p>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Enabled transaction currencies</CardTitle>
-              <CardDescription>Base currency {baseCurrency} is always available.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex flex-wrap gap-3">
-                {currencies
-                  .filter((c) => c !== baseCurrency)
-                  .map((c) => (
-                    <label key={c} className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={enabledFx.includes(c)}
-                        disabled={!canEdit}
-                        onChange={(e) => {
-                          setEnabledFx((prev) =>
-                            e.target.checked ? [...prev, c] : prev.filter((x) => x !== c),
-                          );
-                        }}
-                      />
-                      {c}
-                    </label>
-                  ))}
-              </div>
-              {canEdit ? (
-                <Button size="sm" disabled={currenciesM.isPending} onClick={() => currenciesM.mutate()}>
-                  Save currencies
-                </Button>
-              ) : null}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Recorded exchange rates</CardTitle>
-              <CardDescription>
-                Rate = units of {baseCurrency} per 1 unit of foreign currency, as-of date.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {canEdit ? (
-                <div className="grid gap-3 sm:grid-cols-4">
-                  <div className="space-y-1">
-                    <Label>From</Label>
-                    <Select value={rateFrom} onValueChange={setRateFrom}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {currencies
-                          .filter((c) => c !== baseCurrency)
-                          .map((c) => (
-                            <SelectItem key={c} value={c}>
-                              {c}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Date</Label>
-                    <Input type="date" value={rateDate} onChange={(e) => setRateDate(e.target.value)} />
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Rate → {baseCurrency}</Label>
-                    <Input value={rateValue} onChange={(e) => setRateValue(e.target.value)} />
-                  </div>
-                  <div className="flex items-end">
-                    <Button size="sm" disabled={rateM.isPending} onClick={() => rateM.mutate()}>
-                      Record rate
-                    </Button>
-                  </div>
-                </div>
-              ) : null}
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Pair</TableHead>
-                    <TableHead>Rate</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(extendedQuery.data?.exchangeRates ?? []).map((r) => (
-                    <TableRow key={r.id}>
-                      <TableCell>{r.rate_date}</TableCell>
-                      <TableCell>
-                        {r.from_currency}/{r.to_currency}
-                      </TableCell>
-                      <TableCell>{r.rate}</TableCell>
-                      <TableCell>{r.voided_at ? "Voided" : "Active"}</TableCell>
-                      <TableCell>
-                        {canEdit && !r.voided_at ? (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Localization</CardTitle>
+                        <CardDescription>
+                          Display preferences only — ledger dates remain ISO.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label>Locale</Label>
+                          <Select value={locale} disabled={!canEdit} onValueChange={setLocale}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(extendedQuery.data?.locales ?? ["en-GB"]).map((l) => (
+                                <SelectItem key={l} value={l}>
+                                  {l}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Date format</Label>
+                          <Select
+                            value={dateFormat}
+                            disabled={!canEdit}
+                            onValueChange={setDateFormat}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(extendedQuery.data?.dateFormats ?? ["DD/MM/YYYY"]).map((f) => (
+                                <SelectItem key={f} value={f}>
+                                  {f}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Document theme colour</Label>
+                          <Input
+                            value={themeColor}
+                            disabled={!canEdit}
+                            onChange={(e) => setThemeColor(e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2 sm:col-span-2">
+                          <Label>Default invoice footer</Label>
+                          <Input
+                            value={invoiceFooter}
+                            disabled={!canEdit}
+                            onChange={(e) => setInvoiceFooter(e.target.value)}
+                          />
+                        </div>
+                        {canEdit ? (
                           <Button
                             size="sm"
-                            variant="outline"
-                            onClick={() =>
-                              voidRate({ data: { rateId: r.id } }).then(async () => {
-                                await queryClient.invalidateQueries({ queryKey: ["org-extended", companyId] });
-                                toast.success("Rate voided");
-                              })
-                            }
+                            disabled={localizationM.isPending}
+                            onClick={() => localizationM.mutate()}
                           >
-                            Void
+                            Save localization
                           </Button>
                         ) : null}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
 
-        <TabsContent value="users" className="mt-4">
-          <UsersAccessPanel companyId={companyId} />
-        </TabsContent>
+                  <TabsContent value="financial" className="mt-4">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Financial settings</CardTitle>
+                        <CardDescription>
+                          Base currency, financial year and time zone. Period locks are managed
+                          under Accounting. Base currency cannot change after journals are posted.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label>Base currency</Label>
+                          <Select
+                            value={currency}
+                            disabled={!canEdit || saveMutation.isPending}
+                            onValueChange={setCurrency}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {currencies.map((c) => (
+                                <SelectItem key={c} value={c}>
+                                  {c}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Time zone</Label>
+                          <Select
+                            value={timezone}
+                            disabled={!canEdit || saveMutation.isPending}
+                            onValueChange={setTimezone}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {timezones.map((tz) => (
+                                <SelectItem key={tz} value={tz}>
+                                  {tz}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Financial year end month</Label>
+                          <Select
+                            value={fyMonth}
+                            disabled={!canEdit || saveMutation.isPending}
+                            onValueChange={(m) => {
+                              setFyMonth(m);
+                              const max = maxFiscalYearEndDay(Number(m));
+                              if (Number(fyDay) > max) setFyDay(String(max));
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {months.map((m, i) => (
+                                <SelectItem key={m} value={String(i + 1)}>
+                                  {m}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="fy-day">Financial year end day</Label>
+                          <Input
+                            id="fy-day"
+                            type="number"
+                            min={1}
+                            max={maxDay}
+                            value={fyDay}
+                            disabled={!canEdit || saveMutation.isPending}
+                            onChange={(e) => setFyDay(e.target.value)}
+                          />
+                        </div>
+                        <div className="sm:col-span-2 space-y-2 text-sm text-muted-foreground">
+                          <p>
+                            Tax rates and codes:{" "}
+                            <Link className="underline" to="/tax">
+                              Tax settings
+                            </Link>
+                            . Accounting periods:{" "}
+                            <Link className="underline" to="/accounting">
+                              Accounting
+                            </Link>
+                            .
+                          </p>
+                        </div>
+                        <div className="sm:col-span-2">
+                          {canEdit ? (
+                            <Button
+                              size="sm"
+                              disabled={saveMutation.isPending}
+                              onClick={() => saveMutation.mutate()}
+                            >
+                              {saveMutation.isPending ? (
+                                <Loader2 className="size-4 animate-spin" />
+                              ) : null}
+                              Save financial settings
+                            </Button>
+                          ) : null}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
 
-              <TabsContent value="automation" className="mt-4 space-y-4">
-                <SettingsAutomationPanel
-                  companyId={companyId}
-                  canEdit={canEdit}
-                />
-                <WakeSettings />
-              </TabsContent>
+                  <TabsContent value="dimensions" className="mt-4">
+                    <SettingsDimensionsPanel
+                      companyId={companyId}
+                      canEdit={canEdit}
+                      currency={baseCurrency}
+                    />
+                  </TabsContent>
 
-        <TabsContent value="integrations" className="mt-4">
-          <SettingsIntegrationsPanel />
-        </TabsContent>
+                  <TabsContent value="documents" className="mt-4 space-y-4">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Document branding</CardTitle>
+                        <CardDescription>
+                          Letterhead and contact details for customer-facing documents. Logo upload,
+                          accent colour, address, tax number, bank details and footer are on the{" "}
+                          <SettingsDestinationLink
+                            className="underline"
+                            destination={{ to: "/documents/branding" }}
+                          >
+                            document branding page
+                          </SettingsDestinationLink>
+                          .
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label>Trading name</Label>
+                          <Input
+                            value={tradingName}
+                            disabled={!canEdit}
+                            onChange={(e) => setTradingName(e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Letterhead line</Label>
+                          <Input
+                            value={letterhead}
+                            disabled={!canEdit}
+                            onChange={(e) => setLetterhead(e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Invoice email</Label>
+                          <Input
+                            value={invoiceEmail}
+                            disabled={!canEdit}
+                            onChange={(e) => setInvoiceEmail(e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Invoice phone</Label>
+                          <Input
+                            value={invoicePhone}
+                            disabled={!canEdit}
+                            onChange={(e) => setInvoicePhone(e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2 sm:col-span-2">
+                          <Label>Logo URL</Label>
+                          <Input
+                            value={logoUrl}
+                            disabled={!canEdit}
+                            onChange={(e) => setLogoUrl(e.target.value)}
+                            placeholder="https://… (no file upload integration yet)"
+                          />
+                        </div>
+                        {canEdit ? (
+                          <Button
+                            size="sm"
+                            disabled={brandingM.isPending}
+                            onClick={() => brandingM.mutate()}
+                          >
+                            Save branding
+                          </Button>
+                        ) : null}
+                      </CardContent>
+                    </Card>
 
-        <TabsContent value="audit" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Audit history</CardTitle>
-              <CardDescription>
-                Append-only financial and administrative actions. Filter to reduce noise from
-                journal.posted / demo.seed bursts. Secrets are stripped server-side.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid gap-2 sm:grid-cols-2">
-                <Input
-                  placeholder="Filter action (e.g. settings, members, journal)"
-                  value={auditAction}
-                  onChange={(e) => setAuditAction(e.target.value)}
-                />
-                <Input
-                  placeholder="Entity type (e.g. company, exchange_rate)"
-                  value={auditEntity}
-                  onChange={(e) => setAuditEntity(e.target.value)}
-                />
-              </div>
-              {auditQuery.isPending ? (
-                <LoadingState rows={4} />
-              ) : auditQuery.isError ? (
-                <ErrorState
-                  title="Could not load audit"
-                  description={friendlyAuthError(auditQuery.error)}
-                  onRetry={() => auditQuery.refetch()}
-                />
-              ) : (auditQuery.data ?? []).length === 0 ? (
-                <p className="text-sm text-muted-foreground">No events match these filters.</p>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>When</TableHead>
-                      <TableHead>Action</TableHead>
-                      <TableHead>Entity</TableHead>
-                      <TableHead>Actor</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {(auditQuery.data ?? []).map((a) => (
-                      <TableRow key={a.id}>
-                        <TableCell className="whitespace-nowrap text-xs">
-                          {new Date(a.created_at).toLocaleString()}
-                        </TableCell>
-                        <TableCell>{a.action}</TableCell>
-                        <TableCell className="text-xs">
-                          {a.entity_type}
-                          {a.entity_id ? ` · ${a.entity_id.slice(0, 8)}…` : ""}
-                        </TableCell>
-                        <TableCell className="text-xs">{a.actor_user_id?.slice(0, 8) ?? "—"}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Invoice and bill numbering</CardTitle>
+                        <CardDescription>
+                          Prefix, next number and zero-padding per document type. Allocation uses a
+                          concurrency-safe database function when creating invoices/bills without a
+                          manual number. Changing next number never renumbers historical documents.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {extendedQuery.isPending ? (
+                          <LoadingState rows={3} />
+                        ) : (
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Type</TableHead>
+                                <TableHead>Prefix</TableHead>
+                                <TableHead>Next</TableHead>
+                                <TableHead>Padding</TableHead>
+                                <TableHead>Preview</TableHead>
+                                <TableHead />
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {(extendedQuery.data?.sequences ?? []).map((seq) => (
+                                <SequenceRow
+                                  key={seq.document_type}
+                                  seq={seq}
+                                  disabled={!canEdit}
+                                  onSave={(patch) =>
+                                    saveSequence({
+                                      data: { companyId, ...seq, ...patch },
+                                    }).then(async () => {
+                                      await queryClient.invalidateQueries({
+                                        queryKey: ["org-extended", companyId],
+                                      });
+                                      toast.success("Sequence updated");
+                                    })
+                                  }
+                                />
+                              ))}
+                            </TableBody>
+                          </Table>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
 
-        {isDemo ? (
-          <TabsContent value="demo" className="mt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Demo Company reset & reseed</CardTitle>
-                <CardDescription>
-                  Clears transactional data for this demo organisation only, reseeds chart of
-                  accounts / periods, then posts the canonical sample ledger through the real
-                  PostingEngine (invoices, bills, bank, journals). Cannot target non-demo
-                  organisations or touch production customer data.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  After reset, Trial Balance / P&amp;L / Balance Sheet should match the known demo
-                  dataset (see docs/demo/).
-                </p>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  disabled={demoResetM.isPending}
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        "Reset and reseed Demo Company? Sample journals and documents will be replaced. Live organisations are never affected.",
-                      )
-                    ) {
-                      demoResetM.mutate();
-                    }
-                  }}
-                >
-                  {demoResetM.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-                  Reset & reseed demo data
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        ) : null}
-      </Tabs>
-          ) : null}
-          </>}
+                  <TabsContent value="currencies" className="mt-4 space-y-4">
+                    <Alert>
+                      <AlertTitle>FX policy</AlertTitle>
+                      <AlertDescription>
+                        Rates are append-only. Posted journals keep their snapshot{" "}
+                        <code className="text-xs">fx_rate_to_base</code>. Void a rate to stop new
+                        lookups — historical journals are never rewritten. See{" "}
+                        <span className="font-medium">
+                          docs/settings-fx-firm/FX_ACCOUNTING_POLICY.md
+                        </span>
+                        .
+                      </AlertDescription>
+                    </Alert>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Enabled transaction currencies</CardTitle>
+                        <CardDescription>
+                          Base currency {baseCurrency} is always available.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="flex flex-wrap gap-3">
+                          {currencies
+                            .filter((c) => c !== baseCurrency)
+                            .map((c) => (
+                              <label key={c} className="flex items-center gap-2 text-sm">
+                                <input
+                                  type="checkbox"
+                                  checked={enabledFx.includes(c)}
+                                  disabled={!canEdit}
+                                  onChange={(e) => {
+                                    setEnabledFx((prev) =>
+                                      e.target.checked ? [...prev, c] : prev.filter((x) => x !== c),
+                                    );
+                                  }}
+                                />
+                                {c}
+                              </label>
+                            ))}
+                        </div>
+                        {canEdit ? (
+                          <Button
+                            size="sm"
+                            disabled={currenciesM.isPending}
+                            onClick={() => currenciesM.mutate()}
+                          >
+                            Save currencies
+                          </Button>
+                        ) : null}
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Recorded exchange rates</CardTitle>
+                        <CardDescription>
+                          Rate = units of {baseCurrency} per 1 unit of foreign currency, as-of date.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        {canEdit ? (
+                          <div className="grid gap-3 sm:grid-cols-4">
+                            <div className="space-y-1">
+                              <Label>From</Label>
+                              <Select value={rateFrom} onValueChange={setRateFrom}>
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {currencies
+                                    .filter((c) => c !== baseCurrency)
+                                    .map((c) => (
+                                      <SelectItem key={c} value={c}>
+                                        {c}
+                                      </SelectItem>
+                                    ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-1">
+                              <Label>Date</Label>
+                              <Input
+                                type="date"
+                                value={rateDate}
+                                onChange={(e) => setRateDate(e.target.value)}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label>Rate → {baseCurrency}</Label>
+                              <Input
+                                value={rateValue}
+                                onChange={(e) => setRateValue(e.target.value)}
+                              />
+                            </div>
+                            <div className="flex items-end">
+                              <Button
+                                size="sm"
+                                disabled={rateM.isPending}
+                                onClick={() => rateM.mutate()}
+                              >
+                                Record rate
+                              </Button>
+                            </div>
+                          </div>
+                        ) : null}
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Date</TableHead>
+                              <TableHead>Pair</TableHead>
+                              <TableHead>Rate</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead />
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {(extendedQuery.data?.exchangeRates ?? []).map((r) => (
+                              <TableRow key={r.id}>
+                                <TableCell>{r.rate_date}</TableCell>
+                                <TableCell>
+                                  {r.from_currency}/{r.to_currency}
+                                </TableCell>
+                                <TableCell>{r.rate}</TableCell>
+                                <TableCell>{r.voided_at ? "Voided" : "Active"}</TableCell>
+                                <TableCell>
+                                  {canEdit && !r.voided_at ? (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() =>
+                                        voidRate({ data: { rateId: r.id } }).then(async () => {
+                                          await queryClient.invalidateQueries({
+                                            queryKey: ["org-extended", companyId],
+                                          });
+                                          toast.success("Rate voided");
+                                        })
+                                      }
+                                    >
+                                      Void
+                                    </Button>
+                                  ) : null}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="users" className="mt-4">
+                    <UsersAccessPanel companyId={companyId} />
+                  </TabsContent>
+
+                  <TabsContent value="automation" className="mt-4 space-y-4">
+                    <SettingsAutomationPanel companyId={companyId} canEdit={canEdit} />
+                    <WakeSettings />
+                  </TabsContent>
+
+                  <TabsContent value="integrations" className="mt-4">
+                    <SettingsIntegrationsPanel />
+                  </TabsContent>
+
+                  <TabsContent value="audit" className="mt-4">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Audit history</CardTitle>
+                        <CardDescription>
+                          Append-only financial and administrative actions. Filter to reduce noise
+                          from journal.posted / demo.seed bursts. Secrets are stripped server-side.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          <Input
+                            placeholder="Filter action (e.g. settings, members, journal)"
+                            value={auditAction}
+                            onChange={(e) => setAuditAction(e.target.value)}
+                          />
+                          <Input
+                            placeholder="Entity type (e.g. company, exchange_rate)"
+                            value={auditEntity}
+                            onChange={(e) => setAuditEntity(e.target.value)}
+                          />
+                        </div>
+                        {auditQuery.isPending ? (
+                          <LoadingState rows={4} />
+                        ) : auditQuery.isError ? (
+                          <ErrorState
+                            title="Could not load audit"
+                            description={friendlyAuthError(auditQuery.error)}
+                            onRetry={() => auditQuery.refetch()}
+                          />
+                        ) : (auditQuery.data ?? []).length === 0 ? (
+                          <p className="text-sm text-muted-foreground">
+                            No events match these filters.
+                          </p>
+                        ) : (
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>When</TableHead>
+                                <TableHead>Action</TableHead>
+                                <TableHead>Entity</TableHead>
+                                <TableHead>Actor</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {(auditQuery.data ?? []).map((a) => (
+                                <TableRow key={a.id}>
+                                  <TableCell className="whitespace-nowrap text-xs">
+                                    {new Date(a.created_at).toLocaleString()}
+                                  </TableCell>
+                                  <TableCell>{a.action}</TableCell>
+                                  <TableCell className="text-xs">
+                                    {a.entity_type}
+                                    {a.entity_id ? ` · ${a.entity_id.slice(0, 8)}…` : ""}
+                                  </TableCell>
+                                  <TableCell className="text-xs">
+                                    {a.actor_user_id?.slice(0, 8) ?? "—"}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
+                  {isDemo ? (
+                    <TabsContent value="demo" className="mt-4">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base">Demo Company reset & reseed</CardTitle>
+                          <CardDescription>
+                            Clears transactional data for this demo organisation only, reseeds chart
+                            of accounts / periods, then posts the canonical sample ledger through
+                            the real PostingEngine (invoices, bills, bank, journals). Cannot target
+                            non-demo organisations or touch production customer data.
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <p className="text-sm text-muted-foreground">
+                            After reset, Trial Balance / P&amp;L / Balance Sheet should match the
+                            known demo dataset (see docs/demo/).
+                          </p>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            disabled={demoResetM.isPending}
+                            onClick={() => {
+                              if (
+                                window.confirm(
+                                  "Reset and reseed Demo Company? Sample journals and documents will be replaced. Live organisations are never affected.",
+                                )
+                              ) {
+                                demoResetM.mutate();
+                              }
+                            }}
+                          >
+                            {demoResetM.isPending ? (
+                              <Loader2 className="size-4 animate-spin" />
+                            ) : null}
+                            Reset & reseed demo data
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                  ) : null}
+                </Tabs>
+              ) : null}
+            </>
+          )}
         </div>
       </div>
     </>
@@ -1135,13 +1256,28 @@ function SequenceRow({
     <TableRow>
       <TableCell className="font-mono text-xs">{seq.document_type}</TableCell>
       <TableCell>
-        <Input className="h-8 w-24" value={prefix} disabled={disabled} onChange={(e) => setPrefix(e.target.value)} />
+        <Input
+          className="h-8 w-24"
+          value={prefix}
+          disabled={disabled}
+          onChange={(e) => setPrefix(e.target.value)}
+        />
       </TableCell>
       <TableCell>
-        <Input className="h-8 w-20" value={next} disabled={disabled} onChange={(e) => setNext(e.target.value)} />
+        <Input
+          className="h-8 w-20"
+          value={next}
+          disabled={disabled}
+          onChange={(e) => setNext(e.target.value)}
+        />
       </TableCell>
       <TableCell>
-        <Input className="h-8 w-16" value={pad} disabled={disabled} onChange={(e) => setPad(e.target.value)} />
+        <Input
+          className="h-8 w-16"
+          value={pad}
+          disabled={disabled}
+          onChange={(e) => setPad(e.target.value)}
+        />
       </TableCell>
       <TableCell className="font-mono text-xs text-muted-foreground">
         {formatDocumentNumberPreview(prefix, Number(next) || 1, Number(pad) || 4)}

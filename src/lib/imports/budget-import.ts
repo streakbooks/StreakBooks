@@ -29,7 +29,8 @@ export function prepareBudgetImportCsv(csvText: string, currency: string): Budge
       throw new Error(`Row ${sourceRow}: invalid account code`);
     }
     const key = accountCode.toLocaleLowerCase("en-US");
-    if (seen.has(key)) throw new Error(`Row ${sourceRow}: duplicate budget account code ${accountCode}`);
+    if (seen.has(key))
+      throw new Error(`Row ${sourceRow}: duplicate budget account code ${accountCode}`);
     seen.add(key);
     const months = Array.from({ length: 12 }, (_, index) => {
       const raw = (values[`month_${index + 1}`] ?? "").trim();
@@ -38,7 +39,9 @@ export function prepareBudgetImportCsv(csvText: string, currency: string): Budge
       }
       const places = (raw.split(".")[1] ?? "").length;
       if (places > decimalPlacesFor(currency)) {
-        throw new Error(`Row ${sourceRow}: month ${index + 1} exceeds ${currency} currency precision`);
+        throw new Error(
+          `Row ${sourceRow}: month ${index + 1} exceeds ${currency} currency precision`,
+        );
       }
       const minor = toMinorUnits(raw, currency);
       if (minor > BigInt(Number.MAX_SAFE_INTEGER) || minor < BigInt(Number.MIN_SAFE_INTEGER)) {

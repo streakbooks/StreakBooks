@@ -25,8 +25,11 @@ export function parseMoneySearch(input: string): MoneySearch | null {
   const symbol = /^([$£€₹¥])\s*/.exec(s);
   if (symbol) {
     const symbolCode: Record<string, string | undefined> = {
-      "£": "GBP", "€": "EUR", "₹": "INR", "¥": "JPY",
-      "$": undefined, // "$" is shared by many currencies, not just USD.
+      "£": "GBP",
+      "€": "EUR",
+      "₹": "INR",
+      "¥": "JPY",
+      $: undefined, // "$" is shared by many currencies, not just USD.
     };
     const code = symbolCode[symbol[1]!];
     if (currency && code && currency !== code) return null;
@@ -47,20 +50,28 @@ export function minorAmountForCurrency(query: MoneySearch, code: string): number
   const places = decimalPlacesFor(code);
   const [whole = "", fraction = ""] = query.decimal.split(".");
   if (fraction.length > places && /[1-9]/.test(fraction.slice(places))) return null;
-  const minor = BigInt(whole) * 10n ** BigInt(places) +
+  const minor =
+    BigInt(whole) * 10n ** BigInt(places) +
     BigInt((fraction + "0".repeat(places)).slice(0, places) || "0");
   return minor <= BigInt(Number.MAX_SAFE_INTEGER) ? Number(minor) : null;
 }
 
 /** PostgREST OR expression matching currency and amount together. */
 export function documentMoneyFilter(query: MoneySearch, amountColumn = "total_minor"): string {
-  const signed = (minor: number) => query.sign === "negative" ? -minor : minor;
+  const signed = (minor: number) => (query.sign === "negative" ? -minor : minor);
   if (query.currency) {
     const minor = minorAmountForCurrency(query, query.currency);
-    return minor === null ? "" : "and(currency_code.eq." + query.currency + "," + amountColumn + ".eq." + signed(minor) + ")";
+    return minor === null
+      ? ""
+      : "and(currency_code.eq." +
+          query.currency +
+          "," +
+          amountColumn +
+          ".eq." +
+          signed(minor) +
+          ")";
   }
-  const exceptions = Object.entries(DEFAULT_CURRENCY_DECIMALS)
-    .filter(([, places]) => places !== 2);
+  const exceptions = Object.entries(DEFAULT_CURRENCY_DECIMALS).filter(([, places]) => places !== 2);
   const clauses: string[] = [];
   const defaultMinor = minorAmountForCurrency(query, "GBP");
   if (defaultMinor !== null) {
@@ -68,11 +79,16 @@ export function documentMoneyFilter(query: MoneySearch, amountColumn = "total_mi
     const currencyFilter = excluded.length
       ? "currency_code.not.in.(" + excluded.join(",") + ")"
       : "currency_code.not.is.null";
-    clauses.push("and(" + currencyFilter + "," + amountColumn + ".eq." + signed(defaultMinor) + ")");
+    clauses.push(
+      "and(" + currencyFilter + "," + amountColumn + ".eq." + signed(defaultMinor) + ")",
+    );
   }
   for (const [code] of exceptions) {
     const minor = minorAmountForCurrency(query, code);
-    if (minor !== null) clauses.push("and(currency_code.eq." + code + "," + amountColumn + ".eq." + signed(minor) + ")");
+    if (minor !== null)
+      clauses.push(
+        "and(currency_code.eq." + code + "," + amountColumn + ".eq." + signed(minor) + ")",
+      );
   }
   return clauses.join(",");
 }
@@ -90,12 +106,17 @@ export function bankMoneyFilter(
     existing.push(account.id);
     groups.set(amount, existing);
   }
-  return [...groups].map(([amount, ids]) => {
-    const signed = query.sign === "both"
-      ? [...new Set([amount, -amount])]
-      : [query.sign === "negative" ? -amount : amount];
-    return "and(bank_account_id.in.(" + ids.join(",") + "),amount_minor.in.(" + signed.join(",") + "))";
-  }).join(",");
+  return [...groups]
+    .map(([amount, ids]) => {
+      const signed =
+        query.sign === "both"
+          ? [...new Set([amount, -amount])]
+          : [query.sign === "negative" ? -amount : amount];
+      return (
+        "and(bank_account_id.in.(" + ids.join(",") + "),amount_minor.in.(" + signed.join(",") + "))"
+      );
+    })
+    .join(",");
 }
 
 export function searchDate(input: string): string | null {

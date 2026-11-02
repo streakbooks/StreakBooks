@@ -39,21 +39,23 @@ export const importProductsCsv = createServerFn({ method: "POST" })
     // Always revalidate on the authenticated server, regardless of client preview.
     const records = prepareProductsCsv(data.csvText, currency);
     const result: ProductsImportResult = {
-      created: 0, skipped: 0, failed: 0, errors: [], auditError: null,
+      created: 0,
+      skipped: 0,
+      failed: 0,
+      errors: [],
+      auditError: null,
     };
     const createdCodes: string[] = [];
     for (const row of records) {
-      const { error } = await context.supabase
-        .from("products" as never)
-        .insert({
-          company_id: data.companyId,
-          kind: row.kind,
-          code: row.code,
-          name: row.name,
-          sales_price_minor: row.salesPriceMinor,
-          purchase_cost_minor: row.purchaseCostMinor,
-          is_active: true,
-        } as never);
+      const { error } = await context.supabase.from("products" as never).insert({
+        company_id: data.companyId,
+        kind: row.kind,
+        code: row.code,
+        name: row.name,
+        sales_price_minor: row.salesPriceMinor,
+        purchase_cost_minor: row.purchaseCostMinor,
+        is_active: true,
+      } as never);
       if (!error) {
         result.created++;
         createdCodes.push(row.code);
@@ -67,19 +69,22 @@ export const importProductsCsv = createServerFn({ method: "POST" })
     }
 
     if (createdCodes.length) {
-      const { error } = await context.supabase.rpc("record_audit_event" as never, {
-        _company_id: data.companyId,
-        _action: "products.import",
-        _entity_type: "products",
-        _entity_id: null,
-        _details: {
-          created: result.created,
-          skipped: result.skipped,
-          failed: result.failed,
-          sku_codes: createdCodes,
-          source: "csv",
-        },
-      } as never);
+      const { error } = await context.supabase.rpc(
+        "record_audit_event" as never,
+        {
+          _company_id: data.companyId,
+          _action: "products.import",
+          _entity_type: "products",
+          _entity_id: null,
+          _details: {
+            created: result.created,
+            skipped: result.skipped,
+            failed: result.failed,
+            sku_codes: createdCodes,
+            source: "csv",
+          },
+        } as never,
+      );
       if (error) result.auditError = error.message;
     }
     return result;

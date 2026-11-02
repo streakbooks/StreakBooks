@@ -55,10 +55,17 @@ function price(value: string, currency: string, row: number): number {
  * Sales rounds half-up, whereas Purchases currently truncates extended minor units.
  * Do not estimate financial limits using floating-point multiplication.
  */
-function lineValueMinor(kind: TransactionImportKind, line: Pick<TransactionImportLine, "quantity" | "unitPriceMinor">): bigint {
+function lineValueMinor(
+  kind: TransactionImportKind,
+  line: Pick<TransactionImportLine, "quantity" | "unitPriceMinor">,
+): bigint {
   return kind === "sales"
     ? extendedAmountMinor(line.quantity, line.unitPriceMinor)
-    : computeLineAmounts({ quantity: line.quantity, unit_price_minor: line.unitPriceMinor, tax_rate_bps: 0 }).net_minor;
+    : computeLineAmounts({
+        quantity: line.quantity,
+        unit_price_minor: line.unitPriceMinor,
+        tax_rate_bps: 0,
+      }).net_minor;
 }
 
 /**
@@ -85,28 +92,39 @@ export function validateResolvedTransactionTotals(
   let totalMinor = 0n;
   for (const [index, line] of document.lines.entries()) {
     const taxRateBps = taxRatesBps[index]!;
-    const amounts = kind === "sales"
-      ? computeTaxLineRounded({
-          quantity: line.quantity, unit_price_minor: line.unitPriceMinor,
-          tax_rate_bps: taxRateBps, treatment,
-        })
-      : computeLineAmounts({
-          quantity: line.quantity, unit_price_minor: line.unitPriceMinor,
-          tax_rate_bps: taxRateBps, treatment: "exclusive",
-        });
+    const amounts =
+      kind === "sales"
+        ? computeTaxLineRounded({
+            quantity: line.quantity,
+            unit_price_minor: line.unitPriceMinor,
+            tax_rate_bps: taxRateBps,
+            treatment,
+          })
+        : computeLineAmounts({
+            quantity: line.quantity,
+            unit_price_minor: line.unitPriceMinor,
+            tax_rate_bps: taxRateBps,
+            treatment: "exclusive",
+          });
     subtotalMinor += amounts.net_minor;
     taxMinor += amounts.tax_minor;
     totalMinor += amounts.gross_minor;
     for (const [label, amount] of [
-      ["subtotal", subtotalMinor], ["tax", taxMinor], ["total", totalMinor],
+      ["subtotal", subtotalMinor],
+      ["tax", taxMinor],
+      ["total", totalMinor],
     ] as const) {
       if (amount < 0n || amount > max) {
-        throw new Error(`Row ${line.sourceRow}: document ${document.documentNumber} ${label} exceeds safe integer range`);
+        throw new Error(
+          `Row ${line.sourceRow}: document ${document.documentNumber} ${label} exceeds safe integer range`,
+        );
       }
     }
   }
   if (totalMinor <= 0n) {
-    throw new Error(`Row ${document.lines[0]?.sourceRow ?? 1}: document ${document.documentNumber} has no monetary value after tax rounding`);
+    throw new Error(
+      `Row ${document.lines[0]?.sourceRow ?? 1}: document ${document.documentNumber} has no monetary value after tax rounding`,
+    );
   }
   return { subtotalMinor, taxMinor, totalMinor };
 }
@@ -119,7 +137,9 @@ export function validateResolvedTransactionTotals(
  * and call the authorised domain posting services.
  */
 export function prepareTransactionCsv(
-  csvText: string, kind: TransactionImportKind, currency: string,
+  csvText: string,
+  kind: TransactionImportKind,
+  currency: string,
 ): TransactionImportDocument[] {
   if (csvText.length > 5 * 1024 * 1024) throw new Error("CSV exceeds 5 MB");
   if (!/^[A-Z]{3}$/.test(currency)) throw new Error("Invalid currency");
@@ -134,9 +154,14 @@ export function prepareTransactionCsv(
   for (const { sourceRow, values: v } of preview.records) {
     const documentNumber = (v[kind === "sales" ? "invoice_number" : "bill_number"] ?? "").trim();
     const contactName = (v[kind === "sales" ? "customer" : "supplier"] ?? "").trim();
-    const documentDate = date(v[kind === "sales" ? "invoice_date" : "bill_date"] ?? "", sourceRow, "document date");
+    const documentDate = date(
+      v[kind === "sales" ? "invoice_date" : "bill_date"] ?? "",
+      sourceRow,
+      "document date",
+    );
     const dueDate = date(v["due_date"] ?? "", sourceRow, "due date");
-    if (dueDate < documentDate) throw new Error(`Row ${sourceRow}: due date precedes document date`);
+    if (dueDate < documentDate)
+      throw new Error(`Row ${sourceRow}: due date precedes document date`);
     if (documentNumber.length > 80 || contactName.length > 200) {
       throw new Error(`Row ${sourceRow}: document number or contact name too long`);
     }
@@ -161,14 +186,31 @@ export function prepareTransactionCsv(
     const taxCode = (v["tax_code"] ?? "").trim() || null;
     if (taxCode && taxCode.length > 80) throw new Error(`Row ${sourceRow}: tax code too long`);
     const line: TransactionImportLine = {
-      sourceRow, documentNumber, contactName, documentDate, dueDate,
-      accountCode, description, quantity, unitPriceMinor, taxCode,
+      sourceRow,
+      documentNumber,
+      contactName,
+      documentDate,
+      dueDate,
+      accountCode,
+      description,
+      quantity,
+      unitPriceMinor,
+      taxCode,
     };
-    const key = kind === "sales" ? documentNumber.toLocaleLowerCase("en-US")
-      : JSON.stringify([contactName.toLocaleLowerCase("en-US"), documentNumber.toLocaleLowerCase("en-US")]);
+    const key =
+      kind === "sales"
+        ? documentNumber.toLocaleLowerCase("en-US")
+        : JSON.stringify([
+            contactName.toLocaleLowerCase("en-US"),
+            documentNumber.toLocaleLowerCase("en-US"),
+          ]);
     const prior = documents.get(key);
     if (prior) {
-      if (prior.contactName !== contactName || prior.documentDate !== documentDate || prior.dueDate !== dueDate) {
+      if (
+        prior.contactName !== contactName ||
+        prior.documentDate !== documentDate ||
+        prior.dueDate !== dueDate
+      ) {
         throw new Error(`Row ${sourceRow}: conflicting header for document ${documentNumber}`);
       }
       prior.lines.push(line);
@@ -183,11 +225,15 @@ export function prepareTransactionCsv(
     for (const line of doc.lines) {
       documentMinor += lineValueMinor(kind, line);
       if (documentMinor > BigInt(Number.MAX_SAFE_INTEGER)) {
-        throw new Error(`Row ${line.sourceRow}: document ${doc.documentNumber} total exceeds safe integer range`);
+        throw new Error(
+          `Row ${line.sourceRow}: document ${doc.documentNumber} total exceeds safe integer range`,
+        );
       }
     }
     if (documentMinor === 0n) {
-      throw new Error(`Row ${doc.lines[0]!.sourceRow}: document ${doc.documentNumber} has no monetary value after line rounding`);
+      throw new Error(
+        `Row ${doc.lines[0]!.sourceRow}: document ${doc.documentNumber} has no monetary value after line rounding`,
+      );
     }
   }
   return [...documents.values()];

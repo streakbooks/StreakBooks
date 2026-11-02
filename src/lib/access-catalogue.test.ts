@@ -37,9 +37,9 @@ describe("access catalogue", () => {
   });
 
   it("does not customise an owner or an unknown role", () => {
-    expect(
-      effectivePermissions("owner", [{ permission: "sales.view", effect: "deny" }]),
-    ).toContain("sales.view");
+    expect(effectivePermissions("owner", [{ permission: "sales.view", effect: "deny" }])).toContain(
+      "sales.view",
+    );
     expect(
       effectivePermissions("owner", [{ permission: "billing.manage", effect: "deny" }]),
     ).toContain("billing.manage");

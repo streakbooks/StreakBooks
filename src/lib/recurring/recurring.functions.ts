@@ -4,10 +4,7 @@ import { authenticateCronRequest } from "@/integrations/supabase/cron-auth";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { runDuePurchaseBillSchedules } from "@/lib/recurring/scheduler";
 import { generatePurchaseBillFromRecurring } from "@/lib/recurring/generate-purchase-bill";
-import {
-  authoriseBillInternal,
-  validateBillLines,
-} from "@/lib/purchases/purchases.functions";
+import { authoriseBillInternal, validateBillLines } from "@/lib/purchases/purchases.functions";
 
 /**
  * Cron entry: secured by LOVABLE_CRON_SECRET Bearer token.
@@ -28,23 +25,23 @@ export const runRecurringScheduler = createServerFn({ method: "POST" }).handler(
   if (runErr) throw new Error(runErr.message);
   const runId = (runRow as { id: string }).id;
 
-  const stats = await runDuePurchaseBillSchedules(admin, asOf, async ({
-    companyId,
-    recurringBillId,
-    userId,
-  }) => {
-    await generatePurchaseBillFromRecurring(
-      admin,
-      userId,
-      companyId,
-      recurringBillId,
-      {
-        validateBillLines,
-        authoriseBill: authoriseBillInternal,
-      },
-      { automatic: true },
-    );
-  });
+  const stats = await runDuePurchaseBillSchedules(
+    admin,
+    asOf,
+    async ({ companyId, recurringBillId, userId }) => {
+      await generatePurchaseBillFromRecurring(
+        admin,
+        userId,
+        companyId,
+        recurringBillId,
+        {
+          validateBillLines,
+          authoriseBill: authoriseBillInternal,
+        },
+        { automatic: true },
+      );
+    },
+  );
 
   // Recurring manual journals are processed in the database (acts as each template's creator).
   const journalRun = await admin.rpc(
@@ -54,7 +51,8 @@ export const runRecurringScheduler = createServerFn({ method: "POST" }).handler(
   const journals = journalRun.error
     ? { error: journalRun.error.message }
     : (journalRun.data as { posted: number; failed: number; skipped: number } | null);
-  const journalsFailed = journalRun.error || (journals && "failed" in journals && journals.failed > 0);
+  const journalsFailed =
+    journalRun.error || (journals && "failed" in journals && journals.failed > 0);
 
   await admin
     .from("recurring_generation_runs" as never)

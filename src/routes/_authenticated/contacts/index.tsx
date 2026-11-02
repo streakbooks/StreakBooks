@@ -1,4 +1,4 @@
-import {SettingsDestinationLink} from "@/components/settings/ModuleSettingsLinks";
+import { SettingsDestinationLink } from "@/components/settings/ModuleSettingsLinks";
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -31,7 +31,12 @@ import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/_authenticated/contacts/")({
   validateSearch: (search: Record<string, unknown>) => ({
-    view: search['view'] === "suppliers" ? "suppliers" : search['view'] === "customers" ? "customers" : undefined,
+    view:
+      search["view"] === "suppliers"
+        ? "suppliers"
+        : search["view"] === "customers"
+          ? "customers"
+          : undefined,
   }),
   head: () => ({
     meta: [
@@ -66,7 +71,9 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
 
   const { view: requestedView } = Route.useSearch();
   const [view, setView] = useState(requestedView ?? "all");
-  useEffect(() => { if (requestedView) setView(requestedView); }, [requestedView]);
+  useEffect(() => {
+    if (requestedView) setView(requestedView);
+  }, [requestedView]);
   const [page, setPage] = useState(0);
   const [q, setQ] = useState("");
   const kindForApi = useMemo(() => {
@@ -127,7 +134,11 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
         description="One directory for customers and suppliers — shared with sales, purchases and statements."
         actions={
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" asChild><Link to="/contacts/new" search={{ kind: "customer" }}>New contact</Link></Button>
+            <Button size="sm" asChild>
+              <Link to="/contacts/new" search={{ kind: "customer" }}>
+                New contact
+              </Link>
+            </Button>
             <Button variant="outline" size="sm" asChild>
               <Link to="/contacts/import">
                 <Upload className="mr-1 size-4" /> Import
@@ -142,7 +153,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
               <Download className="mr-1 size-4" /> Export
             </Button>
             <Button variant="outline" size="sm" asChild>
-              <SettingsDestinationLink destination={{to:"/contacts/settings"}}>
+              <SettingsDestinationLink destination={{ to: "/contacts/settings" }}>
                 <Settings2 className="mr-1 size-4" /> Settings
               </SettingsDestinationLink>
             </Button>
@@ -176,7 +187,6 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
           />
         </div>
       ) : null}
-
 
       <Tabs
         value={view}

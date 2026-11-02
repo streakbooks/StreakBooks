@@ -1,11 +1,7 @@
 import { assertLinesBalance, type JournalLineDraft } from "@/lib/accounting/money";
 
 export type AiSuggestionType =
-  | "journal_draft"
-  | "category_suggestion"
-  | "invoice_draft"
-  | "bill_draft"
-  | "note";
+  "journal_draft" | "category_suggestion" | "invoice_draft" | "bill_draft" | "note";
 
 export type ParsedAiSuggestion = {
   type: AiSuggestionType;

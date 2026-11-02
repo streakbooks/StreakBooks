@@ -14,7 +14,16 @@ const GROUPS: Array<{ label: string; ids: SettingsCategory[] }> = [
   },
   {
     label: "Operations",
-    ids: ["sales", "purchases", "banking", "dimensions", "products", "contacts", "expenses", "reports"],
+    ids: [
+      "sales",
+      "purchases",
+      "banking",
+      "dimensions",
+      "products",
+      "contacts",
+      "expenses",
+      "reports",
+    ],
   },
   {
     label: "Platform",

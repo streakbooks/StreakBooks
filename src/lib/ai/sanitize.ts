@@ -31,8 +31,9 @@ export function sanitizeUntrustedText(input: unknown, maxLen = 4_000): SanitizeR
     if (re.test(raw)) flags.push(re.source.slice(0, 48));
   }
   // Neutralise common delimiter breakouts without deleting user content wholesale
-  let text = raw
-    .replace(/\u0000/g, "")
+  const text = raw
+    .split("\u0000")
+    .join("")
     .replace(/<\/?system>/gi, "[system-tag-removed]")
     .replace(/\[INST\]/gi, "[inst-removed]")
     .slice(0, maxLen);

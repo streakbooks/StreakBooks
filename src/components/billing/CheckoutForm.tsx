@@ -216,7 +216,9 @@ export function CheckoutForm({
               <div className="space-y-1" aria-label="Billing region">
                 <p className="text-sm font-medium">Billing region</p>
                 <p className="rounded-md border border-input bg-muted/30 px-3 py-2 text-sm">
-                  {billingCountries.find((item) => item.code === defaultCountry)?.name ?? defaultCountry} · {currency}
+                  {billingCountries.find((item) => item.code === defaultCountry)?.name ??
+                    defaultCountry}{" "}
+                  · {currency}
                 </p>
               </div>
             </div>
@@ -225,10 +227,10 @@ export function CheckoutForm({
           <section className="space-y-3 rounded-xl border bg-card p-5">
             <h2 className="text-base font-semibold">Pay with</h2>
             <p className="text-sm text-muted-foreground">
-              Payment methods depend on your billing country, the provider's capabilities and
-              which options are enabled for LinkBooks. Stripe selects eligible cards, wallets and
-              local payment methods on its hosted checkout. Indian UPI AutoPay and bank e-mandates
-              use Razorpay. LinkBooks never collects card numbers, UPI IDs or bank credentials.
+              Payment methods depend on your billing country, the provider's capabilities and which
+              options are enabled for LinkBooks. Stripe selects eligible cards, wallets and local
+              payment methods on its hosted checkout. Indian UPI AutoPay and bank e-mandates use
+              Razorpay. LinkBooks never collects card numbers, UPI IDs or bank credentials.
             </p>
             {currency ? (
               <RadioGroup
@@ -267,7 +269,8 @@ export function CheckoutForm({
             )}
             {currency && available.length === 0 ? (
               <p className="text-sm text-destructive">
-                No payment processor is configured for this country. The platform owner must enable an eligible provider before checkout.
+                No payment processor is configured for this country. The platform owner must enable
+                an eligible provider before checkout.
               </p>
             ) : null}
           </section>
@@ -278,7 +281,16 @@ export function CheckoutForm({
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between gap-3">
               <dt className="text-muted-foreground">{planName}</dt>
-              <dd>{currency ? formatMinor(quote?.currency === currency ? quote.listMinor : listAmount(monthly[currency], interval, annualFreeMonths), currency) : "—"}</dd>
+              <dd>
+                {currency
+                  ? formatMinor(
+                      quote?.currency === currency
+                        ? quote.listMinor
+                        : listAmount(monthly[currency], interval, annualFreeMonths),
+                      currency,
+                    )
+                  : "—"}
+              </dd>
             </div>
             <div className="flex justify-between gap-3">
               <dt className="text-muted-foreground">Billing</dt>
@@ -289,7 +301,13 @@ export function CheckoutForm({
             </div>
             <div className="flex justify-between gap-3 border-t pt-2 text-base font-semibold">
               <dt>Due at checkout</dt>
-              <dd>{dueMinor != null && currency ? formatMinor(dueMinor, currency) : quoteLoading ? "Calculating…" : "—"}</dd>
+              <dd>
+                {dueMinor != null && currency
+                  ? formatMinor(dueMinor, currency)
+                  : quoteLoading
+                    ? "Calculating…"
+                    : "—"}
+              </dd>
             </div>
           </dl>
           {quote?.discountMinor ? (
@@ -298,14 +316,19 @@ export function CheckoutForm({
             </p>
           ) : null}
           <p className="text-xs text-muted-foreground">
-            The billing currency follows your organisation region; markets without a supported local price currently use USD.
-            Tax collection is not configured. Tax obligations must be reviewed before going live.
-            Payment methods will be confirmed by the hosted provider.
+            The billing currency follows your organisation region; markets without a supported local
+            price currently use USD. Tax collection is not configured. Tax obligations must be
+            reviewed before going live. Payment methods will be confirmed by the hosted provider.
           </p>
           {error || serverError || quoteError ? (
             <p className="text-sm text-destructive">{error || serverError || quoteError}</p>
           ) : null}
-          <Button type="button" className="w-full" disabled={busy || quoteLoading || dueMinor == null || !available.length} onClick={() => submit(false)}>
+          <Button
+            type="button"
+            className="w-full"
+            disabled={busy || quoteLoading || dueMinor == null || !available.length}
+            onClick={() => submit(false)}
+          >
             {busy ? "Opening secure payment…" : "Continue to payment"}
           </Button>
           <Button

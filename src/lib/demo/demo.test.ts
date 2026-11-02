@@ -71,10 +71,7 @@ describe("Demo Company canonical dataset", () => {
     const bankId = "acct-1000";
     const gl = buildGeneralLedger(lines, { accountId: bankId, to: DEMO_AS_OF });
     expect(gl.length).toBeGreaterThan(0);
-    const net = gl.reduce(
-      (n, l) => n + BigInt(l.debit_minor) - BigInt(l.credit_minor),
-      0n,
-    );
+    const net = gl.reduce((n, l) => n + BigInt(l.debit_minor) - BigInt(l.credit_minor), 0n);
     expect(net).toBe(DEMO_EXPECTED.bank);
   });
 

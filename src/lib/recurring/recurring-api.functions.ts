@@ -35,7 +35,8 @@ export const listRecurringWorkspace = createServerFn({ method: "GET" })
       status: input.status,
       frequency: input.frequency,
       supplier: (input.supplier ?? "").trim().slice(0, 100),
-      nextFrom: input.nextFrom && /^\d{4}-\d{2}-\d{2}$/.test(input.nextFrom) ? input.nextFrom : undefined,
+      nextFrom:
+        input.nextFrom && /^\d{4}-\d{2}-\d{2}$/.test(input.nextFrom) ? input.nextFrom : undefined,
       nextTo: input.nextTo && /^\d{4}-\d{2}-\d{2}$/.test(input.nextTo) ? input.nextTo : undefined,
     }),
   )
@@ -44,9 +45,7 @@ export const listRecurringWorkspace = createServerFn({ method: "GET" })
     const from = data.page * data.pageSize;
     const to = from + data.pageSize - 1;
 
-    const scheduleFiltered = Boolean(
-      data.status || data.frequency || data.nextFrom || data.nextTo,
-    );
+    const scheduleFiltered = Boolean(data.status || data.frequency || data.nextFrom || data.nextTo);
     const schedules = scheduleFiltered ? "recurring_schedules!inner" : "recurring_schedules";
     const contacts = data.supplier ? "contacts!inner" : "contacts";
     let q = context.supabase
@@ -73,7 +72,9 @@ export const listRecurringWorkspace = createServerFn({ method: "GET" })
     if (data.status === "paused") {
       q = q.eq("recurring_schedules.is_paused" as never, true as never);
     } else if (data.status === "active") {
-      q = q.eq("is_active" as never, true as never).eq("recurring_schedules.is_paused" as never, false as never);
+      q = q
+        .eq("is_active" as never, true as never)
+        .eq("recurring_schedules.is_paused" as never, false as never);
     } else if (data.status === "error") {
       q = q.not("recurring_schedules.last_error" as never, "is", null as never);
     }
@@ -278,7 +279,13 @@ export const skipNextRecurringBillOccurrence = createServerFn({ method: "POST" }
       .select("id, recurring_schedules(id, dtstart, rrule)" as never)
       .eq("legacy_recurring_bill_id" as never, data.recurringBillId as never)
       .maybeSingle();
-    const schedRaw = (tpl as unknown as { recurring_schedules?: { id: string; dtstart: string; rrule: string } | { id: string; dtstart: string; rrule: string }[] })?.recurring_schedules;
+    const schedRaw = (
+      tpl as unknown as {
+        recurring_schedules?:
+          | { id: string; dtstart: string; rrule: string }
+          | { id: string; dtstart: string; rrule: string }[];
+      }
+    )?.recurring_schedules;
     const sched = Array.isArray(schedRaw) ? schedRaw[0] : schedRaw;
     if (!sched) throw new Error("Schedule not found");
 

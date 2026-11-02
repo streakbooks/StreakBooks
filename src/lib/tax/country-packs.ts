@@ -61,7 +61,12 @@ export const TAX_COUNTRY_PACKS: TaxCountryPack[] = [
     version: "2026.10.1",
     sourceRefs: ["https://www.ato.gov.au/businesses-and-organisations/gst-excise"],
     sourceEffectiveNote: "Starter 10% GST stub — verify against ATO before use.",
-    supportedFeatures: ["registration_fields", "effective_dated_rates", "gl_mapping", "internal_tax_summary"],
+    supportedFeatures: [
+      "registration_fields",
+      "effective_dated_rates",
+      "gl_mapping",
+      "internal_tax_summary",
+    ],
     knownLimitations: ["No BAS preparation or lodgement", "No ATO integration"],
     filingStatus: "not_implemented",
   },
@@ -75,7 +80,12 @@ export const TAX_COUNTRY_PACKS: TaxCountryPack[] = [
     version: "2026.10.1",
     sourceRefs: ["https://www.ird.govt.nz/gst"],
     sourceEffectiveNote: "Starter GST stub — verify against IRD.",
-    supportedFeatures: ["registration_fields", "effective_dated_rates", "gl_mapping", "internal_tax_summary"],
+    supportedFeatures: [
+      "registration_fields",
+      "effective_dated_rates",
+      "gl_mapping",
+      "internal_tax_summary",
+    ],
     knownLimitations: ["No IRD filing"],
     filingStatus: "not_implemented",
   },
@@ -101,7 +111,9 @@ export const TAX_COUNTRY_PACKS: TaxCountryPack[] = [
     terminology: { taxName: "GST/HST", registrationLabel: "GST/HST account number" },
     verificationStatus: "generic_unverified",
     version: "2026.10.1",
-    sourceRefs: ["https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses.html"],
+    sourceRefs: [
+      "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses.html",
+    ],
     sourceEffectiveNote:
       "No automatic provincial rates. Configure GST/HST/PST/QST components manually per province.",
     supportedFeatures: ["manual_rates", "gl_mapping", "internal_tax_summary"],

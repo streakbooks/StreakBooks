@@ -1,5 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { legacyFrequencyToRrule, type LegacyRecurrenceFrequency } from "@/lib/recurring/legacy-frequency";
+import {
+  legacyFrequencyToRrule,
+  type LegacyRecurrenceFrequency,
+} from "@/lib/recurring/legacy-frequency";
 import { parseScheduleOptions } from "@/lib/recurring/recurring-schedule-options";
 
 type RpcClient = {

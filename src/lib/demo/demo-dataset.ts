@@ -18,18 +18,46 @@ export const DEMO_AS_OF = "2026-10-19";
 export const DEMO_FY_FROM = "2026-04-01";
 
 /** Stable synthetic account ids for in-memory tests (code-prefixed). */
-export const DEMO_ACCOUNT_IDS: Record<string, { id: string; name: string; type: AccountType; subtype: string }> = {
+export const DEMO_ACCOUNT_IDS: Record<
+  string,
+  { id: string; name: string; type: AccountType; subtype: string }
+> = {
   "1000": { id: "acct-1000", name: "Bank", type: "asset", subtype: "current_asset" },
   "1100": { id: "acct-1100", name: "Accounts Receivable", type: "asset", subtype: "current_asset" },
   "1150": { id: "acct-1150", name: "Inventory", type: "asset", subtype: "current_asset" },
-  "1200": { id: "acct-1200", name: "VAT Recoverable / Other Current Assets", type: "asset", subtype: "current_asset" },
+  "1200": {
+    id: "acct-1200",
+    name: "VAT Recoverable / Other Current Assets",
+    type: "asset",
+    subtype: "current_asset",
+  },
   "1300": { id: "acct-1300", name: "Prepayments", type: "asset", subtype: "current_asset" },
-  "1500": { id: "acct-1500", name: "Property, Plant & Equipment", type: "asset", subtype: "non_current_asset" },
-  "1510": { id: "acct-1510", name: "Accumulated Depreciation", type: "asset", subtype: "non_current_asset" },
-  "2000": { id: "acct-2000", name: "Accounts Payable", type: "liability", subtype: "current_liability" },
+  "1500": {
+    id: "acct-1500",
+    name: "Property, Plant & Equipment",
+    type: "asset",
+    subtype: "non_current_asset",
+  },
+  "1510": {
+    id: "acct-1510",
+    name: "Accumulated Depreciation",
+    type: "asset",
+    subtype: "non_current_asset",
+  },
+  "2000": {
+    id: "acct-2000",
+    name: "Accounts Payable",
+    type: "liability",
+    subtype: "current_liability",
+  },
   "2100": { id: "acct-2100", name: "Tax Payable", type: "liability", subtype: "current_liability" },
   "2200": { id: "acct-2200", name: "Accruals", type: "liability", subtype: "current_liability" },
-  "2500": { id: "acct-2500", name: "Long-term Loans", type: "liability", subtype: "non_current_liability" },
+  "2500": {
+    id: "acct-2500",
+    name: "Long-term Loans",
+    type: "liability",
+    subtype: "non_current_liability",
+  },
   "3000": { id: "acct-3000", name: "Owner Equity", type: "equity", subtype: "equity" },
   "3100": { id: "acct-3100", name: "Opening Balance Equity", type: "equity", subtype: "equity" },
   "3200": { id: "acct-3200", name: "Retained Earnings", type: "equity", subtype: "equity" },
@@ -224,7 +252,6 @@ export const DEMO_JOURNAL_SPECS: DemoJournalSpec[] = [
       { code: "4100", debit: 0n, credit: 25_000n },
     ],
   },
-
 ];
 
 export function buildDemoPostedLines(): PostedLine[] {
@@ -386,9 +413,24 @@ export const DEMO_MODULE_STATUS: Array<{
   note: string;
 }> = [
   { path: "/", label: "Dashboard", status: "ready", note: "Figures from posted ledger only" },
-  { path: "/banking", label: "Banking", status: "ready", note: "Accounts, import, reconcile samples" },
-  { path: "/sales", label: "Sales", status: "ready", note: "Quotes, invoices, receipts, credits, recurring (manual generate)" },
-  { path: "/purchases", label: "Purchases", status: "ready", note: "Bills, POs, expenses, payments, credits, claims, recurring" },
+  {
+    path: "/banking",
+    label: "Banking",
+    status: "ready",
+    note: "Accounts, import, reconcile samples",
+  },
+  {
+    path: "/sales",
+    label: "Sales",
+    status: "ready",
+    note: "Quotes, invoices, receipts, credits, recurring (manual generate)",
+  },
+  {
+    path: "/purchases",
+    label: "Purchases",
+    status: "ready",
+    note: "Bills, POs, expenses, payments, credits, claims, recurring",
+  },
   { path: "/contacts", label: "Contacts", status: "ready", note: "6 demo customers/suppliers" },
   {
     path: "/products-services",
@@ -401,7 +443,12 @@ export const DEMO_MODULE_STATUS: Array<{
   { path: "/tax", label: "Tax", status: "ready", note: "Rates and summaries" },
   { path: "/accountant", label: "Accountant", status: "ready", note: "Period-end checklist" },
   { path: "/firm", label: "Firm", status: "ready", note: "Practice linking (optional)" },
-  { path: "/ai-assistant", label: "AI Assistant", status: "partial", note: "Needs AI_API_KEY for LLM; local checks work" },
+  {
+    path: "/ai-assistant",
+    label: "AI Assistant",
+    status: "partial",
+    note: "Needs AI_API_KEY for LLM; local checks work",
+  },
   { path: "/settings", label: "Settings", status: "ready", note: "Includes Demo reset" },
   { path: "/help", label: "Help", status: "shell", note: "Placeholder guides" },
 ];

@@ -154,7 +154,9 @@ describe("locked period / invalid org contracts", () => {
     const supabase = {
       rpc: vi.fn().mockResolvedValue({
         data: null,
-        error: { message: "Account 00000000-0000-4000-8000-000000000000 not found in organisation" },
+        error: {
+          message: "Account 00000000-0000-4000-8000-000000000000 not found in organisation",
+        },
       }),
     };
     await expect(

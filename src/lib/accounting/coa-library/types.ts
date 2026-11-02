@@ -3,12 +3,7 @@
 export type AccountType = "asset" | "liability" | "equity" | "income" | "expense";
 export type NormalBalance = "debit" | "credit";
 export type DetailLevel = "simple" | "standard" | "detailed";
-export type Recommendation =
-  | "core"
-  | "recommended"
-  | "optional"
-  | "system"
-  | "feature_dependent";
+export type Recommendation = "core" | "recommended" | "optional" | "system" | "feature_dependent";
 
 /** Canonical FS destinations independent of display names. */
 export type FsLine =

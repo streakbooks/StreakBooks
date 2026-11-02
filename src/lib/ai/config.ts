@@ -95,9 +95,7 @@ export function getAiPublicStatus(): AiPublicStatus {
 }
 
 /** Reject accidental Vite exposure of AI keys. */
-export function findUnsafeAiViteKeys(
-  env: Record<string, string | undefined> = {},
-): string[] {
+export function findUnsafeAiViteKeys(env: Record<string, string | undefined> = {}): string[] {
   const bad: string[] = [];
   for (const [key, value] of Object.entries(env)) {
     if (!key.startsWith("VITE_")) continue;
@@ -106,8 +104,7 @@ export function findUnsafeAiViteKeys(
       upper.includes("AI_API") ||
       upper.includes("OPENAI") ||
       upper.includes("ANTHROPIC") ||
-      (typeof value === "string" &&
-        (value.startsWith("sk-") || value.includes("openai")))
+      (typeof value === "string" && (value.startsWith("sk-") || value.includes("openai")))
     ) {
       bad.push(key);
     }

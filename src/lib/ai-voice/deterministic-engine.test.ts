@@ -125,7 +125,8 @@ describe("natural Signal commands", () => {
     ["prepare a new bill", "/purchases/bills/new"],
   ])("understands %s", (phrase, destination) => {
     expect(parseDeterministicCommand(phrase)).toMatchObject({
-      kind: "matched", command: { destination },
+      kind: "matched",
+      command: { destination },
     });
   });
   it.each([
@@ -135,7 +136,8 @@ describe("natural Signal commands", () => {
     ["go to previous section", "/sales/quotes", "/sales/invoices"],
   ])("switches sections for %s", (phrase, location, destination) => {
     expect(parseDeterministicCommand(phrase, location)).toMatchObject({
-      kind: "matched", command: { destination },
+      kind: "matched",
+      command: { destination },
     });
   });
   it.each([

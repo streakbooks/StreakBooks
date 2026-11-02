@@ -38,7 +38,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,7 +55,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 const INVITE_ROLES: CompanyRole[] = ["admin", "accountant", "bookkeeper", "staff", "read_only"];
 
@@ -97,7 +110,9 @@ export function UsersAccessPanel({ companyId }: { companyId: string }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const members = membersQuery.data ?? [];
   const selected = members.find((member) => member.user_id === selectedId) ?? null;
-  const activeOwners = members.filter((member) => member.role === "owner" && member.status === "active").length;
+  const activeOwners = members.filter(
+    (member) => member.role === "owner" && member.status === "active",
+  ).length;
 
   if (!ready) return <LoadingState rows={3} />;
   if (!canView) {
@@ -146,9 +161,14 @@ export function UsersAccessPanel({ companyId }: { companyId: string }) {
               </TableHeader>
               <TableBody>
                 {members.map((member) => {
-                  const custom = (adjustmentsQuery.data ?? []).some((row) => row.userId === member.user_id);
+                  const custom = (adjustmentsQuery.data ?? []).some(
+                    (row) => row.userId === member.user_id,
+                  );
                   return (
-                    <TableRow key={member.user_id} data-state={selectedId === member.user_id ? "selected" : undefined}>
+                    <TableRow
+                      key={member.user_id}
+                      data-state={selectedId === member.user_id ? "selected" : undefined}
+                    >
                       <TableCell>
                         {member.full_name || "—"}
                         {member.is_you ? " (you)" : ""}
@@ -168,7 +188,11 @@ export function UsersAccessPanel({ companyId }: { companyId: string }) {
                         <StatusBadge status={member.status} />
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" variant="outline" onClick={() => setSelectedId(member.user_id)}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSelectedId(member.user_id)}
+                        >
                           {canManage && !member.is_you ? "Manage" : "View"}
                         </Button>
                       </TableCell>
@@ -183,11 +207,15 @@ export function UsersAccessPanel({ companyId }: { companyId: string }) {
               key={selected.user_id}
               companyId={companyId}
               member={selected}
-              adjustments={(adjustmentsQuery.data ?? []).filter((row) => row.userId === selected.user_id)}
+              adjustments={(adjustmentsQuery.data ?? []).filter(
+                (row) => row.userId === selected.user_id,
+              )}
               canManage={canManage}
               canGrantOwner={canGrantOwner}
               actorPermissions={actorPermissions}
-              soleOwner={selected.role === "owner" && selected.status === "active" && activeOwners <= 1}
+              soleOwner={
+                selected.role === "owner" && selected.status === "active" && activeOwners <= 1
+              }
               onClose={() => setSelectedId(null)}
               onSaved={async () => {
                 await qc.invalidateQueries({ queryKey: ["company-members", companyId] });
@@ -271,7 +299,8 @@ function MemberEditor({
         next.some(
           (item) =>
             !current.some(
-              (existing) => existing.permission === item.permission && existing.effect === item.effect,
+              (existing) =>
+                existing.permission === item.permission && existing.effect === item.effect,
             ),
         );
       if (!roleChanged && !accessChanged) return false;
@@ -336,7 +365,9 @@ function MemberEditor({
       {member.is_you ? (
         <Alert className="mb-4">
           <AlertTitle>Your access</AlertTitle>
-          <AlertDescription>Another owner or administrator changes your role and access.</AlertDescription>
+          <AlertDescription>
+            Another owner or administrator changes your role and access.
+          </AlertDescription>
         </Alert>
       ) : null}
       {soleOwner ? (
@@ -556,7 +587,12 @@ function InvitationsCard({
           </Button>
         </div>
         <p className="text-sm text-muted-foreground">{ROLE_SUMMARIES[role]}</p>
-        <Button type="button" size="sm" variant="ghost" onClick={() => setCustomise((open) => !open)}>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          onClick={() => setCustomise((open) => !open)}
+        >
           {customise ? "Hide tailored access" : "Tailor access for this invitation"}
         </Button>
         {customise ? (
@@ -595,15 +631,23 @@ function InvitationsCard({
         {isPending ? (
           <LoadingState rows={2} />
         ) : isError ? (
-          <ErrorState title="Could not load invitations" description={friendlyAuthError(error)} onRetry={onRetry} />
+          <ErrorState
+            title="Could not load invitations"
+            description={friendlyAuthError(error)}
+            onRetry={onRetry}
+          />
         ) : invitations.length === 0 ? (
           <p className="text-sm text-muted-foreground">No invitations yet.</p>
         ) : (
           <ul className="space-y-2 text-sm">
             {invitations.map((invitation) => (
-              <li key={invitation.id} className="flex flex-wrap items-center justify-between gap-2 border-b py-2">
+              <li
+                key={invitation.id}
+                className="flex flex-wrap items-center justify-between gap-2 border-b py-2"
+              >
                 <span>
-                  {invitation.email} · {roleLabels[invitation.role as CompanyRole] ?? invitation.role}{" "}
+                  {invitation.email} ·{" "}
+                  {roleLabels[invitation.role as CompanyRole] ?? invitation.role}{" "}
                   <Badge variant="outline">{invitation.status}</Badge>
                   {invitation.status === "pending" || invitation.status === "expired" ? (
                     <span className="ml-2 text-xs text-muted-foreground">
@@ -648,7 +692,11 @@ function AccessChecklist({
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       {ACCESS_AREAS.map((area) => (
-        <section key={area.id} className="rounded-md border p-3" aria-labelledby={`access-${area.id}`}>
+        <section
+          key={area.id}
+          className="rounded-md border p-3"
+          aria-labelledby={`access-${area.id}`}
+        >
           <h4 id={`access-${area.id}`} className="text-sm font-semibold">
             {area.label}
           </h4>
@@ -656,8 +704,11 @@ function AccessChecklist({
           <ul className="space-y-3">
             {area.items.map((item) => {
               const locked = isRoleLockedPermission(item.permission) || role === "owner";
-              const included = locked ? baseline.has(item.permission) : selected.has(item.permission);
-              const actorCanGrant = actorPermissions.has(item.permission) || baseline.has(item.permission);
+              const included = locked
+                ? baseline.has(item.permission)
+                : selected.has(item.permission);
+              const actorCanGrant =
+                actorPermissions.has(item.permission) || baseline.has(item.permission);
               const controlDisabled = disabled || locked || (!included && !actorCanGrant);
               return (
                 <li key={item.permission}>
@@ -671,12 +722,16 @@ function AccessChecklist({
                     />
                     <span>
                       <span className="flex items-center gap-1 text-sm">
-                        {locked ? <Lock className="size-3 text-muted-foreground" aria-hidden /> : null}
+                        {locked ? (
+                          <Lock className="size-3 text-muted-foreground" aria-hidden />
+                        ) : null}
                         {item.label}
                       </span>
                       <span className="block text-xs text-muted-foreground">
                         {locked ? "Comes from the duty role. " : ""}
-                        {!locked && !included && !actorCanGrant ? "You can only add access you already hold. " : ""}
+                        {!locked && !included && !actorCanGrant
+                          ? "You can only add access you already hold. "
+                          : ""}
                         {item.detail}
                       </span>
                     </span>

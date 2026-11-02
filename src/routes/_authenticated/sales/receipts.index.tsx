@@ -167,16 +167,52 @@ function ReceiptsList() {
                         {fmt.date(r.receipt_date)}
                       </Link>
                     </TableCell>
-                    <TableCell><Link to="/sales/receipts/$receiptId" params={{ receiptId: r.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{r.reference ?? "—"}</Link></TableCell>
-                    <TableCell><Link to="/sales/receipts/$receiptId" params={{ receiptId: r.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{r.contacts?.name ?? "—"}</Link></TableCell>
                     <TableCell>
-                      <Link to="/sales/receipts/$receiptId" params={{ receiptId: r.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"><StatusBadge status={r.status} /></Link>
+                      <Link
+                        to="/sales/receipts/$receiptId"
+                        params={{ receiptId: r.id }}
+                        className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                      >
+                        {r.reference ?? "—"}
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                      <Link
+                        to="/sales/receipts/$receiptId"
+                        params={{ receiptId: r.id }}
+                        className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                      >
+                        {r.contacts?.name ?? "—"}
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                      <Link
+                        to="/sales/receipts/$receiptId"
+                        params={{ receiptId: r.id }}
+                        className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                      >
+                        <StatusBadge status={r.status} />
+                      </Link>
                     </TableCell>
                     <TableCell className="money">
-                      <Link to="/sales/receipts/$receiptId" params={{ receiptId: r.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{fmt.money(r.amount_minor, r.currency_code)}</Link>
+                      <Link
+                        to="/sales/receipts/$receiptId"
+                        params={{ receiptId: r.id }}
+                        className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                      >
+                        {fmt.money(r.amount_minor, r.currency_code)}
+                      </Link>
                     </TableCell>
                     <TableCell className="money">
-                      <Link to="/sales/receipts/$receiptId" params={{ receiptId: r.id }} className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{r.status === "void" ? "—" : fmt.money(r.unallocated_minor, r.currency_code)}</Link>
+                      <Link
+                        to="/sales/receipts/$receiptId"
+                        params={{ receiptId: r.id }}
+                        className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                      >
+                        {r.status === "void"
+                          ? "—"
+                          : fmt.money(r.unallocated_minor, r.currency_code)}
+                      </Link>
                     </TableCell>
                   </TableRow>
                 ))}

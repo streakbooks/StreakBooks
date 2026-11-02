@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -622,10 +622,10 @@ function BillsWorkspace() {
             const active = tab === t.id;
             const count = counts[t.countKey];
             return (
-              <button
+              <Link
                 key={t.id}
-                type="button"
-                onClick={() => patchSearch({ tab: t.id, page: 0 })}
+                to="/purchases/bills"
+                search={(previous: BillsSearch) => ({ ...previous, tab: t.id, page: 0 })}
                 className={cn(
                   "inline-flex shrink-0 items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                   active
@@ -643,7 +643,7 @@ function BillsWorkspace() {
                 >
                   {count}
                 </span>
-              </button>
+              </Link>
             );
           })}
         </nav>
@@ -1021,22 +1021,35 @@ function BillsWorkspace() {
                   <TableBody>
                     {rows.map((b) => {
                       const cur = b.currency_code || baseCurrency;
+                      const billLink = (children: ReactNode, files = false) => (
+                        <Link
+                          to="/purchases/bills/$billId"
+                          params={{ billId: b.id }}
+                          search={{
+                            ...(tab !== "all" ? { fromTab: tab } : {}),
+                            ...(files ? { files: true } : {}),
+                          }}
+                          className="rounded-sm underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+                        >
+                          {children}
+                        </Link>
+                      );
                       return (
                         <TableRow
                           key={b.id}
-                          role="link"
-                          tabIndex={0}
                           className={cn(
                             selected.has(b.id) && "bg-muted/40",
                             "group cursor-pointer hover:bg-muted/50",
                           )}
                           data-state={selected.has(b.id) ? "selected" : undefined}
-                          onClick={() => openBill(b)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
-                              openBill(b);
-                            }
+                          onClick={(event) => {
+                            const target = event.target;
+                            if (
+                              (target instanceof Element &&
+                                target.closest("a, button, input, select, textarea, [role='checkbox']")) ||
+                              event.ctrlKey || event.metaKey || event.shiftKey || event.altKey
+                            ) return;
+                            openBill(b);
                           }}
                         >
                           {visibleCols.map((col) => {
@@ -1077,17 +1090,13 @@ function BillsWorkspace() {
                               case "supplier":
                                 return (
                                   <TableCell key={col}>
-                                    <span className="font-medium text-foreground underline-offset-2 group-hover:underline">
-                                      {b.contacts?.name ?? "—"}
-                                    </span>
+                                    {billLink(<span className="font-medium text-foreground">{b.contacts?.name ?? "—"}</span>)}
                                   </TableCell>
                                 );
                               case "reference":
                                 return (
                                   <TableCell key={col}>
-                                    <span className="font-mono text-sm underline-offset-2 group-hover:underline">
-                                      {b.display_reference ?? "—"}
-                                    </span>
+                                    {billLink(<span className="font-mono text-sm">{b.display_reference ?? "—"}</span>)}
                                     {!b.supplier_invoice_number && b.bill_number ? (
                                       <span className="mt-0.5 block text-[11px] text-muted-foreground">
                                         Internal · no supplier invoice #
@@ -1096,36 +1105,33 @@ function BillsWorkspace() {
                                   </TableCell>
                                 );
                               case "bill_date":
-                                return <TableCell key={col}>{b.bill_date}</TableCell>;
+                                return <TableCell key={col}>{billLink(b.bill_date)}</TableCell>;
                               case "due_date":
                                 return (
                                   <TableCell key={col}>
-                                    <span
-                                      className={cn(
-                                        b.days_overdue > 0 &&
-                                          "font-medium text-amber-700 dark:text-amber-400",
-                                      )}
-                                    >
-                                      {b.due_date || "—"}
-                                    </span>
+                                    {billLink(
+                                      <span className={cn(b.days_overdue > 0 && "font-medium text-amber-700 dark:text-amber-400")}>
+                                        {b.due_date || "—"}
+                                      </span>
+                                    )}
                                   </TableCell>
                                 );
                               case "status":
                                 return (
                                   <TableCell key={col}>
-                                    <StatusBadge status={b.status} />
+                                    {billLink(<StatusBadge status={b.status} />)}
                                   </TableCell>
                                 );
                               case "total":
                                 return (
                                   <TableCell key={col} className="text-right tabular-nums">
-                                    {fromMinorUnits(BigInt(b.document_total_minor), cur)}
+                                    {billLink(fromMinorUnits(BigInt(b.document_total_minor), cur))}
                                   </TableCell>
                                 );
                               case "paid":
                                 return (
                                   <TableCell key={col} className="text-right tabular-nums">
-                                    {fromMinorUnits(BigInt(b.amount_paid_minor), cur)}
+                                    {billLink(fromMinorUnits(BigInt(b.amount_paid_minor), cur))}
                                   </TableCell>
                                 );
                               case "balance":
@@ -1139,29 +1145,22 @@ function BillsWorkspace() {
                                         —
                                       </span>
                                     ) : (
-                                      fromMinorUnits(BigInt(b.balance_due_minor), cur)
+                                      billLink(fromMinorUnits(BigInt(b.balance_due_minor), cur))
                                     )}
                                   </TableCell>
                                 );
                               case "attachments":
                                 return (
-                                  <TableCell
-                                    key={col}
-                                    onClick={(e) => {
-                                      if (b.attachment_count > 0) {
-                                        e.stopPropagation();
-                                        openBill(b, { files: true });
-                                      }
-                                    }}
-                                  >
-                                    {b.attachment_count > 0 ? (
-                                      <span className="inline-flex items-center gap-1 text-primary underline-offset-2 hover:underline">
-                                        <Paperclip className="size-3.5" />
-                                        {b.attachment_count}
-                                      </span>
-                                    ) : (
-                                      "—"
-                                    )}
+                                  <TableCell key={col}>
+                                    {b.attachment_count > 0
+                                      ? billLink(
+                                          <span className="inline-flex items-center gap-1 text-primary">
+                                            <Paperclip className="size-3.5" />
+                                            {b.attachment_count}
+                                          </span>,
+                                          true,
+                                        )
+                                      : "—"}
                                   </TableCell>
                                 );
                               case "account_number":

@@ -1,51 +1,81 @@
-# Superadmin status
+# Superadmin status — 2 November 2026 continuation
 
-Date: 2 November 2026. `origin/main` is `7813d20`, which includes `53cc3ec`. Later edits go through a pull request.
+Branch: `chore/superadmin-continue`, [PR #66](https://github.com/rohitmehra86/LinkBooks/pull/66).
+Cursor history through `3ace577` is retained; main `c672888` was merged into this
+branch. This continuation is **not merged to main, not deployed, and not
+production-certified**. No Vercel action was run.
 
-## Evidence
+## Completed in this batch
 
-Executed on 2 November 2026 from `d:\Apps\LinkBooks`:
+- Restored the exact uploaded master directive at `docs/superadmin-master-prompt.md`.
+- Structured Customer 360: overview, team, subscription and permission-scoped billing
+  events, with honest list caps, empty/error states and viewer-local timestamps.
+- Connected bounded support requests to the existing approval inbox and actual
+  scoped diagnostic grants. Self-approval and support-only approval are refused.
+  Direct legacy grants cannot bypass the approval guard. No new ledger policy.
+- Revocation, time-based expiry without a worker, expiry cleanup, member-readable
+  access events, and audited diagnostic reads. Unknown legacy actors/reasons are
+  not fabricated or disclosed retrospectively.
+- Unsupported approval types cannot be marked applied; feature-grant form requires
+  feature-management permission. Platform loading/errors no longer render blank.
+- Fixed lifetime-value type failure and safe-integer overflow handling.
+- Added repeatable Docker PostgreSQL component tests, browser component tests and
+  a GitHub Actions job. Expanded static migration checks to include Cursor files
+  50–61 and the new workflow.
+- Extended public benchmark to 15 accounting products plus three SaaS controls;
+  official public documentation only, no private competitor-console claims.
 
-- `npx vitest run src/lib/platform src/lib/billing/plan-quote.test.ts --reporter=dot` — 6 files, 37 tests, passed. The extra cases cover the subscription last-update label and start-month grouping.
-- `npx tsc --noEmit --pretty false` — exit 0 after the subscription start cohort.
-- Browser check of `http://localhost:8080/platform?section=subscriptions`: the column reads "last update", and start months say they appear after the migration and are not revenue. The listed trial was not edited.
-- Browser check of `http://localhost:8080/pricing/builder` after the migrations: Growth quoted at US$30 monthly and US$300 yearly. No card was charged. An add-on quantity was not selected in that pass.
-- Browser check of `http://localhost:8080/platform?section=overview`: the revenue card says there is no eligible active subscription with a stored price, and the stored movement check says there is no recognised MRR and no open stored movement. Both are empty results, not a zero balance. Match and mismatch were not exercised. A second approver was not used.
-- Browser check of dashboard, invoice list, invoice INV-V2083 and the new-invoice form on Demo Company. The new invoice was not saved.
-- `npx supabase backups list --project-ref ipxflpzfcqwtenodbxwc` returned point-in-time restore disabled and no backup rows.
-- `npx eslint` on `src/lib/platform`, `PlatformOverview.tsx`, `PlatformApprovals.tsx` and `platform.index.tsx` — exit 0 after Prettier.
+## Local verification
 
-Production build, browser sign-in, RLS SQL suites and the live database were not run.
+- `npm test`: **216 files, 1,521 tests passed**.
+- `npm run test:platform`: **14 browser component tests passed**, including keyboard
+  navigation and a 390px viewport. The test adapter uses synthetic data.
+- `npm run test:platform:postgres`: **43 existing pending migrations + one new
+  migration compiled** against a minimal synthetic baseline; actual support
+  authorization/lifecycle/expiry/ACL assertions passed. Concurrent requests and
+  concurrent approvals each produce exactly one committed effect. The disable
+  rollback was also executed locally: reads/requests denied and audit retained.
+- Lookup audit: **131 declarations, zero violations**.
+- Native-navigation source audit: **23 files, 11 reporting tabs, passed**.
+- Changed-source lint: **19 files, zero findings** at the recorded run; final changes
+  are checked again before commit.
+- Final typecheck and production build pass locally; GitHub run outcomes are recorded
+  in the PR. A failed or pending job is not a passing certification.
 
-## Not verified
+The Postgres fixture copies actual platform permission/session helpers and table
+DDL, and supplies minimal synthetic dependencies. PL/pgSQL resolves some statements
+lazily. This does **not** prove every pending RPC, full Supabase migration history,
+Auth HTTP flow, hosted schema equivalence or restored-backup recovery. Browser
+component tests are not a real hosted second-user walkthrough.
 
-- Migrations `20261102120000` through `20261102160000` were applied to Supabase project `ipxflpzfcqwtenodbxwc` on 2 November 2026 and recorded in `supabase_migrations.schema_migrations`. A full `supabase db push` was not used.
-- No Stripe or Razorpay test key was used. No charge, refund, price or webhook was sent.
-- `/platform` was opened with an existing platform session. Overview, businesses, subscriptions, features and integrations loaded. Approvals was not in the navigation. Billing was not opened. A second approver was not used.
-- p95 latency was not measured.
-- Postgres RLS suites in `tests/integration/platform-*.sql` were not re-run.
-- The `md5` audit chain was not executed. It detects a break in new rows. A database superuser can still replace the trigger. It is not WORM storage.
-- `supabase/migrations/20261102130000_rollout_enforcement.sql` is applied. Percentage, allowlist, internal, trial, region and scheduled rollouts can gate plan and catalogue defaults.
-- `supabase/migrations/20261102140000_mrr_movements.sql` and `20261102150000_mrr_reconciliation.sql` are applied.
-- `supabase/migrations/20261102160000_subscription_start_cohorts.sql` is applied. Subscriptions that already existed stay without a start month.
-- Tax basis points are an operator setting. They are not a filing position.
+## Hosted state (updated 2 November 2026, evening)
 
-## Capability labels
+Backup taken and restore-verified, then all pending migrations through
+`20261103000000` applied and recorded on the hosted project, plus
+`20261103000100` (MFA policy coverage) and `20261103000200` (anon EXECUTE revoke).
+Evidence and caveats: [HANDOFF.md](../HANDOFF.md#hosted-apply--2-november-2026-evening).
+The section below is the earlier, superseded state.
 
-| Capability | Label | Path |
-| --- | --- | --- |
-| Entitlement order | IMPLEMENTED | `src/lib/platform/entitlements.ts`, `public.winning_entitlements` |
-| Feature catalogue | IMPLEMENTED | `src/lib/platform/feature-registry.ts`, `billing_features` seed |
-| Price quote and margin gate | IMPLEMENTED | `src/lib/platform/price-book.ts`, `src/lib/billing/margin.ts` |
-| Approvals inbox | IMPLEMENTED | `src/components/platform/PlatformApprovals.tsx` |
-| Revenue empty vs forbidden | IMPLEMENTED | `PlatformOverview.tsx`, `revenueState` |
-| Provider price sync | BLOCKED | Test-mode secret key and a test customer |
-| Customer plan builder page | IMPLEMENTED as a quote only | `src/routes/pricing_.builder.tsx`. It does not charge or grant a feature. |
-| Usage overage | IMPLEMENTED as a calculation only | `usageOverage` in `src/lib/platform/price-book.ts`. No invoice. |
-| Historical MRR movements | IMPLEMENTED | `supabase/migrations/20261102140000_mrr_movements.sql` |
-| MRR reconciliation | IMPLEMENTED | `reconcileMrr`, `platform_reconcile_mrr`, overview “Stored movement check” |
-| Subscription start months | IMPLEMENTED | `subscriptionStartCohorts`, `platform_subscription_cohorts`. Not revenue. |
-| Batch C businesses, users, roles | PARTIAL | Existing `/platform` sections. Approvals is visible after the migration. Second approver not used. |
-| Batch D integrations and recovery | PARTIAL | Existing screens. Backup list empty. |
-| Batches E–H | MISSING | No new surfaces. |
-| Status page, SMS, e-signature, BI | NOT APPLICABLE until a vendor is connected | `docs/decisions/002-commodity-operations-tools.md` |
+## Unapplied and blocked (superseded)
+
+`20261103000000_supervised_support_workflow.sql` is **UNAPPLIED HOSTED**. All 43
+Cursor migrations `20261102190000` through `20261102610000` were executed only in
+an isolated disposable fixture by this continuation. No hosted migration/backfill
+was applied, and no provider call or production-data exercise was made.
+
+No verified hosted backup/restore approval was received. A quoted approval phrase
+in documentation is not confirmation. Test-mode provider credentials, a real
+second platform approver, full schema/history reconciliation and a second person's
+independent PR review remain outstanding. GitHub currently has no submitted reviews
+on PR #66. Main merge requires a new explicit instruction under the uploaded prompt.
+
+## Programme completeness
+
+The full A–H programme remains **partial**. Jobs need workers; alerts need measured
+observations/delivery; API keys need actual enforcement; finance drafts need connected
+test-provider workflows; partner and sandbox metadata do not provision services.
+No production certification or measured p95/SLO is claimed. The exact findings,
+remaining work, paths and rollout gates are in
+[RESUMPTION-20261102.md](RESUMPTION-20261102.md), the public benchmark is in
+[benchmark-follow-up-20261102.md](benchmark-follow-up-20261102.md), and safe rollback
+SQL is in [rollbacks/disable-supervised-support.sql](rollbacks/disable-supervised-support.sql).

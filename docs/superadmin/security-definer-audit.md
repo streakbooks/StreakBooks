@@ -1,3 +1,5 @@
+> **Continuation update, 2 November 2026:** Current reviewed implementation and open defects are in [RESUMPTION-20261102.md](RESUMPTION-20261102.md) and [STATUS.md](STATUS.md). The notes below are historical evidence, not a claim that the full programme is complete or that its pending migrations are applied.
+
 # Security-definer audit
 
 Read-only check of project `ipxflpzfcqwtenodbxwc` on 2 November 2026. Nothing here was applied.

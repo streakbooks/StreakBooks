@@ -18,9 +18,17 @@ import {
   getPlatformDetails,
   exportPlatformRecords,
   getPlatformSubscriptionCohorts,
+  getSupervisedSupport,
 } from "@/lib/platform/platform.functions";
 import { rowsCsv, recordFields, platformColumnLabel } from "@/lib/platform/catalog";
 import type { PlatformContext, Row, Section } from "@/lib/platform/catalog";
+import {
+  PlatformCustomer360,
+  PlatformRecordFields,
+  PlatformRelatedRecords,
+  MetadataTable,
+} from "./PlatformCustomer360";
+import { PlatformSupport } from "./PlatformSupport";
 import { PlatformEditor } from "./PlatformEditor";
 import { PlatformBulkActions } from "./PlatformBulkActions";
 import type { EditMode } from "./PlatformEditor";
@@ -61,8 +69,32 @@ export function PlatformResource({
     enabled: !!details && ["businesses", "users", "firms"].includes(section),
     retry: false,
   });
+  const loadSupport = useServerFn(getSupervisedSupport);
+  const support = useQuery({
+    queryKey: ["platform", "supervised-support"],
+    queryFn: () => loadSupport(),
+    enabled:
+      (section === "support" ||
+        (section === "businesses" && context.permissions.includes("support.manage"))) &&
+      context.permissions.includes("support.view"),
+    retry: false,
+  });
   const load = useServerFn(listPlatformRecords);
   const read = useServerFn(readSupportDiagnostics);
+  async function loadDiagnostics(companyId: string) {
+    setDiagnosticCompany(companyId);
+    setDiagnosticBusy(true);
+    setDiagnosticError("");
+    setDiagnostics(null);
+    try {
+      setDiagnostics(await read({ data: { companyId } }));
+    } catch (error) {
+      setDiagnosticError(error instanceof Error ? error.message : "Diagnostic read failed");
+      setDiagnostics(null);
+    } finally {
+      setDiagnosticBusy(false);
+    }
+  }
   const query = useQuery({
     queryKey: ["platform", resource, filter, page, sort],
     queryFn: () => load({ data: { resource, search: filter, page, sort } }),
@@ -241,22 +273,6 @@ export function PlatformResource({
             </Button>
           </>
         ) : null}
-        {section === "support" && owner ? (
-          <>
-            <Button variant="outline" onClick={() => setEdit({ mode: "grant", row: null })}>
-              Authorize support access
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setResource(resource === "support" ? "grants" : "support");
-                setPage(0);
-              }}
-            >
-              {resource === "support" ? "View access grants" : "View tickets"}
-            </Button>
-          </>
-        ) : null}
       </div>
       {exportError ? (
         <p role="alert" className="text-destructive">
@@ -414,7 +430,11 @@ export function PlatformResource({
       )}
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <span>
-          {query.data?.total ?? 0} records · Page {page + 1}
+          {query.isError
+            ? "Record count unavailable"
+            : query.data
+              ? `${query.data.total} records · Page ${page + 1}`
+              : "Loading record count…"}
         </span>
         <div className="flex gap-2">
           <Button
@@ -434,25 +454,24 @@ export function PlatformResource({
         </div>
       </div>
       {section === "support" ? (
+        <PlatformSupport
+          context={context}
+          onRead={(companyId) => void loadDiagnostics(companyId)}
+          reading={diagnosticBusy}
+        />
+      ) : null}
+      {section === "support" && support.data?.ready === true ? (
         <section className="rounded-xl border p-5">
           <h2 className="font-semibold">Audited journal diagnostics</h2>
           <p className="my-2 text-sm text-muted-foreground">
-            Requires a separate one-hour grant for your user and this business. Returns up to 25
-            journal headers; each read is audited.
+            Requires a separate approved, unexpired grant for your user and this business. Returns
+            up to 25 journal headers; each read is audited.
           </p>
           <form
             className="flex flex-wrap gap-2"
             onSubmit={(e) => {
               e.preventDefault();
-              setDiagnosticBusy(true);
-              setDiagnosticError("");
-              read({ data: { companyId: diagnosticCompany } })
-                .then(setDiagnostics)
-                .catch((e: Error) => {
-                  setDiagnosticError(e.message);
-                  setDiagnostics(null);
-                })
-                .finally(() => setDiagnosticBusy(false));
+              void loadDiagnostics(diagnosticCompany);
             }}
           >
             <Input
@@ -460,7 +479,12 @@ export function PlatformResource({
               className="max-w-md"
               required
               value={diagnosticCompany}
-              onChange={(e) => setDiagnosticCompany(e.target.value)}
+              disabled={diagnosticBusy}
+              onChange={(e) => {
+                setDiagnosticCompany(e.target.value);
+                setDiagnostics(null);
+                setDiagnosticError("");
+              }}
             />
             <Button disabled={diagnosticBusy}>
               {diagnosticBusy ? "Loading…" : "Read diagnostics"}
@@ -472,9 +496,7 @@ export function PlatformResource({
             </p>
           ) : null}
           {diagnostics ? (
-            <pre className="mt-3 max-h-72 overflow-auto text-xs">
-              {JSON.stringify(diagnostics, null, 2)}
-            </pre>
+            <MetadataTable rows={diagnostics} empty="No journal headers found for this business." />
           ) : null}
         </section>
       ) : null}
@@ -490,34 +512,35 @@ export function PlatformResource({
         <Dialog open onOpenChange={() => setDetails(null)}>
           <DialogContent className="max-h-[85vh] overflow-auto sm:max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Record details</DialogTitle>
-              <DialogDescription>
-                Verified stored record · {display(details["id"])}
-              </DialogDescription>
+              <DialogTitle>
+                {section === "businesses"
+                  ? `Customer 360 · ${display(details["name"])}`
+                  : "Record details"}
+              </DialogTitle>
+              <DialogDescription>Stored record · {display(details["id"])}</DialogDescription>
             </DialogHeader>
-            <dl className="space-y-3 text-sm">
-              {Object.entries(details).map(([key, value]) => (
-                <div key={key}>
-                  <dt className="font-medium text-muted-foreground">{key.replaceAll("_", " ")}</dt>
-                  <dd className="whitespace-pre-wrap break-all">
-                    {typeof value === "object" && value !== null
-                      ? JSON.stringify(value, null, 2)
-                      : display(value)}
-                  </dd>
-                </div>
-              ))}
-            </dl>
+            {section !== "businesses" ? <PlatformRecordFields row={details} /> : null}
             {related.isFetching ? (
               <p role="status">Loading related records…</p>
             ) : related.isError ? (
-              <p role="alert">{related.error.message}</p>
+              <div role="alert">
+                <p>{related.error.message}</p>
+                <Button variant="outline" onClick={() => void related.refetch()}>
+                  Retry details
+                </Button>
+              </div>
             ) : related.data ? (
-              <section>
-                <h3 className="font-semibold">Related records (up to 100 per list)</h3>
-                <pre className="mt-2 overflow-auto whitespace-pre-wrap break-all text-xs">
-                  {JSON.stringify(related.data, null, 2)}
-                </pre>
-              </section>
+              section === "businesses" ? (
+                <PlatformCustomer360
+                  business={details}
+                  related={related.data}
+                  canRequestSupport={
+                    support.data?.ready === true && context.permissions.includes("support.manage")
+                  }
+                />
+              ) : (
+                <PlatformRelatedRecords related={related.data} />
+              )
             ) : null}
           </DialogContent>
         </Dialog>

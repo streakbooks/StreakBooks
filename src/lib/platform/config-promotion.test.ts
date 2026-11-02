@@ -1,0 +1,127 @@
+import { readFileSync } from "node:fs";
+import { describe, expect, it } from "vitest";
+import { decidePromotion, requestPromotion } from "./config-promotion";
+
+describe("config promotion", () => {
+  it("requires a second person and does not copy in this process", () => {
+    const opened = requestPromotion({
+      role: "platform_owner",
+      sourceId: "company-1",
+      targetId: "company-2",
+      requesterId: "owner-a",
+      reason: "Copy tax",
+    });
+    expect(opened.copied).toBe(false);
+    expect(() =>
+      decidePromotion({
+        role: "platform_owner",
+        request: opened.request,
+        approverId: "owner-a",
+        decision: "approved",
+        reason: "Confirmed",
+      }),
+    ).toThrow(/second person/);
+    const decided = decidePromotion({
+      role: "platform_owner",
+      request: opened.request,
+      approverId: "owner-b",
+      decision: "approved",
+      reason: "Confirmed",
+    });
+    expect(decided.copied).toBe(false);
+    expect(decided.ledgerCopied).toBe(false);
+    expect(decided.presentationFields).toEqual([
+      "locale",
+      "date_format",
+      "invoice_footer",
+      "document_theme_color",
+    ]);
+    expect(decided.request.status).toBe("approved");
+  });
+
+  it("copies presentation fields only after the later migration is applied", () => {
+    const sql = readFileSync(
+      new URL("../../../supabase/migrations/20261102320000_config_promotion.sql", import.meta.url),
+      "utf8",
+    );
+    expect(sql).toContain("READY-TO-APPLY");
+    expect(sql).toContain("copied");
+    expect(sql).not.toContain("UPDATE public.companies");
+    const copy = readFileSync(
+      new URL(
+        "../../../supabase/migrations/20261102380000_promotion_presentation.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    expect(copy).toContain("READY-TO-APPLY");
+    expect(copy).toContain("SET locale = source.locale");
+    expect(copy).not.toContain("base_currency");
+    expect(copy).not.toContain("journal_lines");
+    const guard = readFileSync(
+      new URL("../../../supabase/migrations/20261102440000_company_exists_guards.sql", import.meta.url),
+      "utf8",
+    );
+    expect(guard).toContain("platform_promotions_source_fk");
+    expect(guard).toContain("platform_promotions_target_fk");
+    expect(guard).toContain("That business was not found");
+    expect(guard).not.toContain("UPDATE public.companies");
+  });
+
+  it("allows one pending promotion onto a business", () => {
+    expect(() =>
+      requestPromotion({
+        role: "platform_owner",
+        sourceId: "company-1",
+        targetId: "company-2",
+        requesterId: "owner-a",
+        reason: "Copy presentation",
+        pending: true,
+      }),
+    ).toThrow(/pending promotion/);
+    const sql = readFileSync(
+      new URL(
+        "../../../supabase/migrations/20261102510000_promotion_one_pending.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    expect(sql).toContain("platform_promotions_one_pending_target");
+    expect(sql).toContain("That business already has a pending promotion");
+    expect(sql).toContain("require_platform('settings.manage')");
+    expect(sql).not.toContain("UPDATE public.companies");
+  });
+
+  it("does not promote an archived business", () => {
+    const opened = requestPromotion({
+      role: "platform_owner",
+      sourceId: "company-1",
+      targetId: "company-2",
+      requesterId: "owner-a",
+      reason: "Copy presentation",
+    });
+    expect(() =>
+      decidePromotion({
+        role: "platform_owner",
+        request: opened.request,
+        approverId: "owner-b",
+        decision: "approved",
+        reason: "Confirmed",
+        archived: true,
+      }),
+    ).toThrow(/archived business/);
+    const sql = readFileSync(
+      new URL(
+        "../../../supabase/migrations/20261102610000_promotion_not_archived.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    expect(sql).toContain("An archived business cannot be promoted");
+    expect(sql).toContain("source.archived_at IS NULL");
+    expect(sql).toContain("SET locale = source.locale");
+    expect(sql).toContain("require_platform('settings.manage')");
+    expect(sql).not.toContain("base_currency");
+    expect(sql).not.toContain("journal_lines");
+  });
+});

@@ -1,12 +1,159 @@
+# Hosted apply — 2 November 2026 (evening)
+
+BACKUP CONFIRMED. Before any hosted change, a logical backup of project
+`ipxflpzfcqwtenodbxwc` was taken with `supabase db dump --linked` (roles, public/private
+schema, auth+storage schema, all data incl. 26 auth tables) and kept off-repo on the
+owner's machine (`~/LinkBooks-backups/20261102-2121-pre-superadmin/`, SHA256SUMS
+alongside). It was restored into a disposable `supabase/postgres:17.11.0.003` container:
+222/222 tables, storage policies 9/9, and every user/app table row count matched live
+(only `auth.schema_migrations`/`storage.migrations` bookkeeping is excluded by the dump,
+and one `report_open_events` row was written after the dump). Restore caveat: function
+EXECUTE grants for `anon` do not round-trip into the stock image; after any restore,
+re-run `20261103000200_revoke_anon_definer_execute.sql`.
+
+Rehearsal: the 62 unrecorded migrations from `20261102042056` onward were applied in
+order to that restored copy. 53 applied cleanly; 9 reporting migrations failed only with
+"already exists" (already live under other versions). Data row counts were unchanged.
+
+Hosted result (owner instruction to complete and merge):
+- The 53 were applied to the hosted project, each in its own transaction, 53/53 OK.
+  All 62 versions are recorded in `supabase_migrations.schema_migrations`.
+- `20261103000100_mfa_policies_superadmin_tables.sql`: aal2 restrictive policy now on
+  all 204 RLS tables (0 uncovered).
+- `20261103000200_revoke_anon_definer_execute.sql`: `20261102180000` revoked from
+  PUBLIC only, so 28 definer functions stayed executable by `anon` through Supabase's
+  direct grant. Now only `get_shared_invoice`, `list_public_billing_plans` and
+  `list_live_feature_prices` are anon-executable.
+- Advisors after apply: no ERROR findings; `function_search_path_mutable` 0;
+  `anon_security_definer_function_executable` 3 (the intended public functions).
+- Not applied: the start-month backfill in `docs/superadmin/start-month-backfill.md`
+  (data update; still a proposal).
+
+Still open: test-mode provider credentials, a real second platform approver, an
+independent human review of PR #66, and Vercel deploys (blocked by team membership).
+
+---
+
+# Current continuation — 2 November 2026
+
+This section supersedes the historical handoff below. Work remains on
+`chore/superadmin-continue` / PR #66. Main `c672888` was merged into this branch;
+this continuation is not merged to main. No Vercel operation was run.
+
+The uploaded master directive is restored at `docs/superadmin-master-prompt.md`.
+Current implementation, gaps and verification limits:
+[superadmin continuation review](superadmin/RESUMPTION-20261102.md),
+[current status](superadmin/STATUS.md), and
+[decision 007](decisions/007-supervised-support-and-audited-resumption.md).
+
+Customer 360 now renders stored identity/team/subscription/billing-event metadata.
+The new supervised support workflow reuses the existing approval inbox, actual
+support grants and audit log. Its SQL is **unapplied hosted**. Requests are hidden
+until the schema capability is available. The original direct-grant UI is removed.
+Unsupported approval types fail instead of claiming an applied change.
+
+No verified hosted backup or restore approval was received. Quoted approval phrases
+in old instructions or the master prompt do not constitute confirmation. No hosted
+DDL, backfill, provider call, charge, production-data exercise or Vercel check was
+performed in this continuation.
+
+Docker is available **in this cloud workspace**. The new isolated PostgreSQL fixture
+executes 43 existing pending migrations plus the new one and verifies the support
+workflow. It is not a complete Supabase reset or proof of hosted schema equivalence.
+The previous Windows-machine Docker blocker is historical and may still apply there.
+
+Remaining external gates: verified backup/restore evidence, test-mode provider
+credentials outside chat, a real second platform approver, independent human PR
+review, full migration-history reconciliation, and a new explicit main-merge
+instruction. Broad programme gaps remain documented; no production certification
+is claimed. Rollback SQL: `superadmin/rollbacks/disable-supervised-support.sql`.
+
+---
+
+## Historical handoff (retained verbatim below)
+
 # Handoff
+
+## P0 evidence
+
+Typecheck exit 0. Lint 0 errors and 23 warnings. Vitest 163 files, 1279 tests, all passed. Production build exit 0. Playwright had no seeded platform_owner: `e2e/superadmin-journeys.spec.ts` 2 passed and 2 skipped. Migration history is BLOCKED: Docker is not installed, and the only other Supabase project is LeadOrbit. READY-TO-APPLY and not applied: `20261102170000`, `20261102180000`, `20261102180100`, `20261102190000`, `20261102200000`, `20261102210000`, `20261102220000`, `20261102230000`, `20261102240000`, `20261102250000`, `20261102260000`, `20261102270000`, `20261102280000`, `20261102290000`, `20261102300000`, `20261102310000`, `20261102320000`, `20261102330000`, `20261102340000`, `20261102350000`, `20261102360000`, `20261102370000`, `20261102380000`, `20261102390000`, `20261102400000`, `20261102410000`, `20261102420000`, `20261102430000`, `20261102440000`, `20261102450000`, `20261102460000`, `20261102470000`, `20261102480000`, `20261102490000`, `20261102500000`, `20261102510000`, `20261102520000`, `20261102530000`, `20261102540000`, `20261102550000`, `20261102560000`, `20261102570000`, `20261102580000`, `20261102590000`, `20261102600000`, `20261102610000`, and the start-month backfill in `docs/superadmin/start-month-backfill.md`.
 
 - P0.1: typecheck exit 0, lint 0 errors and 23 warnings, 1279 unit tests passed, production build exit 0.
 - P0.2: `sk_live_` and `rzp_live_` are refused unless `LINKBOOKS_ALLOW_LIVE_PAYMENT_KEYS=true`. 15 provider-key tests passed.
 - P0.3 BLOCKED: Playwright Chromium installed; public quote tests passed 2, grant/revoke skipped. Need Docker Desktop or Podman on PATH to seed a local platform_owner.
 - P0.4: definer audit written. `20261102180000` and `20261102180100` are READY-TO-APPLY and were not applied. Definer audit test passed.
 - P0.5 BLOCKED: no Docker and no LinkBooks staging project. Do not use LeadOrbit. Create an empty staging project or install Docker Desktop or Podman.
+- P0.6: pull request 65 merged at `9fc4429` after verify and voice-browser succeeded.
+- Batch A: `attachQuote` tests passed, 4. A quote is not attached or granted without a Stripe test secret. No subscription row was written.
+- Batch A: second-approver decision tests passed, 3. Live walkthrough BLOCKED until a second platform user with approvals.manage exists.
+- Batch A: mid-cycle proration tests passed, 5. No provider call. BLOCKED until a test-mode secret is in `.env.local`.
+- Batch B: usage overage draft tests passed, 3. Nothing was posted. BLOCKED until a test-mode secret is in `.env.local`.
+- Batch B: missing fees and lifetime value stay unavailable, not zero. Tests passed, 3. Provider reconciliation BLOCKED until a test-mode secret and provider events exist.
+- Batch C: break-glass tests passed, 4. `20261102190000` is READY-TO-APPLY and was not applied.
+- Batch C: step-up allows only `aal2`. Tests passed, 2. The applied `platform_can` already requires `aal2`.
+- Batch C: an empty admin IP allowlist stays closed. Tests passed, 2. No hosted change.
+- Batch C: audit verification matches the applied md5 chain and rejects one edited row. Tests passed, 1. Rewriting every later row still verifies.
+- Batch C: role tests match the November `platform_can` lists. Tests passed, 2. Finance cannot approve and support cannot bill. Custom permissions stay in the database.
+- Batch D: integration health reports missing Stripe and Razorpay configuration and does not call a provider. Tests passed, 2.
+- Batch D: API key rotation tests passed, 3. `20261102200000` stores a hash only and was not applied. The raw key is returned once by that function and is not written to the audit row.
+- Batch D: webhook history tests passed, 3. `20261102210000` lists delivery outcomes only and was not applied. A missing store stays unrecorded.
+- Batch D: backup visibility tests passed, 2. Point-in-time restore off and an empty list stay “no restore point”, not a confirmed backup.
+- Batch D: data export stays on the existing `platform_export` function. The authorisation and audit test passed, 1. No second export path was added.
+- Batch D: closure tests passed, 3. `20261102220000` archives after a second decision and was not applied. It does not delete ledger rows.
+- Batches E–H: ledger integrity stays on `ledger_health_check` for company members. Tests passed, 2. Platform staff are not given ledger amounts.
+- Batches E–H: AI governance tests passed, 3. `20261102230000` reads the existing cap and kill switch and was not applied. A missing unit price stays null. No provider call.
+- Batches E–H: customer summary tests passed, 2. `20261102240000` returns identity and subscription only and was not applied. Ledger amounts are not included.
+- Batches E–H: global search tests passed, 2. `20261102250000` searches businesses and users and was not applied. The query text is not stored in the audit row.
+- Batches E–H: segment tests passed, 2. `20261102260000` was not applied. Contact tags are unchanged.
+- Batches E–H: alert tests passed, 2. `20261102270000` was not applied. A missing observation does not fire.
+- Batches E–H: job console tests passed, 2. `20261102280000` queues a job and was not applied. The job is not executed.
+- Batches E–H: incident and release tests passed, 2. `20261102290000` was not applied. A release note does not deploy.
+- Batches E–H: service desk tests passed, 2. `20261102300000` was not applied. Cases are separate from support grants.
+- Batches E–H: partner tests passed, 2. `20261102310000` was not applied. A missing revenue share stays null and no plan is created.
+- Batches E–H: config promotion tests passed, 2. `20261102320000` was not applied. Approval copies no settings.
+- Batches E–H: sandbox request tests passed, 1. `20261102330000` was not applied. No company was created and posting is unchanged.
+- Final: author report is in `docs/superadmin/final-report.md`. Independent review remains open until a second person reads pull request 66.
+- Full unit suite after the platform files: 192 files, 1349 tests, all passed. Typecheck failed because an audit-chain row could be undefined. That access is now checked.
+- Batch B: provider charge comparison tests passed, 2. A missing provider list stays unrecorded. The live fetch stays BLOCKED until a test-mode secret and provider events exist.
+- Batch B: provider fee tests passed, 2. `20261102340000` stores a supplied fee and was not applied. A missing fee stays unavailable. No provider call.
+- Batch D: webhook outcome tests passed, 2. `20261102350000` records delivered or failed and was not applied. The live handler does not call it. No request body is stored.
+- Batch B: lifetime value tests passed, 3. `20261102360000` sums supplied payments in one currency and was not applied. No payments stays unavailable. Mixed currencies stay unseparated.
+- Batch B: usage draft save tests passed, 4. `20261102370000` cannot mark a draft posted and was not applied. Provider posting stays BLOCKED until a test-mode secret is in `.env.local`.
+- Batches E–H: presentation promotion tests passed, 2. `20261102380000` copies locale, date format, footer, and theme colour after a second approval and was not applied. Base currency and journals are not copied.
+- Batch B: usage draft guard tests passed, 4. `20261102390000` rejects an amount that does not match the draft status and was not applied. Posting stays blocked.
+- Batch B: included usage must be quantity zero. `20261102400000` was not applied. Posting stays blocked.
+- Batch B: reconciliation store tests passed, 2. `20261102410000` stores a match or mismatch and was not applied. A missing provider list is not stored. The live fetch stays BLOCKED.
+- Batch A: proration store tests passed, 2. `20261102420000` stores the integer and was not applied. It cannot record a provider call.
+- Batch C: every unapplied platform function checks `require_platform` or `platform_can`, and every new table enables row level security. Test passed, 1.
+- Batch C: break-glass expiry writes a platform audit row. `20261102430000` was not applied. The customer log stays action and time. Tests passed, 4.
+- Batch C: a break-glass request and a promotion request require a business that exists. `20261102440000` was not applied. Tests passed, 6.
+- Batch B: a stored fee cannot exceed the charge. `20261102450000` was not applied. A missing fee stays unavailable. Tests passed, 3.
+- Batches E–H: a duplicate segment name or membership is rejected and is not audited as a new tag. `20261102460000` was not applied. Tests passed, 2.
+- Batch D: updating a webhook outcome records the previous status. `20261102470000` was not applied. The live handler does not call it. Tests passed, 2.
+- Batch B: a lifetime payment source is recorded once. `20261102480000` was not applied. A repeat does not add to the total. Tests passed, 4.
+- Batch D: one pending closure per business, and approval archives only a real business that is still open. `20261102490000` was not applied. Tests passed, 4.
+- Batches E–H: a release version is recorded once and still does not deploy. `20261102500000` was not applied. Tests passed, 2.
+- Batches E–H: one pending promotion per target business. `20261102510000` was not applied. The request does not copy settings. Tests passed, 3.
+- Batch C: one open break-glass grant per business. `20261102520000` was not applied. The customer log stays action and time. Tests passed, 5.
+- Batches E–H: one queued row per job name. `20261102530000` was not applied. Queueing does not run the job. Tests passed, 2.
+- Batches E–H: an alert name is created once. `20261102540000` was not applied. A missing observation does not fire. Tests passed, 2.
+- Batch B: one usage draft per business. `20261102550000` updates that draft and was not applied. It cannot post. Tests passed, 5.
+- Batches E–H: a partner name is registered once. `20261102560000` was not applied. A missing revenue share stays null and no plan is created. Tests passed, 2.
+- Batches E–H: a sandbox name is requested once. `20261102570000` was not applied. No company is created and posting is unchanged. Tests passed, 1.
+- Batches E–H: one open service case per subject, and an open case can be closed. `20261102580000` was not applied. The case is not deleted. Tests passed, 3.
+- Batch C: stored platform rows must name a business that exists. `20261102590000` was not applied. A business delete does not cascade. Tests passed, 1.
+- Batch B: a mismatch cannot be stored with a zero difference. `20261102600000` was not applied. A missing provider list is still not stored. Tests passed, 3.
+- Batches E–H: an archived business cannot be promoted. `20261102610000` was not applied. Approval still copies presentation fields only. Tests passed, 4.
+- Hosted gate BLOCKED: `20261102170000` through `20261102610000`, and the start-month backfill, are READY-TO-APPLY. Nothing further was applied. Write `BACKUP CONFIRMED` in this file to release them.
 
-Date: 2 November 2026. `origin/main` is `7813d20`, which is after `53cc3ec`. Further work goes through a pull request. Do not push `main` directly.
+## NEEDS FROM OWNER
+
+- Write `BACKUP CONFIRMED` here before any hosted migration is applied.
+- Put a test-mode `STRIPE_SECRET_KEY` or Razorpay test keys in `.env.local` before provider calls.
+- Add a second platform user with `approvals.manage` for the kill-switch walkthrough.
+- Install Docker Desktop or Podman on PATH, or create an empty LinkBooks staging Supabase project. Do not use LeadOrbit.
+
+Date: 2 November 2026. `origin/main` is `9fc4429`. Further work goes through pull request 66. Do not push `main` directly.
 
 ## Process from here
 

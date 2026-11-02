@@ -26,7 +26,7 @@ type Field = {
   required?: boolean;
 };
 export type EditMode =
-  "edit" | "create" | "assign" | "member" | "grant" | "revoke" | "revokeRole" | "revokeGrant";
+  "edit" | "create" | "assign" | "member" | "revoke" | "revokeRole" | "revokeGrant";
 const field = (key: string, label: string, options?: readonly string[]): Field => ({
   key,
   label,
@@ -41,11 +41,6 @@ function specification(
   if (mode === "revoke") return { action: "user.revoke", fields: [] };
   if (mode === "revokeRole") return { action: "role.revoke", fields: [] };
   if (mode === "revokeGrant") return { action: "support.revoke", fields: [] };
-  if (mode === "grant")
-    return {
-      action: "support.grant",
-      fields: [field("user_id", "Staff user ID"), field("company_id", "Business ID")],
-    };
   if (mode === "assign")
     return {
       action: "role.assign",
@@ -242,9 +237,7 @@ export function PlatformEditor({
               ? "Revoke access"
               : mode === "edit"
                 ? "Edit record"
-                : mode === "grant"
-                  ? "Authorize one-hour support access"
-                  : "Create or assign record"}
+                : "Create or assign record"}
           </DialogTitle>
           <DialogDescription>
             Changes require a reason and are saved with an audit record. IDs are available in the

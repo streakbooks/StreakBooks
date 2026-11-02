@@ -311,3 +311,48 @@ export const getPlatformSubscriptionCohorts = createServerFn({ method: "GET" })
     const parsed = cohortPayload.parse(result.data);
     return { ready: true as const, ...parsed, message: null };
   });
+
+// This capability is unavailable until the reviewed supervised-support migration is applied.
+export const getSupervisedSupport = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<import("./support").SupportState> => {
+    const { isMissingSupportSchema } = await import("./support");
+    const result = await context.supabase.rpc("platform_supervised_support_list" as never);
+    setResponseHeader("Cache-Control", "private, no-store");
+    if (isMissingSupportSchema(result.error)) return { ready: false, rows: [] };
+    return { ready: true, rows: unwrap<import("./support").SupportRequest[]>(result) };
+  });
+export const requestSupervisedSupport = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(async (value: unknown) =>
+    (await import("./support")).supportRequestSchema.parse(value),
+  )
+  .handler(async ({ context, data }) =>
+    unwrap<string>(
+      await context.supabase.rpc(
+        "platform_request_break_glass" as never,
+        {
+          _company_id: data.companyId,
+          _reason: data.reason,
+          _expires_at: new Date(Date.now() + data.minutes * 60_000).toISOString(),
+          _request_id: data.requestId,
+        } as never,
+      ),
+    ),
+  );
+export const revokeSupervisedSupport = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(async (value: unknown) =>
+    (await import("./support")).supportRevokeSchema.parse(value),
+  )
+  .handler(async ({ context, data }) =>
+    unwrap<void>(
+      await context.supabase.rpc(
+        "platform_revoke_break_glass" as never,
+        {
+          _grant_id: data.id,
+          _reason: data.reason,
+        } as never,
+      ),
+    ),
+  );

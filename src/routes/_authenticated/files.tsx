@@ -74,9 +74,9 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/files")({
-  validateSearch: (raw: Record<string, unknown>) => ({
-    folder: typeof raw["folder"] === "string" && raw["folder"] ? raw["folder"] : undefined,
-    file: typeof raw["file"] === "string" && raw["file"] ? raw["file"] : undefined,
+  validateSearch: (raw: Record<string, unknown>): { folder?: string; file?: string } => ({
+    ...(typeof raw["folder"] === "string" && raw["folder"] ? { folder: raw["folder"] as string } : {}),
+    ...(typeof raw["file"] === "string" && raw["file"] ? { file: raw["file"] as string } : {}),
   }),
   head: () => ({ meta: [{ title: "Files — LinkBooks" }] }),
   component: FilesPage,
@@ -595,7 +595,7 @@ function FilesPage() {
                     <TableCell className="max-w-xs">
                       <Link
                         to="/files"
-                        search={(previous) => ({ ...previous, file: f.id })}
+                        search={(previous) => ({ ...previous, file: f.id }) as never}
                         className="block max-w-xs truncate text-left font-medium hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                         aria-label={`View details for ${f.file_name}`}
                       >

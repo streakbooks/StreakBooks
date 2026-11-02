@@ -62,6 +62,20 @@ export default {
         const { handlePortalWebhook } = await import("./lib/portals/portal-webhooks");
         return handlePortalWebhook(request);
       }
+      if (pathname === "/api/communications/digest-cron") {
+        if (request.method !== "POST") return new Response("Method Not Allowed", { status: 405 });
+        const { authenticateCronRequest } = await import("./integrations/supabase/cron-auth");
+        const authFailure = await authenticateCronRequest(request);
+        if (authFailure) return authFailure;
+        const { runScheduledDigests } = await import("./lib/notifications/digest-worker.server");
+        try {
+          const result = await runScheduledDigests();
+          return Response.json(result, { headers: { "cache-control": "no-store" } });
+        } catch (error) {
+          console.error("Scheduled digest worker error", error);
+          return Response.json({ error: "Scheduled digest worker failed" }, { status: 503 });
+        }
+      }
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);

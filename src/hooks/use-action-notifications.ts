@@ -23,6 +23,10 @@ export type ActionNotification = {
   resolved_at: string | null;
 };
 
+// A fresh channel name per effect mount prevents React Strict Mode's rapid
+// setup/cleanup/setup cycle from reusing a still-subscribed Realtime channel.
+let realtimeChannelSequence = 0;
+
 export const notificationQueryKey = (companyId: string | null, limit = 100) =>
   ["action-notifications", companyId, limit] as const;
 
@@ -74,7 +78,7 @@ export function useActionNotifications(companyId: string | null, userId: string,
   useEffect(() => {
     if (!companyId || !userId) return;
     const channel = supabase
-      .channel(`action-center:${companyId}:${userId}`)
+      .channel(`action-center:${companyId}:${userId}:${++realtimeChannelSequence}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "action_notifications", filter: `recipient_user_id=eq.${userId}` },

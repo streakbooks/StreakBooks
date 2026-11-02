@@ -36,6 +36,7 @@ export async function sendViaResend(
   try {
     const res = await fetchImpl("https://api.resend.com/emails", {
       method: "POST",
+      signal: AbortSignal.timeout(15000),
       headers: {
         Authorization: `Bearer ${config.apiKey}`,
         "Content-Type": "application/json",
@@ -68,5 +69,36 @@ export async function sendViaResend(
       ok: false,
       error: e instanceof Error ? e.message.slice(0, 300) : "Could not reach the e-mail provider",
     };
+  }
+}
+
+/** Query the transport provider for sender-domain readiness; never expose the API token to clients. */
+export async function checkResendDomain(
+  config: Extract<EmailConfig, { configured: true }>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<{ state: "verified" | "unverified" | "unknown"; domain: string; detail: string }> {
+  const address = /<([^<>]+)>\s*$/.exec(config.from)?.[1] ?? config.from;
+  const domain = address.split("@")[1]?.toLowerCase() ?? "";
+  if (!domain) return { state: "unknown", domain: "", detail: "Invalid server EMAIL_FROM address" };
+  try {
+    const res = await fetchImpl("https://api.resend.com/domains", {
+      method: "GET",
+      signal: AbortSignal.timeout(6000),
+      headers: { Authorization: `Bearer ${config.apiKey}` },
+    });
+    if (!res.ok) return {
+      state: "unknown", domain,
+      detail: "Provider could not verify domain status. Check Resend domain access and DNS.",
+    };
+    const body = (await res.json()) as { data?: Array<{ name: string; status: string }>; has_more?: boolean };
+    const match = body.data?.find((item) => item.name.toLowerCase() === domain);
+    if (match?.status === "verified") return { state: "verified", domain, detail: "Sender domain verified by Resend" };
+    if (match) return { state: "unverified", domain, detail: `Resend domain status: ${match.status}` };
+    return {
+      state: "unknown", domain,
+      detail: "Sender domain not present in the returned Resend domain page; verify it in the provider dashboard.",
+    };
+  } catch {
+    return { state: "unknown", domain, detail: "Unable to reach Resend for DNS verification" };
   }
 }

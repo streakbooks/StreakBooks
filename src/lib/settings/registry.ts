@@ -224,9 +224,10 @@ export const categoryMeta: CategoryMeta[] = [
   {
     id: "notifications",
     label: "Notifications & Communications",
-    description: "Email identity, digests and channel preferences.",
-    synonyms: ["email", "bcc", "dkim", "digest", "sms"],
-    availability: "unavailable",
+    description: "Provider status, email identity, notification preferences, quiet hours and on-demand digests.",
+    synonyms: ["email", "reply-to", "quiet hours", "digest", "notification", "resend"],
+    moduleLinks: [{ label: "Action Center", to: "/notifications" }],
+    availability: "partial",
   },
   {
     id: "portals",
@@ -322,9 +323,11 @@ export const bankingConfigSchema = z.object({
 });
 
 export const notificationsConfigSchema = z.object({
-  email_from_name: z.string().max(120).default(""),
-  reply_to: z.string().email().or(z.literal("")).default(""),
+  email_from_name: z.string().trim().max(120).regex(/^[^\r\n<>]*$/, "Invalid sender name").default(""),
+  reply_to: z.string().trim().email().or(z.literal("")).default(""),
   quiet_hours_enabled: z.boolean().default(false),
+  quiet_hours_start: z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/).default("22:00"),
+  quiet_hours_end: z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/).default("07:00"),
 });
 
 export const reportsConfigSchema = z.object({

@@ -22,7 +22,7 @@ Fetched 2 November 2026. Prices and capabilities below are only what those pages
 | Chargebee | https://www.chargebee.com/docs/billing/2.0/product-catalog/product-catalog | Product families, plans, addons, charges, price points per currency and interval. Entitlements map a feature level onto a catalogue item. Grandfathering exists as an early-access flag and is off by default, so a catalogue edit can affect existing subscriptions unless that flag is set. |
 | LaunchDarkly | https://launchdarkly.com/docs/home/releases/percentage-rollouts | Percentage rollouts hash context key and kind into stable buckets. Raising the percentage adds buckets. Kill-switch flags are permanent booleans that serve the off variation without a deploy. |
 
-Sage Accounting, Reckon and Akaunting were not re-fetched on this date. Their prices are not stated.
+Sage Accounting, Reckon and Akaunting public workflow sources are reviewed in [the continuation benchmark](benchmark-follow-up-20261102.md), bringing the accounting inventory to 15 products. Their prices are not stated. The old LinkBooks assessment below is historical; current capability evidence is in [RESUMPTION-20261102.md](RESUMPTION-20261102.md).
 
 ## What LinkBooks should copy in behaviour, not in presentation
 

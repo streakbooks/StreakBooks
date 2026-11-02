@@ -22,7 +22,17 @@ function PlatformHome() {
     staleTime: 30000,
     retry: false,
   });
-  if (!query.data) return null;
+  if (query.isPending) return <p role="status">Loading platform permissions…</p>;
+  if (query.isError)
+    return (
+      <div role="alert">
+        <p>{query.error.message}</p>
+        <button className="mt-3 underline" onClick={() => void query.refetch()}>
+          Retry platform access
+        </button>
+      </div>
+    );
+  if (!query.data) return <p>No platform context returned.</p>;
   const allowed = visibleSections(query.data.permissions);
   const current = allowed.find(([id]) => id === section) ?? allowed[0];
   if (!current) return <p>No platform permissions assigned.</p>;
@@ -37,7 +47,11 @@ function PlatformHome() {
         <p className="mt-2 max-w-3xl text-sm text-muted-foreground">{description}</p>
       </div>
       {id === "approvals" ? (
-        <PlatformApprovals canManage={query.data.permissions.includes("approvals.manage")} />
+        <PlatformApprovals
+          canManage={query.data.permissions.includes("approvals.manage")}
+          userId={query.data.userId}
+          canGrant={query.data.permissions.includes("features.manage")}
+        />
       ) : id === "overview" ? (
         <PlatformOverview allowedSections={allowed.map(([id]) => id)} />
       ) : id === "monitoring" ? (

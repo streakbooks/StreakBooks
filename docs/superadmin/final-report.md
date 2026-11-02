@@ -1,3 +1,5 @@
+> **Continuation update, 2 November 2026:** Current reviewed implementation and open defects are in [RESUMPTION-20261102.md](RESUMPTION-20261102.md) and [STATUS.md](STATUS.md). The notes below are historical evidence, not a claim that the full programme is complete or that its pending migrations are applied.
+
 # Control centre report
 
 Date: 2 November 2026. Branch `chore/superadmin-continue`. Pull request: https://github.com/rohitmehra86/LinkBooks/pull/66. This is the author’s report. A second person has not reviewed it.

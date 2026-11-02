@@ -31,6 +31,18 @@ describe("lifetime value", () => {
     ).toEqual({ status: "unseparated", minor: null, currency: null });
   });
 
+  it("refuses unsafe minor amounts and overflow instead of rounding money", () => {
+    expect(() =>
+      lifetimeValueFromPayments([{ currency: "GBP", amountMinor: Number.MAX_SAFE_INTEGER + 1 }]),
+    ).toThrow(/whole number/);
+    expect(() =>
+      lifetimeValueFromPayments([
+        { currency: "GBP", amountMinor: Number.MAX_SAFE_INTEGER },
+        { currency: "GBP", amountMinor: 1 },
+      ]),
+    ).toThrow(/precision/);
+  });
+
   it("refuses support and has not been applied", () => {
     expect(() =>
       recordLifetimePayment({

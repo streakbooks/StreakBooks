@@ -1,3 +1,41 @@
+# Current continuation — 2 November 2026
+
+This section supersedes the historical handoff below. Work remains on
+`chore/superadmin-continue` / PR #66. Main `c672888` was merged into this branch;
+this continuation is not merged to main. No Vercel operation was run.
+
+The uploaded master directive is restored at `docs/superadmin-master-prompt.md`.
+Current implementation, gaps and verification limits:
+[superadmin continuation review](superadmin/RESUMPTION-20261102.md),
+[current status](superadmin/STATUS.md), and
+[decision 007](decisions/007-supervised-support-and-audited-resumption.md).
+
+Customer 360 now renders stored identity/team/subscription/billing-event metadata.
+The new supervised support workflow reuses the existing approval inbox, actual
+support grants and audit log. Its SQL is **unapplied hosted**. Requests are hidden
+until the schema capability is available. The original direct-grant UI is removed.
+Unsupported approval types fail instead of claiming an applied change.
+
+No verified hosted backup or restore approval was received. Quoted approval phrases
+in old instructions or the master prompt do not constitute confirmation. No hosted
+DDL, backfill, provider call, charge, production-data exercise or Vercel check was
+performed in this continuation.
+
+Docker is available **in this cloud workspace**. The new isolated PostgreSQL fixture
+executes 43 existing pending migrations plus the new one and verifies the support
+workflow. It is not a complete Supabase reset or proof of hosted schema equivalence.
+The previous Windows-machine Docker blocker is historical and may still apply there.
+
+Remaining external gates: verified backup/restore evidence, test-mode provider
+credentials outside chat, a real second platform approver, independent human PR
+review, full migration-history reconciliation, and a new explicit main-merge
+instruction. Broad programme gaps remain documented; no production certification
+is claimed. Rollback SQL: `superadmin/rollbacks/disable-supervised-support.sql`.
+
+---
+
+## Historical handoff (retained verbatim below)
+
 # Handoff
 
 ## P0 evidence

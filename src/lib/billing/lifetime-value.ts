@@ -14,20 +14,21 @@ export function lifetimeValueFromPayments(
   if (payments === null || payments.length === 0) {
     return { status: "unavailable", minor: null, currency: null };
   }
-  let currency: string | null = null;
+  const currency = payments[0]!.currency;
   let total = 0;
   for (const payment of payments) {
     if (!/^[A-Z]{3}$/.test(payment.currency))
       throw new Error("Currency must be a three-letter code");
-    if (!Number.isInteger(payment.amountMinor) || payment.amountMinor < 0) {
+    if (!Number.isSafeInteger(payment.amountMinor) || payment.amountMinor < 0) {
       throw new Error("Lifetime value must be a whole number of minor units");
     }
-    if (currency === null) currency = payment.currency;
-    else if (currency !== payment.currency)
+    if (currency !== payment.currency)
       return { status: "unseparated", minor: null, currency: null };
     total += payment.amountMinor;
+    if (!Number.isSafeInteger(total))
+      throw new Error("Lifetime value exceeds safe minor-unit precision");
   }
-  return { status: "stored", minor: total, currency: currency ?? null };
+  return { status: "stored", minor: total, currency };
 }
 
 export function recordLifetimePayment(input: {

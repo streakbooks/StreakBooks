@@ -56,4 +56,3 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.capture_standard_report_facts(uuid,date,date,text,jsonb) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.capture_standard_report_facts(uuid,date,date,text,jsonb) TO authenticated;
-

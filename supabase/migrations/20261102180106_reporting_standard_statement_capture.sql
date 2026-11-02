@@ -99,4 +99,3 @@ BEGIN PERFORM private.assert_reporting_feature(_company_id);
  PERFORM public.record_audit_event(_company_id,'report.delivery_queued','report_delivery',id,jsonb_build_object('pack_id',p.id,'view_id',v.id,'recipient_count',jsonb_array_length(recipients)));
  RETURN id;
 END $function$
-

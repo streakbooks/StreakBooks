@@ -12,6 +12,8 @@ export function requestClosure(input: {
   companyId: string;
   requesterId: string;
   reason: string;
+  isDemo?: boolean;
+  pending?: boolean;
 }): {
   request: ClosureRequest;
   deleted: false;
@@ -22,6 +24,10 @@ export function requestClosure(input: {
   }
   const reason = input.reason.trim();
   if (reason.length < 3) throw new Error("A reason is required");
+  if (input.companyId.trim().length === 0 || input.isDemo) {
+    throw new Error("That business cannot be closed");
+  }
+  if (input.pending) throw new Error("That business already has a pending closure");
   return {
     request: {
       companyId: input.companyId,
@@ -40,6 +46,8 @@ export function decideClosure(input: {
   approverId: string;
   decision: "archived" | "rejected";
   reason: string;
+  isDemo?: boolean;
+  alreadyClosed?: boolean;
 }): {
   request: ClosureRequest;
   deleted: false;
@@ -55,6 +63,12 @@ export function decideClosure(input: {
     throw new Error("A second person must decide this request");
   }
   if (reason.length < 3) throw new Error("A reason is required");
+  if (input.decision === "archived" && input.isDemo) {
+    throw new Error("That business cannot be closed");
+  }
+  if (input.decision === "archived" && input.alreadyClosed) {
+    throw new Error("That business is already closed");
+  }
   return {
     request: { ...input.request, approverId: input.approverId, status: input.decision },
     deleted: false,

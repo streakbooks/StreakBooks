@@ -64,7 +64,7 @@ Work top to bottom. A task is done only when its tests have run and the box is t
 - [x] Admin alert rules
 - [x] Job console
 - [x] Incident and release management
-- [ ] Managed services desk
+- [x] Managed services desk
 - [ ] Partner programme
 - [ ] Config promotion
 - [ ] Sandbox tenants

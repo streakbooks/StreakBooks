@@ -2,12 +2,19 @@ import { useReportActivity } from "@/hooks/use-report-activity";
 import { useCanDo } from "@/hooks/use-can";
 import type { ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Printer } from "lucide-react";
+import { ArrowLeft, Download, ChevronDown } from "lucide-react";
 import { useFormat } from "@/hooks/use-format";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { csvFilename, downloadCsv, toCsv, type CsvCell } from "@/lib/reports/csv";
+import type { CsvCell } from "@/lib/reports/csv";
+import { exportVisibleReport } from "@/lib/reports/visible-export.functions";
+import { downloadReportFile } from "@/lib/reports/download";
+import { useServerFn } from "@tanstack/react-start";
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { sourceLabel, sourceTarget } from "@/lib/reports/links";
 import type { ReportSearch } from "@/lib/reports/search";
+import type { ReportPresentation } from "@/lib/reports/report-document";
 import { EmptyState, ErrorState, ReportSkeleton } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,6 +47,8 @@ export function ReportShell({
   extraControls,
   toolbarActions,
   hidePrint = false,
+  headerPresentation,
+  capturedAt,
   getCsv,
   basis,
   children,
@@ -53,6 +62,8 @@ export function ReportShell({
   toolbarActions?: ReactNode;
   /** Standard financial statements use a consolidated export menu instead of print controls. */
   hidePrint?: boolean;
+  headerPresentation?: ReportPresentation | undefined;
+  capturedAt?: string | undefined;
   getCsv?: () => CsvExport | null;
   basis?: string | undefined;
   children: ReactNode;
@@ -75,25 +86,31 @@ export function ReportShell({
     void navigate({ to: "/reports", search: { tab: "standard", from: ctx.from, to: ctx.to } });
   };
   const canExport = useCanDo("reports.export");
+  const exportFn = useServerFn(exportVisibleReport);
+  const fileExport = useMutation({
+    mutationFn: (format: "pdf" | "xlsx" | "csv") => {
+      const csv = getCsv?.();
+      if (!csv) throw new Error("Load the report before exporting");
+      return exportFn({ data: {
+        companyId: ctx.companyId,
+        reportId: ctx.reportId ?? title,
+        title,
+        companyName: ctx.companyName,
+        currency: ctx.currency,
+        from: ctx.from,
+        to: ctx.to,
+        basis: csv.basis ?? basis ?? "",
+        headers: csv.headers,
+        rows: csv.rows.map((row) => row.map((cell) => cell == null ? "" : String(cell))),
+        format,
+      } });
+    },
+    onSuccess: downloadReportFile,
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
   const period =
     mode === "asof" ? `As at ${fmt.date(ctx.to)}` : `${fmt.date(ctx.from)} to ${fmt.date(ctx.to)}`;
 
-  const onExport = () => {
-    const csv = getCsv?.();
-    if (!csv) return;
-    const text = toCsv(
-      {
-        company: ctx.companyName,
-        report: title,
-        period: mode === "asof" ? `As at ${ctx.to}` : `${ctx.from} to ${ctx.to}`,
-        currency: ctx.currency,
-        basis: csv.basis ?? basis ?? "",
-      },
-      csv.headers,
-      csv.rows,
-    );
-    downloadCsv(csvFilename(title, mode === "asof" ? ctx.to : `${ctx.from}-to-${ctx.to}`), text);
-  };
 
   return (
     <div className="report-shell space-y-4">
@@ -104,16 +121,37 @@ export function ReportShell({
         </Button>
       </div>
       {/* Shared report header: identical on screen, print and PDF */}
-      <header className="text-center print:mb-4">
-        <p className="text-sm text-muted-foreground">{ctx.companyName}</p>
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        <p className="text-sm text-muted-foreground">
-          {period} · {ctx.currency}
-        </p>
+      <header className="print:mb-4" style={{ textAlign: headerPresentation?.headerAlignment ?? "center" }}>
+        {(() => {
+          const company = headerPresentation?.showCompanyName === false ? null : (
+            <p key="company" className="text-sm text-muted-foreground">{ctx.companyName}</p>
+          );
+          const titleLine = headerPresentation?.showReportTitle === false ? null : (
+            <h1 key="title" className="text-2xl font-semibold tracking-tight">{title}</h1>
+          );
+          return headerPresentation?.headerOrder === "title-first"
+            ? <>{titleLine}{company}</>
+            : <>{company}{titleLine}</>;
+        })()}
+        {headerPresentation?.showReportPeriod !== false && (
+          <p className="text-sm text-muted-foreground">{period} · {ctx.currency}</p>
+        )}
         {basis ? <p className="text-xs text-muted-foreground">{basis}</p> : null}
-        <p className="hidden text-xs text-muted-foreground print:block">
-          Generated {fmt.dateTime(new Date().toISOString())}
-        </p>
+        {capturedAt && !Number.isNaN(Date.parse(capturedAt)) && (
+          <>
+            {headerPresentation?.showDatePrepared && (
+              <p className="text-xs text-muted-foreground">Prepared: {new Date(capturedAt).toISOString().slice(0, 10)}</p>
+            )}
+            {headerPresentation?.showTimePrepared && (
+              <p className="text-xs text-muted-foreground">Prepared time: {new Date(capturedAt).toISOString().slice(11, 19)} UTC</p>
+            )}
+          </>
+        )}
+        {!headerPresentation && (
+          <p className="hidden text-xs text-muted-foreground print:block">
+            Generated {fmt.dateTime(new Date().toISOString())}
+          </p>
+        )}
       </header>
 
       <div className="flex flex-wrap items-end gap-3 print:hidden">
@@ -184,15 +222,21 @@ export function ReportShell({
         {extraControls}
         <div className="ml-auto flex flex-wrap gap-2">
           {toolbarActions}
-          {getCsv && canExport ? (
-            <Button size="sm" variant="outline" onClick={onExport}>
-              Export CSV
-            </Button>
-          ) : null}
-          {!hidePrint && (
-            <Button size="sm" variant="outline" disabled={!canExport} onClick={() => window.print()}>
-              <Printer className="mr-1 size-4" aria-hidden="true" /> Print / PDF
-            </Button>
+          {getCsv && !hidePrint && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline" disabled={!canExport || fileExport.isPending} aria-label="Download report">
+                  <Download className="mr-2 size-4" aria-hidden="true" />
+                  {fileExport.isPending ? "Preparing…" : "Download"}
+                  <ChevronDown className="ml-2 size-4" aria-hidden="true" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => fileExport.mutate("pdf")}>PDF document (.pdf)</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => fileExport.mutate("xlsx")}>Excel workbook (.xlsx)</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => fileExport.mutate("csv")}>CSV data (.csv)</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
       </div>

@@ -3,6 +3,8 @@ import { isReportDate } from "./date-validation";
 import { reportFiltersSchema } from "./report-filters";
 export const standardSettingsSchema = z
   .object({
+    // Fail closed: cash reporting must never return accrual figures under a cash label.
+    basis: z.literal("accrual").default("accrual"),
     group: z.enum(["total", "month", "quarter", "year"]).default("total"),
     compare: z
       .enum(["none", "prior_period", "prior_year", "ytd", "prior_ytd", "custom"])
@@ -25,6 +27,16 @@ export const standardSettingsSchema = z
     scale: z.enum(["1", "1000", "1000000"]).default("1"),
     currencySymbol: z.boolean().default(false),
     compact: z.boolean().default(false),
+    showCompanyName: z.boolean().default(true),
+    showReportTitle: z.boolean().default(true),
+    showReportPeriod: z.boolean().default(true),
+    showDatePrepared: z.boolean().default(false),
+    showTimePrepared: z.boolean().default(false),
+    headerOrder: z.enum(["company-first", "title-first"]).default("company-first"),
+    headerAlignment: z.enum(["left", "center", "right"]).default("center"),
+    footerAlignment: z.enum(["left", "center", "right"]).default("left"),
+    bandedRows: z.boolean().default(false),
+    reportBorders: z.enum(["default", "none", "all"]).default("default"),
     showBasis: z.boolean().default(true),
     showCurrencyNote: z.boolean().default(true),
     header: z.string().max(300).default(""),

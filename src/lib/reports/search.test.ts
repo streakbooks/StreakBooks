@@ -23,6 +23,14 @@ describe("report URL search params (RP-05)", () => {
       }),
     ).toEqual({});
   });
+  it("persists searchable report analysis filters without accepting unknown or oversized parameters", () => {
+    expect(parseReportSearch({ term: "  Acme Trading  ", nonZero: true })).toEqual({
+      term: "Acme Trading",
+      nonZero: true,
+    });
+    expect(parseReportSearch({ term: "", nonZero: "yes" })).toEqual({});
+    expect(parseReportSearch({ term: "a".repeat(300) }).term).toHaveLength(120);
+  });
   it("omits default values", () => {
     expect(parseReportSearch({ columns: "none" })).toEqual({});
   });

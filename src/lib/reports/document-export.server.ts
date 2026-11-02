@@ -18,7 +18,7 @@ export function exportReportCsv(doc: ReportDocument): string {
       [doc.header],
       ...doc.sections.flatMap((s) => [
         [s.title],
-        ["Account", ...s.columns],
+        [s.labelHeader ?? "Account", ...s.columns],
         ...s.rows.map((r) => [
           r.label,
           ...r.values.map((v, i) => documentCsvValue(v, documentCellStyle(r, s, i))),
@@ -49,13 +49,34 @@ export async function exportReportXlsx(doc: ReportDocument): Promise<Uint8Array>
         },
       },
     );
-    sheet.addRow([doc.company]);
-    sheet.addRow([doc.title]);
-    sheet.addRow([`${doc.from} – ${doc.to}`, doc.currency, doc.subtitle]);
+    const p = doc.presentation;
+    const primaryCompany = p?.showCompanyName === false ? "" : doc.company;
+    const primaryTitle = p?.showReportTitle === false ? "" : doc.title;
+    if (p?.headerOrder === "title-first") {
+      sheet.addRow([primaryTitle]);
+      sheet.addRow([primaryCompany]);
+    } else {
+      sheet.addRow([primaryCompany]);
+      sheet.addRow([primaryTitle]);
+    }
+    const capturedAt = new Date(doc.capturedAt);
+    const prepared = Number.isNaN(capturedAt.getTime()) ? "" : capturedAt.toISOString();
+    sheet.addRow([
+      p?.showReportPeriod === false ? "" : `${doc.from} – ${doc.to}`,
+      p?.showReportPeriod === false ? "" : doc.currency,
+      doc.subtitle,
+      p?.showDatePrepared ? `Prepared: ${prepared.slice(0, 10)}` : "",
+      p?.showTimePrepared ? `Prepared time: ${prepared.slice(11, 19)} UTC` : "",
+    ]);
     sheet.addRow([doc.header]);
+    if (p) {
+      for (const rowIndex of [1, 2, 3, 4])
+        sheet.getRow(rowIndex).alignment = { horizontal: p.headerAlignment };
+      sheet.views = [{ state: "frozen", ySplit: 6, xSplit: 1, showGridLines: p.reportBorders === "all" }];
+    }
     sheet.addRow([section.title]);
-    sheet.addRow(["Account", ...section.columns]);
-    for (const row of section.rows) {
+    sheet.addRow([section.labelHeader ?? "Account", ...section.columns]);
+    for (const [rowIndex, row] of section.rows.entries()) {
       const data = sheet.addRow([
         row.label,
         ...row.values.map((value, i) => {
@@ -71,6 +92,18 @@ export async function exportReportXlsx(doc: ReportDocument): Promise<Uint8Array>
         }),
       ]);
       if (row.kind !== "account") data.font = { bold: true };
+      if (doc.presentation?.bandedRows && rowIndex % 2 === 1 && row.kind !== "heading") {
+        data.eachCell((cell) => { cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF5F7FA" } }; });
+      }
+      if (doc.presentation?.reportBorders === "all")
+        data.eachCell((cell) => {
+          cell.border = {
+            top: { style: "hair", color: { argb: "FFD7DEE4" } },
+            bottom: { style: "hair", color: { argb: "FFD7DEE4" } },
+            left: { style: "hair", color: { argb: "FFD7DEE4" } },
+            right: { style: "hair", color: { argb: "FFD7DEE4" } },
+          };
+        });
       data.getCell(1).alignment = { indent: row.indent ?? 0, wrapText: true };
       row.values.forEach((value, i) => {
         const cell = data.getCell(i + 2);
@@ -109,7 +142,9 @@ export async function exportReportXlsx(doc: ReportDocument): Promise<Uint8Array>
     sheet.getColumn(1).width = 46;
     for (let i = 2; i <= section.columns.length + 1; i++) sheet.getColumn(i).width = 22;
     sheet.views = [{ state: "frozen", ySplit: 6, xSplit: 1 }];
-    sheet.headerFooter.oddFooter = "&L" + doc.footer + "&RPage &P of &N";
+    const footerLocation = doc.presentation?.footerAlignment === "center" ? "&C" : doc.presentation?.footerAlignment === "right" ? "&R" : "&L";
+    const pageLocation = footerLocation === "&R" ? "&L" : "&R";
+    sheet.headerFooter.oddFooter = footerLocation + doc.footer + pageLocation + "Page &P of &N";
   });
   return new Uint8Array(await workbook.xlsx.writeBuffer());
 }

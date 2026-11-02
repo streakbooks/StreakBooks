@@ -81,6 +81,8 @@ export function StandardStatementView({
       ctx={effectiveCtx}
       mode={report === "profit-and-loss" ? "range" : "asof"}
       hidePrint
+      headerPresentation={doc?.presentation}
+      capturedAt={doc?.capturedAt}
       basis={settings.showBasis ? "Accrual basis · posted ledger" : ""}
       extraControls={
         <>

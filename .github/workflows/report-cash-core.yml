@@ -1,0 +1,33 @@
+name: Cash settlement core — focused verification
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/lib/reports/cash-settlement.ts'
+      - 'src/lib/reports/cash-settlement.test.ts'
+      - 'src/lib/reports/standard-settings.ts'
+      - 'src/lib/reports/standard.functions.test.ts'
+      - '.github/workflows/report-cash-core.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/lib/reports/cash-settlement.ts'
+      - 'src/lib/reports/cash-settlement.test.ts'
+      - '.github/workflows/report-cash-core.yml'
+permissions:
+  contents: read
+jobs:
+  cash-core:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Focused lint
+        run: npx eslint src/lib/reports/cash-settlement.ts src/lib/reports/cash-settlement.test.ts
+      - name: Focused unit and server validation tests
+        run: npx vitest run src/lib/reports/cash-settlement.test.ts src/lib/reports/standard.functions.test.ts

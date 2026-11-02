@@ -19,6 +19,20 @@ import {
 import { callRpc } from "@/lib/planning/rpc";
 const missing = "The reporting ecosystem database update is required.";
 const scope = (input: { companyId: string }) => ({ companyId: assertUuid(input?.companyId) });
+export const getReportingFeatureAccess = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(scope)
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
+    return JSON.stringify(
+      await callRpc(
+        context.supabase,
+        "get_reporting_feature_access",
+        { _company_id: data.companyId },
+        missing,
+      ),
+    );
+  });
 export const getReportingWorkspace = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(

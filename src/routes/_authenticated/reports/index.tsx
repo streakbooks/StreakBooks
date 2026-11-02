@@ -1,3 +1,4 @@
+import { ReportingFeatureGate } from "@/components/reports/ReportingFeatureGate";
 import { ManagementWorkspace } from "@/components/reports/ManagementWorkspace";
 import { ReportPacksWorkspace } from "@/components/reports/ReportPacksWorkspace";
 import { AdviserReporting } from "@/components/reports/AdviserReporting";
@@ -111,65 +112,76 @@ function ReportsCentre() {
             <TabsTrigger value="templates">Templates</TabsTrigger>
           </TabsList>
         </div>
-        <TabsContent value="home">
-          <ReportingHome
-            key={company.id}
-            companyId={company.id}
-            from={from}
-            to={periodTo}
-            onNavigate={setTab}
-          />
-        </TabsContent>
-        <TabsContent value="adviser">
-          <AdviserReporting from={from} to={periodTo} />
-        </TabsContent>
-        {(["packs", "drafts", "published", "archived", "schedules"] as const).map((value) => (
-          <TabsContent key={value} value={value}>
-            <ReportPacksWorkspace
-              key={`${company.id}-${value}`}
-              companyId={company.id}
-              from={from}
-              to={periodTo}
-              filter={
-                value === "drafts" || value === "published" || value === "archived" ? value : "all"
-              }
-            />
-            {value === "archived" && (
-              <ReportLibrary
-                key={`${company.id}-archived`}
+        {tab !== "standard" && (
+          <ReportingFeatureGate companyId={company.id} onOpenStandard={() => setTab("standard")}>
+            <TabsContent value="home">
+              <ReportingHome
+                key={company.id}
                 companyId={company.id}
-                initialState="archived"
+                from={from}
+                to={periodTo}
+                onNavigate={setTab}
               />
-            )}
-          </TabsContent>
-        ))}
-        <TabsContent value="templates">
-          <ReportLibrary
-            key={`${company.id}-templates`}
-            companyId={company.id}
-            initialState="templates"
-          />
-        </TabsContent>
-        <TabsContent value="custom">
-          <ReportLibrary key={company.id} companyId={company.id} />
-        </TabsContent>
-        <TabsContent value="management">
-          <ManagementWorkspace key={company.id} companyId={company.id} from={from} to={periodTo} />
-          <div className="mt-4 flex gap-2">
-            <Button asChild variant="outline">
-              <Link to="/budgets">Budget workspace</Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link
-                to="/reports/$reportId"
-                params={{ reportId: "budget-vs-actual" }}
-                search={{ from, to: periodTo }}
-              >
-                Budget versus Actual
-              </Link>
-            </Button>
-          </div>
-        </TabsContent>
+            </TabsContent>
+            <TabsContent value="adviser">
+              <AdviserReporting from={from} to={periodTo} />
+            </TabsContent>
+            {(["packs", "drafts", "published", "archived", "schedules"] as const).map((value) => (
+              <TabsContent key={value} value={value}>
+                <ReportPacksWorkspace
+                  key={`${company.id}-${value}`}
+                  companyId={company.id}
+                  from={from}
+                  to={periodTo}
+                  filter={
+                    value === "drafts" || value === "published" || value === "archived"
+                      ? value
+                      : "all"
+                  }
+                />
+                {value === "archived" && (
+                  <ReportLibrary
+                    key={`${company.id}-archived`}
+                    companyId={company.id}
+                    initialState="archived"
+                  />
+                )}
+              </TabsContent>
+            ))}
+            <TabsContent value="templates">
+              <ReportLibrary
+                key={`${company.id}-templates`}
+                companyId={company.id}
+                initialState="templates"
+              />
+            </TabsContent>
+            <TabsContent value="custom">
+              <ReportLibrary key={company.id} companyId={company.id} />
+            </TabsContent>
+            <TabsContent value="management">
+              <ManagementWorkspace
+                key={company.id}
+                companyId={company.id}
+                from={from}
+                to={periodTo}
+              />
+              <div className="mt-4 flex gap-2">
+                <Button asChild variant="outline">
+                  <Link to="/budgets">Budget workspace</Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link
+                    to="/reports/$reportId"
+                    params={{ reportId: "budget-vs-actual" }}
+                    search={{ from, to: periodTo }}
+                  >
+                    Budget versus Actual
+                  </Link>
+                </Button>
+              </div>
+            </TabsContent>
+          </ReportingFeatureGate>
+        )}
         <TabsContent value="standard" className="space-y-6">
           <div className="flex flex-wrap gap-2">
             {QUICK_REPORT_IDS.map((id) => {

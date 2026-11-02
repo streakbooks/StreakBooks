@@ -130,5 +130,36 @@ DO $$ BEGIN
  IF private.next_reporting_run('2026-01-31 09:00Z','2026-02-28 10:00Z','monthly','UTC')<>'2026-03-31 09:00Z'::timestamptz THEN RAISE EXCEPTION 'Month-end recurrence drift';END IF;
  IF private.next_reporting_run('2024-02-29 09:00Z','2027-03-01 10:00Z','yearly','UTC')<>'2028-02-29 09:00Z'::timestamptz THEN RAISE EXCEPTION 'Leap-year recurrence drift';END IF;
 END $$;
+-- Entitlement defaults, tenant-role denial, frozen writes and access revocation.
+DO $$ DECLARE c uuid:=current_setting('test.rep_c1')::uuid;v uuid; BEGIN
+ INSERT INTO public.report_saved_views(company_id,user_id,report_id,name,config) VALUES(c,current_setting('test.rep_u1')::uuid,'profit-and-loss','Frozen revocation fixture','{}') RETURNING id INTO v;
+ PERFORM public.set_report_access(v,'selected',jsonb_build_array(jsonb_build_object('userId',current_setting('test.rep_u2'),'access','view')),NULL);
+ PERFORM set_config('test.rep_frozen_view',v::text,true);
+ PERFORM set_config('test.rep_frozen_delivery',public.queue_report_delivery(c,jsonb_build_object('packId',current_setting('test.rep_pack'),'recipients',jsonb_build_array('fixture@example.invalid'),'subject','No send: entitlement freeze fixture'))::text,true);
+ IF public.get_reporting_feature_access(c)->>'allowed' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'Included reporting suite is unavailable';END IF;
+ INSERT INTO public.entitlement_overrides(feature_key,scope,scope_id,source,effect,reason) VALUES('reporting','business',c,'revoke','deny','Transactional reporting feature denial test');
+END $$;
+SET LOCAL ROLE authenticated;
+DO $$ DECLARE c uuid:=current_setting('test.rep_c1')::uuid;v uuid:=current_setting('test.rep_frozen_view')::uuid; BEGIN
+ IF public.get_reporting_feature_access(c)->>'source'<>'revoke' OR public.get_reporting_feature_access(c)->>'allowed'<>'false' THEN RAISE EXCEPTION 'Authoritative reporting denial missing';END IF;
+ BEGIN PERFORM public.capture_reporting_facts(c,'2026-10-01','2026-10-31');RAISE EXCEPTION 'TEST: frozen reporting capture accepted';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
+ BEGIN INSERT INTO public.report_models(company_id,owner_id,name,kind,config) VALUES(c,auth.uid(),'Forbidden frozen model','dashboard','{}');RAISE EXCEPTION 'TEST: direct frozen model write accepted';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
+ BEGIN UPDATE public.report_saved_views SET name='Forbidden frozen edit' WHERE id=v;RAISE EXCEPTION 'TEST: frozen edit accepted';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
+ BEGIN PERFORM public.platform_set_entitlement('reporting','business',c,NULL,'grant','allow',NULL,NULL,'Tenant cannot self-authorize','');RAISE EXCEPTION 'TEST: tenant can self-authorize a platform feature';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
+ IF NOT EXISTS(SELECT 1 FROM public.report_packs WHERE id=current_setting('test.rep_pack')::uuid AND snapshot IS NOT NULL) THEN RAISE EXCEPTION 'Feature removal lost approved history';END IF;
+ PERFORM public.set_report_access(v,'private','[]',NULL);
+ PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',current_setting('test.rep_u2'),'aal','aal2','role','authenticated')::text,true);
+ IF EXISTS(SELECT 1 FROM public.report_saved_views WHERE id=v) THEN RAISE EXCEPTION 'Sharing cannot be revoked while feature is frozen';END IF;
+ PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',current_setting('test.rep_u1'),'aal','aal2','role','authenticated')::text,true);
+ IF has_function_privilege('anon','public.get_reporting_feature_access(uuid)','EXECUTE') THEN RAISE EXCEPTION 'Feature decision API exposed anonymously';END IF;
+END $$;
+RESET ROLE;
+DO $$ DECLARE c uuid:=current_setting('test.rep_c1')::uuid;BEGIN
+ PERFORM public.claim_report_deliveries(10);
+ IF (SELECT status FROM public.report_deliveries WHERE id=current_setting('test.rep_frozen_delivery')::uuid)<>'cancelled' THEN RAISE EXCEPTION 'Frozen entitlement did not stop queued delivery';END IF;
+ DELETE FROM public.entitlement_overrides WHERE scope='business' AND scope_id=c AND feature_key='reporting';
+ INSERT INTO public.entitlement_overrides(feature_key,scope,scope_id,source,effect,reason) VALUES('accounting','business',c,'revoke','deny','Transactional reporting dependency denial test');
+ IF public.get_reporting_feature_access(c)->>'dependency'<>'accounting' OR public.get_reporting_feature_access(c)->>'allowed'<>'false' THEN RAISE EXCEPTION 'Reporting dependency is not enforced';END IF;
+END $$;
 ROLLBACK;
 SELECT 'reporting_ecosystem: CRUD/1000 reports/sharing/revocation/tenant isolation/snapshots/independent approval/audit/outbox/schedule assertions passed; every fixture rolled back; no email sent' AS result;

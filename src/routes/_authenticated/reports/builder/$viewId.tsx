@@ -1,3 +1,4 @@
+import { ReportingFeatureGate } from "@/components/reports/ReportingFeatureGate";
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -69,17 +70,19 @@ function BuilderPage() {
       />
     );
   return (
-    <BuilderEditor
-      key={`${company.id}-${viewId}-${saved.data?.updated_at ?? "new"}`}
-      companyId={company.id}
-      defaultFrom={fiscalYearStart(
-        todayIso(),
-        company.fiscal_year_end_month,
-        company.fiscal_year_end_day ?? 31,
-      )}
-      accounts={accounts.data ?? []}
-      saved={saved.data}
-    />
+    <ReportingFeatureGate companyId={company.id}>
+      <BuilderEditor
+        key={`${company.id}-${viewId}-${saved.data?.updated_at ?? "new"}`}
+        companyId={company.id}
+        defaultFrom={fiscalYearStart(
+          todayIso(),
+          company.fiscal_year_end_month,
+          company.fiscal_year_end_day ?? 31,
+        )}
+        accounts={accounts.data ?? []}
+        saved={saved.data}
+      />
+    </ReportingFeatureGate>
   );
 }
 function BuilderEditor({

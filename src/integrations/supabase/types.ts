@@ -11144,6 +11144,10 @@ export type Database = {
         Args: { _company_id: string }
         Returns: Json
       }
+      get_reporting_feature_access: {
+        Args: { _company_id: string }
+        Returns: Json
+      }
       get_shared_invoice: { Args: { _token: string }; Returns: Json }
       has_company_permission: {
         Args: { _company_id: string; _permission: string }

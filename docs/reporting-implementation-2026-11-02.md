@@ -72,7 +72,7 @@ PDF embeds licensed DejaVu Sans, wraps headings, repeats headers, splits wide ta
 
 ## Database migrations and infrastructure
 
-All eight reporting migrations were applied successfully to connected project `ipxflpzfcqwtenodbxwc` (PostgreSQL 17.11):
+All ten reporting migrations were applied successfully to connected project `ipxflpzfcqwtenodbxwc` (PostgreSQL 17.11):
 
 1. `20261102042056_reporting_ecosystem.sql`: sharing/RLS, facts capture, packs/snapshots/transitions, comments, models, durable schedules/outbox.
 2. `20261102043511_reporting_policy_insert_visibility.sql`: correct owner INSERT RETURNING visibility.
@@ -82,6 +82,8 @@ All eight reporting migrations were applied successfully to connected project `i
 6. `20261102053436_reporting_rls_and_reference_indexes.sql`: reference indexes, cached auth predicates, established restrictive MFA policy.
 7. `20261102054954_reporting_calculated_columns.sql`: period facts remain authoritative; calculated columns receive no independent financial facts and are evaluated by the bounded parser.
 8. `20261102060542_reporting_delivery_confirmation_queue.sql`: service-only atomic confirmation claims, cooldown and fair queue rotation; 27 accepted fixture messages are checked across 25+2 claims without starvation or double claims.
+9. `20261102180101_reporting_catalogue_entitlements.sql`: register the reporting suite in the existing registry, included zero-cost price book, dependency graph and audit; enforce live winning entitlements for writes/capture/dispatch.
+10. `20261102180102_reporting_revoke_while_frozen.sql`: allow ownership-checked sharing revocation while new reporting work is frozen.
 
 Generated Supabase types reflect the final schema. Migrations add reporting structures without deleting posted accounting data. The live integration SQL creates isolated synthetic users/companies/posted journals and rolls everything back; it never sends email. Re-run it with an authorized database test connection, not through a browser session with elevated credentials.
 
@@ -93,7 +95,7 @@ The latest worker heartbeat on 2026-11-02 reports `provider_configured=false`; t
 
 | Check | Recorded result | Scope / limitation |
 |---|---|---|
-| `npm test` | 172 files / 1354 tests PASS on Vitest 5.0.5 | Entire repository unit suite; no removed or skipped tests to obtain pass. |
+| `npm test` | 173 files / 1357 tests PASS on Vitest 5.0.5 | Entire repository unit suite; no removed or skipped tests to obtain pass. |
 | `npm run typecheck` | PASS after typed Vitest mock compatibility update | Final TypeScript boundary validation. |
 | `npm run build` | PASS, Vite 8.3.5 | Actual production client/server bundle. |
 | Changed-source ESLint | No new findings; 3 existing ListKit refresh warnings | Compared to HEAD, not a claim of zero whole-repository lint. |
@@ -138,8 +140,12 @@ The acceptance scorecard after confirmed commit/push is **78/149 PASS (52.3%)**.
 
 Main advanced while the reporting work was in progress. The merge retains updated control-centre/billing/CSV work and the reporting branch's stricter saved-report validation and shared lookups. Generated types were regenerated from the actual connected schema; no billing or migration-history repair was attempted. Upstream documents intentionally leave some platform security/history work unapplied pending staging; those unrelated gates remain. Connector-applied reporting migrations are verified by migration name and deployed function/schema behavior; recorded server version timestamps can differ from repository CLI filenames. Do not run an indiscriminate migration push or repair.
 
-The integrated branch passes TypeScript, production build, 172 files / 1,354 tests, reporting browser 8/8, corrections 8/8 and themes 5/5. Explicit ESLint of the resolved files and worker reports no findings. An initial parallel browser execution encountered Vite `504 Outdated Optimize Dep` cache collisions; a dedicated reporting fixture cache fixed the blank-page failure, and all eight original assertions passed on rerun. No assertions were skipped or weakened. GitHub Actions previously passed both jobs for reporting checkpoint `a8ffbe8`; the merged head needs its own CI.
+The integrated branch passes TypeScript, production build, 173 files / 1,357 tests, reporting browser 8/8, corrections 8/8 and themes 5/5. Explicit ESLint of the resolved files and worker reports no findings. An initial parallel browser execution encountered Vite `504 Outdated Optimize Dep` cache collisions; a dedicated reporting fixture cache fixed the blank-page failure, and all eight original assertions passed on rerun. No assertions were skipped or weakened. GitHub Actions previously passed both jobs for reporting checkpoint `a8ffbe8`; the merged head needs its own CI.
 
-A new always-applied upstream rule, `.cursor/rules/linkbooks-superadmin.mdc`, requires new features to register in the shared feature registry/price book and use current entitlement decisions before shipping. The advanced reporting module still needs that catalogue/entitlement integration (including safe freezing and authorization tests). This is an additional release gate; this draft is not being shipped or certified.
+A new always-applied upstream rule, `.cursor/rules/linkbooks-superadmin.mdc`, requires new features to register in the shared feature registry/price book and use current entitlement decisions before shipping. That integration is now implemented and tested: the reporting feature is included without metered or incremental charges, requires accounting, optionally links budgeting, and uses live winning entitlement decisions. Server/database controls freeze new work and queued dispatch; history remains stored and readable under existing reporting permissions; sharing revocation remains available. The UI mirrors decision source/reason and disables saved-view edits when frozen. Tenant users cannot self-grant access through platform RPCs.
 
 The Vercel bot explicitly states that GitHub account `linkbusinessadvisory` is not a member of `paxaris`: [access evidence](https://github.com/rohitmehra86/LinkBooks/pull/63#issuecomment-6570030444). Other detailed build errors remain inaccessible via the current connection. The team owner must resolve membership/connected-account access; no account identity change or protection bypass is used.
+
+## Catalogue integration validation
+
+All 1,357 unit tests pass, TypeScript and production build pass, and the extended live transactional SQL suite verifies defaults, business revocation, required-feature denial, frozen model/saved-view writes, cancelled queued delivery, retained snapshots, sharing revocation and tenant denial of platform self-authorization. No test email is sent. The original catalogue test now checks the original entitlement migration plus additive catalogue migrations, preserving every feature/precedence/unique-key assertion. A migration-order regression test ensures the CLI-created catalogue migrations run after their billing prerequisites on fresh databases; their filenames were ordered deterministically after the latest prerequisite because upstream files use later same-day timestamps. No migration-history repair or published plan version change was made.

@@ -1,3 +1,4 @@
+import { useReportingAccess } from "@/hooks/use-reporting-access";
 import { libraryMetadata } from "@/lib/reports/saved-report";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -25,6 +26,8 @@ const DATE_KEYS = ["from", "to"] as const;
  */
 export function SavedViews({ ctx }: { ctx: ReportCtx }) {
   const reportId = ctx.reportId;
+  const access = useReportingAccess(ctx.companyId);
+  const canEdit = access.data?.allowed === true;
   const queryClient = useQueryClient();
   const listFn = useServerFn(listSavedReportViews);
   const saveFn = useServerFn(saveReportView);
@@ -105,6 +108,16 @@ export function SavedViews({ ctx }: { ctx: ReportCtx }) {
     <div className="flex flex-wrap items-center gap-2 text-sm print:hidden">
       <Star className="size-4 text-muted-foreground" aria-hidden />
       <span className="text-muted-foreground">Saved views</span>
+      {access.data && !access.data.allowed && (
+        <span className="text-xs text-muted-foreground">
+          Saved views are read only: {access.data.reason} (source: {access.data.source}).
+        </span>
+      )}
+      {access.isError && (
+        <span role="alert" className="text-xs text-destructive">
+          Could not verify saved-view editing access. {friendlyAuthError(access.error)}
+        </span>
+      )}
       {views.map((v) => (
         <span key={v.id} className="inline-flex items-center rounded-full border pl-3">
           <button type="button" className="py-1 hover:underline" onClick={() => apply(v)}>
@@ -114,7 +127,10 @@ export function SavedViews({ ctx }: { ctx: ReportCtx }) {
             type="button"
             aria-label={`Delete saved view ${v.name}`}
             className="px-2 py-1 text-muted-foreground hover:text-foreground"
-            onClick={() => remove.mutate(v.id)}
+            disabled={!canEdit || remove.isPending}
+            onClick={() => {
+              if (window.confirm(`Delete saved view “${v.name}”?`)) remove.mutate(v.id);
+            }}
           >
             <X className="size-3" />
           </button>
@@ -138,7 +154,11 @@ export function SavedViews({ ctx }: { ctx: ReportCtx }) {
             />
             Keep these dates
           </label>
-          <Button size="sm" disabled={!name.trim() || save.isPending} onClick={() => save.mutate()}>
+          <Button
+            size="sm"
+            disabled={!canEdit || !name.trim() || save.isPending}
+            onClick={() => save.mutate()}
+          >
             Save
           </Button>
           <Button size="sm" variant="ghost" onClick={() => setNaming(false)}>
@@ -146,7 +166,7 @@ export function SavedViews({ ctx }: { ctx: ReportCtx }) {
           </Button>
         </>
       ) : (
-        <Button size="sm" variant="outline" onClick={() => setNaming(true)}>
+        <Button size="sm" variant="outline" disabled={!canEdit} onClick={() => setNaming(true)}>
           Save this view
         </Button>
       )}

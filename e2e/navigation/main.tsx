@@ -86,7 +86,7 @@ const reports = createRoute({
   getParentRoute: () => root, path: "/reports",
   validateSearch: parseReportingCentreSearch,
   component: () => {
-    const search = reports.useSearch();
+    const search = parseReportingCentreSearch(reports.useSearch() as Record<string, unknown>);
     const tab = search.tab ?? "home";
     return (
       <section>

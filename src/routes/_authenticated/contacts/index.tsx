@@ -1,5 +1,5 @@
 import { SettingsDestinationLink } from "@/components/settings/ModuleSettingsLinks";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -56,6 +56,14 @@ type ContactRow = {
 };
 
 const PAGE_SIZE = 50;
+
+function ContactRecordLink({ contactId, children }: { contactId: string; children: ReactNode }) {
+  return (
+    <Link to="/contacts/$contactId" params={{ contactId }} className="rounded-sm underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-ring">
+      {children}
+    </Link>
+  );
+}
 
 export function ContactsPage({ initialKind = "customer" }: { initialKind?: string } = {}) {
   const { company } = useActiveCompany();
@@ -251,25 +259,21 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                   {(query.data as ContactRow[]).map((c) => (
                     <TableRow key={c.id}>
                       <TableCell>
-                        <Link
-                          to="/contacts/$contactId"
-                          params={{ contactId: c.id }}
-                          className="font-medium underline-offset-2 hover:underline"
-                        >
-                          {c.name}
-                        </Link>
+                        <ContactRecordLink contactId={c.id}><span className="font-medium">{c.name}</span></ContactRecordLink>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {c.account_number ?? "—"}
+                        <ContactRecordLink contactId={c.id}>{c.account_number ?? "—"}</ContactRecordLink>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="neutral" className="capitalize">
-                          {c.kind === "both" ? "Customer & supplier" : c.kind}
-                        </Badge>
+                        <ContactRecordLink contactId={c.id}>
+                          <Badge variant="neutral" className="capitalize">
+                            {c.kind === "both" ? "Customer & supplier" : c.kind}
+                          </Badge>
+                        </ContactRecordLink>
                       </TableCell>
-                      <TableCell>{c.email ?? "—"}</TableCell>
-                      <TableCell>{c.phone ?? "—"}</TableCell>
-                      <TableCell>{c.payment_terms_days}d</TableCell>
+                      <TableCell><ContactRecordLink contactId={c.id}>{c.email ?? "—"}</ContactRecordLink></TableCell>
+                      <TableCell><ContactRecordLink contactId={c.id}>{c.phone ?? "—"}</ContactRecordLink></TableCell>
+                      <TableCell><ContactRecordLink contactId={c.id}>{c.payment_terms_days}d</ContactRecordLink></TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

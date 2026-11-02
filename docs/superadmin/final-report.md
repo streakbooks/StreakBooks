@@ -10,13 +10,13 @@ The work extends the existing platform permissions, `platform_log`, entitlements
 
 | Item | State |
 | --- | --- |
-| Hosted migrations `20261102170000` through `20261102560000`, plus the start-month backfill | READY-TO-APPLY. Not applied. Needs `BACKUP CONFIRMED` in `docs/HANDOFF.md`. |
+| Hosted migrations `20261102170000` through `20261102570000`, plus the start-month backfill | READY-TO-APPLY. Not applied. Needs `BACKUP CONFIRMED` in `docs/HANDOFF.md`. |
 | Payment provider calls, usage posting, reconciliation | Blocked. No test-mode secret in `.env.local`. |
 | Live second-approver walkthrough | Blocked. Needs a second platform user with `approvals.manage`. |
 | Local platform owner and migration-history replay | Blocked. Docker is not installed. LeadOrbit is not a LinkBooks staging database. |
 | Playwright grant and revoke | Skipped. Public quote tests passed, 2. |
 | Audit hash | Detects one edited row. Rewriting every later row still verifies. |
-| Jobs, config promotion, sandbox requests | One queued row per job name (`20261102530000`). A job is not executed. A sandbox request does not create a company. Promotion copies locale, date format, footer, and theme colour only after a second approval (`20261102380000`). One pending promotion per target (`20261102510000`). These migrations are not applied. |
+| Jobs, config promotion, sandbox requests | One queued row per job name (`20261102530000`). A job is not executed. A sandbox name is requested once and does not create a company (`20261102570000`). Promotion copies locale, date format, footer, and theme colour only after a second approval (`20261102380000`). One pending promotion per target (`20261102510000`). These migrations are not applied. |
 | Webhook deliveries | `20261102350000` can record an outcome and is not applied. `20261102470000` keeps the previous status when that outcome changes. The live handler does not call either function. |
 | AI spend | A missing unit price stays null. The read was not applied. |
 | Full unit suite | 192 files, 1349 tests, all passed, after the platform files. Typecheck then failed on `audit-chain.ts` index access and that error is fixed in the following commit. |

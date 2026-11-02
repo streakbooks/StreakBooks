@@ -39,7 +39,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/_authenticated/tax")({
-  validateSearch: (raw: Record<string, unknown>) => ({
+  validateSearch: (raw: Record<string, unknown>): { tab?: string } => ({
     tab: ["registration", "returns", "rates", "codes", "mappings", "packs"].includes(String(raw["tab"]))
       ? String(raw["tab"])
       : undefined,

@@ -14,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ReportActionsMenu } from "./ReportActionsMenu";
+import { ReportPeriodSelect } from "./ReportPeriodSelect";
 import { SavedViews } from "./SavedViews";
 
 export type ReportCtx = {
@@ -22,6 +23,8 @@ export type ReportCtx = {
   companyId: string;
   companyName: string;
   currency: string;
+  fyEndMonth?: number;
+  fyEndDay?: number;
   from: string;
   to: string;
   search: ReportSearch;
@@ -36,6 +39,7 @@ export function ReportShell({
   mode,
   showColumns,
   extraControls,
+  toolbarActions,
   getCsv,
   basis,
   children,
@@ -46,6 +50,7 @@ export function ReportShell({
   mode: "range" | "asof";
   showColumns?: "pl" | "bs";
   extraControls?: ReactNode;
+  toolbarActions?: ReactNode;
   getCsv?: () => CsvExport | null;
   basis?: string | undefined;
   children: ReactNode;
@@ -96,6 +101,13 @@ export function ReportShell({
       </header>
 
       <div className="flex flex-wrap items-end gap-3 print:hidden">
+        <ReportPeriodSelect
+          from={ctx.from}
+          to={ctx.to}
+          fyMonth={ctx.fyEndMonth ?? 12}
+          fyDay={ctx.fyEndDay ?? 31}
+          onChange={(range) => ctx.setSearch(range)}
+        />
         {mode === "range" ? (
           <div className="space-y-1">
             <Label htmlFor="report-from">From</Label>
@@ -155,6 +167,7 @@ export function ReportShell({
         ) : null}
         {extraControls}
         <div className="ml-auto flex flex-wrap gap-2">
+          {toolbarActions}
           {getCsv && canExport ? (
             <Button size="sm" variant="outline" onClick={onExport}>
               Export CSV

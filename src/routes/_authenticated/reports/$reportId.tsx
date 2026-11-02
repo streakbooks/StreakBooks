@@ -66,7 +66,11 @@ function ReportPage() {
 
   const today = useMemo(() => todayIso(), []);
   const defaultFrom = company
-    ? fiscalYearStart(today, company.fiscal_year_end_month, company.fiscal_year_end_day ?? 28)
+    ? fiscalYearStart(
+        report?.id === "balance-sheet" ? (search.to ?? today) : today,
+        company.fiscal_year_end_month,
+        company.fiscal_year_end_day ?? 31,
+      )
     : today;
 
   if (isPending) return <LoadingState />;
@@ -119,6 +123,8 @@ function ReportPage() {
     companyId: company.id,
     companyName: company.name,
     currency: company.base_currency,
+    fyEndMonth: company.fiscal_year_end_month,
+    fyEndDay: company.fiscal_year_end_day ?? 31,
     from: search.from ?? defaultFrom,
     to: search.to ?? today,
     search,

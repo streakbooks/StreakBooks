@@ -1,8 +1,10 @@
+import { standardSettingsSchema, encodeStandardSettings } from "./standard-settings";
 import { isReportDate } from "./date-validation";
 import type { ColumnMode } from "@/lib/reports/statements";
 
 /** URL state of a report page, so every drill-down is linkable and survives reload (RP-05). */
 export type ReportSearch = {
+  settings?: string;
   from?: string;
   to?: string;
   account?: string;
@@ -30,6 +32,13 @@ function str(v: unknown, max = 80): string | undefined {
 
 export function parseReportSearch(raw: Record<string, unknown>): ReportSearch {
   const out: ReportSearch = {};
+  if (raw["settings"] !== undefined) {
+    if (typeof raw["settings"] !== "string" || raw["settings"].length > 60000)
+      throw new Error("Invalid report settings");
+    out.settings = encodeStandardSettings(
+      standardSettingsSchema.parse(JSON.parse(raw["settings"])),
+    );
+  }
   const from = typeof raw["from"] === "string" ? raw["from"].trim() : undefined;
   if (from && isReportDate(from)) out.from = from;
   const to = typeof raw["to"] === "string" ? raw["to"].trim() : undefined;

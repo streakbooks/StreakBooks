@@ -1,3 +1,7 @@
+import { StandardReportControls } from "@/components/reports/StandardReportControls";
+import { ReportPeriodSelect } from "@/components/reports/ReportPeriodSelect";
+import { standardSettingsSchema, encodeStandardSettings } from "@/lib/reports/standard-settings";
+import { standardPeriods } from "@/lib/reports/standard-statement";
 import { ReportActionsMenu } from "@/components/reports/ReportActionsMenu";
 import { parseReportingCentreSearch } from "@/lib/reports/centre-search";
 import { ReportActivityList } from "../../src/components/reports/ReportActivityList";
@@ -83,6 +87,7 @@ export function Fixture() {
       <section aria-label="Standard report actions fixture" className="flex justify-end">
         <ReportActionsMenu from="2026-04-01" to="2026-11-02" />
       </section>
+      <StandardStatementFixture />
       <ActivityFixture />
       <h1 className="text-2xl font-semibold">Reporting and LookupSelect verification</h1>
       <section className="space-y-3 rounded border p-4">
@@ -186,6 +191,78 @@ export function Fixture() {
       {error && <p role="alert">{error}</p>}
       {document && <DocumentPreview document={document} />}
     </main>
+  );
+}
+function StandardStatementFixture() {
+  const [settings, setSettings] = useState(() =>
+    standardSettingsSchema.parse(
+      JSON.parse(localStorage.getItem("standard-fixture-settings") ?? "{}"),
+    ),
+  );
+  const [period, setPeriod] = useState({ from: "2026-10-01", to: "2026-10-31" });
+  const [doc, setDoc] = useState<ReportDocument | null>(null);
+  const [error, setError] = useState("");
+  return (
+    <section aria-label="Standard statement fixture" className="space-y-3 rounded border p-4">
+      <h2 className="font-semibold">Standard statement controls</h2>
+      <div className="flex flex-wrap items-end gap-3">
+        <ReportPeriodSelect {...period} fyMonth={3} fyDay={31} onChange={setPeriod} />
+        <StandardReportControls
+          report="profit-and-loss"
+          settings={settings}
+          onApply={(s) => {
+            setSettings(s);
+            setDoc(null);
+          }}
+          accounts={reportingFactsFixture().accounts}
+          filterOptions={{ currencies: ["GBP", "USD"], sources: ["manual"] }}
+        />
+      </div>
+      <button
+        className="rounded border px-3 py-2"
+        onClick={() => {
+          try {
+            if (settings.filters.clauses.length)
+              throw new Error(
+                "Filtered financial previews are verified by the live database suite",
+              );
+            const f = reportingFactsFixture();
+            const plan = standardPeriods("profit-and-loss", f.from, f.to, settings, 12, 31);
+            f.standardColumns = plan.periods.map((p) => ({
+              ...p,
+              fyStart: "2026-01-01",
+              period: p.from === f.from && p.to === f.to ? f.period : [],
+              bsPrior: [],
+              bsCurrent: f.bsCurrent,
+            }));
+            f.appliedFilters = settings.filters;
+            setDoc(
+              buildReportDocument(f, {
+                name: "Profit and Loss",
+                reportId: "profit-and-loss",
+                config: { settings: encodeStandardSettings(settings) },
+              }),
+            );
+            setError("");
+          } catch (e) {
+            setDoc(null);
+            setError(e instanceof Error ? e.message : "Invalid settings");
+          }
+        }}
+      >
+        Run standard statement fixture
+      </button>
+      <button
+        className="ml-2 rounded border px-3 py-2"
+        onClick={() =>
+          localStorage.setItem("standard-fixture-settings", encodeStandardSettings(settings))
+        }
+      >
+        Persist standard statement settings
+      </button>
+      {error && <p role="alert">{error}</p>}
+      {doc && <DocumentPreview document={doc} compact={settings.compact} />}
+    </section>
   );
 }
 function ActivityFixture() {

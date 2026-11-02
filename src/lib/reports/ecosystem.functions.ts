@@ -1,3 +1,4 @@
+import { standardSettingsSchema } from "./standard-settings";
 import { parseReportSearch } from "./search";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -632,10 +633,31 @@ export const captureReportDocument = createServerFn({ method: "POST" })
     const def = view.config["_builder"]
       ? customDefinitionSchema.parse(view.config["_builder"])
       : null;
+    const standard =
+      !def &&
+      typeof view.config["settings"] === "string" &&
+      ["profit-and-loss", "balance-sheet"].includes(view.report_id);
     const facts = await callRpc(
       context.supabase,
-      def ? "capture_custom_report_facts" : "capture_reporting_facts",
-      { _company_id: data.companyId, _from: from, _to: to, ...(def ? { _definition: def } : {}) },
+      def
+        ? "capture_custom_report_facts"
+        : standard
+          ? "capture_standard_report_facts"
+          : "capture_reporting_facts",
+      {
+        _company_id: data.companyId,
+        _from: from,
+        _to: to,
+        ...(def ? { _definition: def } : {}),
+        ...(standard
+          ? {
+              _report_id: view.report_id,
+              _settings: standardSettingsSchema.parse(
+                JSON.parse(view.config["settings"] as string),
+              ),
+            }
+          : {}),
+      },
       missing,
     );
     return JSON.stringify(
@@ -706,14 +728,30 @@ export const exportReportDocument = createServerFn({ method: "POST" })
       const def = view.config["_builder"]
         ? customDefinitionSchema.parse(view.config["_builder"])
         : null;
+      const standard =
+        !def &&
+        typeof view.config["settings"] === "string" &&
+        ["profit-and-loss", "balance-sheet"].includes(view.report_id);
       facts = await callRpc(
         context.supabase,
-        def ? "capture_custom_report_facts" : "capture_reporting_facts",
+        def
+          ? "capture_custom_report_facts"
+          : standard
+            ? "capture_standard_report_facts"
+            : "capture_reporting_facts",
         {
           _company_id: data.companyId,
           _from: dateSchema.parse(data.from ?? view.config["from"]),
           _to: dateSchema.parse(data.to ?? view.config["to"]),
           ...(def ? { _definition: def } : {}),
+          ...(standard
+            ? {
+                _report_id: view.report_id,
+                _settings: standardSettingsSchema.parse(
+                  JSON.parse(view.config["settings"] as string),
+                ),
+              }
+            : {}),
         },
         missing,
       );

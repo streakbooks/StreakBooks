@@ -1,5 +1,7 @@
+import { buildCapturedStandardStatement } from "./standard-captured";
 /** Immutable report document shared by preview, PDF, XLSX, CSV and the delivery worker. */
 import { z } from "zod";
+import { isReportDate } from "./date-validation";
 import {
   accountMap,
   balancesToLines,
@@ -72,6 +74,20 @@ export const factsSchema = z.object({
   bsCurrent: z.array(balance),
   cash: z.array(cash),
   appliedFilters: reportFiltersSchema.optional(),
+  standardColumns: z
+    .array(
+      z.object({
+        label: z.string(),
+        from: z.string().refine(isReportDate),
+        to: z.string().refine(isReportDate),
+        fyStart: z.string().refine(isReportDate),
+        period: z.array(balance),
+        bsPrior: z.array(balance),
+        bsCurrent: z.array(balance),
+      }),
+    )
+    .max(26)
+    .optional(),
   customColumns: z
     .array(
       z.object({ id: z.string(), from: z.string(), to: z.string(), balances: z.array(balance) }),
@@ -92,16 +108,19 @@ export type DocumentRow = {
   negativeRed?: boolean;
   zero?: "zero" | "dash" | "blank";
   currencyPrefix?: string;
+  decimals?: number;
 };
 export type DocumentSection = {
   id: string;
   title: string;
   columns: string[];
+  columnPeriods?: Array<{ from: string; to: string }>;
   columnFormats?: Array<"inherit" | "money" | "number" | "percent">;
   rows: DocumentRow[];
   note?: string;
 };
 export type ReportDocument = {
+  summary?: Array<{ label: string; value: string }>;
   title: string;
   subtitle: string;
   company: string;
@@ -160,6 +179,20 @@ export function buildReportDocument(
   raw: unknown,
   definition: { name: string; reportId?: string; config: Record<string, unknown> },
 ): ReportDocument {
+  if (
+    typeof definition.config["settings"] === "string" &&
+    (definition.reportId === "profit-and-loss" || definition.reportId === "balance-sheet") &&
+    !definition.config["_builder"]
+  ) {
+    const document = buildCapturedStandardStatement(
+      factsSchema.parse(raw),
+      definition.reportId,
+      definition.config["settings"],
+    );
+    if (definition.name && definition.name !== definition.reportId)
+      document.title = definition.name;
+    return document;
+  }
   const { f, current, prior, bs, tb } = documentFigures(raw);
   const currency = f.company.baseCurrency;
   const config = definition.config;

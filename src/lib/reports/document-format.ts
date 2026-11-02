@@ -38,10 +38,15 @@ export function documentZero(value: string) {
 /** Display scaling leaves the immutable document/source values unchanged. */
 export function documentNumericValue(value: string, row: Partial<DocumentRow>): string {
   if (value === "Unavailable") return value;
-  if (!value || !row.scale || row.scale === "1" || row.format === "percent") return value;
-  const decimals = value.split(".")[1]?.length ?? 0;
+  if (!value || row.format === "percent") return value;
+  const originalDecimals = value.split(".")[1]?.length ?? 0;
+  const decimals = row.decimals ?? originalDecimals;
+  if ((!row.scale || row.scale === "1") && decimals === originalDecimals) return value;
   return decimalValue(
-    { n: value.replace(".", ""), d: (10n ** BigInt(decimals) * BigInt(row.scale)).toString() },
+    {
+      n: value.replace(".", ""),
+      d: (10n ** BigInt(originalDecimals) * BigInt(row.scale ?? "1")).toString(),
+    },
     decimals,
   );
 }

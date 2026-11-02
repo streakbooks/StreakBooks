@@ -43,7 +43,8 @@ export const Route = createFileRoute("/_authenticated/reports/")({
 function ReportsCentre() {
   const { company, isPending } = useActiveCompany();
   const [q, setQ] = useState("");
-  const search = Route.useSearch();
+  // Defensive validation also handles router search state inherited from external URLs.
+  const search = parseReportingCentreSearch(Route.useSearch() as Record<string, unknown>);
   const navigate = Route.useNavigate();
   const tab = search.tab ?? "home";
   const periodFrom = search.from ?? "";

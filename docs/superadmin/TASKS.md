@@ -47,7 +47,7 @@ Work top to bottom. A task is done only when its tests have run and the box is t
 
 ## Batch D
 
-- [ ] Integration health display
+- [x] Integration health display
 - [ ] API key rotation
 - [ ] Webhook delivery history
 - [ ] Backup visibility

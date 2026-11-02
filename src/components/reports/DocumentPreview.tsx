@@ -1,6 +1,7 @@
 import type { ReportDocument } from "@/lib/reports/report-document";
 import { displayDocumentValue, documentCellStyle } from "@/lib/reports/document-format";
 import { Link } from "@tanstack/react-router";
+import { reportHeaderParts } from "@/lib/reports/report-presentation";
 export function DocumentPreview({
   document: doc,
   showHeader = true,
@@ -20,15 +21,14 @@ export function DocumentPreview({
       aria-label="Financial report preview"
     >
       {showHeader ? (
-        <header className="space-y-1 text-center">
-          <p className="text-sm font-medium">{doc.header}</p>
-          <p className="text-muted-foreground">{doc.company}</p>
-          <h2 className="text-2xl font-semibold">{doc.title}</h2>
-          {doc.subtitle && <p>{doc.subtitle}</p>}
-          <p className="text-sm text-muted-foreground">
-            {doc.from} – {doc.to} · {doc.currency}
-          </p>
-          <p className="text-xs text-muted-foreground">Captured {doc.capturedAt}</p>
+        <header className="space-y-1" style={{ textAlign: doc.presentation?.headerAlignment ?? "center" }}>
+          {reportHeaderParts(doc).map((part, index) =>
+            part.title ? (
+              <h2 key={index} className="text-2xl font-semibold">{part.text}</h2>
+            ) : (
+              <p key={index} className="text-sm text-muted-foreground">{part.text}</p>
+            ),
+          )}
         </header>
       ) : (
         <>
@@ -57,10 +57,10 @@ export function DocumentPreview({
                 {section.rows.map((row, i) => (
                   <tr
                     key={i}
-                    className={`border-b ${row.kind === "heading" ? "bg-muted/40" : ""} ${["total", "subtotal", "group", "formula"].includes(row.kind) ? "font-semibold" : ""}`}
+                    className={`${doc.presentation?.reportBorders === "none" ? "" : "border-b"} ${doc.presentation?.bandedRows && i % 2 === 1 ? "bg-muted/15" : ""} ${row.kind === "heading" ? "bg-muted/40" : ""} ${["total", "subtotal", "group", "formula"].includes(row.kind) ? "font-semibold" : ""}`}
                   >
                     <td
-                      className={compact ? "py-1" : "py-2"}
+                      className={`${compact ? "py-1" : "py-2"} ${doc.presentation?.reportBorders === "all" ? "border-x px-2" : ""}`}
                       style={{ paddingLeft: `${(row.indent ?? 0) * 12}px` }}
                     >
                       {row.accountId && !row.accountId.startsWith("__") ? (
@@ -91,7 +91,7 @@ export function DocumentPreview({
                     {row.values.map((value, j) => (
                       <td
                         key={j}
-                        className={`whitespace-nowrap px-3 ${compact ? "py-1" : "py-2"} text-right tabular-nums ${row.negativeRed && value.startsWith("-") ? "text-destructive" : ""}`}
+                        className={`whitespace-nowrap px-3 ${compact ? "py-1" : "py-2"} text-right tabular-nums ${doc.presentation?.reportBorders === "all" ? "border-x" : ""} ${row.negativeRed && value.startsWith("-") ? "text-destructive" : ""}`}
                       >
                         {row.accountId && section.columnPeriods?.[j] ? (
                           <Link
@@ -126,7 +126,7 @@ export function DocumentPreview({
         </section>
       )}
       {doc.footer && (
-        <footer className="border-t pt-3 text-xs text-muted-foreground">{doc.footer}</footer>
+        <footer className="border-t pt-3 text-xs text-muted-foreground" style={{ textAlign: doc.presentation?.footerAlignment ?? "left" }}>{doc.footer}</footer>
       )}
     </article>
   );

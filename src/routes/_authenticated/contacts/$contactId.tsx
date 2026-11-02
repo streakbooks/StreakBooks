@@ -1,4 +1,4 @@
-import { nativeTabLinkClass } from "@/lib/navigation/native-tab";
+import { nativeTabLinkClass, handleNativeTabKeyDown } from "@/lib/navigation/native-tab";
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -322,7 +322,7 @@ function ContactDetail() {
       ) : null}
 
       <Tabs value={tab}>
-        <TabsList className="flex h-auto flex-wrap">
+        <TabsList onKeyDown={handleNativeTabKeyDown} className="flex h-auto flex-wrap">
           <Link className={nativeTabLinkClass} role="tab" aria-selected={tab === "overview"} data-state={tab === "overview" ? "active" : "inactive"} to="/contacts/$contactId" params={{ contactId }} search={{ tab: "overview" }} resetScroll={false}>
               Overview
             </Link>

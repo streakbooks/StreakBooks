@@ -19,7 +19,7 @@ The work extends the existing platform permissions, `platform_log`, entitlements
 | Jobs, config promotion, sandbox requests | The recorded decision does not execute a job, copy settings, or create a company. |
 | Webhook deliveries | The list exists. No writer inserts delivery rows yet. |
 | AI spend | A missing unit price stays null. The read was not applied. |
-| Full unit suite | Last full run was 163 files and 1279 tests, before the later platform files. Each later file was run on its own. |
+| Full unit suite | 192 files, 1349 tests, all passed, after the platform files. Typecheck then failed on `audit-chain.ts` index access and that error is fixed in the following commit. |
 
 ## Not done
 

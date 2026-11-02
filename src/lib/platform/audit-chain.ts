@@ -37,7 +37,7 @@ export function verifyAuditChain(rows: readonly AuditChainRow[]): {
   let previous: string | null = null;
   for (let index = 0; index < rows.length; index += 1) {
     const row = rows[index];
-    if ((row.prevHash ?? null) !== previous || row.rowHash !== auditRowHash(row)) {
+    if (!row || (row.prevHash ?? null) !== previous || row.rowHash !== auditRowHash(row)) {
       return { ok: false, index };
     }
     previous = row.rowHash;

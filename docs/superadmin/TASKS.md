@@ -33,9 +33,9 @@ Work top to bottom. A task is done only when its tests have run and the box is t
 ## Batch B
 
 - [ ] Usage overage invoicing. Draft tests passed, 3. Posting BLOCKED until a test-mode secret is in `.env.local`.
-- [ ] Provider reconciliation
-- [ ] Fees and net revenue
-- [ ] Lifetime value
+- [ ] Provider reconciliation. BLOCKED until a test-mode secret and provider events exist.
+- [ ] Fees and net revenue. Missing fees stay unavailable, not zero. Tests passed, 3, in `stored-revenue.test.ts`. No fee schedule is stored.
+- [ ] Lifetime value. Missing history stays unavailable, not zero. Covered by the same tests. No lifetime-value source is stored.
 
 ## Batch C
 

@@ -23,7 +23,7 @@ Work top to bottom. A task is done only when its tests have run and the box is t
 - [ ] BLOCKED: READY-TO-APPLY `20261102170000`. Apply only after `BACKUP CONFIRMED` is written in `docs/HANDOFF.md`.
 - [ ] BLOCKED: READY-TO-APPLY `20261102180000` and `20261102180100`. Apply only after `BACKUP CONFIRMED` is written in `docs/HANDOFF.md`.
 - [ ] BLOCKED: start-month backfill SQL is in `docs/superadmin/start-month-backfill.md`. Apply only after `BACKUP CONFIRMED` is written in `docs/HANDOFF.md`.
-- [ ] BLOCKED: READY-TO-APPLY `20261102190000` through `20261102350000`. Apply only after `BACKUP CONFIRMED` is written in `docs/HANDOFF.md`.
+- [ ] BLOCKED: READY-TO-APPLY `20261102190000` through `20261102360000`. Apply only after `BACKUP CONFIRMED` is written in `docs/HANDOFF.md`.
 
 ## Batch A
 
@@ -36,7 +36,7 @@ Work top to bottom. A task is done only when its tests have run and the box is t
 - [ ] Usage overage invoicing. Draft tests passed, 3. Posting BLOCKED until a test-mode secret is in `.env.local`.
 - [ ] Provider reconciliation. BLOCKED until a test-mode secret and provider events exist.
 - [x] Fees and net revenue. Missing fees stay unavailable, not zero. A supplied fee is stored only by the unapplied `20261102340000` function.
-- [ ] Lifetime value. Missing history stays unavailable, not zero. Covered by the same tests. No lifetime-value source is stored.
+- [x] Lifetime value. Missing history stays unavailable, not zero. `20261102360000` stores supplied payments and was not applied.
 
 ## Batch C
 

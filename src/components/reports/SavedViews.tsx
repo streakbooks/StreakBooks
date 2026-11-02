@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -79,24 +80,20 @@ export function SavedViews({ ctx }: { ctx: ReportCtx }) {
   if (!reportId || q.isError) return null;
   const views = (q.data ?? []) as unknown as Saved[];
 
-  const apply = (v: Saved) => {
-    const cfg = parseReportSearch(v.config ?? {});
-    const patch: Record<string, unknown> = {};
-    // Clear everything first so the saved view replaces, not merges with, the current filters.
-    for (const k of Object.keys(ctx.search)) patch[k] = undefined;
-    Object.assign(patch, cfg);
-    ctx.setSearch(patch);
-  };
-
   return (
     <div className="flex flex-wrap items-center gap-2 text-sm print:hidden">
       <Star className="size-4 text-muted-foreground" aria-hidden />
       <span className="text-muted-foreground">Saved views</span>
       {views.map((v) => (
         <span key={v.id} className="inline-flex items-center rounded-full border pl-3">
-          <button type="button" className="py-1 hover:underline" onClick={() => apply(v)}>
+          <Link
+            to="/reports/$reportId"
+            params={{ reportId }}
+            search={parseReportSearch(v.config ?? {}) as never}
+            className="rounded-sm py-1 hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+          >
             {v.name}
-          </button>
+          </Link>
           <button
             type="button"
             aria-label={`Delete saved view ${v.name}`}

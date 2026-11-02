@@ -1,3 +1,4 @@
+import { ReportingModelSelect } from "./ReportingModelSelect";
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
@@ -6,7 +7,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   getManagementMetrics,
-  getReportingWorkspace,
   saveReportingModel,
   previewForecast,
 } from "@/lib/reports/ecosystem.functions";
@@ -36,7 +36,6 @@ export function ManagementWorkspace({
 }) {
   const client = useQueryClient(),
     fetch = useServerFn(getManagementMetrics),
-    list = useServerFn(getReportingWorkspace),
     save = useServerFn(saveReportingModel);
   const [start, setStart] = useState(from),
     [end, setEnd] = useState(to),
@@ -47,19 +46,6 @@ export function ManagementWorkspace({
     queryKey: ["management-metrics", companyId, start, end],
     queryFn: () => fetch({ data: { companyId, from: start, to: end } }),
     retry: false,
-  });
-  const saved = useQuery({
-    queryKey: ["reporting-workspace", companyId],
-    queryFn: async () =>
-      JSON.parse(await list({ data: { companyId } })) as {
-        models: Array<{
-          id: string;
-          name: string;
-          kind: string;
-          config: { widgets?: Array<(typeof KPI_IDS)[number]> };
-          version: number;
-        }>;
-      },
   });
   const saving = useMutation({
     mutationFn: () =>
@@ -147,33 +133,22 @@ export function ManagementWorkspace({
               Save as new
             </Button>
           )}
-          <RecordLookupSelect
-            aria-label="Open saved dashboard"
-            className="h-9 rounded border bg-background"
-            defaultValue=""
-            onValueChange={(e) => {
-              const model = saved.data?.models.find((m) => m.id === e);
-              if (model) {
-                const parsed = dashboardSchema.safeParse(model.config);
-                if (!parsed.success) {
-                  toast.error("This saved dashboard configuration is invalid.");
-                  return;
-                }
-                setName(model.name);
-                setWidgets(parsed.data.widgets);
-                setActiveModel({ id: model.id, version: model.version });
+          <ReportingModelSelect
+            companyId={companyId}
+            kind="dashboard"
+            label="Open saved dashboard"
+            revision={String(activeModel?.version ?? "")}
+            onSelect={(model) => {
+              const parsed = dashboardSchema.safeParse(model.config);
+              if (!parsed.success) {
+                toast.error("This saved dashboard configuration is invalid.");
+                return;
               }
+              setName(model.name);
+              setWidgets(parsed.data.widgets);
+              setActiveModel({ id: model.id, version: model.version });
             }}
-          >
-            <option value="">Open saved dashboard</option>
-            {saved.data?.models
-              .filter((m) => m.kind === "dashboard")
-              .map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name}
-                </option>
-              ))}
-          </RecordLookupSelect>
+          />
         </div>
         <div className="flex flex-wrap gap-2">
           {widgets.map((id, i) => (
@@ -263,8 +238,7 @@ function ForecastWorkspace({
 }) {
   const client = useQueryClient(),
     calculate = useServerFn(previewForecast),
-    save = useServerFn(saveReportingModel),
-    list = useServerFn(getReportingWorkspace);
+    save = useServerFn(saveReportingModel);
   const [config, setConfig] = useState<ForecastConfig>({
     start: addMonthsIso(monthStart(to), 1),
     months: 12,
@@ -298,19 +272,6 @@ function ForecastWorkspace({
   const [activeModel, setActiveModel] = useState<{ id: string; version: number } | null>(null);
   const [name, setName] = useState("Operating forecast"),
     [scenario, setScenario] = useState("base");
-  const models = useQuery({
-    queryKey: ["reporting-workspace", companyId],
-    queryFn: async () =>
-      JSON.parse(await list({ data: { companyId } })) as {
-        models: Array<{
-          id: string;
-          name: string;
-          kind: string;
-          config: ForecastConfig;
-          version: number;
-        }>;
-      },
-  });
   const preview = useMutation({
     mutationFn: () => calculate({ data: { companyId, config } }),
     onError: (e) => toast.error(friendlyAuthError(e)),
@@ -345,35 +306,24 @@ function ForecastWorkspace({
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
-        <RecordLookupSelect
-          className="h-9 rounded border bg-background"
-          aria-label="Open forecast assumptions"
-          defaultValue=""
-          onValueChange={(e) => {
-            const m = models.data?.models.find((m) => m.id === e);
-            if (m) {
-              const parsed = forecastSchema.safeParse(m.config);
-              if (!parsed.success) {
-                toast.error("This saved forecast configuration is invalid.");
-                return;
-              }
-              setConfig(parsed.data);
-              setName(m.name);
-              setScenario(parsed.data.scenarios[0]!.id);
-              setActiveModel({ id: m.id, version: m.version });
-              preview.reset();
+        <ReportingModelSelect
+          companyId={companyId}
+          kind="forecast"
+          label="Open forecast assumptions"
+          revision={String(activeModel?.version ?? "")}
+          onSelect={(model) => {
+            const parsed = forecastSchema.safeParse(model.config);
+            if (!parsed.success) {
+              toast.error("This saved forecast configuration is invalid.");
+              return;
             }
+            setConfig(parsed.data);
+            setName(model.name);
+            setScenario(parsed.data.scenarios[0]!.id);
+            setActiveModel({ id: model.id, version: model.version });
+            preview.reset();
           }}
-        >
-          <option value="">Open saved forecast</option>
-          {models.data?.models
-            .filter((m) => m.kind === "forecast")
-            .map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.name}
-              </option>
-            ))}
-        </RecordLookupSelect>
+        />
       </div>
       <div className="grid gap-3 sm:grid-cols-4">
         {(

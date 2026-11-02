@@ -96,12 +96,70 @@ export const getReportingFeatureAccess = createServerFn({ method: "GET" })
       ),
     );
   });
+export const searchReportingModels = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        companyId: z.string().uuid(),
+        kind: z.enum(["dashboard", "forecast", "pack_template"]),
+        query: z.string().trim().max(160).default(""),
+        page: z.number().int().min(0).max(100000).default(0),
+        pageSize: z.number().int().min(1).max(50).default(50),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
+    let query = context.supabase
+      .from("report_models")
+      .select("id,name,kind,version")
+      .eq("company_id", data.companyId)
+      .eq("kind", data.kind);
+    if (data.query) query = query.ilike("name", `%${data.query.replace(/[\\%_]/g, "\\$&")}%`);
+    const start = data.page * data.pageSize;
+    const result = await query
+      .order("name")
+      .order("id")
+      .range(start, start + data.pageSize);
+    if (result.error) throw new Error(result.error.message);
+    return {
+      rows: (result.data ?? []).slice(0, data.pageSize),
+      hasMore: (result.data?.length ?? 0) > data.pageSize,
+    };
+  });
+export const getReportingModel = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ companyId: z.string().uuid(), id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
+    const result = await context.supabase
+      .from("report_models")
+      .select("id,name,kind,config,version")
+      .eq("company_id", data.companyId)
+      .eq("id", data.id)
+      .single();
+    if (result.error)
+      throw new Error("This reporting model is unavailable; refresh and try again.");
+    return result.data;
+  });
 export const getReportingWorkspace = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (input: { companyId: string; packPage?: number; packState?: string; packQuery?: string }) => ({
+    (input: {
+      companyId: string;
+      packPage?: number;
+      packState?: string;
+      packQuery?: string;
+      schedulePage?: number;
+      deliveryPage?: number;
+    }) => ({
       ...scope(input),
       packPage: z.number().int().min(0).max(100000).default(0).parse(input.packPage),
+      schedulePage: z.number().int().min(0).max(100000).default(0).parse(input.schedulePage),
+      deliveryPage: z.number().int().min(0).max(100000).default(0).parse(input.deliveryPage),
       packState: z
         .enum(["all", "drafts", "published", "archived"])
         .default("all")
@@ -131,31 +189,28 @@ export const getReportingWorkspace = createServerFn({ method: "GET" })
     if (data.packState === "archived") packQuery = packQuery.eq("status", "archived");
     if (data.packQuery)
       packQuery = packQuery.ilike("name", `%${data.packQuery.replace(/[\\%_]/g, "\\$&")}%`);
-    const [packs, models, schedules, deliveries, members, counts] = await Promise.all([
+    const [packs, schedules, deliveries, members, counts] = await Promise.all([
       packQuery
         .order("updated_at", { ascending: false })
         .order("id")
         .range(data.packPage * 50, data.packPage * 50 + 49),
       context.supabase
-        .from("report_models" as never)
-        .select("id,name,kind,config,version,updated_at" as never)
-        .eq("company_id" as never, data.companyId as never)
-        .order("updated_at" as never, { ascending: false })
-        .limit(200),
-      context.supabase
         .from("report_schedules" as never)
-        .select("*" as never)
+        .select("*" as never, { count: "exact" })
         .eq("company_id" as never, data.companyId as never)
         .order("next_run_at" as never)
-        .limit(200),
+        .order("id" as never)
+        .range(data.schedulePage * 50, data.schedulePage * 50 + 49),
       context.supabase
         .from("report_deliveries" as never)
         .select(
           "id,pack_id,view_id,schedule_id,subject,status,attempts,provider_id,last_error,scheduled_for,created_at,updated_at" as never,
+          { count: "exact" },
         )
         .eq("company_id" as never, data.companyId as never)
         .order("created_at" as never, { ascending: false })
-        .limit(100),
+        .order("id" as never)
+        .range(data.deliveryPage * 50, data.deliveryPage * 50 + 49),
       context.supabase
         .from("company_members" as never)
         .select("user_id,role" as never)
@@ -169,7 +224,7 @@ export const getReportingWorkspace = createServerFn({ method: "GET" })
         missing,
       ),
     ]);
-    for (const result of [packs, models, schedules, deliveries, members])
+    for (const result of [packs, schedules, deliveries, members])
       if (result.error) throw new Error(result.error.message);
     const people = (members.data ?? []) as unknown as Array<{ user_id: string; role: string }>;
     const ids = people.map((p) => p.user_id);
@@ -180,7 +235,6 @@ export const getReportingWorkspace = createServerFn({ method: "GET" })
     const profileMap = new Map((profiles.data ?? []).map((p) => [p.id, p]));
     return JSON.stringify({
       packs: packs.data ?? [],
-      models: models.data ?? [],
       schedules: schedules.data ?? [],
       deliveries: deliveries.data ?? [],
       members: people.map((p) => ({
@@ -190,6 +244,8 @@ export const getReportingWorkspace = createServerFn({ method: "GET" })
       })),
       userId: context.userId,
       packTotal: packs.count ?? 0,
+      scheduleTotal: schedules.count ?? 0,
+      deliveryTotal: deliveries.count ?? 0,
       packCounts: counts,
       hasMore: (data.packPage + 1) * 50 < (packs.count ?? 0),
     });

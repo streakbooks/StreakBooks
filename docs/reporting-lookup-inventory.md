@@ -51,9 +51,7 @@ The permanent rule is `.cursor/rules/linkbooks-lookup-select.mdc` (`alwaysApply:
 | `src/components/reports/LedgerViews.tsx` | 86 | AccountLookup | report-account |
 | `src/components/reports/LedgerViews.tsx` | 358 | RecordLookupSelect | jr-source |
 | `src/components/reports/LedgerViews.tsx` | 867 | LookupSelect | audit-actor |
-| `src/components/reports/ManagementWorkspace.tsx` | 150 | RecordLookupSelect | Open saved dashboard |
-| `src/components/reports/ManagementWorkspace.tsx` | 348 | RecordLookupSelect | Open forecast assumptions |
-| `src/components/reports/ManagementWorkspace.tsx` | 416 | RecordLookupSelect | forecast-scenario |
+| `src/components/reports/ManagementWorkspace.tsx` | 366 | RecordLookupSelect | forecast-scenario |
 | `src/components/reports/PlanningViews.tsx` | 67 | LookupSelect | bva-budget |
 | `src/components/reports/ReportAccessDialog.tsx` | 124 | MultiLookupSelect | Report sharing recipients |
 | `src/components/reports/ReportAccessDialog.tsx` | 165 | RecordLookupSelect | report-share-firm |
@@ -64,9 +62,9 @@ The permanent rule is `.cursor/rules/linkbooks-lookup-select.mdc` (`alwaysApply:
 | `src/components/reports/ReportFilterEditor.tsx` | 146 | LookupSelect | ariaLabel={`Condition ${index + 1} value`} options={options} value={clause.values[0] ?? ""} onChange={(v) => patch(clause.id, { values: [v]  |
 | `src/components/reports/ReportLibrary.tsx` | 224 | RecordLookupSelect | Report type |
 | `src/components/reports/ReportLibrary.tsx` | 509 | RecordLookupSelect | custom-base |
-| `src/components/reports/ReportPacksWorkspace.tsx` | 603 | RecordLookupSelect | id={`pack-${label}`} className="h-9 w-full rounded border bg-background" value={value} onValueChange={(e) => setter(e)} |
-| `src/components/reports/ReportPacksWorkspace.tsx` | 687 | RecordLookupSelect | pack-template |
-| `src/components/reports/ReportPacksWorkspace.tsx` | 743 | RecordLookupSelect | aria-label={`Assignee for action item ${i + 1}`} className="h-9 rounded border bg-background" value={item.assigneeId ?? ""} onValueChange={( |
+| `src/components/reports/ReportPacksWorkspace.tsx` | 630 | RecordLookupSelect | id={`pack-${label}`} className="h-9 w-full rounded border bg-background" value={value} onValueChange={(e) => setter(e)} |
+| `src/components/reports/ReportPacksWorkspace.tsx` | 766 | RecordLookupSelect | aria-label={`Assignee for action item ${i + 1}`} className="h-9 rounded border bg-background" value={item.assigneeId ?? ""} onValueChange={( |
+| `src/components/reports/ReportingModelSelect.tsx` | 50 | LookupSelect | ariaLabel={label} placeholder={label} value="" allowClear={false} clientFilter={false} options={query.rows.map((row) => ({ id: row.id, label |
 | `src/components/settings/BankImportContent.tsx` | 122 | RecordLookupSelect | value={value === null ? NONE : String(value)} onValueChange={(v) => onChange(v === NONE ? null : Number(v))} |
 | `src/components/settings/BankImportContent.tsx` | 355 | BankLookup | Bank account |
 | `src/components/settings/BankRulesContent.tsx` | 389 | LookupSelect | Bank account scope |
@@ -137,6 +135,6 @@ The permanent rule is `.cursor/rules/linkbooks-lookup-select.mdc` (`alwaysApply:
 | `src/routes/auth_.mfa.tsx` | 130 | RecordLookupSelect | mfa-factor |
 | `src/routes/pricing_.builder.tsx` | 72 | RecordLookupSelect | Base plan |
 
-Total: 128 shared declarations; zero guard violations at the recorded run. Source line numbers may shift with later formatting.
+Total: 126 shared declarations; zero guard violations at the recorded run. Source line numbers may shift with later formatting.
 
 Remaining validation: a complete authenticated workflow matrix across every module; large-list server paging for legacy callers that still supply bounded in-memory arrays; per-field eligibility and create permissions against representative tenant data. These are not certified by the static guard.

@@ -90,6 +90,12 @@ BEGIN
  BEGIN PERFORM public.capture_reporting_facts(c,'2026-10-01','2026-10-31');RAISE EXCEPTION 'TEST: cross-tenant capture accepted';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',u1,'aal','aal2','role','authenticated')::text,true);
  BEGIN PERFORM public.set_report_access(v,'selected',jsonb_build_array(jsonb_build_object('userId',u3,'access','view')),NULL);RAISE EXCEPTION 'TEST: foreign recipient accepted';EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE 'Recipients must%' THEN RAISE;END IF;END;
+ INSERT INTO public.report_models(company_id,owner_id,name,kind,config) SELECT c,u1,'Paged dashboard '||lpad(n::text,4,'0'),'dashboard','{"widgets":["revenue"]}'::jsonb FROM generate_series(1,1051) n;
+ IF (SELECT count(*) FROM public.report_models WHERE company_id=c AND kind='dashboard' AND name LIKE 'Paged dashboard %')<>1051 THEN RAISE EXCEPTION 'Model records truncated';END IF;
+ IF (SELECT name FROM public.report_models WHERE company_id=c AND kind='dashboard' AND name LIKE 'Paged dashboard %' ORDER BY name,id OFFSET 1000 LIMIT 1)<>'Paged dashboard 1001' THEN RAISE EXCEPTION 'Model page beyond 1000 unavailable';END IF;
+ PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',u2,'aal','aal2','role','authenticated')::text,true);
+ IF EXISTS(SELECT 1 FROM public.report_models WHERE company_id=c AND name LIKE 'Paged dashboard %') THEN RAISE EXCEPTION 'Another user can open private models';END IF;
+ PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',u1,'aal','aal2','role','authenticated')::text,true);
  INSERT INTO public.report_models(company_id,owner_id,name,kind,config) VALUES(c,u1,'Dashboard fixture','dashboard','{"widgets":["revenue"]}') RETURNING id INTO model;
  UPDATE public.report_models SET name='Updated dashboard',config='{"widgets":["net_profit"]}' WHERE id=model AND version=1;
  IF (SELECT version FROM public.report_models WHERE id=model)<>2 OR NOT EXISTS(SELECT 1 FROM public.report_model_versions WHERE model_id=model AND version=1 AND name='Dashboard fixture') THEN RAISE EXCEPTION 'Model revision lost';END IF;

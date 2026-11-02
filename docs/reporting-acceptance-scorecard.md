@@ -179,3 +179,5 @@ Overall: **78/149 = 52.3%**. Status counts: PARTIAL: 60, PASS: 78, BLOCKED: 9, F
 Mandatory release gates are not satisfied: incomplete master features; complete signed-in acceptance matrix; verified email/attachment/bounce delivery; deployed P95/memory tests; independent review and GitHub CI/approvals. There is no claim of 100% completion or production certification.
 
 Latest implementation evidence: posted-ledger filters now pass live SQL, configuration browser and real export tests; 175 files/1,376 tests and ten browser scenarios pass. Advanced dimension attribution and full signed-in acceptance remain incomplete, so criterion statuses and the 78/149 PASS total are unchanged. User confirmed email/deployment setup is not ready; no real delivery is certified.
+
+Saved-model search and schedule/delivery pagination now have API/live SQL evidence, including access beyond 1,000 private models. Latest unit run is 176 files/1,390 tests. Full authenticated workflow and other mandatory release gates are still outstanding; the acceptance total remains unchanged.

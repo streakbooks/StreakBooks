@@ -1,3 +1,4 @@
+import { ReportingModelSelect } from "./ReportingModelSelect";
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -45,13 +46,14 @@ import {
 import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
 type Workspace = {
   packs: ReportingPack[];
-  models: Array<{ id: string; name: string; kind: string; config: PackConfig }>;
   schedules: Array<Record<string, unknown>>;
   deliveries: Array<Record<string, unknown>>;
   members: ReportingMember[];
   userId: string;
   hasMore: boolean;
   packTotal: number;
+  scheduleTotal: number;
+  deliveryTotal: number;
 };
 const titles: Record<string, string> = {
   "profit-and-loss": "Profit and Loss",
@@ -82,13 +84,24 @@ export function ReportPacksWorkspace({
     deleteSchedule = useServerFn(deleteReportSchedule);
   const canPrepare = useCanDo("accounting.post"),
     canExport = useCanDo("reports.export");
+  const [schedulePage, setSchedulePage] = useState(0);
+  const [deliveryPage, setDeliveryPage] = useState(0);
   const [page, setPage] = useState(0),
     [search, setSearch] = useState("");
   const q = useQuery({
-    queryKey: ["reporting-workspace", companyId, filter, page, search],
+    queryKey: ["reporting-workspace", companyId, filter, page, search, schedulePage, deliveryPage],
     queryFn: async () =>
       JSON.parse(
-        await fetch({ data: { companyId, packPage: page, packState: filter, packQuery: search } }),
+        await fetch({
+          data: {
+            companyId,
+            packPage: page,
+            packState: filter,
+            packQuery: search,
+            schedulePage,
+            deliveryPage,
+          },
+        }),
       ) as Workspace,
     retry: false,
   });
@@ -546,6 +559,20 @@ export function ReportPacksWorkspace({
             </div>
           </>
         )}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <HistoryPageControls
+            label="Schedules"
+            page={schedulePage}
+            total={workspace.scheduleTotal}
+            onPage={setSchedulePage}
+          />
+          <HistoryPageControls
+            label="Delivery history"
+            page={deliveryPage}
+            total={workspace.deliveryTotal}
+            onPage={setDeliveryPage}
+          />
+        </div>
       </section>
       <Dialog
         open={editor !== null}
@@ -683,25 +710,21 @@ export function ReportPacksWorkspace({
                 </li>
               ))}
             </ol>
-            <Label htmlFor="pack-template">Reuse a saved pack template</Label>
-            <RecordLookupSelect
-              id="pack-template"
-              className="h-9 w-full rounded border bg-background"
-              defaultValue=""
-              onValueChange={(e) => {
-                const template = workspace.models.find((m) => m.id === e);
-                if (template) setConfig({ ...template.config, commentary: "", actionItems: [] });
+            <p className="text-sm font-medium">Reuse a saved pack template</p>
+            <ReportingModelSelect
+              companyId={companyId}
+              kind="pack_template"
+              revision={String(q.dataUpdatedAt)}
+              label="Reuse a saved pack template"
+              onSelect={(template) => {
+                const parsed = packConfigSchema.safeParse(template.config);
+                if (!parsed.success) {
+                  toast.error("This saved pack template configuration is invalid.");
+                  return;
+                }
+                setConfig({ ...parsed.data, commentary: "", actionItems: [] });
               }}
-            >
-              <option value="">Choose template</option>
-              {workspace.models
-                .filter((m) => m.kind === "pack_template")
-                .map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name}
-                  </option>
-                ))}
-            </RecordLookupSelect>
+            />
             <Label htmlFor="pack-header">Firm / client header</Label>
             <Input
               id="pack-header"
@@ -880,5 +903,44 @@ export function ReportPacksWorkspace({
         />
       )}
     </div>
+  );
+}
+
+function HistoryPageControls({
+  label,
+  page,
+  total,
+  onPage,
+}: {
+  label: string;
+  page: number;
+  total: number;
+  onPage: (page: number) => void;
+}) {
+  if (total <= 50 && page === 0) return null;
+  return (
+    <nav aria-label={`${label} pages`} className="flex flex-wrap items-center gap-2 text-sm">
+      <span>
+        {label}: {total} records · page {page + 1} of {Math.max(1, Math.ceil(total / 50))}
+      </span>
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={page === 0}
+        onClick={() => onPage(page - 1)}
+        aria-label={`Previous ${label.toLowerCase()} page`}
+      >
+        Previous
+      </Button>
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={(page + 1) * 50 >= total}
+        onClick={() => onPage(page + 1)}
+        aria-label={`Next ${label.toLowerCase()} page`}
+      >
+        Next
+      </Button>
+    </nav>
   );
 }

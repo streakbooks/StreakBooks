@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { format } from "date-fns";
 import {
@@ -183,12 +184,12 @@ export function PracticeWorkBoardView({
       <div className="flex flex-wrap gap-3">
         <label className="text-sm">
           Client
-          <select
+          <RecordLookupSelect
             aria-label="Filter client work"
             className="block rounded border bg-background p-2"
             value={client}
-            onChange={(e) => {
-              setClient(e.target.value);
+            onValueChange={(e) => {
+              setClient(e);
               setSelection({});
             }}
           >
@@ -198,7 +199,7 @@ export function PracticeWorkBoardView({
                 {c.name}
               </option>
             ))}
-          </select>
+          </RecordLookupSelect>
         </label>
         <label className="text-sm">
           Status
@@ -211,6 +212,8 @@ export function PracticeWorkBoardView({
               setSelection({});
             }}
           >
+            {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
             <option value="open">All open work</option>
             <option value="all">All statuses</option>
             {TASK_STATUSES.map((s) => (
@@ -469,14 +472,14 @@ export function PracticeWorkBoardView({
           </h3>
           <label className="block text-sm">
             Client
-            <select
+            <RecordLookupSelect
               aria-label="Work client"
               className="mt-1 block w-full rounded border bg-background p-2"
               disabled={busy || Boolean(editing)}
               required
               value={formClient}
-              onChange={(e) => {
-                setFormClient(e.target.value);
+              onValueChange={(e) => {
+                setFormClient(e);
                 setAssignee("");
               }}
             >
@@ -487,7 +490,7 @@ export function PracticeWorkBoardView({
                   {c.canManage ? "" : " (view only)"}
                 </option>
               ))}
-            </select>
+            </RecordLookupSelect>
           </label>
           <label className="block text-sm">
             Work title

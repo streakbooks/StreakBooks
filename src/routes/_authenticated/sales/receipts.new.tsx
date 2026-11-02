@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -320,11 +321,11 @@ function ReceiptForm({
         <div className="grid gap-4 sm:grid-cols-4">
           <div className="space-y-2">
             <Label>Currency</Label>
-            <select
+            <RecordLookupSelect
               className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
               value={cur}
-              onChange={(e) => {
-                setCurrency(e.target.value);
+              onValueChange={(e) => {
+                setCurrency(e);
                 setAlloc({});
               }}
             >
@@ -337,7 +338,7 @@ function ReceiptForm({
                   {c === base ? " (base)" : ""}
                 </option>
               ))}
-            </select>
+            </RecordLookupSelect>
           </div>
           {isForeign ? (
             <div className="space-y-2">

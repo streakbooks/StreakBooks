@@ -1,3 +1,11 @@
+import { ReportingFeatureGate } from "@/components/reports/ReportingFeatureGate";
+import { ManagementWorkspace } from "@/components/reports/ManagementWorkspace";
+import { ReportPacksWorkspace } from "@/components/reports/ReportPacksWorkspace";
+import { AdviserReporting } from "@/components/reports/AdviserReporting";
+import { ReportingHome } from "@/components/reports/ReportingHome";
+import { fiscalYearStart, todayIso } from "@/lib/accounting/fiscal-year";
+import { ReportLibrary } from "@/components/reports/ReportLibrary";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useActiveCompany } from "@/hooks/use-active-company";
@@ -32,6 +40,9 @@ export const Route = createFileRoute("/_authenticated/reports/")({
 function ReportsCentre() {
   const { company, isPending } = useActiveCompany();
   const [q, setQ] = useState("");
+  const [tab, setTab] = useState("home");
+  const [periodFrom, setPeriodFrom] = useState("");
+  const [periodTo, setPeriodTo] = useState(todayIso());
   const [category, setCategory] = useState<ReportCategoryId | "all">("all");
 
   const searched = useMemo(() => searchReports(q), [q]);
@@ -55,112 +66,226 @@ function ReportsCentre() {
     );
   }
 
+  const from =
+    periodFrom ||
+    fiscalYearStart(periodTo, company.fiscal_year_end_month, company.fiscal_year_end_day ?? 31);
   return (
     <div className="space-y-6">
       <PageHeader
         title="Reports Centre"
-        description={`Professional financial reports for ${company.name}. ${readyCount} operational reports — dependent modules are labelled honestly, never faked.`}
+        description={`Financial statements, saved reports and performance analysis for ${company.name}. ${readyCount} reports connected to your accounting records.`}
       />
 
-      <div className="flex flex-wrap gap-2">
-        {QUICK_REPORT_IDS.map((id) => {
-          const r = REPORT_CATALOG.find((x) => x.id === id);
-          if (!r) return null;
-          return (
-            <Button key={id} asChild variant="secondary" size="sm">
-              <Link to="/reports/$reportId" params={{ reportId: id }}>
-                {r.title}
-              </Link>
-            </Button>
-          );
-        })}
-      </div>
-
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <div className="flex-1 space-y-2">
-          <Label htmlFor="report-search">Search reports</Label>
+      <div className="flex flex-wrap gap-3">
+        <div>
+          <Label htmlFor="centre-from">Reporting period from</Label>
           <Input
-            id="report-search"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Profit and loss, aged receivables, tax…"
+            id="centre-from"
+            type="date"
+            value={from}
+            onChange={(e) => setPeriodFrom(e.target.value)}
           />
         </div>
-        <div className="w-full space-y-2 sm:w-64">
-          <Label htmlFor="report-category">Category</Label>
-          <select
-            id="report-category"
-            className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 pointer-coarse:h-11"
-            value={category}
-            onChange={(e) => setCategory(e.target.value as ReportCategoryId | "all")}
-          >
-            <option value="all">All categories</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.label}
-              </option>
-            ))}
-          </select>
+        <div>
+          <Label htmlFor="centre-to">Reporting period to</Label>
+          <Input
+            id="centre-to"
+            type="date"
+            value={periodTo}
+            onChange={(e) => setPeriodTo(e.target.value)}
+          />
         </div>
       </div>
-
-      {visibleCategories.map((cat) => {
-        const rows = filtered.filter((r) => r.category === cat.id);
-        return (
-          <section key={cat.id} aria-labelledby={`cat-${cat.id}`} className="space-y-3">
-            <h2
-              id={`cat-${cat.id}`}
-              className="text-sm font-semibold uppercase tracking-wide text-muted-foreground"
-            >
-              {cat.label}
-            </h2>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {rows.map((report) => (
-                <Card
-                  key={report.id}
-                  className={
-                    report.status === "depends"
-                      ? "bg-muted/30"
-                      : "transition-shadow hover:shadow-raised"
+      <Tabs value={tab} onValueChange={setTab} className="space-y-6">
+        <div className="overflow-x-auto">
+          <TabsList aria-label="Reporting modules" className="w-max">
+            <TabsTrigger value="home">Reporting home</TabsTrigger>
+            <TabsTrigger value="standard">Standard reports</TabsTrigger>
+            <TabsTrigger value="custom">Custom reports</TabsTrigger>
+            <TabsTrigger value="management">Management reports</TabsTrigger>
+            <TabsTrigger value="packs">Report packs</TabsTrigger>
+            <TabsTrigger value="adviser">Adviser</TabsTrigger>
+            <TabsTrigger value="drafts">Drafts & review</TabsTrigger>
+            <TabsTrigger value="published">Published</TabsTrigger>
+            <TabsTrigger value="archived">Archived</TabsTrigger>
+            <TabsTrigger value="schedules">Scheduled delivery</TabsTrigger>
+            <TabsTrigger value="templates">Templates</TabsTrigger>
+          </TabsList>
+        </div>
+        {tab !== "standard" && (
+          <ReportingFeatureGate companyId={company.id} onOpenStandard={() => setTab("standard")}>
+            <TabsContent value="home">
+              <ReportingHome
+                key={company.id}
+                companyId={company.id}
+                from={from}
+                to={periodTo}
+                onNavigate={setTab}
+              />
+            </TabsContent>
+            <TabsContent value="adviser">
+              <AdviserReporting from={from} to={periodTo} />
+            </TabsContent>
+            {(["packs", "drafts", "published", "archived", "schedules"] as const).map((value) => (
+              <TabsContent key={value} value={value}>
+                <ReportPacksWorkspace
+                  key={`${company.id}-${value}`}
+                  companyId={company.id}
+                  from={from}
+                  to={periodTo}
+                  filter={
+                    value === "drafts" || value === "published" || value === "archived"
+                      ? value
+                      : "all"
                   }
-                >
-                  <CardHeader className="pb-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <CardTitle className="text-base">{report.title}</CardTitle>
-                      <Badge variant={report.status === "ready" ? "success" : "warning"}>
-                        {report.status === "ready" ? "Ready" : "Depends"}
-                      </Badge>
-                    </div>
-                    <CardDescription>{report.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {report.status === "depends" ? (
-                      <p className="text-sm text-warning-ink">{report.dependency}</p>
-                    ) : report.runner === "link" && report.linkTo ? (
-                      <Button asChild size="sm">
-                        <Link to={report.linkTo}>Open</Link>
-                      </Button>
-                    ) : (
-                      <Button asChild size="sm">
-                        <Link to="/reports/$reportId" params={{ reportId: report.id }}>
-                          Open report
-                        </Link>
-                      </Button>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </section>
-        );
-      })}
+                />
+                {value === "archived" && (
+                  <ReportLibrary
+                    key={`${company.id}-archived`}
+                    companyId={company.id}
+                    initialState="archived"
+                  />
+                )}
+              </TabsContent>
+            ))}
+            <TabsContent value="templates">
+              <ReportLibrary
+                key={`${company.id}-templates`}
+                companyId={company.id}
+                initialState="templates"
+              />
+            </TabsContent>
+            <TabsContent value="custom">
+              <ReportLibrary key={company.id} companyId={company.id} />
+            </TabsContent>
+            <TabsContent value="management">
+              <ManagementWorkspace
+                key={company.id}
+                companyId={company.id}
+                from={from}
+                to={periodTo}
+              />
+              <div className="mt-4 flex gap-2">
+                <Button asChild variant="outline">
+                  <Link to="/budgets">Budget workspace</Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link
+                    to="/reports/$reportId"
+                    params={{ reportId: "budget-vs-actual" }}
+                    search={{ from, to: periodTo }}
+                  >
+                    Budget versus Actual
+                  </Link>
+                </Button>
+              </div>
+            </TabsContent>
+          </ReportingFeatureGate>
+        )}
+        <TabsContent value="standard" className="space-y-6">
+          <div className="flex flex-wrap gap-2">
+            {QUICK_REPORT_IDS.map((id) => {
+              const r = REPORT_CATALOG.find((x) => x.id === id);
+              if (!r) return null;
+              return (
+                <Button key={id} asChild variant="secondary" size="sm">
+                  <Link to="/reports/$reportId" params={{ reportId: id }}>
+                    {r.title}
+                  </Link>
+                </Button>
+              );
+            })}
+          </div>
 
-      {filtered.length === 0 ? (
-        <EmptyState
-          title="No matching reports"
-          description="Try another search term or clear the category filter."
-        />
-      ) : null}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div className="flex-1 space-y-2">
+              <Label htmlFor="report-search">Search reports</Label>
+              <Input
+                id="report-search"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Profit and loss, aged receivables, tax…"
+              />
+            </div>
+            <div className="w-full space-y-2 sm:w-64">
+              <Label htmlFor="report-category">Category</Label>
+              <select
+                id="report-category"
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 pointer-coarse:h-11"
+                value={category}
+                onChange={(e) => setCategory(e.target.value as ReportCategoryId | "all")}
+              >
+                {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
+                <option value="all">All categories</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {visibleCategories.map((cat) => {
+            const rows = filtered.filter((r) => r.category === cat.id);
+            return (
+              <section key={cat.id} aria-labelledby={`cat-${cat.id}`} className="space-y-3">
+                <h2
+                  id={`cat-${cat.id}`}
+                  className="text-sm font-semibold uppercase tracking-wide text-muted-foreground"
+                >
+                  {cat.label}
+                </h2>
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {rows.map((report) => (
+                    <Card
+                      key={report.id}
+                      className={
+                        report.status === "depends"
+                          ? "bg-muted/30"
+                          : "transition-shadow hover:shadow-raised"
+                      }
+                    >
+                      <CardHeader className="pb-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <CardTitle className="text-base">{report.title}</CardTitle>
+                          <Badge variant={report.status === "ready" ? "success" : "warning"}>
+                            {report.status === "ready" ? "Ready" : "Depends"}
+                          </Badge>
+                        </div>
+                        <CardDescription>{report.description}</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {report.status === "depends" ? (
+                          <p className="text-sm text-warning-ink">{report.dependency}</p>
+                        ) : report.runner === "link" && report.linkTo ? (
+                          <Button asChild size="sm">
+                            <Link to={report.linkTo}>Open</Link>
+                          </Button>
+                        ) : (
+                          <Button asChild size="sm">
+                            <Link to="/reports/$reportId" params={{ reportId: report.id }}>
+                              Open report
+                            </Link>
+                          </Button>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </section>
+            );
+          })}
+
+          {filtered.length === 0 ? (
+            <EmptyState
+              title="No matching reports"
+              description="Try another search term or clear the category filter."
+            />
+          ) : null}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

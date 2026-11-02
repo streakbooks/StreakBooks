@@ -52,7 +52,7 @@ export const mutationSchema = z.object({
     "record.save",
   ]),
   id: z.string().uuid().nullable().default(null),
-  payload: z.record(z.unknown()).default({}),
+  payload: z.record(z.string(), z.unknown()).default({}),
   reason: z.string().trim().min(3).max(1000),
 });
 export const overviewSchema = z

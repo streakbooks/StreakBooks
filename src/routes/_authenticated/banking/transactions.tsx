@@ -895,6 +895,8 @@ function BankTransactions() {
                 setSearch({ pageSize: Number(v) === 50 ? undefined : Number(v) })
               }
             >
+              {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
               <SelectTrigger className="h-8 w-28" aria-label="Rows per page">
                 <SelectValue />
               </SelectTrigger>

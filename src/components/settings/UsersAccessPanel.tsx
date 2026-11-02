@@ -396,6 +396,8 @@ function MemberEditor({
               setSelected(selectionFromEffective(effectivePermissions(next)));
             }}
           >
+            {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -570,6 +572,8 @@ function InvitationsCard({
                 setSelected(selectionFromEffective(effectivePermissions(next)));
               }}
             >
+              {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>

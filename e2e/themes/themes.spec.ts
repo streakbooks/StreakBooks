@@ -32,9 +32,8 @@ test("create, upload logo, customize, persist, default, edit, duplicate and dele
   await expect(page.getByRole("columnheader", { name: "Qty", exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "Save theme", exact: true }).click();
   await expect(page.getByRole("status")).toContainText("Theme saved");
-  await page
-    .getByLabel("Default theme for Invoice", { exact: true })
-    .selectOption({ label: "Professional" });
+  await page.getByRole("combobox", { name: "Default theme for Invoice", exact: true }).click();
+  await page.getByRole("option", { name: "Professional", exact: true }).click();
   await page.reload();
   await page.getByRole("button", { name: "Professional Revision 1" }).click();
   await expect(page.getByLabel("Theme Font family", { exact: true })).toHaveValue("serif");

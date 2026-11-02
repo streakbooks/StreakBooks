@@ -231,6 +231,8 @@ export function AccountForm({
             onValueChange={(value) => setKind(value as AccountKind)}
             disabled={typeLocked}
           >
+            {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>

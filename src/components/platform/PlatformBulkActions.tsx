@@ -66,6 +66,8 @@ export function PlatformBulkActions({
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
               >
+                {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
                 {["active", "inactive", "suspended", "archived"].map((s) => (
                   <option key={s}>{s}</option>
                 ))}

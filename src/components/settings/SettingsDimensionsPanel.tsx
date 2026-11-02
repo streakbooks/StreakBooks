@@ -103,6 +103,8 @@ export function SettingsDimensionsPanel({ companyId, canEdit, currency }: Props)
             <div className="space-y-1">
               <Label>Kind</Label>
               <Select value={catKind} onValueChange={setCatKind} disabled={!canEdit}>
+                {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

@@ -27,3 +27,10 @@ Use the native `Select` only for a short fixed enumeration (status, tax-inclusiv
   ariaLabel="Account"
 />
 ```
+
+## Enforcement and migration adapter
+
+- `RecordLookupSelect` is an approved migration adapter backed by the same `LookupSelect`; it consumes declarative option lists while preserving unique IDs, disabled records, labels and original value callbacks. Prefer typed `LookupSelect` options and domain variants for new record fields.
+- Run `npm run check:lookups` for UI changes. Mapped native/Radix option lists must either use the shared architecture or carry `lookup-fixed-enum:` with a reviewed reason. That exception is for schema/status/presentation enums only, never account/contact/product/member/client records.
+- Keep server lookup requests scoped by organisation and abort obsolete requests. Replaying cached pages must not duplicate options. Treat the backend's posting, effective-date, currency and permission rules as authoritative.
+- Browser fixtures verify component behavior; do not describe fixture persistence as live API/database validation.

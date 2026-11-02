@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -109,17 +110,17 @@ function Statements() {
       {availableCurrencies.length > 1 ? (
         <div className="mb-4 flex items-center gap-2 text-sm">
           <Label>Currency</Label>
-          <select
+          <RecordLookupSelect
             className="rounded-md border bg-background px-2 py-1"
             value={currency}
-            onChange={(e) => setCurrencyChoice(e.target.value)}
+            onValueChange={(e) => setCurrencyChoice(e)}
           >
             {availableCurrencies.map((c) => (
               <option key={c} value={c}>
                 {c}
               </option>
             ))}
-          </select>
+          </RecordLookupSelect>
           <span className="text-muted-foreground">
             Each currency has its own statement; they are never added together.
           </span>

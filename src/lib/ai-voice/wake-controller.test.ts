@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 import { WakeController } from "./wake-controller";
 import { AssistantController } from "./assistant-controller";
 import { buildWakeProfile } from "./wake-acoustics";
@@ -29,7 +29,7 @@ const template = {
   ),
 };
 const profile = buildWakeProfile("Hey LinkBooks", [template, template, template]);
-let storage: Map<string, string>, release: ReturnType<typeof vi.fn>;
+let storage: Map<string, string>, release: Mock<() => Promise<void>>;
 function setup() {
   storage.set(
     "linkbooks.personal-wake.v1:user:company",

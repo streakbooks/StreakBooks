@@ -22,7 +22,15 @@ export type SendResult = { ok: true; messageId: string | null } | { ok: false; e
 
 export async function sendViaResend(
   config: Extract<EmailConfig, { configured: true }>,
-  message: { to: string[]; subject: string; html: string; text: string; replyTo?: string | null },
+  message: {
+    to: string[];
+    subject: string;
+    html: string;
+    text: string;
+    replyTo?: string | null;
+    attachments?: Array<{ filename: string; content: string }>;
+    idempotencyKey?: string;
+  },
   fetchImpl: typeof fetch = fetch,
 ): Promise<SendResult> {
   try {
@@ -31,6 +39,7 @@ export async function sendViaResend(
       headers: {
         Authorization: `Bearer ${config.apiKey}`,
         "Content-Type": "application/json",
+        ...(message.idempotencyKey ? { "Idempotency-Key": message.idempotencyKey } : {}),
       },
       body: JSON.stringify({
         from: config.from,
@@ -39,6 +48,7 @@ export async function sendViaResend(
         html: message.html,
         text: message.text,
         ...(message.replyTo ? { reply_to: message.replyTo } : {}),
+        ...(message.attachments ? { attachments: message.attachments } : {}),
       }),
     });
     const body = (await res.json().catch(() => ({}))) as {

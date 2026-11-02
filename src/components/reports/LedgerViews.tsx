@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { Fragment, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -354,13 +355,11 @@ export function JournalReportView({ ctx }: { ctx: ReportCtx }) {
         <>
           <div className="space-y-1">
             <Label htmlFor="jr-source">Source</Label>
-            <select
+            <RecordLookupSelect
               id="jr-source"
               className={selectCls}
               value={source}
-              onChange={(e) =>
-                ctx.setSearch({ source: e.target.value || undefined, page: undefined })
-              }
+              onValueChange={(e) => ctx.setSearch({ source: e || undefined, page: undefined })}
             >
               <option value="">All sources</option>
               {Object.entries(SOURCE_LABELS).map(([k, v]) => (
@@ -368,7 +367,7 @@ export function JournalReportView({ ctx }: { ctx: ReportCtx }) {
                   {v}
                 </option>
               ))}
-            </select>
+            </RecordLookupSelect>
           </div>
           <div className="space-y-1">
             <Label htmlFor="jr-status">Status</Label>
@@ -633,8 +632,8 @@ export function AgedView({ ctx, kind }: { ctx: ReportCtx; kind: "ar" | "ap" }) {
 export function TaxSummaryView({ ctx }: { ctx: ReportCtx }) {
   const fmt = useFormat();
   const fetchTax = useServerFn(getTaxReport);
-  // null = the basis the company files on (Tax settings).
-  const [basisChoice, setBasisChoice] = useState<"accrual" | "cash" | null>(null);
+  // An omitted URL basis uses company tax settings; saved views retain explicit overrides.
+  const basisChoice = ctx.search.basis;
   const q = useQuery({
     queryKey: ["report-tax", ctx.companyId, ctx.from, ctx.to, basisChoice],
     queryFn: () =>
@@ -694,7 +693,9 @@ export function TaxSummaryView({ ctx }: { ctx: ReportCtx }) {
                 id="tax-basis"
                 className={selectCls}
                 value={basis}
-                onChange={(e) => setBasisChoice(e.target.value === "cash" ? "cash" : "accrual")}
+                onChange={(e) =>
+                  ctx.setSearch({ basis: e.target.value === "cash" ? "cash" : "accrual" })
+                }
               >
                 <option value="accrual">Accrual (invoice date)</option>
                 <option value="cash">Cash (payment date)</option>

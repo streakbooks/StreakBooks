@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { SourceMigrationWizard } from "@/components/imports/SourceMigrationWizard";
 import { validateMigrationCsv } from "@/lib/imports/source-migration";
 import { toCsv } from "@/lib/sales/csv";
@@ -411,6 +412,8 @@ function ImportCentre() {
             setAssetFieldMapping({});
           }}
         >
+          {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
           {definitions.map((item, i) => (
             <option key={item.module + item.documentType} value={i}>
               {item.module.replaceAll("_", " ")} — {item.documentType}
@@ -769,12 +772,12 @@ function ImportCentre() {
             <label className="block text-sm font-medium" htmlFor="budget-import-target">
               Target budget
             </label>
-            <select
+            <RecordLookupSelect
               id="budget-import-target"
               className="w-full rounded-md border bg-background p-2"
               value={budgetId}
-              onChange={(e) => {
-                setBudgetId(e.target.value);
+              onValueChange={(e) => {
+                setBudgetId(e);
                 setBudgetResult(null);
               }}
             >
@@ -784,7 +787,7 @@ function ImportCentre() {
                   {budget.name} — FY from {budget.fiscal_year_start}
                 </option>
               ))}
-            </select>
+            </RecordLookupSelect>
             {budgetsQ.isError && (
               <p className="text-sm text-destructive">
                 Could not load budgets. Check access and try again.
@@ -908,13 +911,13 @@ function ImportCentre() {
                           {field.label}
                           {field.required ? " *" : ""}
                         </span>
-                        <select
+                        <RecordLookupSelect
                           className="w-full rounded-md border bg-background p-2 text-sm"
                           value={selectedColumn}
-                          onChange={(e) => {
+                          onValueChange={(e) => {
                             setAssetFieldMapping((current) => ({
                               ...current,
-                              [field.key]: e.target.value,
+                              [field.key]: e,
                             }));
                             setFixedAssetResult(null);
                             setAssetImportAcknowledged(false);
@@ -928,7 +931,7 @@ function ImportCentre() {
                               {header}
                             </option>
                           ))}
-                        </select>
+                        </RecordLookupSelect>
                       </label>
                     );
                   })}

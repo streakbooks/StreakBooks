@@ -100,6 +100,8 @@ function MoneyDocumentsInner() {
             value={kind}
             onChange={(e) => setKind(e.target.value)}
           >
+            {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
             <option value="">All types</option>
             {Object.entries(KIND_LABEL).map(([value, label]) => (
               <option key={value} value={value}>

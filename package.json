@@ -20,6 +20,7 @@
     "typecheck": "tsc --noEmit",
     "test:themes": "playwright test --config playwright.themes.config.ts",
     "test:reporting": "playwright test --config playwright.reporting.config.ts",
+    "test:navigation": "playwright test --config playwright.navigation.config.ts",
     "check:lookups": "node scripts/check-lookup-architecture.mjs"
   },
   "overrides": {

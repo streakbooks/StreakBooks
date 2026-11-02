@@ -40,6 +40,7 @@ Typecheck exit 0. Lint 0 errors and 23 warnings. Vitest 163 files, 1279 tests, a
 - Batches E–H: sandbox request tests passed, 1. `20261102330000` was not applied. No company was created and posting is unchanged.
 - Final: author report is in `docs/superadmin/final-report.md`. Independent review remains open until a second person reads pull request 66.
 - Full unit suite after the platform files: 192 files, 1349 tests, all passed. Typecheck failed because an audit-chain row could be undefined. That access is now checked.
+- Batch B: provider charge comparison tests passed, 2. A missing provider list stays unrecorded. The live fetch stays BLOCKED until a test-mode secret and provider events exist.
 - Hosted gate BLOCKED: `20261102170000` through `20261102330000`, and the start-month backfill, are READY-TO-APPLY. Nothing further was applied. Write `BACKUP CONFIRMED` in this file to release them.
 
 ## NEEDS FROM OWNER

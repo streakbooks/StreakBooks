@@ -294,8 +294,10 @@ export function ReportPacksWorkspace({
                     </td>
                     <td className="p-3">
                       <div className="flex flex-wrap gap-1">
-                        <Button size="sm" variant="ghost" asChild><Link to="/reports" search={(prev) => ({ ...prev, pack: p.id }) as never}>
-                          Open
+                        <Button size="sm" variant="ghost" asChild>
+                          <Link to="/reports" search={(prev) => ({ ...prev, pack: p.id }) as never}>
+                            Open
+                          </Link>
                         </Button>
                         {canPrepare &&
                           owns &&

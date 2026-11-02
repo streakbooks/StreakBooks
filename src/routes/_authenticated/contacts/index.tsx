@@ -33,7 +33,7 @@ export const Route = createFileRoute("/_authenticated/contacts/")({
   validateSearch: (search: Record<string, unknown>) => ({
     view: ["all", "customers", "suppliers", "both", "recent", "updated", "inactive", "archived"].includes(String(search["view"]))
       ? String(search["view"])
-      : "all",
+      : undefined,
   }),
   head: () => ({
     meta: [
@@ -66,7 +66,8 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
   const fetchSummary = useServerFn(getContactsDirectorySummary);
   const exportFn = useServerFn(exportContactsCsv);
 
-  const { view } = Route.useSearch();
+  const { view: requestedView } = Route.useSearch();
+  const view = requestedView ?? "all";
   const [page, setPage] = useState(0);
   const [q, setQ] = useState("");
   const kindForApi = useMemo(() => {

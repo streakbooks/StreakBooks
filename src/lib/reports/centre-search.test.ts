@@ -28,6 +28,6 @@ describe("reporting centre navigation", () => {
         to: "invalid",
         sql: "ignored",
       }),
-    ).toEqual({ tab: "home" });
+    ).toEqual({ tab: "standard" });
   });
 });

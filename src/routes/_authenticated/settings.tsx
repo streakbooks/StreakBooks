@@ -476,7 +476,7 @@ export function SettingsForCompany({
             <>
               {!embeddedSection && <ModuleSettingsLinks category={section} central />}
               {section === "overview" ? (
-                <SettingsOverviewPanel companyId={companyId} onNavigate={selectSection} />
+                <SettingsOverviewPanel companyId={companyId} />
               ) : null}
               {section === "features" ? (
                 <SettingsFeatureManager companyId={companyId} canEdit={canEdit} />

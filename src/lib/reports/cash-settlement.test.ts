@@ -201,6 +201,11 @@ describe("cash settlement source calculation (not yet a live cash-basis report)"
       { settlements: [{ ...payment("a", "2026-11-01", 10n), fxRateToBase: "0" }] },
       "positive posted FX",
     ],
+    [
+      "base-currency FX mismatch",
+      { settlements: [{ ...payment("a", "2026-11-01", 10n), fxRateToBase: "1.2" }] },
+      "Base-currency settlement",
+    ],
   ])("fails closed for %s", (_name, patch, message) => {
     expect(() => recogniseCashSettlements(source(patch), period)).toThrow(message);
   });

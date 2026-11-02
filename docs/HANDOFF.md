@@ -2,7 +2,7 @@
 
 ## P0 evidence
 
-Typecheck exit 0. Lint 0 errors and 23 warnings. Vitest 163 files, 1279 tests, all passed. Production build exit 0. Playwright had no seeded platform_owner: `e2e/superadmin-journeys.spec.ts` 2 passed and 2 skipped. Migration history is BLOCKED: Docker is not installed, and the only other Supabase project is LeadOrbit. READY-TO-APPLY and not applied: `20261102170000`, `20261102180000`, `20261102180100`, and the start-month backfill in `docs/superadmin/start-month-backfill.md`.
+Typecheck exit 0. Lint 0 errors and 23 warnings. Vitest 163 files, 1279 tests, all passed. Production build exit 0. Playwright had no seeded platform_owner: `e2e/superadmin-journeys.spec.ts` 2 passed and 2 skipped. Migration history is BLOCKED: Docker is not installed, and the only other Supabase project is LeadOrbit. READY-TO-APPLY and not applied: `20261102170000`, `20261102180000`, `20261102180100`, `20261102190000`, `20261102200000`, and the start-month backfill in `docs/superadmin/start-month-backfill.md`.
 
 - P0.1: typecheck exit 0, lint 0 errors and 23 warnings, 1279 unit tests passed, production build exit 0.
 - P0.2: `sk_live_` and `rzp_live_` are refused unless `LINKBOOKS_ALLOW_LIVE_PAYMENT_KEYS=true`. 15 provider-key tests passed.
@@ -21,7 +21,8 @@ Typecheck exit 0. Lint 0 errors and 23 warnings. Vitest 163 files, 1279 tests, a
 - Batch C: audit verification matches the applied md5 chain and rejects one edited row. Tests passed, 1. Rewriting every later row still verifies.
 - Batch C: role tests match the November `platform_can` lists. Tests passed, 2. Finance cannot approve and support cannot bill. Custom permissions stay in the database.
 - Batch D: integration health reports missing Stripe and Razorpay configuration and does not call a provider. Tests passed, 2.
-- Hosted gate BLOCKED: `20261102170000`, `20261102180000`, `20261102180100`, and the start-month backfill are READY-TO-APPLY. Nothing was applied. Write `BACKUP CONFIRMED` in this file to release them.
+- Batch D: API key rotation tests passed, 3. `20261102200000` stores a hash only and was not applied. The raw key is returned once by that function and is not written to the audit row.
+- Hosted gate BLOCKED: `20261102170000`, `20261102180000`, `20261102180100`, `20261102190000`, `20261102200000`, and the start-month backfill are READY-TO-APPLY. Nothing further was applied. Write `BACKUP CONFIRMED` in this file to release them.
 
 ## NEEDS FROM OWNER
 
@@ -30,7 +31,7 @@ Typecheck exit 0. Lint 0 errors and 23 warnings. Vitest 163 files, 1279 tests, a
 - Add a second platform user with `approvals.manage` for the kill-switch walkthrough.
 - Install Docker Desktop or Podman on PATH, or create an empty LinkBooks staging Supabase project. Do not use LeadOrbit.
 
-Date: 2 November 2026. `origin/main` is `7813d20`, which is after `53cc3ec`. Further work goes through a pull request. Do not push `main` directly.
+Date: 2 November 2026. `origin/main` is `9fc4429`. Further work goes through pull request 66. Do not push `main` directly.
 
 ## Process from here
 

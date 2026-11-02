@@ -84,6 +84,7 @@ describe("standard statement server boundaries", () => {
     { report: "other" },
     { settings: { compare: "custom" } },
     { settings: { compare: "none", changePercent: true } },
+    { settings: { basis: "cash" } },
   ])("rejects invalid or unsupported report requests %o", async (patch) => {
     await expect(run(getStandardStatement, { ...data, ...patch })).rejects.toThrow();
     expect(callRpc).not.toHaveBeenCalled();

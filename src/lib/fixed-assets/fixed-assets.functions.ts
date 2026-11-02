@@ -401,7 +401,10 @@ export const getFixedAssetImportAvailability = createServerFn({ method: "GET" })
       .limit(0);
     if (error) {
       if (error.code === "42P01" || error.code === "PGRST205" || error.code === "PGRST200") {
-        return { available: false as const, reason: "The fixed asset CSV import database migration has not been deployed." };
+        return {
+          available: false as const,
+          reason: "The fixed asset CSV import database migration has not been deployed.",
+        };
       }
       throw new Error(error.message);
     }
@@ -432,21 +435,26 @@ export const importFixedAssetRegisterCsv = createServerFn({ method: "POST" })
     const [meta, accounts, typesResult] = await Promise.all([
       loadCompanyMeta(sb, data.companyId),
       loadAccountMetas(sb, data.companyId),
-      sb.from("asset_types" as never)
+      sb
+        .from("asset_types" as never)
         .select("id, name, is_active" as never)
         .eq("company_id" as never, data.companyId as never)
         .limit(500),
     ]);
     if (typesResult.error) throw new Error(typesResult.error.message);
     const assets = prepareFixedAssetsCsv(data.csvText, meta.baseCurrency);
-    const byCode = new Map<string, typeof accounts[number]>();
+    const byCode = new Map<string, (typeof accounts)[number]>();
     for (const account of accounts) {
       const code = account.code.toLocaleLowerCase("en-US");
       if (byCode.has(code)) throw new Error("Ambiguous chart-of-accounts code " + account.code);
       byCode.set(code, account);
     }
     const activeTypes = new Map<string, string>();
-    for (const type of (typesResult.data ?? []) as Array<{ id: string; name: string; is_active: boolean }>) {
+    for (const type of (typesResult.data ?? []) as Array<{
+      id: string;
+      name: string;
+      is_active: boolean;
+    }>) {
       if (!type.is_active) continue;
       const name = type.name.toLocaleLowerCase("en-US");
       if (activeTypes.has(name)) throw new Error("Ambiguous asset type: " + type.name);
@@ -454,15 +462,31 @@ export const importFixedAssetRegisterCsv = createServerFn({ method: "POST" })
     }
     const resolve = (code: string, kind: "asset" | "expense", row: number) => {
       const account = byCode.get(code.toLocaleLowerCase("en-US"));
-      if (!account || !account.is_active || !account.is_postable || account.is_control || account.account_type !== kind) {
-        throw new Error("Row " + row + ": " + code + " must match one active, non-control " + kind + " account");
+      if (
+        !account ||
+        !account.is_active ||
+        !account.is_postable ||
+        account.is_control ||
+        account.account_type !== kind
+      ) {
+        throw new Error(
+          "Row " + row + ": " + code + " must match one active, non-control " + kind + " account",
+        );
       }
       return account.id;
     };
     const rows = assets.map((a) => {
-      const assetTypeId = a.assetTypeName ? activeTypes.get(a.assetTypeName.toLocaleLowerCase("en-US")) : null;
+      const assetTypeId = a.assetTypeName
+        ? activeTypes.get(a.assetTypeName.toLocaleLowerCase("en-US"))
+        : null;
       if (a.assetTypeName && !assetTypeId) {
-        throw new Error("Row " + a.sourceRow + ": asset type " + a.assetTypeName + " was not found in this organisation");
+        throw new Error(
+          "Row " +
+            a.sourceRow +
+            ": asset type " +
+            a.assetTypeName +
+            " was not found in this organisation",
+        );
       }
       return {
         external_code: a.externalCode,
@@ -471,7 +495,12 @@ export const importFixedAssetRegisterCsv = createServerFn({ method: "POST" })
           name: a.name,
           description: null,
           // Case-insensitive external references must create identical payloads on retries.
-          notes: "Imported asset reference: " + a.externalCode.toLocaleUpperCase("en-US") + (a.openingDepreciationThrough ? "; opening depreciation through " + a.openingDepreciationThrough : ""),
+          notes:
+            "Imported asset reference: " +
+            a.externalCode.toLocaleUpperCase("en-US") +
+            (a.openingDepreciationThrough
+              ? "; opening depreciation through " + a.openingDepreciationThrough
+              : ""),
           purchase_date: a.purchaseDate,
           depreciation_start_date: a.depreciationStartDate,
           cost_minor: a.costMinor,
@@ -489,7 +518,8 @@ export const importFixedAssetRegisterCsv = createServerFn({ method: "POST" })
       };
     });
     return await callRpc<FixedAssetCsvImportResult>(
-      sb, "import_fixed_asset_register",
+      sb,
+      "import_fixed_asset_register",
       { _company_id: data.companyId, _rows: rows },
       "Fixed asset import requires database migration 20261030153000_fixed_asset_register_csv_import.",
     );

@@ -1,9 +1,18 @@
 import { useCallback, useSyncExternalStore } from "react";
 import {
-  CUSTOM_PALETTE_STORAGE_KEY, CUSTOM_THEME_VARIABLES, DEFAULT_CUSTOM_PALETTE,
-  PALETTE_STORAGE_KEY, THEME_STORAGE_KEY, computeCustomTokens,
-  isPaletteId, isThemePreference, resolveTheme, validateCustomPalette,
-  type CustomPalette, type PaletteId, type ThemePreference,
+  CUSTOM_PALETTE_STORAGE_KEY,
+  CUSTOM_THEME_VARIABLES,
+  DEFAULT_CUSTOM_PALETTE,
+  PALETTE_STORAGE_KEY,
+  THEME_STORAGE_KEY,
+  computeCustomTokens,
+  isPaletteId,
+  isThemePreference,
+  resolveTheme,
+  validateCustomPalette,
+  type CustomPalette,
+  type PaletteId,
+  type ThemePreference,
 } from "@/lib/theme";
 
 const listeners = new Set<() => void>();
@@ -131,7 +140,13 @@ export function useTheme() {
   }, []);
 
   return {
-    preference, resolved: resolveTheme(preference, systemDark),
-    palette, customColors, setPreference, setPalette, setCustomColors, resetCustomColors,
+    preference,
+    resolved: resolveTheme(preference, systemDark),
+    palette,
+    customColors,
+    setPreference,
+    setPalette,
+    setCustomColors,
+    resetCustomColors,
   };
 }

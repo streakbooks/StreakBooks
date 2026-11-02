@@ -21,9 +21,7 @@ export function findUnsafeViteEnvKeys(
     }
     if (
       typeof value === "string" &&
-      (value.startsWith("sb_secret_") ||
-        value.includes("service_role") ||
-        value.startsWith("sk-"))
+      (value.startsWith("sb_secret_") || value.includes("service_role") || value.startsWith("sk-"))
     ) {
       unsafe.push(key);
     }
@@ -31,9 +29,7 @@ export function findUnsafeViteEnvKeys(
   return unsafe;
 }
 
-export function assertNoServiceRoleInViteEnv(
-  env?: Record<string, string | undefined>,
-): void {
+export function assertNoServiceRoleInViteEnv(env?: Record<string, string | undefined>): void {
   const bad = findUnsafeViteEnvKeys(env);
   if (bad.length > 0) {
     throw new Error(

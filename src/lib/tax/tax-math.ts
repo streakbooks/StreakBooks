@@ -93,13 +93,7 @@ export {
 
 /** Tax treatments are not interchangeable — reporting/classification differs even at 0 bps. */
 export type TaxCodeTreatment =
-  | "standard"
-  | "reduced"
-  | "zero_rated"
-  | "exempt"
-  | "outside_scope"
-  | "no_tax"
-  | "reverse_charge";
+  "standard" | "reduced" | "zero_rated" | "exempt" | "outside_scope" | "no_tax" | "reverse_charge";
 
 export function taxPostsToControlAccount(treatment: string, taxMinor: bigint): boolean {
   if (taxMinor === 0n) {

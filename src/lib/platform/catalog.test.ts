@@ -8,11 +8,12 @@ import {
   rowsCsv,
   csvCell,
   sections,
+  platformColumnLabel,
 } from "./catalog";
 describe("platform request boundaries", () => {
   it("rejects unknown navigation and defaults only inside route handling", () => {
     expect(sectionSchema.safeParse("anything").success).toBe(false);
-    expect(sections).toHaveLength(16);
+    expect(sections).toHaveLength(17);
   });
   it("limits list searches and pagination and rejects SQL sort fragments", () => {
     for (const input of [
@@ -72,5 +73,9 @@ describe("administrative CSV exports", () => {
   it("serializes structured values and nulls", () => {
     expect(csvCell(null)).toBe('""');
     expect(csvCell({ active: true })).toBe('"{""active"":true}"');
+  });
+  it("does not call a subscription's last update its start date", () => {
+    expect(platformColumnLabel("subscriptions", "created_at")).toBe("last update");
+    expect(platformColumnLabel("businesses", "created_at")).toBe("created at");
   });
 });

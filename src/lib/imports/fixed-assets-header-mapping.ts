@@ -14,7 +14,8 @@ export function fixedAssetSourceHeaders(text: string): string[] {
   const headers = rows[0]!.map((value) => value.trim());
   const normalized = headers.map((h) => h.toLocaleLowerCase("en-US"));
   if (headers.some((h) => !h)) throw new Error("Blank source column heading");
-  if (new Set(normalized).size !== normalized.length) throw new Error("Duplicate source column headings");
+  if (new Set(normalized).size !== normalized.length)
+    throw new Error("Duplicate source column headings");
   return headers;
 }
 
@@ -31,7 +32,8 @@ export function mapFixedAssetCsv(text: string, mapping: FixedAssetColumnMapping)
   const used = new Set<number>();
   const positions = definition.fields.map((field) => {
     const selected = Object.prototype.hasOwnProperty.call(mapping, field.key)
-      ? mapping[field.key] : field.label;
+      ? mapping[field.key]
+      : field.label;
     if (!selected) {
       if (field.required) throw new Error("Map required field: " + field.label);
       return -1;
@@ -41,13 +43,18 @@ export function mapFixedAssetCsv(text: string, mapping: FixedAssetColumnMapping)
       if (field.required) throw new Error("Map required field: " + field.label);
       return -1;
     }
-    if (used.has(index)) throw new Error("A source column cannot map to multiple asset fields: " + selected);
+    if (used.has(index))
+      throw new Error("A source column cannot map to multiple asset fields: " + selected);
     used.add(index);
     return index;
   });
   const records = source.slice(1).map((cells, rowIndex) => {
-    if (cells.length !== headers.length) throw new Error("Row " + (rowIndex + 2) + ": column count differs from heading");
-    return positions.map((position) => position < 0 ? "" : (cells[position] ?? "").trim());
+    if (cells.length !== headers.length)
+      throw new Error("Row " + (rowIndex + 2) + ": column count differs from heading");
+    return positions.map((position) => (position < 0 ? "" : (cells[position] ?? "").trim()));
   });
-  return toCsv(definition.fields.map((field) => field.label), records);
+  return toCsv(
+    definition.fields.map((field) => field.label),
+    records,
+  );
 }

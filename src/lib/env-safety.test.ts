@@ -28,8 +28,8 @@ describe("env safety", () => {
   });
 
   it("throws on assert", () => {
-    expect(() =>
-      assertNoServiceRoleInViteEnv({ VITE_SUPABASE_SERVICE_ROLE_KEY: "x" }),
-    ).toThrow(/privileged key/);
+    expect(() => assertNoServiceRoleInViteEnv({ VITE_SUPABASE_SERVICE_ROLE_KEY: "x" })).toThrow(
+      /privileged key/,
+    );
   });
 });

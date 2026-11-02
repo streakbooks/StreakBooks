@@ -4,10 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
-import {
-  getContactImportTemplate,
-  importContactsCsv,
-} from "@/lib/contacts/contacts.functions";
+import { getContactImportTemplate, importContactsCsv } from "@/lib/contacts/contacts.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { PageHeader, EmptyState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
@@ -34,8 +31,7 @@ function ContactImportPage() {
   } | null>(null);
 
   const importM = useMutation({
-    mutationFn: () =>
-      importFn({ data: { companyId: companyId!, csvText, skipDuplicates } }),
+    mutationFn: () => importFn({ data: { companyId: companyId!, csvText, skipDuplicates } }),
     onSuccess: (res) => {
       setResult(res);
       toast.success(`Import finished: ${res.created} created`);
@@ -52,7 +48,9 @@ function ContactImportPage() {
         description="Upload a CSV. Existing contacts with the same name are skipped by default."
         actions={
           <Button variant="outline" size="sm" asChild>
-            <Link to="/contacts" search={{ view: undefined }}>Directory</Link>
+            <Link to="/contacts" search={{ view: undefined }}>
+              Directory
+            </Link>
           </Button>
         }
       />
@@ -118,10 +116,7 @@ function ContactImportPage() {
         </pre>
       ) : null}
 
-      <Button
-        disabled={!csvText || importM.isPending}
-        onClick={() => importM.mutate()}
-      >
+      <Button disabled={!csvText || importM.isPending} onClick={() => importM.mutate()}>
         {importM.isPending ? "Importing…" : "Confirm import"}
       </Button>
 

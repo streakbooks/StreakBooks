@@ -42,6 +42,7 @@ import { Route as AuthSsoRouteImport } from './routes/auth_.sso'
 import { Route as PortalIndexRouteImport } from './routes/portal/index'
 import { Route as PortalAppRouteRouteImport } from './routes/portal/app/route'
 import { Route as PortalLoginRouteImport } from './routes/portal/login'
+import { Route as PricingBuilderRouteImport } from './routes/pricing_.builder'
 import { Route as AuthenticatedBankingIndexRouteImport } from './routes/_authenticated/banking/index'
 import { Route as AuthenticatedBankingCashCodingRouteImport } from './routes/_authenticated/banking/cash-coding'
 import { Route as AuthenticatedBankingFeedsRouteImport } from './routes/_authenticated/banking/feeds'
@@ -303,6 +304,11 @@ const PortalLoginRoute = PortalLoginRouteImport.update({
   id: '/login',
   path: '/login',
   getParentRoute: () => PortalRouteRoute,
+} as any)
+const PricingBuilderRoute = PricingBuilderRouteImport.update({
+  id: '/pricing_/builder',
+  path: '/pricing/builder',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedBankingIndexRoute =
   AuthenticatedBankingIndexRouteImport.update({
@@ -861,6 +867,7 @@ export interface FileRoutesByFullPath {
   '/auth/mfa': typeof AuthMfaRoute
   '/auth/sso': typeof AuthSsoRoute
   '/portal/login': typeof PortalLoginRoute
+  '/pricing/builder': typeof PricingBuilderRoute
   '/portal/': typeof PortalIndexRoute
   '/banking/cash-coding': typeof AuthenticatedBankingCashCodingRoute
   '/banking/feeds': typeof AuthenticatedBankingFeedsRoute
@@ -978,6 +985,7 @@ export interface FileRoutesByTo {
   '/auth/mfa': typeof AuthMfaRoute
   '/auth/sso': typeof AuthSsoRoute
   '/portal/login': typeof PortalLoginRoute
+  '/pricing/builder': typeof PricingBuilderRoute
   '/': typeof AuthenticatedIndexRoute
   '/portal': typeof PortalIndexRoute
   '/banking/cash-coding': typeof AuthenticatedBankingCashCodingRoute
@@ -1101,6 +1109,7 @@ export interface FileRoutesById {
   '/auth_/mfa': typeof AuthMfaRoute
   '/auth_/sso': typeof AuthSsoRoute
   '/portal/login': typeof PortalLoginRoute
+  '/pricing_/builder': typeof PricingBuilderRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/portal/': typeof PortalIndexRoute
   '/_authenticated/banking/cash-coding': typeof AuthenticatedBankingCashCodingRoute
@@ -1228,6 +1237,7 @@ export interface FileRouteTypes {
     | '/auth/mfa'
     | '/auth/sso'
     | '/portal/login'
+    | '/pricing/builder'
     | '/portal/'
     | '/banking/cash-coding'
     | '/banking/feeds'
@@ -1345,6 +1355,7 @@ export interface FileRouteTypes {
     | '/auth/mfa'
     | '/auth/sso'
     | '/portal/login'
+    | '/pricing/builder'
     | '/'
     | '/portal'
     | '/banking/cash-coding'
@@ -1467,6 +1478,7 @@ export interface FileRouteTypes {
     | '/auth_/mfa'
     | '/auth_/sso'
     | '/portal/login'
+    | '/pricing_/builder'
     | '/_authenticated/'
     | '/portal/'
     | '/_authenticated/banking/cash-coding'
@@ -1571,6 +1583,7 @@ export interface RootRouteChildren {
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthMfaRoute: typeof AuthMfaRoute
   AuthSsoRoute: typeof AuthSsoRoute
+  PricingBuilderRoute: typeof PricingBuilderRoute
   ShareInvoiceTokenRoute: typeof ShareInvoiceTokenRoute
 }
 
@@ -1806,6 +1819,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/portal/login'
       preLoaderRoute: typeof PortalLoginRouteImport
       parentRoute: typeof PortalRouteRoute
+    }
+    '/pricing_/builder': {
+      id: '/pricing_/builder'
+      path: '/pricing/builder'
+      fullPath: '/pricing/builder'
+      preLoaderRoute: typeof PricingBuilderRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/banking/': {
       id: '/_authenticated/banking/'
@@ -2845,6 +2865,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthCallbackRoute: AuthCallbackRoute,
   AuthMfaRoute: AuthMfaRoute,
   AuthSsoRoute: AuthSsoRoute,
+  PricingBuilderRoute: PricingBuilderRoute,
   ShareInvoiceTokenRoute: ShareInvoiceTokenRoute,
 }
 export const routeTree = rootRouteImport

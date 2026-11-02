@@ -8,10 +8,13 @@ export async function allocateDocumentNumber(
   companyId: string,
   documentType: string,
 ): Promise<string> {
-  const { data, error } = await supabase.rpc("allocate_document_number" as never, {
-    _company_id: companyId,
-    _document_type: documentType,
-  } as never);
+  const { data, error } = await supabase.rpc(
+    "allocate_document_number" as never,
+    {
+      _company_id: companyId,
+      _document_type: documentType,
+    } as never,
+  );
   if (error) throw new Error(error.message);
   const payload: unknown = data;
   const num = typeof payload === "string" ? payload.trim() : "";

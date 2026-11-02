@@ -15,7 +15,10 @@ const CONTROL_CODE_HINTS: Record<NonNullable<LibraryAccount["controlRole"]>, str
   retained_earnings: ["3200"],
 };
 
-function matchExisting(existing: ExistingAccount[], lib: LibraryAccount): ExistingAccount | undefined {
+function matchExisting(
+  existing: ExistingAccount[],
+  lib: LibraryAccount,
+): ExistingAccount | undefined {
   const byKey = existing.find((e) => e.catalog_key && e.catalog_key === lib.key);
   if (byKey) return byKey;
   const byCode = existing.find((e) => e.code === lib.code);
@@ -67,7 +70,10 @@ export function previewIndustryApply(opts: {
       continue;
     }
 
-    if (lib.controlRole && (match.is_control || CONTROL_CODE_HINTS[lib.controlRole]?.includes(match.code))) {
+    if (
+      lib.controlRole &&
+      (match.is_control || CONTROL_CODE_HINTS[lib.controlRole]?.includes(match.code))
+    ) {
       skippedControls.push({
         ...base,
         action: "skip_control",

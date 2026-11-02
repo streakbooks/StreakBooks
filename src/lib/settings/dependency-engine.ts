@@ -77,9 +77,15 @@ export function evaluateSettingsChange(input: EvalInput): DependencyResult {
 
   if (
     input.changeType === "disable_feature" &&
-    ["classes", "locations", "projects", "departments", "cost_centres", "branches", "custom_dimensions"].includes(
-      input.featureKey ?? "",
-    )
+    [
+      "classes",
+      "locations",
+      "projects",
+      "departments",
+      "cost_centres",
+      "branches",
+      "custom_dimensions",
+    ].includes(input.featureKey ?? "")
   ) {
     return {
       verdict: "allowed_with_warnings",
@@ -126,7 +132,8 @@ export function evaluateSettingsChange(input: EvalInput): DependencyResult {
   if (input.changeType === "change_inventory_valuation") {
     return {
       verdict: "allowed_with_warnings",
-      explanation: "Valuation method applies to future movements only. Historical COGS is not rewritten.",
+      explanation:
+        "Valuation method applies to future movements only. Historical COGS is not rewritten.",
       affectedRecordsEstimate: null,
       requiredPermission: "company.settings.edit",
       confirmationText: "Change inventory valuation for future movements?",
@@ -159,7 +166,8 @@ export function evaluateSettingsChange(input: EvalInput): DependencyResult {
   if (input.changeType === "change_fy") {
     return {
       verdict: "allowed_with_warnings",
-      explanation: "Changing the financial year does not alter finalised reports or posted journals.",
+      explanation:
+        "Changing the financial year does not alter finalised reports or posted journals.",
       affectedRecordsEstimate: null,
       requiredPermission: "company.settings.edit",
       confirmationText: "Update financial year end?",
@@ -170,7 +178,8 @@ export function evaluateSettingsChange(input: EvalInput): DependencyResult {
   if (input.changeType === "downgrade_plan") {
     return {
       verdict: "allowed_with_warnings",
-      explanation: "Downgrade will make some features read-only. Review the impact list before confirming.",
+      explanation:
+        "Downgrade will make some features read-only. Review the impact list before confirming.",
       affectedRecordsEstimate: null,
       requiredPermission: "company.settings.edit",
       confirmationText: "Confirm plan downgrade?",

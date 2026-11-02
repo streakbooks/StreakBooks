@@ -288,8 +288,14 @@ describe("currency and checkout payload", () => {
     expect(uk.filter((method) => method.available).map((method) => method.id)).toEqual(["card"]);
     expect(paymentMethodsFor("CA").map((method) => method.id)).toEqual(["card"]);
     expect(paymentMethodsFor("IN").map((method) => method.id)).toEqual(["card", "upi", "emandate"]);
-    expect(paymentMethodsFor("IN", { stripe: false, razorpay: true }).filter((m) => m.available).map((m) => m.id)).toEqual(["upi", "emandate"]);
-    expect(paymentMethodsFor("IN", { stripe: false, razorpay: false }).every((m) => !m.available)).toBe(true);
+    expect(
+      paymentMethodsFor("IN", { stripe: false, razorpay: true })
+        .filter((m) => m.available)
+        .map((m) => m.id),
+    ).toEqual(["upi", "emandate"]);
+    expect(
+      paymentMethodsFor("IN", { stripe: false, razorpay: false }).every((m) => !m.available),
+    ).toBe(true);
     expect(paymentMethodsFor("ZZ")).toEqual([]);
   });
 
@@ -328,15 +334,17 @@ describe("currency and checkout payload", () => {
     });
     expect(billing.country).toBe("GB");
     expect(billing.name).toBe("Alex Stone");
-    expect(parseCheckoutBilling({
-      email: "a@b.co",
-      firstName: "Alex",
-      lastName: "Stone",
-      line1: "1 Rue de Rivoli",
-      city: "Paris",
-      postalCode: "75001",
-      country: "FR",
-    }).country).toBe("FR");
+    expect(
+      parseCheckoutBilling({
+        email: "a@b.co",
+        firstName: "Alex",
+        lastName: "Stone",
+        line1: "1 Rue de Rivoli",
+        city: "Paris",
+        postalCode: "75001",
+        country: "FR",
+      }).country,
+    ).toBe("FR");
   });
 });
 

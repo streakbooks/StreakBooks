@@ -22,13 +22,11 @@ test("upload, date mapping, validation report, and invalid replacement", async (
   await page.getByLabel("Map Customer", { exact: true }).selectOption("");
   await expect(page.getByRole("alert")).toContainText("Map required field: Customer");
   await expect(page.getByLabel("Validated payload")).toHaveText("");
-  await page
-    .locator('input[type="file"]')
-    .setInputFiles({
-      name: "bad.csv",
-      mimeType: "text/csv",
-      buffer: Buffer.from("Name,Name\na,b"),
-    });
+  await page.locator('input[type="file"]').setInputFiles({
+    name: "bad.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from("Name,Name\na,b"),
+  });
   await expect(page.getByRole("alert")).toContainText("unique");
   await expect(page.getByLabel("Validated payload")).toHaveText("");
   expect(errors).toEqual([]);

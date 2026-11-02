@@ -273,8 +273,12 @@ export const upsertContact = createServerFn({ method: "POST" })
         deliveryAddressLine2: (input.deliveryAddressLine2 ?? "").trim().slice(0, 200) || null,
         deliveryRegion: (input.deliveryRegion ?? "").trim().slice(0, 100) || null,
         deliveryPostal: (input.deliveryPostal ?? "").trim().slice(0, 40) || null,
-        defaultSalesAccountId: input.defaultSalesAccountId ? assertUuid(input.defaultSalesAccountId) : null,
-        defaultPurchaseAccountId: input.defaultPurchaseAccountId ? assertUuid(input.defaultPurchaseAccountId) : null,
+        defaultSalesAccountId: input.defaultSalesAccountId
+          ? assertUuid(input.defaultSalesAccountId)
+          : null,
+        defaultPurchaseAccountId: input.defaultPurchaseAccountId
+          ? assertUuid(input.defaultPurchaseAccountId)
+          : null,
         salesTaxInclusive: input.salesTaxInclusive ?? null,
         purchaseTaxInclusive: input.purchaseTaxInclusive ?? null,
       };
@@ -336,14 +340,24 @@ export const upsertContact = createServerFn({ method: "POST" })
       delivery_address_line1: data.deliveryAddressLine1,
       delivery_city: data.deliveryCity,
       delivery_country: data.deliveryCountry,
-      ...(data.billingAddressLine2 !== null ? { billing_address_line2: data.billingAddressLine2 } : {}),
-      ...(data.deliveryAddressLine2 !== null ? { delivery_address_line2: data.deliveryAddressLine2 } : {}),
+      ...(data.billingAddressLine2 !== null
+        ? { billing_address_line2: data.billingAddressLine2 }
+        : {}),
+      ...(data.deliveryAddressLine2 !== null
+        ? { delivery_address_line2: data.deliveryAddressLine2 }
+        : {}),
       ...(data.deliveryRegion !== null ? { delivery_region: data.deliveryRegion } : {}),
       ...(data.deliveryPostal !== null ? { delivery_postal: data.deliveryPostal } : {}),
-      ...(data.defaultSalesAccountId !== null ? { default_sales_account_id: data.defaultSalesAccountId } : {}),
-      ...(data.defaultPurchaseAccountId !== null ? { default_purchase_account_id: data.defaultPurchaseAccountId } : {}),
+      ...(data.defaultSalesAccountId !== null
+        ? { default_sales_account_id: data.defaultSalesAccountId }
+        : {}),
+      ...(data.defaultPurchaseAccountId !== null
+        ? { default_purchase_account_id: data.defaultPurchaseAccountId }
+        : {}),
       ...(data.salesTaxInclusive !== null ? { sales_tax_inclusive: data.salesTaxInclusive } : {}),
-      ...(data.purchaseTaxInclusive !== null ? { purchase_tax_inclusive: data.purchaseTaxInclusive } : {}),
+      ...(data.purchaseTaxInclusive !== null
+        ? { purchase_tax_inclusive: data.purchaseTaxInclusive }
+        : {}),
       updated_at: new Date().toISOString(),
     };
 

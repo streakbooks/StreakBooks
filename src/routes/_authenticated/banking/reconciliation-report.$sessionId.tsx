@@ -114,9 +114,7 @@ function ReconciliationReport() {
           <TableBody>
             <TableRow>
               <TableCell>Balance per bank statement</TableCell>
-              <TableCell className="money">
-                {money(r.totals.statementBalance)}
-              </TableCell>
+              <TableCell className="money">{money(r.totals.statementBalance)}</TableCell>
             </TableRow>
           </TableBody>
         </Table>
@@ -125,24 +123,18 @@ function ReconciliationReport() {
           title="Add: outstanding receipts (in the ledger, not yet on the statement)"
           items={r.outstanding}
         />
-        <p className="mt-1 money text-sm">
-          Total {money(r.totals.outstandingReceipts)}
-        </p>
+        <p className="mt-1 money text-sm">Total {money(r.totals.outstandingReceipts)}</p>
         <Section
           title="Less: outstanding payments (in the ledger, not yet on the statement)"
           items={r.outstandingPaymentsList}
         />
-        <p className="mt-1 money text-sm">
-          Total {money(r.totals.outstandingPayments)}
-        </p>
+        <p className="mt-1 money text-sm">Total {money(r.totals.outstandingPayments)}</p>
 
         <Table className="mt-4">
           <TableBody>
             <TableRow>
               <TableCell className="font-semibold">Expected balance per books</TableCell>
-              <TableCell className="money">
-                {money(r.totals.expectedBookBalance)}
-              </TableCell>
+              <TableCell className="money">{money(r.totals.expectedBookBalance)}</TableCell>
             </TableRow>
             <TableRow>
               <TableCell className="font-semibold">
@@ -158,9 +150,7 @@ function ReconciliationReport() {
               >
                 Unexplained difference
               </TableCell>
-              <TableCell className="money">
-                {money(r.totals.unexplainedDifference)}
-              </TableCell>
+              <TableCell className="money">{money(r.totals.unexplainedDifference)}</TableCell>
             </TableRow>
           </TableBody>
         </Table>

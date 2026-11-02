@@ -48,18 +48,21 @@ export function isExactTransactionImportRetry(
     expected.currencyCode !== stored.currency_code ||
     (stored.memo ?? "") !== "" ||
     expected.lines.length !== stored.lines.length
-  ) return false;
+  )
+    return false;
 
   return expected.lines.every((line, index) => {
     const prior = stored.lines[index];
-    return Boolean(prior) &&
+    return (
+      Boolean(prior) &&
       line.description === prior!.description &&
       line.accountId === prior!.account_id &&
       line.quantity === Number(prior!.quantity) &&
       line.unitPriceMinor === Number(prior!.unit_price_minor) &&
       line.taxCodeId === (prior!.tax_code_id ?? null) &&
       Number(prior!.discount_minor ?? 0) === 0 &&
-      (prior!.product_id ?? null) === null;
+      (prior!.product_id ?? null) === null
+    );
   });
 }
 
@@ -112,10 +115,77 @@ export function isVerifiedTransactionImportJournal(
   },
   journal: PostedImportJournal | null,
 ): boolean {
-  return journal !== null &&
+  return (
+    journal !== null &&
     journal.id === expected.journalId &&
     journal.company_id === expected.companyId &&
     journal.status === "posted" &&
     journal.source_type === expected.sourceType &&
-    journal.source_id === expected.documentId;
+    journal.source_id === expected.documentId
+  );
+}
+
+/**
+ * Read-only GL/subledger guard for a previously posted CSV invoice or bill.
+ * A journal with valid provenance can still be unbalanced or have the wrong
+ * AR/AP control posting. Never skip such a retry without reconciliation.
+ *
+ * All journal lines must be returned by an organisation-filtered query.
+ * A caller must fail closed on query errors or pagination/truncation.
+ * Amounts are in the original journal/document minor units, not FX-converted.
+ */
+export type TransactionImportJournalLine = {
+  company_id: string;
+  journal_id: string;
+  account_id: string;
+  debit_minor: number | string | bigint;
+  credit_minor: number | string | bigint;
+};
+
+export function isReconciledTransactionImportJournal(
+  expected: {
+    companyId: string;
+    journalId: string;
+    controlAccountId: string;
+    controlSide: "debit" | "credit";
+    expectedTotalMinor: bigint;
+    persistedTotalMinor: number | string | bigint;
+  },
+  lines: readonly TransactionImportJournalLine[] | null,
+): boolean {
+  if (!lines || lines.length < 2 || lines.length > 500 || expected.expectedTotalMinor <= 0n) {
+    return false;
+  }
+  try {
+    if (BigInt(expected.persistedTotalMinor) !== expected.expectedTotalMinor) return false;
+    let debit = 0n;
+    let credit = 0n;
+    let controlCount = 0;
+    for (const line of lines) {
+      if (
+        line.company_id !== expected.companyId ||
+        line.journal_id !== expected.journalId ||
+        !line.account_id
+      )
+        return false;
+      const dr = BigInt(line.debit_minor);
+      const cr = BigInt(line.credit_minor);
+      // Each posted GL line must be single-sided and positive.
+      if (dr < 0n || cr < 0n || dr > 0n === cr > 0n) return false;
+      debit += dr;
+      credit += cr;
+      if (line.account_id === expected.controlAccountId) {
+        controlCount++;
+        if (
+          (expected.controlSide === "debit" && (dr !== expected.expectedTotalMinor || cr !== 0n)) ||
+          (expected.controlSide === "credit" && (cr !== expected.expectedTotalMinor || dr !== 0n))
+        )
+          return false;
+      }
+    }
+    return controlCount === 1 && debit === credit;
+  } catch {
+    // Corrupt or non-integral values are not proof of an idempotent posting.
+    return false;
+  }
 }

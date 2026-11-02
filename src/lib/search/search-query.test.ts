@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
-  parseMoneySearch, minorAmountForCurrency, documentMoneyFilter,
-  bankMoneyFilter, searchDate, searchOrFilter,
+  parseMoneySearch,
+  minorAmountForCurrency,
+  documentMoneyFilter,
+  bankMoneyFilter,
+  searchDate,
+  searchOrFilter,
 } from "./search-query";
 
 describe("exact global search monetary matching", () => {
@@ -29,8 +33,9 @@ describe("exact global search monetary matching", () => {
     expect(f).toContain("and(currency_code.eq.JPY,total_minor.eq.50)");
     expect(f).toContain("and(currency_code.eq.KWD,total_minor.eq.50000)");
     expect(f).not.toContain("and(currency_code.eq.GBP,total_minor.eq.50000)");
-    expect(documentMoneyFilter(parseMoneySearch("GBP 50.00")!))
-      .toBe("and(currency_code.eq.GBP,total_minor.eq.5000)");
+    expect(documentMoneyFilter(parseMoneySearch("GBP 50.00")!)).toBe(
+      "and(currency_code.eq.GBP,total_minor.eq.5000)",
+    );
   });
   it("matches a bank transaction only within accounts holding the right currency", () => {
     const f = bankMoneyFilter(query, [
@@ -45,12 +50,15 @@ describe("exact global search monetary matching", () => {
     expect(f).not.toContain("bank_account_id.in.(gbp-bank),amount_minor.in.(50000");
   });
   it("respects a negative sign and explicit currency", () => {
-    expect(bankMoneyFilter(parseMoneySearch("-£50.00")!, [
-      { id: "gbp-bank", currency_code: "GBP" },
-      { id: "usd-bank", currency_code: "USD" },
-    ])).toBe("and(bank_account_id.in.(gbp-bank),amount_minor.in.(-5000))");
-    expect(documentMoneyFilter(parseMoneySearch("-GBP 50.00")!))
-      .toBe("and(currency_code.eq.GBP,total_minor.eq.-5000)");
+    expect(
+      bankMoneyFilter(parseMoneySearch("-£50.00")!, [
+        { id: "gbp-bank", currency_code: "GBP" },
+        { id: "usd-bank", currency_code: "USD" },
+      ]),
+    ).toBe("and(bank_account_id.in.(gbp-bank),amount_minor.in.(-5000))");
+    expect(documentMoneyFilter(parseMoneySearch("-GBP 50.00")!)).toBe(
+      "and(currency_code.eq.GBP,total_minor.eq.-5000)",
+    );
     expect(minorAmountForCurrency(parseMoneySearch("GBP 50.00")!, "USD")).toBeNull();
     expect(parseMoneySearch("USD £50.00")).toBeNull();
     expect(parseMoneySearch("GBP -50.00")!.sign).toBe("negative");
@@ -65,8 +73,9 @@ describe("exact global search monetary matching", () => {
   it("retains exact date search and safe text filtering", () => {
     expect(searchDate("2026-10-31")).toBe("2026-10-31");
     expect(searchDate("2026-02-30")).toBeNull();
-    expect(searchOrFilter(["memo"], "2026-10-31", { dateFields: ["invoice_date"] }))
-      .toContain("invoice_date.eq.2026-10-31");
+    expect(searchOrFilter(["memo"], "2026-10-31", { dateFields: ["invoice_date"] })).toContain(
+      "invoice_date.eq.2026-10-31",
+    );
     const f = searchOrFilter(["invoice_number"], "x),company_id.eq.foo");
     expect(f).not.toContain("company_id.eq.foo");
     expect(f).toContain("invoice_number.ilike.");

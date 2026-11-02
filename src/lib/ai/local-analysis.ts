@@ -99,8 +99,7 @@ export function highlightUnusualMovements(
   let threshold = minAbs;
   if (rows.length >= 5) {
     const mean = abs.reduce((a, b) => a + b, 0) / abs.length;
-    const variance =
-      abs.reduce((a, b) => a + (b - mean) ** 2, 0) / Math.max(abs.length, 1);
+    const variance = abs.reduce((a, b) => a + (b - mean) ** 2, 0) / Math.max(abs.length, 1);
     const std = Math.sqrt(variance);
     threshold = Math.max(minAbs, mean + 2 * std);
   }
@@ -113,15 +112,18 @@ export function highlightUnusualMovements(
 export const NAVIGATION_HELP: Array<{ q: RegExp; answer: string }> = [
   {
     q: /invoice|sales/i,
-    answer: "Sales → Invoices to create or authorise customer invoices. Authorising posts via the shared ledger engine.",
+    answer:
+      "Sales → Invoices to create or authorise customer invoices. Authorising posts via the shared ledger engine.",
   },
   {
     q: /bill|purchase|supplier/i,
-    answer: "Purchases → Bills for supplier bills. Authorising posts AP; payments are under Purchases → Payments.",
+    answer:
+      "Purchases → Bills for supplier bills. Authorising posts AP; payments are under Purchases → Payments.",
   },
   {
     q: /reconcil|bank/i,
-    answer: "Banking → Reconcile and Transactions. Import CSV under Banking → Import. Feeds are not connected unless configured.",
+    answer:
+      "Banking → Reconcile and Transactions. Import CSV under Banking → Import. Feeds are not connected unless configured.",
   },
   {
     q: /trial\s*balance|report|p&l|profit/i,
@@ -129,15 +131,18 @@ export const NAVIGATION_HELP: Array<{ q: RegExp; answer: string }> = [
   },
   {
     q: /period|lock|year.?end/i,
-    answer: "Accounting → Periods to lock/unlock. Locked periods reject posts. Settings holds financial year end.",
+    answer:
+      "Accounting → Periods to lock/unlock. Locked periods reject posts. Settings holds financial year end.",
   },
   {
     q: /tax|vat|gst/i,
-    answer: "Tax for rates/codes and summaries. Settings holds tax regime. There is no automatic filing integration.",
+    answer:
+      "Tax for rates/codes and summaries. Settings holds tax regime. There is no automatic filing integration.",
   },
   {
     q: /demo/i,
-    answer: "Open Demo Company from the company switcher. Reset is under Settings → Demo (demo orgs only).",
+    answer:
+      "Open Demo Company from the company switcher. Reset is under Settings → Demo (demo orgs only).",
   },
 ];
 

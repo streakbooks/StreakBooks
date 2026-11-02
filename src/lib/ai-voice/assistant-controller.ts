@@ -193,20 +193,29 @@ export class AssistantController {
     if (!field || field.token !== form.token)
       throw new Error("Select a field first. Say “go to description” or “next field”.");
     const { key, line } = field;
-    if (key === "contactId" || key === "accountId" || key === "taxCodeId" || key === "paymentTermId") {
+    if (
+      key === "contactId" ||
+      key === "accountId" ||
+      key === "taxCodeId" ||
+      key === "paymentTermId"
+    ) {
       if (clear) throw new Error("Use the field’s normal clear control for record selections.");
       const options =
-        key === "contactId" ? form.contacts : key === "paymentTermId" ? (form.paymentTerms ?? []) : key === "accountId" ? form.accounts : form.taxes;
+        key === "contactId"
+          ? form.contacts
+          : key === "paymentTermId"
+            ? (form.paymentTerms ?? [])
+            : key === "accountId"
+              ? form.accounts
+              : form.taxes;
       this.choose(form, value, options, (id) => {
         if (key === "contactId") {
           form.selectContact(id);
           if (form.module === "bill") this.focusField("bill date");
-        }
-        else if (key === "paymentTermId") {
+        } else if (key === "paymentTermId") {
           form.selectPaymentTerm?.(id);
           if (form.module === "bill") this.focusField("due date");
-        }
-        else {
+        } else {
           if (line === undefined || !form.draft.lines[line])
             throw new Error("Select a line first.");
           form.updateLines(
@@ -585,42 +594,92 @@ export class AssistantController {
         this.clearPending("Pending action cancelled. Your unsaved form is unchanged.");
         return;
       }
-      const scrollCommand = /^(?:(?:please )?(?:scroll|move|go) (up|down|left|right)(?: (?:a little|a bit|more|one page|half a page))?|page (up|down)|(?:scroll|go) to (?:the )?(top|bottom))$/i.exec(text);
+      const scrollCommand =
+        /^(?:(?:please )?(?:scroll|move|go) (up|down|left|right)(?: (?:a little|a bit|more|one page|half a page))?|page (up|down)|(?:scroll|go) to (?:the )?(top|bottom))$/i.exec(
+          text,
+        );
       if (scrollCommand) {
-        const direction = (scrollCommand[1] ?? scrollCommand[2] ?? scrollCommand[3] ?? "").toLowerCase();
+        const direction = (
+          scrollCommand[1] ??
+          scrollCommand[2] ??
+          scrollCommand[3] ??
+          ""
+        ).toLowerCase();
         const horizontal = direction === "left" || direction === "right";
         const sign = direction === "up" || direction === "left" || direction === "top" ? -1 : 1;
-        const target = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        const target =
+          document.activeElement instanceof HTMLElement ? document.activeElement : null;
         let node = target?.parentElement ?? null;
         let scroller: HTMLElement | null = null;
         while (node) {
           const style = window.getComputedStyle(node);
           const overflow = horizontal ? style.overflowX : style.overflowY;
-          const size = horizontal ? node.scrollWidth - node.clientWidth : node.scrollHeight - node.clientHeight;
-          if (size > 4 && /auto|scroll/.test(overflow)) { scroller = node; break; }
+          const size = horizontal
+            ? node.scrollWidth - node.clientWidth
+            : node.scrollHeight - node.clientHeight;
+          if (size > 4 && /auto|scroll/.test(overflow)) {
+            scroller = node;
+            break;
+          }
           node = node.parentElement;
         }
-        const amount = direction === "top" || direction === "bottom" ? 100000 : /a little|a bit/i.test(text) ? 160 : Math.round((horizontal ? window.innerWidth : window.innerHeight) * (/half a page/i.test(text) ? 0.45 : 0.75));
-        const options = { behavior: "smooth" as const, ...(horizontal ? { left: sign * amount } : { top: sign * amount }) };
+        const amount =
+          direction === "top" || direction === "bottom"
+            ? 100000
+            : /a little|a bit/i.test(text)
+              ? 160
+              : Math.round(
+                  (horizontal ? window.innerWidth : window.innerHeight) *
+                    (/half a page/i.test(text) ? 0.45 : 0.75),
+                );
+        const options = {
+          behavior: "smooth" as const,
+          ...(horizontal ? { left: sign * amount } : { top: sign * amount }),
+        };
         if (scroller) scroller.scrollBy(options);
         else window.scrollBy(options);
         this.set({ message: "Scrolled " + direction + ". Signal remains active." });
         return;
       }
-      if (/^(?:enter|input|type|dictate|write|fill in)(?: the)? (?:text|value|data)(?: here| now)?$/i.test(text)) {
-        if (!this.snapshot.field) throw new Error("Choose a bill field first, such as go to memo, then say enter text.");
-        this.set({ message: "Ready for " + this.snapshot.field.label + ". Say the text or value now. Nothing is saved yet." });
+      if (
+        /^(?:enter|input|type|dictate|write|fill in)(?: the)? (?:text|value|data)(?: here| now)?$/i.test(
+          text,
+        )
+      ) {
+        if (!this.snapshot.field)
+          throw new Error("Choose a bill field first, such as go to memo, then say enter text.");
+        this.set({
+          message:
+            "Ready for " +
+            this.snapshot.field.label +
+            ". Say the text or value now. Nothing is saved yet.",
+        });
         return;
       }
       // A bare "choose supplier" opens the registered lookup instead of guessing a record.
-      if (/^(?:choose|select|pick|find|search for|open) (?:a |the )?(?:supplier|vendor|customer|payment terms?|terms)$/i.test(text)) {
+      if (
+        /^(?:choose|select|pick|find|search for|open) (?:a |the )?(?:supplier|vendor|customer|payment terms?|terms)$/i.test(
+          text,
+        )
+      ) {
         this.clearPending();
-        const subject = /terms/i.test(text) ? "payment terms" : /customer/i.test(text) ? "customer" : "supplier";
+        const subject = /terms/i.test(text)
+          ? "payment terms"
+          : /customer/i.test(text)
+            ? "customer"
+            : "supplier";
         this.focusField(subject);
         return;
       }
-      const focusQuery = /^(?:go to|focus(?: on)?|select field|select the field|enter|click on|move to|choose|open|show|expand) (?:the )?(.+?)(?: field| dropdown| list| selector)?$/i.exec(text)?.[1];
-      const direction = /^(?:(?:go to|move to|focus on|select|jump to) (?:the )?)?(next|previous|prev) (?:field|input|tab)$/i.exec(text)?.[1]?.toLowerCase().replace(/^prev$/, "previous");
+      const focusQuery =
+        /^(?:go to|focus(?: on)?|select field|select the field|enter|click on|move to|choose|open|show|expand) (?:the )?(.+?)(?: field| dropdown| list| selector)?$/i.exec(
+          text,
+        )?.[1];
+      const direction =
+        /^(?:(?:go to|move to|focus on|select|jump to) (?:the )?)?(next|previous|prev) (?:field|input|tab)$/i
+          .exec(text)?.[1]
+          ?.toLowerCase()
+          .replace(/^prev$/, "previous");
       if (
         (direction && (this.form || !/\\btab\\b/i.test(text))) ||
         (focusQuery &&
@@ -638,9 +697,20 @@ export class AssistantController {
         await this.dictateField("", true);
         return;
       }
-      if (/^(?:dictate|input text|enter text|type text|input value|enter value|type value|fill in|write|write text|fill|type|input|enter) /i.test(text)) {
+      if (
+        /^(?:dictate|input text|enter text|type text|input value|enter value|type value|fill in|write|write text|fill|type|input|enter) /i.test(
+          text,
+        )
+      ) {
         this.clearPending();
-        await this.dictateField(input.trim().replace(/^(?:dictate|input text|enter text|type text|input value|enter value|type value|fill in|write|write text|fill|type|input|enter)\s+/i, ""));
+        await this.dictateField(
+          input
+            .trim()
+            .replace(
+              /^(?:dictate|input text|enter text|type text|input value|enter value|type value|fill in|write|write text|fill|type|input|enter)\s+/i,
+              "",
+            ),
+        );
         return;
       }
       if (this.clarification) {
@@ -722,7 +792,10 @@ export class AssistantController {
         this.set({ message: "The saved draft is open." });
         return;
       }
-      const termQuery = /^(?:select|choose|use|set|pick) (?:the )?(?:payment terms?|terms) (?:to )?(.+)$/i.exec(text)?.[1];
+      const termQuery =
+        /^(?:select|choose|use|set|pick) (?:the )?(?:payment terms?|terms) (?:to )?(.+)$/i.exec(
+          text,
+        )?.[1];
       if (termQuery && this.form?.module === "bill") {
         const form = this.getEditable();
         if (!form.selectPaymentTerm) throw new Error("Payment terms are unavailable on this bill.");

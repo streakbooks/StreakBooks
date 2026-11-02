@@ -17,8 +17,9 @@ import {
   getIntegrationReadiness,
   getPlatformDetails,
   exportPlatformRecords,
+  getPlatformSubscriptionCohorts,
 } from "@/lib/platform/platform.functions";
-import { rowsCsv, recordFields } from "@/lib/platform/catalog";
+import { rowsCsv, recordFields, platformColumnLabel } from "@/lib/platform/catalog";
 import type { PlatformContext, Row, Section } from "@/lib/platform/catalog";
 import { PlatformEditor } from "./PlatformEditor";
 import { PlatformBulkActions } from "./PlatformBulkActions";
@@ -72,6 +73,13 @@ export function PlatformResource({
     queryKey: ["platform", "integration-readiness"],
     queryFn: () => readinessLoad(),
     enabled: section === "integrations",
+    retry: false,
+  });
+  const loadCohorts = useServerFn(getPlatformSubscriptionCohorts);
+  const cohorts = useQuery({
+    queryKey: ["platform", "subscription-cohorts"],
+    queryFn: () => loadCohorts(),
+    enabled: section === "subscriptions",
     retry: false,
   });
   const canManage = context.permissions.includes(`${section}.manage`);
@@ -255,6 +263,51 @@ export function PlatformResource({
           {exportError}
         </p>
       ) : null}
+      {section === "subscriptions" ? (
+        <section className="rounded-xl border bg-card p-5 text-sm">
+          <h2 className="font-medium">Start months</h2>
+          <p className="mt-1 text-muted-foreground">
+            Counts use a stored start time. They are not revenue, lifetime value, or fees. The list
+            column is the last update.
+          </p>
+          {cohorts.isPending ? (
+            <p className="mt-2" role="status">
+              Checking start months…
+            </p>
+          ) : cohorts.isError ? (
+            <p className="mt-2" role="alert">
+              {cohorts.error instanceof Error ? cohorts.error.message : "Start months failed."}
+            </p>
+          ) : cohorts.data?.message ? (
+            <p className="mt-2" role="status">
+              {cohorts.data.message}
+            </p>
+          ) : cohorts.data &&
+            cohorts.data.unknownStart === 0 &&
+            cohorts.data.months.length === 0 ? (
+            <p className="mt-2" role="status">
+              No subscriptions to group. This is not a zero revenue balance.
+            </p>
+          ) : (
+            <>
+              <p className="mt-2" role="status">
+                {cohorts.data?.unknownStart
+                  ? `${cohorts.data.unknownStart.toLocaleString()} subscriptions have no stored start and are not placed in a month.`
+                  : "Every subscription in this count has a stored start."}
+              </p>
+              {cohorts.data?.months.length ? (
+                <ul className="mt-2 space-y-1">
+                  {cohorts.data.months.map((month) => (
+                    <li key={month.month}>
+                      {month.month}: {month.total.toLocaleString()} subscriptions.
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </>
+          )}
+        </section>
+      ) : null}
       {query.isPending ? (
         <p role="status" className="p-8">
           Loading records…
@@ -280,7 +333,7 @@ export function PlatformResource({
                 ) : null}
                 {columns.map((c) => (
                   <th key={c} scope="col" className="whitespace-nowrap p-3 font-medium">
-                    {c.replaceAll("_", " ")}
+                    {platformColumnLabel(section, c)}
                   </th>
                 ))}
                 <th scope="col" className="p-3">

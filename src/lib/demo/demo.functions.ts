@@ -1,16 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import {
-  assertCompanyMember,
-  assertCompanyPermission,
-} from "@/lib/assert-company-access";
+import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
 import { seedDemoCompanyData } from "@/lib/demo/seed-demo";
-import {
-  DEMO_EXPECTED,
-  DEMO_MODULE_STATUS,
-  DEMO_COMPANY_NAME,
-} from "@/lib/demo/demo-dataset";
+import { DEMO_EXPECTED, DEMO_MODULE_STATUS, DEMO_COMPANY_NAME } from "@/lib/demo/demo-dataset";
 import {
   buildAgingReport,
   buildBalanceSheet,
@@ -49,9 +42,12 @@ export const reseedDemoCompany = createServerFn({ method: "POST" })
       throw new Error("Reseed denied: only Demo Company can be reseeded");
     }
 
-    const { error } = await context.supabase.rpc("reset_demo_company" as never, {
-      _company_id: data.companyId,
-    } as never);
+    const { error } = await context.supabase.rpc(
+      "reset_demo_company" as never,
+      {
+        _company_id: data.companyId,
+      } as never,
+    );
     if (error) throw new Error(error.message);
 
     const seeded = await seedDemoCompanyData(context.supabase, {
@@ -196,17 +192,21 @@ export const getDemoLedgerSnapshot = createServerFn({ method: "GET" })
     // Aging from open invoice docs when present
     const { data: invs } = await context.supabase
       .from("sales_invoices" as never)
-      .select("id, contact_id, due_date, total_minor, amount_paid_minor, amount_credited_minor, status" as never)
+      .select(
+        "id, contact_id, due_date, total_minor, amount_paid_minor, amount_credited_minor, status" as never,
+      )
       .eq("company_id" as never, data.companyId as never);
-    const agingDocs = ((invs ?? []) as Array<{
-      id: string;
-      contact_id: string;
-      due_date: string;
-      total_minor: number;
-      amount_paid_minor: number;
-      amount_credited_minor: number;
-      status: string;
-    }>)
+    const agingDocs = (
+      (invs ?? []) as Array<{
+        id: string;
+        contact_id: string;
+        due_date: string;
+        total_minor: number;
+        amount_paid_minor: number;
+        amount_credited_minor: number;
+        status: string;
+      }>
+    )
       .filter((i) => i.status !== "void" && i.status !== "draft")
       .map((i) => ({
         id: i.id,
@@ -215,9 +215,7 @@ export const getDemoLedgerSnapshot = createServerFn({ method: "GET" })
         doc_date: i.due_date,
         due_date: i.due_date,
         reference: null as string | null,
-        outstanding_minor: BigInt(
-          i.total_minor - i.amount_paid_minor - i.amount_credited_minor,
-        ),
+        outstanding_minor: BigInt(i.total_minor - i.amount_paid_minor - i.amount_credited_minor),
       }))
       .filter((d) => d.outstanding_minor > 0n);
     const arAging = buildAgingReport(agingDocs, { asOf });

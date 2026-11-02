@@ -603,9 +603,10 @@ export const LIBRARY_ACCOUNTS: LibraryAccount[] = [
   }),
 ];
 
-export const LIBRARY_BY_KEY = Object.fromEntries(
-  LIBRARY_ACCOUNTS.map((a) => [a.key, a]),
-) as Record<string, LibraryAccount>;
+export const LIBRARY_BY_KEY = Object.fromEntries(LIBRARY_ACCOUNTS.map((a) => [a.key, a])) as Record<
+  string,
+  LibraryAccount
+>;
 
 const svc = ["rev_service", "exp_wages", "exp_software", "exp_professional", "exp_marketing"];
 const ecom = [
@@ -740,14 +741,11 @@ export const INDUSTRIES: IndustryDef[] = [
     [...svc, "rev_subscription", "exp_software"],
     ["liab_deferred_revenue"],
   ),
-  industry(
-    "amazon_fba",
-    "Amazon FBA / FBM",
-    "ecommerce",
-    "Amazon marketplace sellers.",
-    ecom,
-    ["cogs_landed", "contra_discounts", "exp_insurance"],
-  ),
+  industry("amazon_fba", "Amazon FBA / FBM", "ecommerce", "Amazon marketplace sellers.", ecom, [
+    "cogs_landed",
+    "contra_discounts",
+    "exp_insurance",
+  ]),
   industry(
     "shopify_dtc",
     "Shopify / DTC Brand",
@@ -769,7 +767,13 @@ export const INDUSTRIES: IndustryDef[] = [
     "Dropshipping",
     "ecommerce",
     "Dropship and print-on-demand sellers.",
-    ["rev_marketplace", "cogs_fulfilment", "cogs_marketplace_fees", "exp_marketing", "contra_refunds"],
+    [
+      "rev_marketplace",
+      "cogs_fulfilment",
+      "cogs_marketplace_fees",
+      "exp_marketing",
+      "contra_refunds",
+    ],
     ["asset_clearing_marketplace"],
   ),
   industry(
@@ -884,14 +888,10 @@ export const INDUSTRIES: IndustryDef[] = [
     hospitality,
     ["exp_vehicle"],
   ),
-  industry(
-    "saas",
-    "SaaS / Software",
-    "technology",
-    "Software-as-a-service and apps.",
-    tech,
-    ["exp_professional", "contra_refunds"],
-  ),
+  industry("saas", "SaaS / Software", "technology", "Software-as-a-service and apps.", tech, [
+    "exp_professional",
+    "contra_refunds",
+  ]),
   industry(
     "web_hosting_cloud",
     "Web Hosting & Cloud Services",
@@ -956,14 +956,10 @@ export const INDUSTRIES: IndustryDef[] = [
     [...media, "liab_customer_deposits", "cogs_subcontract"],
     ["exp_travel"],
   ),
-  industry(
-    "salon_spa",
-    "Hair, Beauty & Spa",
-    "personal_care",
-    "Salons and spas.",
-    wellness,
-    ["cogs_materials", "exp_utilities"],
-  ),
+  industry("salon_spa", "Hair, Beauty & Spa", "personal_care", "Salons and spas.", wellness, [
+    "cogs_materials",
+    "exp_utilities",
+  ]),
   industry(
     "gym_fitness",
     "Gym & Fitness",
@@ -1051,9 +1047,10 @@ export const INDUSTRIES: IndustryDef[] = [
   ),
 ];
 
-export const INDUSTRIES_BY_CODE = Object.fromEntries(
-  INDUSTRIES.map((i) => [i.code, i]),
-) as Record<string, IndustryDef>;
+export const INDUSTRIES_BY_CODE = Object.fromEntries(INDUSTRIES.map((i) => [i.code, i])) as Record<
+  string,
+  IndustryDef
+>;
 
 export const CATALOG_VERSION = "2026.10.20.1";
 

@@ -166,7 +166,9 @@ function FixedAssetsPage() {
               Capitalise from a bill
             </Button>
             <Button asChild size="sm" variant="outline">
-              <Link to="/imports" search={{ module: "fixed_assets" }}>Import fixed assets</Link>
+              <Link to="/imports" search={{ module: "fixed_assets" }}>
+                Import fixed assets
+              </Link>
             </Button>
           </div>
           {d.assets.length === 0 ? (

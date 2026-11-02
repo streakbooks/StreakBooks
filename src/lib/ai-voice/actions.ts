@@ -128,10 +128,17 @@ export function spokenDate(input: string, today: string, dateFormat?: string): s
       const last = words.split(" ").at(-1);
       return String(2020 + ["four", "five", "six", "seven", "eight", "nine"].indexOf(last!) + 4);
     })
-    .replace(/\b(two thousand (?:twenty )?(?:four|five|six|seven|eight|nine))\b/g, (_, words: string) => {
-      const last = words.split(" ").at(-1);
-      return String((words.includes("twenty") ? 2020 : 2000) + ["four", "five", "six", "seven", "eight", "nine"].indexOf(last!) + 4);
-    })
+    .replace(
+      /\b(two thousand (?:twenty )?(?:four|five|six|seven|eight|nine))\b/g,
+      (_, words: string) => {
+        const last = words.split(" ").at(-1);
+        return String(
+          (words.includes("twenty") ? 2020 : 2000) +
+            ["four", "five", "six", "seven", "eight", "nine"].indexOf(last!) +
+            4,
+        );
+      },
+    )
     .replace(/(\d)(?=[a-z])|([a-z])(?=\d)/g, "$1$2 ")
     .replace(/\s+/g, " ")
     .trim();
@@ -153,9 +160,9 @@ export function spokenDate(input: string, today: string, dateFormat?: string): s
     date.setUTCDate(date.getUTCDate() + offset);
     return date.toISOString().slice(0, 10);
   }
-  if ((match = /^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})$/.exec(text)))
+  if ((match = /^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/.exec(text)))
     [year, month, day] = [Number(match[1]), Number(match[2]), Number(match[3])];
-  else if ((match = /^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/.exec(text))) {
+  else if ((match = /^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/.exec(text))) {
     if (dateFormat !== "DD/MM/YYYY" && dateFormat !== "MM/DD/YYYY") return null;
     year = Number(match[3]);
     [day, month] =
@@ -181,7 +188,10 @@ export function spokenDate(input: string, today: string, dateFormat?: string): s
     if (!match) return null;
     year = Number(match[5]);
     const spokenMonth = match[1] ?? match[4] ?? "";
-    month = months.findIndex((name) => name === spokenMonth || name.slice(0, 3) === spokenMonth.replace(/\.$/, "")) + 1;
+    month =
+      months.findIndex(
+        (name) => name === spokenMonth || name.slice(0, 3) === spokenMonth.replace(/\.$/, ""),
+      ) + 1;
     day = Number(match[2] ?? match[3]);
   }
   if (year < 1900 || year > 2200 || month < 1 || month > 12 || day < 1 || day > 31) return null;

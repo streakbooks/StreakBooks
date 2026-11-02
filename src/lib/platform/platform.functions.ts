@@ -167,3 +167,147 @@ export const exportPlatformRecords = createServerFn({ method: "POST" })
       ),
     );
   });
+
+const entitlementChange = z.object({
+  feature: z.string().trim().min(2).max(64),
+  scope: z.enum(["user", "business", "firm", "plan", "global"]),
+  scopeId: z.string().uuid().nullable().default(null),
+  planCode: z.string().trim().max(64).nullable().default(null),
+  source: z.enum(["kill_switch", "suspension", "revoke", "grant", "addon", "trial"]),
+  effect: z.enum(["allow", "deny"]),
+  startsAt: z.string().datetime().nullable().default(null),
+  expiresAt: z.string().datetime().nullable().default(null),
+  reason: z.string().trim().min(3).max(1000),
+  notes: z.string().trim().max(2000).default(""),
+});
+
+export const setPlatformEntitlement = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((v: unknown) => entitlementChange.parse(v))
+  .handler(async ({ context, data }) =>
+    unwrap<{ ok: true; pending: boolean; id: string }>(
+      await context.supabase.rpc(
+        "platform_set_entitlement" as never,
+        {
+          _feature: data.feature,
+          _scope: data.scope,
+          _scope_id: data.scopeId,
+          _plan_code: data.planCode,
+          _source: data.source,
+          _effect: data.effect,
+          _starts: data.startsAt,
+          _expires: data.expiresAt,
+          _reason: data.reason,
+          _notes: data.notes,
+        } as never,
+      ),
+    ),
+  );
+
+export const listPlatformApprovals = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) =>
+    unwrap<{ rows: Row[] }>(await context.supabase.rpc("platform_list_approvals" as never)),
+  );
+
+export const decidePlatformApproval = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((v: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        decision: z.enum(["approved", "rejected"]),
+        reason: z.string().trim().min(3).max(1000),
+      })
+      .parse(v),
+  )
+  .handler(async ({ context, data }) =>
+    unwrap<{ ok: true }>(
+      await context.supabase.rpc(
+        "platform_decide_approval" as never,
+        { _id: data.id, _decision: data.decision, _reason: data.reason } as never,
+      ),
+    ),
+  );
+
+const reconciliationRow = z.object({
+  currency: z.string().regex(/^[A-Z]{3}$/),
+  overviewMinor: z.number().int().nonnegative(),
+  storedMinor: z.number().int().nonnegative(),
+  differenceMinor: z.number().int(),
+});
+
+const reconciliationPayload = z.object({
+  state: z.enum(["forbidden", "empty", "match", "mismatch", "uncovered"]),
+  rows: z.array(reconciliationRow),
+  missingFromStore: z.number().int().nonnegative(),
+  extraInStore: z.number().int().nonnegative(),
+  drift: z.number().int().nonnegative(),
+});
+
+export const getPlatformMrrReconciliation = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    setResponseHeader("Cache-Control", "private, no-store");
+    const result = await context.supabase.rpc("platform_reconcile_mrr" as never);
+    if (result.error) {
+      if (result.error.code === "42883" || result.error.code === "PGRST202") {
+        return {
+          ready: false as const,
+          state: "unavailable" as const,
+          rows: [],
+          missingFromStore: 0,
+          extraInStore: 0,
+          drift: 0,
+          message:
+            "Stored MRR reconciliation appears after the movement migration is applied. This is not a zero balance.",
+        };
+      }
+      throw new Error(result.error.message);
+    }
+    const parsed = reconciliationPayload.parse(result.data);
+    return { ready: true as const, ...parsed, message: null };
+  });
+
+const cohortCount = z.number().int().nonnegative();
+const cohortMonth = z.object({
+  month: z.string().regex(/^\d{4}-\d{2}$/),
+  trialing: cohortCount,
+  active: cohortCount,
+  past_due: cohortCount,
+  cancelled: cohortCount,
+  expired: cohortCount,
+  complimentary: cohortCount,
+  paused: cohortCount,
+  other: cohortCount,
+  total: cohortCount,
+});
+const cohortPayload = z.object({
+  unknownStart: cohortCount,
+  months: z.array(cohortMonth),
+});
+
+export const getPlatformSubscriptionCohorts = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    setResponseHeader("Cache-Control", "private, no-store");
+    const result = await context.supabase.rpc("platform_subscription_cohorts" as never);
+    if (result.error) {
+      if (
+        result.error.code === "42883" ||
+        result.error.code === "PGRST202" ||
+        result.error.code === "42703"
+      ) {
+        return {
+          ready: false as const,
+          unknownStart: 0,
+          months: [],
+          message:
+            "Subscription start months appear after the start-date migration is applied. Existing rows are not assigned to a month from their last update. This is not revenue.",
+        };
+      }
+      throw new Error(result.error.message);
+    }
+    const parsed = cohortPayload.parse(result.data);
+    return { ready: true as const, ...parsed, message: null };
+  });

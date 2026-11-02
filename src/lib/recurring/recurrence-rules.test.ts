@@ -36,17 +36,23 @@ describe("recurrence rules", () => {
   });
 
   it("crosses the year boundary for daily recurrence", () => {
-    expect(nextOccurrenceFromSpec(spec({ startDate: "2026-12-31", frequency: "daily" }), "2026-12-31")).toBe(
-      "2027-01-01",
-    );
+    expect(
+      nextOccurrenceFromSpec(spec({ startDate: "2026-12-31", frequency: "daily" }), "2026-12-31"),
+    ).toBe("2027-01-01");
   });
 
   it("supports fortnightly, half-yearly and custom intervals", () => {
     expect(
-      nextOccurrenceFromSpec(spec({ startDate: "2026-01-01", frequency: "fortnightly" }), "2026-01-01"),
+      nextOccurrenceFromSpec(
+        spec({ startDate: "2026-01-01", frequency: "fortnightly" }),
+        "2026-01-01",
+      ),
     ).toBe("2026-01-15");
     expect(
-      nextOccurrenceFromSpec(spec({ startDate: "2026-01-15", frequency: "half_yearly" }), "2026-01-15"),
+      nextOccurrenceFromSpec(
+        spec({ startDate: "2026-01-15", frequency: "half_yearly" }),
+        "2026-01-15",
+      ),
     ).toBe("2026-07-15");
     expect(
       nextOccurrenceFromSpec(
@@ -84,7 +90,9 @@ describe("recurrence rules", () => {
   });
 
   it("keeps the civil date across a daylight-saving instant", () => {
-    expect(civilDateInTimeZone(new Date("2026-03-08T06:30:00.000Z"), "America/New_York")).toBe("2026-03-08");
+    expect(civilDateInTimeZone(new Date("2026-03-08T06:30:00.000Z"), "America/New_York")).toBe(
+      "2026-03-08",
+    );
     expect(civilDateInTimeZone(new Date("2026-03-08T06:30:00.000Z"), "UTC")).toBe("2026-03-08");
   });
 });

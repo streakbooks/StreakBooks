@@ -26,7 +26,14 @@ describe("role permissions matrix", () => {
   });
 
   it("keeps tenant boundary permission company.view on all roles", () => {
-    for (const role of ["owner", "admin", "accountant", "bookkeeper", "staff", "read_only"] as const) {
+    for (const role of [
+      "owner",
+      "admin",
+      "accountant",
+      "bookkeeper",
+      "staff",
+      "read_only",
+    ] as const) {
       expect(roleHasPermission(role, "company.view")).toBe(true);
     }
   });

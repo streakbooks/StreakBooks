@@ -276,7 +276,9 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
         actions={
           <div className="flex flex-wrap gap-2">
             <Button size="sm" variant="outline" asChild>
-              <Link to="/imports" search={{ module: "products" }}>Import catalogue CSV</Link>
+              <Link to="/imports" search={{ module: "products" }}>
+                Import catalogue CSV
+              </Link>
             </Button>
             <Button size="sm" onClick={openCreate} disabled={!canManage}>
               <Plus className="size-4" />
@@ -296,17 +298,24 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
       <div className="mb-4 grid gap-3 sm:grid-cols-3">
         <div className="rounded-lg border bg-card p-4">
           <p className="text-xs text-muted-foreground">Items in current results</p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums">{rows.length}{rows.length >= limit ? "+" : ""}</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums">
+            {rows.length}
+            {rows.length >= limit ? "+" : ""}
+          </p>
           <p className="text-xs text-muted-foreground">Respects filters and current result limit</p>
         </div>
         <div className="rounded-lg border bg-card p-4">
           <p className="text-xs text-muted-foreground">Services in results</p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums">{rows.filter((p) => p.kind === "service").length}</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums">
+            {rows.filter((p) => p.kind === "service").length}
+          </p>
           <p className="text-xs text-muted-foreground">Non-stock services</p>
         </div>
         <div className="rounded-lg border bg-card p-4">
           <p className="text-xs text-muted-foreground">Non-inventory items in results</p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums">{rows.filter((p) => p.kind === "non_inventory").length}</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums">
+            {rows.filter((p) => p.kind === "non_inventory").length}
+          </p>
           <p className="text-xs text-muted-foreground">No stock valuation implied</p>
         </div>
       </div>

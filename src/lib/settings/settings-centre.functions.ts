@@ -107,15 +107,18 @@ export const upsertOrganisationConfig = createServerFn({ method: "POST" })
       document = toSettingsDocument(parsed.data);
     }
 
-    const { data: result, error } = await context.supabase.rpc("upsert_organisation_config" as never, {
-      _company_id: data.companyId,
-      _category: data.category,
-      _document: document,
-      _expected_version: data.expectedVersion,
-      _reason: data.reason || null,
-      _source: "ui",
-      _request_id: null,
-    } as never);
+    const { data: result, error } = await context.supabase.rpc(
+      "upsert_organisation_config" as never,
+      {
+        _company_id: data.companyId,
+        _category: data.category,
+        _document: document,
+        _expected_version: data.expectedVersion,
+        _reason: data.reason || null,
+        _source: "ui",
+        _request_id: null,
+      } as never,
+    );
     if (error) throw new Error(error.message);
     const typed = result as { category: string; document: unknown; version: number };
     return {
@@ -132,10 +135,13 @@ export const listOrganisationFeatures = createServerFn({ method: "GET" })
   }))
   .handler(async ({ data, context }): Promise<ComputedFeatureState[]> => {
     await assertCompanyMember(context.supabase, data.companyId);
-    const canEdit = await context.supabase.rpc("has_company_permission" as never, {
-      _company_id: data.companyId,
-      _permission: "company.settings.edit",
-    } as never);
+    const canEdit = await context.supabase.rpc(
+      "has_company_permission" as never,
+      {
+        _company_id: data.companyId,
+        _permission: "company.settings.edit",
+      } as never,
+    );
 
     const { data: rows, error } = await context.supabase
       .from("organisation_features" as never)
@@ -144,9 +150,13 @@ export const listOrganisationFeatures = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
 
     const byKey = new Map(
-      ((rows ?? []) as Array<{ feature_key: string; enabled: boolean; config: Record<string, unknown> }>).map(
-        (r) => [r.feature_key, r],
-      ),
+      (
+        (rows ?? []) as Array<{
+          feature_key: string;
+          enabled: boolean;
+          config: Record<string, unknown>;
+        }>
+      ).map((r) => [r.feature_key, r]),
     );
 
     const { data: configs } = await context.supabase
@@ -154,10 +164,9 @@ export const listOrganisationFeatures = createServerFn({ method: "GET" })
       .select("category, document" as never)
       .eq("company_id" as never, data.companyId as never);
     const configByCat = new Map(
-      ((configs ?? []) as Array<{ category: string; document: Record<string, unknown> }>).map((c) => [
-        c.category,
-        c.document,
-      ]),
+      ((configs ?? []) as Array<{ category: string; document: Record<string, unknown> }>).map(
+        (c) => [c.category, c.document],
+      ),
     );
 
     const editOk = Boolean(canEdit.data);
@@ -175,7 +184,8 @@ export const listOrganisationFeatures = createServerFn({ method: "GET" })
       }
       if (def.requiresConfigCategory === "automation" && enabled) {
         const doc = configByCat.get("automation") ?? {};
-        configComplete = (doc["ai_mode"] as string | undefined) !== "off" && Boolean(doc["ai_mode"]);
+        configComplete =
+          (doc["ai_mode"] as string | undefined) !== "off" && Boolean(doc["ai_mode"]);
       }
       if (def.requiresConfigCategory === "products" && enabled) {
         const doc = configByCat.get("products") ?? {};
@@ -218,14 +228,17 @@ export const setOrganisationFeature = createServerFn({ method: "POST" })
       }
     }
 
-    const { data: result, error } = await context.supabase.rpc("set_organisation_feature" as never, {
-      _company_id: data.companyId,
-      _feature_key: data.featureKey,
-      _enabled: data.enabled,
-      _config: {},
-      _reason: data.reason || null,
-      _source: "ui",
-    } as never);
+    const { data: result, error } = await context.supabase.rpc(
+      "set_organisation_feature" as never,
+      {
+        _company_id: data.companyId,
+        _feature_key: data.featureKey,
+        _enabled: data.enabled,
+        _config: {},
+        _reason: data.reason || null,
+        _source: "ui",
+      } as never,
+    );
     if (error) throw new Error(error.message);
     return result as { feature_key: string; enabled: boolean };
   });
@@ -288,14 +301,17 @@ export const setLockPolicy = createServerFn({ method: "POST" })
     const impact = evaluateSettingsChange({ changeType: "change_lock_policy" });
     if (impact.verdict === "blocked") throw new Error(impact.explanation);
 
-    const { data: result, error } = await context.supabase.rpc("set_organisation_lock_policy" as never, {
-      _company_id: data.companyId,
-      _lock_date_everyone: data.lockDateEveryone,
-      _lock_date_except_advisors: data.lockDateExceptAdvisors,
-      _conversion_date: data.conversionDate,
-      _require_override_reason: data.requireOverrideReason,
-      _reason: data.reason,
-    } as never);
+    const { data: result, error } = await context.supabase.rpc(
+      "set_organisation_lock_policy" as never,
+      {
+        _company_id: data.companyId,
+        _lock_date_everyone: data.lockDateEveryone,
+        _lock_date_except_advisors: data.lockDateExceptAdvisors,
+        _conversion_date: data.conversionDate,
+        _require_override_reason: data.requireOverrideReason,
+        _reason: data.reason,
+      } as never,
+    );
     if (error) throw new Error(error.message);
     return result;
   });
@@ -342,7 +358,8 @@ export const getSettingsOverview = createServerFn({ method: "GET" })
     }
     warnings.push({
       severity: "medium",
-      message: "Email delivery is not configured — invitations and reminders cannot be sent outbound.",
+      message:
+        "Email delivery is not configured — invitations and reminders cannot be sent outbound.",
       href: "/settings?section=integrations",
     });
     warnings.push({
@@ -351,7 +368,9 @@ export const getSettingsOverview = createServerFn({ method: "GET" })
       href: "/settings?section=integrations",
     });
 
-    const incomplete = features.filter((f) => f.state === "enabled_needs_config").map((f) => f.label);
+    const incomplete = features
+      .filter((f) => f.state === "enabled_needs_config")
+      .map((f) => f.label);
 
     const lockPolicy = (lock as {
       lock_date_everyone: string | null;
@@ -364,13 +383,13 @@ export const getSettingsOverview = createServerFn({ method: "GET" })
     };
 
     return {
-      company: (company as {
+      company: company as {
         name: string;
         base_currency: string;
         fiscal_year_end_month: number;
         tax_regime: string | null;
         is_demo: boolean;
-      } | null),
+      } | null,
       lockPolicy,
       memberCount: memberCount ?? 0,
       warnings,
@@ -415,17 +434,19 @@ export const listSettingsChangeLog = createServerFn({ method: "GET" })
     }
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    return ((rows ?? []) as Array<{
-      id: string;
-      category: string;
-      setting_key: string;
-      old_value: unknown;
-      new_value: unknown;
-      reason: string | null;
-      source: string;
-      created_at: string;
-      actor_user_id: string | null;
-    }>).map((r) => ({
+    return (
+      (rows ?? []) as Array<{
+        id: string;
+        category: string;
+        setting_key: string;
+        old_value: unknown;
+        new_value: unknown;
+        reason: string | null;
+        source: string;
+        created_at: string;
+        actor_user_id: string | null;
+      }>
+    ).map((r) => ({
       id: r.id,
       category: r.category,
       setting_key: r.setting_key,
@@ -440,18 +461,16 @@ export const listSettingsChangeLog = createServerFn({ method: "GET" })
 
 export const evaluateFeatureChange = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; featureKey: string; enabled: boolean }) => ({
-      companyId: assertUuid(input.companyId),
-      featureKey: String(input.featureKey || "").slice(0, 64),
-      enabled: Boolean(input.enabled),
-    }),
-  )
+  .inputValidator((input: { companyId: string; featureKey: string; enabled: boolean }) => ({
+    companyId: assertUuid(input.companyId),
+    featureKey: String(input.featureKey || "").slice(0, 64),
+    enabled: Boolean(input.enabled),
+  }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
 
     let foreignCurrencyBalances = 0;
-    let openFxDocuments = 0;
+    const openFxDocuments = 0;
     if (data.featureKey === "multicurrency" && !data.enabled) {
       const { count } = await context.supabase
         .from("company_currencies" as never)
@@ -476,11 +495,14 @@ export const writeOrganisationSecret = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "company.settings.edit");
-    const { data: result, error } = await context.supabase.rpc("write_organisation_secret" as never, {
-      _company_id: data.companyId,
-      _secret_key: data.secretKey,
-      _plaintext: data.plaintext,
-    } as never);
+    const { data: result, error } = await context.supabase.rpc(
+      "write_organisation_secret" as never,
+      {
+        _company_id: data.companyId,
+        _secret_key: data.secretKey,
+        _plaintext: data.plaintext,
+      } as never,
+    );
     if (error) throw new Error(error.message);
     return result as { secret_key: string; last4: string; rotated: boolean };
   });
@@ -502,9 +524,17 @@ export const isDimensionFeatureEnabled = createServerFn({ method: "GET" })
       .maybeSingle();
     if (!row) {
       // Default: classes/locations/projects on for backward compatibility
-      return ["classes", "locations", "projects", "purchase_orders", "billable_expenses", "discounts", "recurring_transactions", "multicurrency", "advanced_approvals"].includes(
-        data.featureKey,
-      );
+      return [
+        "classes",
+        "locations",
+        "projects",
+        "purchase_orders",
+        "billable_expenses",
+        "discounts",
+        "recurring_transactions",
+        "multicurrency",
+        "advanced_approvals",
+      ].includes(data.featureKey);
     }
     return Boolean((row as { enabled: boolean }).enabled);
   });

@@ -11,7 +11,10 @@ import {
   parseScheduleOptions,
   resolveGenerationPolicy,
 } from "@/lib/recurring/recurring-schedule-options";
-import { generatedDraftHeader, type RecurringTemplateDocument } from "@/lib/purchases/recurring-template";
+import {
+  generatedDraftHeader,
+  type RecurringTemplateDocument,
+} from "@/lib/purchases/recurring-template";
 
 export type BillLineIn = {
   description: string;
@@ -89,11 +92,7 @@ export async function generatePurchaseBillFromRecurring(
   if (schedule.is_paused) throw new Error("Recurring bill is inactive");
 
   const scheduledDate = r.next_due_date;
-  const idempotencyKey = buildOccurrenceIdempotencyKey(
-    "purchase_bill",
-    scheduleId,
-    scheduledDate,
-  );
+  const idempotencyKey = buildOccurrenceIdempotencyKey("purchase_bill", scheduleId, scheduledDate);
 
   const { data: claimRaw, error: claimErr } = await supabase.rpc(
     "recurring_claim_occurrence" as never,
@@ -138,9 +137,10 @@ export async function generatePurchaseBillFromRecurring(
       nextDueDate: scheduledDate,
       document: doc,
     });
-    const dueDate = doc?.dueDateManualOverride && doc.dueDate
-      ? doc.dueDate
-      : addCalendarDays(scheduledDate, scheduleOpts.dueDaysAfterBillDate || 0);
+    const dueDate =
+      doc?.dueDateManualOverride && doc.dueDate
+        ? doc.dueDate
+        : addCalendarDays(scheduledDate, scheduleOpts.dueDaysAfterBillDate || 0);
     const memo = doc?.memo?.trim() || scheduleOpts.memo?.trim() || "Generated from recurring bill";
     // P-16: every generated bill gets its own internal number from the company's numbering sequence.
     const { allocateDocumentNumber } = await import("@/lib/settings/document-numbering");
@@ -178,13 +178,28 @@ export async function generatePurchaseBillFromRecurring(
         tax_rate_bps: l.taxRateBps,
         net_minor: Number(l.net_minor),
         tax_minor: Number(l.tax_minor),
-        product_id: "productId" in l ? (l as { productId?: string | null }).productId ?? null : null,
-        tax_code_id: "taxCodeId" in l ? (l as { taxCodeId?: string | null }).taxCodeId ?? null : null,
-        class_option_id: "classOptionId" in l ? (l as { classOptionId?: string | null }).classOptionId ?? null : null,
-        location_option_id: "locationOptionId" in l ? (l as { locationOptionId?: string | null }).locationOptionId ?? null : null,
-        project_option_id: "projectOptionId" in l ? (l as { projectOptionId?: string | null }).projectOptionId ?? null : null,
-        customer_contact_id: "customerContactId" in l ? (l as { customerContactId?: string | null }).customerContactId ?? null : null,
-        is_billable: "isBillable" in l ? Boolean((l as { isBillable?: boolean }).isBillable) : false,
+        product_id:
+          "productId" in l ? ((l as { productId?: string | null }).productId ?? null) : null,
+        tax_code_id:
+          "taxCodeId" in l ? ((l as { taxCodeId?: string | null }).taxCodeId ?? null) : null,
+        class_option_id:
+          "classOptionId" in l
+            ? ((l as { classOptionId?: string | null }).classOptionId ?? null)
+            : null,
+        location_option_id:
+          "locationOptionId" in l
+            ? ((l as { locationOptionId?: string | null }).locationOptionId ?? null)
+            : null,
+        project_option_id:
+          "projectOptionId" in l
+            ? ((l as { projectOptionId?: string | null }).projectOptionId ?? null)
+            : null,
+        customer_contact_id:
+          "customerContactId" in l
+            ? ((l as { customerContactId?: string | null }).customerContactId ?? null)
+            : null,
+        is_billable:
+          "isBillable" in l ? Boolean((l as { isBillable?: boolean }).isBillable) : false,
       })) as never,
     );
     const notes = doc?.notes ?? [];
@@ -227,10 +242,13 @@ export async function generatePurchaseBillFromRecurring(
       : (nextOccurrenceAfter({ dtstart: schedule.dtstart, rrule: schedule.rrule }, scheduledDate) ??
         scheduledDate);
 
-    await supabase.rpc("recurring_complete_occurrence" as never, {
-      _occurrence_id: occurrenceId,
-      _purchase_bill_id: billId,
-    } as never);
+    await supabase.rpc(
+      "recurring_complete_occurrence" as never,
+      {
+        _occurrence_id: occurrenceId,
+        _purchase_bill_id: billId,
+      } as never,
+    );
 
     await supabase
       .from("recurring_bills" as never)
@@ -263,10 +281,13 @@ export async function generatePurchaseBillFromRecurring(
     return { billId, authorised, occurrenceId };
   } catch (e) {
     const message = e instanceof Error ? e.message : "Generation failed";
-    await supabase.rpc("recurring_complete_occurrence" as never, {
-      _occurrence_id: occurrenceId,
-      _failed_message: message,
-    } as never);
+    await supabase.rpc(
+      "recurring_complete_occurrence" as never,
+      {
+        _occurrence_id: occurrenceId,
+        _failed_message: message,
+      } as never,
+    );
     await supabase
       .from("recurring_bills" as never)
       .update({ last_error: message, updated_at: new Date().toISOString() } as never)

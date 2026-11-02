@@ -92,7 +92,9 @@ function BudgetsPage() {
         actions={
           <div className="flex flex-wrap gap-2">
             <Button asChild variant="outline" size="sm">
-              <Link to="/imports" search={{ module: "budgets" }}>Import budget CSV</Link>
+              <Link to="/imports" search={{ module: "budgets" }}>
+                Import budget CSV
+              </Link>
             </Button>
             <Button asChild variant="outline" size="sm">
               <Link to="/reports/$reportId" params={{ reportId: "budget-vs-actual" }}>

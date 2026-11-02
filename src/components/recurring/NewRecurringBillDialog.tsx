@@ -1,12 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { NewBill } from "@/routes/_authenticated/purchases/bills.new";
 
@@ -39,7 +34,8 @@ export function NewRecurringBillDialog({ open, onOpenChange }: Props) {
         <SheetHeader className="shrink-0 space-y-1 border-b border-border px-6 py-4 pr-12 text-left">
           <SheetTitle>Recurring bill template</SheetTitle>
           <p className="text-sm text-muted-foreground">
-            The full New bill form. Saving a template does not create a bill or an Accounts Payable balance.
+            The full New bill form. Saving a template does not create a bill or an Accounts Payable
+            balance.
           </p>
         </SheetHeader>
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">

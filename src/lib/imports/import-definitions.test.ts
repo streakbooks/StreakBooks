@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { getImportDefinition, IMPORT_DEFINITIONS, importFieldDictionaryCsv, importTemplateCsv } from "./import-definitions";
+import {
+  getImportDefinition,
+  IMPORT_DEFINITIONS,
+  importFieldDictionaryCsv,
+  importTemplateCsv,
+} from "./import-definitions";
 
 describe("shared import definitions", () => {
   it("has one nonempty, uniquely keyed schema for every supported module", () => {
@@ -13,7 +18,9 @@ describe("shared import definitions", () => {
 
   it("generates a valid header and example CSV for banking", () => {
     const csv = importTemplateCsv(getImportDefinition("banking", "Bank transactions"));
-    expect(csv).toContain("Date,Description,Amount,Payee,Reference,Bank Transaction ID,Running Balance");
+    expect(csv).toContain(
+      "Date,Description,Amount,Payee,Reference,Bank Transaction ID,Running Balance",
+    );
     expect(csv).toContain("2026-10-01,Example payment,125.00");
   });
 

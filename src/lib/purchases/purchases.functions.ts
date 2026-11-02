@@ -1,6 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
-import { prepareTransactionCsv, validateResolvedTransactionTotals } from "@/lib/imports/transaction-import-validation";
-import { classifyTransactionImportRetry, isExactTransactionImportRetry, isVerifiedTransactionImportJournal } from "@/lib/imports/transaction-import-retry";
+import {
+  prepareTransactionCsv,
+  validateResolvedTransactionTotals,
+} from "@/lib/imports/transaction-import-validation";
+import {
+  classifyTransactionImportRetry,
+  isExactTransactionImportRetry,
+  isVerifiedTransactionImportJournal,
+  isReconciledTransactionImportJournal,
+} from "@/lib/imports/transaction-import-retry";
 import { isRateEffective } from "@/lib/tax/tax-math";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
@@ -26,6 +34,7 @@ import {
 } from "@/lib/purchases/bill-form-helpers";
 import {
   requireAccountInCompany,
+  requireApControlAccount,
   requireBankAccount,
   loadBankGlAccountIds,
 } from "@/lib/purchases/accounts";
@@ -722,17 +731,25 @@ export const getPurchasesOverview = createServerFn({ method: "GET" })
       return d.toISOString().slice(0, 10);
     };
     type Row = {
-      id: string; bill_number: string | null; supplier_invoice_number: string | null;
-      due_date: string | null; status: string; total_minor: number;
-      amount_paid_minor: number; amount_credited_minor: number;
-      currency_code: string | null; contacts: { name: string } | { name: string }[] | null;
+      id: string;
+      bill_number: string | null;
+      supplier_invoice_number: string | null;
+      due_date: string | null;
+      status: string;
+      total_minor: number;
+      amount_paid_minor: number;
+      amount_credited_minor: number;
+      currency_code: string | null;
+      contacts: { name: string } | { name: string }[] | null;
     };
     const rows: Row[] = [];
     const PAGE = 1000;
     for (let offset = 0; ; offset += PAGE) {
       const { data: page, error } = await context.supabase
         .from("purchase_bills" as never)
-        .select("id, bill_number, supplier_invoice_number, due_date, status, total_minor, amount_paid_minor, amount_credited_minor, currency_code, contacts(name)" as never)
+        .select(
+          "id, bill_number, supplier_invoice_number, due_date, status, total_minor, amount_paid_minor, amount_credited_minor, currency_code, contacts(name)" as never,
+        )
         .eq("company_id" as never, data.companyId as never)
         .in("status" as never, ["authorised", "partly_paid"] as never)
         .order("id" as never)
@@ -742,41 +759,75 @@ export const getPurchasesOverview = createServerFn({ method: "GET" })
       rows.push(...chunk);
       if (chunk.length < PAGE) break;
     }
-    const currencies = new Map<string, {
-      currency: string; outstandingMinor: number; overdueMinor: number;
-      dueSoonMinor: number; laterMinor: number; undatedMinor: number;
-      overdueCount: number; dueSoonCount: number; openCount: number;
-    }>();
+    const currencies = new Map<
+      string,
+      {
+        currency: string;
+        outstandingMinor: number;
+        overdueMinor: number;
+        dueSoonMinor: number;
+        laterMinor: number;
+        undatedMinor: number;
+        overdueCount: number;
+        dueSoonCount: number;
+        openCount: number;
+      }
+    >();
     const upcoming: Array<{
-      id: string; supplier: string; reference: string; dueDate: string | null;
-      currency: string; outstandingMinor: number; overdue: boolean;
+      id: string;
+      supplier: string;
+      reference: string;
+      dueDate: string | null;
+      currency: string;
+      outstandingMinor: number;
+      overdue: boolean;
     }> = [];
     for (const row of rows) {
-      const balance = Math.max(0, Number(row.total_minor) - Number(row.amount_paid_minor) - Number(row.amount_credited_minor));
+      const balance = Math.max(
+        0,
+        Number(row.total_minor) - Number(row.amount_paid_minor) - Number(row.amount_credited_minor),
+      );
       if (!Number.isSafeInteger(balance) || balance <= 0) continue;
       const currency = (row.currency_code ?? "GBP").toUpperCase();
       const entry = currencies.get(currency) ?? {
-        currency, outstandingMinor: 0, overdueMinor: 0, dueSoonMinor: 0,
-        laterMinor: 0, undatedMinor: 0, overdueCount: 0, dueSoonCount: 0, openCount: 0,
+        currency,
+        outstandingMinor: 0,
+        overdueMinor: 0,
+        dueSoonMinor: 0,
+        laterMinor: 0,
+        undatedMinor: 0,
+        overdueCount: 0,
+        dueSoonCount: 0,
+        openCount: 0,
       };
       entry.outstandingMinor += balance;
       entry.openCount += 1;
       if (!row.due_date) entry.undatedMinor += balance;
-      else if (row.due_date < today) { entry.overdueMinor += balance; entry.overdueCount += 1; }
-      else if (row.due_date <= inDays(7)) { entry.dueSoonMinor += balance; entry.dueSoonCount += 1; }
-      else entry.laterMinor += balance;
+      else if (row.due_date < today) {
+        entry.overdueMinor += balance;
+        entry.overdueCount += 1;
+      } else if (row.due_date <= inDays(7)) {
+        entry.dueSoonMinor += balance;
+        entry.dueSoonCount += 1;
+      } else entry.laterMinor += balance;
       currencies.set(currency, entry);
       const contact = Array.isArray(row.contacts) ? row.contacts[0] : row.contacts;
       upcoming.push({
-        id: row.id, supplier: contact?.name ?? "Supplier",
+        id: row.id,
+        supplier: contact?.name ?? "Supplier",
         reference: row.supplier_invoice_number || row.bill_number || "—",
-        dueDate: row.due_date, currency, outstandingMinor: balance,
+        dueDate: row.due_date,
+        currency,
+        outstandingMinor: balance,
         overdue: Boolean(row.due_date && row.due_date < today),
       });
     }
     upcoming.sort((a, b) => (a.dueDate ?? "9999-12-31").localeCompare(b.dueDate ?? "9999-12-31"));
-    return { currencies: [...currencies.values()].sort((a, b) => a.currency.localeCompare(b.currency)),
-      upcoming: upcoming.slice(0, 8), asOf: today };
+    return {
+      currencies: [...currencies.values()].sort((a, b) => a.currency.localeCompare(b.currency)),
+      upcoming: upcoming.slice(0, 8),
+      asOf: today,
+    };
   });
 
 export const submitBillForApproval = createServerFn({ method: "POST" })
@@ -1175,365 +1226,351 @@ export const checkDuplicateSupplierBill = createServerFn({ method: "GET" })
   });
 
 function parseBillDraftInput(input: {
-      companyId: string;
-      billId?: string;
-      contactId: string;
-      billDate: string;
-      dueDate: string;
-      supplierInvoiceNumber?: string;
-      memo?: string;
-      currencyCode: string;
-      taxCalculation?: TaxCalculationMode;
-      paymentTermId?: string | null;
-      paymentTermsDays?: number | null;
-      dueDateManualOverride?: boolean;
-      acknowledgeDuplicate?: boolean;
-      fxRateToBase?: number | null;
-      supplierAddress?: {
-        line1?: string;
-        line2?: string;
-        city?: string;
-        region?: string;
-        postal?: string;
-        country?: string;
-      };
-      lines: BillLineIn[];
-    } ) {
-      if (
-        !/^\d{4}-\d{2}-\d{2}$/.test(input.billDate) ||
-        !/^\d{4}-\d{2}-\d{2}$/.test(input.dueDate)
-      ) {
-        throw new Error("Bill and due dates are required (YYYY-MM-DD)");
-      }
-      const taxCalculation: TaxCalculationMode =
-        input.taxCalculation === "inclusive" || input.taxCalculation === "none"
-          ? input.taxCalculation
-          : "exclusive";
-      const currencyCode = (input.currencyCode ?? "").toUpperCase();
-      if (!/^[A-Z]{3}$/.test(currencyCode)) throw new Error("Currency code required");
-      return {
-        companyId: assertUuid(input.companyId),
-        billId: input.billId ? assertUuid(input.billId, "bill") : undefined,
-        contactId: assertUuid(input.contactId, "supplier"),
-        billDate: input.billDate,
-        dueDate: input.dueDate,
-        supplierInvoiceNumber: (input.supplierInvoiceNumber ?? "").trim().slice(0, 80) || null,
-        memo: (input.memo ?? "").trim().slice(0, 500) || null,
-        currencyCode,
-        taxCalculation,
-        paymentTermId: input.paymentTermId ? assertUuid(input.paymentTermId, "payment term") : null,
-        paymentTermsDays:
-          input.paymentTermsDays == null
-            ? null
-            : Math.max(0, Math.min(3650, Math.floor(Number(input.paymentTermsDays) || 0))),
-        dueDateManualOverride: Boolean(input.dueDateManualOverride),
-        acknowledgeDuplicate: Boolean(input.acknowledgeDuplicate),
-        fxRateToBase:
-          input.fxRateToBase == null || input.fxRateToBase === 1
-            ? null
-            : Number(input.fxRateToBase),
-        supplierAddress: {
-          line1: (input.supplierAddress?.line1 ?? "").trim().slice(0, 200) || null,
-          line2: (input.supplierAddress?.line2 ?? "").trim().slice(0, 200) || null,
-          city: (input.supplierAddress?.city ?? "").trim().slice(0, 100) || null,
-          region: (input.supplierAddress?.region ?? "").trim().slice(0, 100) || null,
-          postal: (input.supplierAddress?.postal ?? "").trim().slice(0, 40) || null,
-          country: (input.supplierAddress?.country ?? "").trim().slice(0, 100) || null,
-        },
-        lines: validateBillLines(input.lines, taxCalculation),
-        rawLines: input.lines,
-        /**
-         * Which optional header fields the caller actually sent. When editing an existing
-         * bill, anything not sent is left exactly as stored instead of being reset to a
-         * default (P-01 / P-02 defence in depth - a partial caller can no longer wipe the
-         * tax mode, FX rate, terms, address or duplicate acknowledgement).
-         */
-        provided: {
-          taxCalculation: input.taxCalculation !== undefined,
-          paymentTermId: input.paymentTermId !== undefined,
-          paymentTermsDays: input.paymentTermsDays !== undefined,
-          dueDateManualOverride: input.dueDateManualOverride !== undefined,
-          acknowledgeDuplicate: input.acknowledgeDuplicate !== undefined,
-          fxRateToBase: input.fxRateToBase !== undefined,
-          supplierAddress: input.supplierAddress !== undefined,
-        },
-      };
-    }
+  companyId: string;
+  billId?: string;
+  contactId: string;
+  billDate: string;
+  dueDate: string;
+  supplierInvoiceNumber?: string;
+  memo?: string;
+  currencyCode: string;
+  taxCalculation?: TaxCalculationMode;
+  paymentTermId?: string | null;
+  paymentTermsDays?: number | null;
+  dueDateManualOverride?: boolean;
+  acknowledgeDuplicate?: boolean;
+  fxRateToBase?: number | null;
+  supplierAddress?: {
+    line1?: string;
+    line2?: string;
+    city?: string;
+    region?: string;
+    postal?: string;
+    country?: string;
+  };
+  lines: BillLineIn[];
+}) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.billDate) || !/^\d{4}-\d{2}-\d{2}$/.test(input.dueDate)) {
+    throw new Error("Bill and due dates are required (YYYY-MM-DD)");
+  }
+  const taxCalculation: TaxCalculationMode =
+    input.taxCalculation === "inclusive" || input.taxCalculation === "none"
+      ? input.taxCalculation
+      : "exclusive";
+  const currencyCode = (input.currencyCode ?? "").toUpperCase();
+  if (!/^[A-Z]{3}$/.test(currencyCode)) throw new Error("Currency code required");
+  return {
+    companyId: assertUuid(input.companyId),
+    billId: input.billId ? assertUuid(input.billId, "bill") : undefined,
+    contactId: assertUuid(input.contactId, "supplier"),
+    billDate: input.billDate,
+    dueDate: input.dueDate,
+    supplierInvoiceNumber: (input.supplierInvoiceNumber ?? "").trim().slice(0, 80) || null,
+    memo: (input.memo ?? "").trim().slice(0, 500) || null,
+    currencyCode,
+    taxCalculation,
+    paymentTermId: input.paymentTermId ? assertUuid(input.paymentTermId, "payment term") : null,
+    paymentTermsDays:
+      input.paymentTermsDays == null
+        ? null
+        : Math.max(0, Math.min(3650, Math.floor(Number(input.paymentTermsDays) || 0))),
+    dueDateManualOverride: Boolean(input.dueDateManualOverride),
+    acknowledgeDuplicate: Boolean(input.acknowledgeDuplicate),
+    fxRateToBase:
+      input.fxRateToBase == null || input.fxRateToBase === 1 ? null : Number(input.fxRateToBase),
+    supplierAddress: {
+      line1: (input.supplierAddress?.line1 ?? "").trim().slice(0, 200) || null,
+      line2: (input.supplierAddress?.line2 ?? "").trim().slice(0, 200) || null,
+      city: (input.supplierAddress?.city ?? "").trim().slice(0, 100) || null,
+      region: (input.supplierAddress?.region ?? "").trim().slice(0, 100) || null,
+      postal: (input.supplierAddress?.postal ?? "").trim().slice(0, 40) || null,
+      country: (input.supplierAddress?.country ?? "").trim().slice(0, 100) || null,
+    },
+    lines: validateBillLines(input.lines, taxCalculation),
+    rawLines: input.lines,
+    /**
+     * Which optional header fields the caller actually sent. When editing an existing
+     * bill, anything not sent is left exactly as stored instead of being reset to a
+     * default (P-01 / P-02 defence in depth - a partial caller can no longer wipe the
+     * tax mode, FX rate, terms, address or duplicate acknowledgement).
+     */
+    provided: {
+      taxCalculation: input.taxCalculation !== undefined,
+      paymentTermId: input.paymentTermId !== undefined,
+      paymentTermsDays: input.paymentTermsDays !== undefined,
+      dueDateManualOverride: input.dueDateManualOverride !== undefined,
+      acknowledgeDuplicate: input.acknowledgeDuplicate !== undefined,
+      fxRateToBase: input.fxRateToBase !== undefined,
+      supplierAddress: input.supplierAddress !== undefined,
+    },
+  };
+}
 
 async function saveBillDraftCore(
   data: ReturnType<typeof parseBillDraftInput>,
   context: { supabase: Parameters<typeof assertCompanyPermission>[0]; userId: string },
 ) {
-    const { supabase, userId } = context;
-    await assertCompanyPermission(supabase, data.companyId, "purchases.draft");
-    if (
-      data.fxRateToBase != null &&
-      (!(data.fxRateToBase > 0) || !Number.isFinite(data.fxRateToBase))
-    ) {
-      throw new Error("Exchange rate must be a positive number");
-    }
+  const { supabase, userId } = context;
+  await assertCompanyPermission(supabase, data.companyId, "purchases.draft");
+  if (
+    data.fxRateToBase != null &&
+    (!(data.fxRateToBase > 0) || !Number.isFinite(data.fxRateToBase))
+  ) {
+    throw new Error("Exchange rate must be a positive number");
+  }
 
-    // Validate everything that can be validated BEFORE any write.
-    for (const accountId of new Set(data.lines.map((l) => l.accountId))) {
-      await requireAccountInCompany(supabase, data.companyId, accountId);
+  // Validate everything that can be validated BEFORE any write.
+  for (const accountId of new Set(data.lines.map((l) => l.accountId))) {
+    await requireAccountInCompany(supabase, data.companyId, accountId);
+  }
+  const { data: supplierRow, error: supplierErr } = await supabase
+    .from("contacts" as never)
+    .select("id, name" as never)
+    .eq("company_id" as never, data.companyId as never)
+    .eq("id" as never, data.contactId as never)
+    .maybeSingle();
+  if (supplierErr) throw new Error(supplierErr.message);
+  if (!supplierRow) throw new Error("Supplier not found in this organisation");
+
+  type ExistingBill = {
+    id: string;
+    status: string;
+    contact_id: string;
+    bill_date: string;
+    due_date: string;
+    supplier_invoice_number: string | null;
+    memo: string | null;
+    total_minor: number;
+    tax_minor: number;
+    currency_code: string;
+    tax_calculation: string | null;
+  };
+  let existing: ExistingBill | null = null;
+  let priorHeader: Record<string, unknown> | null = null;
+  if (data.billId) {
+    const { data: row, error: exErr } = await supabase
+      .from("purchase_bills" as never)
+      .select("*" as never)
+      .eq("id" as never, data.billId as never)
+      .eq("company_id" as never, data.companyId as never)
+      .maybeSingle();
+    if (exErr) throw new Error(exErr.message);
+    if (!row) throw new Error("Bill not found");
+    priorHeader = row as Record<string, unknown>;
+    existing = row as unknown as ExistingBill;
+    if (existing.status !== "draft" && existing.status !== "awaiting_approval") {
+      throw new Error("Only draft or awaiting-approval bills can be edited");
     }
-    const { data: supplierRow, error: supplierErr } = await supabase
+  }
+
+  // When editing, a caller that did not send the tax mode keeps the stored one.
+  const effectiveTaxCalculation: TaxCalculationMode =
+    existing && !data.provided.taxCalculation
+      ? existing.tax_calculation === "inclusive" || existing.tax_calculation === "none"
+        ? existing.tax_calculation
+        : "exclusive"
+      : data.taxCalculation;
+  const validatedLines =
+    effectiveTaxCalculation === data.taxCalculation
+      ? data.lines
+      : validateBillLines(data.rawLines, effectiveTaxCalculation);
+  // Reverse-charge lines carry no supplier tax: the payable is the net amount (TX-04).
+  const lines = applyReverseChargeToLines(
+    validatedLines,
+    await loadTaxCodeInfo(
+      supabase,
+      data.companyId,
+      validatedLines.map((l) => l.taxCodeId ?? ""),
+    ),
+    effectiveTaxCalculation,
+  );
+  const totals = sumLines(lines);
+
+  const isEdit = Boolean(existing);
+  const sends = (key: keyof typeof data.provided) => !isEdit || data.provided[key];
+  const headerFields: Record<string, unknown> = {
+    contact_id: data.contactId,
+    bill_date: data.billDate,
+    due_date: data.dueDate,
+    supplier_invoice_number: data.supplierInvoiceNumber,
+    memo: data.memo,
+    currency_code: data.currencyCode,
+    tax_calculation: effectiveTaxCalculation,
+    subtotal_minor: Number(totals.subtotal_minor),
+    tax_minor: Number(totals.tax_minor),
+    total_minor: Number(totals.total_minor),
+    updated_at: new Date().toISOString(),
+  };
+  if (sends("paymentTermId")) headerFields["payment_term_id"] = data.paymentTermId;
+  if (sends("paymentTermsDays")) headerFields["payment_terms_days"] = data.paymentTermsDays;
+  if (sends("dueDateManualOverride")) {
+    headerFields["due_date_manual_override"] = data.dueDateManualOverride;
+  }
+  if (sends("acknowledgeDuplicate")) headerFields["duplicate_override"] = data.acknowledgeDuplicate;
+  if (sends("fxRateToBase")) headerFields["fx_rate_to_base"] = data.fxRateToBase;
+  if (sends("supplierAddress")) {
+    headerFields["supplier_address_line1"] = data.supplierAddress.line1;
+    headerFields["supplier_address_line2"] = data.supplierAddress.line2;
+    headerFields["supplier_address_city"] = data.supplierAddress.city;
+    headerFields["supplier_address_region"] = data.supplierAddress.region;
+    headerFields["supplier_address_postal"] = data.supplierAddress.postal;
+    headerFields["supplier_address_country"] = data.supplierAddress.country;
+  }
+
+  const lineRows = (billId: string) =>
+    lines.map((l, i) => ({
+      company_id: data.companyId,
+      bill_id: billId,
+      line_no: i + 1,
+      description: l.description,
+      account_id: l.accountId,
+      product_id: l.productId,
+      tax_code_id: l.taxCodeId,
+      quantity: l.quantity,
+      unit_price_minor: l.unitPriceMinor,
+      discount_minor: l.discountMinor,
+      tax_rate_bps: l.taxRateBps,
+      net_minor: Number(l.net_minor),
+      tax_minor: Number(l.tax_minor),
+      class_option_id: l.classOptionId,
+      location_option_id: l.locationOptionId,
+      project_option_id: l.projectOptionId,
+      customer_contact_id: l.customerContactId,
+      is_billable: l.isBillable,
+    }));
+
+  const duplicateMessage =
+    "A bill with this supplier invoice number already exists. Acknowledge the duplicate to continue.";
+
+  if (data.billId && existing && priorHeader) {
+    const { data: priorLineRows, error: priorLinesErr } = await supabase
+      .from("purchase_bill_lines" as never)
+      .select("*" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("bill_id" as never, data.billId as never)
+      .order("line_no" as never);
+    if (priorLinesErr) throw new Error(priorLinesErr.message);
+    const priorLines = (priorLineRows ?? []) as unknown as Array<{
+      description: string;
+      quantity: number;
+      unit_price_minor: number;
+      net_minor: number;
+    }>;
+
+    const contactIds = [...new Set([existing.contact_id, data.contactId])];
+    const { data: contactRows } = await supabase
       .from("contacts" as never)
       .select("id, name" as never)
-      .eq("company_id" as never, data.companyId as never)
-      .eq("id" as never, data.contactId as never)
-      .maybeSingle();
-    if (supplierErr) throw new Error(supplierErr.message);
-    if (!supplierRow) throw new Error("Supplier not found in this organisation");
-
-    type ExistingBill = {
-      id: string;
-      status: string;
-      contact_id: string;
-      bill_date: string;
-      due_date: string;
-      supplier_invoice_number: string | null;
-      memo: string | null;
-      total_minor: number;
-      tax_minor: number;
-      currency_code: string;
-      tax_calculation: string | null;
-    };
-    let existing: ExistingBill | null = null;
-    let priorHeader: Record<string, unknown> | null = null;
-    if (data.billId) {
-      const { data: row, error: exErr } = await supabase
-        .from("purchase_bills" as never)
-        .select("*" as never)
-        .eq("id" as never, data.billId as never)
-        .eq("company_id" as never, data.companyId as never)
-        .maybeSingle();
-      if (exErr) throw new Error(exErr.message);
-      if (!row) throw new Error("Bill not found");
-      priorHeader = row as Record<string, unknown>;
-      existing = row as unknown as ExistingBill;
-      if (existing.status !== "draft" && existing.status !== "awaiting_approval") {
-        throw new Error("Only draft or awaiting-approval bills can be edited");
-      }
-    }
-
-    // When editing, a caller that did not send the tax mode keeps the stored one.
-    const effectiveTaxCalculation: TaxCalculationMode =
-      existing && !data.provided.taxCalculation
-        ? existing.tax_calculation === "inclusive" || existing.tax_calculation === "none"
-          ? existing.tax_calculation
-          : "exclusive"
-        : data.taxCalculation;
-    const validatedLines =
-      effectiveTaxCalculation === data.taxCalculation
-        ? data.lines
-        : validateBillLines(data.rawLines, effectiveTaxCalculation);
-    // Reverse-charge lines carry no supplier tax: the payable is the net amount (TX-04).
-    const lines = applyReverseChargeToLines(
-      validatedLines,
-      await loadTaxCodeInfo(
-        supabase,
-        data.companyId,
-        validatedLines.map((l) => l.taxCodeId ?? ""),
-      ),
-      effectiveTaxCalculation,
+      .in("id" as never, contactIds as never);
+    const contactNames = new Map(
+      ((contactRows ?? []) as Array<{ id: string; name: string }>).map((row) => [row.id, row.name]),
     );
-    const totals = sumLines(lines);
-
-    const isEdit = Boolean(existing);
-    const sends = (key: keyof typeof data.provided) => !isEdit || data.provided[key];
-    const headerFields: Record<string, unknown> = {
-      contact_id: data.contactId,
-      bill_date: data.billDate,
-      due_date: data.dueDate,
-      supplier_invoice_number: data.supplierInvoiceNumber,
+    const before: BillEditSnapshot = {
+      totalMinor: Number(existing.total_minor),
+      taxMinor: Number(existing.tax_minor),
+      billDate: existing.bill_date,
+      dueDate: existing.due_date,
+      supplierInvoiceNumber: existing.supplier_invoice_number,
+      memo: existing.memo,
+      supplierName: contactNames.get(existing.contact_id) ?? null,
+    };
+    const after: BillEditSnapshot = {
+      totalMinor: Number(totals.total_minor),
+      taxMinor: Number(totals.tax_minor),
+      billDate: data.billDate,
+      dueDate: data.dueDate,
+      supplierInvoiceNumber: data.supplierInvoiceNumber,
       memo: data.memo,
-      currency_code: data.currencyCode,
-      tax_calculation: effectiveTaxCalculation,
-      subtotal_minor: Number(totals.subtotal_minor),
-      tax_minor: Number(totals.tax_minor),
-      total_minor: Number(totals.total_minor),
-      updated_at: new Date().toISOString(),
+      supplierName: contactNames.get(data.contactId) ?? null,
     };
-    if (sends("paymentTermId")) headerFields["payment_term_id"] = data.paymentTermId;
-    if (sends("paymentTermsDays")) headerFields["payment_terms_days"] = data.paymentTermsDays;
-    if (sends("dueDateManualOverride")) {
-      headerFields["due_date_manual_override"] = data.dueDateManualOverride;
-    }
-    if (sends("acknowledgeDuplicate"))
-      headerFields["duplicate_override"] = data.acknowledgeDuplicate;
-    if (sends("fxRateToBase")) headerFields["fx_rate_to_base"] = data.fxRateToBase;
-    if (sends("supplierAddress")) {
-      headerFields["supplier_address_line1"] = data.supplierAddress.line1;
-      headerFields["supplier_address_line2"] = data.supplierAddress.line2;
-      headerFields["supplier_address_city"] = data.supplierAddress.city;
-      headerFields["supplier_address_region"] = data.supplierAddress.region;
-      headerFields["supplier_address_postal"] = data.supplierAddress.postal;
-      headerFields["supplier_address_country"] = data.supplierAddress.country;
-    }
+    const oldLineKey = priorLines
+      .map((line) =>
+        [line.description, line.quantity, line.unit_price_minor, line.net_minor].join("|"),
+      )
+      .sort()
+      .join("\n");
+    const newLineKey = lines
+      .map((line) =>
+        [line.description, line.quantity, line.unitPriceMinor, Number(line.net_minor)].join("|"),
+      )
+      .sort()
+      .join("\n");
+    const changes = describeBillEdits(before, after, data.currencyCode, oldLineKey !== newLineKey);
 
-    const lineRows = (billId: string) =>
-      lines.map((l, i) => ({
-        company_id: data.companyId,
-        bill_id: billId,
-        line_no: i + 1,
-        description: l.description,
-        account_id: l.accountId,
-        product_id: l.productId,
-        tax_code_id: l.taxCodeId,
-        quantity: l.quantity,
-        unit_price_minor: l.unitPriceMinor,
-        discount_minor: l.discountMinor,
-        tax_rate_bps: l.taxRateBps,
-        net_minor: Number(l.net_minor),
-        tax_minor: Number(l.tax_minor),
-        class_option_id: l.classOptionId,
-        location_option_id: l.locationOptionId,
-        project_option_id: l.projectOptionId,
-        customer_contact_id: l.customerContactId,
-        is_billable: l.isBillable,
-      }));
-
-    const duplicateMessage =
-      "A bill with this supplier invoice number already exists. Acknowledge the duplicate to continue.";
-
-    if (data.billId && existing && priorHeader) {
-      const { data: priorLineRows, error: priorLinesErr } = await supabase
-        .from("purchase_bill_lines" as never)
-        .select("*" as never)
-        .eq("company_id" as never, data.companyId as never)
-        .eq("bill_id" as never, data.billId as never)
-        .order("line_no" as never);
-      if (priorLinesErr) throw new Error(priorLinesErr.message);
-      const priorLines = (priorLineRows ?? []) as unknown as Array<{
-        description: string;
-        quantity: number;
-        unit_price_minor: number;
-        net_minor: number;
-      }>;
-
-      const contactIds = [...new Set([existing.contact_id, data.contactId])];
-      const { data: contactRows } = await supabase
-        .from("contacts" as never)
-        .select("id, name" as never)
-        .in("id" as never, contactIds as never);
-      const contactNames = new Map(
-        ((contactRows ?? []) as Array<{ id: string; name: string }>).map((row) => [
-          row.id,
-          row.name,
-        ]),
-      );
-      const before: BillEditSnapshot = {
-        totalMinor: Number(existing.total_minor),
-        taxMinor: Number(existing.tax_minor),
-        billDate: existing.bill_date,
-        dueDate: existing.due_date,
-        supplierInvoiceNumber: existing.supplier_invoice_number,
-        memo: existing.memo,
-        supplierName: contactNames.get(existing.contact_id) ?? null,
-      };
-      const after: BillEditSnapshot = {
-        totalMinor: Number(totals.total_minor),
-        taxMinor: Number(totals.tax_minor),
-        billDate: data.billDate,
-        dueDate: data.dueDate,
-        supplierInvoiceNumber: data.supplierInvoiceNumber,
-        memo: data.memo,
-        supplierName: contactNames.get(data.contactId) ?? null,
-      };
-      const oldLineKey = priorLines
-        .map((line) =>
-          [line.description, line.quantity, line.unit_price_minor, line.net_minor].join("|"),
-        )
-        .sort()
-        .join("\n");
-      const newLineKey = lines
-        .map((line) =>
-          [line.description, line.quantity, line.unitPriceMinor, Number(line.net_minor)].join("|"),
-        )
-        .sort()
-        .join("\n");
-      const changes = describeBillEdits(
-        before,
-        after,
-        data.currencyCode,
-        oldLineKey !== newLineKey,
-      );
-
-      const { error: upErr } = await supabase
-        .from("purchase_bills" as never)
-        .update(headerFields as never)
-        .eq("id" as never, data.billId as never)
-        .eq("company_id" as never, data.companyId as never);
-      if (upErr) {
-        if (upErr.message.toLowerCase().includes("duplicate") || upErr.code === "23505") {
-          throw new Error(duplicateMessage);
-        }
-        throw new Error(upErr.message);
-      }
-
-      try {
-        await replaceBillLines(
-          supabase,
-          data.companyId,
-          data.billId,
-          lineRows(data.billId),
-          priorLineRows as unknown as BillLineRow[],
-        );
-      } catch (lineError) {
-        // Put the header back so header totals and lines still agree.
-        const restore: Record<string, unknown> = {};
-        for (const key of Object.keys(headerFields)) restore[key] = priorHeader[key] ?? null;
-        await supabase
-          .from("purchase_bills" as never)
-          .update(restore as never)
-          .eq("id" as never, data.billId as never)
-          .eq("company_id" as never, data.companyId as never);
-        throw lineError;
-      }
-
-      await recordBillAudit(supabase, data.companyId, "bill.draft.update", data.billId, {
-        total_minor: Number(totals.total_minor),
-        previous_total_minor: before.totalMinor,
-        line_count: lines.length,
-        changes,
-      });
-      return { id: data.billId };
-    }
-
-    const { allocateDocumentNumber } = await import("@/lib/settings/document-numbering");
-    const billNumber = await allocateDocumentNumber(
-      supabase as never,
-      data.companyId,
-      "purchase_bill",
-    );
-
-    const { data: inserted, error } = await supabase
+    const { error: upErr } = await supabase
       .from("purchase_bills" as never)
-      .insert({
-        company_id: data.companyId,
-        bill_number: billNumber,
-        status: "draft",
-        created_by: userId,
-        ...headerFields,
-      } as never)
-      .select("id")
-      .single();
-    if (error) {
-      if (error.message.toLowerCase().includes("duplicate") || error.code === "23505") {
+      .update(headerFields as never)
+      .eq("id" as never, data.billId as never)
+      .eq("company_id" as never, data.companyId as never);
+    if (upErr) {
+      if (upErr.message.toLowerCase().includes("duplicate") || upErr.code === "23505") {
         throw new Error(duplicateMessage);
       }
-      throw new Error(error.message);
+      throw new Error(upErr.message);
     }
-    const billId = (inserted as { id: string }).id;
-    await insertNewBillLines(supabase as never, data.companyId, billId, lineRows(billId));
-    await recordBillAudit(supabase, data.companyId, "bill.draft.create", billId, {
-      bill_number: billNumber,
+
+    try {
+      await replaceBillLines(
+        supabase,
+        data.companyId,
+        data.billId,
+        lineRows(data.billId),
+        priorLineRows as unknown as BillLineRow[],
+      );
+    } catch (lineError) {
+      // Put the header back so header totals and lines still agree.
+      const restore: Record<string, unknown> = {};
+      for (const key of Object.keys(headerFields)) restore[key] = priorHeader[key] ?? null;
+      await supabase
+        .from("purchase_bills" as never)
+        .update(restore as never)
+        .eq("id" as never, data.billId as never)
+        .eq("company_id" as never, data.companyId as never);
+      throw lineError;
+    }
+
+    await recordBillAudit(supabase, data.companyId, "bill.draft.update", data.billId, {
       total_minor: Number(totals.total_minor),
+      previous_total_minor: before.totalMinor,
       line_count: lines.length,
-      supplier_name: (supplierRow as { name?: string } | null)?.name ?? "",
+      changes,
     });
-    return { id: billId };
+    return { id: data.billId };
+  }
+
+  const { allocateDocumentNumber } = await import("@/lib/settings/document-numbering");
+  const billNumber = await allocateDocumentNumber(
+    supabase as never,
+    data.companyId,
+    "purchase_bill",
+  );
+
+  const { data: inserted, error } = await supabase
+    .from("purchase_bills" as never)
+    .insert({
+      company_id: data.companyId,
+      bill_number: billNumber,
+      status: "draft",
+      created_by: userId,
+      ...headerFields,
+    } as never)
+    .select("id")
+    .single();
+  if (error) {
+    if (error.message.toLowerCase().includes("duplicate") || error.code === "23505") {
+      throw new Error(duplicateMessage);
+    }
+    throw new Error(error.message);
+  }
+  const billId = (inserted as { id: string }).id;
+  await insertNewBillLines(supabase as never, data.companyId, billId, lineRows(billId));
+  await recordBillAudit(supabase, data.companyId, "bill.draft.create", billId, {
+    bill_number: billNumber,
+    total_minor: Number(totals.total_minor),
+    line_count: lines.length,
+    supplier_name: (supplierRow as { name?: string } | null)?.name ?? "",
+  });
+  return { id: billId };
 }
 
 export const saveBillDraft = createServerFn({ method: "POST" })
@@ -4956,7 +4993,6 @@ export const getSupplierIntelligence = createServerFn({ method: "GET" })
     };
   });
 
-
 /**
  * Purchase bill CSV import using existing draft and AP posting services.
  * Server resolves every referenced customer/account/tax code before any writes.
@@ -4978,7 +5014,8 @@ export const importPurchaseBillsCsv = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await assertCompanyPermission(supabase, data.companyId, "purchases.draft");
-    if (data.authorise) await assertCompanyPermission(supabase, data.companyId, "purchases.authorise");
+    if (data.authorise)
+      await assertCompanyPermission(supabase, data.companyId, "purchases.authorise");
     const { data: org, error: orgError } = await supabase
       .from("companies" as never)
       .select("base_currency" as never)
@@ -4999,13 +5036,26 @@ export const importPurchaseBillsCsv = createServerFn({ method: "POST" })
         .limit(2);
       if (error) throw new Error(error.message);
       const available = (rows ?? []) as Array<{
-        id: string; account_type: string; system_key: string | null; is_active: boolean;
-        is_postable: boolean; archived_at: string | null;
+        id: string;
+        account_type: string;
+        system_key: string | null;
+        is_active: boolean;
+        is_postable: boolean;
+        archived_at: string | null;
       }>;
       const row = available[0];
-      if (available.length !== 1 || !row || !row.is_active || !row.is_postable || row.archived_at ||
-        !["asset", "expense"].includes(row.account_type) || row.system_key) {
-        throw new Error(`Account ${code} must be one active postable expense or non-control asset account`);
+      if (
+        available.length !== 1 ||
+        !row ||
+        !row.is_active ||
+        !row.is_postable ||
+        row.archived_at ||
+        !["asset", "expense"].includes(row.account_type) ||
+        row.system_key
+      ) {
+        throw new Error(
+          `Account ${code} must be one active postable expense or non-control asset account`,
+        );
       }
       accounts.set(code, row.id);
     }
@@ -5022,55 +5072,88 @@ export const importPurchaseBillsCsv = createServerFn({ method: "POST" })
         .limit(2);
       if (error) throw new Error(error.message);
       if ((rows ?? []).length !== 1) {
-        throw new Error(`Supplier "${name}" must match exactly one active supplier in this organisation`);
+        throw new Error(
+          `Supplier "${name}" must match exactly one active supplier in this organisation`,
+        );
       }
       suppliers.set(name, ((rows ?? []) as Array<{ id: string }>)[0]!.id);
     }
 
     // Tax rates must be resolved against the bill date, never trusted from CSV.
     type TaxRow = {
-      id: string; code: string; treatment: string | null; tax_rates: {
-        rate_bps: number; effective_from: string; effective_to: string | null; is_active: boolean;
+      id: string;
+      code: string;
+      treatment: string | null;
+      tax_rates: {
+        rate_bps: number;
+        effective_from: string;
+        effective_to: string | null;
+        is_active: boolean;
       } | null;
     };
-    const taxesByDate = new Map<string, Map<string, { id: string; rateBps: number; treatment: string | null }>>();
+    const taxesByDate = new Map<
+      string,
+      Map<string, { id: string; rateBps: number; treatment: string | null }>
+    >();
     for (const doc of docs) {
       if (!taxesByDate.has(doc.documentDate)) {
         const { data: rows, error } = await supabase
           .from("tax_codes" as never)
-          .select("id, code, treatment, tax_rates(rate_bps, effective_from, effective_to, is_active)" as never)
+          .select(
+            "id, code, treatment, tax_rates(rate_bps, effective_from, effective_to, is_active)" as never,
+          )
           .eq("company_id" as never, data.companyId as never)
           .eq("is_active" as never, true as never)
           .in("applies_to" as never, ["purchases", "both"] as never);
         if (error) throw new Error(error.message);
-        taxesByDate.set(doc.documentDate, new Map(
-          ((rows ?? []) as unknown as TaxRow[])
-            .filter((r) => r.tax_rates && isRateEffective(r.tax_rates, doc.documentDate))
-            .map((r) => [r.code, { id: r.id, rateBps: r.tax_rates!.rate_bps, treatment: r.treatment }]),
-        ));
+        taxesByDate.set(
+          doc.documentDate,
+          new Map(
+            ((rows ?? []) as unknown as TaxRow[])
+              .filter((r) => r.tax_rates && isRateEffective(r.tax_rates, doc.documentDate))
+              .map((r) => [
+                r.code,
+                { id: r.id, rateBps: r.tax_rates!.rate_bps, treatment: r.treatment },
+              ]),
+          ),
+        );
       }
       for (const line of doc.lines) {
         if (line.taxCode && !taxesByDate.get(doc.documentDate)!.has(line.taxCode)) {
-          throw new Error(`Row ${line.sourceRow}: purchase tax code ${line.taxCode} is unavailable on ${doc.documentDate}`);
+          throw new Error(
+            `Row ${line.sourceRow}: purchase tax code ${line.taxCode} is unavailable on ${doc.documentDate}`,
+          );
         }
       }
     }
 
     // Resolve and validate all tax-inclusive document totals before any bill
     // is written; line-only CSV preflight cannot know the effective tax rates.
+    const totalsByDocument = new Map<(typeof docs)[number], bigint>();
     for (const doc of docs) {
-      validateResolvedTransactionTotals(doc, "purchases", doc.lines.map((line) =>
-        // Reverse-charge bills carry no supplier tax; retain the real rate
-        // in the draft for buyer self-assessment but validate payable at 0.
-        line.taxCode
-          ? taxesByDate.get(doc.documentDate)!.get(line.taxCode)!.treatment === "reverse_charge"
-            ? 0 : taxesByDate.get(doc.documentDate)!.get(line.taxCode)!.rateBps
-          : 0,
-      ));
+      totalsByDocument.set(
+        doc,
+        validateResolvedTransactionTotals(
+          doc,
+          "purchases",
+          doc.lines.map((line) =>
+            // Reverse-charge bills carry no supplier tax; retain the real rate
+            // in the draft for buyer self-assessment but validate payable at 0.
+            line.taxCode
+              ? taxesByDate.get(doc.documentDate)!.get(line.taxCode)!.treatment === "reverse_charge"
+                ? 0
+                : taxesByDate.get(doc.documentDate)!.get(line.taxCode)!.rateBps
+              : 0,
+          ),
+        ).totalMinor,
+      );
     }
 
     const outcome: {
-      createdDrafts: number; authorised: number; skipped: number; failed: number;
+      createdDrafts: number;
+      authorised: number;
+      skipped: number;
+      failed: number;
       errors: Array<{ row: number; number: string; draftId: string | null; message: string }>;
       auditError: string | null;
     } = { createdDrafts: 0, authorised: 0, skipped: 0, failed: 0, errors: [], auditError: null };
@@ -5079,7 +5162,9 @@ export const importPurchaseBillsCsv = createServerFn({ method: "POST" })
       try {
         const { data: existing, error: duplicateError } = await supabase
           .from("purchase_bills" as never)
-          .select("id, status, contact_id, bill_date, due_date, currency_code, memo, posted_journal_id" as never)
+          .select(
+            "id, status, contact_id, bill_date, due_date, currency_code, memo, total_minor, posted_journal_id" as never,
+          )
           .eq("company_id" as never, data.companyId as never)
           .eq("contact_id" as never, suppliers.get(doc.contactName)! as never)
           .ilike("supplier_invoice_number" as never, escapeLikeTerm(doc.documentNumber) as never)
@@ -5087,43 +5172,73 @@ export const importPurchaseBillsCsv = createServerFn({ method: "POST" })
           .limit(1);
         if (duplicateError) throw new Error(duplicateError.message);
         if ((existing ?? []).length) {
-          const prior = (existing as unknown as Array<{
-            id: string; status: string; contact_id: string; bill_date: string;
-            due_date: string; currency_code: string; memo: string | null;
-            posted_journal_id: string | null;
-          }>)[0]!;
+          const prior = (
+            existing as unknown as Array<{
+              id: string;
+              status: string;
+              contact_id: string;
+              bill_date: string;
+              due_date: string;
+              currency_code: string;
+              memo: string | null;
+              total_minor: number | string;
+              posted_journal_id: string | null;
+            }>
+          )[0]!;
           const { data: priorLines, error: priorLinesError } = await supabase
             .from("purchase_bill_lines" as never)
-            .select("description, account_id, quantity, unit_price_minor, tax_code_id, discount_minor, product_id" as never)
+            .select(
+              "description, account_id, quantity, unit_price_minor, tax_code_id, discount_minor, product_id" as never,
+            )
             .eq("company_id" as never, data.companyId as never)
             .eq("bill_id" as never, prior.id as never)
             .order("line_no" as never);
           if (priorLinesError) throw new Error(priorLinesError.message);
-          const sameSource = isExactTransactionImportRetry({
-            contactId: suppliers.get(doc.contactName)!,
-            documentDate: doc.documentDate, dueDate: doc.dueDate,
-            currencyCode: currency,
-            lines: doc.lines.map((line) => ({
-              description: line.description, accountId: accounts.get(line.accountCode)!,
-              quantity: line.quantity, unitPriceMinor: line.unitPriceMinor,
-              taxCodeId: line.taxCode ? taxesByDate.get(doc.documentDate)!.get(line.taxCode)!.id : null,
-            })),
-          }, {
-            contact_id: prior.contact_id, document_date: prior.bill_date,
-            due_date: prior.due_date, currency_code: prior.currency_code,
-            memo: prior.memo,
-            lines: (priorLines ?? []) as never,
-          });
+          const sameSource = isExactTransactionImportRetry(
+            {
+              contactId: suppliers.get(doc.contactName)!,
+              documentDate: doc.documentDate,
+              dueDate: doc.dueDate,
+              currencyCode: currency,
+              lines: doc.lines.map((line) => ({
+                description: line.description,
+                accountId: accounts.get(line.accountCode)!,
+                quantity: line.quantity,
+                unitPriceMinor: line.unitPriceMinor,
+                taxCodeId: line.taxCode
+                  ? taxesByDate.get(doc.documentDate)!.get(line.taxCode)!.id
+                  : null,
+              })),
+            },
+            {
+              contact_id: prior.contact_id,
+              document_date: prior.bill_date,
+              due_date: prior.due_date,
+              currency_code: prior.currency_code,
+              memo: prior.memo,
+              lines: (priorLines ?? []) as never,
+            },
+          );
           if (!sameSource) {
-            throw new Error("Supplier invoice number already exists with different header or lines; review the existing bill");
+            throw new Error(
+              "Supplier invoice number already exists with different header or lines; review the existing bill",
+            );
           }
-          const disposition = classifyTransactionImportRetry(prior.status, prior.posted_journal_id, data.authorise);
+          const disposition = classifyTransactionImportRetry(
+            prior.status,
+            prior.posted_journal_id,
+            data.authorise,
+          );
           if (disposition === "manual_authorisation") {
             draftId = prior.id;
-            throw new Error("Matching bill draft already exists but is not authorised; review and authorise it manually");
+            throw new Error(
+              "Matching bill draft already exists but is not authorised; review and authorise it manually",
+            );
           }
           if (disposition === "invalid") {
-            throw new Error("Existing bill has an inconsistent status or missing posting journal; review and reconcile before retrying");
+            throw new Error(
+              "Existing bill has an inconsistent status or missing posting journal; review and reconcile before retrying",
+            );
           }
           if (prior.posted_journal_id) {
             const { data: linkedJournal, error: journalError } = await supabase
@@ -5133,11 +5248,47 @@ export const importPurchaseBillsCsv = createServerFn({ method: "POST" })
               .eq("company_id" as never, data.companyId as never)
               .maybeSingle();
             if (journalError) throw new Error(journalError.message);
-            if (!isVerifiedTransactionImportJournal({
-              companyId: data.companyId, documentId: prior.id,
-              journalId: prior.posted_journal_id, sourceType: "purchase_bill",
-            }, (linkedJournal ?? null) as never)) {
-              throw new Error("Existing bill posting journal cannot be verified against this organisation and bill; reconcile manually");
+            if (
+              !isVerifiedTransactionImportJournal(
+                {
+                  companyId: data.companyId,
+                  documentId: prior.id,
+                  journalId: prior.posted_journal_id,
+                  sourceType: "purchase_bill",
+                },
+                (linkedJournal ?? null) as never,
+              )
+            ) {
+              throw new Error(
+                "Existing bill posting journal cannot be verified against this organisation and bill; reconcile manually",
+              );
+            }
+            // Verify the actual AP control credit and full GL balance before
+            // accepting an existing posted bill as an idempotent CSV retry.
+            const { data: glLines, error: glError } = await supabase
+              .from("journal_lines" as never)
+              .select("company_id, journal_id, account_id, debit_minor, credit_minor" as never)
+              .eq("company_id" as never, data.companyId as never)
+              .eq("journal_id" as never, prior.posted_journal_id as never)
+              .limit(501);
+            if (glError) throw new Error(glError.message);
+            const ap = await requireApControlAccount(supabase, data.companyId);
+            if (
+              !isReconciledTransactionImportJournal(
+                {
+                  companyId: data.companyId,
+                  journalId: prior.posted_journal_id,
+                  controlAccountId: ap.id,
+                  controlSide: "credit",
+                  expectedTotalMinor: totalsByDocument.get(doc)!,
+                  persistedTotalMinor: prior.total_minor,
+                },
+                (glLines ?? null) as never,
+              )
+            ) {
+              throw new Error(
+                "Existing bill journal is unbalanced or AP control does not match the imported bill total; reconcile manually",
+              );
             }
           }
           outcome.skipped++;
@@ -5170,20 +5321,30 @@ export const importPurchaseBillsCsv = createServerFn({ method: "POST" })
       } catch (error) {
         outcome.failed++;
         outcome.errors.push({
-          row: doc.lines[0]!.sourceRow, number: doc.documentNumber, draftId,
+          row: doc.lines[0]!.sourceRow,
+          number: doc.documentNumber,
+          draftId,
           message: error instanceof Error ? error.message : "Bill import failed",
         });
       }
     }
     if (outcome.createdDrafts > 0) {
-      const { error } = await supabase.rpc("record_audit_event" as never, {
-        _company_id: data.companyId,
-        _action: "purchases.bills.import",
-        _entity_type: "purchase_bills",
-        _entity_id: null,
-        _details: { source: "csv", drafts: outcome.createdDrafts, authorised: outcome.authorised,
-          skipped: outcome.skipped, failed: outcome.failed },
-      } as never);
+      const { error } = await supabase.rpc(
+        "record_audit_event" as never,
+        {
+          _company_id: data.companyId,
+          _action: "purchases.bills.import",
+          _entity_type: "purchase_bills",
+          _entity_id: null,
+          _details: {
+            source: "csv",
+            drafts: outcome.createdDrafts,
+            authorised: outcome.authorised,
+            skipped: outcome.skipped,
+            failed: outcome.failed,
+          },
+        } as never,
+      );
       if (error) outcome.auditError = error.message;
     }
     return outcome;

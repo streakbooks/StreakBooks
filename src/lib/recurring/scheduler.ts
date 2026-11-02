@@ -45,9 +45,7 @@ export async function runDuePurchaseBillSchedules(
     const sched = row as unknown as { id: string; company_id: string; template_id: string };
     const { data: tpl, error: tErr } = await supabase
       .from("recurring_templates" as never)
-      .select(
-        "legacy_recurring_bill_id, owner_user_id, document_type, is_active" as never,
-      )
+      .select("legacy_recurring_bill_id, owner_user_id, document_type, is_active" as never)
       .eq("id" as never, sched.template_id as never)
       .maybeSingle();
     if (tErr) throw new Error(tErr.message);

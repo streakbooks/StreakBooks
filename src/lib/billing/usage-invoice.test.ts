@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { usageOverageInvoice } from "./usage-invoice";
 
@@ -30,5 +31,15 @@ describe("usage overage invoice", () => {
       quantity: 2,
       netMinor: 50,
     });
+  });
+
+  it("keeps the saved draft unposted", () => {
+    const sql = readFileSync(
+      new URL("../../../supabase/migrations/20261102370000_usage_drafts.sql", import.meta.url),
+      "utf8",
+    );
+    expect(sql).toContain("READY-TO-APPLY");
+    expect(sql).toContain("posted boolean NOT NULL DEFAULT false CHECK (posted = false)");
+    expect(sql).not.toContain("sales_invoices");
   });
 });

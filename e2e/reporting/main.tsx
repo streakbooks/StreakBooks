@@ -61,6 +61,8 @@ export function Fixture() {
     try {
       const def = customDefinitionSchema.parse(definition),
         f = reportingFactsFixture();
+      if (def.filters.clauses.length)
+        throw new Error("Filtered financial previews are verified by the live database suite");
       f.customColumns = customColumns(def, f.from, f.to).map((c) => ({
         id: c.id,
         from: c.from,
@@ -147,10 +149,12 @@ export function Fixture() {
         </RecordLookupSelect>
       </section>
       <CustomReportDesigner
+        filterOptions={{ currencies: ["GBP", "USD"], sources: ["manual"] }}
         definition={definition}
         onChange={(d) => {
           setDefinition(d);
           setDocument(null);
+          setError("");
           setSaved("");
         }}
         accounts={reportingFactsFixture().accounts}
@@ -161,9 +165,12 @@ export function Fixture() {
         </button>
         <button
           className="rounded border p-2"
-          disabled={!document}
+          disabled={!customDefinitionSchema.safeParse(definition).success}
           onClick={() => {
-            localStorage.setItem("reporting-designer", JSON.stringify(definition));
+            localStorage.setItem(
+              "reporting-designer",
+              JSON.stringify(customDefinitionSchema.parse(definition)),
+            );
             setSaved("Configuration saved in the isolated fixture");
           }}
         >

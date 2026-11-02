@@ -17,6 +17,7 @@ import type { SavedReport } from "@/lib/reports/saved-report";
 import type { ReportDocument } from "@/lib/reports/report-document";
 import {
   getReportAccounts,
+  getReportFilterOptions,
   getSavedReport,
   previewCustomReport,
   exportReportDocument,
@@ -46,6 +47,12 @@ function BuilderPage() {
     enabled: !!company,
     queryFn: () => accountsFn({ data: { companyId: company!.id } }),
   });
+  const filterOptionsFn = useServerFn(getReportFilterOptions);
+  const filterOptions = useQuery({
+    queryKey: ["report-filter-options", company?.id],
+    enabled: !!company,
+    queryFn: () => filterOptionsFn({ data: { companyId: company!.id } }),
+  });
   const saved = useQuery({
     queryKey: ["saved-report", company?.id, viewId],
     enabled: !!company && viewId !== "new",
@@ -53,7 +60,12 @@ function BuilderPage() {
     queryFn: async () =>
       JSON.parse(await load({ data: { companyId: company!.id, viewId } })) as SavedReport,
   });
-  if (isPending || accounts.isPending || (viewId !== "new" && saved.isPending))
+  if (
+    isPending ||
+    accounts.isPending ||
+    filterOptions.isPending ||
+    (viewId !== "new" && saved.isPending)
+  )
     return <LoadingState />;
   if (!company)
     return (
@@ -62,13 +74,14 @@ function BuilderPage() {
         description="Open an organisation to build a report."
       />
     );
-  if (accounts.isError || saved.isError)
+  if (accounts.isError || filterOptions.isError || saved.isError)
     return (
       <ErrorState
         title="Could not load report builder"
-        description={friendlyAuthError(accounts.error ?? saved.error)}
+        description={friendlyAuthError(accounts.error ?? filterOptions.error ?? saved.error)}
         onRetry={() => {
           void accounts.refetch();
+          void filterOptions.refetch();
           if (viewId !== "new") void saved.refetch();
         }}
       />
@@ -84,6 +97,7 @@ function BuilderPage() {
           company.fiscal_year_end_day ?? 31,
         )}
         accounts={accounts.data ?? []}
+        filterOptions={filterOptions.data!}
         saved={saved.data}
       />
     </ReportingFeatureGate>
@@ -93,11 +107,13 @@ function BuilderEditor({
   companyId,
   defaultFrom,
   accounts,
+  filterOptions,
   saved,
 }: {
   companyId: string;
   defaultFrom: string;
   accounts: Awaited<ReturnType<typeof getReportAccounts>>;
+  filterOptions: Awaited<ReturnType<typeof getReportFilterOptions>>;
   saved?: SavedReport | undefined;
 }) {
   const navigate = useNavigate(),
@@ -232,7 +248,12 @@ function BuilderEditor({
           ))}
       </div>
       <div className="print:hidden">
-        <CustomReportDesigner definition={definition} onChange={change} accounts={accounts} />
+        <CustomReportDesigner
+          definition={definition}
+          onChange={change}
+          accounts={accounts}
+          filterOptions={filterOptions}
+        />
       </div>
       {previewMutation.isError && (
         <p role="alert" className="text-sm text-destructive">

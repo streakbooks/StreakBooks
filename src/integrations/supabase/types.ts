@@ -11200,6 +11200,10 @@ export type Database = {
         Args: { _company_id: string }
         Returns: Json
       }
+      get_reporting_filter_options: {
+        Args: { _company_id: string }
+        Returns: Json
+      }
       get_shared_invoice: { Args: { _token: string }; Returns: Json }
       has_company_permission: {
         Args: { _company_id: string; _permission: string }
@@ -11795,6 +11799,20 @@ export type Database = {
           cost_minor: number
           disposal_date: string
           opening_accumulated_minor: number
+        }[]
+      }
+      report_filtered_balances: {
+        Args: {
+          _company_id: string
+          _filters: Json
+          _from: string
+          _to: string
+        }
+        Returns: {
+          account_id: string
+          credit_minor: number
+          debit_minor: number
+          line_count: number
         }[]
       }
       report_fixed_asset_register: {

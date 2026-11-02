@@ -156,3 +156,29 @@ test("recent report links retain account filters and custom-report periods with 
     ),
   ).toHaveCount(2);
 });
+
+test("posted-line filter controls preserve explicit conditions without fabricating fixture balances", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Add condition", exact: true }).click();
+  await page.getByRole("button", { name: "Recalculate report preview", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText("Choose the required filter values");
+  await page.getByRole("combobox", { name: "Condition 1 field", exact: true }).click();
+  await page.getByRole("option", { name: "Account type", exact: true }).click();
+  await page.getByRole("combobox", { name: "Condition 1 value", exact: true }).click();
+  await page.getByRole("option", { name: "income", exact: true }).click();
+  await page.getByRole("button", { name: "Persist fixture configuration", exact: true }).click();
+  await page.reload();
+  await expect(
+    page.getByRole("combobox", { name: "Condition 1 value", exact: true }),
+  ).toContainText("income");
+  await page.getByRole("button", { name: "Recalculate report preview", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText("verified by the live database suite");
+  await expect(page.getByRole("article", { name: "Financial report preview" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Remove condition 1", exact: true }).click();
+  await page.getByRole("button", { name: "Recalculate report preview", exact: true }).click();
+  await expect(page.getByRole("article", { name: "Financial report preview" })).toContainText(
+    "110.00",
+  );
+});

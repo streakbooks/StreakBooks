@@ -1,3 +1,4 @@
+import { ReportFilterEditor } from "./ReportFilterEditor";
 import { MultiLookupSelect } from "@/components/lookup/MultiLookupSelect";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -11,10 +12,12 @@ export function CustomReportDesigner({
   definition: d,
   onChange,
   accounts,
+  filterOptions,
 }: {
   definition: CustomDefinition;
   onChange: (v: CustomDefinition) => void;
   accounts: ReportAccount[];
+  filterOptions: { currencies: string[]; sources: string[] };
 }) {
   const [selected, setSelected] = useState(d.rows[0]?.id ?? "");
   const row = d.rows.find((r) => r.id === selected);
@@ -50,6 +53,12 @@ export function CustomReportDesigner({
           />
         </div>
       </div>
+      <ReportFilterEditor
+        value={d.filters}
+        filterOptions={filterOptions}
+        accounts={accounts}
+        onChange={(filters) => onChange({ ...d, filters })}
+      />
       <div className="grid gap-4 lg:grid-cols-[minmax(220px,1fr)_minmax(300px,2fr)]">
         <section className="space-y-3 rounded-lg border p-4">
           <div className="flex items-center justify-between">

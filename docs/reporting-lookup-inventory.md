@@ -47,7 +47,7 @@ The permanent rule is `.cursor/rules/linkbooks-lookup-select.mdc` (`alwaysApply:
 | `src/components/projects/ProjectTagControl.tsx` | 83 | LookupSelect | Project |
 | `src/components/purchases/BillMakePaymentPanel.tsx` | 209 | AccountLookup | Paid from |
 | `src/components/reports/AdviserReporting.tsx` | 79 | LookupSelect | Reporting firm |
-| `src/components/reports/CustomReportDesigner.tsx` | 156 | MultiLookupSelect | Custom report accounts |
+| `src/components/reports/CustomReportDesigner.tsx` | 165 | MultiLookupSelect | Custom report accounts |
 | `src/components/reports/LedgerViews.tsx` | 86 | AccountLookup | report-account |
 | `src/components/reports/LedgerViews.tsx` | 358 | RecordLookupSelect | jr-source |
 | `src/components/reports/LedgerViews.tsx` | 867 | LookupSelect | audit-actor |
@@ -57,6 +57,11 @@ The permanent rule is `.cursor/rules/linkbooks-lookup-select.mdc` (`alwaysApply:
 | `src/components/reports/PlanningViews.tsx` | 67 | LookupSelect | bva-budget |
 | `src/components/reports/ReportAccessDialog.tsx` | 124 | MultiLookupSelect | Report sharing recipients |
 | `src/components/reports/ReportAccessDialog.tsx` | 165 | RecordLookupSelect | report-share-firm |
+| `src/components/reports/ReportFilterEditor.tsx` | 61 | LookupSelect | Match conditions |
+| `src/components/reports/ReportFilterEditor.tsx` | 97 | LookupSelect | ariaLabel={`Condition ${index + 1} field`} value={clause.field} allowClear={false} options={FILTER_FIELDS.map((id) => ({ id, label: FILTER_L |
+| `src/components/reports/ReportFilterEditor.tsx` | 106 | LookupSelect | ariaLabel={`Condition ${index + 1} operator`} value={clause.op} allowClear={false} options={filterOperators(clause.field).map((id) => ({ id, |
+| `src/components/reports/ReportFilterEditor.tsx` | 139 | MultiLookupSelect | ariaLabel={`Condition ${index + 1} values`} options={options} values={clause.values} onValuesChange={(values) => patch(clause.id, { values } |
+| `src/components/reports/ReportFilterEditor.tsx` | 146 | LookupSelect | ariaLabel={`Condition ${index + 1} value`} options={options} value={clause.values[0] ?? ""} onChange={(v) => patch(clause.id, { values: [v]  |
 | `src/components/reports/ReportLibrary.tsx` | 224 | RecordLookupSelect | Report type |
 | `src/components/reports/ReportLibrary.tsx` | 509 | RecordLookupSelect | custom-base |
 | `src/components/reports/ReportPacksWorkspace.tsx` | 603 | RecordLookupSelect | id={`pack-${label}`} className="h-9 w-full rounded border bg-background" value={value} onValueChange={(e) => setter(e)} |
@@ -132,6 +137,6 @@ The permanent rule is `.cursor/rules/linkbooks-lookup-select.mdc` (`alwaysApply:
 | `src/routes/auth_.mfa.tsx` | 130 | RecordLookupSelect | mfa-factor |
 | `src/routes/pricing_.builder.tsx` | 72 | RecordLookupSelect | Base plan |
 
-Total: 123 shared declarations; zero guard violations at the recorded run. Source line numbers may shift with later formatting.
+Total: 128 shared declarations; zero guard violations at the recorded run. Source line numbers may shift with later formatting.
 
 Remaining validation: a complete authenticated workflow matrix across every module; large-list server paging for legacy callers that still supply bounded in-memory arrays; per-field eligibility and create permissions against representative tenant data. These are not certified by the static guard.

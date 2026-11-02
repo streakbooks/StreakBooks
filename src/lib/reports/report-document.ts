@@ -13,6 +13,7 @@ import {
 } from "@/lib/accounting/reporting";
 import { buildBalanceSheetStatement, buildPnlStatement, type StatementLine } from "./statements";
 import { buildIndirectCashFlow } from "./indirect-cash-flow";
+import { reportFiltersSchema, filterFingerprint, describeReportFilters } from "./report-filters";
 import { customDefinitionSchema, executeCustomReport, decimalValue } from "./custom-definition";
 import { fromMinorUnits, decimalPlacesFor } from "@/lib/accounting/money";
 
@@ -70,6 +71,7 @@ export const factsSchema = z.object({
   bsPrior: z.array(balance),
   bsCurrent: z.array(balance),
   cash: z.array(cash),
+  appliedFilters: reportFiltersSchema.optional(),
   customColumns: z
     .array(
       z.object({ id: z.string(), from: z.string(), to: z.string(), balances: z.array(balance) }),
@@ -195,6 +197,18 @@ export function buildReportDocument(
     sections: [],
   };
   if (builder) {
+    if (builder.filters.clauses.length || f.appliedFilters?.clauses.length) {
+      if (
+        !f.appliedFilters ||
+        filterFingerprint(f.appliedFilters) !== filterFingerprint(builder.filters)
+      )
+        throw new Error("Captured facts do not match the requested report filters");
+      doc.subtitle = [doc.subtitle, "Filtered report"].filter(Boolean).join(" · ");
+      const names = new Map(f.accounts.map((a) => [a.id, `${a.code} — ${a.name}`]));
+      doc.notes = [`Report filters: ${describeReportFilters(builder.filters, names)}`, doc.notes]
+        .filter(Boolean)
+        .join("\n");
+    }
     if (!f.customColumns) throw new Error("Custom column facts were not captured");
     let rows = executeCustomReport(
       builder,

@@ -5,6 +5,7 @@ import { buildReportDocument, PACK_REPORTS } from "./report-document";
 import { exportReportPdf, exportReportXlsx, exportReportCsv } from "./document-export.server";
 import { reportingFactsFixture } from "./__fixtures__/facts";
 import { starterDefinition, customDefinitionSchema } from "./custom-definition";
+import { reportFiltersSchema } from "./report-filters";
 import { displayDocumentValue } from "./document-format";
 
 describe("financial report documents and real export files", () => {
@@ -20,6 +21,41 @@ describe("financial report documents and real export files", () => {
     expect(cash.rows[0]!.values).toEqual(["0.00", "150.00", "40.00", "0.00", "110.00"]);
     const indirect = doc.sections.at(-1)!;
     expect(indirect.rows.at(-1)!.values).toEqual(["110.00"]);
+  });
+  it("rejects missing or mismatched filter provenance and labels filtered exports", async () => {
+    const facts = reportingFactsFixture();
+    const definition = starterDefinition();
+    definition.filters = reportFiltersSchema.parse({
+      clauses: [{ field: "account_type", op: "eq", values: ["income"] }],
+    });
+    facts.customColumns = [
+      {
+        id: "current",
+        from: facts.from,
+        to: facts.to,
+        balances: facts.period.filter(
+          (b) => facts.accounts.find((a) => a.id === b.account_id)?.account_type === "income",
+        ),
+      },
+    ];
+    const build = () =>
+      buildReportDocument(facts, { name: definition.title, config: { _builder: definition } });
+    expect(build).toThrow("Captured facts do not match");
+    facts.appliedFilters = reportFiltersSchema.parse({
+      clauses: [{ field: "account_type", op: "eq", values: ["expense"] }],
+    });
+    expect(build).toThrow("Captured facts do not match");
+    facts.appliedFilters = reportFiltersSchema.parse({
+      clauses: [{ field: "account_type", op: "eq", values: ["income"] }],
+    });
+    const doc = build();
+    expect(doc.subtitle).toContain("Filtered report");
+    expect(doc.notes).toContain("Account type equals income");
+    expect(exportReportCsv(doc)).toContain("Report filters:");
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load((await exportReportXlsx(doc)) as unknown as ExcelJS.Buffer);
+    expect(JSON.stringify(workbook.model)).toContain("Account type equals income");
+    expect((await PDFDocument.load(await exportReportPdf(doc))).getPageCount()).toBeGreaterThan(0);
   });
   it("renders custom monetary constants and percentage ratios from minor-unit ledger facts", () => {
     const facts = reportingFactsFixture();

@@ -194,6 +194,19 @@ export const getReportingWorkspace = createServerFn({ method: "GET" })
       hasMore: (data.packPage + 1) * 50 < (packs.count ?? 0),
     });
   });
+export const getReportFilterOptions = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(scope)
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
+    const result = await context.supabase.rpc("get_reporting_filter_options", {
+      _company_id: data.companyId,
+    });
+    if (result.error) throw result.error;
+    return z
+      .object({ currencies: z.array(z.string()), sources: z.array(z.string()) })
+      .parse(result.data);
+  });
 export const getReportAccounts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(scope)

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { reportFiltersSchema } from "./report-filters";
 import { isReportDate } from "./date-validation";
 import { priorPeriodRange, priorYearRange } from "./statements";
 import { addMonthsIso, monthEnd, monthStart } from "@/lib/accounting/fiscal-year";
@@ -55,6 +56,7 @@ export const customDefinitionSchema = z
     header: z.string().max(300).default(""),
     footer: z.string().max(300).default(""),
     orientation: z.enum(["portrait", "landscape"]).default("portrait"),
+    filters: reportFiltersSchema.default(() => reportFiltersSchema.parse({})),
     display: reportDisplaySchema.default(() => reportDisplaySchema.parse({})),
     rows: z.array(customRowSchema).min(1).max(150),
     columns: z.array(customColumnSchema).min(1).max(24),
@@ -149,6 +151,7 @@ export const customDefinitionSchema = z
 export type CustomDefinition = z.infer<typeof customDefinitionSchema>;
 export type CustomRow = z.infer<typeof customRowSchema>;
 export type ReportAccount = {
+  fs_line?: string | null;
   id: string;
   code: string;
   name: string;

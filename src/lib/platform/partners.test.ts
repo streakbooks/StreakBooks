@@ -35,5 +35,22 @@ describe("partner programme", () => {
     );
     expect(sql).toContain("READY-TO-APPLY");
     expect(sql).not.toContain("billing_plans");
+    expect(() =>
+      registerPartner({
+        role: "platform_owner",
+        name: "North Advisory",
+        reason: "Agreed",
+        revenueShareMinor: null,
+        exists: true,
+      }),
+    ).toThrow(/already exists/);
+    const once = readFileSync(
+      new URL("../../../supabase/migrations/20261102560000_partner_name_once.sql", import.meta.url),
+      "utf8",
+    );
+    expect(once).toContain("platform_partners_name_key");
+    expect(once).toContain("That partner already exists");
+    expect(once).toContain("require_platform('firms.manage')");
+    expect(once).not.toContain("billing_plans");
   });
 });

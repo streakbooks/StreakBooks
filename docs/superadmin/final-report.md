@@ -10,7 +10,7 @@ The work extends the existing platform permissions, `platform_log`, entitlements
 
 | Item | State |
 | --- | --- |
-| Hosted migrations `20261102170000` through `20261102550000`, plus the start-month backfill | READY-TO-APPLY. Not applied. Needs `BACKUP CONFIRMED` in `docs/HANDOFF.md`. |
+| Hosted migrations `20261102170000` through `20261102560000`, plus the start-month backfill | READY-TO-APPLY. Not applied. Needs `BACKUP CONFIRMED` in `docs/HANDOFF.md`. |
 | Payment provider calls, usage posting, reconciliation | Blocked. No test-mode secret in `.env.local`. |
 | Live second-approver walkthrough | Blocked. Needs a second platform user with `approvals.manage`. |
 | Local platform owner and migration-history replay | Blocked. Docker is not installed. LeadOrbit is not a LinkBooks staging database. |

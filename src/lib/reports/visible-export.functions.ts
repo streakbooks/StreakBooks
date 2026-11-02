@@ -55,7 +55,7 @@ export const exportVisibleReport = createServerFn({ method: "POST" })
       sections: [{
         id: data.reportId,
         title: data.title,
-        labelHeader: data.headers[0],
+        labelHeader: data.headers[0]!,
         columns: data.headers.slice(1),
         rows: data.rows.map((row) => ({
           label: row[0] ?? "",

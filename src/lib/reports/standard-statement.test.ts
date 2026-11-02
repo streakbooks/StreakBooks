@@ -69,7 +69,7 @@ describe("standard statement controls and accounting parity", () => {
     expect(workbook.worksheets[0]!.getCell("A1").value).toBe("P&L");
     expect(workbook.worksheets[0]!.getCell("A2").value).toBe("");
     expect(workbook.worksheets[0]!.getCell("D3").value).toContain("Prepared");
-    expect(workbook.worksheets[0]!.getRow(8).fill).toBeDefined();
+    expect(workbook.worksheets[0]!.getCell("A8").fill).toBeDefined();
     expect(workbook.worksheets[0]!.headerFooter.oddFooter).toContain("&CInternal financial statement");
     expect((await PDFDocument.load(await exportReportPdf(doc))).getPageCount()).toBeGreaterThan(0);
   });

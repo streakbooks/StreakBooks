@@ -7,11 +7,9 @@ import { friendlyAuthError } from "@/lib/auth-helpers";
 export function ReportingFeatureGate({
   companyId,
   children,
-  onOpenStandard,
 }: {
   companyId: string;
   children: ReactNode;
-  onOpenStandard?: () => void;
 }) {
   const access = useReportingAccess(companyId);
   if (access.isPending) return <LoadingState />;
@@ -32,15 +30,9 @@ export function ReportingFeatureGate({
           Access source: {access.data.source} ({access.data.scope}). Saved reports and approved
           history are retained. Standard financial reports remain in the Standard reports tab.
         </p>
-        {onOpenStandard ? (
-          <Button variant="outline" onClick={onOpenStandard}>
-            Open standard reports
-          </Button>
-        ) : (
-          <Button asChild variant="outline">
-            <Link to="/reports">Open Reports Centre</Link>
-          </Button>
-        )}
+        <Button asChild variant="outline">
+          <Link to="/reports" search={{ tab: "standard" }}>Open standard reports</Link>
+        </Button>
       </section>
     );
   return (

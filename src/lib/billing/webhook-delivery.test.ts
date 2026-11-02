@@ -36,5 +36,15 @@ describe("webhook delivery recording", () => {
     );
     expect(sql).toContain("READY-TO-APPLY");
     expect(sql).not.toContain("payload");
+    const before = readFileSync(
+      new URL(
+        "../../../supabase/migrations/20261102470000_webhook_delivery_before.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    expect(before).toContain("jsonb_build_object('status', _previous)");
+    expect(before).toContain("require_platform('integrations.manage')");
+    expect(before).not.toContain("payload");
   });
 });

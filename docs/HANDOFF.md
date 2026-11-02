@@ -2,7 +2,7 @@
 
 ## P0 evidence
 
-Typecheck exit 0. Lint 0 errors and 23 warnings. Vitest 163 files, 1279 tests, all passed. Production build exit 0. Playwright had no seeded platform_owner: `e2e/superadmin-journeys.spec.ts` 2 passed and 2 skipped. Migration history is BLOCKED: Docker is not installed, and the only other Supabase project is LeadOrbit. READY-TO-APPLY and not applied: `20261102170000`, `20261102180000`, `20261102180100`, `20261102190000`, `20261102200000`, `20261102210000`, `20261102220000`, `20261102230000`, `20261102240000`, `20261102250000`, `20261102260000`, `20261102270000`, `20261102280000`, `20261102290000`, `20261102300000`, `20261102310000`, `20261102320000`, `20261102330000`, `20261102340000`, `20261102350000`, `20261102360000`, `20261102370000`, `20261102380000`, `20261102390000`, `20261102400000`, `20261102410000`, `20261102420000`, `20261102430000`, `20261102440000`, `20261102450000`, `20261102460000`, and the start-month backfill in `docs/superadmin/start-month-backfill.md`.
+Typecheck exit 0. Lint 0 errors and 23 warnings. Vitest 163 files, 1279 tests, all passed. Production build exit 0. Playwright had no seeded platform_owner: `e2e/superadmin-journeys.spec.ts` 2 passed and 2 skipped. Migration history is BLOCKED: Docker is not installed, and the only other Supabase project is LeadOrbit. READY-TO-APPLY and not applied: `20261102170000`, `20261102180000`, `20261102180100`, `20261102190000`, `20261102200000`, `20261102210000`, `20261102220000`, `20261102230000`, `20261102240000`, `20261102250000`, `20261102260000`, `20261102270000`, `20261102280000`, `20261102290000`, `20261102300000`, `20261102310000`, `20261102320000`, `20261102330000`, `20261102340000`, `20261102350000`, `20261102360000`, `20261102370000`, `20261102380000`, `20261102390000`, `20261102400000`, `20261102410000`, `20261102420000`, `20261102430000`, `20261102440000`, `20261102450000`, `20261102460000`, `20261102470000`, and the start-month backfill in `docs/superadmin/start-month-backfill.md`.
 
 - P0.1: typecheck exit 0, lint 0 errors and 23 warnings, 1279 unit tests passed, production build exit 0.
 - P0.2: `sk_live_` and `rzp_live_` are refused unless `LINKBOOKS_ALLOW_LIVE_PAYMENT_KEYS=true`. 15 provider-key tests passed.
@@ -55,7 +55,8 @@ Typecheck exit 0. Lint 0 errors and 23 warnings. Vitest 163 files, 1279 tests, a
 - Batch C: a break-glass request and a promotion request require a business that exists. `20261102440000` was not applied. Tests passed, 6.
 - Batch B: a stored fee cannot exceed the charge. `20261102450000` was not applied. A missing fee stays unavailable. Tests passed, 3.
 - Batches E–H: a duplicate segment name or membership is rejected and is not audited as a new tag. `20261102460000` was not applied. Tests passed, 2.
-- Hosted gate BLOCKED: `20261102170000` through `20261102460000`, and the start-month backfill, are READY-TO-APPLY. Nothing further was applied. Write `BACKUP CONFIRMED` in this file to release them.
+- Batch D: updating a webhook outcome records the previous status. `20261102470000` was not applied. The live handler does not call it. Tests passed, 2.
+- Hosted gate BLOCKED: `20261102170000` through `20261102470000`, and the start-month backfill, are READY-TO-APPLY. Nothing further was applied. Write `BACKUP CONFIRMED` in this file to release them.
 
 ## NEEDS FROM OWNER
 

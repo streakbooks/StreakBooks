@@ -44,6 +44,8 @@ export function decidePromotion(input: {
 }): {
   request: PromotionRequest;
   copied: false;
+  presentationFields: readonly string[];
+  ledgerCopied: false;
   audit: { action: "promotion.decide"; reason: string };
 } {
   if (!platformRoleAllows(input.role, "settings.manage"))
@@ -56,6 +58,11 @@ export function decidePromotion(input: {
   return {
     request: { ...input.request, status: input.decision },
     copied: false,
+    presentationFields:
+      input.decision === "approved"
+        ? ["locale", "date_format", "invoice_footer", "document_theme_color"]
+        : [],
+    ledgerCopied: false,
     audit: { action: "promotion.decide", reason },
   };
 }

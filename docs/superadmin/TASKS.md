@@ -66,7 +66,7 @@ Work top to bottom. A task is done only when its tests have run and the box is t
 - [x] Incident and release management
 - [x] Managed services desk
 - [x] Partner programme
-- [ ] Config promotion
+- [x] Config promotion
 - [ ] Sandbox tenants
 
 ## Final

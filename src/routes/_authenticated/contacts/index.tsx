@@ -1,5 +1,5 @@
 import { SettingsDestinationLink } from "@/components/settings/ModuleSettingsLinks";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -31,12 +31,9 @@ import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/_authenticated/contacts/")({
   validateSearch: (search: Record<string, unknown>) => ({
-    view:
-      search["view"] === "suppliers"
-        ? "suppliers"
-        : search["view"] === "customers"
-          ? "customers"
-          : undefined,
+    view: ["all", "customers", "suppliers", "both", "recent", "updated", "inactive", "archived"].includes(String(search["view"]))
+      ? String(search["view"])
+      : "all",
   }),
   head: () => ({
     meta: [
@@ -69,11 +66,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
   const fetchSummary = useServerFn(getContactsDirectorySummary);
   const exportFn = useServerFn(exportContactsCsv);
 
-  const { view: requestedView } = Route.useSearch();
-  const [view, setView] = useState(requestedView ?? "all");
-  useEffect(() => {
-    if (requestedView) setView(requestedView);
-  }, [requestedView]);
+  const { view } = Route.useSearch();
   const [page, setPage] = useState(0);
   const [q, setQ] = useState("");
   const kindForApi = useMemo(() => {
@@ -188,23 +181,33 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
         </div>
       ) : null}
 
-      <Tabs
-        value={view}
-        onValueChange={(v) => {
-          setView(v);
-          setPage(0);
-        }}
-      >
+      <Tabs value={view}>
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <TabsList className="flex h-auto flex-wrap">
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="customers">Customers</TabsTrigger>
-            <TabsTrigger value="suppliers">Suppliers</TabsTrigger>
-            <TabsTrigger value="both">Both roles</TabsTrigger>
-            <TabsTrigger value="recent">Recently added</TabsTrigger>
-            <TabsTrigger value="updated">Recently updated</TabsTrigger>
-            <TabsTrigger value="inactive">Inactive</TabsTrigger>
-            <TabsTrigger value="archived">Archived</TabsTrigger>
+            <TabsTrigger value="all" asChild>
+              <Link to="/contacts" search={{ view: "all" }} onClick={() => setPage(0)}>All</Link>
+            </TabsTrigger>
+            <TabsTrigger value="customers" asChild>
+              <Link to="/contacts" search={{ view: "customers" }} onClick={() => setPage(0)}>Customers</Link>
+            </TabsTrigger>
+            <TabsTrigger value="suppliers" asChild>
+              <Link to="/contacts" search={{ view: "suppliers" }} onClick={() => setPage(0)}>Suppliers</Link>
+            </TabsTrigger>
+            <TabsTrigger value="both" asChild>
+              <Link to="/contacts" search={{ view: "both" }} onClick={() => setPage(0)}>Both roles</Link>
+            </TabsTrigger>
+            <TabsTrigger value="recent" asChild>
+              <Link to="/contacts" search={{ view: "recent" }} onClick={() => setPage(0)}>Recently added</Link>
+            </TabsTrigger>
+            <TabsTrigger value="updated" asChild>
+              <Link to="/contacts" search={{ view: "updated" }} onClick={() => setPage(0)}>Recently updated</Link>
+            </TabsTrigger>
+            <TabsTrigger value="inactive" asChild>
+              <Link to="/contacts" search={{ view: "inactive" }} onClick={() => setPage(0)}>Inactive</Link>
+            </TabsTrigger>
+            <TabsTrigger value="archived" asChild>
+              <Link to="/contacts" search={{ view: "archived" }} onClick={() => setPage(0)}>Archived</Link>
+            </TabsTrigger>
           </TabsList>
           <Input
             placeholder="Search name, email, phone, account #, tax ID…"

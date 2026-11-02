@@ -92,6 +92,9 @@ export async function exportReportPdf(doc: ReportDocument): Promise<Uint8Array> 
         );
         y -= 19;
         let max = 1;
+        const labelHeading = wrap(section.labelHeader ?? "Account / measure", font, 8, labelWidth - 8);
+        max = Math.max(max, labelHeading.length);
+        labelHeading.forEach((l, j) => text(l, margin + 2, y - j * 10, 8));
         columns.forEach((c, i) => {
           const ls = wrap(c, font, 8, valueWidth - 8);
           max = Math.max(max, ls.length);
@@ -109,7 +112,15 @@ export async function exportReportPdf(doc: ReportDocument): Promise<Uint8Array> 
       tableHeader();
       for (const [rowIndex, row] of section.rows.entries()) {
         const labels = wrap(row.label, font, 9, labelWidth - 12 - (row.indent ?? 0) * 8);
-        const height = Math.max(1, labels.length) * 12 + 8;
+        const displayCells = row.values.slice(start, start + 6).map((value, i) => {
+          const rendered = displayDocumentValue(value, documentCellStyle(row, section, start + i));
+          const isNumber = /^-?\\d+(?:\\.\\d+)?$/.test(value);
+          const lines = isNumber ? [rendered] : wrap(rendered, font, 8, valueWidth - 8);
+          if (isNumber && font.widthOfTextAtSize(rendered, 8) > valueWidth - 8)
+            throw new Error("A financial amount exceeds the column width; use fewer columns or landscape pages");
+          return { lines, negative: row.negativeRed && value.startsWith("-") };
+        });
+        const height = Math.max(1, labels.length, ...displayCells.map((cell) => cell.lines.length)) * 12 + 8;
         if (height > size[1] - 250)
           throw new Error("A report row is too long for the selected page size");
         if (y - height < margin + 35) {
@@ -125,20 +136,17 @@ export async function exportReportPdf(doc: ReportDocument): Promise<Uint8Array> 
             color: row.kind === "heading" ? rgb(0.94, 0.96, 0.96) : rgb(0.975, 0.98, 0.99),
           });
         labels.forEach((l, i) => text(l, margin + (row.indent ?? 0) * 8, y - i * 12, 9));
-        row.values.slice(start, start + 6).forEach((value, i) => {
-          const s = displayDocumentValue(value, documentCellStyle(row, section, start + i)),
-            w = font.widthOfTextAtSize(s, 8);
-          if (w > valueWidth - 8)
-            throw new Error(
-              "A financial amount exceeds the column width; use fewer columns or landscape pages",
+        displayCells.forEach((cell, i) => {
+          cell.lines.forEach((lineText, j) => {
+            const w = font.widthOfTextAtSize(lineText, 8);
+            text(
+              lineText,
+              margin + labelWidth + (i + 1) * valueWidth - w - 4,
+              y - j * 12,
+              8,
+              cell.negative ? rgb(0.7, 0.1, 0.1) : ink,
             );
-          text(
-            s,
-            margin + labelWidth + (i + 1) * valueWidth - w - 4,
-            y,
-            8,
-            row.negativeRed && value.startsWith("-") ? rgb(0.7, 0.1, 0.1) : ink,
-          );
+          });
         });
         y -= height;
         if (doc.presentation?.reportBorders === "all") {

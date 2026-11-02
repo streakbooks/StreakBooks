@@ -5,6 +5,14 @@
 - P0.3 BLOCKED: Playwright Chromium installed; public quote tests passed 2, grant/revoke skipped. Need Docker Desktop or Podman on PATH to seed a local platform_owner.
 - P0.4: definer audit written. `20261102180000` and `20261102180100` are READY-TO-APPLY and were not applied. Definer audit test passed.
 - P0.5 BLOCKED: no Docker and no LinkBooks staging project. Do not use LeadOrbit. Create an empty staging project or install Docker Desktop or Podman.
+- P0.6: pull request 65 merged at `9fc4429` after verify and voice-browser succeeded.
+
+## NEEDS FROM OWNER
+
+- Write `BACKUP CONFIRMED` here before any hosted migration is applied.
+- Put a test-mode `STRIPE_SECRET_KEY` or Razorpay test keys in `.env.local` before provider calls.
+- Add a second platform user with `approvals.manage` for the kill-switch walkthrough.
+- Install Docker Desktop or Podman on PATH, or create an empty LinkBooks staging Supabase project. Do not use LeadOrbit.
 
 Date: 2 November 2026. `origin/main` is `7813d20`, which is after `53cc3ec`. Further work goes through a pull request. Do not push `main` directly.
 

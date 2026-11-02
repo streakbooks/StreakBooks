@@ -51,7 +51,7 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/fixed-assets")({
-  validateSearch: (raw: Record<string, unknown>): { tab?: string } => ({
+  validateSearch: (raw: Record<string, unknown>): { tab?: string | undefined } => ({
     tab: ["register", "depreciation", "types"].includes(String(raw["tab"])) ? String(raw["tab"]) : undefined,
   }),
   head: () => ({ meta: [{ title: "Fixed assets — LinkBooks" }] }),

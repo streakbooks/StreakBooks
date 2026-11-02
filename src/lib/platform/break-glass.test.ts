@@ -68,5 +68,12 @@ describe("break-glass access", () => {
     expect(expiry).toContain("break_glass.expire");
     expect(expiry).toContain("private.platform_log");
     expect(expiry).not.toContain("reason");
+    const guard = readFileSync(
+      new URL("../../../supabase/migrations/20261102440000_company_exists_guards.sql", import.meta.url),
+      "utf8",
+    );
+    expect(guard).toContain("That business was not found");
+    expect(guard).toContain("break_glass_grants_company_fk");
+    expect(guard).toContain("require_platform('support.manage')");
   });
 });

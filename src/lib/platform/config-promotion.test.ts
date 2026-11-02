@@ -58,5 +58,13 @@ describe("config promotion", () => {
     expect(copy).toContain("SET locale = source.locale");
     expect(copy).not.toContain("base_currency");
     expect(copy).not.toContain("journal_lines");
+    const guard = readFileSync(
+      new URL("../../../supabase/migrations/20261102440000_company_exists_guards.sql", import.meta.url),
+      "utf8",
+    );
+    expect(guard).toContain("platform_promotions_source_fk");
+    expect(guard).toContain("platform_promotions_target_fk");
+    expect(guard).toContain("That business was not found");
+    expect(guard).not.toContain("UPDATE public.companies");
   });
 });

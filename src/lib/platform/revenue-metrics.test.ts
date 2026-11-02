@@ -1,0 +1,55 @@
+import { readFileSync } from "node:fs";
+import { describe, expect, it } from "vitest";
+import { FEATURE_REGISTRY } from "./feature-registry";
+import {
+  arrFromMrrMinor,
+  mrrMovement,
+  normalisedMrrMinor,
+  revenueCardState,
+} from "./revenue-metrics";
+import { formatConsoleInstant, formatUtcDay } from "./console-time";
+
+describe("revenue definitions", () => {
+  it("normalises an annual contract by dividing by 12 and derives ARR from MRR", () => {
+    expect(normalisedMrrMinor(1200, "year")).toBe(100);
+    expect(normalisedMrrMinor(1000, "year")).toBe(83);
+    expect(arrFromMrrMinor(83)).toBe(996);
+    expect(normalisedMrrMinor(2500, "month")).toBe(2500);
+  });
+
+  it("classifies new, expansion, contraction and churned MRR", () => {
+    expect(mrrMovement(0, 500).newMinor).toBe(500);
+    expect(mrrMovement(500, 800)).toMatchObject({ expansionMinor: 300, netNewMinor: 300 });
+    expect(mrrMovement(800, 700)).toMatchObject({ contractionMinor: 100, netNewMinor: -100 });
+    expect(mrrMovement(700, 0)).toMatchObject({ churnedMinor: 700, netNewMinor: -700 });
+  });
+
+  it("separates an empty revenue card from a missing permission", () => {
+    expect(revenueCardState({ revenueState: "empty", rows: [] })).toBe("empty");
+    expect(revenueCardState({ revenueState: "forbidden", rows: [] })).toBe("forbidden");
+    expect(revenueCardState({ revenueState: "ok", rows: [{ currency: "GBP" }] })).toBe("ok");
+    expect(revenueCardState({ rows: [] })).toBe("unseparated");
+  });
+});
+
+describe("console dates", () => {
+  it("labels an instant with the zone and formats a UTC calendar day", () => {
+    expect(formatConsoleInstant("2026-11-02T18:30:00.000Z", "UTC")).toContain("UTC");
+    expect(formatUtcDay("2026-11-02")).toContain("2026");
+  });
+});
+
+describe("feature catalogue", () => {
+  it("is registered in the entitlement migration", () => {
+    const sql = readFileSync(
+      "supabase/migrations/20261102120000_entitlement_price_book.sql",
+      "utf8",
+    );
+    for (const feature of FEATURE_REGISTRY) expect(sql).toContain(`'${feature.key}'`);
+    expect(sql).toContain("kill_switch suspension revoke grant addon trial plan default");
+    expect(sql).toContain("user business firm plan global");
+    expect(new Set(FEATURE_REGISTRY.map((feature) => feature.key)).size).toBe(
+      FEATURE_REGISTRY.length,
+    );
+  });
+});

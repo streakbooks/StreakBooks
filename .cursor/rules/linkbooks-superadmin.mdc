@@ -1,0 +1,25 @@
+---
+description: Register every LinkBooks feature in the superadmin catalogue
+alwaysApply: true
+---
+
+# Superadmin catalogue
+
+New features and modules register before they ship. Extend the existing billing and platform tables. Do not add a second plan, price, entitlement, audit or billing system. Detail is in `docs/superadmin/`.
+
+## Required for every new feature
+
+- Add the feature to `src/lib/platform/feature-registry.ts` and `public.billing_features` (key, name, description, category, module, dependencies, default, metering, cost tag, status).
+- Declare requires, conflicts and optional links in `feature_dependencies`. Do not hardcode that graph inside a screen.
+- Enforce access through `get_entitlements` / `winning_entitlements`. The UI mirrors the decision and shows the source.
+- Add a `feature_prices` row, or record the feature as included in the plan. Amounts are integer minor units.
+- Meter usage when the feature is metered. Removal hides or freezes the feature and keeps accounting history.
+- Write a platform audit event with actor, before, after and reason.
+- Add a unit test for the entitlement or price rule, plus an authorisation check that tenant roles cannot call the platform RPC.
+
+## Safety
+
+- Platform permission never grants customer ledger access.
+- Kill switches and global changes need a second approver. A person cannot approve their own request.
+- Payment provider calls stay in test mode unless the owner says otherwise.
+- Tax labels are configuration, not a legal determination.

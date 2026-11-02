@@ -6,6 +6,7 @@ import { sections, sectionSchema, visibleSections } from "@/lib/platform/catalog
 import { PlatformOverview } from "@/components/platform/PlatformOverview";
 import { PlatformResource } from "@/components/platform/PlatformResource";
 import { PlatformHealth } from "@/components/platform/PlatformHealth";
+import { PlatformApprovals } from "@/components/platform/PlatformApprovals";
 export const Route = createFileRoute("/_authenticated/platform/")({
   validateSearch: (input: Record<string, unknown>) => ({
     section: sectionSchema.catch("overview").parse(input["section"]),
@@ -36,7 +37,9 @@ function PlatformHome() {
         <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
         <p className="mt-2 max-w-3xl text-sm text-muted-foreground">{description}</p>
       </div>
-      {id === "overview" ? (
+      {id === "approvals" ? (
+        <PlatformApprovals canManage={query.data.permissions.includes("approvals.manage")} />
+      ) : id === "overview" ? (
         <PlatformOverview
           allowedSections={allowed.map(([id]) => id)}
           onSection={(s) => {

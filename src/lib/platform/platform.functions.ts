@@ -167,3 +167,65 @@ export const exportPlatformRecords = createServerFn({ method: "POST" })
       ),
     );
   });
+
+const entitlementChange = z.object({
+  feature: z.string().trim().min(2).max(64),
+  scope: z.enum(["user", "business", "firm", "plan", "global"]),
+  scopeId: z.string().uuid().nullable().default(null),
+  planCode: z.string().trim().max(64).nullable().default(null),
+  source: z.enum(["kill_switch", "suspension", "revoke", "grant", "addon", "trial"]),
+  effect: z.enum(["allow", "deny"]),
+  startsAt: z.string().datetime().nullable().default(null),
+  expiresAt: z.string().datetime().nullable().default(null),
+  reason: z.string().trim().min(3).max(1000),
+  notes: z.string().trim().max(2000).default(""),
+});
+
+export const setPlatformEntitlement = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((v: unknown) => entitlementChange.parse(v))
+  .handler(async ({ context, data }) =>
+    unwrap<{ ok: true; pending: boolean; id: string }>(
+      await context.supabase.rpc(
+        "platform_set_entitlement" as never,
+        {
+          _feature: data.feature,
+          _scope: data.scope,
+          _scope_id: data.scopeId,
+          _plan_code: data.planCode,
+          _source: data.source,
+          _effect: data.effect,
+          _starts: data.startsAt,
+          _expires: data.expiresAt,
+          _reason: data.reason,
+          _notes: data.notes,
+        } as never,
+      ),
+    ),
+  );
+
+export const listPlatformApprovals = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) =>
+    unwrap<{ rows: Row[] }>(await context.supabase.rpc("platform_list_approvals" as never)),
+  );
+
+export const decidePlatformApproval = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((v: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        decision: z.enum(["approved", "rejected"]),
+        reason: z.string().trim().min(3).max(1000),
+      })
+      .parse(v),
+  )
+  .handler(async ({ context, data }) =>
+    unwrap<{ ok: true }>(
+      await context.supabase.rpc(
+        "platform_decide_approval" as never,
+        { _id: data.id, _decision: data.decision, _reason: data.reason } as never,
+      ),
+    ),
+  );

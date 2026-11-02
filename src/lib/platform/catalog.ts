@@ -25,6 +25,7 @@ export const sections = [
   ["support", "Support", "Tickets and separately authorized journal diagnostics"],
   ["notifications", "Notifications", "In-app announcements and notification drafts"],
   ["settings", "System settings", "Maintenance mode and retention policy"],
+  ["approvals", "Approvals", "High-risk requests that need a second person"],
 ] as const;
 export type Section = (typeof sections)[number][0];
 export const sectionSchema = z.enum(sections.map((s) => s[0]) as [Section, ...Section[]]);
@@ -78,6 +79,8 @@ export type Overview = {
   cancellations: number;
   pastDue: number;
   revenue: { currency: string; mrr_minor: number; arr_minor: number }[];
+  /** Present after the entitlement migration. Missing means the server did not separate empty from forbidden. */
+  revenueState?: "ok" | "empty" | "forbidden";
   registrations: { day: string; businesses: number }[];
   plans: { plan_code: string; subscriptions: number }[];
   measuredAt: string;

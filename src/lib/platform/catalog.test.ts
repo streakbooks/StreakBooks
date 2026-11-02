@@ -12,7 +12,7 @@ import {
 describe("platform request boundaries", () => {
   it("rejects unknown navigation and defaults only inside route handling", () => {
     expect(sectionSchema.safeParse("anything").success).toBe(false);
-    expect(sections).toHaveLength(16);
+    expect(sections).toHaveLength(17);
   });
   it("limits list searches and pagination and rejects SQL sort fragments", () => {
     for (const input of [

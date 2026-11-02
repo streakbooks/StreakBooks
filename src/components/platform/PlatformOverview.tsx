@@ -13,6 +13,8 @@ import {
   Bar,
 } from "recharts";
 import { getPlatformOverview } from "@/lib/platform/platform.functions";
+import { formatConsoleInstant, formatUtcDay } from "@/lib/platform/console-time";
+import { revenueCardState } from "@/lib/platform/revenue-metrics";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { Section } from "@/lib/platform/catalog";
@@ -69,8 +71,9 @@ export function PlatformOverview({
       ) : (
         <>
           <p className="text-xs text-muted-foreground">
-            Current snapshot · {new Date(query.data.measuredAt).toLocaleString()} · Demo businesses
-            excluded. Active users signed in within 30 days.
+            Current snapshot · {formatConsoleInstant(query.data.measuredAt)} · Registration dates
+            are UTC calendar days ({formatUtcDay(range.from)} to {formatUtcDay(range.to)}). Demo
+            businesses excluded. Active users signed in within 30 days.
           </p>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {(
@@ -146,7 +149,31 @@ export function PlatformOverview({
               Active paid subscriptions, normalized monthly. Annual contracts divide by 12. No
               currency conversion or trial revenue.
             </p>
-            {query.data.revenue.length ? (
+            {revenueCardState({
+              revenueState: query.data.revenueState,
+              rows: query.data.revenue,
+            }) === "forbidden" ? (
+              <p className="mt-4 text-sm" role="status">
+                Billing permission is required to view revenue. This is not a zero balance.
+              </p>
+            ) : revenueCardState({
+                revenueState: query.data.revenueState,
+                rows: query.data.revenue,
+              }) === "empty" ? (
+              <p className="mt-4 text-sm" role="status">
+                No eligible active subscriptions with a stored price. Permission to view billing is
+                present. This is an empty result, not a zero balance and not a permissions error.
+              </p>
+            ) : revenueCardState({
+                revenueState: query.data.revenueState,
+                rows: query.data.revenue,
+              }) === "unseparated" ? (
+              <p className="mt-4 text-sm" role="status">
+                {query.data.revenue.length
+                  ? "Revenue rows are shown, but this server did not label whether an empty result would mean no data or no permission."
+                  : "No revenue rows were returned, and this server did not say whether that is an empty result or a missing billing permission. Do not treat it as zero."}
+              </p>
+            ) : query.data.revenue.length ? (
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
                 {query.data.revenue.map((r) => (
                   <div key={r.currency} className="rounded-lg bg-muted p-4">
@@ -177,8 +204,9 @@ export function PlatformOverview({
                 ))}
               </div>
             ) : (
-              <p className="mt-4 text-sm">
-                No eligible revenue records, or billing permission is unavailable.
+              <p className="mt-4 text-sm" role="status">
+                Billing permission is present and the snapshot is eligible, but no currency row was
+                returned. This is not a zero balance and not a permissions error.
               </p>
             )}
           </section>

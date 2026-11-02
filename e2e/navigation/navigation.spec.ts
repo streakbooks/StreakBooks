@@ -67,3 +67,18 @@ test("report pack deep links preserve identity and exclude invalid record refere
   await page.goto("/reports?tab=packs&pack=not-valid");
   await expect(page.getByTestId("active-report-pack")).toHaveText("none");
 });
+
+test("keyboard arrow, Home and End keys navigate hyperlink tabs", async ({ page }) => {
+  await page.goto("/accounting?tab=coa");
+  const tabs = page.getByRole("tablist", { name: "Accounting tabs" });
+  const first = tabs.getByRole("tab", { name: "Chart of accounts" });
+  await first.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(page.getByTestId("active-accounting-tab")).toHaveText("journals");
+  await page.keyboard.press("End");
+  await expect(page.getByTestId("active-accounting-tab")).toHaveText("fx");
+  await page.keyboard.press("Home");
+  await expect(page.getByTestId("active-accounting-tab")).toHaveText("coa");
+  await page.keyboard.press("ArrowLeft");
+  await expect(page.getByTestId("active-accounting-tab")).toHaveText("fx");
+});

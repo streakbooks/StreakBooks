@@ -268,3 +268,46 @@ export const getPlatformMrrReconciliation = createServerFn({ method: "GET" })
     const parsed = reconciliationPayload.parse(result.data);
     return { ready: true as const, ...parsed, message: null };
   });
+
+const cohortCount = z.number().int().nonnegative();
+const cohortMonth = z.object({
+  month: z.string().regex(/^\d{4}-\d{2}$/),
+  trialing: cohortCount,
+  active: cohortCount,
+  past_due: cohortCount,
+  cancelled: cohortCount,
+  expired: cohortCount,
+  complimentary: cohortCount,
+  paused: cohortCount,
+  other: cohortCount,
+  total: cohortCount,
+});
+const cohortPayload = z.object({
+  unknownStart: cohortCount,
+  months: z.array(cohortMonth),
+});
+
+export const getPlatformSubscriptionCohorts = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    setResponseHeader("Cache-Control", "private, no-store");
+    const result = await context.supabase.rpc("platform_subscription_cohorts" as never);
+    if (result.error) {
+      if (
+        result.error.code === "42883" ||
+        result.error.code === "PGRST202" ||
+        result.error.code === "42703"
+      ) {
+        return {
+          ready: false as const,
+          unknownStart: 0,
+          months: [],
+          message:
+            "Subscription start months appear after the start-date migration is applied. Existing rows are not assigned to a month from their last update. This is not revenue.",
+        };
+      }
+      throw new Error(result.error.message);
+    }
+    const parsed = cohortPayload.parse(result.data);
+    return { ready: true as const, ...parsed, message: null };
+  });

@@ -89,6 +89,12 @@ export type Overview = {
 export function visibleSections(permissions: readonly string[]) {
   return sections.filter(([id]) => permissions.includes(`${id}.view`));
 }
+
+/** The subscriptions list sorts on `created_at`, but that value is `updated_at`. */
+export function platformColumnLabel(section: string, column: string): string {
+  if (section === "subscriptions" && column === "created_at") return "last update";
+  return column.replaceAll("_", " ");
+}
 export function csvCell(value: unknown): string {
   const text =
     typeof value === "object" && value !== null ? JSON.stringify(value) : String(value ?? "");

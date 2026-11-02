@@ -55,8 +55,8 @@ Hidden or unfinished product areas (status page, BI warehouse, SMS, e-signature,
 | SA-006 | Medium | Audit rows were append-only but not hash-chained. A superuser can still alter them. | `md5` chain trigger is in the migration. Not applied. Not a WORM store. |
 | SA-007 | High | No second-person gate for a global kill switch. | `platform_set_entitlement` queues kill switches and global changes. Self-approval is rejected. Not applied. |
 | SA-008 | Low | Integrations and API screens do not prove provider health. | Still true. Do not show them as connected. |
-| SA-009 | Medium | Historical MRR, cohorts, LTV and fees are not stored. Current snapshot cannot reconstruct them. | Still true. Do not invent those charts. |
-| SA-010 | Low | Browser acceptance of `/platform` needs an MFA platform session. | NOT VERIFIED this run. |
+| SA-009 | Medium | Historical MRR, cohorts, LTV and fees are not stored. Current snapshot cannot reconstruct them. | MRR movements and a start-month count are in the repo. Existing subscriptions are not backfilled, so they stay out of a month. LTV and fees are still not stored. Do not invent those charts. |
+| SA-010 | Low | Browser acceptance of `/platform` needs an MFA platform session. | One signed-in session opened overview, businesses, subscriptions, features and integrations. Approvals was absent. Billing was not opened. A second approver was not used. |
 
 ## Performance
 

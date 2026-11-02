@@ -8,6 +8,7 @@ import {
   rowsCsv,
   csvCell,
   sections,
+  platformColumnLabel,
 } from "./catalog";
 describe("platform request boundaries", () => {
   it("rejects unknown navigation and defaults only inside route handling", () => {
@@ -72,5 +73,9 @@ describe("administrative CSV exports", () => {
   it("serializes structured values and nulls", () => {
     expect(csvCell(null)).toBe('""');
     expect(csvCell({ active: true })).toBe('"{""active"":true}"');
+  });
+  it("does not call a subscription's last update its start date", () => {
+    expect(platformColumnLabel("subscriptions", "created_at")).toBe("last update");
+    expect(platformColumnLabel("businesses", "created_at")).toBe("created at");
   });
 });

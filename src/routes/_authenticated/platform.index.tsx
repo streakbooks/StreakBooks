@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getPlatformContext } from "@/lib/platform/platform.functions";
@@ -15,7 +15,6 @@ export const Route = createFileRoute("/_authenticated/platform/")({
 });
 function PlatformHome() {
   const { section } = Route.useSearch();
-  const navigate = useNavigate();
   const load = useServerFn(getPlatformContext);
   const query = useQuery({
     queryKey: ["platform", "context"],
@@ -40,13 +39,7 @@ function PlatformHome() {
       {id === "approvals" ? (
         <PlatformApprovals canManage={query.data.permissions.includes("approvals.manage")} />
       ) : id === "overview" ? (
-        <PlatformOverview
-          allowedSections={allowed.map(([id]) => id)}
-          onSection={(s) => {
-            if (allowed.some(([id]) => id === s))
-              void navigate({ to: "/platform", search: { section: s } });
-          }}
-        />
+        <PlatformOverview allowedSections={allowed.map(([id]) => id)} />
       ) : id === "monitoring" ? (
         <PlatformHealth />
       ) : (

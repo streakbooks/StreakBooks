@@ -37,14 +37,7 @@ export async function callRpc<T>(
   return data as T;
 }
 
-const ISO = /^\d{4}-\d{2}-\d{2}$/;
-
-export function isoDate(v: unknown, label: string): string {
-  if (typeof v !== "string" || !ISO.test(v) || Number.isNaN(Date.parse(`${v}T00:00:00Z`))) {
-    throw new Error(`${label} must be a valid date (YYYY-MM-DD).`);
-  }
-  return v;
-}
+export { assertReportDate as isoDate } from "@/lib/reports/date-validation";
 
 export function wholeMinor(v: unknown, label: string, opts: { min?: number } = {}): number {
   if (typeof v !== "number" || !Number.isSafeInteger(v)) {

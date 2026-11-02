@@ -839,6 +839,8 @@ function Filter({
     <div className="space-y-1">
       <Label>{label}</Label>
       <Select value={value} onValueChange={onChange}>
+        {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
         <SelectTrigger className="w-36">
           <SelectValue />
         </SelectTrigger>

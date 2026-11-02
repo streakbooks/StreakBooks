@@ -262,7 +262,16 @@ function PurchasesOverview() {
                           {bill.supplier}
                         </Link>
                       </td>
-                      <td className="py-3 text-muted-foreground">{bill.reference}</td>
+                      <td className="py-3 text-muted-foreground">
+                        <Link
+                          to="/purchases/bills/$billId"
+                          params={{ billId: bill.id }}
+                          className="hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+                          aria-label={`Open bill ${bill.reference || bill.id}`}
+                        >
+                          {bill.reference || "View bill"}
+                        </Link>
+                      </td>
                       <td className={`py-3 ${bill.overdue ? "font-medium text-destructive" : ""}`}>
                         {bill.dueDate ?? "Not set"}
                         {bill.overdue ? " · Overdue" : ""}

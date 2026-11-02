@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -262,16 +263,16 @@ export function PlatformEditor({
             <label key={f.key} className="block text-sm font-medium">
               {f.label}
               {f.options ? (
-                <select
+                <RecordLookupSelect
                   disabled={section === "roles" && f.key === "scope" && !!row}
                   className="mt-1 h-10 w-full rounded-md border bg-background px-3"
                   value={values[f.key] ?? ""}
-                  onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
+                  onValueChange={(e) => setValues((v) => ({ ...v, [f.key]: e }))}
                 >
                   {f.options.map((o) => (
                     <option key={o}>{o}</option>
                   ))}
-                </select>
+                </RecordLookupSelect>
               ) : (
                 <Input
                   className="mt-1"

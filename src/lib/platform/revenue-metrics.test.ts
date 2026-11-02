@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { FEATURE_REGISTRY } from "./feature-registry";
 import {
@@ -116,10 +116,15 @@ describe("console dates", () => {
 
 describe("feature catalogue", () => {
   it("is registered in the entitlement migration", () => {
-    const sql = readFileSync(
-      "supabase/migrations/20261102120000_entitlement_price_book.sql",
-      "utf8",
-    );
+    const sql = readdirSync("supabase/migrations")
+      .filter(
+        (name) =>
+          name.endsWith("_entitlement_price_book.sql") ||
+          name.endsWith("_catalogue_entitlements.sql"),
+      )
+      .sort()
+      .map((name) => readFileSync(`supabase/migrations/${name}`, "utf8"))
+      .join("\n");
     for (const feature of FEATURE_REGISTRY) expect(sql).toContain(`'${feature.key}'`);
     expect(sql).toContain("kill_switch suspension revoke grant addon trial plan default");
     expect(sql).toContain("user business firm plan global");

@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useMemo, useState } from "react";
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -146,7 +147,7 @@ function OnboardingPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Country</Label>
-              <Select
+              <RecordLookupSelect
                 value={countryCode}
                 disabled={busy}
                 onValueChange={(code) => {
@@ -170,11 +171,11 @@ function OnboardingPage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="space-y-2">
               <Label>Base currency</Label>
-              <Select value={currency} disabled={busy} onValueChange={setCurrency}>
+              <RecordLookupSelect value={currency} disabled={busy} onValueChange={setCurrency}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -185,11 +186,13 @@ function OnboardingPage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
             <div className="space-y-2">
               <Label>Financial year end month</Label>
               <Select value={fyMonth} disabled={busy} onValueChange={setFyMonth}>
+                {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -216,7 +219,7 @@ function OnboardingPage() {
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label>Time zone</Label>
-              <Select value={timezone} disabled={busy} onValueChange={setTimezone}>
+              <RecordLookupSelect value={timezone} disabled={busy} onValueChange={setTimezone}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -227,7 +230,7 @@ function OnboardingPage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
           </div>
 

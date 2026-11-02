@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useRouterState } from "@tanstack/react-router";
 import { useId, useEffect, useMemo, useState } from "react";
 
@@ -118,7 +119,7 @@ function ColumnSelect({
   return (
     <div className="space-y-1">
       <Label className="text-xs">{label}</Label>
-      <Select
+      <RecordLookupSelect
         value={value === null ? NONE : String(value)}
         onValueChange={(v) => onChange(v === NONE ? null : Number(v))}
       >
@@ -133,7 +134,7 @@ function ColumnSelect({
             </SelectItem>
           ))}
         </SelectContent>
-      </Select>
+      </RecordLookupSelect>
     </div>
   );
 }
@@ -461,6 +462,8 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
                   value={mapping.dateFormat}
                   onValueChange={(v) => patch({ dateFormat: v as DateFormat })}
                 >
+                  {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
                   <SelectTrigger aria-label="Date format">
                     <SelectValue />
                   </SelectTrigger>
@@ -529,6 +532,8 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
                   value={mapping.amountMode}
                   onValueChange={(v) => patch({ amountMode: v as AmountMode })}
                 >
+                  {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
                   <SelectTrigger aria-label="Amount layout">
                     <SelectValue />
                   </SelectTrigger>

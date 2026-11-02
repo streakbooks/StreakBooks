@@ -1,7 +1,10 @@
+import { standardSettingsSchema, encodeStandardSettings } from "./standard-settings";
+import { isReportDate } from "./date-validation";
 import type { ColumnMode } from "@/lib/reports/statements";
 
 /** URL state of a report page, so every drill-down is linkable and survives reload (RP-05). */
 export type ReportSearch = {
+  settings?: string;
   from?: string;
   to?: string;
   account?: string;
@@ -19,7 +22,6 @@ export type ReportSearch = {
   view?: "month" | "quarter" | "ytd";
 };
 
-const ISO = /^\d{4}-\d{2}-\d{2}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const COLUMN_MODES: ColumnMode[] = ["none", "prior_period", "prior_year", "month", "quarter"];
 const COMPARES = ["prior_year", "prior_month", "months"] as const;
@@ -30,10 +32,17 @@ function str(v: unknown, max = 80): string | undefined {
 
 export function parseReportSearch(raw: Record<string, unknown>): ReportSearch {
   const out: ReportSearch = {};
-  const from = str(raw["from"], 10);
-  if (from && ISO.test(from)) out.from = from;
-  const to = str(raw["to"], 10);
-  if (to && ISO.test(to)) out.to = to;
+  if (raw["settings"] !== undefined) {
+    if (typeof raw["settings"] !== "string" || raw["settings"].length > 60000)
+      throw new Error("Invalid report settings");
+    out.settings = encodeStandardSettings(
+      standardSettingsSchema.parse(JSON.parse(raw["settings"])),
+    );
+  }
+  const from = typeof raw["from"] === "string" ? raw["from"].trim() : undefined;
+  if (from && isReportDate(from)) out.from = from;
+  const to = typeof raw["to"] === "string" ? raw["to"].trim() : undefined;
+  if (to && isReportDate(to)) out.to = to;
   const account = str(raw["account"], 36);
   if (account && UUID.test(account)) out.account = account;
   if (COLUMN_MODES.includes(raw["columns"] as ColumnMode) && raw["columns"] !== "none") {

@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -20,14 +21,7 @@ import { formatConsoleInstant, formatUtcDay } from "@/lib/platform/console-time"
 import { revenueCardState } from "@/lib/platform/revenue-metrics";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { Section } from "@/lib/platform/catalog";
-export function PlatformOverview({
-  onSection,
-  allowedSections,
-}: {
-  onSection: (s: Section) => void;
-  allowedSections: readonly string[];
-}) {
+export function PlatformOverview({ allowedSections }: { allowedSections: readonly string[] }) {
   const [range, setRange] = useState(() => {
     const end = new Date().toISOString().slice(0, 10);
     const d = new Date();
@@ -100,18 +94,21 @@ export function PlatformOverview({
                 ["Past due subscriptions", query.data.pastDue, "subscriptions"],
               ] as const
             ).map(([title, value, section]) => {
-              const Tag = allowedSections.includes(section) ? "button" : "div";
-              return (
-                <Tag
-                  key={title}
-                  onClick={allowedSections.includes(section) ? () => onSection(section) : undefined}
-                  className="rounded-xl border bg-card p-5 text-left shadow-sm transition hover:border-primary focus-visible:outline-2 focus-visible:outline-primary"
-                >
+              const content = (
+                <>
                   <span className="text-sm text-muted-foreground">{title}</span>
                   <strong className="mt-2 block text-3xl tracking-tight">
                     {Number(value).toLocaleString()}
                   </strong>
-                </Tag>
+                </>
+              );
+              const style = "rounded-xl border bg-card p-5 text-left shadow-sm transition hover:border-primary focus-visible:outline-2 focus-visible:outline-primary";
+              return allowedSections.includes(section) ? (
+                <Link key={title} to="/platform" search={{ section }} className={style}>
+                  {content}
+                </Link>
+              ) : (
+                <div key={title} className={style}>{content}</div>
               );
             })}
           </div>

@@ -1,5 +1,6 @@
+import { nativeTabLinkClass, handleNativeTabKeyDown } from "@/lib/navigation/native-tab";
 import { SettingsDestinationLink } from "@/components/settings/ModuleSettingsLinks";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -30,13 +31,10 @@ import { TableCard } from "@/components/common/table-card";
 import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/_authenticated/contacts/")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    view:
-      search["view"] === "suppliers"
-        ? "suppliers"
-        : search["view"] === "customers"
-          ? "customers"
-          : undefined,
+  validateSearch: (search: Record<string, unknown>): { view?: string | undefined } => ({
+    view: ["all", "customers", "suppliers", "both", "recent", "updated", "inactive", "archived"].includes(String(search["view"]))
+      ? String(search["view"])
+      : undefined,
   }),
   head: () => ({
     meta: [
@@ -60,6 +58,14 @@ type ContactRow = {
 
 const PAGE_SIZE = 50;
 
+function ContactRecordLink({ contactId, children }: { contactId: string; children: ReactNode }) {
+  return (
+    <Link to="/contacts/$contactId" params={{ contactId }} className="rounded-sm underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-ring">
+      {children}
+    </Link>
+  );
+}
+
 export function ContactsPage({ initialKind = "customer" }: { initialKind?: string } = {}) {
   const { company } = useActiveCompany();
   const companyId = company?.id;
@@ -70,10 +76,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
   const exportFn = useServerFn(exportContactsCsv);
 
   const { view: requestedView } = Route.useSearch();
-  const [view, setView] = useState(requestedView ?? "all");
-  useEffect(() => {
-    if (requestedView) setView(requestedView);
-  }, [requestedView]);
+  const view = requestedView ?? "all";
   const [page, setPage] = useState(0);
   const [q, setQ] = useState("");
   const kindForApi = useMemo(() => {
@@ -188,23 +191,17 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
         </div>
       ) : null}
 
-      <Tabs
-        value={view}
-        onValueChange={(v) => {
-          setView(v);
-          setPage(0);
-        }}
-      >
+      <Tabs value={view}>
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <TabsList className="flex h-auto flex-wrap">
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="customers">Customers</TabsTrigger>
-            <TabsTrigger value="suppliers">Suppliers</TabsTrigger>
-            <TabsTrigger value="both">Both roles</TabsTrigger>
-            <TabsTrigger value="recent">Recently added</TabsTrigger>
-            <TabsTrigger value="updated">Recently updated</TabsTrigger>
-            <TabsTrigger value="inactive">Inactive</TabsTrigger>
-            <TabsTrigger value="archived">Archived</TabsTrigger>
+          <TabsList onKeyDown={handleNativeTabKeyDown} className="flex h-auto flex-wrap">
+            <Link className={nativeTabLinkClass} role="tab" aria-selected={view === "all"} data-state={view === "all" ? "active" : "inactive"} to="/contacts" search={{ view: "all" }} onClick={() => setPage(0)}>All</Link>
+            <Link className={nativeTabLinkClass} role="tab" aria-selected={view === "customers"} data-state={view === "customers" ? "active" : "inactive"} to="/contacts" search={{ view: "customers" }} onClick={() => setPage(0)}>Customers</Link>
+            <Link className={nativeTabLinkClass} role="tab" aria-selected={view === "suppliers"} data-state={view === "suppliers" ? "active" : "inactive"} to="/contacts" search={{ view: "suppliers" }} onClick={() => setPage(0)}>Suppliers</Link>
+            <Link className={nativeTabLinkClass} role="tab" aria-selected={view === "both"} data-state={view === "both" ? "active" : "inactive"} to="/contacts" search={{ view: "both" }} onClick={() => setPage(0)}>Both roles</Link>
+            <Link className={nativeTabLinkClass} role="tab" aria-selected={view === "recent"} data-state={view === "recent" ? "active" : "inactive"} to="/contacts" search={{ view: "recent" }} onClick={() => setPage(0)}>Recently added</Link>
+            <Link className={nativeTabLinkClass} role="tab" aria-selected={view === "updated"} data-state={view === "updated" ? "active" : "inactive"} to="/contacts" search={{ view: "updated" }} onClick={() => setPage(0)}>Recently updated</Link>
+            <Link className={nativeTabLinkClass} role="tab" aria-selected={view === "inactive"} data-state={view === "inactive" ? "active" : "inactive"} to="/contacts" search={{ view: "inactive" }} onClick={() => setPage(0)}>Inactive</Link>
+            <Link className={nativeTabLinkClass} role="tab" aria-selected={view === "archived"} data-state={view === "archived" ? "active" : "inactive"} to="/contacts" search={{ view: "archived" }} onClick={() => setPage(0)}>Archived</Link>
           </TabsList>
           <Input
             placeholder="Search name, email, phone, account #, tax ID…"
@@ -247,25 +244,21 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                   {(query.data as ContactRow[]).map((c) => (
                     <TableRow key={c.id}>
                       <TableCell>
-                        <Link
-                          to="/contacts/$contactId"
-                          params={{ contactId: c.id }}
-                          className="font-medium underline-offset-2 hover:underline"
-                        >
-                          {c.name}
-                        </Link>
+                        <ContactRecordLink contactId={c.id}><span className="font-medium">{c.name}</span></ContactRecordLink>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {c.account_number ?? "—"}
+                        <ContactRecordLink contactId={c.id}>{c.account_number ?? "—"}</ContactRecordLink>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="neutral" className="capitalize">
-                          {c.kind === "both" ? "Customer & supplier" : c.kind}
-                        </Badge>
+                        <ContactRecordLink contactId={c.id}>
+                          <Badge variant="neutral" className="capitalize">
+                            {c.kind === "both" ? "Customer & supplier" : c.kind}
+                          </Badge>
+                        </ContactRecordLink>
                       </TableCell>
-                      <TableCell>{c.email ?? "—"}</TableCell>
-                      <TableCell>{c.phone ?? "—"}</TableCell>
-                      <TableCell>{c.payment_terms_days}d</TableCell>
+                      <TableCell><ContactRecordLink contactId={c.id}>{c.email ?? "—"}</ContactRecordLink></TableCell>
+                      <TableCell><ContactRecordLink contactId={c.id}>{c.phone ?? "—"}</ContactRecordLink></TableCell>
+                      <TableCell><ContactRecordLink contactId={c.id}>{c.payment_terms_days}d</ContactRecordLink></TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

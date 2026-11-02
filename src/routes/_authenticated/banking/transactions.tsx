@@ -628,9 +628,23 @@ function BankTransactions() {
                           />
                         ) : null}
                       </TableCell>
-                      <TableCell className="whitespace-nowrap">{fmt.date(t.txn_date)}</TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        <Link
+                          to="/banking/transactions"
+                          search={{ transactionId: t.id, statusGroup: "all" }}
+                          className="rounded-sm font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+                        >
+                          {fmt.date(t.txn_date)}
+                        </Link>
+                      </TableCell>
                       <TableCell>
-                        <div>{t.description ?? "—"}</div>
+                        <Link
+                          to="/banking/transactions"
+                          search={{ transactionId: t.id, statusGroup: "all" }}
+                          className="rounded-sm font-medium text-foreground underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+                        >
+                          {t.description ?? "—"}
+                        </Link>
                         <div className="text-xs text-muted-foreground">
                           {[t.payee, t.reference ? `Ref ${t.reference}` : null, t.contact_name]
                             .filter(Boolean)
@@ -644,7 +658,12 @@ function BankTransactions() {
                       </TableCell>
                       {search.bankAccountId ? null : (
                         <TableCell className="whitespace-nowrap text-sm">
-                          {nameByAccount.get(t.bank_account_id) ?? "—"}
+                          <Link
+                            to="/banking"
+                            className="rounded-sm underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+                          >
+                            {nameByAccount.get(t.bank_account_id) ?? "—"}
+                          </Link>
                         </TableCell>
                       )}
                       <TableCell
@@ -876,6 +895,8 @@ function BankTransactions() {
                 setSearch({ pageSize: Number(v) === 50 ? undefined : Number(v) })
               }
             >
+              {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
               <SelectTrigger className="h-8 w-28" aria-label="Rows per page">
                 <SelectValue />
               </SelectTrigger>

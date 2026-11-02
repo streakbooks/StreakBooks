@@ -1,5 +1,6 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useMemo, useState } from "react";
-import { createFileRoute, useRouteContext } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouteContext } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Archive,
@@ -35,6 +36,10 @@ import {
 } from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/notifications")({
+  validateSearch: (raw: Record<string, unknown>): { view?: View | undefined } => ({
+    view: ["all", "unread", "action", "critical", "completed", "archived"].includes(String(raw["view"]))
+      ? raw["view"] as View : undefined,
+  }),
   head: () => ({ meta: [{ title: "Action Center — LinkBooks" }] }),
   component: ActionCenterPage,
 });
@@ -66,14 +71,14 @@ function ActionCenterPage() {
     user.id,
     500,
   );
-  const [view, setView] = useState<View>("action");
+  const view = Route.useSearch().view ?? "action";
   const [category, setCategory] = useState("all");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<string[]>([]);
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkError, setBulkError] = useState<string | null>(null);
-  const rows = inbox.data ?? [];
+  const rows = useMemo(() => inbox.data ?? [], [inbox.data]);
 
   const filtered = useMemo(
     () => filterActionNotifications(rows, { view, category, search }),
@@ -84,8 +89,8 @@ function ActionCenterPage() {
     Math.min(page, pageCount - 1) * PAGE_SIZE,
     (Math.min(page, pageCount - 1) + 1) * PAGE_SIZE,
   );
-  const onView = (next: View) => {
-    setView(next);
+  const onViewNavigate = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
     setPage(0);
     setSelected([]);
   };
@@ -148,13 +153,10 @@ function ActionCenterPage() {
       </div>
       <div className="flex flex-wrap gap-2" role="group" aria-label="Notification views">
         {VIEWS.map((item) => (
-          <Button
-            key={item.key}
-            size="sm"
-            variant={view === item.key ? "default" : "outline"}
-            onClick={() => onView(item.key)}
-          >
-            {item.label}
+          <Button key={item.key} size="sm" variant={view === item.key ? "default" : "outline"} asChild>
+            <Link to="/notifications" search={{ view: item.key }} onClick={onViewNavigate}>
+              {item.label}
+            </Link>
           </Button>
         ))}
       </div>
@@ -169,6 +171,8 @@ function ActionCenterPage() {
           }}
         />
         <Select value={category} onValueChange={onCategory}>
+          {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
           <SelectTrigger aria-label="Filter by module">
             <SelectValue placeholder="All modules" />
           </SelectTrigger>
@@ -307,7 +311,9 @@ function NotificationRow({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             {!n.read_at && <span className="size-2 rounded-full bg-primary" aria-label="Unread" />}
-            <h2 className="font-semibold">{n.title}</h2>
+            <h2 className="font-semibold">
+              {path ? <a href={path} className="underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-ring">{n.title}</a> : n.title}
+            </h2>
             <span className="rounded bg-muted px-2 py-0.5 text-[11px] font-medium uppercase">
               {n.priority}
             </span>
@@ -527,7 +533,7 @@ function DocumentRequests({ companyId, userId }: { companyId: string | null; use
             >
               <div className="space-y-1">
                 <label className="text-sm font-medium">Team member</label>
-                <Select value={recipient} onValueChange={setRecipient}>
+                <RecordLookupSelect value={recipient} onValueChange={setRecipient}>
                   <SelectTrigger aria-label="Select document recipient">
                     <SelectValue placeholder="Choose colleague" />
                   </SelectTrigger>
@@ -538,7 +544,7 @@ function DocumentRequests({ companyId, userId }: { companyId: string | null; use
                       </SelectItem>
                     ))}
                   </SelectContent>
-                </Select>
+                </RecordLookupSelect>
               </div>
               <div className="space-y-1">
                 <label htmlFor="doc-request-subject" className="text-sm font-medium">
@@ -610,7 +616,7 @@ function DocumentRequests({ companyId, userId }: { companyId: string | null; use
                   >
                     Upload in Files <ArrowUpRight className="size-3" />
                   </a>
-                  <Select
+                  <RecordLookupSelect
                     value={uploaded[r.id] ?? ""}
                     onValueChange={(id) => setUploaded((old) => ({ ...old, [r.id]: id }))}
                   >
@@ -624,7 +630,7 @@ function DocumentRequests({ companyId, userId }: { companyId: string | null; use
                         </SelectItem>
                       ))}
                     </SelectContent>
-                  </Select>
+                  </RecordLookupSelect>
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" onClick={() => void files.refetch()}>
                       Refresh uploaded files

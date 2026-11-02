@@ -1,3 +1,5 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
+import { nativeTabLinkClass, handleNativeTabKeyDown } from "@/lib/navigation/native-tab";
 import { openSettingsPanel } from "@/lib/settings/panels";
 import { SettingsDestinationLink } from "@/components/settings/ModuleSettingsLinks";
 import { InPlaceSettingsPanel } from "@/components/settings/InPlaceSettingsPanel";
@@ -462,7 +464,7 @@ export function SettingsForCompany({
             />
             <SettingsNav
               section={section}
-              onSelect={selectSection}
+              embedded={Boolean(embeddedSection)}
               showDemo={isDemo}
               filter={navFilter}
             />
@@ -476,7 +478,7 @@ export function SettingsForCompany({
             <>
               {!embeddedSection && <ModuleSettingsLinks category={section} central />}
               {section === "overview" ? (
-                <SettingsOverviewPanel companyId={companyId} onNavigate={selectSection} />
+                <SettingsOverviewPanel companyId={companyId} />
               ) : null}
               {section === "features" ? (
                 <SettingsFeatureManager companyId={companyId} canEdit={canEdit} />
@@ -504,26 +506,20 @@ export function SettingsForCompany({
               ) : null}
 
               {showLegacy ? (
-                <Tabs
-                  value={legacyTab}
-                  onValueChange={(v) => {
-                    const entry = Object.entries(LEGACY_TAB_BY_SECTION).find(
-                      ([, tab]) => tab === v,
-                    );
-                    if (entry) selectSection(entry[0]);
-                  }}
-                >
-                  <TabsList className={embeddedSection ? "hidden" : "flex h-auto flex-wrap gap-1"}>
-                    <TabsTrigger value="organisation">Organisation</TabsTrigger>
-                    <TabsTrigger value="financial">Financial</TabsTrigger>
-                    <TabsTrigger value="dimensions">Dimensions</TabsTrigger>
-                    <TabsTrigger value="documents">Documents</TabsTrigger>
-                    <TabsTrigger value="currencies">Currencies</TabsTrigger>
-                    <TabsTrigger value="users">Users</TabsTrigger>
-                    <TabsTrigger value="automation">Automation</TabsTrigger>
-                    <TabsTrigger value="integrations">Integrations</TabsTrigger>
-                    <TabsTrigger value="audit">Audit</TabsTrigger>
-                    {isDemo ? <TabsTrigger value="demo">Demo</TabsTrigger> : null}
+                <Tabs value={legacyTab}>
+                  <TabsList onKeyDown={handleNativeTabKeyDown} className={embeddedSection ? "hidden" : "flex h-auto flex-wrap gap-1"}>
+                    <Link className={nativeTabLinkClass} role="tab" aria-selected={legacyTab === "organisation"} data-state={legacyTab === "organisation" ? "active" : "inactive"} to="/settings" search={{ section: "organisation" }}>Organisation</Link>
+                    <Link className={nativeTabLinkClass} role="tab" aria-selected={legacyTab === "financial"} data-state={legacyTab === "financial" ? "active" : "inactive"} to="/settings" search={{ section: "accounting" }}>Financial</Link>
+                    <Link className={nativeTabLinkClass} role="tab" aria-selected={legacyTab === "dimensions"} data-state={legacyTab === "dimensions" ? "active" : "inactive"} to="/settings" search={{ section: "dimensions" }}>Dimensions</Link>
+                    <Link className={nativeTabLinkClass} role="tab" aria-selected={legacyTab === "documents"} data-state={legacyTab === "documents" ? "active" : "inactive"} to="/settings" search={{ section: "documents" }}>Documents</Link>
+                    <Link className={nativeTabLinkClass} role="tab" aria-selected={legacyTab === "currencies"} data-state={legacyTab === "currencies" ? "active" : "inactive"} to="/settings" search={{ section: "currencies" }}>Currencies</Link>
+                    <Link className={nativeTabLinkClass} role="tab" aria-selected={legacyTab === "users"} data-state={legacyTab === "users" ? "active" : "inactive"} to="/settings" search={{ section: "users" }}>Users</Link>
+                    <Link className={nativeTabLinkClass} role="tab" aria-selected={legacyTab === "automation"} data-state={legacyTab === "automation" ? "active" : "inactive"} to="/settings" search={{ section: "automation" }}>Automation</Link>
+                    <Link className={nativeTabLinkClass} role="tab" aria-selected={legacyTab === "integrations"} data-state={legacyTab === "integrations" ? "active" : "inactive"} to="/settings" search={{ section: "integrations" }}>Integrations</Link>
+                    <Link className={nativeTabLinkClass} role="tab" aria-selected={legacyTab === "audit"} data-state={legacyTab === "audit" ? "active" : "inactive"} to="/settings" search={{ section: "audit" }}>Audit</Link>
+                    {isDemo ? (
+                      <Link className={nativeTabLinkClass} role="tab" aria-selected={legacyTab === "demo"} data-state={legacyTab === "demo" ? "active" : "inactive"} to="/settings" search={{ section: "demo" }}>Demo</Link>
+                    ) : null}
                   </TabsList>
 
                   {section === "accounting" ? (
@@ -565,7 +561,7 @@ export function SettingsForCompany({
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="org-country">Country</Label>
-                          <Select
+                          <RecordLookupSelect
                             value={countryCode}
                             disabled={!canEdit || saveMutation.isPending}
                             onValueChange={setCountryCode}
@@ -580,7 +576,7 @@ export function SettingsForCompany({
                                 </SelectItem>
                               ))}
                             </SelectContent>
-                          </Select>
+                          </RecordLookupSelect>
                         </div>
                         <div className="space-y-2">
                           <Label>Tax regime</Label>
@@ -589,6 +585,8 @@ export function SettingsForCompany({
                             disabled={!canEdit || saveMutation.isPending}
                             onValueChange={setTaxRegime}
                           >
+                            {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
@@ -650,6 +648,8 @@ export function SettingsForCompany({
                         <div className="space-y-2">
                           <Label>Locale</Label>
                           <Select value={locale} disabled={!canEdit} onValueChange={setLocale}>
+                            {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
@@ -669,6 +669,8 @@ export function SettingsForCompany({
                             disabled={!canEdit}
                             onValueChange={setDateFormat}
                           >
+                            {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
@@ -722,7 +724,7 @@ export function SettingsForCompany({
                       <CardContent className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-2">
                           <Label>Base currency</Label>
-                          <Select
+                          <RecordLookupSelect
                             value={currency}
                             disabled={!canEdit || saveMutation.isPending}
                             onValueChange={setCurrency}
@@ -737,11 +739,11 @@ export function SettingsForCompany({
                                 </SelectItem>
                               ))}
                             </SelectContent>
-                          </Select>
+                          </RecordLookupSelect>
                         </div>
                         <div className="space-y-2">
                           <Label>Time zone</Label>
-                          <Select
+                          <RecordLookupSelect
                             value={timezone}
                             disabled={!canEdit || saveMutation.isPending}
                             onValueChange={setTimezone}
@@ -756,7 +758,7 @@ export function SettingsForCompany({
                                 </SelectItem>
                               ))}
                             </SelectContent>
-                          </Select>
+                          </RecordLookupSelect>
                         </div>
                         <div className="space-y-2">
                           <Label>Financial year end month</Label>
@@ -769,6 +771,8 @@ export function SettingsForCompany({
                               if (Number(fyDay) > max) setFyDay(String(max));
                             }}
                           >
+                            {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
@@ -1016,7 +1020,7 @@ export function SettingsForCompany({
                           <div className="grid gap-3 sm:grid-cols-4">
                             <div className="space-y-1">
                               <Label>From</Label>
-                              <Select value={rateFrom} onValueChange={setRateFrom}>
+                              <RecordLookupSelect value={rateFrom} onValueChange={setRateFrom}>
                                 <SelectTrigger>
                                   <SelectValue />
                                 </SelectTrigger>
@@ -1029,7 +1033,7 @@ export function SettingsForCompany({
                                       </SelectItem>
                                     ))}
                                 </SelectContent>
-                              </Select>
+                              </RecordLookupSelect>
                             </div>
                             <div className="space-y-1">
                               <Label>Date</Label>

@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { isPurchaseTaxCode } from "@/lib/purchases/tax-code-eligibility";
 import { VoiceFields } from "@/components/ai-voice/voice-fields";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -615,18 +616,22 @@ export function NewBill({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultsApplied]);
 
-  const suppliers = (suppliersQ.data ?? []) as Array<{
-    id: string;
-    name: string;
-    payment_terms_days: number | null;
-    default_currency: string | null;
-    billing_address_line1: string | null;
-    billing_address_line2: string | null;
-    billing_city: string | null;
-    billing_region: string | null;
-    billing_postal: string | null;
-    billing_country: string | null;
-  }>;
+  const suppliers = useMemo(
+    () =>
+      (suppliersQ.data ?? []) as Array<{
+        id: string;
+        name: string;
+        payment_terms_days: number | null;
+        default_currency: string | null;
+        billing_address_line1: string | null;
+        billing_address_line2: string | null;
+        billing_city: string | null;
+        billing_region: string | null;
+        billing_postal: string | null;
+        billing_country: string | null;
+      }>,
+    [suppliersQ.data],
+  );
 
   const expenseAccounts = (
     (accountsQ.data ?? []) as Array<{
@@ -654,12 +659,16 @@ export function NewBill({
       account_type: a.account_type,
     }));
 
-  const terms = (termsQ.data ?? []) as Array<{
-    id: string;
-    name: string;
-    days: number;
-    calculation_method: "days_after_bill_date" | "due_on_receipt" | "days_after_month_end";
-  }>;
+  const terms = useMemo(
+    () =>
+      (termsQ.data ?? []) as Array<{
+        id: string;
+        name: string;
+        days: number;
+        calculation_method: "days_after_bill_date" | "due_on_receipt" | "days_after_month_end";
+      }>,
+    [termsQ.data],
+  );
 
   const taxCodes = (
     (taxCodesQ.data ?? []) as Array<{
@@ -2001,7 +2010,7 @@ export function NewBill({
             </div>
             <div className="space-y-2">
               <Label>Currency</Label>
-              <Select value={currencyCode} onValueChange={setCurrencyCode}>
+              <RecordLookupSelect value={currencyCode} onValueChange={setCurrencyCode}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -2012,7 +2021,7 @@ export function NewBill({
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
               {currencyCode !== baseCurrency && fxRate != null ? (
                 <p className="text-xs text-muted-foreground">
                   Rate {fxRate} ({fxSource}) · {currencyCode} → {baseCurrency}

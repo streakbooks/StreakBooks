@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { ZodError } from "zod";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
@@ -276,11 +277,11 @@ export function TransactionCorrectionsView({
           </label>
           <label className="text-sm">
             Current account
-            <select
+            <RecordLookupSelect
               aria-label="Correction source account"
               className="block w-full rounded border bg-background p-2"
               value={account}
-              onChange={(e) => changeFilter(() => setAccount(e.target.value))}
+              onValueChange={(e) => changeFilter(() => setAccount(e))}
             >
               <option value="">All accounts in the selected statement</option>
               {setup.accounts
@@ -296,7 +297,7 @@ export function TransactionCorrectionsView({
                     {a.code} · {a.name}
                   </option>
                 ))}
-            </select>
+            </RecordLookupSelect>
           </label>
           <label className="text-sm">
             Source
@@ -306,6 +307,8 @@ export function TransactionCorrectionsView({
               value={source}
               onChange={(e) => changeFilter(() => setSource(e.target.value))}
             >
+              {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
               <option value="">All posted sources</option>
               {[
                 "manual",
@@ -617,13 +620,13 @@ export function TransactionCorrectionsView({
         <fieldset disabled={busy || !setup.can_apply} className="grid gap-3 md:grid-cols-3">
           <label className="text-sm">
             Destination account
-            <select
+            <RecordLookupSelect
               aria-label="Correction destination account"
               className="block w-full rounded border bg-background p-2"
               required
               value={target}
-              onChange={(e) => {
-                setTarget(e.target.value);
+              onValueChange={(e) => {
+                setTarget(e);
                 clearReview();
               }}
             >
@@ -639,7 +642,7 @@ export function TransactionCorrectionsView({
                     {a.code} · {a.name}
                   </option>
                 ))}
-            </select>
+            </RecordLookupSelect>
           </label>
           <label className="text-sm">
             Posting policy

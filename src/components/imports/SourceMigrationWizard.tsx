@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { ImportDefinition } from "@/lib/imports/import-definitions";
@@ -88,6 +89,8 @@ export function SourceMigrationWizard({
           value={source}
           onChange={(e) => setSource(e.target.value)}
         >
+          {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
           {MIGRATION_SOURCES.map((name) => (
             <option key={name}>{name}</option>
           ))}
@@ -155,11 +158,11 @@ export function SourceMigrationWizard({
             <label key={field.key} className="text-sm">
               {field.label}
               {field.required ? " *" : ""}
-              <select
+              <RecordLookupSelect
                 aria-label={`Map ${field.label}`}
                 className="mt-1 block w-full rounded border bg-background p-2"
                 value={mapping[field.key] ?? ""}
-                onChange={(e) => setMapping({ ...mapping, [field.key]: e.target.value })}
+                onValueChange={(e) => setMapping({ ...mapping, [field.key]: e })}
               >
                 <option value="">
                   {field.required ? "Choose source column" : "Do not import"}
@@ -167,7 +170,7 @@ export function SourceMigrationWizard({
                 {headers.map((header) => (
                   <option key={header}>{header}</option>
                 ))}
-              </select>
+              </RecordLookupSelect>
             </label>
           ))}
         </fieldset>

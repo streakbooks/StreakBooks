@@ -1,3 +1,5 @@
+import { useReportActivity } from "@/hooks/use-report-activity";
+import { useCanDo } from "@/hooks/use-can";
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { Printer } from "lucide-react";
@@ -11,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ReportActionsMenu } from "./ReportActionsMenu";
+import { ReportPeriodSelect } from "./ReportPeriodSelect";
 import { SavedViews } from "./SavedViews";
 
 export type ReportCtx = {
@@ -19,6 +23,8 @@ export type ReportCtx = {
   companyId: string;
   companyName: string;
   currency: string;
+  fyEndMonth?: number;
+  fyEndDay?: number;
   from: string;
   to: string;
   search: ReportSearch;
@@ -33,6 +39,7 @@ export function ReportShell({
   mode,
   showColumns,
   extraControls,
+  toolbarActions,
   getCsv,
   basis,
   children,
@@ -43,11 +50,21 @@ export function ReportShell({
   mode: "range" | "asof";
   showColumns?: "pl" | "bs";
   extraControls?: ReactNode;
+  toolbarActions?: ReactNode;
   getCsv?: () => CsvExport | null;
   basis?: string | undefined;
   children: ReactNode;
 }) {
+  useReportActivity(
+    ctx.companyId,
+    ctx.reportId,
+    undefined,
+    mode === "asof" ? ctx.to : ctx.from,
+    ctx.to,
+    ctx.search,
+  );
   const fmt = useFormat();
+  const canExport = useCanDo("reports.export");
   const period =
     mode === "asof" ? `As at ${fmt.date(ctx.to)}` : `${fmt.date(ctx.from)} to ${fmt.date(ctx.to)}`;
 
@@ -84,6 +101,13 @@ export function ReportShell({
       </header>
 
       <div className="flex flex-wrap items-end gap-3 print:hidden">
+        <ReportPeriodSelect
+          from={ctx.from}
+          to={ctx.to}
+          fyMonth={ctx.fyEndMonth ?? 12}
+          fyDay={ctx.fyEndDay ?? 31}
+          onChange={(range) => ctx.setSearch(range)}
+        />
         {mode === "range" ? (
           <div className="space-y-1">
             <Label htmlFor="report-from">From</Label>
@@ -142,17 +166,21 @@ export function ReportShell({
           </div>
         ) : null}
         {extraControls}
-        <div className="ml-auto flex gap-2">
-          {getCsv ? (
+        <div className="ml-auto flex flex-wrap gap-2">
+          {toolbarActions}
+          {getCsv && canExport ? (
             <Button size="sm" variant="outline" onClick={onExport}>
               Export CSV
             </Button>
           ) : null}
-          <Button size="sm" variant="outline" onClick={() => window.print()}>
+          <Button size="sm" variant="outline" disabled={!canExport} onClick={() => window.print()}>
             <Printer className="mr-1 size-4" /> Print / PDF
           </Button>
+          <ReportActionsMenu from={ctx.from} to={ctx.to} />
           <Button size="sm" variant="ghost" asChild>
-            <Link to="/reports">All reports</Link>
+            <Link to="/reports" search={{ tab: "standard", from: ctx.from, to: ctx.to }}>
+              All reports
+            </Link>
           </Button>
         </div>
       </div>

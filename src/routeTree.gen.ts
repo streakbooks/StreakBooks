@@ -111,6 +111,7 @@ import { Route as AuthenticatedPurchasesPaymentsIndexRouteImport } from './route
 import { Route as AuthenticatedPurchasesPaymentsPaymentIdRouteImport } from './routes/_authenticated/purchases/payments.$paymentId'
 import { Route as AuthenticatedPurchasesPaymentsBatchRouteImport } from './routes/_authenticated/purchases/payments.batch'
 import { Route as AuthenticatedPurchasesPaymentsNewRouteImport } from './routes/_authenticated/purchases/payments.new'
+import { Route as AuthenticatedReportsBuilderViewIdRouteImport } from './routes/_authenticated/reports/builder/$viewId'
 import { Route as AuthenticatedSalesCreditNotesIndexRouteImport } from './routes/_authenticated/sales/credit-notes.index'
 import { Route as AuthenticatedSalesCreditNotesCreditNoteIdRouteImport } from './routes/_authenticated/sales/credit-notes.$creditNoteId'
 import { Route as AuthenticatedSalesCreditNotesNewRouteImport } from './routes/_authenticated/sales/credit-notes.new'
@@ -701,6 +702,12 @@ const AuthenticatedPurchasesPaymentsNewRoute =
     path: '/payments/new',
     getParentRoute: () => AuthenticatedPurchasesRouteRoute,
   } as any)
+const AuthenticatedReportsBuilderViewIdRoute =
+  AuthenticatedReportsBuilderViewIdRouteImport.update({
+    id: '/reports/builder/$viewId',
+    path: '/reports/builder/$viewId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSalesCreditNotesIndexRoute =
   AuthenticatedSalesCreditNotesIndexRouteImport.update({
     id: '/credit-notes/',
@@ -925,6 +932,7 @@ export interface FileRoutesByFullPath {
   '/purchases/payments/$paymentId': typeof AuthenticatedPurchasesPaymentsPaymentIdRoute
   '/purchases/payments/batch': typeof AuthenticatedPurchasesPaymentsBatchRoute
   '/purchases/payments/new': typeof AuthenticatedPurchasesPaymentsNewRoute
+  '/reports/builder/$viewId': typeof AuthenticatedReportsBuilderViewIdRoute
   '/sales/credit-notes/$creditNoteId': typeof AuthenticatedSalesCreditNotesCreditNoteIdRouteWithChildren
   '/sales/credit-notes/new': typeof AuthenticatedSalesCreditNotesNewRoute
   '/sales/invoices/$invoiceId': typeof AuthenticatedSalesInvoicesInvoiceIdRouteWithChildren
@@ -1043,6 +1051,7 @@ export interface FileRoutesByTo {
   '/purchases/payments/$paymentId': typeof AuthenticatedPurchasesPaymentsPaymentIdRoute
   '/purchases/payments/batch': typeof AuthenticatedPurchasesPaymentsBatchRoute
   '/purchases/payments/new': typeof AuthenticatedPurchasesPaymentsNewRoute
+  '/reports/builder/$viewId': typeof AuthenticatedReportsBuilderViewIdRoute
   '/sales/credit-notes/new': typeof AuthenticatedSalesCreditNotesNewRoute
   '/sales/invoices/new': typeof AuthenticatedSalesInvoicesNewRoute
   '/sales/quotes/new': typeof AuthenticatedSalesQuotesNewRoute
@@ -1166,6 +1175,7 @@ export interface FileRoutesById {
   '/_authenticated/purchases/payments/$paymentId': typeof AuthenticatedPurchasesPaymentsPaymentIdRoute
   '/_authenticated/purchases/payments/batch': typeof AuthenticatedPurchasesPaymentsBatchRoute
   '/_authenticated/purchases/payments/new': typeof AuthenticatedPurchasesPaymentsNewRoute
+  '/_authenticated/reports/builder/$viewId': typeof AuthenticatedReportsBuilderViewIdRoute
   '/_authenticated/sales/credit-notes/$creditNoteId': typeof AuthenticatedSalesCreditNotesCreditNoteIdRouteWithChildren
   '/_authenticated/sales/credit-notes/new': typeof AuthenticatedSalesCreditNotesNewRoute
   '/_authenticated/sales/invoices/$invoiceId': typeof AuthenticatedSalesInvoicesInvoiceIdRouteWithChildren
@@ -1292,6 +1302,7 @@ export interface FileRouteTypes {
     | '/purchases/payments/$paymentId'
     | '/purchases/payments/batch'
     | '/purchases/payments/new'
+    | '/reports/builder/$viewId'
     | '/sales/credit-notes/$creditNoteId'
     | '/sales/credit-notes/new'
     | '/sales/invoices/$invoiceId'
@@ -1410,6 +1421,7 @@ export interface FileRouteTypes {
     | '/purchases/payments/$paymentId'
     | '/purchases/payments/batch'
     | '/purchases/payments/new'
+    | '/reports/builder/$viewId'
     | '/sales/credit-notes/new'
     | '/sales/invoices/new'
     | '/sales/quotes/new'
@@ -1532,6 +1544,7 @@ export interface FileRouteTypes {
     | '/_authenticated/purchases/payments/$paymentId'
     | '/_authenticated/purchases/payments/batch'
     | '/_authenticated/purchases/payments/new'
+    | '/_authenticated/reports/builder/$viewId'
     | '/_authenticated/sales/credit-notes/$creditNoteId'
     | '/_authenticated/sales/credit-notes/new'
     | '/_authenticated/sales/invoices/$invoiceId'
@@ -2290,6 +2303,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPurchasesPaymentsNewRouteImport
       parentRoute: typeof AuthenticatedPurchasesRouteRoute
     }
+    '/_authenticated/reports/builder/$viewId': {
+      id: '/_authenticated/reports/builder/$viewId'
+      path: '/reports/builder/$viewId'
+      fullPath: '/reports/builder/$viewId'
+      preLoaderRoute: typeof AuthenticatedReportsBuilderViewIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/sales/credit-notes/': {
       id: '/_authenticated/sales/credit-notes/'
       path: '/credit-notes'
@@ -2722,6 +2742,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBudgetsIndexRoute: typeof AuthenticatedBudgetsIndexRoute
   AuthenticatedContactsIndexRoute: typeof AuthenticatedContactsIndexRoute
   AuthenticatedReportsIndexRoute: typeof AuthenticatedReportsIndexRoute
+  AuthenticatedReportsBuilderViewIdRoute: typeof AuthenticatedReportsBuilderViewIdRoute
   AuthenticatedDocumentsPrintKindIdRoute: typeof AuthenticatedDocumentsPrintKindIdRoute
 }
 
@@ -2760,6 +2781,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBudgetsIndexRoute: AuthenticatedBudgetsIndexRoute,
   AuthenticatedContactsIndexRoute: AuthenticatedContactsIndexRoute,
   AuthenticatedReportsIndexRoute: AuthenticatedReportsIndexRoute,
+  AuthenticatedReportsBuilderViewIdRoute:
+    AuthenticatedReportsBuilderViewIdRoute,
   AuthenticatedDocumentsPrintKindIdRoute:
     AuthenticatedDocumentsPrintKindIdRoute,
 }

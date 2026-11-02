@@ -18,6 +18,7 @@ export type RegisterFn = (args: {
     storagePath: string;
     fileName: string;
     contentType?: string;
+    folderId?: string | null;
   };
 }) => Promise<{ id: string }>;
 
@@ -27,6 +28,7 @@ export async function uploadCompanyDocument(input: {
   entityType: AttachmentEntityType;
   entityId: string;
   register: RegisterFn;
+  folderId?: string | null;
 }): Promise<{ id: string }> {
   const { file } = input;
   const check = validateUpload({
@@ -69,6 +71,7 @@ export async function uploadCompanyDocument(input: {
         storagePath,
         fileName: file.name,
         ...(file.type ? { contentType: file.type } : {}),
+        folderId: input.folderId ?? null,
       },
     });
   } catch (e) {

@@ -210,6 +210,7 @@ function FilesPage() {
           companyId: companyId!,
           entityType: "company",
           entityId: companyId!,
+          folderId,
           register: register as never,
         });
       }

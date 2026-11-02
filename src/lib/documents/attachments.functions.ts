@@ -105,6 +105,7 @@ export const registerAttachment = createServerFn({ method: "POST" })
       storagePath: string;
       fileName: string;
       contentType?: string;
+      folderId?: string | null;
     }) => {
       const base = entityInput(input);
       const parts = parseStoragePath(input.storagePath ?? "");
@@ -125,6 +126,7 @@ export const registerAttachment = createServerFn({ method: "POST" })
         contentType: (input.contentType ?? "").trim().slice(0, 120) || null,
         folder: input.storagePath.slice(0, input.storagePath.lastIndexOf("/")),
         objectName: parts.file,
+        folderId: input.folderId ? assertUuid(input.folderId, "folder") : null,
       };
     },
   )
@@ -166,6 +168,7 @@ export const registerAttachment = createServerFn({ method: "POST" })
         content_type: data.contentType,
         size_bytes: size,
         uploaded_by: context.userId,
+        folder_id: data.folderId,
       } as never)
       .select("id" as never)
       .single();
@@ -313,11 +316,13 @@ export const listCompanyFiles = createServerFn({ method: "GET" })
       page?: number;
       pageSize?: number;
       folderId?: string | null;
+      unfiledOnly?: boolean;
     }) => ({
       companyId: assertUuid(input.companyId),
       search: (input.search ?? "").trim().slice(0, 80),
       entityType: input.entityType && input.entityType !== "all" ? input.entityType : null,
       folderId: input.folderId ? assertUuid(input.folderId) : null,
+      unfiledOnly: input.unfiledOnly === true,
       page: Math.max(0, Math.floor(Number(input.page) || 0)),
       pageSize: Math.min(100, Math.max(5, Math.floor(Number(input.pageSize) || 25))),
     }),
@@ -331,6 +336,7 @@ export const listCompanyFiles = createServerFn({ method: "GET" })
       .eq("company_id" as never, data.companyId as never);
     if (data.entityType) q = q.eq("entity_type" as never, data.entityType as never);
     if (data.folderId) q = q.eq("folder_id" as never, data.folderId as never);
+    else if (data.unfiledOnly) q = q.is("folder_id" as never, null);
     if (data.search)
       q = q.ilike("file_name" as never, `%${escapeLikeLiteral(data.search)}%` as never);
     const from = data.page * data.pageSize;

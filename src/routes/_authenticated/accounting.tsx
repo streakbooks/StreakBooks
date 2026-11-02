@@ -1,5 +1,5 @@
 import { TransactionCorrections } from "@/components/accounting/corrections/TransactionCorrections";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2 } from "lucide-react";
@@ -79,7 +79,6 @@ export function AccountingWorkspace({
   currency: string;
 }) {
   const queryClient = useQueryClient();
-  const navigate = useNavigate({ from: "/accounting" });
   const search = Route.useSearch();
   const seedMasters = useServerFn(ensureLedgerMasters);
   const tab: AccountingTab = search.tab ?? (search.journal ? "journals" : "coa");
@@ -125,25 +124,35 @@ export function AccountingWorkspace({
         </AlertDescription>
       </Alert>
 
-      <Tabs
-        value={tab}
-        onValueChange={(v) =>
-          void navigate({
-            search: { tab: v as AccountingTab },
-            replace: true,
-          })
-        }
-      >
+      <Tabs value={tab}>
         <TabsList className="flex-wrap">
-          <TabsTrigger value="coa">Chart of accounts</TabsTrigger>
-          <TabsTrigger value="industry">Industry library</TabsTrigger>
-          <TabsTrigger value="corrections">Transaction corrections</TabsTrigger>
-          <TabsTrigger value="journals">Journals</TabsTrigger>
-          <TabsTrigger value="post">Post manual journal</TabsTrigger>
-          <TabsTrigger value="periods">Financial years</TabsTrigger>
-          <TabsTrigger value="close">Period close</TabsTrigger>
-          <TabsTrigger value="conversion">Opening balances</TabsTrigger>
-          <TabsTrigger value="fx">FX &amp; reversals</TabsTrigger>
+          <TabsTrigger value="coa" asChild>
+            <Link to="/accounting" search={{ tab: "coa" }} resetScroll={false}>Chart of accounts</Link>
+          </TabsTrigger>
+          <TabsTrigger value="industry" asChild>
+            <Link to="/accounting" search={{ tab: "industry" }} resetScroll={false}>Industry library</Link>
+          </TabsTrigger>
+          <TabsTrigger value="corrections" asChild>
+            <Link to="/accounting" search={{ tab: "corrections" }} resetScroll={false}>Transaction corrections</Link>
+          </TabsTrigger>
+          <TabsTrigger value="journals" asChild>
+            <Link to="/accounting" search={{ tab: "journals" }} resetScroll={false}>Journals</Link>
+          </TabsTrigger>
+          <TabsTrigger value="post" asChild>
+            <Link to="/accounting" search={{ tab: "post" }} resetScroll={false}>Post manual journal</Link>
+          </TabsTrigger>
+          <TabsTrigger value="periods" asChild>
+            <Link to="/accounting" search={{ tab: "periods" }} resetScroll={false}>Financial years</Link>
+          </TabsTrigger>
+          <TabsTrigger value="close" asChild>
+            <Link to="/accounting" search={{ tab: "close" }} resetScroll={false}>Period close</Link>
+          </TabsTrigger>
+          <TabsTrigger value="conversion" asChild>
+            <Link to="/accounting" search={{ tab: "conversion" }} resetScroll={false}>Opening balances</Link>
+          </TabsTrigger>
+          <TabsTrigger value="fx" asChild>
+            <Link to="/accounting" search={{ tab: "fx" }} resetScroll={false}>FX &amp; reversals</Link>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="coa" className="mt-4">

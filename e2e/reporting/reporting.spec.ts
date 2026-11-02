@@ -182,3 +182,52 @@ test("posted-line filter controls preserve explicit conditions without fabricati
     "110.00",
   );
 });
+
+test("standard report More options links reach reporting tools with the selected dates and survive reload/back", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "More options", exact: true }).click();
+  await expect(
+    page.getByRole("menuitem", { name: "Create custom report", exact: true }),
+  ).toHaveAttribute("href", "/reports/builder/new?from=2026-04-01&to=2026-11-02");
+  for (const [name, tab] of [
+    ["Saved custom reports", "custom"],
+    ["Management dashboards & forecasts", "management"],
+    ["Management report packs", "packs"],
+    ["Report templates", "templates"],
+    ["Schedules & delivery history", "schedules"],
+  ]) {
+    await expect(page.getByRole("menuitem", { name, exact: true })).toHaveAttribute(
+      "href",
+      `/reports?tab=${tab}&from=2026-04-01&to=2026-11-02`,
+    );
+  }
+  await page.getByRole("menuitem", { name: "Saved custom reports", exact: true }).click();
+  await expect(page).toHaveURL(/\/reports\?tab=custom&from=2026-04-01&to=2026-11-02$/);
+  await page.reload();
+  await expect(page).toHaveURL(/tab=custom/);
+  await page.getByRole("button", { name: "More options", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Management report packs", exact: true }).click();
+  await expect(page).toHaveURL(/tab=packs/);
+  await page.goBack();
+  await expect(page).toHaveURL(/tab=custom/);
+});
+
+test("More options is keyboard accessible and fits a narrow screen", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  const trigger = page.getByRole("button", { name: "More options", exact: true });
+  await trigger.focus();
+  await page.keyboard.press("Enter");
+  await expect(
+    page.getByRole("menuitem", { name: "Create custom report", exact: true }),
+  ).toBeFocused();
+  const menu = page.getByRole("menu");
+  const box = await menu.boundingBox();
+  expect(box).not.toBeNull();
+  expect(box!.x).toBeGreaterThanOrEqual(0);
+  expect(box!.x + box!.width).toBeLessThanOrEqual(390);
+  await page.keyboard.press("Escape");
+  await expect(trigger).toBeFocused();
+});

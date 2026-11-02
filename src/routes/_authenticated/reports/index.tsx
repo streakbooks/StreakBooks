@@ -1,3 +1,4 @@
+import { parseReportingCentreSearch } from "@/lib/reports/centre-search";
 import { ReportingFeatureGate } from "@/components/reports/ReportingFeatureGate";
 import { ManagementWorkspace } from "@/components/reports/ManagementWorkspace";
 import { ReportPacksWorkspace } from "@/components/reports/ReportPacksWorkspace";
@@ -35,14 +36,31 @@ export const Route = createFileRoute("/_authenticated/reports/")({
     ],
   }),
   component: ReportsCentre,
+  validateSearch: parseReportingCentreSearch,
 });
 
 function ReportsCentre() {
   const { company, isPending } = useActiveCompany();
   const [q, setQ] = useState("");
-  const [tab, setTab] = useState("home");
-  const [periodFrom, setPeriodFrom] = useState("");
-  const [periodTo, setPeriodTo] = useState(todayIso());
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const tab = search.tab ?? "home";
+  const setTab = (value: string) =>
+    void navigate({
+      search: (previous) => parseReportingCentreSearch({ ...previous, tab: value }),
+    });
+  const periodFrom = search.from ?? "";
+  const periodTo = search.to ?? todayIso();
+  const setPeriodFrom = (value: string) =>
+    void navigate({
+      search: (previous) => parseReportingCentreSearch({ ...previous, from: value }),
+      replace: true,
+    });
+  const setPeriodTo = (value: string) =>
+    void navigate({
+      search: (previous) => parseReportingCentreSearch({ ...previous, to: value }),
+      replace: true,
+    });
   const [category, setCategory] = useState<ReportCategoryId | "all">("all");
 
   const searched = useMemo(() => searchReports(q), [q]);

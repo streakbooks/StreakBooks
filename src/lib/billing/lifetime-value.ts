@@ -35,6 +35,8 @@ export function recordLifetimePayment(input: {
   currency: string;
   amountMinor: number;
   reason: string;
+  sourceId?: string;
+  recordedSourceIds?: readonly string[];
 }): { stored: false; providerCalled: false; audit: { action: "lifetime.record"; reason: string } } {
   if (!platformRoleAllows(input.role, "billing.manage")) {
     throw new Error("Platform permission required");
@@ -42,5 +44,10 @@ export function recordLifetimePayment(input: {
   lifetimeValueFromPayments([{ currency: input.currency, amountMinor: input.amountMinor }]);
   const reason = input.reason.trim();
   if (reason.length < 3) throw new Error("A reason is required");
+  const sourceId = input.sourceId?.trim() ?? "";
+  if (input.sourceId !== undefined && sourceId.length < 1) throw new Error("Name the payment");
+  if (sourceId.length > 0 && (input.recordedSourceIds ?? []).includes(sourceId)) {
+    throw new Error("That payment is already recorded");
+  }
   return { stored: false, providerCalled: false, audit: { action: "lifetime.record", reason } };
 }

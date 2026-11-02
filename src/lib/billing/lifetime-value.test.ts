@@ -48,4 +48,27 @@ describe("lifetime value", () => {
     expect(sql).toContain("unavailable");
     expect(sql).not.toContain("sales_invoices");
   });
+
+  it("rejects a payment source that is already recorded", () => {
+    expect(() =>
+      recordLifetimePayment({
+        role: "platform_finance",
+        currency: "INR",
+        amountMinor: 100,
+        reason: "Collected",
+        sourceId: "ch_1",
+        recordedSourceIds: ["ch_1"],
+      }),
+    ).toThrow(/already recorded/);
+    const sql = readFileSync(
+      new URL(
+        "../../../supabase/migrations/20261102480000_lifetime_payment_duplicate.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    expect(sql).toContain("That payment is already recorded");
+    expect(sql).toContain("require_platform('billing.manage')");
+    expect(sql).not.toContain("sales_invoices");
+  });
 });

@@ -3,6 +3,7 @@ import fontkit from "@pdf-lib/fontkit";
 import { reportFontBase64 } from "./report-font.server";
 import { displayDocumentValue, documentCellStyle } from "./document-format";
 import type { ReportDocument } from "./report-document";
+import { reportHeaderParts } from "./report-presentation";
 export function bytesToBase64(bytes: Uint8Array): string {
   let text = "";
   for (let start = 0; start < bytes.length; start += 8192)
@@ -54,16 +55,16 @@ export async function exportReportPdf(doc: ReportDocument): Promise<Uint8Array> 
     page.drawText(s, { x, y: yy, size: fs, font, color });
   function header() {
     y = size[1] - margin;
-    for (const value of [
-      doc.header,
-      doc.company,
-      doc.title,
-      doc.subtitle,
-      `${doc.from} – ${doc.to}  •  ${doc.currency}`,
-    ].filter(Boolean)) {
-      for (const l of wrap(value, font, value === doc.title ? 16 : 9, size[0] - margin * 2)) {
-        text(l, margin, y, value === doc.title ? 16 : 9);
-        y -= value === doc.title ? 21 : 13;
+    for (const part of reportHeaderParts(doc)) {
+      const fs = part.title ? 16 : 9;
+      for (const lineText of wrap(part.text, font, fs, size[0] - margin * 2)) {
+        const width = font.widthOfTextAtSize(lineText, fs);
+        const alignment = doc.presentation?.headerAlignment ?? "left";
+        const x = alignment === "center"
+          ? (size[0] - width) / 2
+          : alignment === "right" ? size[0] - margin - width : margin;
+        text(lineText, x, y, fs);
+        y -= part.title ? 21 : 13;
       }
     }
     y -= 8;
@@ -97,7 +98,7 @@ export async function exportReportPdf(doc: ReportDocument): Promise<Uint8Array> 
           ls.forEach((l, j) => text(l, margin + labelWidth + i * valueWidth + 4, y - j * 10, 8));
         });
         y -= max * 10 + 6;
-        page.drawLine({
+        if (doc.presentation?.reportBorders !== "none") page.drawLine({
           start: { x: margin, y },
           end: { x: size[0] - margin, y },
           thickness: 1,
@@ -106,7 +107,7 @@ export async function exportReportPdf(doc: ReportDocument): Promise<Uint8Array> 
         y -= 14;
       }
       tableHeader();
-      for (const row of section.rows) {
+      for (const [rowIndex, row] of section.rows.entries()) {
         const labels = wrap(row.label, font, 9, labelWidth - 12 - (row.indent ?? 0) * 8);
         const height = Math.max(1, labels.length) * 12 + 8;
         if (height > size[1] - 250)
@@ -115,13 +116,13 @@ export async function exportReportPdf(doc: ReportDocument): Promise<Uint8Array> 
           nextPage();
           tableHeader();
         }
-        if (row.kind === "heading")
+        if (row.kind === "heading" || (doc.presentation?.bandedRows && rowIndex % 2 === 1))
           page.drawRectangle({
             x: margin,
             y: y - height + 8,
             width: contentWidth,
             height,
-            color: rgb(0.94, 0.96, 0.96),
+            color: row.kind === "heading" ? rgb(0.94, 0.96, 0.96) : rgb(0.975, 0.98, 0.99),
           });
         labels.forEach((l, i) => text(l, margin + (row.indent ?? 0) * 8, y - i * 12, 9));
         row.values.slice(start, start + 6).forEach((value, i) => {
@@ -140,7 +141,14 @@ export async function exportReportPdf(doc: ReportDocument): Promise<Uint8Array> 
           );
         });
         y -= height;
-        if (["subtotal", "total", "group"].includes(row.kind))
+        if (doc.presentation?.reportBorders === "all") {
+          page.drawLine({ start: { x: margin, y: y + 8 }, end: { x: size[0] - margin, y: y + 8 }, thickness: 0.3, color: line });
+          for (let columnIndex = 0; columnIndex <= columns.length; columnIndex++) {
+            const x = margin + labelWidth + columnIndex * valueWidth;
+            page.drawLine({ start: { x, y: y + 8 }, end: { x, y: y + height + 8 }, thickness: 0.3, color: line });
+          }
+        }
+        if (doc.presentation?.reportBorders !== "none" && ["subtotal", "total", "group"].includes(row.kind))
           page.drawLine({
             start: { x: margin, y: y + 8 },
             end: { x: size[0] - margin, y: y + 8 },
@@ -170,7 +178,10 @@ export async function exportReportPdf(doc: ReportDocument): Promise<Uint8Array> 
   const pages = pdf.getPages();
   pages.forEach((p, i) => {
     const foot = `${doc.footer || "LinkBooks"}  •  Page ${i + 1} of ${pages.length}`;
-    p.drawText(foot, { x: margin, y: 22, font, size: 7, color: muted });
+    const footerWidth = font.widthOfTextAtSize(foot, 7);
+    const footerAlign = doc.presentation?.footerAlignment ?? "left";
+    const footerX = footerAlign === "center" ? (size[0] - footerWidth) / 2 : footerAlign === "right" ? size[0] - margin - footerWidth : margin;
+    p.drawText(foot, { x: footerX, y: 22, font, size: 7, color: muted });
     p.drawText(`Snapshot: ${doc.capturedAt}`, { x: margin, y: 12, font, size: 6, color: muted });
   });
   return pdf.save();

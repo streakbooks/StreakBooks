@@ -51,6 +51,9 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/fixed-assets")({
+  validateSearch: (raw: Record<string, unknown>) => ({
+    tab: ["register", "depreciation", "types"].includes(String(raw["tab"])) ? String(raw["tab"]) : "register",
+  }),
   head: () => ({ meta: [{ title: "Fixed assets — LinkBooks" }] }),
   component: FixedAssetsPage,
 });
@@ -67,6 +70,7 @@ type Dialogs =
 function FixedAssetsPage() {
   const { company } = useActiveCompany();
   const companyId = company?.id;
+  const { tab } = Route.useSearch();
   const fmt = useFormat();
   const canManage = useCanDo("accounts.manage");
   const canPostEntries = useCanDo("accounting.post");
@@ -141,11 +145,11 @@ function FixedAssetsPage() {
           </>
         }
       />
-      <Tabs defaultValue="register">
+      <Tabs value={tab}>
         <TabsList>
-          <TabsTrigger value="register">Register</TabsTrigger>
-          <TabsTrigger value="depreciation">Run depreciation</TabsTrigger>
-          <TabsTrigger value="types">Asset types</TabsTrigger>
+          <TabsTrigger value="register" asChild><Link to="/fixed-assets" search={{ tab: "register" }}>Register</Link></TabsTrigger>
+          <TabsTrigger value="depreciation" asChild><Link to="/fixed-assets" search={{ tab: "depreciation" }}>Run depreciation</Link></TabsTrigger>
+          <TabsTrigger value="types" asChild><Link to="/fixed-assets" search={{ tab: "types" }}>Asset types</Link></TabsTrigger>
         </TabsList>
 
         <TabsContent value="register" className="space-y-4">

@@ -138,6 +138,12 @@ export function recogniseCashSettlements(
       throw new Error("Voided cash settlement requires verified reversal history");
     }
     assertRate(settlement.fxRateToBase);
+    if (
+      source.currencyCode === source.baseCurrencyCode &&
+      !/^0*1(?:\.0+)?$/.test(settlement.fxRateToBase)
+    ) {
+      throw new Error("Base-currency settlement must use FX rate 1");
+    }
     const next = cumulative + settlement.cashDeltaMinor;
     if (next < 0n || next > source.totalMinor - source.nonCashCreditMinor) {
       throw new Error("Cash settlement exceeds uncredited document balance");

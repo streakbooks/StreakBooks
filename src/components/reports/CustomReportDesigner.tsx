@@ -212,7 +212,7 @@ export function CustomReportDesigner({
                 <p className="text-xs text-muted-foreground">
                   Use [row_id], numbers in the report currency, + − × / and parentheses. For a
                   percentage, divide the amounts and choose Percent below. A zero denominator is
-                  reported as a validation error.
+                  shown as Unavailable, without replacing it with a zero value.
                 </p>
               </div>
             )}

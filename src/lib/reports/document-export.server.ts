@@ -23,6 +23,7 @@ export function exportReportCsv(doc: ReportDocument): string {
           r.label,
           ...r.values.map((v, i) => documentCsvValue(v, documentCellStyle(r, s, i))),
         ]),
+        ...(s.note ? [[s.note]] : []),
         [],
       ]),
       [doc.notes],
@@ -58,7 +59,7 @@ export async function exportReportXlsx(doc: ReportDocument): Promise<Uint8Array>
       const data = sheet.addRow([
         row.label,
         ...row.values.map((value, i) => {
-          if (value === "") return "";
+          if (value === "" || value === "Unavailable") return value;
           value = documentNumericValue(value, documentCellStyle(row, section, i));
           // Excel has 15 significant digits. Keep larger exact monetary values as text.
           if (value.replace(/[-.]/g, "").replace(/^0+/, "").length > 15) return value;
@@ -86,10 +87,16 @@ export async function exportReportXlsx(doc: ReportDocument): Promise<Uint8Array>
           positive +
           `;${negative}` +
           (style.zero === "blank" ? ';""' : style.zero === "dash" ? ';"–"' : "");
-        if (style.scale && style.scale !== "1" && style.format !== "percent")
+        if (
+          value !== "Unavailable" &&
+          style.scale &&
+          style.scale !== "1" &&
+          style.format !== "percent"
+        )
           cell.note = `Unscaled value: ${value}. Display divided by ${style.scale}.`;
       });
     }
+    if (section.note) sheet.addRow([section.note]);
     sheet.addRow([doc.notes]);
     sheet.addRow([doc.footer]);
     sheet.getColumn(1).width = 46;

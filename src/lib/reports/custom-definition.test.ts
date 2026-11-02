@@ -70,6 +70,43 @@ describe("custom report execution", () => {
     def.columns[2]!.formula = "[missing]";
     expect(() => customDefinitionSchema.parse(def)).toThrow("Unknown column");
   });
+  it("keeps zero-denominator ratios unavailable and propagates them without losing valid balances", () => {
+    const definition = starterDefinition();
+    definition.rows.push({
+      ...definition.rows[0]!,
+      id: "dependent",
+      label: "Dependent subtotal",
+      kind: "group",
+      children: ["margin", "net"],
+    });
+    const empty = executeCustomReport(definition, accounts, [[]]);
+    expect(empty[2]!.values[0]).toEqual({ n: "0", d: "1" });
+    expect(empty[3]!.values[0]).toBeNull();
+    expect(empty[4]!.values[0]).toBeNull();
+    const expenseOnly = executeCustomReport(starterDefinition(), accounts, [[balances[1]!]]);
+    expect(expenseOnly[2]!.values[0]).toEqual({ n: "-40", d: "1" });
+    expect(expenseOnly[3]!.values[0]).toBeNull();
+    definition.rows[2]!.formula = "1/0";
+    expect(() => customDefinitionSchema.parse(definition)).toThrow("Division by zero");
+  });
+  it("does not invent a percentage when the comparison column is zero", () => {
+    const definition = customDefinitionSchema.parse({
+      ...starterDefinition(),
+      columns: [
+        { id: "current", label: "Current", mode: "period" },
+        { id: "prior", label: "Prior", mode: "prior_period" },
+        {
+          id: "change",
+          label: "Change %",
+          mode: "calculated",
+          formula: "([current]-[prior])/[prior]",
+          format: "percent",
+        },
+      ],
+    });
+    const result = executeCustomReport(definition, accounts, [balances, [], []]);
+    expect(result[2]!.values).toEqual([{ n: "110", d: "1" }, { n: "0", d: "1" }, null]);
+  });
   it("sums nested groups, respects output order and calculates hidden dependencies", () => {
     const def = starterDefinition();
     def.rows[0]!.hidden = true;

@@ -1,7 +1,7 @@
 import { decimalValue } from "./custom-definition";
 import type { DocumentRow, DocumentSection } from "./report-document";
 export function displayDocumentValue(value: string, row: Partial<DocumentRow>): string {
-  if (value === "") return "";
+  if (value === "" || value === "Unavailable") return value;
   value = documentNumericValue(value, row);
   if (documentZero(value) && (row.zero === "blank" || row.zero === "dash"))
     return row.zero === "blank" ? "" : "–";
@@ -37,6 +37,7 @@ export function documentZero(value: string) {
 }
 /** Display scaling leaves the immutable document/source values unchanged. */
 export function documentNumericValue(value: string, row: Partial<DocumentRow>): string {
+  if (value === "Unavailable") return value;
   if (!value || !row.scale || row.scale === "1" || row.format === "percent") return value;
   const decimals = value.split(".")[1]?.length ?? 0;
   return decimalValue(
@@ -45,6 +46,7 @@ export function documentNumericValue(value: string, row: Partial<DocumentRow>): 
   );
 }
 export function documentCsvValue(value: string, row: DocumentRow): string {
+  if (value === "Unavailable") return value;
   const scaled = documentNumericValue(value, row);
   if (documentZero(scaled) && (row.zero === "blank" || row.zero === "dash"))
     return row.zero === "blank" ? "" : "–";

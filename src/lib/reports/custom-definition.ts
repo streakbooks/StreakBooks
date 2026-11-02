@@ -160,7 +160,7 @@ export type CustomResultRow = {
   label: string;
   kind: string;
   indent: number;
-  values: Array<{ n: string; d: string }>;
+  values: Array<{ n: string; d: string } | null>;
   format: CustomRow["format"];
   decimals: number;
   negative: CustomRow["negative"];
@@ -199,49 +199,72 @@ export function executeCustomReport(
       if (!byId.has(id))
         throw new Error(`Account ${id} is not in this organisation's chart of accounts`);
   const rows = new Map(def.rows.map((r) => [r.id, r]));
-  const results = columns.map((balances, index) => {
+  type Value = Fraction | null;
+  class UnavailableDependency extends Error {}
+  const requireValue = (v: Value): Fraction => {
+    if (v === null) throw new UnavailableDependency("An input calculation is unavailable");
+    return v;
+  };
+  function calculate(run: () => Fraction): Value {
+    try {
+      return run();
+    } catch (error) {
+      if (
+        error instanceof UnavailableDependency ||
+        (error instanceof Error && error.message === "Division by zero")
+      )
+        return null;
+      throw error;
+    }
+  }
+  const results: Array<Map<string, Value>> = columns.map((balances, index) => {
     if (def.columns[index]!.mode === "calculated")
       return new Map(def.rows.map((r) => [r.id, fraction(0n)]));
-    const cache = new Map<string, Fraction>();
-    const visiting = new Set<string>();
+    const cache = new Map<string, Value>(),
+      visiting = new Set<string>();
     const balanceMap = new Map(balances.map((b) => [b.account_id, b]));
-    function value(id: string): Fraction {
-      const cached = cache.get(id);
-      if (cached) return cached;
+    function value(id: string): Value {
+      if (cache.has(id)) return cache.get(id)!;
       if (visiting.has(id)) throw new Error(`Circular reference involving ${id}`);
       const row = rows.get(id);
       if (!row) throw new Error(`Unknown row ${id}`);
       visiting.add(id);
-      let result = fraction(0n);
-      if (row.kind === "accounts") {
-        for (const a of accounts) {
-          if (!row.accountIds.includes(a.id) && !row.accountTypes.includes(a.account_type))
-            continue;
-          const b = balanceMap.get(a.id);
-          if (!b) continue;
-          const debit = BigInt(b.debit_minor),
-            credit = BigInt(b.credit_minor);
-          const creditNormal =
-            row.sign === "credit" ||
-            (row.sign === "natural" && ["income", "liability", "equity"].includes(a.account_type));
-          result = add(result, fraction(creditNormal ? credit - debit : debit - credit, unit));
-        }
+      try {
+        const result = calculate(() => {
+          let amount = fraction(0n);
+          if (row.kind === "accounts")
+            for (const a of accounts) {
+              if (!row.accountIds.includes(a.id) && !row.accountTypes.includes(a.account_type))
+                continue;
+              const b = balanceMap.get(a.id);
+              if (!b) continue;
+              const debit = BigInt(b.debit_minor),
+                credit = BigInt(b.credit_minor);
+              const creditNormal =
+                row.sign === "credit" ||
+                (row.sign === "natural" &&
+                  ["income", "liability", "equity"].includes(a.account_type));
+              amount = add(amount, fraction(creditNormal ? credit - debit : debit - credit, unit));
+            }
+          if (row.kind === "group")
+            for (const child of row.children) amount = add(amount, requireValue(value(child)));
+          if (row.kind === "formula")
+            amount = evaluateFormula(row.formula, (id) => requireValue(value(id)));
+          return amount;
+        });
+        cache.set(id, result);
+        return result;
+      } finally {
+        visiting.delete(id);
       }
-      if (row.kind === "group")
-        for (const child of row.children) result = add(result, value(child));
-      if (row.kind === "formula") result = evaluateFormula(row.formula, value);
-      visiting.delete(id);
-      cache.set(id, result);
-      return result;
     }
-    // Validate hidden rows too: hidden is a presentation setting, never a calculation shortcut.
     for (const row of def.rows) value(row.id);
     return cache;
   });
   const byColumnId = new Map(def.columns.map((c, i) => [c.id, i]));
   const calculated = new Set<number>(),
     calculating = new Set<number>();
-  function calculateColumn(index: number): Map<string, Fraction> {
+  function calculateColumn(index: number): Map<string, Value> {
     const column = def.columns[index]!;
     if (column.mode !== "calculated" || calculated.has(index)) return results[index]!;
     if (calculating.has(index)) throw new Error(`Circular column reference involving ${column.id}`);
@@ -250,11 +273,13 @@ export function executeCustomReport(
       if (row.kind === "heading") continue;
       results[index]!.set(
         row.id,
-        evaluateFormula(column.formula, (id) => {
-          const target = byColumnId.get(id);
-          if (target === undefined) throw new Error(`Unknown column ${id}`);
-          return calculateColumn(target).get(row.id)!;
-        }),
+        calculate(() =>
+          evaluateFormula(column.formula, (id) => {
+            const target = byColumnId.get(id);
+            if (target === undefined) throw new Error(`Unknown column ${id}`);
+            return requireValue(calculateColumn(target).get(row.id)!);
+          }),
+        ),
       );
     }
     calculating.delete(index);
@@ -274,7 +299,7 @@ export function executeCustomReport(
       negative: row.negative,
       values: results.map((col) => {
         const v = col.get(row.id)!;
-        return { n: v.n.toString(), d: v.d.toString() };
+        return v === null ? null : { n: v.n.toString(), d: v.d.toString() };
       }),
     }));
 }

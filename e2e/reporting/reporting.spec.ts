@@ -18,8 +18,9 @@ test("custom designer uses account facts, validates formulas, reorders columns a
   await page.getByRole("button", { name: "Move column 2 left", exact: true }).click();
   await expect(page.getByLabel("Column 1 label", { exact: true })).toHaveValue("Last period");
   await page.getByRole("button", { name: "Recalculate report preview", exact: true }).click();
-  // A prior column with no revenue must not fabricate a margin; remove that ratio for this dataset.
-  await expect(page.getByRole("alert")).toContainText("Division by zero");
+  // A prior column with no revenue must expose an unavailable ratio, never fabricate zero.
+  await expect(page.getByRole("article")).toContainText("Unavailable");
+  await expect(page.getByRole("alert")).toHaveCount(0);
   await page.getByRole("button", { name: "Remove Net margin", exact: true }).click();
   await page.getByRole("button", { name: "Recalculate report preview", exact: true }).click();
   await page.getByRole("button", { name: "Persist fixture configuration", exact: true }).click();

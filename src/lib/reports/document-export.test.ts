@@ -158,6 +158,33 @@ describe("financial report documents and real export files", () => {
     expect(doc.sections[0]!.rows[0]!.values).toEqual(["110.00"]);
     expect(JSON.stringify(definition)).toBe(before);
   });
+  it("exports an empty-period report with unavailable ratios instead of invented zero percentages", async () => {
+    const facts = reportingFactsFixture();
+    facts.period = [];
+    facts.prior = [];
+    facts.bsPrior = [];
+    facts.bsCurrent = [];
+    facts.cash = [];
+    facts.customColumns = [{ id: "current", from: facts.from, to: facts.to, balances: [] }];
+    const doc = buildReportDocument(facts, {
+      name: "Empty-period review",
+      config: { _builder: starterDefinition() },
+    });
+    expect(doc.sections[0]!.rows[2]!.values).toEqual(["0.00"]);
+    expect(doc.sections[0]!.rows[3]!.values).toEqual(["Unavailable"]);
+    expect(doc.sections[0]!.note).toContain("not zero balances");
+    expect(displayDocumentValue("Unavailable", { format: "percent", scale: "1000" })).toBe(
+      "Unavailable",
+    );
+    const csv = exportReportCsv(doc);
+    expect(csv).toContain('"Unavailable"');
+    expect(csv).not.toContain("Unavailable%");
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load((await exportReportXlsx(doc)) as unknown as ExcelJS.Buffer);
+    expect(workbook.worksheets[0]!.getCell("B10").value).toBe("Unavailable");
+    const pdf = await PDFDocument.load(await exportReportPdf(doc));
+    expect(pdf.getPageCount()).toBeGreaterThan(0);
+  });
   it("does not silently export unreconciled cash or balance sheets", () => {
     const facts = reportingFactsFixture();
     facts.cash[0]!.closing_minor = "9999";

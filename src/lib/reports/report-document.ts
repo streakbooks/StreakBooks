@@ -220,7 +220,10 @@ export function buildReportDocument(
         (x) =>
           !x.c.hidden &&
           (settings.columns === "all" ||
-            rows.some((r) => r.kind !== "heading" && BigInt(r.values[x.i]!.n) !== 0n)),
+            rows.some(
+              (r) =>
+                r.kind !== "heading" && (r.values[x.i] === null || BigInt(r.values[x.i]!.n) !== 0n),
+            )),
       );
     if (!visible.length) throw new Error("No visible columns match the display settings");
     rows = rows.filter(
@@ -228,8 +231,8 @@ export function buildReportDocument(
         r.kind === "heading" ||
         settings.rows === "all" ||
         (settings.rows === "non_zero"
-          ? visible.some(({ i }) => BigInt(r.values[i]!.n) !== 0n)
-          : visible.every(({ i }) => BigInt(r.values[i]!.n) === 0n)),
+          ? visible.some(({ i }) => r.values[i] === null || BigInt(r.values[i]!.n) !== 0n)
+          : visible.every(({ i }) => r.values[i] !== null && BigInt(r.values[i]!.n) === 0n)),
     );
     if (settings.sort !== "custom")
       rows = [...rows].sort(
@@ -251,6 +254,11 @@ export function buildReportDocument(
       {
         id: "custom",
         title: builder.title,
+        ...(rows.some((r) => visible.some(({ i }) => r.values[i] === null))
+          ? {
+              note: "Unavailable values have a zero denominator or depend on an unavailable calculation; they are not zero balances.",
+            }
+          : {}),
         columnFormats: visible.map(({ c }) => c.format),
         columns: visible.map(({ c, i }) =>
           c.mode === "calculated"
@@ -272,8 +280,10 @@ export function buildReportDocument(
           zero: settings.zero,
           ...(currencyPrefix ? { currencyPrefix } : {}),
           values: visible.map(({ i }) => {
-            const value = r.values[i]!;
+            const value = r.values[i];
             if (r.kind === "heading") return "";
+            if (value === undefined) throw new Error("Missing custom report value");
+            if (value === null) return "Unavailable";
             const format =
               builder.columns[i]!.format === "inherit" ? r.format : builder.columns[i]!.format;
             return decimalValue(value, r.decimals, format === "percent" ? 100n : 1n);

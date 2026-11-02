@@ -58,7 +58,7 @@ Work top to bottom. A task is done only when its tests have run and the box is t
 
 - [x] Ledger integrity monitor
 - [x] AI governance
-- [ ] Customer 360
+- [x] Customer 360
 - [ ] Global search
 - [ ] Segments and tags
 - [ ] Admin alert rules

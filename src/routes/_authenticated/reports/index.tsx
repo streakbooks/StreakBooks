@@ -46,10 +46,6 @@ function ReportsCentre() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const tab = search.tab ?? "home";
-  const setTab = (value: string) =>
-    void navigate({
-      search: (previous) => parseReportingCentreSearch({ ...previous, tab: value }),
-    });
   const periodFrom = search.from ?? "";
   const periodTo = search.to ?? todayIso();
   const setPeriodFrom = (value: string) =>

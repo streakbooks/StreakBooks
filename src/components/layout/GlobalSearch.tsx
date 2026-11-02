@@ -272,7 +272,7 @@ export function GlobalSearch({ className }: { className?: string }) {
               {groups.map((g) => (
                 <CommandGroup key={g.name} heading={g.name}>
                   {g.items.map((a) => (
-                    <CommandItem key={a.id} value={a.id} onSelect={() => goAction(a)} asChild>
+                    <CommandItem key={a.id} value={a.id} onSelect={() => goAction(a)}>
                       <Link
                         to={a.href as never}
                         {...(a.search ? { search: a.search as never } : {})}
@@ -293,7 +293,6 @@ export function GlobalSearch({ className }: { className?: string }) {
                       value={`${h.entity}-${h.id}`}
                       onSelect={() => goHit(h)}
                       className="flex-col items-start gap-0.5"
-                      asChild
                     >
                       <Link
                         to={h.href as never}

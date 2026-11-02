@@ -6,6 +6,7 @@
 - P0.4: definer audit written. `20261102180000` and `20261102180100` are READY-TO-APPLY and were not applied. Definer audit test passed.
 - P0.5 BLOCKED: no Docker and no LinkBooks staging project. Do not use LeadOrbit. Create an empty staging project or install Docker Desktop or Podman.
 - P0.6: pull request 65 merged at `9fc4429` after verify and voice-browser succeeded.
+- Hosted gate BLOCKED: `20261102170000`, `20261102180000`, `20261102180100`, and the start-month backfill are READY-TO-APPLY. Nothing was applied. Write `BACKUP CONFIRMED` in this file to release them.
 
 ## NEEDS FROM OWNER
 

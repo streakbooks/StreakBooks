@@ -20,9 +20,9 @@ Work top to bottom. A task is done only when its tests have run and the box is t
 
 ## Hosted database gate
 
-- [ ] READY-TO-APPLY then apply `20261102170000` only after BACKUP CONFIRMED
-- [ ] READY-TO-APPLY `20261102180000` and `20261102180100`, then apply only after BACKUP CONFIRMED
-- [ ] READY-TO-APPLY then apply start-month backfill only after BACKUP CONFIRMED
+- [ ] BLOCKED: READY-TO-APPLY `20261102170000`. Apply only after `BACKUP CONFIRMED` is written in `docs/HANDOFF.md`.
+- [ ] BLOCKED: READY-TO-APPLY `20261102180000` and `20261102180100`. Apply only after `BACKUP CONFIRMED` is written in `docs/HANDOFF.md`.
+- [ ] BLOCKED: start-month backfill SQL is in `docs/superadmin/start-month-backfill.md`. Apply only after `BACKUP CONFIRMED` is written in `docs/HANDOFF.md`.
 
 ## Batch A
 

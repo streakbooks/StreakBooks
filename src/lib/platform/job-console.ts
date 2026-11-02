@@ -16,7 +16,12 @@ export function jobConsole(input: {
   return { status: "recorded", jobs: input.jobs };
 }
 
-export function enqueueJob(input: { role: PlatformRoleName; name: string; reason: string }): {
+export function enqueueJob(input: {
+  role: PlatformRoleName;
+  name: string;
+  reason: string;
+  queued?: boolean;
+}): {
   status: "queued";
   executed: false;
   name: string;
@@ -29,5 +34,6 @@ export function enqueueJob(input: { role: PlatformRoleName; name: string; reason
   const reason = input.reason.trim();
   if (name.length < 2 || name.length > 80) throw new Error("Name the job");
   if (reason.length < 3) throw new Error("A reason is required");
+  if (input.queued) throw new Error("That job is already queued");
   return { status: "queued", executed: false, name, audit: { action: "job.enqueue", reason } };
 }

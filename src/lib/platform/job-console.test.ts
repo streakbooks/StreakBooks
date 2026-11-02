@@ -24,5 +24,21 @@ describe("job console", () => {
     );
     expect(sql).toContain("READY-TO-APPLY");
     expect(sql).toContain("'executed', false");
+    expect(() =>
+      enqueueJob({
+        role: "platform_owner",
+        name: "Nightly check",
+        reason: "Schedule",
+        queued: true,
+      }),
+    ).toThrow(/already queued/);
+    const once = readFileSync(
+      new URL("../../../supabase/migrations/20261102530000_job_one_queued.sql", import.meta.url),
+      "utf8",
+    );
+    expect(once).toContain("platform_jobs_one_queued");
+    expect(once).toContain("That job is already queued");
+    expect(once).toContain("'executed', false");
+    expect(once).toContain("require_platform('settings.manage')");
   });
 });

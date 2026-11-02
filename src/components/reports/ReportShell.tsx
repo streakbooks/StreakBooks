@@ -1,8 +1,8 @@
 import { useReportActivity } from "@/hooks/use-report-activity";
 import { useCanDo } from "@/hooks/use-can";
 import type { ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
-import { Printer } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { ArrowLeft, Printer } from "lucide-react";
 import { useFormat } from "@/hooks/use-format";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { csvFilename, downloadCsv, toCsv, type CsvCell } from "@/lib/reports/csv";
@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ReportActionsMenu } from "./ReportActionsMenu";
 import { ReportPeriodSelect } from "./ReportPeriodSelect";
 import { SavedViews } from "./SavedViews";
 
@@ -40,6 +39,7 @@ export function ReportShell({
   showColumns,
   extraControls,
   toolbarActions,
+  hidePrint = false,
   getCsv,
   basis,
   children,
@@ -51,6 +51,8 @@ export function ReportShell({
   showColumns?: "pl" | "bs";
   extraControls?: ReactNode;
   toolbarActions?: ReactNode;
+  /** Standard financial statements use a consolidated export menu instead of print controls. */
+  hidePrint?: boolean;
   getCsv?: () => CsvExport | null;
   basis?: string | undefined;
   children: ReactNode;
@@ -64,6 +66,14 @@ export function ReportShell({
     ctx.search,
   );
   const fmt = useFormat();
+  const navigate = useNavigate();
+  const handleBack = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+    void navigate({ to: "/reports", search: { tab: "standard", from: ctx.from, to: ctx.to } });
+  };
   const canExport = useCanDo("reports.export");
   const period =
     mode === "asof" ? `As at ${fmt.date(ctx.to)}` : `${fmt.date(ctx.from)} to ${fmt.date(ctx.to)}`;
@@ -87,6 +97,12 @@ export function ReportShell({
 
   return (
     <div className="report-shell space-y-4">
+      <div className="print:hidden">
+        <Button size="sm" variant="ghost" onClick={handleBack}>
+          <ArrowLeft className="mr-2 size-4" aria-hidden="true" />
+          Back
+        </Button>
+      </div>
       {/* Shared report header: identical on screen, print and PDF */}
       <header className="text-center print:mb-4">
         <p className="text-sm text-muted-foreground">{ctx.companyName}</p>
@@ -173,15 +189,11 @@ export function ReportShell({
               Export CSV
             </Button>
           ) : null}
-          <Button size="sm" variant="outline" disabled={!canExport} onClick={() => window.print()}>
-            <Printer className="mr-1 size-4" /> Print / PDF
-          </Button>
-          <ReportActionsMenu from={ctx.from} to={ctx.to} />
-          <Button size="sm" variant="ghost" asChild>
-            <Link to="/reports" search={{ tab: "standard", from: ctx.from, to: ctx.to }}>
-              All reports
-            </Link>
-          </Button>
+          {!hidePrint && (
+            <Button size="sm" variant="outline" disabled={!canExport} onClick={() => window.print()}>
+              <Printer className="mr-1 size-4" aria-hidden="true" /> Print / PDF
+            </Button>
+          )}
         </div>
       </div>
 

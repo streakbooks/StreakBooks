@@ -1,3 +1,4 @@
+import { libraryMetadata } from "@/lib/reports/saved-report";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -61,7 +62,8 @@ export function SavedViews({ ctx }: { ctx: ReportCtx }) {
     onSuccess: async () => {
       setName("");
       setNaming(false);
-      await queryClient.invalidateQueries({ queryKey: key });
+      await queryClient.invalidateQueries({ queryKey: ["report-saved-views", ctx.companyId] });
+      await queryClient.invalidateQueries({ queryKey: ["report-library", ctx.companyId] });
       toast.success("View saved");
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
@@ -70,14 +72,25 @@ export function SavedViews({ ctx }: { ctx: ReportCtx }) {
   const remove = useMutation({
     mutationFn: (viewId: string) => deleteFn({ data: { companyId: ctx.companyId, viewId } }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: key });
+      await queryClient.invalidateQueries({ queryKey: ["report-saved-views", ctx.companyId] });
+      await queryClient.invalidateQueries({ queryKey: ["report-library", ctx.companyId] });
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
 
-  // The saved-views table may not exist yet; the rest of the report still works.
-  if (!reportId || q.isError) return null;
-  const views = (q.data ?? []) as unknown as Saved[];
+  if (!reportId) return null;
+  if (q.isError)
+    return (
+      <p role="alert" className="text-sm text-destructive print:hidden">
+        Saved views could not be loaded.{" "}
+        <button className="underline" onClick={() => void q.refetch()}>
+          Retry
+        </button>
+      </p>
+    );
+  const views = ((q.data ?? []) as unknown as Saved[]).filter(
+    (v) => !libraryMetadata(v.config).archived,
+  );
 
   const apply = (v: Saved) => {
     const cfg = parseReportSearch(v.config ?? {});

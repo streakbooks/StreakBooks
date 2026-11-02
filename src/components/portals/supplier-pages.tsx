@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -123,10 +124,10 @@ export function PortalBills() {
             <Field label="Tax basis points (2000 = 20%)" value={taxBps} onChange={setTaxBps} />
             <label className="block text-sm">
               Purchase order
-              <select
+              <RecordLookupSelect
                 className="mt-1 block h-9 w-full rounded-md border border-input bg-background px-2"
                 value={orderId}
-                onChange={(event) => setOrderId(event.target.value)}
+                onValueChange={(event) => setOrderId(event)}
               >
                 <option value="">None</option>
                 {orders.map((order) => (
@@ -134,7 +135,7 @@ export function PortalBills() {
                     {String(order["order_number"] ?? "Order")}
                   </option>
                 ))}
-              </select>
+              </RecordLookupSelect>
             </label>
             <div>
               <Label htmlFor="bill-memo">Note</Label>

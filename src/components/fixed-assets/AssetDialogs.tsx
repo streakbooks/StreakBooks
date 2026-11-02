@@ -123,6 +123,8 @@ function MethodFields({
           disabled={disabled}
           onChange={(e) => setMethod(e.target.value as DepreciationMethod)}
         >
+          {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
           {DEPRECIATION_METHODS.map((m) => (
             <option key={m.value} value={m.value}>
               {m.label}

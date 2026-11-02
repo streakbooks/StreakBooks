@@ -21,11 +21,11 @@ import { Route as AuthenticatedAccountingRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAiAssistantRouteImport } from './routes/_authenticated/ai-assistant'
 import { Route as AuthenticatedBankingRouteRouteImport } from './routes/_authenticated/banking/route'
 import { Route as AuthenticatedFilesRouteImport } from './routes/_authenticated/files'
-import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedFirmRouteImport } from './routes/_authenticated/firm'
 import { Route as AuthenticatedFixedAssetsRouteImport } from './routes/_authenticated/fixed-assets'
 import { Route as AuthenticatedHelpRouteImport } from './routes/_authenticated/help'
 import { Route as AuthenticatedImportsRouteImport } from './routes/_authenticated/imports'
+import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedPlatformRouteImport } from './routes/_authenticated/platform'
 import { Route as AuthenticatedProductsServicesRouteImport } from './routes/_authenticated/products-services'
@@ -110,6 +110,7 @@ import { Route as AuthenticatedPurchasesPaymentsIndexRouteImport } from './route
 import { Route as AuthenticatedPurchasesPaymentsPaymentIdRouteImport } from './routes/_authenticated/purchases/payments.$paymentId'
 import { Route as AuthenticatedPurchasesPaymentsBatchRouteImport } from './routes/_authenticated/purchases/payments.batch'
 import { Route as AuthenticatedPurchasesPaymentsNewRouteImport } from './routes/_authenticated/purchases/payments.new'
+import { Route as AuthenticatedReportsBuilderViewIdRouteImport } from './routes/_authenticated/reports/builder/$viewId'
 import { Route as AuthenticatedSalesCreditNotesIndexRouteImport } from './routes/_authenticated/sales/credit-notes.index'
 import { Route as AuthenticatedSalesCreditNotesCreditNoteIdRouteImport } from './routes/_authenticated/sales/credit-notes.$creditNoteId'
 import { Route as AuthenticatedSalesCreditNotesNewRouteImport } from './routes/_authenticated/sales/credit-notes.new'
@@ -193,11 +194,6 @@ const AuthenticatedFilesRoute = AuthenticatedFilesRouteImport.update({
   path: '/files',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedNotificationsRoute = AuthenticatedNotificationsRouteImport.update({
-  id: '/notifications',
-  path: '/notifications',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedFirmRoute = AuthenticatedFirmRouteImport.update({
   id: '/firm',
   path: '/firm',
@@ -219,6 +215,12 @@ const AuthenticatedImportsRoute = AuthenticatedImportsRouteImport.update({
   path: '/imports',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedNotificationsRoute =
+  AuthenticatedNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
@@ -694,6 +696,12 @@ const AuthenticatedPurchasesPaymentsNewRoute =
     path: '/payments/new',
     getParentRoute: () => AuthenticatedPurchasesRouteRoute,
   } as any)
+const AuthenticatedReportsBuilderViewIdRoute =
+  AuthenticatedReportsBuilderViewIdRouteImport.update({
+    id: '/reports/builder/$viewId',
+    path: '/reports/builder/$viewId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSalesCreditNotesIndexRoute =
   AuthenticatedSalesCreditNotesIndexRouteImport.update({
     id: '/credit-notes/',
@@ -836,11 +844,11 @@ export interface FileRoutesByFullPath {
   '/accounting': typeof AuthenticatedAccountingRoute
   '/ai-assistant': typeof AuthenticatedAiAssistantRoute
   '/files': typeof AuthenticatedFilesRoute
-  '/notifications': typeof AuthenticatedNotificationsRoute
   '/firm': typeof AuthenticatedFirmRoute
   '/fixed-assets': typeof AuthenticatedFixedAssetsRoute
   '/help': typeof AuthenticatedHelpRoute
   '/imports': typeof AuthenticatedImportsRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/platform': typeof AuthenticatedPlatformRouteWithChildren
   '/products-services': typeof AuthenticatedProductsServicesRoute
@@ -917,6 +925,7 @@ export interface FileRoutesByFullPath {
   '/purchases/payments/$paymentId': typeof AuthenticatedPurchasesPaymentsPaymentIdRoute
   '/purchases/payments/batch': typeof AuthenticatedPurchasesPaymentsBatchRoute
   '/purchases/payments/new': typeof AuthenticatedPurchasesPaymentsNewRoute
+  '/reports/builder/$viewId': typeof AuthenticatedReportsBuilderViewIdRoute
   '/sales/credit-notes/$creditNoteId': typeof AuthenticatedSalesCreditNotesCreditNoteIdRouteWithChildren
   '/sales/credit-notes/new': typeof AuthenticatedSalesCreditNotesNewRoute
   '/sales/invoices/$invoiceId': typeof AuthenticatedSalesInvoicesInvoiceIdRouteWithChildren
@@ -953,11 +962,11 @@ export interface FileRoutesByTo {
   '/accounting': typeof AuthenticatedAccountingRoute
   '/ai-assistant': typeof AuthenticatedAiAssistantRoute
   '/files': typeof AuthenticatedFilesRoute
-  '/notifications': typeof AuthenticatedNotificationsRoute
   '/firm': typeof AuthenticatedFirmRoute
   '/fixed-assets': typeof AuthenticatedFixedAssetsRoute
   '/help': typeof AuthenticatedHelpRoute
   '/imports': typeof AuthenticatedImportsRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/products-services': typeof AuthenticatedProductsServicesRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -1034,6 +1043,7 @@ export interface FileRoutesByTo {
   '/purchases/payments/$paymentId': typeof AuthenticatedPurchasesPaymentsPaymentIdRoute
   '/purchases/payments/batch': typeof AuthenticatedPurchasesPaymentsBatchRoute
   '/purchases/payments/new': typeof AuthenticatedPurchasesPaymentsNewRoute
+  '/reports/builder/$viewId': typeof AuthenticatedReportsBuilderViewIdRoute
   '/sales/credit-notes/new': typeof AuthenticatedSalesCreditNotesNewRoute
   '/sales/invoices/new': typeof AuthenticatedSalesInvoicesNewRoute
   '/sales/quotes/new': typeof AuthenticatedSalesQuotesNewRoute
@@ -1074,11 +1084,11 @@ export interface FileRoutesById {
   '/_authenticated/accounting': typeof AuthenticatedAccountingRoute
   '/_authenticated/ai-assistant': typeof AuthenticatedAiAssistantRoute
   '/_authenticated/files': typeof AuthenticatedFilesRoute
-  '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/firm': typeof AuthenticatedFirmRoute
   '/_authenticated/fixed-assets': typeof AuthenticatedFixedAssetsRoute
   '/_authenticated/help': typeof AuthenticatedHelpRoute
   '/_authenticated/imports': typeof AuthenticatedImportsRoute
+  '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/platform': typeof AuthenticatedPlatformRouteWithChildren
   '/_authenticated/products-services': typeof AuthenticatedProductsServicesRoute
@@ -1156,6 +1166,7 @@ export interface FileRoutesById {
   '/_authenticated/purchases/payments/$paymentId': typeof AuthenticatedPurchasesPaymentsPaymentIdRoute
   '/_authenticated/purchases/payments/batch': typeof AuthenticatedPurchasesPaymentsBatchRoute
   '/_authenticated/purchases/payments/new': typeof AuthenticatedPurchasesPaymentsNewRoute
+  '/_authenticated/reports/builder/$viewId': typeof AuthenticatedReportsBuilderViewIdRoute
   '/_authenticated/sales/credit-notes/$creditNoteId': typeof AuthenticatedSalesCreditNotesCreditNoteIdRouteWithChildren
   '/_authenticated/sales/credit-notes/new': typeof AuthenticatedSalesCreditNotesNewRoute
   '/_authenticated/sales/invoices/$invoiceId': typeof AuthenticatedSalesInvoicesInvoiceIdRouteWithChildren
@@ -1200,11 +1211,11 @@ export interface FileRouteTypes {
     | '/accounting'
     | '/ai-assistant'
     | '/files'
-    | '/notifications'
     | '/firm'
     | '/fixed-assets'
     | '/help'
     | '/imports'
+    | '/notifications'
     | '/onboarding'
     | '/platform'
     | '/products-services'
@@ -1281,6 +1292,7 @@ export interface FileRouteTypes {
     | '/purchases/payments/$paymentId'
     | '/purchases/payments/batch'
     | '/purchases/payments/new'
+    | '/reports/builder/$viewId'
     | '/sales/credit-notes/$creditNoteId'
     | '/sales/credit-notes/new'
     | '/sales/invoices/$invoiceId'
@@ -1317,11 +1329,11 @@ export interface FileRouteTypes {
     | '/accounting'
     | '/ai-assistant'
     | '/files'
-    | '/notifications'
     | '/firm'
     | '/fixed-assets'
     | '/help'
     | '/imports'
+    | '/notifications'
     | '/onboarding'
     | '/products-services'
     | '/profile'
@@ -1398,6 +1410,7 @@ export interface FileRouteTypes {
     | '/purchases/payments/$paymentId'
     | '/purchases/payments/batch'
     | '/purchases/payments/new'
+    | '/reports/builder/$viewId'
     | '/sales/credit-notes/new'
     | '/sales/invoices/new'
     | '/sales/quotes/new'
@@ -1437,11 +1450,11 @@ export interface FileRouteTypes {
     | '/_authenticated/accounting'
     | '/_authenticated/ai-assistant'
     | '/_authenticated/files'
-    | '/_authenticated/notifications'
     | '/_authenticated/firm'
     | '/_authenticated/fixed-assets'
     | '/_authenticated/help'
     | '/_authenticated/imports'
+    | '/_authenticated/notifications'
     | '/_authenticated/onboarding'
     | '/_authenticated/platform'
     | '/_authenticated/products-services'
@@ -1519,6 +1532,7 @@ export interface FileRouteTypes {
     | '/_authenticated/purchases/payments/$paymentId'
     | '/_authenticated/purchases/payments/batch'
     | '/_authenticated/purchases/payments/new'
+    | '/_authenticated/reports/builder/$viewId'
     | '/_authenticated/sales/credit-notes/$creditNoteId'
     | '/_authenticated/sales/credit-notes/new'
     | '/_authenticated/sales/invoices/$invoiceId'
@@ -1646,13 +1660,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFilesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/notifications': {
-      id: '/_authenticated/notifications'
-      path: '/notifications'
-      fullPath: '/notifications'
-      preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/firm': {
       id: '/_authenticated/firm'
       path: '/firm'
@@ -1679,6 +1686,13 @@ declare module '@tanstack/react-router' {
       path: '/imports'
       fullPath: '/imports'
       preLoaderRoute: typeof AuthenticatedImportsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/notifications': {
+      id: '/_authenticated/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/onboarding': {
@@ -2269,6 +2283,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPurchasesPaymentsNewRouteImport
       parentRoute: typeof AuthenticatedPurchasesRouteRoute
     }
+    '/_authenticated/reports/builder/$viewId': {
+      id: '/_authenticated/reports/builder/$viewId'
+      path: '/reports/builder/$viewId'
+      fullPath: '/reports/builder/$viewId'
+      preLoaderRoute: typeof AuthenticatedReportsBuilderViewIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/sales/credit-notes/': {
       id: '/_authenticated/sales/credit-notes/'
       path: '/credit-notes'
@@ -2675,11 +2696,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountingRoute: typeof AuthenticatedAccountingRoute
   AuthenticatedAiAssistantRoute: typeof AuthenticatedAiAssistantRoute
   AuthenticatedFilesRoute: typeof AuthenticatedFilesRoute
-  AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedFirmRoute: typeof AuthenticatedFirmRoute
   AuthenticatedFixedAssetsRoute: typeof AuthenticatedFixedAssetsRoute
   AuthenticatedHelpRoute: typeof AuthenticatedHelpRoute
   AuthenticatedImportsRoute: typeof AuthenticatedImportsRoute
+  AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedPlatformRoute: typeof AuthenticatedPlatformRouteWithChildren
   AuthenticatedProductsServicesRoute: typeof AuthenticatedProductsServicesRoute
@@ -2701,6 +2722,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBudgetsIndexRoute: typeof AuthenticatedBudgetsIndexRoute
   AuthenticatedContactsIndexRoute: typeof AuthenticatedContactsIndexRoute
   AuthenticatedReportsIndexRoute: typeof AuthenticatedReportsIndexRoute
+  AuthenticatedReportsBuilderViewIdRoute: typeof AuthenticatedReportsBuilderViewIdRoute
   AuthenticatedDocumentsPrintKindIdRoute: typeof AuthenticatedDocumentsPrintKindIdRoute
 }
 
@@ -2713,11 +2735,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountingRoute: AuthenticatedAccountingRoute,
   AuthenticatedAiAssistantRoute: AuthenticatedAiAssistantRoute,
   AuthenticatedFilesRoute: AuthenticatedFilesRoute,
-  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedFirmRoute: AuthenticatedFirmRoute,
   AuthenticatedFixedAssetsRoute: AuthenticatedFixedAssetsRoute,
   AuthenticatedHelpRoute: AuthenticatedHelpRoute,
   AuthenticatedImportsRoute: AuthenticatedImportsRoute,
+  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedPlatformRoute: AuthenticatedPlatformRouteWithChildren,
   AuthenticatedProductsServicesRoute: AuthenticatedProductsServicesRoute,
@@ -2739,6 +2761,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBudgetsIndexRoute: AuthenticatedBudgetsIndexRoute,
   AuthenticatedContactsIndexRoute: AuthenticatedContactsIndexRoute,
   AuthenticatedReportsIndexRoute: AuthenticatedReportsIndexRoute,
+  AuthenticatedReportsBuilderViewIdRoute:
+    AuthenticatedReportsBuilderViewIdRoute,
   AuthenticatedDocumentsPrintKindIdRoute:
     AuthenticatedDocumentsPrintKindIdRoute,
 }

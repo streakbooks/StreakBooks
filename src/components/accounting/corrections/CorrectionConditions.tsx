@@ -59,6 +59,8 @@ export function CorrectionConditions({
                 update(index, { field, operator: "is", value: "", value_to: "" });
               }}
             >
+              {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
               {Object.entries(conditionFields).map(([value, f]) => (
                 <option key={value} value={value}>
                   {f.label}
@@ -71,6 +73,8 @@ export function CorrectionConditions({
               value={c.operator}
               onChange={(e) => update(index, { operator: e.target.value as ConditionOperator })}
             >
+              {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
               {operatorsFor(c.field).map((op) => (
                 <option key={op} value={op}>
                   {conditionOperators[op]}

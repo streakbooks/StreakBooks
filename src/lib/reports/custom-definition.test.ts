@@ -1,0 +1,80 @@
+import { describe, expect, it } from "vitest";
+import {
+  customDefinitionSchema,
+  executeCustomReport,
+  starterDefinition,
+  customColumns,
+  decimalValue,
+} from "./custom-definition";
+const a = "11111111-1111-4111-8111-111111111111",
+  b = "22222222-2222-4222-8222-222222222222";
+const accounts = [
+  { id: a, code: "4000", name: "Revenue", account_type: "income" as const },
+  { id: b, code: "6000", name: "Expense", account_type: "expense" as const },
+];
+const balances = [
+  { account_id: a, debit_minor: "0", credit_minor: "15000" },
+  { account_id: b, debit_minor: "4000", credit_minor: "0" },
+];
+describe("custom report execution", () => {
+  it("reconciles account selection, formulas and margins to ledger facts", () => {
+    const rows = executeCustomReport(starterDefinition(), accounts, [balances]);
+    expect(rows[2]!.values[0]).toEqual({ n: "11000", d: "1" });
+    expect(rows[3]!.values[0]).toEqual({ n: "11", d: "15" });
+  });
+  it("sums nested groups, respects output order and calculates hidden dependencies", () => {
+    const def = starterDefinition();
+    def.rows[0]!.hidden = true;
+    def.rows[3]!.hidden = true;
+    def.rows.push({
+      ...def.rows[0]!,
+      hidden: false,
+      id: "subtotal",
+      label: "Gross contribution",
+      kind: "group",
+      children: ["net"],
+    });
+    const rows = executeCustomReport(def, accounts, [balances]);
+    expect(rows.map((r) => r.id)).toEqual(["expenses", "net", "subtotal"]);
+    expect(rows.at(-1)!.values[0]!.n).toBe("11000");
+  });
+  it("never silently selects an account from another tenant", () => {
+    const def = starterDefinition();
+    def.rows[0]!.accountIds = ["33333333-3333-4333-8333-333333333333"];
+    expect(() => executeCustomReport(def, accounts, [balances])).toThrow("chart of accounts");
+  });
+  it("rejects circular formulas and groups including hidden rows", () => {
+    const def = starterDefinition();
+    def.rows[2]!.formula = "[margin]";
+    expect(() => executeCustomReport(def, accounts, [balances])).toThrow("Circular reference");
+  });
+  it("rejects duplicate identifiers, missing references and invalid fixed periods", () => {
+    const def = starterDefinition();
+    def.rows.push(def.rows[0]!);
+    expect(() => customDefinitionSchema.parse(def)).toThrow();
+    def.rows.pop();
+    def.rows[2]!.formula = "[missing]";
+    expect(() => customDefinitionSchema.parse(def)).toThrow();
+  });
+  it("calculates exact comparative boundaries and leap-year month columns", () => {
+    const def = starterDefinition();
+    def.columns = customDefinitionSchema.parse({
+      ...def,
+      columns: [
+        { id: "last", label: "Prior period", mode: "prior_period" },
+        { id: "month", label: "Month", mode: "month", monthOffset: 1 },
+        { id: "year", label: "Last year", mode: "prior_year" },
+      ],
+    }).columns;
+    const cols = customColumns(def, "2024-01-01", "2024-01-31");
+    expect(cols.map((c) => [c.from, c.to])).toEqual([
+      ["2023-12-01", "2023-12-31"],
+      ["2024-02-01", "2024-02-29"],
+      ["2023-01-01", "2023-01-31"],
+    ]);
+  });
+  it("rounds final display values half away from zero without losing large integers", () => {
+    expect(decimalValue({ n: "-1", d: "8" }, 2)).toBe("-0.13");
+    expect(decimalValue({ n: "12345678901234567890", d: "100" }, 2)).toBe("123456789012345678.90");
+  });
+});

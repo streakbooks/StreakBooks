@@ -7,9 +7,8 @@ async function plan(page: import("@playwright/test").Page, reason = "Correct exp
   await page.getByLabel("Correction search through", { exact: true }).fill("2026-10-31");
   await page.getByRole("button", { name: "Find posted lines", exact: true }).click();
   await page.getByRole("checkbox", { name: selectable, exact: true }).check();
-  await page
-    .getByLabel("Correction destination account", { exact: true })
-    .selectOption("00000000-0000-4000-8000-000000000003");
+  await page.getByRole("combobox", { name: "Correction destination account", exact: true }).click();
+  await page.locator('[role="option"][id$="-opt-00000000-0000-4000-8000-000000000003"]').click();
   await page.getByLabel("Correction reason", { exact: true }).fill(reason);
   await page.getByRole("button", { name: "Preview correction", exact: true }).click();
 }
@@ -103,9 +102,9 @@ test("report-export denial disables evidence downloads", async ({ page }) => {
 test("advanced conditions submit scope, OR logic and exact base amounts", async ({ page }) => {
   await page.goto("/");
   await page.getByLabel("Correction statement", { exact: true }).selectOption("balance_sheet");
-  await expect(
-    page.getByLabel("Correction source account", { exact: true }).locator("option"),
-  ).toHaveText(["All accounts in the selected statement", "1200 · Prepaid costs"]);
+  await page.getByRole("combobox", { name: "Correction source account", exact: true }).click();
+  await expect(page.getByRole("listbox").getByRole("option")).toHaveText(["1200 · Prepaid costs"]);
+  await page.getByRole("searchbox").press("Escape");
   await page.getByRole("button", { name: "Add condition", exact: true }).click();
   await page.getByLabel("Condition 1 field", { exact: true }).selectOption("line_amount");
   await page.getByLabel("Condition 1 operator", { exact: true }).selectOption("between");
@@ -140,9 +139,8 @@ test("cross-statement corrections require review of profit impact", async ({ pag
   page.on("dialog", (dialog) => dialog.accept());
   await page.goto("/");
   await plan(page);
-  await page
-    .getByLabel("Correction destination account", { exact: true })
-    .selectOption("00000000-0000-4000-8000-000000000009");
+  await page.getByRole("combobox", { name: "Correction destination account", exact: true }).click();
+  await page.locator('[role="option"][id$="-opt-00000000-0000-4000-8000-000000000009"]').click();
   await page.getByRole("button", { name: "Preview correction", exact: true }).click();
   await expect(page.getByLabel("Financial statement impact", { exact: true })).toContainText(
     "Profit change: GBP 100.00",

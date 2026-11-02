@@ -1,3 +1,4 @@
+import { useCanDo } from "@/hooks/use-can";
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { Printer } from "lucide-react";
@@ -48,6 +49,7 @@ export function ReportShell({
   children: ReactNode;
 }) {
   const fmt = useFormat();
+  const canExport = useCanDo("reports.export");
   const period =
     mode === "asof" ? `As at ${fmt.date(ctx.to)}` : `${fmt.date(ctx.from)} to ${fmt.date(ctx.to)}`;
 
@@ -143,12 +145,12 @@ export function ReportShell({
         ) : null}
         {extraControls}
         <div className="ml-auto flex gap-2">
-          {getCsv ? (
+          {getCsv && canExport ? (
             <Button size="sm" variant="outline" onClick={onExport}>
               Export CSV
             </Button>
           ) : null}
-          <Button size="sm" variant="outline" onClick={() => window.print()}>
+          <Button size="sm" variant="outline" disabled={!canExport} onClick={() => window.print()}>
             <Printer className="mr-1 size-4" /> Print / PDF
           </Button>
           <Button size="sm" variant="ghost" asChild>

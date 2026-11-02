@@ -81,7 +81,11 @@ export const Route = createFileRoute("/_authenticated/banking/transactions")({
     const bankAccountId = str("bankAccountId");
     if (bankAccountId) out.bankAccountId = bankAccountId;
     const transactionId = str("transactionId");
-    if (transactionId && /^[a-f\d]{8}-[a-f\d]{4}-[1-8][a-f\d]{3}-[89ab][a-f\d]{3}-[a-f\d]{12}$/i.test(transactionId)) out.transactionId = transactionId;
+    if (
+      transactionId &&
+      /^[a-f\d]{8}-[a-f\d]{4}-[1-8][a-f\d]{3}-[89ab][a-f\d]{3}-[a-f\d]{12}$/i.test(transactionId)
+    )
+      out.transactionId = transactionId;
     const dateFrom = str("dateFrom");
     if (dateFrom && ISO.test(dateFrom)) out.dateFrom = dateFrom;
     const dateTo = str("dateTo");
@@ -367,7 +371,11 @@ function BankTransactions() {
       {search.transactionId ? (
         <div className="mb-3 flex items-center gap-3 text-sm text-muted-foreground" role="status">
           <span>Showing the bank transaction selected from global search.</span>
-          <Button variant="outline" size="sm" onClick={() => setSearch({ transactionId: undefined, statusGroup: "all" })}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSearch({ transactionId: undefined, statusGroup: "all" })}
+          >
             Show all transactions
           </Button>
         </div>
@@ -868,6 +876,8 @@ function BankTransactions() {
                 setSearch({ pageSize: Number(v) === 50 ? undefined : Number(v) })
               }
             >
+              {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
               <SelectTrigger className="h-8 w-28" aria-label="Rows per page">
                 <SelectValue />
               </SelectTrigger>

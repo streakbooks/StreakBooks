@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -109,17 +110,17 @@ function Statements() {
       {availableCurrencies.length > 1 ? (
         <div className="mb-4 flex items-center gap-2 text-sm">
           <Label>Currency</Label>
-          <select
+          <RecordLookupSelect
             className="rounded-md border bg-background px-2 py-1"
             value={currency}
-            onChange={(e) => setCurrencyChoice(e.target.value)}
+            onValueChange={(e) => setCurrencyChoice(e)}
           >
             {availableCurrencies.map((c) => (
               <option key={c} value={c}>
                 {c}
               </option>
             ))}
-          </select>
+          </RecordLookupSelect>
           <span className="text-muted-foreground">
             Each currency has its own statement; they are never added together.
           </span>
@@ -211,7 +212,35 @@ function Statements() {
                 <TableRow key={`${l.type}-${l.id}`}>
                   <TableCell>{l.date}</TableCell>
                   <TableCell className="capitalize">{l.type.replace("_", " ")}</TableCell>
-                  <TableCell>{l.type === "bill" ? <Link to="/purchases/bills/$billId" params={{ billId: l.id }} className="underline-offset-2 hover:underline focus-visible:underline">{l.reference ?? l.id.slice(0, 8)}</Link> : l.type === "payment" ? <Link to="/purchases/payments/$paymentId" params={{ paymentId: l.id }} className="underline-offset-2 hover:underline focus-visible:underline">{l.reference ?? l.id.slice(0, 8)}</Link> : l.type === "credit_note" ? <Link to="/purchases/credit-notes/$creditNoteId" params={{ creditNoteId: l.id }} className="underline-offset-2 hover:underline focus-visible:underline">{l.reference ?? l.id.slice(0, 8)}</Link> : l.reference ?? l.id.slice(0, 8)}</TableCell>
+                  <TableCell>
+                    {l.type === "bill" ? (
+                      <Link
+                        to="/purchases/bills/$billId"
+                        params={{ billId: l.id }}
+                        className="underline-offset-2 hover:underline focus-visible:underline"
+                      >
+                        {l.reference ?? l.id.slice(0, 8)}
+                      </Link>
+                    ) : l.type === "payment" ? (
+                      <Link
+                        to="/purchases/payments/$paymentId"
+                        params={{ paymentId: l.id }}
+                        className="underline-offset-2 hover:underline focus-visible:underline"
+                      >
+                        {l.reference ?? l.id.slice(0, 8)}
+                      </Link>
+                    ) : l.type === "credit_note" ? (
+                      <Link
+                        to="/purchases/credit-notes/$creditNoteId"
+                        params={{ creditNoteId: l.id }}
+                        className="underline-offset-2 hover:underline focus-visible:underline"
+                      >
+                        {l.reference ?? l.id.slice(0, 8)}
+                      </Link>
+                    ) : (
+                      (l.reference ?? l.id.slice(0, 8))
+                    )}
+                  </TableCell>
                   <TableCell className="text-right">
                     {l.debit_minor ? fromMinorUnits(l.debit_minor, currency) : "—"}
                   </TableCell>

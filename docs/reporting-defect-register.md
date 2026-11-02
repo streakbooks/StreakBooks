@@ -1,0 +1,30 @@
+# Reporting review and defect register — 2026-11-02
+
+Author review covered the reporting arithmetic boundary, persisted permissions, snapshot immutability, worker authorization, recurrence, lookup races, supported exports, dependencies and regression tests. This is **not an independent reviewer approval**. Production certification remains withheld.
+
+| ID | Severity | Finding | Resolution / verification |
+|---|---|---|---|
+| FIX-01 | High | Owner INSERT RETURNING could fail the STABLE lookup-based read policy. | Direct owner predicate added; live CRUD/RLS suite passes. |
+| FIX-02 | High | Formula resolver could return inherited non-fraction properties. | Require BigInt fraction operands; bounded parser, no eval; formula tests pass. |
+| FIX-03 | High | Cached/aborted lookup requests could append duplicate or stale rows. | Ignore obsolete completion, stable ID deduplication, page-size cache key, bounded cache; lookup tests and browser fixture pass. |
+| FIX-04 | High | Monthly recurrence could drift after February; annual leap-day drift. | Immutable local-time anchor; Jan31→Mar31 and Feb29→2028 live assertions pass. |
+| FIX-05 | High | Scheduled delegation must not manufacture a new authorization time after account revocation. | Persist authorization timestamp; claim and schedule jobs recheck current permissions using original authorization. |
+| FIX-06 | High | Historical pack reads/exports need integrity verification, not only locked writes. | Snapshot SHA checked at detail, capture and export boundaries; direct tamper and later-ledger-posting tests pass. |
+| FIX-07 | High | Existing Vite/Zod/test runner dependencies had high or critical advisories. | Upgrade Vite 8.3.5, Zod 4.6.7 and Vitest 5.0.5; full suite/build rerun. Audit outcome separately recorded. |
+| FIX-08 | Medium | Truncated pack lists produced inaccurate home counts and unsearchable older records. | Server-side search/filter, stable 50-row paging, RLS-scoped aggregate counts. |
+| FIX-09 | Medium | Action items and CSV commentary/branding were absent from exported packs. | Shared document notes now include actions; all export paths retain notes; real workbook/CSV tests pass. |
+| FIX-10 | Medium | Dashboard/forecast saves always created new records. | Version-checked update plus explicit Save as new; persisted old revision and stale-update live tests pass. |
+| FIX-11 | Medium | Renamed or duplicated library item could export its old builder title. | Common validated named config updates title without mutating source; regression test passes. |
+| FIX-12 | Medium | Reporting FK coverage and per-row auth evaluation needed optimization. | Reference indexes and cached auth UID policies applied; live permissions suite passes. |
+| FIX-13 | Medium | Background grant refresh could overwrite an unsaved sharing choice. | Initialize grants once per opened report; later refresh preserves edits. |
+| OPEN-01 | High release gate | Real successful/failed provider delivery, verified domain and configured secret unavailable. | Worker explicitly returns unconfigured; no real delivery claimed. Configure server secrets and verified sender, then send only to info@linkbusinessadvisory.com and retain provider delivery evidence. |
+| OPEN-02 | High release gate | Full signed-in browser→server→database acceptance matrix unavailable. | Component browser fixtures and live SQL tests are separately documented; establish authorized test accounts/session and run complete workflow matrix. |
+| OPEN-03 | High release gate | Advanced master directive scope remains incomplete. | See implementation register and criterion scorecard; do not merge as production-certified. |
+| OPEN-04 | High release gate | Independent engineering/accounting review and required GitHub approvals outstanding. | Keep draft PR until reviewed; do not bypass protection or mark author review independent. |
+| OPEN-05 | Medium | Whole deployed API/browser P95 and long-duration memory behavior unmeasured. | Local SQL benchmark is useful bounded evidence only; run deployed 25-concurrent benchmark and soak. |
+| OPEN-06 | Medium | Dashboard/model/schedule lists retain bounded workspace windows. | Packs and custom library are paginated; add model/schedule pagination and tested recovery for older records. |
+| OPEN-07 | Medium | ExcelJS transitive archive/utility dependencies retain moderate advisories. | Export-only trusted generated workbooks, no XLSX/ZIP import path; bounded documents. Replace vulnerable archive chain or library and rerun audit. No blanket force downgrade. |
+
+Pre-existing project-wide findings: mutable search paths (9), anonymous security-definer RPC exposure (30), leaked-password protection off, private tables with RLS/no policy, and unrelated index/policy advisories. New reporting write RPCs intentionally use security-definer with empty search paths and explicit company/user permission checks; anonymous execute is revoked and worker RPCs are service-role only. Do not revoke established accounting RPCs indiscriminately. Broader platform remediation requires a separately verified compatibility review.
+
+Advisor references: [mutable search path](https://supabase.com/docs/guides/database/database-linter?lint=0011_function_search_path_mutable), [RLS init plan](https://supabase.com/docs/guides/database/database-linter?lint=0003_auth_rls_initplan), [foreign-key indexes](https://supabase.com/docs/guides/database/database-linter?lint=0001_unindexed_foreign_keys), [password protection](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection).

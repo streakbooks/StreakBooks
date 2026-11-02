@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { assertCompanyMember } from "@/lib/assert-company-access";
+import { assertCompanyPermission } from "@/lib/assert-company-access";
 import { addDaysIso } from "@/lib/accounting/fiscal-year";
 import { fetchLedgerBalances, loadCompanyMeta, type Sb } from "@/lib/accounting/ledger-data";
 import {
@@ -81,7 +81,7 @@ export const getCashSummary = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(rangeInput)
   .handler(async ({ data, context }) => {
-    await assertCompanyMember(context.supabase, data.companyId);
+    await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
     const sb = context.supabase as unknown as Sb;
     const [meta, rows] = await Promise.all([
       loadCompanyMeta(sb, data.companyId),
@@ -115,7 +115,7 @@ export const getGlSummary = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(rangeInput)
   .handler(async ({ data, context }) => {
-    await assertCompanyMember(context.supabase, data.companyId);
+    await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
     const sb = context.supabase as unknown as Sb;
     const [meta, rows] = await Promise.all([
       loadCompanyMeta(sb, data.companyId),
@@ -147,7 +147,7 @@ export const getSalesByContact = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(rangeInput)
   .handler(async ({ data, context }) => {
-    await assertCompanyMember(context.supabase, data.companyId);
+    await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
     const sb = context.supabase as unknown as Sb;
     const [meta, rows] = await Promise.all([
       loadCompanyMeta(sb, data.companyId),
@@ -175,7 +175,7 @@ export const getSalesByItem = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(rangeInput)
   .handler(async ({ data, context }) => {
-    await assertCompanyMember(context.supabase, data.companyId);
+    await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
     const sb = context.supabase as unknown as Sb;
     const [meta, rows] = await Promise.all([
       loadCompanyMeta(sb, data.companyId),
@@ -203,7 +203,7 @@ export const getPurchasesBySupplier = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(rangeInput)
   .handler(async ({ data, context }) => {
-    await assertCompanyMember(context.supabase, data.companyId);
+    await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
     const sb = context.supabase as unknown as Sb;
     const [meta, rows] = await Promise.all([
       loadCompanyMeta(sb, data.companyId),
@@ -240,7 +240,7 @@ export const getBankReconSummary = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(asOfInput)
   .handler(async ({ data, context }) => {
-    await assertCompanyMember(context.supabase, data.companyId);
+    await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
     const sb = context.supabase as unknown as Sb;
     const rows = await callRpc<BankReconSummaryRow[] | null>(
       sb,

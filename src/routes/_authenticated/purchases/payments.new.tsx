@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -237,7 +238,7 @@ export function NewPayment() {
         </div>
         <div className="space-y-2">
           <Label>Currency</Label>
-          <Select
+          <RecordLookupSelect
             value={currency}
             onValueChange={(v) => {
               setCurrencyOverride(v);
@@ -260,7 +261,7 @@ export function NewPayment() {
                 </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+          </RecordLookupSelect>
           <p className="text-xs text-muted-foreground">
             A payment can only be allocated to bills in its own currency.
           </p>

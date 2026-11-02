@@ -17,6 +17,7 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
+      - run: npm run check:lookups
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
@@ -36,3 +37,4 @@ jobs:
       - run: npm run test:practice
       - run: npm run test:corrections
       - run: npm run test:themes
+      - run: npm run test:reporting

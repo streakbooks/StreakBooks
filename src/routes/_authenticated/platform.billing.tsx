@@ -102,6 +102,8 @@ function PlatformBillingPage() {
               value={currency}
               onChange={(event) => setCurrency(event.target.value)}
             >
+              {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
               {["USD", "GBP", "AUD", "NZD", "INR"].map((code) => (
                 <option key={code}>{code}</option>
               ))}

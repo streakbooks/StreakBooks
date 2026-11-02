@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { isPurchaseTaxCode } from "@/lib/purchases/tax-code-eligibility";
 import { VoiceFields } from "@/components/ai-voice/voice-fields";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -120,11 +121,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -199,7 +196,10 @@ function SchedulePreview({
     interval: Math.max(1, Math.floor(Number(recurring.interval) || 1)),
     customUnit: recurring.frequency === "custom" ? recurring.customUnit || null : null,
     weekdays: recurring.weekdays
-      ? recurring.weekdays.split(",").map((d) => Number(d.trim())).filter((d) => Number.isInteger(d))
+      ? recurring.weekdays
+          .split(",")
+          .map((d) => Number(d.trim()))
+          .filter((d) => Number.isInteger(d))
       : null,
     monthDay:
       recurring.monthDay === "last_calendar_day" || recurring.monthDay === "last_business_day"
@@ -210,7 +210,10 @@ function SchedulePreview({
     endDate: recurring.endDate || null,
     maxOccurrences: recurring.maxOccurrences ? Math.floor(Number(recurring.maxOccurrences)) : null,
     weekendAdjust: recurring.weekendAdjust,
-    holidays: recurring.holidays.split(",").map((d) => d.trim()).filter(Boolean),
+    holidays: recurring.holidays
+      .split(",")
+      .map((d) => d.trim())
+      .filter(Boolean),
   };
   const error = validateRecurrenceSpec(spec);
   const dates = error ? [] : previewOccurrencesFromSpec(spec, recurring.nextDueDate, 12);
@@ -381,8 +384,11 @@ export function NewBill({
       weekdays: rule?.weekdays?.join(",") ?? "",
       monthDay: rule?.monthDay == null ? "" : String(rule.monthDay),
       holidays: (rule?.holidays ?? []).join(", "),
-      generationPolicy: saved?.generationPolicy ?? (seed.auto_authorise ? "auto_authorise" : "draft"),
-      autoAuthorise: (saved?.generationPolicy ?? (seed.auto_authorise ? "auto_authorise" : "draft")) === "auto_authorise",
+      generationPolicy:
+        saved?.generationPolicy ?? (seed.auto_authorise ? "auto_authorise" : "draft"),
+      autoAuthorise:
+        (saved?.generationPolicy ?? (seed.auto_authorise ? "auto_authorise" : "draft")) ===
+        "auto_authorise",
       notify: Boolean(seed.template.notify_on_generation),
     });
     setContactId(seed.contact_id);
@@ -610,18 +616,22 @@ export function NewBill({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultsApplied]);
 
-  const suppliers = (suppliersQ.data ?? []) as Array<{
-    id: string;
-    name: string;
-    payment_terms_days: number | null;
-    default_currency: string | null;
-    billing_address_line1: string | null;
-    billing_address_line2: string | null;
-    billing_city: string | null;
-    billing_region: string | null;
-    billing_postal: string | null;
-    billing_country: string | null;
-  }>;
+  const suppliers = useMemo(
+    () =>
+      (suppliersQ.data ?? []) as Array<{
+        id: string;
+        name: string;
+        payment_terms_days: number | null;
+        default_currency: string | null;
+        billing_address_line1: string | null;
+        billing_address_line2: string | null;
+        billing_city: string | null;
+        billing_region: string | null;
+        billing_postal: string | null;
+        billing_country: string | null;
+      }>,
+    [suppliersQ.data],
+  );
 
   const expenseAccounts = (
     (accountsQ.data ?? []) as Array<{
@@ -649,21 +659,27 @@ export function NewBill({
       account_type: a.account_type,
     }));
 
-  const terms = (termsQ.data ?? []) as Array<{
-    id: string;
-    name: string;
-    days: number;
-    calculation_method: "days_after_bill_date" | "due_on_receipt" | "days_after_month_end";
-  }>;
+  const terms = useMemo(
+    () =>
+      (termsQ.data ?? []) as Array<{
+        id: string;
+        name: string;
+        days: number;
+        calculation_method: "days_after_bill_date" | "due_on_receipt" | "days_after_month_end";
+      }>,
+    [termsQ.data],
+  );
 
-  const taxCodes = ((taxCodesQ.data ?? []) as Array<{
-    id: string;
-    code: string;
-    name: string;
-    applies_to: string;
-    is_active: boolean;
-    tax_rates: { rate_bps: number } | { rate_bps: number }[] | null;
-  }>)
+  const taxCodes = (
+    (taxCodesQ.data ?? []) as Array<{
+      id: string;
+      code: string;
+      name: string;
+      applies_to: string;
+      is_active: boolean;
+      tax_rates: { rate_bps: number } | { rate_bps: number }[] | null;
+    }>
+  )
     .filter((t) => t.is_active)
     .map((t) => {
       const rate = Array.isArray(t.tax_rates) ? t.tax_rates[0] : t.tax_rates;
@@ -736,19 +752,34 @@ export function NewBill({
     [featuresQ.data],
   );
   const classEnabled = useMemo(() => {
-    const cats = (dimsQ.data as { categories?: Array<{ dimension_kind: string; is_active: boolean }> } | undefined)
-      ?.categories;
-    return featureOn("classes") && Boolean(cats?.some((c) => c.is_active && c.dimension_kind === "class"));
+    const cats = (
+      dimsQ.data as
+        { categories?: Array<{ dimension_kind: string; is_active: boolean }> } | undefined
+    )?.categories;
+    return (
+      featureOn("classes") &&
+      Boolean(cats?.some((c) => c.is_active && c.dimension_kind === "class"))
+    );
   }, [dimsQ.data, featureOn]);
   const locationEnabled = useMemo(() => {
-    const cats = (dimsQ.data as { categories?: Array<{ dimension_kind: string; is_active: boolean }> } | undefined)
-      ?.categories;
-    return featureOn("locations") && Boolean(cats?.some((c) => c.is_active && c.dimension_kind === "location"));
+    const cats = (
+      dimsQ.data as
+        { categories?: Array<{ dimension_kind: string; is_active: boolean }> } | undefined
+    )?.categories;
+    return (
+      featureOn("locations") &&
+      Boolean(cats?.some((c) => c.is_active && c.dimension_kind === "location"))
+    );
   }, [dimsQ.data, featureOn]);
   const projectEnabled = useMemo(() => {
-    const cats = (dimsQ.data as { categories?: Array<{ dimension_kind: string; is_active: boolean }> } | undefined)
-      ?.categories;
-    return featureOn("projects") && Boolean(cats?.some((c) => c.is_active && c.dimension_kind === "project"));
+    const cats = (
+      dimsQ.data as
+        { categories?: Array<{ dimension_kind: string; is_active: boolean }> } | undefined
+    )?.categories;
+    return (
+      featureOn("projects") &&
+      Boolean(cats?.some((c) => c.is_active && c.dimension_kind === "project"))
+    );
   }, [dimsQ.data, featureOn]);
   const showClass = viewMode !== "basic" && classEnabled;
   const showLocation = viewMode !== "basic" && locationEnabled;
@@ -802,7 +833,8 @@ export function NewBill({
       } else if (!dueDateManualOverride) {
         setDueDate(
           calculateDueDate(billDate, {
-            days: s.payment_terms_days ?? settingsQ.data?.purchases_default_payment_terms_days ?? 30,
+            days:
+              s.payment_terms_days ?? settingsQ.data?.purchases_default_payment_terms_days ?? 30,
             calculation_method: "days_after_bill_date",
           }),
         );
@@ -866,7 +898,9 @@ export function NewBill({
     if (!companyId) throw new Error("No organisation");
     if (!contactId) throw new Error("Choose a supplier");
     if (currencyCode !== baseCurrency && (fxRate == null || !(fxRate > 0))) {
-      throw new Error("No exchange rate available for this currency and date. Add a rate in Settings before saving.");
+      throw new Error(
+        "No exchange rate available for this currency and date. Add a rate in Settings before saving.",
+      );
     }
     if (dupQ.data?.duplicate && !acknowledgeDuplicate) {
       throw new Error(
@@ -938,9 +972,14 @@ export function NewBill({
         taxCalculation: payload.taxCalculation,
         scheduleOptions: {
           mode: recurring.mode,
-          generateDaysInAdvance: Math.max(0, Math.floor(Number(recurring.generateDaysInAdvance) || 0)),
+          generateDaysInAdvance: Math.max(
+            0,
+            Math.floor(Number(recurring.generateDaysInAdvance) || 0),
+          ),
           endDate: recurring.endDate || null,
-          maxOccurrences: recurring.maxOccurrences ? Math.floor(Number(recurring.maxOccurrences)) : null,
+          maxOccurrences: recurring.maxOccurrences
+            ? Math.floor(Number(recurring.maxOccurrences))
+            : null,
           catchUpPolicy: recurring.catchUpPolicy,
           dueDaysAfterBillDate: payload.paymentTermsDays ?? 0,
           memo: payload.memo || undefined,
@@ -951,18 +990,27 @@ export function NewBill({
             interval: Math.max(1, Math.floor(Number(recurring.interval) || 1)),
             customUnit: recurring.frequency === "custom" ? recurring.customUnit || null : null,
             weekdays: recurring.weekdays
-              ? recurring.weekdays.split(",").map((d) => Number(d.trim())).filter((d) => Number.isInteger(d))
+              ? recurring.weekdays
+                  .split(",")
+                  .map((d) => Number(d.trim()))
+                  .filter((d) => Number.isInteger(d))
               : null,
             monthDay:
-              recurring.monthDay === "last_calendar_day" || recurring.monthDay === "last_business_day"
+              recurring.monthDay === "last_calendar_day" ||
+              recurring.monthDay === "last_business_day"
                 ? recurring.monthDay
                 : recurring.monthDay
                   ? Number(recurring.monthDay)
                   : null,
             endDate: recurring.endDate || null,
-            maxOccurrences: recurring.maxOccurrences ? Math.floor(Number(recurring.maxOccurrences)) : null,
+            maxOccurrences: recurring.maxOccurrences
+              ? Math.floor(Number(recurring.maxOccurrences))
+              : null,
             weekendAdjust: recurring.weekendAdjust,
-            holidays: recurring.holidays.split(",").map((d) => d.trim()).filter(Boolean),
+            holidays: recurring.holidays
+              .split(",")
+              .map((d) => d.trim())
+              .filter(Boolean),
           },
         },
         templateLines: payload.lines,
@@ -1452,7 +1500,9 @@ export function NewBill({
             const bin = atob(file.contentBase64);
             const bytes = new Uint8Array(bin.length);
             for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-            const blob = new Blob([bytes], { type: file.contentType || "application/octet-stream" });
+            const blob = new Blob([bytes], {
+              type: file.contentType || "application/octet-stream",
+            });
             const url = URL.createObjectURL(blob);
             const aEl = document.createElement("a");
             aEl.href = url;
@@ -1464,269 +1514,304 @@ export function NewBill({
         }}
         header={headerBar}
       >
-      {settingsQ.data?.purchases_require_po ? (
-        <Alert className="mb-4">
-          <AlertDescription>
-            Organisation policy prefers a purchase order before bills. Link a PO from Orders when
-            converting, or continue if this bill is independent.
-          </AlertDescription>
-        </Alert>
-      ) : null}
+        {settingsQ.data?.purchases_require_po ? (
+          <Alert className="mb-4">
+            <AlertDescription>
+              Organisation policy prefers a purchase order before bills. Link a PO from Orders when
+              converting, or continue if this bill is independent.
+            </AlertDescription>
+          </Alert>
+        ) : null}
 
-      {dupQ.data?.duplicate ? (
-        <Alert variant="destructive" className="mb-4">
-          <AlertTitle>Possible duplicate supplier bill</AlertTitle>
-          <AlertDescription className="space-y-2">
-            <p>
-              Another bill uses supplier invoice # <strong>{supplierInvoiceNumber}</strong> for this
-              supplier.
-            </p>
-            <ul className="list-disc pl-5 text-sm">
-              {dupQ.data.matches.map((m) => (
-                <li key={m.id}>
-                  <Link
-                    to="/purchases/bills/$billId"
-                    params={{ billId: m.id }}
-                    className="underline"
-                  >
-                    {m.bill_number ?? m.id.slice(0, 8)} — {m.status} — {m.bill_date}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={acknowledgeDuplicate}
-                onChange={(e) => setAcknowledgeDuplicate(e.target.checked)}
-              />
-              I have reviewed the existing bill and want to save this as a separate bill
-            </label>
-          </AlertDescription>
-        </Alert>
-      ) : null}
+        {dupQ.data?.duplicate ? (
+          <Alert variant="destructive" className="mb-4">
+            <AlertTitle>Possible duplicate supplier bill</AlertTitle>
+            <AlertDescription className="space-y-2">
+              <p>
+                Another bill uses supplier invoice # <strong>{supplierInvoiceNumber}</strong> for
+                this supplier.
+              </p>
+              <ul className="list-disc pl-5 text-sm">
+                {dupQ.data.matches.map((m) => (
+                  <li key={m.id}>
+                    <Link
+                      to="/purchases/bills/$billId"
+                      params={{ billId: m.id }}
+                      className="underline"
+                    >
+                      {m.bill_number ?? m.id.slice(0, 8)} — {m.status} — {m.bill_date}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={acknowledgeDuplicate}
+                  onChange={(e) => setAcknowledgeDuplicate(e.target.checked)}
+                />
+                I have reviewed the existing bill and want to save this as a separate bill
+              </label>
+            </AlertDescription>
+          </Alert>
+        ) : null}
 
-      {currencyCode !== baseCurrency && fxSource === "missing" ? (
-        <Alert variant="destructive" className="mb-4">
-          <AlertDescription>
-            No exchange rate found for {currencyCode} → {baseCurrency} on or before {billDate}. Add
-            a rate in Settings before saving a foreign-currency bill.
-          </AlertDescription>
-        </Alert>
-      ) : null}
+        {currencyCode !== baseCurrency && fxSource === "missing" ? (
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>
+              No exchange rate found for {currencyCode} → {baseCurrency} on or before {billDate}.
+              Add a rate in Settings before saving a foreign-currency bill.
+            </AlertDescription>
+          </Alert>
+        ) : null}
 
-      {formError ? (
-        <Alert variant="destructive" className="mb-4">
-          <AlertDescription>{formError}</AlertDescription>
-        </Alert>
-      ) : null}
+        {formError ? (
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>{formError}</AlertDescription>
+          </Alert>
+        ) : null}
 
-      {isTemplate ? (
-        <div className="mb-4 grid gap-3 md:grid-cols-2">
-          <section className="space-y-3 rounded-md border border-border p-4">
-            <h2 className="text-sm font-semibold">Schedule</h2>
-            <div className="space-y-1.5">
-              <Label>Template name</Label>
-              <Input
-                value={recurring.name}
-                onChange={(e) => setRecurring((r) => ({ ...r, name: e.target.value }))}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
+        {isTemplate ? (
+          <div className="mb-4 grid gap-3 md:grid-cols-2">
+            <section className="space-y-3 rounded-md border border-border p-4">
+              <h2 className="text-sm font-semibold">Schedule</h2>
               <div className="space-y-1.5">
-                <Label>Frequency</Label>
+                <Label>Template name</Label>
+                <Input
+                  value={recurring.name}
+                  onChange={(e) => setRecurring((r) => ({ ...r, name: e.target.value }))}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>Frequency</Label>
+                  <Select
+                    value={recurring.frequency}
+                    onValueChange={(v) =>
+                      setRecurring((r) => ({ ...r, frequency: v as typeof r.frequency }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="daily">Daily</SelectItem>
+                      <SelectItem value="weekly">Weekly</SelectItem>
+                      <SelectItem value="fortnightly">Fortnightly</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                      <SelectItem value="quarterly">Quarterly</SelectItem>
+                      <SelectItem value="half_yearly">Half-yearly</SelectItem>
+                      <SelectItem value="yearly">Yearly</SelectItem>
+                      <SelectItem value="custom">Custom</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Next due</Label>
+                  <Input
+                    type="date"
+                    value={recurring.nextDueDate}
+                    onChange={(e) => setRecurring((r) => ({ ...r, nextDueDate: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>Mode</Label>
+                  <Select
+                    value={recurring.mode}
+                    onValueChange={(v) => setRecurring((r) => ({ ...r, mode: v as typeof r.mode }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="scheduled">Scheduled</SelectItem>
+                      <SelectItem value="reminder">Reminder</SelectItem>
+                      <SelectItem value="on_demand">On demand</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Every</Label>
+                  <Input
+                    value={recurring.interval}
+                    onChange={(e) => setRecurring((r) => ({ ...r, interval: e.target.value }))}
+                  />
+                </div>
+                {recurring.frequency === "custom" ? (
+                  <div className="space-y-1.5">
+                    <Label>Custom unit</Label>
+                    <Select
+                      value={recurring.customUnit || "days"}
+                      onValueChange={(v) =>
+                        setRecurring((r) => ({ ...r, customUnit: v as typeof r.customUnit }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="days">Days</SelectItem>
+                        <SelectItem value="weeks">Weeks</SelectItem>
+                        <SelectItem value="months">Months</SelectItem>
+                        <SelectItem value="years">Years</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ) : null}
+                <div className="space-y-1.5">
+                  <Label>End date</Label>
+                  <Input
+                    type="date"
+                    value={recurring.endDate}
+                    onChange={(e) => setRecurring((r) => ({ ...r, endDate: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Stop after</Label>
+                  <Input
+                    placeholder="occurrences"
+                    value={recurring.maxOccurrences}
+                    onChange={(e) =>
+                      setRecurring((r) => ({ ...r, maxOccurrences: e.target.value }))
+                    }
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Weekdays</Label>
+                  <Input
+                    placeholder="1,3,5 for weekly"
+                    value={recurring.weekdays}
+                    onChange={(e) => setRecurring((r) => ({ ...r, weekdays: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Month day</Label>
+                  <Input
+                    placeholder="last_calendar_day"
+                    value={recurring.monthDay}
+                    onChange={(e) => setRecurring((r) => ({ ...r, monthDay: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <SchedulePreview recurring={recurring} />
+            </section>
+            <section className="space-y-3 rounded-md border border-border p-4">
+              <h2 className="text-sm font-semibold">Automation</h2>
+              <div className="space-y-1.5">
+                <Label>When a bill is due</Label>
                 <Select
-                  value={recurring.frequency}
+                  value={recurring.generationPolicy}
                   onValueChange={(v) =>
-                    setRecurring((r) => ({ ...r, frequency: v as typeof r.frequency }))
+                    setRecurring((r) => ({
+                      ...r,
+                      generationPolicy: v as typeof r.generationPolicy,
+                      autoAuthorise: v === "auto_authorise",
+                    }))
                   }
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="daily">Daily</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="fortnightly">Fortnightly</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="quarterly">Quarterly</SelectItem>
-                    <SelectItem value="half_yearly">Half-yearly</SelectItem>
-                    <SelectItem value="yearly">Yearly</SelectItem>
-                    <SelectItem value="custom">Custom</SelectItem>
+                    <SelectItem value="draft">Create draft</SelectItem>
+                    <SelectItem value="submit_approval">Submit for approval</SelectItem>
+                    <SelectItem value="auto_authorise">Auto-authorise if permitted</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5">
-                <Label>Next due</Label>
-                <Input
-                  type="date"
-                  value={recurring.nextDueDate}
-                  onChange={(e) => setRecurring((r) => ({ ...r, nextDueDate: e.target.value }))}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Mode</Label>
-                <Select
-                  value={recurring.mode}
-                  onValueChange={(v) => setRecurring((r) => ({ ...r, mode: v as typeof r.mode }))}
-                >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="scheduled">Scheduled</SelectItem>
-                    <SelectItem value="reminder">Reminder</SelectItem>
-                    <SelectItem value="on_demand">On demand</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Every</Label>
-                <Input
-                  value={recurring.interval}
-                  onChange={(e) => setRecurring((r) => ({ ...r, interval: e.target.value }))}
-                />
-              </div>
-              {recurring.frequency === "custom" ? (
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label>Custom unit</Label>
+                  <Label>Days in advance</Label>
+                  <Input
+                    value={recurring.generateDaysInAdvance}
+                    onChange={(e) =>
+                      setRecurring((r) => ({ ...r, generateDaysInAdvance: e.target.value }))
+                    }
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Catch-up</Label>
                   <Select
-                    value={recurring.customUnit || "days"}
+                    value={recurring.catchUpPolicy}
                     onValueChange={(v) =>
-                      setRecurring((r) => ({ ...r, customUnit: v as typeof r.customUnit }))
+                      setRecurring((r) => ({ ...r, catchUpPolicy: v as typeof r.catchUpPolicy }))
                     }
                   >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="days">Days</SelectItem>
-                      <SelectItem value="weeks">Weeks</SelectItem>
-                      <SelectItem value="months">Months</SelectItem>
-                      <SelectItem value="years">Years</SelectItem>
+                      <SelectItem value="latest_only">Latest only</SelectItem>
+                      <SelectItem value="all_missed">All missed</SelectItem>
+                      <SelectItem value="review_each">Review each</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-              ) : null}
-              <div className="space-y-1.5">
-                <Label>End date</Label>
-                <Input type="date" value={recurring.endDate} onChange={(e) => setRecurring((r) => ({ ...r, endDate: e.target.value }))} />
+                <div className="space-y-1.5">
+                  <Label>Weekends</Label>
+                  <Select
+                    value={recurring.weekendAdjust}
+                    onValueChange={(v) =>
+                      setRecurring((r) => ({ ...r, weekendAdjust: v as typeof r.weekendAdjust }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No change</SelectItem>
+                      <SelectItem value="previous_business_day">Previous business day</SelectItem>
+                      <SelectItem value="next_business_day">Next business day</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Holidays</Label>
+                  <Input
+                    placeholder="2026-12-25, 2026-12-26"
+                    value={recurring.holidays}
+                    onChange={(e) => setRecurring((r) => ({ ...r, holidays: e.target.value }))}
+                  />
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <Label>Stop after</Label>
-                <Input
-                  placeholder="occurrences"
-                  value={recurring.maxOccurrences}
-                  onChange={(e) => setRecurring((r) => ({ ...r, maxOccurrences: e.target.value }))}
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={recurring.notify}
+                  onChange={(e) => setRecurring((r) => ({ ...r, notify: e.target.checked }))}
                 />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Weekdays</Label>
-                <Input
-                  placeholder="1,3,5 for weekly"
-                  value={recurring.weekdays}
-                  onChange={(e) => setRecurring((r) => ({ ...r, weekdays: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Month day</Label>
-                <Input
-                  placeholder="last_calendar_day"
-                  value={recurring.monthDay}
-                  onChange={(e) => setRecurring((r) => ({ ...r, monthDay: e.target.value }))}
-                />
-              </div>
-            </div>
-            <SchedulePreview recurring={recurring} />
-          </section>
-          <section className="space-y-3 rounded-md border border-border p-4">
-            <h2 className="text-sm font-semibold">Automation</h2>
-            <div className="space-y-1.5">
-              <Label>When a bill is due</Label>
-              <Select
-                value={recurring.generationPolicy}
-                onValueChange={(v) =>
-                  setRecurring((r) => ({
-                    ...r,
-                    generationPolicy: v as typeof r.generationPolicy,
-                    autoAuthorise: v === "auto_authorise",
-                  }))
-                }
-              >
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="draft">Create draft</SelectItem>
-                  <SelectItem value="submit_approval">Submit for approval</SelectItem>
-                  <SelectItem value="auto_authorise">Auto-authorise if permitted</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Days in advance</Label>
-                <Input
-                  value={recurring.generateDaysInAdvance}
-                  onChange={(e) => setRecurring((r) => ({ ...r, generateDaysInAdvance: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Catch-up</Label>
-                <Select
-                  value={recurring.catchUpPolicy}
-                  onValueChange={(v) => setRecurring((r) => ({ ...r, catchUpPolicy: v as typeof r.catchUpPolicy }))}
-                >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="latest_only">Latest only</SelectItem>
-                    <SelectItem value="all_missed">All missed</SelectItem>
-                    <SelectItem value="review_each">Review each</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Weekends</Label>
-                <Select
-                  value={recurring.weekendAdjust}
-                  onValueChange={(v) => setRecurring((r) => ({ ...r, weekendAdjust: v as typeof r.weekendAdjust }))}
-                >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No change</SelectItem>
-                    <SelectItem value="previous_business_day">Previous business day</SelectItem>
-                    <SelectItem value="next_business_day">Next business day</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Holidays</Label>
-                <Input
-                  placeholder="2026-12-25, 2026-12-26"
-                  value={recurring.holidays}
-                  onChange={(e) => setRecurring((r) => ({ ...r, holidays: e.target.value }))}
-                />
-              </div>
-            </div>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={recurring.notify}
-                onChange={(e) => setRecurring((r) => ({ ...r, notify: e.target.checked }))}
-              />
-              Record a notification flag when a bill is generated
-            </label>
-            <p className="text-xs text-muted-foreground">
-              Save template stores this bill form as a schedule. It does not create a bill or an
-              Accounts Payable balance. Reminder mode only records that a bill is due. On demand is
-              never picked up by the scheduler. Auto-authorise uses the same posting path as Save
-              &amp; authorise, and it is refused when the period is locked or permission is missing.
-            </p>
-          </section>
-        </div>
-      ) : null}
+                Record a notification flag when a bill is generated
+              </label>
+              <p className="text-xs text-muted-foreground">
+                Save template stores this bill form as a schedule. It does not create a bill or an
+                Accounts Payable balance. Reminder mode only records that a bill is due. On demand
+                is never picked up by the scheduler. Auto-authorise uses the same posting path as
+                Save &amp; authorise, and it is refused when the period is locked or permission is
+                missing.
+              </p>
+            </section>
+          </div>
+        ) : null}
 
-      <div className="grid gap-3">
-        <div className="space-y-1.5">
-          <Label>Supplier</Label>
+        <div className="grid gap-3">
+          <div className="space-y-1.5">
+            <Label>Supplier</Label>
             <EntityCombobox
-              voiceField={{ key: "contactId", label: "Supplier", aliases: ["vendor", "supplier name", "supplier dropdown", "supplier list", "contact", "choose supplier"], order: 10 }}
+              voiceField={{
+                key: "contactId",
+                label: "Supplier",
+                aliases: [
+                  "vendor",
+                  "supplier name",
+                  "supplier dropdown",
+                  "supplier list",
+                  "contact",
+                  "choose supplier",
+                ],
+                order: 10,
+              }}
               options={supplierOptions}
               value={contactId}
               onChange={onSupplierChange}
@@ -1736,70 +1821,76 @@ export function NewBill({
               onAddNew={() => setQuickSupplierOpen(true)}
               addNewLabel="+ Add new supplier…"
             />
-          <button
-            type="button"
-            className="text-xs text-primary underline-offset-2 hover:underline"
-            onClick={() => setFullSupplierOpen(true)}
-          >
-            Open full supplier details form…
-          </button>
-        </div>
+            <button
+              type="button"
+              className="text-xs text-primary underline-offset-2 hover:underline"
+              onClick={() => setFullSupplierOpen(true)}
+            >
+              Open full supplier details form…
+            </button>
+          </div>
 
-        <Collapsible open={detailsOpen} onOpenChange={setDetailsOpen}>
-          <CollapsibleTrigger asChild>
-            <Button type="button" variant="ghost" size="sm" className="h-8 px-2 text-xs">
-              <ChevronDown
-                className={`mr-1 size-3.5 transition-transform ${detailsOpen ? "rotate-180" : ""}`}
+          <Collapsible open={detailsOpen} onOpenChange={setDetailsOpen}>
+            <CollapsibleTrigger asChild>
+              <Button type="button" variant="ghost" size="sm" className="h-8 px-2 text-xs">
+                <ChevronDown
+                  className={`mr-1 size-3.5 transition-transform ${detailsOpen ? "rotate-180" : ""}`}
+                />
+                Additional details (address, currency, FX)
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="grid gap-3 rounded-md border border-border p-3 sm:grid-cols-3">
+              <p className="sm:col-span-3 text-xs text-muted-foreground">
+                Supplier address on this bill only — does not change the master contact.
+              </p>
+              <Input
+                placeholder="Address line 1"
+                value={addr.line1}
+                onChange={(e) => setAddr((a) => ({ ...a, line1: e.target.value }))}
               />
-              Additional details (address, currency, FX)
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="grid gap-3 rounded-md border border-border p-3 sm:grid-cols-3">
-            <p className="sm:col-span-3 text-xs text-muted-foreground">
-              Supplier address on this bill only — does not change the master contact.
-            </p>
-            <Input
-              placeholder="Address line 1"
-              value={addr.line1}
-              onChange={(e) => setAddr((a) => ({ ...a, line1: e.target.value }))}
-            />
-            <Input
-              placeholder="Address line 2"
-              value={addr.line2}
-              onChange={(e) => setAddr((a) => ({ ...a, line2: e.target.value }))}
-            />
-            <Input
-              placeholder="City"
-              value={addr.city}
-              onChange={(e) => setAddr((a) => ({ ...a, city: e.target.value }))}
-            />
-            <Input
-              placeholder="Region / state"
-              value={addr.region}
-              onChange={(e) => setAddr((a) => ({ ...a, region: e.target.value }))}
-            />
-            <Input
-              placeholder="Postal code"
-              value={addr.postal}
-              onChange={(e) => setAddr((a) => ({ ...a, postal: e.target.value }))}
-            />
-            <Input
-              placeholder="Country"
-              value={addr.country}
-              onChange={(e) => setAddr((a) => ({ ...a, country: e.target.value }))}
-            />
-          </CollapsibleContent>
-        </Collapsible>
+              <Input
+                placeholder="Address line 2"
+                value={addr.line2}
+                onChange={(e) => setAddr((a) => ({ ...a, line2: e.target.value }))}
+              />
+              <Input
+                placeholder="City"
+                value={addr.city}
+                onChange={(e) => setAddr((a) => ({ ...a, city: e.target.value }))}
+              />
+              <Input
+                placeholder="Region / state"
+                value={addr.region}
+                onChange={(e) => setAddr((a) => ({ ...a, region: e.target.value }))}
+              />
+              <Input
+                placeholder="Postal code"
+                value={addr.postal}
+                onChange={(e) => setAddr((a) => ({ ...a, postal: e.target.value }))}
+              />
+              <Input
+                placeholder="Country"
+                value={addr.country}
+                onChange={(e) => setAddr((a) => ({ ...a, country: e.target.value }))}
+              />
+            </CollapsibleContent>
+          </Collapsible>
 
-        <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          <div className="space-y-2">
-            <Label>Bill date</Label>
+          <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            <div className="space-y-2">
+              <Label>Bill date</Label>
               <Input
                 type="date"
                 voiceField={{
                   key: "date",
                   label: "Bill date",
-                  aliases: ["date", "bill date", "invoice date", "document date", "transaction date"],
+                  aliases: [
+                    "date",
+                    "bill date",
+                    "invoice date",
+                    "document date",
+                    "transaction date",
+                  ],
                   order: 20,
                 }}
                 value={billDate}
@@ -1808,33 +1899,44 @@ export function NewBill({
                   applyDueFromTerms(e.target.value, paymentTermId);
                 }}
               />
-          </div>
-          <div className="space-y-2">
-            <Label>Payment terms</Label>
-            <EntityCombobox
-              voiceField={{ key: "paymentTermId", label: "Payment terms", aliases: ["payment term", "terms", "net payment terms", "terms dropdown", "payment terms list"], order: 25 }}
-              options={terms.map((t) => ({
-                value: t.id,
-                label: t.name,
-                description: `${t.days}d · ${t.calculation_method}`,
-              }))}
-              value={paymentTermId}
-              onChange={(id) => {
-                setPaymentTermId(id);
-                applyDueFromTerms(billDate, id);
-              }}
-              placeholder="Select terms"
-              onAddNew={() => setNewTermOpen(true)}
-              addNewLabel="+ Add new payment terms…"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>
-              Due date
-              {dueDateManualOverride ? (
-                <span className="ml-2 text-xs font-normal text-amber-700">(manual override)</span>
-              ) : null}
-            </Label>
+            </div>
+            <div className="space-y-2">
+              <Label>Payment terms</Label>
+              <EntityCombobox
+                voiceField={{
+                  key: "paymentTermId",
+                  label: "Payment terms",
+                  aliases: [
+                    "payment term",
+                    "terms",
+                    "net payment terms",
+                    "terms dropdown",
+                    "payment terms list",
+                  ],
+                  order: 25,
+                }}
+                options={terms.map((t) => ({
+                  value: t.id,
+                  label: t.name,
+                  description: `${t.days}d · ${t.calculation_method}`,
+                }))}
+                value={paymentTermId}
+                onChange={(id) => {
+                  setPaymentTermId(id);
+                  applyDueFromTerms(billDate, id);
+                }}
+                placeholder="Select terms"
+                onAddNew={() => setNewTermOpen(true)}
+                addNewLabel="+ Add new payment terms…"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>
+                Due date
+                {dueDateManualOverride ? (
+                  <span className="ml-2 text-xs font-normal text-amber-700">(manual override)</span>
+                ) : null}
+              </Label>
               <Input
                 type="date"
                 voiceField={{
@@ -1849,22 +1951,22 @@ export function NewBill({
                   setDueDateManualOverride(true);
                 }}
               />
-            {dueDateManualOverride ? (
-              <Button
-                type="button"
-                variant="link"
-                className="h-auto p-0 text-xs"
-                onClick={() => {
-                  setDueDateManualOverride(false);
-                  applyDueFromTerms(billDate, paymentTermId);
-                }}
-              >
-                Return to automatic calculation
-              </Button>
-            ) : null}
-          </div>
-          <div className="space-y-2">
-            <Label>Supplier invoice #</Label>
+              {dueDateManualOverride ? (
+                <Button
+                  type="button"
+                  variant="link"
+                  className="h-auto p-0 text-xs"
+                  onClick={() => {
+                    setDueDateManualOverride(false);
+                    applyDueFromTerms(billDate, paymentTermId);
+                  }}
+                >
+                  Return to automatic calculation
+                </Button>
+              ) : null}
+            </div>
+            <div className="space-y-2">
+              <Label>Supplier invoice #</Label>
               <Input
                 voiceField={{
                   key: "number",
@@ -1886,307 +1988,336 @@ export function NewBill({
                 }}
                 placeholder="Supplier reference"
               />
-          </div>
-          <div className="space-y-2">
-            <Label>Memo / internal reference</Label>
+            </div>
+            <div className="space-y-2">
+              <Label>Memo / internal reference</Label>
               <Input
                 voiceField={{
                   key: "memo",
                   label: "Memo",
-                  aliases: ["internal reference", "customer message", "notes", "narration", "bill memo"],
+                  aliases: [
+                    "internal reference",
+                    "customer message",
+                    "notes",
+                    "narration",
+                    "bill memo",
+                  ],
                   order: 50,
                 }}
                 value={memo}
                 onChange={(e) => setMemo(e.target.value)}
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Currency</Label>
+              <RecordLookupSelect value={currencyCode} onValueChange={setCurrencyCode}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {enabledCurrencies.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </RecordLookupSelect>
+              {currencyCode !== baseCurrency && fxRate != null ? (
+                <p className="text-xs text-muted-foreground">
+                  Rate {fxRate} ({fxSource}) · {currencyCode} → {baseCurrency}
+                </p>
+              ) : null}
+            </div>
+            <div className="space-y-2">
+              <Label>Tax calculation</Label>
+              <Select
+                value={taxCalculation}
+                onValueChange={(v) => setTaxCalculation(v as TaxCalculationMode)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="exclusive">Tax exclusive</SelectItem>
+                  <SelectItem value="inclusive">Tax inclusive</SelectItem>
+                  <SelectItem value="none">No tax</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label>Currency</Label>
-            <Select value={currencyCode} onValueChange={setCurrencyCode}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {enabledCurrencies.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {currencyCode !== baseCurrency && fxRate != null ? (
-              <p className="text-xs text-muted-foreground">
-                Rate {fxRate} ({fxSource}) · {currencyCode} → {baseCurrency}
-              </p>
-            ) : null}
-          </div>
-          <div className="space-y-2">
-            <Label>Tax calculation</Label>
-            <Select
-              value={taxCalculation}
-              onValueChange={(v) => setTaxCalculation(v as TaxCalculationMode)}
+
+          <PurchasesDocumentLines
+            lines={lines}
+            onChange={setLines}
+            products={(productsQ.data ?? []) as never}
+            accounts={expenseAccounts}
+            taxCodes={taxCodes}
+            classOptions={optionsForKind("class")}
+            locationOptions={optionsForKind("location")}
+            projectOptions={optionsForKind("project")}
+            customers={customersForLines}
+            currency={currencyCode}
+            taxCalculation={taxCalculation}
+            toMinor={(d) => toMinorUnits(d, currencyCode)}
+            onAddNewItem={() => setNewItemOpen(true)}
+            onAddNewAccount={() => setNewAccountOpen(true)}
+            onAddNewTax={() => setNewTaxOpen(true)}
+            onAddNewClass={() => setNewDimOpen("class")}
+            onAddNewLocation={() => setNewDimOpen("location")}
+            onAddNewProject={() => setNewDimOpen("project")}
+            onAddNewCustomer={() => setNewCustomerOpen(true)}
+            showClass={showClass}
+            showLocation={showLocation}
+            showCustomer={showCustomer}
+            showProject={showProject}
+            showBillable={showBillable}
+            showDiscount={viewMode !== "basic"}
+            baseCurrencyEquivalent={
+              currencyCode !== baseCurrency && baseEquivalent
+                ? `${baseEquivalent} ${baseCurrency}`
+                : null
+            }
+          />
+
+          {/* Attachments */}
+          <div className="space-y-2 rounded-md border border-border p-4">
+            <div className="flex items-center gap-2">
+              <Paperclip className="size-4" />
+              <Label>Attachments</Label>
+            </div>
+            <p className="text-sm font-medium">Max file size: 20 MB</p>
+            <div
+              className="rounded-md border border-dashed border-border p-6 text-center text-sm text-muted-foreground"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                void onFilesSelected(e.dataTransfer.files);
+              }}
             >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="exclusive">Tax exclusive</SelectItem>
-                <SelectItem value="inclusive">Tax inclusive</SelectItem>
-                <SelectItem value="none">No tax</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <PurchasesDocumentLines
-          lines={lines}
-          onChange={setLines}
-          products={(productsQ.data ?? []) as never}
-          accounts={expenseAccounts}
-          taxCodes={taxCodes}
-          classOptions={optionsForKind("class")}
-          locationOptions={optionsForKind("location")}
-          projectOptions={optionsForKind("project")}
-          customers={customersForLines}
-          currency={currencyCode}
-          taxCalculation={taxCalculation}
-          toMinor={(d) => toMinorUnits(d, currencyCode)}
-          onAddNewItem={() => setNewItemOpen(true)}
-          onAddNewAccount={() => setNewAccountOpen(true)}
-          onAddNewTax={() => setNewTaxOpen(true)}
-          onAddNewClass={() => setNewDimOpen("class")}
-          onAddNewLocation={() => setNewDimOpen("location")}
-          onAddNewProject={() => setNewDimOpen("project")}
-          onAddNewCustomer={() => setNewCustomerOpen(true)}
-          showClass={showClass}
-          showLocation={showLocation}
-          showCustomer={showCustomer}
-          showProject={showProject}
-          showBillable={showBillable}
-          showDiscount={viewMode !== "basic"}
-          baseCurrencyEquivalent={
-            currencyCode !== baseCurrency && baseEquivalent
-              ? `${baseEquivalent} ${baseCurrency}`
-              : null
-          }
-        />
-
-        {/* Attachments */}
-        <div className="space-y-2 rounded-md border border-border p-4">
-          <div className="flex items-center gap-2">
-            <Paperclip className="size-4" />
-            <Label>Attachments</Label>
-          </div>
-          <p className="text-sm font-medium">Max file size: 20 MB</p>
-          <div
-            className="rounded-md border border-dashed border-border p-6 text-center text-sm text-muted-foreground"
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => {
-              e.preventDefault();
-              void onFilesSelected(e.dataTransfer.files);
-            }}
-          >
-            Drag and drop files here, or{" "}
-            <label className="cursor-pointer underline">
-              browse
-              <input
-                type="file"
-                className="sr-only"
-                multiple
-                onChange={(e) => void onFilesSelected(e.target.files)}
-              />
-            </label>
-          </div>
-          <ul className="space-y-1 text-sm">
-            {(attachmentsQ.data ?? []).map((a: {
-              id: string;
-              file_name: string;
-              size_bytes: number | null;
-              content_type: string | null;
-            }) => (
-              <li key={a.id} className="flex flex-wrap items-center gap-2">
-                <span>
-                  {a.file_name}{" "}
-                  <span className="text-muted-foreground">
-                    ({a.size_bytes != null ? `${Math.round(a.size_bytes / 1024)} KB` : "—"})
-                  </span>
-                </span>
-                {canPreviewAttachment(a.file_name, a.content_type) ? (
-                  <Button
-                    type="button"
-                    variant="link"
-                    size="sm"
-                    className="h-auto p-0"
-                    onClick={async () => {
-                      try {
-                        const file = await doDownload({
-                          data: { companyId: companyId!, attachmentId: a.id },
-                        });
-                        const bin = atob(file.contentBase64);
-                        const bytes = new Uint8Array(bin.length);
-                        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-                        const blob = new Blob([bytes], {
-                          type: file.contentType || "application/octet-stream",
-                        });
-                        const url = URL.createObjectURL(blob);
-                        window.open(url, "_blank", "noopener,noreferrer");
-                      } catch (e) {
-                        toast.error(friendlyAuthError(e));
-                      }
-                    }}
-                  >
-                    Preview
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    variant="link"
-                    size="sm"
-                    className="h-auto p-0"
-                    onClick={async () => {
-                      try {
-                        const file = await doDownload({
-                          data: { companyId: companyId!, attachmentId: a.id },
-                        });
-                        const bin = atob(file.contentBase64);
-                        const bytes = new Uint8Array(bin.length);
-                        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-                        const blob = new Blob([bytes], {
-                          type: file.contentType || "application/octet-stream",
-                        });
-                        const url = URL.createObjectURL(blob);
-                        const aEl = document.createElement("a");
-                        aEl.href = url;
-                        aEl.download = file.fileName;
-                        aEl.click();
-                      } catch (e) {
-                        toast.error(friendlyAuthError(e));
-                      }
-                    }}
-                  >
-                    Download
-                  </Button>
-                )}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={async () => {
-                    if (!confirm(`Remove ${a.file_name}?`)) return;
-                    try {
-                      await doDeleteAtt({ data: { companyId: companyId!, attachmentId: a.id } });
-                      await attachmentsQ.refetch();
-                    } catch (e) {
-                      toast.error(friendlyAuthError(e));
-                    }
-                  }}
-                >
-                  Remove
-                </Button>
-              </li>
-            ))}
-            {pendingAttachments.map((a, i) => (
-              <li key={`p-${i}`} className="flex items-center gap-2 text-muted-foreground">
-                {a.fileName} (pending save){" "}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setPendingAttachments((p) => p.filter((_, j) => j !== i))}
-                >
-                  Remove
-                </Button>
-              </li>
-            ))}
-          </ul>
-          <p className="text-xs text-muted-foreground">Limit {MAX_ATTACHMENT_BYTES / (1024 * 1024)} MB per file.</p>
-        </div>
-
-        <Tabs defaultValue="notes">
-          <TabsList>
-            <TabsTrigger value="notes">Internal notes</TabsTrigger>
-            <TabsTrigger value="activity">Activity history</TabsTrigger>
-          </TabsList>
-          <TabsContent value="notes" className="space-y-2">
-            <Textarea
-              placeholder="Internal note (not printed on supplier documents)"
-              value={internalNoteDraft}
-              onChange={(e) => setInternalNoteDraft(e.target.value)}
-              rows={3}
-            />
-            {isTemplate && templateNotes.length > 0 ? (
-              <ul className="space-y-2 text-sm">
-                {templateNotes.map((body, i) => (
-                  <li key={`${i}-${body.slice(0, 12)}`} className="rounded border border-border p-2">
-                    <p className="whitespace-pre-wrap">{body}</p>
+              Drag and drop files here, or{" "}
+              <label className="cursor-pointer underline">
+                browse
+                <input
+                  type="file"
+                  className="sr-only"
+                  multiple
+                  onChange={(e) => void onFilesSelected(e.target.files)}
+                />
+              </label>
+            </div>
+            <ul className="space-y-1 text-sm">
+              {(attachmentsQ.data ?? []).map(
+                (a: {
+                  id: string;
+                  file_name: string;
+                  size_bytes: number | null;
+                  content_type: string | null;
+                }) => (
+                  <li key={a.id} className="flex flex-wrap items-center gap-2">
+                    <span>
+                      {a.file_name}{" "}
+                      <span className="text-muted-foreground">
+                        ({a.size_bytes != null ? `${Math.round(a.size_bytes / 1024)} KB` : "—"})
+                      </span>
+                    </span>
+                    {canPreviewAttachment(a.file_name, a.content_type) ? (
+                      <Button
+                        type="button"
+                        variant="link"
+                        size="sm"
+                        className="h-auto p-0"
+                        onClick={async () => {
+                          try {
+                            const file = await doDownload({
+                              data: { companyId: companyId!, attachmentId: a.id },
+                            });
+                            const bin = atob(file.contentBase64);
+                            const bytes = new Uint8Array(bin.length);
+                            for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+                            const blob = new Blob([bytes], {
+                              type: file.contentType || "application/octet-stream",
+                            });
+                            const url = URL.createObjectURL(blob);
+                            window.open(url, "_blank", "noopener,noreferrer");
+                          } catch (e) {
+                            toast.error(friendlyAuthError(e));
+                          }
+                        }}
+                      >
+                        Preview
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="link"
+                        size="sm"
+                        className="h-auto p-0"
+                        onClick={async () => {
+                          try {
+                            const file = await doDownload({
+                              data: { companyId: companyId!, attachmentId: a.id },
+                            });
+                            const bin = atob(file.contentBase64);
+                            const bytes = new Uint8Array(bin.length);
+                            for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+                            const blob = new Blob([bytes], {
+                              type: file.contentType || "application/octet-stream",
+                            });
+                            const url = URL.createObjectURL(blob);
+                            const aEl = document.createElement("a");
+                            aEl.href = url;
+                            aEl.download = file.fileName;
+                            aEl.click();
+                          } catch (e) {
+                            toast.error(friendlyAuthError(e));
+                          }
+                        }}
+                      >
+                        Download
+                      </Button>
+                    )}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={async () => {
+                        if (!confirm(`Remove ${a.file_name}?`)) return;
+                        try {
+                          await doDeleteAtt({
+                            data: { companyId: companyId!, attachmentId: a.id },
+                          });
+                          await attachmentsQ.refetch();
+                        } catch (e) {
+                          toast.error(friendlyAuthError(e));
+                        }
+                      }}
+                    >
+                      Remove
+                    </Button>
                   </li>
-                ))}
-              </ul>
-            ) : (notesQ.data ?? []).length > 0 ? (
-              <ul className="space-y-2 text-sm">
-                {(notesQ.data as Array<{ id: string; body: string; created_at: string; created_by: string | null }>).map(
-                  (n) => (
+                ),
+              )}
+              {pendingAttachments.map((a, i) => (
+                <li key={`p-${i}`} className="flex items-center gap-2 text-muted-foreground">
+                  {a.fileName} (pending save){" "}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setPendingAttachments((p) => p.filter((_, j) => j !== i))}
+                  >
+                    Remove
+                  </Button>
+                </li>
+              ))}
+            </ul>
+            <p className="text-xs text-muted-foreground">
+              Limit {MAX_ATTACHMENT_BYTES / (1024 * 1024)} MB per file.
+            </p>
+          </div>
+
+          <Tabs defaultValue="notes">
+            <TabsList>
+              <TabsTrigger value="notes">Internal notes</TabsTrigger>
+              <TabsTrigger value="activity">Activity history</TabsTrigger>
+            </TabsList>
+            <TabsContent value="notes" className="space-y-2">
+              <Textarea
+                placeholder="Internal note (not printed on supplier documents)"
+                value={internalNoteDraft}
+                onChange={(e) => setInternalNoteDraft(e.target.value)}
+                rows={3}
+              />
+              {isTemplate && templateNotes.length > 0 ? (
+                <ul className="space-y-2 text-sm">
+                  {templateNotes.map((body, i) => (
+                    <li
+                      key={`${i}-${body.slice(0, 12)}`}
+                      className="rounded border border-border p-2"
+                    >
+                      <p className="whitespace-pre-wrap">{body}</p>
+                    </li>
+                  ))}
+                </ul>
+              ) : (notesQ.data ?? []).length > 0 ? (
+                <ul className="space-y-2 text-sm">
+                  {(
+                    notesQ.data as Array<{
+                      id: string;
+                      body: string;
+                      created_at: string;
+                      created_by: string | null;
+                    }>
+                  ).map((n) => (
                     <li key={n.id} className="rounded border border-border p-2">
                       <p className="whitespace-pre-wrap">{n.body}</p>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {new Date(n.created_at).toLocaleString()} · {n.created_by?.slice(0, 8) ?? "—"}
+                        {new Date(n.created_at).toLocaleString()} ·{" "}
+                        {n.created_by?.slice(0, 8) ?? "—"}
                       </p>
                     </li>
-                  ),
-                )}
-              </ul>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                {documentId ? "No notes yet." : isTemplate ? "Notes are saved with the template." : "Notes are saved with the bill draft."}
-              </p>
-            )}
-          </TabsContent>
-          <TabsContent value="activity">
-            {!documentId ? (
-              <p className="text-sm text-muted-foreground">Activity appears after the first save.</p>
-            ) : activityQ.isPending ? (
-              <LoadingState />
-            ) : (
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-muted-foreground">
-                    <th className="py-1">Date &amp; time</th>
-                    <th>User</th>
-                    <th>Action</th>
-                    <th>Details</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(
-                    (activityQ.data ?? []) as Array<{
-                      id: string;
-                      created_at: string;
-                      actor_user_id: string | null;
-                      action: string;
-                      details: unknown;
-                    }>
-                  ).map((a) => (
-                    <tr key={a.id} className="border-t">
-                      <td className="py-1 whitespace-nowrap">
-                        {new Date(a.created_at).toLocaleString()}
-                      </td>
-                      <td>{a.actor_user_id?.slice(0, 8) ?? "—"}</td>
-                      <td>{a.action}</td>
-                      <td className="max-w-xs truncate text-muted-foreground">
-                        {typeof a.details === "object" ? JSON.stringify(a.details) : String(a.details ?? "")}
-                      </td>
-                    </tr>
                   ))}
-                </tbody>
-              </table>
-            )}
-          </TabsContent>
-        </Tabs>
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  {documentId
+                    ? "No notes yet."
+                    : isTemplate
+                      ? "Notes are saved with the template."
+                      : "Notes are saved with the bill draft."}
+                </p>
+              )}
+            </TabsContent>
+            <TabsContent value="activity">
+              {!documentId ? (
+                <p className="text-sm text-muted-foreground">
+                  Activity appears after the first save.
+                </p>
+              ) : activityQ.isPending ? (
+                <LoadingState />
+              ) : (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-muted-foreground">
+                      <th className="py-1">Date &amp; time</th>
+                      <th>User</th>
+                      <th>Action</th>
+                      <th>Details</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(
+                      (activityQ.data ?? []) as Array<{
+                        id: string;
+                        created_at: string;
+                        actor_user_id: string | null;
+                        action: string;
+                        details: unknown;
+                      }>
+                    ).map((a) => (
+                      <tr key={a.id} className="border-t">
+                        <td className="py-1 whitespace-nowrap">
+                          {new Date(a.created_at).toLocaleString()}
+                        </td>
+                        <td>{a.actor_user_id?.slice(0, 8) ?? "—"}</td>
+                        <td>{a.action}</td>
+                        <td className="max-w-xs truncate text-muted-foreground">
+                          {typeof a.details === "object"
+                            ? JSON.stringify(a.details)
+                            : String(a.details ?? "")}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </TabsContent>
+          </Tabs>
 
-        <div className="flex flex-wrap gap-2 border-t border-border pt-3 text-xs text-muted-foreground">
-          Keyboard: Tab between fields · Save actions also in the header.
+          <div className="flex flex-wrap gap-2 border-t border-border pt-3 text-xs text-muted-foreground">
+            Keyboard: Tab between fields · Save actions also in the header.
+          </div>
         </div>
-      </div>
       </BillWorkspaceLayout>
 
       {/* Cancel three-option dialog */}
@@ -2476,7 +2607,9 @@ export function NewBill({
                       name: newItem.name,
                       code: newItem.code,
                       description: newItem.description,
-                      purchaseCostMinor: Number(toMinorUnits(newItem.purchaseCost || "0", currencyCode)),
+                      purchaseCostMinor: Number(
+                        toMinorUnits(newItem.purchaseCost || "0", currencyCode),
+                      ),
                       ...(newItem.expenseAccountId
                         ? { expenseAccountId: newItem.expenseAccountId }
                         : {}),
@@ -2577,10 +2710,7 @@ export function NewBill({
                       contactId,
                       name: recurring.name,
                       frequency: recurring.frequency as
-                        | "weekly"
-                        | "monthly"
-                        | "quarterly"
-                        | "yearly",
+                        "weekly" | "monthly" | "quarterly" | "yearly",
                       nextDueDate: recurring.nextDueDate,
                       currencyCode,
                       autoAuthorise: recurring.autoAuthorise,
@@ -2674,8 +2804,12 @@ export function NewBill({
                             [
                               {
                                 quantity: Number(l.quantity),
-                                unitPriceMinor: Number(toMinorUnits(l.unitPrice || "0", currencyCode)),
-                                discountMinor: Number(toMinorUnits(l.discount || "0", currencyCode)),
+                                unitPriceMinor: Number(
+                                  toMinorUnits(l.unitPrice || "0", currencyCode),
+                                ),
+                                discountMinor: Number(
+                                  toMinorUnits(l.discount || "0", currencyCode),
+                                ),
                                 taxRateBps: Number(l.taxRateBps || 0),
                               },
                             ],
@@ -2885,7 +3019,12 @@ export function NewBill({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              Add new {newDimOpen === "class" ? "class" : newDimOpen === "location" ? "location" : "project"}
+              Add new{" "}
+              {newDimOpen === "class"
+                ? "class"
+                : newDimOpen === "location"
+                  ? "location"
+                  : "project"}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-1">
@@ -2899,17 +3038,24 @@ export function NewBill({
                 if (!newDimOpen || !companyId) return;
                 try {
                   const kind = newDimOpen;
-                  let cats = (
-                    dimsQ.data as {
-                      categories: Array<{ id: string; dimension_kind: string; is_active: boolean }>;
-                    } | undefined
+                  const cats = (
+                    dimsQ.data as
+                      | {
+                          categories: Array<{
+                            id: string;
+                            dimension_kind: string;
+                            is_active: boolean;
+                          }>;
+                        }
+                      | undefined
                   )?.categories.filter((c) => c.is_active && c.dimension_kind === kind);
                   let categoryId = cats?.[0]?.id;
                   if (!categoryId) {
                     const created = await doUpsertDimCategory({
                       data: {
                         companyId,
-                        name: kind === "class" ? "Class" : kind === "location" ? "Location" : "Project",
+                        name:
+                          kind === "class" ? "Class" : kind === "location" ? "Location" : "Project",
                         dimensionKind: kind,
                       },
                     });

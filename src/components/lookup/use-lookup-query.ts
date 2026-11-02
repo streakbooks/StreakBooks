@@ -68,13 +68,15 @@ export function useLookupQuery<T>({
 
   useEffect(() => {
     if (!enabled || !companyId) return;
-    const key = lookupCacheKey(companyId, kind, debounced, page);
+    const key = lookupCacheKey(companyId, `${kind}:${pageSize}`, debounced, page);
     const skipCache = bypassCache.current;
     bypassCache.current = false;
     if (!skipCache) {
       const cached = cache.current.get(key);
       if (cached) {
-        setRows((current) => (page === 0 ? cached.rows : current));
+        setRows((current) =>
+          page === 0 ? cached.rows : appendUniqueLookupRows(current, cached.rows),
+        );
         setHasMore(cached.hasMore);
         setError(null);
         setLoading(false);
@@ -88,15 +90,18 @@ export function useLookupQuery<T>({
     fetchRef
       .current({ companyId, query: debounced, page, pageSize, signal: controller.signal })
       .then((result) => {
-        if (!isCurrentRequest(id, requestId.current)) return;
+        if (controller.signal.aborted || !isCurrentRequest(id, requestId.current)) return;
         cache.current.set(key, result);
-        setRows((current) => (page === 0 ? result.rows : [...current, ...result.rows]));
+        if (cache.current.size > 128) cache.current.delete(cache.current.keys().next().value!);
+        setRows((current) =>
+          page === 0 ? result.rows : appendUniqueLookupRows(current, result.rows),
+        );
         setHasMore(result.hasMore);
         setLoading(false);
       })
       .catch((reason: unknown) => {
         if (controller.signal.aborted) return;
-        if (!isCurrentRequest(id, requestId.current)) return;
+        if (controller.signal.aborted || !isCurrentRequest(id, requestId.current)) return;
         setError(reason instanceof Error ? reason.message : "Could not load records");
         setLoading(false);
       });
@@ -116,4 +121,13 @@ export function useLookupQuery<T>({
       setRetryToken((current) => current + 1);
     },
   };
+}
+
+/** Page replay must not duplicate options after a retry or a cached navigation. */
+export function appendUniqueLookupRows<T>(current: T[], incoming: T[]): T[] {
+  const identity = (row: T) =>
+    typeof row === "object" && row !== null && "id" in row ? String(row.id) : JSON.stringify(row);
+  const rows = new Map(current.map((row) => [identity(row), row]));
+  for (const row of incoming) rows.set(identity(row), row);
+  return [...rows.values()];
 }

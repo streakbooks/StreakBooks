@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
@@ -126,18 +127,18 @@ function MfaChallengePage() {
         {factors.length > 1 ? (
           <div className="space-y-2">
             <Label htmlFor="mfa-factor">Authenticator</Label>
-            <select
+            <RecordLookupSelect
               id="mfa-factor"
               className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
               value={factorId}
-              onChange={(e) => setFactorId(e.target.value)}
+              onValueChange={(e) => setFactorId(e)}
             >
               {factors.map((f, i) => (
                 <option key={f.id} value={f.id}>
                   {f.friendly_name || `Authenticator ${i + 1}`}
                 </option>
               ))}
-            </select>
+            </RecordLookupSelect>
           </div>
         ) : null}
         <div className="space-y-2">

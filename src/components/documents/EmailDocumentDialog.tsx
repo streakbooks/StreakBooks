@@ -142,6 +142,8 @@ export function EmailDocumentDialog(props: Props) {
             <div className="space-y-1">
               <Label htmlFor="email-template">Template</Label>
               <Select value={template} onValueChange={(v) => setTemplate(v as EmailTemplate)}>
+                {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
                 <SelectTrigger id="email-template">
                   <SelectValue />
                 </SelectTrigger>

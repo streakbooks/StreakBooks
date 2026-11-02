@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
@@ -87,17 +88,17 @@ export function PortalShell() {
             {portal.memberships.length > 1 ? (
               <label className="text-sm">
                 <span className="sr-only">Organisation</span>
-                <select
+                <RecordLookupSelect
                   className="h-9 rounded-md border border-input bg-background px-2"
                   value={current?.membership_id ?? ""}
-                  onChange={(event) => portal.select(event.target.value)}
+                  onValueChange={(event) => portal.select(event)}
                 >
                   {portal.memberships.map((membership) => (
                     <option key={membership.membership_id} value={membership.membership_id}>
                       {membership.company_name} ({membership.role})
                     </option>
                   ))}
-                </select>
+                </RecordLookupSelect>
               </label>
             ) : null}
             <ThemeToggle />

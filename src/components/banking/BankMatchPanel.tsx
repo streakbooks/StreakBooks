@@ -122,6 +122,8 @@ export function BankMatchPanel({
             value={windowDays}
             onChange={(e) => setWindowDays(Number(e.target.value))}
           >
+            {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
             {[3, 7, 14, 30, 60].map((d) => (
               <option key={d} value={d}>
                 {d}

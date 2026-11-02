@@ -14,12 +14,10 @@ export function ReportingHome({
   companyId,
   from,
   to,
-  onNavigate,
 }: {
   companyId: string;
   from: string;
   to: string;
-  onNavigate: (tab: string) => void;
 }) {
   const list = useServerFn(getReportingWorkspace),
     favourites = useServerFn(listReportLibrary);
@@ -76,14 +74,15 @@ export function ReportingHome({
             tab: "schedules",
           },
         ].map((item) => (
-          <button
+          <Link
             key={item.title}
-            onClick={() => onNavigate(item.tab)}
-            className="rounded-lg border p-4 text-left transition-shadow hover:shadow-md"
+            to="/reports"
+            search={{ tab: item.tab as "drafts" | "published" | "schedules", from, to }}
+            className="rounded-lg border p-4 text-left transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-ring"
           >
             <span className="text-sm text-muted-foreground">{item.title}</span>
             <strong className="mt-2 block text-3xl">{item.count}</strong>
-          </button>
+          </Link>
         ))}
       </div>
       <section className="space-y-3">
@@ -109,8 +108,8 @@ export function ReportingHome({
       <section className="space-y-3">
         <div className="flex justify-between">
           <h3 className="text-lg font-semibold">Favourite saved reports</h3>
-          <Button size="sm" variant="ghost" onClick={() => onNavigate("custom")}>
-            Open custom library
+          <Button size="sm" variant="ghost" asChild>
+            <Link to="/reports" search={{ tab: "custom", from, to }}>Open custom library</Link>
           </Button>
         </div>
         {saved.isPending ? (

@@ -1,3 +1,5 @@
+import { ReportActionsMenu } from "@/components/reports/ReportActionsMenu";
+import { parseReportingCentreSearch } from "@/lib/reports/centre-search";
 import { ReportActivityList } from "../../src/components/reports/ReportActivityList";
 import { parseReportSearch } from "../../src/lib/reports/search";
 // Browser harness for real designer/renderer/lookup components. API persistence and RLS use the separate live SQL suite.
@@ -78,6 +80,9 @@ export function Fixture() {
   }
   return (
     <main className="mx-auto max-w-6xl space-y-8 p-4">
+      <section aria-label="Standard report actions fixture" className="flex justify-end">
+        <ReportActionsMenu from="2026-04-01" to="2026-11-02" />
+      </section>
       <ActivityFixture />
       <h1 className="text-2xl font-semibold">Reporting and LookupSelect verification</h1>
       <section className="space-y-3 rounded border p-4">
@@ -231,5 +236,12 @@ const builderRoute = createRoute({
   path: "reports/builder/$viewId",
   validateSearch: parseReportSearch,
 });
-const router = createRouter({ routeTree: root.addChildren([reportRoute, builderRoute]) });
+const centreRoute = createRoute({
+  getParentRoute: () => root,
+  path: "reports",
+  validateSearch: parseReportingCentreSearch,
+});
+const router = createRouter({
+  routeTree: root.addChildren([reportRoute, builderRoute, centreRoute]),
+});
 createRoot(document.getElementById("root")!).render(<RouterProvider router={router} />);

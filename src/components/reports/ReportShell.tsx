@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ReportActionsMenu } from "./ReportActionsMenu";
 import { SavedViews } from "./SavedViews";
 
 export type ReportCtx = {
@@ -153,7 +154,7 @@ export function ReportShell({
           </div>
         ) : null}
         {extraControls}
-        <div className="ml-auto flex gap-2">
+        <div className="ml-auto flex flex-wrap gap-2">
           {getCsv && canExport ? (
             <Button size="sm" variant="outline" onClick={onExport}>
               Export CSV
@@ -162,8 +163,11 @@ export function ReportShell({
           <Button size="sm" variant="outline" disabled={!canExport} onClick={() => window.print()}>
             <Printer className="mr-1 size-4" /> Print / PDF
           </Button>
+          <ReportActionsMenu from={ctx.from} to={ctx.to} />
           <Button size="sm" variant="ghost" asChild>
-            <Link to="/reports">All reports</Link>
+            <Link to="/reports" search={{ tab: "standard", from: ctx.from, to: ctx.to }}>
+              All reports
+            </Link>
           </Button>
         </div>
       </div>

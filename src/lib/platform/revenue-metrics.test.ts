@@ -7,6 +7,7 @@ import {
   normalisedMrrMinor,
   openingMrrBaseline,
   revenueCardState,
+  reconcileMrr,
   storedMrrMovement,
   sumMrrMovements,
 } from "./revenue-metrics";
@@ -52,6 +53,50 @@ describe("revenue definitions", () => {
     expect(sql).toContain("NOT c.is_demo");
     expect(sql).toContain("p.currency IS DISTINCT FROM a.currency");
     expect(sql).toContain("MRR movements are append-only");
+  });
+
+  it("reconciles the latest stored position with the overview and does not treat a gap as zero", () => {
+    expect(reconcileMrr({ overview: [], stored: [] }).state).toBe("empty");
+    expect(
+      reconcileMrr({
+        overview: [{ companyId: "a", currency: "USD", mrrMinor: 3000 }],
+        stored: [],
+      }),
+    ).toMatchObject({
+      state: "uncovered",
+      missingFromStore: ["a"],
+      rows: [{ currency: "USD", overviewMinor: 3000, storedMinor: 0, differenceMinor: 3000 }],
+    });
+    expect(
+      reconcileMrr({
+        overview: [{ companyId: "a", currency: "USD", mrrMinor: 3000 }],
+        stored: [{ companyId: "a", currency: "USD", currentMinor: 3000 }],
+      }).state,
+    ).toBe("match");
+    expect(
+      reconcileMrr({
+        overview: [{ companyId: "a", currency: "USD", mrrMinor: 3000 }],
+        stored: [{ companyId: "a", currency: "GBP", currentMinor: 3000 }],
+      }),
+    ).toMatchObject({ state: "mismatch", drift: ["a"] });
+    expect(
+      reconcileMrr({
+        overview: [],
+        stored: [{ companyId: "b", currency: "USD", currentMinor: 0 }],
+      }).state,
+    ).toBe("empty");
+    expect(
+      reconcileMrr({
+        overview: [],
+        stored: [{ companyId: "b", currency: "USD", currentMinor: 500 }],
+      }),
+    ).toMatchObject({ state: "mismatch", extraInStore: ["b"], rows: [{ differenceMinor: -500 }] });
+    const sql = readFileSync("supabase/migrations/20261102150000_mrr_reconciliation.sql", "utf8");
+    expect(sql).toContain("private.platform_can('billing.view')");
+    expect(sql).toContain("(m.current_mrr_minor > 0) DESC");
+    expect(sql).toContain("THEN 'uncovered'");
+    expect(sql).toContain("NOT c.is_demo");
+    expect(sql).toContain("s.status = 'active'");
   });
 
   it("separates an empty revenue card from a missing permission", () => {

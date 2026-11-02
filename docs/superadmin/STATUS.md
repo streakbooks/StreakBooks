@@ -6,9 +6,10 @@ Date: 2 November 2026. Branch: `feat/superadmin-control-centre`.
 
 Executed on 2 November 2026 from `d:\Apps\LinkBooks`:
 
-- `npx vitest run src/lib/platform src/lib/billing/plan-quote.test.ts --reporter=dot` — 5 files, 34 tests, passed. The extra cases cover usage overage and the MRR baseline, movement classes, and portfolio sum.
-- `npx tsc --noEmit --pretty false` — exit 0 after the quote route and rollout migration.
-- Browser check of `http://localhost:8080/pricing/builder`: published plans loaded; Growth quoted at US$30 monthly and US$300 yearly with no charge; a selected add-on stayed unpriced because the entitlement migration is not applied. `/platform` was not walked (needs a platform owner and a second approver).
+- `npx vitest run src/lib/platform src/lib/billing/plan-quote.test.ts --reporter=dot` — 5 files, 35 tests, passed. The extra cases cover usage overage, MRR movements, and reconciliation against the overview total.
+- `npx tsc --noEmit --pretty false` — exit 0 after the reconciliation migration and overview check.
+- Browser check of `http://localhost:8080/pricing/builder`: published plans loaded; Growth quoted at US$30 monthly and US$300 yearly with no charge; a selected add-on stayed unpriced because the entitlement migration is not applied.
+- Browser check of `http://localhost:8080/platform?section=overview` while a platform session was already signed in: the stored-movement check reported that reconciliation appears after the movement migration is applied. The revenue card stayed unseparated because the live overview function does not yet return `revenueState`. Match and mismatch states were not exercised. A second approver was not used.
 - `npx eslint` on `src/lib/platform`, `PlatformOverview.tsx`, `PlatformApprovals.tsx` and `platform.index.tsx` — exit 0 after Prettier.
 
 Production build, browser sign-in, RLS SQL suites and the live database were not run.
@@ -22,6 +23,7 @@ Production build, browser sign-in, RLS SQL suites and the live database were not
 - Postgres RLS suites in `tests/integration/platform-*.sql` were not re-run.
 - The `md5` audit chain was not executed. It detects a break in new rows. A database superuser can still replace the trigger. It is not WORM storage.
 - `supabase/migrations/20261102130000_rollout_enforcement.sql` is not applied. Percentage, allowlist, internal, trial, region and scheduled rollouts gate plan and catalogue defaults only after that migration.
+- `supabase/migrations/20261102140000_mrr_movements.sql` and `20261102150000_mrr_reconciliation.sql` are not applied. Stored movements and the overview check stay unavailable until then.
 - Tax basis points are an operator setting. They are not a filing position.
 
 ## Capability labels
@@ -37,5 +39,6 @@ Production build, browser sign-in, RLS SQL suites and the live database were not
 | Customer plan builder page | IMPLEMENTED as a quote only | `src/routes/pricing_.builder.tsx`. It does not charge or grant a feature. |
 | Usage overage | IMPLEMENTED as a calculation only | `usageOverage` in `src/lib/platform/price-book.ts`. No invoice. |
 | Historical MRR movements | IMPLEMENTED, blocked on migration apply | `supabase/migrations/20261102140000_mrr_movements.sql` |
+| MRR reconciliation | IMPLEMENTED, blocked on migration apply | `reconcileMrr`, `platform_reconcile_mrr`, overview “Stored movement check” |
 | Batches C–H new surfaces | MISSING | Existing `/platform` sections remain |
 | Status page, SMS, e-signature, BI | NOT APPLICABLE until a vendor is connected | `docs/decisions/002-commodity-operations-tools.md` |

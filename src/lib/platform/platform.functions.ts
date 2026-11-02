@@ -229,3 +229,42 @@ export const decidePlatformApproval = createServerFn({ method: "POST" })
       ),
     ),
   );
+
+const reconciliationRow = z.object({
+  currency: z.string().regex(/^[A-Z]{3}$/),
+  overviewMinor: z.number().int().nonnegative(),
+  storedMinor: z.number().int().nonnegative(),
+  differenceMinor: z.number().int(),
+});
+
+const reconciliationPayload = z.object({
+  state: z.enum(["forbidden", "empty", "match", "mismatch", "uncovered"]),
+  rows: z.array(reconciliationRow),
+  missingFromStore: z.number().int().nonnegative(),
+  extraInStore: z.number().int().nonnegative(),
+  drift: z.number().int().nonnegative(),
+});
+
+export const getPlatformMrrReconciliation = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    setResponseHeader("Cache-Control", "private, no-store");
+    const result = await context.supabase.rpc("platform_reconcile_mrr" as never);
+    if (result.error) {
+      if (result.error.code === "42883" || result.error.code === "PGRST202") {
+        return {
+          ready: false as const,
+          state: "unavailable" as const,
+          rows: [],
+          missingFromStore: 0,
+          extraInStore: 0,
+          drift: 0,
+          message:
+            "Stored MRR reconciliation appears after the movement migration is applied. This is not a zero balance.",
+        };
+      }
+      throw new Error(result.error.message);
+    }
+    const parsed = reconciliationPayload.parse(result.data);
+    return { ready: true as const, ...parsed, message: null };
+  });

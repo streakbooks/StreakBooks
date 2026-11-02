@@ -12,7 +12,10 @@ import {
   BarChart,
   Bar,
 } from "recharts";
-import { getPlatformOverview } from "@/lib/platform/platform.functions";
+import {
+  getPlatformMrrReconciliation,
+  getPlatformOverview,
+} from "@/lib/platform/platform.functions";
 import { formatConsoleInstant, formatUtcDay } from "@/lib/platform/console-time";
 import { revenueCardState } from "@/lib/platform/revenue-metrics";
 import { Button } from "@/components/ui/button";
@@ -32,9 +35,15 @@ export function PlatformOverview({
     return { from: d.toISOString().slice(0, 10), to: end };
   });
   const load = useServerFn(getPlatformOverview);
+  const loadReconciliation = useServerFn(getPlatformMrrReconciliation);
   const query = useQuery({
     queryKey: ["platform", "overview", range],
     queryFn: () => load({ data: range }),
+    retry: false,
+  });
+  const reconciliation = useQuery({
+    queryKey: ["platform", "mrr-reconciliation"],
+    queryFn: () => loadReconciliation(),
     retry: false,
   });
   return (
@@ -209,6 +218,62 @@ export function PlatformOverview({
                 returned. This is not a zero balance and not a permissions error.
               </p>
             )}
+            <div className="mt-4 border-t pt-4 text-sm">
+              <h3 className="font-medium">Stored movement check</h3>
+              {reconciliation.isPending ? (
+                <p className="mt-2" role="status">
+                  Checking stored MRR…
+                </p>
+              ) : reconciliation.isError ? (
+                <p className="mt-2" role="alert">
+                  {reconciliation.error instanceof Error
+                    ? reconciliation.error.message
+                    : "MRR reconciliation failed."}
+                </p>
+              ) : reconciliation.data?.message ? (
+                <p className="mt-2" role="status">
+                  {reconciliation.data.message}
+                </p>
+              ) : reconciliation.data?.state === "forbidden" ? (
+                <p className="mt-2" role="status">
+                  Billing permission is required to reconcile stored MRR. This is not a zero
+                  balance.
+                </p>
+              ) : reconciliation.data?.state === "empty" ? (
+                <p className="mt-2" role="status">
+                  No recognised MRR and no open stored movement. This is an empty result, not a zero
+                  balance.
+                </p>
+              ) : reconciliation.data?.state === "uncovered" ? (
+                <p className="mt-2" role="status">
+                  Recognised MRR has no stored movement yet.{" "}
+                  {reconciliation.data.missingFromStore.toLocaleString()} businesses are missing
+                  from history. Do not treat that gap as zero.
+                </p>
+              ) : reconciliation.data?.state === "match" ? (
+                <p className="mt-2" role="status">
+                  The latest stored position matches the overview for every currency.
+                </p>
+              ) : reconciliation.data?.state === "mismatch" ? (
+                <p className="mt-2" role="status">
+                  Stored MRR does not match the overview. Missing from history:{" "}
+                  {reconciliation.data.missingFromStore.toLocaleString()}. Open in history only:{" "}
+                  {reconciliation.data.extraInStore.toLocaleString()}. Amount or currency drift:{" "}
+                  {reconciliation.data.drift.toLocaleString()}.
+                </p>
+              ) : null}
+              {reconciliation.data?.rows.length ? (
+                <ul className="mt-2 space-y-1">
+                  {reconciliation.data.rows.map((row) => (
+                    <li key={row.currency}>
+                      {row.currency}: overview {row.overviewMinor.toLocaleString()} minor, stored{" "}
+                      {row.storedMinor.toLocaleString()} minor, difference{" "}
+                      {row.differenceMinor.toLocaleString()} minor.
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
           </section>
         </>
       )}

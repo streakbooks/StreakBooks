@@ -35,6 +35,22 @@ describe("incidents and releases", () => {
     expect(sql).toContain("READY-TO-APPLY");
     expect(sql.toLowerCase()).not.toContain("delete from");
     expect(() =>
+      recordRelease({
+        role: "platform_owner",
+        version: "1.4.0",
+        reason: "Notes",
+        recordedVersions: ["1.4.0"],
+      }),
+    ).toThrow(/already recorded/);
+    const once = readFileSync(
+      new URL("../../../supabase/migrations/20261102500000_release_version_once.sql", import.meta.url),
+      "utf8",
+    );
+    expect(once).toContain("platform_releases_version_key");
+    expect(once).toContain("That version is already recorded");
+    expect(once).toContain("'deployed', false");
+    expect(once).toContain("require_platform('settings.manage')");
+    expect(() =>
       openIncident({ role: "platform_finance", title: "Sign-in errors", reason: "Customers" }),
     ).toThrow(/permission/);
   });

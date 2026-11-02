@@ -34,7 +34,12 @@ export function resolveIncident(input: {
   return { status: "resolved", deleted: false, audit: { action: "incident.resolve", reason } };
 }
 
-export function recordRelease(input: { role: PlatformRoleName; version: string; reason: string }): {
+export function recordRelease(input: {
+  role: PlatformRoleName;
+  version: string;
+  reason: string;
+  recordedVersions?: readonly string[];
+}): {
   recorded: false;
   deployed: false;
   version: string;
@@ -46,5 +51,8 @@ export function recordRelease(input: { role: PlatformRoleName; version: string; 
   const reason = input.reason.trim();
   if (!VERSION.test(version)) throw new Error("Use a numeric version");
   if (reason.length < 3) throw new Error("A reason is required");
+  if ((input.recordedVersions ?? []).includes(version)) {
+    throw new Error("That version is already recorded");
+  }
   return { recorded: false, deployed: false, version, audit: { action: "release.record", reason } };
 }

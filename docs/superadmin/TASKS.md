@@ -51,7 +51,7 @@ Work top to bottom. A task is done only when its tests have run and the box is t
 - [x] API key rotation
 - [x] Webhook delivery history
 - [x] Backup visibility
-- [ ] Data export
+- [x] Data export
 - [ ] Closure workflow
 
 ## Batches E–H

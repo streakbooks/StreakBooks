@@ -152,15 +152,17 @@ export function ReportingHome({
       <section className="space-y-3">
         <h3 className="text-lg font-semibold">Recent pack activity</h3>
         {q.data.packs.slice(0, 5).map((p) => (
-          <div
+          <Link
             key={p.id}
-            className="flex flex-wrap justify-between gap-2 rounded border p-3 text-sm"
+            to="/reports"
+            search={{ tab: "packs", pack: p.id, from, to }}
+            className="flex flex-wrap justify-between gap-2 rounded border p-3 text-sm underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-ring"
           >
             <span>{p.name}</span>
             <span className="text-muted-foreground">
               {p.status.replaceAll("_", " ")} · {p.updated_at}
             </span>
-          </div>
+          </Link>
         ))}
         {!q.data.packs.length && (
           <p className="text-sm text-muted-foreground">

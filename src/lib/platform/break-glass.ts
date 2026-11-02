@@ -26,11 +26,13 @@ export function requestBreakGlass(input: {
   reason: string;
   expiresAt: string;
   now: Date;
+  open?: boolean;
 }): { grant: BreakGlassGrant; log: CustomerAccessLog } {
   assertReason(input.reason);
   if (new Date(input.expiresAt).getTime() <= input.now.getTime()) {
     throw new Error("Break-glass access must expire in the future");
   }
+  if (input.open) throw new Error("That business already has break-glass access");
   return {
     grant: {
       id: input.id,
@@ -49,11 +51,15 @@ export function decideBreakGlass(
   actorId: string,
   decision: "approved" | "rejected",
   now: Date,
+  openElsewhere = false,
 ): { grant: BreakGlassGrant; log: CustomerAccessLog } {
   if (grant.status !== "pending") throw new Error("That break-glass request is no longer pending");
   if (grant.requesterId === actorId) throw new Error("A second person must decide this request");
   if (new Date(grant.expiresAt).getTime() <= now.getTime()) {
     throw new Error("That break-glass request has expired");
+  }
+  if (decision === "approved" && openElsewhere) {
+    throw new Error("That business already has break-glass access");
   }
   const status = decision === "approved" ? "active" : "rejected";
   return {

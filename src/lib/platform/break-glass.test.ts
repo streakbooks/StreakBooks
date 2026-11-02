@@ -76,4 +76,29 @@ describe("break-glass access", () => {
     expect(guard).toContain("break_glass_grants_company_fk");
     expect(guard).toContain("require_platform('support.manage')");
   });
+
+  it("allows one open grant and keeps the customer log free of the reason", () => {
+    expect(() =>
+      requestBreakGlass({
+        id: "bg-2",
+        companyId: "company-1",
+        requesterId: "requester",
+        reason: "Customer asked for help",
+        expiresAt: "2026-11-02T09:00:00.000Z",
+        now,
+        open: true,
+      }),
+    ).toThrow(/already has break-glass/);
+    expect(() =>
+      decideBreakGlass(requested.grant, "approver", "approved", now, true),
+    ).toThrow(/already has break-glass/);
+    const sql = readFileSync(
+      new URL("../../../supabase/migrations/20261102520000_break_glass_one_open.sql", import.meta.url),
+      "utf8",
+    );
+    expect(sql).toContain("break_glass_one_pending");
+    expect(sql).toContain("That business already has break-glass access");
+    expect(sql).toContain("require_platform('support.manage')");
+    expect(sql).not.toContain("jsonb_build_object('action'");
+  });
 });

@@ -129,7 +129,13 @@ export function GlobalSearch({ className }: { className?: string }) {
   function handleNativeLinkClick(event: React.MouseEvent<HTMLAnchorElement>) {
     // Preserve native modifier-click and middle-click behavior without dismissing search.
     event.stopPropagation();
-    if (event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) {
+    if (
+      event.button === 0 &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.shiftKey &&
+      !event.altKey
+    ) {
       close();
     }
   }
@@ -300,15 +306,15 @@ export function GlobalSearch({ className }: { className?: string }) {
                         onClick={handleNativeLinkClick}
                         className="flex w-full flex-col items-start gap-0.5"
                       >
-                      <span className="flex w-full justify-between gap-2">
-                        <span className="font-medium">{h.title}</span>
-                        {h.amount_minor !== undefined && h.currency ? (
-                          <span className="tabular-nums text-muted-foreground">
-                            {fmt.money(h.amount_minor, h.currency)}
-                          </span>
-                        ) : null}
-                      </span>
-                      <span className="text-xs text-muted-foreground">{h.subtitle}</span>
+                        <span className="flex w-full justify-between gap-2">
+                          <span className="font-medium">{h.title}</span>
+                          {h.amount_minor !== undefined && h.currency ? (
+                            <span className="tabular-nums text-muted-foreground">
+                              {fmt.money(h.amount_minor, h.currency)}
+                            </span>
+                          ) : null}
+                        </span>
+                        <span className="text-xs text-muted-foreground">{h.subtitle}</span>
                       </Link>
                     </CommandItem>
                   ))}

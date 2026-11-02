@@ -62,14 +62,20 @@ describe("break-glass access", () => {
     expect(sql).toContain("A second person must decide this request");
     expect(sql).toContain("platform_request_break_glass(uuid, text, timestamptz, uuid)");
     const expiry = readFileSync(
-      new URL("../../../supabase/migrations/20261102430000_break_glass_expire_audit.sql", import.meta.url),
+      new URL(
+        "../../../supabase/migrations/20261102430000_break_glass_expire_audit.sql",
+        import.meta.url,
+      ),
       "utf8",
     );
     expect(expiry).toContain("break_glass.expire");
     expect(expiry).toContain("private.platform_log");
     expect(expiry).not.toContain("reason");
     const guard = readFileSync(
-      new URL("../../../supabase/migrations/20261102440000_company_exists_guards.sql", import.meta.url),
+      new URL(
+        "../../../supabase/migrations/20261102440000_company_exists_guards.sql",
+        import.meta.url,
+      ),
       "utf8",
     );
     expect(guard).toContain("That business was not found");
@@ -89,11 +95,14 @@ describe("break-glass access", () => {
         open: true,
       }),
     ).toThrow(/already has break-glass/);
-    expect(() =>
-      decideBreakGlass(requested.grant, "approver", "approved", now, true),
-    ).toThrow(/already has break-glass/);
+    expect(() => decideBreakGlass(requested.grant, "approver", "approved", now, true)).toThrow(
+      /already has break-glass/,
+    );
     const sql = readFileSync(
-      new URL("../../../supabase/migrations/20261102520000_break_glass_one_open.sql", import.meta.url),
+      new URL(
+        "../../../supabase/migrations/20261102520000_break_glass_one_open.sql",
+        import.meta.url,
+      ),
       "utf8",
     );
     expect(sql).toContain("break_glass_one_pending");

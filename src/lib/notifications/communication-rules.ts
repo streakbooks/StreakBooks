@@ -33,12 +33,12 @@ export function inQuietHours(
 }
 
 export function safeSenderName(value: string): string {
-  return value.replace(/[\r\n<>\\"]/g, "").trim().slice(0, 120);
+  return value
+    .replace(/[\r\n<>\\"]/g, "")
+    .trim()
+    .slice(0, 120);
 }
-export function emailWithVerifiedSender(
-  verifiedFrom: string,
-  name: string,
-): string {
+export function emailWithVerifiedSender(verifiedFrom: string, name: string): string {
   const address = /^\s*(?:[^<>]*<)?([^\s<>@]+@[^\s<>@]+\.[^\s<>@]+)>?\s*$/.exec(verifiedFrom)?.[1];
   if (!address) throw new Error("EMAIL_FROM must contain a valid sender address");
   const displayName = safeSenderName(name);

@@ -75,8 +75,12 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/files")({
-  validateSearch: (raw: Record<string, unknown>): { folder?: string | undefined; file?: string | undefined } => ({
-    ...(typeof raw["folder"] === "string" && raw["folder"] ? { folder: raw["folder"] as string } : {}),
+  validateSearch: (
+    raw: Record<string, unknown>,
+  ): { folder?: string | undefined; file?: string | undefined } => ({
+    ...(typeof raw["folder"] === "string" && raw["folder"]
+      ? { folder: raw["folder"] as string }
+      : {}),
     ...(typeof raw["file"] === "string" && raw["file"] ? { file: raw["file"] as string } : {}),
   }),
   head: () => ({ meta: [{ title: "Files — LinkBooks" }] }),
@@ -106,7 +110,10 @@ function FilesPage() {
   const folderId = folder ?? null;
   const selectedFile = file ?? null;
   const setFolderId = (id: string | null) =>
-    void navigate({ to: "/files", search: (previous) => ({ ...previous, folder: id ?? undefined, file: undefined }) });
+    void navigate({
+      to: "/files",
+      search: (previous) => ({ ...previous, folder: id ?? undefined, file: undefined }),
+    });
   const setSelectedFile = (id: string | null) =>
     void navigate({ to: "/files", search: (previous) => ({ ...previous, file: id ?? undefined }) });
   const [newFolderName, setNewFolderName] = useState("");
@@ -344,11 +351,26 @@ function FilesPage() {
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Folder className="size-4" />
-            <Link to="/files" search={{ folder: undefined, file: undefined }} className="text-sm underline" onClick={(e) => { if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) setPage(0); }}>
+            <Link
+              to="/files"
+              search={{ folder: undefined, file: undefined }}
+              className="text-sm underline"
+              onClick={(e) => {
+                if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) setPage(0);
+              }}
+            >
               All files
             </Link>
             {breadcrumbs.map((crumb) => (
-              <Link to="/files" search={{ folder: crumb.id }} key={crumb.id} className="text-sm underline" onClick={(e) => { if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) setPage(0); }}>
+              <Link
+                to="/files"
+                search={{ folder: crumb.id }}
+                key={crumb.id}
+                className="text-sm underline"
+                onClick={(e) => {
+                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) setPage(0);
+                }}
+              >
                 / {crumb.name}
               </Link>
             ))}
@@ -392,7 +414,13 @@ function FilesPage() {
         <div className="flex flex-wrap gap-2">
           {activeFolder?.parent_id ? (
             <Button size="sm" variant="outline" asChild>
-              <Link to="/files" search={{ folder: activeFolder.parent_id }} onClick={(e) => { if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) setPage(0); }}>
+              <Link
+                to="/files"
+                search={{ folder: activeFolder.parent_id }}
+                onClick={(e) => {
+                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) setPage(0);
+                }}
+              >
                 Parent folder
               </Link>
             </Button>
@@ -401,7 +429,13 @@ function FilesPage() {
             .filter((f) => f.parent_id === folderId)
             .map((folder) => (
               <Button key={folder.id} size="sm" variant="outline" asChild>
-                <Link to="/files" search={{ folder: folder.id }} onClick={(e) => { if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) setPage(0); }}>
+                <Link
+                  to="/files"
+                  search={{ folder: folder.id }}
+                  onClick={(e) => {
+                    if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) setPage(0);
+                  }}
+                >
                   <Folder className="mr-2 size-4" />
                   {folder.name}
                 </Link>

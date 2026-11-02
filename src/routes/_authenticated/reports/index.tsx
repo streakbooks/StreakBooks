@@ -24,7 +24,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export const Route = createFileRoute("/_authenticated/reports/")({
   head: () => ({
@@ -115,15 +120,21 @@ function ReportsCentre() {
       <Tabs value={tab} className="space-y-6">
         <div className="flex flex-wrap items-center gap-2 print:hidden">
           <div className="min-w-0 max-w-full overflow-x-auto">
-            <TabsList onKeyDown={handleNativeTabKeyDown} aria-label="Reporting modules" className="w-max">
-              {([
-                ["standard", "All reports"],
-                ["home", "Overview"],
-                ["custom", "Saved & custom"],
-                ["management", "Management"],
-                ["packs", "Report packs"],
-                ["adviser", "Adviser"],
-              ] as const).map(([id, label]) => (
+            <TabsList
+              onKeyDown={handleNativeTabKeyDown}
+              aria-label="Reporting modules"
+              className="w-max"
+            >
+              {(
+                [
+                  ["standard", "All reports"],
+                  ["home", "Overview"],
+                  ["custom", "Saved & custom"],
+                  ["management", "Management"],
+                  ["packs", "Report packs"],
+                  ["adviser", "Adviser"],
+                ] as const
+              ).map(([id, label]) => (
                 <Link
                   key={id}
                   role="tab"
@@ -141,20 +152,31 @@ function ReportsCentre() {
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant={["drafts", "published", "archived", "schedules", "templates"].includes(tab) ? "secondary" : "outline"} size="sm">
+              <Button
+                variant={
+                  ["drafts", "published", "archived", "schedules", "templates"].includes(tab)
+                    ? "secondary"
+                    : "outline"
+                }
+                size="sm"
+              >
                 Workflow tools <ChevronDown className="ml-2 size-4" aria-hidden="true" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {([
-                ["drafts", "Drafts & review"],
-                ["published", "Published reports"],
-                ["archived", "Archived reports"],
-                ["schedules", "Scheduled delivery"],
-                ["templates", "Templates"],
-              ] as const).map(([id, label]) => (
+              {(
+                [
+                  ["drafts", "Drafts & review"],
+                  ["published", "Published reports"],
+                  ["archived", "Archived reports"],
+                  ["schedules", "Scheduled delivery"],
+                  ["templates", "Templates"],
+                ] as const
+              ).map(([id, label]) => (
                 <DropdownMenuItem key={id} asChild>
-                  <Link to="/reports" search={{ ...search, tab: id, pack: undefined }}>{label}</Link>
+                  <Link to="/reports" search={{ ...search, tab: id, pack: undefined }}>
+                    {label}
+                  </Link>
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
@@ -163,12 +185,7 @@ function ReportsCentre() {
         {tab !== "standard" && (
           <ReportingFeatureGate companyId={company.id}>
             <TabsContent value="home">
-              <ReportingHome
-                key={company.id}
-                companyId={company.id}
-                from={from}
-                to={periodTo}
-              />
+              <ReportingHome key={company.id} companyId={company.id} from={from} to={periodTo} />
             </TabsContent>
             <TabsContent value="adviser">
               <AdviserReporting from={from} to={periodTo} />
@@ -181,10 +198,12 @@ function ReportsCentre() {
                   from={from}
                   to={periodTo}
                   selectedPackId={search.pack ?? null}
-                  onSelectPack={(id) => void navigate({
-                    to: "/reports",
-                    search: (previous) => ({ ...previous, pack: id ?? undefined }),
-                  })}
+                  onSelectPack={(id) =>
+                    void navigate({
+                      to: "/reports",
+                      search: (previous) => ({ ...previous, pack: id ?? undefined }),
+                    })
+                  }
                   filter={
                     value === "drafts" || value === "published" || value === "archived"
                       ? value
@@ -242,13 +261,19 @@ function ReportsCentre() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="mr-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">Popular</span>
+            <span className="mr-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Popular
+            </span>
             {QUICK_REPORT_IDS.map((id) => {
               const r = REPORT_CATALOG.find((x) => x.id === id);
               if (!r) return null;
               return (
                 <Button key={id} asChild variant="secondary" size="sm">
-                  <Link to="/reports/$reportId" params={{ reportId: id }} search={{ from, to: periodTo }}>
+                  <Link
+                    to="/reports/$reportId"
+                    params={{ reportId: id }}
+                    search={{ from, to: periodTo }}
+                  >
                     {r.title}
                   </Link>
                 </Button>

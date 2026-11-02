@@ -9,14 +9,17 @@ import {
 
 describe("communication sender identity", () => {
   it("keeps the server-verified sender address while using a safe display name", () => {
-    expect(emailWithVerifiedSender("LinkBooks <verified@linkbooks.com>", "Accounts Team"))
-      .toBe("Accounts Team <verified@linkbooks.com>");
-    expect(emailWithVerifiedSender("verified@linkbooks.com", "Ops")).toBe("Ops <verified@linkbooks.com>");
+    expect(emailWithVerifiedSender("LinkBooks <verified@linkbooks.com>", "Accounts Team")).toBe(
+      "Accounts Team <verified@linkbooks.com>",
+    );
+    expect(emailWithVerifiedSender("verified@linkbooks.com", "Ops")).toBe(
+      "Ops <verified@linkbooks.com>",
+    );
   });
   it("rejects invalid server sender values and strips header injection from names", () => {
     expect(() => emailWithVerifiedSender("malformed-from", "Accounts")).toThrow();
-    expect(safeSenderName('Finance\r\nBcc: evil@invalid.test')).not.toContain("\n");
-    expect(safeSenderName('Finance <Team>')).toBe("Finance Team");
+    expect(safeSenderName("Finance\r\nBcc: evil@invalid.test")).not.toContain("\n");
+    expect(safeSenderName("Finance <Team>")).toBe("Finance Team");
   });
   it("validates reply-to and time values", () => {
     expect(isValidReplyTo("accounts@example.com")).toBe(true);
@@ -28,7 +31,11 @@ describe("communication sender identity", () => {
 });
 
 describe("organisation quiet hours", () => {
-  const config = { quiet_hours_enabled: true, quiet_hours_start: "22:00", quiet_hours_end: "07:00" };
+  const config = {
+    quiet_hours_enabled: true,
+    quiet_hours_start: "22:00",
+    quiet_hours_end: "07:00",
+  };
   it("observes overnight company-local time instead of UTC", () => {
     expect(inQuietHours(config, "Asia/Kolkata", new Date("2026-10-31T18:00:00Z"))).toBe(true);
     expect(inQuietHours(config, "Asia/Kolkata", new Date("2026-10-31T06:00:00Z"))).toBe(false);

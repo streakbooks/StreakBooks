@@ -1046,9 +1046,15 @@ function BillsWorkspace() {
                             const target = event.target;
                             if (
                               (target instanceof Element &&
-                                target.closest("a, button, input, select, textarea, [role='checkbox']")) ||
-                              event.ctrlKey || event.metaKey || event.shiftKey || event.altKey
-                            ) return;
+                                target.closest(
+                                  "a, button, input, select, textarea, [role='checkbox']",
+                                )) ||
+                              event.ctrlKey ||
+                              event.metaKey ||
+                              event.shiftKey ||
+                              event.altKey
+                            )
+                              return;
                             openBill(b);
                           }}
                         >
@@ -1090,13 +1096,21 @@ function BillsWorkspace() {
                               case "supplier":
                                 return (
                                   <TableCell key={col}>
-                                    {billLink(<span className="font-medium text-foreground">{b.contacts?.name ?? "—"}</span>)}
+                                    {billLink(
+                                      <span className="font-medium text-foreground">
+                                        {b.contacts?.name ?? "—"}
+                                      </span>,
+                                    )}
                                   </TableCell>
                                 );
                               case "reference":
                                 return (
                                   <TableCell key={col}>
-                                    {billLink(<span className="font-mono text-sm">{b.display_reference ?? "—"}</span>)}
+                                    {billLink(
+                                      <span className="font-mono text-sm">
+                                        {b.display_reference ?? "—"}
+                                      </span>,
+                                    )}
                                     {!b.supplier_invoice_number && b.bill_number ? (
                                       <span className="mt-0.5 block text-[11px] text-muted-foreground">
                                         Internal · no supplier invoice #
@@ -1110,9 +1124,14 @@ function BillsWorkspace() {
                                 return (
                                   <TableCell key={col}>
                                     {billLink(
-                                      <span className={cn(b.days_overdue > 0 && "font-medium text-amber-700 dark:text-amber-400")}>
+                                      <span
+                                        className={cn(
+                                          b.days_overdue > 0 &&
+                                            "font-medium text-amber-700 dark:text-amber-400",
+                                        )}
+                                      >
                                         {b.due_date || "—"}
-                                      </span>
+                                      </span>,
                                     )}
                                   </TableCell>
                                 );

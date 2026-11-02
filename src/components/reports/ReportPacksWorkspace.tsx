@@ -268,7 +268,18 @@ export function ReportPacksWorkspace({
                     <td className="p-3">
                       <Link
                         to="/reports"
-                        search={(prev) => ({ ...prev, tab: prev.tab === "drafts" || prev.tab === "published" || prev.tab === "archived" ? prev.tab : "packs", pack: p.id }) as never}
+                        search={(prev) =>
+                          ({
+                            ...prev,
+                            tab:
+                              prev.tab === "drafts" ||
+                              prev.tab === "published" ||
+                              prev.tab === "archived"
+                                ? prev.tab
+                                : "packs",
+                            pack: p.id,
+                          }) as never
+                        }
                         className="font-medium underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-ring"
                       >
                         {p.name}

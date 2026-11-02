@@ -323,24 +323,78 @@ function ContactDetail() {
 
       <Tabs value={tab}>
         <TabsList onKeyDown={handleNativeTabKeyDown} className="flex h-auto flex-wrap">
-          <Link className={nativeTabLinkClass} role="tab" aria-selected={tab === "overview"} data-state={tab === "overview" ? "active" : "inactive"} to="/contacts/$contactId" params={{ contactId }} search={{ tab: "overview" }} resetScroll={false}>
-              Overview
-            </Link>
-          <Link className={nativeTabLinkClass} role="tab" aria-selected={tab === "edit"} data-state={tab === "edit" ? "active" : "inactive"} to="/contacts/$contactId" params={{ contactId }} search={{ tab: "edit" }} resetScroll={false}>
-              Edit
-            </Link>
-          <Link className={nativeTabLinkClass} role="tab" aria-selected={tab === "people"} data-state={tab === "people" ? "active" : "inactive"} to="/contacts/$contactId" params={{ contactId }} search={{ tab: "people" }} resetScroll={false}>
-              People
-            </Link>
-          <Link className={nativeTabLinkClass} role="tab" aria-selected={tab === "groups"} data-state={tab === "groups" ? "active" : "inactive"} to="/contacts/$contactId" params={{ contactId }} search={{ tab: "groups" }} resetScroll={false}>
-              Groups & tags
-            </Link>
-          <Link className={nativeTabLinkClass} role="tab" aria-selected={tab === "activity"} data-state={tab === "activity" ? "active" : "inactive"} to="/contacts/$contactId" params={{ contactId }} search={{ tab: "activity" }} resetScroll={false}>
-              Transactions
-            </Link>
-          <Link className={nativeTabLinkClass} role="tab" aria-selected={tab === "portal"} data-state={tab === "portal" ? "active" : "inactive"} to="/contacts/$contactId" params={{ contactId }} search={{ tab: "portal" }} resetScroll={false}>
-              Portal
-            </Link>
+          <Link
+            className={nativeTabLinkClass}
+            role="tab"
+            aria-selected={tab === "overview"}
+            data-state={tab === "overview" ? "active" : "inactive"}
+            to="/contacts/$contactId"
+            params={{ contactId }}
+            search={{ tab: "overview" }}
+            resetScroll={false}
+          >
+            Overview
+          </Link>
+          <Link
+            className={nativeTabLinkClass}
+            role="tab"
+            aria-selected={tab === "edit"}
+            data-state={tab === "edit" ? "active" : "inactive"}
+            to="/contacts/$contactId"
+            params={{ contactId }}
+            search={{ tab: "edit" }}
+            resetScroll={false}
+          >
+            Edit
+          </Link>
+          <Link
+            className={nativeTabLinkClass}
+            role="tab"
+            aria-selected={tab === "people"}
+            data-state={tab === "people" ? "active" : "inactive"}
+            to="/contacts/$contactId"
+            params={{ contactId }}
+            search={{ tab: "people" }}
+            resetScroll={false}
+          >
+            People
+          </Link>
+          <Link
+            className={nativeTabLinkClass}
+            role="tab"
+            aria-selected={tab === "groups"}
+            data-state={tab === "groups" ? "active" : "inactive"}
+            to="/contacts/$contactId"
+            params={{ contactId }}
+            search={{ tab: "groups" }}
+            resetScroll={false}
+          >
+            Groups & tags
+          </Link>
+          <Link
+            className={nativeTabLinkClass}
+            role="tab"
+            aria-selected={tab === "activity"}
+            data-state={tab === "activity" ? "active" : "inactive"}
+            to="/contacts/$contactId"
+            params={{ contactId }}
+            search={{ tab: "activity" }}
+            resetScroll={false}
+          >
+            Transactions
+          </Link>
+          <Link
+            className={nativeTabLinkClass}
+            role="tab"
+            aria-selected={tab === "portal"}
+            data-state={tab === "portal" ? "active" : "inactive"}
+            to="/contacts/$contactId"
+            params={{ contactId }}
+            search={{ tab: "portal" }}
+            resetScroll={false}
+          >
+            Portal
+          </Link>
         </TabsList>
 
         <TabsContent value="overview" className="mt-4 space-y-3 text-sm">

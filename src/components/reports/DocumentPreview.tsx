@@ -21,12 +21,19 @@ export function DocumentPreview({
       aria-label="Financial report preview"
     >
       {showHeader ? (
-        <header className="space-y-1" style={{ textAlign: doc.presentation?.headerAlignment ?? "center" }}>
+        <header
+          className="space-y-1"
+          style={{ textAlign: doc.presentation?.headerAlignment ?? "center" }}
+        >
           {reportHeaderParts(doc).map((part, index) =>
             part.title ? (
-              <h2 key={index} className="text-2xl font-semibold">{part.text}</h2>
+              <h2 key={index} className="text-2xl font-semibold">
+                {part.text}
+              </h2>
             ) : (
-              <p key={index} className="text-sm text-muted-foreground">{part.text}</p>
+              <p key={index} className="text-sm text-muted-foreground">
+                {part.text}
+              </p>
             ),
           )}
         </header>
@@ -126,7 +133,12 @@ export function DocumentPreview({
         </section>
       )}
       {doc.footer && (
-        <footer className="border-t pt-3 text-xs text-muted-foreground" style={{ textAlign: doc.presentation?.footerAlignment ?? "left" }}>{doc.footer}</footer>
+        <footer
+          className="border-t pt-3 text-xs text-muted-foreground"
+          style={{ textAlign: doc.presentation?.footerAlignment ?? "left" }}
+        >
+          {doc.footer}
+        </footer>
       )}
     </article>
   );

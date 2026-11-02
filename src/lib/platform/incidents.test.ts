@@ -43,7 +43,10 @@ describe("incidents and releases", () => {
       }),
     ).toThrow(/already recorded/);
     const once = readFileSync(
-      new URL("../../../supabase/migrations/20261102500000_release_version_once.sql", import.meta.url),
+      new URL(
+        "../../../supabase/migrations/20261102500000_release_version_once.sql",
+        import.meta.url,
+      ),
       "utf8",
     );
     expect(once).toContain("platform_releases_version_key");

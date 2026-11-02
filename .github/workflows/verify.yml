@@ -22,6 +22,7 @@ jobs:
       - run: npm run check:lookups
       - run: npm run check:navigation
       - run: npm run typecheck
+      - run: npm run lint
       - run: npm test
       - run: npm run build
   voice-browser:

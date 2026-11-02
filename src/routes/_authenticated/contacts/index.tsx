@@ -32,7 +32,16 @@ import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/_authenticated/contacts/")({
   validateSearch: (search: Record<string, unknown>): { view?: string | undefined } => ({
-    view: ["all", "customers", "suppliers", "both", "recent", "updated", "inactive", "archived"].includes(String(search["view"]))
+    view: [
+      "all",
+      "customers",
+      "suppliers",
+      "both",
+      "recent",
+      "updated",
+      "inactive",
+      "archived",
+    ].includes(String(search["view"]))
       ? String(search["view"])
       : undefined,
   }),
@@ -60,7 +69,11 @@ const PAGE_SIZE = 50;
 
 function ContactRecordLink({ contactId, children }: { contactId: string; children: ReactNode }) {
   return (
-    <Link to="/contacts/$contactId" params={{ contactId }} className="rounded-sm underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-ring">
+    <Link
+      to="/contacts/$contactId"
+      params={{ contactId }}
+      className="rounded-sm underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+    >
       {children}
     </Link>
   );
@@ -194,14 +207,94 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
       <Tabs value={view}>
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <TabsList onKeyDown={handleNativeTabKeyDown} className="flex h-auto flex-wrap">
-            <Link className={nativeTabLinkClass} role="tab" aria-selected={view === "all"} data-state={view === "all" ? "active" : "inactive"} to="/contacts" search={{ view: "all" }} onClick={() => setPage(0)}>All</Link>
-            <Link className={nativeTabLinkClass} role="tab" aria-selected={view === "customers"} data-state={view === "customers" ? "active" : "inactive"} to="/contacts" search={{ view: "customers" }} onClick={() => setPage(0)}>Customers</Link>
-            <Link className={nativeTabLinkClass} role="tab" aria-selected={view === "suppliers"} data-state={view === "suppliers" ? "active" : "inactive"} to="/contacts" search={{ view: "suppliers" }} onClick={() => setPage(0)}>Suppliers</Link>
-            <Link className={nativeTabLinkClass} role="tab" aria-selected={view === "both"} data-state={view === "both" ? "active" : "inactive"} to="/contacts" search={{ view: "both" }} onClick={() => setPage(0)}>Both roles</Link>
-            <Link className={nativeTabLinkClass} role="tab" aria-selected={view === "recent"} data-state={view === "recent" ? "active" : "inactive"} to="/contacts" search={{ view: "recent" }} onClick={() => setPage(0)}>Recently added</Link>
-            <Link className={nativeTabLinkClass} role="tab" aria-selected={view === "updated"} data-state={view === "updated" ? "active" : "inactive"} to="/contacts" search={{ view: "updated" }} onClick={() => setPage(0)}>Recently updated</Link>
-            <Link className={nativeTabLinkClass} role="tab" aria-selected={view === "inactive"} data-state={view === "inactive" ? "active" : "inactive"} to="/contacts" search={{ view: "inactive" }} onClick={() => setPage(0)}>Inactive</Link>
-            <Link className={nativeTabLinkClass} role="tab" aria-selected={view === "archived"} data-state={view === "archived" ? "active" : "inactive"} to="/contacts" search={{ view: "archived" }} onClick={() => setPage(0)}>Archived</Link>
+            <Link
+              className={nativeTabLinkClass}
+              role="tab"
+              aria-selected={view === "all"}
+              data-state={view === "all" ? "active" : "inactive"}
+              to="/contacts"
+              search={{ view: "all" }}
+              onClick={() => setPage(0)}
+            >
+              All
+            </Link>
+            <Link
+              className={nativeTabLinkClass}
+              role="tab"
+              aria-selected={view === "customers"}
+              data-state={view === "customers" ? "active" : "inactive"}
+              to="/contacts"
+              search={{ view: "customers" }}
+              onClick={() => setPage(0)}
+            >
+              Customers
+            </Link>
+            <Link
+              className={nativeTabLinkClass}
+              role="tab"
+              aria-selected={view === "suppliers"}
+              data-state={view === "suppliers" ? "active" : "inactive"}
+              to="/contacts"
+              search={{ view: "suppliers" }}
+              onClick={() => setPage(0)}
+            >
+              Suppliers
+            </Link>
+            <Link
+              className={nativeTabLinkClass}
+              role="tab"
+              aria-selected={view === "both"}
+              data-state={view === "both" ? "active" : "inactive"}
+              to="/contacts"
+              search={{ view: "both" }}
+              onClick={() => setPage(0)}
+            >
+              Both roles
+            </Link>
+            <Link
+              className={nativeTabLinkClass}
+              role="tab"
+              aria-selected={view === "recent"}
+              data-state={view === "recent" ? "active" : "inactive"}
+              to="/contacts"
+              search={{ view: "recent" }}
+              onClick={() => setPage(0)}
+            >
+              Recently added
+            </Link>
+            <Link
+              className={nativeTabLinkClass}
+              role="tab"
+              aria-selected={view === "updated"}
+              data-state={view === "updated" ? "active" : "inactive"}
+              to="/contacts"
+              search={{ view: "updated" }}
+              onClick={() => setPage(0)}
+            >
+              Recently updated
+            </Link>
+            <Link
+              className={nativeTabLinkClass}
+              role="tab"
+              aria-selected={view === "inactive"}
+              data-state={view === "inactive" ? "active" : "inactive"}
+              to="/contacts"
+              search={{ view: "inactive" }}
+              onClick={() => setPage(0)}
+            >
+              Inactive
+            </Link>
+            <Link
+              className={nativeTabLinkClass}
+              role="tab"
+              aria-selected={view === "archived"}
+              data-state={view === "archived" ? "active" : "inactive"}
+              to="/contacts"
+              search={{ view: "archived" }}
+              onClick={() => setPage(0)}
+            >
+              Archived
+            </Link>
           </TabsList>
           <Input
             placeholder="Search name, email, phone, account #, tax ID…"
@@ -244,10 +337,14 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                   {(query.data as ContactRow[]).map((c) => (
                     <TableRow key={c.id}>
                       <TableCell>
-                        <ContactRecordLink contactId={c.id}><span className="font-medium">{c.name}</span></ContactRecordLink>
+                        <ContactRecordLink contactId={c.id}>
+                          <span className="font-medium">{c.name}</span>
+                        </ContactRecordLink>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        <ContactRecordLink contactId={c.id}>{c.account_number ?? "—"}</ContactRecordLink>
+                        <ContactRecordLink contactId={c.id}>
+                          {c.account_number ?? "—"}
+                        </ContactRecordLink>
                       </TableCell>
                       <TableCell>
                         <ContactRecordLink contactId={c.id}>
@@ -256,9 +353,17 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                           </Badge>
                         </ContactRecordLink>
                       </TableCell>
-                      <TableCell><ContactRecordLink contactId={c.id}>{c.email ?? "—"}</ContactRecordLink></TableCell>
-                      <TableCell><ContactRecordLink contactId={c.id}>{c.phone ?? "—"}</ContactRecordLink></TableCell>
-                      <TableCell><ContactRecordLink contactId={c.id}>{c.payment_terms_days}d</ContactRecordLink></TableCell>
+                      <TableCell>
+                        <ContactRecordLink contactId={c.id}>{c.email ?? "—"}</ContactRecordLink>
+                      </TableCell>
+                      <TableCell>
+                        <ContactRecordLink contactId={c.id}>{c.phone ?? "—"}</ContactRecordLink>
+                      </TableCell>
+                      <TableCell>
+                        <ContactRecordLink contactId={c.id}>
+                          {c.payment_terms_days}d
+                        </ContactRecordLink>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

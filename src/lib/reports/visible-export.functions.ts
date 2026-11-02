@@ -6,26 +6,32 @@ import { callRpc } from "@/lib/planning/rpc";
 import type { ReportDocument } from "./report-document";
 
 const text = z.string().max(500);
-const requestSchema = z.object({
-  companyId: z.string().uuid(),
-  reportId: z.string().min(1).max(100),
-  title: z.string().min(1).max(150),
-  companyName: z.string().min(1).max(200),
-  currency: z.string().min(3).max(3),
-  from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  basis: z.string().max(300).default(""),
-  headers: z.array(z.string().min(1).max(150)).min(2).max(24),
-  rows: z.array(z.array(text).min(1).max(24)).max(2000),
-  format: z.enum(["pdf", "xlsx", "csv"]),
-}).superRefine((v, ctx) => {
-  if (v.from > v.to) ctx.addIssue({ code: "custom", message: "Invalid reporting dates" });
-  for (const [index, row] of v.rows.entries())
-    if (row.length !== v.headers.length) {
-      ctx.addIssue({ code: "custom", path: ["rows", index], message: "Report data and column widths do not match" });
-      break;
-    }
-});
+const requestSchema = z
+  .object({
+    companyId: z.string().uuid(),
+    reportId: z.string().min(1).max(100),
+    title: z.string().min(1).max(150),
+    companyName: z.string().min(1).max(200),
+    currency: z.string().min(3).max(3),
+    from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    basis: z.string().max(300).default(""),
+    headers: z.array(z.string().min(1).max(150)).min(2).max(24),
+    rows: z.array(z.array(text).min(1).max(24)).max(2000),
+    format: z.enum(["pdf", "xlsx", "csv"]),
+  })
+  .superRefine((v, ctx) => {
+    if (v.from > v.to) ctx.addIssue({ code: "custom", message: "Invalid reporting dates" });
+    for (const [index, row] of v.rows.entries())
+      if (row.length !== v.headers.length) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["rows", index],
+          message: "Report data and column widths do not match",
+        });
+        break;
+      }
+  });
 
 export type VisibleReportExportRequest = z.input<typeof requestSchema>;
 
@@ -50,44 +56,64 @@ export const exportVisibleReport = createServerFn({ method: "POST" })
       subtitle: data.basis,
       header: "",
       footer: "LinkBooks · Screen export",
-      notes: "Contains the rows loaded in the report at the time of export. A paginated report may contain only the visible page. For certified financial statements, use the standard report export.",
+      notes:
+        "Contains the rows loaded in the report at the time of export. A paginated report may contain only the visible page. For certified financial statements, use the standard report export.",
       orientation: data.headers.length > 4 ? "landscape" : "portrait",
-      sections: [{
-        id: data.reportId,
-        title: data.title,
-        labelHeader: data.headers[0]!,
-        columns: data.headers.slice(1),
-        rows: data.rows.map((row) => ({
-          label: row[0] ?? "",
-          kind: "account" as const,
-          values: row.slice(1),
-          format: "money" as const,
-          thousands: true,
-          negative: "parentheses" as const,
-        })),
-      }],
+      sections: [
+        {
+          id: data.reportId,
+          title: data.title,
+          labelHeader: data.headers[0]!,
+          columns: data.headers.slice(1),
+          rows: data.rows.map((row) => ({
+            label: row[0] ?? "",
+            kind: "account" as const,
+            values: row.slice(1),
+            format: "money" as const,
+            thousands: true,
+            negative: "parentheses" as const,
+          })),
+        },
+      ],
     };
     const { exportReportPdf, exportReportXlsx, exportReportCsv, bytesToBase64 } =
       await import("./document-export.server");
     // Export Excel strings as text when they are not numeric; never run spreadsheet formula input.
-    const bytes = data.format === "pdf"
-      ? await exportReportPdf(document)
-      : data.format === "xlsx"
-        ? await exportReportXlsx(document)
-        : new TextEncoder().encode(exportReportCsv(document));
-    await callRpc(context.supabase, "record_audit_event", {
-      _company_id: data.companyId,
-      _action: "report.exported",
-      _entity_type: "report",
-      _entity_id: null,
-      _details: { report: data.reportId, format: data.format, scope: "loaded_rows", rows: data.rows.length },
-    }, "Could not record report export");
-    const safe = data.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    const bytes =
+      data.format === "pdf"
+        ? await exportReportPdf(document)
+        : data.format === "xlsx"
+          ? await exportReportXlsx(document)
+          : new TextEncoder().encode(exportReportCsv(document));
+    await callRpc(
+      context.supabase,
+      "record_audit_event",
+      {
+        _company_id: data.companyId,
+        _action: "report.exported",
+        _entity_type: "report",
+        _entity_id: null,
+        _details: {
+          report: data.reportId,
+          format: data.format,
+          scope: "loaded_rows",
+          rows: data.rows.length,
+        },
+      },
+      "Could not record report export",
+    );
+    const safe = data.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
     return {
       content: bytesToBase64(bytes),
       filename: `${safe}-${data.to}.${data.format}`,
-      mime: data.format === "pdf" ? "application/pdf"
-        : data.format === "xlsx" ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        : "text/csv;charset=utf-8",
+      mime:
+        data.format === "pdf"
+          ? "application/pdf"
+          : data.format === "xlsx"
+            ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            : "text/csv;charset=utf-8",
     };
   });

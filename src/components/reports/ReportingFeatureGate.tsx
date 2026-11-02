@@ -31,7 +31,9 @@ export function ReportingFeatureGate({
           history are retained. Standard financial reports remain in the Standard reports tab.
         </p>
         <Button asChild variant="outline">
-          <Link to="/reports" search={{ tab: "standard" }}>Open standard reports</Link>
+          <Link to="/reports" search={{ tab: "standard" }}>
+            Open standard reports
+          </Link>
         </Button>
       </section>
     );

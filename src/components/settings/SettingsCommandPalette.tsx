@@ -29,7 +29,13 @@ export function SettingsCommandPalette({ open, onOpenChange, onSelectSection }: 
   const onLinkClick = (event: MouseEvent<HTMLAnchorElement>) => {
     // Preserve the original command palette on modified/new-tab clicks.
     event.stopPropagation();
-    if (event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
+    if (
+      event.button === 0 &&
+      !event.metaKey &&
+      !event.ctrlKey &&
+      !event.shiftKey &&
+      !event.altKey
+    ) {
       onOpenChange(false);
     }
   };
@@ -53,7 +59,12 @@ export function SettingsCommandPalette({ open, onOpenChange, onSelectSection }: 
                 onOpenChange(false);
               }}
             >
-              <Link to="/settings" search={{ section: c.id }} onClick={onLinkClick} className="flex w-full items-center">
+              <Link
+                to="/settings"
+                search={{ section: c.id }}
+                onClick={onLinkClick}
+                className="flex w-full items-center"
+              >
                 <span className="font-medium">{c.label}</span>
                 <span className="ml-2 text-xs text-muted-foreground">{c.availability}</span>
               </Link>
@@ -76,11 +87,7 @@ export function SettingsCommandPalette({ open, onOpenChange, onSelectSection }: 
                   onOpenChange(false);
                 }}
               >
-                <Link
-                  to={n.to as never}
-                  onClick={onLinkClick}
-                  className="block w-full"
-                >
+                <Link to={n.to as never} onClick={onLinkClick} className="block w-full">
                   {n.label}
                 </Link>
               </CommandItem>
@@ -97,7 +104,14 @@ export function SettingsCommandPalette({ open, onOpenChange, onSelectSection }: 
                   onOpenChange(false);
                 }}
               >
-                <Link to="/settings" search={{ section: c.id }} onClick={onLinkClick} className="block w-full">{c.label}</Link>
+                <Link
+                  to="/settings"
+                  search={{ section: c.id }}
+                  onClick={onLinkClick}
+                  className="block w-full"
+                >
+                  {c.label}
+                </Link>
               </CommandItem>
             ))}
           </CommandGroup>

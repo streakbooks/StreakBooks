@@ -15,7 +15,10 @@ const constraints = [
 describe("company references", () => {
   it("requires a real business and does not cascade a delete", () => {
     const sql = readFileSync(
-      new URL("../../../supabase/migrations/20261102590000_company_references.sql", import.meta.url),
+      new URL(
+        "../../../supabase/migrations/20261102590000_company_references.sql",
+        import.meta.url,
+      ),
       "utf8",
     );
     expect(sql).toContain("READY-TO-APPLY");

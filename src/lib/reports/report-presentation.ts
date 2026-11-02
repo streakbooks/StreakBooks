@@ -5,9 +5,15 @@ export type ReportHeaderPart = { text: string; title: boolean };
 export function reportHeaderParts(doc: ReportDocument): ReportHeaderPart[] {
   const p = doc.presentation;
   if (!p) {
-    return [doc.header, doc.company, doc.title, doc.subtitle,
-      `${doc.from} – ${doc.to} · ${doc.currency}`]
-      .filter(Boolean).map((text) => ({ text, title: text === doc.title }));
+    return [
+      doc.header,
+      doc.company,
+      doc.title,
+      doc.subtitle,
+      `${doc.from} – ${doc.to} · ${doc.currency}`,
+    ]
+      .filter(Boolean)
+      .map((text) => ({ text, title: text === doc.title }));
   }
   const primary = [
     ...(p.showCompanyName ? [{ text: doc.company, title: false }] : []),
@@ -26,7 +32,8 @@ export function reportHeaderParts(doc: ReportDocument): ReportHeaderPart[] {
   if (!Number.isNaN(parsed.getTime())) {
     const stamp = parsed.toISOString();
     if (p.showDatePrepared) parts.push({ text: `Prepared: ${stamp.slice(0, 10)}`, title: false });
-    if (p.showTimePrepared) parts.push({ text: `Prepared time: ${stamp.slice(11, 19)} UTC`, title: false });
+    if (p.showTimePrepared)
+      parts.push({ text: `Prepared time: ${stamp.slice(11, 19)} UTC`, title: false });
   }
   return parts;
 }

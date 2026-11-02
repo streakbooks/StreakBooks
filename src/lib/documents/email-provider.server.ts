@@ -86,17 +86,26 @@ export async function checkResendDomain(
       signal: AbortSignal.timeout(6000),
       headers: { Authorization: `Bearer ${config.apiKey}` },
     });
-    if (!res.ok) return {
-      state: "unknown", domain,
-      detail: "Provider could not verify domain status. Check Resend domain access and DNS.",
+    if (!res.ok)
+      return {
+        state: "unknown",
+        domain,
+        detail: "Provider could not verify domain status. Check Resend domain access and DNS.",
+      };
+    const body = (await res.json()) as {
+      data?: Array<{ name: string; status: string }>;
+      has_more?: boolean;
     };
-    const body = (await res.json()) as { data?: Array<{ name: string; status: string }>; has_more?: boolean };
     const match = body.data?.find((item) => item.name.toLowerCase() === domain);
-    if (match?.status === "verified") return { state: "verified", domain, detail: "Sender domain verified by Resend" };
-    if (match) return { state: "unverified", domain, detail: `Resend domain status: ${match.status}` };
+    if (match?.status === "verified")
+      return { state: "verified", domain, detail: "Sender domain verified by Resend" };
+    if (match)
+      return { state: "unverified", domain, detail: `Resend domain status: ${match.status}` };
     return {
-      state: "unknown", domain,
-      detail: "Sender domain not present in the returned Resend domain page; verify it in the provider dashboard.",
+      state: "unknown",
+      domain,
+      detail:
+        "Sender domain not present in the returned Resend domain page; verify it in the provider dashboard.",
     };
   } catch {
     return { state: "unknown", domain, detail: "Unable to reach Resend for DNS verification" };

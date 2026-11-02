@@ -15,7 +15,9 @@ import type { KeyboardEvent } from "react";
 export function handleNativeTabKeyDown(event: KeyboardEvent<HTMLElement>): void {
   if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
   const tabs = Array.from(
-    event.currentTarget.querySelectorAll<HTMLAnchorElement>('a[role="tab"]:not([aria-disabled="true"])'),
+    event.currentTarget.querySelectorAll<HTMLAnchorElement>(
+      'a[role="tab"]:not([aria-disabled="true"])',
+    ),
   );
   if (tabs.length < 2) return;
   const index = tabs.indexOf(event.target as HTMLAnchorElement);

@@ -26,7 +26,7 @@ Work top to bottom. A task is done only when its tests have run and the box is t
 
 ## Batch A
 
-- [ ] Attach a quote to a subscription
+- [x] Attach a quote to a subscription
 - [ ] Second-approver flow end to end
 - [ ] Mid-cycle add and remove with proration (BLOCKED without a test key)
 

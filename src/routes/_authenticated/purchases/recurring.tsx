@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
@@ -180,17 +180,11 @@ function RecurringTransactionsPage() {
         }
       />
 
-      <Tabs
-        value={view}
-        onValueChange={(v) =>
-          navigate({ search: (prev) => ({ ...prev, view: v as typeof view, page: 0 }) })
-        }
-        className="mb-4"
-      >
+      <Tabs value={view} className="mb-4">
         <TabsList>
-          <TabsTrigger value="schedules">Schedules</TabsTrigger>
-          <TabsTrigger value="exceptions">Exception centre</TabsTrigger>
-          <TabsTrigger value="forecast">Forecast (90d)</TabsTrigger>
+          <TabsTrigger value="schedules" asChild><Link to="/purchases/recurring" search={(prev) => ({ ...prev, view: "schedules", page: 0 })}>Schedules</Link></TabsTrigger>
+          <TabsTrigger value="exceptions" asChild><Link to="/purchases/recurring" search={(prev) => ({ ...prev, view: "exceptions", page: 0 })}>Exception centre</Link></TabsTrigger>
+          <TabsTrigger value="forecast" asChild><Link to="/purchases/recurring" search={(prev) => ({ ...prev, view: "forecast", page: 0 })}>Forecast (90d)</Link></TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -325,21 +319,18 @@ function RecurringTransactionsPage() {
                       const legacyId = row.legacy_recurring_bill_id;
                       if (!legacyId) return null;
                       return (
-                        <TableRow
-                          key={row.id}
-                          className="cursor-pointer"
-                          onClick={() =>
-                            navigate({
-                              search: (prev) => ({ ...prev, id: legacyId, tab: "details" }),
-                            })
-                          }
-                        >
-                          <TableCell>{row.name}</TableCell>
-                          <TableCell>{row.contacts?.name ?? "—"}</TableCell>
-                          <TableCell>{sched?.next_occurrence_date ?? "—"}</TableCell>
+                        <TableRow key={row.id} className="hover:bg-muted/50">
+                          <TableCell>
+                            <Link to="/purchases/recurring" search={(prev) => ({ ...prev, id: legacyId, tab: "details" })} className="font-medium underline-offset-2 hover:underline">{row.name}</Link>
+                          </TableCell>
+                          <TableCell>
+                            <Link to="/purchases/recurring" search={(prev) => ({ ...prev, id: legacyId, tab: "details" })} className="underline-offset-2 hover:underline">{row.contacts?.name ?? "—"}</Link>
+                          </TableCell>
+                          <TableCell>
+                            <Link to="/purchases/recurring" search={(prev) => ({ ...prev, id: legacyId, tab: "details" })} className="underline-offset-2 hover:underline">{sched?.next_occurrence_date ?? "—"}</Link>
+                          </TableCell>
                           <TableCell className="max-w-[180px] truncate text-destructive">
-                            {sched?.last_error ??
-                              (sched?.is_paused || !row.is_active ? "Paused" : "Active")}
+                            <Link to="/purchases/recurring" search={(prev) => ({ ...prev, id: legacyId, tab: "details" })} className="underline-offset-2 hover:underline">{sched?.last_error ?? (sched?.is_paused || !row.is_active ? "Paused" : "Active")}</Link>
                           </TableCell>
                           <TableCell className="text-right">
                             <Button

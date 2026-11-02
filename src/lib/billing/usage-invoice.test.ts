@@ -41,5 +41,11 @@ describe("usage overage invoice", () => {
     expect(sql).toContain("READY-TO-APPLY");
     expect(sql).toContain("posted boolean NOT NULL DEFAULT false CHECK (posted = false)");
     expect(sql).not.toContain("sales_invoices");
+    const guard = readFileSync(
+      new URL("../../../supabase/migrations/20261102390000_usage_draft_guard.sql", import.meta.url),
+      "utf8",
+    );
+    expect(guard).toContain("An unpriced draft has no amount");
+    expect(guard).toContain("posted', false");
   });
 });

@@ -23,6 +23,8 @@ import { PageHeader, EmptyState, LoadingState } from "@/components/common/states
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { ChevronDown } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export const Route = createFileRoute("/_authenticated/reports/")({
   head: () => ({
@@ -111,35 +113,52 @@ function ReportsCentre() {
         </div>
       </div>
       <Tabs value={tab} className="space-y-6">
-        <div className="overflow-x-auto">
-          <TabsList onKeyDown={handleNativeTabKeyDown} aria-label="Reporting modules" className="w-max">
-            {([
-              ["home", "Reporting home"],
-              ["standard", "Standard reports"],
-              ["custom", "Custom reports"],
-              ["management", "Management reports"],
-              ["packs", "Report packs"],
-              ["adviser", "Adviser"],
-              ["drafts", "Drafts & review"],
-              ["published", "Published"],
-              ["archived", "Archived"],
-              ["schedules", "Scheduled delivery"],
-              ["templates", "Templates"],
-            ] as const).map(([id, label]) => (
-              <Link
-                key={id}
-                role="tab"
-                aria-selected={tab === id}
-                data-state={tab === id ? "active" : "inactive"}
-                to="/reports"
-                search={{ ...search, tab: id, pack: undefined }}
-                className={nativeTabLinkClass}
-                resetScroll={false}
-              >
-                {label}
-              </Link>
-            ))}
-          </TabsList>
+        <div className="flex flex-wrap items-center gap-2 print:hidden">
+          <div className="min-w-0 max-w-full overflow-x-auto">
+            <TabsList onKeyDown={handleNativeTabKeyDown} aria-label="Reporting workspaces" className="w-max">
+              {([
+                ["standard", "All reports"],
+                ["home", "Overview"],
+                ["custom", "Saved & custom"],
+                ["management", "Management"],
+                ["packs", "Report packs"],
+                ["adviser", "Adviser"],
+              ] as const).map(([id, label]) => (
+                <Link
+                  key={id}
+                  role="tab"
+                  aria-selected={tab === id}
+                  data-state={tab === id ? "active" : "inactive"}
+                  to="/reports"
+                  search={{ ...search, tab: id, pack: undefined }}
+                  className={nativeTabLinkClass}
+                  resetScroll={false}
+                >
+                  {label}
+                </Link>
+              ))}
+            </TabsList>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant={["drafts", "published", "archived", "schedules", "templates"].includes(tab) ? "secondary" : "outline"} size="sm">
+                Workflow tools <ChevronDown className="ml-2 size-4" aria-hidden="true" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {([
+                ["drafts", "Drafts & review"],
+                ["published", "Published reports"],
+                ["archived", "Archived reports"],
+                ["schedules", "Scheduled delivery"],
+                ["templates", "Templates"],
+              ] as const).map(([id, label]) => (
+                <DropdownMenuItem key={id} asChild>
+                  <Link to="/reports" search={{ ...search, tab: id, pack: undefined }}>{label}</Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
         {tab !== "standard" && (
           <ReportingFeatureGate companyId={company.id}>

@@ -115,7 +115,7 @@ function ReportsCentre() {
       <Tabs value={tab} className="space-y-6">
         <div className="flex flex-wrap items-center gap-2 print:hidden">
           <div className="min-w-0 max-w-full overflow-x-auto">
-            <TabsList onKeyDown={handleNativeTabKeyDown} aria-label="Reporting workspaces" className="w-max">
+            <TabsList onKeyDown={handleNativeTabKeyDown} aria-label="Reporting modules" className="w-max">
               {([
                 ["standard", "All reports"],
                 ["home", "Overview"],

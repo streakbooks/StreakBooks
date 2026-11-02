@@ -74,7 +74,7 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/files")({
-  validateSearch: (raw: Record<string, unknown>): { folder?: string; file?: string } => ({
+  validateSearch: (raw: Record<string, unknown>): { folder?: string | undefined; file?: string | undefined } => ({
     ...(typeof raw["folder"] === "string" && raw["folder"] ? { folder: raw["folder"] as string } : {}),
     ...(typeof raw["file"] === "string" && raw["file"] ? { file: raw["file"] as string } : {}),
   }),

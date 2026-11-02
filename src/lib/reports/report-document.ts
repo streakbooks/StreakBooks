@@ -113,6 +113,7 @@ export type DocumentRow = {
 export type DocumentSection = {
   id: string;
   title: string;
+  labelHeader?: string;
   columns: string[];
   columnPeriods?: Array<{ from: string; to: string }>;
   columnFormats?: Array<"inherit" | "money" | "number" | "percent">;

@@ -61,6 +61,17 @@ Status: `done` · `partial` · `unavailable` · `pending`
 
 ---
 
+## Notifications & Communications — October 31, 2026 update
+
+- Operational Settings panel wired to `organisation_config` (From Name, Reply To, quiet hours).
+- Provider status and DNS checks, Resend delivery tests, RLS-filtered on-demand digests and actual email_outbox delivery history are implemented.
+- Safe self-addressed provider test permitted for Demo Company; sample financial documents and digests are never emailed.
+- Digest rate limiting and sender permissions enforced in Supabase.
+- Availability remains **Partial** until a verified provider, live acceptance test and scheduled worker are implemented.
+- Detailed runbook: `docs/settings/NOTIFICATIONS-COMMUNICATIONS.md`.
+
+---
+
 ## Verification commands
 
 ```bash

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { readEmailConfig, sendViaResend } from "@/lib/documents/email-provider.server";
+import { checkResendDomain, readEmailConfig, sendViaResend } from "@/lib/documents/email-provider.server";
 
 describe("email provider config", () => {
   it("is not configured without an API key and a from address", () => {
@@ -71,5 +71,24 @@ describe("resend transport", () => {
       ok: false,
       error: "offline",
     });
+  });
+});
+
+describe("Resend domain verification", () => {
+  const cfg = { configured: true as const, provider: "resend" as const,
+    from: "Accounts <hello@example.com>", apiKey: "private" };
+  it("reports verified only when Resend verifies the sender domain", async () => {
+    const fake = vi.fn(async () => new Response(JSON.stringify({ data: [
+      { name: "example.com", status: "verified" },
+    ] }), { status: 200 }));
+    expect(await checkResendDomain(cfg, fake as typeof fetch)).toMatchObject({
+      domain: "example.com", state: "verified",
+    });
+  });
+  it("does not infer verification from a missing or inaccessible domain", async () => {
+    const missing = vi.fn(async () => new Response(JSON.stringify({ data: [] }), { status: 200 }));
+    expect((await checkResendDomain(cfg, missing as typeof fetch)).state).toBe("unknown");
+    const forbidden = vi.fn(async () => new Response("Access denied", { status: 403 }));
+    expect((await checkResendDomain(cfg, forbidden as typeof fetch)).state).toBe("unknown");
   });
 });

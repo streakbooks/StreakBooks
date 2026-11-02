@@ -1,4 +1,5 @@
 import { parseReportingCentreSearch } from "@/lib/reports/centre-search";
+import { nativeTabLinkClass, handleNativeTabKeyDown } from "@/lib/navigation/native-tab";
 import { ReportingFeatureGate } from "@/components/reports/ReportingFeatureGate";
 import { ManagementWorkspace } from "@/components/reports/ManagementWorkspace";
 import { ReportPacksWorkspace } from "@/components/reports/ReportPacksWorkspace";
@@ -6,7 +7,7 @@ import { AdviserReporting } from "@/components/reports/AdviserReporting";
 import { ReportingHome } from "@/components/reports/ReportingHome";
 import { fiscalYearStart, todayIso } from "@/lib/accounting/fiscal-year";
 import { ReportLibrary } from "@/components/reports/ReportLibrary";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsContent } from "@/components/ui/tabs";
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useActiveCompany } from "@/hooks/use-active-company";
@@ -42,13 +43,10 @@ export const Route = createFileRoute("/_authenticated/reports/")({
 function ReportsCentre() {
   const { company, isPending } = useActiveCompany();
   const [q, setQ] = useState("");
-  const search = Route.useSearch();
+  // Defensive validation also handles router search state inherited from external URLs.
+  const search = parseReportingCentreSearch(Route.useSearch() as Record<string, unknown>);
   const navigate = Route.useNavigate();
   const tab = search.tab ?? "home";
-  const setTab = (value: string) =>
-    void navigate({
-      search: (previous) => parseReportingCentreSearch({ ...previous, tab: value }),
-    });
   const periodFrom = search.from ?? "";
   const periodTo = search.to ?? todayIso();
   const setPeriodFrom = (value: string) =>
@@ -114,31 +112,45 @@ function ReportsCentre() {
           />
         </div>
       </div>
-      <Tabs value={tab} onValueChange={setTab} className="space-y-6">
+      <Tabs value={tab} className="space-y-6">
         <div className="overflow-x-auto">
-          <TabsList aria-label="Reporting modules" className="w-max">
-            <TabsTrigger value="home">Reporting home</TabsTrigger>
-            <TabsTrigger value="standard">Standard reports</TabsTrigger>
-            <TabsTrigger value="custom">Custom reports</TabsTrigger>
-            <TabsTrigger value="management">Management reports</TabsTrigger>
-            <TabsTrigger value="packs">Report packs</TabsTrigger>
-            <TabsTrigger value="adviser">Adviser</TabsTrigger>
-            <TabsTrigger value="drafts">Drafts & review</TabsTrigger>
-            <TabsTrigger value="published">Published</TabsTrigger>
-            <TabsTrigger value="archived">Archived</TabsTrigger>
-            <TabsTrigger value="schedules">Scheduled delivery</TabsTrigger>
-            <TabsTrigger value="templates">Templates</TabsTrigger>
+          <TabsList onKeyDown={handleNativeTabKeyDown} aria-label="Reporting modules" className="w-max">
+            {([
+              ["home", "Reporting home"],
+              ["standard", "Standard reports"],
+              ["custom", "Custom reports"],
+              ["management", "Management reports"],
+              ["packs", "Report packs"],
+              ["adviser", "Adviser"],
+              ["drafts", "Drafts & review"],
+              ["published", "Published"],
+              ["archived", "Archived"],
+              ["schedules", "Scheduled delivery"],
+              ["templates", "Templates"],
+            ] as const).map(([id, label]) => (
+              <Link
+                key={id}
+                role="tab"
+                aria-selected={tab === id}
+                data-state={tab === id ? "active" : "inactive"}
+                to="/reports"
+                search={{ ...search, tab: id, pack: undefined }}
+                className={nativeTabLinkClass}
+                resetScroll={false}
+              >
+                {label}
+              </Link>
+            ))}
           </TabsList>
         </div>
         {tab !== "standard" && (
-          <ReportingFeatureGate companyId={company.id} onOpenStandard={() => setTab("standard")}>
+          <ReportingFeatureGate companyId={company.id}>
             <TabsContent value="home">
               <ReportingHome
                 key={company.id}
                 companyId={company.id}
                 from={from}
                 to={periodTo}
-                onNavigate={setTab}
               />
             </TabsContent>
             <TabsContent value="adviser">
@@ -151,6 +163,11 @@ function ReportsCentre() {
                   companyId={company.id}
                   from={from}
                   to={periodTo}
+                  selectedPackId={search.pack ?? null}
+                  onSelectPack={(id) => void navigate({
+                    to: "/reports",
+                    search: (previous) => ({ ...previous, pack: id ?? undefined }),
+                  })}
                   filter={
                     value === "drafts" || value === "published" || value === "archived"
                       ? value

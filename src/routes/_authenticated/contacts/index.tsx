@@ -1,4 +1,4 @@
-import { nativeTabLinkClass } from "@/lib/navigation/native-tab";
+import { nativeTabLinkClass, handleNativeTabKeyDown } from "@/lib/navigation/native-tab";
 import { SettingsDestinationLink } from "@/components/settings/ModuleSettingsLinks";
 import { useMemo, useState, type ReactNode } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -193,7 +193,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
 
       <Tabs value={view}>
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <TabsList className="flex h-auto flex-wrap">
+          <TabsList onKeyDown={handleNativeTabKeyDown} className="flex h-auto flex-wrap">
             <Link className={nativeTabLinkClass} role="tab" aria-selected={view === "all"} data-state={view === "all" ? "active" : "inactive"} to="/contacts" search={{ view: "all" }} onClick={() => setPage(0)}>All</Link>
             <Link className={nativeTabLinkClass} role="tab" aria-selected={view === "customers"} data-state={view === "customers" ? "active" : "inactive"} to="/contacts" search={{ view: "customers" }} onClick={() => setPage(0)}>Customers</Link>
             <Link className={nativeTabLinkClass} role="tab" aria-selected={view === "suppliers"} data-state={view === "suppliers" ? "active" : "inactive"} to="/contacts" search={{ view: "suppliers" }} onClick={() => setPage(0)}>Suppliers</Link>

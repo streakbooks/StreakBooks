@@ -18,6 +18,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check:lookups
+      - run: npm run check:navigation
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
@@ -38,3 +39,15 @@ jobs:
       - run: npm run test:corrections
       - run: npm run test:themes
       - run: npm run test:reporting
+  navigation-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:navigation

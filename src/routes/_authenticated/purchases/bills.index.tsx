@@ -1355,15 +1355,16 @@ function PreviewBody({
           <dd>{bill.attachment_count}</dd>
         </div>
       </dl>
-      <Button
-        className="w-full"
-        onClick={() => {
-          window.location.href = `/purchases/bills/${bill.id}${tab !== "all" ? `?fromTab=${tab}` : ""}`;
-        }}
-      >
-        {bill.status === "draft" || bill.status === "awaiting_approval"
-          ? "Open & edit"
-          : "Open full document"}
+      <Button className="w-full" asChild>
+        <Link
+          to="/purchases/bills/$billId"
+          params={{ billId: bill.id }}
+          search={{ ...(tab !== "all" ? { fromTab: tab } : {}) }}
+        >
+          {bill.status === "draft" || bill.status === "awaiting_approval"
+            ? "Open & edit"
+            : "Open full document"}
+        </Link>
       </Button>
     </div>
   );

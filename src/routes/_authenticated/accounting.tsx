@@ -1,4 +1,4 @@
-import { nativeTabLinkClass } from "@/lib/navigation/native-tab";
+import { nativeTabLinkClass, handleNativeTabKeyDown } from "@/lib/navigation/native-tab";
 import { TransactionCorrections } from "@/components/accounting/corrections/TransactionCorrections";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -126,7 +126,7 @@ export function AccountingWorkspace({
       </Alert>
 
       <Tabs value={tab}>
-        <TabsList className="flex-wrap">
+        <TabsList onKeyDown={handleNativeTabKeyDown} className="flex-wrap">
           <Link className={nativeTabLinkClass} role="tab" aria-selected={tab === "coa"} data-state={tab === "coa" ? "active" : "inactive"} to="/accounting" search={{ tab: "coa" }} resetScroll={false}>Chart of accounts</Link>
           <Link className={nativeTabLinkClass} role="tab" aria-selected={tab === "industry"} data-state={tab === "industry" ? "active" : "inactive"} to="/accounting" search={{ tab: "industry" }} resetScroll={false}>Industry library</Link>
           <Link className={nativeTabLinkClass} role="tab" aria-selected={tab === "corrections"} data-state={tab === "corrections" ? "active" : "inactive"} to="/accounting" search={{ tab: "corrections" }} resetScroll={false}>Transaction corrections</Link>

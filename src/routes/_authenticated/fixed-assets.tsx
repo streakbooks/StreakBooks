@@ -1,4 +1,4 @@
-import { nativeTabLinkClass } from "@/lib/navigation/native-tab";
+import { nativeTabLinkClass, handleNativeTabKeyDown } from "@/lib/navigation/native-tab";
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -148,7 +148,7 @@ function FixedAssetsPage() {
         }
       />
       <Tabs value={tab}>
-        <TabsList>
+        <TabsList onKeyDown={handleNativeTabKeyDown}>
           <Link className={nativeTabLinkClass} role="tab" aria-selected={tab === "register"} data-state={tab === "register" ? "active" : "inactive"} to="/fixed-assets" search={{ tab: "register" }}>Register</Link>
           <Link className={nativeTabLinkClass} role="tab" aria-selected={tab === "depreciation"} data-state={tab === "depreciation" ? "active" : "inactive"} to="/fixed-assets" search={{ tab: "depreciation" }}>Run depreciation</Link>
           <Link className={nativeTabLinkClass} role="tab" aria-selected={tab === "types"} data-state={tab === "types" ? "active" : "inactive"} to="/fixed-assets" search={{ tab: "types" }}>Asset types</Link>

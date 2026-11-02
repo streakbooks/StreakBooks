@@ -178,7 +178,7 @@ export function StandardReportControls({
                 <TabsTrigger value="comparisons">Comparisons</TabsTrigger>
                 <TabsTrigger value="layout">Rows & numbers</TabsTrigger>
                 {report === "profit-and-loss" && <TabsTrigger value="filters">Filters</TabsTrigger>}
-                <TabsTrigger value="notes">Header, footer & visual</TabsTrigger>
+                <TabsTrigger value="notes">Header & notes</TabsTrigger>
               </TabsList>
             </div>
             <TabsContent value="comparisons" className="space-y-4">

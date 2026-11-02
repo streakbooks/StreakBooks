@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifyTransactionImportRetry, isExactTransactionImportRetry, isVerifiedTransactionImportJournal, type ExpectedImportRetry, type StoredImportRetry } from "./transaction-import-retry";
+import { classifyTransactionImportRetry, isExactTransactionImportRetry, isVerifiedTransactionImportJournal, isReconciledTransactionImportJournal, type ExpectedImportRetry, type StoredImportRetry } from "./transaction-import-retry";
 
 const expected: ExpectedImportRetry = {
   contactId: "contact-a",
@@ -115,5 +115,86 @@ describe("AR/AP import retry journal provenance guard (read-only)", () => {
       { ...expectedJournal, documentId: "bill-a", sourceType: "purchase_bill" },
       { ...journal, source_type: "purchase_bill", source_id: "bill-a" },
     )).toBe(true);
+  });
+});
+
+
+describe("AR/AP CSV retry GL-to-subledger reconciliation (read-only)", () => {
+  const companyId = "org-a";
+  const journalId = "journal-a";
+  const controlAccountId = "ar-control";
+  const expected = {
+    companyId, journalId, controlAccountId,
+    controlSide: "debit" as const,
+    expectedTotalMinor: 1100n,
+    persistedTotalMinor: "1100",
+  };
+  const lines = [
+    { company_id: companyId, journal_id: journalId, account_id: controlAccountId, debit_minor: "1100", credit_minor: "0" },
+    { company_id: companyId, journal_id: journalId, account_id: "revenue", debit_minor: 0, credit_minor: 1000 },
+    { company_id: companyId, journal_id: journalId, account_id: "tax", debit_minor: 0, credit_minor: 100 },
+  ];
+
+  it("accepts balanced AR debit with matching persisted invoice and calculated CSV total", () => {
+    expect(isReconciledTransactionImportJournal(expected, lines)).toBe(true);
+  });
+
+  it("accepts balanced AP credit with reverse-charge self-assessment lines", () => {
+    const ap = { ...expected, controlSide: "credit" as const, controlAccountId: "ap-control" };
+    const billLines = [
+      { ...lines[0]!, account_id: "expense", debit_minor: 1000, credit_minor: 0 },
+      { ...lines[0]!, account_id: "input-tax", debit_minor: 100, credit_minor: 0 },
+      { ...lines[0]!, account_id: "ap-control", debit_minor: 0, credit_minor: 1100 },
+      { ...lines[0]!, account_id: "reverse-input", debit_minor: 50, credit_minor: 0 },
+      { ...lines[0]!, account_id: "reverse-output", debit_minor: 0, credit_minor: 50 },
+    ];
+    expect(isReconciledTransactionImportJournal(ap, billLines)).toBe(true);
+  });
+
+  it("rejects mismatched persisted subledger total and wrong GL control amount", () => {
+    expect(isReconciledTransactionImportJournal({ ...expected, persistedTotalMinor: 1099 }, lines)).toBe(false);
+    expect(isReconciledTransactionImportJournal({ ...expected, expectedTotalMinor: 1099n }, lines)).toBe(false);
+    expect(isReconciledTransactionImportJournal(expected, [
+      { ...lines[0]!, debit_minor: 1099 }, ...lines.slice(1),
+    ])).toBe(false);
+  });
+
+  it("rejects cross-company and unrelated journal lines, including mixed-company responses", () => {
+    expect(isReconciledTransactionImportJournal(expected, [
+      { ...lines[0]!, company_id: "org-b" }, ...lines.slice(1),
+    ])).toBe(false);
+    expect(isReconciledTransactionImportJournal(expected, [
+      lines[0]!, { ...lines[1]!, journal_id: "journal-other" }, lines[2]!,
+    ])).toBe(false);
+  });
+
+  it("rejects unbalanced journals and duplicate AR/AP control postings", () => {
+    expect(isReconciledTransactionImportJournal(expected, [
+      lines[0]!, lines[1]!, { ...lines[2]!, credit_minor: 99 },
+    ])).toBe(false);
+    expect(isReconciledTransactionImportJournal(expected, [
+      ...lines, { ...lines[0]!, debit_minor: 1100 },
+    ])).toBe(false);
+  });
+
+  it("rejects zero, negative, dual-sided, fractional or invalid journal amounts", () => {
+    for (const patch of [
+      { debit_minor: -1 },
+      { debit_minor: 0 },
+      { credit_minor: 1 },
+      { debit_minor: 0.5 },
+      { debit_minor: "not-a-number" },
+    ]) {
+      expect(isReconciledTransactionImportJournal(expected, [
+        { ...lines[0]!, ...patch }, ...lines.slice(1),
+      ])).toBe(false);
+    }
+  });
+
+  it("fails closed on empty, missing or truncated journal line queries", () => {
+    expect(isReconciledTransactionImportJournal(expected, null)).toBe(false);
+    expect(isReconciledTransactionImportJournal(expected, [])).toBe(false);
+    expect(isReconciledTransactionImportJournal(expected, [lines[0]!])).toBe(false);
+    expect(isReconciledTransactionImportJournal(expected, Array.from({ length: 501 }, () => lines[0]!))).toBe(false);
   });
 });

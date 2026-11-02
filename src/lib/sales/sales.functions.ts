@@ -1,12 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { prepareTransactionCsv, validateResolvedTransactionTotals } from "@/lib/imports/transaction-import-validation";
-import { classifyTransactionImportRetry, isExactTransactionImportRetry, isVerifiedTransactionImportJournal } from "@/lib/imports/transaction-import-retry";
+import { classifyTransactionImportRetry, isExactTransactionImportRetry, isVerifiedTransactionImportJournal, isReconciledTransactionImportJournal } from "@/lib/imports/transaction-import-retry";
 import { loadSalesTaxCodes } from "@/lib/sales/tax-codes";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
 import { addDaysIso, type SalesLineInput } from "@/lib/sales/line-helpers";
 import { postInvoiceAuthorisation } from "@/lib/sales/posting";
+import { resolveArAccount } from "@/lib/sales/ar-accounts";
 import { callSalesRpc, requireRpc, type SalesClient } from "@/lib/sales/rpc";
 import { deleteDraftDocument, saveSalesDocument } from "@/lib/sales/doc-save";
 import {
@@ -1372,10 +1373,11 @@ export const importSalesInvoicesCsv = createServerFn({ method: "POST" })
     // Validate resolved net, tax and gross totals for ALL documents before
     // writing any draft. The CSV-only check cannot know effective tax rates.
     const treatment = await loadTaxTreatment(supabase, data.companyId);
+    const totalsByDocument = new Map<(typeof docs)[number], bigint>();
     for (const doc of docs) {
-      validateResolvedTransactionTotals(doc, "sales", doc.lines.map((line) =>
+      totalsByDocument.set(doc, validateResolvedTransactionTotals(doc, "sales", doc.lines.map((line) =>
         line.taxCode ? ratesByDate.get(doc.documentDate)!.get(line.taxCode)! : 0,
-      ), treatment);
+      ), treatment).totalMinor);
     }
 
     const outcome: {
@@ -1389,7 +1391,7 @@ export const importSalesInvoicesCsv = createServerFn({ method: "POST" })
       try {
         const { data: existing, error: existingError } = await supabase
           .from("sales_invoices" as never)
-          .select("id, status, contact_id, invoice_date, due_date, currency_code, memo, posted_journal_id" as never)
+          .select("id, status, contact_id, invoice_date, due_date, currency_code, memo, total_minor, posted_journal_id" as never)
           .eq("company_id" as never, data.companyId as never)
           .ilike("invoice_number" as never, escapeLikeLiteral(doc.documentNumber) as never)
           .neq("status" as never, "void" as never)
@@ -1399,7 +1401,7 @@ export const importSalesInvoicesCsv = createServerFn({ method: "POST" })
           const prior = (existing as unknown as Array<{
             id: string; status: string; contact_id: string; invoice_date: string;
             due_date: string; currency_code: string; memo: string | null;
-            posted_journal_id: string | null;
+            total_minor: number | string; posted_journal_id: string | null;
           }>)[0]!;
           const { data: priorLines, error: priorLinesError } = await supabase
             .from("sales_invoice_lines" as never)
@@ -1447,6 +1449,24 @@ export const importSalesInvoicesCsv = createServerFn({ method: "POST" })
               journalId: prior.posted_journal_id, sourceType: "sales_invoice",
             }, (linkedJournal ?? null) as never)) {
               throw new Error("Existing invoice posting journal cannot be verified against this organisation and invoice; reconcile manually");
+            }
+            // A valid source link is insufficient: the journal must balance
+            // and its AR control debit must equal both CSV and invoice totals.
+            const { data: glLines, error: glError } = await supabase
+              .from("journal_lines" as never)
+              .select("company_id, journal_id, account_id, debit_minor, credit_minor" as never)
+              .eq("company_id" as never, data.companyId as never)
+              .eq("journal_id" as never, prior.posted_journal_id as never)
+              .limit(501);
+            if (glError) throw new Error(glError.message);
+            const ar = await resolveArAccount(supabase as never, data.companyId);
+            if (!isReconciledTransactionImportJournal({
+              companyId: data.companyId, journalId: prior.posted_journal_id,
+              controlAccountId: ar.id, controlSide: "debit",
+              expectedTotalMinor: totalsByDocument.get(doc)!,
+              persistedTotalMinor: prior.total_minor,
+            }, (glLines ?? null) as never)) {
+              throw new Error("Existing invoice journal is unbalanced or AR control does not match the imported invoice total; reconcile manually");
             }
           }
           outcome.skipped++;

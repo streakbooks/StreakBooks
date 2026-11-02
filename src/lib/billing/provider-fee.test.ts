@@ -44,4 +44,25 @@ describe("provider fees", () => {
     expect(sql).toContain("That provider charge already has a fee");
     expect(sql).not.toContain("stripe.com");
   });
+
+  it("rejects a fee larger than the charge", () => {
+    expect(() =>
+      recordProviderFee({
+        role: "platform_finance",
+        grossMinor: 30,
+        feeMinor: 1000,
+        reason: "Statement",
+      }),
+    ).toThrow(/cannot exceed/);
+    const sql = readFileSync(
+      new URL(
+        "../../../supabase/migrations/20261102450000_provider_fee_within_gross.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    expect(sql).toContain("A fee cannot exceed the charge");
+    expect(sql).toContain("fee_minor <= gross_minor");
+    expect(sql).toContain("require_platform('billing.manage')");
+  });
 });

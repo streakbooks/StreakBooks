@@ -17,6 +17,13 @@ export function recordProviderFee(input: {
   }
   const reason = input.reason.trim();
   if (reason.length < 3) throw new Error("A reason is required");
+  if (
+    input.grossMinor != null &&
+    input.feeMinor != null &&
+    input.feeMinor > input.grossMinor
+  ) {
+    throw new Error("A fee cannot exceed the charge");
+  }
   return {
     stored: false,
     providerCalled: false,

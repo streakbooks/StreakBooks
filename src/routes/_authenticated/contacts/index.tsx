@@ -30,7 +30,7 @@ import { TableCard } from "@/components/common/table-card";
 import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/_authenticated/contacts/")({
-  validateSearch: (search: Record<string, unknown>): { view?: string } => ({
+  validateSearch: (search: Record<string, unknown>): { view?: string | undefined } => ({
     view: ["all", "customers", "suppliers", "both", "recent", "updated", "inactive", "archived"].includes(String(search["view"]))
       ? String(search["view"])
       : undefined,

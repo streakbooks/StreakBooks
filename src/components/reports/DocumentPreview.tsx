@@ -1,5 +1,5 @@
 import type { ReportDocument } from "@/lib/reports/report-document";
-import { displayDocumentValue } from "@/lib/reports/document-format";
+import { displayDocumentValue, documentCellStyle } from "@/lib/reports/document-format";
 import { Link } from "@tanstack/react-router";
 export function DocumentPreview({ document: doc }: { document: ReportDocument }) {
   return (
@@ -53,8 +53,11 @@ export function DocumentPreview({ document: doc }: { document: ReportDocument })
                       )}
                     </td>
                     {row.values.map((value, j) => (
-                      <td key={j} className="whitespace-nowrap px-3 py-2 text-right tabular-nums">
-                        {displayDocumentValue(value, row)}
+                      <td
+                        key={j}
+                        className={`whitespace-nowrap px-3 py-2 text-right tabular-nums ${row.negativeRed && value.startsWith("-") ? "text-destructive" : ""}`}
+                      >
+                        {displayDocumentValue(value, documentCellStyle(row, section, j))}
                       </td>
                     ))}
                   </tr>

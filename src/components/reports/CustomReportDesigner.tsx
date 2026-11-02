@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { CustomDefinition, CustomRow, ReportAccount } from "@/lib/reports/custom-definition";
-import { customRowSchema } from "@/lib/reports/custom-definition";
+import { customRowSchema, customColumnSchema } from "@/lib/reports/custom-definition";
 const select = "h-9 rounded-md border border-input bg-background px-2 text-sm";
 export function CustomReportDesigner({
   definition: d,
@@ -217,6 +217,16 @@ export function CustomReportDesigner({
               </div>
             )}
             {row.kind === "group" && (
+              <label className="flex gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={row.collapsed}
+                  onChange={(e) => patchRow({ collapsed: e.target.checked })}
+                />
+                Collapse group details in output
+              </label>
+            )}
+            {row.kind === "group" && (
               <fieldset className="space-y-2">
                 <legend className="mb-2 text-sm font-medium">Rows included in this subtotal</legend>
                 {d.rows
@@ -304,6 +314,125 @@ export function CustomReportDesigner({
         )}
       </div>
       <section className="space-y-3 rounded-lg border p-4">
+        <h3 className="font-semibold">Display settings</h3>
+        <p className="text-xs text-muted-foreground">
+          Display scaling, hiding and sorting preserve the underlying balances and formula results.
+          Percentages are not divided by the monetary scale.
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <label className="space-y-1 text-sm">
+            Divide monetary / number figures by
+            <select
+              aria-label="Display scale"
+              className={`${select} w-full`}
+              value={d.display.scale}
+              onChange={(e) =>
+                onChange({
+                  ...d,
+                  display: { ...d.display, scale: e.target.value as typeof d.display.scale },
+                })
+              }
+            >
+              <option value="1">1</option>
+              <option value="100">100</option>
+              <option value="1000">1,000</option>
+              <option value="1000000">1,000,000</option>
+            </select>
+          </label>
+          <label className="space-y-1 text-sm">
+            Zero values
+            <select
+              aria-label="Zero value display"
+              className={`${select} w-full`}
+              value={d.display.zero}
+              onChange={(e) =>
+                onChange({
+                  ...d,
+                  display: { ...d.display, zero: e.target.value as typeof d.display.zero },
+                })
+              }
+            >
+              <option value="zero">Zero</option>
+              <option value="dash">Dash</option>
+              <option value="blank">Blank</option>
+            </select>
+          </label>
+          <label className="space-y-1 text-sm">
+            Show rows
+            <select
+              aria-label="Row balance visibility"
+              className={`${select} w-full`}
+              value={d.display.rows}
+              onChange={(e) =>
+                onChange({
+                  ...d,
+                  display: { ...d.display, rows: e.target.value as typeof d.display.rows },
+                })
+              }
+            >
+              <option value="all">All configured rows</option>
+              <option value="non_zero">Non-zero rows</option>
+              <option value="zero">Zero-balance rows</option>
+            </select>
+          </label>
+          <label className="space-y-1 text-sm">
+            Show columns
+            <select
+              aria-label="Column balance visibility"
+              className={`${select} w-full`}
+              value={d.display.columns}
+              onChange={(e) =>
+                onChange({
+                  ...d,
+                  display: { ...d.display, columns: e.target.value as typeof d.display.columns },
+                })
+              }
+            >
+              <option value="all">All configured columns</option>
+              <option value="non_zero">Non-zero columns</option>
+            </select>
+          </label>
+          <label className="space-y-1 text-sm">
+            Row order
+            <select
+              aria-label="Output row order"
+              className={`${select} w-full`}
+              value={d.display.sort}
+              onChange={(e) =>
+                onChange({
+                  ...d,
+                  display: { ...d.display, sort: e.target.value as typeof d.display.sort },
+                })
+              }
+            >
+              <option value="custom">Custom order</option>
+              <option value="label_asc">Label A–Z</option>
+              <option value="label_desc">Label Z–A</option>
+            </select>
+          </label>
+        </div>
+        <div className="flex flex-wrap gap-4">
+          {(
+            [
+              ["thousands", "Thousands separators"],
+              ["negativeRed", "Negative values in red"],
+              ["currencySymbol", "Currency symbols"],
+            ] as const
+          ).map(([key, label]) => (
+            <label key={key} className="flex gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={d.display[key]}
+                onChange={(e) =>
+                  onChange({ ...d, display: { ...d.display, [key]: e.target.checked } })
+                }
+              />
+              {label}
+            </label>
+          ))}
+        </div>
+      </section>
+      <section className="space-y-3 rounded-lg border p-4">
         <div className="flex justify-between">
           <h3 className="font-semibold">Report columns</h3>
           <Button
@@ -315,13 +444,13 @@ export function CustomReportDesigner({
                 ...d,
                 columns: [
                   ...d.columns,
-                  {
+                  customColumnSchema.parse({
                     id: `col_${crypto.randomUUID().slice(0, 8)}`,
                     label: "New column",
                     mode: "prior_period",
                     monthOffset: 0,
                     hidden: false,
-                  },
+                  }),
                 ],
               })
             }
@@ -363,7 +492,51 @@ export function CustomReportDesigner({
                 <option value="prior_year">Prior year</option>
                 <option value="month">Month offset</option>
                 <option value="fixed">Fixed dates</option>
+                <option value="calculated">Calculated column</option>
               </select>
+              <span className="font-mono text-xs text-muted-foreground">[{c.id}]</span>
+              <select
+                className={select}
+                aria-label={`Column ${i + 1} format`}
+                value={c.format}
+                onChange={(e) =>
+                  onChange({
+                    ...d,
+                    columns: d.columns.map((v, j) =>
+                      j === i ? { ...v, format: e.target.value as typeof c.format } : v,
+                    ),
+                  })
+                }
+              >
+                <option value="inherit">Row format</option>
+                <option value="money">Currency</option>
+                <option value="number">Number</option>
+                <option value="percent">Percentage</option>
+              </select>
+              {c.mode === "calculated" && (
+                <div className="w-full space-y-1">
+                  <Input
+                    aria-label={`Column ${i + 1} formula`}
+                    value={c.formula}
+                    maxLength={1000}
+                    placeholder="[current] - [prior]"
+                    className="font-mono"
+                    onChange={(e) =>
+                      onChange({
+                        ...d,
+                        columns: d.columns.map((v, j) =>
+                          j === i ? { ...v, formula: e.target.value } : v,
+                        ),
+                      })
+                    }
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Use column identifiers in brackets. For variance percentage, divide the
+                    difference by the comparison column and select Percentage. Undefined division is
+                    reported explicitly.
+                  </p>
+                </div>
+              )}
               {c.mode === "month" && (
                 <Input
                   aria-label={`Column ${i + 1} month offset`}

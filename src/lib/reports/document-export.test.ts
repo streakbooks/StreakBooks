@@ -4,7 +4,7 @@ import ExcelJS from "exceljs";
 import { buildReportDocument, PACK_REPORTS } from "./report-document";
 import { exportReportPdf, exportReportXlsx, exportReportCsv } from "./document-export.server";
 import { reportingFactsFixture } from "./__fixtures__/facts";
-import { starterDefinition } from "./custom-definition";
+import { starterDefinition, customDefinitionSchema } from "./custom-definition";
 import { displayDocumentValue } from "./document-format";
 
 describe("financial report documents and real export files", () => {
@@ -34,6 +34,129 @@ describe("financial report documents and real export files", () => {
     });
     expect(doc.sections[0]!.rows[2]!.values).toEqual(["210.00"]);
     expect(doc.sections[0]!.rows[3]!.values).toEqual(["140.00"]);
+  });
+  it("keeps calculated variance percentage columns consistent across document, CSV and Excel", async () => {
+    const facts = reportingFactsFixture();
+    const definition = customDefinitionSchema.parse({
+      ...starterDefinition(),
+      columns: [
+        { id: "current", label: "Actual", mode: "period" },
+        { id: "prior", label: "Prior", mode: "prior_period" },
+        {
+          id: "variance",
+          label: "Variance",
+          mode: "calculated",
+          formula: "[current]-[prior]",
+          format: "money",
+        },
+        {
+          id: "percentage",
+          label: "Variance %",
+          mode: "calculated",
+          formula: "[variance]/[prior]",
+          format: "percent",
+        },
+      ],
+    });
+    facts.customColumns = definition.columns.map((c) => ({
+      id: c.id,
+      from: facts.from,
+      to: facts.to,
+      balances:
+        c.mode === "calculated"
+          ? []
+          : facts.period.map((b) => ({
+              ...b,
+              debit_minor: (BigInt(b.debit_minor) / (c.id === "prior" ? 2n : 1n)).toString(),
+              credit_minor: (BigInt(b.credit_minor) / (c.id === "prior" ? 2n : 1n)).toString(),
+            })),
+    }));
+    const doc = buildReportDocument(facts, {
+      name: definition.title,
+      config: { _builder: definition },
+    });
+    expect(doc.sections[0]!.rows[2]!.values).toEqual(["110.00", "55.00", "55.00", "100.00"]);
+    expect(exportReportCsv(doc)).toContain('"100.00%"');
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load((await exportReportXlsx(doc)) as unknown as ExcelJS.Buffer);
+    expect(workbook.worksheets[0]!.getCell("E9").value).toBe(1);
+    expect(workbook.worksheets[0]!.getCell("E9").numFmt).toBe("0.00%;(0.00%)");
+  });
+  it("applies display scaling, symbols, red negatives and zero styles without changing document balances", async () => {
+    const facts = reportingFactsFixture();
+    facts.customColumns = [
+      { id: "current", from: facts.from, to: facts.to, balances: facts.period },
+    ];
+    const definition = starterDefinition();
+    definition.display = {
+      ...definition.display,
+      scale: "100",
+      thousands: false,
+      negativeRed: true,
+      currencySymbol: true,
+      zero: "dash",
+    };
+    const doc = buildReportDocument(facts, {
+      name: definition.title,
+      config: { _builder: definition },
+    });
+    const net = doc.sections[0]!.rows[2]!;
+    expect(net.values).toEqual(["110.00"]);
+    expect(displayDocumentValue(net.values[0]!, net)).toBe("£1.10");
+    expect(displayDocumentValue("-1234567.89", { ...net, scale: "1000", thousands: true })).toBe(
+      "(£1,234.57)",
+    );
+    expect(displayDocumentValue("0.00", net)).toBe("–");
+    expect(displayDocumentValue("0.00", { ...net, zero: "blank" })).toBe("");
+    expect(displayDocumentValue("73.33", { ...net, format: "percent" })).toBe("73.33%");
+    expect(doc.subtitle).toContain("divided by 100");
+    expect(exportReportCsv(doc)).toContain('"1.10"');
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load((await exportReportXlsx(doc)) as unknown as ExcelJS.Buffer);
+    expect(workbook.worksheets[0]!.getCell("B9").value).toBe(1.1);
+    expect(workbook.worksheets[0]!.getCell("B9").numFmt).toBe('"£"0.00;[Red]("£"0.00);"–"');
+    expect(workbook.worksheets[0]!.getCell("B9").note).toBe(
+      "Unscaled value: 110.00. Display divided by 100.",
+    );
+  });
+  it("hides zero rows/columns and collapses groups while preserving formula dependencies", () => {
+    const facts = reportingFactsFixture();
+    const definition = customDefinitionSchema.parse({
+      ...starterDefinition(),
+      columns: [
+        { id: "current", label: "Current", mode: "period" },
+        { id: "zero", label: "Zero", mode: "calculated", formula: "[current]-[current]" },
+      ],
+      display: { rows: "non_zero", columns: "non_zero", sort: "label_desc" },
+      rows: [
+        ...starterDefinition().rows,
+        { id: "empty", label: "Zero row", kind: "accounts" },
+        {
+          id: "total",
+          label: "Combined",
+          kind: "group",
+          children: ["revenue", "expenses"],
+          collapsed: true,
+        },
+      ],
+    });
+    facts.customColumns = [
+      { id: "current", from: facts.from, to: facts.to, balances: facts.period },
+      { id: "zero", from: facts.from, to: facts.to, balances: [] },
+    ];
+    const before = JSON.stringify(definition);
+    const doc = buildReportDocument(facts, {
+      name: definition.title,
+      config: { _builder: definition },
+    });
+    expect(doc.sections[0]!.columns).toHaveLength(1);
+    expect(doc.sections[0]!.rows.map((r) => r.label)).toEqual([
+      "Net profit",
+      "Net margin",
+      "Combined",
+    ]);
+    expect(doc.sections[0]!.rows[0]!.values).toEqual(["110.00"]);
+    expect(JSON.stringify(definition)).toBe(before);
   });
   it("does not silently export unreconciled cash or balance sheets", () => {
     const facts = reportingFactsFixture();

@@ -34,6 +34,43 @@ test("custom designer uses account facts, validates formulas, reorders columns a
   await expect(page.getByRole("alert")).toContainText("Expected a number");
   expect(errors).toEqual([]);
 });
+test("calculated columns validate references and preserve saved financial output", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Add column", exact: true }).click();
+  await page.getByLabel("Column 2 period", { exact: true }).selectOption("calculated");
+  await page.getByLabel("Column 2 label", { exact: true }).fill("Double actual");
+  await page.getByLabel("Column 2 formula", { exact: true }).fill("[current] * 2");
+  await page.getByLabel("Column 2 format", { exact: true }).selectOption("money");
+  await page.getByRole("button", { name: "Recalculate report preview", exact: true }).click();
+  await expect(page.getByRole("article")).toContainText("220.00");
+  await page.getByRole("button", { name: "Persist fixture configuration", exact: true }).click();
+  await page.reload();
+  await expect(page.getByLabel("Column 2 formula", { exact: true })).toHaveValue("[current] * 2");
+  await page.getByLabel("Column 2 formula", { exact: true }).fill("[missing]");
+  await page.getByRole("button", { name: "Recalculate report preview", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText("Unknown column missing");
+});
+test("display controls persist scaling and currency styling without changing the calculated net", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: /Net profit\s*\[net\]/ }).click();
+  await page.getByLabel("Formula", { exact: true }).fill("[revenue] - [expenses] * 10");
+  await page.getByLabel("Display scale", { exact: true }).selectOption("100");
+  await page.getByLabel("Currency symbols", { exact: true }).check();
+  await page.getByLabel("Negative values in red", { exact: true }).check();
+  await page.getByRole("button", { name: "Recalculate report preview", exact: true }).click();
+  await expect(page.getByRole("cell", { name: "(£2.50)", exact: true })).toHaveClass(
+    /text-destructive/,
+  );
+  await expect(page.getByRole("article")).toContainText("figures divided by 100");
+  await page.getByRole("button", { name: "Persist fixture configuration", exact: true }).click();
+  await page.reload();
+  await expect(page.getByLabel("Display scale", { exact: true })).toHaveValue("100");
+  await expect(page.getByLabel("Currency symbols", { exact: true })).toBeChecked();
+});
 test("large lookup pages, searches, uses keyboard selection and preserves parent state through creation", async ({
   page,
 }) => {

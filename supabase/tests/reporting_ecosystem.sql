@@ -29,6 +29,9 @@ BEGIN
  IF outcome<>15000 THEN RAISE EXCEPTION 'Revenue does not equal independently expected posted revenue';END IF;
  SELECT sum((value->>'debit_minor')::bigint-(value->>'credit_minor')::bigint) INTO outcome FROM jsonb_array_elements(f->'period');IF outcome<>0 THEN RAISE EXCEPTION 'Trial balance does not balance';END IF;
  IF (f->'cash'->0->>'closing_minor')::bigint<>11000 THEN RAISE EXCEPTION 'Cash closing does not match posted movements';END IF;
+ f:=public.capture_custom_report_facts(c,'2026-10-01','2026-10-31',jsonb_build_object('columns',jsonb_build_array(jsonb_build_object('id','current','mode','period'),jsonb_build_object('id','double','mode','calculated','formula','[current]*2'))));
+ IF jsonb_array_length(f->'customColumns')<>2 OR f->'customColumns'->1->'balances'<>'[]'::jsonb THEN RAISE EXCEPTION 'Calculated column accepted independently supplied financial facts';END IF;
+ IF NOT EXISTS(SELECT 1 FROM jsonb_array_elements(f->'customColumns'->0->'balances') b WHERE b->>'account_id'=rev::text AND (b->>'credit_minor')::bigint=15000) THEN RAISE EXCEPTION 'Custom actual column disagrees with posted ledger';END IF;
  INSERT INTO public.report_saved_views(company_id,user_id,report_id,name,config) VALUES(c,u1,'profit-and-loss','Fixture custom report','{"columns":"prior_year"}') RETURNING id INTO v;
  IF (SELECT modified_by FROM public.report_saved_views WHERE id=v)<>u1 THEN RAISE EXCEPTION 'Modifier metadata missing';END IF;
  INSERT INTO public.report_saved_views(company_id,user_id,report_id,name,config) SELECT c,u1,'profit-and-loss','Search fixture '||n,'{}' FROM generate_series(1,1000) n;

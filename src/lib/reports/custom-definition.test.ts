@@ -38,6 +38,38 @@ describe("custom report execution", () => {
       d: "1",
     });
   });
+  it("calculates nested variance and percentage columns from exact period values", () => {
+    const def = customDefinitionSchema.parse({
+      ...starterDefinition(),
+      columns: [
+        { id: "current", label: "Actual", mode: "period" },
+        { id: "prior", label: "Prior", mode: "prior_period" },
+        { id: "variance", label: "Variance", mode: "calculated", formula: "[current]-[prior]" },
+        {
+          id: "percent",
+          label: "Variance %",
+          mode: "calculated",
+          formula: "[variance]/[prior]",
+          format: "percent",
+        },
+      ],
+    });
+    const previous = [
+      { account_id: a, debit_minor: "0", credit_minor: "10000" },
+      { account_id: b, debit_minor: "2000", credit_minor: "0" },
+    ];
+    const net = executeCustomReport(def, accounts, [balances, previous, [], []])[2]!;
+    expect(net.values).toEqual([
+      { n: "110", d: "1" },
+      { n: "80", d: "1" },
+      { n: "30", d: "1" },
+      { n: "3", d: "8" },
+    ]);
+    def.columns[2]!.formula = "[percent]";
+    expect(() => customDefinitionSchema.parse(def)).toThrow("Circular column");
+    def.columns[2]!.formula = "[missing]";
+    expect(() => customDefinitionSchema.parse(def)).toThrow("Unknown column");
+  });
   it("sums nested groups, respects output order and calculates hidden dependencies", () => {
     const def = starterDefinition();
     def.rows[0]!.hidden = true;

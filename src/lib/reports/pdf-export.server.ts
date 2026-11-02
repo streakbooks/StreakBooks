@@ -1,7 +1,7 @@
 import { PDFDocument, rgb, type PDFFont } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import { reportFontBase64 } from "./report-font.server";
-import { displayDocumentValue } from "./document-format";
+import { displayDocumentValue, documentCellStyle } from "./document-format";
 import type { ReportDocument } from "./report-document";
 export function bytesToBase64(bytes: Uint8Array): string {
   let text = "";
@@ -50,8 +50,8 @@ export async function exportReportPdf(doc: ReportDocument): Promise<Uint8Array> 
   const ink = rgb(0.12, 0.17, 0.2),
     muted = rgb(0.38, 0.43, 0.47),
     line = rgb(0.83, 0.86, 0.88);
-  const text = (s: string, x: number, yy: number, fs = 9) =>
-    page.drawText(s, { x, y: yy, size: fs, font, color: ink });
+  const text = (s: string, x: number, yy: number, fs = 9, color = ink) =>
+    page.drawText(s, { x, y: yy, size: fs, font, color });
   function header() {
     y = size[1] - margin;
     for (const value of [
@@ -125,13 +125,19 @@ export async function exportReportPdf(doc: ReportDocument): Promise<Uint8Array> 
           });
         labels.forEach((l, i) => text(l, margin + (row.indent ?? 0) * 8, y - i * 12, 9));
         row.values.slice(start, start + 6).forEach((value, i) => {
-          const s = displayDocumentValue(value, row),
+          const s = displayDocumentValue(value, documentCellStyle(row, section, start + i)),
             w = font.widthOfTextAtSize(s, 8);
           if (w > valueWidth - 8)
             throw new Error(
               "A financial amount exceeds the column width; use fewer columns or landscape pages",
             );
-          text(s, margin + labelWidth + (i + 1) * valueWidth - w - 4, y, 8);
+          text(
+            s,
+            margin + labelWidth + (i + 1) * valueWidth - w - 4,
+            y,
+            8,
+            row.negativeRed && value.startsWith("-") ? rgb(0.7, 0.1, 0.1) : ink,
+          );
         });
         y -= height;
         if (["subtotal", "total", "group"].includes(row.kind))

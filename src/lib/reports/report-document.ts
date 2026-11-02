@@ -85,11 +85,17 @@ export type DocumentRow = {
   indent?: number;
   format?: "money" | "number" | "percent";
   negative?: "minus" | "parentheses";
+  scale?: string;
+  thousands?: boolean;
+  negativeRed?: boolean;
+  zero?: "zero" | "dash" | "blank";
+  currencyPrefix?: string;
 };
 export type DocumentSection = {
   id: string;
   title: string;
   columns: string[];
+  columnFormats?: Array<"inherit" | "money" | "number" | "percent">;
   rows: DocumentRow[];
   note?: string;
 };
@@ -190,29 +196,87 @@ export function buildReportDocument(
   };
   if (builder) {
     if (!f.customColumns) throw new Error("Custom column facts were not captured");
-    const rows = executeCustomReport(
+    let rows = executeCustomReport(
       builder,
       f.accounts,
       f.customColumns.map((c) => c.balances),
       decimalPlacesFor(currency),
     );
-    const visible = builder.columns.map((c, i) => ({ c, i })).filter((x) => !x.c.hidden);
+    const suppressed = new Set<string>();
+    const byRow = new Map(builder.rows.map((r) => [r.id, r]));
+    function hideChildren(id: string) {
+      for (const child of byRow.get(id)?.children ?? []) {
+        if (suppressed.has(child)) continue;
+        suppressed.add(child);
+        hideChildren(child);
+      }
+    }
+    for (const r of builder.rows) if (r.kind === "group" && r.collapsed) hideChildren(r.id);
+    rows = rows.filter((r) => !suppressed.has(r.id));
+    const settings = builder.display;
+    const visible = builder.columns
+      .map((c, i) => ({ c, i }))
+      .filter(
+        (x) =>
+          !x.c.hidden &&
+          (settings.columns === "all" ||
+            rows.some((r) => r.kind !== "heading" && BigInt(r.values[x.i]!.n) !== 0n)),
+      );
+    if (!visible.length) throw new Error("No visible columns match the display settings");
+    rows = rows.filter(
+      (r) =>
+        r.kind === "heading" ||
+        settings.rows === "all" ||
+        (settings.rows === "non_zero"
+          ? visible.some(({ i }) => BigInt(r.values[i]!.n) !== 0n)
+          : visible.every(({ i }) => BigInt(r.values[i]!.n) === 0n)),
+    );
+    if (settings.sort !== "custom")
+      rows = [...rows].sort(
+        (a, b) => a.label.localeCompare(b.label) * (settings.sort === "label_desc" ? -1 : 1),
+      );
+    const currencyPrefix = settings.currencySymbol
+      ? new Intl.NumberFormat("en", { style: "currency", currency })
+          .formatToParts(0)
+          .find((p) => p.type === "currency")?.value
+      : undefined;
+    if (settings.scale !== "1")
+      doc.subtitle = [
+        doc.subtitle,
+        `Monetary and number figures divided by ${Number(settings.scale).toLocaleString("en")}`,
+      ]
+        .filter(Boolean)
+        .join(" · ");
     doc.sections = [
       {
         id: "custom",
         title: builder.title,
-        columns: visible.map(
-          ({ c, i }) => `${c.label} (${f.customColumns![i]!.from} – ${f.customColumns![i]!.to})`,
+        columnFormats: visible.map(({ c }) => c.format),
+        columns: visible.map(({ c, i }) =>
+          c.mode === "calculated"
+            ? c.label
+            : `${c.label} (${f.customColumns![i]!.from} – ${f.customColumns![i]!.to})`,
         ),
         rows: rows.map((r) => ({
           label: r.label,
-          kind: r.kind as DocumentRow["kind"],
+          kind: (r.kind === "accounts" ? "account" : r.kind) as DocumentRow["kind"],
+          ...(byRow.get(r.id)?.accountIds.length === 1 && !byRow.get(r.id)?.accountTypes.length
+            ? { accountId: byRow.get(r.id)!.accountIds[0]! }
+            : {}),
           indent: r.indent,
           format: r.format,
           negative: r.negative,
+          scale: settings.scale,
+          thousands: settings.thousands,
+          negativeRed: settings.negativeRed,
+          zero: settings.zero,
+          ...(currencyPrefix ? { currencyPrefix } : {}),
           values: visible.map(({ i }) => {
             const value = r.values[i]!;
-            return decimalValue(value, r.decimals, r.format === "percent" ? 100n : 1n);
+            if (r.kind === "heading") return "";
+            const format =
+              builder.columns[i]!.format === "inherit" ? r.format : builder.columns[i]!.format;
+            return decimalValue(value, r.decimals, format === "percent" ? 100n : 1n);
           }),
         })),
       },

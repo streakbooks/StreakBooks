@@ -19,10 +19,32 @@ export const customRowSchema = z.object({
   formula: z.string().max(1000).default(""),
   indent: z.number().int().min(0).max(6).default(0),
   hidden: z.boolean().default(false),
+  collapsed: z.boolean().default(false),
   format: z.enum(["money", "number", "percent"]).default("money"),
   decimals: z.number().int().min(0).max(6).default(2),
   negative: z.enum(["minus", "parentheses"]).default("parentheses"),
   sign: z.enum(["natural", "debit", "credit"]).default("natural"),
+});
+export const customColumnSchema = z.object({
+  id: rowId,
+  label: z.string().trim().min(1).max(100),
+  mode: z.enum(["period", "prior_period", "prior_year", "month", "fixed", "calculated"]),
+  monthOffset: z.number().int().min(-120).max(120).default(0),
+  from: z.string().refine(isReportDate).optional(),
+  to: z.string().refine(isReportDate).optional(),
+  hidden: z.boolean().default(false),
+  formula: z.string().max(1000).default(""),
+  format: z.enum(["inherit", "money", "number", "percent"]).default("inherit"),
+});
+export const reportDisplaySchema = z.object({
+  scale: z.enum(["1", "100", "1000", "1000000"]).default("1"),
+  thousands: z.boolean().default(true),
+  negativeRed: z.boolean().default(false),
+  zero: z.enum(["zero", "dash", "blank"]).default("zero"),
+  currencySymbol: z.boolean().default(false),
+  rows: z.enum(["all", "non_zero", "zero"]).default("all"),
+  columns: z.enum(["all", "non_zero"]).default("all"),
+  sort: z.enum(["custom", "label_asc", "label_desc"]).default("custom"),
 });
 export const customDefinitionSchema = z
   .object({
@@ -33,21 +55,9 @@ export const customDefinitionSchema = z
     header: z.string().max(300).default(""),
     footer: z.string().max(300).default(""),
     orientation: z.enum(["portrait", "landscape"]).default("portrait"),
+    display: reportDisplaySchema.default(() => reportDisplaySchema.parse({})),
     rows: z.array(customRowSchema).min(1).max(150),
-    columns: z
-      .array(
-        z.object({
-          id: rowId,
-          label: z.string().trim().min(1).max(100),
-          mode: z.enum(["period", "prior_period", "prior_year", "month", "fixed"]),
-          monthOffset: z.number().int().min(-120).max(120).default(0),
-          from: z.string().refine(isReportDate).optional(),
-          to: z.string().refine(isReportDate).optional(),
-          hidden: z.boolean().default(false),
-        }),
-      )
-      .min(1)
-      .max(24),
+    columns: z.array(customColumnSchema).min(1).max(24),
   })
   .superRefine((value, ctx) => {
     for (const key of ["rows", "columns"] as const)
@@ -56,6 +66,43 @@ export const customDefinitionSchema = z
     for (const column of value.columns)
       if (column.mode === "fixed" && (!column.from || !column.to || column.from > column.to))
         ctx.addIssue({ code: "custom", message: "Fixed columns require a valid date range" });
+    const columnIds = new Set(value.columns.map((c) => c.id));
+    for (const column of value.columns.filter((c) => c.mode === "calculated")) {
+      try {
+        evaluateFormula(column.formula, (id) => {
+          if (!columnIds.has(id)) throw new Error(`Unknown column ${id}`);
+          return fraction(1n);
+        });
+      } catch (e) {
+        if (
+          e instanceof Error &&
+          (e.message !== "Division by zero" || !column.formula.includes("["))
+        )
+          ctx.addIssue({ code: "custom", message: `${column.label}: ${e.message}` });
+      }
+    }
+    const columnGraph = new Map(
+      value.columns.map((c) => [
+        c.id,
+        c.mode === "calculated"
+          ? [...c.formula.matchAll(/\[([A-Za-z][A-Za-z0-9_-]*)\]/g)].map((m) => m[1]!)
+          : [],
+      ]),
+    );
+    const activeColumns = new Set<string>(),
+      completeColumns = new Set<string>();
+    function visitColumn(id: string) {
+      if (completeColumns.has(id)) return;
+      if (activeColumns.has(id)) {
+        ctx.addIssue({ code: "custom", message: `Circular column reference involving ${id}` });
+        return;
+      }
+      activeColumns.add(id);
+      for (const dependency of columnGraph.get(id) ?? []) visitColumn(dependency);
+      activeColumns.delete(id);
+      completeColumns.add(id);
+    }
+    for (const id of columnGraph.keys()) visitColumn(id);
     const ids = new Set(value.rows.map((r) => r.id));
     for (const row of value.rows) {
       if (row.kind === "group" && (!row.children.length || row.children.some((id) => !ids.has(id))))
@@ -152,7 +199,9 @@ export function executeCustomReport(
       if (!byId.has(id))
         throw new Error(`Account ${id} is not in this organisation's chart of accounts`);
   const rows = new Map(def.rows.map((r) => [r.id, r]));
-  const results = columns.map((balances) => {
+  const results = columns.map((balances, index) => {
+    if (def.columns[index]!.mode === "calculated")
+      return new Map(def.rows.map((r) => [r.id, fraction(0n)]));
     const cache = new Map<string, Fraction>();
     const visiting = new Set<string>();
     const balanceMap = new Map(balances.map((b) => [b.account_id, b]));
@@ -189,6 +238,30 @@ export function executeCustomReport(
     for (const row of def.rows) value(row.id);
     return cache;
   });
+  const byColumnId = new Map(def.columns.map((c, i) => [c.id, i]));
+  const calculated = new Set<number>(),
+    calculating = new Set<number>();
+  function calculateColumn(index: number): Map<string, Fraction> {
+    const column = def.columns[index]!;
+    if (column.mode !== "calculated" || calculated.has(index)) return results[index]!;
+    if (calculating.has(index)) throw new Error(`Circular column reference involving ${column.id}`);
+    calculating.add(index);
+    for (const row of def.rows) {
+      if (row.kind === "heading") continue;
+      results[index]!.set(
+        row.id,
+        evaluateFormula(column.formula, (id) => {
+          const target = byColumnId.get(id);
+          if (target === undefined) throw new Error(`Unknown column ${id}`);
+          return calculateColumn(target).get(row.id)!;
+        }),
+      );
+    }
+    calculating.delete(index);
+    calculated.add(index);
+    return results[index]!;
+  }
+  for (let i = 0; i < def.columns.length; i++) calculateColumn(i);
   return def.rows
     .filter((r) => !r.hidden)
     .map((row) => ({

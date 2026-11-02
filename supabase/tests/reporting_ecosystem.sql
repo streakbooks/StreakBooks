@@ -116,6 +116,13 @@ BEGIN
  END LOOP;
  IF (SELECT status FROM public.report_deliveries WHERE id=job)<>'accepted' THEN RAISE EXCEPTION 'Provider acceptance not recorded';END IF;
  IF (SELECT status FROM public.report_packs WHERE id=p)<>'published' THEN RAISE EXCEPTION 'Acceptance incorrectly treated as confirmed delivery';END IF;
+ INSERT INTO public.report_deliveries(company_id,owner_id,pack_id,recipients,subject,message,facts,definition,status,provider_id)
+ SELECT d.company_id,d.owner_id,d.pack_id,d.recipients,d.subject,d.message,d.facts,d.definition,'accepted','fixture-poll-'||n
+ FROM public.report_deliveries d CROSS JOIN generate_series(1,26) n WHERE d.id=job;
+ IF (SELECT count(*) FROM public.claim_report_delivery_confirmations(25))<>25 THEN RAISE EXCEPTION 'Confirmation polling did not claim first page';END IF;
+ IF (SELECT count(*) FROM public.claim_report_delivery_confirmations(25))<>2 THEN RAISE EXCEPTION 'Old pending confirmations starve later messages';END IF;
+ IF EXISTS(SELECT 1 FROM public.claim_report_delivery_confirmations(25)) THEN RAISE EXCEPTION 'Confirmation claim ignored cooldown';END IF;
+ IF has_function_privilege('authenticated','public.claim_report_delivery_confirmations(integer)','EXECUTE') THEN RAISE EXCEPTION 'Application user can claim provider events';END IF;
  PERFORM public.confirm_report_delivery('fixture-provider-id',true,NULL);
  IF (SELECT status FROM public.report_packs WHERE id=p)<>'delivered' THEN RAISE EXCEPTION 'Confirmed delivery not recorded';END IF;
 END $$;

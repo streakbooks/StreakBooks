@@ -493,6 +493,51 @@ export type Database = {
           },
         ]
       }
+      approval_requests: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_reason: string | null
+          expires_at: string
+          id: string
+          impact: Json
+          kind: string
+          payload: Json
+          reason: string
+          requester_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_reason?: string | null
+          expires_at: string
+          id?: string
+          impact?: Json
+          kind: string
+          payload?: Json
+          reason: string
+          requester_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_reason?: string | null
+          expires_at?: string
+          id?: string
+          impact?: Json
+          kind?: string
+          payload?: Json
+          reason?: string
+          requester_id?: string
+          status?: string
+        }
+        Relationships: []
+      }
       asset_depreciation_entries: {
         Row: {
           amount_minor: number
@@ -1532,19 +1577,40 @@ export type Database = {
       }
       billing_features: {
         Row: {
+          catalogue_status: string
+          category: string
+          cost_tag: string | null
+          default_enabled: boolean
           description: string
           key: string
           label: string
+          metering: string
+          module: string
+          version_no: number
         }
         Insert: {
+          catalogue_status?: string
+          category?: string
+          cost_tag?: string | null
+          default_enabled?: boolean
           description?: string
           key: string
           label: string
+          metering?: string
+          module?: string
+          version_no?: number
         }
         Update: {
+          catalogue_status?: string
+          category?: string
+          cost_tag?: string | null
+          default_enabled?: boolean
           description?: string
           key?: string
           label?: string
+          metering?: string
+          module?: string
+          version_no?: number
         }
         Relationships: []
       }
@@ -2399,6 +2465,7 @@ export type Database = {
           read_only_until: string | null
           scheduled_at: string | null
           scheduled_plan_code: string | null
+          started_at: string | null
           status: string
           trial_ends_at: string | null
           trial_started_at: string | null
@@ -2423,6 +2490,7 @@ export type Database = {
           read_only_until?: string | null
           scheduled_at?: string | null
           scheduled_plan_code?: string | null
+          started_at?: string | null
           status: string
           trial_ends_at?: string | null
           trial_started_at?: string | null
@@ -2447,6 +2515,7 @@ export type Database = {
           read_only_until?: string | null
           scheduled_at?: string | null
           scheduled_plan_code?: string | null
+          started_at?: string | null
           status?: string
           trial_ends_at?: string | null
           trial_started_at?: string | null
@@ -3697,6 +3766,68 @@ export type Database = {
           },
         ]
       }
+      entitlement_overrides: {
+        Row: {
+          approval_status: string
+          created_at: string
+          created_by: string | null
+          effect: string
+          expires_at: string | null
+          feature_key: string
+          id: string
+          limit_value: number | null
+          notes: string
+          plan_code: string | null
+          reason: string
+          scope: string
+          scope_id: string | null
+          source: string
+          starts_at: string | null
+        }
+        Insert: {
+          approval_status?: string
+          created_at?: string
+          created_by?: string | null
+          effect: string
+          expires_at?: string | null
+          feature_key: string
+          id?: string
+          limit_value?: number | null
+          notes?: string
+          plan_code?: string | null
+          reason: string
+          scope: string
+          scope_id?: string | null
+          source: string
+          starts_at?: string | null
+        }
+        Update: {
+          approval_status?: string
+          created_at?: string
+          created_by?: string | null
+          effect?: string
+          expires_at?: string | null
+          feature_key?: string
+          id?: string
+          limit_value?: number | null
+          notes?: string
+          plan_code?: string | null
+          reason?: string
+          scope?: string
+          scope_id?: string | null
+          source?: string
+          starts_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entitlement_overrides_feature_key_fkey"
+            columns: ["feature_key"]
+            isOneToOne: false
+            referencedRelation: "billing_features"
+            referencedColumns: ["key"]
+          },
+        ]
+      }
       exchange_rates: {
         Row: {
           company_id: string
@@ -3744,6 +3875,170 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      feature_dependencies: {
+        Row: {
+          feature_key: string
+          kind: string
+          other_key: string
+        }
+        Insert: {
+          feature_key: string
+          kind: string
+          other_key: string
+        }
+        Update: {
+          feature_key?: string
+          kind?: string
+          other_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feature_dependencies_feature_key_fkey"
+            columns: ["feature_key"]
+            isOneToOne: false
+            referencedRelation: "billing_features"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "feature_dependencies_other_key_fkey"
+            columns: ["other_key"]
+            isOneToOne: false
+            referencedRelation: "billing_features"
+            referencedColumns: ["key"]
+          },
+        ]
+      }
+      feature_prices: {
+        Row: {
+          amount_minor: number
+          billing_interval: string
+          created_at: string
+          currency: string
+          effective_from: string | null
+          effective_to: string | null
+          feature_key: string
+          id: string
+          included_qty: number
+          max_qty: number | null
+          min_qty: number
+          model: string
+          reason: string
+          status: string
+          supersedes_id: string | null
+          tax_bps: number
+          tax_treatment: string
+          tiers: Json
+          version_no: number
+        }
+        Insert: {
+          amount_minor: number
+          billing_interval: string
+          created_at?: string
+          currency: string
+          effective_from?: string | null
+          effective_to?: string | null
+          feature_key: string
+          id?: string
+          included_qty?: number
+          max_qty?: number | null
+          min_qty?: number
+          model: string
+          reason: string
+          status?: string
+          supersedes_id?: string | null
+          tax_bps?: number
+          tax_treatment?: string
+          tiers?: Json
+          version_no?: number
+        }
+        Update: {
+          amount_minor?: number
+          billing_interval?: string
+          created_at?: string
+          currency?: string
+          effective_from?: string | null
+          effective_to?: string | null
+          feature_key?: string
+          id?: string
+          included_qty?: number
+          max_qty?: number | null
+          min_qty?: number
+          model?: string
+          reason?: string
+          status?: string
+          supersedes_id?: string | null
+          tax_bps?: number
+          tax_treatment?: string
+          tiers?: Json
+          version_no?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feature_prices_feature_key_fkey"
+            columns: ["feature_key"]
+            isOneToOne: false
+            referencedRelation: "billing_features"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "feature_prices_supersedes_id_fkey"
+            columns: ["supersedes_id"]
+            isOneToOne: false
+            referencedRelation: "feature_prices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feature_rollouts: {
+        Row: {
+          allowlist: string[]
+          created_at: string
+          created_by: string | null
+          ends_at: string | null
+          feature_key: string
+          id: string
+          mode: string
+          percent: number
+          reason: string
+          starts_at: string | null
+          target_region: string | null
+        }
+        Insert: {
+          allowlist?: string[]
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string | null
+          feature_key: string
+          id?: string
+          mode: string
+          percent?: number
+          reason: string
+          starts_at?: string | null
+          target_region?: string | null
+        }
+        Update: {
+          allowlist?: string[]
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string | null
+          feature_key?: string
+          id?: string
+          mode?: string
+          percent?: number
+          reason?: string
+          starts_at?: string | null
+          target_region?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feature_rollouts_feature_key_fkey"
+            columns: ["feature_key"]
+            isOneToOne: false
+            referencedRelation: "billing_features"
+            referencedColumns: ["key"]
           },
         ]
       }
@@ -4893,6 +5188,50 @@ export type Database = {
           },
         ]
       }
+      mrr_movements: {
+        Row: {
+          captured_at: string
+          captured_by: string | null
+          company_id: string
+          currency: string
+          current_mrr_minor: number
+          delta_minor: number
+          id: string
+          movement: string
+          previous_mrr_minor: number
+        }
+        Insert: {
+          captured_at?: string
+          captured_by?: string | null
+          company_id: string
+          currency: string
+          current_mrr_minor: number
+          delta_minor: number
+          id?: string
+          movement: string
+          previous_mrr_minor: number
+        }
+        Update: {
+          captured_at?: string
+          captured_by?: string | null
+          company_id?: string
+          currency?: string
+          current_mrr_minor?: number
+          delta_minor?: number
+          id?: string
+          movement?: string
+          previous_mrr_minor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mrr_movements_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organisation_config: {
         Row: {
           category: string
@@ -5191,8 +5530,10 @@ export type Database = {
           entity_id: string
           entity_type: string
           id: number
+          prev_hash: string | null
           reason: string
           request_ip: string | null
+          row_hash: string | null
           session_id: string | null
         }
         Insert: {
@@ -5204,8 +5545,10 @@ export type Database = {
           entity_id: string
           entity_type: string
           id?: never
+          prev_hash?: string | null
           reason: string
           request_ip?: string | null
+          row_hash?: string | null
           session_id?: string | null
         }
         Update: {
@@ -5217,8 +5560,10 @@ export type Database = {
           entity_id?: string
           entity_type?: string
           id?: never
+          prev_hash?: string | null
           reason?: string
           request_ip?: string | null
+          row_hash?: string | null
           session_id?: string | null
         }
         Relationships: []
@@ -8142,6 +8487,7 @@ export type Database = {
           lease_until: string | null
           message: string
           next_attempt_at: string
+          next_status_check_at: string
           owner_id: string
           pack_id: string | null
           provider_id: string | null
@@ -8165,6 +8511,7 @@ export type Database = {
           lease_until?: string | null
           message?: string
           next_attempt_at?: string
+          next_status_check_at?: string
           owner_id: string
           pack_id?: string | null
           provider_id?: string | null
@@ -8188,6 +8535,7 @@ export type Database = {
           lease_until?: string | null
           message?: string
           next_attempt_at?: string
+          next_status_check_at?: string
           owner_id?: string
           pack_id?: string | null
           provider_id?: string | null
@@ -10551,6 +10899,7 @@ export type Database = {
           lease_until: string | null
           message: string
           next_attempt_at: string
+          next_status_check_at: string
           owner_id: string
           pack_id: string | null
           provider_id: string | null
@@ -10568,6 +10917,13 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      claim_report_delivery_confirmations: {
+        Args: { _limit?: number }
+        Returns: {
+          id: string
+          provider_id: string
+        }[]
       }
       complete_action_document_request: {
         Args: { _attachment_id: string; _request_id: string }
@@ -10882,6 +11238,7 @@ export type Database = {
         }[]
       }
       list_contact_portal_access: { Args: { payload: Json }; Returns: Json }
+      list_live_feature_prices: { Args: never; Returns: Json }
       list_organisation_secret_meta: {
         Args: { _company_id: string }
         Returns: {
@@ -11003,8 +11360,16 @@ export type Database = {
         Args: { _ids: string[]; _reason: string; _status: string }
         Returns: Json
       }
+      platform_capture_mrr_movements: {
+        Args: { _reason: string }
+        Returns: Json
+      }
       platform_company_context: { Args: never; Returns: Json }
       platform_context: { Args: never; Returns: Json }
+      platform_decide_approval: {
+        Args: { _decision: string; _id: string; _reason: string }
+        Returns: Json
+      }
       platform_details: {
         Args: { _id: string; _resource: string }
         Returns: Json
@@ -11023,6 +11388,7 @@ export type Database = {
         }
         Returns: Json
       }
+      platform_list_approvals: { Args: never; Returns: Json }
       platform_mutate: {
         Args: {
           _action: string
@@ -11037,7 +11403,23 @@ export type Database = {
         Args: { _action: string; _payload: Json; _reason: string }
         Returns: Json
       }
+      platform_reconcile_mrr: { Args: never; Returns: Json }
       platform_role: { Args: never; Returns: string }
+      platform_set_entitlement: {
+        Args: {
+          _effect: string
+          _expires: string
+          _feature: string
+          _notes: string
+          _plan_code: string
+          _reason: string
+          _scope: string
+          _scope_id: string
+          _source: string
+          _starts: string
+        }
+        Returns: Json
+      }
       platform_set_plan_visibility: {
         Args: { _is_public: boolean; _plan_code: string; _reason: string }
         Returns: undefined
@@ -11046,6 +11428,7 @@ export type Database = {
         Args: { _reason: string; _role: string; _user_id: string }
         Returns: undefined
       }
+      platform_subscription_cohorts: { Args: never; Returns: Json }
       platform_support_read: { Args: { _company_id: string }; Returns: Json }
       portal_acknowledge_order: { Args: { payload: Json }; Returns: Json }
       portal_assert_writable: {
@@ -11448,6 +11831,27 @@ export type Database = {
         Returns: number
       }
       revoke_portal_access: { Args: { payload: Json }; Returns: Json }
+      rollout_bucket: {
+        Args: { _feature: string; _organisation: string }
+        Returns: number
+      }
+      rollout_decision: {
+        Args: {
+          _allowlist: string[]
+          _company_id: string
+          _ends: string
+          _feature: string
+          _mode: string
+          _now: string
+          _organisation: string
+          _percent: number
+          _region: string
+          _starts: string
+          _target_region: string
+          _trialing: boolean
+        }
+        Returns: Json
+      }
       run_depreciation: {
         Args: { _company_id: string; _period_end: string; _preview?: boolean }
         Returns: {
@@ -11677,6 +12081,10 @@ export type Database = {
       }
       void_sales_credit_note: { Args: { payload: Json }; Returns: Json }
       void_sales_invoice: { Args: { payload: Json }; Returns: Json }
+      winning_entitlements: {
+        Args: { _company_id: string; _user_id: string }
+        Returns: Json
+      }
       write_off_bad_debt: { Args: { payload: Json }; Returns: Json }
       write_organisation_secret: {
         Args: { _company_id: string; _plaintext: string; _secret_key: string }

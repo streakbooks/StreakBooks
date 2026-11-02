@@ -86,13 +86,8 @@ Deno.serve(async (request) => {
       console.error("Delivery result could not be recorded", job.id, result.error.code);
   }
   // Poll provider events. Acceptance alone never advances a pack to Delivered.
-  const pending = await sb
-    .from("report_deliveries")
-    .select("provider_id")
-    .eq("status", "accepted")
-    .not("provider_id", "is", null)
-    .order("updated_at")
-    .limit(25);
+  const pending = await sb.rpc("claim_report_delivery_confirmations", { _limit: 25 });
+  if (pending.error) return json({ error: "Could not claim provider confirmation checks" }, 500);
   let confirmed = 0;
   for (const job of pending.data ?? []) {
     try {

@@ -91,4 +91,37 @@ describe("config promotion", () => {
     expect(sql).toContain("require_platform('settings.manage')");
     expect(sql).not.toContain("UPDATE public.companies");
   });
+
+  it("does not promote an archived business", () => {
+    const opened = requestPromotion({
+      role: "platform_owner",
+      sourceId: "company-1",
+      targetId: "company-2",
+      requesterId: "owner-a",
+      reason: "Copy presentation",
+    });
+    expect(() =>
+      decidePromotion({
+        role: "platform_owner",
+        request: opened.request,
+        approverId: "owner-b",
+        decision: "approved",
+        reason: "Confirmed",
+        archived: true,
+      }),
+    ).toThrow(/archived business/);
+    const sql = readFileSync(
+      new URL(
+        "../../../supabase/migrations/20261102610000_promotion_not_archived.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    expect(sql).toContain("An archived business cannot be promoted");
+    expect(sql).toContain("source.archived_at IS NULL");
+    expect(sql).toContain("SET locale = source.locale");
+    expect(sql).toContain("require_platform('settings.manage')");
+    expect(sql).not.toContain("base_currency");
+    expect(sql).not.toContain("journal_lines");
+  });
 });

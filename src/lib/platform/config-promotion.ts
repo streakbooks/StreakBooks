@@ -43,6 +43,7 @@ export function decidePromotion(input: {
   approverId: string;
   decision: "approved" | "rejected";
   reason: string;
+  archived?: boolean;
 }): {
   request: PromotionRequest;
   copied: false;
@@ -57,6 +58,9 @@ export function decidePromotion(input: {
     throw new Error("A second person must decide this request");
   const reason = input.reason.trim();
   if (reason.length < 3) throw new Error("A reason is required");
+  if (input.decision === "approved" && input.archived) {
+    throw new Error("An archived business cannot be promoted");
+  }
   return {
     request: { ...input.request, status: input.decision },
     copied: false,

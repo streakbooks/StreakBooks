@@ -52,7 +52,7 @@ import {
 
 export const Route = createFileRoute("/_authenticated/fixed-assets")({
   validateSearch: (raw: Record<string, unknown>) => ({
-    tab: ["register", "depreciation", "types"].includes(String(raw["tab"])) ? String(raw["tab"]) : "register",
+    tab: ["register", "depreciation", "types"].includes(String(raw["tab"])) ? String(raw["tab"]) : undefined,
   }),
   head: () => ({ meta: [{ title: "Fixed assets — LinkBooks" }] }),
   component: FixedAssetsPage,
@@ -70,7 +70,8 @@ type Dialogs =
 function FixedAssetsPage() {
   const { company } = useActiveCompany();
   const companyId = company?.id;
-  const { tab } = Route.useSearch();
+  const { tab: requestedTab } = Route.useSearch();
+  const tab = requestedTab ?? "register";
   const fmt = useFormat();
   const canManage = useCanDo("accounts.manage");
   const canPostEntries = useCanDo("accounting.post");

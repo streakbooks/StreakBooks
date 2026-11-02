@@ -63,7 +63,7 @@ Work top to bottom. A task is done only when its tests have run and the box is t
 - [x] Segments and tags
 - [x] Admin alert rules
 - [x] Job console
-- [ ] Incident and release management
+- [x] Incident and release management
 - [ ] Managed services desk
 - [ ] Partner programme
 - [ ] Config promotion

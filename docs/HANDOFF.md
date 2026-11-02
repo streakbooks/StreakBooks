@@ -2,7 +2,7 @@
 
 ## P0 evidence
 
-Typecheck exit 0. Lint 0 errors and 23 warnings. Vitest 163 files, 1279 tests, all passed. Production build exit 0. Playwright had no seeded platform_owner: `e2e/superadmin-journeys.spec.ts` 2 passed and 2 skipped. Migration history is BLOCKED: Docker is not installed, and the only other Supabase project is LeadOrbit. READY-TO-APPLY and not applied: `20261102170000`, `20261102180000`, `20261102180100`, `20261102190000`, `20261102200000`, `20261102210000`, `20261102220000`, `20261102230000`, `20261102240000`, `20261102250000`, `20261102260000`, `20261102270000`, `20261102280000`, and the start-month backfill in `docs/superadmin/start-month-backfill.md`.
+Typecheck exit 0. Lint 0 errors and 23 warnings. Vitest 163 files, 1279 tests, all passed. Production build exit 0. Playwright had no seeded platform_owner: `e2e/superadmin-journeys.spec.ts` 2 passed and 2 skipped. Migration history is BLOCKED: Docker is not installed, and the only other Supabase project is LeadOrbit. READY-TO-APPLY and not applied: `20261102170000`, `20261102180000`, `20261102180100`, `20261102190000`, `20261102200000`, `20261102210000`, `20261102220000`, `20261102230000`, `20261102240000`, `20261102250000`, `20261102260000`, `20261102270000`, `20261102280000`, `20261102290000`, and the start-month backfill in `docs/superadmin/start-month-backfill.md`.
 
 - P0.1: typecheck exit 0, lint 0 errors and 23 warnings, 1279 unit tests passed, production build exit 0.
 - P0.2: `sk_live_` and `rzp_live_` are refused unless `LINKBOOKS_ALLOW_LIVE_PAYMENT_KEYS=true`. 15 provider-key tests passed.
@@ -33,7 +33,8 @@ Typecheck exit 0. Lint 0 errors and 23 warnings. Vitest 163 files, 1279 tests, a
 - Batches E–H: segment tests passed, 2. `20261102260000` was not applied. Contact tags are unchanged.
 - Batches E–H: alert tests passed, 2. `20261102270000` was not applied. A missing observation does not fire.
 - Batches E–H: job console tests passed, 2. `20261102280000` queues a job and was not applied. The job is not executed.
-- Hosted gate BLOCKED: `20261102170000` through `20261102280000`, and the start-month backfill, are READY-TO-APPLY. Nothing further was applied. Write `BACKUP CONFIRMED` in this file to release them.
+- Batches E–H: incident and release tests passed, 2. `20261102290000` was not applied. A release note does not deploy.
+- Hosted gate BLOCKED: `20261102170000` through `20261102290000`, and the start-month backfill, are READY-TO-APPLY. Nothing further was applied. Write `BACKUP CONFIRMED` in this file to release them.
 
 ## NEEDS FROM OWNER
 

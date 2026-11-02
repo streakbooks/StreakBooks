@@ -23,13 +23,13 @@ Work top to bottom. A task is done only when its tests have run and the box is t
 - [ ] BLOCKED: READY-TO-APPLY `20261102170000`. Apply only after `BACKUP CONFIRMED` is written in `docs/HANDOFF.md`.
 - [ ] BLOCKED: READY-TO-APPLY `20261102180000` and `20261102180100`. Apply only after `BACKUP CONFIRMED` is written in `docs/HANDOFF.md`.
 - [ ] BLOCKED: start-month backfill SQL is in `docs/superadmin/start-month-backfill.md`. Apply only after `BACKUP CONFIRMED` is written in `docs/HANDOFF.md`.
-- [ ] BLOCKED: READY-TO-APPLY `20261102190000` through `20261102410000`. Apply only after `BACKUP CONFIRMED` is written in `docs/HANDOFF.md`.
+- [ ] BLOCKED: READY-TO-APPLY `20261102190000` through `20261102420000`. Apply only after `BACKUP CONFIRMED` is written in `docs/HANDOFF.md`.
 
 ## Batch A
 
 - [x] Attach a quote to a subscription
 - [ ] Second-approver flow end to end. Decision tests passed. Live walkthrough BLOCKED until a second platform user with `approvals.manage` exists.
-- [ ] Mid-cycle add and remove with proration. Calculation tests passed, 5. Provider call BLOCKED until a test-mode secret is in `.env.local`.
+- [ ] Mid-cycle add and remove with proration. Calculation tests passed, 5. `20261102420000` can store the integer and cannot record a provider call. Provider call BLOCKED until a test-mode secret is in `.env.local`.
 
 ## Batch B
 

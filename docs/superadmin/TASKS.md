@@ -60,7 +60,7 @@ Work top to bottom. A task is done only when its tests have run and the box is t
 - [x] AI governance
 - [x] Customer 360
 - [x] Global search
-- [ ] Segments and tags
+- [x] Segments and tags
 - [ ] Admin alert rules
 - [ ] Job console
 - [ ] Incident and release management

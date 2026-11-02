@@ -133,7 +133,7 @@ function ReportsCentre() {
                 aria-selected={tab === id}
                 data-state={tab === id ? "active" : "inactive"}
                 to="/reports"
-                search={{ ...search, tab: id }}
+                search={{ ...search, tab: id, pack: undefined }}
                 className={nativeTabLinkClass}
                 resetScroll={false}
               >
@@ -162,6 +162,11 @@ function ReportsCentre() {
                   companyId={company.id}
                   from={from}
                   to={periodTo}
+                  selectedPackId={search.pack ?? null}
+                  onSelectPack={(id) => void navigate({
+                    to: "/reports",
+                    search: (previous) => ({ ...previous, pack: id ?? undefined }),
+                  })}
                   filter={
                     value === "drafts" || value === "published" || value === "archived"
                       ? value

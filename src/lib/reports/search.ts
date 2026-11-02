@@ -17,6 +17,8 @@ export type ReportSearch = {
   entity?: string;
   action?: string;
   basis?: "accrual" | "cash";
+  term?: string;
+  nonZero?: boolean;
   /** Budget vs Actual: which budget, and monthly / quarterly / year-to-date columns. */
   budget?: string;
   view?: "month" | "quarter" | "ytd";
@@ -69,5 +71,8 @@ export function parseReportSearch(raw: Record<string, unknown>): ReportSearch {
     out.view = raw["view"];
   }
   if (raw["basis"] === "cash" || raw["basis"] === "accrual") out.basis = raw["basis"];
+  const term = str(raw["term"], 120);
+  if (term) out.term = term;
+  if (raw["nonZero"] === true) out.nonZero = true;
   return out;
 }

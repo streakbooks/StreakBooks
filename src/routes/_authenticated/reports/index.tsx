@@ -147,14 +147,13 @@ function ReportsCentre() {
           </TabsList>
         </div>
         {tab !== "standard" && (
-          <ReportingFeatureGate companyId={company.id} onOpenStandard={() => setTab("standard")}>
+          <ReportingFeatureGate companyId={company.id}>
             <TabsContent value="home">
               <ReportingHome
                 key={company.id}
                 companyId={company.id}
                 from={from}
                 to={periodTo}
-                onNavigate={setTab}
               />
             </TabsContent>
             <TabsContent value="adviser">

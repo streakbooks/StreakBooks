@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -118,10 +119,10 @@ export function PortalSettingsPanel({
         />
         <label className="text-sm">
           Settlement user
-          <select
+          <RecordLookupSelect
             className="mt-1 block h-9 w-full rounded-md border border-input bg-background px-2"
             value={String(current["settlement_user_id"] ?? "")}
-            onChange={(event) => set("settlement_user_id", event.target.value)}
+            onValueChange={(event) => set("settlement_user_id", event)}
             disabled={!canEdit}
           >
             <option value="">Not set</option>
@@ -130,7 +131,7 @@ export function PortalSettingsPanel({
                 {actor.name || actor.email} ({actor.role})
               </option>
             ))}
-          </select>
+          </RecordLookupSelect>
         </label>
         <AccountSelect
           label="Card-fee expense account"
@@ -587,10 +588,10 @@ function AccountSelect({
   return (
     <label className="text-sm">
       {label}
-      <select
+      <RecordLookupSelect
         className="mt-1 block h-9 w-full rounded-md border border-input bg-background px-2"
         value={value}
-        onChange={(event) => onChange(event.target.value)}
+        onValueChange={(event) => onChange(event)}
       >
         <option value="">Not set</option>
         {accounts.map((account) => (
@@ -598,7 +599,7 @@ function AccountSelect({
             {account.code} — {account.name}
           </option>
         ))}
-      </select>
+      </RecordLookupSelect>
     </label>
   );
 }

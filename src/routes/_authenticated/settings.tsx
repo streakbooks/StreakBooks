@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { openSettingsPanel } from "@/lib/settings/panels";
 import { SettingsDestinationLink } from "@/components/settings/ModuleSettingsLinks";
 import { InPlaceSettingsPanel } from "@/components/settings/InPlaceSettingsPanel";
@@ -565,7 +566,7 @@ export function SettingsForCompany({
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="org-country">Country</Label>
-                          <Select
+                          <RecordLookupSelect
                             value={countryCode}
                             disabled={!canEdit || saveMutation.isPending}
                             onValueChange={setCountryCode}
@@ -580,7 +581,7 @@ export function SettingsForCompany({
                                 </SelectItem>
                               ))}
                             </SelectContent>
-                          </Select>
+                          </RecordLookupSelect>
                         </div>
                         <div className="space-y-2">
                           <Label>Tax regime</Label>
@@ -589,6 +590,8 @@ export function SettingsForCompany({
                             disabled={!canEdit || saveMutation.isPending}
                             onValueChange={setTaxRegime}
                           >
+                            {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
@@ -650,6 +653,8 @@ export function SettingsForCompany({
                         <div className="space-y-2">
                           <Label>Locale</Label>
                           <Select value={locale} disabled={!canEdit} onValueChange={setLocale}>
+                            {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
@@ -669,6 +674,8 @@ export function SettingsForCompany({
                             disabled={!canEdit}
                             onValueChange={setDateFormat}
                           >
+                            {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
@@ -722,7 +729,7 @@ export function SettingsForCompany({
                       <CardContent className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-2">
                           <Label>Base currency</Label>
-                          <Select
+                          <RecordLookupSelect
                             value={currency}
                             disabled={!canEdit || saveMutation.isPending}
                             onValueChange={setCurrency}
@@ -737,11 +744,11 @@ export function SettingsForCompany({
                                 </SelectItem>
                               ))}
                             </SelectContent>
-                          </Select>
+                          </RecordLookupSelect>
                         </div>
                         <div className="space-y-2">
                           <Label>Time zone</Label>
-                          <Select
+                          <RecordLookupSelect
                             value={timezone}
                             disabled={!canEdit || saveMutation.isPending}
                             onValueChange={setTimezone}
@@ -756,7 +763,7 @@ export function SettingsForCompany({
                                 </SelectItem>
                               ))}
                             </SelectContent>
-                          </Select>
+                          </RecordLookupSelect>
                         </div>
                         <div className="space-y-2">
                           <Label>Financial year end month</Label>
@@ -769,6 +776,8 @@ export function SettingsForCompany({
                               if (Number(fyDay) > max) setFyDay(String(max));
                             }}
                           >
+                            {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
@@ -1016,7 +1025,7 @@ export function SettingsForCompany({
                           <div className="grid gap-3 sm:grid-cols-4">
                             <div className="space-y-1">
                               <Label>From</Label>
-                              <Select value={rateFrom} onValueChange={setRateFrom}>
+                              <RecordLookupSelect value={rateFrom} onValueChange={setRateFrom}>
                                 <SelectTrigger>
                                   <SelectValue />
                                 </SelectTrigger>
@@ -1029,7 +1038,7 @@ export function SettingsForCompany({
                                       </SelectItem>
                                     ))}
                                 </SelectContent>
-                              </Select>
+                              </RecordLookupSelect>
                             </div>
                             <div className="space-y-1">
                               <Label>Date</Label>

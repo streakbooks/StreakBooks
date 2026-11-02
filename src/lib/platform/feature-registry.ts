@@ -325,9 +325,22 @@ export const FEATURE_REGISTRY: readonly CatalogueFeature[] = [
     costTag: null,
     status: "live",
   },
+  {
+    key: "reporting",
+    name: "Reporting ecosystem",
+    description:
+      "Custom financial reports, management analysis, review packs and scheduled reporting.",
+    category: "module",
+    module: "reporting",
+    defaultEnabled: true,
+    metering: "none",
+    costTag: null,
+    status: "live",
+  },
 ];
 
 export const FEATURE_DEPENDENCIES = [
+  { featureKey: "reporting", requires: ["accounting"], conflicts: [], optional: ["budgeting"] },
   { featureKey: "bank_feeds", requires: ["bank_import"], conflicts: [], optional: [] },
   { featureKey: "white_label", requires: ["client_portal"], conflicts: [], optional: [] },
   { featureKey: "inventory", requires: ["purchases"], conflicts: [], optional: ["projects"] },

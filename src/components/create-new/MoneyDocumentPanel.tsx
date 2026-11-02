@@ -426,6 +426,8 @@ function Select({
       value={value}
       onChange={(event) => onChange(event.target.value)}
     >
+      {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
       <option value="">Select</option>
       {options.map((option) => (
         <option key={option.value} value={option.value}>

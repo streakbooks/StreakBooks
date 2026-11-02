@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -349,7 +350,7 @@ function BankingAccounts() {
           placeholder="GL account"
           allowClear={false}
         />
-        <Select value={currency ?? baseCurrency} onValueChange={setCurrency}>
+        <RecordLookupSelect value={currency ?? baseCurrency} onValueChange={setCurrency}>
           <SelectTrigger aria-label="Currency">
             <SelectValue />
           </SelectTrigger>
@@ -361,7 +362,7 @@ function BankingAccounts() {
               </SelectItem>
             ))}
           </SelectContent>
-        </Select>
+        </RecordLookupSelect>
         {(currency ?? baseCurrency) !== baseCurrency ? (
           <p className="text-xs text-muted-foreground">
             Foreign-currency bank accounts keep their own currency for statements. Ledger journals

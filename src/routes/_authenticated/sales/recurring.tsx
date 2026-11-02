@@ -313,6 +313,8 @@ export function RecurringInvoices() {
                 value={frequency}
                 onChange={(e) => setFrequency(e.target.value)}
               >
+                {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
                 {FREQUENCIES.map((f) => (
                   <option key={f.value} value={f.value}>
                     {f.label}

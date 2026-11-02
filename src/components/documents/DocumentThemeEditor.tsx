@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useRef, useState } from "react";
 import { CustomerStatementSheet } from "./CustomerStatementSheet";
 import { statementPreview } from "@/lib/documents/themes/statement-preview";
@@ -341,6 +342,8 @@ export function DocumentThemeEditor({
                       value={String(config[key as keyof ThemeConfig])}
                       onChange={(e) => update(key as keyof ThemeConfig, e.target.value)}
                     >
+                      {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
                       {f.options.map((o) => (
                         <option key={o} value={o}>
                           {o}
@@ -440,6 +443,8 @@ export function DocumentThemeEditor({
                 value={kind}
                 onChange={(e) => setKind(e.target.value as ThemeKind)}
               >
+                {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
                 {THEME_KINDS.map((k) => (
                   <option key={k} value={k}>
                     {labelFor(k)}
@@ -503,13 +508,13 @@ export function DocumentThemeEditor({
           {THEME_KINDS.map((k) => (
             <label key={k} className="text-sm">
               {labelFor(k)}
-              <select
+              <RecordLookupSelect
                 aria-label={`Default theme for ${labelFor(k)}`}
                 className="block w-full rounded border bg-background p-2"
                 disabled={disabled || !canEdit}
                 value={defaults.find((d) => d.kind === k)?.theme_id ?? ""}
-                onChange={(e) =>
-                  void run(() => onDefault(k, e.target.value || null), "Document default saved")
+                onValueChange={(e) =>
+                  void run(() => onDefault(k, e || null), "Document default saved")
                 }
               >
                 <option value="">Organisation branding</option>
@@ -518,7 +523,7 @@ export function DocumentThemeEditor({
                     {t.name}
                   </option>
                 ))}
-              </select>
+              </RecordLookupSelect>
             </label>
           ))}
         </div>

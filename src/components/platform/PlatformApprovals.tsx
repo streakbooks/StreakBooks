@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -99,18 +100,18 @@ export function PlatformApprovals({ canManage }: { canManage: boolean }) {
         >
           <label className="text-sm">
             Feature
-            <select
+            <RecordLookupSelect
               className="mt-1 w-full rounded-md border bg-background px-3 py-2"
               aria-label="Feature"
               value={grant.feature}
-              onChange={(event) => setGrant({ ...grant, feature: event.target.value })}
+              onValueChange={(feature) => setGrant({ ...grant, feature })}
             >
               {FEATURE_REGISTRY.map((feature) => (
                 <option key={feature.key} value={feature.key}>
                   {feature.key} — {feature.name}
                 </option>
               ))}
-            </select>
+            </RecordLookupSelect>
           </label>
           <label className="text-sm">
             Scope

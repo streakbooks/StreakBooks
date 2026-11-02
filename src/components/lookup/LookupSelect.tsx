@@ -314,7 +314,7 @@ export function LookupSelect({
                 className={cn(
                   "sticky top-0 z-10 flex cursor-pointer items-center gap-2 rounded-sm bg-popover px-2 py-1.5 text-sm font-medium",
                   highlight === 0
-                    ? "bg-primary text-primary-foreground"
+                    ? "bg-[var(--lookup-selection,#162c43)] text-white"
                     : "text-primary hover:bg-accent",
                 )}
                 onMouseEnter={() => dispatch({ type: "highlight", index: 0, count: rows.length })}
@@ -365,7 +365,7 @@ export function LookupSelect({
                         aria-disabled={option.disabled || undefined}
                         className={cn(
                           "flex cursor-pointer items-start gap-2 rounded-sm px-2 py-1.5 text-sm",
-                          active && "bg-primary text-primary-foreground",
+                          active && "bg-[var(--lookup-selection,#162c43)] text-white",
                           option.disabled && "cursor-not-allowed opacity-50",
                         )}
                         onMouseEnter={() =>

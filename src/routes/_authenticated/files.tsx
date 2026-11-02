@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -440,7 +441,7 @@ function FilesPage() {
               <Pencil className="mr-1 size-4" />
               Rename
             </Button>
-            <Select
+            <RecordLookupSelect
               value={activeFolder.parent_id ?? "root"}
               onValueChange={(v) =>
                 renameFolderM.mutate({
@@ -462,7 +463,7 @@ function FilesPage() {
                   </SelectItem>
                 ))}
               </SelectContent>
-            </Select>
+            </RecordLookupSelect>
             <Button
               size="sm"
               variant="ghost"
@@ -493,6 +494,8 @@ function FilesPage() {
             setPage(0);
           }}
         >
+          {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
           <SelectTrigger className="w-52" aria-label="Filter by record type">
             <SelectValue />
           </SelectTrigger>
@@ -630,7 +633,7 @@ function FilesPage() {
                     </TableCell>
                     <TableCell>
                       {manageable ? (
-                        <Select
+                        <RecordLookupSelect
                           value={f.folder_id ?? "unfiled"}
                           onValueChange={(v) =>
                             moveM.mutate({
@@ -654,7 +657,7 @@ function FilesPage() {
                               </SelectItem>
                             ))}
                           </SelectContent>
-                        </Select>
+                        </RecordLookupSelect>
                       ) : (
                         (folders.find((folder) => folder.id === f.folder_id)?.name ?? "Unfiled")
                       )}

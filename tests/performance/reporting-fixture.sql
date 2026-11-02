@@ -1,0 +1,27 @@
+-- Isolated PostgreSQL-only performance fixture; never apply to the connected production database.
+CREATE ROLE authenticated; CREATE ROLE anon; CREATE SCHEMA auth;
+CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
+CREATE TABLE public.companies(id uuid PRIMARY KEY,name text,base_currency text,fiscal_year_end_month int,fiscal_year_end_day int);
+INSERT INTO public.companies VALUES('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','Isolated performance fixture','GBP',12,31);
+CREATE FUNCTION public.is_company_member(_company_id uuid) RETURNS boolean LANGUAGE sql STABLE AS $$SELECT auth.uid()='11111111-1111-4111-8111-111111111111'::uuid AND _company_id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid$$;
+CREATE FUNCTION public.has_company_permission(_company_id uuid,_permission text) RETURNS boolean LANGUAGE sql STABLE AS $$SELECT public.is_company_member(_company_id)$$;
+CREATE TABLE public.currency_decimals(code text PRIMARY KEY,decimal_places smallint);
+INSERT INTO public.currency_decimals VALUES('GBP',2),('USD',2),('JPY',0);
+CREATE TABLE public.accounts(id uuid PRIMARY KEY,company_id uuid,code text,name text,account_type text,subtype text,account_kind text,system_key text,fs_line text,cash_flow_class text,is_control boolean DEFAULT false,is_active boolean DEFAULT true,is_postable boolean DEFAULT true,show_on_dashboard_watchlist boolean DEFAULT false);
+INSERT INTO public.accounts(id,company_id,code,name,account_type,subtype,account_kind) SELECT md5('account'||n)::uuid,'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',n::text,'Account '||n,CASE WHEN n=0 THEN 'asset' ELSE 'income' END,CASE WHEN n=0 THEN 'bank' ELSE 'revenue' END,CASE WHEN n=0 THEN 'bank' ELSE 'revenue' END FROM generate_series(0,200) n;
+CREATE TABLE public.journals(id uuid PRIMARY KEY,company_id uuid,journal_date date,currency_code text,fx_rate_to_base numeric,status text,source_type text,memo text);
+CREATE INDEX journals_company_date_idx ON public.journals(company_id,journal_date) WHERE status='posted';
+INSERT INTO public.journals SELECT md5('journal'||n)::uuid,'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','2026-01-01'::date+(n%300),CASE WHEN n%10=0 THEN 'USD' ELSE 'GBP' END,CASE WHEN n%10=0 THEN 1.2 ELSE 1 END,'posted','manual','Performance balanced journal' FROM generate_series(1,50000)n;
+CREATE TABLE public.journal_lines(id uuid PRIMARY KEY,company_id uuid,journal_id uuid,account_id uuid,debit_minor bigint,credit_minor bigint);
+CREATE INDEX journal_lines_company_account_idx ON public.journal_lines(company_id,account_id);
+CREATE INDEX journal_lines_journal_idx ON public.journal_lines(journal_id);
+INSERT INTO public.journal_lines SELECT md5('debit'||n)::uuid,'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',md5('journal'||n)::uuid,md5('account0')::uuid,100,0 FROM generate_series(1,50000)n;
+INSERT INTO public.journal_lines SELECT md5('credit'||n)::uuid,'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',md5('journal'||n)::uuid,md5('account'||(1+n%200))::uuid,0,100 FROM generate_series(1,50000)n;
+CREATE TABLE public.bank_accounts(id uuid PRIMARY KEY,company_id uuid,name text,gl_account_id uuid,is_active boolean);
+INSERT INTO public.bank_accounts VALUES(gen_random_uuid(),'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','Fixture bank',md5('account0')::uuid,true);
+CREATE TABLE public.report_saved_views(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),company_id uuid,user_id uuid,name text,config jsonb,updated_at timestamptz DEFAULT now());
+CREATE INDEX report_views_company_name_idx ON public.report_saved_views(company_id,lower(name));
+INSERT INTO public.report_saved_views(company_id,user_id,name,config) SELECT 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','11111111-1111-4111-8111-111111111111','Saved report '||n,'{}' FROM generate_series(1,1000)n;
+GRANT USAGE ON SCHEMA public,auth TO authenticated;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO authenticated;
+ANALYZE;

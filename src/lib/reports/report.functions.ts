@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
+import { assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
 import { billOutstanding } from "@/lib/purchases/line-math";
 import { invoiceOutstanding } from "@/lib/sales/line-helpers";
@@ -45,14 +45,7 @@ import {
   type StatementLine,
 } from "@/lib/reports/statements";
 
-const ISO = /^\d{4}-\d{2}-\d{2}$/;
-
-function isoDate(v: unknown, name: string): string {
-  if (typeof v !== "string" || !ISO.test(v) || Number.isNaN(Date.parse(`${v}T00:00:00Z`))) {
-    throw new Error(`${name} must be a valid date (YYYY-MM-DD).`);
-  }
-  return v;
-}
+import { assertReportDate as isoDate } from "./date-validation";
 
 function optIsoDate(v: unknown, name: string): string | undefined {
   if (v === undefined || v === null || v === "") return undefined;
@@ -77,7 +70,7 @@ export type Ctx = {
 };
 
 export async function loadCtx(supabase: Sb, id: string): Promise<Ctx> {
-  await assertCompanyMember(supabase, id);
+  await assertCompanyPermission(supabase, id, "reports.view");
   const [meta, accounts] = await Promise.all([
     loadCompanyMeta(supabase, id),
     loadAccountMetas(supabase, id),
@@ -373,7 +366,7 @@ export const getAccountTransactions = createServerFn({ method: "GET" })
     }),
   )
   .handler(async ({ data, context }) => {
-    await assertCompanyMember(context.supabase, data.companyId);
+    await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
     const meta = await loadCompanyMeta(context.supabase, data.companyId);
     const { data: acct, error } = await context.supabase
       .from("accounts" as never)
@@ -916,7 +909,7 @@ export const getJournalReport = createServerFn({ method: "GET" })
     }),
   )
   .handler(async ({ data, context }) => {
-    await assertCompanyMember(context.supabase, data.companyId);
+    await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
     let q = context.supabase
       .from("journals" as never)
       .select(

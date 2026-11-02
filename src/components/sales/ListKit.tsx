@@ -90,6 +90,8 @@ export function ListToolbar({
       filters={
         <>
           <Select value={state.status} onValueChange={(v) => onChange({ status: v, page: 0 })}>
+            {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
             <SelectTrigger className="w-full sm:w-44" aria-label="Status">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
@@ -204,6 +206,8 @@ export function Pager({
           value={String(state.pageSize)}
           onValueChange={(v) => onChange({ pageSize: Number(v), page: 0 })}
         >
+          {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
           <SelectTrigger className="w-28" aria-label="Rows per page">
             <SelectValue />
           </SelectTrigger>

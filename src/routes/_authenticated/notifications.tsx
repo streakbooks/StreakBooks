@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useMemo, useState } from "react";
 import { createFileRoute, useRouteContext } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -73,7 +74,7 @@ function ActionCenterPage() {
   const [selected, setSelected] = useState<string[]>([]);
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkError, setBulkError] = useState<string | null>(null);
-  const rows = inbox.data ?? [];
+  const rows = useMemo(() => inbox.data ?? [], [inbox.data]);
 
   const filtered = useMemo(
     () => filterActionNotifications(rows, { view, category, search }),
@@ -169,6 +170,8 @@ function ActionCenterPage() {
           }}
         />
         <Select value={category} onValueChange={onCategory}>
+          {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
           <SelectTrigger aria-label="Filter by module">
             <SelectValue placeholder="All modules" />
           </SelectTrigger>
@@ -527,7 +530,7 @@ function DocumentRequests({ companyId, userId }: { companyId: string | null; use
             >
               <div className="space-y-1">
                 <label className="text-sm font-medium">Team member</label>
-                <Select value={recipient} onValueChange={setRecipient}>
+                <RecordLookupSelect value={recipient} onValueChange={setRecipient}>
                   <SelectTrigger aria-label="Select document recipient">
                     <SelectValue placeholder="Choose colleague" />
                   </SelectTrigger>
@@ -538,7 +541,7 @@ function DocumentRequests({ companyId, userId }: { companyId: string | null; use
                       </SelectItem>
                     ))}
                   </SelectContent>
-                </Select>
+                </RecordLookupSelect>
               </div>
               <div className="space-y-1">
                 <label htmlFor="doc-request-subject" className="text-sm font-medium">
@@ -610,7 +613,7 @@ function DocumentRequests({ companyId, userId }: { companyId: string | null; use
                   >
                     Upload in Files <ArrowUpRight className="size-3" />
                   </a>
-                  <Select
+                  <RecordLookupSelect
                     value={uploaded[r.id] ?? ""}
                     onValueChange={(id) => setUploaded((old) => ({ ...old, [r.id]: id }))}
                   >
@@ -624,7 +627,7 @@ function DocumentRequests({ companyId, userId }: { companyId: string | null; use
                         </SelectItem>
                       ))}
                     </SelectContent>
-                  </Select>
+                  </RecordLookupSelect>
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" onClick={() => void files.refetch()}>
                       Refresh uploaded files

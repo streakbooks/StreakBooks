@@ -154,6 +154,8 @@ export function JournalsPanel({
           value={source}
           onChange={(e) => setSource(e.target.value)}
         >
+          {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+
           <option value="">All sources</option>
           {Object.entries(SOURCE_LABEL).map(([value, label]) => (
             <option key={value} value={value}>

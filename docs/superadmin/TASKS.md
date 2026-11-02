@@ -42,7 +42,7 @@ Work top to bottom. A task is done only when its tests have run and the box is t
 - [x] Break-glass access
 - [x] Step-up MFA
 - [x] Admin IP allowlist
-- [ ] Tamper-evident audit verification
+- [x] Tamper-evident audit verification
 - [ ] Authorisation tests for every platform role
 
 ## Batch D

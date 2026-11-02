@@ -1,5 +1,5 @@
 import { parseReportingCentreSearch } from "@/lib/reports/centre-search";
-import { nativeTabLinkClass } from "@/lib/navigation/native-tab";
+import { nativeTabLinkClass, handleNativeTabKeyDown } from "@/lib/navigation/native-tab";
 import { ReportingFeatureGate } from "@/components/reports/ReportingFeatureGate";
 import { ManagementWorkspace } from "@/components/reports/ManagementWorkspace";
 import { ReportPacksWorkspace } from "@/components/reports/ReportPacksWorkspace";
@@ -114,7 +114,7 @@ function ReportsCentre() {
       </div>
       <Tabs value={tab} className="space-y-6">
         <div className="overflow-x-auto">
-          <TabsList aria-label="Reporting modules" className="w-max">
+          <TabsList onKeyDown={handleNativeTabKeyDown} aria-label="Reporting modules" className="w-max">
             {([
               ["home", "Reporting home"],
               ["standard", "Standard reports"],

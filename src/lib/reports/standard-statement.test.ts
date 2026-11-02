@@ -10,6 +10,7 @@ import { displayDocumentValue } from "./document-format";
 import { parseReportSearch } from "./search";
 import { validateSavedConfig } from "./saved-report";
 import { reportPeriod } from "./report-periods";
+import { reportHeaderParts } from "./report-presentation";
 function captured(
   settings: ReturnType<typeof standardSettingsSchema.parse>,
   report: "profit-and-loss" | "balance-sheet" = "profit-and-loss",
@@ -40,6 +41,39 @@ const build = (s: ReturnType<typeof standardSettingsSchema.parse>, f = captured(
     config: { settings: encodeStandardSettings(s) },
   });
 describe("standard statement controls and accounting parity", () => {
+  it("persists visual settings and applies them across report document, PDF and Excel", async () => {
+    const settings = standardSettingsSchema.parse({
+      showCompanyName: false,
+      headerOrder: "title-first",
+      showReportPeriod: false,
+      showDatePrepared: true,
+      showTimePrepared: true,
+      headerAlignment: "right",
+      footerAlignment: "center",
+      bandedRows: true,
+      reportBorders: "all",
+      footer: "Internal financial statement",
+    });
+    const doc = build(settings);
+    expect(doc.presentation).toMatchObject({
+      showCompanyName: false, headerOrder: "title-first", headerAlignment: "right",
+      bandedRows: true, reportBorders: "all",
+    });
+    const parts = reportHeaderParts(doc).map((part) => part.text);
+    expect(parts).toContain("P&L");
+    expect(parts).not.toContain(doc.company);
+    expect(parts.some((part) => part.startsWith("Prepared:"))).toBe(true);
+    expect(parts.some((part) => part.includes("UTC"))).toBe(true);
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load((await exportReportXlsx(doc)) as unknown as ExcelJS.Buffer);
+    expect(workbook.worksheets[0]!.getCell("A1").value).toBe("P&L");
+    expect(workbook.worksheets[0]!.getCell("A2").value).toBe("");
+    expect(workbook.worksheets[0]!.getCell("D3").value).toContain("Prepared");
+    expect(workbook.worksheets[0]!.getRow(8).fill).toBeDefined();
+    expect(workbook.worksheets[0]!.headerFooter.oddFooter).toContain("&CInternal financial statement");
+    expect((await PDFDocument.load(await exportReportPdf(doc))).getPageCount()).toBeGreaterThan(0);
+  });
+
   it("keeps grouping independent from full-period comparison and computes exact amount/percent changes", () => {
     const s = standardSettingsSchema.parse({
       compare: "prior_year",

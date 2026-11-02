@@ -6,7 +6,7 @@ Date: 2 November 2026. Branch: `feat/superadmin-control-centre`.
 
 Executed on 2 November 2026 from `d:\Apps\LinkBooks`:
 
-- `npx vitest run src/lib/platform src/lib/billing/plan-quote.test.ts --reporter=dot` — 5 files, 32 tests, passed.
+- `npx vitest run src/lib/platform src/lib/billing/plan-quote.test.ts --reporter=dot` — 5 files, 34 tests, passed. The extra cases cover usage overage and the MRR baseline, movement classes, and portfolio sum.
 - `npx tsc --noEmit --pretty false` — exit 0 after the quote route and rollout migration.
 - Browser check of `http://localhost:8080/pricing/builder`: published plans loaded; Growth quoted at US$30 monthly and US$300 yearly with no charge; a selected add-on stayed unpriced because the entitlement migration is not applied. `/platform` was not walked (needs a platform owner and a second approver).
 - `npx eslint` on `src/lib/platform`, `PlatformOverview.tsx`, `PlatformApprovals.tsx` and `platform.index.tsx` — exit 0 after Prettier.
@@ -35,5 +35,7 @@ Production build, browser sign-in, RLS SQL suites and the live database were not
 | Revenue empty vs forbidden | IMPLEMENTED in UI; SQL field blocked on apply | `PlatformOverview.tsx`, `revenueState` |
 | Provider price sync | BLOCKED | Test-mode secret key and a test customer |
 | Customer plan builder page | IMPLEMENTED as a quote only | `src/routes/pricing_.builder.tsx`. It does not charge or grant a feature. |
+| Usage overage | IMPLEMENTED as a calculation only | `usageOverage` in `src/lib/platform/price-book.ts`. No invoice. |
+| Historical MRR movements | IMPLEMENTED, blocked on migration apply | `supabase/migrations/20261102140000_mrr_movements.sql` |
 | Batches C–H new surfaces | MISSING | Existing `/platform` sections remain |
 | Status page, SMS, e-signature, BI | NOT APPLICABLE until a vendor is connected | `docs/decisions/002-commodity-operations-tools.md` |

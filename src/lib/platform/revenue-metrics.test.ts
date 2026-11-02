@@ -5,7 +5,10 @@ import {
   arrFromMrrMinor,
   mrrMovement,
   normalisedMrrMinor,
+  openingMrrBaseline,
   revenueCardState,
+  storedMrrMovement,
+  sumMrrMovements,
 } from "./revenue-metrics";
 import { formatConsoleInstant, formatUtcDay } from "./console-time";
 
@@ -22,6 +25,33 @@ describe("revenue definitions", () => {
     expect(mrrMovement(500, 800)).toMatchObject({ expansionMinor: 300, netNewMinor: 300 });
     expect(mrrMovement(800, 700)).toMatchObject({ contractionMinor: 100, netNewMinor: -100 });
     expect(mrrMovement(700, 0)).toMatchObject({ churnedMinor: 700, netNewMinor: -700 });
+  });
+
+  it("stores a movement only when recognised MRR changes, and sums a portfolio", () => {
+    expect(storedMrrMovement(0, 500)).toMatchObject({ movement: "new", deltaMinor: 500 });
+    expect(storedMrrMovement(500, 800)).toMatchObject({ movement: "expansion", deltaMinor: 300 });
+    expect(storedMrrMovement(800, 700)).toMatchObject({
+      movement: "contraction",
+      deltaMinor: -100,
+    });
+    expect(storedMrrMovement(700, 0)).toMatchObject({ movement: "churn", deltaMinor: -700 });
+    expect(storedMrrMovement(700, 700).movement).toBe("unchanged");
+    expect(openingMrrBaseline(500)).toMatchObject({
+      movement: "baseline",
+      previousMinor: 500,
+      deltaMinor: 0,
+    });
+    expect(sumMrrMovements([mrrMovement(0, 500), mrrMovement(200, 0)])).toMatchObject({
+      newMinor: 500,
+      churnedMinor: 200,
+      netNewMinor: 300,
+    });
+    const sql = readFileSync("supabase/migrations/20261102140000_mrr_movements.sql", "utf8");
+    expect(sql).toContain("movement IN ('baseline', 'new', 'expansion', 'contraction', 'churn')");
+    expect(sql).toContain("s.status = 'active'");
+    expect(sql).toContain("NOT c.is_demo");
+    expect(sql).toContain("p.currency IS DISTINCT FROM a.currency");
+    expect(sql).toContain("MRR movements are append-only");
   });
 
   it("separates an empty revenue card from a missing permission", () => {

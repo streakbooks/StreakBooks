@@ -3,6 +3,7 @@ import {
   needsSecondApprover,
   publishGuard,
   quoteFeature,
+  usageOverage,
   yearlySavingsMinor,
   type FeaturePrice,
 } from "./price-book";
@@ -81,5 +82,20 @@ describe("feature price book", () => {
     expect(
       needsSecondApprover({ source: "grant", scope: "business", discountBps: 1000, count: 1 }),
     ).toBe(false);
+  });
+
+  it("prices usage above the included quantity and leaves a missing rate unpriced", () => {
+    expect(usageOverage({ usedQty: 150, includedQty: 100, unitAmountMinor: 2 })).toEqual({
+      overageQty: 50,
+      netMinor: 100,
+    });
+    expect(usageOverage({ usedQty: 40, includedQty: 100, unitAmountMinor: 2 })).toEqual({
+      overageQty: 0,
+      netMinor: 0,
+    });
+    expect(usageOverage({ usedQty: 150, includedQty: 100, unitAmountMinor: null })).toEqual({
+      overageQty: 50,
+      netMinor: null,
+    });
   });
 });

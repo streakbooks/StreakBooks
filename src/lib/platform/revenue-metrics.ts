@@ -23,6 +23,58 @@ export type MrrMovement = {
   netNewMinor: number;
 };
 
+export type StoredMrrMovement = {
+  previousMinor: number;
+  currentMinor: number;
+  movement: "new" | "expansion" | "contraction" | "churn" | "unchanged" | "baseline";
+  deltaMinor: number;
+};
+
+/** Same classes as `mrrMovement`. Unchanged pairs are not stored. */
+export function storedMrrMovement(previousMinor: number, currentMinor: number): StoredMrrMovement {
+  const classified = mrrMovement(previousMinor, currentMinor);
+  const movement =
+    previousMinor === currentMinor
+      ? "unchanged"
+      : classified.newMinor > 0
+        ? "new"
+        : classified.churnedMinor > 0
+          ? "churn"
+          : classified.expansionMinor > 0
+            ? "expansion"
+            : "contraction";
+  return {
+    previousMinor,
+    currentMinor,
+    movement,
+    deltaMinor: classified.netNewMinor,
+  };
+}
+
+/** First observation of recognised MRR. It is not new, expansion, or churn. */
+export function openingMrrBaseline(currentMinor: number): StoredMrrMovement {
+  const current = normalisedMrrMinor(currentMinor, "month");
+  if (current <= 0) throw new Error("A baseline needs recognised MRR above zero.");
+  return { previousMinor: current, currentMinor: current, movement: "baseline", deltaMinor: 0 };
+}
+
+export function sumMrrMovements(rows: readonly MrrMovement[]): MrrMovement {
+  const total: MrrMovement = {
+    newMinor: 0,
+    expansionMinor: 0,
+    contractionMinor: 0,
+    churnedMinor: 0,
+    netNewMinor: 0,
+  };
+  for (const row of rows) {
+    for (const key of Object.keys(total) as (keyof MrrMovement)[]) {
+      if (!Number.isInteger(row[key])) throw new Error("MRR movement fields must be integers.");
+      total[key] += row[key];
+    }
+  }
+  return total;
+}
+
 export function mrrMovement(previousMinor: number, currentMinor: number): MrrMovement {
   const previous = normalisedMrrMinor(previousMinor, "month");
   const current = normalisedMrrMinor(currentMinor, "month");

@@ -101,8 +101,12 @@ export function quoteFeature(price: FeaturePrice, requestedQty: number): Feature
     netMinor = tierAmount(price.tiers, quantity, price.model);
   }
   if (price.model === "usage") {
-    const overage = Math.max(0, quantity - Math.max(0, price.includedQty));
-    netMinor = overage * price.amountMinor;
+    const overage = usageOverage({
+      usedQty: quantity,
+      includedQty: Math.max(0, price.includedQty),
+      unitAmountMinor: price.amountMinor,
+    });
+    netMinor = overage.netMinor ?? 0;
   }
   const taxMinor = Math.floor((netMinor * price.taxBps) / 10_000);
   return {
@@ -113,6 +117,34 @@ export function quoteFeature(price: FeaturePrice, requestedQty: number): Feature
     taxMinor,
     totalMinor: netMinor + taxMinor,
     model: price.model,
+  };
+}
+
+/**
+ * Usage above the included quantity, priced at the unit rate.
+ * A missing unit price stays null. This does not create an invoice or a charge.
+ */
+export function usageOverage(input: {
+  usedQty: number;
+  includedQty: number;
+  unitAmountMinor: number | null;
+}): { overageQty: number; netMinor: number | null } {
+  if (!Number.isInteger(input.usedQty) || input.usedQty < 0) {
+    throw new Error("Used quantity must be a non-negative integer.");
+  }
+  if (!Number.isInteger(input.includedQty) || input.includedQty < 0) {
+    throw new Error("Included quantity must be a non-negative integer.");
+  }
+  if (
+    input.unitAmountMinor != null &&
+    (!Number.isInteger(input.unitAmountMinor) || input.unitAmountMinor < 0)
+  ) {
+    throw new Error("Overage unit price must be a non-negative integer of minor units.");
+  }
+  const overageQty = Math.max(0, input.usedQty - input.includedQty);
+  return {
+    overageQty,
+    netMinor: input.unitAmountMinor == null ? null : overageQty * input.unitAmountMinor,
   };
 }
 

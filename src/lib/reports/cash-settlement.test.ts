@@ -8,8 +8,14 @@ import {
 const company = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const invoice = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 const payment = (id: string, date: string, amount: bigint, sequence = 0): CashSettlement => ({
-  id, companyId: company, documentId: invoice, settledOn: date,
-  cashDeltaMinor: amount, fxRateToBase: "1", sequence, status: "posted",
+  id,
+  companyId: company,
+  documentId: invoice,
+  settledOn: date,
+  cashDeltaMinor: amount,
+  fxRateToBase: "1",
+  sequence,
+  status: "posted",
 });
 const source = (patch: Partial<CashSourceDocument> = {}): CashSourceDocument => ({
   id: invoice,
@@ -23,10 +29,7 @@ const source = (patch: Partial<CashSourceDocument> = {}): CashSourceDocument => 
     { accountId: "sales", kind: "net", amountMinor: 100n },
     { accountId: "output-tax", kind: "tax", amountMinor: 20n },
   ],
-  settlements: [
-    payment("receipt-1", "2026-10-15", 60n),
-    payment("receipt-2", "2026-11-01", 60n),
-  ],
+  settlements: [payment("receipt-1", "2026-10-15", 60n), payment("receipt-2", "2026-11-01", 60n)],
   ...patch,
 });
 const period = { from: "2026-11-01", to: "2026-11-30" };
@@ -41,9 +44,17 @@ describe("cash settlement source calculation (not yet a live cash-basis report)"
     expect(amounts(nov)).toEqual([[50n, 10n]]);
     expect(nov[0]!.cashDeltaMinor).toBe(60n);
     expect(nov[0]!.fxRoundingBaseMinor).toBe(0n);
-    expect(amounts(recogniseCashSettlements(source(), {
-      from: "2026-10-01", to: "2026-11-30",
-    }))).toEqual([[50n, 10n], [50n, 10n]]);
+    expect(
+      amounts(
+        recogniseCashSettlements(source(), {
+          from: "2026-10-01",
+          to: "2026-11-30",
+        }),
+      ),
+    ).toEqual([
+      [50n, 10n],
+      [50n, 10n],
+    ]);
   });
 
   it("uses cumulative allocation to avoid losing the final tax cent", () => {
@@ -53,14 +64,19 @@ describe("cash settlement source calculation (not yet a live cash-basis report)"
         { accountId: "sales", kind: "net", amountMinor: 100n },
         { accountId: "tax", kind: "tax", amountMinor: 1n },
       ],
-      settlements: [
-        payment("small", "2026-10-01", 1n),
-        payment("rest", "2026-11-01", 100n),
-      ],
+      settlements: [payment("small", "2026-10-01", 1n), payment("rest", "2026-11-01", 100n)],
     });
-    expect(amounts(recogniseCashSettlements(s, {
-      from: "2026-10-01", to: "2026-11-30",
-    }))).toEqual([[1n, 0n], [99n, 1n]]);
+    expect(
+      amounts(
+        recogniseCashSettlements(s, {
+          from: "2026-10-01",
+          to: "2026-11-30",
+        }),
+      ),
+    ).toEqual([
+      [1n, 0n],
+      [99n, 1n],
+    ]);
   });
 
   it("does not treat applied non-cash credit notes as receipts", () => {
@@ -83,10 +99,7 @@ describe("cash settlement source calculation (not yet a live cash-basis report)"
         { accountId: "sales", kind: "net", amountMinor: 80n },
         { accountId: "tax", kind: "tax", amountMinor: 20n },
       ],
-      settlements: [
-        payment("receipt", "2026-10-01", 100n),
-        payment("refund", "2026-11-01", -20n),
-      ],
+      settlements: [payment("receipt", "2026-10-01", 100n), payment("refund", "2026-11-01", -20n)],
     });
     const rows = recogniseCashSettlements(s, period);
     expect(amounts(rows)).toEqual([[-16n, -4n]]);
@@ -110,8 +123,10 @@ describe("cash settlement source calculation (not yet a live cash-basis report)"
     expect(rows[0]!.cashBaseMinor).toBe(1n);
     expect(rows[0]!.components.map((item) => item.recognisedBaseMinor)).toEqual([1n, 1n]);
     expect(rows[0]!.fxRoundingBaseMinor).toBe(-1n);
-    expect(rows[0]!.components.reduce((sum, item) => sum + item.recognisedBaseMinor, 0n)
-      + rows[0]!.fxRoundingBaseMinor).toBe(rows[0]!.cashBaseMinor);
+    expect(
+      rows[0]!.components.reduce((sum, item) => sum + item.recognisedBaseMinor, 0n) +
+        rows[0]!.fxRoundingBaseMinor,
+    ).toBe(rows[0]!.cashBaseMinor);
   });
 
   it("uses different settlement rates for separate partial foreign-currency payments", () => {
@@ -150,27 +165,63 @@ describe("cash settlement source calculation (not yet a live cash-basis report)"
     ["void document", { status: "void" as const }, "posted, non-void"],
     ["bad document gross", { totalMinor: 119n }, "do not reconcile"],
     ["invalid credit", { nonCashCreditMinor: 121n }, "Invalid cash source"],
-    ["invalid date", { settlements: [payment("a", "2026-02-30", 20n)] }, "Invalid cash settlement date"],
-    ["wrong company", { settlements: [{ ...payment("a", "2026-11-01", 20n), companyId: "other" }] }, "Cross-organisation"],
-    ["wrong document", { settlements: [{ ...payment("a", "2026-11-01", 20n), documentId: "other" }] }, "mismatched"],
-    ["void receipt", { settlements: [{ ...payment("a", "2026-11-01", 20n), status: "void" as const }] }, "Voided cash settlement"],
+    [
+      "invalid date",
+      { settlements: [payment("a", "2026-02-30", 20n)] },
+      "Invalid cash settlement date",
+    ],
+    [
+      "wrong company",
+      { settlements: [{ ...payment("a", "2026-11-01", 20n), companyId: "other" }] },
+      "Cross-organisation",
+    ],
+    [
+      "wrong document",
+      { settlements: [{ ...payment("a", "2026-11-01", 20n), documentId: "other" }] },
+      "mismatched",
+    ],
+    [
+      "void receipt",
+      { settlements: [{ ...payment("a", "2026-11-01", 20n), status: "void" as const }] },
+      "Voided cash settlement",
+    ],
     ["overpayment", { settlements: [payment("a", "2026-11-01", 121n)] }, "exceeds uncredited"],
-    ["refund before receipt", { settlements: [payment("a", "2026-11-01", -1n)] }, "exceeds uncredited"],
-    ["duplicate source", { settlements: [payment("a", "2026-11-01", 10n), payment("a", "2026-11-02", 10n)] }, "Duplicate"],
-    ["invalid FX", { settlements: [{ ...payment("a", "2026-11-01", 10n), fxRateToBase: "0" }] }, "positive posted FX"],
+    [
+      "refund before receipt",
+      { settlements: [payment("a", "2026-11-01", -1n)] },
+      "exceeds uncredited",
+    ],
+    [
+      "duplicate source",
+      { settlements: [payment("a", "2026-11-01", 10n), payment("a", "2026-11-02", 10n)] },
+      "Duplicate",
+    ],
+    [
+      "invalid FX",
+      { settlements: [{ ...payment("a", "2026-11-01", 10n), fxRateToBase: "0" }] },
+      "positive posted FX",
+    ],
   ])("fails closed for %s", (_name, patch, message) => {
     expect(() => recogniseCashSettlements(source(patch), period)).toThrow(message);
   });
 
   it("fails closed when credits plus cash exceed the invoice or bill gross", () => {
-    expect(() => recogniseCashSettlements(source({
-      nonCashCreditMinor: 30n,
-    }), { from: "2026-10-01", to: "2026-11-30" })).toThrow("exceeds uncredited");
+    expect(() =>
+      recogniseCashSettlements(
+        source({
+          nonCashCreditMinor: 30n,
+        }),
+        { from: "2026-10-01", to: "2026-11-30" },
+      ),
+    ).toThrow("exceeds uncredited");
   });
 
   it("rejects invalid report dates before reading source facts", () => {
-    expect(() => recogniseCashSettlements(source(), {
-      from: "2026-11-31", to: "2026-12-01",
-    })).toThrow("valid reporting period");
+    expect(() =>
+      recogniseCashSettlements(source(), {
+        from: "2026-11-31",
+        to: "2026-12-01",
+      }),
+    ).toThrow("valid reporting period");
   });
 });

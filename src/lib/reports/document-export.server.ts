@@ -93,7 +93,7 @@ export async function exportReportXlsx(doc: ReportDocument): Promise<Uint8Array>
       ]);
       if (row.kind !== "account") data.font = { bold: true };
       if (doc.presentation?.bandedRows && rowIndex % 2 === 1 && row.kind !== "heading") {
-        data.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF5F7FA" } };
+        data.eachCell((cell) => { cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF5F7FA" } }; });
       }
       if (doc.presentation?.reportBorders === "all")
         data.eachCell((cell) => {

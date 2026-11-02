@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -74,6 +74,10 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/files")({
+  validateSearch: (raw: Record<string, unknown>) => ({
+    folder: typeof raw["folder"] === "string" && raw["folder"] ? raw["folder"] : undefined,
+    file: typeof raw["file"] === "string" && raw["file"] ? raw["file"] : undefined,
+  }),
   head: () => ({ meta: [{ title: "Files — LinkBooks" }] }),
   component: FilesPage,
 });
@@ -96,7 +100,14 @@ function FilesPage() {
   const updateFolder = useServerFn(updateDocumentFolder);
   const deleteFolder = useServerFn(deleteDocumentFolder);
   const moveFile = useServerFn(moveDocumentToFolder);
-  const [folderId, setFolderId] = useState<string | null>(null);
+  const { folder, file } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const folderId = folder ?? null;
+  const selectedFile = file ?? null;
+  const setFolderId = (id: string | null) =>
+    void navigate({ to: "/files", search: (previous) => ({ ...previous, folder: id ?? undefined, file: undefined }) });
+  const setSelectedFile = (id: string | null) =>
+    void navigate({ to: "/files", search: (previous) => ({ ...previous, file: id ?? undefined }) });
   const [newFolderName, setNewFolderName] = useState("");
   const [showNewFolder, setShowNewFolder] = useState(false);
 
@@ -106,7 +117,6 @@ function FilesPage() {
   const [page, setPage] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [sort, setSort] = useState<"newest" | "oldest" | "name" | "largest">("newest");
-  const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null);
 
@@ -332,28 +342,13 @@ function FilesPage() {
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Folder className="size-4" />
-            <button
-              type="button"
-              className="text-sm underline"
-              onClick={() => {
-                setFolderId(null);
-                setPage(0);
-              }}
-            >
+            <Link to="/files" search={{ folder: undefined, file: undefined }} className="text-sm underline" onClick={(e) => { if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) setPage(0); }}>
               All files
-            </button>
+            </Link>
             {breadcrumbs.map((crumb) => (
-              <button
-                type="button"
-                key={crumb.id}
-                className="text-sm underline"
-                onClick={() => {
-                  setFolderId(crumb.id);
-                  setPage(0);
-                }}
-              >
+              <Link to="/files" search={{ folder: crumb.id }} key={crumb.id} className="text-sm underline" onClick={(e) => { if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) setPage(0); }}>
                 / {crumb.name}
-              </button>
+              </Link>
             ))}
           </div>
           {canUpload ? (
@@ -394,31 +389,20 @@ function FilesPage() {
         ) : null}
         <div className="flex flex-wrap gap-2">
           {activeFolder?.parent_id ? (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                setFolderId(activeFolder.parent_id);
-                setPage(0);
-              }}
-            >
-              Parent folder
+            <Button size="sm" variant="outline" asChild>
+              <Link to="/files" search={{ folder: activeFolder.parent_id }} onClick={(e) => { if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) setPage(0); }}>
+                Parent folder
+              </Link>
             </Button>
           ) : null}
           {folders
             .filter((f) => f.parent_id === folderId)
             .map((folder) => (
-              <Button
-                key={folder.id}
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  setFolderId(folder.id);
-                  setPage(0);
-                }}
-              >
-                <Folder className="mr-2 size-4" />
-                {folder.name}
+              <Button key={folder.id} size="sm" variant="outline" asChild>
+                <Link to="/files" search={{ folder: folder.id }} onClick={(e) => { if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) setPage(0); }}>
+                  <Folder className="mr-2 size-4" />
+                  {folder.name}
+                </Link>
               </Button>
             ))}
         </div>
@@ -609,14 +593,14 @@ function FilesPage() {
                 return (
                   <TableRow key={f.id}>
                     <TableCell className="max-w-xs">
-                      <button
-                        type="button"
-                        className="max-w-xs truncate text-left font-medium hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
-                        onClick={() => setSelectedFile(f.id)}
+                      <Link
+                        to="/files"
+                        search={(previous) => ({ ...previous, file: f.id })}
+                        className="block max-w-xs truncate text-left font-medium hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                         aria-label={`View details for ${f.file_name}`}
                       >
                         {f.file_name}
-                      </button>
+                      </Link>
                     </TableCell>
                     <TableCell>
                       {f.entityPath && f.entity_type !== "company" ? (

@@ -4,7 +4,9 @@ updates:
     directory: /
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
+    # 0 disables routine npm version PRs; Dependabot security updates still apply.
+    # Framework upgrades (e.g. TanStack Start server-function typing) need planned work.
+    open-pull-requests-limit: 0
     groups:
       nonbreaking-dependencies:
         update-types:

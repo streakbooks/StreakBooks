@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -60,7 +60,6 @@ export const Route = createFileRoute("/_authenticated/contacts/$contactId")({
 function ContactDetail() {
   const { contactId } = Route.useParams();
   const { tab } = Route.useSearch();
-  const navigate = useNavigate({ from: Route.fullPath });
   const { company } = useActiveCompany();
   const companyId = company?.id;
   const currency = company?.base_currency ?? "GBP";
@@ -321,19 +320,38 @@ function ContactDetail() {
         </div>
       ) : null}
 
-      <Tabs
-        value={tab}
-        onValueChange={(nextTab) => {
-          void navigate({ search: { tab: nextTab }, replace: true, resetScroll: false });
-        }}
-      >
+      <Tabs value={tab}>
         <TabsList className="flex h-auto flex-wrap">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="edit">Edit</TabsTrigger>
-          <TabsTrigger value="people">People</TabsTrigger>
-          <TabsTrigger value="groups">Groups & tags</TabsTrigger>
-          <TabsTrigger value="activity">Transactions</TabsTrigger>
-          <TabsTrigger value="portal">Portal</TabsTrigger>
+          <TabsTrigger value="overview" asChild>
+            <Link to="/contacts/$contactId" params={{ contactId }} search={{ tab: "overview" }} resetScroll={false}>
+              Overview
+            </Link>
+          </TabsTrigger>
+          <TabsTrigger value="edit" asChild>
+            <Link to="/contacts/$contactId" params={{ contactId }} search={{ tab: "edit" }} resetScroll={false}>
+              Edit
+            </Link>
+          </TabsTrigger>
+          <TabsTrigger value="people" asChild>
+            <Link to="/contacts/$contactId" params={{ contactId }} search={{ tab: "people" }} resetScroll={false}>
+              People
+            </Link>
+          </TabsTrigger>
+          <TabsTrigger value="groups" asChild>
+            <Link to="/contacts/$contactId" params={{ contactId }} search={{ tab: "groups" }} resetScroll={false}>
+              Groups & tags
+            </Link>
+          </TabsTrigger>
+          <TabsTrigger value="activity" asChild>
+            <Link to="/contacts/$contactId" params={{ contactId }} search={{ tab: "activity" }} resetScroll={false}>
+              Transactions
+            </Link>
+          </TabsTrigger>
+          <TabsTrigger value="portal" asChild>
+            <Link to="/contacts/$contactId" params={{ contactId }} search={{ tab: "portal" }} resetScroll={false}>
+              Portal
+            </Link>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-4 space-y-3 text-sm">

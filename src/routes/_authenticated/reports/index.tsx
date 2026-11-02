@@ -7,6 +7,7 @@ import { AdviserReporting } from "@/components/reports/AdviserReporting";
 import { ReportingHome } from "@/components/reports/ReportingHome";
 import { fiscalYearStart, todayIso } from "@/lib/accounting/fiscal-year";
 import { ReportLibrary } from "@/components/reports/ReportLibrary";
+import { ReportDirectory } from "@/components/reports/ReportDirectory";
 import { Tabs, TabsList, TabsContent } from "@/components/ui/tabs";
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -19,8 +20,6 @@ import {
   type ReportCategoryId,
 } from "@/lib/reports/catalog";
 import { PageHeader, EmptyState, LoadingState } from "@/components/common/states";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -46,7 +45,7 @@ function ReportsCentre() {
   // Defensive validation also handles router search state inherited from external URLs.
   const search = parseReportingCentreSearch(Route.useSearch() as Record<string, unknown>);
   const navigate = Route.useNavigate();
-  const tab = search.tab ?? "home";
+  const tab = search.tab ?? "standard";
   const periodFrom = search.from ?? "";
   const periodTo = search.to ?? todayIso();
   const setPeriodFrom = (value: string) =>
@@ -68,7 +67,6 @@ function ReportsCentre() {
     () => (category === "all" ? searched : searched.filter((r) => r.category === category)),
     [searched, category],
   );
-  const visibleCategories = categories.filter((c) => filtered.some((r) => r.category === c.id));
 
   const readyCount = REPORT_CATALOG.filter((r) => r.status === "ready").length;
 
@@ -218,13 +216,20 @@ function ReportsCentre() {
           </ReportingFeatureGate>
         )}
         <TabsContent value="standard" className="space-y-6">
-          <div className="flex flex-wrap gap-2">
+          <div className="space-y-1">
+            <h2 className="text-xl font-semibold tracking-tight">Browse reports</h2>
+            <p className="text-sm text-muted-foreground">
+              Choose a category or search for a report. Each report opens in its own workspace.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="mr-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">Popular</span>
             {QUICK_REPORT_IDS.map((id) => {
               const r = REPORT_CATALOG.find((x) => x.id === id);
               if (!r) return null;
               return (
                 <Button key={id} asChild variant="secondary" size="sm">
-                  <Link to="/reports/$reportId" params={{ reportId: id }}>
+                  <Link to="/reports/$reportId" params={{ reportId: id }} search={{ from, to: periodTo }}>
                     {r.title}
                   </Link>
                 </Button>
@@ -262,56 +267,7 @@ function ReportsCentre() {
             </div>
           </div>
 
-          {visibleCategories.map((cat) => {
-            const rows = filtered.filter((r) => r.category === cat.id);
-            return (
-              <section key={cat.id} aria-labelledby={`cat-${cat.id}`} className="space-y-3">
-                <h2
-                  id={`cat-${cat.id}`}
-                  className="text-sm font-semibold uppercase tracking-wide text-muted-foreground"
-                >
-                  {cat.label}
-                </h2>
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  {rows.map((report) => (
-                    <Card
-                      key={report.id}
-                      className={
-                        report.status === "depends"
-                          ? "bg-muted/30"
-                          : "transition-shadow hover:shadow-raised"
-                      }
-                    >
-                      <CardHeader className="pb-2">
-                        <div className="flex items-start justify-between gap-2">
-                          <CardTitle className="text-base">{report.title}</CardTitle>
-                          <Badge variant={report.status === "ready" ? "success" : "warning"}>
-                            {report.status === "ready" ? "Ready" : "Depends"}
-                          </Badge>
-                        </div>
-                        <CardDescription>{report.description}</CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        {report.status === "depends" ? (
-                          <p className="text-sm text-warning-ink">{report.dependency}</p>
-                        ) : report.runner === "link" && report.linkTo ? (
-                          <Button asChild size="sm">
-                            <Link to={report.linkTo}>Open</Link>
-                          </Button>
-                        ) : (
-                          <Button asChild size="sm">
-                            <Link to="/reports/$reportId" params={{ reportId: report.id }}>
-                              Open report
-                            </Link>
-                          </Button>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </section>
-            );
-          })}
+          <ReportDirectory reports={filtered} from={from} to={periodTo} />
 
           {filtered.length === 0 ? (
             <EmptyState

@@ -33,5 +33,13 @@ describe("segments and tags", () => {
     expect(sql).toContain("READY-TO-APPLY");
     expect(sql).toContain("private.require_platform('businesses.manage')");
     expect(sql).not.toContain("journal_lines");
+    const guard = readFileSync(
+      new URL("../../../supabase/migrations/20261102460000_segment_duplicate_guard.sql", import.meta.url),
+      "utf8",
+    );
+    expect(guard).toContain("That segment already exists");
+    expect(guard).toContain("That business is already in this segment");
+    expect(guard).toContain("private.platform_log");
+    expect(guard).not.toContain("ON CONFLICT DO NOTHING");
   });
 });

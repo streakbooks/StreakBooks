@@ -17,7 +17,7 @@ export function parseReportingCentreSearch(raw: Record<string, unknown>): {
   tab?: ReportingTab;
   from?: string;
   to?: string;
-  pack?: string;
+  pack?: string | undefined;
 } {
   const result: { tab?: ReportingTab; from?: string; to?: string; pack?: string } = {
     tab: REPORTING_TABS.includes(raw["tab"] as ReportingTab)

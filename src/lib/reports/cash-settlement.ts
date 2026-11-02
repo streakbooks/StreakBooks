@@ -62,8 +62,8 @@ function apportion(cumulative: bigint, weights: bigint[], total: bigint): bigint
   const allocated = shares.reduce((sum, share) => sum + share.whole, 0n);
   const extras = cumulative - allocated;
   // Largest-remainder distribution ensures every penny is assigned once.
-  const ranked = [...shares].sort(
-    (a, b) => a.remainder === b.remainder ? a.index - b.index : a.remainder > b.remainder ? -1 : 1,
+  const ranked = [...shares].sort((a, b) =>
+    a.remainder === b.remainder ? a.index - b.index : a.remainder > b.remainder ? -1 : 1,
   );
   for (let i = 0; i < Number(extras); i++) ranked[i]!.whole++;
   return shares.map((share) => share.whole);
@@ -88,10 +88,14 @@ export function recogniseCashSettlements(
   if (!/^[A-Z]{3}$/.test(source.currencyCode) || !/^[A-Z]{3}$/.test(source.baseCurrencyCode)) {
     throw new Error("Cash recognition requires valid currency codes");
   }
-  if (source.totalMinor <= 0n || source.nonCashCreditMinor < 0n ||
-      source.nonCashCreditMinor > source.totalMinor ||
-      source.components.length === 0 || source.components.length > 1000 ||
-      source.settlements.length > 10000) {
+  if (
+    source.totalMinor <= 0n ||
+    source.nonCashCreditMinor < 0n ||
+    source.nonCashCreditMinor > source.totalMinor ||
+    source.components.length === 0 ||
+    source.components.length > 1000 ||
+    source.settlements.length > 10000
+  ) {
     throw new Error("Invalid cash source totals or source size");
   }
   const weights = source.components.map((component) => {
@@ -104,8 +108,8 @@ export function recogniseCashSettlements(
     throw new Error("Cash source components do not reconcile to document gross");
   }
   const ordered = [...source.settlements].sort(
-    (a, b) => a.settledOn.localeCompare(b.settledOn) ||
-      a.sequence - b.sequence || a.id.localeCompare(b.id),
+    (a, b) =>
+      a.settledOn.localeCompare(b.settledOn) || a.sequence - b.sequence || a.id.localeCompare(b.id),
   );
   let cumulative = 0n;
   let before = weights.map(() => 0n);
@@ -116,12 +120,15 @@ export function recogniseCashSettlements(
       throw new Error("Duplicate or missing settlement identity");
     }
     seen.add(settlement.id);
-    if (settlement.companyId !== source.companyId ||
-        settlement.documentId !== source.id) {
+    if (settlement.companyId !== source.companyId || settlement.documentId !== source.id) {
       throw new Error("Cross-organisation or mismatched cash settlement");
     }
-    if (!isReportDate(settlement.settledOn) || !Number.isSafeInteger(settlement.sequence) ||
-        settlement.sequence < 0 || settlement.cashDeltaMinor === 0n) {
+    if (
+      !isReportDate(settlement.settledOn) ||
+      !Number.isSafeInteger(settlement.sequence) ||
+      settlement.sequence < 0 ||
+      settlement.cashDeltaMinor === 0n
+    ) {
       throw new Error("Invalid cash settlement date, sequence or amount");
     }
     if (settlement.settledOn > period.to) continue;
@@ -138,8 +145,10 @@ export function recogniseCashSettlements(
     const after = apportion(next, weights, source.totalMinor);
     const pieces = source.components.map((component, index) => {
       const recognisedMinor = after[index]! - before[index]!;
-      if ((settlement.cashDeltaMinor > 0n && recognisedMinor < 0n) ||
-          (settlement.cashDeltaMinor < 0n && recognisedMinor > 0n)) {
+      if (
+        (settlement.cashDeltaMinor > 0n && recognisedMinor < 0n) ||
+        (settlement.cashDeltaMinor < 0n && recognisedMinor > 0n)
+      ) {
         // Rare largest-remainder paradox: do not report negative revenue on
         // a receipt or positive revenue on a refund; require review.
         throw new Error("Cash allocation rounding requires manual reconciliation");
@@ -148,8 +157,10 @@ export function recogniseCashSettlements(
         ...component,
         recognisedMinor,
         recognisedBaseMinor: convertMinorToBase(
-          recognisedMinor, settlement.fxRateToBase,
-          source.currencyCode, source.baseCurrencyCode,
+          recognisedMinor,
+          settlement.fxRateToBase,
+          source.currencyCode,
+          source.baseCurrencyCode,
         ),
       };
     });
@@ -158,11 +169,13 @@ export function recogniseCashSettlements(
       throw new Error("Cash allocation does not reconcile to settlement");
     }
     const cashBaseMinor = convertMinorToBase(
-      settlement.cashDeltaMinor, settlement.fxRateToBase,
-      source.currencyCode, source.baseCurrencyCode,
+      settlement.cashDeltaMinor,
+      settlement.fxRateToBase,
+      source.currencyCode,
+      source.baseCurrencyCode,
     );
-    const fxRoundingBaseMinor = cashBaseMinor -
-      pieces.reduce((value, item) => value + item.recognisedBaseMinor, 0n);
+    const fxRoundingBaseMinor =
+      cashBaseMinor - pieces.reduce((value, item) => value + item.recognisedBaseMinor, 0n);
     if (settlement.settledOn >= period.from) {
       recognised.push({
         settlementId: settlement.id,

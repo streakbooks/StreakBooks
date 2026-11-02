@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Search, SlidersHorizontal } from "lucide-react";
@@ -124,6 +124,14 @@ export function GlobalSearch({ className }: { className?: string }) {
   function goHit(h: GlobalSearchHit) {
     close();
     void navigate({ to: h.href as never, ...(h.search ? { search: h.search as never } : {}) });
+  }
+
+  function handleNativeLinkClick(event: React.MouseEvent<HTMLAnchorElement>) {
+    // Preserve native modifier-click and middle-click behavior without dismissing search.
+    event.stopPropagation();
+    if (event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) {
+      close();
+    }
   }
 
   const groups = (["Create", "Go to", "Reports"] as const)
@@ -264,8 +272,15 @@ export function GlobalSearch({ className }: { className?: string }) {
               {groups.map((g) => (
                 <CommandGroup key={g.name} heading={g.name}>
                   {g.items.map((a) => (
-                    <CommandItem key={a.id} value={a.id} onSelect={() => goAction(a)}>
-                      {a.label}
+                    <CommandItem key={a.id} value={a.id} onSelect={() => goAction(a)} asChild>
+                      <Link
+                        to={a.href as never}
+                        {...(a.search ? { search: a.search as never } : {})}
+                        onClick={handleNativeLinkClick}
+                        className="w-full cursor-pointer"
+                      >
+                        {a.label}
+                      </Link>
                     </CommandItem>
                   ))}
                 </CommandGroup>
@@ -278,7 +293,14 @@ export function GlobalSearch({ className }: { className?: string }) {
                       value={`${h.entity}-${h.id}`}
                       onSelect={() => goHit(h)}
                       className="flex-col items-start gap-0.5"
+                      asChild
                     >
+                      <Link
+                        to={h.href as never}
+                        {...(h.search ? { search: h.search as never } : {})}
+                        onClick={handleNativeLinkClick}
+                        className="flex w-full flex-col items-start gap-0.5"
+                      >
                       <span className="flex w-full justify-between gap-2">
                         <span className="font-medium">{h.title}</span>
                         {h.amount_minor !== undefined && h.currency ? (
@@ -288,6 +310,7 @@ export function GlobalSearch({ className }: { className?: string }) {
                         ) : null}
                       </span>
                       <span className="text-xs text-muted-foreground">{h.subtitle}</span>
+                      </Link>
                     </CommandItem>
                   ))}
                 </CommandGroup>

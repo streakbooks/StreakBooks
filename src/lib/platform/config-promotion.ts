@@ -13,6 +13,7 @@ export function requestPromotion(input: {
   targetId: string;
   requesterId: string;
   reason: string;
+  pending?: boolean;
 }): {
   request: PromotionRequest;
   copied: false;
@@ -23,6 +24,7 @@ export function requestPromotion(input: {
   const reason = input.reason.trim();
   if (input.sourceId.trim() === input.targetId.trim()) throw new Error("Choose two businesses");
   if (reason.length < 3) throw new Error("A reason is required");
+  if (input.pending) throw new Error("That business already has a pending promotion");
   return {
     request: {
       sourceId: input.sourceId.trim(),

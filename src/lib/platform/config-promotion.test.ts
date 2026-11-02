@@ -67,4 +67,28 @@ describe("config promotion", () => {
     expect(guard).toContain("That business was not found");
     expect(guard).not.toContain("UPDATE public.companies");
   });
+
+  it("allows one pending promotion onto a business", () => {
+    expect(() =>
+      requestPromotion({
+        role: "platform_owner",
+        sourceId: "company-1",
+        targetId: "company-2",
+        requesterId: "owner-a",
+        reason: "Copy presentation",
+        pending: true,
+      }),
+    ).toThrow(/pending promotion/);
+    const sql = readFileSync(
+      new URL(
+        "../../../supabase/migrations/20261102510000_promotion_one_pending.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    expect(sql).toContain("platform_promotions_one_pending_target");
+    expect(sql).toContain("That business already has a pending promotion");
+    expect(sql).toContain("require_platform('settings.manage')");
+    expect(sql).not.toContain("UPDATE public.companies");
+  });
 });

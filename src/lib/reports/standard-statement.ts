@@ -208,6 +208,18 @@ export function standardStatementDocument(input: {
     from: input.from,
     to: input.to,
     capturedAt: input.capturedAt,
+    presentation: {
+      showCompanyName: s.showCompanyName,
+      showReportTitle: s.showReportTitle,
+      showReportPeriod: s.showReportPeriod,
+      showDatePrepared: s.showDatePrepared,
+      showTimePrepared: s.showTimePrepared,
+      headerOrder: s.headerOrder,
+      headerAlignment: s.headerAlignment,
+      footerAlignment: s.footerAlignment,
+      bandedRows: s.bandedRows,
+      reportBorders: s.reportBorders,
+    },
     subtitle: [s.subtitle, s.scale !== "1" ? `Figures divided by ${s.scale}` : ""]
       .filter(Boolean)
       .join(" · "),

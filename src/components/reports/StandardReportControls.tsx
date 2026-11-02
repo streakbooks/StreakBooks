@@ -372,7 +372,41 @@ export function StandardReportControls({
                 )}
               </TabsContent>
             )}
-            <TabsContent value="notes" className="space-y-3">
+            <TabsContent value="notes" className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Choice
+                  label="Header layout"
+                  value={draft.headerOrder}
+                  onChange={(value) => patch({ headerOrder: value as StandardSettings["headerOrder"] })}
+                  options={[["company-first", "Company name first"], ["title-first", "Report title first"]]}
+                />
+                <Choice
+                  label="Header alignment"
+                  value={draft.headerAlignment}
+                  onChange={(value) => patch({ headerAlignment: value as StandardSettings["headerAlignment"] })}
+                  options={[["left", "Left"], ["center", "Center"], ["right", "Right"]]}
+                />
+                <Choice
+                  label="Footer alignment"
+                  value={draft.footerAlignment}
+                  onChange={(value) => patch({ footerAlignment: value as StandardSettings["footerAlignment"] })}
+                  options={[["left", "Left"], ["center", "Center"], ["right", "Right"]]}
+                />
+                <Choice
+                  label="Report gridlines"
+                  value={draft.reportBorders}
+                  onChange={(value) => patch({ reportBorders: value as StandardSettings["reportBorders"] })}
+                  options={[["default", "Standard"], ["all", "All cells"], ["none", "None"]]}
+                />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {check("showCompanyName", "Show company name")}
+                {check("showReportTitle", "Show report title")}
+                {check("showReportPeriod", "Show report period")}
+                {check("showDatePrepared", "Show date prepared")}
+                {check("showTimePrepared", "Show time prepared")}
+                {check("bandedRows", "Banded data rows")}
+              </div>
               {(
                 [
                   ["header", "Report header"],

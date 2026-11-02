@@ -8,6 +8,7 @@ import { friendlyAuthError } from "@/lib/auth-helpers";
 import { csvFilename, downloadCsv, toCsv, type CsvCell } from "@/lib/reports/csv";
 import { sourceLabel, sourceTarget } from "@/lib/reports/links";
 import type { ReportSearch } from "@/lib/reports/search";
+import type { ReportPresentation } from "@/lib/reports/report-document";
 import { EmptyState, ErrorState, ReportSkeleton } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,6 +41,8 @@ export function ReportShell({
   extraControls,
   toolbarActions,
   hidePrint = false,
+  headerPresentation,
+  capturedAt,
   getCsv,
   basis,
   children,
@@ -53,6 +56,8 @@ export function ReportShell({
   toolbarActions?: ReactNode;
   /** Standard financial statements use a consolidated export menu instead of print controls. */
   hidePrint?: boolean;
+  headerPresentation?: ReportPresentation | undefined;
+  capturedAt?: string | undefined;
   getCsv?: () => CsvExport | null;
   basis?: string | undefined;
   children: ReactNode;
@@ -104,16 +109,37 @@ export function ReportShell({
         </Button>
       </div>
       {/* Shared report header: identical on screen, print and PDF */}
-      <header className="text-center print:mb-4">
-        <p className="text-sm text-muted-foreground">{ctx.companyName}</p>
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        <p className="text-sm text-muted-foreground">
-          {period} · {ctx.currency}
-        </p>
+      <header className="print:mb-4" style={{ textAlign: headerPresentation?.headerAlignment ?? "center" }}>
+        {(() => {
+          const company = headerPresentation?.showCompanyName === false ? null : (
+            <p key="company" className="text-sm text-muted-foreground">{ctx.companyName}</p>
+          );
+          const titleLine = headerPresentation?.showReportTitle === false ? null : (
+            <h1 key="title" className="text-2xl font-semibold tracking-tight">{title}</h1>
+          );
+          return headerPresentation?.headerOrder === "title-first"
+            ? <>{titleLine}{company}</>
+            : <>{company}{titleLine}</>;
+        })()}
+        {headerPresentation?.showReportPeriod !== false && (
+          <p className="text-sm text-muted-foreground">{period} · {ctx.currency}</p>
+        )}
         {basis ? <p className="text-xs text-muted-foreground">{basis}</p> : null}
-        <p className="hidden text-xs text-muted-foreground print:block">
-          Generated {fmt.dateTime(new Date().toISOString())}
-        </p>
+        {capturedAt && !Number.isNaN(Date.parse(capturedAt)) && (
+          <>
+            {headerPresentation?.showDatePrepared && (
+              <p className="text-xs text-muted-foreground">Prepared: {new Date(capturedAt).toISOString().slice(0, 10)}</p>
+            )}
+            {headerPresentation?.showTimePrepared && (
+              <p className="text-xs text-muted-foreground">Prepared time: {new Date(capturedAt).toISOString().slice(11, 19)} UTC</p>
+            )}
+          </>
+        )}
+        {!headerPresentation && (
+          <p className="hidden text-xs text-muted-foreground print:block">
+            Generated {fmt.dateTime(new Date().toISOString())}
+          </p>
+        )}
       </header>
 
       <div className="flex flex-wrap items-end gap-3 print:hidden">

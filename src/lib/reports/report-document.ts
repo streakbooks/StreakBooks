@@ -119,7 +119,21 @@ export type DocumentSection = {
   rows: DocumentRow[];
   note?: string;
 };
+export type ReportPresentation = {
+  showCompanyName: boolean;
+  showReportTitle: boolean;
+  showReportPeriod: boolean;
+  showDatePrepared: boolean;
+  showTimePrepared: boolean;
+  headerOrder: "company-first" | "title-first";
+  headerAlignment: "left" | "center" | "right";
+  footerAlignment: "left" | "center" | "right";
+  bandedRows: boolean;
+  reportBorders: "default" | "none" | "all";
+};
+
 export type ReportDocument = {
+  presentation?: ReportPresentation;
   summary?: Array<{ label: string; value: string }>;
   title: string;
   subtitle: string;

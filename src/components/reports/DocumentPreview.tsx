@@ -1,22 +1,43 @@
 import type { ReportDocument } from "@/lib/reports/report-document";
 import { displayDocumentValue, documentCellStyle } from "@/lib/reports/document-format";
 import { Link } from "@tanstack/react-router";
-export function DocumentPreview({ document: doc }: { document: ReportDocument }) {
+export function DocumentPreview({
+  document: doc,
+  showHeader = true,
+  compact = false,
+  onToggleSection,
+  collapsedSections = [],
+}: {
+  document: ReportDocument;
+  showHeader?: boolean;
+  compact?: boolean;
+  onToggleSection?: (label: string) => void;
+  collapsedSections?: string[];
+}) {
   return (
     <article
       className="report-shell space-y-6 rounded-lg border bg-background p-4 sm:p-8 print:border-0 print:p-0"
       aria-label="Financial report preview"
     >
-      <header className="space-y-1 text-center">
-        <p className="text-sm font-medium">{doc.header}</p>
-        <p className="text-muted-foreground">{doc.company}</p>
-        <h2 className="text-2xl font-semibold">{doc.title}</h2>
-        {doc.subtitle && <p>{doc.subtitle}</p>}
-        <p className="text-sm text-muted-foreground">
-          {doc.from} – {doc.to} · {doc.currency}
-        </p>
-        <p className="text-xs text-muted-foreground">Captured {doc.capturedAt}</p>
-      </header>
+      {showHeader ? (
+        <header className="space-y-1 text-center">
+          <p className="text-sm font-medium">{doc.header}</p>
+          <p className="text-muted-foreground">{doc.company}</p>
+          <h2 className="text-2xl font-semibold">{doc.title}</h2>
+          {doc.subtitle && <p>{doc.subtitle}</p>}
+          <p className="text-sm text-muted-foreground">
+            {doc.from} – {doc.to} · {doc.currency}
+          </p>
+          <p className="text-xs text-muted-foreground">Captured {doc.capturedAt}</p>
+        </header>
+      ) : (
+        <>
+          {doc.header && <p className="text-center text-sm font-medium">{doc.header}</p>}
+          {doc.subtitle && (
+            <p className="text-center text-sm text-muted-foreground">{doc.subtitle}</p>
+          )}
+        </>
+      )}
       {doc.sections.map((section, index) => (
         <section key={`${section.id}-${index}`} className="space-y-3 break-inside-avoid">
           <h3 className="font-semibold">{section.title}</h3>
@@ -38,7 +59,10 @@ export function DocumentPreview({ document: doc }: { document: ReportDocument })
                     key={i}
                     className={`border-b ${row.kind === "heading" ? "bg-muted/40" : ""} ${["total", "subtotal", "group", "formula"].includes(row.kind) ? "font-semibold" : ""}`}
                   >
-                    <td className="py-2" style={{ paddingLeft: `${(row.indent ?? 0) * 12}px` }}>
+                    <td
+                      className={compact ? "py-1" : "py-2"}
+                      style={{ paddingLeft: `${(row.indent ?? 0) * 12}px` }}
+                    >
                       {row.accountId && !row.accountId.startsWith("__") ? (
                         <Link
                           to="/reports/$reportId"
@@ -48,6 +72,18 @@ export function DocumentPreview({ document: doc }: { document: ReportDocument })
                         >
                           {row.label}
                         </Link>
+                      ) : row.kind === "heading" && onToggleSection ? (
+                        <button
+                          className="flex w-full items-center gap-2 text-left"
+                          aria-label={`${collapsedSections.includes(row.label) ? "Expand" : "Collapse"} ${row.label}`}
+                          aria-expanded={!collapsedSections.includes(row.label)}
+                          onClick={() => onToggleSection(row.label)}
+                        >
+                          <span aria-hidden="true">
+                            {collapsedSections.includes(row.label) ? "▸" : "▾"}
+                          </span>
+                          {row.label}
+                        </button>
                       ) : (
                         row.label
                       )}
@@ -55,9 +91,24 @@ export function DocumentPreview({ document: doc }: { document: ReportDocument })
                     {row.values.map((value, j) => (
                       <td
                         key={j}
-                        className={`whitespace-nowrap px-3 py-2 text-right tabular-nums ${row.negativeRed && value.startsWith("-") ? "text-destructive" : ""}`}
+                        className={`whitespace-nowrap px-3 ${compact ? "py-1" : "py-2"} text-right tabular-nums ${row.negativeRed && value.startsWith("-") ? "text-destructive" : ""}`}
                       >
-                        {displayDocumentValue(value, documentCellStyle(row, section, j))}
+                        {row.accountId && section.columnPeriods?.[j] ? (
+                          <Link
+                            to="/reports/$reportId"
+                            params={{ reportId: "general-ledger" }}
+                            search={{
+                              account: row.accountId,
+                              from: section.columnPeriods[j]!.from,
+                              to: section.columnPeriods[j]!.to,
+                            }}
+                            className="hover:underline"
+                          >
+                            {displayDocumentValue(value, documentCellStyle(row, section, j))}
+                          </Link>
+                        ) : (
+                          displayDocumentValue(value, documentCellStyle(row, section, j))
+                        )}
                       </td>
                     ))}
                   </tr>
@@ -70,7 +121,7 @@ export function DocumentPreview({ document: doc }: { document: ReportDocument })
       ))}
       {doc.notes && (
         <section className="space-y-2">
-          <h3 className="font-semibold">Management commentary</h3>
+          <h3 className="font-semibold">Report notes</h3>
           <p className="whitespace-pre-wrap text-sm">{doc.notes}</p>
         </section>
       )}

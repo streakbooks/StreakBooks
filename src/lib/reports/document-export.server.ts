@@ -60,7 +60,10 @@ export async function exportReportXlsx(doc: ReportDocument): Promise<Uint8Array>
         row.label,
         ...row.values.map((value, i) => {
           if (value === "" || value === "Unavailable") return value;
-          value = documentNumericValue(value, documentCellStyle(row, section, i));
+          value = documentNumericValue(value, {
+            ...documentCellStyle(row, section, i),
+            decimals: value.split(".")[1]?.length ?? 0,
+          });
           // Excel has 15 significant digits. Keep larger exact monetary values as text.
           if (value.replace(/[-.]/g, "").replace(/^0+/, "").length > 15) return value;
           const numeric = Number(value);
@@ -71,7 +74,9 @@ export async function exportReportXlsx(doc: ReportDocument): Promise<Uint8Array>
       data.getCell(1).alignment = { indent: row.indent ?? 0, wrapText: true };
       row.values.forEach((value, i) => {
         const cell = data.getCell(i + 2);
-        const decimals = value.split(".")[1]?.length ?? 0;
+        const decimals =
+          documentNumericValue(value, documentCellStyle(row, section, i)).split(".")[1]?.length ??
+          0;
         const style = documentCellStyle(row, section, i);
         const format =
           (style.format === "percent" || style.thousands === false ? "0" : "#,##0") +
@@ -89,11 +94,13 @@ export async function exportReportXlsx(doc: ReportDocument): Promise<Uint8Array>
           (style.zero === "blank" ? ';""' : style.zero === "dash" ? ';"–"' : "");
         if (
           value !== "Unavailable" &&
-          style.scale &&
-          style.scale !== "1" &&
+          ((style.scale && style.scale !== "1") || style.decimals !== undefined) &&
           style.format !== "percent"
         )
-          cell.note = `Unscaled value: ${value}. Display divided by ${style.scale}.`;
+          cell.note =
+            style.decimals === undefined
+              ? `Unscaled value: ${value}. Display divided by ${style.scale}.`
+              : `Unscaled value: ${value}. Display divided by ${style.scale ?? "1"}; display decimals ${style.decimals}.`;
       });
     }
     if (section.note) sheet.addRow([section.note]);

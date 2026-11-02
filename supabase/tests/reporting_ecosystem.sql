@@ -18,7 +18,7 @@ END $$;
 SET LOCAL ROLE authenticated;
 DO $$
 DECLARE c uuid:=current_setting('test.rep_c1')::uuid;foreign_c uuid:=current_setting('test.rep_c2')::uuid;u1 uuid:=current_setting('test.rep_u1')::uuid;u2 uuid:=current_setting('test.rep_u2')::uuid;u3 uuid:=current_setting('test.rep_u3')::uuid;
- visit uuid:=gen_random_uuid();model uuid;v uuid;p uuid;j uuid;bank uuid;rev uuid;expense uuid;f jsonb;old_snapshot jsonb;ver integer;outcome bigint;job uuid; schedule uuid;
+ visit uuid:=gen_random_uuid();model uuid;standard_view uuid;v uuid;p uuid;j uuid;bank uuid;rev uuid;expense uuid;f jsonb;old_snapshot jsonb;ver integer;outcome bigint;job uuid; schedule uuid;
 BEGIN
  SELECT id INTO bank FROM public.accounts WHERE company_id=c AND code='1000';SELECT id INTO rev FROM public.accounts WHERE company_id=c AND code='4000';SELECT id INTO expense FROM public.accounts WHERE company_id=c AND code='6000';
  j:=public.post_journal(jsonb_build_object('company_id',c,'journal_date','2026-10-01','currency_code','GBP','source_type','manual','idempotency_key','report-fixture:'||gen_random_uuid(),'lines',jsonb_build_array(jsonb_build_object('account_id',bank,'debit_minor',15000,'credit_minor',0),jsonb_build_object('account_id',rev,'debit_minor',0,'credit_minor',15000))));
@@ -35,6 +35,24 @@ BEGIN
  f:=public.capture_custom_report_facts(c,'2026-10-01','2026-10-31','{"columns":[{"id":"current","mode":"period"}],"filters":{"logic":"and","clauses":[{"field":"account_type","op":"in","values":["income"]}]}}');
  IF jsonb_array_length(f->'customColumns'->0->'balances')<>1 OR f->'customColumns'->0->'balances'->0->>'credit_minor'<>'15000' OR f->'appliedFilters'->'clauses'->0->>'field'<>'account_type' THEN RAISE EXCEPTION 'Custom fact filter or provenance wrong';END IF;
  IF has_function_privilege('anon','public.report_filtered_balances(uuid,date,date,jsonb)','EXECUTE') THEN RAISE EXCEPTION 'Anonymous filtering allowed';END IF;
+ f:=public.capture_standard_report_facts(c,'2026-10-01','2026-10-31','profit-and-loss','{"group":"month","compare":"prior_year"}');
+ IF jsonb_array_length(f->'standardColumns')<>3 OR f->'standardColumns'->1->>'label'<>'Oct 2026' OR f->'standardColumns'->2->>'to'<>'2025-10-31' THEN RAISE EXCEPTION 'Standard comparison period plan wrong';END IF;
+ SELECT (value->>'credit_minor')::bigint INTO outcome FROM jsonb_array_elements(f->'standardColumns'->0->'period') WHERE value->>'account_id'=rev::text;
+ IF outcome<>15000 THEN RAISE EXCEPTION 'Standard capture changed posted revenue';END IF;
+ f:=public.capture_standard_report_facts(c,'2026-10-01','2026-10-31','profit-and-loss','{"compare":"custom","compareFrom":"2026-10-02","compareTo":"2026-10-02","filters":{"logic":"and","clauses":[{"field":"account_type","op":"eq","values":["expense"]}]}}');
+ IF jsonb_array_length(f->'standardColumns'->0->'period')<>1 OR f->'standardColumns'->0->'period'->0->>'debit_minor'<>'4000' OR f->'standardColumns'->1->>'from'<>'2026-10-02' THEN RAISE EXCEPTION 'Standard filtered/custom capture wrong';END IF;
+ f:=public.capture_standard_report_facts(c,'2026-10-01','2026-10-31','balance-sheet','{"compare":"prior_period"}');
+ IF f->'standardColumns'->1->>'to'<>'2026-09-30' OR f->'standardColumns'->1->>'from'<>'2026-01-01' THEN RAISE EXCEPTION 'BS capture date/FY split wrong';END IF;
+ f:=public.capture_standard_report_facts(c,'2026-10-01','2026-10-31','balance-sheet','{"incomePercent":true,"percentBasis":"assets"}');
+ IF jsonb_array_length(f->'standardColumns')<>1 THEN RAISE EXCEPTION 'BS asset percentage capture denied';END IF;
+
+ BEGIN PERFORM public.capture_standard_report_facts(c,'2020-01-01','2026-10-31','profit-and-loss','{"group":"month"}');RAISE EXCEPTION 'TEST: truncated long statement allowed';EXCEPTION WHEN OTHERS THEN IF SQLERRM LIKE 'TEST:%' THEN RAISE;END IF;END;
+ BEGIN PERFORM public.capture_standard_report_facts(foreign_c,'2026-10-01','2026-10-31','profit-and-loss','{}');RAISE EXCEPTION 'TEST: foreign standard capture allowed';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
+ IF has_function_privilege('anon','public.capture_standard_report_facts(uuid,date,date,text,jsonb)','EXECUTE') THEN RAISE EXCEPTION 'Anonymous standard capture allowed';END IF;
+ INSERT INTO public.report_saved_views(company_id,user_id,report_id,name,config) VALUES(c,u1,'profit-and-loss','Standard customization fixture',jsonb_build_object('settings','{"compare":"prior_year","changeAmount":true,"changePercent":true}')) RETURNING id INTO standard_view;
+ job:=public.queue_report_delivery(c,jsonb_build_object('viewId',standard_view,'from','2026-10-01','to','2026-10-31','recipients',jsonb_build_array('fixture@example.invalid'),'subject','No send: customized statement fixture'));
+ IF (SELECT jsonb_array_length(facts->'standardColumns') FROM public.report_deliveries WHERE id=job)<>2 OR (SELECT definition->'config'->>'settings' FROM public.report_deliveries WHERE id=job) IS NULL THEN RAISE EXCEPTION 'Scheduled/queued attachment lost customization';END IF;
+
  f:=public.capture_reporting_facts(c,'2026-10-01','2026-10-31');
  f:=public.capture_reporting_facts(c,'2026-10-01','2026-10-31');
  IF f->>'fyStart'<>'2026-01-01' THEN RAISE EXCEPTION 'Financial year wrong';END IF;

@@ -10924,6 +10924,16 @@ export type Database = {
         Args: { _company_id: string; _from: string; _to: string }
         Returns: Json
       }
+      capture_standard_report_facts: {
+        Args: {
+          _company_id: string
+          _from: string
+          _report_id: string
+          _settings: Json
+          _to: string
+        }
+        Returns: Json
+      }
       cash_movements_by_month: {
         Args: { _company_id: string; _from: string; _to: string }
         Returns: {

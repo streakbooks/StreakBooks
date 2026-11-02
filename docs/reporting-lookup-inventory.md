@@ -62,9 +62,14 @@ The permanent rule is `.cursor/rules/linkbooks-lookup-select.mdc` (`alwaysApply:
 | `src/components/reports/ReportFilterEditor.tsx` | 146 | LookupSelect | ariaLabel={`Condition ${index + 1} value`} options={options} value={clause.values[0] ?? ""} onChange={(v) => patch(clause.id, { values: [v]  |
 | `src/components/reports/ReportLibrary.tsx` | 224 | RecordLookupSelect | Report type |
 | `src/components/reports/ReportLibrary.tsx` | 509 | RecordLookupSelect | custom-base |
-| `src/components/reports/ReportPacksWorkspace.tsx` | 630 | RecordLookupSelect | id={`pack-${label}`} className="h-9 w-full rounded border bg-background" value={value} onValueChange={(e) => setter(e)} |
-| `src/components/reports/ReportPacksWorkspace.tsx` | 766 | RecordLookupSelect | aria-label={`Assignee for action item ${i + 1}`} className="h-9 rounded border bg-background" value={item.assigneeId ?? ""} onValueChange={( |
+| `src/components/reports/ReportPacksWorkspace.tsx` | 639 | RecordLookupSelect | id={`pack-${label}`} className="h-9 w-full rounded border bg-background" value={value} onValueChange={(e) => setter(e)} |
+| `src/components/reports/ReportPacksWorkspace.tsx` | 775 | RecordLookupSelect | aria-label={`Assignee for action item ${i + 1}`} className="h-9 rounded border bg-background" value={item.assigneeId ?? ""} onValueChange={( |
+| `src/components/reports/ReportPeriodSelect.tsx` | 27 | LookupSelect | Report period preset |
 | `src/components/reports/ReportingModelSelect.tsx` | 50 | LookupSelect | ariaLabel={label} placeholder={label} value="" allowClear={false} clientFilter={false} options={query.rows.map((row) => ({ id: row.id, label |
+| `src/components/reports/StandardReportControls.tsx` | 46 | LookupSelect | ariaLabel={label} value={value} onChange={onChange} allowClear={false} options={options.map(([id, label]) => ({ id, label }))} |
+| `src/components/reports/StandardReportControls.tsx` | 116 | LookupSelect | Display statement columns |
+| `src/components/reports/StandardReportControls.tsx` | 131 | LookupSelect | Compare statement with |
+| `src/components/reports/StandardReportControls.tsx` | 187 | LookupSelect | Compare selected period with |
 | `src/components/settings/BankImportContent.tsx` | 122 | RecordLookupSelect | value={value === null ? NONE : String(value)} onValueChange={(v) => onChange(v === NONE ? null : Number(v))} |
 | `src/components/settings/BankImportContent.tsx` | 355 | BankLookup | Bank account |
 | `src/components/settings/BankRulesContent.tsx` | 389 | LookupSelect | Bank account scope |
@@ -91,14 +96,14 @@ The permanent rule is `.cursor/rules/linkbooks-lookup-select.mdc` (`alwaysApply:
 | `src/routes/_authenticated/banking/transfers.tsx` | 163 | BankLookup | From account |
 | `src/routes/_authenticated/banking/transfers.tsx` | 176 | BankLookup | To account |
 | `src/routes/_authenticated/budgets/$budgetId.tsx` | 434 | AccountLookup | budget-add |
-| `src/routes/_authenticated/files.tsx` | 444 | RecordLookupSelect | value={activeFolder.parent_id ?? "root"} onValueChange={(v) => renameFolderM.mutate({ id: activeFolder.id, name: activeFolder.name, parentId |
-| `src/routes/_authenticated/files.tsx` | 636 | RecordLookupSelect | value={f.folder_id ?? "unfiled"} onValueChange={(v) => moveM.mutate({ attachmentId: f.id, targetId: v === "unfiled" ? null : v,  |
+| `src/routes/_authenticated/files.tsx` | 428 | RecordLookupSelect | value={activeFolder.parent_id ?? "root"} onValueChange={(v) => renameFolderM.mutate({ id: activeFolder.id, name: activeFolder.name, parentId |
+| `src/routes/_authenticated/files.tsx` | 620 | RecordLookupSelect | value={f.folder_id ?? "unfiled"} onValueChange={(v) => moveM.mutate({ attachmentId: f.id, targetId: v === "unfiled" ? null : v,  |
 | `src/routes/_authenticated/firm.tsx` | 184 | LookupSelect | Active firm |
 | `src/routes/_authenticated/firm.tsx` | 297 | LookupSelect | Client |
 | `src/routes/_authenticated/imports.tsx` | 775 | RecordLookupSelect | budget-import-target |
 | `src/routes/_authenticated/imports.tsx` | 914 | RecordLookupSelect | className="w-full rounded-md border bg-background p-2 text-sm" value={selectedColumn} onValueChange={(e) => { setAssetFieldMapping((current) |
-| `src/routes/_authenticated/notifications.tsx` | 533 | RecordLookupSelect | value={recipient} onValueChange={setRecipient} |
-| `src/routes/_authenticated/notifications.tsx` | 616 | RecordLookupSelect | value={uploaded[r.id] ?? ""} onValueChange={(id) => setUploaded((old) => ({ ...old, [r.id]: id }))} |
+| `src/routes/_authenticated/notifications.tsx` | 536 | RecordLookupSelect | value={recipient} onValueChange={setRecipient} |
+| `src/routes/_authenticated/notifications.tsx` | 619 | RecordLookupSelect | value={uploaded[r.id] ?? ""} onValueChange={(id) => setUploaded((old) => ({ ...old, [r.id]: id }))} |
 | `src/routes/_authenticated/onboarding.tsx` | 150 | RecordLookupSelect | value={countryCode} disabled={busy} onValueChange={(code) => { setCountryCode(code); const match = countries.find((c) => c.code === code); i |
 | `src/routes/_authenticated/onboarding.tsx` | 178 | RecordLookupSelect | value={currency} disabled={busy} onValueChange={setCurrency} |
 | `src/routes/_authenticated/onboarding.tsx` | 222 | RecordLookupSelect | value={timezone} disabled={busy} onValueChange={setTimezone} |
@@ -125,16 +130,16 @@ The permanent rule is `.cursor/rules/linkbooks-lookup-select.mdc` (`alwaysApply:
 | `src/routes/_authenticated/sales/receipts.new.tsx` | 308 | AccountLookup | Deposit account |
 | `src/routes/_authenticated/sales/receipts.new.tsx` | 324 | RecordLookupSelect | className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm" value={cur} onValueChange={(e) => { setCurrency(e); setAllo |
 | `src/routes/_authenticated/sales/statements.tsx` | 106 | ContactLookup | Customer |
-| `src/routes/_authenticated/settings.tsx` | 569 | RecordLookupSelect | value={countryCode} disabled={!canEdit // saveMutation.isPending} onValueChange={setCountryCode} |
-| `src/routes/_authenticated/settings.tsx` | 732 | RecordLookupSelect | value={currency} disabled={!canEdit // saveMutation.isPending} onValueChange={setCurrency} |
-| `src/routes/_authenticated/settings.tsx` | 751 | RecordLookupSelect | value={timezone} disabled={!canEdit // saveMutation.isPending} onValueChange={setTimezone} |
-| `src/routes/_authenticated/settings.tsx` | 1028 | RecordLookupSelect | value={rateFrom} onValueChange={setRateFrom} |
-| `src/routes/_authenticated/tax.tsx` | 333 | AccountLookup | Output tax liability |
-| `src/routes/_authenticated/tax.tsx` | 345 | AccountLookup | Recoverable input tax |
-| `src/routes/_authenticated/tax.tsx` | 357 | AccountLookup | Non-recoverable tax |
+| `src/routes/_authenticated/settings.tsx` | 564 | RecordLookupSelect | value={countryCode} disabled={!canEdit // saveMutation.isPending} onValueChange={setCountryCode} |
+| `src/routes/_authenticated/settings.tsx` | 727 | RecordLookupSelect | value={currency} disabled={!canEdit // saveMutation.isPending} onValueChange={setCurrency} |
+| `src/routes/_authenticated/settings.tsx` | 746 | RecordLookupSelect | value={timezone} disabled={!canEdit // saveMutation.isPending} onValueChange={setTimezone} |
+| `src/routes/_authenticated/settings.tsx` | 1023 | RecordLookupSelect | value={rateFrom} onValueChange={setRateFrom} |
+| `src/routes/_authenticated/tax.tsx` | 340 | AccountLookup | Output tax liability |
+| `src/routes/_authenticated/tax.tsx` | 352 | AccountLookup | Recoverable input tax |
+| `src/routes/_authenticated/tax.tsx` | 364 | AccountLookup | Non-recoverable tax |
 | `src/routes/auth_.mfa.tsx` | 130 | RecordLookupSelect | mfa-factor |
 | `src/routes/pricing_.builder.tsx` | 72 | RecordLookupSelect | Base plan |
 
-Total: 126 shared declarations; zero guard violations at the recorded run. Source line numbers may shift with later formatting.
+Total: 131 shared declarations; zero guard violations at the recorded run. Source line numbers may shift with later formatting.
 
 Remaining validation: a complete authenticated workflow matrix across every module; large-list server paging for legacy callers that still supply bounded in-memory arrays; per-field eligibility and create permissions against representative tenant data. These are not certified by the static guard.

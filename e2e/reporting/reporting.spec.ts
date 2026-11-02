@@ -231,3 +231,88 @@ test("More options is keyboard accessible and fits a narrow screen", async ({ pa
   await page.keyboard.press("Escape");
   await expect(trigger).toBeFocused();
 });
+
+test("standard statements apply real comparison and presentation options and preserve saved settings", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const region = page.getByRole("region", { name: "Standard statement fixture", exact: true });
+  await region.getByRole("button", { name: "Customize report", exact: true }).click();
+  await page.getByRole("combobox", { name: "Compare selected period with", exact: true }).click();
+  await page.getByRole("option", { name: "Previous year", exact: true }).click();
+  await page.getByLabel("Show change in amount", { exact: true }).check();
+  await page.getByLabel("Show percentage change", { exact: true }).check();
+  await page.getByLabel("Show percentage columns", { exact: true }).check();
+  await page.getByRole("tab", { name: "Rows & numbers", exact: true }).click();
+  await page.getByLabel("Show account codes", { exact: true }).uncheck();
+  await page.getByLabel("Compact rows", { exact: true }).check();
+  await page.getByRole("combobox", { name: "Decimal places", exact: true }).click();
+  await page.getByRole("option", { name: "Whole numbers", exact: true }).click();
+  await page.getByRole("tab", { name: "Header & notes", exact: true }).click();
+  await page
+    .getByRole("dialog")
+    .getByLabel("Report notes", { exact: true })
+    .fill("Reviewed management statement");
+  await page.getByRole("button", { name: "Apply report settings", exact: true }).click();
+  await region.getByRole("button", { name: "Run standard statement fixture", exact: true }).click();
+  await expect(region.getByRole("article")).toContainText("Change in amount");
+  await expect(region.getByRole("article")).toContainText("73.33%");
+  await expect(region.getByRole("article")).toContainText("Unavailable");
+  await expect(region.getByRole("article")).toContainText("Reviewed management statement");
+  await expect(region.getByRole("article")).not.toContainText("4000 Fixture revenue");
+  await region
+    .getByRole("button", { name: "Persist standard statement settings", exact: true })
+    .click();
+  await page.reload();
+  await region.getByRole("button", { name: "Customize report", exact: true }).click();
+  await expect(page.getByLabel("Show percentage change", { exact: true })).toBeChecked();
+  await page.getByRole("tab", { name: "Rows & numbers", exact: true }).click();
+  await expect(page.getByRole("combobox", { name: "Decimal places", exact: true })).toContainText(
+    "Whole numbers",
+  );
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+});
+
+test("standard customization validates comparison dates and filters before applying", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const region = page.getByRole("region", { name: "Standard statement fixture", exact: true });
+  await region.getByRole("button", { name: "Customize report", exact: true }).click();
+  await page.getByRole("combobox", { name: "Compare selected period with", exact: true }).click();
+  await page.getByRole("option", { name: "Custom comparison period", exact: true }).click();
+  await page.getByRole("button", { name: "Apply report settings", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText("valid custom comparison");
+  await page.getByLabel("Comparison from", { exact: true }).fill("2025-01-01");
+  await page.getByLabel("Comparison to", { exact: true }).fill("2025-12-31");
+  await page.getByRole("tab", { name: "Filters", exact: true }).click();
+  await page.getByRole("button", { name: "Add condition", exact: true }).click();
+  await page.getByRole("button", { name: "Apply report settings", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText("required filter values");
+  await page.getByRole("button", { name: "Remove condition 1", exact: true }).click();
+  await page.getByRole("button", { name: "Apply report settings", exact: true }).click();
+  await region.getByRole("button", { name: "Run standard statement fixture", exact: true }).click();
+  await expect(region.getByRole("article")).toContainText("Custom comparison");
+});
+
+test("standard report comparison and filter shortcuts open the relevant controls", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const region = page.getByRole("region", { name: "Standard statement fixture", exact: true });
+  await region.getByRole("combobox", { name: "Compare statement with", exact: true }).click();
+  await page.getByRole("option", { name: "Previous year", exact: true }).click();
+  await region.getByRole("button", { name: "Run standard statement fixture", exact: true }).click();
+  await expect(region.getByRole("article")).toContainText("Previous year");
+  await region.getByRole("button", { name: "Filters", exact: true }).click();
+  await expect(page.getByRole("tab", { name: "Filters", exact: true })).toHaveAttribute(
+    "data-state",
+    "active",
+  );
+  await expect(page.getByRole("button", { name: "Add condition", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  await region.getByRole("combobox", { name: "Compare statement with", exact: true }).click();
+  await page.getByRole("option", { name: "Custom comparison period", exact: true }).click();
+  await expect(page.getByLabel("Comparison from", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+});

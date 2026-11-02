@@ -1,3 +1,4 @@
+import { nativeTabLinkClass } from "@/lib/navigation/native-tab";
 import { SettingsDestinationLink } from "@/components/settings/ModuleSettingsLinks";
 import { useMemo, useState, type ReactNode } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -193,30 +194,14 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
       <Tabs value={view}>
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <TabsList className="flex h-auto flex-wrap">
-            <TabsTrigger value="all" asChild>
-              <Link to="/contacts" search={{ view: "all" }} onClick={() => setPage(0)}>All</Link>
-            </TabsTrigger>
-            <TabsTrigger value="customers" asChild>
-              <Link to="/contacts" search={{ view: "customers" }} onClick={() => setPage(0)}>Customers</Link>
-            </TabsTrigger>
-            <TabsTrigger value="suppliers" asChild>
-              <Link to="/contacts" search={{ view: "suppliers" }} onClick={() => setPage(0)}>Suppliers</Link>
-            </TabsTrigger>
-            <TabsTrigger value="both" asChild>
-              <Link to="/contacts" search={{ view: "both" }} onClick={() => setPage(0)}>Both roles</Link>
-            </TabsTrigger>
-            <TabsTrigger value="recent" asChild>
-              <Link to="/contacts" search={{ view: "recent" }} onClick={() => setPage(0)}>Recently added</Link>
-            </TabsTrigger>
-            <TabsTrigger value="updated" asChild>
-              <Link to="/contacts" search={{ view: "updated" }} onClick={() => setPage(0)}>Recently updated</Link>
-            </TabsTrigger>
-            <TabsTrigger value="inactive" asChild>
-              <Link to="/contacts" search={{ view: "inactive" }} onClick={() => setPage(0)}>Inactive</Link>
-            </TabsTrigger>
-            <TabsTrigger value="archived" asChild>
-              <Link to="/contacts" search={{ view: "archived" }} onClick={() => setPage(0)}>Archived</Link>
-            </TabsTrigger>
+            <Link className={nativeTabLinkClass} role="tab" aria-selected={view === "all"} data-state={view === "all" ? "active" : "inactive"} to="/contacts" search={{ view: "all" }} onClick={() => setPage(0)}>All</Link>
+            <Link className={nativeTabLinkClass} role="tab" aria-selected={view === "customers"} data-state={view === "customers" ? "active" : "inactive"} to="/contacts" search={{ view: "customers" }} onClick={() => setPage(0)}>Customers</Link>
+            <Link className={nativeTabLinkClass} role="tab" aria-selected={view === "suppliers"} data-state={view === "suppliers" ? "active" : "inactive"} to="/contacts" search={{ view: "suppliers" }} onClick={() => setPage(0)}>Suppliers</Link>
+            <Link className={nativeTabLinkClass} role="tab" aria-selected={view === "both"} data-state={view === "both" ? "active" : "inactive"} to="/contacts" search={{ view: "both" }} onClick={() => setPage(0)}>Both roles</Link>
+            <Link className={nativeTabLinkClass} role="tab" aria-selected={view === "recent"} data-state={view === "recent" ? "active" : "inactive"} to="/contacts" search={{ view: "recent" }} onClick={() => setPage(0)}>Recently added</Link>
+            <Link className={nativeTabLinkClass} role="tab" aria-selected={view === "updated"} data-state={view === "updated" ? "active" : "inactive"} to="/contacts" search={{ view: "updated" }} onClick={() => setPage(0)}>Recently updated</Link>
+            <Link className={nativeTabLinkClass} role="tab" aria-selected={view === "inactive"} data-state={view === "inactive" ? "active" : "inactive"} to="/contacts" search={{ view: "inactive" }} onClick={() => setPage(0)}>Inactive</Link>
+            <Link className={nativeTabLinkClass} role="tab" aria-selected={view === "archived"} data-state={view === "archived" ? "active" : "inactive"} to="/contacts" search={{ view: "archived" }} onClick={() => setPage(0)}>Archived</Link>
           </TabsList>
           <Input
             placeholder="Search name, email, phone, account #, tax ID…"

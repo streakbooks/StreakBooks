@@ -1,3 +1,4 @@
+import { nativeTabLinkClass } from "@/lib/navigation/native-tab";
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -228,12 +229,12 @@ function TaxConfigPage() {
 
       <Tabs value={activeTab}>
         <TabsList className="mb-4 flex h-auto flex-wrap">
-          <TabsTrigger value="registration" asChild><Link to="/tax" search={{ tab: "registration" }} resetScroll={false}>Registration</Link></TabsTrigger>
-          <TabsTrigger value="returns" asChild><Link to="/tax" search={{ tab: "returns" }} resetScroll={false}>Returns</Link></TabsTrigger>
-          <TabsTrigger value="rates" asChild><Link to="/tax" search={{ tab: "rates" }} resetScroll={false}>Rates</Link></TabsTrigger>
-          <TabsTrigger value="codes" asChild><Link to="/tax" search={{ tab: "codes" }} resetScroll={false}>Codes</Link></TabsTrigger>
-          <TabsTrigger value="mappings" asChild><Link to="/tax" search={{ tab: "mappings" }} resetScroll={false}>GL mappings</Link></TabsTrigger>
-          <TabsTrigger value="packs" asChild><Link to="/tax" search={{ tab: "packs" }} resetScroll={false}>Country packs</Link></TabsTrigger>
+          <Link className={nativeTabLinkClass} role="tab" aria-selected={activeTab === "registration"} data-state={activeTab === "registration" ? "active" : "inactive"} to="/tax" search={{ tab: "registration" }} resetScroll={false}>Registration</Link>
+          <Link className={nativeTabLinkClass} role="tab" aria-selected={activeTab === "returns"} data-state={activeTab === "returns" ? "active" : "inactive"} to="/tax" search={{ tab: "returns" }} resetScroll={false}>Returns</Link>
+          <Link className={nativeTabLinkClass} role="tab" aria-selected={activeTab === "rates"} data-state={activeTab === "rates" ? "active" : "inactive"} to="/tax" search={{ tab: "rates" }} resetScroll={false}>Rates</Link>
+          <Link className={nativeTabLinkClass} role="tab" aria-selected={activeTab === "codes"} data-state={activeTab === "codes" ? "active" : "inactive"} to="/tax" search={{ tab: "codes" }} resetScroll={false}>Codes</Link>
+          <Link className={nativeTabLinkClass} role="tab" aria-selected={activeTab === "mappings"} data-state={activeTab === "mappings" ? "active" : "inactive"} to="/tax" search={{ tab: "mappings" }} resetScroll={false}>GL mappings</Link>
+          <Link className={nativeTabLinkClass} role="tab" aria-selected={activeTab === "packs"} data-state={activeTab === "packs" ? "active" : "inactive"} to="/tax" search={{ tab: "packs" }} resetScroll={false}>Country packs</Link>
         </TabsList>
 
         <TabsContent value="registration" className="space-y-4">

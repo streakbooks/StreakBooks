@@ -462,7 +462,7 @@ export function SettingsForCompany({
             />
             <SettingsNav
               section={section}
-              onSelect={selectSection}
+              embedded={Boolean(embeddedSection)}
               showDemo={isDemo}
               filter={navFilter}
             />

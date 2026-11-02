@@ -28,7 +28,7 @@ Work top to bottom. A task is done only when its tests have run and the box is t
 
 - [x] Attach a quote to a subscription
 - [ ] Second-approver flow end to end. Decision tests passed. Live walkthrough BLOCKED until a second platform user with `approvals.manage` exists.
-- [ ] Mid-cycle add and remove with proration (BLOCKED without a test key)
+- [ ] Mid-cycle add and remove with proration. Calculation tests passed, 5. Provider call BLOCKED until a test-mode secret is in `.env.local`.
 
 ## Batch B
 

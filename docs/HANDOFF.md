@@ -12,6 +12,7 @@ Typecheck exit 0. Lint 0 errors and 23 warnings. Vitest 163 files, 1279 tests, a
 - P0.6: pull request 65 merged at `9fc4429` after verify and voice-browser succeeded.
 - Batch A: `attachQuote` tests passed, 4. A quote is not attached or granted without a Stripe test secret. No subscription row was written.
 - Batch A: second-approver decision tests passed, 3. Live walkthrough BLOCKED until a second platform user with approvals.manage exists.
+- Batch A: mid-cycle proration tests passed, 5. No provider call. BLOCKED until a test-mode secret is in `.env.local`.
 - Hosted gate BLOCKED: `20261102170000`, `20261102180000`, `20261102180100`, and the start-month backfill are READY-TO-APPLY. Nothing was applied. Write `BACKUP CONFIRMED` in this file to release them.
 
 ## NEEDS FROM OWNER

@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { RefreshCw, Download } from "lucide-react";
+import { RefreshCw, Download, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { useCanDo } from "@/hooks/use-can";
 import { getStandardStatement, exportStandardStatement } from "@/lib/reports/standard.functions";
@@ -17,6 +17,12 @@ import { ReportShell, ReportPane, Stat, type ReportCtx } from "./ReportShell";
 import { StandardReportControls } from "./StandardReportControls";
 import { DocumentPreview } from "./DocumentPreview";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 export function StandardStatementView({
   ctx,
   report,
@@ -74,6 +80,7 @@ export function StandardStatementView({
       title={report === "profit-and-loss" ? "Profit and Loss" : "Balance Sheet"}
       ctx={effectiveCtx}
       mode={report === "profit-and-loss" ? "range" : "asof"}
+      hidePrint
       basis={settings.showBasis ? "Accrual basis · posted ledger" : ""}
       extraControls={
         <>
@@ -95,6 +102,22 @@ export function StandardStatementView({
             onOpen={() => setChoicesOpen(true)}
             onRetryFilters={() => void choices.refetch()}
           />
+          <div className="space-y-1">
+            <Label htmlFor="statement-accounting-method">Accounting method</Label>
+            <select
+              id="statement-accounting-method"
+              className="flex h-9 rounded-md border border-input bg-background px-3 text-sm shadow-xs focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+              value={ctx.search.basis ?? "accrual"}
+              onChange={(e) => ctx.setSearch({ basis: e.target.value === "accrual" ? undefined : e.target.value })}
+              aria-describedby="statement-cash-note"
+            >
+              <option value="accrual">Accrual</option>
+              <option value="cash" disabled>Cash — not available yet</option>
+            </select>
+            <p id="statement-cash-note" className="max-w-48 text-xs text-muted-foreground">
+              Cash basis requires payment-allocation reporting and is not supported yet.
+            </p>
+          </div>
           {report === "balance-sheet" && settings.group !== "total" && (
             <div className="space-y-1">
               <Label htmlFor="statement-column-from">Column periods from</Label>
@@ -121,26 +144,31 @@ export function StandardStatementView({
         </>
       }
       toolbarActions={
-        <>
-          {(
-            [
-              ["pdf", "Download PDF"],
-              ["xlsx", "Export Excel"],
-              ["csv", "Export CSV"],
-            ] as const
-          ).map(([format, label]) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
             <Button
-              key={format}
               size="sm"
               variant="outline"
               disabled={!canExport || !doc || q.isError || exporting.isPending}
-              onClick={() => exporting.mutate(format)}
+              aria-label="Download report"
             >
-              <Download className="mr-1 size-4" aria-hidden="true" />
-              {exporting.isPending && exporting.variables === format ? "Preparing…" : label}
+              <Download className="mr-2 size-4" aria-hidden="true" />
+              {exporting.isPending ? "Preparing…" : "Download"}
+              <ChevronDown className="ml-2 size-4" aria-hidden="true" />
             </Button>
-          ))}
-        </>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {([
+              ["pdf", "PDF document"],
+              ["xlsx", "Excel workbook (.xlsx)"],
+              ["csv", "CSV data (.csv)"],
+            ] as const).map(([format, label]) => (
+              <DropdownMenuItem key={format} onSelect={() => exporting.mutate(format)}>
+                {label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       }
     >
       <ReportPane

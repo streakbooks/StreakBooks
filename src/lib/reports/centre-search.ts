@@ -22,7 +22,7 @@ export function parseReportingCentreSearch(raw: Record<string, unknown>): {
   const result: { tab?: ReportingTab; from?: string; to?: string; pack?: string } = {
     tab: REPORTING_TABS.includes(raw["tab"] as ReportingTab)
       ? (raw["tab"] as ReportingTab)
-      : "home",
+      : "standard",
   };
   const pack = raw["pack"];
   if (typeof pack === "string" && /^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(pack)) {

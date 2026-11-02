@@ -12,7 +12,7 @@ Work top to bottom. A task is done only when its tests have run and the box is t
 ## P0 — Safety and verification
 
 - [x] 1. Full suite: typecheck, lint, unit tests, build
-- [ ] 2. Reject `sk_live_` unless an explicit production flag is set
+- [x] 2. Reject `sk_live_` unless an explicit production flag is set
 - [ ] 3. Playwright Chromium plus a local `platform_owner` so grant and revoke run
 - [ ] 4. Security-definer audit, search_path, anon revoke, migrations not applied
 - [ ] 5. Reconcile migration history off production

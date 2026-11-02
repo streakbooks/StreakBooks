@@ -31,12 +31,23 @@ describe("platform access", () => {
 });
 
 describe("provider keys", () => {
-  it("accepts Stripe and Razorpay test or live keys", () => {
-    expect(() => assertStripeTestKey("sk_live_abc")).not.toThrow();
-    expect(() => assertStripeTestKey("sk_test_abc")).not.toThrow();
-    expect(() => assertStripeTestKey("pk_test_abc")).toThrow(/sk_test_|sk_live_/);
-    expect(() => assertRazorpayTestKey("rzp_live_abc")).not.toThrow();
-    expect(() => assertRazorpayTestKey("rzp_test_abc")).not.toThrow();
+  const live = { LINKBOOKS_ALLOW_LIVE_PAYMENT_KEYS: "true" };
+
+  it("accepts test keys and refuses live keys unless the production flag is exactly true", () => {
+    expect(() => assertStripeTestKey("sk_test_abc", {})).not.toThrow();
+    expect(() => assertStripeTestKey("sk_live_abc", {})).toThrow(
+      /LINKBOOKS_ALLOW_LIVE_PAYMENT_KEYS/,
+    );
+    expect(() =>
+      assertStripeTestKey("sk_live_abc", { LINKBOOKS_ALLOW_LIVE_PAYMENT_KEYS: "1" }),
+    ).toThrow(/LINKBOOKS_ALLOW_LIVE_PAYMENT_KEYS/);
+    expect(() => assertStripeTestKey("sk_live_abc", live)).not.toThrow();
+    expect(() => assertStripeTestKey("pk_test_abc", live)).toThrow(/sk_test_/);
+    expect(() => assertRazorpayTestKey("rzp_test_abc", {})).not.toThrow();
+    expect(() => assertRazorpayTestKey("rzp_live_abc", {})).toThrow(
+      /LINKBOOKS_ALLOW_LIVE_PAYMENT_KEYS/,
+    );
+    expect(() => assertRazorpayTestKey("rzp_live_abc", live)).not.toThrow();
   });
 });
 

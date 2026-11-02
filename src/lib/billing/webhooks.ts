@@ -1,3 +1,4 @@
+import { assertStripeTestKey } from "@/lib/billing/provider-keys";
 import { verifyRazorpaySignature, verifyStripeSignature } from "@/lib/billing/signatures";
 
 type AdminUpdate = {
@@ -97,6 +98,7 @@ export function mayActivateStripeCheckout(
 async function readStripeSubscription(subscriptionId: string): Promise<Record<string, unknown>> {
   const secret = process.env["STRIPE_SECRET_KEY"];
   if (!secret) throw new Error("Stripe API secret is not configured.");
+  assertStripeTestKey(secret);
   const response = await fetch(
     `https://api.stripe.com/v1/subscriptions/${encodeURIComponent(subscriptionId)}`,
     {

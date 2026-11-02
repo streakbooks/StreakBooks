@@ -1,3 +1,8 @@
+import {
+  assertRazorpayTestKey,
+  assertStripeTestKey,
+  livePaymentKeysAllowed,
+} from "@/lib/billing/provider-keys";
 import { resolvePortalCheckoutMode, type PortalCheckoutMode } from "@/lib/portals/payment-rules";
 
 export function portalCheckoutMode(): {
@@ -11,6 +16,7 @@ export function portalCheckoutMode(): {
       razorpayKeyId: process.env["RAZORPAY_KEY_ID"],
       razorpayKeySecret: process.env["RAZORPAY_KEY_SECRET"],
       allowSandbox: false,
+      allowLiveKeys: livePaymentKeysAllowed(),
     }),
     allowSandbox: false,
   };
@@ -25,6 +31,7 @@ export function checkoutModeFor(allowSandbox: boolean): {
     razorpayKeyId: process.env["RAZORPAY_KEY_ID"],
     razorpayKeySecret: process.env["RAZORPAY_KEY_SECRET"],
     allowSandbox,
+    allowLiveKeys: livePaymentKeysAllowed(),
   });
 }
 
@@ -55,6 +62,7 @@ export async function createProviderCheckout(
   }
   if (mode === "stripe") {
     const secret = process.env["STRIPE_SECRET_KEY"] ?? "";
+    assertStripeTestKey(secret);
     const body = new URLSearchParams();
     body.set("mode", "payment");
     body.set("success_url", `${input.origin}/portal/app/payments?paid=1`);
@@ -90,6 +98,7 @@ export async function createProviderCheckout(
 
   const keyId = process.env["RAZORPAY_KEY_ID"] ?? "";
   const keySecret = process.env["RAZORPAY_KEY_SECRET"] ?? "";
+  assertRazorpayTestKey(keyId);
   const response = await fetch("https://api.razorpay.com/v1/payment_links", {
     method: "POST",
     headers: {

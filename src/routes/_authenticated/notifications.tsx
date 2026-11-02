@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/notifications")({
-  validateSearch: (raw: Record<string, unknown>): { view?: View } => ({
+  validateSearch: (raw: Record<string, unknown>): { view?: View | undefined } => ({
     view: ["all", "unread", "action", "critical", "completed", "archived"].includes(String(raw["view"]))
       ? raw["view"] as View : undefined,
   }),

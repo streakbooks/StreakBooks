@@ -12,7 +12,7 @@ Read-only reconciliation used three connected organizations: 37/26/22 accounts, 
 
 | Area | Status | Delivered behavior / remaining work |
 |---|---|---|
-| Reporting centre | PARTIAL | Home, standard, custom, management, adviser, packs, drafts, published, archived, templates and schedule tabs; actual favourites and pack activity/counts. Recently opened/frequently used report history and complete authenticated navigation matrix remain. |
+| Reporting centre | PARTIAL | Home, standard, custom, management, adviser, packs, drafts, published, archived, templates and schedule tabs; actual favourites and pack activity/counts. Persisted recently opened/frequently used reports now retain supported period/account/comparison filters. The complete authenticated navigation matrix remains. |
 | Standard reports | PARTIAL | Existing catalogue below retained; existing authoritative statement and analysis runners. No claim that all catalogue items now support new PDF/XLSX/delivery. |
 | Saved custom library | PARTIAL | Real create/update, duplicate, rename, delete confirmation, favourite, archive/restore, descriptions, templates, creator/modifier/access metadata, search/sort/type/status filters and 20-row server paging. Shared read/edit access enforced by RLS. Full logout/login UI matrix remains. |
 | Advanced builder | PARTIAL | Actual CoA IDs/types, account/group/formula/heading rows, row and column ordering/hiding, nested groups, bounded rational formulas, comparative/fixed/month/calculated variance columns, sign/decimal/percent/negative formatting, notes/header/footer/orientation, preview/save/export. Calculated columns with safe dependency validation, per-column formats, scaling, zero styles/suppression, symbols, red negatives, label sorting and collapsed groups are delivered. Budget/forecast columns, advanced dimensions/filter DSL and additional accounting display controls remain. |
@@ -23,7 +23,7 @@ Read-only reconciliation used three connected organizations: 37/26/22 accounts, 
 | Management packs | PARTIAL | Save/duplicate drafts, reusable private templates, selected ordered sections, preparer/reviewer, frozen source/config SHA, independent approval, publication, archive/restore, exports. Five standard sections supported; custom reports, budgets, forecasts, ageing and KPI sections are not yet pack selections. Firm logo/theme asset integration remains. |
 | Lifecycle | PARTIAL | Atomic permission-checked versioned transitions, independent reviewer, review feedback, immutable publication, archive restore and audit; live transactional integration passes. Complete authenticated browser flow and independent reviewer approval remain. |
 | Sharing/scheduling/email | BLOCKED | Private/selected/company/authorized-firm access, revocation, durable outbox/leases/retries/idempotency/history, real pg_cron + Edge worker deployed. Provider acceptance is separate from delivered. Server email secret/sender absent; no real delivery/attachment/bounce verification claimed. |
-| Shared LookupSelect | PARTIAL | 121 shared declarations, declarative migration adapter, multi-select composition, dark selection, domain variants, flyovers, stable IDs, cancellation/stale-request/cache fixes, rule and CI guard. Complete signed-in module matrix and large legacy caller paging remain. See inventory. |
+| Shared LookupSelect | PARTIAL | 123 shared declarations, declarative migration adapter, multi-select composition, dark selection, domain variants, flyovers, stable IDs, cancellation/stale-request/cache fixes, rule and CI guard. Complete signed-in module matrix and large legacy caller paging remain. See inventory. |
 | Security | PARTIAL | Server reports.view/export checks, tenant RLS, scoped sharing, MFA, revoked-user rechecks, immutable identities, bounded formulas and private worker secret. No committed secrets. Project-wide advisor findings and moderate dependency remediation remain. |
 | Scale | PARTIAL | 100k relevant rows, 1000 saved reports, 25 concurrent SQL requests; exact totals preserved. Whole deployed service P95 and memory soak remain unverified. |
 | Review/integration | BLOCKED | Author review and checks performed; independent review, CI result/approvals and release acceptance remain gates. No protected-main bypass. |
@@ -72,7 +72,7 @@ PDF embeds licensed DejaVu Sans, wraps headings, repeats headers, splits wide ta
 
 ## Database migrations and infrastructure
 
-All ten reporting migrations were applied successfully to connected project `ipxflpzfcqwtenodbxwc` (PostgreSQL 17.11):
+All twelve reporting migrations were applied successfully to connected project `ipxflpzfcqwtenodbxwc` (PostgreSQL 17.11):
 
 1. `20261102042056_reporting_ecosystem.sql`: sharing/RLS, facts capture, packs/snapshots/transitions, comments, models, durable schedules/outbox.
 2. `20261102043511_reporting_policy_insert_visibility.sql`: correct owner INSERT RETURNING visibility.
@@ -84,6 +84,8 @@ All ten reporting migrations were applied successfully to connected project `ipx
 8. `20261102060542_reporting_delivery_confirmation_queue.sql`: service-only atomic confirmation claims, cooldown and fair queue rotation; 27 accepted fixture messages are checked across 25+2 claims without starvation or double claims.
 9. `20261102180101_reporting_catalogue_entitlements.sql`: register the reporting suite in the existing registry, included zero-cost price book, dependency graph and audit; enforce live winning entitlements for writes/capture/dispatch.
 10. `20261102180102_reporting_revoke_while_frozen.sql`: allow ownership-checked sharing revocation while new reporting work is frozen.
+11. `20261102180103_reporting_access_history.sql`: private, idempotent report-open events and recent/frequent aggregation with tenant/user/grant enforcement.
+12. `20261102180104_reporting_activity_filter_context.sql`: retain supported filter context while preserving the original RPC signature for older callers.
 
 Generated Supabase types reflect the final schema. Migrations add reporting structures without deleting posted accounting data. The live integration SQL creates isolated synthetic users/companies/posted journals and rolls everything back; it never sends email. Re-run it with an authorized database test connection, not through a browser session with elevated credentials.
 
@@ -95,12 +97,12 @@ The latest worker heartbeat on 2026-11-02 reports `provider_configured=false`; t
 
 | Check | Recorded result | Scope / limitation |
 |---|---|---|
-| `npm test` | 173 files / 1357 tests PASS on Vitest 5.0.5 | Entire repository unit suite; no removed or skipped tests to obtain pass. |
+| `npm test` | 174 files / 1363 tests PASS on Vitest 5.0.5 | Entire repository unit suite; no removed or skipped tests to obtain pass. |
 | `npm run typecheck` | PASS after typed Vitest mock compatibility update | Final TypeScript boundary validation. |
 | `npm run build` | PASS, Vite 8.3.5 | Actual production client/server bundle. |
 | Changed-source ESLint | No new findings; 3 existing ListKit refresh warnings | Compared to HEAD, not a claim of zero whole-repository lint. |
-| `npm run check:lookups` | 121 declarations, zero violations | Source architecture guard; not full runtime coverage. |
-| `npm run test:reporting` | 8 PASS | Actual components at 390/768/1440px; formula/reorder/config persistence, 10k paginated lookup, keyboard/disabled/create/cancel. Fixture storage is not Supabase re-login proof. |
+| `npm run check:lookups` | 123 declarations, zero violations | Source architecture guard; not full runtime coverage. |
+| `npm run test:reporting` | 9 PASS | Actual components at 390/768/1440px; formula/reorder/config persistence, 10k paginated lookup, keyboard/disabled/create/cancel. Fixture storage is not Supabase re-login proof. |
 | `npm run test:practice` | 2 PASS | Existing practice work-board regression. |
 | `npm run test:corrections` | 8 PASS | Real shared lookup interaction replaces native selector assertions. |
 | `npm run test:themes` | 5 PASS | Existing document theme previews/export regression. |
@@ -124,7 +126,7 @@ The two user screenshots were reference material only. The existing LinkBooks ap
 
 The criterion-by-criterion scorecard is `reporting-acceptance-scorecard.md`; the exact field inventory is `reporting-lookup-inventory.md`; defects/risks are `reporting-defect-register.md`. PARTIAL/FAIL/BLOCKED are not counted as passed.
 
-Next implementation order: (1) advanced filter/dimension and remaining accounting display controls with posted-ledger SQL and tests; (2) include saved custom, budget, ageing, forecast and KPI sections in immutable pack capture/export; (3) firm-shared reusable templates, full branding, dashboard sharing, report history, model/schedule paging; (4) complete authorized browser→API→DB matrix and API contract negatives; (5) verified provider delivery/attachment/bounce tests; (6) deployed 25-concurrent P95 and memory soak; (7) independent accounting/security review and GitHub CI/approvals; (8) only then merge main and verify exact resulting SHA. Do not restart or discard the implemented branch.
+Next implementation order: (1) advanced filter/dimension and remaining accounting display controls with posted-ledger SQL and tests; (2) include saved custom, budget, ageing, forecast and KPI sections in immutable pack capture/export; (3) firm-shared reusable templates, full branding, dashboard sharing, model/schedule paging; (4) complete authorized browser→API→DB matrix and API contract negatives; (5) verified provider delivery/attachment/bounce tests; (6) deployed 25-concurrent P95 and memory soak; (7) independent accounting/security review and GitHub CI/approvals; (8) only then merge main and verify exact resulting SHA. Do not restart or discard the implemented branch.
 
 ## GitHub integration
 
@@ -140,7 +142,7 @@ The acceptance scorecard after confirmed commit/push is **78/149 PASS (52.3%)**.
 
 Main advanced while the reporting work was in progress. The merge retains updated control-centre/billing/CSV work and the reporting branch's stricter saved-report validation and shared lookups. Generated types were regenerated from the actual connected schema; no billing or migration-history repair was attempted. Upstream documents intentionally leave some platform security/history work unapplied pending staging; those unrelated gates remain. Connector-applied reporting migrations are verified by migration name and deployed function/schema behavior; recorded server version timestamps can differ from repository CLI filenames. Do not run an indiscriminate migration push or repair.
 
-The integrated branch passes TypeScript, production build, 173 files / 1,357 tests, reporting browser 8/8, corrections 8/8 and themes 5/5. Explicit ESLint of the resolved files and worker reports no findings. An initial parallel browser execution encountered Vite `504 Outdated Optimize Dep` cache collisions; a dedicated reporting fixture cache fixed the blank-page failure, and all eight original assertions passed on rerun. No assertions were skipped or weakened. GitHub Actions previously passed both jobs for reporting checkpoint `a8ffbe8`; the merged head needs its own CI.
+The integrated branch passes TypeScript, production build, 174 files / 1,363 tests, reporting browser 8/8, corrections 8/8 and themes 5/5. Explicit ESLint of the resolved files and worker reports no findings. An initial parallel browser execution encountered Vite `504 Outdated Optimize Dep` cache collisions; a dedicated reporting fixture cache fixed the blank-page failure, and all eight original assertions passed on rerun. No assertions were skipped or weakened. GitHub Actions previously passed both jobs for reporting checkpoint `a8ffbe8`; the merged head needs its own CI.
 
 A new always-applied upstream rule, `.cursor/rules/linkbooks-superadmin.mdc`, requires new features to register in the shared feature registry/price book and use current entitlement decisions before shipping. That integration is now implemented and tested: the reporting feature is included without metered or incremental charges, requires accounting, optionally links budgeting, and uses live winning entitlement decisions. Server/database controls freeze new work and queued dispatch; history remains stored and readable under existing reporting permissions; sharing revocation remains available. The UI mirrors decision source/reason and disables saved-view edits when frozen. Tenant users cannot self-grant access through platform RPCs.
 
@@ -148,4 +150,10 @@ The Vercel bot explicitly states that GitHub account `linkbusinessadvisory` is n
 
 ## Catalogue integration validation
 
-All 1,357 unit tests pass, TypeScript and production build pass, and the extended live transactional SQL suite verifies defaults, business revocation, required-feature denial, frozen model/saved-view writes, cancelled queued delivery, retained snapshots, sharing revocation and tenant denial of platform self-authorization. No test email is sent. The original catalogue test now checks the original entitlement migration plus additive catalogue migrations, preserving every feature/precedence/unique-key assertion. A migration-order regression test ensures the CLI-created catalogue migrations run after their billing prerequisites on fresh databases; their filenames were ordered deterministically after the latest prerequisite because upstream files use later same-day timestamps. No migration-history repair or published plan version change was made.
+All 1,363 unit tests pass, TypeScript and production build pass, and the extended live transactional SQL suite verifies defaults, business revocation, required-feature denial, frozen model/saved-view writes, cancelled queued delivery, retained snapshots, sharing revocation and tenant denial of platform self-authorization. No test email is sent. The original catalogue test now checks the original entitlement migration plus additive catalogue migrations, preserving every feature/precedence/unique-key assertion. A migration-order regression test ensures the CLI-created catalogue migrations run after their billing prerequisites on fresh databases; their filenames were ordered deterministically after the latest prerequisite because upstream files use later same-day timestamps. No migration-history repair or published plan version change was made.
+
+## Reporting activity validation
+
+Reporting home now shows real recently opened and frequently used report types/saved custom reports alongside pack activity. The stored metadata contains report identifiers, periods and supported URL filters, not financial balances. Strict-mode/network retries cannot duplicate a navigation event; another user cannot read that history, and revoked shared-view titles disappear from the summary. Saved builder links reopen the recorded period; GL links retain the actual selected account. Core standard saved views remain readable while entitlement controls disable edits, and activity recording itself stops when reporting is frozen. Live transactional assertions and six API contract/permission/validation unit tests pass. A ninth component browser scenario verifies actual link URLs and empty-state behavior; this remains separate from full signed-in production browser validation.
+
+Two dynamic record selectors newly introduced on upstream main (plan builder and feature approvals) now use the permanent shared lookup adapter. The current guard finds 123 shared declarations and zero violations; the inventory was refreshed.

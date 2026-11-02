@@ -1,3 +1,4 @@
+import { useReportActivity } from "@/hooks/use-report-activity";
 import { useCanDo } from "@/hooks/use-can";
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
@@ -48,6 +49,14 @@ export function ReportShell({
   basis?: string | undefined;
   children: ReactNode;
 }) {
+  useReportActivity(
+    ctx.companyId,
+    ctx.reportId,
+    undefined,
+    mode === "asof" ? ctx.to : ctx.from,
+    ctx.to,
+    ctx.search,
+  );
   const fmt = useFormat();
   const canExport = useCanDo("reports.export");
   const period =

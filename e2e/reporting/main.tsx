@@ -1,7 +1,9 @@
+import { ReportActivityList } from "../../src/components/reports/ReportActivityList";
+import { parseReportSearch } from "../../src/lib/reports/search";
 // Browser harness for real designer/renderer/lookup components. API persistence and RLS use the separate live SQL suite.
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
-import { createRootRoute, createRouter, RouterProvider } from "@tanstack/react-router";
+import { createRootRoute, createRoute, createRouter, RouterProvider } from "@tanstack/react-router";
 import { CustomReportDesigner } from "../../src/components/reports/CustomReportDesigner";
 import { DocumentPreview } from "../../src/components/reports/DocumentPreview";
 import { LookupSelect } from "../../src/components/lookup/LookupSelect";
@@ -74,6 +76,7 @@ export function Fixture() {
   }
   return (
     <main className="mx-auto max-w-6xl space-y-8 p-4">
+      <ActivityFixture />
       <h1 className="text-2xl font-semibold">Reporting and LookupSelect verification</h1>
       <section className="space-y-3 rounded border p-4">
         <h2 className="font-semibold">Originating form</h2>
@@ -173,6 +176,53 @@ export function Fixture() {
     </main>
   );
 }
+function ActivityFixture() {
+  const [empty, setEmpty] = useState(false);
+  const visits = [
+    {
+      key: "gl",
+      reportId: "general-ledger",
+      viewId: null,
+      name: null,
+      builder: false,
+      from: "2026-10-01",
+      to: "2026-10-31",
+      openedAt: "2026-11-02T00:00:00Z",
+      opens: 3,
+      search: { account: "11111111-1111-4111-8111-111111111111", columns: "month" },
+    },
+    {
+      key: "custom",
+      reportId: "profit-and-loss",
+      viewId: "22222222-2222-4222-8222-222222222222",
+      name: "Board contribution",
+      builder: true,
+      from: "2026-09-01",
+      to: "2026-09-30",
+      openedAt: "2026-11-01T00:00:00Z",
+      opens: 1,
+    },
+  ];
+  return (
+    <section aria-label="Report activity fixture" className="space-y-3 rounded border p-4">
+      <button onClick={() => setEmpty(true)}>Clear fixture report activity</button>
+      <ReportActivityList
+        activity={{ recent: empty ? [] : visits, frequent: empty ? [] : [visits[0]!] }}
+        fmt={{ date: (v) => v, dateTime: (v) => v }}
+      />
+    </section>
+  );
+}
 const root = createRootRoute({ component: Fixture });
-const router = createRouter({ routeTree: root });
+const reportRoute = createRoute({
+  getParentRoute: () => root,
+  path: "reports/$reportId",
+  validateSearch: parseReportSearch,
+});
+const builderRoute = createRoute({
+  getParentRoute: () => root,
+  path: "reports/builder/$viewId",
+  validateSearch: parseReportSearch,
+});
+const router = createRouter({ routeTree: root.addChildren([reportRoute, builderRoute]) });
 createRoot(document.getElementById("root")!).render(<RouterProvider router={router} />);

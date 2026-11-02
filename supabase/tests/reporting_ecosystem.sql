@@ -18,7 +18,7 @@ END $$;
 SET LOCAL ROLE authenticated;
 DO $$
 DECLARE c uuid:=current_setting('test.rep_c1')::uuid;foreign_c uuid:=current_setting('test.rep_c2')::uuid;u1 uuid:=current_setting('test.rep_u1')::uuid;u2 uuid:=current_setting('test.rep_u2')::uuid;u3 uuid:=current_setting('test.rep_u3')::uuid;
- model uuid;v uuid;p uuid;j uuid;bank uuid;rev uuid;expense uuid;f jsonb;old_snapshot jsonb;ver integer;outcome bigint;job uuid; schedule uuid;
+ visit uuid:=gen_random_uuid();model uuid;v uuid;p uuid;j uuid;bank uuid;rev uuid;expense uuid;f jsonb;old_snapshot jsonb;ver integer;outcome bigint;job uuid; schedule uuid;
 BEGIN
  SELECT id INTO bank FROM public.accounts WHERE company_id=c AND code='1000';SELECT id INTO rev FROM public.accounts WHERE company_id=c AND code='4000';SELECT id INTO expense FROM public.accounts WHERE company_id=c AND code='6000';
  j:=public.post_journal(jsonb_build_object('company_id',c,'journal_date','2026-10-01','currency_code','GBP','source_type','manual','idempotency_key','report-fixture:'||gen_random_uuid(),'lines',jsonb_build_array(jsonb_build_object('account_id',bank,'debit_minor',15000,'credit_minor',0),jsonb_build_object('account_id',rev,'debit_minor',0,'credit_minor',15000))));
@@ -32,6 +32,19 @@ BEGIN
  f:=public.capture_custom_report_facts(c,'2026-10-01','2026-10-31',jsonb_build_object('columns',jsonb_build_array(jsonb_build_object('id','current','mode','period'),jsonb_build_object('id','double','mode','calculated','formula','[current]*2'))));
  IF jsonb_array_length(f->'customColumns')<>2 OR f->'customColumns'->1->'balances'<>'[]'::jsonb THEN RAISE EXCEPTION 'Calculated column accepted independently supplied financial facts';END IF;
  IF NOT EXISTS(SELECT 1 FROM jsonb_array_elements(f->'customColumns'->0->'balances') b WHERE b->>'account_id'=rev::text AND (b->>'credit_minor')::bigint=15000) THEN RAISE EXCEPTION 'Custom actual column disagrees with posted ledger';END IF;
+ IF NOT public.record_report_open(c,'profit-and-loss',NULL,visit,'2026-10-01','2026-10-31') THEN RAISE EXCEPTION 'Report open was not persisted';END IF;
+ IF public.record_report_open(c,'profit-and-loss',NULL,visit,'2026-10-01','2026-10-31') THEN RAISE EXCEPTION 'Retried report open duplicated usage';END IF;
+ PERFORM public.record_report_open(c,'profit-and-loss',NULL,gen_random_uuid(),'2026-11-01','2026-11-30');
+ IF (public.get_report_activity(c)->'recent'->0->>'opens')::int<>2 OR public.get_report_activity(c)->'recent'->0->>'from'<>'2026-11-01' THEN RAISE EXCEPTION 'Recent/frequent report activity is not accurate';END IF;
+ visit:=gen_random_uuid();
+ PERFORM public.record_report_open(c,'general-ledger',NULL,visit,'2026-10-01','2026-10-31',jsonb_build_object('account',bank,'columns','month'));
+ IF public.record_report_open(c,'general-ledger',NULL,visit,'2026-10-01','2026-10-31','{}') THEN RAISE EXCEPTION 'Retried activity overwrote its filter context';END IF;
+ IF public.get_report_activity(c)->'recent'->0->'search'->>'account'<>bank::text THEN RAISE EXCEPTION 'Recent GL report lost selected account';END IF;
+ PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',u2,'aal','aal2','role','authenticated')::text,true);
+ IF jsonb_array_length(public.get_report_activity(c)->'recent')<>0 OR EXISTS(SELECT 1 FROM public.report_open_events WHERE company_id=c) THEN RAISE EXCEPTION 'Another member can see private report activity';END IF;
+ BEGIN PERFORM public.record_report_open(foreign_c,'profit-and-loss',NULL,gen_random_uuid(),'2026-10-01','2026-10-31');RAISE EXCEPTION 'TEST: foreign activity write accepted';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
+ IF has_table_privilege('authenticated','public.report_open_events','INSERT') THEN RAISE EXCEPTION 'Activity actor can be forged by direct insert';END IF;
+ PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',u1,'aal','aal2','role','authenticated')::text,true);
  INSERT INTO public.report_saved_views(company_id,user_id,report_id,name,config) VALUES(c,u1,'profit-and-loss','Fixture custom report','{"columns":"prior_year"}') RETURNING id INTO v;
  IF (SELECT modified_by FROM public.report_saved_views WHERE id=v)<>u1 THEN RAISE EXCEPTION 'Modifier metadata missing';END IF;
  INSERT INTO public.report_saved_views(company_id,user_id,report_id,name,config) SELECT c,u1,'profit-and-loss','Search fixture '||n,'{}' FROM generate_series(1,1000) n;
@@ -45,6 +58,7 @@ BEGIN
  PERFORM public.set_report_access(v,'selected',jsonb_build_array(jsonb_build_object('userId',u2,'access','view')),NULL);
  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',u2,'aal','aal2','role','authenticated')::text,true);
  IF NOT EXISTS(SELECT 1 FROM public.report_saved_views WHERE id=v) THEN RAISE EXCEPTION 'Granted reader cannot see report';END IF;
+ PERFORM public.record_report_open(c,'profit-and-loss',v,gen_random_uuid(),'2026-10-01','2026-10-31');
  UPDATE public.report_saved_views SET name='Forbidden rename' WHERE id=v;GET DIAGNOSTICS ver=ROW_COUNT;IF ver<>0 THEN RAISE EXCEPTION 'Viewer can edit';END IF;
  BEGIN PERFORM public.set_report_access(v,'company','[]',NULL);RAISE EXCEPTION 'TEST: nonowner share accepted';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',u1,'aal','aal2','role','authenticated')::text,true);
@@ -57,6 +71,7 @@ BEGIN
  PERFORM public.set_report_access(v,'private','[]',NULL);
  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',u2,'aal','aal2','role','authenticated')::text,true);
  IF EXISTS(SELECT 1 FROM public.report_saved_views WHERE id=v) THEN RAISE EXCEPTION 'Revocation ineffective';END IF;
+ IF jsonb_array_length(public.get_report_activity(c)->'recent')<>0 THEN RAISE EXCEPTION 'Revoked shared report still leaks its activity title';END IF;
  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',u3,'aal','aal2','role','authenticated')::text,true);
  IF EXISTS(SELECT 1 FROM public.report_saved_views WHERE company_id=c) THEN RAISE EXCEPTION 'Cross-tenant saved report read';END IF;
  BEGIN PERFORM public.capture_reporting_facts(c,'2026-10-01','2026-10-31');RAISE EXCEPTION 'TEST: cross-tenant capture accepted';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
@@ -141,6 +156,7 @@ DO $$ DECLARE c uuid:=current_setting('test.rep_c1')::uuid;v uuid; BEGIN
 END $$;
 SET LOCAL ROLE authenticated;
 DO $$ DECLARE c uuid:=current_setting('test.rep_c1')::uuid;v uuid:=current_setting('test.rep_frozen_view')::uuid; BEGIN
+ IF public.record_report_open(c,'profit-and-loss',NULL,gen_random_uuid(),'2026-10-01','2026-10-31') THEN RAISE EXCEPTION 'Frozen reporting still records new activity';END IF;
  IF public.get_reporting_feature_access(c)->>'source'<>'revoke' OR public.get_reporting_feature_access(c)->>'allowed'<>'false' THEN RAISE EXCEPTION 'Authoritative reporting denial missing';END IF;
  BEGIN PERFORM public.capture_reporting_facts(c,'2026-10-01','2026-10-31');RAISE EXCEPTION 'TEST: frozen reporting capture accepted';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
  BEGIN INSERT INTO public.report_models(company_id,owner_id,name,kind,config) VALUES(c,auth.uid(),'Forbidden frozen model','dashboard','{}');RAISE EXCEPTION 'TEST: direct frozen model write accepted';EXCEPTION WHEN insufficient_privilege THEN NULL;END;

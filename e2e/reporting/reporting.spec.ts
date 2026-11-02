@@ -134,3 +134,24 @@ for (const width of [390, 768, 1440])
     );
     expect(horizontal).toBe(false);
   });
+
+test("recent report links retain account filters and custom-report periods with truthful empty states", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const activity = page.getByRole("region", { name: "Report activity fixture" });
+  await expect(activity).toContainText("3 opens");
+  const gl = activity.getByRole("link", { name: /Account Transactions/ }).first();
+  await expect(gl).toHaveAttribute("href", /account=11111111-1111-4111-8111-111111111111/);
+  await expect(gl).toHaveAttribute("href", /from=2026-10-01/);
+  await expect(activity.getByRole("link", { name: /Board contribution/ })).toHaveAttribute(
+    "href",
+    /from=2026-09-01/,
+  );
+  await page.getByRole("button", { name: "Clear fixture report activity", exact: true }).click();
+  await expect(
+    activity.getByText(
+      "Open a financial or saved custom report to build your own activity history.",
+    ),
+  ).toHaveCount(2);
+});

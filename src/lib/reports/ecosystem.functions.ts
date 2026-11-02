@@ -1,10 +1,11 @@
+import { parseReportSearch } from "./search";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
 import { loadAccountMetas, type Sb } from "@/lib/accounting/ledger-data";
-import { validateSavedConfig } from "./saved-report";
+import { validateSavedConfig, assertRunnableReport } from "./saved-report";
 import { customDefinitionSchema } from "./custom-definition";
 import { buildReportDocument } from "./report-document";
 import {
@@ -19,6 +20,68 @@ import {
 import { callRpc } from "@/lib/planning/rpc";
 const missing = "The reporting ecosystem database update is required.";
 const scope = (input: { companyId: string }) => ({ companyId: assertUuid(input?.companyId) });
+export const recordReportOpen = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      reportId: string;
+      viewId?: string;
+      eventId: string;
+      search?: Record<string, unknown>;
+      from: string;
+      to: string;
+    }) => {
+      const parsed = z
+        .object({
+          companyId: z.string().uuid(),
+          reportId: z.string(),
+          viewId: z.string().uuid().optional(),
+          eventId: z.string().uuid(),
+          search: z.record(z.string(), z.unknown()).default({}),
+          from: dateSchema,
+          to: dateSchema,
+        })
+        .refine((v) => v.from <= v.to, "Invalid activity period")
+        .parse(input);
+      return {
+        ...parsed,
+        reportId: assertRunnableReport(parsed.reportId),
+        search: parseReportSearch(parsed.search),
+      };
+    },
+  )
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
+    return await callRpc<boolean>(
+      context.supabase,
+      "record_report_open",
+      {
+        _company_id: data.companyId,
+        _report_id: data.reportId,
+        _view_id: data.viewId ?? null,
+        _event_id: data.eventId,
+        _search: data.search,
+        _from: data.from,
+        _to: data.to,
+      },
+      missing,
+    );
+  });
+export const getReportActivity = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(scope)
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
+    return JSON.stringify(
+      await callRpc(
+        context.supabase,
+        "get_report_activity",
+        { _company_id: data.companyId },
+        missing,
+      ),
+    );
+  });
 export const getReportingFeatureAccess = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(scope)

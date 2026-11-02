@@ -1,3 +1,4 @@
+import { ReportActivityHome } from "./ReportActivityHome";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
@@ -148,6 +149,7 @@ export function ReportingHome({
           </div>
         )}
       </section>
+      <ReportActivityHome companyId={companyId} />
       <section className="space-y-3">
         <h3 className="text-lg font-semibold">Recent pack activity</h3>
         {q.data.packs.slice(0, 5).map((p) => (

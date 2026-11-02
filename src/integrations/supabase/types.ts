@@ -8689,6 +8689,57 @@ export type Database = {
           },
         ]
       }
+      report_open_events: {
+        Row: {
+          company_id: string
+          from_date: string
+          id: string
+          opened_at: string
+          report_id: string
+          search_config: Json
+          to_date: string
+          user_id: string
+          view_id: string | null
+        }
+        Insert: {
+          company_id: string
+          from_date: string
+          id: string
+          opened_at?: string
+          report_id: string
+          search_config?: Json
+          to_date: string
+          user_id: string
+          view_id?: string | null
+        }
+        Update: {
+          company_id?: string
+          from_date?: string
+          id?: string
+          opened_at?: string
+          report_id?: string
+          search_config?: Json
+          to_date?: string
+          user_id?: string
+          view_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_open_events_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_open_events_view_id_fkey"
+            columns: ["view_id"]
+            isOneToOne: false
+            referencedRelation: "report_saved_views"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       report_packs: {
         Row: {
           approved_at: string | null
@@ -11140,6 +11191,7 @@ export type Database = {
       }
       get_entitlements: { Args: { _company_id: string }; Returns: Json }
       get_portal_settings: { Args: { payload: Json }; Returns: Json }
+      get_report_activity: { Args: { _company_id: string }; Returns: Json }
       get_reporting_delivery_status: {
         Args: { _company_id: string }
         Returns: Json
@@ -11644,6 +11696,30 @@ export type Database = {
       }
       record_customer_receipt: { Args: { payload: Json }; Returns: Json }
       record_email_outbox: { Args: { payload: Json }; Returns: string }
+      record_report_open:
+        | {
+            Args: {
+              _company_id: string
+              _event_id: string
+              _from: string
+              _report_id: string
+              _to: string
+              _view_id: string
+            }
+            Returns: boolean
+          }
+        | {
+            Args: {
+              _company_id: string
+              _event_id: string
+              _from: string
+              _report_id: string
+              _search: Json
+              _to: string
+              _view_id: string
+            }
+            Returns: boolean
+          }
       record_supplier_payment: { Args: { payload: Json }; Returns: Json }
       record_supplier_payment_batch: { Args: { payload: Json }; Returns: Json }
       recurring_claim_occurrence: {

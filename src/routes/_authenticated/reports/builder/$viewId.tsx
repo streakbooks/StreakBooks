@@ -1,3 +1,5 @@
+import { parseReportSearch } from "@/lib/reports/search";
+import { useReportActivity } from "@/hooks/use-report-activity";
 import { ReportingFeatureGate } from "@/components/reports/ReportingFeatureGate";
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
@@ -30,11 +32,13 @@ import { Label } from "@/components/ui/label";
 import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
 export const Route = createFileRoute("/_authenticated/reports/builder/$viewId")({
   component: BuilderPage,
+  validateSearch: parseReportSearch,
   head: () => ({ meta: [{ title: "Report builder — LinkBooks" }] }),
 });
 function BuilderPage() {
   const { company, isPending } = useActiveCompany();
   const { viewId } = Route.useParams();
+  const openingPeriod = Route.useSearch();
   const accountsFn = useServerFn(getReportAccounts),
     load = useServerFn(getSavedReport);
   const accounts = useQuery({
@@ -72,7 +76,7 @@ function BuilderPage() {
   return (
     <ReportingFeatureGate companyId={company.id}>
       <BuilderEditor
-        key={`${company.id}-${viewId}-${saved.data?.updated_at ?? "new"}`}
+        key={`${company.id}-${viewId}-${saved.data?.updated_at ?? "new"}-${openingPeriod.from ?? ""}-${openingPeriod.to ?? ""}`}
         companyId={company.id}
         defaultFrom={fiscalYearStart(
           todayIso(),
@@ -107,8 +111,12 @@ function BuilderEditor({
       ? customDefinitionSchema.parse(saved.config["_builder"])
       : starterDefinition(),
   );
-  const [from, setFrom] = useState(String(saved?.config["from"] ?? defaultFrom)),
-    [to, setTo] = useState(String(saved?.config["to"] ?? todayIso()));
+  const openingPeriod = Route.useSearch();
+  const [from, setFrom] = useState(
+      String(openingPeriod.from ?? saved?.config["from"] ?? defaultFrom),
+    ),
+    [to, setTo] = useState(String(openingPeriod.to ?? saved?.config["to"] ?? todayIso()));
+  useReportActivity(companyId, saved?.report_id, saved?.id, from, to);
   const [document, setDocument] = useState<ReportDocument | null>(null);
   const [previewKey, setPreviewKey] = useState("");
   const change = (next: CustomDefinition) => {

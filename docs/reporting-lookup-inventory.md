@@ -38,6 +38,7 @@ The permanent rule is `.cursor/rules/linkbooks-lookup-select.mdc` (`alwaysApply:
 | `src/components/lookup/create-forms.tsx` | 394 | LookupSelect | Tax rate |
 | `src/components/lookup/create-forms.tsx` | 587 | AccountLookup | Ledger account |
 | `src/components/lookup/variants.tsx` | 75 | LookupSelect | {...props} options={options} searchPlaceholder={searchPlaceholder} emptyText={emptyText} |
+| `src/components/platform/PlatformApprovals.tsx` | 103 | RecordLookupSelect | Feature |
 | `src/components/platform/PlatformEditor.tsx` | 266 | RecordLookupSelect | disabled={section === "roles" && f.key === "scope" && !!row} className="mt-1 h-10 w-full rounded-md border bg-background px-3" value={values |
 | `src/components/portals/PortalShell.tsx` | 91 | RecordLookupSelect | className="h-9 rounded-md border border-input bg-background px-2" value={current?.membership_id ?? ""} onValueChange={(event) => portal.sele |
 | `src/components/portals/staff-panels.tsx` | 122 | RecordLookupSelect | className="mt-1 block h-9 w-full rounded-md border border-input bg-background px-2" value={String(current["settlement_user_id"] ?? "")} onVa |
@@ -54,8 +55,8 @@ The permanent rule is `.cursor/rules/linkbooks-lookup-select.mdc` (`alwaysApply:
 | `src/components/reports/ManagementWorkspace.tsx` | 348 | RecordLookupSelect | Open forecast assumptions |
 | `src/components/reports/ManagementWorkspace.tsx` | 416 | RecordLookupSelect | forecast-scenario |
 | `src/components/reports/PlanningViews.tsx` | 67 | LookupSelect | bva-budget |
-| `src/components/reports/ReportAccessDialog.tsx` | 120 | MultiLookupSelect | Report sharing recipients |
-| `src/components/reports/ReportAccessDialog.tsx` | 161 | RecordLookupSelect | report-share-firm |
+| `src/components/reports/ReportAccessDialog.tsx` | 124 | MultiLookupSelect | Report sharing recipients |
+| `src/components/reports/ReportAccessDialog.tsx` | 165 | RecordLookupSelect | report-share-firm |
 | `src/components/reports/ReportLibrary.tsx` | 224 | RecordLookupSelect | Report type |
 | `src/components/reports/ReportLibrary.tsx` | 509 | RecordLookupSelect | custom-base |
 | `src/components/reports/ReportPacksWorkspace.tsx` | 603 | RecordLookupSelect | id={`pack-${label}`} className="h-9 w-full rounded border bg-background" value={value} onValueChange={(e) => setter(e)} |
@@ -98,9 +99,9 @@ The permanent rule is `.cursor/rules/linkbooks-lookup-select.mdc` (`alwaysApply:
 | `src/routes/_authenticated/onboarding.tsx` | 150 | RecordLookupSelect | value={countryCode} disabled={busy} onValueChange={(code) => { setCountryCode(code); const match = countries.find((c) => c.code === code); i |
 | `src/routes/_authenticated/onboarding.tsx` | 178 | RecordLookupSelect | value={currency} disabled={busy} onValueChange={setCurrency} |
 | `src/routes/_authenticated/onboarding.tsx` | 222 | RecordLookupSelect | value={timezone} disabled={busy} onValueChange={setTimezone} |
-| `src/routes/_authenticated/products-services.tsx` | 534 | AccountLookup | Income account |
-| `src/routes/_authenticated/products-services.tsx` | 548 | AccountLookup | Expense account |
-| `src/routes/_authenticated/products-services.tsx` | 622 | LookupSelect | Tax rate |
+| `src/routes/_authenticated/products-services.tsx` | 543 | AccountLookup | Income account |
+| `src/routes/_authenticated/products-services.tsx` | 557 | AccountLookup | Expense account |
+| `src/routes/_authenticated/products-services.tsx` | 631 | LookupSelect | Tax rate |
 | `src/routes/_authenticated/purchases/bills.new.tsx` | 2013 | RecordLookupSelect | value={currencyCode} onValueChange={setCurrencyCode} |
 | `src/routes/_authenticated/purchases/bills.new.tsx` | 2578 | AccountLookup | Expense account |
 | `src/routes/_authenticated/purchases/credit-notes.$creditNoteId.tsx` | 380 | AccountLookup | ariaLabel={`Line ${i + 1} account`} purpose="expense" productKind="product" accounts={accounts} value={l.accountId} onChange={(v) => setEdit |
@@ -129,7 +130,8 @@ The permanent rule is `.cursor/rules/linkbooks-lookup-select.mdc` (`alwaysApply:
 | `src/routes/_authenticated/tax.tsx` | 345 | AccountLookup | Recoverable input tax |
 | `src/routes/_authenticated/tax.tsx` | 357 | AccountLookup | Non-recoverable tax |
 | `src/routes/auth_.mfa.tsx` | 130 | RecordLookupSelect | mfa-factor |
+| `src/routes/pricing_.builder.tsx` | 72 | RecordLookupSelect | Base plan |
 
-Total: 121 shared declarations; zero guard violations at the recorded run. Source line numbers may shift with later formatting.
+Total: 123 shared declarations; zero guard violations at the recorded run. Source line numbers may shift with later formatting.
 
 Remaining validation: a complete authenticated workflow matrix across every module; large-list server paging for legacy callers that still supply bounded in-memory arrays; per-field eligibility and create permissions against representative tenant data. These are not certified by the static guard.

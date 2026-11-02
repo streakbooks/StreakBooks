@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -68,11 +69,11 @@ function PlanBuilderPage() {
       >
         <label className="block text-sm">
           Base plan
-          <select
+          <RecordLookupSelect
             className="mt-1 w-full rounded-md border bg-background px-3 py-2"
             aria-label="Base plan"
             value={planCode}
-            onChange={(event) => setPlanCode(event.target.value)}
+            onValueChange={setPlanCode}
           >
             {(result?.plans.length ? result.plans : [{ code: "growth", name: "Growth" }]).map(
               (plan) => (
@@ -81,7 +82,7 @@ function PlanBuilderPage() {
                 </option>
               ),
             )}
-          </select>
+          </RecordLookupSelect>
         </label>
         <fieldset className="space-y-3">
           <legend className="text-sm font-medium">Optional features</legend>

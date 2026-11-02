@@ -29,5 +29,14 @@ jobs:
       - run: npm ci
       - name: Focused lint
         run: npx eslint src/lib/reports/cash-settlement.ts src/lib/reports/cash-settlement.test.ts
+      - name: Print autoformatted source for manual review on lint failure
+        if: failure()
+        run: |
+          npx eslint --fix src/lib/reports/cash-settlement.ts src/lib/reports/cash-settlement.test.ts || true
+          for file in src/lib/reports/cash-settlement.ts src/lib/reports/cash-settlement.test.ts; do
+            echo "CASH_FORMAT_START:$file"
+            cat "$file"
+            echo "CASH_FORMAT_END:$file"
+          done
       - name: Focused unit and server validation tests
         run: npx vitest run src/lib/reports/cash-settlement.test.ts src/lib/reports/standard.functions.test.ts

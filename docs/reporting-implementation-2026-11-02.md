@@ -124,4 +124,10 @@ Next implementation order: (1) advanced filter/dimension/calculated-column/accou
 
 ## GitHub integration
 
-Pending branch commit/push and draft PR creation at report generation. This section will be updated with actual references. Main is not merged; production certification remains withheld under the user's mandatory acceptance and merge conditions.
+Implementation commit `87cc69ce8aa9418b9789c3cabead00adf9e5bdc5` is pushed and verified on `origin/feat/reporting-ecosystem`. [Draft PR #63](https://github.com/rohitmehra86/LinkBooks/pull/63) targets main. Documentation follow-up commits may advance the branch. GitHub Actions run [41395661363](https://github.com/rohitmehra86/LinkBooks/actions/runs/41395661363) started and is still running at this recording.
+
+Three Vercel checks report failure: `Vercel – link-books`, `Vercel – link-books-t2fo`, and `Vercel – linkbooks`. The latter links to a team-invitation/commit-author access page. Inspection of the other deployment logs was denied with HTTP 403 for team `paxaris`; obtaining the authorization link returned team-not-found. The actual build failure reasons are unverified; do not assume these are code errors or claim deployment success. Team/deployment access needs resolving. This is separate from local build PASS.
+
+GitHub's push message also reported existing default-branch Dependabot alerts (3 critical/2 high); the feature branch npm audit after upgrades has 0 critical/0 high, 22 moderate total and 9 moderate production findings. Main's alerts have not been cleared by an unmerged branch.
+
+The acceptance scorecard after confirmed commit/push is **78/149 PASS (52.3%)**. Main remains at baseline `7f574d6a025931e71c94a363a1e27100c4c4f4b7`, unmerged. Production certification is withheld under the user's mandatory acceptance and merge conditions.

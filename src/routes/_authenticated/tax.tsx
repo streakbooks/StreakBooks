@@ -39,6 +39,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/_authenticated/tax")({
+  validateSearch: (raw: Record<string, unknown>) => ({
+    tab: ["registration", "returns", "rates", "codes", "mappings", "packs"].includes(String(raw["tab"]))
+      ? String(raw["tab"])
+      : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Tax configuration — LinkBooks" },
@@ -54,6 +59,7 @@ export const Route = createFileRoute("/_authenticated/tax")({
 function TaxConfigPage() {
   const { company, isPending } = useActiveCompany();
   const companyId = company?.id;
+  const activeTab = Route.useSearch().tab ?? "registration";
   const qc = useQueryClient();
 
   const fetchSettings = useServerFn(getTaxSettings);
@@ -220,14 +226,14 @@ function TaxConfigPage() {
         </AlertDescription>
       </Alert>
 
-      <Tabs defaultValue="registration">
+      <Tabs value={activeTab}>
         <TabsList className="mb-4 flex h-auto flex-wrap">
-          <TabsTrigger value="registration">Registration</TabsTrigger>
-          <TabsTrigger value="returns">Returns</TabsTrigger>
-          <TabsTrigger value="rates">Rates</TabsTrigger>
-          <TabsTrigger value="codes">Codes</TabsTrigger>
-          <TabsTrigger value="mappings">GL mappings</TabsTrigger>
-          <TabsTrigger value="packs">Country packs</TabsTrigger>
+          <TabsTrigger value="registration" asChild><Link to="/tax" search={{ tab: "registration" }} resetScroll={false}>Registration</Link></TabsTrigger>
+          <TabsTrigger value="returns" asChild><Link to="/tax" search={{ tab: "returns" }} resetScroll={false}>Returns</Link></TabsTrigger>
+          <TabsTrigger value="rates" asChild><Link to="/tax" search={{ tab: "rates" }} resetScroll={false}>Rates</Link></TabsTrigger>
+          <TabsTrigger value="codes" asChild><Link to="/tax" search={{ tab: "codes" }} resetScroll={false}>Codes</Link></TabsTrigger>
+          <TabsTrigger value="mappings" asChild><Link to="/tax" search={{ tab: "mappings" }} resetScroll={false}>GL mappings</Link></TabsTrigger>
+          <TabsTrigger value="packs" asChild><Link to="/tax" search={{ tab: "packs" }} resetScroll={false}>Country packs</Link></TabsTrigger>
         </TabsList>
 
         <TabsContent value="registration" className="space-y-4">

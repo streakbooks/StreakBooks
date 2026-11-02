@@ -1,46 +1,64 @@
 # Handoff
 
-Date: 2 November 2026. Branch: `main` at `3964c4b`, plus the migration-applied note. `origin/main` received a fast-forward. Pull request 62 was not merged through GitHub; its commits are on `main`.
+Date: 2 November 2026. `origin/main` is `7813d20`, which is after `53cc3ec`. Further work goes through a pull request. Do not push `main` directly.
+
+## Process from here
+
+Merge to `main` only through a pull request after the required CI checks pass and the full test suite is green. See `docs/decisions/006-main-and-migrations.md`.
+
+Before applying a migration to project `ipxflpzfcqwtenodbxwc`: confirm a restore point, keep the change additive and reversible, write the rollback SQL, apply it, and verify it. Do not apply a destructive change. `supabase backups list` on 2 November 2026 returned point-in-time restore disabled and an empty backup list. No restore point was confirmed for the five migrations that are already applied.
 
 ## Completed
 
 - Phase 0 audit: `docs/superadmin/audit.md`.
-- Phase 1 benchmark from pages fetched on 2 November 2026: `docs/superadmin/benchmark.md`.
-- Decisions: `docs/decisions/001-extend-existing-billing.md` through `004-roadmap-priority.md`.
-- Entitlement resolver, dependency checks, rollout buckets and removal rule. Unit tests cover source order, scope, deny-over-allow, expiry, dependencies and stable percentages.
-- Feature catalogue registered in TypeScript and in migration `supabase/migrations/20261102120000_entitlement_price_book.sql`.
-- Price-book quotes for included, flat, per-user, tiered, volume and usage prices. Integer minor units. Margin publish gate reuses `planMargin`.
-- MRR = annual amount divided by 12 with integer truncation. ARR = MRR × 12. The remainder is documented (1000 minor units per year is MRR 83 and ARR 996).
-- Overview copy distinguishes forbidden, empty, unseparated and ok revenue. Dates show the viewer time zone. Filter days are labelled UTC.
-- Approvals screen: grant, revoke, add-on, trial, kill switch. Kill switch and global scope create a pending approval. The decider cannot be the requester. The screen is hidden until the migration adds `approvals.view`.
-- Cursor rule: `.cursor/rules/linkbooks-superadmin.mdc`.
-- Audit hash-chain trigger in the migration, using `md5`, not applied.
+- Phase 1 benchmark: `docs/superadmin/benchmark.md`.
+- Decisions `docs/decisions/001-extend-existing-billing.md` through `006-main-and-migrations.md`.
+- Entitlement resolver, price book, approvals, MRR movements, reconciliation, and subscription start months. The five migrations `20261102120000` through `20261102160000` are applied and recorded. Rollback notes: `docs/superadmin/rollback-20261102.md`.
+- Customer quote route `/pricing/builder`. It does not charge a card or write an entitlement.
+- Local signed-in checks on 2 November 2026, after the migrations: dashboard on Demo Company; invoice list and invoice INV-V2083; new-invoice form opened and not saved; Growth quote US$30 monthly and US$300 yearly; overview revenue card empty rather than unseparated; stored movement check empty rather than zero; subscriptions column "last update"; start-month panel; feature management; approvals form visible in the navigation. No entitlement was saved. Billing and payments was not opened.
 
-## Completed since the first handoff
+## Batch status
 
-- Customer quote route `/pricing/builder`. It calls `list_live_feature_prices` and `quoteFeature` through `quoteCustomerPlan`. When add-on prices are not on the database yet, it prices the published base plan only and refuses to price selected features. It does not charge a card or write an entitlement. Browser check on the local app: Growth quoted at US$30 monthly and US$300 yearly; a selected white-label quantity was left unpriced.
-- Database rollout enforcement in `supabase/migrations/20261102130000_rollout_enforcement.sql`. Active percentage, allowlist, internal, trial, region and scheduled rollouts can deny a plan or catalogue default. See `docs/decisions/005-rollout-windows.md`.
-- Usage overage calculation in `usageOverage`. Units above the included quantity are priced at the stored unit rate. A missing rate stays unpriced. No invoice is created.
-- Historical MRR movements in `supabase/migrations/20261102140000_mrr_movements.sql`. The first observation is a baseline. Later captures record new, expansion, contraction, and churn with the overview's active non-demo integer MRR. A currency change closes the old currency. Rows are append-only. Deleting a business that has a movement row is restricted. Applied to project `ipxflpzfcqwtenodbxwc` on 2 November 2026.
-- MRR reconciliation in `reconcileMrr` and `supabase/migrations/20261102150000_mrr_reconciliation.sql`. The latest stored position per business is compared with the overview. A gap is uncovered, not zero. A churned row is not open MRR. The same-timestamp currency change keeps the open amount. The overview shows the result, or says the migration is not applied. It does not capture or charge. Browser check: the signed-in overview showed that the check is waiting for the migration.
-- Subscription list label and start months. The list column that was aliased from the last update is labelled "last update". `platform_subscription_cohorts` counts a stored start month and leaves a missing start unassigned. Existing rows are not backfilled. Applied to project `ipxflpzfcqwtenodbxwc` on 2 November 2026. LTV and fees are not calculated.
+| Batch | Label | Evidence |
+| --- | --- | --- |
+| A Entitlements, price book, custom plans | PARTIAL | `src/lib/platform/entitlements.ts`, `price-book.ts`, `src/routes/pricing_.builder.tsx`, `PlatformApprovals.tsx`. Vitest: 6 files, 37 tests passed. Attaching a quote to a subscription is blocked until a test-mode provider exists. |
+| B Subscriptions, usage, revenue, overview | PARTIAL | `revenue-metrics.ts`, `subscription-cohorts.ts`, migrations `20261102140000`–`20261102160000`. Overview and start months checked in the browser. Usage invoices, provider sync, lifetime value and fees are not built. |
+| C Businesses, users, roles, security | PARTIAL | Existing `/platform` sections for businesses, users, firms, roles, audit. Approvals now shows for this session. A second approver and break-glass were not used. |
+| D Integrations, API, monitoring, support | PARTIAL | Existing screens load. Connections were not verified. Backup list is empty and point-in-time restore is off. |
+| E Incident, maintenance, release, health | MISSING | No new incident, maintenance, release or health-score surface. |
+| F Accounting integrity, AI governance, compliance, jobs | MISSING | No new desk beyond the existing accounting screens. |
+| G Commercial and partner operations | MISSING | No partner desk. |
+| H Operations analytics, alerting, promotion, sandbox | MISSING | No alerting or sandbox promotion desk. |
+
+## This follow-up
+
+- CI for `53cc3ec`: GitHub Actions run "LinkBooks verification" completed success. Checks `verify` and `voice-browser` completed success. `main` reports `protected=false`, and the branch-protection endpoint returned 404. The push was a direct fast-forward because the branch is not protected.
+- Pull request 62 is closed and GitHub marks it merged. A comment points at `3964c4b` and `53cc3ec`.
+- Migration history: `docs/superadmin/migration-history.md`. Remote data was not changed. Docker is not available here, so `supabase db reset` and a schema diff were not run.
+- `feature_dependencies` has row-level security, a SELECT grant to `authenticated`, and no policy. `supabase/migrations/20261102170000_feature_dependency_read.sql` adds that policy and is not applied.
+- Start-month backfill is a proposal only: `docs/superadmin/start-month-backfill.md`. It was not applied.
+- Playwright journeys: `e2e/superadmin-journeys.spec.ts`. Grant and revoke stay skipped unless `E2E_PLATFORM_STORAGE_STATE` and `E2E_PLATFORM_TEST_BUSINESS_ID` are set. The public quote tests did not run: the Playwright Chromium binary is not installed. The same quote was checked in the Cursor browser.
+- Deployed app `https://linkbooks-navy.vercel.app`: the sign-in page renders. `/pricing`, `/pricing/builder` and `/platform` return 404, and the deployed bundle does not contain the plan builder. A Vercel comment on pull request 62 says the GitHub account is not a member of the paxaris team, so `53cc3ec` was not deployed. No sign-in was attempted on that site.
+- Local process environment has no `STRIPE_SECRET_KEY`, `RAZORPAY_KEY_ID` or `RAZORPAY_KEY_SECRET`. `.env` is absent. `.env.local` has no Stripe or Razorpay lines. The quote page says no test-mode payment provider is connected. `assertStripeTestKey` still accepts a `sk_live_` prefix; no such key is configured in this checkout.
 
 ## Outstanding
 
-- Re-run `tests/integration/platform-security.sql` plus a grant, revoke, percentage rollout, kill-switch, MRR-capture, and reconciliation case against project `ipxflpzfcqwtenodbxwc`. The five November 2026 migrations are applied. A full `supabase db push` was not used, because older local files are not the remote history.
-- Usage overage invoices.
-- Attach a quoted add-on to a subscription. That stays blocked until a test-mode provider can create the line item. Do not grant the feature for free from the public quote page.
-- Lifetime value and payment fees. Do not invent them from the subscription list.
-- Batches C–H beyond the control plane that already shipped in October 2026. Do not add buttons for them until the RPC exists.
-- Browser walkthrough of `/platform` with a second user for approvals. One signed-in session opened overview, businesses, subscriptions, features and integrations. Approvals was not in the navigation. Billing was not opened.
+- Re-run `tests/integration/platform-security.sql` and a grant, revoke, percentage rollout, kill-switch, MRR-capture and reconciliation case on the hosted project.
+- Usage overage invoices, and attaching a quoted add-on. Do not grant a feature for free.
+- Lifetime value and payment fees. Do not invent them.
+- Apply `20261102170000` only after a restore point exists.
+- Prove schema equivalence with a local reset once Docker is available. Do not copy the 62 remote-only versions into `supabase/migrations/`, and do not mark them reverted.
+- Install Playwright Chromium and run `e2e/superadmin-journeys.spec.ts` against a disposable business.
 
 ## BLOCKED
 
-- Payment provider sync. Need a test-mode secret (`STRIPE_SECRET_KEY` or Razorpay test keys), a test customer and confirmation the key is not live. Do not put the key in the repo, the UI or logs.
-- Applying any migration other than the five November 2026 files. `supabase db push` is blocked by remote history that has no local file. Do not mark that history reverted.
-- Email or mobile approval delivery. No verified mail transport was used. In-console decision is the path that exists.
-- Single platform owner cannot self-approve a kill switch. A second platform user with `approvals.manage` is required. That is intentional.
+- Payment provider sync. Need a test-mode secret and a test customer. Do not put the key in the repo, the UI or logs.
+- `supabase db push`. Remote history has versions with no local file.
+- Email or mobile approval delivery.
+- A single platform owner cannot self-approve a kill switch.
+- Hosted deploy of `53cc3ec` until the Vercel team membership is fixed.
+- Any further hosted migration until a restore point exists.
 
 ## Next action
 
-Say "Continue from docs/HANDOFF.md" to exercise the applied migrations on `main`, or after a test-mode payment key is available for an overage invoice. Do not run `supabase db push`. Do not mark remote migration history reverted.
+Review `docs/superadmin/start-month-backfill.md` before any start-month update. Continue batches E–H only with a working RPC, an authorisation check and a test. Do not add placeholder buttons.

@@ -1,1 +1,25 @@
+# Local environment files (only the non-secret template is tracked)
+.env
+.env.*
+!.env.example
+
+# Installed dependencies and generated output
+node_modules/
+.output/
+.vercel/
+.wrangler/
+dist/
+build/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+
+# Local platform/IDE/test state
 supabase/.temp/
+supabase/.branches/
+supabase/.profiles/
+.DS_Store
+*.log
+.vscode/
+.idea/

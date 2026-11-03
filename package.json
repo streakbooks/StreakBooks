@@ -4,6 +4,7 @@
   "sideEffects": false,
   "type": "module",
   "scripts": {
+    "check:repository": "node scripts/check-repository-hygiene.mjs && node --test scripts/check-repository-hygiene.test.mjs",
     "dev": "vite dev --port 8080 --strictPort",
     "build": "vite build",
     "build:dev": "vite build --mode development",

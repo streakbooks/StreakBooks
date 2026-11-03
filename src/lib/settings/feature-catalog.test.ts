@@ -1,0 +1,60 @@
+import { describe, expect, it } from "vitest";
+import { FEATURE_CATALOG, computeFeatureState } from "./feature-catalog";
+
+describe("feature state engine", () => {
+  const classes = FEATURE_CATALOG.find((f) => f.key === "classes")!;
+
+  it("offers browser voice navigation without provider configuration and keeps it off until enabled", () => {
+    const voice = FEATURE_CATALOG.find((f) => f.key === "voice_commands")!;
+    expect(computeFeatureState(voice, { enabled: false, canEdit: true }).state).toBe(
+      "available_disabled",
+    );
+    expect(computeFeatureState(voice, { enabled: true, canEdit: true }).state).toBe(
+      "enabled_operational",
+    );
+    expect(voice.requiresConfigCategory).toBeUndefined();
+  });
+
+  it("exposes the implemented fixed asset register in the feature manager", () => {
+    const assets = FEATURE_CATALOG.find((f) => f.key === "fixed_assets")!;
+    expect(computeFeatureState(assets, { enabled: true, canEdit: true }).state).toBe(
+      "enabled_operational",
+    );
+  });
+
+  it("marks unavailable features honestly", () => {
+    const timeTracking = FEATURE_CATALOG.find((f) => f.key === "time_tracking")!;
+    const s = computeFeatureState(timeTracking, { enabled: true, canEdit: true });
+    expect(s.state).toBe("unavailable");
+    expect(s.enabled).toBe(false);
+  });
+
+  it("returns available_disabled when off", () => {
+    const s = computeFeatureState(classes, { enabled: false, canEdit: true });
+    expect(s.state).toBe("available_disabled");
+  });
+
+  it("returns enabled_operational when on and config ok", () => {
+    const s = computeFeatureState(classes, { enabled: true, canEdit: true, configComplete: true });
+    expect(s.state).toBe("enabled_operational");
+  });
+
+  it("returns enabled_needs_config when config incomplete", () => {
+    const late = FEATURE_CATALOG.find((f) => f.key === "late_fees")!;
+    const s = computeFeatureState(late, {
+      enabled: true,
+      canEdit: true,
+      configComplete: false,
+    });
+    expect(s.state).toBe("enabled_needs_config");
+  });
+
+  it("returns restricted when entitlement blocked", () => {
+    const s = computeFeatureState(classes, {
+      enabled: false,
+      canEdit: true,
+      entitlementBlocked: true,
+    });
+    expect(s.state).toBe("restricted");
+  });
+});

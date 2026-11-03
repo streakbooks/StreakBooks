@@ -1,0 +1,35 @@
+{
+  "scope": "Read-only snapshots of the connected organisations, 2026-01-01 through 2026-10-31; no business records modified",
+  "results": [
+    {
+      "companyOrdinal": 1,
+      "accounts": 37,
+      "postedLines": 50,
+      "trialBalance": "PASS",
+      "balanceSheet": "PASS",
+      "profitAndLoss": "PASS",
+      "cashSummary": "PASS",
+      "indirectCashFlow": "PASS"
+    },
+    {
+      "companyOrdinal": 2,
+      "accounts": 26,
+      "postedLines": 41,
+      "trialBalance": "PASS",
+      "balanceSheet": "PASS",
+      "profitAndLoss": "PASS",
+      "cashSummary": "PASS",
+      "indirectCashFlow": "PASS"
+    },
+    {
+      "companyOrdinal": 3,
+      "accounts": 22,
+      "postedLines": 0,
+      "trialBalance": "PASS",
+      "balanceSheet": "PASS",
+      "profitAndLoss": "PASS",
+      "cashSummary": "PASS",
+      "indirectCashFlow": "PASS"
+    }
+  ]
+}

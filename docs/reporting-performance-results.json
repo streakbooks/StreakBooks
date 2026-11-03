@@ -1,0 +1,51 @@
+{
+  "environment": {
+    "database": "PostgreSQL 17 Docker",
+    "container": "linkbooks-reporting-qa",
+    "cpus": 2,
+    "memoryMiB": 768,
+    "transport": "local docker exec / psql, includes process overhead",
+    "scope": "SQL aggregation and fact capture only; auth permission helper is an isolated fixture; production RLS is validated separately",
+    "relevantPostedLines": 100000,
+    "balancedJournals": 50000,
+    "accounts": 201,
+    "savedReports": 1000,
+    "samplesPerOperation": 25
+  },
+  "operations": {
+    "standard": {
+      "p95Ms": 143,
+      "minMs": 116,
+      "maxMs": 153
+    },
+    "custom": {
+      "p95Ms": 716,
+      "minMs": 673,
+      "maxMs": 717
+    },
+    "dashboard": {
+      "p95Ms": 672,
+      "minMs": 619,
+      "maxMs": 692
+    },
+    "search": {
+      "p95Ms": 86,
+      "minMs": 69,
+      "maxMs": 87
+    }
+  },
+  "concurrency": {
+    "requests": 25,
+    "errors": 0,
+    "totalMs": 2036
+  },
+  "independentReconciliation": {
+    "debitsMinor": "5100000",
+    "creditsMinor": "5100000",
+    "fxPolicy": "45,000 GBP journals at 100 minor + 5,000 USD journals at 100 minor × 1.2"
+  },
+  "limitations": [
+    "Does not measure deployed API authentication, Internet latency, actual browser dashboard load or long-duration memory behavior",
+    "The acceptance P95 targets require a separate deployed end-to-end benchmark"
+  ]
+}

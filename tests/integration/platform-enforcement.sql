@@ -1,0 +1,32 @@
+BEGIN;
+DO $$
+DECLARE v_owner uuid:=gen_random_uuid();v_user uuid:=gen_random_uuid();v_sid uuid:=gen_random_uuid();v_customer_sid uuid:=gen_random_uuid();v_cid uuid;v_mid uuid;v_attachment uuid;v_contact uuid;v_invoice uuid;x jsonb;denied boolean;affected integer;v_record public.platform_records%rowtype;
+BEGIN
+ INSERT INTO auth.users(id,email) VALUES(v_owner,'enforcement-'||v_owner||'@example.invalid'),(v_user,'customer-'||v_user||'@example.invalid');
+ INSERT INTO auth.sessions(id,user_id,created_at,updated_at) VALUES(v_sid,v_owner,now(),now()),(v_customer_sid,v_user,now(),now());
+ INSERT INTO public.platform_roles(user_id,role) VALUES(v_owner,'platform_owner');
+ PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',v_owner,'session_id',v_sid,'aal','aal2','iat',floor(extract(epoch from now())))::text,true);
+ EXECUTE 'SET LOCAL ROLE authenticated';
+ x:=public.platform_mutate('business.create',null,jsonb_build_object('name','Enforcement fixture','owner_id',v_user,'country_code','GB','base_currency','GBP','fiscal_year_end_month',12,'fiscal_year_end_day',31,'timezone','Europe/London'),'Create enforcement fixture');v_cid:=(x->>'id')::uuid;
+ x:=public.platform_mutate('business.update',v_cid,jsonb_build_object('status','active','storage_quota_bytes',10),'Apply custom storage cap');
+ PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',v_user,'session_id',v_customer_sid,'aal','aal1','iat',floor(extract(epoch from now())))::text,true);
+ INSERT INTO public.document_attachments(company_id,entity_type,entity_id,file_name,storage_path,size_bytes,uploaded_by) VALUES(v_cid,'company',v_cid,'fixture.txt',v_cid||'/company/'||v_cid||'/fixture.txt',5,v_user) RETURNING id INTO v_attachment;
+ denied:=false;BEGIN INSERT INTO public.document_attachments(company_id,entity_type,entity_id,file_name,storage_path,size_bytes,uploaded_by) VALUES(v_cid,'company',v_cid,'too-large.txt',v_cid||'/company/'||v_cid||'/too-large.txt',6,v_user);EXCEPTION WHEN raise_exception THEN denied:=true;END;IF NOT denied THEN RAISE EXCEPTION 'Custom storage quota was bypassed';END IF;
+ INSERT INTO public.contacts(company_id,name,kind) VALUES(v_cid,'Fixture customer','customer') RETURNING id INTO v_contact;
+ INSERT INTO public.sales_invoices(company_id,contact_id,invoice_date,due_date,currency_code,created_by) VALUES(v_cid,v_contact,current_date,current_date+30,'GBP',v_user) RETURNING id INTO v_invoice;
+ PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',v_owner,'session_id',v_sid,'aal','aal2','iat',floor(extract(epoch from now())))::text,true);
+ x:=public.platform_mutate('business.update',v_cid,jsonb_build_object('status','suspended','storage_quota_bytes',10),'Suspend with existing financial records');
+ PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',v_user,'session_id',v_customer_sid,'aal','aal1','iat',floor(extract(epoch from now())))::text,true);
+ IF NOT EXISTS(SELECT 1 FROM public.sales_invoices WHERE id=v_invoice) THEN RAISE EXCEPTION 'Suspension hid or removed financial history';END IF;
+ PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',v_owner,'session_id',v_sid,'aal','aal2','iat',floor(extract(epoch from now())))::text,true);
+ x:=public.platform_mutate('business.update',v_cid,jsonb_build_object('status','active','storage_quota_bytes',10),'Restore existing financial records');
+ EXECUTE 'RESET ROLE';SELECT * INTO v_record FROM public.platform_records WHERE kind='settings' AND name='maintenance' AND company_id IS NULL;EXECUTE 'SET LOCAL ROLE authenticated';
+ x:=public.platform_mutate('record.save',v_record.id,jsonb_build_object('kind','settings','name','maintenance','status','active','version',v_record.version,'document',jsonb_build_object('description','Test-only maintenance')),'Activate maintenance in rollback transaction');v_mid:=(x->>'id')::uuid;
+ PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',v_user,'session_id',v_customer_sid,'aal','aal1','iat',floor(extract(epoch from now())))::text,true);
+ IF public.has_company_permission(v_cid,'sales.draft') OR NOT public.has_company_permission(v_cid,'sales.view') THEN RAISE EXCEPTION 'Maintenance read/write separation failed';END IF;
+ denied:=false;BEGIN UPDATE public.sales_invoices SET memo='Must not save during maintenance' WHERE id=v_invoice;GET DIAGNOSTICS affected=ROW_COUNT;denied:=affected=0;EXCEPTION WHEN insufficient_privilege OR raise_exception THEN denied:=true;END;IF NOT denied THEN RAISE EXCEPTION 'Maintenance mutation was accepted';END IF;
+ EXECUTE 'RESET ROLE';
+ IF EXISTS(SELECT 1 FROM public.sales_invoices WHERE id=v_invoice AND memo='Must not save during maintenance') THEN RAISE EXCEPTION 'Maintenance changed financial history';END IF;
+END $$;
+ROLLBACK;
+SELECT 'PASS: storage quota enforced, historical invoices intact during suspension, and maintenance blocks writes while retaining reads; fixtures rolled back' AS result;

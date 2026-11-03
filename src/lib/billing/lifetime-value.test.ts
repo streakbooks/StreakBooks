@@ -1,0 +1,86 @@
+import { readFileSync } from "node:fs";
+import { describe, expect, it } from "vitest";
+import { lifetimeValueFromPayments, recordLifetimePayment } from "./lifetime-value";
+
+describe("lifetime value", () => {
+  it("does not treat missing history as zero", () => {
+    expect(lifetimeValueFromPayments(null)).toEqual({
+      status: "unavailable",
+      minor: null,
+      currency: null,
+    });
+    expect(lifetimeValueFromPayments([])).toEqual({
+      status: "unavailable",
+      minor: null,
+      currency: null,
+    });
+  });
+
+  it("sums one currency and keeps mixed currencies unseparated", () => {
+    expect(
+      lifetimeValueFromPayments([
+        { currency: "INR", amountMinor: 1000 },
+        { currency: "INR", amountMinor: 500 },
+      ]),
+    ).toEqual({ status: "stored", minor: 1500, currency: "INR" });
+    expect(
+      lifetimeValueFromPayments([
+        { currency: "INR", amountMinor: 1000 },
+        { currency: "USD", amountMinor: 500 },
+      ]),
+    ).toEqual({ status: "unseparated", minor: null, currency: null });
+  });
+
+  it("refuses unsafe minor amounts and overflow instead of rounding money", () => {
+    expect(() =>
+      lifetimeValueFromPayments([{ currency: "GBP", amountMinor: Number.MAX_SAFE_INTEGER + 1 }]),
+    ).toThrow(/whole number/);
+    expect(() =>
+      lifetimeValueFromPayments([
+        { currency: "GBP", amountMinor: Number.MAX_SAFE_INTEGER },
+        { currency: "GBP", amountMinor: 1 },
+      ]),
+    ).toThrow(/precision/);
+  });
+
+  it("refuses support and has not been applied", () => {
+    expect(() =>
+      recordLifetimePayment({
+        role: "platform_support",
+        currency: "INR",
+        amountMinor: 100,
+        reason: "Collected",
+      }),
+    ).toThrow(/permission/);
+    const sql = readFileSync(
+      new URL("../../../supabase/migrations/20261102360000_lifetime_value.sql", import.meta.url),
+      "utf8",
+    );
+    expect(sql).toContain("READY-TO-APPLY");
+    expect(sql).toContain("unavailable");
+    expect(sql).not.toContain("sales_invoices");
+  });
+
+  it("rejects a payment source that is already recorded", () => {
+    expect(() =>
+      recordLifetimePayment({
+        role: "platform_finance",
+        currency: "INR",
+        amountMinor: 100,
+        reason: "Collected",
+        sourceId: "ch_1",
+        recordedSourceIds: ["ch_1"],
+      }),
+    ).toThrow(/already recorded/);
+    const sql = readFileSync(
+      new URL(
+        "../../../supabase/migrations/20261102480000_lifetime_payment_duplicate.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    expect(sql).toContain("That payment is already recorded");
+    expect(sql).toContain("require_platform('billing.manage')");
+    expect(sql).not.toContain("sales_invoices");
+  });
+});

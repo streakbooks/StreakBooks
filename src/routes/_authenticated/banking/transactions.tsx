@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
 import { useFormat } from "@/hooks/use-format";
+import { useTablePrefs } from "@/hooks/use-table-prefs";
+import { TableAppearanceControls } from "@/components/common/TableAppearanceControls";
 import { TableCard } from "@/components/common/table-card";
 import { StatusBadge } from "@/components/common/stat-card";
 import {
@@ -129,6 +131,13 @@ const DEFAULT_BANK_TXN_VIEW: ViewSnapshot = {
   pageSize: "50",
 };
 
+const BANK_OPTIONAL_COLUMNS = [
+  { id: "account", label: "Bank account" },
+  { id: "status", label: "Transaction status" },
+  { id: "journal", label: "Linked journals" },
+] as const;
+const BANK_OPTIONAL_IDS = BANK_OPTIONAL_COLUMNS.map((column) => column.id);
+
 type Expanded = { id: string; mode: "code" | "match"; initialAccountId?: string } | null;
 
 function BankTransactions() {
@@ -157,6 +166,15 @@ function BankTransactions() {
   const statusGroup = search.statusGroup ?? "";
   const page = search.page ?? 0;
   const pageSize = search.pageSize ?? 50;
+  const tablePrefs = useTablePrefs(
+    `${user.id}:${companyId ?? "none"}:bank-transactions`,
+    BANK_OPTIONAL_IDS,
+  );
+  const showAccountColumn = !search.bankAccountId && tablePrefs.isVisible("account");
+  const showStatusColumn = tablePrefs.isVisible("status");
+  const showJournalColumn = tablePrefs.isVisible("journal");
+  const tableColumnCount =
+    5 + Number(showAccountColumn) + Number(showStatusColumn) + Number(showJournalColumn);
 
   const setSearch = (patch: { [K in keyof Search]?: Search[K] | undefined }, keepPage = false) =>
     void navigate({
@@ -592,6 +610,14 @@ function BankTransactions() {
             }}
           />
         </div>
+        <TableAppearanceControls
+          columns={BANK_OPTIONAL_COLUMNS}
+          hidden={tablePrefs.hidden}
+          density={tablePrefs.density}
+          onToggleColumn={tablePrefs.toggle}
+          onDensityChange={tablePrefs.setDensity}
+          onReset={tablePrefs.reset}
+        />
       </div>
 
       {reviewing && uncategorisedRows.length > 0 ? (
@@ -688,7 +714,13 @@ function BankTransactions() {
         />
       ) : (
         <TableCard>
-          <Table>
+          <Table
+            className={
+              tablePrefs.density === "compact"
+                ? "[&_th]:h-8 [&_td]:py-1.5 [&_td]:text-xs"
+                : undefined
+            }
+          >
             <TableHeader>
               <TableRow>
                 <TableHead className="w-8">
@@ -706,10 +738,10 @@ function BankTransactions() {
                 </TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Description</TableHead>
-                {search.bankAccountId ? null : <TableHead>Account</TableHead>}
+                {showAccountColumn ? <TableHead>Account</TableHead> : null}
                 <TableHead className="text-right">Amount</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Journal</TableHead>
+                {showStatusColumn ? <TableHead>Status</TableHead> : null}
+                {showJournalColumn ? <TableHead>Journal</TableHead> : null}
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -769,7 +801,7 @@ function BankTransactions() {
                           </div>
                         ) : null}
                       </TableCell>
-                      {search.bankAccountId ? null : (
+                      {showAccountColumn ? (
                         <TableCell className="whitespace-nowrap text-sm">
                           <Link
                             to="/banking"
@@ -778,7 +810,7 @@ function BankTransactions() {
                             {nameByAccount.get(t.bank_account_id) ?? "—"}
                           </Link>
                         </TableCell>
-                      )}
+                      ) : null}
                       <TableCell
                         className={cn(
                           "money font-medium",
@@ -788,30 +820,34 @@ function BankTransactions() {
                       >
                         {fmt.money(t.amount_minor, currency)}
                       </TableCell>
-                      <TableCell>
-                        <StatusBadge status={t.status} />
-                      </TableCell>
-                      <TableCell>
-                        {t.links.length === 0 ? (
-                          <span className="text-muted-foreground">—</span>
-                        ) : (
-                          <div className="flex flex-col">
-                            {t.links.map((l) =>
-                              l.journalId ? (
-                                <Link
-                                  key={l.journalLineId}
-                                  to="/banking/journal/$journalId"
-                                  params={{ journalId: l.journalId }}
-                                  className="text-sm underline-offset-4 hover:underline"
-                                >
-                                  Journal #{l.journalNumber}
-                                  {l.reversed ? " (reversed)" : ""}
-                                </Link>
-                              ) : null,
-                            )}
-                          </div>
-                        )}
-                      </TableCell>
+                      {showStatusColumn ? (
+                        <TableCell>
+                          <StatusBadge status={t.status} />
+                        </TableCell>
+                      ) : null}
+                      {showJournalColumn ? (
+                        <TableCell>
+                          {t.links.length === 0 ? (
+                            <span className="text-muted-foreground">—</span>
+                          ) : (
+                            <div className="flex flex-col">
+                              {t.links.map((l) =>
+                                l.journalId ? (
+                                  <Link
+                                    key={l.journalLineId}
+                                    to="/banking/journal/$journalId"
+                                    params={{ journalId: l.journalId }}
+                                    className="text-sm underline-offset-4 hover:underline"
+                                  >
+                                    Journal #{l.journalNumber}
+                                    {l.reversed ? " (reversed)" : ""}
+                                  </Link>
+                                ) : null,
+                              )}
+                            </div>
+                          )}
+                        </TableCell>
+                      ) : null}
                       <TableCell>
                         <div className="flex flex-wrap items-center gap-1">
                           {t.status === "uncategorised" ? (
@@ -905,7 +941,7 @@ function BankTransactions() {
                     </TableRow>
                     {open ? (
                       <TableRow>
-                        <TableCell colSpan={search.bankAccountId ? 7 : 8} className="bg-muted/10">
+                        <TableCell colSpan={tableColumnCount} className="bg-muted/10">
                           {open.mode === "code" ? (
                             <div className="space-y-2">
                               {suggestQ.data && suggestQ.data.suggestions.length > 0 ? (

@@ -278,4 +278,63 @@ test.describe("deep links in authenticated module workspaces", () => {
     await page.getByRole("button", { name: "Clear filters" }).click();
     await expect(page).not.toHaveURL(/direction=out/);
   });
+
+  test("invoice table appearance persists and read-only preview keeps the list open", async ({
+    page,
+  }) => {
+    await signIn(page, "/sales/invoices");
+    const columns = page.getByRole("button", { name: "Choose table columns" });
+    await columns.click();
+    const due = page.getByRole("menuitemcheckbox", { name: "Due date" });
+    await expect(due).toBeChecked();
+    await due.click();
+    await page.keyboard.press("Escape");
+    if (await page.getByRole("columnheader", { name: "Due", exact: true }).count()) {
+      await expect(page.getByRole("columnheader", { name: "Due", exact: true })).toHaveCount(0);
+    }
+    await page.getByRole("button", { name: "Choose row density" }).click();
+    await page.getByRole("menuitemradio", { name: "Compact" }).click();
+    await page.reload();
+    await page.getByRole("button", { name: "Choose table columns" }).click();
+    await expect(page.getByRole("menuitemcheckbox", { name: "Due date" })).not.toBeChecked();
+    await page.keyboard.press("Escape");
+    const before = page.url();
+    const previews = page.getByRole("button", { name: /^Preview invoice / });
+    if ((await previews.count()) > 0) {
+      await previews.first().click();
+      await expect(page.getByRole("dialog")).toBeVisible();
+      await expect(page.getByRole("link", { name: "Open full invoice" })).toHaveAttribute(
+        "href",
+        /\/sales\/invoices\//,
+      );
+      expect(page.url()).toBe(before);
+      await page.keyboard.press("Escape");
+      await expect(page.getByRole("dialog")).toHaveCount(0);
+    }
+    await page.getByRole("button", { name: "Choose row density" }).click();
+    await page.getByRole("menuitem", { name: "Restore table defaults" }).click();
+    await page.getByRole("button", { name: "Choose table columns" }).click();
+    await expect(page.getByRole("menuitemcheckbox", { name: "Due date" })).toBeChecked();
+  });
+
+  test("bank transaction columns and density persist without hiding coding controls", async ({
+    page,
+  }) => {
+    await signIn(page, "/banking/transactions");
+    await page.getByRole("button", { name: "Choose table columns" }).click();
+    const journal = page.getByRole("menuitemcheckbox", { name: "Linked journals" });
+    await expect(journal).toBeChecked();
+    await journal.click();
+    await page.keyboard.press("Escape");
+    await page.reload();
+    await page.getByRole("button", { name: "Choose table columns" }).click();
+    await expect(page.getByRole("menuitemcheckbox", { name: "Linked journals" })).not.toBeChecked();
+    await page.keyboard.press("Escape");
+    const actionsHeader = page.getByRole("columnheader", { name: "Actions" });
+    if ((await actionsHeader.count()) > 0) await expect(actionsHeader).toBeVisible();
+    await page.getByRole("button", { name: "Choose row density" }).click();
+    await page.getByRole("menuitem", { name: "Restore table defaults" }).click();
+    await page.getByRole("button", { name: "Choose table columns" }).click();
+    await expect(page.getByRole("menuitemcheckbox", { name: "Linked journals" })).toBeChecked();
+  });
 });

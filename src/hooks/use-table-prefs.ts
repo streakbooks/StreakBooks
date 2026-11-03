@@ -40,5 +40,6 @@ export function useTablePrefs(storageKey: string, columnIds: string[]) {
     isVisible: (id: string) => !prefs.hidden.includes(id),
     setDensity: (density: Density) => update({ ...prefs, density }),
     toggle: (id: string) => update({ ...prefs, hidden: toggleColumn(prefs.hidden, id) }),
+    reset: () => update(DEFAULT_TABLE_PREFS),
   };
 }

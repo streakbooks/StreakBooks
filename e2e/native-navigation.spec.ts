@@ -232,4 +232,50 @@ test.describe("deep links in authenticated module workspaces", () => {
     await page.keyboard.press("Escape");
     await expect(dashboard.getByText("Bank accounts", { exact: true })).toBeVisible();
   });
+
+  test("Sales invoice saved view filters and quick actions remain available", async ({ page }) => {
+    await signIn(page, "/sales/invoices");
+    const overdue = page.getByRole("button", { name: "Overdue", exact: true });
+    await overdue.click();
+    await page.getByRole("button", { name: "Saved views" }).click();
+    await page.getByRole("textbox", { name: "New view name" }).fill("Follow up overdue");
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Follow up overdue" })).toBeVisible();
+    await page.getByRole("button", { name: "Follow up overdue" }).click();
+    await expect(overdue).toBeVisible();
+    await page.getByRole("button", { name: "Clear filters" }).click();
+    await page.reload();
+    await page.getByRole("button", { name: "Saved views" }).click();
+    await expect(page.getByRole("button", { name: "Follow up overdue" })).toBeVisible();
+    await page.getByRole("button", { name: "Delete saved view Follow up overdue" }).click();
+    await expect(page.getByRole("button", { name: "Follow up overdue" })).toHaveCount(0);
+  });
+
+  test("Bills workspace keeps filter views and resets page on applying one", async ({ page }) => {
+    await signIn(page, "/purchases/bills");
+    await page.getByRole("button", { name: "Overdue", exact: true }).click();
+    await expect(page).toHaveURL(/overdueOnly=true/);
+    await page.getByRole("button", { name: "Saved views" }).click();
+    await page.getByRole("textbox", { name: "New view name" }).fill("Pay overdue");
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await page.getByRole("button", { name: "Pay overdue" }).click();
+    await expect(page).toHaveURL(/overdueOnly=true/);
+    await page.getByRole("button", { name: "Clear filters" }).click();
+    await expect(page).not.toHaveURL(/overdueOnly=true/);
+  });
+
+  test("Banking transaction filters save and restore direction with safe URL state", async ({
+    page,
+  }) => {
+    await signIn(page, "/banking/transactions");
+    await page.getByRole("button", { name: "Money out", exact: true }).click();
+    await expect(page).toHaveURL(/direction=out/);
+    await page.getByRole("button", { name: "Saved views" }).click();
+    await page.getByRole("textbox", { name: "New view name" }).fill("Outgoing transactions");
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await page.getByRole("button", { name: "Outgoing transactions" }).click();
+    await expect(page).toHaveURL(/direction=out/);
+    await page.getByRole("button", { name: "Clear filters" }).click();
+    await expect(page).not.toHaveURL(/direction=out/);
+  });
 });

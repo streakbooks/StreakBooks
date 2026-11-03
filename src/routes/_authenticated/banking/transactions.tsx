@@ -1,6 +1,6 @@
 import { ProjectTagControl } from "@/components/projects/ProjectTagControl";
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouteContext } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -32,6 +32,8 @@ import { PageHeader, ListSkeleton, ErrorState, EmptyState } from "@/components/c
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SavedFilterViews } from "@/components/common/SavedFilterViews";
+import type { ViewSchema, ViewSnapshot } from "@/lib/workspaces/saved-filter-views";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
@@ -102,9 +104,35 @@ export const Route = createFileRoute("/_authenticated/banking/transactions")({
   component: BankTransactions,
 });
 
+const BANK_TXN_VIEW_SCHEMA = {
+  status: {
+    type: "choice",
+    choices: ["", "uncategorised", "matched", "reconciled", "excluded", "all"],
+  },
+  statusGroup: { type: "choice", choices: ["", "unreconciled", "posted", "all"] },
+  q: { type: "text", maxLength: 120 },
+  bankAccountId: { type: "uuid" },
+  dateFrom: { type: "date" },
+  dateTo: { type: "date" },
+  direction: { type: "choice", choices: ["", "in", "out"] },
+  pageSize: { type: "choice", choices: ["25", "50", "100", "200"] },
+} satisfies ViewSchema;
+
+const DEFAULT_BANK_TXN_VIEW: ViewSnapshot = {
+  status: "uncategorised",
+  statusGroup: "",
+  q: "",
+  bankAccountId: "",
+  dateFrom: "",
+  dateTo: "",
+  direction: "",
+  pageSize: "50",
+};
+
 type Expanded = { id: string; mode: "code" | "match"; initialAccountId?: string } | null;
 
 function BankTransactions() {
+  const { user } = useRouteContext({ from: "/_authenticated" });
   const { company } = useActiveCompany();
   const fmt = useFormat();
   const companyId = company?.id;
@@ -479,6 +507,91 @@ function BankTransactions() {
         >
           Search
         </Button>
+      </div>
+
+      <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border bg-card/80 p-3 print:hidden">
+        <span className="mr-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Quick views
+        </span>
+        <Button
+          size="sm"
+          variant={status === "uncategorised" && !statusGroup ? "secondary" : "outline"}
+          onClick={() =>
+            setSearch({ status: "uncategorised", statusGroup: undefined, transactionId: undefined })
+          }
+        >
+          For review
+        </Button>
+        <Button
+          size="sm"
+          variant={statusGroup === "unreconciled" ? "secondary" : "outline"}
+          onClick={() =>
+            setSearch({ status: undefined, statusGroup: "unreconciled", transactionId: undefined })
+          }
+        >
+          Unreconciled
+        </Button>
+        <Button
+          size="sm"
+          variant={search.direction === "out" ? "secondary" : "outline"}
+          onClick={() =>
+            setSearch({
+              direction: search.direction === "out" ? undefined : "out",
+              transactionId: undefined,
+            })
+          }
+        >
+          Money out
+        </Button>
+        <div className="ml-auto">
+          <SavedFilterViews
+            scope={user.id + ":" + companyId + ":bank-transactions"}
+            schema={BANK_TXN_VIEW_SCHEMA}
+            defaults={DEFAULT_BANK_TXN_VIEW}
+            current={{
+              status: search.status ?? "",
+              statusGroup: search.statusGroup ?? "",
+              q: search.q ?? "",
+              bankAccountId: search.bankAccountId ?? "",
+              dateFrom: search.dateFrom ?? "",
+              dateTo: search.dateTo ?? "",
+              direction: search.direction ?? "",
+              pageSize: String(pageSize),
+            }}
+            onApply={(view) => {
+              const term = String(view["q"] ?? "");
+              setQText(term);
+              setSearch({
+                status: String(view["status"] ?? "") || undefined,
+                statusGroup: String(view["statusGroup"] ?? "") || undefined,
+                q: term || undefined,
+                bankAccountId: String(view["bankAccountId"] ?? "") || undefined,
+                transactionId: undefined,
+                dateFrom: String(view["dateFrom"] ?? "") || undefined,
+                dateTo: String(view["dateTo"] ?? "") || undefined,
+                direction: String(view["direction"] ?? "") || undefined,
+                page: undefined,
+                pageSize:
+                  Number(view["pageSize"] ?? "50") === 50 ? undefined : Number(view["pageSize"]),
+              });
+            }}
+            onReset={() => {
+              setQText("");
+              setSearch({
+                status: "uncategorised",
+                statusGroup: undefined,
+                q: undefined,
+                bankAccountId: undefined,
+                transactionId: undefined,
+                dateFrom: undefined,
+                dateTo: undefined,
+                direction: undefined,
+                page: undefined,
+                pageSize: undefined,
+              });
+            }}
+          />
+        </div>
       </div>
 
       {reviewing && uncategorisedRows.length > 0 ? (

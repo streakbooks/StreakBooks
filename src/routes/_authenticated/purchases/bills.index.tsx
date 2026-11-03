@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouteContext } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -42,6 +42,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { StatusBadge } from "@/components/common/stat-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SavedFilterViews } from "@/components/common/SavedFilterViews";
+import type { ViewSchema, ViewSnapshot } from "@/lib/workspaces/saved-filter-views";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
@@ -230,7 +232,40 @@ function approvalStatusOf(b: BillRow) {
   return "Approved / authorised";
 }
 
+const BILLS_VIEW_SCHEMA = {
+  tab: { type: "choice", choices: TABS.map((t) => t.id) },
+  q: { type: "text", maxLength: 100 },
+  from: { type: "date" },
+  to: { type: "date" },
+  dateField: { type: "choice", choices: ["bill_date", "due_date"] },
+  includeVoid: { type: "boolean" },
+  overdueOnly: { type: "boolean" },
+  status: {
+    type: "choice",
+    choices: ["", "draft", "awaiting_approval", "authorised", "partly_paid", "paid", "void"],
+  },
+  sortBy: {
+    type: "choice",
+    choices: ["bill_date", "due_date", "total_minor", "status", "bill_number"],
+  },
+  sortDir: { type: "choice", choices: ["asc", "desc"] },
+} satisfies ViewSchema;
+
+const DEFAULT_BILLS_VIEW: ViewSnapshot = {
+  tab: "all",
+  q: "",
+  from: "",
+  to: "",
+  dateField: "bill_date",
+  includeVoid: false,
+  overdueOnly: false,
+  status: "",
+  sortBy: "bill_date",
+  sortDir: "desc",
+};
+
 function BillsWorkspace() {
+  const { user } = useRouteContext({ from: "/_authenticated" });
   const { company } = useActiveCompany();
   const companyId = company?.id;
   const baseCurrency = company?.base_currency ?? "GBP";
@@ -647,6 +682,93 @@ function BillsWorkspace() {
             );
           })}
         </nav>
+
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-card/80 p-3 print:hidden">
+          <span className="mr-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Quick views
+          </span>
+          <Button
+            size="sm"
+            variant={tab === "for_approval" ? "secondary" : "outline"}
+            onClick={() =>
+              patchSearch({
+                tab: "for_approval",
+                status: undefined,
+                overdueOnly: undefined,
+                page: 0,
+              })
+            }
+          >
+            Awaiting approval
+          </Button>
+          <Button
+            size="sm"
+            variant={tab === "to_pay" && !overdueOnly ? "secondary" : "outline"}
+            onClick={() =>
+              patchSearch({ tab: "to_pay", status: undefined, overdueOnly: undefined, page: 0 })
+            }
+          >
+            To pay
+          </Button>
+          <Button
+            size="sm"
+            variant={overdueOnly && tab === "to_pay" ? "secondary" : "outline"}
+            onClick={() =>
+              patchSearch({ tab: "to_pay", status: undefined, overdueOnly: true, page: 0 })
+            }
+          >
+            Overdue
+          </Button>
+          <div className="ml-auto">
+            <SavedFilterViews
+              scope={user.id + ":" + companyId + ":purchase-bills"}
+              schema={BILLS_VIEW_SCHEMA}
+              defaults={DEFAULT_BILLS_VIEW}
+              current={{
+                tab,
+                q,
+                from: fromDate,
+                to: toDate,
+                dateField,
+                includeVoid,
+                overdueOnly,
+                status: statusFilter,
+                sortBy,
+                sortDir,
+              }}
+              onApply={(view) =>
+                patchSearch({
+                  tab: String(view["tab"] ?? "all"),
+                  q: String(view["q"] ?? ""),
+                  from: String(view["from"] ?? ""),
+                  to: String(view["to"] ?? ""),
+                  dateField: String(view["dateField"] ?? "bill_date"),
+                  includeVoid: view["includeVoid"] === true,
+                  overdueOnly: view["overdueOnly"] === true,
+                  status: String(view["status"] ?? ""),
+                  sortBy: String(view["sortBy"] ?? "bill_date"),
+                  sortDir: String(view["sortDir"] ?? "desc"),
+                  page: 0,
+                })
+              }
+              onReset={() =>
+                patchSearch({
+                  tab: "all",
+                  q: undefined,
+                  from: undefined,
+                  to: undefined,
+                  dateField: undefined,
+                  includeVoid: undefined,
+                  overdueOnly: undefined,
+                  status: undefined,
+                  sortBy: undefined,
+                  sortDir: undefined,
+                  page: 0,
+                })
+              }
+            />
+          </div>
+        </div>
 
         {/* C. Filters + table (or recurring) */}
         {tab === "recurring" ? (

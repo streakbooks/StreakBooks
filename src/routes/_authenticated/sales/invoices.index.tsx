@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouteContext } from "@tanstack/react-router";
 import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -20,6 +20,8 @@ import {
   type ListState,
 } from "@/components/sales/ListKit";
 import { Button } from "@/components/ui/button";
+import { SavedFilterViews } from "@/components/common/SavedFilterViews";
+import type { ViewSchema, ViewSnapshot } from "@/lib/workspaces/saved-filter-views";
 import {
   Table,
   TableBody,
@@ -42,7 +44,33 @@ const STATUSES = [
   { value: "void", label: "Void" },
 ];
 
+const INVOICE_VIEW_SCHEMA = {
+  q: { type: "text", maxLength: 100 },
+  status: { type: "choice", choices: ["all", ...STATUSES.map((s) => s.value)] },
+  from: { type: "date" },
+  to: { type: "date" },
+  sort: {
+    type: "choice",
+    choices: ["invoice_date", "due_date", "invoice_number", "total_minor", "status"],
+  },
+  dir: { type: "choice", choices: ["asc", "desc"] },
+  pageSize: { type: "choice", choices: ["25", "50", "100", "200"] },
+  overdue: { type: "boolean" },
+} satisfies ViewSchema;
+
+const DEFAULT_INVOICE_VIEW: ViewSnapshot = {
+  q: "",
+  status: "all",
+  from: "",
+  to: "",
+  sort: "invoice_date",
+  dir: "desc",
+  pageSize: "50",
+  overdue: false,
+};
+
 function InvoicesList() {
+  const { user } = useRouteContext({ from: "/_authenticated" });
   const { company } = useActiveCompany();
   const fmt = useFormat();
   const fetchInvoices = useServerFn(listInvoices);
@@ -116,6 +144,75 @@ function InvoicesList() {
           </label>
         }
       />
+      <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border bg-card/70 p-3 print:hidden">
+        <span className="mr-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Quick filters
+        </span>
+        <Button
+          variant={overdue && state.status === "all" ? "secondary" : "outline"}
+          size="sm"
+          onClick={() => {
+            setOverdue(true);
+            patch({ status: "all", page: 0 });
+          }}
+        >
+          Overdue
+        </Button>
+        <Button
+          variant={state.status === "draft" && !overdue ? "secondary" : "outline"}
+          size="sm"
+          onClick={() => {
+            setOverdue(false);
+            patch({ status: "draft", page: 0 });
+          }}
+        >
+          Drafts
+        </Button>
+        <Button
+          variant={state.status === "partly_paid" && !overdue ? "secondary" : "outline"}
+          size="sm"
+          onClick={() => {
+            setOverdue(false);
+            patch({ status: "partly_paid", page: 0 });
+          }}
+        >
+          Partly paid
+        </Button>
+        <div className="ml-auto">
+          <SavedFilterViews
+            scope={user.id + ":" + companyId + ":sales-invoices"}
+            schema={INVOICE_VIEW_SCHEMA}
+            defaults={DEFAULT_INVOICE_VIEW}
+            current={{
+              q: state.q,
+              status: state.status,
+              from: state.from,
+              to: state.to,
+              sort: state.sort,
+              dir: state.dir,
+              pageSize: String(state.pageSize),
+              overdue,
+            }}
+            onApply={(view) => {
+              setState({
+                ...initialListState("invoice_date"),
+                q: String(view["q"] ?? ""),
+                status: String(view["status"] ?? "all"),
+                from: String(view["from"] ?? ""),
+                to: String(view["to"] ?? ""),
+                sort: String(view["sort"] ?? "invoice_date"),
+                dir: view["dir"] === "asc" ? "asc" : "desc",
+                pageSize: Number(view["pageSize"] ?? 50),
+              });
+              setOverdue(view["overdue"] === true);
+            }}
+            onReset={() => {
+              setState(initialListState("invoice_date"));
+              setOverdue(false);
+            }}
+          />
+        </div>
+      </div>
       {query.isPending ? (
         <ListSkeleton />
       ) : query.isError ? (
@@ -157,6 +254,7 @@ function InvoicesList() {
                     className="text-right"
                   />
                   <TableHead className="text-right">Outstanding</TableHead>
+                  <TableHead className="text-right">View</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -230,6 +328,19 @@ function InvoicesList() {
                         >
                           {fmt.money(out, inv.currency_code)}
                         </Link>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button asChild variant="outline" size="sm">
+                          <Link
+                            to="/sales/invoices/$invoiceId"
+                            params={{ invoiceId: inv.id }}
+                            aria-label={
+                              "Open invoice " + (inv.invoice_number ?? inv.id.slice(0, 8))
+                            }
+                          >
+                            Open
+                          </Link>
+                        </Button>
                       </TableCell>
                     </TableRow>
                   );

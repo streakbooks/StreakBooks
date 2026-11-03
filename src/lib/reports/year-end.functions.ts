@@ -12,6 +12,7 @@ import {
 } from "@/lib/accounting/ledger-data";
 import { postJournal } from "@/lib/accounting/posting-engine";
 import { buildYearEndJournal, planYearEndClose } from "@/lib/accounting/year-end";
+import { toSafeMinorNumber } from "@/lib/accounting/money";
 
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -54,24 +55,27 @@ export const previewYearEndClose = createServerFn({ method: "GET" })
     await assertCompanyMember(context.supabase, data.companyId);
     const p = await plan(context.supabase, data.companyId, data.fyEnd);
     // Already closed?
-    const { data: existing } = await context.supabase
+    const { data: existing, error: existingError } = await context.supabase
       .from("journals" as never)
       .select("id, journal_number" as never)
       .eq("company_id" as never, data.companyId as never)
       .eq("idempotency_key" as never, `year_end_close:${data.companyId}:${data.fyEnd}` as never)
+      .eq("status" as never, "posted" as never)
+      .is("reversed_by_journal_id" as never, null as never)
       .maybeSingle();
+    if (existingError) throw new Error(existingError.message);
     const ex = existing as { id: string; journal_number: number } | null;
     return {
       fyStart: p.fy.start,
       fyEnd: p.fy.end,
       retainedEarnings: { id: p.re.id, code: p.re.code, name: p.re.name },
-      netProfitMinor: Number(p.plan.netProfitMinor),
+      netProfitMinor: toSafeMinorNumber(p.plan.netProfitMinor, "Year-end net profit"),
       lines: p.plan.lines.map((l) => ({
         account_id: l.account_id,
         code: p.byId.get(l.account_id)?.code ?? "",
         name: p.byId.get(l.account_id)?.name ?? "",
-        debit_minor: Number(l.debit_minor),
-        credit_minor: Number(l.credit_minor),
+        debit_minor: toSafeMinorNumber(l.debit_minor, "Year-end debit"),
+        credit_minor: toSafeMinorNumber(l.credit_minor, "Year-end credit"),
       })),
       alreadyClosedJournalId: ex?.id ?? null,
       alreadyClosedJournalNumber: ex?.journal_number ?? null,
@@ -92,6 +96,8 @@ export const postYearEndClose = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "journals.manual");
     const p = await plan(context.supabase, data.companyId, data.fyEnd);
+    // Validate the API's number contract before posting anything to the ledger.
+    const netProfitMinor = toSafeMinorNumber(p.plan.netProfitMinor, "Year-end net profit");
     const journal = buildYearEndJournal({
       companyId: data.companyId,
       fyStart: p.fy.start,
@@ -100,5 +106,5 @@ export const postYearEndClose = createServerFn({ method: "POST" })
       plan: p.plan,
     });
     const { journalId } = await postJournal(context.supabase, journal);
-    return { journalId, netProfitMinor: Number(p.plan.netProfitMinor) };
+    return { journalId, netProfitMinor };
   });

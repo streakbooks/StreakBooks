@@ -4,6 +4,7 @@ import { assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
 import { ensureFiscalPeriodForDate } from "@/lib/accounting/posting-engine";
 import { findControlAccountIds } from "@/lib/accounting/control-accounts";
+import { toSafeMinorNumber } from "@/lib/accounting/money";
 import {
   fetchAccountBalanceAsOf,
   loadAccountMetas,
@@ -126,7 +127,7 @@ export const getPeriodCloseFacts = createServerFn({ method: "GET" })
           data.periodEnd,
         );
       }
-      openingBalanceMinor = Number(net);
+      openingBalanceMinor = toSafeMinorNumber(net, "Opening balance");
     }
 
     // Missing tax evidence is an error; only an explicitly inactive regime is not applicable.
@@ -162,6 +163,8 @@ export const getPeriodCloseFacts = createServerFn({ method: "GET" })
           "idempotency_key" as never,
           `year_end_close:${data.companyId}:${data.periodEnd}` as never,
         )
+        .eq("status" as never, "posted" as never)
+        .is("reversed_by_journal_id" as never, null as never)
         .maybeSingle();
       if (closingError) throw new Error(closingError.message);
       yearEnd = { fyEnd: data.periodEnd, closed: Boolean(closing) };

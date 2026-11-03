@@ -15,13 +15,19 @@ vi.mock("@tanstack/react-start", () => ({
 vi.mock("@/integrations/supabase/auth-middleware", () => ({ requireSupabaseAuth: {} }));
 vi.mock("@/lib/assert-company-access", () => ({ assertCompanyPermission: vi.fn() }));
 vi.mock("@/lib/accounting/posting-engine", () => ({ ensureFiscalPeriodForDate: vi.fn() }));
+vi.mock("@/lib/accounting/control-accounts", () => ({
+  findControlAccountIds: (_accounts: unknown, kind: string) =>
+    kind === "opening_balance" ? ["opening-account"] : [],
+}));
 vi.mock("@/lib/accounting/ledger-data", () => ({
   loadCompanyMeta: async () => ({ baseCurrency: "GBP", fyEndMonth: 12, fyEndDay: 31 }),
   loadAccountMetas: async () => [],
   fetchAccountBalanceAsOf: vi.fn(),
 }));
 import { getPeriodCloseFacts } from "./period-close.functions";
+import { fetchAccountBalanceAsOf } from "@/lib/accounting/ledger-data";
 let tableError: string | null = null;
+let journalReversed = false;
 function client() {
   return {
     from(table: string) {
@@ -35,6 +41,10 @@ function client() {
           return query;
         },
         in() {
+          return query;
+        },
+        is(c: string, v: unknown) {
+          filters.push(["is", c, v]);
           return query;
         },
         gte(c: string, v: unknown) {
@@ -73,7 +83,16 @@ function client() {
                     ? covered
                       ? [{ id: "future" }]
                       : []
-                    : [],
+                    : table === "journals"
+                      ? !journalReversed &&
+                        filters.some(([op, c, v]) => op === "eq" && c === "status" && v === "posted") &&
+                        filters.some(
+                          ([op, c, v]) =>
+                            op === "is" && c === "reversed_by_journal_id" && v === null,
+                        )
+                        ? { id: "closing-journal" }
+                        : null
+                      : [],
             }),
           );
         },
@@ -84,12 +103,15 @@ function client() {
 }
 beforeEach(() => {
   tableError = null;
+  journalReversed = false;
+  vi.mocked(fetchAccountBalanceAsOf).mockReset();
+  vi.mocked(fetchAccountBalanceAsOf).mockResolvedValue(0n);
 });
 const call = (periodEnd: string) =>
   (
     getPeriodCloseFacts as unknown as (
       a: unknown,
-    ) => Promise<{ taxReturn: { filed: boolean } | null }>
+    ) => Promise<{ taxReturn: { filed: boolean } | null; yearEnd: { closed: boolean } | null }>
   )({ data: { companyId: "client", periodEnd }, context: { supabase: client() } });
 describe("close facts evidence", () => {
   it("does not treat a future tax return as covering an earlier month end", async () => {
@@ -101,5 +123,21 @@ describe("close facts evidence", () => {
     await expect(call("2026-10-31")).rejects.toThrow("Database check unavailable");
     tableError = "company_tax_settings";
     await expect(call("2026-10-31")).rejects.toThrow("Database check unavailable");
+  });
+});
+
+describe("year-end checklist integrity", () => {
+  it("counts only unreversed, posted closing journals as a completed close", async () => {
+    expect((await call("2026-12-31")).yearEnd?.closed).toBe(true);
+    journalReversed = true;
+    expect((await call("2026-12-31")).yearEnd?.closed).toBe(false);
+  });
+  it("does not silently round large opening-balance equity amounts", async () => {
+    vi.mocked(fetchAccountBalanceAsOf).mockResolvedValue(9007199254740993n);
+    await expect(call("2026-10-31")).rejects.toThrow(/Opening balance exceeds/);
+  });
+  it("surfaces database close-status errors rather than silently assuming open", async () => {
+    tableError = "journals";
+    await expect(call("2026-12-31")).rejects.toThrow(/Database check unavailable/);
   });
 });

@@ -1,3 +1,4 @@
+import { REPORT_CATALOG } from "@/lib/reports/catalog";
 import { parseReportingCentreSearch } from "@/lib/reports/centre-search";
 import { nativeTabLinkClass, handleNativeTabKeyDown } from "@/lib/navigation/native-tab";
 import { ReportingFeatureGate } from "@/components/reports/ReportingFeatureGate";
@@ -7,18 +8,10 @@ import { AdviserReporting } from "@/components/reports/AdviserReporting";
 import { ReportingHome } from "@/components/reports/ReportingHome";
 import { fiscalYearStart, todayIso } from "@/lib/accounting/fiscal-year";
 import { ReportLibrary } from "@/components/reports/ReportLibrary";
-import { ReportDirectory } from "@/components/reports/ReportDirectory";
+import { ReportCatalogue } from "@/components/reports/ReportCatalogue";
 import { Tabs, TabsList, TabsContent } from "@/components/ui/tabs";
-import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useActiveCompany } from "@/hooks/use-active-company";
-import {
-  QUICK_REPORT_IDS,
-  REPORT_CATALOG,
-  nonEmptyCategories,
-  searchReports,
-  type ReportCategoryId,
-} from "@/lib/reports/catalog";
 import { PageHeader, EmptyState, LoadingState } from "@/components/common/states";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,7 +41,6 @@ export const Route = createFileRoute("/_authenticated/reports/")({
 
 function ReportsCentre() {
   const { company, isPending } = useActiveCompany();
-  const [q, setQ] = useState("");
   // Defensive validation also handles router search state inherited from external URLs.
   const search = parseReportingCentreSearch(Route.useSearch() as Record<string, unknown>);
   const navigate = Route.useNavigate();
@@ -65,18 +57,6 @@ function ReportsCentre() {
       search: (previous) => parseReportingCentreSearch({ ...previous, to: value }),
       replace: true,
     });
-  const [category, setCategory] = useState<ReportCategoryId | "all">("all");
-
-  const searched = useMemo(() => searchReports(q), [q]);
-  // Only categories that still have a matching report are offered or shown (RP-10).
-  const categories = useMemo(() => nonEmptyCategories(searched), [searched]);
-  const filtered = useMemo(
-    () => (category === "all" ? searched : searched.filter((r) => r.category === category)),
-    [searched, category],
-  );
-
-  const readyCount = REPORT_CATALOG.filter((r) => r.status === "ready").length;
-
   if (isPending) return <LoadingState />;
   if (!company) {
     return (
@@ -90,6 +70,7 @@ function ReportsCentre() {
   const from =
     periodFrom ||
     fiscalYearStart(periodTo, company.fiscal_year_end_month, company.fiscal_year_end_day ?? 31);
+  const readyCount = REPORT_CATALOG.filter((r) => r.status === "ready").length;
   return (
     <div className="space-y-6">
       <PageHeader
@@ -254,71 +235,19 @@ function ReportsCentre() {
           </ReportingFeatureGate>
         )}
         <TabsContent value="standard" className="space-y-6">
-          <div className="space-y-1">
-            <h2 className="text-xl font-semibold tracking-tight">Browse reports</h2>
-            <p className="text-sm text-muted-foreground">
-              Choose a category or search for a report. Each report opens in its own workspace.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="mr-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Popular
-            </span>
-            {QUICK_REPORT_IDS.map((id) => {
-              const r = REPORT_CATALOG.find((x) => x.id === id);
-              if (!r) return null;
-              return (
-                <Button key={id} asChild variant="secondary" size="sm">
-                  <Link
-                    to="/reports/$reportId"
-                    params={{ reportId: id }}
-                    search={{ from, to: periodTo }}
-                  >
-                    {r.title}
-                  </Link>
-                </Button>
-              );
-            })}
-          </div>
-
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-            <div className="flex-1 space-y-2">
-              <Label htmlFor="report-search">Search reports</Label>
-              <Input
-                id="report-search"
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Profit and loss, aged receivables, tax…"
-              />
-            </div>
-            <div className="w-full space-y-2 sm:w-64">
-              <Label htmlFor="report-category">Category</Label>
-              <select
-                id="report-category"
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 pointer-coarse:h-11"
-                value={category}
-                onChange={(e) => setCategory(e.target.value as ReportCategoryId | "all")}
-              >
-                {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
-
-                <option value="all">All categories</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <ReportDirectory reports={filtered} from={from} to={periodTo} />
-
-          {filtered.length === 0 ? (
-            <EmptyState
-              title="No matching reports"
-              description="Try another search term or clear the category filter."
-            />
-          ) : null}
+          <ReportCatalogue
+            query={search.query ?? ""}
+            category={search.category ?? "all"}
+            from={from}
+            to={periodTo}
+            onChange={({ query, category }) =>
+              void navigate({
+                search: (previous) => parseReportingCentreSearch({ ...previous, query, category }),
+                replace: true,
+                resetScroll: false,
+              })
+            }
+          />
         </TabsContent>
       </Tabs>
     </div>

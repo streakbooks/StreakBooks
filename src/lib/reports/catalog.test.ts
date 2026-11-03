@@ -59,3 +59,18 @@ describe("reports catalogue", () => {
     expect(filtered.map((c) => c.id).sort()).toEqual(["purchases", "sales"]);
   });
 });
+
+describe("report discovery search terms", () => {
+  it("finds report words across titles, descriptions and tags in either order", () => {
+    expect(searchReports("profit loss").some((r) => r.id === "profit-and-loss")).toBe(true);
+    expect(searchReports(" LOSS   PROFIT ").map((r) => r.id)).toEqual(
+      searchReports("profit loss").map((r) => r.id),
+    );
+    expect(searchReports("balance bs").some((r) => r.id === "balance-sheet")).toBe(true);
+  });
+  it("requires every term and treats wildcard syntax literally", () => {
+    expect(searchReports("profit definitelynomatch")).toEqual([]);
+    expect(searchReports(".*")).toEqual([]);
+    expect(searchReports("  ")).toEqual(REPORT_CATALOG);
+  });
+});

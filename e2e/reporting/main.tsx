@@ -1,3 +1,5 @@
+import { ReportCatalogue } from "@/components/reports/ReportCatalogue";
+import { useRouterState, useNavigate } from "@tanstack/react-router";
 import { StandardReportControls } from "@/components/reports/StandardReportControls";
 import { ReportPeriodSelect } from "@/components/reports/ReportPeriodSelect";
 import { standardSettingsSchema, encodeStandardSettings } from "@/lib/reports/standard-settings";
@@ -87,6 +89,7 @@ export function Fixture() {
       <section aria-label="Standard report actions fixture" className="flex justify-end">
         <ReportActionsMenu from="2026-04-01" to="2026-11-02" />
       </section>
+      <CatalogueFixture />
       <StandardStatementFixture />
       <ActivityFixture />
       <h1 className="text-2xl font-semibold">Reporting and LookupSelect verification</h1>
@@ -263,6 +266,27 @@ function StandardStatementFixture() {
       {error && <p role="alert">{error}</p>}
       {doc && <DocumentPreview document={doc} compact={settings.compact} />}
     </section>
+  );
+}
+function CatalogueFixture() {
+  const raw = useRouterState({ select: (state) => state.location.search });
+  const search = parseReportingCentreSearch(raw as Record<string, unknown>);
+  const navigate = useNavigate();
+  return (
+    <ReportCatalogue
+      query={search.query ?? ""}
+      category={search.category ?? "all"}
+      from={search.from ?? "2026-04-01"}
+      to={search.to ?? "2026-11-02"}
+      onChange={({ query, category }) =>
+        void navigate({
+          to: "/reports",
+          search: parseReportingCentreSearch({ ...search, query, category }),
+          replace: true,
+          resetScroll: false,
+        })
+      }
+    />
   );
 }
 function ActivityFixture() {

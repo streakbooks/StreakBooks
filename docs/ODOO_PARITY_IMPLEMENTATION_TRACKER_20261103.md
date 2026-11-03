@@ -59,6 +59,6 @@ See [the cross-navigation audit](ACCOUNTING_PARITY_AUDIT_20261103.md) and [deliv
 See [ACCOUNTING_WORKFLOWS_DELIVERY_20261103.md](ACCOUNTING_WORKFLOWS_DELIVERY_20261103.md) for implementation boundaries, local checks, migration/approval status and tests.
 
 - Source implemented: transactional/versioned purchase orders and server browse; sales orders through draft invoice conversion; OFX/QFX bank statement intake; prepayment/deferred-income recognition schedules; compatible guarded Demo reset; isolated PostgreSQL CI scenarios.
-- Local verification: 1,747 unit tests; real workflow RPC and shared-engine PostgreSQL fixtures; concurrency/lock/tenant/reset tests; build/type/lint/navigation/lookup checks.
+- Local verification: 1,782 unit tests on the branch including concurrent main PR #14; real workflow RPC and shared-engine PostgreSQL fixtures; concurrency/lock/tenant/reset tests; build/type/lint/navigation/lookup checks.
 - Live migration `20261103154859` was applied after the owner explicitly approved the database change. RLS/RPC permissions, unauthenticated denials and new-object security advisories were checked; no live financial transactions or Demo reset were executed.
 - P0 live authenticated acceptance, purchasing receipts/partial matching, historical AP, pricing/retainers, inventory/COGS, source-linked deferrals and provider integrations remain open. None of the broad P0–P3 milestones is closed here.

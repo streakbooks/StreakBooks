@@ -24,7 +24,22 @@ const docker = (args, input) =>
   });
 const sql = (input) =>
   docker(
-    ["exec", "-i", name, "psql", "-X", "-q", "-A", "-t", "-U", "postgres", "-v", "ON_ERROR_STOP=1"],
+    [
+      "exec",
+      "-i",
+      name,
+      "psql",
+      "-h",
+      "127.0.0.1",
+      "-X",
+      "-q",
+      "-A",
+      "-t",
+      "-U",
+      "postgres",
+      "-v",
+      "ON_ERROR_STOP=1",
+    ],
     input,
   );
 const read = (p) => readFileSync(path.join(root, p), "utf8");
@@ -52,9 +67,10 @@ try {
     "postgres:17",
   ]);
   let ready = false;
-  for (let i = 0; i < 40; i++) {
+  for (let i = 0; i < 120; i++) {
     try {
-      docker(["exec", name, "pg_isready", "-U", "postgres"]);
+      // The temporary init server accepts Unix sockets but not TCP. Wait for the final server.
+      docker(["exec", name, "pg_isready", "-h", "127.0.0.1", "-U", "postgres"]);
       ready = true;
       break;
     } catch {
@@ -96,6 +112,8 @@ try {
         "-i",
         name,
         "psql",
+        "-h",
+        "127.0.0.1",
         "-X",
         "-q",
         "-A",

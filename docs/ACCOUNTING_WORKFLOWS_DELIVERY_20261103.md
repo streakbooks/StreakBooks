@@ -1,6 +1,6 @@
 # Accounting workflows delivery — 3 November 2026
 
-Base: main `a30d55b` (PR #13). Branch: `feature/accounting-workflows`.
+Base: main `a30d55b` (PR #13). Branch: `feature/accounting-workflows`. Concurrent main `bd09907` (cash-basis Profit and Loss, PR #14) was merged into the branch and preserved before final validation.
 
 ## Implemented source workflows
 
@@ -81,9 +81,10 @@ Next accounting depth: source-document allocation/reconciliation, schedule adjus
 
 ## Verification
 
-- Full unit suite: **1,747 passed in 241 files**.
+- Full unit suite: **1,782 passed in 245 files**.
 - Focused new API/arithmetic/import tests: passed; validators and server handlers are exercised with authority/transport mocks.
 - Isolated PostgreSQL 17: actual workflow migration/RPC execution; atomic failure rollback, idempotency, version conflicts, tenant read isolation, forbidden writes, sales order lifecycle, exact schedule dates/amounts, period locks and balanced shared-engine postings.
+- The first CI run exposed a test-runner startup race: the temporary PostgreSQL init server could answer a Unix-socket readiness probe before the final server started. The runner now waits for the final loopback TCP listener, with a bounded startup deadline. No database port is exposed.
 - Three parallel recognition requests committed exactly one additional journal. Demo cleanup and non-demo reset denial passed.
 - PostgreSQL fixtures use the repository's real `post_journal`, lock-check, audit and numbering function source with a bounded schema/auth/entitlement fixture. This is not the entire Supabase stack, complete production RLS matrix or a restore drill.
 - `npm run test:workflows:postgres` requires Linux/WSL with the local Docker socket and PostgreSQL 17 image. It opens no database ports and creates/removes only its uniquely named container. GitHub quality gates run this test automatically.

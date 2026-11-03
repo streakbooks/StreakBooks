@@ -81,6 +81,7 @@ export function cashProfitLoss(
   const cash = new Set(input.cashAccountIds);
   const needsCashPolicy = (accountId: string) => {
     const account = accounts.get(accountId);
+    if (account?.account_type === "income" || account?.account_type === "expense") return false;
     return /inventory|stock|prepaid|prepayment|deferred|accrued|payroll|wages/.test(
       [account?.account_kind, account?.subtype, account?.system_key].join(" ").toLowerCase(),
     );

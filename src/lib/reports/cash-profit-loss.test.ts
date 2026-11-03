@@ -291,3 +291,9 @@ describe("unsupported accrual bridges", () => {
     },
   );
 });
+
+it("retains explicitly expensed payroll payments without treating them as an unmapped liability bridge", () => {
+  const input = cashInputFixture();
+  input.accounts.find((row) => row.id === expenseId)!.account_kind = "payroll_expense";
+  expect(totals(input)).toEqual({ revenue: 5000n, expense: 4000n });
+});

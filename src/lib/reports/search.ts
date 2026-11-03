@@ -1,5 +1,9 @@
 import { standardSettingsSchema, encodeStandardSettings } from "./standard-settings";
 import { isReportDate } from "./date-validation";
+import {
+  parseTransactionColumns,
+  DEFAULT_TRANSACTION_COLUMNS,
+} from "./account-transaction-options";
 import type { ColumnMode } from "@/lib/reports/statements";
 
 /** URL state of a report page, so every drill-down is linkable and survives reload (RP-05). */
@@ -19,6 +23,16 @@ export type ReportSearch = {
   basis?: "accrual" | "cash";
   term?: string;
   nonZero?: boolean;
+  /** Account Transactions only: persisted with favourite and shared report views. */
+  txnColumns?: string;
+  txnSource?: string;
+  txnFlow?: "debit" | "credit";
+  txnSort?: "date_desc" | "amount_asc" | "amount_desc";
+  txnQuery?: string;
+  /** Inclusive absolute movement range, entered in base-currency major units. */
+  txnMin?: string;
+  txnMax?: string;
+  txnPageSize?: 25 | 50 | 100 | 200;
   /** Budget vs Actual: which budget, and monthly / quarterly / year-to-date columns. */
   budget?: string;
   view?: "month" | "quarter" | "ytd";
@@ -74,5 +88,27 @@ export function parseReportSearch(raw: Record<string, unknown>): ReportSearch {
   const term = str(raw["term"], 120);
   if (term) out.term = term;
   if (raw["nonZero"] === true) out.nonZero = true;
+  if (typeof raw["txnColumns"] === "string" && raw["txnColumns"].length <= 500) {
+    const selected = parseTransactionColumns(raw["txnColumns"]);
+    if (selected.join(",") !== DEFAULT_TRANSACTION_COLUMNS.join(","))
+      out.txnColumns = selected.join(",");
+  }
+  const txnSource = str(raw["txnSource"], 40);
+  if (txnSource && /^[a-z_]+$/.test(txnSource)) out.txnSource = txnSource;
+  if (raw["txnFlow"] === "debit" || raw["txnFlow"] === "credit") out.txnFlow = raw["txnFlow"];
+  if (
+    raw["txnSort"] === "date_desc" ||
+    raw["txnSort"] === "amount_asc" ||
+    raw["txnSort"] === "amount_desc"
+  )
+    out.txnSort = raw["txnSort"];
+  const txnQuery = str(raw["txnQuery"], 120);
+  if (txnQuery) out.txnQuery = txnQuery;
+  for (const key of ["txnMin", "txnMax"] as const) {
+    const value = raw[key];
+    if (typeof value === "string" && /^\d{1,12}(?:\.\d{1,3})?$/.test(value)) out[key] = value;
+  }
+  if ([25, 50, 100, 200].includes(Number(raw["txnPageSize"])))
+    out.txnPageSize = Number(raw["txnPageSize"]) as 25 | 50 | 100 | 200;
   return out;
 }

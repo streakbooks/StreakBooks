@@ -128,7 +128,7 @@ export function ReportShell({
       </div>
       {/* Shared report header: identical on screen, print and PDF */}
       <header
-        className="print:mb-4"
+        className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-card via-card to-muted/30 px-5 py-6 shadow-xs print:mb-4 print:overflow-visible print:rounded-none print:border-0 print:bg-transparent print:p-0 print:shadow-none"
         style={{ textAlign: headerPresentation?.headerAlignment ?? "center" }}
       >
         {(() => {
@@ -140,7 +140,10 @@ export function ReportShell({
             );
           const titleLine =
             headerPresentation?.showReportTitle === false ? null : (
-              <h1 key="title" className="text-2xl font-semibold tracking-tight">
+              <h1
+                key="title"
+                className="text-2xl font-semibold tracking-tight md:text-3xl print:text-2xl"
+              >
                 {title}
               </h1>
             );

@@ -1,4 +1,10 @@
 import { assertCurrentPayablesDate, payableOutstandingInBase } from "./payables-integrity";
+import {
+  filterTransactionRows,
+  type TransactionFlow,
+  type TransactionSort,
+} from "./account-transaction-options";
+import { toMinorUnits, decimalPlacesFor } from "@/lib/accounting/money";
 import { loadCompanyDefaults } from "@/lib/sales/sales-common";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -25,6 +31,7 @@ import {
   fetchAccountBalanceAsOf,
   fetchAccountTransactionsPage,
   fetchLedgerBalances,
+  type AccountTxnPage,
   loadAccountMetas,
   loadCompanyMeta,
   loadPostedLines,
@@ -357,16 +364,36 @@ export const getAccountTransactions = createServerFn({ method: "GET" })
       to: string;
       page?: number;
       pageSize?: number;
+      source?: string;
+      query?: string;
+      flow?: TransactionFlow;
+      sort?: TransactionSort;
+      minAmount?: string;
+      maxAmount?: string;
     }) => ({
       companyId: companyId(input),
       accountId: assertUuid(input.accountId, "account"),
       from: isoDate(input.from, "From"),
       to: isoDate(input.to, "To"),
-      page: Math.max(0, Math.floor(Number(input.page ?? 0)) || 0),
-      pageSize: Math.min(500, Math.max(10, Math.floor(Number(input.pageSize ?? 100)) || 100)),
+      page: Math.min(100000, Math.max(0, Math.floor(Number(input.page ?? 0)) || 0)),
+      pageSize: [25, 50, 100, 200].includes(Number(input.pageSize)) ? Number(input.pageSize) : 100,
+      source:
+        typeof input.source === "string" && /^[a-z_]{1,40}$/.test(input.source) ? input.source : "",
+      query: typeof input.query === "string" ? input.query.trim().slice(0, 120) : "",
+      minAmount:
+        input.minAmount && /^\d{1,12}(?:\.\d{1,3})?$/.test(input.minAmount) ? input.minAmount : "",
+      maxAmount:
+        input.maxAmount && /^\d{1,12}(?:\.\d{1,3})?$/.test(input.maxAmount) ? input.maxAmount : "",
+      flow: input.flow === "debit" || input.flow === "credit" ? input.flow : ("all" as const),
+      sort: (["date_asc", "date_desc", "amount_asc", "amount_desc"] as string[]).includes(
+        input.sort ?? "",
+      )
+        ? input.sort!
+        : ("date_asc" as const),
     }),
   )
   .handler(async ({ data, context }) => {
+    if (data.to < data.from) throw new Error("'To' date cannot be before 'From' date.");
     await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
     const meta = await loadCompanyMeta(context.supabase, data.companyId);
     const { data: acct, error } = await context.supabase
@@ -377,42 +404,179 @@ export const getAccountTransactions = createServerFn({ method: "GET" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!acct) throw new Error("Account not found.");
-    const a = acct as unknown as {
+    const account = acct as unknown as {
       id: string;
       code: string;
       name: string;
       account_type: string;
       normal_balance: string;
     };
-    const sign = a.normal_balance === "credit" ? -1n : 1n;
-    const page = await fetchAccountTransactionsPage(context.supabase, meta.id, meta.baseCurrency, {
-      accountId: data.accountId,
-      from: data.from,
-      to: data.to,
-      limit: data.pageSize,
-      offset: data.page * data.pageSize,
-    });
+    const sign = account.normal_balance === "credit" ? -1n : 1n;
+    const currencyPlaces = decimalPlacesFor(meta.baseCurrency);
+    for (const value of [data.minAmount, data.maxAmount]) {
+      if (value && (value.split(".")[1]?.length ?? 0) > currencyPlaces)
+        throw new Error(
+          `Amount filters for ${meta.baseCurrency} support ${currencyPlaces} decimal places.`,
+        );
+    }
+    const minAmountMinor = data.minAmount
+      ? toMinorUnits(data.minAmount, meta.baseCurrency)
+      : undefined;
+    const maxAmountMinor = data.maxAmount
+      ? toMinorUnits(data.maxAmount, meta.baseCurrency)
+      : undefined;
+    if (minAmountMinor != null && maxAmountMinor != null && minAmountMinor > maxAmountMinor)
+      throw new Error("Minimum movement cannot exceed maximum movement.");
+    // The standard unfiltered report continues to use the efficient SQL window-function RPC.
+    // For advanced filters, fetch ALL posted lines for the selected account, calculate
+    // running balances over the complete chronology, then filter/sort before pagination.
+    // Filtering after the RPC's 100-row page would create incorrect totals and paging.
+    const filtered = Boolean(
+      data.source ||
+      data.query ||
+      data.minAmount ||
+      data.maxAmount ||
+      data.flow !== "all" ||
+      data.sort !== "date_asc",
+    );
+    let page: AccountTxnPage;
+    if (!filtered) {
+      page = await fetchAccountTransactionsPage(context.supabase, meta.id, meta.baseCurrency, {
+        accountId: data.accountId,
+        from: data.from,
+        to: data.to,
+        limit: data.pageSize,
+        offset: data.page * data.pageSize,
+      });
+    } else {
+      const [opening, lines] = await Promise.all([
+        fetchAccountBalanceAsOf(
+          context.supabase,
+          meta.id,
+          meta.baseCurrency,
+          data.accountId,
+          addDaysIso(data.from, -1),
+        ),
+        loadPostedLines(context.supabase, meta.id, meta.baseCurrency, {
+          from: data.from,
+          to: data.to,
+          accountIds: [data.accountId],
+        }),
+      ]);
+      lines.sort(
+        (a, b) =>
+          a.journal_date.localeCompare(b.journal_date) ||
+          (a.journal_number ?? 0) - (b.journal_number ?? 0) ||
+          (a.line_no ?? 0) - (b.line_no ?? 0) ||
+          (a.line_id ?? "").localeCompare(b.line_id ?? ""),
+      );
+      let running = opening;
+      const fullRows = lines.map((line) => {
+        const debit = BigInt(line.debit_minor);
+        const credit = BigInt(line.credit_minor);
+        running += debit - credit;
+        return {
+          line_id: line.line_id ?? `${line.journal_id}:${line.line_no ?? 0}`,
+          journal_id: line.journal_id ?? "",
+          journal_number: line.journal_number ?? 0,
+          journal_date: line.journal_date,
+          line_no: line.line_no ?? 0,
+          memo: line.memo ?? null,
+          description: line.description ?? null,
+          source_type: line.source_type ?? "other",
+          source_id: line.source_id ?? null,
+          debit_minor: debit,
+          credit_minor: credit,
+          running_balance_minor: running,
+        };
+      });
+      const matching = filterTransactionRows(fullRows, {
+        source: data.source,
+        query: data.query,
+        flow: data.flow,
+        sort: data.sort,
+        minAmountMinor,
+        maxAmountMinor,
+      });
+      page = {
+        opening_balance_minor: opening,
+        closing_balance_minor: running,
+        total_count: matching.length,
+        rows: matching.slice(data.page * data.pageSize, (data.page + 1) * data.pageSize),
+      };
+    }
+    // Source metadata is queried only for journals on the requested page, tenant-scoped
+    // and posted-only. These fields support genuine advanced columns (not placeholder UI).
+    const journalIds = [...new Set(page.rows.map((row) => row.journal_id))].filter(Boolean);
+    const headerMap = new Map<
+      string,
+      {
+        currency_code: string;
+        fx_rate_to_base: number | string | null;
+        posted_at: string | null;
+        posted_by: string | null;
+        created_by: string | null;
+      }
+    >();
+    if (journalIds.length) {
+      const { data: journalHeaders, error: journalError } = await context.supabase
+        .from("journals" as never)
+        .select("id, currency_code, fx_rate_to_base, posted_at, posted_by, created_by" as never)
+        .eq("company_id" as never, meta.id as never)
+        .eq("status" as never, "posted" as never)
+        .in("id" as never, journalIds as never);
+      if (journalError) throw new Error(journalError.message);
+      for (const item of (journalHeaders ?? []) as Array<{
+        id: string;
+        currency_code: string;
+        fx_rate_to_base: number | string | null;
+        posted_at: string | null;
+        posted_by: string | null;
+        created_by: string | null;
+      }>) {
+        headerMap.set(item.id, item);
+      }
+      if (headerMap.size !== journalIds.length)
+        throw new Error(
+          "Some posted journal metadata is not accessible; cannot produce a complete report.",
+        );
+    }
     return {
-      account: { id: a.id, code: a.code, name: a.name, normalBalance: a.normal_balance },
-      // Balances are on the account's normal side (credit-normal accounts show positive credits).
+      account: {
+        id: account.id,
+        code: account.code,
+        name: account.name,
+        normalBalance: account.normal_balance,
+      },
+      // Opening/closing balances are for the FULL posted account, not just the filtered rows.
       opening_balance_minor: num(page.opening_balance_minor * sign),
       closing_balance_minor: num(page.closing_balance_minor * sign),
       total_count: page.total_count,
+      filtered,
       page: data.page,
       pageSize: data.pageSize,
-      rows: page.rows.map((r) => ({
-        line_id: r.line_id,
-        journal_id: r.journal_id,
-        journal_number: r.journal_number,
-        journal_date: r.journal_date,
-        memo: r.memo,
-        description: r.description,
-        source_type: r.source_type,
-        source_id: r.source_id,
-        debit_minor: num(r.debit_minor),
-        credit_minor: num(r.credit_minor),
-        running_balance_minor: num(r.running_balance_minor * sign),
-      })),
+      rows: page.rows.map((row) => {
+        const header = headerMap.get(row.journal_id);
+        return {
+          line_id: row.line_id,
+          line_no: row.line_no,
+          journal_id: row.journal_id,
+          journal_number: row.journal_number,
+          journal_date: row.journal_date,
+          memo: row.memo,
+          description: row.description,
+          source_type: row.source_type,
+          source_id: row.source_id,
+          currency_code: header?.currency_code ?? meta.baseCurrency,
+          fx_rate_to_base: header?.fx_rate_to_base ?? null,
+          posted_at: header?.posted_at ?? null,
+          posted_by: header?.posted_by ?? null,
+          created_by: header?.created_by ?? null,
+          debit_minor: num(row.debit_minor),
+          credit_minor: num(row.credit_minor),
+          running_balance_minor: num(row.running_balance_minor * sign),
+        };
+      }),
     };
   });
 

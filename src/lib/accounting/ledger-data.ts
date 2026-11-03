@@ -102,6 +102,7 @@ export async function loadAccountMetas(supabase: Sb, companyId: string): Promise
 
 type RawLine = {
   id: string;
+  line_no: number;
   account_id: string;
   debit_minor: number;
   credit_minor: number;
@@ -130,7 +131,7 @@ type RawLine = {
 };
 
 const LINE_SELECT =
-  "id, account_id, debit_minor, credit_minor, description, journals!inner(id, journal_number, journal_date, status, memo, source_type, source_id, currency_code, fx_rate_to_base), accounts!inner(code, name, account_type, subtype, account_kind, system_key, fs_line, cash_flow_class)";
+  "id, line_no, account_id, debit_minor, credit_minor, description, journals!inner(id, journal_number, journal_date, status, memo, source_type, source_id, currency_code, fx_rate_to_base), accounts!inner(code, name, account_type, subtype, account_kind, system_key, fs_line, cash_flow_class)";
 
 export type LineFilter = {
   from?: string | undefined;
@@ -154,6 +155,8 @@ export function rawLineToPosted(r: RawLine, baseCurrency: string): PostedLine {
   );
   return {
     account_id: r.account_id,
+    line_id: r.id,
+    line_no: r.line_no,
     account_code: r.accounts.code,
     account_name: r.accounts.name,
     account_type: r.accounts.account_type,

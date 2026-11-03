@@ -10,6 +10,9 @@ export type AccountType = "asset" | "liability" | "equity" | "income" | "expense
 
 export type PostedLine = {
   account_id: string;
+  /** Stable source line identity for drill-down, filtered reports and React keys. */
+  line_id?: string;
+  line_no?: number;
   account_code: string;
   account_name: string;
   account_type: AccountType;

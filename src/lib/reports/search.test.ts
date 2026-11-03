@@ -31,6 +31,38 @@ describe("report URL search params (RP-05)", () => {
     expect(parseReportSearch({ term: "", nonZero: "yes" })).toEqual({});
     expect(parseReportSearch({ term: "a".repeat(300) }).term).toHaveLength(120);
   });
+  it("validates account transaction columns, filtering and page-size URL state", () => {
+    expect(
+      parseReportSearch({
+        txnColumns: "description,date,balance,description,bogus",
+        txnSource: "sales_invoice",
+        txnFlow: "credit",
+        txnSort: "date_desc",
+        txnQuery: "  Acme  ",
+        txnPageSize: "50",
+        txnMin: "100.00",
+        txnMax: "250.50",
+      }),
+    ).toMatchObject({
+      txnColumns: "description,date,balance",
+      txnSource: "sales_invoice",
+      txnFlow: "credit",
+      txnSort: "date_desc",
+      txnQuery: "Acme",
+      txnPageSize: 50,
+      txnMin: "100.00",
+      txnMax: "250.50",
+    });
+    expect(
+      parseReportSearch({
+        txnColumns: "bogus",
+        txnSource: "bad-value",
+        txnFlow: "other",
+        txnSort: "invalid",
+        txnPageSize: 999,
+      }),
+    ).toEqual({});
+  });
   it("omits default values", () => {
     expect(parseReportSearch({ columns: "none" })).toEqual({});
   });

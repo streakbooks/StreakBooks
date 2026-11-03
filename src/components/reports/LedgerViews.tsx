@@ -5,9 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useFormat } from "@/hooks/use-format";
 import { csvMoney } from "@/lib/reports/csv";
-import { listAccounts } from "@/lib/accounting/accounting.functions";
 import {
-  getAccountTransactions,
   getAgedPayables,
   getAgedReceivables,
   getAuditFilterOptions,
@@ -20,7 +18,7 @@ import { getAgedReceivablesAsAt } from "@/lib/sales/ar-reports.functions";
 import { SOURCE_LABELS, sourceLabel } from "@/lib/reports/links";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { AccountLookup, LookupSelect } from "@/components/lookup";
+import { LookupSelect } from "@/components/lookup";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
@@ -31,6 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { AdvancedAccountTransactionsView } from "./AdvancedAccountTransactions";
 import {
   JournalLink,
   PagerBar,
@@ -43,154 +42,10 @@ import {
 
 const selectCls = "flex h-10 rounded-md border border-input bg-background px-3 text-sm";
 
-/* ---------------- Account transactions (single account, running balance) ---------------- */
+/* ---------------- Account transactions (advanced posted-ledger explorer) ---------------- */
 
 export function AccountTransactionsView({ ctx }: { ctx: ReportCtx }) {
-  const fmt = useFormat();
-  const fetchAccounts = useServerFn(listAccounts);
-  const fetchTxns = useServerFn(getAccountTransactions);
-  const accountId = ctx.search.account ?? "";
-  const page = Math.max(0, (ctx.search.page ?? 1) - 1);
-  const accountsQ = useQuery({
-    queryKey: ["accounts", ctx.companyId],
-    queryFn: () => fetchAccounts({ data: { companyId: ctx.companyId } }),
-  });
-  const q = useQuery({
-    queryKey: ["report-acct-txn", ctx.companyId, accountId, ctx.from, ctx.to, page],
-    enabled: Boolean(accountId),
-    queryFn: () =>
-      fetchTxns({
-        data: {
-          companyId: ctx.companyId,
-          accountId,
-          from: ctx.from,
-          to: ctx.to,
-          page,
-          pageSize: 100,
-        },
-      }),
-  });
-  const d = q.data;
-  const accounts = (accountsQ.data ?? []) as Array<{ id: string; code: string; name: string }>;
-  return (
-    <ReportShell
-      title={
-        d ? `Account Transactions: ${d.account.code} ${d.account.name}` : "Account Transactions"
-      }
-      ctx={ctx}
-      mode="range"
-      basis="Running balance is shown on the account's normal side"
-      extraControls={
-        <div className="space-y-1">
-          <Label htmlFor="report-account">Account</Label>
-          <AccountLookup
-            id="report-account"
-            className="w-72"
-            ariaLabel="Account"
-            accounts={accounts}
-            value={accountId}
-            onChange={(id) => ctx.setSearch({ account: id || undefined, page: undefined })}
-            companyId={ctx.companyId}
-            purpose="posting"
-            placeholder="Select account…"
-            allowClear
-          />
-        </div>
-      }
-      getCsv={() =>
-        d
-          ? {
-              headers: ["Date", "Journal", "Source", "Memo", "Debit", "Credit", "Balance"],
-              rows: [
-                [
-                  "",
-                  "",
-                  "",
-                  "Opening balance",
-                  "",
-                  "",
-                  csvMoney(d.opening_balance_minor, ctx.currency),
-                ],
-                ...d.rows.map((r) => [
-                  r.journal_date,
-                  r.journal_number,
-                  sourceLabel(r.source_type),
-                  r.memo ?? r.description ?? "",
-                  csvMoney(r.debit_minor, ctx.currency),
-                  csvMoney(r.credit_minor, ctx.currency),
-                  csvMoney(r.running_balance_minor, ctx.currency),
-                ]),
-              ],
-            }
-          : null
-      }
-    >
-      {!accountId ? (
-        <p className="text-sm text-muted-foreground">
-          Choose an account, or open this report from a row in the Trial Balance, Profit and Loss or
-          Balance Sheet.
-        </p>
-      ) : (
-        <ReportPane
-          query={q}
-          isEmpty={Boolean(d) && d!.rows.length === 0 && d!.opening_balance_minor === 0}
-          emptyTitle="No movements"
-          emptyDescription="No posted lines for this account in the range."
-        >
-          {d ? (
-            <>
-              <p className="mb-2 text-sm text-muted-foreground">
-                Opening {fmt.amount(d.opening_balance_minor, ctx.currency)} · Closing{" "}
-                {fmt.amount(d.closing_balance_minor, ctx.currency)}
-              </p>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Journal</TableHead>
-                    <TableHead>Source</TableHead>
-                    <TableHead>Memo</TableHead>
-                    <TableHead className="text-right">Debit</TableHead>
-                    <TableHead className="text-right">Credit</TableHead>
-                    <TableHead className="text-right">Balance</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {d.rows.map((r) => (
-                    <TableRow key={r.line_id}>
-                      <TableCell>{fmt.date(r.journal_date)}</TableCell>
-                      <TableCell>
-                        <JournalLink journalId={r.journal_id} number={r.journal_number} />
-                      </TableCell>
-                      <TableCell>
-                        <SourceLink type={r.source_type} id={r.source_id} />
-                      </TableCell>
-                      <TableCell>{r.memo ?? r.description ?? "—"}</TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {fmt.amount(r.debit_minor, ctx.currency)}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {fmt.amount(r.credit_minor, ctx.currency)}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {fmt.amount(r.running_balance_minor, ctx.currency)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              <PagerBar
-                page={d.page}
-                pageSize={d.pageSize}
-                total={d.total_count}
-                onPage={(p) => ctx.setSearch({ page: p === 0 ? undefined : p + 1 })}
-              />
-            </>
-          ) : null}
-        </ReportPane>
-      )}
-    </ReportShell>
-  );
+  return <AdvancedAccountTransactionsView ctx={ctx} />;
 }
 
 /* ---------------- General ledger, all accounts ---------------- */

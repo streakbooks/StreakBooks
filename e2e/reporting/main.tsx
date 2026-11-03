@@ -1,3 +1,6 @@
+import { StatementBasisSelect } from "@/components/reports/StatementBasisSelect";
+import { cashStandardFacts } from "@/lib/reports/cash-standard";
+import { cashInputFixture } from "@/lib/reports/__fixtures__/cash-facts";
 import { ForecastComparison } from "@/components/reports/ForecastComparison";
 import { forecastProjection } from "@/lib/reports/management";
 import { forecastSchema } from "@/lib/reports/ecosystem-model";
@@ -93,6 +96,7 @@ export function Fixture() {
         <ReportActionsMenu from="2026-04-01" to="2026-11-02" />
       </section>
       <CatalogueFixture />
+      {window.location.pathname === "/cash-fixture" && <CashBasisFixture />}
       <ForecastComparisonFixture />
       <StandardStatementFixture />
       <ActivityFixture />
@@ -272,6 +276,51 @@ function StandardStatementFixture() {
     </section>
   );
 }
+function CashBasisFixture() {
+  const [basis, setBasis] = useState<"accrual" | "cash">(() =>
+    localStorage.getItem("cash-basis-fixture") === "cash" ? "cash" : "accrual",
+  );
+  const [drill, setDrill] = useState("");
+  const input = cashInputFixture(),
+    f = reportingFactsFixture();
+  f.accounts = input.accounts;
+  f.from = "2026-11-01";
+  f.to = "2026-11-30";
+  const settings = standardSettingsSchema.parse({ basis });
+  const plan = standardPeriods("profit-and-loss", f.from, f.to, settings, 12, 31);
+  // Only settlement journals exist in this fixture's November accrual period: no accrued P&L.
+  f.period = [];
+  f.standardColumns = plan.periods.map((period) => ({
+    ...period,
+    fyStart: f.fyStart,
+    period: [],
+    bsPrior: [],
+    bsCurrent: [],
+  }));
+  const facts = basis === "cash" ? cashStandardFacts(f, input, settings) : f;
+  const doc = buildReportDocument(facts, {
+    name: "Cash basis fixture",
+    reportId: "profit-and-loss",
+    config: { settings: encodeStandardSettings(settings) },
+  });
+  return (
+    <section aria-label="Cash basis fixture" className="space-y-4 rounded border p-4">
+      <StatementBasisSelect
+        basis={basis}
+        report="profit-and-loss"
+        onChange={(value) => {
+          setBasis(value);
+          localStorage.setItem("cash-basis-fixture", value);
+        }}
+      />
+      <p role="status">{drill}</p>
+      <DocumentPreview
+        document={doc}
+        onAccountDrill={(id, from, to) => setDrill(`Cash drill: ${id} ${from} to ${to}`)}
+      />
+    </section>
+  );
+}
 function ForecastComparisonFixture() {
   const config = forecastSchema.parse({
     start: "2026-11-01",
@@ -367,7 +416,8 @@ const centreRoute = createRoute({
   path: "reports",
   validateSearch: parseReportingCentreSearch,
 });
+const cashFixtureRoute = createRoute({ getParentRoute: () => root, path: "cash-fixture" });
 const router = createRouter({
-  routeTree: root.addChildren([reportRoute, builderRoute, centreRoute]),
+  routeTree: root.addChildren([reportRoute, builderRoute, centreRoute, cashFixtureRoute]),
 });
 createRoot(document.getElementById("root")!).render(<RouterProvider router={router} />);

@@ -209,4 +209,29 @@ test.describe("authenticated LinkBooks staging smoke", () => {
     await expect(page.getByLabel("Reporting period to", { exact: true })).toHaveValue("2026-01-30");
     await expect(page).toHaveURL(/to=2026-01-30/);
   });
+
+  test("cash P&L switches basis through the authenticated engine and downloads cash-labelled data", async ({
+    page,
+  }) => {
+    await signIn(page, "/reports/profit-and-loss?from=2026-01-01&to=2026-01-31");
+    await expect(page.getByRole("article")).toBeVisible();
+    await page.getByLabel("Accounting method", { exact: true }).selectOption("cash");
+    await expect(page.getByRole("article")).toContainText("Cash basis");
+    await page.reload();
+    await expect(page.getByLabel("Accounting method", { exact: true })).toHaveValue("cash");
+    await expect(page.getByRole("article")).toContainText("Cash basis");
+    await page.getByRole("button", { name: "Download report", exact: true }).click();
+    const pending = page.waitForEvent("download");
+    await page.getByRole("menuitem", { name: "CSV data (.csv)", exact: true }).click();
+    const download = await pending;
+    expect(await download.failure()).toBeNull();
+    const stream = await download.createReadStream();
+    if (!stream) throw new Error("Cash report download stream unavailable");
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream) chunks.push(Buffer.from(chunk));
+    // Keep actual financial data out of test output and artifacts.
+    expect(Buffer.concat(chunks).toString("utf8").includes("Cash basis")).toBe(true);
+    await page.getByLabel("Accounting method", { exact: true }).selectOption("accrual");
+    await expect(page.getByRole("article")).toContainText("Accrual basis");
+  });
 });

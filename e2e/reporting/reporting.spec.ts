@@ -281,6 +281,7 @@ test("standard customization validates comparison dates and filters before apply
   await region.getByRole("button", { name: "Customize report", exact: true }).click();
   await page.getByRole("combobox", { name: "Compare selected period with", exact: true }).click();
   await page.getByRole("option", { name: "Custom comparison period", exact: true }).click();
+  await expect(page.getByLabel("Comparison from", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Apply report settings", exact: true }).click();
   await expect(page.getByRole("alert")).toContainText("valid custom comparison");
   await page.getByLabel("Comparison from", { exact: true }).fill("2025-01-01");
@@ -428,4 +429,26 @@ test("forecast comparison exposes completed-month expense and profit variances w
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );
+});
+
+test("cash basis selector changes actual recognition, persists and drills to cash dates", async ({
+  page,
+}) => {
+  await page.goto("/cash-fixture");
+  const fixture = page.getByRole("region", { name: "Cash basis fixture", exact: true });
+  await expect(fixture.getByRole("row").filter({ hasText: "Net profit" })).toContainText("0.00");
+  await fixture.getByLabel("Accounting method", { exact: true }).selectOption("cash");
+  await expect(fixture.getByRole("row").filter({ hasText: "Net profit" })).toContainText("10.00");
+  await expect(fixture.getByRole("article")).toContainText("Cash basis");
+  await expect(fixture.getByRole("article").getByRole("link")).toHaveCount(0);
+  await fixture
+    .getByRole("button", { name: /cash transactions/ })
+    .first()
+    .click();
+  await expect(fixture.getByRole("status")).toContainText("2026-11-01 to 2026-11-30");
+  await page.reload();
+  await expect(fixture.getByLabel("Accounting method", { exact: true })).toHaveValue("cash");
+  await expect(fixture.getByRole("row").filter({ hasText: "Net profit" })).toContainText("10.00");
+  await fixture.getByLabel("Accounting method", { exact: true }).selectOption("accrual");
+  await expect(fixture.getByRole("row").filter({ hasText: "Net profit" })).toContainText("0.00");
 });

@@ -13,6 +13,17 @@ export function buildCapturedStandardStatement(
   encoded: string,
 ): ReportDocument {
   const s = standardSettingsSchema.parse(JSON.parse(encoded));
+  if (
+    s.basis === "cash" &&
+    (report !== "profit-and-loss" ||
+      f.basis !== "cash" ||
+      f.cashPolicy !== "settled-posted-documents-v1")
+  )
+    throw new Error(
+      "Cash-basis facts were not captured by the cash recognition engine. Refresh the report; scheduled cash attachments require cash snapshot support.",
+    );
+  if (s.basis === "accrual" && f.basis === "cash")
+    throw new Error("Cash facts cannot be rendered as accrual figures");
   const plan = standardPeriods(
     report,
     f.from,
@@ -98,6 +109,14 @@ export function buildCapturedStandardStatement(
       : { denominators: bs!.map((p) => p.assets) }),
     capturedAt: f.capturedAt,
   });
+  doc.basis = s.basis;
+  if (s.basis === "cash")
+    doc.notes = [
+      "Cash basis: posted receipts/payments are apportioned over their original posted source document components on the cash date. Unpaid documents and noncash credit allocations are excluded. Direct cash income/expenses are included; loans, transfers, capital purchases, depreciation, opening balances and unrealized FX are not operating cash income/expenses. Component FX rounding is reconciled to the bank movement. Advances, missing historical allocations and mixed-sign/inventory sources require review rather than estimated totals. This is management cash reporting, not a jurisdiction-specific tax return.",
+      doc.notes,
+    ]
+      .filter(Boolean)
+      .join("\n");
   const main = pnl?.[0],
     sheet = bs?.[0];
   doc.summary = (

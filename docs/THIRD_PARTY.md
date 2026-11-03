@@ -17,3 +17,6 @@ The current `package.json` and `package-lock.json` declare React/TanStack/Vite, 
 |---|---|---|---|
 | None | — | — | Uses Node.js built-ins only |
 
+
+## 4 November 2026 accounting milestones
+PR #21 (ledger-health contract), PR #22 (year-end exactness) and PR #23 (Ledger Health workspace) added **no new direct or transitive npm dependencies**. Existing React, TanStack, Supabase and Node tooling were reused; lockfiles are unchanged in these PRs. The existing dependency tree still requires a separate full transitive license and vulnerability review.

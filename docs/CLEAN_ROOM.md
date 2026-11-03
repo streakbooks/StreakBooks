@@ -16,6 +16,17 @@
 | Planned regional tax contracts | Public HMRC, ATO, IRD and US jurisdiction guidance | Own regional rules, fixture tables and source-linked documents; separate jurisdiction-specific sign-off. |
 | Planned scalable reporting | Public report workflow expectations | Own ledger-safe SQL pagination, authorized capture, grouping with explicit reconciliation and exact amount types. |
 
+## Independent implementations delivered 4 November 2026
+
+| LinkBooks feature | Public concept source | Original LinkBooks implementation |
+|---|---|---|
+| Ledger-health permission and complete evidence contract (PR #21) | Double-entry and financial-audit principles | Added strict eight-check schema validation to existing `src/lib/accounting/ledger-health.ts`, request-company binding, `accounting.view` server guard and own Vitest fixtures. No third-party code reused. |
+| Year-end evidence and exact amount guards (PR #22) | General financial close and safe-integer principles | Implemented posted/unreversed journal evidence, error propagation and bounded BigInt conversions using existing LinkBooks journals. Tests derive from independent accounting invariants. |
+| Accessible Ledger Health workspace (PR #23) | Generic audit readiness and accessibility principles | Mounted the pre-existing LinkBooks panel as native `/accounting?tab=health`; state key prevents company-result carryover; semantic heading, tests and scoped read-only interaction. |
+| Multi-account GL presentation (PR #20) | Generic ledger selection and report filtering capabilities | Original account-picker components, server company access and account inclusion rules in LinkBooks' existing reporting catalogue. |
+
+No new npm dependencies, competitor source files, CSS, templates, icons, translations, logos or report artwork were added by PR #21–#23.
+
 ## Mandatory review for each future feature
 1. Record public *concept* references by URL and date.
 2. Write the data/API/UI design using LinkBooks vocabulary and existing stack.

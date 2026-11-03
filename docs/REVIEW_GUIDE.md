@@ -1,26 +1,39 @@
-# LinkBooks modernization — review and handover guide
-**Checkpoint date:** 3 November 2026 · **Scope:** foundational audit and repository hygiene, NOT every item in the master roadmap.
+# LinkBooks modernization — implementation handover
 
-## Delivered in this checkpoint
-- `docs/ARCHITECTURE.md`: verified source stack and data model inventory, route boundaries, auth/RLS and CI.
-- `docs/GAP_ANALYSIS.md`: feature-level Odoo/Xero concept comparison and prioritized LinkBooks gap register.
-- `docs/ROADMAP.md`: dependency-ordered P0/P1/P2 rollout with acceptance criteria.
-- `docs/CLEAN_ROOM.md` and `docs/THIRD_PARTY.md`: independent design and license records; no new packages.
-- `docs/features/repository-hygiene.md`: detailed safety feature, test plan and deployment notes.
-- Security hygiene code/CI and updated README: no tracked environment/configuration secrets or generated folders.
-- This guide intentionally exists before completion of later milestones, so outstanding work is always visible.
+**Updated:** 4 November 2026 · **Verified source:** `linkbusinessadvisory/LinkBooks` · **Scope:** foundation, advanced reporting and the first three P0 accounting-integrity fixes. **Not a production compliance certification.**
 
-## Local Windows/PowerShell review
-**Before pulling changes that untrack the old .env file**, preserve your existing local configuration *outside* the repository:
+## Delivered to main and how to review
+
+| Feature | PR | Merge commit | What changed |
+|---|---|---|---|
+| Professional Account Transactions | [#17](https://github.com/linkbusinessadvisory/LinkBooks/pull/17) | `04f15ea1` | Searchable, sortable, configurable single-account ledger explorer, saved/visible screens |
+| Universal presentation explorer | [#18](https://github.com/linkbusinessadvisory/LinkBooks/pull/18) | `ef53489f` | Loaded-row customization, column choice, filters, grouping and URL/saved state across reporting catalogue |
+| Architecture, gap analysis and source hygiene | [#19](https://github.com/linkbusinessadvisory/LinkBooks/pull/19) | `f5c058e6` | Architecture/roadmap, clean-room IP policy, tracked-`.env` removal, repository gate, README |
+| Unified multi-account financial reporting | [#20](https://github.com/linkbusinessadvisory/LinkBooks/pull/20) | `5b1bab70` | Multi-account pickers and real company-scoped account-based GL and summaries, account scope and group choices |
+| Fail-closed ledger health | [#21](https://github.com/linkbusinessadvisory/LinkBooks/pull/21) | `65beabfb` | Eight required DB integrity checks, no silent pass on missing evidence, explicit `accounting.view`, tenant-scoped results |
+| Year-end/close exactness | [#22](https://github.com/linkbusinessadvisory/LinkBooks/pull/22) | `ac851d29` | Only active posted closing journals count; fail on DB errors; safe BigInt-to-number boundaries |
+| Accounting Ledger Health screen | [#23](https://github.com/linkbusinessadvisory/LinkBooks/pull/23) | `0679cd10` | New Accounting tab with on-demand checks, keyed per-company results, keyboard-friendly native URL and semantic heading |
+
+### Source-level / CI verification
+- [PR #21 exact-head CI](https://github.com/linkbusinessadvisory/LinkBooks/actions/runs/41696750497) — green.
+- [PR #22 exact-head CI](https://github.com/linkbusinessadvisory/LinkBooks/actions/runs/41697565330) — green.
+- [PR #23 exact-head CI](https://github.com/linkbusinessadvisory/LinkBooks/actions/runs/41698757672) — **1,830 unit tests passed in 250 files**, 4 repository checks, TypeScript, changed-file ESLint, isolated PostgreSQL workflow/cash-history tests, navigation checks and production build all passed.
+- The authenticated browser **staging** job was skipped. Playwright test discovery passed; that does **not** mean live signed-in journeys ran.
+- Each merge starts its own main-branch gate; verify the newest main run before deploying.
+- No production migration, package installation, tax filing submission or live journal posting was performed for PR #21–#23.
+
+## Windows/PowerShell local setup and checks
+
+**Environment:** Node.js 22 and npm, Git, valid *publishable* credentials for the authorized Supabase project. Never put service-role or `sb_secret_` credentials in `VITE_` variables.
+
 ```powershell
 cd D:\MyApp\LinkBooks
-if (Test-Path .env) { Copy-Item .env ..\linkbooks-local.env.backup -Force }
-git status
+git status --short
+# If generated src/routeTree.gen.ts has local modifications, back it up:
+git stash push -m "Local generated route tree before update" -- src/routeTree.gen.ts
 git switch main
 git pull --ff-only origin main
-if ((Test-Path ..\linkbooks-local.env.backup) -and !(Test-Path .env)) { Copy-Item ..\linkbooks-local.env.backup .env }
-if (!(Test-Path .env)) { Copy-Item .env.example .env }
-# Edit .env locally with your publishable project configuration; never commit it.
+# Keep your existing local .env; it is ignored by Git.
 npm ci
 npm run check:repository
 npm run typecheck
@@ -29,23 +42,44 @@ npm run lint
 npm run build
 npm run dev
 ```
-Visit http://localhost:8080. Existing login credentials must be supplied through normal authentication. **No test accounts/passwords were created or published.** Demo Company provisioning follows existing app logic; no new seed data was inserted into the connected database.
 
-## Manual checks for this milestone
-1. **Repo safety:** `git ls-files .env` prints nothing; `git check-ignore --no-index -v .env` shows the rule; `git ls-files .env.example` includes the sample.
-2. **Build hygiene:** generated `node_modules/`, `.vercel/` and `.output/` must remain untracked even after running `npm ci` and `npm run build`.
-3. **App smoke:** login with an authorized company user; open Reports → Profit and Loss → Customize view and then Standard view. Verify existing statements, saved views, and cash/accrual basis still behave as before (this is regression review, not a new reporting implementation).
-4. **Accounting cross-check:** in a synthetic/non-client company, inspect journal totals, Trial Balance, Balance Sheet and an aged report; any mismatch is an issue to investigate, not an invitation to adjust posted data.
-5. **Security:** confirm a user outside a company cannot access its reports. Privileged SQL function review remains a separate P0 ticket.
+Open `http://localhost:8080`. A previously tracked `.env` is intentionally no longer version-controlled. If this is a fresh checkout, copy `.env.example` to `.env` and fill in valid project URL and publishable key for both browser and server configuration. Never commit that file.
 
-## Validation status
-- Source review and read-only connected Supabase metadata were performed; no production table changes, financial postings, client fixtures or emails sent.
-- GitHub quality gate must be green **for the exact commit merged into main**. Insert the run link and final commit hash in the handover response.
-- Staging browser auth, regional tax sign-off, large-ledger benchmarks, provider delivery and regulator submission certification **have not been completed** in this checkpoint.
-- Direct local execution in this assistant runtime is unavailable because private GitHub cloning cannot resolve the host. GitHub Actions is the authoritative repository CI executor; do not claim a local build ran.
+### Seed data and logins
+Existing LinkBooks users sign in normally; **no new usernames, passwords or user accounts were created**. An existing **Demo Company** uses the real posting engine; do not reset or reseed live client companies. No new demo fixture was inserted into the connected project in this milestone. For fixtures, review `tests/fixtures/` and the existing demo initialization screens. Authenticated staging tests require separately provisioned *non-production* credentials via GitHub secrets; none are printed here.
 
-## Unfinished work and recommended next steps
-See `docs/ROADMAP.md` in order: financial-integrity fixture suite and lock dates; privileged-function/RLS review; US/UK/AU/NZ tax rules; bank imports/reconciliation; server-side large-ledger reporting; historical AR/AP, FX, inventory, consolidation, and practice operations.
-- No release/version tag is claimed unless actually created. The installed GitHub connector can commit/merge but does not expose a tag-creation action.
-- No client-facing compliance claim can be made from unit tests alone.
+## Manual acceptance cases
 
+### A. Ledger Health (new user-visible path)
+1. Sign in with a user who has `accounting.view`, select the intended company, then visit **Accounting → Ledger health** or `/accounting?tab=health`.
+2. Click **Run health check**. Expect 8 checks: trial balance, journal balance, orphans, document journals, AR, AP, period locks and automation.
+3. Check pass/warn/fail/NA text, posted journals/lines and date, details of failing checks, and available **Review** links. Zero-journal books can legitimately pass **only when all required checks are returned**.
+4. Switch to a different company: previous results should disappear until run again. Refresh or Ctrl+Click the tab; the selected URL should persist.
+5. With a different authenticated user lacking the permission or company membership, the RPC must reject access. This requires real second-role staging credentials.
+
+### B. Period close and year-end
+1. **Accounting → Period close**: choose a valid end date and examine bank, draft document, AR/AP, tax and year-end evidence.
+2. Test on a **synthetic/test company only**: when a posted, unreversed closing journal exists, Year-end shows complete. A reversed/draft journal does not. Check errors do not silently report success.
+3. The large-number boundary is covered by `src/lib/accounting/money.test.ts` and `period-close.functions.test.ts`. An amount greater than JS safe integer throws instead of silently rounding.
+4. **Do not post/reverse a real client's year-end journal to test the screen.** Confirm actual ledger TB/GL/BS against source documents separately.
+
+### C. Reports: existing #17–#20
+1. Open **Reports**, select General Ledger/Account Transactions, and switch between one and multiple accounts using the account picker. Verify company scope, archived/all accounts and period boundaries.
+2. Compare a single-account running balance to GL/TB for the same currency, period and basis. Selected-account Trial Balance subtotals need not balance; the UI labels this distinctly.
+3. Try **Customize view** to select/reorder/filter columns and save a view. Remember its filters operate on loaded rows and are not accounting calculations.
+4. Test CSV/XLSX/PDF exports and source drill-down on a non-client dataset; do not assume page-scoped exports represent the entire ledger.
+
+## Known unfinished or external gates
+
+- **P0:** complete **signed-in** tenant/role/period-lock matrix, full ledger/AR/AP/control reconciliation, historical allocation accuracy, banking duplicate/matching and region-specific US/UK/AU/NZ tax truth tables.
+- **P0:** HMRC MTD, ATO BAS, IRD GST and state-level US sales-tax filing connectors **must not be represented as certified** without provider/regulator approval, sandbox receipts and professional review.
+- **P0:** privileged SQL function authorization review, MFA and negative tenant tests across actual browser/server/RLS boundaries. Live security advisor warnings need deliberate triage, not blanket privilege changes.
+- **P0/P1:** server-side large-ledger pagination and all-matching export; current presentation explorer is loaded-row only. Scheduled email/pack delivery must be verified end to end.
+- **P1:** safe exact-string UI/API support for exceptionally large minor-unit balances; active year-end repost after reversal needs idempotency review; FX, inventory/COGS cost layers, consolidation, intercompany and practice task workflows need additional acceptance.
+- **P1/P2:** data migration, API/webhooks, payroll integration, performance >100,000 ledger lines, synthetic demo fixtures and production rollout tests.
+- **Supply chain:** earlier local `npm ci` reported 22 moderate npm advisories; audit transitive dependencies and do not blindly run `npm audit fix --force`.
+- **Tag limitation:** the available GitHub connector can commit and merge but does not provide tag creation. Do not claim a release tag exists. Commit hashes above are immutable rollback checkpoints.
+- **Frontend runtime:** successful CI builds do not prove a user's local browser, `.env`, Supabase authentication or deployed Vercel runtime; those require separate validation.
+
+## Next engineering milestone
+Proceed from [ROADMAP.md](ROADMAP.md), starting with complete **authenticated accounting integrity and multi-company authorization fixtures**, then region-specific tax and bank controls. Reuse existing accounting SQL and routes, avoid destructive changes, and require a feature design, tests, financial sign-off and rollback evidence for every major module.

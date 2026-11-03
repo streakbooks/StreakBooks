@@ -44,3 +44,15 @@ The existing reporting UI explorer (PR #18) is a **loaded-row presentation**. Do
 ## Recommended next engineering ticket
 Ledger and period-lock **signed-in acceptance matrix** (Order 1). Do not add a second posting engine. Start from existing `src/lib/accounting/period-close.functions.ts`, `src/lib/accounting/ledger-health.functions.ts`, `src/lib/platform/ledger-integrity.ts`, posting RPCs and their existing tests. Require multi-client role fixtures and database-backed reconciliation before changing production SQL.
 
+
+## Engineering delivery status — 4 November 2026
+
+This section records **evidence**, not blanket completion of acceptance criteria.
+
+- **Milestone 0 foundation:** completed via [PR #19](https://github.com/linkbusinessadvisory/LinkBooks/pull/19). `.env` untracked, CI guard, README and documentation.
+- **Advanced reporting incremental:** PR #17, #18 and #20 merged; multi-account selectors and loaded-row customization exist. Full server-side ledger pagination and all-matching exports remain open under item 6/13.
+- **Milestone 1 accounting integrity — PARTIAL:** PR #21 rejects incomplete/mismatched ledger-health responses and enforces `accounting.view`; PR #22 guards year-end close evidence and exact amount conversion; PR #23 exposes read-only integrity checks at `/accounting?tab=health`. No new database posting engine was created. Staging negative authorization tests, all posting pathways and accountant sign-off still required.
+- **Milestone 2 permissions/security — INVESTIGATING:** read-only project metadata checked for RLS and public callable functions; no privilege grants/revocations applied. Validate policies with distinct real user roles and all SECURITY DEFINER routines.
+- **Milestones 3–16:** implementation/acceptance pending as listed above. Existing code and data models must be reviewed before any feature is classified Missing or Done.
+
+See the up-to-date [REVIEW_GUIDE](REVIEW_GUIDE.md) for exact commit hashes, manual acceptance and limitations.

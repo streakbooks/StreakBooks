@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyPermission } from "@/lib/assert-company-access";
 import type { Sb } from "@/lib/accounting/ledger-data";
-import { buildReportDocument } from "./report-document";
+import { buildReportDocument, factsSchema } from "./report-document";
 import { callRpc } from "@/lib/planning/rpc";
 import { standardSettingsSchema, encodeStandardSettings } from "./standard-settings";
 import { isReportDate } from "./date-validation";
@@ -16,6 +16,7 @@ const requestSchema = z.object({
 });
 export type StandardStatementRequest = z.infer<typeof requestSchema>;
 async function run(supabase: Sb, data: StandardStatementRequest) {
+  if (data.from > data.to) throw new Error("End date must follow start date");
   await assertCompanyPermission(supabase, data.companyId, "reports.view");
   const facts = await callRpc(
     supabase,
@@ -29,7 +30,14 @@ async function run(supabase: Sb, data: StandardStatementRequest) {
     },
     "The standard statement database update is required.",
   );
-  return buildReportDocument(facts, {
+  const captured = factsSchema.parse(facts);
+  if (
+    captured.company.id !== data.companyId ||
+    captured.from !== data.from ||
+    captured.to !== data.to
+  )
+    throw new Error("Captured statement company or reporting dates do not match the request");
+  return buildReportDocument(captured, {
     name: data.report,
     reportId: data.report,
     config: { settings: encodeStandardSettings(data.settings) },

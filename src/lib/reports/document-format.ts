@@ -1,7 +1,13 @@
 import { decimalValue } from "./custom-definition";
 import type { DocumentRow, DocumentSection } from "./report-document";
+/** Numeric report facts use canonical decimal strings; other values are literal text.
+ * Leading-zero identifiers and scientific-looking references must not become Excel numbers.
+ */
+export function isDocumentNumber(value: string): boolean {
+  return /^-?(?:0|[1-9]\d*)(?:\.\d+)?$/.test(value);
+}
 export function displayDocumentValue(value: string, row: Partial<DocumentRow>): string {
-  if (value === "" || value === "Unavailable") return value;
+  if (!isDocumentNumber(value)) return value;
   value = documentNumericValue(value, row);
   if (documentZero(value) && (row.zero === "blank" || row.zero === "dash"))
     return row.zero === "blank" ? "" : "–";
@@ -37,7 +43,7 @@ export function documentZero(value: string) {
 }
 /** Display scaling leaves the immutable document/source values unchanged. */
 export function documentNumericValue(value: string, row: Partial<DocumentRow>): string {
-  if (value === "Unavailable") return value;
+  if (!isDocumentNumber(value)) return value;
   if (!value || row.format === "percent") return value;
   const originalDecimals = value.split(".")[1]?.length ?? 0;
   const decimals = row.decimals ?? originalDecimals;
@@ -51,7 +57,7 @@ export function documentNumericValue(value: string, row: Partial<DocumentRow>): 
   );
 }
 export function documentCsvValue(value: string, row: DocumentRow): string {
-  if (value === "Unavailable") return value;
+  if (!isDocumentNumber(value)) return value;
   const scaled = documentNumericValue(value, row);
   if (documentZero(scaled) && (row.zero === "blank" || row.zero === "dash"))
     return row.zero === "blank" ? "" : "–";

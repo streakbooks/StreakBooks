@@ -109,3 +109,26 @@ describe("standard statement server boundaries", () => {
     );
   });
 });
+
+describe("standard capture provenance", () => {
+  it("rejects reversed dates before requesting ledger facts", async () => {
+    await expect(
+      run(getStandardStatement, { ...data, from: "2026-11-01", to: "2026-10-01" }),
+    ).rejects.toThrow("End date");
+    expect(callRpc).not.toHaveBeenCalled();
+  });
+  it.each(["company", "from", "to"])(
+    "rejects captured %s outside the requested scope",
+    async (field) => {
+      const f = reportingFactsFixture();
+      if (field === "company") f.company.id = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+      if (field === "from") f.from = "2026-09-01";
+      if (field === "to") f.to = "2026-11-01";
+      vi.mocked(callRpc).mockResolvedValue(f);
+      await expect(run(exportStandardStatement, { ...data, format: "csv" })).rejects.toThrow(
+        "do not match",
+      );
+      expect(callRpc).toHaveBeenCalledTimes(1);
+    },
+  );
+});

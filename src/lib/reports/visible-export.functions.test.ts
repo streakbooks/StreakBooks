@@ -57,6 +57,7 @@ const execute = (data: Record<string, unknown>) =>
 describe("permission-bound unified report downloads", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(assertCompanyPermission).mockResolvedValue(undefined);
   });
 
   it("exports a real PDF with report-specific source label", async () => {
@@ -110,5 +111,44 @@ describe("permission-bound unified report downloads", () => {
       }),
     ).rejects.toThrow();
     expect(assertCompanyPermission).not.toHaveBeenCalled();
+  });
+});
+
+describe("screen export fidelity and authorization", () => {
+  it("retains journal references, source text and leading-zero account codes as Excel text", async () => {
+    const file = await execute({
+      ...request,
+      format: "xlsx",
+      headers: ["Date", "Journal", "Source", "Account code", "Debit"],
+      rows: [
+        ["2026-01-15", "#14", "invoice", "001230", "12.50"],
+        ["2026-01-16", "- adjustment", "=HYPERLINK(1)", "0000", "-2.25"],
+      ],
+    });
+    const book = new ExcelJS.Workbook();
+    await book.xlsx.load(Buffer.from(file.content, "base64") as unknown as ExcelJS.Buffer);
+    const sheet = book.worksheets[0]!;
+    expect(sheet.getCell("A7").value).toBe("2026-01-15");
+    expect(sheet.getCell("B7").value).toBe("#14");
+    expect(sheet.getCell("C7").value).toBe("invoice");
+    expect(sheet.getCell("D7").value).toBe("001230");
+    expect(sheet.getCell("E7").value).toBe(12.5);
+    expect(sheet.getCell("B8").value).toBe("- adjustment");
+    expect(sheet.getCell("C8").value).toBe("=HYPERLINK(1)");
+    expect(sheet.getCell("D8").value).toBe("0000");
+    expect(sheet.getCell("E8").value).toBe(-2.25);
+  });
+
+  it.each(["2026-02-30", "2026-13-01"])("rejects impossible calendar date %s", async (from) => {
+    await expect(execute({ ...request, from, format: "csv" })).rejects.toThrow();
+    expect(assertCompanyPermission).not.toHaveBeenCalled();
+  });
+
+  it("requires both viewing and exporting permissions before rendering or auditing", async () => {
+    vi.mocked(assertCompanyPermission).mockImplementation(async (_sb, _company, permission) => {
+      if (permission === "reports.view") throw new Error("View denied");
+    });
+    await expect(execute({ ...request, format: "csv" })).rejects.toThrow("View denied");
+    expect(callRpc).not.toHaveBeenCalled();
   });
 });

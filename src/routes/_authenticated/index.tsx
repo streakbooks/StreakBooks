@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouteContext } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -20,6 +20,7 @@ import {
   ReconcileAction,
 } from "@/components/dashboard/DashboardWidgets";
 import { PersonalizedDashboardWidgets } from "@/components/dashboard/PersonalizedDashboardWidgets";
+import { BookkeepingAttentionCentre } from "@/components/dashboard/BookkeepingAttentionCentre";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -44,6 +45,7 @@ export const Route = createFileRoute("/_authenticated/")({
 });
 
 function Dashboard() {
+  const { user } = useRouteContext({ from: "/_authenticated" });
   const { company, isPending } = useActiveCompany();
   const companyId = company?.id ?? null;
   const isDemo = Boolean(company?.is_demo);
@@ -132,6 +134,9 @@ function Dashboard() {
               <Link to="/reports">Reports</Link>
             </Button>
             {data ? <ReconcileAction data={data} /> : null}
+            <Button variant="outline" size="sm" asChild>
+              <a href="#bookkeeping-attention">Review tasks</a>
+            </Button>
             <QuickActions />
           </>
         }
@@ -170,7 +175,8 @@ function Dashboard() {
         <div className="space-y-6">
           <GettingStarted data={data} />
           <KpiRow data={data} />
-          <PersonalizedDashboardWidgets data={data} companyId={companyId} />
+          <BookkeepingAttentionCentre data={data} />
+          <PersonalizedDashboardWidgets data={data} companyId={companyId} userId={user.id} />
           <div className="grid gap-6 lg:grid-cols-3">
             {isDemo ? (
               <Card>

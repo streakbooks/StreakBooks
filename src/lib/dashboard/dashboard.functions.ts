@@ -24,6 +24,7 @@ import {
 import { buildProfitAndLoss } from "@/lib/accounting/reporting";
 import { billOutstanding } from "@/lib/purchases/line-math";
 import { invoiceOutstanding } from "@/lib/sales/line-helpers";
+import { buildDocumentAttention, type OpenAttentionDocument } from "@/lib/dashboard/attention";
 import {
   ageOutstandingByCurrency,
   monthlyCashSeries,
@@ -65,15 +66,7 @@ async function countRows(
   return count ?? 0;
 }
 
-type OpenDoc = {
-  id: string;
-  due_date: string;
-  currency_code: string;
-  total_minor: number;
-  amount_paid_minor: number;
-  amount_credited_minor: number;
-  posted_journal_id: string | null;
-};
+type OpenDoc = OpenAttentionDocument;
 
 async function openDocs(
   supabase: Sb,
@@ -85,7 +78,10 @@ async function openDocs(
       supabase
         .from(table as never)
         .select(
-          "id, due_date, currency_code, total_minor, amount_paid_minor, amount_credited_minor, posted_journal_id" as never,
+          ("id, due_date, currency_code, total_minor, amount_paid_minor, amount_credited_minor, posted_journal_id, contacts(name), " +
+            (table === "sales_invoices"
+              ? "invoice_number"
+              : "bill_number, supplier_invoice_number")) as never,
         )
         .eq("company_id" as never, companyId as never)
         .in("status" as never, ["authorised", "partly_paid"] as never)
@@ -109,6 +105,20 @@ export const getDashboardSnapshot = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const sb = context.supabase;
     await assertCompanyMember(sb, data.companyId);
+    // The dashboard's historic totals are membership-scoped. New record-level action
+    // previews additionally enforce the relevant module permissions on the server.
+    const [canSales, canPurchases, canBanking, canApproveExpenses] = await Promise.all(
+      (["sales.view", "purchases.view", "banking.view", "expenses.approve"] as const).map(
+        async (permission) => {
+          const { data: granted, error } = await sb.rpc("has_company_permission", {
+            _company_id: data.companyId,
+            _permission: permission,
+          });
+          if (error) throw new Error(error.message);
+          return Boolean(granted);
+        },
+      ),
+    );
     const asOf = data.asOf;
     const [meta, accounts] = await Promise.all([
       loadCompanyMeta(sb, data.companyId),
@@ -122,17 +132,20 @@ export const getDashboardSnapshot = createServerFn({ method: "GET" })
     // Bank accounts: ledger balance and unreconciled count
     const { data: bankRows, error: bankErr } = await sb
       .from("bank_accounts" as never)
-      .select("id, name, currency_code, gl_account_id" as never)
+      .select("id, name, currency_code, gl_account_id, is_active" as never)
       .eq("company_id" as never, data.companyId as never)
-      .eq("is_active" as never, true as never)
       .order("name" as never);
     if (bankErr) throw new Error(bankErr.message);
-    const banks = (bankRows ?? []) as unknown as Array<{
+    const allBanks = (bankRows ?? []) as unknown as Array<{
       id: string;
       name: string;
       currency_code: string;
       gl_account_id: string;
+      is_active: boolean;
     }>;
+    // Inactive bank accounts still define the true currency of historical lines.
+    // The headline bank widgets must continue to include active accounts only.
+    const banks = allBanks.filter((bank) => bank.is_active);
     const bankSummaries = await Promise.all(
       banks.map(async (b) => {
         const [balance, unreconciled] = await Promise.all([
@@ -151,6 +164,41 @@ export const getDashboardSnapshot = createServerFn({ method: "GET" })
         };
       }),
     );
+    // Small, read-only list of genuine bank lines awaiting classification.
+    // Uses the same company boundary and real bank-account currencies as the existing dashboard.
+    const { data: uncategorisedRows, error: reviewBankError } = canBanking
+      ? await sb
+          .from("bank_transactions" as never)
+          .select("id, bank_account_id, txn_date, amount_minor, description" as never)
+          .eq("company_id" as never, data.companyId as never)
+          .eq("status" as never, "uncategorised" as never)
+          .order("txn_date" as never, { ascending: true } as never)
+          .limit(6)
+      : { data: [], error: null };
+    if (reviewBankError) throw new Error(reviewBankError.message);
+    const bankById = new Map(allBanks.map((b) => [b.id, b]));
+    const bankAttention = (
+      (uncategorisedRows ?? []) as unknown as Array<{
+        id: string;
+        bank_account_id: string;
+        txn_date: string;
+        amount_minor: number;
+        description: string | null;
+      }>
+    ).flatMap((row) => {
+      const account = bankById.get(row.bank_account_id);
+      if (!account) return []; // Never label a source amount with an assumed currency.
+      return [
+        {
+          id: row.id,
+          description: row.description ?? "Bank transaction",
+          bankAccount: account.name,
+          txnDate: row.txn_date,
+          amountMinor: row.amount_minor,
+          currency: account.currency_code,
+        },
+      ];
+    });
     const bankGlIds = [
       ...new Set([
         ...banks.map((b) => b.gl_account_id),
@@ -180,6 +228,11 @@ export const getDashboardSnapshot = createServerFn({ method: "GET" })
     );
     const payables = ageOutstandingByCurrency(
       bills.filter((d) => d.posted_journal_id).map((d) => toOutstanding(d, "ap")),
+      asOf,
+    );
+    const documentAttention = buildDocumentAttention(
+      canSales ? invoices : [],
+      canPurchases ? bills : [],
       asOf,
     );
 
@@ -327,6 +380,16 @@ export const getDashboardSnapshot = createServerFn({ method: "GET" })
         lastYearRevenueMinor: Number(lastFy.revenue),
       },
       approvals: { expenseClaims: claims, bills: billsAwaiting },
+      attention: {
+        ...documentAttention,
+        bank: bankAttention,
+        access: {
+          sales: canSales,
+          purchases: canPurchases,
+          banking: canBanking,
+          expenseApprovals: canApproveExpenses,
+        },
+      },
       watchlist,
       tasks: {
         uncategorisedBankLines: uncategorised,

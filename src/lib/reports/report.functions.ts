@@ -1,3 +1,5 @@
+import { assertCurrentPayablesDate, payableOutstandingInBase } from "./payables-integrity";
+import { loadCompanyDefaults } from "@/lib/sales/sales-common";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyPermission } from "@/lib/assert-company-access";
@@ -5,7 +7,6 @@ import { assertUuid } from "@/lib/company-validation";
 import { billOutstanding } from "@/lib/purchases/line-math";
 import { invoiceOutstanding } from "@/lib/sales/line-helpers";
 import { fetchAllPages, type PageResult } from "@/lib/accounting/fetch-all";
-import { convertMinorToBase } from "@/lib/accounting/fx";
 import { addDaysIso, fiscalYearStart, shiftYear, todayIso } from "@/lib/accounting/fiscal-year";
 import {
   buildAgingReport,
@@ -605,6 +606,8 @@ export const getAgedPayables = createServerFn({ method: "GET" })
   }))
   .handler(async ({ data, context }) => {
     const ctx = await loadCtx(context.supabase, data.companyId);
+    const defaults = await loadCompanyDefaults(context.supabase, data.companyId);
+    assertCurrentPayablesDate(data.asOf, defaults.today);
     type Row = {
       id: string;
       contact_id: string;
@@ -628,6 +631,7 @@ export const getAgedPayables = createServerFn({ method: "GET" })
           )
           .eq("company_id" as never, data.companyId as never)
           .in("status" as never, ["authorised", "partly_paid"] as never)
+          .lte("bill_date" as never, data.asOf as never)
           .order("id" as never)
           .range(from, to) as unknown as PromiseLike<PageResult<Row>>,
     );
@@ -639,15 +643,12 @@ export const getAgedPayables = createServerFn({ method: "GET" })
         amount_paid_minor: r.amount_paid_minor,
         amount_credited_minor: r.amount_credited_minor,
       });
-      const converted =
-        r.currency_code !== ctx.meta.baseCurrency && r.fx_rate_to_base
-          ? convertMinorToBase(
-              outstanding,
-              r.fx_rate_to_base,
-              r.currency_code,
-              ctx.meta.baseCurrency,
-            )
-          : outstanding;
+      const converted = payableOutstandingInBase(
+        outstanding,
+        r.currency_code,
+        ctx.meta.baseCurrency,
+        r.fx_rate_to_base,
+      );
       return {
         id: r.id,
         contact_id: r.contact_id,

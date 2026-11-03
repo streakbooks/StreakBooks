@@ -113,3 +113,21 @@ describe("reporting uses journal FX snapshot", () => {
     expect(lineToBaseMinor(1234n, "1")).toBe(1234n);
   });
 });
+
+describe("integer FX snapshot rates", () => {
+  it.each(["2", "10", "100"])(
+    "treats %s and its decimal representation as the same rate",
+    (rate) => {
+      expect(scaleMinorByRate(1234n, rate)).toBe(scaleMinorByRate(1234n, `${rate}.0`));
+      expect(convertMinorToBase(1234n, rate, "USD", "GBP")).toBe(
+        convertMinorToBase(1234n, `${rate}.0`, "USD", "GBP"),
+      );
+    },
+  );
+  it("converts integer rates across zero-, two- and three-decimal currencies with one rounding", () => {
+    expect(convertMinorToBase(1n, "2", "JPY", "GBP")).toBe(200n);
+    expect(convertMinorToBase(1000n, "2", "KWD", "GBP")).toBe(200n);
+    expect(convertMinorToBase(-1000n, "2", "KWD", "GBP")).toBe(-200n);
+    expect(scaleMinorByRate(9007199254740993n, "2")).toBe(18014398509481986n);
+  });
+});

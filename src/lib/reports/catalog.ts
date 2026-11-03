@@ -173,7 +173,7 @@ export const REPORT_CATALOG: ReportDef[] = [
     id: "aged-payables",
     title: "Aged Payables",
     description:
-      "Outstanding posted supplier bills by ageing bucket, reconciled to the payables control account.",
+      "Current outstanding posted supplier bills by ageing bucket, compared with the payables control account. Historical dates require retained allocation history.",
     category: "purchases",
     tags: ["ap", "ageing"],
     status: "ready",

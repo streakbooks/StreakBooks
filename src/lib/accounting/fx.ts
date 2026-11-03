@@ -27,7 +27,7 @@ export function scaleMinorByRate(txnMinor: bigint | number, rate: number | strin
   if (rateStr === "1" || rateStr === "1.0" || rateStr === "1.00") return minor;
   const [rw, rf = ""] = rateStr.split(".");
   const rateScale = BigInt(rf.length);
-  const rateInt = BigInt(rw + (rf || "0"));
+  const rateInt = BigInt((rw ?? "0") + rf);
   return roundHalfUpRational(minor * rateInt, 10n ** rateScale);
 }
 
@@ -52,7 +52,7 @@ export function convertMinorToBase(
     throw new Error("fx rate must be a positive decimal");
   }
   const [rw, rf = ""] = rateStr.split(".");
-  const rateInt = BigInt(rw + (rf || "0"));
+  const rateInt = BigInt((rw ?? "0") + rf);
   let denominator = 10n ** BigInt(rf.length);
   let numerator = minor * rateInt;
   const shift = decimalPlacesFor(baseCurrency) - decimalPlacesFor(txnCurrency);

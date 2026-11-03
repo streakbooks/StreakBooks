@@ -16,20 +16,22 @@ import { JournalLink } from "./ReportShell";
 export function CashProfitLossDrill({
   companyId,
   accountId,
+  report = "profit-and-loss",
   from,
   to,
   onClose,
 }: {
   companyId: string;
   accountId: string;
+  report?: "profit-and-loss" | "balance-sheet";
   from: string;
   to: string;
   onClose: () => void;
 }) {
   const fetch = useServerFn(getCashProfitLossTransactions);
   const query = useQuery({
-    queryKey: ["cash-profit-loss-drill", companyId, accountId, from, to],
-    queryFn: () => fetch({ data: { companyId, accountId, from, to } }),
+    queryKey: ["cash-profit-loss-drill", companyId, accountId, report, from, to],
+    queryFn: () => fetch({ data: { companyId, accountId, report, from, to } }),
     retry: false,
   });
   const data = query.data;
@@ -39,7 +41,8 @@ export function CashProfitLossDrill({
         <DialogHeader>
           <DialogTitle>Cash recognition transactions</DialogTitle>
           <DialogDescription>
-            {from} to {to} · Settlement amounts, distinct from the accrual General Ledger.
+            {report === "balance-sheet" ? `Through ${to}` : `${from} to ${to}`} · Cash recognition
+            amounts.
           </DialogDescription>
         </DialogHeader>
         {query.isPending ? (
@@ -86,7 +89,7 @@ export function CashProfitLossDrill({
                   ))}
                   <tr className="border-t font-semibold">
                     <th className="p-2 text-left" colSpan={3}>
-                      Total recognized in this period
+                      Total cash recognition
                     </th>
                     <td className="p-2 text-right">
                       {fromMinorUnits(BigInt(data.debit), data.currency)}

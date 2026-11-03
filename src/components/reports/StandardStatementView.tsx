@@ -234,6 +234,7 @@ export function StandardStatementView({
       </ReportShell>
       {cashDrill && (
         <CashProfitLossDrill
+          report={report}
           key={`${ctx.companyId}-${cashDrill.accountId}-${cashDrill.from}-${cashDrill.to}`}
           companyId={ctx.companyId}
           {...cashDrill}

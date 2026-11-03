@@ -24,7 +24,7 @@ vi.mock("@/lib/planning/rpc", () => ({ callRpc: vi.fn() }));
 vi.mock("./cash-profit-loss.server", () => ({ loadCashProfitLossInput: vi.fn() }));
 import { loadCashProfitLossInput } from "./cash-profit-loss.server";
 import { cashInputFixture } from "./__fixtures__/cash-facts";
-import { reportingFactsFixture, testCompany, revenueId } from "./__fixtures__/facts";
+import { reportingFactsFixture, testCompany, revenueId, bankId } from "./__fixtures__/facts";
 import { getStandardStatement, exportStandardStatement } from "./standard.functions";
 import { getCashProfitLossTransactions } from "./cash-drill.functions";
 import { standardSettingsSchema, encodeStandardSettings } from "./standard-settings";
@@ -149,10 +149,20 @@ describe("server-integrated cash P&L and downloads", () => {
       }),
     ).toThrow("Cash-basis facts were not captured");
   });
-  it("rejects cash Balance Sheet and accrual-only filters explicitly", async () => {
-    await expect(
-      execute<ReportDocument>(getStandardStatement, { ...data, report: "balance-sheet" }),
-    ).rejects.toThrow("Profit and Loss only");
+  it("serves a cash Balance Sheet and drills bank balances through the same ledger", async () => {
+    const doc = await execute<ReportDocument>(getStandardStatement, {
+      ...data,
+      report: "balance-sheet",
+    });
+    expect(doc.summary?.find((row) => row.label === "Assets")?.value).toBe("12.00");
+    const drill = await execute<{ debit: string; credit: string }>(getCashProfitLossTransactions, {
+      ...data,
+      report: "balance-sheet",
+      accountId: bankId,
+    });
+    expect(BigInt(drill.debit) - BigInt(drill.credit)).toBe(1200n);
+  });
+  it("rejects accrual-only filters explicitly", async () => {
     await expect(
       execute<ReportDocument>(getStandardStatement, {
         ...data,

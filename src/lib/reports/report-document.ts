@@ -1,3 +1,4 @@
+import { resolveStandardSettings, encodeStandardSettings } from "./standard-settings";
 import { buildCapturedStandardStatement } from "./standard-captured";
 /** Immutable report document shared by preview, PDF, XLSX, CSV and the delivery worker. */
 import { z } from "zod";
@@ -40,6 +41,8 @@ export const factsSchema = z.object({
   schemaVersion: z.literal(1),
   basis: z.enum(["accrual", "cash"]).optional(),
   cashPolicy: z.string().optional(),
+  cashSourceVersion: z.literal(1).optional(),
+  cashSource: z.record(z.string(), z.array(z.record(z.string(), z.unknown()))).optional(),
   capturedAt: z.string(),
   from: z.string(),
   to: z.string(),
@@ -213,7 +216,14 @@ export function buildReportDocument(
     const document = buildCapturedStandardStatement(
       factsSchema.parse(raw),
       definition.reportId,
-      definition.config["settings"],
+      encodeStandardSettings(
+        resolveStandardSettings({
+          settings: definition.config["settings"],
+          ...(definition.config["basis"] === "cash" || definition.config["basis"] === "accrual"
+            ? { basis: definition.config["basis"] }
+            : {}),
+        }),
+      ),
     );
     if (definition.name && definition.name !== definition.reportId)
       document.title = definition.name;

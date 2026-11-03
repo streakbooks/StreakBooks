@@ -3,6 +3,10 @@ import { loadCashProfitLossInput } from "./cash-profit-loss.server";
 import { cashProfitLoss } from "./cash-profit-loss";
 import { cashInputFixture } from "./__fixtures__/cash-facts";
 import { reportingFactsFixture, testCompany, bankId } from "./__fixtures__/facts";
+import { buildReportDocument } from "./report-document";
+import { standardSettingsSchema, encodeStandardSettings } from "./standard-settings";
+import { cashStandardFacts } from "./cash-standard";
+import { exportReportPdf } from "./pdf-export.server";
 import type { Sb } from "@/lib/accounting/ledger-data";
 
 type Row = Record<string, unknown>;
@@ -75,6 +79,9 @@ function database() {
         amount_minor: "4800",
       },
     ],
+    sales_credit_allocations: [],
+    purchase_credit_allocations: [],
+    cash_allocation_history: [],
     money_documents: [],
     money_document_credit_uses: [],
   };
@@ -138,6 +145,86 @@ describe("cash source adapter", () => {
       value: "posted",
     });
   });
+  it("restores the exact archived supplier split for a report before a later void", async () => {
+    const db = database();
+    const original = db.data["supplier_payment_allocations"]!.pop()!;
+    db.data["supplier_payments"]![0]!["void_journal_id"] = "later-void";
+    db.data["cash_allocation_history"] = [
+      {
+        id: "archive",
+        company_id: testCompany,
+        source_table: "supplier_payment_allocations",
+        allocation_id: original["id"],
+        operation: "DELETE",
+        source_row: original,
+      },
+    ];
+    const input = await loadCashProfitLossInput(db.sb, db.facts, "2026-11-30");
+    expect(input.allocations.find((row) => row.id === original["id"])?.amount).toBe(4800n);
+    expect(
+      cashProfitLoss(input, { from: "2026-11-01", to: "2026-11-30" }).reduce(
+        (sum, row) => sum + row.credit - row.debit,
+        0n,
+      ),
+    ).toBe(1000n);
+  });
+  it("refuses to reuse deleted splits for an unvoided payment or changed allocations", async () => {
+    const db = database();
+    const original = db.data["supplier_payment_allocations"]!.pop()!;
+    const event = {
+      id: "archive",
+      company_id: testCompany,
+      source_table: "supplier_payment_allocations",
+      allocation_id: original["id"],
+      operation: "DELETE",
+      source_row: original,
+    };
+    db.data["cash_allocation_history"] = [event];
+    await expect(loadCashProfitLossInput(db.sb, db.facts, "2026-11-30")).rejects.toThrow(
+      "matching source void",
+    );
+    event.operation = "UPDATE";
+    await expect(loadCashProfitLossInput(db.sb, db.facts, "2026-11-30")).rejects.toThrow(
+      "reallocation recognition history",
+    );
+  });
+  it.each(["profit-and-loss", "balance-sheet"] as const)(
+    "renders frozen %s cash delivery facts with the same engine as preview and PDF export",
+    async (report) => {
+      const db = database();
+      const settings = standardSettingsSchema.parse({
+        basis: "cash",
+        group: "month",
+        compare: "prior_period",
+      });
+      const definition = {
+        name: "Cash P&L",
+        reportId: report,
+        config: { settings: encodeStandardSettings(settings) },
+      };
+      const facts = { ...db.facts, from: "2026-11-01", to: "2026-11-30" };
+      const snapshot = JSON.stringify({ ...facts, cashSourceVersion: 1, cashSource: db.data });
+      const input = await loadCashProfitLossInput(db.sb, facts, facts.to);
+      const preview = buildReportDocument(
+        cashStandardFacts(facts, input, settings, report),
+        definition,
+      );
+      const attachment = buildReportDocument(JSON.parse(snapshot), definition);
+      expect(attachment).toEqual(preview);
+      expect(buildReportDocument(JSON.parse(snapshot), definition)).toEqual(attachment);
+      db.data["supplier_payment_allocations"] = [];
+      expect(buildReportDocument(JSON.parse(snapshot), definition)).toEqual(attachment);
+      const bytes = await exportReportPdf(attachment);
+      expect(new TextDecoder().decode(bytes.slice(0, 4))).toBe("%PDF");
+      const wrongBasis = {
+        ...definition,
+        config: { settings: encodeStandardSettings(standardSettingsSchema.parse({})) },
+      };
+      expect(() => buildReportDocument(JSON.parse(snapshot), wrongBasis)).toThrow(
+        "accounting basis",
+      );
+    },
+  );
   it("rejects unsafe numeric API amounts instead of silently rounding financial facts", async () => {
     const db = database();
     db.data["sales_receipts"]![0]!["amount_minor"] = Number.MAX_SAFE_INTEGER + 1;

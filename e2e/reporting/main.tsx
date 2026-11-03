@@ -277,6 +277,7 @@ function StandardStatementFixture() {
   );
 }
 function CashBasisFixture() {
+  const [report, setReport] = useState<"profit-and-loss" | "balance-sheet">("profit-and-loss");
   const [basis, setBasis] = useState<"accrual" | "cash">(() =>
     localStorage.getItem("cash-basis-fixture") === "cash" ? "cash" : "accrual",
   );
@@ -287,7 +288,7 @@ function CashBasisFixture() {
   f.from = "2026-11-01";
   f.to = "2026-11-30";
   const settings = standardSettingsSchema.parse({ basis });
-  const plan = standardPeriods("profit-and-loss", f.from, f.to, settings, 12, 31);
+  const plan = standardPeriods(report, f.from, f.to, settings, 12, 31);
   // Only settlement journals exist in this fixture's November accrual period: no accrued P&L.
   f.period = [];
   f.standardColumns = plan.periods.map((period) => ({
@@ -295,19 +296,30 @@ function CashBasisFixture() {
     fyStart: f.fyStart,
     period: [],
     bsPrior: [],
-    bsCurrent: [],
+    bsCurrent: report === "balance-sheet" ? f.bsCurrent : [],
   }));
-  const facts = basis === "cash" ? cashStandardFacts(f, input, settings) : f;
+  const facts = basis === "cash" ? cashStandardFacts(f, input, settings, report) : f;
   const doc = buildReportDocument(facts, {
     name: "Cash basis fixture",
-    reportId: "profit-and-loss",
+    reportId: report,
     config: { settings: encodeStandardSettings(settings) },
   });
   return (
     <section aria-label="Cash basis fixture" className="space-y-4 rounded border p-4">
+      <label>
+        Statement
+        <select
+          aria-label="Fixture statement"
+          value={report}
+          onChange={(e) => setReport(e.target.value as typeof report)}
+        >
+          <option value="profit-and-loss">Profit and Loss</option>
+          <option value="balance-sheet">Balance Sheet</option>
+        </select>
+      </label>
       <StatementBasisSelect
         basis={basis}
-        report="profit-and-loss"
+        report={report}
         onChange={(value) => {
           setBasis(value);
           localStorage.setItem("cash-basis-fixture", value);

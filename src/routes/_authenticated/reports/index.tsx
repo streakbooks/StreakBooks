@@ -216,6 +216,13 @@ function ReportsCentre() {
                 companyId={company.id}
                 from={from}
                 to={periodTo}
+                onPeriodChange={(range) =>
+                  void navigate({
+                    search: (previous) => parseReportingCentreSearch({ ...previous, ...range }),
+                    replace: true,
+                    resetScroll: false,
+                  })
+                }
               />
               <div className="mt-4 flex gap-2">
                 <Button asChild variant="outline">

@@ -1,3 +1,13 @@
+import { useCanDo } from "@/hooks/use-can";
+import { exportForecast } from "@/lib/reports/forecast-export.functions";
+import { downloadReportFile } from "@/lib/reports/download";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ForecastComparison } from "./ForecastComparison";
 import { ReportingModelSelect } from "./ReportingModelSelect";
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
@@ -29,22 +39,22 @@ export function ManagementWorkspace({
   companyId,
   from,
   to,
+  onPeriodChange,
 }: {
   companyId: string;
   from: string;
   to: string;
+  onPeriodChange: (range: { from: string; to: string }) => void;
 }) {
   const client = useQueryClient(),
     fetch = useServerFn(getManagementMetrics),
     save = useServerFn(saveReportingModel);
-  const [start, setStart] = useState(from),
-    [end, setEnd] = useState(to),
-    [widgets, setWidgets] = useState<Array<(typeof KPI_IDS)[number]>>([...KPI_IDS]),
+  const [widgets, setWidgets] = useState<Array<(typeof KPI_IDS)[number]>>([...KPI_IDS]),
     [name, setName] = useState("Management dashboard");
   const [activeModel, setActiveModel] = useState<{ id: string; version: number } | null>(null);
   const q = useQuery({
-    queryKey: ["management-metrics", companyId, start, end],
-    queryFn: () => fetch({ data: { companyId, from: start, to: end } }),
+    queryKey: ["management-metrics", companyId, from, to],
+    queryFn: () => fetch({ data: { companyId, from, to } }),
     retry: false,
   });
   const saving = useMutation({
@@ -75,8 +85,8 @@ export function ManagementWorkspace({
           <Input
             id="management-from"
             type="date"
-            value={start}
-            onChange={(e) => setStart(e.target.value)}
+            value={from}
+            onChange={(e) => e.target.value && onPeriodChange({ from: e.target.value, to })}
           />
         </div>
         <div>
@@ -84,8 +94,8 @@ export function ManagementWorkspace({
           <Input
             id="management-to"
             type="date"
-            value={end}
-            onChange={(e) => setEnd(e.target.value)}
+            value={to}
+            onChange={(e) => e.target.value && onPeriodChange({ from, to: e.target.value })}
           />
         </div>
         <Button variant="outline" onClick={() => void q.refetch()}>
@@ -194,7 +204,7 @@ export function ManagementWorkspace({
                   key={id}
                   to="/reports/$reportId"
                   params={{ reportId: metric.reportId }}
-                  search={{ from: start, to: end }}
+                  search={{ from, to }}
                   className="space-y-2 rounded-lg border p-4 transition-shadow hover:shadow-md"
                 >
                   <h3 className="text-sm font-medium capitalize text-muted-foreground">
@@ -216,8 +226,8 @@ export function ManagementWorkspace({
           </div>
           <ForecastWorkspace
             companyId={companyId}
-            from={start}
-            to={end}
+            from={from}
+            to={to}
             currency={q.data.company.baseCurrency}
           />
         </>
@@ -238,6 +248,7 @@ function ForecastWorkspace({
 }) {
   const client = useQueryClient(),
     calculate = useServerFn(previewForecast),
+    exportFn = useServerFn(exportForecast),
     save = useServerFn(saveReportingModel);
   const [config, setConfig] = useState<ForecastConfig>({
     start: addMonthsIso(monthStart(to), 1),
@@ -288,10 +299,15 @@ function ForecastWorkspace({
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
+  const canExport = useCanDo("reports.export");
+  const exporting = useMutation({
+    mutationFn: (format: "pdf" | "xlsx" | "csv") =>
+      exportFn({ data: { companyId, config, name, format } }),
+    onSuccess: downloadReportFile,
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
   const current = config.scenarios.find((s) => s.id === scenario) ?? config.scenarios[0]!;
   const output = preview.data?.find((s) => s.scenario.id === current.id);
-  const money = (s: string | null) =>
-    s === null ? "No completed-month actual" : fromMinorUnits(BigInt(s), currency);
   return (
     <section className="space-y-4 rounded-lg border p-4">
       <h2 className="text-xl font-semibold">Forecasts & scenarios</h2>
@@ -427,10 +443,33 @@ function ForecastWorkspace({
           preview.reset();
         }}
       />
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button disabled={preview.isPending} onClick={() => preview.mutate()}>
           Calculate forecast
         </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              disabled={!canExport || !preview.data || exporting.isPending || !name.trim()}
+            >
+              {exporting.isPending ? "Preparing forecast…" : "Download forecast"}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {(
+              [
+                ["pdf", "PDF document"],
+                ["xlsx", "Excel workbook (.xlsx)"],
+                ["csv", "CSV data (.csv)"],
+              ] as const
+            ).map(([format, label]) => (
+              <DropdownMenuItem key={format} onSelect={() => exporting.mutate(format)}>
+                {label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
         <Button
           variant="outline"
           disabled={saving.isPending || !preview.data || !name.trim()}
@@ -456,38 +495,7 @@ function ForecastWorkspace({
           {friendlyAuthError(preview.error)}
         </p>
       )}
-      {output && (
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr>
-                <th className="p-2">Month</th>
-                <th className="p-2">Projected revenue</th>
-                <th className="p-2">Projected expenses</th>
-                <th className="p-2">Projected profit</th>
-                <th className="p-2">Actual revenue</th>
-                <th className="p-2">Revenue variance</th>
-              </tr>
-            </thead>
-            <tbody>
-              {output.rows.map((r) => (
-                <tr key={r.month} className="border-t">
-                  <td className="p-2">{r.month}</td>
-                  <td className="p-2">{money(r.projectedRevenueMinor)}</td>
-                  <td className="p-2">{money(r.projectedExpenseMinor)}</td>
-                  <td className="p-2">{money(r.projectedProfitMinor)}</td>
-                  <td className="p-2">{money(r.actualRevenueMinor)}</td>
-                  <td className="p-2">
-                    {r.revenueVarianceMinor === null
-                      ? "Unavailable"
-                      : money(r.revenueVarianceMinor)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {output && <ForecastComparison output={output} currency={currency} />}
     </section>
   );
 }

@@ -816,49 +816,8 @@ export const previewForecast = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
-    const { documentFigures } = await import("./report-document"),
-      { forecastProjection } = await import("./management"),
-      { addMonthsIso, monthEnd, todayIso } = await import("@/lib/accounting/fiscal-year");
-    const base = await callRpc(
-      context.supabase,
-      "capture_reporting_facts",
-      { _company_id: data.companyId, _from: data.config.baselineFrom, _to: data.config.baselineTo },
-      missing,
-    );
-    const { current } = documentFigures(base);
-    const today = todayIso();
-    const actuals: Array<{ month: string; revenueMinor: string; expenseMinor: string }> = [];
-    // Only closed months can be compared with a full-month projection; future values stay explicitly absent.
-    const completed = Array.from({ length: data.config.months }, (_, i) =>
-      addMonthsIso(data.config.start, i),
-    ).filter((date) => monthEnd(date) < today);
-    for (let i = 0; i < completed.length; i += 6) {
-      const batch = await Promise.all(
-        completed.slice(i, i + 6).map(async (month) => {
-          const facts = await callRpc(
-            context.supabase,
-            "capture_reporting_facts",
-            { _company_id: data.companyId, _from: month, _to: monthEnd(month) },
-            missing,
-          );
-          const { current: p } = documentFigures(facts);
-          return {
-            month,
-            revenueMinor: (p.revenue + p.contraRevenue).toString(),
-            expenseMinor: p.expense.toString(),
-          };
-        }),
-      );
-      actuals.push(...batch);
-    }
-    return forecastProjection(
-      data.config,
-      {
-        revenueMinor: (current.revenue + current.contraRevenue).toString(),
-        expenseMinor: current.expense.toString(),
-      },
-      actuals,
-    );
+    const { captureForecast } = await import("./forecast-calculation.server");
+    return (await captureForecast(context.supabase, data.companyId, data.config)).projections;
   });
 export const getFirmReportingPortfolio = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

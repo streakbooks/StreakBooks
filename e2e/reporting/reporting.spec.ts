@@ -402,3 +402,30 @@ test("catalogue matches separate search words without requiring the exact report
   await expect(catalogue.getByRole("status")).toHaveText("1 report found");
   await expect(catalogue.getByRole("link", { name: /Profit and Loss/ }).last()).toBeVisible();
 });
+
+test("forecast comparison exposes completed-month expense and profit variances without fabricating future actuals", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const comparison = page.getByRole("region", { name: "Forecast versus actual", exact: true });
+  const row = comparison.getByRole("row").filter({ hasText: "2026-11-01" });
+  const cells = row.getByRole("cell");
+  await expect(cells.nth(5)).toHaveText("70.00");
+  await expect(cells.nth(8)).toHaveText("-10.00");
+  await expect(cells.nth(9)).toHaveText("-16.67%");
+  await expect(cells.nth(10)).toHaveText("30.00");
+  await expect(cells.nth(11)).toHaveText("75.00%");
+  const future = comparison.getByRole("row").filter({ hasText: "2026-12-01" });
+  await expect(future).toContainText("No completed-month actual");
+  await expect(future).toContainText("Unavailable");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await comparison
+    .getByRole("region", { name: "Forecast comparison results", exact: true })
+    .focus();
+  await expect(
+    comparison.getByRole("region", { name: "Forecast comparison results", exact: true }),
+  ).toBeFocused();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
+});

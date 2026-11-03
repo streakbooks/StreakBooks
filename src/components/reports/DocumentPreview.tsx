@@ -7,12 +7,14 @@ export function DocumentPreview({
   showHeader = true,
   compact = false,
   onToggleSection,
+  onAccountDrill,
   collapsedSections = [],
 }: {
   document: ReportDocument;
   showHeader?: boolean;
   compact?: boolean;
   onToggleSection?: (label: string) => void;
+  onAccountDrill?: (accountId: string, from: string, to: string) => void;
   collapsedSections?: string[];
 }) {
   return (
@@ -71,14 +73,27 @@ export function DocumentPreview({
                       style={{ paddingLeft: `${(row.indent ?? 0) * 12}px` }}
                     >
                       {row.accountId && !row.accountId.startsWith("__") ? (
-                        <Link
-                          to="/reports/$reportId"
-                          params={{ reportId: "general-ledger" }}
-                          search={{ account: row.accountId, from: doc.from, to: doc.to }}
-                          className="hover:underline"
-                        >
-                          {row.label}
-                        </Link>
+                        doc.basis === "cash" ? (
+                          onAccountDrill ? (
+                            <button
+                              className="text-left hover:underline"
+                              onClick={() => onAccountDrill(row.accountId!, doc.from, doc.to)}
+                            >
+                              {row.label}
+                            </button>
+                          ) : (
+                            row.label
+                          )
+                        ) : (
+                          <Link
+                            to="/reports/$reportId"
+                            params={{ reportId: "general-ledger" }}
+                            search={{ account: row.accountId, from: doc.from, to: doc.to }}
+                            className="hover:underline"
+                          >
+                            {row.label}
+                          </Link>
+                        )
                       ) : row.kind === "heading" && onToggleSection ? (
                         <button
                           className="flex w-full items-center gap-2 text-left"
@@ -101,18 +116,38 @@ export function DocumentPreview({
                         className={`whitespace-nowrap px-3 ${compact ? "py-1" : "py-2"} text-right tabular-nums ${doc.presentation?.reportBorders === "all" ? "border-x" : ""} ${row.negativeRed && value.startsWith("-") ? "text-destructive" : ""}`}
                       >
                         {row.accountId && section.columnPeriods?.[j] ? (
-                          <Link
-                            to="/reports/$reportId"
-                            params={{ reportId: "general-ledger" }}
-                            search={{
-                              account: row.accountId,
-                              from: section.columnPeriods[j]!.from,
-                              to: section.columnPeriods[j]!.to,
-                            }}
-                            className="hover:underline"
-                          >
-                            {displayDocumentValue(value, documentCellStyle(row, section, j))}
-                          </Link>
+                          doc.basis === "cash" ? (
+                            onAccountDrill ? (
+                              <button
+                                className="hover:underline"
+                                aria-label={`${row.label} cash transactions ${section.columnPeriods![j]!.from} to ${section.columnPeriods![j]!.to}`}
+                                onClick={() =>
+                                  onAccountDrill(
+                                    row.accountId!,
+                                    section.columnPeriods![j]!.from,
+                                    section.columnPeriods![j]!.to,
+                                  )
+                                }
+                              >
+                                {displayDocumentValue(value, documentCellStyle(row, section, j))}
+                              </button>
+                            ) : (
+                              displayDocumentValue(value, documentCellStyle(row, section, j))
+                            )
+                          ) : (
+                            <Link
+                              to="/reports/$reportId"
+                              params={{ reportId: "general-ledger" }}
+                              search={{
+                                account: row.accountId,
+                                from: section.columnPeriods![j]!.from,
+                                to: section.columnPeriods![j]!.to,
+                              }}
+                              className="hover:underline"
+                            >
+                              {displayDocumentValue(value, documentCellStyle(row, section, j))}
+                            </Link>
+                          )
                         ) : (
                           displayDocumentValue(value, documentCellStyle(row, section, j))
                         )}

@@ -18,18 +18,27 @@ export type StandardStatementRequest = z.infer<typeof requestSchema>;
 async function run(supabase: Sb, data: StandardStatementRequest) {
   if (data.from > data.to) throw new Error("End date must follow start date");
   await assertCompanyPermission(supabase, data.companyId, "reports.view");
-  const facts = await callRpc(
-    supabase,
-    "capture_standard_report_facts",
-    {
-      _company_id: data.companyId,
-      _from: data.from,
-      _to: data.to,
-      _report_id: data.report,
-      _settings: data.settings,
-    },
-    "The standard statement database update is required.",
-  );
+  if (data.settings.basis === "cash" && data.report !== "profit-and-loss")
+    throw new Error(
+      "Cash basis is available for Profit and Loss only; Balance Sheet remains accrual.",
+    );
+  const facts =
+    data.settings.basis === "cash"
+      ? await (
+          await import("./cash-standard.server")
+        ).captureCashStandard(supabase, data.companyId, data.from, data.to, data.settings)
+      : await callRpc(
+          supabase,
+          "capture_standard_report_facts",
+          {
+            _company_id: data.companyId,
+            _from: data.from,
+            _to: data.to,
+            _report_id: data.report,
+            _settings: data.settings,
+          },
+          "The standard statement database update is required.",
+        );
   const captured = factsSchema.parse(facts);
   if (
     captured.company.id !== data.companyId ||
@@ -71,7 +80,7 @@ export const exportStandardStatement = createServerFn({ method: "POST" })
         _action: "report.exported",
         _entity_type: "report",
         _entity_id: null,
-        _details: { report: data.report, format: data.format },
+        _details: { report: data.report, format: data.format, basis: data.settings.basis },
       },
       "Could not record report export.",
     );

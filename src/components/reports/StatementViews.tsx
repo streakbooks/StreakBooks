@@ -136,7 +136,7 @@ function StatementAccessView({
   const access = useReportingAccess(ctx.companyId);
   if (access.isPending) return <LoadingState />;
   if (access.data?.allowed) return <StandardStatementView ctx={ctx} report={report} />;
-  if (ctx.search.settings)
+  if (ctx.search.settings || ctx.search.basis === "cash")
     return (
       <div className="space-y-3">
         <ErrorState
@@ -144,7 +144,10 @@ function StatementAccessView({
           description={access.data?.reason ?? "Could not verify customization access."}
           onRetry={() => void access.refetch()}
         />
-        <Button variant="outline" onClick={() => ctx.setSearch({ settings: undefined })}>
+        <Button
+          variant="outline"
+          onClick={() => ctx.setSearch({ settings: undefined, basis: undefined })}
+        >
           Open standard statement
         </Button>
       </div>

@@ -1,14 +1,14 @@
 /**
- * Cash-basis recognition core. This is NOT an enabled report basis.
+ * Cash-basis allocation core shared by the server-side cash P&L engine.
  *
  * Caller must provide authenticated, organisation-scoped, posted source facts
  * including dated allocations and reversal/refund events. Non-cash credits are
- * deliberately not recognised as receipts/payments. The reporting RPC, FX
- * reconciliation, inventory/COGS and opening-balance coverage are release gates.
+ * deliberately not recognised as receipts/payments. Unsupported allocation history,
+ * advance-payment, inventory/COGS and opening-balance sources must fail explicitly.
  *
  * All amounts are transaction-currency minor units (bigint). A settlement's
  * recognised net and tax components add to its exact cash delta. FX rounding
- * is returned explicitly; a caller must reconcile/post it, never discard it.
+ * is returned explicitly; the cash P&L caller apportions actual base cash to reconcile it.
  */
 import { convertMinorToBase } from "@/lib/accounting/fx";
 import { isReportDate } from "./date-validation";
@@ -53,7 +53,19 @@ export type CashRecognition = {
   components: Array<CashComponent & { recognisedMinor: bigint; recognisedBaseMinor: bigint }>;
 };
 
-function apportion(cumulative: bigint, weights: bigint[], total: bigint): bigint[] {
+export function apportionCashAmount(
+  cumulative: bigint,
+  weights: bigint[],
+  total: bigint,
+): bigint[] {
+  if (
+    total <= 0n ||
+    cumulative < 0n ||
+    weights.length === 0 ||
+    weights.some((weight) => weight < 0n) ||
+    weights.reduce((sum, weight) => sum + weight, 0n) !== total
+  )
+    throw new Error("Invalid cash apportionment totals");
   const shares = weights.map((weight, index) => ({
     index,
     whole: (cumulative * weight) / total,
@@ -148,7 +160,7 @@ export function recogniseCashSettlements(
     if (next < 0n || next > source.totalMinor - source.nonCashCreditMinor) {
       throw new Error("Cash settlement exceeds uncredited document balance");
     }
-    const after = apportion(next, weights, source.totalMinor);
+    const after = apportionCashAmount(next, weights, source.totalMinor);
     const pieces = source.components.map((component, index) => {
       const recognisedMinor = after[index]! - before[index]!;
       if (

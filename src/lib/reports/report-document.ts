@@ -38,6 +38,8 @@ const cash = z.object({
 });
 export const factsSchema = z.object({
   schemaVersion: z.literal(1),
+  basis: z.enum(["accrual", "cash"]).optional(),
+  cashPolicy: z.string().optional(),
   capturedAt: z.string(),
   from: z.string(),
   to: z.string(),
@@ -134,6 +136,7 @@ export type ReportPresentation = {
 };
 
 export type ReportDocument = {
+  basis?: "accrual" | "cash";
   presentation?: ReportPresentation;
   summary?: Array<{ label: string; value: string }>;
   title: string;
@@ -194,6 +197,14 @@ export function buildReportDocument(
   raw: unknown,
   definition: { name: string; reportId?: string; config: Record<string, unknown> },
 ): ReportDocument {
+  if (
+    definition.config["basis"] === "cash" &&
+    !definition.config["settings"] &&
+    !definition.config["_builder"]
+  )
+    throw new Error(
+      "Cash reports require captured cash settings; refresh the report before exporting",
+    );
   if (
     typeof definition.config["settings"] === "string" &&
     (definition.reportId === "profit-and-loss" || definition.reportId === "balance-sheet") &&

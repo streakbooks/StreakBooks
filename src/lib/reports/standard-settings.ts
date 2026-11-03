@@ -3,8 +3,7 @@ import { isReportDate } from "./date-validation";
 import { reportFiltersSchema } from "./report-filters";
 export const standardSettingsSchema = z
   .object({
-    // Fail closed: cash reporting must never return accrual figures under a cash label.
-    basis: z.literal("accrual").default("accrual"),
+    basis: z.enum(["accrual", "cash"]).default("accrual"),
     group: z.enum(["total", "month", "quarter", "year"]).default("total"),
     compare: z
       .enum(["none", "prior_period", "prior_year", "ytd", "prior_ytd", "custom"])
@@ -56,9 +55,14 @@ export function resolveStandardSettings(search: {
   settings?: string;
   columns?: string;
   compare?: string;
+  basis?: "accrual" | "cash";
 }): StandardSettings {
-  if (search.settings) return standardSettingsSchema.parse(JSON.parse(search.settings));
+  if (search.settings) {
+    const parsed = standardSettingsSchema.parse(JSON.parse(search.settings));
+    return search.basis ? { ...parsed, basis: search.basis } : parsed;
+  }
   return standardSettingsSchema.parse({
+    basis: search.basis ?? "accrual",
     showTotal: search.compare !== "months",
     group:
       search.columns === "month" || search.columns === "quarter"

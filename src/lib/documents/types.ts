@@ -45,7 +45,7 @@ export function documentAppPath(kind: DocumentKind, id: string): string {
     case "purchase_bill":
       return `/purchases/bills/${id}`;
     case "purchase_order":
-      return `/purchases/orders`;
+      return `/purchases/orders/${id}`;
     case "purchase_credit_note":
       return `/purchases/credit-notes/${id}`;
     case "supplier_remittance":

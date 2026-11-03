@@ -1,3 +1,4 @@
+import { impliedDiscountMinor } from "@/lib/purchases/po-convert";
 /**
  * Pure mappers from database rows (as returned by Supabase) to the neutral PrintDocument
  * model used by the on-screen sheet, the print stylesheet and the e-mail templates.
@@ -429,7 +430,16 @@ export function mapPurchaseOrder(
     expiryDate: null,
     reference: null,
     party: supplierParty("Supplier", contact),
-    lines: sortedLines(lines, "line_no").map(salesLine),
+    lines: sortedLines(lines, "line_no").map((line) =>
+      salesLine({
+        ...line,
+        discount_minor: impliedDiscountMinor({
+          quantity: num(line["quantity"]),
+          unit_price_minor: num(line["unit_price_minor"]),
+          net_minor: num(line["net_minor"]),
+        }),
+      }),
+    ),
     showLines: true,
     totals: {
       subtotalMinor: num(row["subtotal_minor"]),

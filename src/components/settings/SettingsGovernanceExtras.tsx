@@ -1,3 +1,5 @@
+import { getIntegrationHealth } from "@/lib/settings/integration-health.functions";
+import { integrationStatusLabel } from "@/lib/settings/integration-health";
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -135,7 +137,12 @@ export function SettingsAutomationPanel({ companyId, canEdit }: Props) {
   );
 }
 
-export function SettingsIntegrationsPanel() {
+export function SettingsIntegrationsPanel({ companyId }: { companyId: string }) {
+  const fetch = useServerFn(getIntegrationHealth);
+  const health = useQuery({
+    queryKey: ["integration-health", companyId],
+    queryFn: () => fetch({ data: { companyId } }),
+  });
   return (
     <Card>
       <CardHeader>
@@ -145,21 +152,33 @@ export function SettingsIntegrationsPanel() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
-        <IntegrationRow
-          name="Outbound email (invitations & statements)"
-          status="Not configured"
-          detail="No email provider credentials are configured. Invitation rows can be created and shared manually; statements are not emailed."
-        />
-        <IntegrationRow
-          name="Live FX rate feed"
-          status="Not connected"
-          detail="Exchange rates are recorded manually (append-only). Posted journals keep their historical fx_rate_to_base snapshot."
-        />
-        <IntegrationRow
-          name="Bank open banking / feed aggregator"
-          status="Module-local"
-          detail="Bank feeds are managed under Banking. A disconnected feed never appears as connected from Settings."
-        />
+        {health.isPending ? (
+          <p role="status">Checking integration configuration…</p>
+        ) : health.isError ? (
+          <p role="alert">{friendlyAuthError(health.error)}</p>
+        ) : (
+          health.data.map((integration) => (
+            <IntegrationRow
+              key={integration.key}
+              name={integration.name}
+              status={integrationStatusLabel(integration.status)}
+              detail={integration.detail}
+            />
+          ))
+        )}
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={health.isFetching}
+          onClick={() => void health.refetch()}
+        >
+          Refresh status
+        </Button>
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/settings" search={{ section: "notifications" }}>
+            Check email delivery
+          </Link>
+        </Button>
         <IntegrationRow
           name="Address autocomplete"
           status="Not configured"

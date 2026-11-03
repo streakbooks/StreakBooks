@@ -11,9 +11,9 @@ describe("impliedDiscountMinor", () => {
     expect(impliedDiscountMinor({ quantity: 3, unit_price_minor: 1000, net_minor: 3000 })).toBe(0);
     expect(impliedDiscountMinor({ quantity: 1, unit_price_minor: 100, net_minor: 500 })).toBe(0);
   });
-  it("handles fractional quantities by rounding the gross", () => {
+  it("handles fractional quantities using the shared bill calculation", () => {
     expect(impliedDiscountMinor({ quantity: 1.5, unit_price_minor: 1001, net_minor: 1500 })).toBe(
-      2,
+      1,
     );
   });
 });

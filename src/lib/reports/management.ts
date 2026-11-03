@@ -90,6 +90,15 @@ export function forecastProjection(
         const month = addMonthsIso(cfg.start, i),
           actual = byMonth.get(month);
         const variance = actual ? BigInt(actual.revenueMinor) - rev : null;
+        const actualProfit = actual
+          ? BigInt(actual.revenueMinor) - BigInt(actual.expenseMinor)
+          : null;
+        const expenseVariance = actual ? BigInt(actual.expenseMinor) - cost : null;
+        const profitVariance = actualProfit === null ? null : actualProfit - (rev - cost);
+        const varianceBps = (value: bigint | null, projected: bigint) =>
+          value !== null && projected !== 0n
+            ? roundDiv(value * 10000n, projected < 0n ? -projected : projected).toString()
+            : null;
         return {
           month,
           projectedRevenueMinor: rev.toString(),
@@ -98,10 +107,12 @@ export function forecastProjection(
           actualRevenueMinor: actual?.revenueMinor ?? null,
           actualExpenseMinor: actual?.expenseMinor ?? null,
           revenueVarianceMinor: variance?.toString() ?? null,
-          revenueVarianceBps:
-            variance !== null && rev !== 0n
-              ? roundDiv(variance * 10000n, rev < 0n ? -rev : rev).toString()
-              : null,
+          revenueVarianceBps: varianceBps(variance, rev),
+          actualProfitMinor: actualProfit?.toString() ?? null,
+          expenseVarianceMinor: expenseVariance?.toString() ?? null,
+          expenseVarianceBps: varianceBps(expenseVariance, cost),
+          profitVarianceMinor: profitVariance?.toString() ?? null,
+          profitVarianceBps: varianceBps(profitVariance, rev - cost),
         };
       }),
     };

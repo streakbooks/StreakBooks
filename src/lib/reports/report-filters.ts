@@ -104,13 +104,12 @@ export const reportFilterSchema = z
   })
   .transform((clause) => ({
     ...clause,
-    values: [
-      ...new Set(
-        clause.op === "in" || clause.op === "not_in"
-          ? clause.values.filter(Boolean)
-          : clause.values,
-      ),
-    ],
+    // Only set-membership operators have unordered, duplicate-free values.
+    // Range endpoints are positional: equal endpoints define a valid inclusive range.
+    values:
+      clause.op === "in" || clause.op === "not_in"
+        ? [...new Set(clause.values.filter(Boolean))]
+        : clause.values,
   }))
   .superRefine((clause, ctx) => {
     const error = (message: string) => ctx.addIssue({ code: "custom", message });

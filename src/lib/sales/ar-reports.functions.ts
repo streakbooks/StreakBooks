@@ -9,7 +9,7 @@
  */
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { assertCompanyMember } from "@/lib/assert-company-access";
+import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
 import { fetchAllPages } from "@/lib/sales/fetch-all";
 import { resolveArAccount } from "@/lib/sales/ar-accounts";
@@ -20,7 +20,7 @@ import {
   type AsAtInvoice,
   type AsAtReceipt,
 } from "@/lib/sales/ar-asat";
-import { isIsoDateString } from "@/lib/sales/list-filters";
+import { isReportDate } from "@/lib/reports/date-validation";
 import { loadCompanyDefaults } from "@/lib/sales/sales-common";
 import type { SalesClient } from "@/lib/sales/rpc";
 
@@ -244,7 +244,7 @@ async function arControlBalanceAsAt(
 export const getAgedReceivablesAsAt = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { companyId: string; asOf?: string }) => {
-    if (input.asOf !== undefined && input.asOf !== "" && !isIsoDateString(input.asOf)) {
+    if (input.asOf !== undefined && input.asOf !== "" && !isReportDate(input.asOf)) {
       throw new Error("As-at date must be YYYY-MM-DD");
     }
     return { companyId: assertUuid(input.companyId), asOf: input.asOf || null };
@@ -252,6 +252,7 @@ export const getAgedReceivablesAsAt = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     await assertCompanyMember(supabase, data.companyId);
+    await assertCompanyPermission(supabase, data.companyId, "reports.view");
     const defaults = await loadCompanyDefaults(supabase, data.companyId);
     const asOf = data.asOf ?? defaults.today;
 

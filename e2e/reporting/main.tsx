@@ -1,3 +1,8 @@
+import { ForecastComparison } from "@/components/reports/ForecastComparison";
+import { forecastProjection } from "@/lib/reports/management";
+import { forecastSchema } from "@/lib/reports/ecosystem-model";
+import { ReportCatalogue } from "@/components/reports/ReportCatalogue";
+import { useRouterState, useNavigate } from "@tanstack/react-router";
 import { StandardReportControls } from "@/components/reports/StandardReportControls";
 import { ReportPeriodSelect } from "@/components/reports/ReportPeriodSelect";
 import { standardSettingsSchema, encodeStandardSettings } from "@/lib/reports/standard-settings";
@@ -87,6 +92,8 @@ export function Fixture() {
       <section aria-label="Standard report actions fixture" className="flex justify-end">
         <ReportActionsMenu from="2026-04-01" to="2026-11-02" />
       </section>
+      <CatalogueFixture />
+      <ForecastComparisonFixture />
       <StandardStatementFixture />
       <ActivityFixture />
       <h1 className="text-2xl font-semibold">Reporting and LookupSelect verification</h1>
@@ -263,6 +270,48 @@ function StandardStatementFixture() {
       {error && <p role="alert">{error}</p>}
       {doc && <DocumentPreview document={doc} compact={settings.compact} />}
     </section>
+  );
+}
+function ForecastComparisonFixture() {
+  const config = forecastSchema.parse({
+    start: "2026-11-01",
+    months: 2,
+    baselineFrom: "2026-10-01",
+    baselineTo: "2026-10-31",
+    scenarios: [
+      {
+        id: "base",
+        name: "Forecast test",
+        revenueGrowthBps: 0,
+        expenseGrowthBps: 0,
+        assumptions: "Synthetic fixture: no growth",
+      },
+    ],
+  });
+  const output = forecastProjection(config, { revenueMinor: "10000", expenseMinor: "6000" }, [
+    { month: "2026-11-01", revenueMinor: "12000", expenseMinor: "5000" },
+  ])[0]!;
+  return <ForecastComparison output={output} currency="GBP" />;
+}
+function CatalogueFixture() {
+  const raw = useRouterState({ select: (state) => state.location.search });
+  const search = parseReportingCentreSearch(raw as Record<string, unknown>);
+  const navigate = useNavigate();
+  return (
+    <ReportCatalogue
+      query={search.query ?? ""}
+      category={search.category ?? "all"}
+      from={search.from ?? "2026-04-01"}
+      to={search.to ?? "2026-11-02"}
+      onChange={({ query, category }) =>
+        void navigate({
+          to: "/reports",
+          search: parseReportingCentreSearch({ ...search, query, category }),
+          replace: true,
+          resetScroll: false,
+        })
+      }
+    />
   );
 }
 function ActivityFixture() {

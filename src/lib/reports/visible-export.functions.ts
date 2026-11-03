@@ -1,3 +1,4 @@
+import { isReportDate } from "./date-validation";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -13,8 +14,8 @@ const requestSchema = z
     title: z.string().min(1).max(150),
     companyName: z.string().min(1).max(200),
     currency: z.string().min(3).max(3),
-    from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-    to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    from: z.string().refine(isReportDate, "Choose a real calendar date"),
+    to: z.string().refine(isReportDate, "Choose a real calendar date"),
     basis: z.string().max(300).default(""),
     headers: z.array(z.string().min(1).max(150)).min(2).max(24),
     rows: z.array(z.array(text).min(1).max(24)).max(2000),
@@ -44,6 +45,7 @@ export const exportVisibleReport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => requestSchema.parse(input))
   .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
     await assertCompanyPermission(context.supabase, data.companyId, "reports.export");
     const capturedAt = new Date().toISOString();
     const document: ReportDocument = {

@@ -316,3 +316,116 @@ test("standard report comparison and filter shortcuts open the relevant controls
   await expect(page.getByLabel("Comparison from", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Cancel", exact: true }).click();
 });
+
+test("standard filters accept and retain a single-day inclusive range", async ({ page }) => {
+  await page.goto("/");
+  const region = page.getByRole("region", { name: "Standard statement fixture", exact: true });
+  await region.getByRole("button", { name: "Customize report", exact: true }).click();
+  await page.getByRole("tab", { name: "Filters", exact: true }).click();
+  await page.getByRole("button", { name: "Add condition", exact: true }).click();
+  await page.getByRole("combobox", { name: "Condition 1 field", exact: true }).click();
+  await page.getByRole("option", { name: "Journal date", exact: true }).click();
+  await page.getByRole("combobox", { name: "Condition 1 operator", exact: true }).click();
+  await page.getByRole("option", { name: "Between", exact: true }).click();
+  await page.getByLabel("Condition 1 value 1", { exact: true }).fill("2026-01-15");
+  await page.getByLabel("Condition 1 value 2", { exact: true }).fill("2026-01-15");
+  await page.getByRole("button", { name: "Apply report settings", exact: true }).click();
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  await region
+    .getByRole("button", { name: "Persist standard statement settings", exact: true })
+    .click();
+  await page.reload();
+  await region.getByRole("button", { name: "Customize report", exact: true }).click();
+  await page.getByRole("tab", { name: "Filters", exact: true }).click();
+  await expect(page.getByLabel("Condition 1 value 1", { exact: true })).toHaveValue("2026-01-15");
+  await expect(page.getByLabel("Condition 1 value 2", { exact: true })).toHaveValue("2026-01-15");
+});
+
+test("catalogue search and category survive reload with retained report dates", async ({
+  page,
+}) => {
+  await page.goto("/reports?tab=standard&from=2026-04-01&to=2026-10-31");
+  const catalogue = page.getByRole("region", { name: "Report catalogue", exact: true });
+  await catalogue.getByLabel("Search reports", { exact: true }).fill("aged");
+  await catalogue.getByLabel("Category", { exact: true }).selectOption("sales");
+  await expect(catalogue.getByRole("status")).toHaveText("1 report found");
+  await expect(page).toHaveURL(/query=aged/);
+  await page.reload();
+  await expect(catalogue.getByLabel("Search reports", { exact: true })).toHaveValue("aged");
+  await expect(catalogue.getByLabel("Category", { exact: true })).toHaveValue("sales");
+  const report = catalogue.getByRole("link", { name: /Aged Receivables/ }).last();
+  const href = await report.getAttribute("href");
+  expect(href).toContain("from=2026-04-01");
+  expect(href).toContain("to=2026-10-31");
+});
+
+test("catalogue keeps the chosen category visible and recovers from no matches", async ({
+  page,
+}) => {
+  await page.goto(
+    "/reports?query=aged&category=financial_statements&from=2026-04-01&to=2026-10-31",
+  );
+  const catalogue = page.getByRole("region", { name: "Report catalogue", exact: true });
+  await expect(catalogue.getByLabel("Category", { exact: true })).toHaveValue(
+    "financial_statements",
+  );
+  await expect(catalogue.getByRole("status")).toHaveText("0 reports found");
+  await expect(catalogue.getByText("No matching reports", { exact: true })).toBeVisible();
+  await catalogue.getByRole("button", { name: "Clear filters", exact: true }).click();
+  await expect(catalogue.getByLabel("Search reports", { exact: true })).toHaveValue("");
+  await expect(catalogue.getByLabel("Category", { exact: true })).toHaveValue("all");
+  await expect(page).not.toHaveURL(/query=|category=/);
+  await expect(page).toHaveURL(/from=2026-04-01/);
+  await expect(page).toHaveURL(/to=2026-10-31/);
+  await expect(catalogue.getByText("No matching reports", { exact: true })).toHaveCount(0);
+});
+
+test("catalogue filters are keyboard accessible and fit mobile", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/reports?query=aged");
+  const catalogue = page.getByRole("region", { name: "Report catalogue", exact: true });
+  await catalogue.getByLabel("Category", { exact: true }).focus();
+  await page.keyboard.press("Tab");
+  await expect(catalogue.getByRole("button", { name: "Clear filters", exact: true })).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(catalogue.getByLabel("Search reports", { exact: true })).toHaveValue("");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
+});
+
+test("catalogue matches separate search words without requiring the exact report title", async ({
+  page,
+}) => {
+  await page.goto("/reports?query=profit%20loss&category=financial_statements");
+  const catalogue = page.getByRole("region", { name: "Report catalogue", exact: true });
+  await expect(catalogue.getByRole("status")).toHaveText("1 report found");
+  await expect(catalogue.getByRole("link", { name: /Profit and Loss/ }).last()).toBeVisible();
+});
+
+test("forecast comparison exposes completed-month expense and profit variances without fabricating future actuals", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const comparison = page.getByRole("region", { name: "Forecast versus actual", exact: true });
+  const row = comparison.getByRole("row").filter({ hasText: "2026-11-01" });
+  const cells = row.getByRole("cell");
+  await expect(cells.nth(5)).toHaveText("70.00");
+  await expect(cells.nth(8)).toHaveText("-10.00");
+  await expect(cells.nth(9)).toHaveText("-16.67%");
+  await expect(cells.nth(10)).toHaveText("30.00");
+  await expect(cells.nth(11)).toHaveText("75.00%");
+  const future = comparison.getByRole("row").filter({ hasText: "2026-12-01" });
+  await expect(future).toContainText("No completed-month actual");
+  await expect(future).toContainText("Unavailable");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await comparison
+    .getByRole("region", { name: "Forecast comparison results", exact: true })
+    .focus();
+  await expect(
+    comparison.getByRole("region", { name: "Forecast comparison results", exact: true }),
+  ).toBeFocused();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
+});

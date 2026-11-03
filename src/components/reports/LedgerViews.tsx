@@ -515,9 +515,18 @@ export function AgedView({ ctx, kind }: { ctx: ReportCtx; kind: "ar" | "ap" }) {
       title={title}
       ctx={ctx}
       mode="asof"
+      basis={
+        kind === "ap"
+          ? "Current outstanding snapshot · historical payment allocation history is unavailable"
+          : "Dated receivables and allocations · currencies kept separate"
+      }
       getCsv={() =>
         d
           ? {
+              basis:
+                kind === "ap"
+                  ? "Current outstanding snapshot; historical dated allocations are unavailable"
+                  : "Dated receivables; base-currency table only",
               headers: ["Contact", "Current", "1-30", "31-60", "61-90", "90+", "Total"],
               rows: [
                 ...d.rows.map((r) => [

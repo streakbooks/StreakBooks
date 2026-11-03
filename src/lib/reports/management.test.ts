@@ -70,3 +70,76 @@ describe("documented management metrics and projected assumptions", () => {
     ).toThrow();
   });
 });
+
+describe("forecast expense and profit comparisons", () => {
+  const config = forecastSchema.parse({
+    start: "2026-11-01",
+    months: 2,
+    baselineFrom: "2026-10-01",
+    baselineTo: "2026-10-31",
+    scenarios: [
+      {
+        id: "base",
+        name: "Base",
+        revenueGrowthBps: 0,
+        expenseGrowthBps: 0,
+        assumptions: "No growth",
+      },
+    ],
+  });
+  it("reconciles actual profit and all variances with exact signed arithmetic", () => {
+    const rows = forecastProjection(config, { revenueMinor: "10000", expenseMinor: "6000" }, [
+      { month: "2026-11-01", revenueMinor: "12000", expenseMinor: "5000" },
+    ])[0]!.rows;
+    expect(rows[0]).toMatchObject({
+      actualProfitMinor: "7000",
+      revenueVarianceMinor: "2000",
+      revenueVarianceBps: "2000",
+      expenseVarianceMinor: "-1000",
+      expenseVarianceBps: "-1667",
+      profitVarianceMinor: "3000",
+      profitVarianceBps: "7500",
+    });
+    expect(rows[1]).toMatchObject({
+      actualProfitMinor: null,
+      expenseVarianceMinor: null,
+      expenseVarianceBps: null,
+      profitVarianceMinor: null,
+      profitVarianceBps: null,
+    });
+  });
+  it("uses absolute denominators for projected losses and leaves zero-denominator percentages unavailable", () => {
+    const row = forecastProjection(config, { revenueMinor: "0", expenseMinor: "6000" }, [
+      { month: "2026-11-01", revenueMinor: "0", expenseMinor: "3000" },
+    ])[0]!.rows[0]!;
+    expect(row).toMatchObject({
+      revenueVarianceBps: null,
+      actualProfitMinor: "-3000",
+      profitVarianceMinor: "3000",
+      profitVarianceBps: "5000",
+      expenseVarianceBps: "-5000",
+    });
+    const zero = forecastProjection(config, { revenueMinor: "0", expenseMinor: "0" }, [
+      { month: "2026-11-01", revenueMinor: "0", expenseMinor: "0" },
+    ])[0]!.rows[0]!;
+    expect(zero.actualProfitMinor).toBe("0");
+    expect(zero.profitVarianceMinor).toBe("0");
+    expect(zero.profitVarianceBps).toBeNull();
+  });
+  it("preserves amounts beyond Number precision", () => {
+    const row = forecastProjection(
+      config,
+      { revenueMinor: "900719925474099301", expenseMinor: "900719925474099300" },
+      [
+        {
+          month: "2026-11-01",
+          revenueMinor: "900719925474099304",
+          expenseMinor: "900719925474099300",
+        },
+      ],
+    )[0]!.rows[0]!;
+    expect(row.actualProfitMinor).toBe("4");
+    expect(row.profitVarianceMinor).toBe("3");
+    expect(row.profitVarianceBps).toBe("30000");
+  });
+});

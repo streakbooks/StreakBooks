@@ -47,3 +47,32 @@ describe("bounded reporting filter definitions", () => {
     expect(filterFingerprint(first)).toBe(filterFingerprint(second));
   });
 });
+
+describe("inclusive reporting ranges", () => {
+  it.each([
+    { field: "journal_date", values: ["2026-11-03", "2026-11-03"] },
+    { field: "debit", values: ["100.00", "100.00"] },
+    { field: "credit", values: ["-0.01", "-0.01"] },
+    { field: "debit", values: ["9007199254740993.01", "9007199254740993.01"] },
+  ])("preserves both inclusive endpoints: %o", ({ field, values }) => {
+    const filters = reportFiltersSchema.parse({ clauses: [{ field, op: "between", values }] });
+    expect(filters.clauses[0]!.values).toEqual(values);
+    expect(describeReportFilters(filters)).toContain(`${values[0]} to ${values[1]}`);
+    expect(reportFiltersSchema.parse(JSON.parse(JSON.stringify(filters)))).toEqual(filters);
+  });
+
+  it("rejects duplicate surplus range endpoints instead of repairing malformed input", () => {
+    expect(() =>
+      reportFiltersSchema.parse({
+        clauses: [{ field: "debit", op: "between", values: ["1", "2", "2"] }],
+      }),
+    ).toThrow();
+  });
+
+  it.each(["in", "not_in"])("still deduplicates %s selections", (op) => {
+    const filters = reportFiltersSchema.parse({
+      clauses: [{ field: "memo", op, values: ["Alpha", "", "Alpha", "Beta"] }],
+    });
+    expect(filters.clauses[0]!.values).toEqual(["Alpha", "Beta"]);
+  });
+});

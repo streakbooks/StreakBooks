@@ -125,4 +125,88 @@ test.describe("authenticated LinkBooks staging smoke", () => {
     ).toBeVisible();
     await page.keyboard.press("Escape");
   });
+
+  test("Reports catalogue retains discovery filters and dates through reload", async ({ page }) => {
+    await signIn(page, "/reports?tab=standard&from=2026-01-01&to=2026-01-31");
+    const catalogue = page.getByRole("region", { name: "Report catalogue", exact: true });
+    await expect(catalogue).toBeVisible();
+    await catalogue.getByLabel("Search reports", { exact: true }).fill("profit loss");
+    await catalogue.getByLabel("Category", { exact: true }).selectOption("financial_statements");
+    await expect(catalogue.getByRole("status")).toHaveText("1 report found");
+    await page.reload();
+    await expect(catalogue.getByLabel("Search reports", { exact: true })).toHaveValue(
+      "profit loss",
+    );
+    await expect(catalogue.getByLabel("Category", { exact: true })).toHaveValue(
+      "financial_statements",
+    );
+    await catalogue
+      .getByRole("link", { name: /Profit and Loss/ })
+      .last()
+      .click();
+    await expect(page).toHaveURL(/from=2026-01-01/);
+    await expect(page).toHaveURL(/to=2026-01-31/);
+    await expect(page.getByRole("article")).toBeVisible();
+  });
+
+  test("posted-ledger P&L accepts an inclusive single-day filter through the authenticated server", async ({
+    page,
+  }) => {
+    await signIn(page, "/reports/profit-and-loss?from=2026-01-01&to=2026-01-31");
+    await expect(page.getByRole("article")).toBeVisible();
+    await page.getByRole("button", { name: "Customize report", exact: true }).click();
+    await page.getByRole("tab", { name: "Filters", exact: true }).click();
+    await page.getByRole("button", { name: "Add condition", exact: true }).click();
+    await page.getByRole("combobox", { name: "Condition 1 field", exact: true }).click();
+    await page.getByRole("option", { name: "Journal date", exact: true }).click();
+    await page.getByRole("combobox", { name: "Condition 1 operator", exact: true }).click();
+    await page.getByRole("option", { name: "Between", exact: true }).click();
+    await page.getByLabel("Condition 1 value 1", { exact: true }).fill("2026-01-15");
+    await page.getByLabel("Condition 1 value 2", { exact: true }).fill("2026-01-15");
+    await page.getByRole("button", { name: "Apply report settings", exact: true }).click();
+    await expect(page.getByRole("article")).toContainText(
+      "Journal date between 2026-01-15 to 2026-01-15",
+    );
+    await page.reload();
+    await expect(page.getByRole("article")).toContainText(
+      "Journal date between 2026-01-15 to 2026-01-15",
+    );
+  });
+
+  test("authenticated financial CSV export retains the active statement period", async ({
+    page,
+  }) => {
+    await signIn(page, "/reports/profit-and-loss?from=2026-01-01&to=2026-01-31");
+    await expect(page.getByRole("article")).toBeVisible();
+    await page.getByRole("button", { name: "Download report", exact: true }).click();
+    const pending = page.waitForEvent("download");
+    await page.getByRole("menuitem", { name: "CSV data (.csv)", exact: true }).click();
+    const download = await pending;
+    expect(download.suggestedFilename()).toBe("profit-and-loss-2026-01-31.csv");
+    expect(await download.failure()).toBeNull();
+    const stream = await download.createReadStream();
+    if (!stream) throw new Error("The report download stream is unavailable");
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream) chunks.push(Buffer.from(chunk));
+    const content = Buffer.concat(chunks).toString("utf8");
+    // Do not log financial rows or attach report artifacts to the CI output.
+    expect(content.includes("2026-01-01 to 2026-01-31")).toBe(true);
+    expect(content.includes("Net profit")).toBe(true);
+  });
+
+  test("management report dates follow the Reports Centre without discarding dashboard edits", async ({
+    page,
+  }) => {
+    await signIn(page, "/reports?tab=management&from=2026-01-01&to=2026-01-31");
+    await expect(page.getByLabel("Dashboard name", { exact: true })).toBeVisible();
+    await page.getByLabel("Dashboard name", { exact: true }).fill("Unsaved reporting review");
+    await page.getByLabel("Reporting period from", { exact: true }).fill("2026-01-02");
+    await expect(page.getByLabel("From", { exact: true })).toHaveValue("2026-01-02");
+    await expect(page.getByLabel("Dashboard name", { exact: true })).toHaveValue(
+      "Unsaved reporting review",
+    );
+    await page.getByLabel("To", { exact: true }).fill("2026-01-30");
+    await expect(page.getByLabel("Reporting period to", { exact: true })).toHaveValue("2026-01-30");
+    await expect(page).toHaveURL(/to=2026-01-30/);
+  });
 });

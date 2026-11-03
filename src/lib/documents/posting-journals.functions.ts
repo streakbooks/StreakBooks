@@ -99,9 +99,9 @@ export const listDocumentPostingJournals = createServerFn({ method: "GET" })
       combined.set(row.id, row);
     }
     return [...combined.values()]
-      .sort((a, b) =>
-        a.journal_date.localeCompare(b.journal_date) ||
-        a.journal_number - b.journal_number,
+      .sort(
+        (a, b) =>
+          a.journal_date.localeCompare(b.journal_date) || a.journal_number - b.journal_number,
       )
       .map(({ journal_lines, ...j }) => ({
         ...j,

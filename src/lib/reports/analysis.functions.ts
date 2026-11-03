@@ -1,3 +1,4 @@
+import { loadDepreciationExpenseAccounts } from "./depreciation-accounts.server";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyPermission } from "@/lib/assert-company-access";
@@ -346,7 +347,7 @@ export const getCashFlowIndirect = createServerFn({ method: "GET" })
       }),
       fetchLedgerBalances(ctx.supabase, ctx.meta.id, base, { to: openingDate }),
       fetchLedgerBalances(ctx.supabase, ctx.meta.id, base, { to: data.to }),
-      depreciationExpenseAccounts(ctx.supabase, data.companyId),
+      loadDepreciationExpenseAccounts(ctx.supabase, data.companyId),
     ]);
     const sumBank = (rows: typeof opening) =>
       rows
@@ -374,18 +375,3 @@ export const getCashFlowIndirect = createServerFn({ method: "GET" })
         "Indirect method from the posted ledger (year-end closing journals excluded). A gain or loss on disposal stays in net profit and the asset's net book value shows under investing.",
     };
   });
-
-/** Expense accounts the fixed-asset register depreciates into; empty before that module exists. */
-async function depreciationExpenseAccounts(sb: Sb, companyId: string): Promise<string[]> {
-  const { data, error } = await sb
-    .from("fixed_assets" as never)
-    .select("expense_account_id" as never)
-    .eq("company_id" as never, companyId as never)
-    .limit(1000);
-  if (error) return [];
-  return [
-    ...new Set(
-      ((data ?? []) as Array<{ expense_account_id: string }>).map((r) => r.expense_account_id),
-    ),
-  ];
-}

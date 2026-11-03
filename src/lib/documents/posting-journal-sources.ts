@@ -26,14 +26,10 @@ const SOURCES: Partial<Record<PostingJournalEntityType, readonly string[]>> = {
   journal: ["manual", "opening_balance", "reversal", "other"],
 };
 
-export function postingJournalSourceTypes(
-  entityType: PostingJournalEntityType,
-): readonly string[] {
+export function postingJournalSourceTypes(entityType: PostingJournalEntityType): readonly string[] {
   return SOURCES[entityType] ?? [];
 }
 
-export function isPostingJournalEntityType(
-  value: unknown,
-): value is PostingJournalEntityType {
+export function isPostingJournalEntityType(value: unknown): value is PostingJournalEntityType {
   return typeof value === "string" && Object.prototype.hasOwnProperty.call(SOURCES, value);
 }

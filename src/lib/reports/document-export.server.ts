@@ -1,4 +1,9 @@
-import { documentCellStyle, documentNumericValue, documentCsvValue } from "./document-format";
+import {
+  documentCellStyle,
+  documentNumericValue,
+  documentCsvValue,
+  isDocumentNumber,
+} from "./document-format";
 import ExcelJS from "exceljs";
 import type { ReportDocument } from "./report-document";
 import { toCsv } from "./csv";
@@ -82,7 +87,7 @@ export async function exportReportXlsx(doc: ReportDocument): Promise<Uint8Array>
       const data = sheet.addRow([
         row.label,
         ...row.values.map((value, i) => {
-          if (value === "" || value === "Unavailable") return value;
+          if (!isDocumentNumber(value)) return value;
           value = documentNumericValue(value, {
             ...documentCellStyle(row, section, i),
             decimals: value.split(".")[1]?.length ?? 0,
@@ -111,6 +116,10 @@ export async function exportReportXlsx(doc: ReportDocument): Promise<Uint8Array>
       data.getCell(1).alignment = { indent: row.indent ?? 0, wrapText: true };
       row.values.forEach((value, i) => {
         const cell = data.getCell(i + 2);
+        if (!isDocumentNumber(value)) {
+          cell.numFmt = "@";
+          return;
+        }
         const decimals =
           documentNumericValue(value, documentCellStyle(row, section, i)).split(".")[1]?.length ??
           0;

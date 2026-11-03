@@ -173,7 +173,7 @@ export const REPORT_CATALOG: ReportDef[] = [
     id: "aged-payables",
     title: "Aged Payables",
     description:
-      "Outstanding posted supplier bills by ageing bucket, reconciled to the payables control account.",
+      "Current outstanding posted supplier bills by ageing bucket, compared with the payables control account. Historical dates require retained allocation history.",
     category: "purchases",
     tags: ["ap", "ageing"],
     status: "ready",
@@ -344,11 +344,11 @@ export function getReportById(id: string): ReportDef | undefined {
 }
 
 export function searchReports(q: string): ReportDef[] {
-  const needle = q.trim().toLowerCase();
-  if (!needle) return REPORT_CATALOG;
+  const terms = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (!terms.length) return REPORT_CATALOG;
   return REPORT_CATALOG.filter((r) => {
     const hay = `${r.title} ${r.description} ${r.tags.join(" ")} ${r.id}`.toLowerCase();
-    return hay.includes(needle);
+    return terms.every((term) => hay.includes(term));
   });
 }
 

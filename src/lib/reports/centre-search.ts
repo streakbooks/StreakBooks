@@ -1,3 +1,4 @@
+import { REPORT_CATEGORIES, type ReportCategoryId } from "./catalog";
 import { isReportDate } from "./date-validation";
 export const REPORTING_TABS = [
   "home",
@@ -18,12 +19,18 @@ export function parseReportingCentreSearch(raw: Record<string, unknown>): {
   from?: string;
   to?: string;
   pack?: string | undefined;
+  query?: string;
+  category?: ReportCategoryId;
 } {
-  const result: { tab?: ReportingTab; from?: string; to?: string; pack?: string } = {
+  const result: ReturnType<typeof parseReportingCentreSearch> = {
     tab: REPORTING_TABS.includes(raw["tab"] as ReportingTab)
       ? (raw["tab"] as ReportingTab)
       : "standard",
   };
+  if (typeof raw["query"] === "string" && raw["query"].trim())
+    result.query = raw["query"].slice(0, 120);
+  if (REPORT_CATEGORIES.some((category) => category.id === raw["category"]))
+    result.category = raw["category"] as ReportCategoryId;
   const pack = raw["pack"];
   if (
     typeof pack === "string" &&

@@ -533,4 +533,62 @@ test.describe("deep links in authenticated module workspaces", () => {
     await page.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0);
   });
+
+  test("mobile Sales invoice cards preserve preview, native full invoice links and table access", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await signIn(page, "/sales/invoices");
+    const toTable = page.getByRole("button", { name: "Switch invoices to table view" });
+    await expect(toTable).toBeVisible();
+    const cards = page.getByRole("region", { name: "Mobile invoices" });
+    const rows = cards.locator("article");
+    if ((await rows.count()) > 0) {
+      const first = rows.first();
+      await expect(first.getByText("Outstanding", { exact: true })).toBeVisible();
+      const link = first.getByRole("link", { name: /^Open invoice / });
+      await expect(link).toHaveAttribute("href", /\/sales\/invoices\/[^/]+/);
+      const url = page.url();
+      await first.getByRole("button", { name: /^Preview invoice / }).click();
+      await expect(page.getByRole("dialog")).toBeVisible();
+      expect(page.url()).toBe(url);
+      await page.keyboard.press("Escape");
+    }
+    await toTable.click();
+    await expect(page.getByRole("button", { name: "Switch invoices to cards view" })).toBeVisible();
+    if ((await rows.count()) > 0) await expect(cards).toHaveCount(0);
+    await page.getByRole("button", { name: "Switch invoices to cards view" }).click();
+    await expect(toTable).toBeVisible();
+    await expect(page.getByRole("button", { name: "Saved views" })).toBeVisible();
+  });
+
+  test("mobile Purchases bills keep selection, approval bar and document preview", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await signIn(page, "/purchases/bills");
+    const toTable = page.getByRole("button", { name: "Switch bills to table view" });
+    await expect(toTable).toBeVisible();
+    const cards = page.getByRole("region", { name: "Mobile bills" });
+    const rows = cards.locator("article");
+    if ((await rows.count()) > 0) {
+      const first = rows.first();
+      await expect(first.getByText("Outstanding AP")).toBeVisible();
+      const select = first.getByRole("checkbox", { name: /^Select bill / });
+      await select.check();
+      const bar = page.getByRole("region", { name: "Selected record actions" });
+      await expect(bar).toContainText("1 record selected");
+      await bar.getByRole("button", { name: "Clear selected records" }).click();
+      await expect(bar).toHaveCount(0);
+      const url = page.url();
+      await first.getByRole("button", { name: /^Preview bill / }).click();
+      await expect(page.getByRole("dialog")).toBeVisible();
+      expect(page.url()).toBe(url);
+      await page.keyboard.press("Escape");
+    }
+    await toTable.click();
+    await expect(page.getByRole("button", { name: "Switch bills to cards view" })).toBeVisible();
+    await page.getByRole("button", { name: "Switch bills to cards view" }).click();
+    await expect(toTable).toBeVisible();
+  });
 });

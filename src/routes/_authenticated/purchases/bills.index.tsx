@@ -16,6 +16,12 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  MobileListViewToggle,
+  type MobileListView,
+} from "@/components/common/MobileListViewToggle";
+import { BillMobileCards } from "@/components/purchases/BillMobileCards";
 import {
   authoriseBill,
   exportBillsCsv,
@@ -290,6 +296,8 @@ function BillsWorkspace() {
   const [searchDraft, setSearchDraft] = useState(q);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [previewId, setPreviewId] = useState<string | null>(null);
+  const isMobile = useIsMobile();
+  const [mobileView, setMobileView] = useState<MobileListView>("cards");
   const [showHelp, setShowHelp] = useState(false);
   const [prefs, setPrefs] = useState<BillsListWorkspacePrefs>(DEFAULT_BILLS_LIST_PREFS);
 
@@ -931,6 +939,7 @@ function BillsWorkspace() {
                 )}
               </div>
               <div className="ml-auto flex flex-wrap items-center gap-1">
+                <MobileListViewToggle view={mobileView} onChange={setMobileView} context="bills" />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm">
@@ -1094,6 +1103,31 @@ function BillsWorkspace() {
                 title="No bills in this view"
                 description="Adjust filters or create a new supplier bill."
                 actionLabel="New bill"
+              />
+            ) : isMobile && mobileView === "cards" ? (
+              <BillMobileCards
+                rows={rows}
+                selected={selected}
+                density={prefs.density}
+                baseCurrency={baseCurrency}
+                money={(minor, currency) => fromMinorUnits(BigInt(minor), currency)}
+                onSelect={(id, checked) =>
+                  setSelected((previous) => {
+                    const next = new Set(previous);
+                    if (checked) next.add(id);
+                    else next.delete(id);
+                    return next;
+                  })
+                }
+                onPreview={setPreviewId}
+                onOpen={(id) => {
+                  const bill = rows.find((row) => row.id === id);
+                  if (bill) openBill(bill);
+                }}
+                onOpenFiles={(id) => {
+                  const bill = rows.find((row) => row.id === id);
+                  if (bill) openBill(bill, { files: true });
+                }}
               />
             ) : (
               <div className={cn("overflow-x-auto rounded-lg border border-border", densityClass)}>

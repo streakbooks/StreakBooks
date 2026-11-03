@@ -6,6 +6,13 @@ import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useFormat } from "@/hooks/use-format";
 import { useTablePrefs } from "@/hooks/use-table-prefs";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  MobileListViewToggle,
+  type MobileListView,
+} from "@/components/common/MobileListViewToggle";
+import { InvoiceMobileCards } from "@/components/sales/InvoiceMobileCards";
+import { invoiceIsOverdue, invoiceOutstandingMinor } from "@/lib/sales/invoice-list-display";
 import { TableAppearanceControls } from "@/components/common/TableAppearanceControls";
 import { DocumentPreviewExtras } from "@/components/documents/DocumentPreviewExtras";
 import { exportInvoicesCsv, listInvoices } from "@/lib/sales/sales.functions";
@@ -96,6 +103,8 @@ function InvoicesList() {
   const [state, setState] = useState<ListState>(initialListState("invoice_date"));
   const [overdue, setOverdue] = useState(false);
   const [previewId, setPreviewId] = useState<string | null>(null);
+  const isMobile = useIsMobile();
+  const [mobileView, setMobileView] = useState<MobileListView>("cards");
   const tablePrefs = useTablePrefs(
     `${user.id}:${companyId ?? "none"}:sales-invoices`,
     INVOICE_OPTIONAL_IDS,
@@ -252,6 +261,7 @@ function InvoicesList() {
             }}
           />
         </div>
+        <MobileListViewToggle view={mobileView} onChange={setMobileView} context="invoices" />
         <TableAppearanceControls
           columns={INVOICE_OPTIONAL_COLUMNS}
           hidden={tablePrefs.hidden}
@@ -285,161 +295,174 @@ function InvoicesList() {
         />
       ) : (
         <>
-          <TableCard>
-            <Table
-              className={
-                tablePrefs.density === "compact"
-                  ? "[&_th]:h-8 [&_td]:py-1.5 [&_td]:text-xs"
-                  : undefined
-              }
-            >
-              <TableHeader>
-                <TableRow>
-                  <SortHead label="Number" column="invoice_number" state={state} onChange={patch} />
-                  {tablePrefs.isVisible("date") ? (
+          {isMobile && mobileView === "cards" ? (
+            <InvoiceMobileCards
+              rows={rows}
+              today={today}
+              density={tablePrefs.density}
+              date={(value) => fmt.date(value)}
+              money={(minor, currency) => fmt.money(minor, currency)}
+              onPreview={setPreviewId}
+            />
+          ) : (
+            <TableCard>
+              <Table
+                className={
+                  tablePrefs.density === "compact"
+                    ? "[&_th]:h-8 [&_td]:py-1.5 [&_td]:text-xs"
+                    : undefined
+                }
+              >
+                <TableHeader>
+                  <TableRow>
                     <SortHead
-                      label="Date"
-                      column="invoice_date"
+                      label="Number"
+                      column="invoice_number"
                       state={state}
                       onChange={patch}
-                      className="hidden lg:table-cell"
                     />
-                  ) : null}
-                  {tablePrefs.isVisible("due") ? (
+                    {tablePrefs.isVisible("date") ? (
+                      <SortHead
+                        label="Date"
+                        column="invoice_date"
+                        state={state}
+                        onChange={patch}
+                        className="hidden lg:table-cell"
+                      />
+                    ) : null}
+                    {tablePrefs.isVisible("due") ? (
+                      <SortHead
+                        label="Due"
+                        column="due_date"
+                        state={state}
+                        onChange={patch}
+                        className="hidden lg:table-cell"
+                      />
+                    ) : null}
+                    <TableHead>Customer</TableHead>
+                    <SortHead label="Status" column="status" state={state} onChange={patch} />
                     <SortHead
-                      label="Due"
-                      column="due_date"
+                      label="Total"
+                      column="total_minor"
                       state={state}
                       onChange={patch}
-                      className="hidden lg:table-cell"
+                      className="text-right"
                     />
-                  ) : null}
-                  <TableHead>Customer</TableHead>
-                  <SortHead label="Status" column="status" state={state} onChange={patch} />
-                  <SortHead
-                    label="Total"
-                    column="total_minor"
-                    state={state}
-                    onChange={patch}
-                    className="text-right"
-                  />
-                  {tablePrefs.isVisible("outstanding") ? (
-                    <TableHead className="hidden text-right lg:table-cell">Outstanding</TableHead>
-                  ) : null}
-                  <TableHead className="sticky right-0 z-10 min-w-[120px] bg-muted/95 text-right">
-                    Actions
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((inv) => {
-                  const live = ["authorised", "partly_paid"].includes(inv.status);
-                  const out = live
-                    ? inv.total_minor - inv.amount_paid_minor - inv.amount_credited_minor
-                    : 0;
-                  const isOverdue = live && out > 0 && inv.due_date < today;
-                  return (
-                    <TableRow key={inv.id}>
-                      <TableCell>
-                        <Link
-                          to="/sales/invoices/$invoiceId"
-                          params={{ invoiceId: inv.id }}
-                          className="underline-offset-2 hover:underline"
-                        >
-                          {inv.invoice_number ?? inv.id.slice(0, 8)}
-                        </Link>
-                      </TableCell>
-                      {tablePrefs.isVisible("date") ? (
-                        <TableCell className="hidden lg:table-cell">
+                    {tablePrefs.isVisible("outstanding") ? (
+                      <TableHead className="hidden text-right lg:table-cell">Outstanding</TableHead>
+                    ) : null}
+                    <TableHead className="sticky right-0 z-10 min-w-[120px] bg-muted/95 text-right">
+                      Actions
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rows.map((inv) => {
+                    const out = invoiceOutstandingMinor(inv);
+                    const isOverdue = invoiceIsOverdue(inv, today);
+                    return (
+                      <TableRow key={inv.id}>
+                        <TableCell>
                           <Link
                             to="/sales/invoices/$invoiceId"
                             params={{ invoiceId: inv.id }}
-                            className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                            className="underline-offset-2 hover:underline"
                           >
-                            {fmt.date(inv.invoice_date)}
+                            {inv.invoice_number ?? inv.id.slice(0, 8)}
                           </Link>
                         </TableCell>
-                      ) : null}
-                      {tablePrefs.isVisible("due") ? (
-                        <TableCell className="hidden lg:table-cell">
-                          <Link
-                            to="/sales/invoices/$invoiceId"
-                            params={{ invoiceId: inv.id }}
-                            className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
-                          >
-                            {fmt.date(inv.due_date)}
-                          </Link>
-                        </TableCell>
-                      ) : null}
-                      <TableCell>
-                        <Link
-                          to="/sales/invoices/$invoiceId"
-                          params={{ invoiceId: inv.id }}
-                          className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
-                        >
-                          {inv.contacts?.name ?? "—"}
-                        </Link>
-                      </TableCell>
-                      <TableCell>
-                        <Link
-                          to="/sales/invoices/$invoiceId"
-                          params={{ invoiceId: inv.id }}
-                          className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
-                        >
-                          <StatusBadge status={isOverdue ? "overdue" : inv.status} />
-                        </Link>
-                      </TableCell>
-                      <TableCell className="money">
-                        <Link
-                          to="/sales/invoices/$invoiceId"
-                          params={{ invoiceId: inv.id }}
-                          className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
-                        >
-                          {fmt.money(inv.total_minor, inv.currency_code)}
-                        </Link>
-                      </TableCell>
-                      {tablePrefs.isVisible("outstanding") ? (
-                        <TableCell className="money hidden lg:table-cell">
-                          <Link
-                            to="/sales/invoices/$invoiceId"
-                            params={{ invoiceId: inv.id }}
-                            className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
-                          >
-                            {fmt.money(out, inv.currency_code)}
-                          </Link>
-                        </TableCell>
-                      ) : null}
-                      <TableCell className="sticky right-0 z-10 border-l bg-card text-right">
-                        <div className="flex flex-wrap justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setPreviewId(inv.id)}
-                            aria-label={
-                              "Preview invoice " + (inv.invoice_number ?? inv.id.slice(0, 8))
-                            }
-                          >
-                            Preview
-                          </Button>
-                          <Button asChild variant="outline" size="sm">
+                        {tablePrefs.isVisible("date") ? (
+                          <TableCell className="hidden lg:table-cell">
                             <Link
                               to="/sales/invoices/$invoiceId"
                               params={{ invoiceId: inv.id }}
+                              className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                            >
+                              {fmt.date(inv.invoice_date)}
+                            </Link>
+                          </TableCell>
+                        ) : null}
+                        {tablePrefs.isVisible("due") ? (
+                          <TableCell className="hidden lg:table-cell">
+                            <Link
+                              to="/sales/invoices/$invoiceId"
+                              params={{ invoiceId: inv.id }}
+                              className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                            >
+                              {fmt.date(inv.due_date)}
+                            </Link>
+                          </TableCell>
+                        ) : null}
+                        <TableCell>
+                          <Link
+                            to="/sales/invoices/$invoiceId"
+                            params={{ invoiceId: inv.id }}
+                            className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                          >
+                            {inv.contacts?.name ?? "—"}
+                          </Link>
+                        </TableCell>
+                        <TableCell>
+                          <Link
+                            to="/sales/invoices/$invoiceId"
+                            params={{ invoiceId: inv.id }}
+                            className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                          >
+                            <StatusBadge status={isOverdue ? "overdue" : inv.status} />
+                          </Link>
+                        </TableCell>
+                        <TableCell className="money">
+                          <Link
+                            to="/sales/invoices/$invoiceId"
+                            params={{ invoiceId: inv.id }}
+                            className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                          >
+                            {fmt.money(inv.total_minor, inv.currency_code)}
+                          </Link>
+                        </TableCell>
+                        {tablePrefs.isVisible("outstanding") ? (
+                          <TableCell className="money hidden lg:table-cell">
+                            <Link
+                              to="/sales/invoices/$invoiceId"
+                              params={{ invoiceId: inv.id }}
+                              className="block w-full rounded-sm underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                            >
+                              {fmt.money(out, inv.currency_code)}
+                            </Link>
+                          </TableCell>
+                        ) : null}
+                        <TableCell className="sticky right-0 z-10 border-l bg-card text-right">
+                          <div className="flex flex-wrap justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setPreviewId(inv.id)}
                               aria-label={
-                                "Open invoice " + (inv.invoice_number ?? inv.id.slice(0, 8))
+                                "Preview invoice " + (inv.invoice_number ?? inv.id.slice(0, 8))
                               }
                             >
-                              Open
-                            </Link>
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </TableCard>
+                              Preview
+                            </Button>
+                            <Button asChild variant="outline" size="sm">
+                              <Link
+                                to="/sales/invoices/$invoiceId"
+                                params={{ invoiceId: inv.id }}
+                                aria-label={
+                                  "Open invoice " + (inv.invoice_number ?? inv.id.slice(0, 8))
+                                }
+                              >
+                                Open
+                              </Link>
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TableCard>
+          )}
           <Pager total={query.data?.total ?? 0} state={state} onChange={patch} />
         </>
       )}
@@ -481,11 +504,7 @@ function InvoicesList() {
                   <dt className="text-muted-foreground">Outstanding</dt>
                   <dd className="mt-1 font-semibold tabular-nums">
                     {fmt.money(
-                      ["authorised", "partly_paid"].includes(previewInvoice.status)
-                        ? previewInvoice.total_minor -
-                            previewInvoice.amount_paid_minor -
-                            previewInvoice.amount_credited_minor
-                        : 0,
+                      invoiceOutstandingMinor(previewInvoice),
                       previewInvoice.currency_code,
                     )}
                   </dd>

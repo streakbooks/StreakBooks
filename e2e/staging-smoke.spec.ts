@@ -73,4 +73,32 @@ test.describe("authenticated LinkBooks staging smoke", () => {
     await page.getByRole("button", { name: "Switch to transaction cards" }).click();
     await expect(page.getByRole("button", { name: "Switch to transaction table" })).toBeVisible();
   });
+
+  test("mobile Sales invoices switch between cards and desktop table without posting", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await signIn(page, "/sales/invoices");
+    const table = page.getByRole("button", { name: "Switch invoices to table view" });
+    await expect(table).toBeVisible();
+    await table.click();
+    await expect(page.getByRole("button", { name: "Switch invoices to cards view" })).toBeVisible();
+    await page.getByRole("button", { name: "Switch invoices to cards view" }).click();
+    await expect(table).toBeVisible();
+    await expect(page.getByRole("button", { name: "Saved views" })).toBeVisible();
+  });
+
+  test("mobile Purchases bills switch views while preserving workflow filters", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await signIn(page, "/purchases/bills");
+    const table = page.getByRole("button", { name: "Switch bills to table view" });
+    await expect(table).toBeVisible();
+    await table.click();
+    await expect(page.getByRole("button", { name: "Switch bills to cards view" })).toBeVisible();
+    await page.getByRole("button", { name: "Switch bills to cards view" }).click();
+    await expect(table).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Bill workflow" })).toBeVisible();
+  });
 });

@@ -14,18 +14,12 @@ import { friendlyAuthError } from "@/lib/auth-helpers";
 import { PageHeader, ErrorState, LoadingState, CardGridSkeleton } from "@/components/common/states";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import {
-  AgeingWidget,
-  ApprovalsWidget,
-  BankAccountsWidget,
-  CashFlowWidget,
   GettingStarted,
   KpiRow,
-  ProfitWidget,
   QuickActions,
   ReconcileAction,
-  TasksWidget,
-  WatchlistWidget,
 } from "@/components/dashboard/DashboardWidgets";
+import { PersonalizedDashboardWidgets } from "@/components/dashboard/PersonalizedDashboardWidgets";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -176,15 +170,8 @@ function Dashboard() {
         <div className="space-y-6">
           <GettingStarted data={data} />
           <KpiRow data={data} />
+          <PersonalizedDashboardWidgets data={data} companyId={companyId} />
           <div className="grid gap-6 lg:grid-cols-3">
-            <CashFlowWidget data={data} />
-            <BankAccountsWidget data={data} />
-            <AgeingWidget kind="receivables" data={data} />
-            <AgeingWidget kind="payables" data={data} />
-            <ProfitWidget data={data} />
-            <ApprovalsWidget data={data} />
-            <WatchlistWidget data={data} />
-            <TasksWidget data={data} />
             {isDemo ? (
               <Card>
                 <CardHeader>

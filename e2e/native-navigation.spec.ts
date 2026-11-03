@@ -175,4 +175,61 @@ test.describe("deep links in authenticated module workspaces", () => {
       await expect(links.first()).toHaveAttribute("href", /purchases\/bills\//);
     }
   });
+
+  test("workspace navigation filters by feature name and restores full list", async ({ page }) => {
+    await signIn(page, "/");
+    const menu = page.getByRole("navigation", { name: "Main" });
+    const filter = menu.getByRole("searchbox", { name: "Filter navigation" });
+    await filter.fill("depreciation");
+    await expect(menu.getByRole("link", { name: "Fixed assets" })).toBeVisible();
+    await expect(menu.getByRole("link", { name: "Banking" })).toHaveCount(0);
+    await filter.fill("no such workspace xzq");
+    await expect(menu.getByRole("status")).toHaveText("No matching workspace");
+    await filter.clear();
+    await expect(menu.getByRole("link", { name: "Banking" })).toBeVisible();
+  });
+
+  test("favourite workspaces persist across reload without duplicate links", async ({ page }) => {
+    await signIn(page, "/");
+    const menu = page.getByRole("navigation", { name: "Main" });
+    await menu.getByRole("button", { name: "Pin Sales" }).click();
+    await expect(
+      menu.getByRole("group", { name: "Favourites" }).getByRole("link", { name: "Sales" }),
+    ).toHaveAttribute("href", /\/sales/);
+    await expect(menu.getByRole("link", { name: "Sales", exact: true })).toHaveCount(1);
+    await page.reload();
+    await expect(menu.getByRole("button", { name: "Unpin Sales" })).toBeVisible();
+    await menu.getByRole("button", { name: "Unpin Sales" }).click();
+    await expect(menu.getByRole("group", { name: "Favourites" })).toHaveCount(0);
+    await expect(menu.getByRole("link", { name: "Sales", exact: true })).toHaveCount(1);
+  });
+
+  test("workspace group toggle preserves native links and navigation", async ({ page }) => {
+    await signIn(page, "/");
+    const menu = page.getByRole("navigation", { name: "Main" });
+    const heading = menu.getByRole("button", { name: "Money" });
+    await heading.click();
+    await expect(heading).toHaveAttribute("aria-expanded", "false");
+    await expect(menu.getByRole("link", { name: "Sales", exact: true })).toBeHidden();
+    await heading.click();
+    await expect(menu.getByRole("link", { name: "Sales", exact: true })).toBeVisible();
+  });
+
+  test("dashboard widget preferences preserve real data and survive refresh", async ({ page }) => {
+    await signIn(page, "/");
+    const dashboard = page.getByRole("region", { name: "Dashboard widgets" });
+    await expect(dashboard.getByText("Bank accounts", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Customize dashboard" }).click();
+    const bank = page.getByRole("checkbox", { name: "Bank accounts" });
+    await expect(bank).toBeChecked();
+    await bank.click();
+    await page.keyboard.press("Escape");
+    await expect(dashboard.getByText("Bank accounts", { exact: true })).toHaveCount(0);
+    await page.reload();
+    await expect(dashboard.getByText("Bank accounts", { exact: true })).toHaveCount(0);
+    await page.getByRole("button", { name: "Customize dashboard" }).click();
+    await page.getByRole("button", { name: "Show all widgets" }).click();
+    await page.keyboard.press("Escape");
+    await expect(dashboard.getByText("Bank accounts", { exact: true })).toBeVisible();
+  });
 });

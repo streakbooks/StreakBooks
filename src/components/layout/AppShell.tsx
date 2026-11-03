@@ -2,7 +2,7 @@ import { SettingsSurface } from "@/components/settings/SettingsSurface";
 import { InPlaceSettingsPanel } from "@/components/settings/InPlaceSettingsPanel";
 import { parseSettingsPanel, panelLabel } from "@/lib/settings/panels";
 import { WorkspaceSettingsShortcut } from "@/components/settings/ModuleSettingsLinks";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import {
   Link,
   useNavigate,
@@ -11,7 +11,17 @@ import {
   useRouterState,
 } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { ChevronRight, LogOut, Menu, PanelLeftClose, PanelLeftOpen, UserRound } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  LogOut,
+  Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Search,
+  Star,
+  UserRound,
+} from "lucide-react";
 import { NAV_GROUPS, navItems, type NavItem } from "@/lib/nav";
 import { activeNavItem, activeNavLabel } from "@/lib/nav-active";
 import { buildBreadcrumbs } from "@/lib/breadcrumbs";
@@ -117,23 +127,30 @@ function Brand({ collapsed }: { collapsed?: boolean }) {
   );
 }
 
+/** A distinct LinkBooks workspace navigator: searchable, pin-able and route-aware.
+ * All destinations remain native hyperlinks, including new-tab/middle-click support.
+ */
 function NavLink({
   item,
   collapsed,
   active,
+  pinned,
   onNavigate,
+  onTogglePin,
 }: {
   item: NavItem;
   collapsed: boolean;
   active: boolean;
+  pinned: boolean;
   onNavigate?: (() => void) | undefined;
+  onTogglePin?: ((path: string) => void) | undefined;
 }) {
   const link = (
     <Link
       to={item.to}
       {...(item.to === "/settings" ? { search: { section: "overview" } } : {})}
       onClick={(event) => {
-        // A modified click opens another tab/window and must not dismiss this workspace.
+        // Modified clicks preserve the workspace and open another tab as normal.
         if (
           event.button === 0 &&
           !event.ctrlKey &&
@@ -149,7 +166,7 @@ function NavLink({
       aria-current={active ? "page" : undefined}
       data-active={active ? "true" : undefined}
       className={cn(
-        "lb-nav-link group relative flex min-h-10 items-center gap-3 rounded-lg border border-transparent px-3 py-2 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar pointer-coarse:min-h-11",
+        "lb-nav-link group relative flex min-h-10 min-w-0 flex-1 items-center gap-3 rounded-lg border border-transparent px-3 py-2 text-sm font-medium outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar motion-reduce:transition-none pointer-coarse:min-h-11",
         collapsed && "justify-center px-0",
       )}
     >
@@ -160,13 +177,55 @@ function NavLink({
       {collapsed ? null : <span className="truncate">{item.label}</span>}
     </Link>
   );
-  if (!collapsed) return link;
+  if (collapsed) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>{link}</TooltipTrigger>
+        <TooltipContent side="right">{item.label}</TooltipContent>
+      </Tooltip>
+    );
+  }
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>{link}</TooltipTrigger>
-      <TooltipContent side="right">{item.label}</TooltipContent>
-    </Tooltip>
+    <div className="group/nav flex items-center gap-1 rounded-lg">
+      {link}
+      {onTogglePin ? (
+        <button
+          type="button"
+          onClick={() => onTogglePin(item.to)}
+          aria-label={(pinned ? "Unpin " : "Pin ") + item.label}
+          aria-pressed={pinned}
+          title={pinned ? "Remove from favourites" : "Add to favourites"}
+          className={cn(
+            "grid size-9 shrink-0 place-items-center rounded-md text-sidebar-foreground/65 outline-none transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring pointer-coarse:size-11",
+            pinned
+              ? "text-sidebar-primary"
+              : "opacity-70 lg:opacity-0 lg:group-hover/nav:opacity-100 lg:focus:opacity-100",
+          )}
+        >
+          <Star className={cn("size-3.5", pinned && "fill-current")} aria-hidden />
+        </button>
+      ) : null}
+    </div>
   );
+}
+
+const NAV_PINS_KEY = "linkbooks.workspace.pins.v1";
+const NAV_RECENT_KEY = "linkbooks.workspace.recent.v1";
+const NAV_MAX_RECENT = 4;
+const NAV_MAX_PINS = 8;
+
+function readWorkspacePaths(key: string, max: number): string[] {
+  try {
+    const parsed: unknown = JSON.parse(window.localStorage.getItem(key) ?? "[]");
+    if (!Array.isArray(parsed)) return [];
+    const paths = new Set(navItems.map((item) => item.to));
+    return parsed
+      .filter((path): path is string => typeof path === "string" && paths.has(path))
+      .filter((path, index, items) => items.indexOf(path) === index)
+      .slice(0, max);
+  } catch {
+    return [];
+  }
 }
 
 function NavList({
@@ -181,49 +240,162 @@ function NavList({
     select: (s) => (s.location.search as Record<string, unknown>)["from"],
   });
   const activeTo = activeNavItem(pathname, brandingOrigin)?.to ?? null;
+  const searchId = useId();
+  const [query, setQuery] = useState("");
+  const [pins, setPins] = useState<string[]>([]);
+  const [recent, setRecent] = useState<string[]>([]);
+  const [closedGroups, setClosedGroups] = useState<string[]>([]);
+
+  useEffect(() => {
+    setPins(readWorkspacePaths(NAV_PINS_KEY, NAV_MAX_PINS));
+    setRecent(readWorkspacePaths(NAV_RECENT_KEY, NAV_MAX_RECENT));
+  }, []);
+
+  useEffect(() => {
+    if (!activeTo || activeTo === "/") return;
+    setRecent((previous) => {
+      const updated = [activeTo, ...previous.filter((p) => p !== activeTo)].slice(
+        0,
+        NAV_MAX_RECENT,
+      );
+      try {
+        window.localStorage.setItem(NAV_RECENT_KEY, JSON.stringify(updated));
+      } catch {
+        /* browser storage unavailable */
+      }
+      return updated;
+    });
+  }, [activeTo]);
+
+  function togglePin(path: string) {
+    setPins((previous) => {
+      const updated = previous.includes(path)
+        ? previous.filter((p) => p !== path)
+        : [path, ...previous].slice(0, NAV_MAX_PINS);
+      try {
+        window.localStorage.setItem(NAV_PINS_KEY, JSON.stringify(updated));
+      } catch {
+        /* browser storage unavailable */
+      }
+      return updated;
+    });
+  }
+
+  const search = query.trim().toLocaleLowerCase();
+  const matches = (item: NavItem) =>
+    !search || (item.label + " " + item.description).toLocaleLowerCase().includes(search);
   const main = NAV_GROUPS.filter((g) => g.id !== "footer");
   const footer = NAV_GROUPS.filter((g) => g.id === "footer");
+  const byPath = (path: string) => navItems.find((item) => item.to === path);
+  const shortcutItems = (paths: string[]) =>
+    paths.map(byPath).filter((item): item is NavItem => Boolean(item && matches(item)));
+  const makeLink = (item: NavItem) => (
+    <NavLink
+      key={item.to}
+      item={item}
+      collapsed={collapsed}
+      active={item.to === activeTo}
+      pinned={pins.includes(item.to)}
+      onNavigate={onNavigate}
+      onTogglePin={togglePin}
+    />
+  );
   const renderGroup = (g: (typeof NAV_GROUPS)[number], index: number) => {
-    const items = navItems.filter((n) => n.group === g.id);
+    const items = navItems.filter(
+      (n) =>
+        n.group === g.id &&
+        matches(n) &&
+        (collapsed || (!pins.includes(n.to) && (Boolean(search) || !recent.includes(n.to)))),
+    );
     if (items.length === 0) return null;
-    const headingId = `nav-group-${g.id}`;
+    const headingId = "nav-group-" + g.id;
+    const isClosed = !search && closedGroups.includes(g.id);
     return (
       <div
         key={g.id}
         role="group"
         {...(g.label ? { "aria-labelledby": headingId } : {})}
-        className={cn(index > 0 && "mt-4")}
+        className={cn(index > 0 && "mt-3")}
       >
         {g.label ? (
           collapsed ? (
             <div className="mx-3 mb-1.5 border-t border-sidebar-border" aria-hidden />
           ) : (
-            <div
+            <button
               id={headingId}
-              className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/55"
+              type="button"
+              aria-expanded={!isClosed}
+              aria-controls={headingId + "-items"}
+              onClick={() =>
+                setClosedGroups((previous) =>
+                  previous.includes(g.id)
+                    ? previous.filter((id) => id !== g.id)
+                    : [...previous, g.id],
+                )
+              }
+              className="mb-1 flex w-full items-center justify-between rounded-md px-3 py-1 text-left text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/65 outline-none hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring"
             >
               {g.label}
-            </div>
+              {isClosed ? <ChevronRight className="size-3" /> : <ChevronDown className="size-3" />}
+            </button>
           )
         ) : null}
-        <div className="space-y-0.5">
-          {items.map((item) => (
-            <NavLink
-              key={item.to}
-              item={item}
-              collapsed={collapsed}
-              active={item.to === activeTo}
-              onNavigate={onNavigate}
-            />
-          ))}
+        <div
+          id={headingId + "-items"}
+          className={cn("space-y-0.5", isClosed && !collapsed && "hidden")}
+        >
+          {items.map(makeLink)}
         </div>
       </div>
     );
   };
+  const pinnedItems = shortcutItems(pins);
+  const recentItems = shortcutItems(recent.filter((path) => !pins.includes(path)));
   return (
     <TooltipProvider delayDuration={150}>
       <nav aria-label="Main" className="flex min-h-0 flex-1 flex-col px-3 pb-3">
-        <div className="min-h-0 flex-1 overflow-y-auto">{main.map(renderGroup)}</div>
+        {!collapsed ? (
+          <div className="mb-3 px-1">
+            <label htmlFor={searchId} className="sr-only">
+              Filter navigation
+            </label>
+            <div className="flex items-center gap-2 rounded-lg border border-sidebar-border bg-sidebar-accent/40 px-3 focus-within:ring-2 focus-within:ring-sidebar-ring">
+              <Search className="size-4 shrink-0 text-sidebar-foreground/60" aria-hidden />
+              <input
+                id={searchId}
+                type="search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Find a workspace..."
+                className="h-10 min-w-0 flex-1 bg-transparent text-sm text-sidebar-foreground outline-none placeholder:text-sidebar-foreground/55"
+              />
+            </div>
+          </div>
+        ) : null}
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+          {!collapsed && pinnedItems.length > 0 ? (
+            <div role="group" aria-label="Favourites" className="mb-3">
+              <div className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/65">
+                Favourites
+              </div>
+              <div className="space-y-0.5">{pinnedItems.map(makeLink)}</div>
+            </div>
+          ) : null}
+          {!collapsed && recentItems.length > 0 && !search ? (
+            <div role="group" aria-label="Recently visited" className="mb-3">
+              <div className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/65">
+                Recently visited
+              </div>
+              <div className="space-y-0.5">{recentItems.map(makeLink)}</div>
+            </div>
+          ) : null}
+          {main.map(renderGroup)}
+          {search && !navItems.some(matches) ? (
+            <p role="status" className="px-3 py-4 text-sm text-sidebar-foreground/70">
+              No matching workspace
+            </p>
+          ) : null}
+        </div>
         <div className="mt-2 border-t border-sidebar-border pt-3">{footer.map(renderGroup)}</div>
       </nav>
     </TooltipProvider>

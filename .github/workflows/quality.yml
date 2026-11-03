@@ -54,18 +54,29 @@ jobs:
         run: npm run check:navigation
 
       - name: Validate authenticated browser test discovery
-        run: npx playwright test e2e/native-navigation.spec.ts --list
+        run: |
+          npx playwright test e2e/native-navigation.spec.ts --list
+          npx playwright test e2e/staging-smoke.spec.ts --list
 
       - name: Production build
         run: npm run build
 
   staging-browser:
-    # Opt in with a verified, dedicated staging URL and test account.
-    if: ${{ github.event_name == 'pull_request' && vars.E2E_STAGING_ENABLED == 'true' && vars.E2E_STAGING_URL != '' }}
+    # Enabled only for trusted repository PRs and after all static/compile tests pass.
+    needs: validate
+    if: ${{ vars.E2E_STAGING_ENABLED == 'true' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)) }}
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 25
+    env:
+      E2E_STAGING_ENABLED: 'true'
+      E2E_STAGING_RUN: 'true'
+      E2E_BASE_URL: ${{ vars.E2E_STAGING_URL }}
+      E2E_EXPECTED_STAGING_HOST: ${{ vars.E2E_EXPECTED_STAGING_HOST }}
+      E2E_PRODUCTION_URL: ${{ vars.E2E_PRODUCTION_URL }}
+      E2E_EMAIL: ${{ secrets.E2E_STAGING_EMAIL }}
+      E2E_PASSWORD: ${{ secrets.E2E_STAGING_PASSWORD }}
     steps:
-      - name: Checkout repository
+      - name: Checkout trusted PR source
         uses: actions/checkout@v4
 
       - name: Set up Node.js
@@ -74,25 +85,14 @@ jobs:
           node-version: '22'
           cache: npm
 
-      - name: Install dependencies
+      - name: Verify HTTPS staging origin, production separation and credentials
+        run: node scripts/check-staging-target.mjs
+
+      - name: Install locked dependencies
         run: npm ci
 
-      - name: Install Chromium
+      - name: Install Chromium with system dependencies
         run: npx playwright install --with-deps chromium
 
-      - name: Authenticated staging browser tests
-        env:
-          E2E_BASE_URL: ${{ vars.E2E_STAGING_URL }}
-          E2E_EMAIL: ${{ secrets.E2E_STAGING_EMAIL }}
-          E2E_PASSWORD: ${{ secrets.E2E_STAGING_PASSWORD }}
-        shell: bash
-        run: |
-          if [[ -z "$E2E_EMAIL" || -z "$E2E_PASSWORD" ]]; then
-            echo "Staging E2E credentials are required to enable browser testing." >&2
-            exit 1
-          fi
-          case "$E2E_BASE_URL" in
-            https://*) ;;
-            *) echo "Staging tests require a HTTPS URL." >&2; exit 1 ;;
-          esac
-          npx playwright test e2e/native-navigation.spec.ts
+      - name: Run real authenticated staging smoke
+        run: npx playwright test e2e/staging-smoke.spec.ts --workers=1

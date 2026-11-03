@@ -20,10 +20,15 @@ export default defineConfig({
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
   retries: 0,
-  reporter: "list",
+  workers: process.env.CI ? 1 : undefined,
+  timeout: 60_000,
+  reporter: process.env.CI ? [["github"], ["list"]] : "list",
   use: {
     baseURL: process.env.E2E_BASE_URL ?? "http://127.0.0.1:8080",
-    trace: "on-first-retry",
+    // Staging financial previews can contain confidential data; never capture CI traces.
+    trace: process.env.E2E_STAGING_RUN === "true" ? "off" : "on-first-retry",
+    screenshot: "off",
+    video: "off",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   // Against a configured staging URL, never start a competing local dev server.

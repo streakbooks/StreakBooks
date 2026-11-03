@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { assertCompanyMember } from "@/lib/assert-company-access";
+import { assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
 import { parseHealthReport, type HealthReport } from "@/lib/accounting/ledger-health";
 
@@ -15,7 +15,7 @@ export const runLedgerHealthCheck = createServerFn({ method: "POST" })
   }))
   .handler(
     async ({ data, context }): Promise<{ report: HealthReport } | { unavailable: string }> => {
-      await assertCompanyMember(context.supabase, data.companyId);
+      await assertCompanyPermission(context.supabase, data.companyId, "accounting.view");
       const { data: result, error } = await context.supabase.rpc(
         "ledger_health_check" as never,
         { payload: { company_id: data.companyId } } as never,
@@ -32,6 +32,6 @@ export const runLedgerHealthCheck = createServerFn({ method: "POST" })
         }
         throw new Error(error.message);
       }
-      return { report: parseHealthReport(result) };
+      return { report: parseHealthReport(result, data.companyId) };
     },
   );

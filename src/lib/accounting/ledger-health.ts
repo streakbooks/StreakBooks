@@ -39,49 +39,105 @@ export type HealthReport = {
 
 const STATUSES = new Set<string>(["pass", "warn", "fail", "na"]);
 
-function asNumber(v: unknown): number {
-  return typeof v === "number" && Number.isFinite(v) ? v : 0;
+/**
+ * The database function always emits these eight checks. An incomplete response
+ * must not become a green accounting status, even if its "overall" says "pass".
+ */
+export const REQUIRED_LEDGER_HEALTH_CHECKS: readonly HealthCheckKey[] = [
+  "trial_balance",
+  "unbalanced",
+  "orphans",
+  "document_journals",
+  "subledger_ar",
+  "subledger_ap",
+  "period_locks",
+  "automation",
+];
+
+function nonNegativeSafeInteger(v: unknown, field: string): number {
+  if (typeof v !== "number" || !Number.isSafeInteger(v) || v < 0) {
+    throw new Error(`The ledger health check returned an invalid ${field}.`);
+  }
+  return v;
 }
 
 function asString(v: unknown): string {
   return typeof v === "string" ? v : "";
 }
 
-/** Turns the raw JSON into a typed report. An unknown status is treated as a failure, never a pass. */
-export function parseHealthReport(raw: unknown): HealthReport {
-  if (!raw || typeof raw !== "object") throw new Error("The health check returned no result.");
+/**
+ * Parse the database result without allowing missing evidence to read as a pass.
+ * The expected company ID ties this report back to the authenticated request.
+ */
+export function parseHealthReport(raw: unknown, expectedCompanyId?: string): HealthReport {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    throw new Error("The ledger health check returned no result.");
+  }
   const r = raw as Record<string, unknown>;
-  const rawChecks = Array.isArray(r["checks"]) ? (r["checks"] as unknown[]) : [];
-  const checks: HealthCheck[] = rawChecks.map((c) => {
-    const o = (c ?? {}) as Record<string, unknown>;
+  const rawChecks = r["checks"];
+  if (!Array.isArray(rawChecks) || rawChecks.length === 0) {
+    throw new Error("The ledger health check returned no checks.");
+  }
+
+  const keys = new Set<string>();
+  const checks: HealthCheck[] = rawChecks.map((entry: unknown) => {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+      throw new Error("The ledger health check returned an invalid check.");
+    }
+    const o = entry as Record<string, unknown>;
+    const key = asString(o["key"]);
+    if (!key || keys.has(key)) {
+      throw new Error("The ledger health check returned a missing or duplicate check key.");
+    }
+    keys.add(key);
     const status = asString(o["status"]);
+    const validStatus = STATUSES.has(status) ? (status as HealthStatus) : "fail";
+    // Only AR/AP checks can legitimately be not-applicable when a control is unset.
+    const normalizedStatus =
+      validStatus === "na" && key !== "subledger_ar" && key !== "subledger_ap"
+        ? "fail"
+        : validStatus;
     const items = Array.isArray(o["items"])
       ? (o["items"] as unknown[]).filter(
-          (i): i is HealthItem => Boolean(i) && typeof i === "object",
+          (item): item is HealthItem =>
+            Boolean(item) && typeof item === "object" && !Array.isArray(item),
         )
       : [];
     return {
-      key: asString(o["key"]),
+      key,
       label: asString(o["label"]),
-      status: STATUSES.has(status) ? (status as HealthStatus) : "fail",
-      count: asNumber(o["count"]),
+      status: normalizedStatus,
+      count: nonNegativeSafeInteger(o["count"], `${key} count`),
       summary: asString(o["summary"]),
       items,
     };
   });
+
+  const missing = REQUIRED_LEDGER_HEALTH_CHECKS.filter((key) => !keys.has(key));
+  if (missing.length > 0) {
+    throw new Error(`The ledger health check is incomplete: ${missing.join(", ")}.`);
+  }
+  const companyId = asString(r["company_id"]);
+  if (!companyId || (expectedCompanyId && companyId !== expectedCompanyId)) {
+    throw new Error("The ledger health check returned the wrong organisation.");
+  }
+  const baseCurrency = asString(r["base_currency"]);
+  if (!baseCurrency) throw new Error("The ledger health check returned no base currency.");
+
   return {
-    companyId: asString(r["company_id"]),
-    baseCurrency: asString(r["base_currency"]),
+    companyId,
+    baseCurrency,
     generatedAt: asString(r["generated_at"]),
     overall: overallStatus(checks),
-    journalsChecked: asNumber(r["journals_checked"]),
-    linesChecked: asNumber(r["lines_checked"]),
+    journalsChecked: nonNegativeSafeInteger(r["journals_checked"], "journal count"),
+    linesChecked: nonNegativeSafeInteger(r["lines_checked"], "line count"),
     checks,
   };
 }
 
 /** Worst status wins. Checks that do not apply (`na`) neither pass nor fail the whole report. */
 export function overallStatus(checks: Pick<HealthCheck, "status">[]): "pass" | "warn" | "fail" {
+  if (checks.length === 0) return "fail";
   if (checks.some((c) => c.status === "fail")) return "fail";
   if (checks.some((c) => c.status === "warn")) return "warn";
   return "pass";

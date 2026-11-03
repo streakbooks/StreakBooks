@@ -5,11 +5,20 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { postingJournalSourceTypes, type PostingJournalEntityType } from "@/lib/documents/posting-journal-sources";
+import {
+  postingJournalSourceTypes,
+  type PostingJournalEntityType,
+} from "@/lib/documents/posting-journal-sources";
 import { listDocumentPostingJournals } from "@/lib/documents/posting-journals.functions";
 import { Badge } from "@/components/ui/badge";
 import {
-  Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 
 /** Reusable read-only ledger tab for posted source documents. */
@@ -28,15 +37,32 @@ export function DocumentPostingJournals({
   const q = useQuery({
     queryKey: ["document-posting-journals", companyId, entityType, entityId],
     enabled: Boolean(companyId && entityId && permitted),
-    queryFn: () => load({
-      data: { companyId: companyId!, entityType, entityId: entityId! },
-    }),
+    queryFn: () =>
+      load({
+        data: { companyId: companyId!, entityType, entityId: entityId! },
+      }),
   });
   if (!permitted) return null;
-  if (!entityId) return <p className="text-sm text-muted-foreground">Save the document before viewing journal entries.</p>;
-  if (q.isPending) return <p className="text-sm text-muted-foreground">Loading posted journal entries…</p>;
-  if (q.isError) return <p role="alert" className="text-sm text-destructive">{friendlyAuthError(q.error)}</p>;
-  if (!q.data?.length) return <p className="text-sm text-muted-foreground">No posted journal entries for this document. Drafts do not affect the ledger.</p>;
+  if (!entityId)
+    return (
+      <p className="text-sm text-muted-foreground">
+        Save the document before viewing journal entries.
+      </p>
+    );
+  if (q.isPending)
+    return <p className="text-sm text-muted-foreground">Loading posted journal entries…</p>;
+  if (q.isError)
+    return (
+      <p role="alert" className="text-sm text-destructive">
+        {friendlyAuthError(q.error)}
+      </p>
+    );
+  if (!q.data?.length)
+    return (
+      <p className="text-sm text-muted-foreground">
+        No posted journal entries for this document. Drafts do not affect the ledger.
+      </p>
+    );
 
   return (
     <div className="space-y-5">
@@ -57,9 +83,13 @@ export function DocumentPostingJournals({
                 </Link>
                 <Badge variant="outline">{journal.status}</Badge>
                 {journal.reverses_journal_id ? <Badge variant="secondary">Reversal</Badge> : null}
-                {journal.reversed_by_journal_id ? <Badge variant="secondary">Reversed</Badge> : null}
+                {journal.reversed_by_journal_id ? (
+                  <Badge variant="secondary">Reversed</Badge>
+                ) : null}
               </div>
-              <span className="text-muted-foreground">{journal.journal_date} · {currency}</span>
+              <span className="text-muted-foreground">
+                {journal.journal_date} · {currency}
+              </span>
             </div>
             <div className="overflow-x-auto">
               <Table>
@@ -74,13 +104,19 @@ export function DocumentPostingJournals({
                 <TableBody>
                   {journal.lines.map((line) => (
                     <TableRow key={line.id}>
-                      <TableCell>{line.account_code} {line.account_name}</TableCell>
+                      <TableCell>
+                        {line.account_code} {line.account_name}
+                      </TableCell>
                       <TableCell>{line.description || "—"}</TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {BigInt(line.debit_minor) !== 0n ? fromMinorUnits(BigInt(line.debit_minor), currency) : "—"}
+                        {BigInt(line.debit_minor) !== 0n
+                          ? fromMinorUnits(BigInt(line.debit_minor), currency)
+                          : "—"}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {BigInt(line.credit_minor) !== 0n ? fromMinorUnits(BigInt(line.credit_minor), currency) : "—"}
+                        {BigInt(line.credit_minor) !== 0n
+                          ? fromMinorUnits(BigInt(line.credit_minor), currency)
+                          : "—"}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -88,8 +124,12 @@ export function DocumentPostingJournals({
                 <TableFooter>
                   <TableRow>
                     <TableCell colSpan={2}>Total ({currency})</TableCell>
-                    <TableCell className="text-right tabular-nums">{fromMinorUnits(debit, currency)}</TableCell>
-                    <TableCell className="text-right tabular-nums">{fromMinorUnits(credit, currency)}</TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {fromMinorUnits(debit, currency)}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {fromMinorUnits(credit, currency)}
+                    </TableCell>
                   </TableRow>
                 </TableFooter>
               </Table>

@@ -45,6 +45,9 @@ The GitHub `quality.yml` workflow additionally runs PostgreSQL workflow checks, 
 - No actual client data, account credentials, .env files or generated build folders in commits.
 - Keep changes small, linted, typed, tested and reviewed. Never force-push or rewrite published history.
 
+## Ledger health and financial close
+Open **Accounting → Ledger health** (or `/accounting?tab=health`) to run eight read-only ledger integrity checks for the selected company. The panel explicitly reports failures and unavailable checks; it is not independent financial certification. Use **Accounting → Period close** for accounting-year close evidence and optional year-end journals. See [REVIEW_GUIDE](docs/REVIEW_GUIDE.md) for safe manual acceptance steps.
+
 ## Reports
 Reports → All reports includes P&L, Balance Sheet, Trial Balance, cash flow, account transactions, aged receivables/payables, tax, budget-v-actual and other analysis. Use **Customize view** for loaded-row columns, filtering, sorting and grouping; the original financial report remains the accounting authority. Loaded-row export is not necessarily full-account history.
 

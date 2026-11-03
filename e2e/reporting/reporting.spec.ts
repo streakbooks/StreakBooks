@@ -452,3 +452,19 @@ test("cash basis selector changes actual recognition, persists and drills to cas
   await fixture.getByLabel("Accounting method", { exact: true }).selectOption("accrual");
   await expect(fixture.getByRole("row").filter({ hasText: "Net profit" })).toContainText("0.00");
 });
+
+test("cash Balance Sheet balances and drills into cash account details", async ({ page }) => {
+  await page.goto("/cash-fixture");
+  const fixture = page.getByRole("region", { name: "Cash basis fixture", exact: true });
+  await fixture.getByLabel("Fixture statement").selectOption("balance-sheet");
+  await fixture.getByLabel("Accounting method", { exact: true }).selectOption("cash");
+  await expect(fixture.getByRole("row").filter({ hasText: "Total assets" })).toContainText("12.00");
+  await expect(fixture.getByRole("row").filter({ hasText: "Current year earnings" })).toContainText(
+    "10.00",
+  );
+  await fixture
+    .getByRole("button", { name: /cash transactions/ })
+    .first()
+    .click();
+  await expect(fixture.getByRole("status")).toContainText("Cash drill:");
+});

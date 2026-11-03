@@ -12,6 +12,7 @@ export async function captureCashStandard(
   from: string,
   to: string,
   settings: StandardSettings,
+  report: "profit-and-loss" | "balance-sheet" = "profit-and-loss",
 ): Promise<ReportingFacts> {
   if (settings.filters.clauses.length)
     throw new Error(
@@ -28,7 +29,7 @@ export async function captureCashStandard(
   if (base.company.id !== companyId || base.from !== from || base.to !== to)
     throw new Error("Cash capture company or dates do not match the request");
   const plan = standardPeriods(
-    "profit-and-loss",
+    report,
     from,
     to,
     settings,
@@ -37,5 +38,5 @@ export async function captureCashStandard(
   );
   const last = plan.periods.reduce((max, period) => (period.to > max ? period.to : max), to);
   const input = await loadCashProfitLossInput(supabase, base, last);
-  return cashStandardFacts(base, input, settings);
+  return cashStandardFacts(base, input, settings, report);
 }

@@ -74,6 +74,7 @@ export type CashPnlEntry = {
 export function cashProfitLoss(
   input: CashPnlInput,
   period: { from: string; to: string },
+  ledger = false,
 ): CashPnlEntry[] {
   if (!isReportDate(period.from) || !isReportDate(period.to) || period.from > period.to)
     throw new Error("Choose a valid cash reporting period");
@@ -387,7 +388,7 @@ export function cashProfitLoss(
       for (const component of components) {
         const account = accounts.get(component.accountId)!;
         if (
-          !["income", "expense"].includes(account.account_type) ||
+          (!ledger && !["income", "expense"].includes(account.account_type)) ||
           component.recognisedBaseMinor === 0n
         )
           continue;
@@ -428,7 +429,8 @@ export function cashProfitLoss(
         "A posted bank movement uses receivables/payables without complete cash allocation detail",
       );
     for (const line of journal.lines) {
-      if (!["income", "expense"].includes(accounts.get(line.accountId)!.account_type)) continue;
+      if (!ledger && !["income", "expense"].includes(accounts.get(line.accountId)!.account_type))
+        continue;
       result.push({
         accountId: line.accountId,
         date: journal.date,

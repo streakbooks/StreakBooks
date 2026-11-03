@@ -61,6 +61,9 @@ beforeEach(() => {
   vi.mocked(loadCashProfitLossInput).mockImplementation(async () => cashInputFixture());
   vi.mocked(callRpc).mockImplementation(async (_sb, name, args) => {
     if (name === "record_audit_event") return true;
+    if (name === "cash_reporting_capabilities") return 1;
+    if (name === "get_reporting_delivery_status") return { configured: true };
+    if (name === "queue_report_delivery" || name === "save_report_schedule") return viewId;
     const f = reportingFactsFixture();
     f.accounts = cashInputFixture().accounts;
     f.from = (args as { _from: string })._from;
@@ -91,7 +94,7 @@ describe("saved cash report lifecycle", () => {
       ).toBe(false);
     },
   );
-  it("does not queue an accrual snapshot for a cash report", async () => {
+  it("queues cash reports only after verifying database snapshot capability", async () => {
     await expect(
       execute(queueReportDelivery, {
         companyId: testCompany,
@@ -103,10 +106,10 @@ describe("saved cash report lifecycle", () => {
           subject: "Cash report",
         },
       }),
-    ).rejects.toThrow("cash snapshot support");
-    expect(callRpc).not.toHaveBeenCalled();
+    ).resolves.toBe(viewId);
+    expect(vi.mocked(callRpc).mock.calls[0]?.[1]).toBe("cash_reporting_capabilities");
   });
-  it("does not schedule unsupported cash snapshots", async () => {
+  it("schedules cash reports through the snapshot-aware queue", async () => {
     await expect(
       execute(saveReportSchedule, {
         companyId: testCompany,
@@ -121,7 +124,7 @@ describe("saved cash report lifecycle", () => {
           enabled: true,
         },
       }),
-    ).rejects.toThrow("cash snapshot support");
-    expect(callRpc).not.toHaveBeenCalled();
+    ).resolves.toBe(viewId);
+    expect(vi.mocked(callRpc).mock.calls[0]?.[1]).toBe("cash_reporting_capabilities");
   });
 });

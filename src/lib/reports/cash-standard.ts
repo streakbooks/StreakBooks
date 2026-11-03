@@ -1,3 +1,5 @@
+import { cashLedger } from "./cash-ledger";
+import { fiscalYearStart } from "@/lib/accounting/fiscal-year";
 import type { ReportingFacts } from "./report-document";
 import { standardPeriods } from "./standard-statement";
 import type { StandardSettings } from "./standard-settings";
@@ -9,6 +11,7 @@ export function cashStandardFacts(
   base: ReportingFacts,
   input: CashPnlInput,
   settings: StandardSettings,
+  report: "profit-and-loss" | "balance-sheet" = "profit-and-loss",
 ): ReportingFacts {
   if (
     settings.basis !== "cash" ||
@@ -19,7 +22,7 @@ export function cashStandardFacts(
   if (settings.filters.clauses.length)
     throw new Error("Clear accrual posted-line filters before running cash basis");
   const plan = standardPeriods(
-    "profit-and-loss",
+    report,
     base.from,
     base.to,
     settings,
@@ -49,18 +52,37 @@ export function cashStandardFacts(
       credit_minor: row.credit_minor.toString(),
     }));
   };
-  const columns = plan.periods.map((period) => ({
-    ...period,
-    fyStart: base.fyStart,
-    period: balances(cashProfitLoss(input, period)),
-    bsPrior: [],
-    bsCurrent: [],
-  }));
+  const columns = plan.periods.map((period) => {
+    const fyStart = fiscalYearStart(
+      period.to,
+      base.company.fyEndMonth,
+      base.company.fyEndDay ?? 31,
+    );
+    if (report === "balance-sheet") {
+      const entries = cashLedger(input, { from: "0001-01-01", to: period.to });
+      return {
+        ...period,
+        fyStart,
+        period: [],
+        bsPrior: balances(entries.filter((e) => e.date < fyStart)),
+        bsCurrent: balances(entries.filter((e) => e.date >= fyStart)),
+      };
+    }
+    return {
+      ...period,
+      fyStart,
+      period: balances(cashProfitLoss(input, period)),
+      bsPrior: [],
+      bsCurrent: [],
+    };
+  });
   return {
     ...base,
     basis: "cash",
     cashPolicy: CASH_POLICY,
     period: columns[0]!.period,
+    bsPrior: columns[0]!.bsPrior,
+    bsCurrent: columns[0]!.bsCurrent,
     standardColumns: columns,
     appliedFilters: settings.filters,
   };

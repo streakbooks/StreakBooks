@@ -20,12 +20,12 @@ export function StatementBasisSelect({
         aria-describedby="statement-cash-note"
       >
         <option value="accrual">Accrual</option>
-        {report === "profit-and-loss" && <option value="cash">Cash</option>}
+        <option value="cash">Cash</option>
       </select>
       <p id="statement-cash-note" className="max-w-56 text-xs text-muted-foreground">
         {report === "profit-and-loss"
           ? "Cash recognizes allocated receipts, payments and direct cash transactions on their cash dates."
-          : "Balance Sheet remains on accrual basis."}
+          : "Cash balances include settled source components, cash movements and posted opening positions."}
       </p>
     </div>
   );

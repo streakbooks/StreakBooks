@@ -234,4 +234,19 @@ test.describe("authenticated LinkBooks staging smoke", () => {
     await page.getByLabel("Accounting method", { exact: true }).selectOption("accrual");
     await expect(page.getByRole("article")).toContainText("Accrual basis");
   });
+  test("cash Balance Sheet retains basis after reload and exports a cash statement", async ({
+    page,
+  }) => {
+    await signIn(page, "/reports/balance-sheet?to=2026-01-31");
+    await expect(page.getByRole("article")).toBeVisible();
+    await page.getByLabel("Accounting method", { exact: true }).selectOption("cash");
+    await expect(page.getByRole("article")).toContainText("Cash basis");
+    await page.reload();
+    await expect(page.getByLabel("Accounting method", { exact: true })).toHaveValue("cash");
+    await expect(page.getByRole("article")).toContainText("Total assets");
+    await page.getByRole("button", { name: "Download report", exact: true }).click();
+    const pending = page.waitForEvent("download");
+    await page.getByRole("menuitem", { name: "CSV data (.csv)", exact: true }).click();
+    expect(await (await pending).failure()).toBeNull();
+  });
 });

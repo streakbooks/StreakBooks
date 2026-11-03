@@ -529,10 +529,15 @@ async function assertDeliveryBasis(supabase: Sb, companyId: string, viewId?: str
     config["basis"] === "cash" ||
     (typeof config["settings"] === "string" &&
       standardSettingsSchema.parse(JSON.parse(config["settings"])).basis === "cash");
-  if (cash)
-    throw new Error(
-      "Cash P&L email and scheduling need cash snapshot support. Use the cash report's PDF, Excel or CSV download instead.",
+  if (cash) {
+    const version = await callRpc(
+      supabase,
+      "cash_reporting_capabilities",
+      { _company_id: companyId },
+      "Apply the cash delivery snapshot database update before emailing or scheduling cash reports.",
     );
+    if (version !== 1) throw new Error("Cash report delivery requires snapshot version 1");
+  }
 }
 export const queueReportDelivery = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -667,7 +672,14 @@ export const captureReportDocument = createServerFn({ method: "POST" })
       cashSettings?.basis === "cash"
         ? await (
             await import("./cash-standard.server")
-          ).captureCashStandard(context.supabase, data.companyId, from, to, cashSettings)
+          ).captureCashStandard(
+            context.supabase,
+            data.companyId,
+            from,
+            to,
+            cashSettings,
+            view.report_id as "profit-and-loss" | "balance-sheet",
+          )
         : await callRpc(
             context.supabase,
             def
@@ -781,6 +793,7 @@ export const exportReportDocument = createServerFn({ method: "POST" })
               dateSchema.parse(data.from ?? view.config["from"]),
               dateSchema.parse(data.to ?? view.config["to"]),
               cashSettings,
+              view.report_id as "profit-and-loss" | "balance-sheet",
             )
           : await callRpc(
               context.supabase,

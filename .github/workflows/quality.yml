@@ -53,6 +53,9 @@ jobs:
       - name: Isolated PostgreSQL workflow tests
         run: npm run test:workflows:postgres
 
+      - name: Cash history and delivery PostgreSQL checks
+        run: python3 scripts/test-cash-history-postgres.py
+
       - name: Native navigation checks
         run: npm run check:navigation
 

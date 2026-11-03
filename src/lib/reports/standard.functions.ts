@@ -18,15 +18,18 @@ export type StandardStatementRequest = z.infer<typeof requestSchema>;
 async function run(supabase: Sb, data: StandardStatementRequest) {
   if (data.from > data.to) throw new Error("End date must follow start date");
   await assertCompanyPermission(supabase, data.companyId, "reports.view");
-  if (data.settings.basis === "cash" && data.report !== "profit-and-loss")
-    throw new Error(
-      "Cash basis is available for Profit and Loss only; Balance Sheet remains accrual.",
-    );
   const facts =
     data.settings.basis === "cash"
       ? await (
           await import("./cash-standard.server")
-        ).captureCashStandard(supabase, data.companyId, data.from, data.to, data.settings)
+        ).captureCashStandard(
+          supabase,
+          data.companyId,
+          data.from,
+          data.to,
+          data.settings,
+          data.report,
+        )
       : await callRpc(
           supabase,
           "capture_standard_report_facts",

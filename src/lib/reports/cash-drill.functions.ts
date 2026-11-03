@@ -12,6 +12,7 @@ export const getCashProfitLossTransactions = createServerFn({ method: "POST" })
     z
       .object({
         companyId: z.string().uuid(),
+        report: z.enum(["profit-and-loss", "balance-sheet"]).default("profit-and-loss"),
         accountId: z.string().uuid(),
         from: z.string().refine(isReportDate),
         to: z.string().refine(isReportDate),
@@ -32,14 +33,20 @@ export const getCashProfitLossTransactions = createServerFn({ method: "POST" })
     if (facts.company.id !== data.companyId || facts.from !== data.from || facts.to !== data.to)
       throw new Error("Cash drill scope does not match the request");
     const account = facts.accounts.find((row) => row.id === data.accountId);
-    if (!account || !["income", "expense"].includes(account.account_type))
+    if (
+      !account ||
+      (data.report === "profit-and-loss" && !["income", "expense"].includes(account.account_type))
+    )
       throw new Error("Choose an accessible income or expense account");
     const { loadCashProfitLossInput } = await import("./cash-profit-loss.server");
     const { cashProfitLoss } = await import("./cash-profit-loss");
     const input = await loadCashProfitLossInput(context.supabase, facts, data.to);
-    const entries = cashProfitLoss(input, data).filter(
-      (entry) => entry.accountId === data.accountId,
-    );
+    const { cashLedger } = await import("./cash-ledger");
+    const entries = (
+      data.report === "balance-sheet"
+        ? cashLedger(input, { from: "0001-01-01", to: data.to })
+        : cashProfitLoss(input, data)
+    ).filter((entry) => entry.accountId === data.accountId);
     if (entries.length > 2000)
       throw new Error("More than 2,000 cash recognition rows; narrow the reporting period");
     return {

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { assertLinesBalance, fromMinorUnits, sumMinor, toMinorUnits, toSafeMinorNumber } from "./money";
+import {
+  assertLinesBalance,
+  fromMinorUnits,
+  sumMinor,
+  toMinorUnits,
+  toSafeMinorNumber,
+} from "./money";
 
 describe("money minor units", () => {
   it("converts major to minor without float drift", () => {

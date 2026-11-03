@@ -85,7 +85,9 @@ function client() {
                       : []
                     : table === "journals"
                       ? !journalReversed &&
-                        filters.some(([op, c, v]) => op === "eq" && c === "status" && v === "posted") &&
+                        filters.some(
+                          ([op, c, v]) => op === "eq" && c === "status" && v === "posted",
+                        ) &&
                         filters.some(
                           ([op, c, v]) =>
                             op === "is" && c === "reversed_by_journal_id" && v === null,

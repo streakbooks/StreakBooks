@@ -38,6 +38,8 @@ import { downloadBase64, uploadCompanyDocument } from "@/lib/documents/upload-cl
 import { openSignedDownload } from "@/lib/documents/ui";
 import { canPreviewAttachment } from "@/lib/purchases/bill-form-helpers";
 import { LoadingState } from "@/components/common/states";
+import { DocumentPostingJournals } from "@/components/documents/DocumentPostingJournals";
+import { postingJournalSourceTypes } from "@/lib/documents/posting-journal-sources";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -314,6 +316,9 @@ export const DocumentRecordPanel = forwardRef<
         <TabsList>
           <TabsTrigger value="notes">Internal notes</TabsTrigger>
           <TabsTrigger value="activity">Activity history</TabsTrigger>
+          {can("accounting.view") && postingJournalSourceTypes(entityType).length > 0 ? (
+            <TabsTrigger value="journal_entries">Journal Entries</TabsTrigger>
+          ) : null}
         </TabsList>
         <TabsContent value="notes" className="space-y-2">
           {canManage ? (
@@ -392,6 +397,11 @@ export const DocumentRecordPanel = forwardRef<
             </table>
           )}
         </TabsContent>
+        {can("accounting.view") && postingJournalSourceTypes(entityType).length > 0 ? (
+          <TabsContent value="journal_entries">
+            <DocumentPostingJournals entityType={entityType} entityId={entityId} />
+          </TabsContent>
+        ) : null}
       </Tabs>
     </div>
   );

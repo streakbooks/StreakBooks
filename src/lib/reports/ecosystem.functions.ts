@@ -1,4 +1,8 @@
-import { standardSettingsSchema } from "./standard-settings";
+import {
+  standardSettingsSchema,
+  encodeStandardSettings,
+  resolveStandardSettings,
+} from "./standard-settings";
 import { parseReportSearch } from "./search";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -511,6 +515,25 @@ export const saveReportingModel = createServerFn({ method: "POST" })
     if (result.error) throw new Error("Model changed or access was denied; refresh before saving");
     return JSON.stringify(result.data);
   });
+async function assertDeliveryBasis(supabase: Sb, companyId: string, viewId?: string) {
+  if (!viewId) return;
+  const { data, error } = await supabase
+    .from("report_saved_views" as never)
+    .select("config" as never)
+    .eq("company_id" as never, companyId as never)
+    .eq("id" as never, viewId as never)
+    .single();
+  if (error || !data) throw new Error("Report access denied");
+  const config = (data as unknown as { config: Record<string, unknown> }).config;
+  const cash =
+    config["basis"] === "cash" ||
+    (typeof config["settings"] === "string" &&
+      standardSettingsSchema.parse(JSON.parse(config["settings"])).basis === "cash");
+  if (cash)
+    throw new Error(
+      "Cash P&L email and scheduling need cash snapshot support. Use the cash report's PDF, Excel or CSV download instead.",
+    );
+}
 export const queueReportDelivery = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { companyId: string; payload: unknown }) => ({
@@ -519,6 +542,7 @@ export const queueReportDelivery = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "reports.export");
+    await assertDeliveryBasis(context.supabase, data.companyId, data.payload.viewId);
     const status = await callRpc<{ configured: boolean }>(
       context.supabase,
       "get_reporting_delivery_status",
@@ -546,6 +570,7 @@ export const saveReportSchedule = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "reports.export");
+    await assertDeliveryBasis(context.supabase, data.companyId, data.payload.viewId);
     return String(
       await callRpc(
         context.supabase,
@@ -635,36 +660,47 @@ export const captureReportDocument = createServerFn({ method: "POST" })
       : null;
     const standard =
       !def &&
-      typeof view.config["settings"] === "string" &&
+      (typeof view.config["settings"] === "string" || view.config["basis"] === "cash") &&
       ["profit-and-loss", "balance-sheet"].includes(view.report_id);
-    const facts = await callRpc(
-      context.supabase,
-      def
-        ? "capture_custom_report_facts"
-        : standard
-          ? "capture_standard_report_facts"
-          : "capture_reporting_facts",
-      {
-        _company_id: data.companyId,
-        _from: from,
-        _to: to,
-        ...(def ? { _definition: def } : {}),
-        ...(standard
-          ? {
-              _report_id: view.report_id,
-              _settings: standardSettingsSchema.parse(
-                JSON.parse(view.config["settings"] as string),
-              ),
-            }
-          : {}),
-      },
-      missing,
-    );
+    const cashSettings = standard ? resolveStandardSettings(parseReportSearch(view.config)) : null;
+    const facts =
+      cashSettings?.basis === "cash"
+        ? await (
+            await import("./cash-standard.server")
+          ).captureCashStandard(context.supabase, data.companyId, from, to, cashSettings)
+        : await callRpc(
+            context.supabase,
+            def
+              ? "capture_custom_report_facts"
+              : standard
+                ? "capture_standard_report_facts"
+                : "capture_reporting_facts",
+            {
+              _company_id: data.companyId,
+              _from: from,
+              _to: to,
+              ...(def ? { _definition: def } : {}),
+              ...(standard
+                ? {
+                    _report_id: view.report_id,
+                    _settings: standardSettingsSchema.parse(
+                      JSON.parse(view.config["settings"] as string),
+                    ),
+                  }
+                : {}),
+            },
+            missing,
+          );
     return JSON.stringify(
       buildReportDocument(facts, {
         name: view.name,
         reportId: view.report_id,
-        config: view.config,
+        config: {
+          ...view.config,
+          ...(cashSettings?.basis === "cash"
+            ? { settings: encodeStandardSettings(cashSettings) }
+            : {}),
+        },
       }),
     );
   });
@@ -730,32 +766,55 @@ export const exportReportDocument = createServerFn({ method: "POST" })
         : null;
       const standard =
         !def &&
-        typeof view.config["settings"] === "string" &&
+        (typeof view.config["settings"] === "string" || view.config["basis"] === "cash") &&
         ["profit-and-loss", "balance-sheet"].includes(view.report_id);
-      facts = await callRpc(
-        context.supabase,
-        def
-          ? "capture_custom_report_facts"
-          : standard
-            ? "capture_standard_report_facts"
-            : "capture_reporting_facts",
-        {
-          _company_id: data.companyId,
-          _from: dateSchema.parse(data.from ?? view.config["from"]),
-          _to: dateSchema.parse(data.to ?? view.config["to"]),
-          ...(def ? { _definition: def } : {}),
-          ...(standard
-            ? {
-                _report_id: view.report_id,
-                _settings: standardSettingsSchema.parse(
-                  JSON.parse(view.config["settings"] as string),
-                ),
-              }
+      const cashSettings = standard
+        ? resolveStandardSettings(parseReportSearch(view.config))
+        : null;
+      facts =
+        cashSettings?.basis === "cash"
+          ? await (
+              await import("./cash-standard.server")
+            ).captureCashStandard(
+              context.supabase,
+              data.companyId,
+              dateSchema.parse(data.from ?? view.config["from"]),
+              dateSchema.parse(data.to ?? view.config["to"]),
+              cashSettings,
+            )
+          : await callRpc(
+              context.supabase,
+              def
+                ? "capture_custom_report_facts"
+                : standard
+                  ? "capture_standard_report_facts"
+                  : "capture_reporting_facts",
+              {
+                _company_id: data.companyId,
+                _from: dateSchema.parse(data.from ?? view.config["from"]),
+                _to: dateSchema.parse(data.to ?? view.config["to"]),
+                ...(def ? { _definition: def } : {}),
+                ...(standard
+                  ? {
+                      _report_id: view.report_id,
+                      _settings: standardSettingsSchema.parse(
+                        JSON.parse(view.config["settings"] as string),
+                      ),
+                    }
+                  : {}),
+              },
+              missing,
+            );
+      definition = {
+        name: view.name,
+        reportId: view.report_id,
+        config: {
+          ...view.config,
+          ...(cashSettings?.basis === "cash"
+            ? { settings: encodeStandardSettings(cashSettings) }
             : {}),
         },
-        missing,
-      );
-      definition = { name: view.name, reportId: view.report_id, config: view.config };
+      };
     }
     const doc = buildReportDocument(facts, definition);
     const { exportReportPdf, exportReportXlsx, exportReportCsv, bytesToBase64 } =

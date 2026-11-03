@@ -239,7 +239,11 @@ export function standardStatementDocument(input: {
           s.incomePercent ? [plan.periods[i]!, plan.periods[i]!] : [plan.periods[i]!],
         ),
         note: [
-          s.showBasis ? "Accrual basis · posted ledger" : "",
+          s.showBasis
+            ? s.basis === "cash"
+              ? "Cash basis · posted settlements and direct cash movements"
+              : "Accrual basis · posted ledger"
+            : "",
           s.showCurrencyNote
             ? `All monetary figures in ${currency}; foreign transactions use their posted base-currency conversion.`
             : "",

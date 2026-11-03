@@ -36,7 +36,7 @@ const period = { from: "2026-11-01", to: "2026-11-30" };
 const amounts = (rows: ReturnType<typeof recogniseCashSettlements>) =>
   rows.map((row) => row.components.map((component) => component.recognisedMinor));
 
-describe("cash settlement source calculation (not yet a live cash-basis report)", () => {
+describe("cash settlement source calculation", () => {
   it("recognises partial invoice receipts by settlement date, not invoice date", () => {
     const nov = recogniseCashSettlements(source(), period);
     expect(nov).toHaveLength(1);

@@ -1,3 +1,4 @@
+import { integrationStatusLabel } from "@/lib/settings/integration-health";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -111,17 +112,17 @@ export function SettingsOverviewPanel({ companyId }: Props) {
         <CardHeader>
           <CardTitle className="text-base">Integration health</CardTitle>
           <CardDescription>
-            Honest connection state — nothing is claimed as live unless wired.
+            Configuration status. A configured transport still needs delivery verification.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-2 sm:grid-cols-2">
           {d.integrations.map((i) => (
-            <div
-              key={i.name}
-              className="flex items-center justify-between rounded-md border px-3 py-2 text-sm"
-            >
-              <span>{i.name}</span>
-              <Badge variant="outline">Unavailable</Badge>
+            <div key={i.name} className="rounded-md border px-3 py-2 text-sm">
+              <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+                <span>{i.name}</span>
+                <Badge variant="outline">{integrationStatusLabel(i.status)}</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">{i.detail}</p>
             </div>
           ))}
         </CardContent>

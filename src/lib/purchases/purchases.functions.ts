@@ -1,5 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import {
+  assertOrderDate,
+  assertOrderStatusChange,
+  validatePurchaseOrderLines,
+  type PurchaseOrderLineInput,
+} from "@/lib/purchases/purchase-order";
+import {
   prepareTransactionCsv,
   validateResolvedTransactionTotals,
 } from "@/lib/imports/transaction-import-validation";
@@ -3251,6 +3257,72 @@ export const listPurchaseOrders = createServerFn({ method: "GET" })
     return rows ?? [];
   });
 
+export const getPurchaseOrder = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; orderId: string }) => ({
+    companyId: assertUuid(input.companyId),
+    orderId: assertUuid(input.orderId, "order"),
+  }))
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "purchases.view");
+    const { data: order, error } = await context.supabase
+      .from("purchase_orders" as never)
+      .select("*, contacts(name), purchase_order_lines(*)" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("id" as never, data.orderId as never)
+      .eq("purchase_order_lines.company_id" as never, data.companyId as never)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!order) throw new Error("Purchase order not found in this organisation");
+    return order as unknown as import("@/lib/purchases/purchase-order-data").PurchaseOrderDetail;
+  });
+
+export const changePurchaseOrderStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; orderId: string; status: "sent" | "cancelled" }) => {
+    if (input.status !== "sent" && input.status !== "cancelled")
+      throw new Error("Invalid order status");
+    return {
+      companyId: assertUuid(input.companyId),
+      orderId: assertUuid(input.orderId, "order"),
+      status: input.status,
+    };
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    await assertCompanyPermission(supabase, data.companyId, "purchases.draft");
+    const { data: row, error } = await supabase
+      .from("purchase_orders" as never)
+      .select("status, billed_bill_id" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("id" as never, data.orderId as never)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("Purchase order not found in this organisation");
+    const current = row as { status: string; billed_bill_id: string | null };
+    assertOrderStatusChange(current.status, current.billed_bill_id, data.status);
+    const { data: changed, error: updateError } = await supabase
+      .from("purchase_orders" as never)
+      .update({ status: data.status, updated_at: new Date().toISOString() } as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("id" as never, data.orderId as never)
+      .eq("status" as never, current.status as never)
+      .is("billed_bill_id" as never, null as never)
+      .select("id");
+    if (updateError) throw new Error(updateError.message);
+    if (!(changed as unknown[] | null)?.length)
+      throw new Error("Order changed while saving. Reload and try again.");
+    await recordBillAudit(
+      supabase,
+      data.companyId,
+      "purchase_order_status_changed",
+      data.orderId,
+      { from: current.status, to: data.status, delivery: "manual_status_only" },
+      "purchase_order",
+    );
+    return { id: data.orderId, status: data.status };
+  });
+
 export const savePurchaseOrder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
@@ -3260,14 +3332,18 @@ export const savePurchaseOrder = createServerFn({ method: "POST" })
       orderDate: string;
       currencyCode: string;
       memo?: string;
-      lines: BillLineIn[];
+      lines: PurchaseOrderLineInput[];
     }) => ({
       companyId: assertUuid(input.companyId),
       contactId: assertUuid(input.contactId, "supplier"),
-      orderDate: input.orderDate,
-      currencyCode: input.currencyCode.toUpperCase(),
+      orderDate: assertOrderDate(input.orderDate),
+      currencyCode: (() => {
+        const currency = input.currencyCode.trim().toUpperCase();
+        if (!/^[A-Z]{3}$/.test(currency)) throw new Error("Choose a valid currency");
+        return currency;
+      })(),
       memo: (input.memo ?? "").trim().slice(0, 500) || null,
-      lines: validateBillLines(input.lines),
+      lines: validatePurchaseOrderLines(input.lines),
     }),
   )
   .handler(async ({ data, context }) => {
@@ -3282,6 +3358,8 @@ export const savePurchaseOrder = createServerFn({ method: "POST" })
       .select("id" as never)
       .eq("company_id" as never, data.companyId as never)
       .eq("id" as never, data.contactId as never)
+      .in("kind" as never, ["supplier", "both"] as never)
+      .eq("is_active" as never, true as never)
       .maybeSingle();
     if (supplierErr) throw new Error(supplierErr.message);
     if (!supplier) throw new Error("Supplier not found in this organisation");
@@ -3335,6 +3413,14 @@ export const savePurchaseOrder = createServerFn({ method: "POST" })
         .eq("status" as never, "draft" as never);
       throw new Error(`Could not save purchase order lines: ${lineErr.message}`);
     }
+    await recordBillAudit(
+      supabase,
+      data.companyId,
+      "purchase_order_created",
+      orderId,
+      { order_number: orderNumber, line_count: data.lines.length },
+      "purchase_order",
+    );
     return { id: orderId, orderNumber };
   });
 
@@ -3471,6 +3557,7 @@ export const convertPurchaseOrderToBill = createServerFn({ method: "POST" })
       .eq("company_id" as never, data.companyId as never)
       .eq("id" as never, data.orderId as never)
       .is("billed_bill_id" as never, null as never)
+      .eq("status" as never, order.status as never)
       .select("id");
     if (markErr || !marked || (marked as unknown[]).length === 0) {
       await cleanupBill();

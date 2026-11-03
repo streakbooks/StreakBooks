@@ -1,3 +1,4 @@
+import { computeLineAmounts } from "@/lib/purchases/line-math";
 /**
  * Pure helpers for turning a purchase order into a draft bill (P-15).
  */
@@ -13,8 +14,14 @@ export function impliedDiscountMinor(line: {
   unit_price_minor: number;
   net_minor: number;
 }): number {
-  const gross = Math.round(Number(line.quantity) * Number(line.unit_price_minor));
-  return Math.max(0, gross - Number(line.net_minor));
+  // Use the same six-decimal quantity arithmetic as the bill editor. Math.round here
+  // invented a one-minor-unit discount on fractional quantities and changed totals on save.
+  const gross = computeLineAmounts({
+    quantity: Number(line.quantity),
+    unit_price_minor: BigInt(line.unit_price_minor),
+  }).net_minor;
+  const discount = gross - BigInt(line.net_minor);
+  return Number(discount > 0n ? discount : 0n);
 }
 
 /** Calendar-safe due date: bill date + `termsDays` days (UTC, no local-time drift). */

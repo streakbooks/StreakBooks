@@ -1,3 +1,4 @@
+import { buildIntegrationHealth } from "./integration-health";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
@@ -324,11 +325,19 @@ export const getSettingsOverview = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
 
-    const { data: company } = await context.supabase
+    const { data: company, error: companyError } = await context.supabase
       .from("companies" as never)
       .select("name, base_currency, fiscal_year_end_month, tax_regime, is_demo" as never)
       .eq("id" as never, data.companyId as never)
       .maybeSingle();
+
+    if (companyError) throw new Error(companyError.message);
+    if (!company) throw new Error("Organisation not found");
+    const { readEmailConfig } = await import("@/lib/documents/email-provider.server");
+    const integrations = buildIntegrationHealth({
+      emailConfigured: readEmailConfig().configured,
+      isDemo: (company as { is_demo: boolean }).is_demo,
+    });
 
     const { data: lock } = await context.supabase
       .from("organisation_lock_policy" as never)
@@ -356,12 +365,13 @@ export const getSettingsOverview = createServerFn({ method: "GET" })
         href: "/settings?section=accounting",
       });
     }
-    warnings.push({
-      severity: "medium",
-      message:
-        "Email delivery is not configured — invitations and reminders cannot be sent outbound.",
-      href: "/settings?section=integrations",
-    });
+    const email = integrations.find((integration) => integration.key === "email")!;
+    if (email.status !== "configured")
+      warnings.push({
+        severity: "medium",
+        message: email.detail,
+        href: "/settings?section=notifications",
+      });
     warnings.push({
       severity: "low",
       message: "Bank feeds and payment gateways are not connected.",
@@ -400,12 +410,7 @@ export const getSettingsOverview = createServerFn({ method: "GET" })
         unavailable: features.filter((f) => f.state === "unavailable").length,
         disabled: features.filter((f) => f.state === "available_disabled").length,
       },
-      integrations: [
-        { name: "Outbound email", status: "unavailable" as const },
-        { name: "Live FX feed", status: "unavailable" as const },
-        { name: "Bank aggregator", status: "unavailable" as const },
-        { name: "Payment gateway", status: "unavailable" as const },
-      ],
+      integrations,
     };
   });
 

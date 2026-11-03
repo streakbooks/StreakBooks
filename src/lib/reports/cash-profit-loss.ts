@@ -79,6 +79,12 @@ export function cashProfitLoss(
     throw new Error("Choose a valid cash reporting period");
   const accounts = new Map(input.accounts.map((account) => [account.id, account]));
   const cash = new Set(input.cashAccountIds);
+  const needsCashPolicy = (accountId: string) => {
+    const account = accounts.get(accountId);
+    return /inventory|stock|prepaid|prepayment|deferred|accrued|payroll|wages/.test(
+      [account?.account_kind, account?.subtype, account?.system_key].join(" ").toLowerCase(),
+    );
+  };
   const ar = new Set(
     findControlAccountIds(
       input.accounts.map((a) => ({ ...a, is_active: true })),
@@ -184,6 +190,10 @@ export function cashProfitLoss(
       const grouped = new Map<string, bigint>();
       for (const line of original.lines) {
         if (control.has(line.accountId)) continue;
+        if (needsCashPolicy(line.accountId))
+          throw new Error(
+            "Inventory, prepayment, deferred or payroll/accrual accounts need a reviewed cash-recognition policy; they cannot be silently omitted from cash P&L.",
+          );
         grouped.set(
           line.accountId,
           (grouped.get(line.accountId) ?? 0n) + (line.debit - line.credit) * orientation,
@@ -408,6 +418,10 @@ export function cashProfitLoss(
       )
     )
       continue;
+    if (journal.lines.some((line) => needsCashPolicy(line.accountId)))
+      throw new Error(
+        "A cash movement settles inventory, prepayment, deferred or payroll/accrual balances requiring a reviewed cash-recognition policy.",
+      );
     if (journal.lines.some((line) => ar.has(line.accountId) || ap.has(line.accountId)))
       throw new Error(
         "A posted bank movement uses receivables/payables without complete cash allocation detail",

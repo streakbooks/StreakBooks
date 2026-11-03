@@ -278,3 +278,16 @@ describe("cash capture consistency", () => {
     expect(() => totals(input)).toThrow("posted cash settlement journal is unavailable");
   });
 });
+
+describe("unsupported accrual bridges", () => {
+  it.each(["inventory", "prepayment", "deferred_revenue"])(
+    "never silently drops a paid %s account from cash P&L",
+    (kind) => {
+      const input = cashInputFixture();
+      const account = input.accounts.find((row) => row.id === expenseId)!;
+      account.account_kind = kind;
+      account.account_type = "asset";
+      expect(() => totals(input)).toThrow("cash-recognition policy");
+    },
+  );
+});

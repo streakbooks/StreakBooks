@@ -1,3 +1,7 @@
+import type { PurchaseOrderDetail } from "@/lib/purchases/purchase-order-data";
+import { fromMinorUnits } from "@/lib/accounting/money";
+import { impliedDiscountMinor } from "@/lib/purchases/po-convert";
+import { getPurchaseOrder } from "@/lib/purchases/purchases.functions";
 import { useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -30,34 +34,95 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/_authenticated/purchases/orders/new")({
+  validateSearch: (raw: Record<string, unknown>): { edit?: string } =>
+    typeof raw["edit"] === "string" ? { edit: raw["edit"] } : {},
   component: NewOrder,
 });
 
 export function NewOrder() {
   const { company } = useActiveCompany();
+  const { edit } = Route.useSearch();
   // Remount the draft when switching companies; never carry supplier/account IDs across tenants.
   return company ? (
-    <OrderForm key={company.id} companyId={company.id} baseCurrency={company.base_currency} />
+    <OrderLoader
+      key={`${company.id}:${edit ?? "new"}`}
+      companyId={company.id}
+      baseCurrency={company.base_currency}
+      edit={edit}
+    />
   ) : (
     <EmptyState title="No organisation" description="Select a company." />
   );
 }
 
-function OrderForm({ companyId, baseCurrency }: { companyId: string; baseCurrency: string }) {
+function OrderLoader({
+  companyId,
+  baseCurrency,
+  edit,
+}: {
+  companyId: string;
+  baseCurrency: string;
+  edit: string | undefined;
+}) {
+  const fetch = useServerFn(getPurchaseOrder);
+  const q = useQuery({
+    queryKey: ["purchase-order", companyId, edit],
+    enabled: Boolean(edit),
+    queryFn: () => fetch({ data: { companyId, orderId: edit! } }),
+  });
+  if (edit && q.isPending) return <LoadingState />;
+  if (edit && q.isError)
+    return <ErrorState title="Could not load order" description={friendlyAuthError(q.error)} />;
+  if (q.data && (q.data.status !== "draft" || q.data.billed_bill_id))
+    return (
+      <EmptyState
+        title="Order cannot be edited"
+        description="Only unbilled draft orders can be edited."
+      />
+    );
+  return <OrderForm companyId={companyId} baseCurrency={baseCurrency} initial={q.data} />;
+}
+function OrderForm({
+  companyId,
+  baseCurrency,
+  initial,
+}: {
+  companyId: string;
+  baseCurrency: string;
+  initial: PurchaseOrderDetail | undefined;
+}) {
   const queryClient = useQueryClient();
   const fmt = useFormat();
   const fetchSuppliers = useServerFn(listSuppliers);
   const fetchAccounts = useServerFn(listAccounts);
   const save = useServerFn(savePurchaseOrder);
   const { can } = useCan();
-  const [contactId, setContactId] = useState("");
-  const [orderDate, setOrderDate] = useState(new Date().toISOString().slice(0, 10));
-  const [memo, setMemo] = useState("");
-  const nextKey = useRef(1);
-  const [lines, setLines] = useState(() => [{ ...emptyOrderLine(), key: 0 }]);
+  const [contactId, setContactId] = useState(initial?.contact_id ?? "");
+  const [orderDate, setOrderDate] = useState(
+    initial?.order_date ?? new Date().toISOString().slice(0, 10),
+  );
+  const [memo, setMemo] = useState(initial?.memo ?? "");
+  const nextKey = useRef(initial?.purchase_order_lines.length ?? 1);
+  const [lines, setLines] = useState(() =>
+    initial
+      ? [...initial.purchase_order_lines]
+          .sort((a, b) => a.line_no - b.line_no)
+          .map((l, i) => ({
+            key: i,
+            ...emptyOrderLine(),
+            description: l.description,
+            accountId: l.account_id,
+            quantity: String(l.quantity),
+            unitPrice: fromMinorUnits(l.unit_price_minor, initial.currency_code),
+            discount: fromMinorUnits(impliedDiscountMinor(l), initial.currency_code),
+            taxPercent: String(l.tax_rate_bps / 100),
+          }))
+      : [{ ...emptyOrderLine(), key: 0 }],
+  );
   const [savedId, setSavedId] = useState<string | null>(null);
   const recordRef = useRef<DocumentRecordHandle>(null);
   const createdRef = useRef<string | null>(null);
+  const requestId = useRef(crypto.randomUUID());
   const suppliersQ = useQuery({
     queryKey: ["suppliers", companyId],
     queryFn: () => fetchSuppliers({ data: { companyId } }),
@@ -72,7 +137,9 @@ function OrderForm({ companyId, baseCurrency }: { companyId: string; baseCurrenc
     default_currency: string | null;
   }>;
   const currency = (
-    suppliers.find((s) => s.id === contactId)?.default_currency || baseCurrency
+    (initial && contactId === initial.contact_id ? initial.currency_code : null) ||
+    suppliers.find((s) => s.id === contactId)?.default_currency ||
+    baseCurrency
   ).toUpperCase();
   const accounts = (
     (accountsQ.data ?? []) as Array<{
@@ -102,6 +169,8 @@ function OrderForm({ companyId, baseCurrency }: { companyId: string; baseCurrenc
       return save({
         data: {
           companyId,
+          requestId: requestId.current,
+          ...(initial ? { orderId: initial.id, version: initial.version } : {}),
           contactId,
           orderDate,
           currencyCode: currency,
@@ -119,6 +188,7 @@ function OrderForm({ companyId, baseCurrency }: { companyId: string; baseCurrenc
         toast.error(`Order saved, but notes or files could not be stored: ${friendlyAuthError(e)}`);
       }
       await queryClient.invalidateQueries({ queryKey: ["orders", companyId] });
+      await queryClient.invalidateQueries({ queryKey: ["purchase-order", companyId, result.id] });
       toast.success("Purchase order saved");
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
@@ -144,7 +214,7 @@ function OrderForm({ companyId, baseCurrency }: { companyId: string; baseCurrenc
   return (
     <>
       <PageHeader
-        title="New purchase order"
+        title={initial ? `Edit ${initial.order_number ?? "purchase order"}` : "New purchase order"}
         description="Agree supplier costs before billing. A purchase order does not affect the ledger."
       />
       {savedId ? (
@@ -345,7 +415,7 @@ function OrderForm({ companyId, baseCurrency }: { companyId: string; baseCurrenc
       <DocumentRecordPanel
         ref={recordRef}
         entityType="purchase_order"
-        entityId={savedId}
+        entityId={savedId ?? initial?.id ?? null}
         audience="supplier"
       />
       <div className="mt-4 flex gap-2">

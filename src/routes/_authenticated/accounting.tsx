@@ -1,3 +1,4 @@
+import { DeferralsPanel } from "@/components/accounting/DeferralsPanel";
 import { nativeTabLinkClass, handleNativeTabKeyDown } from "@/lib/navigation/native-tab";
 import { TransactionCorrections } from "@/components/accounting/corrections/TransactionCorrections";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -32,6 +33,7 @@ const ACCOUNTING_TABS = [
   "conversion",
   "fx",
   "corrections",
+  "deferrals",
 ] as const;
 type AccountingTab = (typeof ACCOUNTING_TABS)[number];
 type AccountingSearch = { tab?: AccountingTab | undefined; journal?: string | undefined };
@@ -226,8 +228,22 @@ export function AccountingWorkspace({
           >
             FX &amp; reversals
           </Link>
+          <Link
+            className={nativeTabLinkClass}
+            role="tab"
+            aria-selected={tab === "deferrals"}
+            data-state={tab === "deferrals" ? "active" : "inactive"}
+            to="/accounting"
+            search={{ tab: "deferrals" }}
+            resetScroll={false}
+          >
+            Prepayments & deferred income
+          </Link>
         </TabsList>
 
+        <TabsContent value="deferrals" className="mt-4">
+          <DeferralsPanel key={companyId} companyId={companyId} currency={currency} />
+        </TabsContent>
         <TabsContent value="coa" className="mt-4">
           <ChartAccountsPanel companyId={companyId} currency={currency} />
         </TabsContent>

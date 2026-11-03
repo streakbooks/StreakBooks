@@ -1,3 +1,4 @@
+import { parseOfxStatement, OFX_MAPPING } from "@/lib/banking/ofx-import";
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useRouterState } from "@tanstack/react-router";
 import { useId, useEffect, useMemo, useState } from "react";
@@ -162,11 +163,14 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
   const [includeDuplicates, setIncludeDuplicates] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [fileError, setFileError] = useState("");
+  const [ofxInfo, setOfxInfo] = useState<{ currency: string; accountId: string } | null>(null);
   async function loadCsvFile(file: File) {
     setFileError("");
-    if (!/\\.(csv|txt)$/i.test(file.name)) {
+    setCsvText("");
+    setOfxInfo(null);
+    if (!/\.(csv|txt|ofx|qfx)$/i.test(file.name)) {
       setFileError(
-        "Unsupported format. Please export a CSV file; OFX, QFX, QBO, QIF and PDF are not yet supported.",
+        "Use CSV, TXT, OFX or QFX. PDF, QIF and investment statements are not supported.",
       );
       return;
     }
@@ -174,14 +178,18 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
       setFileError("File is too large (maximum 5 MB). Split it by date range.");
       return;
     }
-    const text = await file.text();
-    if (!text.trim()) {
-      setFileError("The selected file is empty.");
-      return;
+    try {
+      const text = await file.text();
+      if (!text.trim()) throw new Error("The selected file is empty.");
+      const ofx = /\.(ofx|qfx)$/i.test(file.name) ? parseOfxStatement(text) : null;
+      setOfxInfo(ofx ? { currency: ofx.currency, accountId: ofx.accountId } : null);
+      setFilename(file.name);
+      setCsvText(ofx?.csvText ?? text);
+      setMapping(ofx ? { ...OFX_MAPPING } : null);
+      setIncludeDuplicates(false);
+    } catch (error) {
+      setFileError(error instanceof Error ? error.message : "Could not read statement");
     }
-    setFilename(file.name);
-    setCsvText(text);
-    setIncludeDuplicates(false);
   }
 
   const accountsQ = useQuery({
@@ -196,6 +204,7 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
   });
   const account = (accountsQ.data ?? []).find((a) => a.id === bankAccountId);
   const currency = account?.currency_code ?? company?.base_currency ?? "GBP";
+  const ofxCurrencyMismatch = Boolean(ofxInfo && account && ofxInfo.currency !== currency);
 
   const savedQ = useQuery({
     queryKey: ["bank-import-mapping", companyId, bankAccountId],
@@ -211,6 +220,11 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
   // Pick the starting mapping when a file is loaded: saved mapping (server, then this browser), else a guess.
   useEffect(() => {
     if (!csvText.trim() || !companyId || !bankAccountId || savedQ.isPending) return;
+    if (ofxInfo) {
+      setMapping({ ...OFX_MAPPING });
+      setMappingSource("guess");
+      return;
+    }
     const base = parseCsvText(csvText, "auto");
     const saved =
       savedQ.data?.mapping ?? (bankAccountId ? readLocalMapping(companyId, bankAccountId) : null);
@@ -218,7 +232,7 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
       saved && validateMapping(saved, base.rows[0]?.length ?? 0).length === 0 ? saved : null;
     setMapping(usable ?? guessMapping(base.rows, "auto"));
     setMappingSource(usable ? "saved" : "guess");
-  }, [csvText, companyId, bankAccountId, savedQ.isPending, savedQ.data]);
+  }, [csvText, companyId, bankAccountId, savedQ.isPending, savedQ.data, ofxInfo]);
 
   const columnCount = Math.max(0, ...(parsed?.rows ?? []).slice(0, 50).map((r) => r.length));
   const headerRow = parsed?.rows[0] ?? [];
@@ -266,6 +280,8 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
 
   const mutation = useMutation({
     mutationFn: async () => {
+      if (ofxCurrencyMismatch)
+        throw new Error("The OFX currency does not match the selected bank account");
       const base = dupQ.data!.rows;
       const rows = base
         .filter((r) => includeDuplicates || !dupRows.has(r.rowNumber))
@@ -314,6 +330,7 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
   const rowsToImport = mapped ? mapped.rows.length - (includeDuplicates ? 0 : dupRows.size) : 0;
   const canImport =
     Boolean(bankAccountId && mapped && mapped.rows.length > 0 && dupQ.data) &&
+    !ofxCurrencyMismatch &&
     rowsToImport > 0 &&
     !mutation.isPending;
 
@@ -339,8 +356,9 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
         <div className="space-y-2">
           <h2 className="font-semibold">Prepare your bank statement</h2>
           <p className="text-sm text-muted-foreground">
-            Export a CSV from your bank or use the LinkBooks template. Import one bank account at a
-            time. Positive amounts are money received and negative amounts are money spent.
+            Export CSV, OFX or QFX from your bank, or use the LinkBooks CSV template. Import one
+            bank account at a time. Positive amounts are money received and negative amounts are
+            money spent.
           </p>
           <Button type="button" size="sm" variant="outline" onClick={downloadBankTemplate}>
             <Download className="mr-2 size-4" /> Download CSV template
@@ -384,7 +402,9 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
           >
             <UploadCloud className="size-8 text-muted-foreground" />
             <span className="text-sm font-medium">Drag and drop your file or click to browse</span>
-            <span className="text-xs text-muted-foreground">CSV or TXT · Maximum 5 MB</span>
+            <span className="text-xs text-muted-foreground">
+              CSV, TXT, OFX or QFX · Maximum 5 MB
+            </span>
             <span className="rounded-md border bg-background px-3 py-1.5 text-sm">
               {csvText ? filename : "Choose file"}
             </span>
@@ -392,7 +412,7 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
           <input
             id={`${uiId}-csv-file`}
             type="file"
-            accept=".csv,.txt,text/csv,text/plain"
+            accept=".csv,.txt,.ofx,.qfx,text/csv,text/plain,application/x-ofx"
             className="sr-only"
             onChange={(e) => {
               const file = e.target.files?.[0];
@@ -400,14 +420,27 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
               e.currentTarget.value = "";
             }}
           />
+          {ofxInfo ? (
+            <p className="mb-3 text-sm">
+              OFX account ending {ofxInfo.accountId.slice(-4)} · {ofxInfo.currency}. Verify the
+              selected bank account. Bank FITIDs are preserved for duplicate detection.
+            </p>
+          ) : null}
+          {ofxCurrencyMismatch ? (
+            <p role="alert" className="mb-3 text-sm text-destructive">
+              Statement currency does not match the selected bank account. Select the correct
+              account.
+            </p>
+          ) : null}
           {fileError ? (
             <p role="alert" className="text-sm text-destructive">
               {fileError}
             </p>
           ) : null}
           <p className="text-xs text-muted-foreground">
-            OFX, QFX, QBO, QIF and PDF uploads are not supported yet. Export CSV instead. Imported
-            statement lines remain uncategorised until coded or reconciled.
+            Bank and credit-card OFX/QFX and CSV statements are supported. QBO, QIF, PDF, investment
+            statements and OFX correction records are not supported. Imported statement lines remain
+            uncategorised until coded or reconciled.
           </p>
         </div>
       </section>
@@ -709,7 +742,7 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
           description={friendlyAuthError(importsQ.error)}
         />
       ) : (importsQ.data ?? []).length === 0 ? (
-        <EmptyState title="No imports yet" description="Upload a CSV statement." />
+        <EmptyState title="No imports yet" description="Upload a CSV, OFX or QFX statement." />
       ) : (
         <Table>
           <TableHeader>

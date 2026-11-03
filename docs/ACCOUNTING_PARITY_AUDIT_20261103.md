@@ -2,6 +2,8 @@
 
 Date: 3 November 2026. Repository: `linkbusinessadvisory/LinkBooks`.
 
+Current follow-up: [workflow-depth delivery](ACCOUNTING_WORKFLOWS_DELIVERY_20261103.md) adds transactional/versioned purchase orders, sales orders, OFX/QFX intake and manual deferral schedules; its migration was applied after explicit owner approval. The broader backlog below remains open where noted.
+
 ## Scope and evidence
 
 This is a source-level functionality assessment and two implementation tasks, not certification of full Xero/Odoo parity. The current routes, server functions, feature flags, existing migrations, reporting catalogue and previous audit records were inspected. Operational status requires more than a route or configuration switch. Historical audit files dated October describe earlier versions; they are not authoritative evidence that current fixed assets, portals, reports, notifications or platform modules are absent.
@@ -25,10 +27,10 @@ Odoo 19 rendered accounting documentation timed out; official Odoo 18/17 search-
 | Navigation / workflow | Present in current code | Verified gap or remaining acceptance | Next implementation / evidence |
 |---|---|---|---|
 | Dashboard | Ledger-backed metrics and bookkeeping attention centre | Full totals-to-report tie-out under permissions and multiple currencies is not certified | Reuse golden ledger fixtures across metrics and reports |
-| Purchasing / orders | Non-posting PO header/lines, draft-bill conversion, shared printable document | Before this task: single-line form, no detail route, hidden order number/currency, no status controls; conversion rounding and cancellation race defects | Task 1 addresses these. Draft editing, approvals, receipts, partial billing and matching remain |
+| Purchasing / orders | Non-posting PO header/lines, draft-bill conversion, shared printable document | Before this task: single-line form, no detail route, hidden order number/currency, no status controls; conversion rounding and cancellation race defects | Task 1 addresses these. Transactional creation/conversion, draft editing and server browse are implemented in the workflow-depth follow-up; approvals, receipts, partial billing and matching remain |
 | Purchasing / bills and credits | Bill workspace, line tax/discounts/dimensions, approvals, posting, credits, allocations | Full posted lifecycle/concurrency evidence; atomic PO creation/conversion; historical allocation event model | Transactional DB RPCs and tenant/role/lock-period scenarios |
 | Purchasing / expenses and payments | Expenses, employee claims, supplier payments, payment batches and statements | Automated payout provider; receipt intake/OCR; production bank-file validation; timesheets | Provider sandbox and human-reviewed intake; time/expense allocation model |
-| Sales / quotes and invoices | Quote conversion, invoice editing/posting, credits, receipts, customer statements, reminders and recurring documents | Sales orders, delivery tracking, retainers and price lists explicitly unavailable in feature catalogue | Independent sales-order lifecycle and invoice linkage; customer pricing and deposit accounting |
+| Sales / quotes and invoices | Quote conversion, invoice editing/posting, credits, receipts, customer statements, reminders and recurring documents | Sales orders now support draft/confirmation/invoice conversion in the workflow-depth follow-up. Delivery tracking, retainers and price lists remain pending | Independent sales-order lifecycle and invoice linkage; customer pricing and deposit accounting |
 | Sales / collections | Existing allocations and email actions | Online payment gateway, signed settlement/refund webhooks and bank fee/FX reconciliation | Provider credentials and sandbox plus idempotent settlement ledger |
 | Banking / accounts and imports | Accounts, CSV mappings/duplicates, review cards, cash coding, transfers | Actual bank-feed provider is absent; external consent/sync/retry lifecycle not implemented | Select and integrate supported provider, signed webhook tests and consent renewal |
 | Banking / rules and reconciliation | Priority-sorted deterministic rule matching, split coding, matching, reconciliation sessions and reports | Do not recreate these as missing based on old October docs. Multi-source matching, concurrent completion and cross-ledger acceptance still need depth/proof | Exercise bank→document→journal→reconciliation end to end |
@@ -54,7 +56,7 @@ Source: `src/lib/settings/categories.ts`, `registry.ts`, `feature-catalog.ts`, S
 | Categories | Present / assessment | Outstanding work |
 |---|---|---|
 | overview, integrations | Summary and integration cards | Task 2 aligns real email configuration across both panels; delivery verification and missing providers remain separate |
-| features | Five-state feature manager and persisted organisation flags | Sales orders, time tracking, retainers and price lists remain explicitly unavailable; inventory/AI/late fees are beta |
+| features | Five-state feature manager and persisted organisation flags | Sales orders are now available through draft invoice conversion; time tracking, retainers and price lists remain unavailable; inventory/AI/late fees are beta |
 | organisation, accounting, currencies | Organisation and fiscal defaults, locks, conversion dates, manual FX | Validate changes against posted-data constraints and multi-role scenarios; automatic FX feed remains absent |
 | sales, purchases, banking | Module defaults and workflow links | Do not enable configuration promises without corresponding consuming workflow; PO receipt/matching and bank providers remain pending |
 | dimensions, products, expenses | Dimensions, product options, expense configuration | Analytic distributions, valued inventory and timesheets need end-to-end implementations |
@@ -69,11 +71,11 @@ Source: `src/lib/settings/categories.ts`, `registry.ts`, `feature-catalog.ts`, S
 ## Prioritized pending delivery tasks
 
 1. **P0 financial acceptance:** isolated PostgreSQL/Supabase fixture for invoice→receipt→AR/GL, bill→payment→AP/GL, bank→journal→reconciliation, credit/void/reversal/FX, period locks, two tenants, multiple roles and concurrent replay. Existing unit tests cannot substitute for this.
-2. **Purchasing depth:** transactional creation/conversion RPC with audit in the same transaction; draft editing and version conflicts; approval policy; receiving/returns; ordered-vs-received billing; partial bills and 2-/3-way matching; full-list server search/pagination.
+2. **Purchasing depth:** transactional creation/conversion/audit, versioned draft editing and server browse are implemented in the workflow-depth follow-up. Approval policy, receiving/returns, ordered-vs-received billing, partial bills, 2-/3-way matching and full-filter CSV export remain pending.
 3. **Historical reporting:** dated AP payment/credit allocation and reversal events, then historical aged payables. Preserve existing refusal to fabricate past balances until that history exists.
-4. **Sales depth:** sales orders and fulfilment; price lists/volume pricing; retainers/deposit liability and draw-down; collections/payment gateway lifecycle.
+4. **Sales depth:** basic sales orders through draft invoice conversion are implemented. Fulfilment/partial invoicing; price lists/volume pricing; retainers/deposit liability and draw-down; collections/payment gateway lifecycle.
 5. **Automation/integrations:** recurring worker deployment and retry visibility; bank provider consent/webhooks; inbound email/OCR; actual email sender verification; payout/collection providers. Configuration credentials are necessary but not sufficient implementations.
-6. **Accounting depth:** deferred/prepaid schedules, analytic distributions, asset-to-GL reconciliation, complete cash-basis/tax acceptance, country filing/e-invoicing.
+6. **Accounting depth:** manual deferred/prepaid schedules are implemented. Source-linked deferral reconciliation/adjustments, analytic distributions, asset-to-GL reconciliation, complete cash-basis/tax acceptance, country filing/e-invoicing.
 7. **Business expansion:** inventory valuation/COGS/returns, timesheets/project billing, intercompany/eliminations/consolidation, vendor/e-commerce migration connectors.
 8. **Operations:** repeatable backups/restore drill, monitored worker/provider failures and financial incident procedures.
 

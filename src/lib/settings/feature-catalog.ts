@@ -84,8 +84,8 @@ export const FEATURE_CATALOG: FeatureDefinition[] = [
   {
     key: "sales_orders",
     label: "Sales orders",
-    description: "Sales order workflow.",
-    implementation: "unavailable",
+    description: "Draft, confirm, cancel and convert sales orders to draft invoices.",
+    implementation: "available",
     consumerModules: ["sales"],
     preservesHistory: true,
   },

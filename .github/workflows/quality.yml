@@ -50,6 +50,9 @@ jobs:
       - name: Unit tests
         run: npm test
 
+      - name: Isolated PostgreSQL workflow tests
+        run: npm run test:workflows:postgres
+
       - name: Cash history and delivery PostgreSQL checks
         run: python3 scripts/test-cash-history-postgres.py
 

@@ -77,6 +77,7 @@ import { Route as AuthenticatedReportsIndexRouteImport } from './routes/_authent
 import { Route as AuthenticatedReportsReportIdRouteImport } from './routes/_authenticated/reports/$reportId'
 import { Route as AuthenticatedSalesIndexRouteImport } from './routes/_authenticated/sales/index'
 import { Route as AuthenticatedSalesCustomersRouteImport } from './routes/_authenticated/sales/customers'
+import { Route as AuthenticatedSalesOrdersRouteImport } from './routes/_authenticated/sales/orders'
 import { Route as AuthenticatedSalesRecurringRouteImport } from './routes/_authenticated/sales/recurring'
 import { Route as AuthenticatedSalesRemindersRouteImport } from './routes/_authenticated/sales/reminders'
 import { Route as AuthenticatedSalesSettingsRouteImport } from './routes/_authenticated/sales/settings'
@@ -516,6 +517,12 @@ const AuthenticatedSalesCustomersRoute =
     path: '/customers',
     getParentRoute: () => AuthenticatedSalesRouteRoute,
   } as any)
+const AuthenticatedSalesOrdersRoute =
+  AuthenticatedSalesOrdersRouteImport.update({
+    id: '/orders',
+    path: '/orders',
+    getParentRoute: () => AuthenticatedSalesRouteRoute,
+  } as any)
 const AuthenticatedSalesRecurringRoute =
   AuthenticatedSalesRecurringRouteImport.update({
     id: '/recurring',
@@ -917,6 +924,7 @@ export interface FileRoutesByFullPath {
   '/purchases/suppliers': typeof AuthenticatedPurchasesSuppliersRoute
   '/reports/$reportId': typeof AuthenticatedReportsReportIdRoute
   '/sales/customers': typeof AuthenticatedSalesCustomersRoute
+  '/sales/orders': typeof AuthenticatedSalesOrdersRoute
   '/sales/recurring': typeof AuthenticatedSalesRecurringRoute
   '/sales/reminders': typeof AuthenticatedSalesRemindersRoute
   '/sales/settings': typeof AuthenticatedSalesSettingsRoute
@@ -1039,6 +1047,7 @@ export interface FileRoutesByTo {
   '/purchases/suppliers': typeof AuthenticatedPurchasesSuppliersRoute
   '/reports/$reportId': typeof AuthenticatedReportsReportIdRoute
   '/sales/customers': typeof AuthenticatedSalesCustomersRoute
+  '/sales/orders': typeof AuthenticatedSalesOrdersRoute
   '/sales/recurring': typeof AuthenticatedSalesRecurringRoute
   '/sales/reminders': typeof AuthenticatedSalesRemindersRoute
   '/sales/settings': typeof AuthenticatedSalesSettingsRoute
@@ -1166,6 +1175,7 @@ export interface FileRoutesById {
   '/_authenticated/purchases/suppliers': typeof AuthenticatedPurchasesSuppliersRoute
   '/_authenticated/reports/$reportId': typeof AuthenticatedReportsReportIdRoute
   '/_authenticated/sales/customers': typeof AuthenticatedSalesCustomersRoute
+  '/_authenticated/sales/orders': typeof AuthenticatedSalesOrdersRoute
   '/_authenticated/sales/recurring': typeof AuthenticatedSalesRecurringRoute
   '/_authenticated/sales/reminders': typeof AuthenticatedSalesRemindersRoute
   '/_authenticated/sales/settings': typeof AuthenticatedSalesSettingsRoute
@@ -1296,6 +1306,7 @@ export interface FileRouteTypes {
     | '/purchases/suppliers'
     | '/reports/$reportId'
     | '/sales/customers'
+    | '/sales/orders'
     | '/sales/recurring'
     | '/sales/reminders'
     | '/sales/settings'
@@ -1418,6 +1429,7 @@ export interface FileRouteTypes {
     | '/purchases/suppliers'
     | '/reports/$reportId'
     | '/sales/customers'
+    | '/sales/orders'
     | '/sales/recurring'
     | '/sales/reminders'
     | '/sales/settings'
@@ -1544,6 +1556,7 @@ export interface FileRouteTypes {
     | '/_authenticated/purchases/suppliers'
     | '/_authenticated/reports/$reportId'
     | '/_authenticated/sales/customers'
+    | '/_authenticated/sales/orders'
     | '/_authenticated/sales/recurring'
     | '/_authenticated/sales/reminders'
     | '/_authenticated/sales/settings'
@@ -2102,6 +2115,13 @@ declare module '@tanstack/react-router' {
       path: '/customers'
       fullPath: '/sales/customers'
       preLoaderRoute: typeof AuthenticatedSalesCustomersRouteImport
+      parentRoute: typeof AuthenticatedSalesRouteRoute
+    }
+    '/_authenticated/sales/orders': {
+      id: '/_authenticated/sales/orders'
+      path: '/orders'
+      fullPath: '/sales/orders'
+      preLoaderRoute: typeof AuthenticatedSalesOrdersRouteImport
       parentRoute: typeof AuthenticatedSalesRouteRoute
     }
     '/_authenticated/sales/recurring': {
@@ -2704,6 +2724,7 @@ const AuthenticatedSalesQuotesQuoteIdRouteWithChildren =
 
 interface AuthenticatedSalesRouteRouteChildren {
   AuthenticatedSalesCustomersRoute: typeof AuthenticatedSalesCustomersRoute
+  AuthenticatedSalesOrdersRoute: typeof AuthenticatedSalesOrdersRoute
   AuthenticatedSalesRecurringRoute: typeof AuthenticatedSalesRecurringRoute
   AuthenticatedSalesRemindersRoute: typeof AuthenticatedSalesRemindersRoute
   AuthenticatedSalesSettingsRoute: typeof AuthenticatedSalesSettingsRoute
@@ -2726,6 +2747,7 @@ interface AuthenticatedSalesRouteRouteChildren {
 const AuthenticatedSalesRouteRouteChildren: AuthenticatedSalesRouteRouteChildren =
   {
     AuthenticatedSalesCustomersRoute: AuthenticatedSalesCustomersRoute,
+    AuthenticatedSalesOrdersRoute: AuthenticatedSalesOrdersRoute,
     AuthenticatedSalesRecurringRoute: AuthenticatedSalesRecurringRoute,
     AuthenticatedSalesRemindersRoute: AuthenticatedSalesRemindersRoute,
     AuthenticatedSalesSettingsRoute: AuthenticatedSalesSettingsRoute,

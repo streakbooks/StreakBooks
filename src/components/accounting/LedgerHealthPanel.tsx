@@ -15,7 +15,7 @@ import {
 } from "@/lib/accounting/ledger-health";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 const ICON: Record<HealthStatus, typeof CheckCircle2> = {
@@ -71,7 +71,7 @@ export function LedgerHealthPanel({ companyId }: { companyId: string }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Ledger health check</CardTitle>
+        <h2 className="text-base font-semibold leading-none tracking-tight">Ledger health check</h2>
         <CardDescription>
           Read-only checks on the books: trial balance, journal balance, orphan lines, documents
           against journals, receivables and payables against the ledger, and period locks. It

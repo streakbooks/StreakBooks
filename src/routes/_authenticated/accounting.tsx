@@ -19,6 +19,7 @@ import { ConversionBalancesPanel } from "@/components/accounting/ConversionBalan
 import { FxPanel } from "@/components/accounting/FxPanel";
 import { FinancialYearsPanel } from "@/components/accounting/FinancialYearsPanel";
 import { IndustryCoaPanel } from "@/components/accounting/IndustryCoaPanel";
+import { LedgerHealthPanel } from "@/components/accounting/LedgerHealthPanel";
 import { JournalsPanel } from "@/components/accounting/JournalsPanel";
 import { PeriodClosePanel } from "@/components/accounting/PeriodClosePanel";
 import { ManualJournalPanel } from "@/components/create-new/JournalPanels";
@@ -30,6 +31,7 @@ const ACCOUNTING_TABS = [
   "post",
   "periods",
   "close",
+  "health",
   "conversion",
   "fx",
   "corrections",
@@ -209,6 +211,17 @@ export function AccountingWorkspace({
           <Link
             className={nativeTabLinkClass}
             role="tab"
+            aria-selected={tab === "health"}
+            data-state={tab === "health" ? "active" : "inactive"}
+            to="/accounting"
+            search={{ tab: "health" }}
+            resetScroll={false}
+          >
+            Ledger health
+          </Link>
+          <Link
+            className={nativeTabLinkClass}
+            role="tab"
             aria-selected={tab === "conversion"}
             data-state={tab === "conversion" ? "active" : "inactive"}
             to="/accounting"
@@ -281,6 +294,10 @@ export function AccountingWorkspace({
 
         <TabsContent value="close" className="mt-4">
           <PeriodClosePanel companyId={companyId} />
+        </TabsContent>
+
+        <TabsContent value="health" className="mt-4">
+          <LedgerHealthPanel key={companyId} companyId={companyId} />
         </TabsContent>
 
         <TabsContent value="conversion" className="mt-4">

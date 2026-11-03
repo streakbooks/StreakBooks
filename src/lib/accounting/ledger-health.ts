@@ -103,6 +103,13 @@ export function parseHealthReport(raw: unknown, expectedCompanyId?: string): Hea
             Boolean(item) && typeof item === "object" && !Array.isArray(item),
         )
       : [];
+    for (const item of items) {
+      for (const [field, value] of Object.entries(item)) {
+        if (field.endsWith("_minor") && typeof value === "number" && !Number.isSafeInteger(value)) {
+          throw new Error("The ledger health check returned an unsafe minor-unit amount.");
+        }
+      }
+    }
     return {
       key,
       label: asString(o["label"]),

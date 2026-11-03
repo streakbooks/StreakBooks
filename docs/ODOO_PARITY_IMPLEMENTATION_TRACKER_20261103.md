@@ -43,3 +43,13 @@ Authoritative repository: linkbusinessadvisory/LinkBooks. Keep independent LinkB
 ## This PR — exact boundary
 
 Implements a reusable, read-only posting-journal tab in the shared DocumentRecordPanel for accounting.view users; source-type and tenant filters; explicit reversal linkage; debit/credit totals; pure mapping tests. No posting logic or database schema changed. Its integration and E2E tests have not been run in this connector session. It does NOT complete the overall P0 milestone or any P1–P3 item.
+
+
+## Follow-up implementation tasks — 3 November 2026
+
+See [the cross-navigation audit](ACCOUNTING_PARITY_AUDIT_20261103.md) and [delivery/local verification guide](ACCOUNTING_PARITY_DELIVERY_20261103.md).
+
+- Purchase orders: multi-line discounted form, saved detail route, document actions, guarded manual status/cancellation, own-currency list/CSV, cancellation/conversion conflict protection and fractional-quantity discount preservation. This does not complete P3 purchasing receipt/matching or P0 transactional acceptance.
+- Settings: shared server-backed document-email configuration readiness across Overview/Integrations; Demo restrictions and missing providers remain explicit. Configuration is not delivery verification.
+- Current main's reporting PR #12 is preserved. Historical Aged Payables remains unsupported pending dated allocation/reversal history.
+- Live authenticated UI/PostgreSQL/tenant/race tests, safe staging setup, transactional PO RPCs and provider integrations remain pending. No P0–P3 checkbox above is closed by these tasks.

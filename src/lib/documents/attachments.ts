@@ -96,7 +96,7 @@ export const ATTACHMENT_ENTITIES: Record<AttachmentEntityType, EntityInfo> = {
     table: "purchase_orders",
     view: "purchases.view",
     manage: ["purchases.draft"],
-    path: () => `/purchases/orders`,
+    path: (id) => `/purchases/orders/${id}`,
   },
   purchase_credit_note: {
     label: "Supplier credit note",

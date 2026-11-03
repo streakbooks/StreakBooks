@@ -1210,7 +1210,7 @@ export function SettingsForCompany({
                   </TabsContent>
 
                   <TabsContent value="integrations" className="mt-4">
-                    <SettingsIntegrationsPanel />
+                    <SettingsIntegrationsPanel companyId={companyId} />
                   </TabsContent>
 
                   <TabsContent value="audit" className="mt-4">

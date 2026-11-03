@@ -15,6 +15,7 @@ import { resolveStandardSettings, encodeStandardSettings } from "@/lib/reports/s
 import { downloadReportFile } from "@/lib/reports/download";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { displayDocumentValue } from "@/lib/reports/document-format";
+import { standardDocumentExplorerCsv } from "@/lib/reports/report-explorer";
 import { ReportShell, ReportPane, Stat, type ReportCtx } from "./ReportShell";
 import { StandardReportControls } from "./StandardReportControls";
 import { DocumentPreview } from "./DocumentPreview";
@@ -83,6 +84,7 @@ export function StandardStatementView({
         ctx={effectiveCtx}
         mode={report === "profit-and-loss" ? "range" : "asof"}
         hidePrint
+        getCsv={() => (doc ? standardDocumentExplorerCsv(doc) : null)}
         headerPresentation={doc?.presentation}
         capturedAt={doc?.capturedAt}
         basis={

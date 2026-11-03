@@ -101,6 +101,43 @@ describe("permission-bound unified report downloads", () => {
     expect(csv).toContain("'=HYPERLINK(1)");
   });
 
+  it("exports single-column PDF rows and wide comparison CSV", async () => {
+    const pdfFile = await execute({
+      ...request,
+      format: "pdf",
+      headers: ["Account"],
+      rows: [["Cash"], ["Sales"]],
+    });
+    const pdfBytes = Uint8Array.from(atob(pdfFile.content), (c) => c.charCodeAt(0));
+    const pdf = await PDFDocument.load(pdfBytes);
+    expect(pdf.getPageCount()).toBeGreaterThan(0);
+
+    const headers = Array.from({ length: 29 }, (_, i) => "Column " + i);
+    const wideFile = await execute({
+      ...request,
+      format: "csv",
+      headers,
+      rows: [headers.map((_, i) => String(i))],
+    });
+    const csv = new TextDecoder().decode(
+      Uint8Array.from(atob(wideFile.content), (c) => c.charCodeAt(0)),
+    );
+    expect(csv).toContain("Column 28");
+  });
+
+  it("exports 100-column comparisons as CSV without bypassing PDF width safeguards", async () => {
+    const headers = Array.from({ length: 100 }, (_, i) => "Period " + i);
+    const rows = [headers.map((_, i) => String(i))];
+    const file = await execute({ ...request, format: "csv", headers, rows });
+    const csv = new TextDecoder().decode(
+      Uint8Array.from(atob(file.content), (c) => c.charCodeAt(0)),
+    );
+    expect(csv).toContain("Period 99");
+    await expect(execute({ ...request, format: "pdf", headers, rows })).rejects.toThrow(
+      "PDF supports at most 32 visible columns",
+    );
+  });
+
   it("blocks mismatched and oversized rows before permission or export", async () => {
     await expect(execute({ ...request, format: "pdf", rows: [["Incomplete"]] })).rejects.toThrow();
     await expect(

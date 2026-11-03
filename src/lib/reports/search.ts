@@ -33,6 +33,17 @@ export type ReportSearch = {
   txnMin?: string;
   txnMax?: string;
   txnPageSize?: 25 | 50 | 100 | 200;
+  /** Presentation-only customization shared by all loaded catalogue reports. */
+  exploreMode?: "grid";
+  exploreColumns?: string;
+  exploreQuery?: string;
+  exploreField?: number;
+  exploreMatch?: string;
+  exploreGroup?: number;
+  exploreSort?: number;
+  exploreDirection?: "desc";
+  explorePage?: number;
+  explorePageSize?: 25 | 50 | 100 | 200;
   /** Budget vs Actual: which budget, and monthly / quarterly / year-to-date columns. */
   budget?: string;
   view?: "month" | "quarter" | "ytd";
@@ -110,5 +121,32 @@ export function parseReportSearch(raw: Record<string, unknown>): ReportSearch {
   }
   if ([25, 50, 100, 200].includes(Number(raw["txnPageSize"])))
     out.txnPageSize = Number(raw["txnPageSize"]) as 25 | 50 | 100 | 200;
+  if (raw["exploreMode"] === "grid") out.exploreMode = "grid";
+  if (typeof raw["exploreColumns"] === "string" && raw["exploreColumns"].length <= 500) {
+    const indices = raw["exploreColumns"]
+      .split(",")
+      .map((item) => (/^\d{1,3}$/.test(item) ? Number(item) : -1));
+    const selected = [...new Set(indices)].filter((n) => n >= 0 && n <= 127).slice(0, 128);
+    if (selected.length) out.exploreColumns = selected.join(",");
+  }
+  const exploreQuery = str(raw["exploreQuery"], 120);
+  if (exploreQuery) out.exploreQuery = exploreQuery;
+  const exploreMatch = str(raw["exploreMatch"], 120);
+  if (exploreMatch) out.exploreMatch = exploreMatch;
+  for (const key of ["exploreField", "exploreGroup", "exploreSort"] as const) {
+    const value = raw[key];
+    if (
+      (typeof value === "number" || typeof value === "string") &&
+      /^\d{1,3}$/.test(String(value)) &&
+      Number(value) <= 127
+    )
+      out[key] = Number(value);
+  }
+  if (raw["exploreDirection"] === "desc") out.exploreDirection = "desc";
+  const explorePage = Number(raw["explorePage"]);
+  if (Number.isInteger(explorePage) && explorePage > 1 && explorePage <= 100000)
+    out.explorePage = explorePage;
+  if ([25, 50, 100, 200].includes(Number(raw["explorePageSize"])))
+    out.explorePageSize = Number(raw["explorePageSize"]) as 25 | 50 | 100 | 200;
   return out;
 }

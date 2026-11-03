@@ -63,6 +63,44 @@ describe("report URL search params (RP-05)", () => {
       }),
     ).toEqual({});
   });
+  it("persists generic explorer state for saved views with strict bounds", () => {
+    expect(
+      parseReportSearch({
+        exploreMode: "grid",
+        exploreColumns: "3,1,3,999,-1",
+        exploreQuery: "  customer  ",
+        exploreField: "0",
+        exploreMatch: "  invoice ",
+        exploreGroup: 2,
+        exploreSort: "1",
+        exploreDirection: "desc",
+        explorePage: "2",
+        explorePageSize: "100",
+      }),
+    ).toMatchObject({
+      exploreMode: "grid",
+      exploreColumns: "3,1",
+      exploreQuery: "customer",
+      exploreField: 0,
+      exploreMatch: "invoice",
+      exploreGroup: 2,
+      exploreSort: 1,
+      exploreDirection: "desc",
+      explorePage: 2,
+      explorePageSize: 100,
+    });
+    expect(
+      parseReportSearch({
+        exploreMode: "bogus",
+        exploreColumns: "bad",
+        exploreField: -1,
+        exploreGroup: 888,
+        explorePageSize: 4,
+        explorePage: "1",
+      }),
+    ).toEqual({});
+  });
+
   it("omits default values", () => {
     expect(parseReportSearch({ columns: "none" })).toEqual({});
   });

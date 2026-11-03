@@ -17,12 +17,22 @@ const requestSchema = z
     from: z.string().refine(isReportDate, "Choose a real calendar date"),
     to: z.string().refine(isReportDate, "Choose a real calendar date"),
     basis: z.string().max(300).default(""),
-    headers: z.array(z.string().min(1).max(150)).min(2).max(24),
-    rows: z.array(z.array(text).min(1).max(24)).max(2000),
+    headers: z.array(z.string().min(1).max(150)).min(1).max(128),
+    rows: z.array(z.array(text).min(1).max(128)).max(2000),
     format: z.enum(["pdf", "xlsx", "csv"]),
   })
   .superRefine((v, ctx) => {
     if (v.from > v.to) ctx.addIssue({ code: "custom", message: "Invalid reporting dates" });
+    if (v.headers.length * v.rows.length > 50000)
+      ctx.addIssue({
+        code: "custom",
+        message: "Reduce the number of visible report rows or columns before exporting",
+      });
+    if (v.format === "pdf" && v.headers.length > 32)
+      ctx.addIssue({
+        code: "custom",
+        message: "PDF supports at most 32 visible columns; hide columns or choose CSV/Excel",
+      });
     for (const [index, row] of v.rows.entries())
       if (row.length !== v.headers.length) {
         ctx.addIssue({

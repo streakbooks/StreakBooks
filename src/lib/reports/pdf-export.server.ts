@@ -79,10 +79,10 @@ export async function exportReportPdf(doc: ReportDocument): Promise<Uint8Array> 
   header();
   for (const section of doc.sections) {
     // Wide custom reports paginate horizontally with the row label repeated in each panel.
-    for (let start = 0; start < section.columns.length; start += 6) {
+    for (let start = 0; start < Math.max(1, section.columns.length); start += 6) {
       const columns = section.columns.slice(start, start + 6),
         contentWidth = size[0] - margin * 2,
-        labelWidth = contentWidth * 0.38,
+        labelWidth = columns.length ? contentWidth * 0.38 : contentWidth,
         valueWidth = (contentWidth - labelWidth) / Math.max(1, columns.length);
       function tableHeader() {
         if (y < 120) nextPage();

@@ -2,7 +2,7 @@ import { useReportActivity } from "@/hooks/use-report-activity";
 import { useCanDo } from "@/hooks/use-can";
 import type { ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Download, ChevronDown } from "lucide-react";
+import { ArrowLeft, Download, ChevronDown, SlidersHorizontal } from "lucide-react";
 import { useFormat } from "@/hooks/use-format";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import type { CsvCell } from "@/lib/reports/csv";
@@ -27,6 +27,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ReportPeriodSelect } from "./ReportPeriodSelect";
 import { SavedViews } from "./SavedViews";
+import { ReportDataExplorer } from "./ReportDataExplorer";
+import { prepareReportExplorer } from "@/lib/reports/report-explorer";
 
 export type ReportCtx = {
   /** Catalogue id of the report; enables saved views. */
@@ -91,11 +93,29 @@ export function ReportShell({
     void navigate({ to: "/reports", search: { tab: "standard", from: ctx.from, to: ctx.to } });
   };
   const canExport = useCanDo("reports.export");
+  const explorerActive = Boolean(getCsv && ctx.search.exploreMode === "grid");
+  const explorerData = explorerActive ? (getCsv?.() ?? null) : null;
   const exportFn = useServerFn(exportVisibleReport);
   const fileExport = useMutation({
     mutationFn: (format: "pdf" | "xlsx" | "csv") => {
-      const csv = getCsv?.();
-      if (!csv) throw new Error("Load the report before exporting");
+      const raw = explorerActive ? explorerData : getCsv?.();
+      if (!raw) throw new Error("Load the report before exporting");
+      const csv = explorerActive
+        ? (() => {
+            const view = prepareReportExplorer(raw, {
+              columns: ctx.search.exploreColumns,
+              query: ctx.search.exploreQuery,
+              field: ctx.search.exploreField,
+              match: ctx.search.exploreMatch,
+              group: ctx.search.exploreGroup,
+              sort: ctx.search.exploreSort,
+              direction: ctx.search.exploreDirection,
+              page: ctx.search.explorePage,
+              pageSize: ctx.search.explorePageSize,
+            });
+            return { headers: view.headers, rows: view.exportRows, basis: view.basis };
+          })()
+        : raw;
       return exportFn({
         data: {
           companyId: ctx.companyId,
@@ -253,8 +273,24 @@ export function ReportShell({
         ) : null}
         {extraControls}
         <div className="ml-auto flex flex-wrap gap-2">
-          {toolbarActions}
-          {getCsv && !hidePrint && (
+          {getCsv && (
+            <Button
+              size="sm"
+              variant={explorerActive ? "default" : "outline"}
+              aria-pressed={explorerActive}
+              onClick={() =>
+                ctx.setSearch({
+                  exploreMode: explorerActive ? undefined : "grid",
+                  explorePage: undefined,
+                })
+              }
+            >
+              <SlidersHorizontal className="mr-2 size-4" aria-hidden="true" />
+              {explorerActive ? "Standard view" : "Customize view"}
+            </Button>
+          )}
+          {!explorerActive && toolbarActions}
+          {getCsv && (!hidePrint || explorerActive) && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -286,7 +322,7 @@ export function ReportShell({
 
       <SavedViews ctx={ctx} />
 
-      {children}
+      {explorerActive ? <ReportDataExplorer ctx={ctx} data={explorerData} /> : children}
     </div>
   );
 }

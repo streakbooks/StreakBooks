@@ -265,7 +265,11 @@ export function cashProfitLoss(
       throw new Error("Duplicate or cross-company cash payment");
     paymentIds.add(payment.id);
     const journal = journals.get(payment.journalId);
-    if (!journal || journal.date > period.to) continue;
+    if (!journal)
+      throw new Error(
+        "A posted cash settlement journal is unavailable. Refresh the report or reconcile source permissions and history.",
+      );
+    if (journal.date > period.to) continue;
     const voided = payment.voidJournalId ? journals.get(payment.voidJournalId) : undefined;
     handled.add(journal.id);
     if (voided) {

@@ -270,3 +270,11 @@ describe("noncash credit distribution", () => {
     expect(() => totals(input)).toThrow("non-proportional credit");
   });
 });
+
+describe("cash capture consistency", () => {
+  it("fails explicitly if a posted settlement header has no visible posted journal", () => {
+    const input = cashInputFixture();
+    input.journals = input.journals.filter((row) => row.id !== "receipt-journal");
+    expect(() => totals(input)).toThrow("posted cash settlement journal is unavailable");
+  });
+});

@@ -26,12 +26,14 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
-  webServer: hasAccount
-    ? {
-        command: "npm run dev -- --port 8080 --strictPort --host 127.0.0.1",
-        url: "http://127.0.0.1:8080",
-        reuseExistingServer: true,
-        timeout: 120_000,
-      }
-    : undefined,
+  // Against a configured staging URL, never start a competing local dev server.
+  webServer:
+    hasAccount && !process.env.E2E_BASE_URL
+      ? {
+          command: "npm run dev -- --port 8080 --strictPort --host 127.0.0.1",
+          url: "http://127.0.0.1:8080",
+          reuseExistingServer: true,
+          timeout: 120_000,
+        }
+      : undefined,
 });

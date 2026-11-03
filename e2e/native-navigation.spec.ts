@@ -457,8 +457,13 @@ test.describe("deep links in authenticated module workspaces", () => {
   test("Mobile bank table keeps core fields and overflow row controls usable", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await signIn(page, "/banking/transactions");
+    const toggle = page.getByRole("button", { name: "Switch to transaction table" });
+    await expect(toggle).toBeVisible();
+    const cards = page.getByRole("region", { name: "Mobile bank transactions" });
+    if ((await cards.getByRole("article").count()) === 0)
+      test.skip(true, "Needs staged bank transactions");
+    await toggle.click();
     const actions = page.getByRole("columnheader", { name: "Actions" });
-    if ((await actions.count()) === 0) test.skip(true, "Needs staged bank transactions");
     await expect(actions).toBeVisible();
     await expect(page.getByRole("columnheader", { name: "Description" })).toBeVisible();
     await expect(page.getByRole("columnheader", { name: "Amount" })).toBeVisible();
@@ -470,5 +475,62 @@ test.describe("deep links in authenticated module workspaces", () => {
       await expect(page.getByRole("menu")).toBeVisible();
       await page.keyboard.press("Escape");
     }
+  });
+
+  test("mobile bank cards preview records and switch to the original review table", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await signIn(page, "/banking/transactions");
+    const cards = page.getByRole("region", { name: "Mobile bank transactions" });
+    const toggle = page.getByRole("button", { name: "Switch to transaction table" });
+    await expect(toggle).toBeVisible();
+    const items = cards.getByRole("article");
+    if ((await items.count()) === 0) test.skip(true, "Requires staged bank transactions");
+    await expect(
+      items.first().getByRole("button", { name: /^Preview transaction / }),
+    ).toBeVisible();
+    await items
+      .first()
+      .getByRole("button", { name: /^Preview transaction / })
+      .click();
+    await expect(page.getByRole("dialog", { name: "Bank transaction preview" })).toBeVisible();
+    await page.keyboard.press("Escape");
+    const code = items.getByRole("button", { name: "Code", exact: true });
+    if ((await code.count()) > 0) {
+      await code.first().click();
+      await expect(page.getByRole("columnheader", { name: "Actions" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Switch to transaction cards" })).toBeVisible();
+    } else {
+      await toggle.click();
+      await expect(page.getByRole("columnheader", { name: "Actions" })).toBeVisible();
+    }
+    await page.getByRole("button", { name: "Switch to transaction cards" }).click();
+    await expect(cards).toBeVisible();
+  });
+
+  test("bank keyboard shortcuts focus search and navigate an open preview", async ({ page }) => {
+    await signIn(page, "/banking/transactions");
+    const search = page.getByRole("textbox", { name: "Search bank transactions" });
+    await page.locator("body").click({ position: { x: 10, y: 10 } });
+    await page.keyboard.press("/");
+    await expect(search).toBeFocused();
+    await search.fill("hello");
+    await page.keyboard.press("/");
+    await expect(search).toHaveValue("hello/");
+    await search.clear();
+    const previews = page.getByRole("button", { name: /^Preview transaction / });
+    if ((await previews.count()) === 0) test.skip(true, "Requires staged bank transactions");
+    await previews.first().click();
+    const dialog = page.getByRole("dialog", { name: "Bank transaction preview" });
+    await expect(dialog).toBeVisible();
+    if ((await previews.count()) > 1) {
+      await page.keyboard.press("ArrowRight");
+      await expect(dialog).toContainText(/2 of \d+ on this page/);
+      await page.keyboard.press("ArrowLeft");
+      await expect(dialog).toContainText(/1 of \d+ on this page/);
+    }
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
   });
 });

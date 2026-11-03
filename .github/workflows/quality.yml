@@ -50,5 +50,49 @@ jobs:
       - name: Unit tests
         run: npm test
 
+      - name: Native navigation checks
+        run: npm run check:navigation
+
+      - name: Validate authenticated browser test discovery
+        run: npx playwright test e2e/native-navigation.spec.ts --list
+
       - name: Production build
         run: npm run build
+
+  staging-browser:
+    # Opt in with a verified, dedicated staging URL and test account.
+    if: ${{ github.event_name == 'pull_request' && vars.E2E_STAGING_ENABLED == 'true' && vars.E2E_STAGING_URL != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Authenticated staging browser tests
+        env:
+          E2E_BASE_URL: ${{ vars.E2E_STAGING_URL }}
+          E2E_EMAIL: ${{ secrets.E2E_STAGING_EMAIL }}
+          E2E_PASSWORD: ${{ secrets.E2E_STAGING_PASSWORD }}
+        shell: bash
+        run: |
+          if [[ -z "$E2E_EMAIL" || -z "$E2E_PASSWORD" ]]; then
+            echo "Staging E2E credentials are required to enable browser testing." >&2
+            exit 1
+          fi
+          case "$E2E_BASE_URL" in
+            https://*) ;;
+            *) echo "Staging tests require a HTTPS URL." >&2; exit 1 ;;
+          esac
+          npx playwright test e2e/native-navigation.spec.ts

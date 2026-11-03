@@ -10,6 +10,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import type { BankTxnListRow } from "@/lib/banking/banking.functions";
+import { bankingReviewShortcut } from "@/lib/banking/review-shortcuts";
 
 type Props = {
   transaction: BankTxnListRow | null;
@@ -45,6 +46,29 @@ export function BankTransactionQuickPreview({
       <SheetContent
         className="w-full overflow-y-auto sm:max-w-lg"
         aria-label="Bank transaction preview"
+        onKeyDown={(event) => {
+          const target = event.target;
+          const editing =
+            target instanceof HTMLElement &&
+            Boolean(
+              target.closest(
+                "input, textarea, select, [contenteditable='true'], [role='combobox']",
+              ),
+            );
+          const shortcut = bankingReviewShortcut({
+            key: event.key,
+            modified: event.altKey || event.ctrlKey || event.metaKey || event.shiftKey,
+            editing,
+            previewOpen: true,
+          });
+          if (shortcut === "previous" && pagePosition > 1) {
+            event.preventDefault();
+            onPrevious();
+          } else if (shortcut === "next" && pagePosition < pageTotal) {
+            event.preventDefault();
+            onNext();
+          }
+        }}
       >
         <SheetHeader>
           <SheetTitle>Bank transaction preview</SheetTitle>
@@ -152,6 +176,9 @@ export function BankTransactionQuickPreview({
                 Next
                 <ArrowRight className="size-4" aria-hidden />
               </Button>
+              <p className="sr-only">
+                Use the left and right arrow keys to review the previous or next transaction.
+              </p>
             </div>
           </div>
         ) : null}

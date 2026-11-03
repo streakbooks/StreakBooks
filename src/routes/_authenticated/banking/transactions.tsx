@@ -1,6 +1,6 @@
 import { ProjectTagControl } from "@/components/projects/ProjectTagControl";
-import { Fragment, useEffect, useMemo, useState } from "react";
-import { Eye, MoreHorizontal } from "lucide-react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { Eye, MoreHorizontal, Rows3, Table2 } from "lucide-react";
 import { createFileRoute, Link, useRouteContext } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -9,6 +9,9 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
 import { useFormat } from "@/hooks/use-format";
 import { useTablePrefs } from "@/hooks/use-table-prefs";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { BankTransactionMobileCards } from "@/components/banking/BankTransactionMobileCards";
+import { bankingReviewShortcut } from "@/lib/banking/review-shortcuts";
 import { TableAppearanceControls } from "@/components/common/TableAppearanceControls";
 import { TableCard } from "@/components/common/table-card";
 import { StatusBadge } from "@/components/common/stat-card";
@@ -200,6 +203,11 @@ function BankTransactions() {
       }) as never,
     });
 
+  const isMobile = useIsMobile();
+  const [mobileTableView, setMobileTableView] = useState(false);
+  const [mobileFocusId, setMobileFocusId] = useState<string | null>(null);
+  const focusRowRef = useRef<HTMLTableRowElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [qText, setQText] = useState(search.q ?? "");
   useEffect(() => setQText(search.q ?? ""), [search.q]);
   const [expanded, setExpanded] = useState<Expanded>(null);
@@ -209,6 +217,36 @@ function BankTransactions() {
   const [bulkAccountId, setBulkAccountId] = useState("");
   const [bulkTaxCodeId, setBulkTaxCodeId] = useState(NONE);
   const [bulkProgress, setBulkProgress] = useState<string | null>(null);
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target;
+      const editing =
+        target instanceof HTMLElement &&
+        Boolean(
+          target.closest("input, textarea, select, [contenteditable='true'], [role='combobox']"),
+        );
+      if (document.querySelector('[role="dialog"], [role="alertdialog"]')) return;
+      if (
+        bankingReviewShortcut({
+          key: event.key,
+          modified: event.altKey || event.ctrlKey || event.metaKey || event.shiftKey,
+          editing,
+        }) === "search" &&
+        searchInputRef.current
+      ) {
+        event.preventDefault();
+        searchInputRef.current.focus();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobile || !mobileTableView || !mobileFocusId) return;
+    focusRowRef.current?.scrollIntoView({ block: "center" });
+  }, [isMobile, mobileTableView, mobileFocusId]);
 
   const filterKey = [
     companyId,
@@ -228,6 +266,7 @@ function BankTransactions() {
     setExpanded(null);
     setPreviewId(null);
     setPendingAction(null);
+    setMobileFocusId(null);
   }, [filterKey.join("|")]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const accountsQ = useQuery({
@@ -385,6 +424,7 @@ function BankTransactions() {
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
 
   const rows = (txnsQ.data?.rows ?? []) as BankTxnListRow[];
+  const showMobileCards = isMobile && !mobileTableView;
   const previewIndex = rows.findIndex((transaction) => transaction.id === previewId);
   const previewTransaction = previewIndex >= 0 ? (rows[previewIndex] ?? null) : null;
   const actionRow = rows.find((txn) => txn.id === pendingAction?.id);
@@ -533,7 +573,9 @@ function BankTransactions() {
           />
         </label>
         <Input
+          ref={searchInputRef}
           className="max-w-xs"
+          aria-label="Search bank transactions"
           placeholder="Search description, reference, payee…"
           value={qText}
           onChange={(e) => setQText(e.target.value)}
@@ -633,6 +675,29 @@ function BankTransactions() {
             }}
           />
         </div>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="md:hidden"
+          aria-label={
+            mobileTableView ? "Switch to transaction cards" : "Switch to transaction table"
+          }
+          aria-pressed={mobileTableView}
+          onClick={() => {
+            setExpanded(null);
+            setMobileFocusId(null);
+            setMobileTableView((value) => !value);
+          }}
+        >
+          {mobileTableView ? (
+            <Rows3 className="size-4" aria-hidden />
+          ) : (
+            <Table2 className="size-4" aria-hidden />
+          )}
+          {mobileTableView ? "Cards" : "Table"}
+        </Button>
+        <span className="hidden text-xs text-muted-foreground lg:inline">Press / to search</span>
         <TableAppearanceControls
           columns={BANK_OPTIONAL_COLUMNS}
           hidden={tablePrefs.hidden}
@@ -740,6 +805,35 @@ function BankTransactions() {
             </Button>
           }
         />
+      ) : showMobileCards ? (
+        <BankTransactionMobileCards
+          rows={rows}
+          selected={selected}
+          density={tablePrefs.density}
+          formatDate={(date) => fmt.date(date)}
+          formatMoney={(amount, code) => fmt.money(amount, code)}
+          accountName={(id) => nameByAccount.get(id) ?? "Bank account"}
+          accountCurrency={(id) => currencyByAccount.get(id) ?? currency}
+          onSelect={(id, checked) =>
+            setSelected((previous) => {
+              const next = new Set(previous);
+              if (checked) next.add(id);
+              else next.delete(id);
+              return next;
+            })
+          }
+          onPreview={setPreviewId}
+          onReview={(id, mode) => {
+            setMobileFocusId(id);
+            setExpanded({ id, mode });
+            setMobileTableView(true);
+          }}
+          onManage={(id) => {
+            setMobileFocusId(id);
+            setExpanded(null);
+            setMobileTableView(true);
+          }}
+        />
       ) : (
         <TableCard>
           <Table
@@ -790,7 +884,7 @@ function BankTransactions() {
                 const open = expanded?.id === t.id ? expanded : null;
                 return (
                   <Fragment key={t.id}>
-                    <TableRow>
+                    <TableRow ref={mobileFocusId === t.id ? focusRowRef : undefined}>
                       <TableCell>
                         {t.status === "uncategorised" ? (
                           <Checkbox

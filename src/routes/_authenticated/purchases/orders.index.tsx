@@ -52,6 +52,8 @@ function OrdersList() {
   const { company } = useActiveCompany();
   const { can } = useCan();
   const [status, setStatus] = useState("all");
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const fmt = useFormat();
   const navigate = useNavigate();
   const fetch = useServerFn(listPurchaseOrders);
@@ -59,9 +61,9 @@ function OrdersList() {
   const queryClient = useQueryClient();
   const companyId = company?.id;
   const query = useQuery({
-    queryKey: ["orders", companyId],
+    queryKey: ["orders", companyId, search, status, page],
     enabled: Boolean(companyId),
-    queryFn: () => fetch({ data: { companyId: companyId! } }),
+    queryFn: () => fetch({ data: { companyId: companyId!, q: search, status, page } }),
   });
 
   const convertMutation = useMutation({
@@ -75,13 +77,8 @@ function OrdersList() {
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
 
-  const rows = (query.data ?? []) as OrderRow[];
-  const list = useListSearch(
-    rows,
-    (o) =>
-      `${o.order_number ?? ""} ${o.order_date} ${o.contacts?.name ?? ""} ${o.status} ${o.currency_code}`,
-  );
-  const visible = list.filtered.filter((o) => status === "all" || o.status === status);
+  const rows = (query.data?.rows ?? []) as OrderRow[];
+  const visible = rows;
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
 
@@ -102,12 +99,18 @@ function OrdersList() {
         <ListSkeleton />
       ) : query.isError ? (
         <ErrorState title="Could not load orders" description={friendlyAuthError(query.error)} />
-      ) : (query.data ?? []).length === 0 ? (
+      ) : !query.data?.total && !search && status === "all" ? (
         <EmptyState title="No purchase orders" description="Create a PO for a supplier." />
       ) : (
         <>
           <div className="mb-3 max-w-xs">
-            <Select value={status} onValueChange={setStatus}>
+            <Select
+              value={status}
+              onValueChange={(value) => {
+                setStatus(value);
+                setPage(1);
+              }}
+            >
               <SelectTrigger aria-label="Order status">
                 <SelectValue />
               </SelectTrigger>
@@ -129,14 +132,17 @@ function OrdersList() {
             </Select>
           </div>
           <ListToolbar
-            query={list.query}
-            onQuery={list.setQuery}
+            query={search}
+            onQuery={(value) => {
+              setSearch(value);
+              setPage(1);
+            }}
             shown={visible.length}
-            total={rows.length}
+            total={query.data?.total ?? 0}
             placeholder="Search orders"
             exportCsv={{
               company: company?.name ?? "",
-              title: "Purchase orders",
+              title: "Purchase orders — current page",
               currency: "Per row",
               headers: ["Order", "Date", "Supplier", "Status", "Currency", "Total"],
               rows: visible.map((r) => [
@@ -150,9 +156,29 @@ function OrdersList() {
             }}
           />
           <p className="mb-3 text-xs text-muted-foreground">
-            Showing up to the latest 100 orders. Search, filters and export apply to these loaded
-            orders.
+            Search and status filters cover all orders. CSV exports the current page.
           </p>
+          <div className="mb-3 flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page === 1}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              Previous
+            </Button>
+            <span>
+              Page {page} · {query.data?.total ?? 0} orders
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page * 25 >= (query.data?.total ?? 0)}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Next
+            </Button>
+          </div>
           <TableCard>
             <Table>
               <TableHeader>

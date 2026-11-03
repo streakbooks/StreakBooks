@@ -152,14 +152,9 @@ export function StandardReportControls({
           }}
         />
       </div>
-      {report === "profit-and-loss" && (
-        <Button variant="outline" size="sm" onClick={() => openEditor("filters")}>
-          Filters{settings.filters.clauses.length ? ` · ${settings.filters.clauses.length}` : ""}
-        </Button>
-      )}
       <Button variant="outline" size="sm" onClick={() => openEditor("comparisons")}>
         <SlidersHorizontal className="mr-1 size-4" aria-hidden="true" />
-        Customize report
+        Customize statement
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">

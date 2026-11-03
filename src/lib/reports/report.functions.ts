@@ -1,4 +1,5 @@
 import { assertCurrentPayablesDate, payableOutstandingInBase } from "./payables-integrity";
+import { shouldIncludeLedgerAccount } from "./account-scope";
 import {
   filterTransactionRows,
   type TransactionFlow,
@@ -582,13 +583,35 @@ export const getAccountTransactions = createServerFn({ method: "GET" })
 
 export const getGeneralLedgerAll = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; from: string; to: string }) => ({
-    companyId: companyId(input),
-    from: isoDate(input.from, "From"),
-    to: isoDate(input.to, "To"),
-  }))
+  .inputValidator(
+    (input: {
+      companyId: string;
+      from: string;
+      to: string;
+      accountIds?: string;
+      accountScope?: "transactions" | "balance" | "all";
+    }) => ({
+      companyId: companyId(input),
+      from: isoDate(input.from, "From"),
+      to: isoDate(input.to, "To"),
+      accountIds:
+        input.accountIds && input.accountIds.length <= 3700
+          ? [...new Set(input.accountIds.split(",").map((id) => assertUuid(id, "report account")))]
+          : ([] as string[]),
+      accountScope:
+        input.accountScope === "transactions" || input.accountScope === "all"
+          ? input.accountScope
+          : ("balance" as const),
+    }),
+  )
   .handler(async ({ data, context }) => {
+    if (data.to < data.from) throw new Error("'To' date cannot be before 'From' date.");
+    await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
     const ctx = await loadCtx(context.supabase, data.companyId);
+    if (data.accountIds.length > 100) throw new Error("Too many selected accounts.");
+    // Never silently accept a cross-organisation account ID.
+    if (data.accountIds.some((id) => !ctx.byId.has(id))) throw new Error("Account not found.");
+    const selected = data.accountIds.length ? new Set(data.accountIds) : null;
     const base = ctx.meta.baseCurrency;
     const openingDate = addDaysIso(data.from, -1);
     const [openingBal, lines] = await Promise.all([
@@ -596,17 +619,34 @@ export const getGeneralLedgerAll = createServerFn({ method: "GET" })
       loadPostedLines(ctx.supabase, ctx.meta.id, base, { from: data.from, to: data.to }),
     ]);
     const opening = new Map<string, bigint>();
-    for (const b of openingBal) opening.set(b.account_id, b.debit_minor - b.credit_minor);
+    for (const b of openingBal) {
+      if (!selected || selected.has(b.account_id))
+        opening.set(b.account_id, b.debit_minor - b.credit_minor);
+    }
     const byAccount = new Map<string, PostedLine[]>();
     for (const l of lines) {
+      if (selected && !selected.has(l.account_id)) continue;
       const arr = byAccount.get(l.account_id) ?? [];
       arr.push(l);
       byAccount.set(l.account_id, arr);
     }
-    const ids = new Set([...opening.keys(), ...byAccount.keys()]);
+    const ids = new Set(
+      data.accountScope === "all"
+        ? selected
+          ? [...selected]
+          : ctx.accounts.map((a) => a.id)
+        : [...opening.keys(), ...byAccount.keys()],
+    );
     const accounts = [...ids]
       .map((id) => ctx.byId.get(id))
       .filter((a): a is AccountMeta => Boolean(a))
+      .filter((a) =>
+        shouldIncludeLedgerAccount(
+          data.accountScope,
+          byAccount.get(a.id)?.length ?? 0,
+          opening.get(a.id) ?? 0n,
+        ),
+      )
       .sort((a, b) => a.code.localeCompare(b.code))
       .map((a) => {
         const sign = a.account_type === "asset" || a.account_type === "expense" ? 1n : -1n;
@@ -632,13 +672,13 @@ export const getGeneralLedgerAll = createServerFn({ method: "GET" })
           };
         });
         return {
-          account: { id: a.id, code: a.code, name: a.name },
+          account: { id: a.id, code: a.code, name: a.name, account_type: a.account_type },
           opening_balance_minor: num(open * sign),
           closing_balance_minor: num(running * sign),
           rows,
         };
       });
-    return { accounts, lineCount: lines.length };
+    return { accounts, lineCount: accounts.reduce((sum, a) => sum + a.rows.length, 0) };
   });
 
 /* ------------------------------------------------------------------ */

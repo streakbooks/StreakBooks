@@ -101,6 +101,32 @@ describe("report URL search params (RP-05)", () => {
     ).toEqual({});
   });
 
+  it("persists selected reporting accounts and grouping without accepting cross-shape input", () => {
+    const second = "22222222-2222-4222-8222-222222222222";
+    expect(
+      parseReportSearch({
+        accountIds: `${id},${second},${id}`,
+        accountScope: "transactions",
+        accountGroup: "type",
+      }),
+    ).toEqual({
+      accountIds: `${id},${second}`,
+      accountScope: "transactions",
+      accountGroup: "type",
+    });
+    expect(
+      parseReportSearch({ accountIds: `${id},bad`, accountScope: "invalid", accountGroup: "none" }),
+    ).toEqual({});
+    // The full URL length bound is enforced before de-duplicating identifiers.
+    expect(
+      parseReportSearch({ accountIds: Array.from({ length: 101 }, () => id).join(",") }),
+    ).toEqual({});
+    expect(
+      parseReportSearch({ accountIds: Array.from({ length: 100 }, () => id).join(",") }),
+    ).toEqual({ accountIds: id });
+    expect(parseReportSearch({ accountIds: "x".repeat(4000) })).toEqual({});
+  });
+
   it("omits default values", () => {
     expect(parseReportSearch({ columns: "none" })).toEqual({});
   });

@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Columns3, RotateCcw, Search, SlidersHorizontal, ArrowUp, ArrowDown } from "lucide-react";
-import { AccountLookup } from "@/components/lookup";
+import { ReportAccountMultiSelect } from "./ReportAccountMultiSelect";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -65,7 +65,7 @@ export function AdvancedAccountTransactionsView({ ctx }: { ctx: ReportCtx }) {
     queryKey: ["accounts", ctx.companyId],
     queryFn: () => fetchAccounts({ data: { companyId: ctx.companyId } }),
   });
-  const accounts = (accountsQ.data ?? []) as Array<{ id: string; code: string; name: string }>;
+  const accounts = accountsQ.data ?? [];
   const reportQ = useQuery({
     queryKey: [
       "report-acct-txn",
@@ -150,23 +150,21 @@ export function AdvancedAccountTransactionsView({ ctx }: { ctx: ReportCtx }) {
       title="Account Transactions"
       ctx={ctx}
       mode="range"
+      allowExplorer={false}
       basis="Posted ledger only · Monetary columns are in the organisation's base currency · Running balances retain full-ledger order"
       extraControls={
-        <div className="space-y-1">
-          <Label htmlFor="report-account">Account</Label>
-          <AccountLookup
-            id="report-account"
-            className="w-72"
-            ariaLabel="Account"
-            accounts={accounts}
-            value={accountId}
-            onChange={(id) => ctx.setSearch({ account: id || undefined, page: undefined })}
-            companyId={ctx.companyId}
-            purpose="posting"
-            placeholder="Select account…"
-            allowClear
-          />
-        </div>
+        <ReportAccountMultiSelect
+          accounts={accounts}
+          selected={accountId ? [accountId] : undefined}
+          onChange={(ids) =>
+            ctx.setSearch({
+              account: ids?.length === 1 ? ids[0] : undefined,
+              accountIds: ids && ids.length > 1 ? ids.join(",") : undefined,
+              page: undefined,
+            })
+          }
+          disabled={accountsQ.isPending}
+        />
       }
       getCsv={() => {
         if (!data) return null;

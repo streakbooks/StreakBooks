@@ -54,6 +54,7 @@ export function ReportShell({
   extraControls,
   toolbarActions,
   hidePrint = false,
+  allowExplorer = true,
   headerPresentation,
   capturedAt,
   getCsv,
@@ -69,6 +70,8 @@ export function ReportShell({
   toolbarActions?: ReactNode;
   /** Standard financial statements use a consolidated export menu instead of print controls. */
   hidePrint?: boolean;
+  /** Report-specific full-history editors can suppress the separate loaded-row explorer. */
+  allowExplorer?: boolean;
   headerPresentation?: ReportPresentation | undefined;
   capturedAt?: string | undefined;
   getCsv?: () => CsvExport | null;
@@ -93,7 +96,7 @@ export function ReportShell({
     void navigate({ to: "/reports", search: { tab: "standard", from: ctx.from, to: ctx.to } });
   };
   const canExport = useCanDo("reports.export");
-  const explorerActive = Boolean(getCsv && ctx.search.exploreMode === "grid");
+  const explorerActive = Boolean(allowExplorer && getCsv && ctx.search.exploreMode === "grid");
   const explorerData = explorerActive ? (getCsv?.() ?? null) : null;
   const exportFn = useServerFn(exportVisibleReport);
   const fileExport = useMutation({
@@ -273,7 +276,7 @@ export function ReportShell({
         ) : null}
         {extraControls}
         <div className="ml-auto flex flex-wrap gap-2">
-          {getCsv && (
+          {getCsv && allowExplorer && (
             <Button
               size="sm"
               variant={explorerActive ? "default" : "outline"}
@@ -286,7 +289,7 @@ export function ReportShell({
               }
             >
               <SlidersHorizontal className="mr-2 size-4" aria-hidden="true" />
-              {explorerActive ? "Standard view" : "Customize view"}
+              {explorerActive ? "Return to report" : "Explore loaded rows"}
             </Button>
           )}
           {!explorerActive && toolbarActions}

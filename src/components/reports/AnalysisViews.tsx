@@ -28,6 +28,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AccountLink, ReportPane, ReportShell, Stat, type ReportCtx } from "./ReportShell";
+import { ReportAccountMultiSelect } from "./ReportAccountMultiSelect";
+import { listAccounts } from "@/lib/accounting/accounting.functions";
 
 type Col<T> = {
   header: string;
@@ -263,6 +265,10 @@ export function CashSummaryView({ ctx }: { ctx: ReportCtx }) {
     queryFn: () => fetchFn({ data: { companyId: ctx.companyId, from: ctx.from, to: ctx.to } }),
   });
   const d = q.data;
+  const chosen = ctx.search.accountIds?.split(",") ?? null;
+  const visible = chosen
+    ? (d?.rows ?? []).filter((row) => chosen.includes(row.gl_account_id))
+    : (d?.rows ?? []);
   type Row = NonNullable<typeof d>["rows"][number];
   const m = (v: number) => fmt.amount(v, ctx.currency);
   const cols: Col<Row>[] = [
@@ -301,15 +307,30 @@ export function CashSummaryView({ ctx }: { ctx: ReportCtx }) {
       ctx={ctx}
       mode="range"
       basis="Posted ledger movements on each bank account. Transfers between your own accounts are shown separately."
-      getCsv={() => (d ? csvFor(d.rows, cols) : null)}
+      extraControls={
+        <ReportAccountMultiSelect
+          label="Bank accounts"
+          accounts={(d?.rows ?? []).map((row) => ({
+            id: row.gl_account_id,
+            code: "",
+            name: row.bank_account_name,
+          }))}
+          selected={chosen ?? undefined}
+          onChange={(ids) =>
+            ctx.setSearch({ accountIds: ids?.join(",") || undefined, explorePage: undefined })
+          }
+          disabled={!d}
+        />
+      }
+      getCsv={() => (d ? csvFor(visible, cols) : null)}
     >
       <ReportPane
         query={q}
-        isEmpty={Boolean(d) && d!.rows.length === 0}
+        isEmpty={Boolean(d) && visible.length === 0}
         emptyTitle="No bank accounts"
-        emptyDescription="Add a bank account to see its cash movements."
+        emptyDescription="No bank accounts match this selection. Choose All accounts to view every balance."
       >
-        {d ? <RowsTable rows={d.rows} cols={cols} rowKey={(r) => r.bank_account_id} /> : null}
+        {d ? <RowsTable rows={visible} cols={cols} rowKey={(r) => r.bank_account_id} /> : null}
       </ReportPane>
     </ReportShell>
   );
@@ -322,11 +343,20 @@ export function CashSummaryView({ ctx }: { ctx: ReportCtx }) {
 export function GlSummaryView({ ctx }: { ctx: ReportCtx }) {
   const fmt = useFormat();
   const fetchFn = useServerFn(getGlSummary);
+  const fetchAccounts = useServerFn(listAccounts);
+  const accountsQ = useQuery({
+    queryKey: ["report-account-options", ctx.companyId],
+    queryFn: () => fetchAccounts({ data: { companyId: ctx.companyId } }),
+  });
   const q = useQuery({
     queryKey: ["report-gl-summary", ctx.companyId, ctx.from, ctx.to],
     queryFn: () => fetchFn({ data: { companyId: ctx.companyId, from: ctx.from, to: ctx.to } }),
   });
   const d = q.data;
+  const selectedIds = ctx.search.accountIds?.split(",") ?? null;
+  const selectedRows = selectedIds
+    ? (d?.rows ?? []).filter((row) => selectedIds.includes(row.account_id))
+    : (d?.rows ?? []);
   type Row = NonNullable<typeof d>["rows"][number];
   const m = (v: number) => fmt.amount(v, ctx.currency);
   const money = (
@@ -375,16 +405,26 @@ export function GlSummaryView({ ctx }: { ctx: ReportCtx }) {
       title="General Ledger Summary"
       ctx={ctx}
       mode="range"
-      basis="Debits and credits per account from posted journals. Opening and closing are signed debit minus credit."
-      getCsv={() => (d ? csvFor(d.rows, cols) : null)}
+      basis="Debits and credits per selected account from posted journals. Opening and closing are signed debit minus credit."
+      extraControls={
+        <ReportAccountMultiSelect
+          accounts={accountsQ.data ?? []}
+          selected={selectedIds ?? undefined}
+          onChange={(ids) =>
+            ctx.setSearch({ accountIds: ids?.join(",") || undefined, explorePage: undefined })
+          }
+          disabled={accountsQ.isPending}
+        />
+      }
+      getCsv={() => (d ? csvFor(selectedRows, cols) : null)}
     >
       <ReportPane
         query={q}
-        isEmpty={Boolean(d) && d!.rows.length === 0}
+        isEmpty={Boolean(d) && selectedRows.length === 0}
         emptyTitle="No ledger activity"
-        emptyDescription="No posted journals fall in this period."
+        emptyDescription="No posted account activity matches the period and account selection."
       >
-        {d ? <RowsTable rows={d.rows} cols={cols} rowKey={(r) => r.account_id} /> : null}
+        {d ? <RowsTable rows={selectedRows} cols={cols} rowKey={(r) => r.account_id} /> : null}
       </ReportPane>
     </ReportShell>
   );
@@ -674,6 +714,10 @@ export function BankReconSummaryView({ ctx }: { ctx: ReportCtx }) {
     queryFn: () => fetchFn({ data: { companyId: ctx.companyId, asOf: ctx.to } }),
   });
   const d = q.data;
+  const chosen = ctx.search.accountIds?.split(",") ?? null;
+  const visible = chosen
+    ? (d?.rows ?? []).filter((row) => chosen.includes(row.gl_account_id))
+    : (d?.rows ?? []);
   type Row = NonNullable<typeof d>["rows"][number];
   // Balances are in each bank account's own currency; amounts are shown with that currency's decimals.
   const cols: Col<Row>[] = [
@@ -742,18 +786,33 @@ export function BankReconSummaryView({ ctx }: { ctx: ReportCtx }) {
       ctx={ctx}
       mode="asof"
       basis="Book balance against the last completed reconciliation and what is still uncleared"
-      getCsv={() => (d ? csvFor(d.rows, cols) : null)}
+      getCsv={() => (d ? csvFor(visible, cols) : null)}
       extraControls={
-        <Button size="sm" variant="outline" asChild className="print:hidden">
-          <Link to="/banking/reconcile">Open reconciliation</Link>
-        </Button>
+        <>
+          <ReportAccountMultiSelect
+            label="Bank accounts"
+            accounts={(d?.rows ?? []).map((row) => ({
+              id: row.gl_account_id,
+              code: "",
+              name: row.bank_account_name,
+            }))}
+            selected={chosen ?? undefined}
+            onChange={(ids) =>
+              ctx.setSearch({ accountIds: ids?.join(",") || undefined, explorePage: undefined })
+            }
+            disabled={!d}
+          />
+          <Button size="sm" variant="outline" asChild className="print:hidden">
+            <Link to="/banking/reconcile">Open reconciliation</Link>
+          </Button>
+        </>
       }
     >
       <ReportPane
         query={q}
-        isEmpty={Boolean(d) && d!.rows.length === 0}
+        isEmpty={Boolean(d) && visible.length === 0}
         emptyTitle="No bank accounts"
-        emptyDescription="Add a bank account to see its reconciliation status."
+        emptyDescription="No bank accounts match this selection. Choose All accounts to review every bank reconciliation."
       >
         {d ? (
           <>
@@ -764,7 +823,7 @@ export function BankReconSummaryView({ ctx }: { ctx: ReportCtx }) {
                 Book balance and uncleared net are in {ctx.currency}.
               </AlertDescription>
             </Alert>
-            <RowsTable rows={d.rows} cols={cols} rowKey={(r) => r.bank_account_id} />
+            <RowsTable rows={visible} cols={cols} rowKey={(r) => r.bank_account_id} />
           </>
         ) : null}
       </ReportPane>

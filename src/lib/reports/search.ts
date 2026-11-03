@@ -12,6 +12,11 @@ export type ReportSearch = {
   from?: string;
   to?: string;
   account?: string;
+  /** Multi-account selection in reporting; absent means all permitted accounts. */
+  accountIds?: string;
+  /** Restricts account visibility, never recalculates account balances. */
+  accountScope?: "transactions" | "balance" | "all";
+  accountGroup?: "code" | "name" | "type";
   columns?: ColumnMode;
   compare?: "prior_year" | "prior_month" | "months";
   page?: number;
@@ -72,6 +77,15 @@ export function parseReportSearch(raw: Record<string, unknown>): ReportSearch {
   if (to && isReportDate(to)) out.to = to;
   const account = str(raw["account"], 36);
   if (account && UUID.test(account)) out.account = account;
+  if (typeof raw["accountIds"] === "string" && raw["accountIds"].length <= 3700) {
+    const ids = [...new Set(raw["accountIds"].split(",").map((v) => v.trim()))];
+    if (ids.length > 0 && ids.length <= 100 && ids.every((id) => UUID.test(id)))
+      out.accountIds = ids.join(",");
+  }
+  if (raw["accountScope"] === "transactions" || raw["accountScope"] === "all")
+    out.accountScope = raw["accountScope"];
+  if (raw["accountGroup"] === "name" || raw["accountGroup"] === "type")
+    out.accountGroup = raw["accountGroup"];
   if (COLUMN_MODES.includes(raw["columns"] as ColumnMode) && raw["columns"] !== "none") {
     out.columns = raw["columns"] as ColumnMode;
   }

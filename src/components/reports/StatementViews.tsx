@@ -19,6 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AccountLink, ReportPane, ReportShell, Stat, type ReportCtx } from "./ReportShell";
+import { ReportAccountMultiSelect } from "./ReportAccountMultiSelect";
 
 export function TrialBalanceView({ ctx }: { ctx: ReportCtx }) {
   const fmt = useFormat();
@@ -28,18 +29,43 @@ export function TrialBalanceView({ ctx }: { ctx: ReportCtx }) {
     queryFn: () => fetchTb({ data: { companyId: ctx.companyId, to: ctx.to } }),
   });
   const d = q.data;
+  const selectedIds = ctx.search.accountIds?.split(",") ?? null;
+  const visible = selectedIds
+    ? (d?.rows ?? []).filter((row) => selectedIds.includes(row.account_id))
+    : (d?.rows ?? []);
+  const selectedDebit = visible.reduce((total, row) => total + row.debit_minor, 0);
+  const selectedCredit = visible.reduce((total, row) => total + row.credit_minor, 0);
+  const subset = selectedIds !== null;
   return (
     <ReportShell
       title="Trial Balance"
       ctx={ctx}
       mode="asof"
-      basis={d?.basis}
+      basis={
+        subset
+          ? `${d?.basis ?? ""} · Selected-account view only; full trial balance reconciliation is unchanged.`
+          : d?.basis
+      }
+      extraControls={
+        <ReportAccountMultiSelect
+          accounts={(d?.rows ?? []).map((row) => ({
+            id: row.account_id,
+            code: row.code,
+            name: row.name,
+          }))}
+          selected={selectedIds ?? undefined}
+          onChange={(ids) =>
+            ctx.setSearch({ accountIds: ids?.join(",") || undefined, explorePage: undefined })
+          }
+          disabled={!d}
+        />
+      }
       getCsv={() =>
         d
           ? {
               headers: ["Code", "Account", "Debit", "Credit"],
               rows: [
-                ...d.rows.map((r) => [
+                ...visible.map((r) => [
                   r.code,
                   r.name,
                   csvMoney(r.debit_minor, ctx.currency),
@@ -47,30 +73,37 @@ export function TrialBalanceView({ ctx }: { ctx: ReportCtx }) {
                 ]),
                 [
                   "",
-                  "Total",
-                  csvMoney(d.totalDebit, ctx.currency),
-                  csvMoney(d.totalCredit, ctx.currency),
+                  subset ? "Selected accounts subtotal (not a balanced TB)" : "Total",
+                  csvMoney(subset ? selectedDebit : d.totalDebit, ctx.currency),
+                  csvMoney(subset ? selectedCredit : d.totalCredit, ctx.currency),
                 ],
               ],
-              basis: d.basis,
+              basis: subset
+                ? `${d.basis} Selected accounts only; this subset does not establish a balanced trial balance.`
+                : d.basis,
             }
           : null
       }
     >
       <ReportPane
         query={q}
-        isEmpty={Boolean(d) && d!.rows.length === 0}
+        isEmpty={Boolean(d) && visible.length === 0}
         emptyTitle="No posted activity"
-        emptyDescription="Authorise documents or post journals to populate the trial balance."
+        emptyDescription="No accounts match this selection. Choose All accounts to review the complete trial balance."
       >
         {d ? (
           <>
             <p className="mb-2 text-sm">
-              Totals {fmt.amount(d.totalDebit, ctx.currency)} /{" "}
-              {fmt.amount(d.totalCredit, ctx.currency)}{" "}
-              <Badge variant={d.balances ? "secondary" : "destructive"}>
-                {d.balances ? "Balances" : "Out of balance"}
-              </Badge>
+              {subset ? "Selected accounts subtotal" : "Full trial balance"}{" "}
+              {fmt.amount(subset ? selectedDebit : d.totalDebit, ctx.currency)} /{" "}
+              {fmt.amount(subset ? selectedCredit : d.totalCredit, ctx.currency)}{" "}
+              {subset ? (
+                <Badge variant="outline">Subset; not a balance check</Badge>
+              ) : (
+                <Badge variant={d.balances ? "secondary" : "destructive"}>
+                  {d.balances ? "Balances" : "Out of balance"}
+                </Badge>
+              )}
             </p>
             <Table>
               <TableHeader>
@@ -82,7 +115,7 @@ export function TrialBalanceView({ ctx }: { ctx: ReportCtx }) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {d.rows.map((r) => (
+                {visible.map((r) => (
                   <TableRow key={r.account_id}>
                     <TableCell>{r.code}</TableCell>
                     <TableCell>
@@ -103,12 +136,14 @@ export function TrialBalanceView({ ctx }: { ctx: ReportCtx }) {
                   </TableRow>
                 ))}
                 <TableRow className="border-t-2 font-semibold">
-                  <TableCell colSpan={2}>Total</TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {fmt.amount(d.totalDebit, ctx.currency)}
+                  <TableCell colSpan={2}>
+                    {subset ? "Selected accounts subtotal" : "Total"}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
-                    {fmt.amount(d.totalCredit, ctx.currency)}
+                    {fmt.amount(subset ? selectedDebit : d.totalDebit, ctx.currency)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {fmt.amount(subset ? selectedCredit : d.totalCredit, ctx.currency)}
                   </TableCell>
                 </TableRow>
               </TableBody>

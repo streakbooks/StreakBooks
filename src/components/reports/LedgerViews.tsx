@@ -30,6 +30,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AdvancedAccountTransactionsView } from "./AdvancedAccountTransactions";
+import { ReportAccountMultiSelect } from "./ReportAccountMultiSelect";
+import { listAccounts } from "@/lib/accounting/accounting.functions";
 import {
   JournalLink,
   PagerBar,
@@ -45,7 +47,13 @@ const selectCls = "flex h-10 rounded-md border border-input bg-background px-3 t
 /* ---------------- Account transactions (advanced posted-ledger explorer) ---------------- */
 
 export function AccountTransactionsView({ ctx }: { ctx: ReportCtx }) {
-  return <AdvancedAccountTransactionsView ctx={ctx} />;
+  // A single-account drill-down retains the full posted-line metadata explorer.
+  // The catalogue entry defaults to a multi-account report instead of a required selector.
+  return ctx.search.account ? (
+    <AdvancedAccountTransactionsView ctx={ctx} />
+  ) : (
+    <GeneralLedgerAllView ctx={ctx} />
+  );
 }
 
 /* ---------------- General ledger, all accounts ---------------- */
@@ -53,17 +61,102 @@ export function AccountTransactionsView({ ctx }: { ctx: ReportCtx }) {
 export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
   const fmt = useFormat();
   const fetchGl = useServerFn(getGeneralLedgerAll);
+  const fetchAccounts = useServerFn(listAccounts);
+  const accountIds = ctx.search.accountIds;
+  const accountScope = ctx.search.accountScope ?? "balance";
+  const accountGroup = ctx.search.accountGroup ?? "code";
+  const accountsQ = useQuery({
+    queryKey: ["report-account-options", ctx.companyId],
+    queryFn: () => fetchAccounts({ data: { companyId: ctx.companyId } }),
+  });
   const q = useQuery({
-    queryKey: ["report-gl-all", ctx.companyId, ctx.from, ctx.to],
-    queryFn: () => fetchGl({ data: { companyId: ctx.companyId, from: ctx.from, to: ctx.to } }),
+    queryKey: ["report-gl-all", ctx.companyId, ctx.from, ctx.to, accountIds, accountScope],
+    queryFn: () =>
+      fetchGl({
+        data: {
+          companyId: ctx.companyId,
+          from: ctx.from,
+          to: ctx.to,
+          ...(accountIds ? { accountIds } : {}),
+          accountScope,
+        },
+      }),
   });
   const d = q.data;
+  // Reorder account groups only; never recalculate transaction running balances.
+  const orderedAccounts = [...(d?.accounts ?? [])].sort((a, b) => {
+    if (accountGroup === "name")
+      return (
+        a.account.name.localeCompare(b.account.name) || a.account.code.localeCompare(b.account.code)
+      );
+    if (accountGroup === "type")
+      return (
+        a.account.account_type.localeCompare(b.account.account_type) ||
+        a.account.code.localeCompare(b.account.code)
+      );
+    return a.account.code.localeCompare(b.account.code);
+  });
+  const selectAccounts = (ids: string[] | undefined) => {
+    ctx.setSearch({
+      account: ctx.reportId === "general-ledger" && ids?.length === 1 ? ids[0] : undefined,
+      accountIds:
+        ids && (ctx.reportId !== "general-ledger" || ids.length > 1) ? ids.join(",") : undefined,
+      page: undefined,
+      explorePage: undefined,
+    });
+  };
   return (
     <ReportShell
-      title="General Ledger"
+      title={ctx.reportId === "general-ledger" ? "Account Transactions" : "General Ledger"}
       ctx={ctx}
       mode="range"
-      basis="All accounts with activity or an opening balance; running balance on the normal side"
+      basis="Posted ledger · Account-level balances preserve all posted movements in date order"
+      extraControls={
+        <>
+          <ReportAccountMultiSelect
+            accounts={accountsQ.data ?? []}
+            selected={accountIds ? accountIds.split(",") : undefined}
+            onChange={selectAccounts}
+            disabled={accountsQ.isPending}
+          />
+          <div className="space-y-1">
+            <Label htmlFor="report-account-scope">Accounts to include</Label>
+            <select
+              id="report-account-scope"
+              className={selectCls}
+              value={accountScope}
+              onChange={(event) =>
+                ctx.setSearch({
+                  accountScope: event.target.value === "balance" ? undefined : event.target.value,
+                  explorePage: undefined,
+                })
+              }
+            >
+              <option value="transactions">With posted transactions</option>
+              <option value="balance">Transactions or opening balance</option>
+              <option value="all">All accounts, including zero balances</option>
+            </select>
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="report-account-group">Group accounts by</Label>
+            <select
+              id="report-account-group"
+              className={selectCls}
+              value={accountGroup}
+              onChange={(event) =>
+                ctx.setSearch({
+                  accountGroup: event.target.value === "code" ? undefined : event.target.value,
+                  explorePage: undefined,
+                })
+              }
+            >
+              <option value="code">Account code</option>
+              <option value="name">Account name</option>
+              <option value="type">Account type, then code</option>
+            </select>
+          </div>
+        </>
+      }
       getCsv={() =>
         d
           ? {
@@ -76,8 +169,12 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
                 "Debit",
                 "Credit",
                 "Balance",
+                "Account code",
+                "Account type",
+                "Journal ID",
+                "Source ID",
               ],
-              rows: d.accounts.flatMap((a) => [
+              rows: orderedAccounts.flatMap((a) => [
                 [
                   `${a.account.code} ${a.account.name}`,
                   "",
@@ -87,6 +184,10 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
                   "",
                   "",
                   csvMoney(a.opening_balance_minor, ctx.currency),
+                  a.account.code,
+                  a.account.account_type,
+                  "",
+                  "",
                 ],
                 ...a.rows.map((r) => [
                   `${a.account.code} ${a.account.name}`,
@@ -97,6 +198,10 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
                   csvMoney(r.debit_minor, ctx.currency),
                   csvMoney(r.credit_minor, ctx.currency),
                   csvMoney(r.running_balance_minor, ctx.currency),
+                  a.account.code,
+                  a.account.account_type,
+                  r.journal_id,
+                  r.source_id ?? "",
                 ]),
               ]),
             }
@@ -105,9 +210,9 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
     >
       <ReportPane
         query={q}
-        isEmpty={Boolean(d) && d!.accounts.length === 0}
+        isEmpty={Boolean(d) && orderedAccounts.length === 0}
         emptyTitle="No ledger activity"
-        emptyDescription="Nothing was posted in this period."
+        emptyDescription="No accounts match the period and selection. Choose All accounts or include zero balances."
       >
         {d ? (
           <Table>
@@ -123,7 +228,7 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {d.accounts.map((a) => (
+              {orderedAccounts.map((a) => (
                 <Fragment key={a.account.id}>
                   <TableRow className="bg-muted/40">
                     <TableCell colSpan={6} className="font-semibold">
@@ -133,6 +238,7 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
                         search={{ account: a.account.id, from: ctx.from, to: ctx.to }}
                         className="underline-offset-2 hover:underline"
                       >
+                        {accountGroup === "type" ? `${a.account.account_type} · ` : ""}
                         {a.account.code} {a.account.name}
                       </Link>
                     </TableCell>

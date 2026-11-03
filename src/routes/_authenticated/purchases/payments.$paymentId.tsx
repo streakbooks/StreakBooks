@@ -19,6 +19,7 @@ import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/c
 import { StatusBadge } from "@/components/common/stat-card";
 import { Button } from "@/components/ui/button";
 import { DocumentActions } from "@/components/documents/DocumentActions";
+import { DocumentPostingJournals } from "@/components/documents/DocumentPostingJournals";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
@@ -358,6 +359,12 @@ function PaymentDocument() {
           transmit funds to a bank.
         </p>
       </section>
+      {can("accounting.view") ? (
+        <section className="rounded-lg border border-border bg-background p-4">
+          <h2 className="mb-3 text-sm font-semibold">Journal Entries</h2>
+          <DocumentPostingJournals entityType="supplier_payment" entityId={paymentId} />
+        </section>
+      ) : null}
       <DocumentActions kind="supplier_remittance" id={paymentId} />
     </div>
   );

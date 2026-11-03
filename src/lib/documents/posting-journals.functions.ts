@@ -22,8 +22,8 @@ export type DocumentPostingJournal = {
     id: string;
     line_no: number;
     description: string | null;
-    debit_minor: number;
-    credit_minor: number;
+    debit_minor: string;
+    credit_minor: string;
     account_code: string;
     account_name: string;
   }>;
@@ -112,8 +112,8 @@ export const listDocumentPostingJournals = createServerFn({ method: "GET" })
             id: line.id,
             line_no: line.line_no,
             description: line.description,
-            debit_minor: Number(line.debit_minor),
-            credit_minor: Number(line.credit_minor),
+            debit_minor: String(line.debit_minor),
+            credit_minor: String(line.credit_minor),
             account_code: line.accounts?.code ?? "",
             account_name: line.accounts?.name ?? "",
           })),

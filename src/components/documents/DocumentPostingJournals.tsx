@@ -77,10 +77,10 @@ export function DocumentPostingJournals({
                       <TableCell>{line.account_code} {line.account_name}</TableCell>
                       <TableCell>{line.description || "—"}</TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {line.debit_minor ? fromMinorUnits(BigInt(line.debit_minor), currency) : "—"}
+                        {BigInt(line.debit_minor) !== 0n ? fromMinorUnits(BigInt(line.debit_minor), currency) : "—"}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {line.credit_minor ? fromMinorUnits(BigInt(line.credit_minor), currency) : "—"}
+                        {BigInt(line.credit_minor) !== 0n ? fromMinorUnits(BigInt(line.credit_minor), currency) : "—"}
                       </TableCell>
                     </TableRow>
                   ))}

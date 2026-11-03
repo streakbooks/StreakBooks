@@ -1,5 +1,6 @@
 import { ProjectTagControl } from "@/components/projects/ProjectTagControl";
 import { Fragment, useEffect, useMemo, useState } from "react";
+import { Eye } from "lucide-react";
 import { createFileRoute, Link, useRouteContext } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -26,6 +27,8 @@ import { cn } from "@/lib/utils";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { BankCodingPanel } from "@/components/banking/BankCodingPanel";
 import { BankMatchPanel } from "@/components/banking/BankMatchPanel";
+import { BankTransactionQuickPreview } from "@/components/banking/BankTransactionQuickPreview";
+import { SelectionActionBar } from "@/components/common/SelectionActionBar";
 import { ConfirmButton } from "@/components/banking/ConfirmButton";
 import { AccountLookup, LookupSelect, type LookupCreateContext } from "@/components/lookup";
 import { BankAccountCreateForm, TaxCodeCreateForm } from "@/components/lookup/create-forms";
@@ -192,11 +195,13 @@ function BankTransactions() {
   useEffect(() => setQText(search.q ?? ""), [search.q]);
   const [expanded, setExpanded] = useState<Expanded>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [previewId, setPreviewId] = useState<string | null>(null);
   const [bulkAccountId, setBulkAccountId] = useState("");
   const [bulkTaxCodeId, setBulkTaxCodeId] = useState(NONE);
   const [bulkProgress, setBulkProgress] = useState<string | null>(null);
 
   const filterKey = [
+    companyId,
     search.bankAccountId,
     search.transactionId,
     status,
@@ -211,6 +216,7 @@ function BankTransactions() {
   useEffect(() => {
     setSelected(new Set());
     setExpanded(null);
+    setPreviewId(null);
   }, [filterKey.join("|")]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const accountsQ = useQuery({
@@ -368,6 +374,8 @@ function BankTransactions() {
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
 
   const rows = (txnsQ.data?.rows ?? []) as BankTxnListRow[];
+  const previewIndex = rows.findIndex((transaction) => transaction.id === previewId);
+  const previewTransaction = previewIndex >= 0 ? (rows[previewIndex] ?? null) : null;
   const total = txnsQ.data?.total ?? 0;
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
   const reviewing = status === "uncategorised";
@@ -620,6 +628,11 @@ function BankTransactions() {
         />
       </div>
 
+      <SelectionActionBar
+        count={selected.size}
+        onClear={() => setSelected(new Set())}
+        description="Selection applies to visible transactions on this page. Choose a coding account below."
+      />
       {reviewing && uncategorisedRows.length > 0 ? (
         <div className="mb-3 space-y-2 rounded-md border bg-muted/30 p-3 text-sm">
           <div className="flex flex-wrap items-center gap-2">
@@ -850,6 +863,19 @@ function BankTransactions() {
                       ) : null}
                       <TableCell>
                         <div className="flex flex-wrap items-center gap-1">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="size-8 p-0"
+                            title="Preview transaction"
+                            aria-label={
+                              "Preview transaction " + (t.description ?? fmt.date(t.txn_date))
+                            }
+                            onClick={() => setPreviewId(t.id)}
+                          >
+                            <Eye className="size-4" aria-hidden />
+                          </Button>
                           {t.status === "uncategorised" ? (
                             <>
                               <Button
@@ -1030,6 +1056,33 @@ function BankTransactions() {
           </Table>
         </TableCard>
       )}
+
+      <BankTransactionQuickPreview
+        transaction={previewTransaction}
+        accountName={
+          previewTransaction
+            ? (nameByAccount.get(previewTransaction.bank_account_id) ?? "Bank account")
+            : "Bank account"
+        }
+        currency={
+          previewTransaction
+            ? (currencyByAccount.get(previewTransaction.bank_account_id) ?? currency)
+            : currency
+        }
+        pagePosition={previewIndex + 1}
+        pageTotal={rows.length}
+        formatDate={(value) => fmt.date(value)}
+        formatMoney={(amount, code) => fmt.money(amount, code)}
+        onClose={() => setPreviewId(null)}
+        onPrevious={() => {
+          const previous = rows[previewIndex - 1];
+          if (previous) setPreviewId(previous.id);
+        }}
+        onNext={() => {
+          const next = rows[previewIndex + 1];
+          if (next) setPreviewId(next.id);
+        }}
+      />
 
       {txnsQ.data ? (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">

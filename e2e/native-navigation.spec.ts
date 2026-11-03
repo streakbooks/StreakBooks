@@ -337,4 +337,61 @@ test.describe("deep links in authenticated module workspaces", () => {
     await page.getByRole("button", { name: "Choose table columns" }).click();
     await expect(page.getByRole("menuitemcheckbox", { name: "Linked journals" })).toBeChecked();
   });
+
+  test("bank transaction preview is read-only, navigable and preserves the list URL", async ({
+    page,
+  }) => {
+    await signIn(page, "/banking/transactions");
+    const previewButtons = page.getByRole("button", { name: /^Preview transaction / });
+    if ((await previewButtons.count()) === 0) return;
+    const original = page.url();
+    await previewButtons.first().click();
+    const dialog = page.getByRole("dialog", { name: "Bank transaction preview" });
+    await expect(dialog).toBeVisible();
+    await expect(
+      dialog.getByRole("link", { name: /View transaction in workspace/ }),
+    ).toHaveAttribute("href", /\/banking\/transactions/);
+    await expect(dialog.getByRole("region", { name: "Linked journals" })).toBeVisible();
+    expect(page.url()).toBe(original);
+    if ((await previewButtons.count()) > 1) {
+      await dialog.getByRole("button", { name: "Next" }).click();
+      await expect(dialog.getByText(/2 of \d+ on this page/)).toBeVisible();
+    }
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+    expect(page.url()).toBe(original);
+  });
+
+  test("Bills preview shows financial breakdown without posting or leaving the list", async ({
+    page,
+  }) => {
+    await signIn(page, "/purchases/bills");
+    const previews = page.getByRole("button", { name: "Quick preview" });
+    if ((await previews.count()) === 0) return;
+    const original = page.url();
+    await previews.first().click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByText("Supplier invoice #")).toBeVisible();
+    await expect(dialog.getByText("Tax included")).toBeVisible();
+    await expect(dialog.getByText("Payment status")).toBeVisible();
+    await expect(dialog.getByRole("link", { name: /Open.*document|Open & edit/ })).toHaveAttribute(
+      "href",
+      /\/purchases\/bills\//,
+    );
+    expect(page.url()).toBe(original);
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+  });
+
+  test("selected banking rows show a clear, non-posting selection action", async ({ page }) => {
+    await signIn(page, "/banking/transactions");
+    const checkboxes = page.getByRole("checkbox", { name: /^Select / });
+    if ((await checkboxes.count()) === 0) return;
+    await checkboxes.first().click();
+    const actions = page.getByRole("region", { name: "Selected record actions" });
+    await expect(actions).toContainText("selected");
+    await actions.getByRole("button", { name: "Clear selected records" }).click();
+    await expect(actions).toHaveCount(0);
+  });
 });

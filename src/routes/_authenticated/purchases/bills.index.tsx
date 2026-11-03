@@ -43,6 +43,7 @@ import { StatusBadge } from "@/components/common/stat-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SavedFilterViews } from "@/components/common/SavedFilterViews";
+import { SelectionActionBar } from "@/components/common/SelectionActionBar";
 import type { ViewSchema, ViewSnapshot } from "@/lib/workspaces/saved-filter-views";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -309,6 +310,7 @@ function BillsWorkspace() {
   // A selection must never survive a change of tab / filter / page, or bulk actions would hit
   // bills the user can no longer see (P-20).
   const filterKey = [
+    companyId,
     tab,
     q,
     fromDate,
@@ -317,6 +319,8 @@ function BillsWorkspace() {
     includeVoid,
     overdueOnly,
     statusFilter,
+    sortBy,
+    sortDir,
     page,
   ].join("|");
   const lastFilterKey = useRef(filterKey);
@@ -324,6 +328,7 @@ function BillsWorkspace() {
     if (lastFilterKey.current !== filterKey) {
       lastFilterKey.current = filterKey;
       setSelected(new Set());
+      setPreviewId(null);
     }
   }, [filterKey]);
 
@@ -464,6 +469,8 @@ function BillsWorkspace() {
   });
 
   const rows = useMemo(() => (billsQ.data?.rows ?? []) as BillRow[], [billsQ.data]);
+  const previewIndex = rows.findIndex((bill) => bill.id === previewId);
+  const previewBill = previewIndex >= 0 ? (rows[previewIndex] ?? null) : null;
   const totalCount = billsQ.data?.totalCount ?? 0;
   const counts: Counts = summaryQ.data?.counts ?? {
     all: 0,
@@ -992,8 +999,11 @@ function BillsWorkspace() {
             </div>
 
             {selected.size > 0 ? (
-              <div className="flex flex-wrap items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-sm">
-                <span className="font-medium">{selected.size} selected</span>
+              <SelectionActionBar
+                count={selected.size}
+                onClear={() => setSelected(new Set())}
+                description="Only the selected bills are included. Authorisation and approval permissions still apply."
+              >
                 {tab === "drafts" || tab === "all" ? (
                   <Button
                     size="sm"
@@ -1026,10 +1036,7 @@ function BillsWorkspace() {
                     <Link to="/purchases/payments/new">Prepare payment</Link>
                   </Button>
                 ) : null}
-                <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
-                  Clear
-                </Button>
-              </div>
+              </SelectionActionBar>
             ) : null}
 
             <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
@@ -1380,19 +1387,29 @@ function BillsWorkspace() {
           </>
         )}
 
-        <Sheet open={Boolean(previewId)} onOpenChange={(o) => !o && setPreviewId(null)}>
-          <SheetContent className="sm:max-w-md">
+        <Sheet open={Boolean(previewBill)} onOpenChange={(o) => !o && setPreviewId(null)}>
+          <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
             <SheetHeader>
-              <SheetTitle>Quick preview</SheetTitle>
+              <SheetTitle>Bill {previewBill?.display_reference ?? "preview"}</SheetTitle>
               <SheetDescription>
                 Summary only — open the full document for editing and history.
               </SheetDescription>
             </SheetHeader>
-            {previewId ? (
+            {previewBill ? (
               <PreviewBody
-                bill={rows.find((r) => r.id === previewId) ?? null}
+                bill={previewBill}
                 currency={baseCurrency}
                 tab={tab}
+                position={previewIndex + 1}
+                total={rows.length}
+                onPrevious={() => {
+                  const previous = rows[previewIndex - 1];
+                  if (previous) setPreviewId(previous.id);
+                }}
+                onNext={() => {
+                  const next = rows[previewIndex + 1];
+                  if (next) setPreviewId(next.id);
+                }}
               />
             ) : null}
           </SheetContent>
@@ -1447,10 +1464,18 @@ function PreviewBody({
   bill,
   currency,
   tab,
+  position,
+  total,
+  onPrevious,
+  onNext,
 }: {
   bill: BillRow | null;
   currency: string;
   tab: BillsWorkspaceTab;
+  position: number;
+  total: number;
+  onPrevious: () => void;
+  onNext: () => void;
 }) {
   if (!bill) {
     return (
@@ -1472,7 +1497,7 @@ function PreviewBody({
         </div>
       </div>
       <StatusBadge status={bill.status} />
-      <dl className="grid grid-cols-2 gap-2">
+      <dl className="grid grid-cols-2 gap-4 rounded-xl border bg-muted/20 p-4">
         <div>
           <dt className="text-xs text-muted-foreground">Total</dt>
           <dd className="font-medium tabular-nums">
@@ -1492,10 +1517,56 @@ function PreviewBody({
           <dd>{bill.due_date || "—"}</dd>
         </div>
         <div>
+          <dt className="text-xs text-muted-foreground">Paid</dt>
+          <dd className="font-medium tabular-nums">
+            {bill.status === "draft" || bill.status === "awaiting_approval"
+              ? "— (unposted)"
+              : fromMinorUnits(BigInt(bill.amount_paid_minor), cur)}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted-foreground">Credited</dt>
+          <dd className="font-medium tabular-nums">
+            {bill.status === "draft" || bill.status === "awaiting_approval"
+              ? "— (unposted)"
+              : fromMinorUnits(BigInt(bill.amount_credited_minor), cur)}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted-foreground">Tax included</dt>
+          <dd className="font-medium tabular-nums">
+            {fromMinorUnits(BigInt(bill.tax_minor), cur)}
+          </dd>
+        </div>
+        <div>
           <dt className="text-xs text-muted-foreground">Attachments</dt>
           <dd>{bill.attachment_count}</dd>
         </div>
       </dl>
+      <div className="space-y-2 rounded-xl border p-4 text-sm">
+        <div>
+          <span className="text-muted-foreground">Supplier invoice #</span>
+          <p className="mt-1 font-medium">{bill.supplier_invoice_number ?? "—"}</p>
+        </div>
+        <div>
+          <span className="text-muted-foreground">Internal bill #</span>
+          <p className="mt-1 font-medium">{bill.bill_number ?? "—"}</p>
+        </div>
+        <div>
+          <span className="text-muted-foreground">Approval</span>
+          <p className="mt-1 font-medium">{approvalStatusOf(bill)}</p>
+        </div>
+        <div>
+          <span className="text-muted-foreground">Payment status</span>
+          <p className="mt-1 font-medium">{paymentStatusOf(bill)}</p>
+        </div>
+        {bill.memo ? (
+          <div>
+            <span className="text-muted-foreground">Memo</span>
+            <p className="mt-1 whitespace-pre-wrap break-words">{bill.memo}</p>
+          </div>
+        ) : null}
+      </div>
       <Button className="w-full" asChild>
         <Link
           to="/purchases/bills/$billId"
@@ -1507,6 +1578,17 @@ function PreviewBody({
             : "Open full document"}
         </Link>
       </Button>
+      <div className="flex items-center justify-between gap-3 border-t pt-3">
+        <Button size="sm" variant="outline" disabled={position <= 1} onClick={onPrevious}>
+          Previous
+        </Button>
+        <span className="text-xs text-muted-foreground tabular-nums">
+          {position} of {total} bills on this page
+        </span>
+        <Button size="sm" variant="outline" disabled={position >= total} onClick={onNext}>
+          Next
+        </Button>
+      </div>
     </div>
   );
 }

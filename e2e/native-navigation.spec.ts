@@ -591,4 +591,76 @@ test.describe("deep links in authenticated module workspaces", () => {
     await page.getByRole("button", { name: "Switch bills to cards view" }).click();
     await expect(toTable).toBeVisible();
   });
+
+  test("Dashboard attention centre links to real bookkeeping workflows without posting", async ({
+    page,
+  }) => {
+    await signIn(page, "/");
+    const centre = page.getByRole("region", { name: "Bookkeeping attention centre" });
+    await expect(centre).toBeVisible();
+    await expect(centre.getByText("Priority work queue")).toBeVisible();
+    await expect(centre.getByText("Other workflow tasks")).toBeVisible();
+    const filters = centre.getByRole("group", { name: "Filter bookkeeping tasks" });
+    await filters.getByRole("button", { name: /^Overdue/ }).click();
+    await expect(filters.getByRole("button", { name: /^Overdue/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await filters.getByRole("button", { name: /^Bank review/ }).click();
+    await expect(filters.getByRole("button", { name: /^Bank review/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await filters.getByRole("button", { name: /^All/ }).click();
+    const recordLinks = centre.getByRole("link", { name: /^Open$/ });
+    if ((await recordLinks.count()) > 0) {
+      await expect(recordLinks.first()).toHaveAttribute(
+        "href",
+        /\/(sales\/invoices|purchases\/bills)\//,
+      );
+    }
+    await expect(page.getByRole("link", { name: "Review tasks" })).toHaveAttribute(
+      "href",
+      "#bookkeeping-attention",
+    );
+  });
+
+  test("dashboard layouts can be saved, restored, reordered and persisted per organisation", async ({
+    page,
+  }) => {
+    await signIn(page, "/");
+    const workspace = page.getByRole("region", { name: "Dashboard widgets" });
+    await expect(workspace).toBeVisible();
+    await page.getByRole("button", { name: "Customize dashboard" }).click();
+    await page.getByRole("button", { name: "Apply Collections dashboard layout" }).click();
+    await expect(page.getByRole("checkbox", { name: "Receivables ageing" })).toBeChecked();
+    await expect(page.getByRole("checkbox", { name: "Payables ageing" })).not.toBeChecked();
+    const name = page.getByRole("textbox", { name: "Dashboard layout name" });
+    await name.fill("Bookkeeping review QA");
+    await page.getByRole("button", { name: "Save dashboard layout" }).click();
+    await expect(
+      page.getByRole("button", { name: "Load dashboard layout Bookkeeping review QA" }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Apply Overview dashboard layout" }).click();
+    await expect(page.getByRole("checkbox", { name: "Payables ageing" })).toBeChecked();
+    await page.getByRole("button", { name: "Load dashboard layout Bookkeeping review QA" }).click();
+    await expect(page.getByRole("checkbox", { name: "Payables ageing" })).not.toBeChecked();
+    await page.keyboard.press("Escape");
+    await page.getByRole("button", { name: "Arrange", exact: true }).click();
+    await expect(workspace.getByRole("button", { name: "Move Cash flow up" })).toBeEnabled();
+    await workspace.getByRole("button", { name: "Move Cash flow up" }).click();
+    await page.getByRole("button", { name: "Done arranging" }).click();
+    await page.reload();
+    await expect(page.getByRole("region", { name: "Dashboard widgets" })).toBeVisible();
+    await page.getByRole("button", { name: "Customize dashboard" }).click();
+    await expect(
+      page.getByRole("button", { name: "Load dashboard layout Bookkeeping review QA" }),
+    ).toBeVisible();
+    await expect(page.getByRole("checkbox", { name: "Payables ageing" })).not.toBeChecked();
+    // Leave the test user's browser layout clean; no financial data is changed.
+    await page.getByRole("button", { name: "Restore default panels" }).click();
+    await page
+      .getByRole("button", { name: "Delete dashboard layout Bookkeeping review QA" })
+      .click();
+  });
 });

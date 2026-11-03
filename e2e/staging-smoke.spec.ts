@@ -101,4 +101,28 @@ test.describe("authenticated LinkBooks staging smoke", () => {
     await expect(table).toBeVisible();
     await expect(page.getByRole("navigation", { name: "Bill workflow" })).toBeVisible();
   });
+
+  test("Dashboard attention and layout controls display real protected workspace", async ({
+    page,
+  }) => {
+    await signIn(page, "/");
+    const attention = page.getByRole("region", { name: "Bookkeeping attention centre" });
+    await expect(attention).toBeVisible();
+    await expect(attention.getByText("Priority work queue")).toBeVisible();
+    await attention
+      .getByRole("group", { name: "Filter bookkeeping tasks" })
+      .getByRole("button", { name: /^Overdue/ })
+      .click();
+    await expect(
+      attention
+        .getByRole("group", { name: "Filter bookkeeping tasks" })
+        .getByRole("button", { name: /^Overdue/ }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("region", { name: "Dashboard widgets" })).toBeVisible();
+    await page.getByRole("button", { name: "Customize dashboard" }).click();
+    await expect(
+      page.getByRole("button", { name: "Apply Banking dashboard layout" }),
+    ).toBeVisible();
+    await page.keyboard.press("Escape");
+  });
 });

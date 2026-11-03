@@ -1,3 +1,4 @@
+import { workflowRpc } from "@/lib/workflows-rpc.server";
 import { createServerFn } from "@tanstack/react-start";
 import {
   assertOrderDate,
@@ -3242,19 +3243,36 @@ export const allocateSupplierPayment = createServerFn({ method: "POST" })
 
 export const listPurchaseOrders = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(companyIdOf)
+  .inputValidator((input: { companyId: string; q?: string; status?: string; page?: number }) => ({
+    companyId: assertUuid(input.companyId),
+    q: (input.q ?? "").trim().slice(0, 100),
+    status: input.status ?? "all",
+    page: Math.max(1, Math.min(100000, Math.floor(input.page ?? 1))),
+  }))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "purchases.view");
-    const { data: rows, error } = await context.supabase
-      .from("purchase_orders" as never)
-      .select(
-        "id, order_number, order_date, status, total_minor, currency_code, contact_id, contacts(name), billed_bill_id" as never,
-      )
-      .eq("company_id" as never, data.companyId as never)
-      .order("order_date" as never, { ascending: false } as never)
-      .limit(100);
-    if (error) throw new Error(error.message);
-    return rows ?? [];
+    return workflowRpc<{
+      rows: Array<{
+        id: string;
+        order_number: string | null;
+        order_date: string;
+        currency_code: string;
+        status: string;
+        total_minor: number;
+        billed_bill_id: string | null;
+        version: number;
+        contacts: { name: string } | null;
+      }>;
+      total: number;
+      page: number;
+      pageSize: number;
+    }>(context.supabase, "browse_purchase_orders", {
+      _company: data.companyId,
+      _search: data.q,
+      _status: data.status,
+      _page: data.page,
+      _size: 25,
+    });
   });
 
 export const getPurchaseOrder = createServerFn({ method: "GET" })
@@ -3280,8 +3298,7 @@ export const getPurchaseOrder = createServerFn({ method: "GET" })
 export const changePurchaseOrderStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { companyId: string; orderId: string; status: "sent" | "cancelled" }) => {
-    if (input.status !== "sent" && input.status !== "cancelled")
-      throw new Error("Invalid order status");
+    if (!["sent", "cancelled"].includes(input.status)) throw new Error("Invalid order status");
     return {
       companyId: assertUuid(input.companyId),
       orderId: assertUuid(input.orderId, "order"),
@@ -3289,38 +3306,12 @@ export const changePurchaseOrderStatus = createServerFn({ method: "POST" })
     };
   })
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
-    await assertCompanyPermission(supabase, data.companyId, "purchases.draft");
-    const { data: row, error } = await supabase
-      .from("purchase_orders" as never)
-      .select("status, billed_bill_id" as never)
-      .eq("company_id" as never, data.companyId as never)
-      .eq("id" as never, data.orderId as never)
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    if (!row) throw new Error("Purchase order not found in this organisation");
-    const current = row as { status: string; billed_bill_id: string | null };
-    assertOrderStatusChange(current.status, current.billed_bill_id, data.status);
-    const { data: changed, error: updateError } = await supabase
-      .from("purchase_orders" as never)
-      .update({ status: data.status, updated_at: new Date().toISOString() } as never)
-      .eq("company_id" as never, data.companyId as never)
-      .eq("id" as never, data.orderId as never)
-      .eq("status" as never, current.status as never)
-      .is("billed_bill_id" as never, null as never)
-      .select("id");
-    if (updateError) throw new Error(updateError.message);
-    if (!(changed as unknown[] | null)?.length)
-      throw new Error("Order changed while saving. Reload and try again.");
-    await recordBillAudit(
-      supabase,
-      data.companyId,
-      "purchase_order_status_changed",
-      data.orderId,
-      { from: current.status, to: data.status, delivery: "manual_status_only" },
-      "purchase_order",
+    await assertCompanyPermission(context.supabase, data.companyId, "purchases.draft");
+    return workflowRpc<{ id: string; status: string }>(
+      context.supabase,
+      "change_purchase_order_atomic",
+      { _company: data.companyId, _order: data.orderId, _status: data.status },
     );
-    return { id: data.orderId, status: data.status };
   });
 
 export const savePurchaseOrder = createServerFn({ method: "POST" })
@@ -3333,95 +3324,45 @@ export const savePurchaseOrder = createServerFn({ method: "POST" })
       currencyCode: string;
       memo?: string;
       lines: PurchaseOrderLineInput[];
-    }) => ({
-      companyId: assertUuid(input.companyId),
-      contactId: assertUuid(input.contactId, "supplier"),
-      orderDate: assertOrderDate(input.orderDate),
-      currencyCode: (() => {
-        const currency = input.currencyCode.trim().toUpperCase();
-        if (!/^[A-Z]{3}$/.test(currency)) throw new Error("Choose a valid currency");
-        return currency;
-      })(),
-      memo: (input.memo ?? "").trim().slice(0, 500) || null,
-      lines: validatePurchaseOrderLines(input.lines),
-    }),
+      requestId: string;
+      orderId?: string;
+      version?: number;
+    }) => {
+      const currencyCode = input.currencyCode.trim().toUpperCase();
+      if (!/^[A-Z]{3}$/.test(currencyCode)) throw new Error("Choose a valid currency");
+      if (input.orderId && (!Number.isSafeInteger(input.version) || input.version! < 1))
+        throw new Error("Reload the order before editing");
+      const lines = validatePurchaseOrderLines(input.lines).map(
+        ({ description, accountId, quantity, unitPriceMinor, discountMinor, taxRateBps }) => ({
+          description,
+          accountId,
+          quantity,
+          unitPriceMinor,
+          discountMinor,
+          taxRateBps,
+        }),
+      );
+      return {
+        companyId: assertUuid(input.companyId),
+        contactId: assertUuid(input.contactId, "supplier"),
+        orderDate: assertOrderDate(input.orderDate),
+        currencyCode,
+        memo: (input.memo ?? "").trim().slice(0, 500),
+        lines,
+        requestId: assertUuid(input.requestId, "request"),
+        orderId: input.orderId ? assertUuid(input.orderId, "order") : null,
+        version: input.version ?? null,
+      };
+    },
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    await assertCompanyPermission(supabase, data.companyId, "purchases.draft");
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(data.orderDate)) throw new Error("Order date required");
-    for (const accountId of new Set(data.lines.map((l) => l.accountId))) {
-      await requireAccountInCompany(supabase, data.companyId, accountId);
-    }
-    const { data: supplier, error: supplierErr } = await supabase
-      .from("contacts" as never)
-      .select("id" as never)
-      .eq("company_id" as never, data.companyId as never)
-      .eq("id" as never, data.contactId as never)
-      .in("kind" as never, ["supplier", "both"] as never)
-      .eq("is_active" as never, true as never)
-      .maybeSingle();
-    if (supplierErr) throw new Error(supplierErr.message);
-    if (!supplier) throw new Error("Supplier not found in this organisation");
-
-    const totals = sumLines(data.lines);
-    const { allocateDocumentNumber } = await import("@/lib/settings/document-numbering");
-    const orderNumber = await allocateDocumentNumber(
-      supabase as never,
-      data.companyId,
-      "purchase_order",
+    await assertCompanyPermission(context.supabase, data.companyId, "purchases.draft");
+    const { companyId, ...payload } = data;
+    return workflowRpc<{ id: string; orderNumber: string; version: number }>(
+      context.supabase,
+      "save_purchase_order_atomic",
+      { _company: companyId, _payload: payload },
     );
-    const { data: po, error } = await supabase
-      .from("purchase_orders" as never)
-      .insert({
-        company_id: data.companyId,
-        contact_id: data.contactId,
-        order_number: orderNumber,
-        order_date: data.orderDate,
-        currency_code: data.currencyCode,
-        memo: data.memo,
-        status: "draft",
-        subtotal_minor: Number(totals.subtotal_minor),
-        tax_minor: Number(totals.tax_minor),
-        total_minor: Number(totals.total_minor),
-        created_by: userId,
-      } as never)
-      .select("id")
-      .single();
-    if (error) throw new Error(error.message);
-    const orderId = (po as { id: string }).id;
-    const { error: lineErr } = await supabase.from("purchase_order_lines" as never).insert(
-      data.lines.map((l, i) => ({
-        company_id: data.companyId,
-        order_id: orderId,
-        line_no: i + 1,
-        description: l.description,
-        account_id: l.accountId,
-        quantity: l.quantity,
-        unit_price_minor: l.unitPriceMinor,
-        tax_rate_bps: l.taxRateBps,
-        net_minor: Number(l.net_minor),
-        tax_minor: Number(l.tax_minor),
-      })) as never,
-    );
-    if (lineErr) {
-      await supabase
-        .from("purchase_orders" as never)
-        .delete()
-        .eq("company_id" as never, data.companyId as never)
-        .eq("id" as never, orderId as never)
-        .eq("status" as never, "draft" as never);
-      throw new Error(`Could not save purchase order lines: ${lineErr.message}`);
-    }
-    await recordBillAudit(
-      supabase,
-      data.companyId,
-      "purchase_order_created",
-      orderId,
-      { order_number: orderNumber, line_count: data.lines.length },
-      "purchase_order",
-    );
-    return { id: orderId, orderNumber };
   });
 
 export const convertPurchaseOrderToBill = createServerFn({ method: "POST" })
@@ -3431,142 +3372,11 @@ export const convertPurchaseOrderToBill = createServerFn({ method: "POST" })
     orderId: assertUuid(input.orderId, "order"),
   }))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    await assertCompanyPermission(supabase, data.companyId, "purchases.draft");
-    const { data: po, error } = await supabase
-      .from("purchase_orders" as never)
-      .select("*, purchase_order_lines(*)" as never)
-      .eq("id" as never, data.orderId as never)
-      .eq("company_id" as never, data.companyId as never)
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    if (!po) throw new Error("Purchase order not found");
-    const order = po as unknown as {
-      status: string;
-      order_number: string | null;
-      billed_bill_id: string | null;
-      contact_id: string;
-      order_date: string;
-      currency_code: string;
-      memo: string | null;
-      subtotal_minor: number;
-      tax_minor: number;
-      total_minor: number;
-      purchase_order_lines: Array<{
-        description: string;
-        account_id: string;
-        quantity: number;
-        unit_price_minor: number;
-        tax_rate_bps: number;
-        net_minor: number;
-        tax_minor: number;
-        line_no?: number;
-      }>;
-    };
-    if (order.billed_bill_id) throw new Error("Purchase order already converted to a bill");
-    if (order.status === "cancelled") throw new Error("Cancelled orders cannot be billed");
-    if (!order.purchase_order_lines?.length) throw new Error("Purchase order has no lines");
-
-    // Due date follows the supplier's payment terms (not a fixed 30 days).
-    const { data: supplier, error: supplierErr } = await supabase
-      .from("contacts" as never)
-      .select("payment_terms_days" as never)
-      .eq("company_id" as never, data.companyId as never)
-      .eq("id" as never, order.contact_id as never)
-      .maybeSingle();
-    if (supplierErr) throw new Error(supplierErr.message);
-    const termsDays = Number(
-      (supplier as { payment_terms_days: number | null } | null)?.payment_terms_days ?? 30,
-    );
-    const dueDate = dueDateFromBillDate(order.order_date, termsDays);
-
-    const { allocateDocumentNumber } = await import("@/lib/settings/document-numbering");
-    const billNumber = await allocateDocumentNumber(
-      supabase as never,
-      data.companyId,
-      "purchase_bill",
-    );
-
-    const { data: bill, error: bErr } = await supabase
-      .from("purchase_bills" as never)
-      .insert({
-        company_id: data.companyId,
-        contact_id: order.contact_id,
-        bill_number: billNumber,
-        bill_date: order.order_date,
-        due_date: dueDate,
-        payment_terms_days: termsDays,
-        tax_calculation: "exclusive",
-        currency_code: order.currency_code,
-        memo:
-          order.memo ?? (order.order_number ? `From purchase order ${order.order_number}` : null),
-        status: "draft",
-        subtotal_minor: order.subtotal_minor,
-        tax_minor: order.tax_minor,
-        total_minor: order.total_minor,
-        purchase_order_id: data.orderId,
-        created_by: userId,
-      } as never)
-      .select("id")
-      .single();
-    if (bErr) throw new Error(bErr.message);
-    const billId = (bill as { id: string }).id;
-
-    const cleanupBill = async () => {
-      await supabase
-        .from("purchase_bill_lines" as never)
-        .delete()
-        .eq("company_id" as never, data.companyId as never)
-        .eq("bill_id" as never, billId as never);
-      await supabase
-        .from("purchase_bills" as never)
-        .delete()
-        .eq("company_id" as never, data.companyId as never)
-        .eq("id" as never, billId as never)
-        .eq("status" as never, "draft" as never);
-    };
-
-    const { error: lineErr } = await supabase.from("purchase_bill_lines" as never).insert(
-      [...order.purchase_order_lines]
-        .sort((x, y) => (x.line_no ?? 0) - (y.line_no ?? 0))
-        .map((l, i) => ({
-          company_id: data.companyId,
-          bill_id: billId,
-          line_no: i + 1,
-          description: l.description,
-          account_id: l.account_id,
-          quantity: l.quantity,
-          unit_price_minor: l.unit_price_minor,
-          discount_minor: impliedDiscountMinor(l),
-          tax_rate_bps: l.tax_rate_bps,
-          net_minor: l.net_minor,
-          tax_minor: l.tax_minor,
-        })) as never,
-    );
-    if (lineErr) {
-      await cleanupBill();
-      throw new Error(`Could not copy the order lines to the bill: ${lineErr.message}`);
-    }
-    const { data: marked, error: markErr } = await supabase
-      .from("purchase_orders" as never)
-      .update({
-        status: "billed",
-        billed_bill_id: billId,
-        updated_at: new Date().toISOString(),
-      } as never)
-      .eq("company_id" as never, data.companyId as never)
-      .eq("id" as never, data.orderId as never)
-      .is("billed_bill_id" as never, null as never)
-      .eq("status" as never, order.status as never)
-      .select("id");
-    if (markErr || !marked || (marked as unknown[]).length === 0) {
-      await cleanupBill();
-      throw new Error(
-        markErr?.message ?? "The purchase order changed while converting. Reload and try again.",
-      );
-    }
-    // No ledger posting - draft bill only.
-    return { billId };
+    await assertCompanyPermission(context.supabase, data.companyId, "purchases.draft");
+    return workflowRpc<{ billId: string }>(context.supabase, "convert_purchase_order_atomic", {
+      _company: data.companyId,
+      _order: data.orderId,
+    });
   });
 
 // ---- Recurring bills ----

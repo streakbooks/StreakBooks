@@ -17,6 +17,7 @@ export const SALES_SECTIONS = [
   { to: "/sales", label: "Overview", exact: true },
   { to: "/sales/invoices", label: "Invoices" },
   { to: "/sales/quotes", label: "Quotes" },
+  { to: "/sales/orders", label: "Sales orders" },
   { to: "/sales/receipts", label: "Receipts" },
   { to: "/sales/credit-notes", label: "Credit notes" },
   { to: "/sales/customers", label: "Customers" },

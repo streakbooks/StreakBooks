@@ -72,6 +72,21 @@ const CREATE: PaletteAction[] = [
 export function buildPaletteActions(): PaletteAction[] {
   return [
     ...CREATE,
+    {
+      id: "nav-sales-orders",
+      group: "Go to",
+      label: "Sales orders",
+      keywords: "customer order confirmation draft invoice",
+      href: "/sales/orders",
+    },
+    {
+      id: "nav-deferrals",
+      group: "Go to",
+      label: "Prepayments & deferred income",
+      keywords: "recognition prepaid expense deferred revenue schedule",
+      href: "/accounting",
+      search: { tab: "deferrals" },
+    },
     ...navItems.map<PaletteAction>((n) => ({
       id: `nav-${n.to}`,
       group: "Go to",

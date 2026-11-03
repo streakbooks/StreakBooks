@@ -1,5 +1,7 @@
 export type PurchaseOrderDetail = {
   id: string;
+  version: number;
+  contact_id: string;
   order_number: string | null;
   order_date: string;
   currency_code: string;

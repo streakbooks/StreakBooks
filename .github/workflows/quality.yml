@@ -50,6 +50,9 @@ jobs:
       - name: Unit tests
         run: npm test
 
+      - name: Isolated PostgreSQL workflow tests
+        run: npm run test:workflows:postgres
+
       - name: Native navigation checks
         run: npm run check:navigation
 

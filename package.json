@@ -24,7 +24,8 @@
     "test:platform": "playwright test --config playwright.platform.config.ts",
     "test:platform:postgres": "node scripts/test-platform-postgres.mjs",
     "check:lookups": "node scripts/check-lookup-architecture.mjs",
-    "check:navigation": "node scripts/check-native-navigation.mjs"
+    "check:navigation": "node scripts/check-native-navigation.mjs",
+    "test:workflows:postgres": "node scripts/test-workflows-postgres.mjs"
   },
   "overrides": {
     "rolldown": "1.2.1"

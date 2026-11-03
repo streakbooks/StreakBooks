@@ -133,6 +133,13 @@ function PurchaseOrderDetail({ companyId, orderId }: { companyId: string; orderI
         {editableStatus && can("purchases.draft") ? (
           <>
             {order.status === "draft" ? (
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/purchases/orders/new" search={{ edit: orderId }}>
+                  Edit draft
+                </Link>
+              </Button>
+            ) : null}
+            {order.status === "draft" ? (
               <Button
                 size="sm"
                 variant="outline"

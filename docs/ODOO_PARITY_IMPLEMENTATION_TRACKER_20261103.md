@@ -53,3 +53,12 @@ See [the cross-navigation audit](ACCOUNTING_PARITY_AUDIT_20261103.md) and [deliv
 - Settings: shared server-backed document-email configuration readiness across Overview/Integrations; Demo restrictions and missing providers remain explicit. Configuration is not delivery verification.
 - Current main's reporting PR #12 is preserved. Historical Aged Payables remains unsupported pending dated allocation/reversal history.
 - Live authenticated UI/PostgreSQL/tenant/race tests, safe staging setup, transactional PO RPCs and provider integrations remain pending. No P0–P3 checkbox above is closed by these tasks.
+
+## Workflow depth follow-up — purchasing, sales, banking, accounting
+
+See [ACCOUNTING_WORKFLOWS_DELIVERY_20261103.md](ACCOUNTING_WORKFLOWS_DELIVERY_20261103.md) for implementation boundaries, local checks, migration/approval status and tests.
+
+- Source implemented: transactional/versioned purchase orders and server browse; sales orders through draft invoice conversion; OFX/QFX bank statement intake; prepayment/deferred-income recognition schedules; compatible guarded Demo reset; isolated PostgreSQL CI scenarios.
+- Local verification: 1,747 unit tests; real workflow RPC and shared-engine PostgreSQL fixtures; concurrency/lock/tenant/reset tests; build/type/lint/navigation/lookup checks.
+- Live migration `20261103154859` was applied after the owner explicitly approved the database change. RLS/RPC permissions, unauthenticated denials and new-object security advisories were checked; no live financial transactions or Demo reset were executed.
+- P0 live authenticated acceptance, purchasing receipts/partial matching, historical AP, pricing/retainers, inventory/COGS, source-linked deferrals and provider integrations remain open. None of the broad P0–P3 milestones is closed here.

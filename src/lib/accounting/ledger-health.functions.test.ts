@@ -60,7 +60,11 @@ beforeEach(() => {
 describe("ledger health server permissions and result binding", () => {
   it("requires the accounting.view permission before making a privileged RPC", async () => {
     await expect(call()).resolves.toMatchObject({ report: { overall: "pass" } });
-    expect(assertCompanyPermission).toHaveBeenCalledWith(expect.anything(), companyId, "accounting.view");
+    expect(assertCompanyPermission).toHaveBeenCalledWith(
+      expect.anything(),
+      companyId,
+      "accounting.view",
+    );
     expect(rpc).toHaveBeenCalledWith("ledger_health_check", { payload: { company_id: companyId } });
   });
   it("does not call the database when permissions are denied", async () => {

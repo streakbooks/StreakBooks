@@ -73,9 +73,7 @@ describe("parseHealthReport", () => {
     expect(b.overall).toBe("fail");
   });
   it("allows NA only for subledgers where controls are not configured", () => {
-    const result = parseHealthReport(
-      raw(allChecks({ subledger_ar: "na", subledger_ap: "na" })),
-    );
+    const result = parseHealthReport(raw(allChecks({ subledger_ar: "na", subledger_ap: "na" })));
     expect(result.overall).toBe("pass");
   });
   it("rejects unsafe, missing or negative accounting counts", () => {

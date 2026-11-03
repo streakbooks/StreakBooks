@@ -1,6 +1,6 @@
 import { ProjectTagControl } from "@/components/projects/ProjectTagControl";
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { Eye } from "lucide-react";
+import { Eye, MoreHorizontal } from "lucide-react";
 import { createFileRoute, Link, useRouteContext } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -30,6 +30,14 @@ import { BankMatchPanel } from "@/components/banking/BankMatchPanel";
 import { BankTransactionQuickPreview } from "@/components/banking/BankTransactionQuickPreview";
 import { SelectionActionBar } from "@/components/common/SelectionActionBar";
 import { ConfirmButton } from "@/components/banking/ConfirmButton";
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { AccountLookup, LookupSelect, type LookupCreateContext } from "@/components/lookup";
 import { BankAccountCreateForm, TaxCodeCreateForm } from "@/components/lookup/create-forms";
 import { toContactLookupOption } from "@/lib/lookup/eligibility";
@@ -142,6 +150,7 @@ const BANK_OPTIONAL_COLUMNS = [
 const BANK_OPTIONAL_IDS = BANK_OPTIONAL_COLUMNS.map((column) => column.id);
 
 type Expanded = { id: string; mode: "code" | "match"; initialAccountId?: string } | null;
+type BankRowAction = { id: string; kind: "exclude" | "restore" | "unmatch" | "redo" } | null;
 
 function BankTransactions() {
   const { user } = useRouteContext({ from: "/_authenticated" });
@@ -196,6 +205,7 @@ function BankTransactions() {
   const [expanded, setExpanded] = useState<Expanded>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [previewId, setPreviewId] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<BankRowAction>(null);
   const [bulkAccountId, setBulkAccountId] = useState("");
   const [bulkTaxCodeId, setBulkTaxCodeId] = useState(NONE);
   const [bulkProgress, setBulkProgress] = useState<string | null>(null);
@@ -217,6 +227,7 @@ function BankTransactions() {
     setSelected(new Set());
     setExpanded(null);
     setPreviewId(null);
+    setPendingAction(null);
   }, [filterKey.join("|")]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const accountsQ = useQuery({
@@ -376,6 +387,10 @@ function BankTransactions() {
   const rows = (txnsQ.data?.rows ?? []) as BankTxnListRow[];
   const previewIndex = rows.findIndex((transaction) => transaction.id === previewId);
   const previewTransaction = previewIndex >= 0 ? (rows[previewIndex] ?? null) : null;
+  const actionRow = rows.find((txn) => txn.id === pendingAction?.id);
+  const actionHasPostedCoding = Boolean(
+    actionRow?.links.some((link) => link.sourceType === "bank_transaction" && !link.reversed),
+  );
   const total = txnsQ.data?.total ?? 0;
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
   const reviewing = status === "uncategorised";
@@ -750,12 +765,18 @@ function BankTransactions() {
                   ) : null}
                 </TableHead>
                 <TableHead>Date</TableHead>
-                <TableHead>Description</TableHead>
-                {showAccountColumn ? <TableHead>Account</TableHead> : null}
-                <TableHead className="text-right">Amount</TableHead>
+                <TableHead className="min-w-[180px]">Description</TableHead>
+                {showAccountColumn ? (
+                  <TableHead className="hidden lg:table-cell">Account</TableHead>
+                ) : null}
+                <TableHead className="whitespace-nowrap text-right">Amount</TableHead>
                 {showStatusColumn ? <TableHead>Status</TableHead> : null}
-                {showJournalColumn ? <TableHead>Journal</TableHead> : null}
-                <TableHead>Actions</TableHead>
+                {showJournalColumn ? (
+                  <TableHead className="hidden lg:table-cell">Journal</TableHead>
+                ) : null}
+                <TableHead className="sticky right-0 z-10 min-w-[100px] bg-muted/95 text-right">
+                  Actions
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -815,7 +836,7 @@ function BankTransactions() {
                         ) : null}
                       </TableCell>
                       {showAccountColumn ? (
-                        <TableCell className="whitespace-nowrap text-sm">
+                        <TableCell className="hidden whitespace-nowrap text-sm lg:table-cell">
                           <Link
                             to="/banking"
                             className="rounded-sm underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-ring"
@@ -826,7 +847,7 @@ function BankTransactions() {
                       ) : null}
                       <TableCell
                         className={cn(
-                          "money font-medium",
+                          "money whitespace-nowrap font-medium",
                           t.amount_minor > 0 && "text-money-in",
                           t.amount_minor < 0 && "text-money-out",
                         )}
@@ -839,7 +860,7 @@ function BankTransactions() {
                         </TableCell>
                       ) : null}
                       {showJournalColumn ? (
-                        <TableCell>
+                        <TableCell className="hidden lg:table-cell">
                           {t.links.length === 0 ? (
                             <span className="text-muted-foreground">—</span>
                           ) : (
@@ -861,8 +882,8 @@ function BankTransactions() {
                           )}
                         </TableCell>
                       ) : null}
-                      <TableCell>
-                        <div className="flex flex-wrap items-center gap-1">
+                      <TableCell className="sticky right-0 z-10 border-l bg-card text-right">
+                        <div className="flex flex-wrap items-center justify-end gap-1">
                           <Button
                             type="button"
                             size="sm"
@@ -892,6 +913,7 @@ function BankTransactions() {
                               <Button
                                 size="sm"
                                 variant="outline"
+                                className="hidden sm:inline-flex"
                                 onClick={() =>
                                   setExpanded(
                                     open?.mode === "match" ? null : { id: t.id, mode: "match" },
@@ -900,67 +922,88 @@ function BankTransactions() {
                               >
                                 Match
                               </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                disabled={excludeM.isPending}
-                                onClick={() => excludeM.mutate(t.id)}
-                              >
-                                Exclude
-                              </Button>
                             </>
                           ) : null}
                           {t.status === "matched" ? (
                             <ProjectTagControl lazy kind="bank_transaction" documentId={t.id} />
                           ) : null}
-                          {t.status === "matched" ? (
-                            canRedo ? (
-                              <>
-                                <ConfirmButton
-                                  title="Remove & redo this coding?"
-                                  description="A reversing journal is posted for the journal that coded this line, the link is removed, and the line returns to For review so you can code it again. Nothing is deleted."
-                                  confirmLabel="Remove & redo"
-                                  disabled={unmatchM.isPending}
-                                  onConfirm={() => unmatchM.mutate({ txnId: t.id, redo: true })}
-                                >
-                                  Remove &amp; redo
-                                </ConfirmButton>
-                                <ConfirmButton
-                                  title="Unmatch this line?"
-                                  description="A reversing journal is posted and the line returns to For review."
-                                  confirmLabel="Unmatch"
-                                  disabled={unmatchM.isPending}
-                                  onConfirm={() => unmatchM.mutate({ txnId: t.id, redo: false })}
-                                >
-                                  Unmatch
-                                </ConfirmButton>
-                              </>
-                            ) : (
-                              <ConfirmButton
-                                title="Unmatch this line?"
-                                description="The link to the ledger line is removed and the line returns to For review. The journal it was matched to is not changed."
-                                confirmLabel="Unmatch"
-                                disabled={unmatchM.isPending}
-                                onConfirm={() => unmatchM.mutate({ txnId: t.id, redo: false })}
-                              >
-                                Unmatch
-                              </ConfirmButton>
-                            )
-                          ) : null}
                           {t.status === "reconciled" ? (
-                            <span className="text-xs text-muted-foreground">
-                              Reconciled. Reopen the reconciliation to change.
-                            </span>
+                            <span className="text-xs text-muted-foreground">Reconciled</span>
                           ) : null}
-                          {t.status === "excluded" ? (
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              disabled={restoreM.isPending}
-                              onClick={() => restoreM.mutate(t.id)}
-                            >
-                              Restore
-                            </Button>
+                          {["uncategorised", "matched", "excluded"].includes(t.status) ? (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  className="size-8 p-0"
+                                  aria-label={
+                                    "More actions for transaction " +
+                                    (t.description ?? fmt.date(t.txn_date))
+                                  }
+                                >
+                                  <MoreHorizontal className="size-4" aria-hidden />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="min-w-48">
+                                {t.status === "uncategorised" ? (
+                                  <>
+                                    <DropdownMenuItem
+                                      className="sm:hidden"
+                                      onSelect={() =>
+                                        setExpanded(
+                                          open?.mode === "match"
+                                            ? null
+                                            : { id: t.id, mode: "match" },
+                                        )
+                                      }
+                                    >
+                                      Match transaction
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      disabled={excludeM.isPending}
+                                      onSelect={() =>
+                                        setPendingAction({ id: t.id, kind: "exclude" })
+                                      }
+                                    >
+                                      Exclude from review…
+                                    </DropdownMenuItem>
+                                  </>
+                                ) : null}
+                                {t.status === "matched" ? (
+                                  <>
+                                    {canRedo ? (
+                                      <DropdownMenuItem
+                                        disabled={unmatchM.isPending}
+                                        onSelect={() =>
+                                          setPendingAction({ id: t.id, kind: "redo" })
+                                        }
+                                      >
+                                        Remove & redo coding…
+                                      </DropdownMenuItem>
+                                    ) : null}
+                                    {canRedo ? <DropdownMenuSeparator /> : null}
+                                    <DropdownMenuItem
+                                      disabled={unmatchM.isPending}
+                                      onSelect={() =>
+                                        setPendingAction({ id: t.id, kind: "unmatch" })
+                                      }
+                                    >
+                                      Unmatch transaction…
+                                    </DropdownMenuItem>
+                                  </>
+                                ) : null}
+                                {t.status === "excluded" ? (
+                                  <DropdownMenuItem
+                                    disabled={restoreM.isPending}
+                                    onSelect={() => setPendingAction({ id: t.id, kind: "restore" })}
+                                  >
+                                    Restore transaction…
+                                  </DropdownMenuItem>
+                                ) : null}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           ) : null}
                         </div>
                       </TableCell>
@@ -1056,6 +1099,54 @@ function BankTransactions() {
           </Table>
         </TableCard>
       )}
+
+      <ConfirmDialog
+        open={Boolean(pendingAction)}
+        onOpenChange={(open) => !open && setPendingAction(null)}
+        title={
+          pendingAction?.kind === "exclude"
+            ? "Exclude this transaction?"
+            : pendingAction?.kind === "restore"
+              ? "Restore this transaction?"
+              : pendingAction?.kind === "redo"
+                ? "Remove and redo this coding?"
+                : "Unmatch this transaction?"
+        }
+        description={
+          pendingAction?.kind === "exclude"
+            ? "This transaction will be excluded from the review list. It is not deleted and can be restored."
+            : pendingAction?.kind === "restore"
+              ? "Return this excluded transaction to the review list."
+              : pendingAction?.kind === "redo"
+                ? "A reversing journal is posted for the coding, the link is removed, and this line returns to For review. Nothing is deleted."
+                : actionHasPostedCoding
+                  ? "A reversing journal is posted and this line returns to For review."
+                  : "The link to the ledger line is removed. The journal it was matched to is not changed."
+        }
+        confirmLabel={
+          pendingAction?.kind === "exclude"
+            ? "Exclude"
+            : pendingAction?.kind === "restore"
+              ? "Restore"
+              : pendingAction?.kind === "redo"
+                ? "Remove & redo"
+                : "Unmatch"
+        }
+        pending={excludeM.isPending || restoreM.isPending || unmatchM.isPending}
+        onConfirm={() => {
+          if (!pendingAction || !actionRow) {
+            setPendingAction(null);
+            return;
+          }
+          const { kind, id } = pendingAction;
+          if (kind === "exclude" && actionRow.status === "uncategorised") excludeM.mutate(id);
+          else if (kind === "restore" && actionRow.status === "excluded") restoreM.mutate(id);
+          else if ((kind === "unmatch" || kind === "redo") && actionRow.status === "matched") {
+            unmatchM.mutate({ txnId: id, redo: kind === "redo" });
+          }
+          setPendingAction(null);
+        }}
+      />
 
       <BankTransactionQuickPreview
         transaction={previewTransaction}

@@ -44,6 +44,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SavedFilterViews } from "@/components/common/SavedFilterViews";
 import { SelectionActionBar } from "@/components/common/SelectionActionBar";
+import { DocumentPreviewExtras } from "@/components/documents/DocumentPreviewExtras";
 import type { ViewSchema, ViewSnapshot } from "@/lib/workspaces/saved-filter-views";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -1392,12 +1393,14 @@ function BillsWorkspace() {
             <SheetHeader>
               <SheetTitle>Bill {previewBill?.display_reference ?? "preview"}</SheetTitle>
               <SheetDescription>
-                Summary only — open the full document for editing and history.
+                Read-only review with line items and attachments. Open the full document for editing
+                and posting history.
               </SheetDescription>
             </SheetHeader>
             {previewBill ? (
               <PreviewBody
                 bill={previewBill}
+                companyId={companyId!}
                 currency={baseCurrency}
                 tab={tab}
                 position={previewIndex + 1}
@@ -1462,6 +1465,7 @@ function SummaryChip({
 
 function PreviewBody({
   bill,
+  companyId,
   currency,
   tab,
   position,
@@ -1470,6 +1474,7 @@ function PreviewBody({
   onNext,
 }: {
   bill: BillRow | null;
+  companyId: string;
   currency: string;
   tab: BillsWorkspaceTab;
   position: number;
@@ -1567,6 +1572,14 @@ function PreviewBody({
           </div>
         ) : null}
       </div>
+      <DocumentPreviewExtras
+        key={`${companyId}:${bill.id}`}
+        companyId={companyId}
+        documentId={bill.id}
+        kind="purchase_bill"
+        currency={cur}
+        money={(minor, code) => fromMinorUnits(BigInt(minor), code)}
+      />
       <Button className="w-full" asChild>
         <Link
           to="/purchases/bills/$billId"

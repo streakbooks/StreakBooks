@@ -394,4 +394,81 @@ test.describe("deep links in authenticated module workspaces", () => {
     await actions.getByRole("button", { name: "Clear selected records" }).click();
     await expect(actions).toHaveCount(0);
   });
+
+  test("Invoice quick preview loads secured line items and attachments", async ({ page }) => {
+    await signIn(page, "/sales/invoices");
+    const previews = page.getByRole("button", { name: /^Preview invoice / });
+    if ((await previews.count()) === 0) test.skip(true, "Needs a staged invoice");
+    await previews.first().click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    const items = dialog.getByRole("region", { name: "Line items" });
+    const attachments = dialog.getByRole("region", { name: "Document attachments" });
+    await expect(items).toBeVisible();
+    await expect(attachments).toBeVisible();
+    await expect(items.getByRole("status")).toHaveCount(0);
+    await expect(attachments.getByRole("status")).toHaveCount(0);
+    await expect(dialog.getByRole("link", { name: "Open full invoice" })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+  });
+
+  test("Bills preview loads authorised line and attachment data", async ({ page }) => {
+    await signIn(page, "/purchases/bills");
+    const previews = page.getByRole("button", { name: "Quick preview" });
+    if ((await previews.count()) === 0) test.skip(true, "Needs a staged supplier bill");
+    await previews.first().click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByRole("region", { name: "Line items" })).toBeVisible();
+    await expect(dialog.getByRole("region", { name: "Document attachments" })).toBeVisible();
+    await expect(
+      dialog.getByRole("region", { name: "Line items" }).getByRole("status"),
+    ).toHaveCount(0);
+    await expect(
+      dialog.getByRole("region", { name: "Document attachments" }).getByRole("status"),
+    ).toHaveCount(0);
+    await expect(
+      dialog.getByRole("link", { name: /Open & edit|Open full document/ }),
+    ).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+  });
+
+  test("Bank More actions require explicit confirmation and Cancel is non-posting", async ({
+    page,
+  }) => {
+    await signIn(page, "/banking/transactions");
+    const more = page.getByRole("button", { name: /^More actions for transaction / });
+    if ((await more.count()) === 0)
+      test.skip(true, "Needs a staged uncategorised, matched or excluded bank transaction");
+    await more.first().click();
+    const menu = page.getByRole("menu");
+    const exclude = menu.getByRole("menuitem", { name: /Exclude from review/ });
+    const unmatch = menu.getByRole("menuitem", { name: /Unmatch transaction/ });
+    const restore = menu.getByRole("menuitem", { name: /Restore transaction/ });
+    const target = (await exclude.count()) ? exclude : (await unmatch.count()) ? unmatch : restore;
+    await target.click();
+    const dialog = page.getByRole("alertdialog");
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole("button", { name: "Cancel" }).click();
+    await expect(dialog).toHaveCount(0);
+  });
+
+  test("Mobile bank table keeps core fields and overflow row controls usable", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await signIn(page, "/banking/transactions");
+    const actions = page.getByRole("columnheader", { name: "Actions" });
+    if ((await actions.count()) === 0) test.skip(true, "Needs staged bank transactions");
+    await expect(actions).toBeVisible();
+    await expect(page.getByRole("columnheader", { name: "Description" })).toBeVisible();
+    await expect(page.getByRole("columnheader", { name: "Amount" })).toBeVisible();
+    await expect(page.getByRole("columnheader", { name: "Account" })).toBeHidden();
+    await expect(page.getByRole("columnheader", { name: "Journal" })).toBeHidden();
+    const more = page.getByRole("button", { name: /^More actions for transaction / });
+    if ((await more.count()) > 0) {
+      await more.first().click();
+      await expect(page.getByRole("menu")).toBeVisible();
+      await page.keyboard.press("Escape");
+    }
+  });
 });

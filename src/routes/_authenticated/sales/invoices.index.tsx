@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link, useRouteContext } from "@tanstack/react-router";
 import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -7,6 +7,7 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { useFormat } from "@/hooks/use-format";
 import { useTablePrefs } from "@/hooks/use-table-prefs";
 import { TableAppearanceControls } from "@/components/common/TableAppearanceControls";
+import { DocumentPreviewExtras } from "@/components/documents/DocumentPreviewExtras";
 import { exportInvoicesCsv, listInvoices } from "@/lib/sales/sales.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { PageHeader, ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
@@ -101,6 +102,21 @@ function InvoicesList() {
   );
   const patch = (p: Partial<ListState>) => setState((s) => ({ ...s, ...p }));
   const q = useDebounced(state.q);
+  useEffect(
+    () => setPreviewId(null),
+    [
+      companyId,
+      q,
+      state.status,
+      state.page,
+      state.pageSize,
+      state.from,
+      state.to,
+      state.sort,
+      state.dir,
+      overdue,
+    ],
+  );
 
   const filters = () => ({
     companyId: companyId!,
@@ -281,10 +297,22 @@ function InvoicesList() {
                 <TableRow>
                   <SortHead label="Number" column="invoice_number" state={state} onChange={patch} />
                   {tablePrefs.isVisible("date") ? (
-                    <SortHead label="Date" column="invoice_date" state={state} onChange={patch} />
+                    <SortHead
+                      label="Date"
+                      column="invoice_date"
+                      state={state}
+                      onChange={patch}
+                      className="hidden lg:table-cell"
+                    />
                   ) : null}
                   {tablePrefs.isVisible("due") ? (
-                    <SortHead label="Due" column="due_date" state={state} onChange={patch} />
+                    <SortHead
+                      label="Due"
+                      column="due_date"
+                      state={state}
+                      onChange={patch}
+                      className="hidden lg:table-cell"
+                    />
                   ) : null}
                   <TableHead>Customer</TableHead>
                   <SortHead label="Status" column="status" state={state} onChange={patch} />
@@ -296,9 +324,11 @@ function InvoicesList() {
                     className="text-right"
                   />
                   {tablePrefs.isVisible("outstanding") ? (
-                    <TableHead className="text-right">Outstanding</TableHead>
+                    <TableHead className="hidden text-right lg:table-cell">Outstanding</TableHead>
                   ) : null}
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="sticky right-0 z-10 min-w-[120px] bg-muted/95 text-right">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -320,7 +350,7 @@ function InvoicesList() {
                         </Link>
                       </TableCell>
                       {tablePrefs.isVisible("date") ? (
-                        <TableCell>
+                        <TableCell className="hidden lg:table-cell">
                           <Link
                             to="/sales/invoices/$invoiceId"
                             params={{ invoiceId: inv.id }}
@@ -331,7 +361,7 @@ function InvoicesList() {
                         </TableCell>
                       ) : null}
                       {tablePrefs.isVisible("due") ? (
-                        <TableCell>
+                        <TableCell className="hidden lg:table-cell">
                           <Link
                             to="/sales/invoices/$invoiceId"
                             params={{ invoiceId: inv.id }}
@@ -369,7 +399,7 @@ function InvoicesList() {
                         </Link>
                       </TableCell>
                       {tablePrefs.isVisible("outstanding") ? (
-                        <TableCell className="money">
+                        <TableCell className="money hidden lg:table-cell">
                           <Link
                             to="/sales/invoices/$invoiceId"
                             params={{ invoiceId: inv.id }}
@@ -379,7 +409,7 @@ function InvoicesList() {
                           </Link>
                         </TableCell>
                       ) : null}
-                      <TableCell className="text-right">
+                      <TableCell className="sticky right-0 z-10 border-l bg-card text-right">
                         <div className="flex flex-wrap justify-end gap-1">
                           <Button
                             variant="ghost"
@@ -414,12 +444,12 @@ function InvoicesList() {
         </>
       )}
       <Sheet open={Boolean(previewInvoice)} onOpenChange={(open) => !open && setPreviewId(null)}>
-        <SheetContent className="sm:max-w-lg">
+        <SheetContent className="w-full overflow-y-auto sm:max-w-xl">
           <SheetHeader>
             <SheetTitle>Invoice {previewInvoice?.invoice_number ?? "preview"}</SheetTitle>
             <SheetDescription>
-              Read-only summary from the invoice list. Open the full record to review details,
-              attachments and posting entries.
+              Read-only review with line items and attachments. Open the full record for editing,
+              payments and posting history.
             </SheetDescription>
           </SheetHeader>
           {previewInvoice ? (
@@ -461,6 +491,14 @@ function InvoicesList() {
                   </dd>
                 </div>
               </dl>
+              <DocumentPreviewExtras
+                key={`${companyId}:${previewInvoice.id}`}
+                companyId={companyId}
+                documentId={previewInvoice.id}
+                kind="sales_invoice"
+                currency={previewInvoice.currency_code}
+                money={(minor, code) => fmt.money(minor, code)}
+              />
               <Button asChild className="w-full">
                 <Link to="/sales/invoices/$invoiceId" params={{ invoiceId: previewInvoice.id }}>
                   Open full invoice

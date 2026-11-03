@@ -30,6 +30,11 @@ jobs:
           node-version: '22'
           cache: npm
 
+      - name: Prevent tracked local secrets and generated artifacts
+        run: |
+          node scripts/check-repository-hygiene.mjs
+          node --test scripts/check-repository-hygiene.test.mjs
+
       - name: Install locked dependencies
         run: npm ci
 

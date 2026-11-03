@@ -83,6 +83,13 @@ describe("parseHealthReport", () => {
     checks[0] = check("trial_balance", "pass", { count: -1 });
     expect(() => parseHealthReport(raw(checks))).toThrow(/trial_balance count/);
   });
+  it("refuses lossy minor-unit amounts in database integrity details", () => {
+    const checks = allChecks();
+    checks[0] = check("trial_balance", "warn", {
+      items: [{ difference_minor: Number.MAX_SAFE_INTEGER + 1 }],
+    });
+    expect(() => parseHealthReport(raw(checks))).toThrow(/unsafe minor-unit amount/);
+  });
   it("keeps valid issue details but removes malformed entries", () => {
     const checks = allChecks();
     checks[2] = check("orphans", "fail", {

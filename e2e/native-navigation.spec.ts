@@ -54,6 +54,14 @@ test.describe("Native browser navigation across LinkBooks", () => {
     await popup.reload();
     await expect(popup).toHaveURL(/tab=journals/);
     await popup.close();
+
+    // The read-only ledger health panel must be reachable by a refresh-safe URL.
+    await page.goto("/accounting?tab=health");
+    const health = page.getByRole("tab", { name: "Ledger health", exact: true });
+    await expect(health).toHaveAttribute("href", /tab=health/);
+    await expect(health).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByRole("heading", { name: "Ledger health check" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Run health check" })).toBeEnabled();
   });
 
   test("bill workflow navigation and Files breadcrumbs are native links", async ({ page }) => {

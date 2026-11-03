@@ -77,6 +77,19 @@ export function sumMinor(values: Iterable<bigint | number>): bigint {
   return total;
 }
 
+/**
+ * At an API/UI boundary that still uses numbers, refuse lossy conversion of
+ * exact ledger minor units rather than silently rounding a financial amount.
+ * Prefer strings/BigInt in new APIs when large amounts need to be displayed.
+ */
+export function toSafeMinorNumber(amount: bigint, label: string): number {
+  const max = BigInt(Number.MAX_SAFE_INTEGER);
+  if (amount > max || amount < -max) {
+    throw new Error(`${label} exceeds the safe integer range for this view.`);
+  }
+  return Number(amount);
+}
+
 export type JournalLineDraft = {
   account_id: string;
   description?: string;

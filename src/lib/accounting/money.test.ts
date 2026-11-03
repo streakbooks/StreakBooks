@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { assertLinesBalance, fromMinorUnits, sumMinor, toMinorUnits } from "./money";
+import {
+  assertLinesBalance,
+  fromMinorUnits,
+  sumMinor,
+  toMinorUnits,
+  toSafeMinorNumber,
+} from "./money";
 
 describe("money minor units", () => {
   it("converts major to minor without float drift", () => {
@@ -20,6 +26,15 @@ describe("money minor units", () => {
 
   it("sums with bigint only", () => {
     expect(sumMinor([10n, 20n, 30n])).toBe(60n);
+  });
+
+  it("converts only exact minor-unit integers at legacy number boundaries", () => {
+    const max = BigInt(Number.MAX_SAFE_INTEGER);
+    expect(toSafeMinorNumber(0n, "Test")).toBe(0);
+    expect(toSafeMinorNumber(max, "Test")).toBe(Number.MAX_SAFE_INTEGER);
+    expect(toSafeMinorNumber(-max, "Test")).toBe(-Number.MAX_SAFE_INTEGER);
+    expect(() => toSafeMinorNumber(max + 1n, "Opening balance")).toThrow(/Opening balance/);
+    expect(() => toSafeMinorNumber(-(max + 1n), "Net profit")).toThrow(/Net profit/);
   });
 });
 

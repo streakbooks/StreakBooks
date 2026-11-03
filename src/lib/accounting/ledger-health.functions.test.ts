@@ -88,7 +88,7 @@ describe("ledger health server permissions and result binding", () => {
     await expect(call()).resolves.toHaveProperty("unavailable");
   });
   it("rejects an invalid requested company ID before access or RPC", async () => {
-    await expect(call("not-a-uuid")).rejects.toThrow();
+    expect(() => call("not-a-uuid")).toThrow(/Invalid company id/);
     expect(assertCompanyPermission).not.toHaveBeenCalled();
     expect(rpc).not.toHaveBeenCalled();
   });

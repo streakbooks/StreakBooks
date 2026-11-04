@@ -41,8 +41,8 @@ function FirmInvitePage() {
       <CardHeader>
         <CardTitle>Firm staff invitation</CardTitle>
         <CardDescription>
-          Verify the invited email address to join a practice. No client bookkeeping permissions
-          are granted automatically.
+          Verify the invited email address to join a practice. No client bookkeeping permissions are
+          granted automatically.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">

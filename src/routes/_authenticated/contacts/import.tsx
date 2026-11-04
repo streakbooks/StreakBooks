@@ -9,6 +9,7 @@ import { friendlyAuthError } from "@/lib/auth-helpers";
 import { PageHeader, EmptyState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { CsvImportPreview } from "@/components/common/CsvImportPreview";
 import { Checkbox } from "@/components/ui/checkbox";
 
 export const Route = createFileRoute("/_authenticated/contacts/import")({
@@ -34,7 +35,9 @@ function ContactImportPage() {
     mutationFn: () => importFn({ data: { companyId: companyId!, csvText, skipDuplicates } }),
     onSuccess: (res) => {
       setResult(res);
-      toast.success(`Import finished: ${res.created} created`);
+      if (res.failed > 0)
+        toast.warning(`Import finished with ${res.failed} row errors. Review the results below.`);
+      else toast.success(`Import finished: ${res.created} created`);
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
@@ -82,12 +85,14 @@ function ContactImportPage() {
         >
           Download template
         </Button>
-        <Label className="inline-flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm">
+        <Label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border bg-card px-3 py-2 text-sm focus-within:ring-2 focus-within:ring-ring">
           Choose CSV
           <input
             type="file"
             accept=".csv,text/csv"
-            className="hidden"
+            className="sr-only"
+            aria-label="Choose contact CSV"
+            disabled={importM.isPending}
             onChange={async (e) => {
               const file = e.target.files?.[0];
               if (!file) return;
@@ -95,10 +100,14 @@ function ContactImportPage() {
                 toast.error("File too large (max ~1.5 MB)");
                 return;
               }
-              const text = await file.text();
-              setCsvText(text);
-              setResult(null);
-              toast.message(`Loaded ${file.name}`);
+              try {
+                const text = await file.text();
+                setCsvText(text);
+                setResult(null);
+                toast.message(`Loaded ${file.name}`);
+              } catch {
+                toast.error("This file could not be read. Choose it again.");
+              }
             }}
           />
         </Label>
@@ -109,19 +118,14 @@ function ContactImportPage() {
         Skip contacts that already exist (same name)
       </label>
 
-      {csvText ? (
-        <pre className="mb-4 max-h-48 overflow-auto rounded-md border bg-muted/30 p-3 text-xs">
-          {csvText.slice(0, 4000)}
-          {csvText.length > 4000 ? "\n…" : ""}
-        </pre>
-      ) : null}
+      {csvText ? <CsvImportPreview text={csvText} /> : null}
 
       <Button disabled={!csvText || importM.isPending} onClick={() => importM.mutate()}>
         {importM.isPending ? "Importing…" : "Confirm import"}
       </Button>
 
       {result ? (
-        <div className="mt-6 space-y-2 text-sm">
+        <div role="status" className="mt-6 space-y-2 rounded-xl border bg-card p-4 text-sm">
           <p>
             Created {result.created} · Skipped {result.skipped} · Failed {result.failed}
           </p>

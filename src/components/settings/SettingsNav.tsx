@@ -97,7 +97,7 @@ export function SettingsNav({ section, embedded = false, showDemo, filter }: Pro
           );
         });
         if (items.length === 0) return null;
-        const isOpen = open[group.label] !== false;
+        const isOpen = Boolean(q) || open[group.label] !== false;
         return (
           <Collapsible
             key={group.label}
@@ -117,6 +117,7 @@ export function SettingsNav({ section, embedded = false, showDemo, filter }: Pro
               {items.map((c) => (
                 <Link
                   key={c.id}
+                  aria-current={section === c.id ? "page" : undefined}
                   to={embedded ? pathname : "/settings"}
                   search={
                     embedded
@@ -134,7 +135,7 @@ export function SettingsNav({ section, embedded = false, showDemo, filter }: Pro
                   <span className="truncate">{c.label}</span>
                   {c.availability === "unavailable" ? (
                     <Badge variant="outline" className="ml-1 shrink-0 text-[10px]">
-                      Soon
+                      Unavailable
                     </Badge>
                   ) : c.availability === "partial" ? (
                     <Badge variant="secondary" className="ml-1 shrink-0 text-[10px]">

@@ -78,7 +78,7 @@ import {
   type TaxCalculationMode,
 } from "@/lib/purchases/bill-form-helpers";
 import { cleanupBlankPurchaseLines, incompletePurchaseLines } from "@/lib/purchases/blank-lines";
-import { LoadingState, EmptyState } from "@/components/common/states";
+import { ErrorState, LoadingState, EmptyState } from "@/components/common/states";
 import { EntityCombobox } from "@/components/common/EntityCombobox";
 import { AccountLookup } from "@/components/lookup";
 import {
@@ -1367,12 +1367,23 @@ export function NewBill({
   );
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (suppliersQ.isPending || accountsQ.isPending) return <LoadingState />;
+  if (suppliersQ.isError || accountsQ.isError)
+    return (
+      <ErrorState
+        title="Could not load bill entry options"
+        description={friendlyAuthError(suppliersQ.error ?? accountsQ.error)}
+        onRetry={() => {
+          void suppliersQ.refetch();
+          void accountsQ.refetch();
+        }}
+      />
+    );
 
   const headerBar: ReactNode = (
     <div className="flex flex-wrap items-center gap-2">
       <div className="min-w-0 flex-1">
         <h1 className="text-xl font-semibold tracking-tight">New bill</h1>
-        <p className="text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
           {isTemplate
             ? `Template · Status: ${templateId ? (scheduleActive ? "Active schedule" : "Saved template") : "Unsaved"} · Not posted · View: `
             : `Draft · Status: ${billId ? "Saved draft" : "Unsaved"} · View: `}
@@ -1382,16 +1393,19 @@ export function NewBill({
               void savePrefsPatch({ viewMode: v as BillWorkspacePrefs["viewMode"] })
             }
           >
-            <SelectTrigger className="inline-flex h-7 w-auto gap-1 border-0 px-1 text-xs shadow-none">
+            <SelectTrigger
+              aria-label="Bill entry detail level"
+              className="inline-flex h-8 w-auto gap-1 border-0 px-1 text-xs shadow-none"
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="basic">Basic</SelectItem>
-              <SelectItem value="professional">Professional</SelectItem>
+              <SelectItem value="basic">Essential fields</SelectItem>
+              <SelectItem value="professional">All accounting fields</SelectItem>
               <SelectItem value="custom">Custom</SelectItem>
             </SelectContent>
           </Select>
-        </p>
+        </div>
       </div>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -1432,14 +1446,16 @@ export function NewBill({
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button size="sm" className="rounded-l-none border-l border-primary-foreground/20 px-2">
+            <Button
+              size="sm"
+              aria-label="More bill save actions"
+              disabled={mutation.isPending}
+              className="rounded-l-none border-l border-primary-foreground/20 px-2"
+            >
               <ChevronDown className="size-3.5" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => mutation.mutate("authorise")}>
-              {isTemplate ? "Save & activate" : "Save & authorise (post)"}
-            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => mutation.mutate("add_another")}>
               Save &amp; add another
             </DropdownMenuItem>

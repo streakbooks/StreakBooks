@@ -249,6 +249,7 @@ export function ReportDataExplorer({ ctx, data }: { ctx: ReportCtx; data: Explor
               }}
             >
               <option value="">All columns</option>
+              {/* lookup-fixed-enum: The current report's display columns, not business records. */}
               {data.headers.map((label, index) => (
                 <option key={index} value={index}>
                   {label || "Column " + (index + 1)}
@@ -286,6 +287,7 @@ export function ReportDataExplorer({ ctx, data }: { ctx: ReportCtx; data: Explor
               }
             >
               <option value="">No grouping</option>
+              {/* lookup-fixed-enum: The current report's display columns, not business records. */}
               {data.headers.map((label, index) => (
                 <option key={index} value={index}>
                   {label || "Column " + (index + 1)}
@@ -307,6 +309,7 @@ export function ReportDataExplorer({ ctx, data }: { ctx: ReportCtx; data: Explor
               }
             >
               <option value="">Original report order</option>
+              {/* lookup-fixed-enum: The current report's display columns, not business records. */}
               {data.headers.map((label, index) => (
                 <option key={index} value={index}>
                   {label || "Column " + (index + 1)}
@@ -345,6 +348,7 @@ export function ReportDataExplorer({ ctx, data }: { ctx: ReportCtx; data: Explor
                 })
               }
             >
+              {/* lookup-fixed-enum: Fixed page-size choices. */}
               {[25, 50, 100, 200].map((amount) => (
                 <option key={amount} value={amount}>
                   {amount}

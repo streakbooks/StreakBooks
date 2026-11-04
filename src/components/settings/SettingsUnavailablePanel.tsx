@@ -1,16 +1,18 @@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { CategoryMeta } from "@/lib/settings/registry";
+import { Link } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
 
 export function SettingsUnavailablePanel({ meta }: { meta: CategoryMeta }) {
   return (
     <div className="space-y-4">
       <Alert>
-        <AlertTitle>Unavailable</AlertTitle>
+        <AlertTitle>These settings are not available yet</AlertTitle>
         <AlertDescription>
-          {meta.label} is not operational in the current LinkBooks build. It is listed here so the
-          Settings Centre covers the full information architecture without presenting a fake
-          connected or synchronised state.
+          {meta.id === "fixed_assets"
+            ? "Manage your assets and depreciation in the Fixed assets workspace. Additional configuration is not available here yet."
+            : `${meta.label} cannot be configured in this version of LinkBooks.`}
         </AlertDescription>
       </Alert>
       <Card>
@@ -19,8 +21,13 @@ export function SettingsUnavailablePanel({ meta }: { meta: CategoryMeta }) {
           <CardDescription>{meta.description}</CardDescription>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground">
-          Tracked in <code>docs/settings/CHECKLIST.md</code>. When implemented, this panel will
-          persist configuration through the typed settings registry with server-side enforcement.
+          {meta.id === "fixed_assets" ? (
+            <Button asChild>
+              <Link to="/fixed-assets">Open fixed assets</Link>
+            </Button>
+          ) : (
+            "Your existing organisation settings are unchanged."
+          )}
         </CardContent>
       </Card>
     </div>

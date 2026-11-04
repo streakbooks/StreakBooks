@@ -233,6 +233,7 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
                   })
                 }
               >
+                {/* lookup-fixed-enum: Fixed page-size choices. */}
                 {[25, 50, 100, 200].map((size) => (
                   <option key={size} value={size}>
                     {size}

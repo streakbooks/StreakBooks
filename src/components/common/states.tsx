@@ -27,7 +27,7 @@ export function PageHeader({
   meta?: ReactNode;
 }) {
   return (
-    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div className="lb-page-header mb-7 flex flex-col gap-4 border-b border-border/70 pb-5 lg:flex-row lg:items-end lg:justify-between print:border-0 print:pb-0">
       <div className="min-w-0">
         {breadcrumbs && breadcrumbs.length > 0 ? (
           <nav aria-label="Breadcrumb" className="mb-1.5">
@@ -53,7 +53,9 @@ export function PageHeader({
           </nav>
         ) : null}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+          <h1 className="break-words text-2xl font-semibold tracking-tight sm:text-[1.75rem] sm:leading-tight">
+            {title}
+          </h1>
           {meta}
         </div>
         {description ? (
@@ -61,7 +63,9 @@ export function PageHeader({
         ) : null}
       </div>
       {actions ? (
-        <div className="flex flex-wrap items-center gap-2 print:hidden">{actions}</div>
+        <div className="flex max-w-full flex-wrap items-center gap-2 lg:max-w-[60%] lg:justify-end print:hidden">
+          {actions}
+        </div>
       ) : null}
     </div>
   );
@@ -78,7 +82,7 @@ export function SectionHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="mb-3 flex items-end justify-between gap-3">
+    <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
       <div>
         <h2 className="text-base font-semibold tracking-tight">{title}</h2>
         {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
@@ -122,7 +126,7 @@ export function EmptyState({
       <h3 className="mt-4 text-sm font-semibold">{title}</h3>
       <p className="mt-1 max-w-sm text-sm text-muted-foreground">{description}</p>
       {action ? <div className="mt-5">{action}</div> : null}
-      {!action && actionLabel ? (
+      {!action && actionLabel && onActionClick ? (
         <Button className="mt-5" size="sm" type="button" onClick={onActionClick}>
           {actionLabel}
         </Button>
@@ -152,7 +156,12 @@ export function LoadingState({ rows = 4 }: { rows?: number }) {
 /** Row skeleton for list pages: header strip + rows, same footprint as the loaded table. */
 export function ListSkeleton({ rows = 8, columns = 5 }: { rows?: number; columns?: number }) {
   return (
-    <Card role="status" aria-busy="true" aria-label="Loading list" className="overflow-hidden">
+    <Card
+      role="status"
+      aria-busy="true"
+      aria-label="Loading list"
+      className="overflow-hidden [&_>div]:min-w-0 [&_.animate-pulse]:max-w-full"
+    >
       <div className="flex gap-4 border-b bg-muted/40 px-4 py-3">
         {Array.from({ length: columns }).map((_, i) => (
           <Skeleton key={i} className={cn("h-3", i === columns - 1 ? "ml-auto w-16" : "w-24")} />
@@ -185,7 +194,7 @@ export function CardGridSkeleton({ count = 4 }: { count?: number }) {
       role="status"
       aria-busy="true"
       aria-label="Loading"
-      className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+      className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
     >
       {Array.from({ length: count }).map((_, i) => (
         <Card key={i}>

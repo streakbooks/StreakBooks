@@ -16,6 +16,7 @@ export default defineConfig({
     "**/practice/**",
     "**/corrections/**",
     "**/themes/**",
+    "**/ui/**",
   ],
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),

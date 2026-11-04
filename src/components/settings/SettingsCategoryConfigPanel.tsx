@@ -90,7 +90,8 @@ export function SettingsCategoryConfigPanel({
   const defaults = useMemo(() => defaultDocumentFor(category), [category]);
 
   useEffect(() => {
-    if (!q.data || q.data.category !== category) return;
+    const data = q.data;
+    if (!data || data.category !== category) return;
     setState((previous) => {
       const current = previous?.scope === scope ? previous : null;
       if (current && !areSettingsDocumentsEqual(current.baseline, current.draft)) {
@@ -99,16 +100,16 @@ export function SettingsCategoryConfigPanel({
       }
       if (
         current &&
-        current.version === q.data.version &&
-        areSettingsDocumentsEqual(current.baseline, q.data.document)
+        current.version === data.version &&
+        areSettingsDocumentsEqual(current.baseline, data.document)
       ) {
         return previous;
       }
       return {
         scope,
-        baseline: { ...q.data.document },
-        draft: { ...q.data.document },
-        version: q.data.version,
+        baseline: { ...data.document },
+        draft: { ...data.document },
+        version: data.version,
       };
     });
   }, [q.data, category, scope]);

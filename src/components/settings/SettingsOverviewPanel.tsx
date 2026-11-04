@@ -90,8 +90,8 @@ export function SettingsOverviewPanel({ companyId }: Props) {
         <div className="min-w-0">
           <p className="truncate font-medium">{d.company?.name ?? "Organisation"}</p>
           <p className="text-xs text-muted-foreground">
-            {d.company?.base_currency ?? "Currency not configured"} · {d.memberCount}{" "}
-            member{d.memberCount === 1 ? "" : "s"}
+            {d.company?.base_currency ?? "Currency not configured"} · {d.memberCount} member
+            {d.memberCount === 1 ? "" : "s"}
             {d.company?.is_demo ? " · Demo organisation" : ""}
           </p>
         </div>

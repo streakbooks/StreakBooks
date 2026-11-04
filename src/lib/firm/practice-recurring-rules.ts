@@ -20,21 +20,25 @@ const mapping: Record<FirmEngagement["frequency"], string | null> = {
 
 export function compatiblePracticeRecurring(
   engagement: Pick<FirmEngagement, "status" | "frequency" | "agreed_fee" | "currency_code">,
-  schedule: Pick<PracticeRecurringSchedule, "frequency" | "is_active" | "auto_authorise" | "currency_code">,
+  schedule: Pick<
+    PracticeRecurringSchedule,
+    "frequency" | "is_active" | "auto_authorise" | "currency_code"
+  >,
 ): boolean {
-  return engagement.status === "active" &&
+  return (
+    engagement.status === "active" &&
     mapping[engagement.frequency] !== null &&
     mapping[engagement.frequency] === schedule.frequency &&
     schedule.is_active &&
     !schedule.auto_authorise &&
     (engagement.agreed_fee === null ||
-      engagement.currency_code.toUpperCase() === schedule.currency_code.toUpperCase());
+      engagement.currency_code.toUpperCase() === schedule.currency_code.toUpperCase())
+  );
 }
 
 export function practiceDraftDue(
   schedule: Pick<PracticeRecurringSchedule, "is_active" | "auto_authorise" | "next_due_date">,
   todayUtc: string,
 ): boolean {
-  return schedule.is_active && !schedule.auto_authorise &&
-    schedule.next_due_date <= todayUtc;
+  return schedule.is_active && !schedule.auto_authorise && schedule.next_due_date <= todayUtc;
 }

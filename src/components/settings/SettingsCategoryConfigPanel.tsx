@@ -84,9 +84,7 @@ export function SettingsCategoryConfigPanel({
   const [state, setState] = useState<DraftState | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const active = state?.scope === scope ? state : null;
-  const dirty = Boolean(
-    active && !areSettingsDocumentsEqual(active.baseline, active.draft),
-  );
+  const dirty = Boolean(active && !areSettingsDocumentsEqual(active.baseline, active.draft));
   const serverChanged = Boolean(active && dirty && q.data && q.data.version !== active.version);
   const defaults = useMemo(() => defaultDocumentFor(category), [category]);
 
@@ -228,8 +226,8 @@ export function SettingsCategoryConfigPanel({
           <CardHeader>
             <CardTitle className="text-base">Manage in the connected module</CardTitle>
             <CardDescription>
-              There are no editable organisation-level fields for this category in Settings
-              Centre. Use the related module above for supported configuration.
+              There are no editable organisation-level fields for this category in Settings Centre.
+              Use the related module above for supported configuration.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -279,8 +277,7 @@ export function SettingsCategoryConfigPanel({
                   const id = "settings-" + category + "-" + key;
                   const options = ENUM_OPTIONS[category + "." + key];
                   const error = fieldErrors[key];
-                  const isNumeric =
-                    typeof defaults[key] === "number" ||
+                  const isNumeric = typeof defaults[key] === "number" ||
                     isNullableNumericSetting(category, key);
 
                   if (typeof value === "boolean") {
@@ -330,7 +327,8 @@ export function SettingsCategoryConfigPanel({
                           disabled={disabled}
                           aria-invalid={Boolean(error)}
                           onChange={(event) => {
-                            const numbers = Array.isArray(defaults[key]) &&
+                            const numbers =
+                              Array.isArray(defaults[key]) &&
                               (defaults[key] as Array<string | number>).some(
                                 (item) => typeof item === "number",
                               );
@@ -338,9 +336,11 @@ export function SettingsCategoryConfigPanel({
                               .split(",")
                               .map((part) => part.trim())
                               .filter(Boolean)
-                              .map((part) => (numbers && part !== "" && Number.isFinite(Number(part))
-                                ? Number(part)
-                                : part));
+                              .map((part) =>
+                                numbers && part !== "" && Number.isFinite(Number(part))
+                                  ? Number(part)
+                                  : part,
+                              );
                             updateField(key, parts);
                           }}
                         />
@@ -351,8 +351,11 @@ export function SettingsCategoryConfigPanel({
                       </div>
                     );
                   }
-                  if (typeof value === "number" || typeof value === "string" ||
-                      (value === null && isNumeric)) {
+                  if (
+                    typeof value === "number" ||
+                    typeof value === "string" ||
+                    (value === null && isNumeric)
+                  ) {
                     return (
                       <div key={key} className="space-y-1.5">
                         <Label htmlFor={id}>{displayLabel(key)}</Label>
@@ -390,11 +393,7 @@ export function SettingsCategoryConfigPanel({
                   <Button disabled={disabled || !dirty || serverChanged} onClick={saveDraft}>
                     {mut.isPending ? "Saving…" : "Save changes"}
                   </Button>
-                  <Button
-                    variant="outline"
-                    disabled={mut.isPending || !dirty}
-                    onClick={resetDraft}
-                  >
+                  <Button variant="outline" disabled={mut.isPending || !dirty} onClick={resetDraft}>
                     Discard changes
                   </Button>
                   <span aria-live="polite" className="text-xs text-muted-foreground">

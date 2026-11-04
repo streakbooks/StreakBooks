@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { assertPeriodCloseReview, buildCloseChecklist, summariseChecklist, type CloseFacts } from "./period-close";
+import {
+  assertPeriodCloseReview,
+  buildCloseChecklist,
+  summariseChecklist,
+  type CloseFacts,
+} from "./period-close";
 
 const clean: CloseFacts = {
   periodEnd: "2026-12-31",

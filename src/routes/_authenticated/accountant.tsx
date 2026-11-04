@@ -222,7 +222,9 @@ function AccountantTools() {
                 />
               </div>
 
-              <h2 className="mt-8 mb-3 text-sm font-medium text-muted-foreground">Recent journals</h2>
+              <h2 className="mt-8 mb-3 text-sm font-medium text-muted-foreground">
+                Recent journals
+              </h2>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -325,8 +327,8 @@ function AccountantTools() {
         </TabsContent>
         <TabsContent value="period-close" className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Review live close checks before any year-end posting or period lock. Existing server-side
-            permissions remain authoritative.
+            Review live close checks before any year-end posting or period lock. Existing
+            server-side permissions remain authoritative.
           </p>
           <PeriodClosePanel key={companyId} companyId={companyId} />
         </TabsContent>

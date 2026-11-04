@@ -10,6 +10,7 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
 import {
   listContacts,
+  countContacts,
   getContactsDirectorySummary,
   exportContactsCsv,
 } from "@/lib/contacts/contacts.functions";
@@ -29,6 +30,13 @@ import {
 } from "@/components/ui/table";
 import { TableCard } from "@/components/common/table-card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/contacts/")({
   validateSearch: (search: Record<string, unknown>): { view?: string | undefined } => ({
@@ -85,6 +93,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
   const currency = company?.base_currency ?? "GBP";
   const qc = useQueryClient();
   const fetch = useServerFn(listContacts);
+  const fetchCount = useServerFn(countContacts);
   const fetchSummary = useServerFn(getContactsDirectorySummary);
   const exportFn = useServerFn(exportContactsCsv);
 
@@ -92,6 +101,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
   const view = requestedView ?? "all";
   const [page, setPage] = useState(0);
   const [q, setQ] = useState("");
+  const [sort, setSort] = useState("default");
   const kindForApi = useMemo(() => {
     if (view === "customers") return "customers";
     if (view === "suppliers") return "suppliers";
@@ -99,7 +109,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
   }, [view]);
 
   const query = useQuery({
-    queryKey: ["contacts", companyId, view, q, page],
+    queryKey: ["contacts", companyId, view, q, sort, page],
     enabled: Boolean(companyId),
     queryFn: () =>
       fetch({
@@ -111,8 +121,16 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
           includeInactive: view === "inactive" || view === "archived",
           limit: PAGE_SIZE,
           offset: page * PAGE_SIZE,
+          ...(sort !== "default" ? { sort } : {}),
         },
       }),
+  });
+
+  const countQ = useQuery({
+    queryKey: ["contacts-count", companyId, view, q],
+    enabled: Boolean(companyId),
+    queryFn: () =>
+      fetchCount({ data: { companyId: companyId!, kind: kindForApi, view, ...(q ? { q } : {}) } }),
   });
 
   const summaryQ = useQuery({
@@ -124,7 +142,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
   const exportM = useMutation({
     mutationFn: () =>
       exportFn({
-        data: { companyId: companyId!, kind: kindForApi, includeInactive: view === "archived" },
+        data: { companyId: companyId!, kind: kindForApi, view, ...(q ? { q } : {}) },
       }),
     onSuccess: (res) => {
       const blob = new Blob([res.csv], { type: "text/csv;charset=utf-8" });
@@ -296,15 +314,36 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
               Archived
             </Link>
           </TabsList>
-          <Input
-            placeholder="Search name, email, phone, account #, tax ID…"
-            className="lg:max-w-sm"
-            value={q}
-            onChange={(e) => {
-              setQ(e.target.value);
-              setPage(0);
-            }}
-          />
+          <div className="flex w-full flex-wrap gap-2 lg:w-auto">
+            <Select
+              value={sort}
+              onValueChange={(value) => {
+                setSort(value);
+                setPage(0);
+              }}
+            >
+              <SelectTrigger className="w-44" aria-label="Sort contacts">
+                <SelectValue placeholder="Sort contacts" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">Default order</SelectItem>
+                <SelectItem value="name_asc">Name A–Z</SelectItem>
+                <SelectItem value="name_desc">Name Z–A</SelectItem>
+                <SelectItem value="recent">Newest first</SelectItem>
+                <SelectItem value="updated">Recently updated</SelectItem>
+              </SelectContent>
+            </Select>
+            <Input
+              placeholder="Search name, email, phone, account #, tax ID…"
+              className="lg:max-w-sm"
+              value={q}
+              onChange={(e) => {
+                setQ(e.target.value);
+                setPage(0);
+              }}
+              aria-label="Search contacts"
+            />
+          </div>
         </div>
         <TabsContent value={view} className="mt-4">
           {query.isPending ? (
@@ -372,10 +411,14 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
           )}
           {!query.isPending &&
           !query.isError &&
-          (page > 0 || (query.data ?? []).length === PAGE_SIZE) ? (
+          (page > 0 ||
+            (countQ.data?.count ?? (query.data ?? []).length) > PAGE_SIZE ||
+            (countQ.isError && (query.data ?? []).length === PAGE_SIZE)) ? (
             <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
               <span>
-                Showing {page * PAGE_SIZE + 1}–{page * PAGE_SIZE + (query.data ?? []).length}
+                Showing {(query.data ?? []).length ? page * PAGE_SIZE + 1 : 0}–
+                {page * PAGE_SIZE + (query.data ?? []).length}
+                {countQ.data ? ` of ${countQ.data.count}` : ""}
               </span>
               <div className="flex gap-2">
                 <Button
@@ -389,7 +432,11 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                 <Button
                   size="sm"
                   variant="outline"
-                  disabled={(query.data ?? []).length < PAGE_SIZE}
+                  disabled={
+                    countQ.data
+                      ? (page + 1) * PAGE_SIZE >= countQ.data.count
+                      : (query.data ?? []).length < PAGE_SIZE
+                  }
                   onClick={() => setPage((p) => p + 1)}
                 >
                   Next

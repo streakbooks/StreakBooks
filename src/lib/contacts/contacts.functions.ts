@@ -60,6 +60,7 @@ export const listContacts = createServerFn({ method: "GET" })
       view?: string;
       limit?: number;
       offset?: number;
+      sort?: string;
     }) => ({
       companyId: assertUuid(input.companyId),
       kind: (input.kind ?? "all").trim(),
@@ -67,7 +68,10 @@ export const listContacts = createServerFn({ method: "GET" })
       includeInactive: Boolean(input.includeInactive),
       view: (input.view ?? "all").trim(),
       limit: Math.min(500, Math.max(1, Number(input.limit ?? 200) || 200)),
-      offset: Math.max(0, Number(input.offset ?? 0) || 0),
+      offset: Math.min(1_000_000, Math.max(0, Math.floor(Number(input.offset ?? 0) || 0))),
+      sort: ["name_asc", "name_desc", "recent", "updated"].includes(input.sort ?? "")
+        ? input.sort!
+        : "",
     }),
   )
   .handler(async ({ data, context }) => {
@@ -79,20 +83,22 @@ export const listContacts = createServerFn({ method: "GET" })
       .range(data.offset, data.offset + data.limit - 1);
 
     // One primary sort, chosen by the view (C-02).
-    if (data.view === "recent") {
+    if (data.sort === "recent" || (!data.sort && data.view === "recent")) {
       q = q.order("created_at" as never, { ascending: false });
-    } else if (data.view === "updated") {
+    } else if (data.sort === "updated" || (!data.sort && data.view === "updated")) {
       q = q.order("updated_at" as never, { ascending: false });
     } else {
-      q = q.order("name" as never);
+      q = q.order("name" as never, { ascending: data.sort !== "name_desc" });
     }
+    // Stable pagination even when two contacts share the same sort value.
+    q = q.order("id" as never);
 
     if (data.view === "archived") {
       q = q.not("archived_at" as never, "is" as never, null as never);
     } else if (!data.includeInactive && data.view !== "inactive") {
       q = q.eq("is_active" as never, true as never).is("archived_at" as never, null as never);
     } else if (data.view === "inactive") {
-      q = q.eq("is_active" as never, false as never);
+      q = q.eq("is_active" as never, false as never).is("archived_at" as never, null as never);
     }
 
     if (data.kind === "customers" || data.view === "customers") {
@@ -112,6 +118,46 @@ export const listContacts = createServerFn({ method: "GET" })
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
     return rows ?? [];
+  });
+
+/** Exact count for the same server-side directory filters; never infer total from a full page. */
+export const countContacts = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; kind?: string; q?: string; view?: string }) => ({
+    companyId: assertUuid(input.companyId),
+    kind: (input.kind ?? "all").trim(),
+    q: (input.q ?? "").trim().slice(0, 100),
+    view: (input.view ?? "all").trim(),
+  }))
+  .handler(async ({ data, context }) => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    let q = context.supabase
+      .from("contacts" as never)
+      .select("id" as never, { count: "exact", head: true })
+      .eq("company_id" as never, data.companyId as never);
+
+    if (data.view === "archived") {
+      q = q.not("archived_at" as never, "is" as never, null as never);
+    } else if (data.view === "inactive") {
+      q = q.eq("is_active" as never, false as never).is("archived_at" as never, null as never);
+    } else {
+      q = q.eq("is_active" as never, true as never).is("archived_at" as never, null as never);
+    }
+    if (data.kind === "customers" || data.view === "customers") {
+      q = q.in("kind" as never, ["customer", "both"] as never);
+    } else if (data.kind === "suppliers" || data.view === "suppliers") {
+      q = q.in("kind" as never, ["supplier", "both"] as never);
+    } else if (data.view === "both") {
+      q = q.eq("kind" as never, "both" as never);
+    }
+    const search = buildIlikeOr(
+      ["name", "email", "phone", "account_number", "tax_number", "legal_name"],
+      data.q,
+    );
+    if (search) q = q.or(search as never);
+    const { count, error } = await q;
+    if (error) throw new Error(error.message);
+    return { count: count ?? 0 };
   });
 
 export const getContactsDirectorySummary = createServerFn({ method: "GET" })
@@ -236,6 +282,7 @@ export const upsertContact = createServerFn({ method: "POST" })
       salesTaxInclusive?: boolean | null;
       purchaseTaxInclusive?: boolean | null;
     }) => {
+      const providedFields = Object.keys(input);
       const name = (input.name ?? "").trim();
       if (!name) throw new Error("Contact name is required");
       if (!["supplier", "customer", "both", "employee"].includes(input.kind)) {
@@ -244,6 +291,7 @@ export const upsertContact = createServerFn({ method: "POST" })
       const notes = (input.notes ?? "").trim().slice(0, 4000);
       return {
         companyId: assertUuid(input.companyId),
+        providedFields,
         id: input.id ? assertUuid(input.id) : undefined,
         name,
         kind: input.kind,
@@ -362,9 +410,45 @@ export const upsertContact = createServerFn({ method: "POST" })
     };
 
     if (data.id) {
+      // This endpoint is used by both the comprehensive creation form and
+      // smaller contact editors. Never erase undisplayed financial or address
+      // defaults merely because a caller did not submit those fields.
+      const patch: Record<string, unknown> = { ...payload };
+      const optionalColumns: Record<string, string> = {
+        email: "email",
+        phone: "phone",
+        taxNumber: "tax_number",
+        paymentTermsDays: "payment_terms_days",
+        notes: "notes",
+        isActive: "is_active",
+        accountNumber: "account_number",
+        legalName: "legal_name",
+        website: "website",
+        defaultCurrency: "default_currency",
+        creditLimitMinor: "credit_limit_minor",
+        billingAddressLine1: "billing_address_line1",
+        billingAddressLine2: "billing_address_line2",
+        billingCity: "billing_city",
+        billingRegion: "billing_region",
+        billingPostal: "billing_postal",
+        billingCountry: "billing_country",
+        deliveryAddressLine1: "delivery_address_line1",
+        deliveryAddressLine2: "delivery_address_line2",
+        deliveryCity: "delivery_city",
+        deliveryRegion: "delivery_region",
+        deliveryPostal: "delivery_postal",
+        deliveryCountry: "delivery_country",
+        defaultSalesAccountId: "default_sales_account_id",
+        defaultPurchaseAccountId: "default_purchase_account_id",
+        salesTaxInclusive: "sales_tax_inclusive",
+        purchaseTaxInclusive: "purchase_tax_inclusive",
+      };
+      for (const [field, column] of Object.entries(optionalColumns)) {
+        if (!data.providedFields.includes(field)) delete patch[column];
+      }
       const { data: row, error } = await context.supabase
         .from("contacts" as never)
-        .update(payload as never)
+        .update(patch as never)
         .eq("id" as never, data.id as never)
         .eq("company_id" as never, data.companyId as never)
         .select("id")
@@ -798,26 +882,14 @@ export const saveContactSettings = createServerFn({ method: "POST" })
 /* ── CSV export / import ── */
 export const exportContactsCsv = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; kind?: string; includeInactive?: boolean }) => ({
+  .inputValidator((input: { companyId: string; kind?: string; view?: string; q?: string }) => ({
     companyId: assertUuid(input.companyId),
     kind: (input.kind ?? "all").trim(),
-    includeInactive: Boolean(input.includeInactive),
+    view: (input.view ?? "all").trim(),
+    q: (input.q ?? "").trim().slice(0, 100),
   }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
-    let q = context.supabase
-      .from("contacts" as never)
-      .select(
-        "name, kind, email, phone, tax_number, payment_terms_days, account_number, legal_name, website, notes, is_active" as never,
-      )
-      .eq("company_id" as never, data.companyId as never)
-      .order("name" as never)
-      .limit(5000);
-    if (!data.includeInactive) q = q.eq("is_active" as never, true as never);
-    if (data.kind === "customers") q = q.in("kind" as never, ["customer", "both"] as never);
-    else if (data.kind === "suppliers") q = q.in("kind" as never, ["supplier", "both"] as never);
-    const { data: rows, error } = await q;
-    if (error) throw new Error(error.message);
     const columns = [
       "name",
       "kind",
@@ -831,14 +903,49 @@ export const exportContactsCsv = createServerFn({ method: "POST" })
       "notes",
       "is_active",
     ];
+    const rows: Array<Record<string, string | number | null>> = [];
+    // Export the matching directory dataset, not only the first loaded page.
+    // Reject oversized exports explicitly instead of returning a misleading partial file.
+    for (let from = 0; ; from += 1000) {
+      let q = context.supabase
+        .from("contacts" as never)
+        .select(columns.join(",") as never)
+        .eq("company_id" as never, data.companyId as never)
+        .order("name" as never)
+        .order("id" as never)
+        .range(from, from + 999);
+      if (data.view === "archived") {
+        q = q.not("archived_at" as never, "is" as never, null as never);
+      } else if (data.view === "inactive") {
+        q = q.eq("is_active" as never, false as never).is("archived_at" as never, null as never);
+      } else {
+        q = q.eq("is_active" as never, true as never).is("archived_at" as never, null as never);
+      }
+      if (data.kind === "customers" || data.view === "customers") {
+        q = q.in("kind" as never, ["customer", "both"] as never);
+      } else if (data.kind === "suppliers" || data.view === "suppliers") {
+        q = q.in("kind" as never, ["supplier", "both"] as never);
+      } else if (data.view === "both") {
+        q = q.eq("kind" as never, "both" as never);
+      }
+      const search = buildIlikeOr(
+        ["name", "email", "phone", "account_number", "tax_number", "legal_name"],
+        data.q,
+      );
+      if (search) q = q.or(search as never);
+      const { data: page, error } = await q;
+      if (error) throw new Error(error.message);
+      rows.push(...((page ?? []) as Array<Record<string, string | number | null>>));
+      if (rows.length > 50_000) {
+        throw new Error("More than 50,000 contacts match. Narrow the filters before exporting.");
+      }
+      if ((page ?? []).length < 1000) break;
+    }
     const csv = buildContactsCsv(
-      ((rows ?? []) as Array<Record<string, string | number | null>>).map((r) => ({
-        ...r,
-        is_active: r["is_active"] ? "true" : "false",
-      })),
+      rows.map((r) => ({ ...r, is_active: r["is_active"] ? "true" : "false" })),
       columns,
     );
-    return { csv, count: (rows ?? []).length };
+    return { csv, count: rows.length };
   });
 
 export const getContactImportTemplate = createServerFn({ method: "GET" })

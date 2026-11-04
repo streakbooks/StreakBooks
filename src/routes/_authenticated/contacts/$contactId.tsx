@@ -170,6 +170,8 @@ function ContactDetail() {
     setSelectedTags(t.map((x) => x.tag_id ?? x.contact_tags?.id).filter(Boolean) as string[]);
   }, [contactQ.data]);
 
+  const validTerms = /^\d+$/.test(terms) && Number(terms) <= 3650;
+
   const saveM = useMutation({
     mutationFn: () =>
       saveContact({
@@ -181,7 +183,7 @@ function ContactDetail() {
           email,
           phone,
           taxNumber,
-          paymentTermsDays: Number(terms) || 0,
+          paymentTermsDays: Number(terms),
           notes,
           accountNumber,
           legalName,
@@ -192,7 +194,12 @@ function ContactDetail() {
         },
       }),
     onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: ["contact", companyId, contactId] });
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["contact", companyId, contactId] }),
+        qc.invalidateQueries({ queryKey: ["contacts", companyId] }),
+        qc.invalidateQueries({ queryKey: ["contacts-count", companyId] }),
+        qc.invalidateQueries({ queryKey: ["contacts-summary", companyId] }),
+      ]);
       toast.success("Contact updated");
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
@@ -204,6 +211,8 @@ function ContactDetail() {
     onSuccess: async (_, restore) => {
       await qc.invalidateQueries({ queryKey: ["contact", companyId, contactId] });
       await qc.invalidateQueries({ queryKey: ["contacts", companyId] });
+      await qc.invalidateQueries({ queryKey: ["contacts-count", companyId] });
+      await qc.invalidateQueries({ queryKey: ["contacts-summary", companyId] });
       toast.success(restore ? "Contact restored" : "Contact archived");
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
@@ -234,14 +243,20 @@ function ContactDetail() {
   const groupsM = useMutation({
     mutationFn: () =>
       saveGroups({ data: { companyId: companyId!, contactId, groupIds: selectedGroups } }),
-    onSuccess: () => toast.success("Groups updated"),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["contact", companyId, contactId] });
+      toast.success("Groups updated");
+    },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
 
   const tagsM = useMutation({
     mutationFn: () =>
       saveTags({ data: { companyId: companyId!, contactId, tagIds: selectedTags } }),
-    onSuccess: () => toast.success("Tags updated"),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["contact", companyId, contactId] });
+      toast.success("Tags updated");
+    },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
 
@@ -481,7 +496,15 @@ function ContactDetail() {
             Internal notes never appear on customer-facing documents automatically. Changing
             defaults does not rewrite posted invoices or bills.
           </p>
-          <Button disabled={saveM.isPending || !name.trim()} onClick={() => saveM.mutate()}>
+          {!validTerms ? (
+            <p role="alert" className="text-sm text-destructive">
+              Payment terms must be a whole number from 0 to 3650 days.
+            </p>
+          ) : null}
+          <Button
+            disabled={!canManage || saveM.isPending || !name.trim() || !validTerms}
+            onClick={() => saveM.mutate()}
+          >
             Save changes
           </Button>
         </TabsContent>
@@ -506,7 +529,9 @@ function ContactDetail() {
             <Button
               size="sm"
               className="sm:col-span-3"
-              disabled={personM.isPending || (!personFirst.trim() && !personEmail.trim())}
+              disabled={
+                !canManage || personM.isPending || (!personFirst.trim() && !personEmail.trim())
+              }
               onClick={() => personM.mutate()}
             >
               Add person
@@ -529,6 +554,7 @@ function ContactDetail() {
                   <Button
                     variant="ghost"
                     size="sm"
+                    disabled={!canManage}
                     onClick={async () => {
                       try {
                         await removePerson({ data: { companyId: companyId!, personId: p.id } });
@@ -569,7 +595,7 @@ function ContactDetail() {
             <Button
               size="sm"
               className="mt-3"
-              disabled={groupsM.isPending}
+              disabled={!canManage || groupsM.isPending}
               onClick={() => groupsM.mutate()}
             >
               Save groups
@@ -597,7 +623,7 @@ function ContactDetail() {
             <Button
               size="sm"
               className="mt-3"
-              disabled={tagsM.isPending}
+              disabled={!canManage || tagsM.isPending}
               onClick={() => tagsM.mutate()}
             >
               Save tags

@@ -33,6 +33,26 @@ describe("contact-helpers", () => {
     expect(rows[0]?.[0]).toBe("A");
   });
 
+  it("parses multiline quoted notes, commas, escaped quotes and CRLF", () => {
+    const csv = 'name,notes,email\r\n"Acme, Ltd","Line one\r\nLine ""two""",hello@example.com\r\n';
+    expect(parseContactsCsv(csv)).toEqual({
+      headers: ["name", "notes", "email"],
+      rows: [["Acme, Ltd", 'Line one\r\nLine "two"', "hello@example.com"]],
+    });
+  });
+
+  it("rejects unterminated or invalid quoted CSV", () => {
+    expect(() => parseContactsCsv('name,notes\nA,"unclosed')).toThrow("Unclosed quoted");
+    expect(() => parseContactsCsv('name,notes\nA,"abc"garbage')).toThrow(
+      "Unexpected text after quoted",
+    );
+  });
+
+  it("prevents CSV formulas even with leading whitespace", () => {
+    expect(csvEscape("  =SUM(A1:A2)")).toBe("'  =SUM(A1:A2)");
+    expect(csvEscape("\t+1+1")).toBe("'\t+1+1");
+  });
+
   it("scores duplicates", () => {
     const { score, reasons } = duplicateScore(
       { name: "Acme", email: "a@x.com", tax_number: "T1" },

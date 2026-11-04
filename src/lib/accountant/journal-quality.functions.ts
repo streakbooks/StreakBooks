@@ -3,10 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyPermission } from "@/lib/assert-company-access";
 import { isoDate } from "./practice-work";
-import {
-  reviewManualJournals,
-  type ManualJournalReviewRow,
-} from "./journal-quality";
+import { reviewManualJournals, type ManualJournalReviewRow } from "./journal-quality";
 
 const queryInput = z
   .object({
@@ -21,8 +18,7 @@ const queryInput = z
       return;
     }
     const days =
-      (Date.parse(value.to + "T00:00:00Z") -
-        Date.parse(value.from + "T00:00:00Z")) /
+      (Date.parse(value.to + "T00:00:00Z") - Date.parse(value.from + "T00:00:00Z")) /
       86400000;
     if (days > 366)
       ctx.addIssue({ code: "custom", message: "Choose a review period of 366 days or less." });

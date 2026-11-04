@@ -196,9 +196,7 @@ export function FirmEngagementPanel({
                           {item.status}
                         </Badge>
                       </td>
-                      <td className="p-3 capitalize">
-                        {item.frequency.replace("_", " ")}
-                      </td>
+                      <td className="p-3 capitalize">{item.frequency.replace("_", " ")}</td>
                       <td className="whitespace-nowrap p-3">
                         {item.agreed_fee === null
                           ? "Not set"
@@ -253,9 +251,7 @@ export function FirmEngagementPanel({
                 minLength={2}
                 maxLength={150}
                 value={draft.name}
-                onChange={(event) =>
-                  setDraft((value) => ({ ...value, name: event.target.value }))
-                }
+                onChange={(event) => setDraft((value) => ({ ...value, name: event.target.value }))}
                 placeholder="Monthly bookkeeping and reporting"
               />
             </div>
@@ -368,9 +364,7 @@ export function FirmEngagementPanel({
                 className="min-h-24 w-full rounded-md border bg-background p-3 text-sm"
                 maxLength={3000}
                 value={draft.notes}
-                onChange={(event) =>
-                  setDraft((value) => ({ ...value, notes: event.target.value }))
-                }
+                onChange={(event) => setDraft((value) => ({ ...value, notes: event.target.value }))}
               />
             </div>
             <DialogFooter>

@@ -55,7 +55,9 @@ async function loadEngagement(
 async function loadRecurring(db: Db, billingCompanyId: string, recurringId: string) {
   const { data: row, error } = await db
     .from("sales_recurring_invoices" as never)
-    .select("id,name,company_id,frequency,next_due_date,is_active,auto_authorise,currency_code" as never)
+    .select(
+        "id,name,company_id,frequency,next_due_date,is_active,auto_authorise,currency_code" as never,
+      )
     .eq("id" as never, recurringId as never)
     .eq("company_id" as never, billingCompanyId as never)
     .maybeSingle();
@@ -73,13 +75,17 @@ export const listFirmPracticeRecurringTemplates = createServerFn({ method: "GET"
     await checkClientBilling(context.supabase, context.userId, data, false);
     const { data: rows, error } = await context.supabase
       .from("sales_recurring_invoices" as never)
-      .select("id,name,company_id,frequency,next_due_date,is_active,auto_authorise,currency_code" as never)
+      .select(
+        "id,name,company_id,frequency,next_due_date,is_active,auto_authorise,currency_code" as never,
+      )
       .eq("company_id" as never, data.billingCompanyId as never)
       .order("name" as never)
       .limit(101);
     if (error) throw new Error(error.message);
     if ((rows ?? []).length > 100)
-      throw new Error("Billing company has more than 100 recurring templates; narrow the selection");
+      throw new Error(
+        "Billing company has more than 100 recurring templates; narrow the selection",
+      );
     return (rows ?? []) as PracticeRecurringSchedule[];
   });
 
@@ -117,14 +123,17 @@ export const linkFirmEngagementRecurring = createServerFn({ method: "POST" })
         "Select an active, draft-only recurring schedule matching the engagement frequency and currency",
       );
     }
-    const { error } = await db.from("firm_engagement_recurring_links" as never).upsert({
-      firm_id: data.firmId,
-      company_id: data.companyId,
-      billing_company_id: data.billingCompanyId,
-      engagement_id: data.engagementId,
-      recurring_id: data.recurringId,
-      created_by: context.userId,
-    } as never, { onConflict: "engagement_id,recurring_id", ignoreDuplicates: true });
+    const { error } = await db.from("firm_engagement_recurring_links" as never).upsert(
+      {
+        firm_id: data.firmId,
+        company_id: data.companyId,
+        billing_company_id: data.billingCompanyId,
+        engagement_id: data.engagementId,
+        recurring_id: data.recurringId,
+        created_by: context.userId,
+      } as never,
+      { onConflict: "engagement_id,recurring_id", ignoreDuplicates: true },
+    );
     if (error) throw new Error(error.message);
     return { linked: true };
   });
@@ -167,7 +176,8 @@ export const generateFirmEngagementDraft = createServerFn({ method: "POST" })
       .eq("recurring_id" as never, data.recurringId as never)
       .maybeSingle();
     if (linkedError) throw new Error(linkedError.message);
-    if (!linked) throw new Error("The recurring schedule must be linked before generating an invoice");
+    if (!linked)
+      throw new Error("The recurring schedule must be linked before generating an invoice");
 
     const engagement = await loadEngagement(db, data);
     const recurring = await loadRecurring(db, data.billingCompanyId, data.recurringId);
@@ -185,17 +195,20 @@ export const generateFirmEngagementDraft = createServerFn({ method: "POST" })
     if (v2Error) throw new Error(v2Error.message);
     if (v2) {
       const schedules = (v2 as {
-        recurring_schedules: Array<{ auto_authorise: boolean; is_paused: boolean }> |
-          { auto_authorise: boolean; is_paused: boolean } | null;
+        recurring_schedules:
+          | Array<{ auto_authorise: boolean; is_paused: boolean }>
+          | { auto_authorise: boolean; is_paused: boolean }
+          | null;
       }).recurring_schedules;
       const rows = schedules ? (Array.isArray(schedules) ? schedules : [schedules]) : [];
       if (rows.some((row) => row.auto_authorise || row.is_paused)) {
-        throw new Error("Automatic authorization or paused schedule is not allowed for this practice workflow");
+        throw new Error(
+          "Automatic authorization or paused schedule is not allowed for this practice workflow",
+        );
       }
     }
-    const { generateSalesInvoiceFromRecurring } = await import(
-      "@/lib/recurring/generate-sales-invoice"
-    );
+    const { generateSalesInvoiceFromRecurring } =
+      await import("@/lib/recurring/generate-sales-invoice");
     const generated = await generateSalesInvoiceFromRecurring(
       db as never,
       context.userId,
@@ -205,16 +218,17 @@ export const generateFirmEngagementDraft = createServerFn({ method: "POST" })
 
     // The invoice already exists at this point; report a linkage failure without
     // lying that generation failed or generating a duplicate on blind retry.
-    const { error: linkError } = await db
-      .from("firm_engagement_invoice_links" as never)
-      .upsert({
+    const { error: linkError } = await db.from("firm_engagement_invoice_links" as never).upsert(
+      {
         firm_id: data.firmId,
         company_id: data.companyId,
         engagement_id: data.engagementId,
         billing_company_id: data.billingCompanyId,
         invoice_id: generated.invoiceId,
         created_by: context.userId,
-      } as never, { onConflict: "engagement_id,invoice_id", ignoreDuplicates: true });
+      } as never,
+      { onConflict: "engagement_id,invoice_id", ignoreDuplicates: true },
+    );
     return {
       invoiceId: generated.invoiceId,
       nextDueDate: generated.nextDueDate,

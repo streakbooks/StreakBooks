@@ -155,7 +155,9 @@ export function SettingsAutomationPanel({ companyId, canEdit }: Props) {
               value={purchTerms}
               disabled={!canEdit || saveM.isPending}
               aria-invalid={parsedPurchaseTerms === null}
-              aria-describedby={parsedPurchaseTerms === null ? "workflow-purchases-error" : undefined}
+              aria-describedby={
+                parsedPurchaseTerms === null ? "workflow-purchases-error" : undefined
+              }
               onChange={(e) => {
                 setPurchTerms(e.target.value);
                 setDirty(true);

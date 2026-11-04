@@ -276,16 +276,24 @@ export const searchSynonyms: Record<string, SettingsCategory[]> = {
 export function searchSettings(query: string): CategoryMeta[] {
   const q = query.trim().toLowerCase();
   if (!q) return categoryMeta;
+  // Query tokens can match whole synonyms, but short abbreviations such as
+  // "ar", "ap" and "po" must not match arbitrary substrings of other words.
+  const normalizedQuery = " " + q.replace(/[^a-z0-9]+/g, " ").trim() + " ";
+  const matches = (term: string): boolean => {
+    const candidate = term.toLowerCase();
+    return candidate.includes(q) || normalizedQuery.includes(" " + candidate + " ");
+  };
   const synonymHits = new Set<SettingsCategory>();
-  for (const [syn, cats] of Object.entries(searchSynonyms)) {
-    if (syn.includes(q) || q.includes(syn)) cats.forEach((c) => synonymHits.add(c));
+  for (const [synonym, categories] of Object.entries(searchSynonyms)) {
+    if (matches(synonym)) categories.forEach((category) => synonymHits.add(category));
   }
-  return categoryMeta.filter((c) => {
-    if (synonymHits.has(c.id)) return true;
-    if (c.label.toLowerCase().includes(q)) return true;
-    if (c.description.toLowerCase().includes(q)) return true;
-    return c.synonyms.some((s) => s.toLowerCase().includes(q) || q.includes(s.toLowerCase()));
-  });
+  return categoryMeta.filter(
+    (category) =>
+      synonymHits.has(category.id) ||
+      matches(category.label) ||
+      matches(category.description) ||
+      category.synonyms.some(matches),
+  );
 }
 
 /** Typed config documents stored in organisation_config */

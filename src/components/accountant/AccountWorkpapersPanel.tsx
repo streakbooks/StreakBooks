@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { useCanDo } from "@/hooks/use-can";
 import { WorkpaperPeriodComparisonPanel } from "@/components/accountant/WorkpaperPeriodComparisonPanel";
+import { WorkpaperReconcilingItemsPanel } from "@/components/accountant/WorkpaperReconcilingItemsPanel";
 import { useFormat } from "@/hooks/use-format";
 import {
   listAccountWorkpapers,
@@ -408,6 +409,19 @@ export function AccountWorkpapersPanel({
               </Button>
             )}
           </div>
+          {saved ? (
+            <WorkpaperReconcilingItemsPanel
+              key={saved.id}
+              companyId={companyId}
+              workpaperId={saved.id}
+              status={saved.status}
+              currency={currency}
+            />
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Save the draft workpaper before recording reconciling issues.
+            </p>
+          )}
         </div>
       )}
     </section>

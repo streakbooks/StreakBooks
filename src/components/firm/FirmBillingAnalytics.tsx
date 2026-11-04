@@ -13,6 +13,7 @@ import {
   unlinkFirmEngagementInvoice,
 } from "@/lib/firm/firm-billing.functions";
 import { getFirmPracticePulse } from "@/lib/firm/firm-analytics.functions";
+import { FirmRecurringBillingPanel } from "@/components/firm/FirmRecurringBillingPanel";
 import { LookupSelect } from "@/components/lookup";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -291,6 +292,12 @@ export function FirmBillingPanel({
           )}
         </>
       )}
+      <FirmRecurringBillingPanel
+        firmId={firmId}
+        clients={clients}
+        canManage={canManage}
+        billingCompanyId={activeCompanyId}
+      />
     </section>
   );
 }

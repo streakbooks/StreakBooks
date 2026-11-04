@@ -16,6 +16,7 @@ export async function generateSalesInvoiceFromRecurring(
   userId: string,
   companyId: string,
   recurringId: string,
+  options?: { forceDraft?: boolean },
 ): Promise<{ invoiceId: string; journalId: string | null; nextDueDate: string | null }> {
   await assertCompanyPermission(supabase, companyId, "sales.draft");
   const { data: rec, error } = await supabase
@@ -163,7 +164,8 @@ export async function generateSalesInvoiceFromRecurring(
     });
     invoiceId = saved.id;
 
-    const autoAuthorise = schedule.auto_authorise ?? r.auto_authorise;
+    // Callers working on practice fees can force a draft regardless of template edits.
+    const autoAuthorise = !options?.forceDraft && (schedule.auto_authorise ?? r.auto_authorise);
     if (autoAuthorise) {
       await assertCompanyPermission(supabase, companyId, "recurring.auto_authorise");
       await assertCompanyPermission(supabase, companyId, "sales.authorise");

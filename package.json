@@ -29,7 +29,8 @@
     "test:workflows:postgres": "node scripts/test-workflows-postgres.mjs",
     "test:documents:postgres": "node scripts/test-document-review-postgres.mjs",
     "test:accountant:postgres": "node scripts/test-accountant-exceptions-postgres.mjs",
-    "test:ui": "playwright test --config playwright.ui.config.ts"
+    "test:ui": "playwright test --config playwright.ui.config.ts",
+    "test:workpaper-items:postgres": "node scripts/test-accountant-workpaper-items-postgres.mjs"
   },
   "overrides": {
     "rolldown": "1.2.1"

@@ -33,7 +33,10 @@ describe("manual journal draft preflight", () => {
     expect(review([{ ...base[0]!, debit: "-100.00" }, base[1]!]).canPost).toBe(false);
     expect(review([{ ...base[0]!, credit: "1.00" }, base[1]!]).canPost).toBe(false);
     expect(review([...base, { ...base[0]!, debit: "0.00" }]).invalidLines).toEqual([3]);
-    expect(review([...base, { accountId: "", description: "Extra", debit: "", credit: "" }]).invalidLines).toEqual([3]);
+    expect(
+      review([...base, { accountId: "", description: "Extra", debit: "", credit: "" }])
+        .invalidLines,
+    ).toEqual([3]);
   });
 
   it("rejects accounts that are inactive, controlled or otherwise unavailable", () => {

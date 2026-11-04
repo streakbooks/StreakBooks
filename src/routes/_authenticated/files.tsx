@@ -387,26 +387,26 @@ function FilesPage() {
             {canUpload ? (
               <>
                 <input
-                ref={inputRef}
-                type="file"
-                multiple
-                hidden
-                accept={FILE_INPUT_ACCEPT}
-                aria-label="Choose files to upload"
-                onChange={(e) => onPick(e.target.files)}
-              />
-              <Button
-                size="sm"
-                disabled={uploadM.isPending}
-                onClick={() => inputRef.current?.click()}
-              >
-                {uploadM.isPending ? (
-                  <Loader2 className="mr-1 size-4 animate-spin" />
-                ) : (
-                  <Upload className="mr-1 size-4" />
-                )}
-                Upload files
-              </Button>
+                  ref={inputRef}
+                  type="file"
+                  multiple
+                  hidden
+                  accept={FILE_INPUT_ACCEPT}
+                  aria-label="Choose files to upload"
+                  onChange={(e) => onPick(e.target.files)}
+                />
+                <Button
+                  size="sm"
+                  disabled={uploadM.isPending}
+                  onClick={() => inputRef.current?.click()}
+                >
+                  {uploadM.isPending ? (
+                    <Loader2 className="mr-1 size-4 animate-spin" />
+                  ) : (
+                    <Upload className="mr-1 size-4" />
+                  )}
+                  Upload files
+                </Button>
               </>
             ) : null}
           </>

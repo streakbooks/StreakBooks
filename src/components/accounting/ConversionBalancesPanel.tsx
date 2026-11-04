@@ -413,8 +413,8 @@ export function ConversionBalancesPanel({
       </Alert>
       {hasUnsavedDraft ? (
         <p role="status" className="text-xs text-muted-foreground">
-          Unsaved draft. Entries are not stored until they are posted.
-          Export the posting review CSV before leaving this tab.
+          Unsaved draft. Entries are not stored until they are posted. Export the posting review
+          CSV before leaving this tab.
         </p>
       ) : null}
 
@@ -565,8 +565,8 @@ export function ConversionBalancesPanel({
             Export posting review CSV
           </Button>
           <p className="text-xs text-muted-foreground">
-            This CSV shows entered accounts and documents in their row currencies,
-            plus base-currency totals. Export does not create accounting entries.
+            This CSV shows entered accounts and documents in their row currencies, plus
+            base-currency totals. Export does not create accounting entries.
           </p>
           <div className="flex items-start gap-2">
             <Checkbox

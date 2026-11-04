@@ -1,5 +1,7 @@
 import { PracticeWorkBoard } from "@/components/accountant/PracticeWorkBoard";
 import { FirmClientPortfolio } from "@/components/firm/FirmClientPortfolio";
+import { FirmOnboardingPanel, FirmTeamPanel } from "@/components/firm/FirmOnboardingAndTeam";
+import { FirmEngagementPanel } from "@/components/firm/FirmEngagementPanel";
 import { setActiveCompany } from "@/lib/company.functions";
 import { useCanDo } from "@/hooks/use-can";
 import { useState } from "react";
@@ -217,6 +219,9 @@ function FirmPage() {
             <TabsList className="flex h-auto flex-wrap justify-start gap-1">
               <TabsTrigger value="clients">Clients & overview</TabsTrigger>
               <TabsTrigger value="work">Work & deadlines</TabsTrigger>
+              <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
+              <TabsTrigger value="engagements">Engagements</TabsTrigger>
+              <TabsTrigger value="team">Team</TabsTrigger>
               <TabsTrigger value="activity">Client activity</TabsTrigger>
               <TabsTrigger value="setup">Firm settings</TabsTrigger>
             </TabsList>
@@ -267,6 +272,46 @@ function FirmPage() {
                   Open Accountant tools
                 </Link>
               </p>
+            </TabsContent>
+
+            <TabsContent value="onboarding">
+              {clientsQ.isPending ? (
+                <LoadingState />
+              ) : clientsQ.isError ? (
+                <ErrorState
+                  title="Could not load clients"
+                  description={friendlyAuthError(clientsQ.error)}
+                />
+              ) : (
+                <FirmOnboardingPanel
+                  key={firmId}
+                  firmId={firmId}
+                  clients={clientsQ.data ?? []}
+                  canManage={firmAdmin}
+                />
+              )}
+            </TabsContent>
+
+            <TabsContent value="engagements">
+              {clientsQ.isPending ? (
+                <LoadingState />
+              ) : clientsQ.isError ? (
+                <ErrorState
+                  title="Could not load clients"
+                  description={friendlyAuthError(clientsQ.error)}
+                />
+              ) : (
+                <FirmEngagementPanel
+                  key={firmId}
+                  firmId={firmId}
+                  clients={clientsQ.data ?? []}
+                  canManage={firmAdmin}
+                />
+              )}
+            </TabsContent>
+
+            <TabsContent value="team">
+              <FirmTeamPanel key={firmId} firmId={firmId} />
             </TabsContent>
 
             <TabsContent value="activity" className="space-y-4">

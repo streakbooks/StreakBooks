@@ -59,7 +59,7 @@ export function PeriodClosePanel({
   initialPeriodId,
 }: {
   companyId: string;
-  initialPeriodId?: string;
+  initialPeriodId?: string | undefined;
 }) {
   const canLock = useCanDo("periods.lock");
   const canPostClose = useCanDo("journals.manual");

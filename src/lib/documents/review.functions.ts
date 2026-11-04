@@ -40,10 +40,7 @@ export type ReviewQueueItem = {
   uploaded_at: string;
 };
 
-type ReviewRow = Omit<
-  ReviewQueueItem,
-  "file_name" | "content_type" | "size_bytes" | "uploaded_at"
->;
+type ReviewRow = Omit<ReviewQueueItem, "file_name" | "content_type" | "size_bytes" | "uploaded_at">;
 
 export const listDocumentReviewQueue = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -68,20 +65,32 @@ export const listDocumentReviewQueue = createServerFn({ method: "GET" })
       )
       .eq("company_id" as never, data.companyId as never);
     if (data.status) query = query.eq("status" as never, data.status as never);
-    const { data: rows, error, count } = await query
+    const {
+      data: rows,
+      error,
+      count,
+    } = await query
       .order("updated_at" as never, { ascending: false } as never)
       .order("id" as never, { ascending: false } as never)
       .range(data.page * data.pageSize, (data.page + 1) * data.pageSize - 1);
     if (error) throwReviewError(error);
     const reviews = (rows ?? []) as unknown as ReviewRow[];
     if (reviews.length === 0)
-      return { rows: [] as ReviewQueueItem[], total: count ?? 0, page: data.page, pageSize: data.pageSize };
+      return {
+        rows: [] as ReviewQueueItem[],
+        total: count ?? 0,
+        page: data.page,
+        pageSize: data.pageSize,
+      };
     const attachments = await context.supabase
       .from("document_attachments" as never)
       .select("id, file_name, content_type, size_bytes, created_at" as never)
       .eq("company_id" as never, data.companyId as never)
       .eq("entity_type" as never, "company" as never)
-      .in("id" as never, reviews.map((row) => row.attachment_id) as never);
+      .in(
+        "id" as never,
+        reviews.map((row) => row.attachment_id) as never,
+      );
     if (attachments.error) throw new Error(attachments.error.message);
     const lookup = new Map(
       ((attachments.data ?? []) as unknown as Array<{

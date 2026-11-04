@@ -37,9 +37,7 @@ export function filterDeferralPage(
     return rows.filter(
       (row) =>
         row.status === "active" &&
-        row.deferral_entries.some(
-          (entry) => !entry.journal_id && entry.due_on <= today,
-        ),
+        row.deferral_entries.some((entry) => !entry.journal_id && entry.due_on <= today),
     );
   }
   return rows.filter((row) => row.status === filter);
@@ -52,18 +50,16 @@ export function deferralPageCounts(rows: readonly DeferralSchedule[], today: str
       (sum, row) =>
         sum +
         (row.status === "active"
-          ? row.deferral_entries.filter(
-              (entry) => !entry.journal_id && entry.due_on <= today,
-            ).length
+          ? row.deferral_entries.filter((entry) => !entry.journal_id && entry.due_on <= today)
+              .length
           : 0),
       0,
     ),
     reversedEntries: rows.reduce(
       (sum, row) =>
         sum +
-        row.deferral_entries.filter(
-          (entry) => Boolean(entry.journals?.reversed_by_journal_id),
-        ).length,
+        row.deferral_entries.filter((entry) => Boolean(entry.journals?.reversed_by_journal_id))
+          .length,
       0,
     ),
   };

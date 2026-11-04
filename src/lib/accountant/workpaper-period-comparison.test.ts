@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  compareWorkpaperPeriods,
-  type ComparedLedgerAccount,
-} from "./workpaper-period-comparison";
+import { compareWorkpaperPeriods, type ComparedLedgerAccount } from "./workpaper-period-comparison";
 import type { AccountWorkpaper } from "./workpapers";
 
 const account = (id: string, debit: number, credit: number): ComparedLedgerAccount => ({
@@ -43,7 +40,9 @@ describe("cross-period accountant workpaper comparison", () => {
       [],
       [],
     );
-    expect(result.map((row) => [row.accountId, row.currentMinor, row.previousMinor, row.movementMinor])).toEqual([
+    expect(
+      result.map((row) => [row.accountId, row.currentMinor, row.previousMinor, row.movementMinor]),
+    ).toEqual([
       ["100", 8000, 5000, 3000],
       ["200", -12000, -9000, -3000],
     ]);

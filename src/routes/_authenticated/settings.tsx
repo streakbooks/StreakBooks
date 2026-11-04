@@ -13,6 +13,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Search, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany, companyContextKey } from "@/hooks/use-active-company";
+import { useCanDo } from "@/hooks/use-can";
 import { getCompanyDetails, updateCompany } from "@/lib/company.functions";
 import {
   createExchangeRate,
@@ -26,7 +27,6 @@ import {
   voidExchangeRate,
 } from "@/lib/settings/org-settings.functions";
 import {
-  canManageCompany,
   countries,
   currencies,
   months,
@@ -318,7 +318,8 @@ export function SettingsForCompany({
     setEnabledFx(e.enabledCurrencies);
   }, [extendedQuery.data]);
 
-  const canEdit = canManageCompany(detailsQuery.data?.role);
+  const canEdit = useCanDo("company.settings.edit");
+  const canLock = useCanDo("periods.lock");
   const isDemo = Boolean(detailsQuery.data?.is_demo);
   const maxDay = useMemo(() => maxFiscalYearEndDay(Number(fyMonth)), [fyMonth]);
   const baseCurrency = detailsQuery.data?.base_currency ?? "GBP";
@@ -676,7 +677,7 @@ export function SettingsForCompany({
                       <SettingsAccountingLocksPanel
                         companyId={companyId}
                         canEdit={canEdit}
-                        canLock={canEdit}
+                        canLock={canLock}
                       />
                     </div>
                   ) : null}

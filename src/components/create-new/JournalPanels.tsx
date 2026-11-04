@@ -89,8 +89,7 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
   const totals = review;
   const balanced = review.balanced;
   const reverseError = mode === "post" ? validateAutoReverseDate(date, autoReverseOn) : null;
-  const canSubmit =
-    review.canPost && !reverseError && (mode === "post" || name.trim().length > 0);
+  const canSubmit = review.canPost && !reverseError && (mode === "post" || name.trim().length > 0);
 
   async function handleCsvImport(file: File) {
     if (file.size > 256000) throw new Error("CSV file exceeds the 256 KB import limit.");
@@ -131,14 +130,8 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
       .map((line) => ({
         accountId: line.accountId,
         description: line.description || memo || name,
-        debitMinor: toSafeMinorNumber(
-          tryParseMinor(line.debit, currency) ?? 0n,
-          "Journal debit",
-        ),
-        creditMinor: toSafeMinorNumber(
-          tryParseMinor(line.credit, currency) ?? 0n,
-          "Journal credit",
-        ),
+        debitMinor: toSafeMinorNumber(tryParseMinor(line.debit, currency) ?? 0n, "Journal debit"),
+        creditMinor: toSafeMinorNumber(tryParseMinor(line.credit, currency) ?? 0n, "Journal credit"),
       }));
   }
 
@@ -444,10 +437,9 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
       </div>
       {review.invalidLines.length > 0 ? (
         <p role="alert" className="text-sm text-destructive">
-          Review line{review.invalidLines.length === 1 ? "" : "s"}{" "}
-          {review.invalidLines.join(", ")}: select an eligible account and enter one valid,
-          non-negative debit or credit within the supported amount limits. Invalid text is never
-          treated as zero.
+          Review line{review.invalidLines.length === 1 ? "" : "s"} {review.invalidLines.join(", ")}:
+          select an eligible account and enter one valid, non-negative debit or credit within the
+          supported amount limits. Invalid text is never treated as zero.
         </p>
       ) : null}
 

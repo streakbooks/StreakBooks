@@ -82,12 +82,8 @@ export function FirmOnboardingPanel({
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
   const updateM = useMutation({
-    mutationFn: (data: {
-      task_key: string;
-      version: number;
-      complete: boolean;
-      note: string;
-    }) => update({ data: { ...data, firmId, companyId: clientId } }),
+    mutationFn: (data: { task_key: string; version: number; complete: boolean; note: string }) =>
+      update({ data: { ...data, firmId, companyId: clientId } }),
     onSuccess: async () => {
       setNotes({});
       await qc.invalidateQueries({ queryKey });
@@ -106,8 +102,8 @@ export function FirmOnboardingPanel({
       <div>
         <h2 className="text-lg font-semibold">Client onboarding & offboarding</h2>
         <p className="text-sm text-muted-foreground">
-          Track opening records, scope, access and independent client setup work. Completion
-          does not automatically grant access or change accounting data.
+          Track opening records, scope, access and independent client setup work. Completion does
+          not automatically grant access or change accounting data.
         </p>
       </div>
       {available.length === 0 ? (
@@ -136,7 +132,9 @@ export function FirmOnboardingPanel({
             <>
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card p-4">
                 <div>
-                  <p className="font-semibold">{done} of {steps.length} checklist items completed</p>
+                  <p className="font-semibold">
+                    {done} of {steps.length} checklist items completed
+                  </p>
                   <p className="text-sm text-muted-foreground">
                     {steps.length === 0
                       ? "No checklist created for this client yet."
@@ -156,8 +154,8 @@ export function FirmOnboardingPanel({
               </div>
               {steps.length === 0 ? (
                 <div className="rounded-lg border border-dashed p-5 text-sm text-muted-foreground">
-                  The template contains {ONBOARDING_TEMPLATE.length} steps. A firm administrator
-                  can add them without overwriting previously completed work.
+                  The template contains {ONBOARDING_TEMPLATE.length} steps. A firm administrator can
+                  add them without overwriting previously completed work.
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -251,10 +249,7 @@ export function FirmTeamPanel({ firmId }: { firmId: string }) {
   if (teamQ.isPending) return <LoadingState />;
   if (teamQ.isError)
     return (
-      <ErrorState
-        title="Could not load firm team"
-        description={friendlyAuthError(teamQ.error)}
-      />
+      <ErrorState title="Could not load firm team" description={friendlyAuthError(teamQ.error)} />
     );
   return (
     <section className="space-y-4">

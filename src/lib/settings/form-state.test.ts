@@ -58,9 +58,7 @@ describe("Settings Centre draft validation", () => {
     expect(
       validateSettingsDraft("reports", { ...defaults, default_basis: "something_else" }).ok,
     ).toBe(false);
-    expect(validateSettingsDraft("reports", { ...defaults, default_basis: "cash" }).ok).toBe(
-      true,
-    );
+    expect(validateSettingsDraft("reports", { ...defaults, default_basis: "cash" }).ok).toBe(true);
   });
 
   it("does not create pretend configuration for categories without an editable schema", () => {

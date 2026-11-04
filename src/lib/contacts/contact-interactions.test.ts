@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   normalizeContactTimelineFilter,
+  normalizeContactFollowUpScope,
+  contactFollowUpDateRange,
   validateContactInteractionDraft,
 } from "./contact-interactions";
 
@@ -18,6 +20,7 @@ describe("Contact interaction input", () => {
       title: "Follow up with client",
       detail: "Discuss the missing bank statement",
       dueOn: "2026-12-04",
+      remindOn: null,
     });
   });
 
@@ -53,6 +56,53 @@ describe("Contact interaction input", () => {
     expect(() =>
       validateContactInteractionDraft({ kind: "note", title: "Call back", dueOn: "2026-12-04" }),
     ).toThrow("Only tasks");
+  });
+
+  it("validates reminder dates and task ownership requirements", () => {
+    expect(
+      validateContactInteractionDraft({
+        kind: "task",
+        title: "Call supplier",
+        dueOn: "2026-12-04",
+        remindOn: "2026-12-01",
+      }),
+    ).toMatchObject({ remindOn: "2026-12-01", dueOn: "2026-12-04" });
+    expect(() =>
+      validateContactInteractionDraft({
+        kind: "task",
+        title: "Call supplier",
+        remindOn: "2026-12-01",
+      }),
+    ).toThrow("on or before");
+    expect(() =>
+      validateContactInteractionDraft({
+        kind: "task",
+        title: "Call supplier",
+        dueOn: "2026-12-01",
+        remindOn: "2026-12-02",
+      }),
+    ).toThrow("on or before");
+    expect(() =>
+      validateContactInteractionDraft({
+        kind: "note",
+        title: "Call supplier",
+        remindOn: "2026-12-01",
+      }),
+    ).toThrow("Only tasks");
+  });
+
+  it("uses the organisation's local calendar day when computing upcoming reminders", () => {
+    const now = new Date("2026-11-04T23:30:00Z");
+    expect(contactFollowUpDateRange(now, "Asia/Kolkata")).toEqual({
+      today: "2026-11-05",
+      until: "2026-11-12",
+    });
+    expect(contactFollowUpDateRange(now, "America/Los_Angeles")).toEqual({
+      today: "2026-11-04",
+      until: "2026-11-11",
+    });
+    expect(normalizeContactFollowUpScope("team")).toBe("team");
+    expect(normalizeContactFollowUpScope("unknown")).toBe("mine");
   });
 
   it("restricts timeline filters to allowlisted modes", () => {

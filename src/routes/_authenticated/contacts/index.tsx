@@ -56,6 +56,7 @@ import {
 } from "@/lib/contacts/contact-directory-columns";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { PageHeader, ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
+import { ContactFollowUpsPanel } from "@/components/contacts/ContactFollowUpsPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -773,6 +774,8 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
           />
         </div>
       ) : null}
+
+      <ContactFollowUpsPanel companyId={companyId} />
 
       <Tabs value={view}>
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">

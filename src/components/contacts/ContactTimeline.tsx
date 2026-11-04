@@ -6,6 +6,8 @@ import {
   createContactInteraction,
   listContactInteractions,
   setContactTaskCompleted,
+  listContactTaskAssignees,
+  updateContactTaskReminder,
 } from "@/lib/contacts/contact-interactions.functions";
 import type {
   ContactInteractionKind,
@@ -32,6 +34,9 @@ type ContactInteractionRow = {
   title: string;
   detail: string;
   due_on: string | null;
+  remind_on: string | null;
+  assigned_to: string | null;
+  is_mine: boolean;
   completed_at: string | null;
   occurred_at: string;
   created_at: string;
@@ -45,6 +50,74 @@ const KIND_LABELS: Record<ContactInteractionKind, string> = {
   meeting: "Meeting",
   task: "Follow-up task",
 };
+
+type Assignee = { id: string; name: string };
+
+function ContactTaskAssignment({
+  task,
+  assignees,
+  disabled,
+  onSave,
+}: {
+  task: ContactInteractionRow;
+  assignees: Assignee[];
+  disabled: boolean;
+  onSave: (id: string, assignedTo: string | null, remindOn: string | null) => void;
+}) {
+  const [owner, setOwner] = useState(task.assigned_to ?? "unassigned");
+  const [reminder, setReminder] = useState(task.remind_on ?? "");
+  const validReminder = !reminder || (Boolean(task.due_on) && reminder <= task.due_on!);
+  const changed =
+    owner !== (task.assigned_to ?? "unassigned") || reminder !== (task.remind_on ?? "");
+
+  return (
+    <div className="grid gap-2 rounded-md border bg-muted/30 p-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+      <div className="space-y-1">
+        <Label>Responsible team member</Label>
+        <Select value={owner} onValueChange={setOwner}>
+          <SelectTrigger aria-label={`Assign task ${task.title}`}>
+            <SelectValue placeholder="Choose assignee" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="unassigned">Unassigned</SelectItem>
+            {assignees.map((member) => (
+              <SelectItem key={member.id} value={member.id}>
+                {member.name}
+              </SelectItem>
+            ))}
+            {task.assigned_to && !assignees.some((member) => member.id === task.assigned_to) ? (
+              <SelectItem value={task.assigned_to}>Former or inactive member</SelectItem>
+            ) : null}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1">
+        <Label htmlFor={`contact-task-remind-${task.id}`}>Reminder date</Label>
+        <Input
+          id={`contact-task-remind-${task.id}`}
+          type="date"
+          value={reminder}
+          max={task.due_on ?? undefined}
+          disabled={!task.due_on || disabled}
+          onChange={(event) => setReminder(event.target.value)}
+        />
+      </div>
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={disabled || !validReminder || !changed}
+        onClick={() => onSave(task.id, owner === "unassigned" ? null : owner, reminder || null)}
+      >
+        Save changes
+      </Button>
+      {!validReminder ? (
+        <p role="alert" className="text-xs text-destructive sm:col-span-3">
+          Reminder must be on or before the due date.
+        </p>
+      ) : null}
+    </div>
+  );
+}
 
 function displayDate(value: string | null): string {
   if (!value) return "No due date";
@@ -72,6 +145,8 @@ export function ContactTimeline({
   const fetchActivity = useServerFn(listContactInteractions);
   const createActivity = useServerFn(createContactInteraction);
   const setTask = useServerFn(setContactTaskCompleted);
+  const fetchAssignees = useServerFn(listContactTaskAssignees);
+  const updateTask = useServerFn(updateContactTaskReminder);
 
   const [page, setPage] = useState(0);
   const [filter, setFilter] = useState<ContactTimelineFilter>("all");
@@ -79,6 +154,13 @@ export function ContactTimeline({
   const [title, setTitle] = useState("");
   const [detail, setDetail] = useState("");
   const [dueOn, setDueOn] = useState("");
+  const [remindOn, setRemindOn] = useState("");
+  const [assignedTo, setAssignedTo] = useState("me");
+
+  const assigneesQ = useQuery({
+    queryKey: ["contact-task-assignees", companyId],
+    queryFn: () => fetchAssignees({ data: { companyId } }),
+  });
 
   const query = useQuery({
     queryKey: ["contact-interactions", companyId, contactId, filter, page],
@@ -95,14 +177,21 @@ export function ContactTimeline({
           title,
           detail,
           dueOn: kind === "task" && dueOn ? dueOn : null,
+          remindOn: kind === "task" && remindOn ? remindOn : null,
+          assignedTo: kind === "task" && assignedTo !== "me" ? assignedTo : null,
         },
       }),
     onSuccess: async () => {
       setTitle("");
       setDetail("");
       setDueOn("");
+      setRemindOn("");
+      setAssignedTo("me");
       setPage(0);
-      await qc.invalidateQueries({ queryKey: ["contact-interactions", companyId, contactId] });
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["contact-interactions", companyId, contactId] }),
+        qc.invalidateQueries({ queryKey: ["contact-followups", companyId] }),
+      ]);
       toast.success("Contact activity recorded");
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
@@ -112,11 +201,45 @@ export function ContactTimeline({
     mutationFn: ({ id, completed }: { id: string; completed: boolean }) =>
       setTask({ data: { companyId, contactId, activityId: id, completed } }),
     onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: ["contact-interactions", companyId, contactId] });
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["contact-interactions", companyId, contactId] }),
+        qc.invalidateQueries({ queryKey: ["contact-followups", companyId] }),
+      ]);
       toast.success("Follow-up task updated");
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
+
+  const updateM = useMutation({
+    mutationFn: ({
+      id,
+      assignedTo: owner,
+      remindOn: reminder,
+    }: {
+      id: string;
+      assignedTo: string | null;
+      remindOn: string | null;
+    }) =>
+      updateTask({
+        data: {
+          companyId,
+          contactId,
+          taskId: id,
+          assignedTo: owner,
+          remindOn: reminder,
+        },
+      }),
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["contact-interactions", companyId, contactId] }),
+        qc.invalidateQueries({ queryKey: ["contact-followups", companyId] }),
+      ]);
+      toast.success("Task owner and reminder saved");
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+
+  const assignees = (assigneesQ.data?.members ?? []) as Assignee[];
 
   const rows = (query.data?.rows ?? []) as ContactInteractionRow[];
   const total = query.data?.count ?? 0;
@@ -166,6 +289,44 @@ export function ContactTimeline({
               </div>
             ) : null}
           </div>
+          {kind === "task" ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label>Task owner</Label>
+                <Select value={assignedTo} onValueChange={setAssignedTo}>
+                  <SelectTrigger aria-label="Assign new follow-up task">
+                    <SelectValue placeholder="Assign to" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="me">Assign to me</SelectItem>
+                    {assignees
+                      .filter((member) => member.id !== assigneesQ.data?.selfId)
+                      .map((member) => (
+                        <SelectItem key={member.id} value={member.id}>
+                          {member.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="contact-timeline-reminder">In-app reminder date (optional)</Label>
+                <Input
+                  id="contact-timeline-reminder"
+                  type="date"
+                  value={remindOn}
+                  max={dueOn || undefined}
+                  disabled={!dueOn}
+                  onChange={(event) => setRemindOn(event.target.value)}
+                />
+              </div>
+              {assigneesQ.isError ? (
+                <p role="alert" className="text-xs text-destructive sm:col-span-2">
+                  Could not load team members. You can still assign this task to yourself.
+                </p>
+              ) : null}
+            </div>
+          ) : null}
           <div className="space-y-1">
             <Label htmlFor="contact-timeline-title">Subject</Label>
             <Input
@@ -187,13 +348,21 @@ export function ContactTimeline({
               onChange={(event) => setDetail(event.target.value)}
             />
           </div>
-          <Button disabled={!title.trim() || createM.isPending} onClick={() => createM.mutate()}>
+          <Button
+            disabled={
+              !title.trim() ||
+              createM.isPending ||
+              (kind === "task" && Boolean(remindOn) && (!dueOn || remindOn > dueOn))
+            }
+            onClick={() => createM.mutate()}
+          >
             {createM.isPending ? "Saving…" : "Add to timeline"}
           </Button>
         </div>
       ) : (
         <p className="text-sm text-muted-foreground">
-          Contact activity is read-only for your role.
+          Only contact managers can add activities. Assigned team members can complete their own
+          tasks.
         </p>
       )}
 
@@ -252,26 +421,45 @@ export function ContactTimeline({
                 </p>
               ) : null}
               {activity.kind === "task" ? (
-                <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs text-muted-foreground">
+                      {activity.completed_at
+                        ? `Completed ${displayDate(activity.completed_at)}`
+                        : `Due: ${displayDate(activity.due_on)}`}
+                    </p>
+                    {canManage || activity.is_mine ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={taskM.isPending || updateM.isPending}
+                        onClick={() =>
+                          taskM.mutate({
+                            id: activity.id,
+                            completed: !activity.completed_at,
+                          })
+                        }
+                      >
+                        {activity.completed_at ? "Reopen task" : "Mark complete"}
+                      </Button>
+                    ) : null}
+                  </div>
                   <p className="text-xs text-muted-foreground">
-                    {activity.completed_at
-                      ? `Completed ${displayDate(activity.completed_at)}`
-                      : `Due: ${displayDate(activity.due_on)}`}
+                    Owner:{" "}
+                    {assignees.find((member) => member.id === activity.assigned_to)?.name ??
+                      (activity.assigned_to ? "Former or inactive member" : "Unassigned")}
+                    {activity.remind_on ? ` · Reminder ${activity.remind_on}` : ""}
                   </p>
                   {canManage ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={taskM.isPending}
-                      onClick={() =>
-                        taskM.mutate({
-                          id: activity.id,
-                          completed: !activity.completed_at,
-                        })
+                    <ContactTaskAssignment
+                      key={`${activity.id}:${activity.assigned_to ?? ""}:${activity.remind_on ?? ""}`}
+                      task={activity}
+                      assignees={assignees}
+                      disabled={updateM.isPending || taskM.isPending}
+                      onSave={(id, owner, reminder) =>
+                        updateM.mutate({ id, assignedTo: owner, remindOn: reminder })
                       }
-                    >
-                      {activity.completed_at ? "Reopen task" : "Mark complete"}
-                    </Button>
+                    />
                   ) : null}
                 </div>
               ) : null}

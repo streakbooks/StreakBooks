@@ -449,7 +449,7 @@ export function FxPanel({ companyId, currency }: { companyId: string; currency: 
                                   `Cancel the scheduled auto-reversal for journal #${r.journal_number ?? "unknown"} on ${r.reverse_on}? The original journal remains posted.`,
                                 )
                               ) cancelM.mutate(r.journal_id);
-                            }
+                            }}
                           >
                             Cancel
                           </Button>

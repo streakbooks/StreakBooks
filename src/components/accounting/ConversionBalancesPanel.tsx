@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Plus, Trash2 } from "lucide-react";
@@ -17,6 +17,7 @@ import {
   type TbEntry,
 } from "@/lib/accounting/conversion-balances";
 import { toMinorUnits } from "@/lib/accounting/money";
+import { conversionReviewCsv } from "@/lib/accounting/conversion-review";
 import { ContactLookup } from "@/components/lookup";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { useFormat } from "@/hooks/use-format";
@@ -74,6 +75,7 @@ export function ConversionBalancesPanel({
   const [filter, setFilter] = useState("");
   const [reason, setReason] = useState("");
   const [nextKey, setNextKey] = useState(1);
+  const [reviewedFingerprint, setReviewedFingerprint] = useState("");
 
   const overview = useQuery({
     queryKey: ["conversion-overview", companyId],
@@ -125,13 +127,57 @@ export function ConversionBalancesPanel({
   const validation = useMemo(() => validateConversion(input), [input]);
   const s = validation.summary;
   const nothingEntered = s.tbLineCount + s.invoiceCount + s.billCount === 0;
+  // Review approval is valid only for the exact draft approved by the user.
+  const reviewFingerprint = JSON.stringify([
+    companyId, conversionDate, tbInput, invoices, bills, acceptDifference, note,
+  ]);
+  const reviewMatches = Boolean(reviewedFingerprint) && reviewedFingerprint === reviewFingerprint;
+  const hasUnsavedDraft =
+    Boolean(conversionDate || note.trim()) ||
+    Object.values(tbInput).some((line) => Boolean(line.debit.trim() || line.credit.trim())) ||
+    invoices.length > 0 ||
+    bills.length > 0;
+
+  useEffect(() => {
+    if (!hasUnsavedDraft) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [hasUnsavedDraft]);
+
+  const exportReview = () => {
+    if (!validation.canPost) return;
+    try {
+      const csv = conversionReviewCsv(input, setup.data?.accounts ?? [], [
+        ...(setup.data?.customers ?? []),
+        ...(setup.data?.suppliers ?? []),
+      ]);
+      const url = URL.createObjectURL(
+        new Blob(["\\uFEFF", csv], { type: "text/csv;charset=utf-8" }),
+      );
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `linkbooks-opening-balances-review-${conversionDate}.csv`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      toast.error(friendlyAuthError(error));
+    }
+  };
 
   const post = useMutation({
-    mutationFn: () =>
-      doPost({
+    mutationFn: () => {
+      if (!validation.canPost || !reviewMatches) {
+        throw new Error("Review and confirm the current opening balances before posting.");
+      }
+      return doPost({
         data: { payload: buildConversionPayload(companyId, input, note.trim() || undefined) },
-      }),
+      });
+    },
     onSuccess: async () => {
+      setReviewedFingerprint("");
       toast.success("Conversion balances posted");
       await qc.invalidateQueries({ queryKey: ["conversion-overview", companyId] });
       await qc.invalidateQueries({ queryKey: ["journals", companyId] });
@@ -214,7 +260,12 @@ export function ConversionBalancesPanel({
               <Button
                 variant="destructive"
                 disabled={!reason.trim() || reverse.isPending}
-                onClick={() => reverse.mutate()}
+                onClick={() => {
+                  const accepted = window.confirm(
+                    `Reverse opening balances dated ${b.opening_date}? This creates reversing journals and attempts to cancel ${b.invoice_count} opening invoices and ${b.bill_count} opening bills. Reason: ${reason.trim()}`,
+                  );
+                  if (accepted) reverse.mutate();
+                }}
               >
                 {reverse.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
                 Reverse
@@ -352,6 +403,12 @@ export function ConversionBalancesPanel({
           before the conversion date are then blocked.
         </AlertDescription>
       </Alert>
+      {hasUnsavedDraft ? (
+        <p role="status" className="text-xs text-muted-foreground">
+          Unsaved draft. Entries are not stored until they are posted.
+          Export the posting review CSV before leaving this tab.
+        </p>
+      ) : null}
 
       <Card>
         <CardHeader>

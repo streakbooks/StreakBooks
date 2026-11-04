@@ -161,8 +161,8 @@ export function LedgerHealthPanel({ companyId }: { companyId: string }) {
             </p>
             <div className="flex flex-wrap items-center gap-3">
               <span className="text-xs text-muted-foreground">
-                {counts?.fail ?? 0} failed · {counts?.warn ?? 0} warnings ·{" "}
-                {counts?.pass ?? 0} passed · {counts?.na ?? 0} not applicable
+                {counts?.fail ?? 0} failed · {counts?.warn ?? 0} warnings · {counts?.pass ?? 0}{" "}
+                passed · {counts?.na ?? 0} not applicable
               </span>
               <span className="text-xs text-muted-foreground">
                 Snapshot only — rerun after correcting financial records.
@@ -197,8 +197,8 @@ export function LedgerHealthPanel({ companyId }: { companyId: string }) {
               </div>
             </div>
             <p className="text-xs text-muted-foreground" role="status">
-              Displaying {visibleChecks.length} of {report.checks.length} checks.
-              Exports include the full returned snapshot, not just filtered checks.
+              Displaying {visibleChecks.length} of {report.checks.length} checks. Exports include
+              the full returned snapshot, not just filtered checks.
             </p>
             {visibleChecks.length === 0 ? (
               <p className="rounded-md border p-4 text-sm text-muted-foreground">
@@ -212,7 +212,10 @@ export function LedgerHealthPanel({ companyId }: { companyId: string }) {
                   return (
                     <li key={c.key} className="space-y-1 p-3">
                       <div className="flex items-start gap-2">
-                        <Icon className={cn("mt-0.5 h-4 w-4 shrink-0", TONE[c.status])} aria-hidden />
+                        <Icon
+                          className={cn("mt-0.5 h-4 w-4 shrink-0", TONE[c.status])}
+                          aria-hidden
+                        />
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="text-sm font-medium">{c.label}</span>

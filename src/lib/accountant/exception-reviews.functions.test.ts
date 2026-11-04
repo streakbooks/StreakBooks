@@ -36,17 +36,36 @@ const calls: Array<[string, ...unknown[]]> = [];
 
 function db() {
   const builder = {
-    select() { return this; },
-    eq(key: string, value: unknown) { calls.push(["eq", key, value]); return this; },
-    in(key: string, value: unknown) { calls.push(["in", key, value]); return this; },
-    order() { return this; },
-    limit(value: number) { calls.push(["limit", value]); return Promise.resolve({ data: [], error: null }); },
+    select() {
+      return this;
+    },
+    eq(key: string, value: unknown) {
+      calls.push(["eq", key, value]);
+      return this;
+    },
+    in(key: string, value: unknown) {
+      calls.push(["in", key, value]);
+      return this;
+    },
+    order() {
+      return this;
+    },
+    limit(value: number) {
+      calls.push(["limit", value]);
+      return Promise.resolve({ data: [], error: null });
+    },
   };
   return {
-    from(table: string) { calls.push(["from", table]); return builder; },
+    from(table: string) {
+      calls.push(["from", table]);
+      return builder;
+    },
     rpc(name: string, args: unknown) {
       calls.push(["rpc", name, args]);
-      return Promise.resolve({ data: { id: reviewId, version: 2, status: "investigating" }, error: null });
+      return Promise.resolve({
+        data: { id: reviewId, version: 2, status: "investigating" },
+        error: null,
+      });
     },
   };
 }
@@ -65,12 +84,14 @@ describe("accountant exception review server boundary", () => {
     const client = db();
     await list({ data: { companyId, journalIds: [journalId] }, context: { supabase: client } });
     expect(assertCompanyPermission).toHaveBeenCalledWith(client, companyId, "accounting.view");
-    expect(calls).toEqual(expect.arrayContaining([
-      ["from", "accountant_journal_exception_reviews"],
-      ["eq", "company_id", companyId],
-      ["in", "journal_id", [journalId]],
-      ["limit", 5000],
-    ]));
+    expect(calls).toEqual(
+      expect.arrayContaining([
+        ["from", "accountant_journal_exception_reviews"],
+        ["eq", "company_id", companyId],
+        ["in", "journal_id", [journalId]],
+        ["limit", 5000],
+      ]),
+    );
   });
 
   it("rejects unauthorized callers before any table read", async () => {
@@ -129,15 +150,21 @@ describe("accountant exception review server boundary", () => {
     });
     expect(record).toMatchObject({ id: reviewId, version: 2 });
     expect(assertCompanyPermission).toHaveBeenCalledWith(client, companyId, "accounting.post");
-    expect(calls).toEqual(expect.arrayContaining([
-      ["rpc", "save_accountant_journal_exception", expect.objectContaining({
-        _company_id: companyId,
-        _journal_id: journalId,
-        _finding_key: findingKey,
-        _action: "submit",
-        _expected_version: 1,
-      })],
-    ]));
+    expect(calls).toEqual(
+      expect.arrayContaining([
+        [
+          "rpc",
+          "save_accountant_journal_exception",
+          expect.objectContaining({
+            _company_id: companyId,
+            _journal_id: journalId,
+            _finding_key: findingKey,
+            _action: "submit",
+            _expected_version: 1,
+          }),
+        ],
+      ]),
+    );
     expect(calls.some((call) => call[0] === "from")).toBe(false);
   });
 
@@ -148,11 +175,13 @@ describe("accountant exception review server boundary", () => {
       context: { supabase: client },
     });
     expect(assertCompanyPermission).toHaveBeenCalledWith(client, companyId, "accounting.view");
-    expect(calls).toEqual(expect.arrayContaining([
-      ["from", "accountant_journal_exception_events"],
-      ["eq", "company_id", companyId],
-      ["eq", "review_id", reviewId],
-      ["limit", 100],
-    ]));
+    expect(calls).toEqual(
+      expect.arrayContaining([
+        ["from", "accountant_journal_exception_events"],
+        ["eq", "company_id", companyId],
+        ["eq", "review_id", reviewId],
+        ["limit", 100],
+      ]),
+    );
   });
 });

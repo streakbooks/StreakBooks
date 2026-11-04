@@ -4,13 +4,17 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { configuredInvitationOrigin, firmInvitePath } from "@/lib/firm/invite-link";
 
 const firmInput = z.object({ firmId: z.string().uuid() }).strict();
-const createInput = firmInput.extend({
-  email: z.email().max(254),
-  role: z.enum(["member", "admin"]),
-}).strict();
-const tokenInput = z.object({
-  token: z.string().regex(/^[0-9a-f]{64}$/),
-}).strict();
+const createInput = firmInput
+  .extend({
+    email: z.email().max(254),
+    role: z.enum(["member", "admin"]),
+  })
+  .strict();
+const tokenInput = z
+  .object({
+    token: z.string().regex(/^[0-9a-f]{64}$/),
+  })
+  .strict();
 const revokeInput = z.object({ inviteId: z.string().uuid() }).strict();
 
 export type FirmStaffInvitation = {
@@ -21,7 +25,12 @@ export type FirmStaffInvitation = {
   createdAt: string;
   expiresAt: string;
   acceptedAt: string | null;
-  deliveryStatus: "not_attempted" | "provider_accepted" | "failed" | "not_configured" | "domain_unverified";
+  deliveryStatus:
+    | "not_attempted"
+    | "provider_accepted"
+    | "failed"
+    | "not_configured"
+    | "domain_unverified";
 };
 
 export type FirmInvitationPreview = {
@@ -67,9 +76,8 @@ export const createFirmStaffInvitation = createServerFn({ method: "POST" })
     let deliveryStatus: FirmStaffInvitation["deliveryStatus"] = "not_configured";
     let messageId: string | null = null;
     if (origin) {
-      const { readEmailConfig, checkResendDomain, sendViaResend } = await import(
-        "@/lib/documents/email-provider.server"
-      );
+      const { readEmailConfig, checkResendDomain, sendViaResend } =
+        await import("@/lib/documents/email-provider.server");
       const config = readEmailConfig();
       if (config.configured) {
         const domain = await checkResendDomain(config);
@@ -107,7 +115,8 @@ export const createFirmStaffInvitation = createServerFn({ method: "POST" })
       "firm_invite_delivery" as never,
       { _id: invitation.id, _status: deliveryStatus, _provider_message_id: messageId } as never,
     );
-    if (recordError) throw new Error("Invite created but delivery audit failed: " + recordError.message);
+    if (recordError)
+      throw new Error("Invite created but delivery audit failed: " + recordError.message);
     return {
       id: invitation.id,
       email: invitation.email,

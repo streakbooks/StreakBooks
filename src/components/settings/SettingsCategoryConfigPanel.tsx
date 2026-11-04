@@ -20,6 +20,8 @@ import {
   type SettingsCategory,
 } from "@/lib/settings/registry";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { settingsFieldPresentation } from "@/lib/settings/field-presentation";
+import { CheckCircle2, CircleAlert, Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -201,6 +203,7 @@ export function SettingsCategoryConfigPanel({
   const hasEditor = Boolean(CATEGORY_SCHEMAS[category]);
   const draft = active?.draft ?? {};
   const disabled = !canEdit || mut.isPending || !active;
+  const saveError = mut.isError ? friendlyAuthError(mut.error) : null;
 
   return (
     <div className="space-y-4">
@@ -234,13 +237,13 @@ export function SettingsCategoryConfigPanel({
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Configuration</CardTitle>
+            <CardTitle className="text-base">Organisation preferences</CardTitle>
             <CardDescription>
-              Changes are saved to your organisation with version checks to prevent overwriting
-              another user's updates.
+              Set the preferences for this category. Changes affect only your organisation and are
+              saved when you choose Save changes.
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid max-w-xl gap-4">
+          <CardContent className="max-w-4xl space-y-5">
             {q.isPending ? (
               <div className="space-y-3" aria-label="Loading settings">
                 <Skeleton className="h-12 w-full" />
@@ -273,8 +276,10 @@ export function SettingsCategoryConfigPanel({
                   </Alert>
                 ) : null}
 
-                {Object.entries(draft).map(([key, value]) => {
+                <div className="grid gap-3 lg:grid-cols-2">
+                  {Object.entries(draft).map(([key, value]) => {
                   const id = "settings-" + category + "-" + key;
+                  const field = settingsFieldPresentation(category, key);
                   const options = ENUM_OPTIONS[category + "." + key];
                   const error = fieldErrors[key];
                   const isNumeric =
@@ -282,11 +287,22 @@ export function SettingsCategoryConfigPanel({
 
                   if (typeof value === "boolean") {
                     return (
-                      <div key={key} className="flex items-center justify-between gap-3">
-                        <Label htmlFor={id}>{displayLabel(key)}</Label>
+                      <div
+                        key={key}
+                        className="flex items-start justify-between gap-4 rounded-lg border bg-card p-4"
+                      >
+                        <div className="min-w-0 space-y-1.5">
+                          <Label htmlFor={id} className="text-sm font-medium">
+                            {field.label}
+                          </Label>
+                          <p id={id + "-description"} className="text-xs leading-relaxed text-muted-foreground">
+                            {field.description}
+                          </p>
+                        </div>
                         <Switch
                           id={id}
                           checked={value}
+                          aria-describedby={id + "-description"}
                           disabled={disabled}
                           onCheckedChange={(checked) => updateField(key, checked)}
                         />
@@ -295,14 +311,21 @@ export function SettingsCategoryConfigPanel({
                   }
                   if (options && typeof value === "string") {
                     return (
-                      <div key={key} className="space-y-1.5">
-                        <Label htmlFor={id}>{displayLabel(key)}</Label>
+                      <div key={key} className="space-y-2 rounded-lg border p-4">
+                        <Label htmlFor={id}>{field.label}</Label>
+                        <p id={id + "-description"} className="text-xs text-muted-foreground">
+                          {field.description}
+                        </p>
                         <Select
                           value={value}
                           disabled={disabled}
                           onValueChange={(selected) => updateField(key, selected)}
                         >
-                          <SelectTrigger id={id} aria-invalid={Boolean(error)}>
+                          <SelectTrigger
+                            id={id}
+                            aria-invalid={Boolean(error)}
+                            aria-describedby={`${id}-description${error ? ` ${id}-error` : ""}`}
+                          >
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -313,19 +336,27 @@ export function SettingsCategoryConfigPanel({
                             ))}
                           </SelectContent>
                         </Select>
-                        {error ? <p className="text-xs text-destructive">{error}</p> : null}
+                        {error ? (
+                          <p id={id + "-error"} className="text-xs text-destructive">
+                            {error}
+                          </p>
+                        ) : null}
                       </div>
                     );
                   }
                   if (Array.isArray(value)) {
                     return (
-                      <div key={key} className="space-y-1.5">
-                        <Label htmlFor={id}>{displayLabel(key)}</Label>
+                      <div key={key} className="space-y-2 rounded-lg border p-4">
+                        <Label htmlFor={id}>{field.label}</Label>
+                        <p id={id + "-description"} className="text-xs text-muted-foreground">
+                          {field.description}
+                        </p>
                         <Input
                           id={id}
                           value={value.join(", ")}
                           disabled={disabled}
                           aria-invalid={Boolean(error)}
+                          aria-describedby={`${id}-description${error ? ` ${id}-error` : ""}`}
                           onChange={(event) => {
                             const numbers =
                               Array.isArray(defaults[key]) &&
@@ -344,10 +375,11 @@ export function SettingsCategoryConfigPanel({
                             updateField(key, parts);
                           }}
                         />
-                        <p className="text-xs text-muted-foreground">
-                          Enter comma-separated values.
-                        </p>
-                        {error ? <p className="text-xs text-destructive">{error}</p> : null}
+                        {error ? (
+                          <p id={id + "-error"} className="text-xs text-destructive">
+                            {error}
+                          </p>
+                        ) : null}
                       </div>
                     );
                   }
@@ -357,15 +389,18 @@ export function SettingsCategoryConfigPanel({
                     (value === null && isNumeric)
                   ) {
                     return (
-                      <div key={key} className="space-y-1.5">
-                        <Label htmlFor={id}>{displayLabel(key)}</Label>
+                      <div key={key} className="space-y-2 rounded-lg border p-4">
+                        <Label htmlFor={id}>{field.label}</Label>
+                        <p id={id + "-description"} className="text-xs text-muted-foreground">
+                          {field.description}
+                        </p>
                         <Input
                           id={id}
                           value={value === null ? "" : String(value)}
                           disabled={disabled}
                           inputMode={isNumeric ? "decimal" : undefined}
                           aria-invalid={Boolean(error)}
-                          aria-describedby={error ? id + "-error" : undefined}
+                          aria-describedby={`${id}-description${error ? ` ${id}-error` : ""}`}
                           onChange={(event) =>
                             updateField(
                               key,
@@ -384,24 +419,60 @@ export function SettingsCategoryConfigPanel({
                     );
                   }
                   return null;
-                })}
+                  })}
+                </div>
 
                 {fieldErrors["_form"] ? (
                   <p className="text-sm text-destructive">{fieldErrors["_form"]}</p>
                 ) : null}
-                <div className="flex flex-wrap items-center gap-2 border-t pt-4">
-                  <Button disabled={disabled || !dirty || serverChanged} onClick={saveDraft}>
+                {saveError ? (
+                  <Alert variant="destructive">
+                    <AlertTitle>Could not save settings</AlertTitle>
+                    <AlertDescription>{saveError}</AlertDescription>
+                  </Alert>
+                ) : null}
+                <div className="sticky bottom-0 z-10 -mx-1 flex flex-wrap items-center gap-2 rounded-lg border bg-card/95 p-3 shadow-sm backdrop-blur-sm sm:p-4">
+                  <Button
+                    type="button"
+                    disabled={disabled || !dirty || serverChanged}
+                    onClick={saveDraft}
+                  >
+                    {mut.isPending ? (
+                      <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
+                    ) : null}
                     {mut.isPending ? "Saving…" : "Save changes"}
                   </Button>
-                  <Button variant="outline" disabled={mut.isPending || !dirty} onClick={resetDraft}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={mut.isPending || !dirty}
+                    onClick={resetDraft}
+                  >
                     Discard changes
                   </Button>
-                  <span aria-live="polite" className="text-xs text-muted-foreground">
-                    {!canEdit
-                      ? "Read-only: you cannot change these settings."
-                      : dirty
-                        ? "Unsaved changes"
-                        : "All changes saved"}
+                  <span
+                    role="status"
+                    aria-live="polite"
+                    className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"
+                  >
+                    {!canEdit ? (
+                      "Read-only settings"
+                    ) : serverChanged ? (
+                      <>
+                        <CircleAlert className="size-4 text-destructive" aria-hidden />
+                        Reload latest values before saving
+                      </>
+                    ) : dirty ? (
+                      <>
+                        <CircleAlert className="size-4" aria-hidden />
+                        Unsaved changes
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="size-4" aria-hidden />
+                        All changes saved
+                      </>
+                    )}
                   </span>
                 </div>
               </>

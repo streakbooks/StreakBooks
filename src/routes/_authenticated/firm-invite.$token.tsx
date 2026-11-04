@@ -41,8 +41,8 @@ function FirmInvitePage() {
       <CardHeader>
         <CardTitle>Firm staff invitation</CardTitle>
         <CardDescription>
-          Verify the invited email address to join a practice. No client bookkeeping
-          permissions are granted automatically.
+          Verify the invited email address to join a practice. No client bookkeeping permissions
+          are granted automatically.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -60,8 +60,8 @@ function FirmInvitePage() {
           <Alert>
             <AlertTitle>Sign in with the invited account</AlertTitle>
             <AlertDescription>
-              This account cannot accept the invitation. Sign out and use the verified email
-              address that received the invitation.
+              This account cannot accept the invitation. Sign out and use the verified email address
+              that received the invitation.
             </AlertDescription>
           </Alert>
         ) : null}

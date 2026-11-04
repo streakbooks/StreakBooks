@@ -103,8 +103,8 @@ export function WorkpaperReconcilingItemsPanel({
   const items = list.data ?? [];
   const openItems = items.filter((item) => item.state === "open");
   const openMinor = openItems.reduce((total, item) => total + BigInt(item.amount_minor), 0n);
-  const safeOpen = openMinor >= -BigInt(Number.MAX_SAFE_INTEGER) &&
-    openMinor <= BigInt(Number.MAX_SAFE_INTEGER);
+  const safeOpen =
+    openMinor >= -BigInt(Number.MAX_SAFE_INTEGER) && openMinor <= BigInt(Number.MAX_SAFE_INTEGER);
   const exportItems = () => {
     const csv = toCsv(
       [
@@ -135,10 +135,7 @@ export function WorkpaperReconcilingItemsPanel({
   };
 
   return (
-    <section
-      className="space-y-3 rounded-xl border p-4"
-      aria-label="Workpaper reconciling issues"
-    >
+    <section className="space-y-3 rounded-xl border p-4" aria-label="Workpaper reconciling issues">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h4 className="font-semibold">Reconciling issues and evidence follow-up</h4>
         <Button size="sm" variant="outline" disabled={!items.length} onClick={exportItems}>
@@ -147,8 +144,8 @@ export function WorkpaperReconcilingItemsPanel({
       </div>
       <p className="text-xs text-muted-foreground">
         Record identified balance differences and resolution evidence. Items do not alter the
-        posted ledger or automatically explain a GL movement. Unresolved items block workpaper
-        preparation at the database level.
+        posted ledger or automatically explain a GL movement. Unresolved items block workpaper preparation
+        at the database level.
       </p>
       {list.isPending ? (
         <p className="text-sm text-muted-foreground">Loading reconciling issues…</p>
@@ -235,7 +232,7 @@ export function WorkpaperReconcilingItemsPanel({
           <h5 className="text-sm font-semibold">
             {editing ? "Review selected issue" : "Add a reconciling issue"}
           </h5>
-          {(!editing || editing.state === "open") ? (
+          {!editing || editing.state === "open" ? (
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="space-y-1 text-sm">
                 Description
@@ -274,7 +271,7 @@ export function WorkpaperReconcilingItemsPanel({
             </label>
           ) : null}
           <div className="flex flex-wrap gap-2">
-            {(!editing || editing.state === "open") ? (
+            {!editing || editing.state === "open" ? (
               <Button
                 size="sm"
                 disabled={mutation.isPending || description.trim().length < 3 || !amount.trim()}
@@ -287,8 +284,11 @@ export function WorkpaperReconcilingItemsPanel({
               <Button
                 size="sm"
                 variant="outline"
-                disabled={mutation.isPending || reason.trim().length < 3 ||
-                  editing.evidence_reference.trim().length < 3}
+                disabled={
+                  mutation.isPending ||
+                  reason.trim().length < 3 ||
+                  editing.evidence_reference.trim().length < 3
+                }
                 onClick={() => mutation.mutate("resolve")}
               >
                 Resolve with evidence
@@ -305,7 +305,9 @@ export function WorkpaperReconcilingItemsPanel({
               </Button>
             ) : null}
             {editing ? (
-              <Button size="sm" variant="ghost" onClick={reset}>Cancel edit</Button>
+              <Button size="sm" variant="ghost" onClick={reset}>
+                Cancel edit
+              </Button>
             ) : null}
           </div>
         </div>

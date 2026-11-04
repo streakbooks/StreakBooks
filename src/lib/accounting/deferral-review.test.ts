@@ -45,8 +45,11 @@ describe("deferral review", () => {
     expect(canPostDeferralEntry(due, "active", "2026-11-04", "2026-11-04")).toBe(true);
     expect(canPostDeferralEntry(due, "active", "2026-11-04", "2026-10-30")).toBe(false);
     expect(canPostDeferralEntry(due, "active", "2026-11-04", "2026-11-05")).toBe(false);
+    expect(canPostDeferralEntry(due, "active", "2026-11-04", "2026-11-31")).toBe(false);
     expect(canPostDeferralEntry(due, "cancelled", "2026-11-04", "2026-11-04")).toBe(false);
-    expect(canPostDeferralEntry(example.deferral_entries[1]!, "active", "2026-12-01", "2026-12-01")).toBe(false);
+    expect(
+      canPostDeferralEntry(example.deferral_entries[1]!, "active", "2026-12-01", "2026-12-01"),
+    ).toBe(false);
   });
 
   it("filters only the fetched page and summarises due or reversed exceptions", () => {

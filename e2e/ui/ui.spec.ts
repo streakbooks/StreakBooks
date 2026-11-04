@@ -285,13 +285,11 @@ test("contact import retains upstream mapping, quoted preview and partial failur
   page,
 }) => {
   await page.goto("/?flow=contact-import");
-  await page
-    .getByLabel("Choose contact CSV")
-    .setInputFiles({
-      name: "contacts.csv",
-      mimeType: "text/csv",
-      buffer: Buffer.from('Customer,Mail\n"River, Co",river@example.test\nNorthfield,invalid'),
-    });
+  await page.getByLabel("Choose contact CSV").setInputFiles({
+    name: "contacts.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from('Customer,Mail\n"River, Co",river@example.test\nNorthfield,invalid'),
+  });
   await expect(page.getByRole("button", { name: "Confirm import" })).toBeDisabled();
   await page.getByLabel("Contact name (required)").selectOption("0");
   await page.getByLabel("Email", { exact: true }).selectOption("1");

@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyPermission } from "@/lib/assert-company-access";
+import { fetchAllPages } from "@/lib/accounting/fetch-all";
 import { isoDate } from "./practice-work";
 import type { AccountWorkpaper } from "./workpapers";
 
@@ -51,32 +52,38 @@ export const listWorkpaperLedger = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "accounting.view");
     const [accounts, balances] = await Promise.all([
-      context.supabase
-        .from("accounts")
-        .select("id,code,name,account_type,is_postable")
-        .eq("company_id", data.companyId)
-        .eq("is_postable", true)
-        .in("account_type", ["asset", "liability", "equity"])
-        .order("code")
-        .limit(5001),
-      context.supabase.rpc(
-        "ledger_balances" as never,
-        {
-          _company_id: data.companyId,
-          _from: null,
-          _to: data.asOf,
-          _exclude_year_end_close: false,
-        } as never,
+      fetchAllPages(
+        (from, to) =>
+          context.supabase
+            .from("accounts")
+            .select("id,code,name,account_type,is_postable")
+            .eq("company_id", data.companyId)
+            .eq("is_postable", true)
+            .in("account_type", ["asset", "liability", "equity"])
+            .order("id")
+            .range(from, to),
+        { maxRows: 5000 },
+      ),
+      fetchAllPages(
+        (from, to) =>
+          context.supabase
+            .rpc(
+              "ledger_balances" as never,
+              {
+                _company_id: data.companyId,
+                _from: null,
+                _to: data.asOf,
+                _exclude_year_end_close: false,
+              } as never,
+            )
+            .order("account_id")
+            .range(from, to),
+        { maxRows: 5000 },
       ),
     ]);
-    if (accounts.error) throw new Error(accounts.error.message);
-    if (balances.error) throw new Error(balances.error.message);
-    if ((accounts.data ?? []).length > 5000) {
-      throw new Error("Workpaper portfolio exceeds the current account review limit.");
-    }
     const amounts = new Map(
       (
-        (balances.data ?? []) as Array<{
+        balances as Array<{
           account_id: string;
           debit_minor: number;
           credit_minor: number;
@@ -84,7 +91,7 @@ export const listWorkpaperLedger = createServerFn({ method: "GET" })
       ).map((row) => [row.account_id, row]),
     );
     return {
-      rows: (accounts.data ?? []).map((account) => {
+      rows: accounts.map((account) => {
         const balance = amounts.get(account.id);
         return {
           account_id: account.id,

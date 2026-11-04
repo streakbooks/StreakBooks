@@ -129,9 +129,9 @@ describe("period lock fresh-review preflight", () => {
 
   it("requires acknowledgement for an unchanged checklist with outstanding items", () => {
     const issues = buildCloseChecklist({ ...clean, draftDocuments: 1 });
-    expect(() =>
-      assertPeriodCloseReview({ ...request, reviewed: issues, latest: issues }),
-    ).toThrow("Acknowledge");
+    expect(() => assertPeriodCloseReview({ ...request, reviewed: issues, latest: issues })).toThrow(
+      "Acknowledge",
+    );
     expect(() =>
       assertPeriodCloseReview({
         ...request,

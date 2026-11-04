@@ -305,7 +305,7 @@ export function AccountingWorkspace({
         </TabsContent>
 
         <TabsContent value="fx" className="mt-4">
-          <FxPanel companyId={companyId} currency={currency} />
+          <FxPanel key={companyId} companyId={companyId} currency={currency} />
         </TabsContent>
       </Tabs>
     </>

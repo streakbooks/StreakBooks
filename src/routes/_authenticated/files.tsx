@@ -141,6 +141,10 @@ function FilesPage() {
     }, 300);
     return () => clearTimeout(t);
   }, [search]);
+  useEffect(() => {
+    if (folderId && view === "to-file") setView("all");
+  }, [folderId, view]);
+
 
   const canUpload = ATTACHMENT_ENTITIES.company.manage.some((p) => can(p));
 
@@ -686,7 +690,7 @@ function FilesPage() {
               Preview is not available for this format. Download to view it.
             </p>
           ) : previewUrl ? (
-            preview?.previewType === "image" ? (
+            (preview?.kind === "url" || preview?.kind === "inline") && preview.previewType === "image" ? (
               <img src={previewUrl} alt={`Preview of ${selected.file_name}`} className="mt-3 max-h-96 max-w-full rounded border object-contain" referrerPolicy="no-referrer" />
             ) : (
               <iframe

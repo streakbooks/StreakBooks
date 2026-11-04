@@ -814,7 +814,10 @@ export function SettingsForCompany({
                             id="org-name"
                             value={name}
                             disabled={!canEdit || saveMutation.isPending}
-                            onChange={(e) => setName(e.target.value)}
+                            onChange={(e) => {
+                              setName(e.target.value);
+                              setDetailsDirty(true);
+                            }}
                           />
                         </div>
                         <div className="space-y-2">
@@ -823,7 +826,10 @@ export function SettingsForCompany({
                             id="org-legal"
                             value={legalName}
                             disabled={!canEdit || saveMutation.isPending}
-                            onChange={(e) => setLegalName(e.target.value)}
+                            onChange={(e) => {
+                              setLegalName(e.target.value);
+                              setDetailsDirty(true);
+                            }}
                           />
                         </div>
                         <div className="space-y-2">
@@ -831,7 +837,10 @@ export function SettingsForCompany({
                           <RecordLookupSelect
                             value={countryCode}
                             disabled={!canEdit || saveMutation.isPending}
-                            onValueChange={setCountryCode}
+                            onValueChange={(value) => {
+                              setCountryCode(value);
+                              setDetailsDirty(true);
+                            }}
                           >
                             <SelectTrigger id="org-country">
                               <SelectValue />
@@ -850,7 +859,10 @@ export function SettingsForCompany({
                           <Select
                             value={taxRegime}
                             disabled={!canEdit || saveMutation.isPending}
-                            onValueChange={setTaxRegime}
+                            onValueChange={(value) => {
+                              setTaxRegime(value);
+                              setDetailsDirty(true);
+                            }}
                           >
                             {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
 
@@ -872,7 +884,10 @@ export function SettingsForCompany({
                             id="tax-reg"
                             value={regNumber}
                             disabled={!canEdit || saveMutation.isPending}
-                            onChange={(e) => setRegNumber(e.target.value)}
+                            onChange={(e) => {
+                              setRegNumber(e.target.value);
+                              setDetailsDirty(true);
+                            }}
                           />
                         </div>
                         <div className="flex items-center justify-between gap-4 sm:col-span-2">
@@ -880,7 +895,10 @@ export function SettingsForCompany({
                           <Switch
                             checked={pricesIncludeTax}
                             disabled={!canEdit || saveMutation.isPending}
-                            onCheckedChange={setPricesIncludeTax}
+                            onCheckedChange={(checked) => {
+                              setPricesIncludeTax(checked);
+                              setDetailsDirty(true);
+                            }}
                           />
                         </div>
                         <div className="sm:col-span-2">
@@ -914,7 +932,10 @@ export function SettingsForCompany({
                       <CardContent className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-2">
                           <Label>Locale</Label>
-                          <Select value={locale} disabled={!canEdit} onValueChange={setLocale}>
+                          <Select value={locale} disabled={!canEdit} onValueChange={(value) => {
+                              setLocale(value);
+                              setLocalizationDirty(true);
+                            }}>
                             {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
 
                             <SelectTrigger>
@@ -934,7 +955,10 @@ export function SettingsForCompany({
                           <Select
                             value={dateFormat}
                             disabled={!canEdit}
-                            onValueChange={setDateFormat}
+                            onValueChange={(value) => {
+                              setDateFormat(value);
+                              setLocalizationDirty(true);
+                            }}
                           >
                             {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
 
@@ -955,7 +979,10 @@ export function SettingsForCompany({
                           <Input
                             value={themeColor}
                             disabled={!canEdit}
-                            onChange={(e) => setThemeColor(e.target.value)}
+                            onChange={(e) => {
+                              setThemeColor(e.target.value);
+                              setLocalizationDirty(true);
+                            }}
                           />
                         </div>
                         <div className="space-y-2 sm:col-span-2">
@@ -963,7 +990,10 @@ export function SettingsForCompany({
                           <Input
                             value={invoiceFooter}
                             disabled={!canEdit}
-                            onChange={(e) => setInvoiceFooter(e.target.value)}
+                            onChange={(e) => {
+                              setInvoiceFooter(e.target.value);
+                              setLocalizationDirty(true);
+                            }}
                           />
                         </div>
                         {canEdit ? (
@@ -994,7 +1024,10 @@ export function SettingsForCompany({
                           <RecordLookupSelect
                             value={currency}
                             disabled={!canEdit || saveMutation.isPending}
-                            onValueChange={setCurrency}
+                            onValueChange={(value) => {
+                              setCurrency(value);
+                              setDetailsDirty(true);
+                            }}
                           >
                             <SelectTrigger>
                               <SelectValue />
@@ -1013,7 +1046,10 @@ export function SettingsForCompany({
                           <RecordLookupSelect
                             value={timezone}
                             disabled={!canEdit || saveMutation.isPending}
-                            onValueChange={setTimezone}
+                            onValueChange={(value) => {
+                              setTimezone(value);
+                              setDetailsDirty(true);
+                            }}
                           >
                             <SelectTrigger>
                               <SelectValue />
@@ -1034,6 +1070,7 @@ export function SettingsForCompany({
                             disabled={!canEdit || saveMutation.isPending}
                             onValueChange={(m) => {
                               setFyMonth(m);
+                              setDetailsDirty(true);
                               const max = maxFiscalYearEndDay(Number(m));
                               if (Number(fyDay) > max) setFyDay(String(max));
                             }}
@@ -1061,7 +1098,10 @@ export function SettingsForCompany({
                             max={maxDay}
                             value={fyDay}
                             disabled={!canEdit || saveMutation.isPending}
-                            onChange={(e) => setFyDay(e.target.value)}
+                            onChange={(e) => {
+                              setFyDay(e.target.value);
+                              setDetailsDirty(true);
+                            }}
                           />
                         </div>
                         <div className="sm:col-span-2 space-y-2 text-sm text-muted-foreground">
@@ -1125,7 +1165,10 @@ export function SettingsForCompany({
                           <Input
                             value={tradingName}
                             disabled={!canEdit}
-                            onChange={(e) => setTradingName(e.target.value)}
+                            onChange={(e) => {
+                              setTradingName(e.target.value);
+                              setBrandingDirty(true);
+                            }}
                           />
                         </div>
                         <div className="space-y-2">
@@ -1133,7 +1176,10 @@ export function SettingsForCompany({
                           <Input
                             value={letterhead}
                             disabled={!canEdit}
-                            onChange={(e) => setLetterhead(e.target.value)}
+                            onChange={(e) => {
+                              setLetterhead(e.target.value);
+                              setBrandingDirty(true);
+                            }}
                           />
                         </div>
                         <div className="space-y-2">
@@ -1141,7 +1187,10 @@ export function SettingsForCompany({
                           <Input
                             value={invoiceEmail}
                             disabled={!canEdit}
-                            onChange={(e) => setInvoiceEmail(e.target.value)}
+                            onChange={(e) => {
+                              setInvoiceEmail(e.target.value);
+                              setBrandingDirty(true);
+                            }}
                           />
                         </div>
                         <div className="space-y-2">
@@ -1149,7 +1198,10 @@ export function SettingsForCompany({
                           <Input
                             value={invoicePhone}
                             disabled={!canEdit}
-                            onChange={(e) => setInvoicePhone(e.target.value)}
+                            onChange={(e) => {
+                              setInvoicePhone(e.target.value);
+                              setBrandingDirty(true);
+                            }}
                           />
                         </div>
                         <div className="space-y-2 sm:col-span-2">
@@ -1157,7 +1209,10 @@ export function SettingsForCompany({
                           <Input
                             value={logoUrl}
                             disabled={!canEdit}
-                            onChange={(e) => setLogoUrl(e.target.value)}
+                            onChange={(e) => {
+                              setLogoUrl(e.target.value);
+                              setBrandingDirty(true);
+                            }}
                             placeholder="https://… (no file upload integration yet)"
                           />
                         </div>
@@ -1257,6 +1312,7 @@ export function SettingsForCompany({
                                     setEnabledFx((prev) =>
                                       e.target.checked ? [...prev, c] : prev.filter((x) => x !== c),
                                     );
+                                    setCurrenciesDirty(true);
                                   }}
                                 />
                                 {c}

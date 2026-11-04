@@ -153,18 +153,38 @@ export function AdvancedAccountTransactionsView({ ctx }: { ctx: ReportCtx }) {
       allowExplorer={false}
       basis="Posted ledger only · Monetary columns are in the organisation's base currency · Running balances retain full-ledger order"
       extraControls={
-        <ReportAccountMultiSelect
-          accounts={accounts}
-          selected={accountId ? [accountId] : undefined}
-          onChange={(ids) =>
-            ctx.setSearch({
-              account: ids?.length === 1 ? ids[0] : undefined,
-              accountIds: ids && ids.length > 1 ? ids.join(",") : undefined,
-              page: undefined,
-            })
-          }
-          disabled={accountsQ.isPending}
-        />
+        <>
+          <div className="space-y-1">
+            <Label htmlFor="advanced-account-basis">Accounting method</Label>
+            <select
+              id="advanced-account-basis"
+              className={selectClass}
+              value="accrual"
+              onChange={(event) =>
+                ctx.setSearch({
+                  basis: event.target.value === "cash" ? "cash" : undefined,
+                  page: undefined,
+                  explorePage: undefined,
+                })
+              }
+            >
+              <option value="accrual">Accrual (posted ledger)</option>
+              <option value="cash">Cash (recognized settlements)</option>
+            </select>
+          </div>
+          <ReportAccountMultiSelect
+            accounts={accounts}
+            selected={accountId ? [accountId] : undefined}
+            onChange={(ids) =>
+              ctx.setSearch({
+                account: ids?.length === 1 ? ids[0] : undefined,
+                accountIds: ids && ids.length > 1 ? ids.join(",") : undefined,
+                page: undefined,
+              })
+            }
+            disabled={accountsQ.isPending}
+          />
+        </>
       }
       getCsv={() => {
         if (!data) return null;

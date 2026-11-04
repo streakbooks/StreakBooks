@@ -15,6 +15,7 @@ import {
   getTaxReport,
 } from "@/lib/reports/report.functions";
 import { getAgedReceivablesAsAt } from "@/lib/sales/ar-reports.functions";
+import { getCashGeneralLedgerAll } from "@/lib/reports/cash-general-ledger.functions";
 import { SOURCE_LABELS, sourceLabel } from "@/lib/reports/links";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -49,7 +50,7 @@ const selectCls = "flex h-10 rounded-md border border-input bg-background px-3 t
 export function AccountTransactionsView({ ctx }: { ctx: ReportCtx }) {
   // A single-account drill-down retains the full posted-line metadata explorer.
   // The catalogue entry defaults to a multi-account report instead of a required selector.
-  return ctx.search.account ? (
+  return ctx.search.account && ctx.search.basis !== "cash" ? (
     <AdvancedAccountTransactionsView ctx={ctx} />
   ) : (
     <GeneralLedgerAllView ctx={ctx} />
@@ -61,16 +62,19 @@ export function AccountTransactionsView({ ctx }: { ctx: ReportCtx }) {
 export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
   const fmt = useFormat();
   const fetchGl = useServerFn(getGeneralLedgerAll);
+  const fetchCashGl = useServerFn(getCashGeneralLedgerAll);
   const fetchAccounts = useServerFn(listAccounts);
-  const accountIds = ctx.search.accountIds;
+  const cashBasis = ctx.search.basis === "cash";
+  const accountIds = ctx.search.accountIds ?? (cashBasis ? ctx.search.account : undefined);
   const accountScope = ctx.search.accountScope ?? "balance";
   const accountGroup = ctx.search.accountGroup ?? "code";
   const accountsQ = useQuery({
     queryKey: ["report-account-options", ctx.companyId],
     queryFn: () => fetchAccounts({ data: { companyId: ctx.companyId } }),
   });
-  const q = useQuery({
+  const accrualQ = useQuery({
     queryKey: ["report-gl-all", ctx.companyId, ctx.from, ctx.to, accountIds, accountScope],
+    enabled: !cashBasis,
     queryFn: () =>
       fetchGl({
         data: {
@@ -82,6 +86,21 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
         },
       }),
   });
+  const cashQ = useQuery({
+    queryKey: ["report-cash-gl-all", ctx.companyId, ctx.from, ctx.to, accountIds, accountScope],
+    enabled: cashBasis,
+    queryFn: () =>
+      fetchCashGl({
+        data: {
+          companyId: ctx.companyId,
+          from: ctx.from,
+          to: ctx.to,
+          ...(accountIds ? { accountIds } : {}),
+          accountScope,
+        },
+      }),
+  });
+  const q = cashBasis ? cashQ : accrualQ;
   const d = q.data;
   // Reorder account groups only; never recalculate transaction running balances.
   const orderedAccounts = [...(d?.accounts ?? [])].sort((a, b) => {
@@ -98,9 +117,12 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
   });
   const selectAccounts = (ids: string[] | undefined) => {
     ctx.setSearch({
-      account: ctx.reportId === "general-ledger" && ids?.length === 1 ? ids[0] : undefined,
+      account:
+        !cashBasis && ctx.reportId === "general-ledger" && ids?.length === 1 ? ids[0] : undefined,
       accountIds:
-        ids && (ctx.reportId !== "general-ledger" || ids.length > 1) ? ids.join(",") : undefined,
+        ids && (cashBasis || ctx.reportId !== "general-ledger" || ids.length > 1)
+          ? ids.join(",")
+          : undefined,
       page: undefined,
       explorePage: undefined,
     });
@@ -110,9 +132,31 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
       title={ctx.reportId === "general-ledger" ? "Account Transactions" : "General Ledger"}
       ctx={ctx}
       mode="range"
-      basis="Posted ledger · Account-level balances preserve all posted movements in date order"
+      basis={
+        cashBasis
+          ? "Management cash-recognition basis · Recognised receipts and payments, not accrual posting dates. Cash reconciliation and supported recognition policies are required."
+          : "Posted accrual ledger · Account-level balances preserve all posted movements in date order"
+      }
       extraControls={
         <>
+          <div className="space-y-1">
+            <Label htmlFor="account-ledger-basis">Accounting method</Label>
+            <select
+              id="account-ledger-basis"
+              className={selectCls}
+              value={cashBasis ? "cash" : "accrual"}
+              onChange={(event) =>
+                ctx.setSearch({
+                  basis: event.target.value === "cash" ? "cash" : undefined,
+                  explorePage: undefined,
+                  page: undefined,
+                })
+              }
+            >
+              <option value="accrual">Accrual (posted ledger)</option>
+              <option value="cash">Cash (recognized settlements)</option>
+            </select>
+          </div>
           <ReportAccountMultiSelect
             accounts={accountsQ.data ?? []}
             selected={accountIds ? accountIds.split(",") : undefined}
@@ -132,7 +176,9 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
                 })
               }
             >
-              <option value="transactions">With posted transactions</option>
+              <option value="transactions">
+                {cashBasis ? "With recognized cash movements" : "With posted transactions"}
+              </option>
               <option value="balance">Transactions or opening balance</option>
               <option value="all">All accounts, including zero balances</option>
             </select>
@@ -174,6 +220,9 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
                 "Journal ID",
                 "Source ID",
               ],
+              basis: cashBasis
+                ? "Cash recognition ledger; full cash history used for opening balances. This is not the posted accrual journal."
+                : "Accrual posted ledger; full posting history used for opening balances.",
               rows: orderedAccounts.flatMap((a) => [
                 [
                   `${a.account.code} ${a.account.name}`,
@@ -235,7 +284,12 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
                       <Link
                         to="/reports/$reportId"
                         params={{ reportId: "general-ledger" }}
-                        search={{ account: a.account.id, from: ctx.from, to: ctx.to }}
+                        search={{
+                          account: a.account.id,
+                          from: ctx.from,
+                          to: ctx.to,
+                          ...(cashBasis ? { basis: "cash" as const } : {}),
+                        }}
                         className="underline-offset-2 hover:underline"
                       >
                         {accountGroup === "type" ? `${a.account.account_type} · ` : ""}

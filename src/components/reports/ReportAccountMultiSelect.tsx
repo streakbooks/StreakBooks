@@ -131,6 +131,11 @@ export function ReportAccountMultiSelect({
                 Select matches
               </Button>
             </div>
+            {selected === undefined && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                All accounts are included. Tick an account below to create a focused selection.
+              </p>
+            )}
             <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs">
               <Checkbox
                 checked={showArchived}

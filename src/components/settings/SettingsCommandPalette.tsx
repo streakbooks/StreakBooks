@@ -46,11 +46,7 @@ export function SettingsCommandPalette({ open, onOpenChange, onSelectSection }: 
             {matches.map((category) => (
               <CommandItem
                 key={category.id}
-                value={[
-                  category.label,
-                  category.description,
-                  ...category.synonyms,
-                ].join(" ")}
+                value={[category.label, category.description, ...category.synonyms].join(" ")}
                 onSelect={() => {
                   onSelectSection(category.id);
                   onOpenChange(false);
@@ -58,9 +54,7 @@ export function SettingsCommandPalette({ open, onOpenChange, onSelectSection }: 
                 className="flex flex-col items-start gap-1 py-2"
               >
                 <span className="font-medium">{category.label}</span>
-                <span className="text-xs text-muted-foreground">
-                  {category.description}
-                </span>
+                <span className="text-xs text-muted-foreground">{category.description}</span>
               </CommandItem>
             ))}
           </CommandGroup>

@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { listPeriods, lockPeriod } from "@/lib/accounting/accounting.functions";
 import { getPeriodCloseFacts } from "@/lib/accounting/period-close.functions";
 import {
+  assertPeriodCloseReview,
   buildCloseChecklist,
   summariseChecklist,
   type CloseCheckStatus,
@@ -117,6 +118,13 @@ export function PeriodClosePanel({ companyId }: { companyId: string }) {
     });
   }, [facts.data, ar.data, ap.data, end]);
   const summary = items ? summariseChecklist(items) : null;
+  const checklistSignature = items
+    ? JSON.stringify(items.map((item) => [item.id, item.status, item.detail]))
+    : "";
+
+  useEffect(() => {
+    setAck(false);
+  }, [companyId, periodId, checklistSignature]);
 
   const preview = useQuery({
     queryKey: ["year-end-preview", companyId, facts.data?.yearEnd?.fyEnd],
@@ -127,14 +135,66 @@ export function PeriodClosePanel({ companyId }: { companyId: string }) {
   });
 
   const lock = useMutation({
-    mutationFn: () => doLock({ data: { periodId } }),
+    mutationFn: async () => {
+      if (!period || !end || !items) throw new Error("Select a period and review its checks.");
+
+      const selectedId = period.id;
+      const selectedEnd = end;
+
+      // Recheck the actual server facts, not potentially stale React Query cache entries.
+      const [latestPeriods, latestFacts, latestAr, latestAp] = await Promise.all([
+        fetchPeriods({ data: { companyId } }),
+        fetchFacts({ data: { companyId, periodEnd: selectedEnd } }),
+        fetchAr({ data: { companyId, asOf: selectedEnd } }),
+        fetchAp({ data: { companyId, asOf: selectedEnd } }),
+      ]);
+      const liveChecklist = buildCloseChecklist({
+        periodEnd: selectedEnd,
+        unreconciledBankLines: latestFacts.unreconciledBankLines,
+        draftDocuments: latestFacts.draftDocuments,
+        ar: {
+          found: latestAr.controlAccountFound,
+          variance: latestAr.varianceMinor,
+        },
+        ap: {
+          found: latestAp.controlAccountFound,
+          variance: latestAp.varianceMinor,
+        },
+        openingBalanceMinor: latestFacts.openingBalanceMinor,
+        taxReturn: latestFacts.taxReturn,
+        yearEnd: latestFacts.yearEnd ? { closed: latestFacts.yearEnd.closed } : null,
+      });
+      assertPeriodCloseReview({
+        periodId: selectedId,
+        periodEnd: selectedEnd,
+        latestPeriod: latestPeriods.find((row) => row.id === selectedId),
+        reviewed: items,
+        latest: liveChecklist,
+        acknowledged: ack,
+      });
+      return doLock({ data: { periodId: selectedId } });
+    },
     onSuccess: async () => {
       toast.success("Period locked");
       setAck(false);
       setPeriodId("");
-      await qc.invalidateQueries({ queryKey: ["periods", companyId] });
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["periods", companyId] }),
+        qc.invalidateQueries({ queryKey: ["period-close-facts", companyId] }),
+        qc.invalidateQueries({ queryKey: ["period-close-ar", companyId] }),
+        qc.invalidateQueries({ queryKey: ["period-close-ap", companyId] }),
+      ]);
     },
-    onError: (e) => toast.error(friendlyAuthError(e)),
+    onError: async (error) => {
+      setAck(false);
+      toast.error(friendlyAuthError(error));
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["periods", companyId] }),
+        qc.invalidateQueries({ queryKey: ["period-close-facts", companyId] }),
+        qc.invalidateQueries({ queryKey: ["period-close-ar", companyId] }),
+        qc.invalidateQueries({ queryKey: ["period-close-ap", companyId] }),
+      ]);
+    },
   });
 
   const close = useMutation({
@@ -185,6 +245,7 @@ export function PeriodClosePanel({ companyId }: { companyId: string }) {
               onChange={(v) => {
                 setPeriodId(v);
                 setAck(false);
+                setConfirmClose(false);
               }}
               placeholder="Choose a period"
               searchPlaceholder="Search period"
@@ -317,8 +378,9 @@ export function PeriodClosePanel({ companyId }: { companyId: string }) {
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            A locked period rejects new postings. An owner or accountant can unlock it again from
-            the Financial years tab.
+            A locked period rejects new postings. The checklist is checked again before locking.
+            If the results have changed, review them again. An owner or accountant can unlock the
+            period from the Financial years tab.
           </p>
           {summary && !summary.clean ? (
             <div className="flex items-center gap-2">
@@ -339,9 +401,21 @@ export function PeriodClosePanel({ companyId }: { companyId: string }) {
               ar.isError ||
               ap.isError ||
               lock.isPending ||
+              facts.isFetching ||
+              ar.isFetching ||
+              ap.isFetching ||
+              periods.isFetching ||
               (needsAck && !ack)
             }
-            onClick={() => lock.mutate()}
+            onClick={() => {
+              if (
+                window.confirm(
+                  `Lock ${period?.name ?? "this period"}? New postings will be rejected until it is unlocked.`,
+                )
+              ) {
+                lock.mutate();
+              }
+            }}
           >
             {lock.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
             Lock period

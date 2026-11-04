@@ -1,5 +1,12 @@
 # Accountant Tools — GL workpaper reconciling issue schedule
 
+## Rollout verification
+
+- The additive migration was applied and recorded in the connected Supabase project as `20261104080519_workpaper_reconciling_items`.
+- Both new tables have RLS enabled, the authenticated write RPC denies anonymous execution, and no reconciling-item data was inserted during rollout.
+- The concurrent Firm & Clients PR #50 was merged to main before this feature's final review. GitHub's combined PR CI must be rerun against the updated main; firm changes must remain intact.
+- An authenticated multi-role staging-browser acceptance is still required to certify real-user UX.
+
 ## Delivered in this incremental change
 
 - Adds a structured, tenant-and-workpaper-scoped register for identified reconciling issues with **exact signed minor-unit amounts**, descriptions, supporting evidence references, and open/resolved states.

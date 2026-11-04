@@ -64,3 +64,58 @@ describe("isRateEffective", () => {
     expect(isRateEffective({ ...rate, is_active: false }, "2024-06-01")).toBe(false);
   });
 });
+
+describe("tax calculation input integrity", () => {
+  const line = {
+    quantity: 1,
+    unit_price_minor: 10000n,
+    tax_rate_bps: 2000,
+    treatment: "exclusive" as const,
+  };
+
+  it.each([Number.MAX_SAFE_INTEGER + 1, 1.25, Infinity, NaN])(
+    "does not silently coerce unsafe monetary inputs",
+    (unit) => {
+      expect(() => computeTaxLine({ ...line, unit_price_minor: unit })).toThrow(
+        /safe integer minor units/,
+      );
+      expect(() => computeTaxLine({ ...line, discount_minor: unit })).toThrow(
+        /safe integer minor units/,
+      );
+    },
+  );
+
+  it.each([0, -1, NaN, Infinity, 0.0000001, 1.1234567])(
+    "refuses invalid quantities or unrepresentable decimal precision",
+    (quantity) => {
+      expect(() => computeTaxLine({ ...line, quantity })).toThrow(/Quantity/);
+    },
+  );
+
+  it("accepts six-place quantities and conventional floating representation noise", () => {
+    const a = computeTaxLine({ ...line, quantity: 1.234567 });
+    expect(a.net_minor).toBe(12345n);
+    const b = computeTaxLine({ ...line, quantity: 0.1 + 0.2 });
+    expect(b.net_minor).toBe(3000n);
+  });
+
+  it("rejects unsupported runtime tax treatments instead of assuming inclusive", () => {
+    expect(() => computeTaxLine({ ...line, treatment: "unknown" as never })).toThrow(
+      /Unknown tax treatment/,
+    );
+  });
+
+  it("retains exact bigint arithmetic beyond the safe number range", () => {
+    const large = 9007199254740993n;
+    const result = computeTaxLine({ ...line, unit_price_minor: large });
+    expect(result.net_minor).toBe(large);
+    expect(result.tax_minor).toBe((large * 2000n + 5000n) / 10000n);
+    expect(result.gross_minor).toBe(result.net_minor + result.tax_minor);
+  });
+
+  it("does not accept unsafe quantity multiplication at any tax rate", () => {
+    expect(() => computeTaxLine({ ...line, quantity: Number.MAX_SAFE_INTEGER })).toThrow(
+      /Quantity/,
+    );
+  });
+});

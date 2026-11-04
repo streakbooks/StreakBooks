@@ -1610,67 +1610,131 @@ function SequenceRow({
   const [next, setNext] = useState(String(seq.next_number));
   const [pad, setPad] = useState(String(seq.padding));
   const [pending, setPending] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  const [baseline, setBaseline] = useState(JSON.stringify(seq));
 
   useEffect(() => {
+    if (dirty) return;
     setPrefix(seq.prefix);
     setNext(String(seq.next_number));
     setPad(String(seq.padding));
-  }, [seq]);
+    setBaseline(JSON.stringify(seq));
+  }, [seq, dirty]);
+
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+
+  const parsed = validateDocumentSequenceDraft({ prefix, next, padding: pad });
+  const serverChanged = dirty && JSON.stringify(seq) !== baseline;
+  const errorId = "sequence-" + seq.document_type + "-error";
+  const error = !parsed.ok ? Object.values(parsed.errors)[0] : null;
+  const discard = () => {
+    setPrefix(seq.prefix);
+    setNext(String(seq.next_number));
+    setPad(String(seq.padding));
+    setBaseline(JSON.stringify(seq));
+    setDirty(false);
+  };
+  const saveDraft = async () => {
+    if (!parsed.ok || serverChanged || disabled || pending || !dirty) return;
+    setPending(true);
+    try {
+      await onSave(parsed.value);
+      setDirty(false);
+    } catch (e) {
+      toast.error(friendlyAuthError(e));
+    } finally {
+      setPending(false);
+    }
+  };
 
   return (
     <TableRow>
       <TableCell className="font-mono text-xs">{seq.document_type}</TableCell>
       <TableCell>
         <Input
+          aria-label={seq.document_type + " number prefix"}
           className="h-8 w-24"
           value={prefix}
-          disabled={disabled}
-          onChange={(e) => setPrefix(e.target.value)}
+          maxLength={21}
+          aria-invalid={Boolean(!parsed.ok && parsed.errors["prefix"])}
+          disabled={disabled || pending}
+          onChange={(e) => {
+            setPrefix(e.target.value);
+            setDirty(true);
+          }}
         />
       </TableCell>
       <TableCell>
         <Input
+          aria-label={seq.document_type + " next number"}
           className="h-8 w-20"
+          inputMode="numeric"
           value={next}
-          disabled={disabled}
-          onChange={(e) => setNext(e.target.value)}
+          aria-invalid={Boolean(!parsed.ok && parsed.errors["next"])}
+          disabled={disabled || pending}
+          onChange={(e) => {
+            setNext(e.target.value);
+            setDirty(true);
+          }}
         />
       </TableCell>
       <TableCell>
         <Input
+          aria-label={seq.document_type + " number padding"}
           className="h-8 w-16"
+          inputMode="numeric"
           value={pad}
-          disabled={disabled}
-          onChange={(e) => setPad(e.target.value)}
+          aria-invalid={Boolean(!parsed.ok && parsed.errors["padding"])}
+          disabled={disabled || pending}
+          onChange={(e) => {
+            setPad(e.target.value);
+            setDirty(true);
+          }}
         />
       </TableCell>
       <TableCell className="font-mono text-xs text-muted-foreground">
-        {formatDocumentNumberPreview(prefix, Number(next) || 1, Number(pad) || 4)}
+        {parsed.ok ? formatDocumentNumberPreview(parsed.value.prefix, parsed.value.next_number, parsed.value.padding) : "—"}
+        {error ? (
+          <span id={errorId} role="alert" className="mt-1 block max-w-40 text-xs text-destructive">
+            {error}
+          </span>
+        ) : serverChanged ? (
+          <span role="status" className="mt-1 block max-w-40 text-xs text-destructive">
+            Numbering changed on the server.
+          </span>
+        ) : null}
       </TableCell>
       <TableCell>
-        {disabled ? null : (
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={pending}
-            onClick={async () => {
-              setPending(true);
-              try {
-                await onSave({
-                  prefix,
-                  next_number: Number(next),
-                  padding: Number(pad),
-                });
-              } catch (e) {
-                toast.error(friendlyAuthError(e));
-              } finally {
-                setPending(false);
-              }
-            }}
-          >
-            Save
-          </Button>
-        )}
+        {!disabled ? (
+          <div className="flex flex-wrap gap-1">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!dirty || !parsed.ok || serverChanged || pending}
+              onClick={() => void saveDraft()}
+            >
+              {pending ? "Saving…" : "Save"}
+            </Button>
+            {dirty ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={pending}
+                onClick={discard}
+              >
+                {serverChanged ? "Reload" : "Discard"}
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
       </TableCell>
     </TableRow>
   );

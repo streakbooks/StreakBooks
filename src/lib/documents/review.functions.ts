@@ -12,7 +12,7 @@ import {
 } from "@/lib/documents/review-model";
 
 const MIGRATION_HINT =
-  "The Documents review workflow needs database migration 20261104163000. Ask an administrator to apply it.";
+  "The Documents review workflow needs database migration 20261104054143. Ask an administrator to apply it.";
 
 function throwReviewError(error: { code?: string; message: string }): never {
   if (error.code === "42P01" || /document_reviews|document_review_events/.test(error.message))

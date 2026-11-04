@@ -9,12 +9,21 @@ describe("Settings Centre concurrency version validation", () => {
     expect(parseExpectedSettingsVersion(12)).toBe(12);
   });
 
-  it.each([-1, 1.5, Number.NaN, Infinity, -Infinity, Number.MAX_SAFE_INTEGER + 1, "0", "", true, {}, []])(
-    "rejects an invalid expected version: %s",
-    (value) => {
-      expect(() => parseExpectedSettingsVersion(value)).toThrow("Invalid settings version");
-    },
-  );
+  it.each([
+    -1,
+    1.5,
+    Number.NaN,
+    Infinity,
+    -Infinity,
+    Number.MAX_SAFE_INTEGER + 1,
+    "0",
+    "",
+    true,
+    {},
+    [],
+  ])("rejects an invalid expected version: %s", (value) => {
+    expect(() => parseExpectedSettingsVersion(value)).toThrow("Invalid settings version");
+  });
 });
 
 describe("Settings Centre feature flag validation", () => {

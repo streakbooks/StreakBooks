@@ -264,8 +264,7 @@ export const getAttachmentPreview = createServerFn({ method: "GET" })
     const previewType = filePreviewKind(file.content_type, file.file_name);
     if (!previewType) return { kind: "unsupported" as const };
     if (file.storage_bucket === COMPANY_DOCUMENTS_BUCKET) {
-      if (!file.storage_path?.startsWith(`${data.companyId}/`))
-        throw new Error("File not found");
+      if (!file.storage_path?.startsWith(`${data.companyId}/`)) throw new Error("File not found");
       const { data: signed, error: signedError } = await context.supabase.storage
         .from(COMPANY_DOCUMENTS_BUCKET)
         .createSignedUrl(file.storage_path, 120);
@@ -391,11 +390,18 @@ export const listCompanyFiles = createServerFn({ method: "GET" })
     const from = data.page * data.pageSize;
     // Order before pagination. Sorting only the returned page gives incorrect global results.
     const order = fileSortOrder(data.sort);
-    const { data: rows, error, count } = await q
-      .order(order.column as never, {
-        ascending: order.ascending,
-        nullsFirst: false,
-      } as never)
+    const {
+      data: rows,
+      error,
+      count,
+    } = await q
+      .order(
+        order.column as never,
+        {
+          ascending: order.ascending,
+          nullsFirst: false,
+        } as never,
+      )
       .order("id" as never, { ascending: true } as never)
       .range(from, from + data.pageSize - 1);
     if (error) {

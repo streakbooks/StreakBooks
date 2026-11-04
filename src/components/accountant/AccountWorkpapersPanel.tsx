@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { useCanDo } from "@/hooks/use-can";
+import { WorkpaperPeriodComparisonPanel } from "@/components/accountant/WorkpaperPeriodComparisonPanel";
 import { useFormat } from "@/hooks/use-format";
 import {
   listAccountWorkpapers,
@@ -248,6 +249,12 @@ export function AccountWorkpapersPanel({
         {reviewed} independently reviewed · {ready} awaiting review ·{" "}
         {rows.length - reviewed - ready} needing attention
       </p>
+      <WorkpaperPeriodComparisonPanel
+        companyId={companyId}
+        asOf={asOf}
+        current={trial.data?.rows ?? []}
+        currentPapers={papers.data ?? []}
+      />
       {rows.length === 0 ? (
         <EmptyState
           title="No posted balance-sheet accounts"

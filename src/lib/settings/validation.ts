@@ -6,3 +6,11 @@ export function parseExpectedSettingsVersion(value: unknown): number | null {
   }
   return value;
 }
+
+/** Do not coerce client-supplied flags such as the string "false" to true. */
+export function assertSettingsBoolean(value: unknown): boolean {
+  if (typeof value !== "boolean") {
+    throw new Error("Invalid settings boolean");
+  }
+  return value;
+}

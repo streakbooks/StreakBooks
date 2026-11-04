@@ -46,6 +46,58 @@ const saveInput = z.object({
     }),
 });
 
+/** Raw posted-ledger balances, not the financial-statement trial balance's
+ * synthetic retained-earnings presentation. This matches the sign-off RPC. */
+export const listWorkpaperLedger = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => listInput.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "accounting.view");
+    const [accounts, balances] = await Promise.all([
+      context.supabase
+        .from("accounts")
+        .select("id,code,name,account_type,is_postable")
+        .eq("company_id", data.companyId)
+        .eq("is_postable", true)
+        .in("account_type", ["asset", "liability", "equity"])
+        .order("code")
+        .limit(5001),
+      context.supabase.rpc("ledger_balances" as never, {
+        _company_id: data.companyId,
+        _from: null,
+        _to: data.asOf,
+        _exclude_year_end_close: false,
+      } as never),
+    ]);
+    if (accounts.error) throw new Error(accounts.error.message);
+    if (balances.error) throw new Error(balances.error.message);
+    if ((accounts.data ?? []).length > 5000) {
+      throw new Error("Workpaper portfolio exceeds the current account review limit.");
+    }
+    const amounts = new Map(
+      (
+        (balances.data ?? []) as Array<{
+          account_id: string;
+          debit_minor: number;
+          credit_minor: number;
+        }>
+      ).map((row) => [row.account_id, row]),
+    );
+    return {
+      rows: (accounts.data ?? []).map((account) => {
+        const balance = amounts.get(account.id);
+        return {
+          account_id: account.id,
+          code: account.code,
+          name: account.name,
+          account_type: account.account_type,
+          debit_minor: balance?.debit_minor ?? 0,
+          credit_minor: balance?.credit_minor ?? 0,
+        };
+      }),
+    };
+  });
+
 export const listAccountWorkpapers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => listInput.parse(input))

@@ -1,3 +1,4 @@
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -247,6 +248,10 @@ function CashCoding() {
     },
   });
 
+  const requiredQueries = [accountsQ, optionsQ];
+  if (requiredQueries.some((query) => query.isError && query.data === undefined))
+    return <QueryErrorState queries={requiredQueries} title="Could not load cash coding options" />;
+
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
 
   const allPageSelected = rows.length > 0 && rows.every((r) => selected.has(r.id));
@@ -429,7 +434,11 @@ function CashCoding() {
       {txnsQ.isPending ? (
         <LoadingState />
       ) : txnsQ.isError ? (
-        <ErrorState title="Could not load" description={friendlyAuthError(txnsQ.error)} />
+        <ErrorState
+          onRetry={() => void txnsQ.refetch()}
+          title="Could not load"
+          description={friendlyAuthError(txnsQ.error)}
+        />
       ) : rows.length === 0 ? (
         <EmptyState title="Nothing to code" description="No uncategorised transactions." />
       ) : (

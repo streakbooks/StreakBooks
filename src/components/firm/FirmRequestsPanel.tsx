@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -17,13 +18,7 @@ import { LookupSelect } from "@/components/lookup";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ErrorState, LoadingState, EmptyState } from "@/components/common/states";
 
 function RequestCompletion({
@@ -66,6 +61,7 @@ function RequestCompletion({
   if (files.isError)
     return (
       <ErrorState
+        onRetry={() => void files.refetch()}
         title="Could not load eligible documents"
         description={friendlyAuthError(files.error)}
       />
@@ -81,7 +77,7 @@ function RequestCompletion({
       ) : (
         <div className="flex flex-wrap gap-2">
           <div className="min-w-52 flex-1">
-            <Select value={fileId} onValueChange={setSelected}>
+            <RecordLookupSelect required value={fileId} onValueChange={setSelected}>
               <SelectTrigger aria-label="Document to fulfil request">
                 <SelectValue placeholder="Choose uploaded document" />
               </SelectTrigger>
@@ -92,7 +88,7 @@ function RequestCompletion({
                   </SelectItem>
                 ))}
               </SelectContent>
-            </Select>
+            </RecordLookupSelect>
           </div>
           <Button disabled={!fileId || update.isPending} onClick={() => update.mutate()}>
             Mark fulfilled with document
@@ -222,6 +218,7 @@ export function FirmRequestsPanel({
                 <LoadingState rows={1} />
               ) : recipientsQ.isError ? (
                 <ErrorState
+                  onRetry={() => void recipientsQ.refetch()}
                   title="Could not load authorised recipients"
                   description={friendlyAuthError(recipientsQ.error)}
                 />
@@ -234,7 +231,7 @@ export function FirmRequestsPanel({
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-1">
                     <Label>Requested from</Label>
-                    <Select value={requestedFrom} onValueChange={setRecipient}>
+                    <RecordLookupSelect required value={requestedFrom} onValueChange={setRecipient}>
                       <SelectTrigger aria-label="Requested recipient">
                         <SelectValue />
                       </SelectTrigger>
@@ -245,7 +242,7 @@ export function FirmRequestsPanel({
                           </SelectItem>
                         ))}
                       </SelectContent>
-                    </Select>
+                    </RecordLookupSelect>
                   </div>
                   <div className="space-y-1">
                     <Label htmlFor="firm-request-due">Due date</Label>
@@ -294,6 +291,7 @@ export function FirmRequestsPanel({
             <LoadingState />
           ) : requestsQ.isError ? (
             <ErrorState
+              onRetry={() => void requestsQ.refetch()}
               title="Could not load document requests"
               description={friendlyAuthError(requestsQ.error)}
             />

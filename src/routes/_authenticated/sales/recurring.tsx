@@ -1,3 +1,4 @@
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -252,6 +253,12 @@ export function RecurringInvoices() {
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
+
+  const requiredQueries = [customersQ, accountsQ, productsQ, configQ];
+  if (requiredQueries.some((query) => query.isError && query.data === undefined))
+    return (
+      <QueryErrorState queries={requiredQueries} title="Could not load recurring invoice options" />
+    );
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   const rows = listQ.data ?? [];

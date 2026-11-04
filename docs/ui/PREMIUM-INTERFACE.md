@@ -1,7 +1,8 @@
 # Approved interface refinement
 
 Base: `linkbusinessadvisory/LinkBooks`, main `6eec8fa5fe20d15b86f839c780f2e21c37aed49c`.
-Local branch: `ui/approved-premium-refinement`. No remote publication is authorized.
+Initial branch: `ui/approved-premium-refinement`. Completion branch: `ui/complete-premium-interface`.
+The user subsequently authorized publication and merge into GitHub main. Deployment remains separate.
 
 ## Design system
 
@@ -103,7 +104,7 @@ implementation start. Keep live company/role journeys, real bank/payment-provide
 manual assistive-technology review and every-route screenshots pending until that access is
 available. Do not use production financial records for destructive verification.
 
-## Recorded results — 4 November 2026
+## Initial implementation results — 4 November 2026
 
 - 1,933 unit tests across 259 files passed.
 - 118 browser fixture tests passed: UI 35, reporting 23, document themes 5,
@@ -126,9 +127,9 @@ The HTML root suppresses only the expected pre-paint theme attribute hydration d
 
 Final checks: TypeScript, production build and repository lint passed (lint retains 20 existing
 Fast Refresh warnings and no errors). Both npm and Bun lockfiles include the pinned local
-font packages; Bun frozen-lockfile validation passed. Implementation is committed locally for integration into main; nothing has been pushed or deployed.
+font packages; Bun frozen-lockfile validation passed. At this checkpoint implementation was committed locally; publishing and deployment had not occurred.
 
-## Local main integration
+## Earlier local main integration
 
 The completed UI changes were integrated with upstream main `9323f72` after merge approval.
 Both the upstream document/accountant PostgreSQL test commands and the new UI test command
@@ -142,7 +143,53 @@ Upstream has existing quality issues outside this merge's changed files: 14 look
 violations and 14 formatting errors in the document/accountant PostgreSQL runner scripts.
 An untouched upstream checkout has 21 lookup violations; this UI change reduces that count
 by seven and introduces none. Full-repository lint is therefore not reported as passing on
-the newer combined base. These upstream issues are retained rather than silently changing
-unrelated workflows during integration.
+the newer combined base. These issues were recorded at that checkpoint and addressed during the subsequent completion pass.
 
-This integration is local only. GitHub main has not been updated and no deployment occurred.
+That checkpoint was local only. The completion pass below supersedes its quality limitations; no deployment is part of this change.
+
+## Completion pass
+
+Latest upstream firm invitations, recurring billing and accountant workpaper changes are retained.
+Searchable authorized-record lookups now cover firm colleagues, engagements, invoices, documents
+and recurring templates. All 16 remaining lookup architecture violations on the combined base
+are resolved; fixed status/type/frequency enums remain ordinary selects with explicit annotations.
+
+Required-data failures have recovery UI on banking, product accounting options, receipts,
+recurring sales, statements, credit notes, expenses and payments. Retry controls are also added
+to existing document, practice, contacts, orders and settings errors. Required-data guards only
+replace a form when no cached result exists, preserving unsaved inputs during background
+refetch failures. The query error component retries failed queries without reloading successful
+ones. Accounting mutations, tenant scopes, permission checks and SQL are unchanged.
+
+Sheets and popovers contain overflow on small screens. Intent-based route preloading improves
+navigation latency. The firm colleague lookup has keyboard/search and view-only browser tests.
+
+`PAGE-COVERAGE.md` inventories every production route definition, action declaration and query
+count. `check:ui` scans all production TSX for literal placeholder destinations, empty click
+handlers and unnamed direct icon actions. This static check cannot prove arbitrary handlers,
+provider callbacks or live server behavior. `check:lookups` and browser regression suites are
+now mandatory GitHub CI gates. PostgreSQL runner formatting is corrected so full lint runs.
+
+The user's permanent final reporting requirements are persisted in `AGENTS.md` and
+`docs/engineering/FINAL-REPORT-STANDARD.md`. Authenticated staging remains conditional on
+repository staging configuration and dedicated test credentials; fixtures do not replace it.
+
+### Completion verification
+
+- 1,998 unit tests passed across 274 files; zero failures.
+- 121 browser fixture tests passed: UI 38, reporting 23, themes 5, navigation 5,
+  corrections 8, practice 2, platform 40; zero failures.
+- Six isolated PostgreSQL suites passed: workflows, documents, accountant exceptions,
+  accountant workpaper items, platform permissions/lifecycle, cash history/delivery.
+- TypeScript and production build passed. Full ESLint: zero errors, 20 existing
+  Fast Refresh warnings. Build retains existing server-function deprecation warnings.
+- Source contracts: 384 TSX files, 130 route definitions, zero UI contract violations;
+  150 shared lookup declarations, zero lookup violations. Navigation and repository
+  hygiene checks passed.
+
+These are local results for the completion changes, not live staging or production acceptance.
+GitHub merge status and CI URLs must be verified at publication and reported separately.
+No SQL migration or deployment is required or executed by this UI change. Existing upstream
+migration application is outside this verification. Authenticated staging credentials remain
+unavailable; real company journeys, provider callbacks, every-route manual accessibility and
+production performance still require dedicated staging/manual review.

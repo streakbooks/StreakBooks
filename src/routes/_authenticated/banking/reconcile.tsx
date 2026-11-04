@@ -1,3 +1,4 @@
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -176,6 +177,12 @@ function Reconcile() {
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
 
+  const requiredQueries = [accountsQ, sessionsQ];
+  if (requiredQueries.some((query) => query.isError && query.data === undefined))
+    return (
+      <QueryErrorState queries={requiredQueries} title="Could not load reconciliation options" />
+    );
+
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
 
   const sessions = sessionsQ.data ?? [];
@@ -256,6 +263,7 @@ function Reconcile() {
         <LoadingState />
       ) : wsQ.isError ? (
         <ErrorState
+          onRetry={() => void wsQ.refetch()}
           title="Could not load reconciliation"
           description={friendlyAuthError(wsQ.error)}
         />

@@ -184,12 +184,17 @@ export function AccountWorkpapersPanel({
   if (trial.isPending || papers.isPending) return <LoadingState />;
   if (trial.isError) {
     return (
-      <ErrorState title="Trial balance unavailable" description={friendlyAuthError(trial.error)} />
+      <ErrorState
+        onRetry={() => void trial.refetch()}
+        title="Trial balance unavailable"
+        description={friendlyAuthError(trial.error)}
+      />
     );
   }
   if (papers.isError) {
     return (
       <ErrorState
+        onRetry={() => void papers.refetch()}
         title="Workpaper register unavailable"
         description={friendlyAuthError(papers.error)}
       />

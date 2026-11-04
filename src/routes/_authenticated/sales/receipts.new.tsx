@@ -1,3 +1,4 @@
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
@@ -244,6 +245,10 @@ function ReceiptForm({
       toast.error(msg);
     },
   });
+
+  const requiredQueries = [customersQ, depositsQ, configQ, openQ];
+  if (requiredQueries.some((query) => query.isError && query.data === undefined))
+    return <QueryErrorState queries={requiredQueries} title="Could not load receipt options" />;
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (customersQ.isPending || depositsQ.isPending || configQ.isPending) return <LoadingState />;

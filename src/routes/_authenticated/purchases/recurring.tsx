@@ -300,7 +300,11 @@ function RecurringTransactionsPage() {
           {workspaceQ.isPending ? (
             <LoadingState />
           ) : workspaceQ.isError ? (
-            <ErrorState title="Could not load" description={friendlyAuthError(workspaceQ.error)} />
+            <ErrorState
+              onRetry={() => void workspaceQ.refetch()}
+              title="Could not load"
+              description={friendlyAuthError(workspaceQ.error)}
+            />
           ) : (workspaceQ.data?.rows ?? []).length === 0 ? (
             <EmptyState
               title="No recurring bill templates"

@@ -15,6 +15,7 @@ export default defineConfig({
         "@/integrations/supabase/client",
         "@/lib/purchases/purchases.functions",
         "@/lib/portals/portals.functions",
+        "@/lib/firm/firm-assignments.functions",
       ].map((find) => ({ find, replacement: path.resolve(import.meta.dirname, "functions.ts") })),
       { find: "@", replacement: path.resolve(import.meta.dirname, "../../src") },
     ],

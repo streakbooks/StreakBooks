@@ -248,3 +248,35 @@ test.describe("touch input", () => {
     );
   });
 });
+
+test("required-query recovery retries failures without reloading successful data", async ({
+  page,
+}) => {
+  await page.goto("/?flow=query-error");
+  await expect(page.getByRole("alert")).toContainText("Required data unavailable");
+  await page.getByRole("button", { name: "Try again", exact: true }).click();
+  await expect(page.getByRole("status")).toHaveText("Failed retries: 2; successful retries: 0");
+});
+
+test("practice colleague selection searches authorized records and keeps the selected value", async ({
+  page,
+}) => {
+  await page.goto("/?flow=staff");
+  const choose = page.getByRole("combobox", { name: "Assign colleague", exact: true });
+  await expect(choose).toBeVisible();
+  await choose.click();
+  await page.getByRole("searchbox").fill("Maya");
+  await page.getByRole("searchbox").press("ArrowDown");
+  await page.getByRole("searchbox").press("Enter");
+  await expect(choose).toContainText("Maya River");
+});
+
+test("view-only practice workspace does not offer membership or assignment mutations", async ({
+  page,
+}) => {
+  await page.goto("/?flow=staff&readonly=true");
+  await expect(page.getByRole("button", { name: "Add colleague", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("combobox", { name: "Assign colleague", exact: true })).toHaveCount(
+    0,
+  );
+});

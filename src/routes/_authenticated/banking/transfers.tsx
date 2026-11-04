@@ -1,3 +1,4 @@
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -147,6 +148,10 @@ export function Transfers() {
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
+
+  const requiredQueries = [accountsQ, transfersQ];
+  if (requiredQueries.some((query) => query.isError && query.data === undefined))
+    return <QueryErrorState queries={requiredQueries} title="Could not load bank transfers" />;
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (accountsQ.isPending) return <LoadingState />;

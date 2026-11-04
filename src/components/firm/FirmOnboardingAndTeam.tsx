@@ -136,6 +136,7 @@ export function FirmOnboardingPanel({
             <LoadingState />
           ) : stepsQ.isError ? (
             <ErrorState
+              onRetry={() => void stepsQ.refetch()}
               title="Could not load onboarding"
               description={friendlyAuthError(stepsQ.error)}
             />
@@ -271,7 +272,11 @@ export function FirmTeamPanel({ firmId }: { firmId: string }) {
   if (teamQ.isPending) return <LoadingState />;
   if (teamQ.isError)
     return (
-      <ErrorState title="Could not load firm team" description={friendlyAuthError(teamQ.error)} />
+      <ErrorState
+        onRetry={() => void teamQ.refetch()}
+        title="Could not load firm team"
+        description={friendlyAuthError(teamQ.error)}
+      />
     );
   return (
     <section className="space-y-4">

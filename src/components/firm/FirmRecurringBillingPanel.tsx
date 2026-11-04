@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -18,13 +19,7 @@ import { LookupSelect } from "@/components/lookup";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 
 export function FirmRecurringBillingPanel({
@@ -194,7 +189,11 @@ export function FirmRecurringBillingPanel({
             </div>
             <div className="space-y-1">
               <Label>Engagement</Label>
-              <Select value={currentEngagementId} onValueChange={setEngagementId}>
+              <RecordLookupSelect
+                required
+                value={currentEngagementId}
+                onValueChange={setEngagementId}
+              >
                 <SelectTrigger aria-label="Engagement for recurring billing">
                   <SelectValue placeholder="Select engagement" />
                 </SelectTrigger>
@@ -205,7 +204,7 @@ export function FirmRecurringBillingPanel({
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </RecordLookupSelect>
             </div>
           </div>
           {!validBillingCompany ? (
@@ -224,6 +223,7 @@ export function FirmRecurringBillingPanel({
               {linksQ.isPending ? <LoadingState rows={2} /> : null}
               {linksQ.isError ? (
                 <ErrorState
+                  onRetry={() => void linksQ.refetch()}
                   title="Cannot load recurring links"
                   description={friendlyAuthError(linksQ.error)}
                 />
@@ -292,7 +292,11 @@ export function FirmRecurringBillingPanel({
                 <div className="flex flex-wrap items-end gap-3 rounded-lg border p-4">
                   <div className="min-w-64 flex-1 space-y-1">
                     <Label>Eligible recurring Sales template</Label>
-                    <Select value={currentTemplateId} onValueChange={setTemplateId}>
+                    <RecordLookupSelect
+                      required
+                      value={currentTemplateId}
+                      onValueChange={setTemplateId}
+                    >
                       <SelectTrigger aria-label="Recurring invoice template">
                         <SelectValue />
                       </SelectTrigger>
@@ -303,7 +307,7 @@ export function FirmRecurringBillingPanel({
                           </SelectItem>
                         ))}
                       </SelectContent>
-                    </Select>
+                    </RecordLookupSelect>
                   </div>
                   <Button
                     disabled={linkM.isPending || !currentTemplateId}

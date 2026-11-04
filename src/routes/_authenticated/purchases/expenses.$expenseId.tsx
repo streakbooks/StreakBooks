@@ -60,7 +60,13 @@ function ExpenseDetail() {
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (query.isPending) return <LoadingState />;
   if (query.isError) {
-    return <ErrorState title="Expense not found" description={friendlyAuthError(query.error)} />;
+    return (
+      <ErrorState
+        onRetry={() => void query.refetch()}
+        title="Expense not found"
+        description={friendlyAuthError(query.error)}
+      />
+    );
   }
 
   const e = query.data as {

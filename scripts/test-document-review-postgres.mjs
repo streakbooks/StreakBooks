@@ -12,7 +12,8 @@ for (const key of [
   "DOCKER_TLS",
   "DOCKER_TLS_VERIFY",
   "DOCKER_CERT_PATH",
-]) delete env[key];
+])
+  delete env[key];
 
 function docker(args, input) {
   return execFileSync("docker", ["--host=unix:///var/run/docker.sock", ...args], {
@@ -25,17 +26,41 @@ function docker(args, input) {
 }
 function sql(file) {
   const source = readFileSync(path.join(root, file), "utf8");
-  return docker([
-    "exec", "-i", name, "psql", "-h", "127.0.0.1",
-    "-X", "-q", "-v", "ON_ERROR_STOP=1", "-U", "postgres",
-  ], source);
+  return docker(
+    [
+      "exec",
+      "-i",
+      name,
+      "psql",
+      "-h",
+      "127.0.0.1",
+      "-X",
+      "-q",
+      "-v",
+      "ON_ERROR_STOP=1",
+      "-U",
+      "postgres",
+    ],
+    source,
+  );
 }
 
 try {
   docker([
-    "run", "--detach", "--rm", "--name", name,
-    "--network", "none", "--cpus", "2", "--memory", "768m",
-    "-e", "POSTGRES_HOST_AUTH_METHOD=trust", "postgres:17",
+    "run",
+    "--detach",
+    "--rm",
+    "--name",
+    name,
+    "--network",
+    "none",
+    "--cpus",
+    "2",
+    "--memory",
+    "768m",
+    "-e",
+    "POSTGRES_HOST_AUTH_METHOD=trust",
+    "postgres:17",
   ]);
   let ready = false;
   for (let attempt = 0; attempt < 120; attempt++) {

@@ -55,6 +55,7 @@ export function TransactionCorrections({ companyId }: { companyId: string }) {
   if (setup.isError)
     return (
       <ErrorState
+        onRetry={() => void setup.refetch()}
         title="Transaction corrections unavailable"
         description={friendlyAuthError(setup.error)}
       />

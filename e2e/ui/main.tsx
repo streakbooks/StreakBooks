@@ -1,3 +1,5 @@
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { FirmStaffAssignments } from "@/components/firm/FirmStaffAssignments";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Route as BatchRoute } from "@/routes/_authenticated/purchases/payments.batch";
 import { PortalInvoiceDetail } from "@/components/portals/customer-pages";
@@ -183,9 +185,54 @@ function BillFixture() {
     </main>
   );
 }
+function QueryFailureFixture() {
+  const [retried, setRetried] = useState(0);
+  const [successful, setSuccessful] = useState(0);
+  return (
+    <main>
+      <QueryErrorState
+        title="Required data unavailable"
+        queries={[
+          {
+            isError: true,
+            error: new Error("First failed request"),
+            refetch: () => setRetried((n) => n + 1),
+          },
+          {
+            isError: true,
+            error: new Error("Second failed request"),
+            refetch: () => setRetried((n) => n + 1),
+          },
+          { isError: false, error: null, refetch: () => setSuccessful((n) => n + 1) },
+        ]}
+      />
+      <p role="status">
+        Failed retries: {retried}; successful retries: {successful}
+      </p>
+    </main>
+  );
+}
 function Scenario() {
   const params = new URLSearchParams(window.location.search);
   const Batch = BatchRoute.options.component!;
+  if (params.get("flow") === "query-error") return <QueryFailureFixture />;
+  if (params.get("flow") === "staff")
+    return (
+      <main className="p-4">
+        <FirmStaffAssignments
+          firmId="firm-fixture"
+          clients={[
+            {
+              id: "client-one",
+              company_id: "fixture-company",
+              access_level: "full",
+              companies: { name: "Acme Studio" },
+            },
+          ]}
+          canManage={params.get("readonly") !== "true"}
+        />
+      </main>
+    );
   if (params.get("flow") === "batch")
     return (
       <main className="p-4">

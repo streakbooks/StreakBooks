@@ -62,6 +62,7 @@ function CreditNotesList() {
         <ListSkeleton />
       ) : query.isError ? (
         <ErrorState
+          onRetry={() => void query.refetch()}
           title="Could not load credit notes"
           description={friendlyAuthError(query.error)}
         />

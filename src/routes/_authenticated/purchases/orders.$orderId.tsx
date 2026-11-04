@@ -109,6 +109,7 @@ function PurchaseOrderDetail({ companyId, orderId }: { companyId: string; orderI
   if (query.isError)
     return (
       <ErrorState
+        onRetry={() => void query.refetch()}
         title="Could not load purchase order"
         description={friendlyAuthError(query.error)}
       />

@@ -76,7 +76,11 @@ function DuplicatesPage() {
       {query.isPending ? (
         <LoadingState />
       ) : query.isError ? (
-        <ErrorState title="Could not scan" description={friendlyAuthError(query.error)} />
+        <ErrorState
+          onRetry={() => void query.refetch()}
+          title="Could not scan"
+          description={friendlyAuthError(query.error)}
+        />
       ) : (query.data ?? []).length === 0 ? (
         <EmptyState
           title="No likely duplicates"

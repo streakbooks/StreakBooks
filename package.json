@@ -30,7 +30,9 @@
     "test:documents:postgres": "node scripts/test-document-review-postgres.mjs",
     "test:accountant:postgres": "node scripts/test-accountant-exceptions-postgres.mjs",
     "test:ui": "playwright test --config playwright.ui.config.ts",
-    "test:workpaper-items:postgres": "node scripts/test-accountant-workpaper-items-postgres.mjs"
+    "test:workpaper-items:postgres": "node scripts/test-accountant-workpaper-items-postgres.mjs",
+    "check:ui": "node scripts/check-ui-contracts.mjs",
+    "audit:ui": "node scripts/check-ui-contracts.mjs --write-audit"
   },
   "overrides": {
     "rolldown": "1.2.1"

@@ -38,7 +38,13 @@ function JournalDetail() {
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (q.isPending) return <LoadingState />;
   if (q.isError)
-    return <ErrorState title="Could not load journal" description={friendlyAuthError(q.error)} />;
+    return (
+      <ErrorState
+        onRetry={() => void q.refetch()}
+        title="Could not load journal"
+        description={friendlyAuthError(q.error)}
+      />
+    );
 
   const { journal, lines } = q.data;
   const currency = journal.currency_code ?? company?.base_currency ?? "GBP";

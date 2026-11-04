@@ -182,7 +182,11 @@ function FirmPage() {
       {firmsQ.isPending ? (
         <LoadingState />
       ) : firmsQ.isError ? (
-        <ErrorState title="Could not load firms" description={friendlyAuthError(firmsQ.error)} />
+        <ErrorState
+          onRetry={() => void firmsQ.refetch()}
+          title="Could not load firms"
+          description={friendlyAuthError(firmsQ.error)}
+        />
       ) : (firmsQ.data ?? []).length === 0 ? (
         <div className="space-y-4">
           <EmptyState
@@ -240,6 +244,7 @@ function FirmPage() {
                 <LoadingState />
               ) : clientsQ.isError ? (
                 <ErrorState
+                  onRetry={() => void clientsQ.refetch()}
                   title="Could not load clients"
                   description={friendlyAuthError(clientsQ.error)}
                 />
@@ -288,6 +293,7 @@ function FirmPage() {
                 <LoadingState />
               ) : clientsQ.isError ? (
                 <ErrorState
+                  onRetry={() => void clientsQ.refetch()}
                   title="Could not load clients"
                   description={friendlyAuthError(clientsQ.error)}
                 />
@@ -306,6 +312,7 @@ function FirmPage() {
                 <LoadingState />
               ) : clientsQ.isError ? (
                 <ErrorState
+                  onRetry={() => void clientsQ.refetch()}
                   title="Could not load clients"
                   description={friendlyAuthError(clientsQ.error)}
                 />
@@ -325,6 +332,7 @@ function FirmPage() {
                 <LoadingState />
               ) : clientsQ.isError ? (
                 <ErrorState
+                  onRetry={() => void clientsQ.refetch()}
                   title="Could not load clients"
                   description={friendlyAuthError(clientsQ.error)}
                 />
@@ -343,6 +351,7 @@ function FirmPage() {
                 <LoadingState />
               ) : clientsQ.isError ? (
                 <ErrorState
+                  onRetry={() => void clientsQ.refetch()}
                   title="Could not load clients"
                   description={friendlyAuthError(clientsQ.error)}
                 />
@@ -361,6 +370,7 @@ function FirmPage() {
                 <LoadingState />
               ) : clientsQ.isError ? (
                 <ErrorState
+                  onRetry={() => void clientsQ.refetch()}
                   title="Could not load clients"
                   description={friendlyAuthError(clientsQ.error)}
                 />
@@ -420,6 +430,7 @@ function FirmPage() {
                     <LoadingState rows={3} />
                   ) : activityQ.isError ? (
                     <ErrorState
+                      onRetry={() => void activityQ.refetch()}
                       title="Could not load activity"
                       description={friendlyAuthError(activityQ.error)}
                     />

@@ -140,7 +140,11 @@ function OrdersWorkspace({ companyId, currency }: { companyId: string; currency:
         detail.isPending ? (
           <LoadingState />
         ) : detail.isError ? (
-          <ErrorState title="Could not load order" description={friendlyAuthError(detail.error)} />
+          <ErrorState
+            onRetry={() => void detail.refetch()}
+            title="Could not load order"
+            description={friendlyAuthError(detail.error)}
+          />
         ) : (
           <section className="mb-6 space-y-4 rounded-lg border p-4">
             <div className="flex flex-wrap items-center gap-3">
@@ -283,6 +287,7 @@ function OrdersWorkspace({ companyId, currency }: { companyId: string; currency:
           <LoadingState />
         ) : q.isError ? (
           <ErrorState
+            onRetry={() => void q.refetch()}
             title="Could not load sales orders"
             description={friendlyAuthError(q.error)}
           />

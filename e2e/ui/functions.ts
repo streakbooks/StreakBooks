@@ -148,3 +148,25 @@ export async function postPortalMessage() {
 export async function uploadPortalFile() {
   return {};
 }
+export const RESPONSIBILITIES = ["bookkeeper", "reviewer", "relationship_manager"];
+export async function listAssignableFirmMembers() {
+  return [
+    { user_id: "person-one", full_name: "Alex North", email: "alex@example.test" },
+    { user_id: "person-two", full_name: "Maya River", email: "maya@example.test" },
+  ];
+}
+export async function listCandidateFirmColleagues() {
+  return [{ user_id: "candidate-one", full_name: "Sam Green", email: "sam@example.test" }];
+}
+export async function listFirmClientAssignments() {
+  return [];
+}
+export async function addExistingFirmColleague() {
+  throw new Error("Fixture prevents membership writes");
+}
+export async function removeFirmAssignment() {
+  throw new Error("Fixture prevents membership writes");
+}
+export async function saveFirmAssignment() {
+  throw new Error("Fixture prevents membership writes");
+}

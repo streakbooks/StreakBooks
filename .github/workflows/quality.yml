@@ -27,7 +27,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
           cache: npm
 
       - name: Prevent tracked local secrets and generated artifacts
@@ -67,11 +67,17 @@ jobs:
       - name: Isolated workpaper reconciling item security tests
         run: npm run test:workpaper-items:postgres
 
+      - name: Isolated platform permission and lifecycle tests
+        run: npm run test:platform:postgres
+
       - name: Cash history and delivery PostgreSQL checks
         run: python3 scripts/test-cash-history-postgres.py
 
       - name: Native navigation checks
         run: npm run check:navigation
+
+      - name: Shared interface and lookup contracts
+        run: npm run check:ui && npm run check:lookups
 
       - name: Validate authenticated browser test discovery
         run: |
@@ -88,8 +94,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
-      E2E_STAGING_ENABLED: 'true'
-      E2E_STAGING_RUN: 'true'
+      E2E_STAGING_ENABLED: "true"
+      E2E_STAGING_RUN: "true"
       E2E_BASE_URL: ${{ vars.E2E_STAGING_URL }}
       E2E_EXPECTED_STAGING_HOST: ${{ vars.E2E_EXPECTED_STAGING_HOST }}
       E2E_PRODUCTION_URL: ${{ vars.E2E_PRODUCTION_URL }}
@@ -102,7 +108,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
           cache: npm
 
       - name: Verify HTTPS staging origin, production separation and credentials
@@ -116,3 +122,35 @@ jobs:
 
       - name: Run real authenticated staging smoke
         run: npx playwright test e2e/staging-smoke.spec.ts --workers=1
+
+  interface-browser:
+    name: Interface browser regressions
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout tested source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Shared interface, financial error states and mobile themes
+        run: npm run test:ui
+      - name: Reporting workflows and responsive lookups
+        run: npm run test:reporting
+      - name: Document themes and PDF layouts
+        run: npm run test:themes
+      - name: Native and keyboard navigation
+        run: npm run test:navigation
+      - name: Corrections and read-only permissions
+        run: npm run test:corrections
+      - name: Practice review and conflict recovery
+        run: npm run test:practice
+      - name: Platform workflows and permissions
+        run: npm run test:platform

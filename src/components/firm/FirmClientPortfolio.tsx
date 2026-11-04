@@ -222,6 +222,7 @@ export function FirmClientPortfolio({
             value={status}
             onValueChange={(value) => setStatus(value as FirmClientStatus | "all")}
           >
+            {/* lookup-fixed-enum: Practice status filter uses fixed lifecycle values. */}
             <SelectTrigger aria-label="Filter by practice status">
               <SelectValue />
             </SelectTrigger>
@@ -350,6 +351,7 @@ export function FirmClientPortfolio({
                     setDraft((current) => ({ ...current, status: value as FirmClientStatus }))
                   }
                 >
+                  {/* lookup-fixed-enum: Practice status uses fixed lifecycle values. */}
                   <SelectTrigger id="client-status">
                     <SelectValue />
                   </SelectTrigger>

@@ -801,6 +801,7 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
         <LoadingState />
       ) : importsQ.isError ? (
         <ErrorState
+          onRetry={() => void importsQ.refetch()}
           title="Could not load imports"
           description={friendlyAuthError(importsQ.error)}
         />

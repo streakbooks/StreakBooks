@@ -311,6 +311,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
             <ListSkeleton />
           ) : query.isError ? (
             <ErrorState
+              onRetry={() => void query.refetch()}
               title="Could not load contacts"
               description={friendlyAuthError(query.error)}
             />

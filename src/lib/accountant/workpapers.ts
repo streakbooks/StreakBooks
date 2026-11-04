@@ -18,7 +18,8 @@ export type AccountWorkpaper = {
   version: number;
 };
 
-export type WorkpaperReviewState = "not_started" | "stale" | "missing_evidence" | "difference" | WorkpaperStatus;
+export type WorkpaperReviewState =
+  "not_started" | "stale" | "missing_evidence" | "difference" | WorkpaperStatus;
 
 /** Signed convention: debits positive, credits negative, in base-currency minor units. */
 export function signedWorkpaperLedger(debit: number, credit: number): number {

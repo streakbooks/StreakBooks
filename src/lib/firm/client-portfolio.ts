@@ -55,12 +55,19 @@ export function csvField(value: string): string {
   return '"' + safe.replace(/"/g, '""') + '"';
 }
 
-export function firmClientCsv(
-  rows: FirmClientRow[],
-  profiles: FirmClientProfile[],
-): string {
+export function firmClientCsv(rows: FirmClientRow[], profiles: FirmClientProfile[]): string {
   const profileMap = new Map(profiles.map((profile) => [profile.company_id, profile]));
-  const headers = ["Client", "Status", "Access", "Contact", "Email", "Industry", "Service", "Tags", "Review date"];
+  const headers = [
+    "Client",
+    "Status",
+    "Access",
+    "Contact",
+    "Email",
+    "Industry",
+    "Service",
+    "Tags",
+    "Review date",
+  ];
   const lines = rows.map((client) => {
     const profile = profileMap.get(client.company_id);
     return [
@@ -73,7 +80,9 @@ export function firmClientCsv(
       profile?.service_line ?? "",
       (profile?.tags ?? []).join("; "),
       profile?.next_review_date ?? "",
-    ].map(csvField).join(",");
+    ]
+      .map(csvField)
+      .join(",");
   });
   return "\uFEFF" + [headers.map(csvField).join(","), ...lines].join("\r\n");
 }

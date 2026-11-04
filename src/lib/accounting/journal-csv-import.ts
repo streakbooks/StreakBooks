@@ -1,8 +1,4 @@
-import {
-  decimalPlacesFor,
-  toMinorUnits,
-  toSafeMinorNumber,
-} from "@/lib/accounting/money";
+import { decimalPlacesFor, toMinorUnits, toSafeMinorNumber } from "@/lib/accounting/money";
 
 export const JOURNAL_CSV_HEADERS = ["account_code", "description", "debit", "credit"] as const;
 
@@ -93,9 +89,7 @@ export function importJournalLinesCsv(
 ): ImportedJournalLine[] {
   const rows = parseCsvCells(text);
   if (!rows.length) throw new Error("The CSV is empty.");
-  const headers = rows[0]!.map((value) =>
-    value.trim().toLowerCase().replace(/\s+/g, "_"),
-  );
+  const headers = rows[0]!.map((value) => value.trim().toLowerCase().replace(/\s+/g, "_"));
   if (
     headers.length !== JOURNAL_CSV_HEADERS.length ||
     !JOURNAL_CSV_HEADERS.every((value, index) => headers[index] === value)
@@ -120,9 +114,7 @@ export function importJournalLinesCsv(
       throw new Error("Row " + rowNumber + ": " + label + " must be a non-negative decimal.");
     const decimal = source.split(".")[1] ?? "";
     if (decimal.length > decimalPlaces) {
-      throw new Error(
-        "Row " + rowNumber + ": " + label + " exceeds currency decimal precision.",
-      );
+      throw new Error("Row " + rowNumber + ": " + label + " exceeds currency decimal precision.");
     }
     const minor = toMinorUnits(source, currencyCode);
     toSafeMinorNumber(minor, "Row " + rowNumber + " " + label);
@@ -136,8 +128,18 @@ export function importJournalLinesCsv(
     if (row.length !== 4) throw new Error("Row " + rowNumber + ": expected exactly four columns.");
     const code = row[0]!.trim().toUpperCase();
     const account = byCode.get(code);
-    if (!account || duplicates.has(code) || !account.is_active || !account.is_postable || account.is_control) {
-      throw new Error("Row " + rowNumber + ": account code is unknown, ambiguous or not allowed for manual posting.");
+    if (
+      !account ||
+      duplicates.has(code) ||
+      !account.is_active ||
+      !account.is_postable ||
+      account.is_control
+    ) {
+      throw new Error(
+        "Row " +
+          rowNumber +
+          ": account code is unknown, ambiguous or not allowed for manual posting.",
+      );
     }
     const description = row[1]!.trim();
     if (description.length > 300) {

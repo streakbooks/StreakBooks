@@ -5,7 +5,11 @@ import { assertCompanyPermission } from "@/lib/assert-company-access";
 
 const companyId = z.string().uuid();
 const journalId = z.string().uuid();
-const findingKey = z.string().min(40).max(180).regex(/^[a-z0-9:_-]+$/);
+const findingKey = z
+  .string()
+  .min(40)
+  .max(180)
+  .regex(/^[a-z0-9:_-]+$/);
 
 const listInput = z.object({
   companyId,

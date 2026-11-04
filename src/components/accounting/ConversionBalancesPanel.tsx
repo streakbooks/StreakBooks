@@ -130,7 +130,13 @@ export function ConversionBalancesPanel({
   const nothingEntered = s.tbLineCount + s.invoiceCount + s.billCount === 0;
   // Review approval is valid only for the exact draft approved by the user.
   const reviewFingerprint = JSON.stringify([
-    companyId, conversionDate, tbInput, invoices, bills, acceptDifference, note,
+    companyId,
+    conversionDate,
+    tbInput,
+    invoices,
+    bills,
+    acceptDifference,
+    note,
   ]);
   const reviewMatches = Boolean(reviewedFingerprint) && reviewedFingerprint === reviewFingerprint;
   const hasUnsavedDraft =

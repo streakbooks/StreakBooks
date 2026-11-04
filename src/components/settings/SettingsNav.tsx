@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { openSettingsPanel, type SettingsPanelId } from "@/lib/settings/panels";
 import { cn } from "@/lib/utils";
-import { categoryMeta, type SettingsCategory } from "@/lib/settings/registry";
+import { categoryMeta, searchSettings, type SettingsCategory } from "@/lib/settings/registry";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -82,6 +82,10 @@ export function SettingsNav({ section, embedded = false, showDemo, filter }: Pro
   };
 
   const q = (filter ?? "").trim().toLowerCase();
+  const matches = new Set(searchSettings(q).map((item) => item.id));
+  const hasVisibleMatches = categoryMeta.some(
+    (item) => matches.has(item.id) && (item.id !== "demo" || showDemo),
+  );
 
   return (
     <nav className="space-y-2" aria-label="Settings categories">
@@ -89,12 +93,7 @@ export function SettingsNav({ section, embedded = false, showDemo, filter }: Pro
         const items = categoryMeta.filter((c) => {
           if (!group.ids.includes(c.id)) return false;
           if (c.id === "demo" && !showDemo) return false;
-          if (!q) return true;
-          return (
-            c.label.toLowerCase().includes(q) ||
-            c.synonyms.some((s) => s.includes(q)) ||
-            c.description.toLowerCase().includes(q)
-          );
+          return matches.has(c.id);
         });
         if (items.length === 0) return null;
         const isOpen = Boolean(q) || open[group.label] !== false;
@@ -150,14 +149,7 @@ export function SettingsNav({ section, embedded = false, showDemo, filter }: Pro
           </Collapsible>
         );
       })}
-      {q &&
-      !categoryMeta.some(
-        (category) =>
-          (category.id !== "demo" || showDemo) &&
-          (category.label.toLowerCase().includes(q) ||
-            category.description.toLowerCase().includes(q) ||
-            category.synonyms.some((synonym) => synonym.toLowerCase().includes(q))),
-      ) ? (
+      {q && !hasVisibleMatches ? (
         <p role="status" className="px-2 py-3 text-sm text-muted-foreground">
           No matching settings categories.
         </p>

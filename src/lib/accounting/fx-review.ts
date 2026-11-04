@@ -16,7 +16,7 @@ export function fxReviewSignature(
     companyId,
     asOf,
     Object.entries(rates)
-      .map(([currency, rate]) => [currency.toUpperCase(), rate.trim()])
+      .map(([currency, rate]) => [currency.toUpperCase(), rate.trim()] as const)
       .sort(([a], [b]) => a.localeCompare(b)),
   ]);
 }

@@ -45,6 +45,23 @@ describe("Settings Centre draft validation", () => {
     }
   });
 
+  it("edits optional purchase approval thresholds without coercing blank values to zero", () => {
+    const defaults = defaultDocumentFor("purchases") as SettingsDocument;
+    const amount = validateSettingsDraft("purchases", {
+      ...defaults,
+      approval_threshold_minor: "12500",
+    });
+    expect(amount.ok).toBe(true);
+    if (amount.ok) expect(amount.document.approval_threshold_minor).toBe(12500);
+
+    const cleared = validateSettingsDraft("purchases", {
+      ...defaults,
+      approval_threshold_minor: "",
+    });
+    expect(cleared.ok).toBe(true);
+    if (cleared.ok) expect(cleared.document.approval_threshold_minor).toBeNull();
+  });
+
   it("rejects invalid enum settings and accepts allowed choices", () => {
     const defaults = defaultDocumentFor("reports") as SettingsDocument;
     expect(

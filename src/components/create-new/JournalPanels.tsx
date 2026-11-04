@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Trash2 } from "lucide-react";
@@ -11,7 +11,9 @@ import {
   generateRecurringJournal,
   saveRecurringJournalTemplate,
 } from "@/lib/create-new/money-documents.functions";
-import { fromMinorUnits, toMinorUnits } from "@/lib/accounting/money";
+import { fromMinorUnits, toSafeMinorNumber } from "@/lib/accounting/money";
+import { tryParseMinor } from "@/lib/purchases/money-input";
+import { inspectManualJournal } from "@/lib/accounting/manual-journal-review";
 import { importJournalLinesCsv, JOURNAL_CSV_HEADERS } from "@/lib/accounting/journal-csv-import";
 import { toCsv } from "@/lib/sales/csv";
 import { validateAutoReverseDate } from "@/lib/accounting/fx-reval";
@@ -44,14 +46,6 @@ export function ManualJournalPanel() {
 
 export function RecurringJournalPanel() {
   return <JournalLines mode="template" />;
-}
-
-function safeMinor(value: string, currency: string): bigint {
-  try {
-    return toMinorUnits(value.trim() || "0", currency);
-  } catch {
-    return 0n;
-  }
 }
 
 function JournalLines({ mode }: { mode: "post" | "template" }) {
@@ -87,28 +81,16 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
   // Control accounts (receivables, payables, tax) are written by their own documents, not by hand.
   const accounts = allAccounts.filter((a) => a.is_active && a.is_postable && !a.is_control);
 
-  const totals = useMemo(() => {
-    let debit = 0n;
-    let credit = 0n;
-    for (const line of lines) {
-      debit += safeMinor(line.debit, currency);
-      credit += safeMinor(line.credit, currency);
-    }
-    return { debit, credit, difference: debit - credit };
-  }, [lines, currency]);
-
-  const filled = lines.filter((line) => line.accountId);
-  const bothSides = lines.some(
-    (line) => safeMinor(line.debit, currency) > 0n && safeMinor(line.credit, currency) > 0n,
+  const review = inspectManualJournal(
+    lines,
+    currency,
+    accounts.map((account) => account.id),
   );
-  const balanced = totals.debit > 0n && totals.difference === 0n;
+  const totals = review;
+  const balanced = review.balanced;
   const reverseError = mode === "post" ? validateAutoReverseDate(date, autoReverseOn) : null;
   const canSubmit =
-    balanced &&
-    filled.length >= 2 &&
-    !bothSides &&
-    !reverseError &&
-    (mode === "post" || name.trim().length > 0);
+    review.canPost && !reverseError && (mode === "post" || name.trim().length > 0);
 
   async function handleCsvImport(file: File) {
     if (file.size > 256000) throw new Error("CSV file exceeds the 256 KB import limit.");
@@ -141,13 +123,22 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
   }
 
   function payloadLines() {
+    if (!review.canPost) {
+      throw new Error("Resolve invalid or unbalanced journal lines before continuing.");
+    }
     return lines
       .filter((line) => line.accountId)
       .map((line) => ({
         accountId: line.accountId,
         description: line.description || memo || name,
-        debitMinor: Number(safeMinor(line.debit, currency)),
-        creditMinor: Number(safeMinor(line.credit, currency)),
+        debitMinor: toSafeMinorNumber(
+          tryParseMinor(line.debit, currency) ?? 0n,
+          "Journal debit",
+        ),
+        creditMinor: toSafeMinorNumber(
+          tryParseMinor(line.credit, currency) ?? 0n,
+          "Journal credit",
+        ),
       }));
   }
 
@@ -229,6 +220,19 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
       onSubmit={(event) => {
         event.preventDefault();
         setError(null);
+        if (!canSubmit) return;
+        if (mode === "post") {
+          const reverseText = autoReverseOn
+            ? ` It will be scheduled for auto-reversal on ${autoReverseOn}.`
+            : "";
+          const accepted = window.confirm(
+            `Post ${review.filledCount} journal lines dated ${date}? Debits ${fromMinorUnits(
+              totals.debit,
+              currency,
+            )} ${currency}; credits ${fromMinorUnits(totals.credit, currency)} ${currency}.${reverseText}`,
+          );
+          if (!accepted) return;
+        }
         saveM.mutate();
       }}
     >
@@ -438,8 +442,13 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
           </Badge>
         )}
       </div>
-      {bothSides ? (
-        <p className="text-sm text-destructive">A line cannot have both a debit and a credit.</p>
+      {review.invalidLines.length > 0 ? (
+        <p role="alert" className="text-sm text-destructive">
+          Review line{review.invalidLines.length === 1 ? "" : "s"}{" "}
+          {review.invalidLines.join(", ")}: select an eligible account and enter one valid,
+          non-negative debit or credit within the supported amount limits. Invalid text is never
+          treated as zero.
+        </p>
       ) : null}
 
       <DocumentRecordPanel

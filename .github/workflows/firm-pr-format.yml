@@ -1,0 +1,32 @@
+name: Format Firm & Clients PR files
+on:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  format:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'feature/firm-practice-completion-20261104'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout trusted same-repo feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Format only scoped firm files
+        run: |
+          npx prettier --write             src/components/firm/FirmStaffAssignments.tsx             src/components/firm/FirmRequestsPanel.tsx             src/components/firm/FirmBillingAnalytics.tsx             src/components/firm/FirmOnboardingAndTeam.tsx             src/lib/firm/firm-assignments.functions.ts             src/lib/firm/firm-requests.functions.ts             src/lib/firm/firm-billing.functions.ts             src/lib/firm/firm-analytics.functions.ts             src/lib/firm/firm-workflows.functions.ts             src/routes/_authenticated/firm.tsx
+      - name: Commit only formatted code
+        run: |
+          git add             src/components/firm/FirmStaffAssignments.tsx             src/components/firm/FirmRequestsPanel.tsx             src/components/firm/FirmBillingAnalytics.tsx             src/components/firm/FirmOnboardingAndTeam.tsx             src/lib/firm/firm-assignments.functions.ts             src/lib/firm/firm-requests.functions.ts             src/lib/firm/firm-billing.functions.ts             src/lib/firm/firm-analytics.functions.ts             src/lib/firm/firm-workflows.functions.ts             src/routes/_authenticated/firm.tsx
+          if ! git diff --cached --quiet; then
+            git -c user.name="LinkBooks CI Formatter"                 -c user.email="ci@users.noreply.github.com"                 commit -m "style(firm): format practice completion files"
+            git push origin HEAD:${{ github.head_ref }}
+          fi

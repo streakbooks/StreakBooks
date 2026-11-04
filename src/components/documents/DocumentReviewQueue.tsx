@@ -96,8 +96,7 @@ export function DocumentReviewQueue({
     queryKey: ["document-review-preview", companyId, selected?.attachment_id],
     enabled: Boolean(selected),
     retry: false,
-    queryFn: () =>
-      getPreview({ data: { companyId, attachmentId: selected!.attachment_id } }),
+    queryFn: () => getPreview({ data: { companyId, attachmentId: selected!.attachment_id } }),
   });
   useEffect(() => {
     const result = preview.data;
@@ -319,9 +318,8 @@ export function DocumentReviewQueue({
               <ol className="space-y-1 text-xs text-muted-foreground">
                 {history.data.map((event) => (
                   <li key={event.id}>
-                    {new Date(event.created_at).toLocaleString()} ·{" "}
-                    {event.old_status ?? "New"} → {event.new_status} ·{" "}
-                    {event.new_type}
+                    {new Date(event.created_at).toLocaleString()} · {event.old_status ?? "New"} →
+                    {event.new_status} · {event.new_type}
                   </li>
                 ))}
               </ol>
@@ -344,7 +342,9 @@ export function DocumentReviewQueue({
                   disabled={!canManage}
                   onValueChange={(value) => update({ documentType: value as ReviewType })}
                 >
-                  <SelectTrigger id="review-type"><SelectValue /></SelectTrigger>
+                  <SelectTrigger id="review-type">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {REVIEW_TYPES.map((option) => (
                       <SelectItem key={option} value={option}>
@@ -361,13 +361,17 @@ export function DocumentReviewQueue({
                   disabled={!canManage || (selected.status === "approved" && !canApprove)}
                   onValueChange={(value) => update({ status: value as ReviewStatus })}
                 >
-                  <SelectTrigger id="review-status"><SelectValue /></SelectTrigger>
+                  <SelectTrigger id="review-status">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {REVIEW_STATUSES.map((option) => (
                       <SelectItem
                         key={option}
                         value={option}
-                        disabled={option === "approved" && (!canApprove || selected.status !== "ready")}
+                        disabled={
+                          option === "approved" && (!canApprove || selected.status !== "ready")
+                        }
                       >
                         {REVIEW_STATUS_LABELS[option]}
                       </SelectItem>
@@ -448,7 +452,9 @@ export function DocumentReviewQueue({
             </div>
             <Button
               type="submit"
-              disabled={!canManage || save.isPending || (selected.status === "approved" && !canApprove)}
+              disabled={
+                !canManage || save.isPending || (selected.status === "approved" && !canApprove)
+              }
             >
               {save.isPending ? <Loader2 className="mr-1 size-4 animate-spin" /> : null}
               Save review

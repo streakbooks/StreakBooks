@@ -49,7 +49,7 @@ try {
   }
   if (!ready) throw new Error("Isolated PostgreSQL never became ready");
   sql("tests/fixtures/documents/baseline.sql");
-  sql("supabase/migrations/20261104163000_documents_review_workflow.sql");
+  sql("supabase/migrations/20261104054143_documents_review_workflow.sql");
   console.log(sql("tests/integration/documents-review.sql").trim());
 } finally {
   try {

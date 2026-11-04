@@ -10,6 +10,7 @@ import {
 } from "@/lib/settings/settings-centre.functions";
 import {
   areSettingsDocumentsEqual,
+  isNullableNumericSetting,
   validateSettingsDraft,
 } from "@/lib/settings/form-state";
 import {
@@ -278,7 +279,9 @@ export function SettingsCategoryConfigPanel({
                   const id = "settings-" + category + "-" + key;
                   const options = ENUM_OPTIONS[category + "." + key];
                   const error = fieldErrors[key];
-                  const isNumeric = typeof defaults[key] === "number";
+                  const isNumeric =
+                    typeof defaults[key] === "number" ||
+                    isNullableNumericSetting(category, key);
 
                   if (typeof value === "boolean") {
                     return (
@@ -348,18 +351,26 @@ export function SettingsCategoryConfigPanel({
                       </div>
                     );
                   }
-                  if (typeof value === "number" || typeof value === "string") {
+                  if (typeof value === "number" || typeof value === "string" ||
+                      (value === null && isNumeric)) {
                     return (
                       <div key={key} className="space-y-1.5">
                         <Label htmlFor={id}>{displayLabel(key)}</Label>
                         <Input
                           id={id}
-                          value={String(value)}
+                          value={value === null ? "" : String(value)}
                           disabled={disabled}
                           inputMode={isNumeric ? "decimal" : undefined}
                           aria-invalid={Boolean(error)}
                           aria-describedby={error ? id + "-error" : undefined}
-                          onChange={(event) => updateField(key, event.target.value)}
+                          onChange={(event) =>
+                            updateField(
+                              key,
+                              value === null && event.target.value === ""
+                                ? null
+                                : event.target.value,
+                            )
+                          }
                         />
                         {error ? (
                           <p id={id + "-error"} className="text-xs text-destructive">

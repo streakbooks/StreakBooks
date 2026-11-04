@@ -5,7 +5,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { useCanDo } from "@/hooks/use-can";
 import { useFormat } from "@/hooks/use-format";
-
 import {
   listAccountWorkpapers,
   listWorkpaperLedger,
@@ -88,15 +87,13 @@ export function AccountWorkpapersPanel({
   );
   const selected = rows.find((row) => row.account_id === selectedId);
   const saved = selected?.paper;
-  const state =
-    selected?.live == null ? "stale" : workpaperReviewState(saved, selected.live);
+  const state = selected?.live == null ? "stale" : workpaperReviewState(saved, selected.live);
   const mutation = useMutation({
     mutationFn: (action: "save" | "prepare" | "review" | "reopen") => {
       if (!selected || selected.live === null) {
         throw new Error("Select an account with a valid ledger balance.");
       }
-      const minor =
-        supporting.trim() === "" ? null : toMinorUnits(supporting, currency).toString();
+      const minor = supporting.trim() === "" ? null : toMinorUnits(supporting, currency).toString();
       return submit({
         data: {
           companyId,
@@ -145,8 +142,15 @@ export function AccountWorkpapersPanel({
   const exportCsv = () => {
     const csv = toCsv(
       [
-        "Code", "Account", "As of", "GL minor", "Evidence minor",
-        "Difference minor", "Status", "Evidence reference", "Reviewer ID",
+        "Code",
+        "Account",
+        "As of",
+        "GL minor",
+        "Evidence minor",
+        "Difference minor",
+        "Status",
+        "Evidence reference",
+        "Reviewer ID",
       ],
       visible.map((row) => {
         const paper = row.paper;
@@ -167,9 +171,7 @@ export function AccountWorkpapersPanel({
         ];
       }),
     );
-    const url = URL.createObjectURL(
-      new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }),
-    );
+    const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
     const anchor = document.createElement("a");
     anchor.href = url;
     anchor.download = "linkbooks-account-workpapers-" + asOf + ".csv";
@@ -179,10 +181,17 @@ export function AccountWorkpapersPanel({
 
   if (trial.isPending || papers.isPending) return <LoadingState />;
   if (trial.isError) {
-    return <ErrorState title="Trial balance unavailable" description={friendlyAuthError(trial.error)} />;
+    return (
+      <ErrorState title="Trial balance unavailable" description={friendlyAuthError(trial.error)} />
+    );
   }
   if (papers.isError) {
-    return <ErrorState title="Workpaper register unavailable" description={friendlyAuthError(papers.error)} />;
+    return (
+      <ErrorState
+        title="Workpaper register unavailable"
+        description={friendlyAuthError(papers.error)}
+      />
+    );
   }
   const reviewed = rows.filter(
     (row) => row.live !== null && workpaperReviewState(row.paper, row.live) === "reviewed",
@@ -202,9 +211,9 @@ export function AccountWorkpapersPanel({
       </div>
       <Alert>
         <AlertDescription>
-          Workpapers do not post journals, reconcile bank statements or file returns.
-          Signed base-currency balances use positive debits and negative credits.
-          Evidence references identify external schedules; they are not file attachments.
+          Workpapers do not post journals, reconcile bank statements or file returns. Signed
+          base-currency balances use positive debits and negative credits. Evidence references
+          identify external schedules; they are not file attachments.
         </AlertDescription>
       </Alert>
       <div className="flex flex-wrap items-end gap-3">
@@ -228,8 +237,12 @@ export function AccountWorkpapersPanel({
             onChange={(event) => setSearch(event.target.value)}
           />
         </label>
-        <Button variant="outline" onClick={exportCsv}>Export CSV</Button>
-        <Button variant="outline" asChild><Link to="/reports">Reports</Link></Button>
+        <Button variant="outline" onClick={exportCsv}>
+          Export CSV
+        </Button>
+        <Button variant="outline" asChild>
+          <Link to="/reports">Reports</Link>
+        </Button>
       </div>
       <p className="text-sm text-muted-foreground">
         {reviewed} independently reviewed · {ready} awaiting review ·{" "}
@@ -270,7 +283,13 @@ export function AccountWorkpapersPanel({
                         : "—"}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={review === "stale" || review === "difference" ? "destructive" : "secondary"}>
+                      <Badge
+                        variant={
+                          review === "stale" || review === "difference"
+                            ? "destructive"
+                            : "secondary"
+                        }
+                      >
                         {WORKPAPER_STATE_LABELS[review]}
                       </Badge>
                     </TableCell>
@@ -293,7 +312,9 @@ export function AccountWorkpapersPanel({
       )}
       {selected && selected.live !== null && (
         <div className="space-y-3 rounded-xl border p-4">
-          <h3 className="font-semibold">{selected.code} — {selected.name}</h3>
+          <h3 className="font-semibold">
+            {selected.code} — {selected.name}
+          </h3>
           <p className="text-sm">
             Posted ledger: <strong>{fmt.money(selected.live)}</strong> ·{" "}
             {WORKPAPER_STATE_LABELS[state]}
@@ -340,7 +361,9 @@ export function AccountWorkpapersPanel({
           )}
           <div className="flex flex-wrap gap-2">
             <Button
-              disabled={!canManage || mutation.isPending || Boolean(saved && saved.status !== "draft")}
+              disabled={
+                !canManage || mutation.isPending || Boolean(saved && saved.status !== "draft")
+              }
               onClick={() => mutation.mutate("save")}
             >
               Save evidence
@@ -348,7 +371,12 @@ export function AccountWorkpapersPanel({
             {saved?.status === "draft" && (
               <Button
                 variant="outline"
-                disabled={!canManage || mutation.isPending || state !== "draft" || saved.evidence_reference.trim().length < 3}
+                disabled={
+                  !canManage ||
+                  mutation.isPending ||
+                  state !== "draft" ||
+                  saved.evidence_reference.trim().length < 3
+                }
                 onClick={() => mutation.mutate("prepare")}
               >
                 Submit for review

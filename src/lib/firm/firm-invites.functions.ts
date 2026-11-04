@@ -26,10 +26,7 @@ export type FirmStaffInvitation = {
   expiresAt: string;
   acceptedAt: string | null;
   deliveryStatus:
-    | "not_attempted"
-    | "provider_accepted"
-    | "failed"
-    | "not_configured"
+    | "not_attempted" | "provider_accepted" | "failed" | "not_configured"
     | "domain_unverified";
 };
 

@@ -114,7 +114,7 @@ export function FirmStaffAssignments({
         </p>
         <Link
           to="/settings"
-          search={{ settingsPanel: "category:users" }}
+          search={{ section: "users", settingsPanel: "category:users" }}
           className="text-sm underline"
         >
           Open Users &amp; Access invitations

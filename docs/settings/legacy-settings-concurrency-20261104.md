@@ -10,7 +10,7 @@
 
 ## Rollout order
 1. Pass full GitHub CI (TypeScript, full applicable ESLint, unit tests, isolated PostgreSQL integration/security, browser suite discovery and production build).
-2. Apply `supabase/migrations/20261104164500_legacy_settings_cas.sql` to the verified LinkBooks Supabase project, then verify the functions are **SECURITY INVOKER** and anonymous execution is revoked. Reconcile the migration filename with the actual recorded version.
+2. Apply `supabase/migrations/20261104165209_legacy_settings_cas.sql` to the verified LinkBooks Supabase project, then verify the functions are **SECURITY INVOKER** and anonymous execution is revoked. Reconcile the migration filename with the actual recorded version.
 3. Deploy a build from `linkbusinessadvisory/LinkBooks` only to a project connected to that repository. Do not deploy these changes to the Vercel project still serving `rohitmehra86/LinkBooks`.
 4. In authenticated staging, test two sessions editing the same section, document-number allocation while the editor is open, keyboard/mobile save/discard controls, and audit logs. No production deployment is claimed until verified.
 

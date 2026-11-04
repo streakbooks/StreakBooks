@@ -70,7 +70,6 @@ import { SettingsFeatureManager } from "@/components/settings/SettingsFeatureMan
 import { SettingsAccountingLocksPanel } from "@/components/settings/SettingsAccountingLocksPanel";
 import { SettingsCategoryConfigPanel } from "@/components/settings/SettingsCategoryConfigPanel";
 import { SettingsCommunicationsPanel } from "@/components/settings/SettingsCommunicationsPanel";
-import { SettingsUnavailablePanel } from "@/components/settings/SettingsUnavailablePanel";
 import { SubscriptionPanel } from "@/components/billing/SubscriptionPanel";
 import { SettingsCommandPalette } from "@/components/settings/SettingsCommandPalette";
 import { maxFiscalYearEndDay, formatDocumentNumberPreview } from "@/lib/settings/dimension-helpers";
@@ -113,10 +112,9 @@ const CONFIG_SECTIONS: SettingsCategory[] = [
   "contacts",
   "expenses",
   "import_migration",
+  "fixed_assets",
   "accountant",
 ];
-
-const UNAVAILABLE_SECTIONS: SettingsCategory[] = ["fixed_assets"];
 
 export const Route = createFileRoute("/_authenticated/settings")({
   validateSearch: (
@@ -707,9 +705,6 @@ export function SettingsForCompany({
               ) : null}
               {section === "portals" ? (
                 <PortalSettingsPanel companyId={companyId} canEdit={canEdit} />
-              ) : null}
-              {UNAVAILABLE_SECTIONS.includes(section) && sectionMeta ? (
-                <SettingsUnavailablePanel meta={sectionMeta} />
               ) : null}
               {section === "notifications" ? (
                 <SettingsCommunicationsPanel companyId={companyId} canEdit={canEdit} />

@@ -242,13 +242,18 @@ export const categoryMeta: CategoryMeta[] = [
     label: "Fixed Assets & Depreciation",
     description: "Asset register, methods and depreciation runs.",
     synonyms: ["depreciation", "capex", "asset register"],
-    availability: "unavailable",
+    moduleLinks: [
+      { label: "Fixed Assets workspace", to: "/fixed-assets" },
+      { label: "Fixed Assets import", to: "/imports" },
+    ],
+    availability: "partial",
   },
   {
     id: "import_migration",
     label: "Import & Migration",
     description: "Guided migration from other accounting systems.",
     synonyms: ["xero", "quickbooks", "zoho", "csv", "import"],
+    moduleLinks: [{ label: "Data Import Centre", to: "/imports" }],
     availability: "partial",
   },
 ];

@@ -5,7 +5,11 @@ import { assertUuid } from "@/lib/company-validation";
 import type { CompanyRole } from "@/lib/company-constants";
 import { normaliseAdjustments, type AccessAdjustment } from "@/lib/access-catalogue";
 import { normalizeCurrencySelection } from "@/lib/settings/currency-selection";
-import type { BrandingSnapshot, LocalisationSnapshot, SequenceSnapshot } from "@/lib/settings/legacy-snapshots";
+import type {
+  BrandingSnapshot,
+  LocalisationSnapshot,
+  SequenceSnapshot,
+} from "@/lib/settings/legacy-snapshots";
 
 const DOCUMENT_TYPES = [
   "sales_invoice",
@@ -252,8 +256,11 @@ export const updateDocumentSequence = createServerFn({ method: "POST" })
       if (!(DOCUMENT_TYPES as readonly string[]).includes(input.document_type)) {
         throw new Error("Unknown document type");
       }
-      if (!Number.isSafeInteger(input.next_number) || input.next_number < 1 ||
-          input.next_number >= 2147483647) {
+      if (
+        !Number.isSafeInteger(input.next_number) ||
+        input.next_number < 1 ||
+        input.next_number >= 2147483647
+      ) {
         throw new Error("Next number must be an integer between 1 and 2147483646");
       }
       if (!Number.isInteger(input.padding) || input.padding < 1 || input.padding > 10) {

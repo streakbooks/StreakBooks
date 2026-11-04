@@ -278,147 +278,150 @@ export function SettingsCategoryConfigPanel({
 
                 <div className="grid gap-3 lg:grid-cols-2">
                   {Object.entries(draft).map(([key, value]) => {
-                  const id = "settings-" + category + "-" + key;
-                  const field = settingsFieldPresentation(category, key);
-                  const options = ENUM_OPTIONS[category + "." + key];
-                  const error = fieldErrors[key];
-                  const isNumeric =
-                    typeof defaults[key] === "number" || isNullableNumericSetting(category, key);
+                    const id = "settings-" + category + "-" + key;
+                    const field = settingsFieldPresentation(category, key);
+                    const options = ENUM_OPTIONS[category + "." + key];
+                    const error = fieldErrors[key];
+                    const isNumeric =
+                      typeof defaults[key] === "number" || isNullableNumericSetting(category, key);
 
-                  if (typeof value === "boolean") {
-                    return (
-                      <div
-                        key={key}
-                        className="flex items-start justify-between gap-4 rounded-lg border bg-card p-4"
-                      >
-                        <div className="min-w-0 space-y-1.5">
-                          <Label htmlFor={id} className="text-sm font-medium">
-                            {field.label}
-                          </Label>
-                          <p id={id + "-description"} className="text-xs leading-relaxed text-muted-foreground">
+                    if (typeof value === "boolean") {
+                      return (
+                        <div
+                          key={key}
+                          className="flex items-start justify-between gap-4 rounded-lg border bg-card p-4"
+                        >
+                          <div className="min-w-0 space-y-1.5">
+                            <Label htmlFor={id} className="text-sm font-medium">
+                              {field.label}
+                            </Label>
+                            <p
+                              id={id + "-description"}
+                              className="text-xs leading-relaxed text-muted-foreground"
+                            >
+                              {field.description}
+                            </p>
+                          </div>
+                          <Switch
+                            id={id}
+                            checked={value}
+                            aria-describedby={id + "-description"}
+                            disabled={disabled}
+                            onCheckedChange={(checked) => updateField(key, checked)}
+                          />
+                        </div>
+                      );
+                    }
+                    if (options && typeof value === "string") {
+                      return (
+                        <div key={key} className="space-y-2 rounded-lg border p-4">
+                          <Label htmlFor={id}>{field.label}</Label>
+                          <p id={id + "-description"} className="text-xs text-muted-foreground">
                             {field.description}
                           </p>
+                          <Select
+                            value={value}
+                            disabled={disabled}
+                            onValueChange={(selected) => updateField(key, selected)}
+                          >
+                            <SelectTrigger
+                              id={id}
+                              aria-invalid={Boolean(error)}
+                              aria-describedby={`${id}-description${error ? ` ${id}-error` : ""}`}
+                            >
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {options.map((option) => (
+                                <SelectItem key={option} value={option}>
+                                  {displayLabel(option)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {error ? (
+                            <p id={id + "-error"} className="text-xs text-destructive">
+                              {error}
+                            </p>
+                          ) : null}
                         </div>
-                        <Switch
-                          id={id}
-                          checked={value}
-                          aria-describedby={id + "-description"}
-                          disabled={disabled}
-                          onCheckedChange={(checked) => updateField(key, checked)}
-                        />
-                      </div>
-                    );
-                  }
-                  if (options && typeof value === "string") {
-                    return (
-                      <div key={key} className="space-y-2 rounded-lg border p-4">
-                        <Label htmlFor={id}>{field.label}</Label>
-                        <p id={id + "-description"} className="text-xs text-muted-foreground">
-                          {field.description}
-                        </p>
-                        <Select
-                          value={value}
-                          disabled={disabled}
-                          onValueChange={(selected) => updateField(key, selected)}
-                        >
-                          <SelectTrigger
+                      );
+                    }
+                    if (Array.isArray(value)) {
+                      return (
+                        <div key={key} className="space-y-2 rounded-lg border p-4">
+                          <Label htmlFor={id}>{field.label}</Label>
+                          <p id={id + "-description"} className="text-xs text-muted-foreground">
+                            {field.description}
+                          </p>
+                          <Input
                             id={id}
+                            value={value.join(", ")}
+                            disabled={disabled}
                             aria-invalid={Boolean(error)}
                             aria-describedby={`${id}-description${error ? ` ${id}-error` : ""}`}
-                          >
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {options.map((option) => (
-                              <SelectItem key={option} value={option}>
-                                {displayLabel(option)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        {error ? (
-                          <p id={id + "-error"} className="text-xs text-destructive">
-                            {error}
+                            onChange={(event) => {
+                              const numbers =
+                                Array.isArray(defaults[key]) &&
+                                (defaults[key] as Array<string | number>).some(
+                                  (item) => typeof item === "number",
+                                );
+                              const parts = event.target.value
+                                .split(",")
+                                .map((part) => part.trim())
+                                .filter(Boolean)
+                                .map((part) =>
+                                  numbers && part !== "" && Number.isFinite(Number(part))
+                                    ? Number(part)
+                                    : part,
+                                );
+                              updateField(key, parts);
+                            }}
+                          />
+                          {error ? (
+                            <p id={id + "-error"} className="text-xs text-destructive">
+                              {error}
+                            </p>
+                          ) : null}
+                        </div>
+                      );
+                    }
+                    if (
+                      typeof value === "number" ||
+                      typeof value === "string" ||
+                      (value === null && isNumeric)
+                    ) {
+                      return (
+                        <div key={key} className="space-y-2 rounded-lg border p-4">
+                          <Label htmlFor={id}>{field.label}</Label>
+                          <p id={id + "-description"} className="text-xs text-muted-foreground">
+                            {field.description}
                           </p>
-                        ) : null}
-                      </div>
-                    );
-                  }
-                  if (Array.isArray(value)) {
-                    return (
-                      <div key={key} className="space-y-2 rounded-lg border p-4">
-                        <Label htmlFor={id}>{field.label}</Label>
-                        <p id={id + "-description"} className="text-xs text-muted-foreground">
-                          {field.description}
-                        </p>
-                        <Input
-                          id={id}
-                          value={value.join(", ")}
-                          disabled={disabled}
-                          aria-invalid={Boolean(error)}
-                          aria-describedby={`${id}-description${error ? ` ${id}-error` : ""}`}
-                          onChange={(event) => {
-                            const numbers =
-                              Array.isArray(defaults[key]) &&
-                              (defaults[key] as Array<string | number>).some(
-                                (item) => typeof item === "number",
-                              );
-                            const parts = event.target.value
-                              .split(",")
-                              .map((part) => part.trim())
-                              .filter(Boolean)
-                              .map((part) =>
-                                numbers && part !== "" && Number.isFinite(Number(part))
-                                  ? Number(part)
-                                  : part,
-                              );
-                            updateField(key, parts);
-                          }}
-                        />
-                        {error ? (
-                          <p id={id + "-error"} className="text-xs text-destructive">
-                            {error}
-                          </p>
-                        ) : null}
-                      </div>
-                    );
-                  }
-                  if (
-                    typeof value === "number" ||
-                    typeof value === "string" ||
-                    (value === null && isNumeric)
-                  ) {
-                    return (
-                      <div key={key} className="space-y-2 rounded-lg border p-4">
-                        <Label htmlFor={id}>{field.label}</Label>
-                        <p id={id + "-description"} className="text-xs text-muted-foreground">
-                          {field.description}
-                        </p>
-                        <Input
-                          id={id}
-                          value={value === null ? "" : String(value)}
-                          disabled={disabled}
-                          inputMode={isNumeric ? "decimal" : undefined}
-                          aria-invalid={Boolean(error)}
-                          aria-describedby={`${id}-description${error ? ` ${id}-error` : ""}`}
-                          onChange={(event) =>
-                            updateField(
-                              key,
-                              value === null && event.target.value === ""
-                                ? null
-                                : event.target.value,
-                            )
-                          }
-                        />
-                        {error ? (
-                          <p id={id + "-error"} className="text-xs text-destructive">
-                            {error}
-                          </p>
-                        ) : null}
-                      </div>
-                    );
-                  }
-                  return null;
+                          <Input
+                            id={id}
+                            value={value === null ? "" : String(value)}
+                            disabled={disabled}
+                            inputMode={isNumeric ? "decimal" : undefined}
+                            aria-invalid={Boolean(error)}
+                            aria-describedby={`${id}-description${error ? ` ${id}-error` : ""}`}
+                            onChange={(event) =>
+                              updateField(
+                                key,
+                                value === null && event.target.value === ""
+                                  ? null
+                                  : event.target.value,
+                              )
+                            }
+                          />
+                          {error ? (
+                            <p id={id + "-error"} className="text-xs text-destructive">
+                              {error}
+                            </p>
+                          ) : null}
+                        </div>
+                      );
+                    }
+                    return null;
                   })}
                 </div>
 

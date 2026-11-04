@@ -106,6 +106,19 @@ try {
   sql(read("tests/fixtures/workflows/settings-legacy-cas-baseline.sql"));
   sql(read("supabase/migrations/20261104165209_legacy_settings_cas.sql"));
   sql(read("tests/integration/settings-legacy-cas.sql"));
+  sql(read("tests/fixtures/workflows/settings-feature-disable-baseline.sql"));
+  sql(
+    fn(
+      "supabase/migrations/20261022180000_settings_centre_foundation.sql",
+      "public.set_organisation_feature",
+    ),
+  );
+  sql(
+    "REVOKE ALL ON FUNCTION public.set_organisation_feature(uuid,text,boolean,jsonb,text,text) FROM PUBLIC, anon; " +
+      "GRANT EXECUTE ON FUNCTION public.set_organisation_feature(uuid,text,boolean,jsonb,text,text) TO authenticated;",
+  );
+  sql(read("supabase/migrations/20261104182500_multicurrency_feature_disable_guard.sql"));
+  sql(read("tests/integration/settings-feature-disable-guard.sql"));
   console.log(
     "Workflow migration compiled. Atomic rollback, permissions, two-tenant RLS, PO edit/conversion, sales lifecycle, deferrals and real shared posting-engine balance/lock scenarios passed.",
   );

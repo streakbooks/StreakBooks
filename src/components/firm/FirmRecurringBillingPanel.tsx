@@ -13,16 +13,17 @@ import {
   listFirmPracticeRecurringTemplates,
   unlinkFirmEngagementRecurring,
 } from "@/lib/firm/firm-recurring-billing.functions";
-import {
-  compatiblePracticeRecurring,
-  practiceDraftDue,
-} from "@/lib/firm/practice-recurring-rules";
+import { compatiblePracticeRecurring, practiceDraftDue } from "@/lib/firm/practice-recurring-rules";
 import { LookupSelect } from "@/components/lookup";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 
@@ -40,10 +41,13 @@ export function FirmRecurringBillingPanel({
   const available = clients.filter((client) => Boolean(client.companies));
   const [selected, setSelected] = useState("");
   const companyId = available.some((c) => c.company_id === selected)
-    ? selected : available[0]?.company_id ?? "";
+    ? selected
+    : (available[0]?.company_id ?? "");
   const [engagementId, setEngagementId] = useState("");
   const [templateId, setTemplateId] = useState("");
-  const validBillingCompany = Boolean(companyId && billingCompanyId && companyId !== billingCompanyId);
+  const validBillingCompany = Boolean(
+    companyId && billingCompanyId && companyId !== billingCompanyId,
+  );
   const getEngagements = useServerFn(listFirmEngagements);
   const getTemplates = useServerFn(listFirmPracticeRecurringTemplates);
   const getLinks = useServerFn(listFirmEngagementRecurringLinks);
@@ -58,7 +62,8 @@ export function FirmRecurringBillingPanel({
   });
   const engagements = engagementsQ.data ?? [];
   const currentEngagementId = engagements.some((item) => item.id === engagementId)
-    ? engagementId : engagements[0]?.id ?? "";
+    ? engagementId
+    : (engagements[0]?.id ?? "");
   const engagement = engagements.find((item) => item.id === currentEngagementId);
   const templatesQ = useQuery({
     queryKey: ["firm-recurring-templates", firmId, companyId, billingCompanyId],
@@ -69,21 +74,34 @@ export function FirmRecurringBillingPanel({
     ? (templatesQ.data ?? []).filter((tpl) => compatiblePracticeRecurring(engagement, tpl))
     : [];
   const currentTemplateId = eligible.some((item) => item.id === templateId)
-    ? templateId : eligible[0]?.id ?? "";
-  const linkKey = ["firm-recurring-links", firmId, companyId, billingCompanyId, currentEngagementId];
+    ? templateId
+    : (eligible[0]?.id ?? "");
+  const linkKey = [
+    "firm-recurring-links",
+    firmId,
+    companyId,
+    billingCompanyId,
+    currentEngagementId,
+  ];
   const linksQ = useQuery({
     queryKey: linkKey,
     enabled: Boolean(validBillingCompany && currentEngagementId),
     queryFn: () =>
-      getLinks({ data: { firmId, companyId, billingCompanyId, engagementId: currentEngagementId } }),
+      getLinks({
+        data: { firmId, companyId, billingCompanyId, engagementId: currentEngagementId },
+      }),
   });
   const linkM = useMutation({
-    mutationFn: () => link({
-      data: {
-        firmId, companyId, billingCompanyId, engagementId: currentEngagementId,
-        recurringId: currentTemplateId,
-      },
-    }),
+    mutationFn: () =>
+      link({
+        data: {
+          firmId,
+          companyId,
+          billingCompanyId,
+          engagementId: currentEngagementId,
+          recurringId: currentTemplateId,
+        },
+      }),
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: linkKey });
       toast.success("Recurring invoice template linked");
@@ -91,12 +109,16 @@ export function FirmRecurringBillingPanel({
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
   const unlinkM = useMutation({
-    mutationFn: (recurringId: string) => unlink({
-      data: {
-        firmId, companyId, billingCompanyId, engagementId: currentEngagementId,
-        recurringId,
-      },
-    }),
+    mutationFn: (recurringId: string) =>
+      unlink({
+        data: {
+          firmId,
+          companyId,
+          billingCompanyId,
+          engagementId: currentEngagementId,
+          recurringId,
+        },
+      }),
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: linkKey });
       toast.success("Recurring reference unlinked; template unchanged");
@@ -104,12 +126,16 @@ export function FirmRecurringBillingPanel({
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
   const generateM = useMutation({
-    mutationFn: (recurringId: string) => generate({
-      data: {
-        firmId, companyId, billingCompanyId, engagementId: currentEngagementId,
-        recurringId,
-      },
-    }),
+    mutationFn: (recurringId: string) =>
+      generate({
+        data: {
+          firmId,
+          companyId,
+          billingCompanyId,
+          engagementId: currentEngagementId,
+          recurringId,
+        },
+      }),
     onSuccess: async (result) => {
       await qc.invalidateQueries({ queryKey: linkKey });
       await qc.invalidateQueries({
@@ -138,7 +164,10 @@ export function FirmRecurringBillingPanel({
         Configure recurring Sales invoices
       </Link>
       {!available.length ? (
-        <EmptyState title="No linked clients" description="Link a client to use recurring billing." />
+        <EmptyState
+          title="No linked clients"
+          description="Link a client to use recurring billing."
+        />
       ) : (
         <>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -148,9 +177,14 @@ export function FirmRecurringBillingPanel({
                 ariaLabel="Client for recurring billing"
                 allowClear={false}
                 value={companyId}
-                onChange={(value) => { setSelected(value); setEngagementId(""); setTemplateId(""); }}
+                onChange={(value) => {
+                  setSelected(value);
+                  setEngagementId("");
+                  setTemplateId("");
+                }}
                 options={available.map((item) => ({
-                  id: item.company_id, name: getFirmClientName(item),
+                  id: item.company_id,
+                  name: getFirmClientName(item),
                   label: getFirmClientName(item),
                 }))}
               />
@@ -163,7 +197,9 @@ export function FirmRecurringBillingPanel({
                 </SelectTrigger>
                 <SelectContent>
                   {engagements.map((item) => (
-                    <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>
+                    <SelectItem key={item.id} value={item.id}>
+                        {item.name}
+                      </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -184,16 +220,23 @@ export function FirmRecurringBillingPanel({
             <>
               {linksQ.isPending ? <LoadingState rows={2} /> : null}
               {linksQ.isError ? (
-                <ErrorState title="Cannot load recurring links" description={friendlyAuthError(linksQ.error)} />
+                <ErrorState
+                  title="Cannot load recurring links"
+                  description={friendlyAuthError(linksQ.error)}
+                />
               ) : null}
               {(linksQ.data ?? []).map((item) => {
                 const schedule = item.sales_recurring_invoices;
                 return (
-                  <div key={item.recurring_id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3">
+                  <div
+                    key={item.recurring_id}
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3"
+                  >
                     <div>
                       <p className="font-medium">{schedule?.name ?? "Recurring invoice"}</p>
                       <p className="text-xs text-muted-foreground">
-                        Next due {schedule?.next_due_date ?? "unknown"} · {schedule?.frequency ?? ""}
+                        Next due {schedule?.next_due_date ?? "unknown"} ·{" "}
+                        {schedule?.frequency ?? ""}
                       </p>
                       <Badge variant="outline">
                         {schedule?.is_active ? "Active template" : "Inactive template"}
@@ -204,7 +247,9 @@ export function FirmRecurringBillingPanel({
                         <Button
                           size="sm"
                           disabled={
-                            generateM.isPending || !engagement || !schedule ||
+                            generateM.isPending ||
+                            !engagement ||
+                            !schedule ||
                             !compatiblePracticeRecurring(engagement, schedule) ||
                             !practiceDraftDue(schedule, new Date().toISOString().slice(0, 10))
                           }
@@ -223,7 +268,11 @@ export function FirmRecurringBillingPanel({
                           variant="outline"
                           disabled={unlinkM.isPending}
                           onClick={() => {
-                            if (window.confirm("Unlink the recurring reference without deleting its template?"))
+                            if (
+                              window.confirm(
+                                "Unlink the recurring reference without deleting its template?",
+                              )
+                            )
                               unlinkM.mutate(item.recurring_id);
                           }}
                         >
@@ -239,7 +288,9 @@ export function FirmRecurringBillingPanel({
                   <div className="min-w-64 flex-1 space-y-1">
                     <Label>Eligible recurring Sales template</Label>
                     <Select value={currentTemplateId} onValueChange={setTemplateId}>
-                      <SelectTrigger aria-label="Recurring invoice template"><SelectValue /></SelectTrigger>
+                      <SelectTrigger aria-label="Recurring invoice template">
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
                         {eligible.map((item) => (
                           <SelectItem key={item.id} value={item.id}>
@@ -249,15 +300,18 @@ export function FirmRecurringBillingPanel({
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button disabled={linkM.isPending || !currentTemplateId} onClick={() => linkM.mutate()}>
+                  <Button
+                    disabled={linkM.isPending || !currentTemplateId}
+                    onClick={() => linkM.mutate()}
+                  >
                     Link recurring template
                   </Button>
                 </div>
               ) : null}
               {canManage && engagement && !eligible.length ? (
                 <p className="text-sm text-muted-foreground">
-                  No active draft-only recurring template matches this engagement's frequency
-                  and currency. Create one in Sales first.
+                  No active draft-only recurring template matches this engagement's frequency and
+                  currency. Create one in Sales first.
                 </p>
               ) : null}
             </>

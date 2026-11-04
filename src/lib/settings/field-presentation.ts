@@ -164,7 +164,8 @@ const FIELDS: Record<string, SettingsFieldPresentation> = {
   },
   "automation.ai_mode": {
     label: "AI assistant permission level",
-    description: "Choose the permitted AI action level; approvals remain required where applicable.",
+    description:
+      "Choose the permitted AI action level; approvals remain required where applicable.",
   },
   "automation.voice_commands": {
     label: "Enable voice commands",

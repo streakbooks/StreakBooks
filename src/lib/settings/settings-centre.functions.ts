@@ -1,6 +1,7 @@
 import { buildIntegrationHealth } from "./integration-health";
 import { assertSettingsCategory } from "@/lib/settings/categories";
 import { assertSettingsBoolean, parseExpectedSettingsVersion } from "@/lib/settings/validation";
+import { countConfiguredForeignCurrencies } from "@/lib/settings/foreign-currency-safety";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
@@ -40,20 +41,6 @@ function toSettingsDocument(raw: unknown): SettingsDocument {
     }
   }
   return out;
-}
-
-/** Count configured foreign currencies; unknown database counts must not be treated as zero. */
-async function countConfiguredForeignCurrencies(
-  supabase: Parameters<typeof assertCompanyMember>[0],
-  companyId: string,
-): Promise<number> {
-  const { count, error } = await supabase
-    .from("company_currencies" as never)
-    .select("currency_code" as never, { count: "exact", head: true })
-    .eq("company_id" as never, companyId as never);
-  if (error) throw new Error(error.message);
-  if (count == null) throw new Error("Unable to verify configured foreign currencies");
-  return count;
 }
 
 export const getOrganisationConfig = createServerFn({ method: "GET" })

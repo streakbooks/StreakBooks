@@ -338,24 +338,22 @@ export function SettingsForCompany({
   }, [extendedQuery.data, localizationDirty, brandingDirty, currenciesDirty]);
 
   const detailsServerChanged = Boolean(
-    detailsDirty &&
-      detailsQuery.data &&
-      JSON.stringify(detailsQuery.data) !== detailsBaseline,
+    detailsDirty && detailsQuery.data && JSON.stringify(detailsQuery.data) !== detailsBaseline,
   );
   const localizationServerChanged = Boolean(
     localizationDirty &&
-      extendedQuery.data?.company &&
-      JSON.stringify(extendedQuery.data.company) !== localizationBaseline,
+    extendedQuery.data?.company &&
+    JSON.stringify(extendedQuery.data.company) !== localizationBaseline,
   );
   const brandingServerChanged = Boolean(
     brandingDirty &&
-      extendedQuery.data &&
-      JSON.stringify(extendedQuery.data.branding) !== brandingBaseline,
+    extendedQuery.data &&
+    JSON.stringify(extendedQuery.data.branding) !== brandingBaseline,
   );
   const currenciesServerChanged = Boolean(
     currenciesDirty &&
-      extendedQuery.data &&
-      JSON.stringify(extendedQuery.data.enabledCurrencies) !== currenciesBaseline,
+    extendedQuery.data &&
+    JSON.stringify(extendedQuery.data.enabledCurrencies) !== currenciesBaseline,
   );
   const detailsValid =
     name.trim().length >= 2 &&
@@ -366,8 +364,7 @@ export function SettingsForCompany({
     Number(fyDay) <= maxFiscalYearEndDay(Number(fyMonth));
   const localizationValid = isValidThemeColor(themeColor) && invoiceFooter.length <= 2000;
   const brandingValid =
-    isValidOptionalEmail(invoiceEmail) &&
-    (!logoUrl.trim() || /^https:\/\//i.test(logoUrl.trim()));
+    isValidOptionalEmail(invoiceEmail) && (!logoUrl.trim() || /^https:\/\//i.test(logoUrl.trim()));
   const fxRateValid =
     isValidPositiveFxRate(rateValue) &&
     rateFrom !== (detailsQuery.data?.base_currency ?? "GBP") &&
@@ -645,7 +642,9 @@ export function SettingsForCompany({
               ) : null}
             </div>
           ) : null}
-          {!detail && extendedQuery.isError && ["organisation", "documents", "currencies"].includes(section) ? (
+          {!detail &&
+          extendedQuery.isError &&
+          ["organisation", "documents", "currencies"].includes(section) ? (
             <Alert variant="destructive">
               <AlertTitle>Additional organisation settings could not be loaded</AlertTitle>
               <AlertDescription className="flex flex-wrap items-center gap-3">
@@ -924,7 +923,9 @@ export function SettingsForCompany({
                           canEdit={canEdit}
                           pending={saveMutation.isPending}
                           serverChanged={detailsServerChanged}
-                          error={saveMutation.isError ? friendlyAuthError(saveMutation.error) : null}
+                          error={
+                            saveMutation.isError ? friendlyAuthError(saveMutation.error) : null
+                          }
                           onSave={() => saveMutation.mutate()}
                           onDiscard={resetDetails}
                         />
@@ -941,10 +942,14 @@ export function SettingsForCompany({
                       <CardContent className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-2">
                           <Label htmlFor="org-locale">Locale</Label>
-                          <Select value={locale} disabled={!canEdit || !extendedQuery.data} onValueChange={(value) => {
+                          <Select
+                            value={locale}
+                            disabled={!canEdit || !extendedQuery.data}
+                            onValueChange={(value) => {
                               setLocale(value);
                               setLocalizationDirty(true);
-                            }}>
+                            }}
+                          >
                             {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
 
                             <SelectTrigger id="org-locale">
@@ -1020,7 +1025,9 @@ export function SettingsForCompany({
                           canEdit={canEdit}
                           pending={localizationM.isPending}
                           serverChanged={localizationServerChanged}
-                          error={localizationM.isError ? friendlyAuthError(localizationM.error) : null}
+                          error={
+                            localizationM.isError ? friendlyAuthError(localizationM.error) : null
+                          }
                           onSave={() => localizationM.mutate()}
                           onDiscard={resetLocalization}
                         />
@@ -1143,7 +1150,9 @@ export function SettingsForCompany({
                           canEdit={canEdit}
                           pending={saveMutation.isPending}
                           serverChanged={detailsServerChanged}
-                          error={saveMutation.isError ? friendlyAuthError(saveMutation.error) : null}
+                          error={
+                            saveMutation.isError ? friendlyAuthError(saveMutation.error) : null
+                          }
                           onSave={() => saveMutation.mutate()}
                           onDiscard={resetDetails}
                         />
@@ -1236,7 +1245,9 @@ export function SettingsForCompany({
                             id="org-logo-url"
                             inputMode="url"
                             value={logoUrl}
-                            aria-invalid={Boolean(logoUrl.trim() && !/^https:\/\//i.test(logoUrl.trim()))}
+                            aria-invalid={Boolean(
+                              logoUrl.trim() && !/^https:\/\//i.test(logoUrl.trim()),
+                            )}
                             aria-describedby="org-logo-url-hint"
                             disabled={!canEdit || !extendedQuery.data}
                             onChange={(e) => {
@@ -1704,7 +1715,13 @@ function SequenceRow({
         />
       </TableCell>
       <TableCell className="font-mono text-xs text-muted-foreground">
-        {parsed.ok ? formatDocumentNumberPreview(parsed.value.prefix, parsed.value.next_number, parsed.value.padding) : "—"}
+        {parsed.ok
+          ? formatDocumentNumberPreview(
+              parsed.value.prefix,
+              parsed.value.next_number,
+              parsed.value.padding,
+            )
+          : "—"}
         {error ? (
           <span id={errorId} role="alert" className="mt-1 block max-w-40 text-xs text-destructive">
             {error}
@@ -1727,12 +1744,7 @@ function SequenceRow({
               {pending ? "Saving…" : "Save"}
             </Button>
             {dirty ? (
-              <Button
-                size="sm"
-                variant="ghost"
-                disabled={pending}
-                onClick={discard}
-              >
+              <Button size="sm" variant="ghost" disabled={pending} onClick={discard}>
                 {serverChanged ? "Reload" : "Discard"}
               </Button>
             ) : null}

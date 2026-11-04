@@ -99,7 +99,14 @@ export function FirmClientPortfolio({
   const saveM = useMutation({
     mutationFn: async () => {
       if (!editing) throw new Error("Select a client");
-      const tags = [...new Set(draft.tags.split(",").map((tag) => tag.trim()).filter(Boolean))];
+      const tags = [
+        ...new Set(
+          draft.tags
+            .split(",")
+            .map((tag) => tag.trim())
+            .filter(Boolean),
+        ),
+      ];
       const input: FirmClientProfileInput = {
         ...draft,
         tags,
@@ -286,7 +293,9 @@ export function FirmClientPortfolio({
                             <Button
                               size="sm"
                               variant="outline"
-                              disabled={profilesQ.isError || profilesQ.isPending || !client.companies}
+                              disabled={
+                                profilesQ.isError || profilesQ.isPending || !client.companies
+                              }
                               onClick={() => editClient(client)}
                             >
                               Profile
@@ -321,8 +330,8 @@ export function FirmClientPortfolio({
           <DialogHeader>
             <DialogTitle>Client practice profile</DialogTitle>
             <DialogDescription>
-              {editing ? getFirmClientName(editing) : "Client"} — Firm-owned information.
-              Changes here do not edit the client's legal or accounting records.
+              {editing ? getFirmClientName(editing) : "Client"} — Firm-owned information. Changes
+              here do not edit the client's legal or accounting records.
             </DialogDescription>
           </DialogHeader>
           <form
@@ -341,7 +350,9 @@ export function FirmClientPortfolio({
                     setDraft((current) => ({ ...current, status: value as FirmClientStatus }))
                   }
                 >
-                  <SelectTrigger id="client-status"><SelectValue /></SelectTrigger>
+                  <SelectTrigger id="client-status">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {CLIENT_STATUSES.map((value) => (
                       <SelectItem key={value} value={value}>
@@ -365,12 +376,14 @@ export function FirmClientPortfolio({
                   }
                 />
               </div>
-              {([
-                ["primary_contact_name", "Primary contact"],
-                ["primary_contact_email", "Contact email"],
-                ["industry", "Industry"],
-                ["service_line", "Primary service"],
-              ] as const).map(([field, title]) => (
+              {(
+                [
+                  ["primary_contact_name", "Primary contact"],
+                  ["primary_contact_email", "Contact email"],
+                  ["industry", "Industry"],
+                  ["service_line", "Primary service"],
+                ] as const
+              ).map(([field, title]) => (
                 <div key={field} className="space-y-1">
                   <Label htmlFor={field}>{title}</Label>
                   <Input

@@ -14,6 +14,7 @@ import {
 } from "@/lib/documents/attachments";
 import { entityManagePermissions, entityViewPermissions } from "@/lib/documents/record-activity";
 import { escapeLikeLiteral } from "@/lib/sales/list-filters";
+import { filePreviewKind, fileSortOrder, parseFileSort } from "@/lib/documents/file-workspace";
 
 const MIGRATION_HINT =
   "File storage needs a database update that has not been applied yet (migration 20261025200100). Ask an administrator to apply the latest migrations.";
@@ -235,6 +236,52 @@ export const getAttachmentDownload = createServerFn({ method: "GET" })
     };
   });
 
+/** Short-lived, view-only URL for safe inline formats. No download disposition or public bucket. */
+export const getAttachmentPreview = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; attachmentId: string }) => ({
+    companyId: assertUuid(input.companyId),
+    attachmentId: assertUuid(input.attachmentId, "file"),
+  }))
+  .handler(async ({ data, context }) => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    // Document RLS includes record-level permissions; never use a service-role client here.
+    const { data: row, error } = await context.supabase
+      .from("document_attachments" as never)
+      .select("file_name, content_type, storage_path, storage_bucket, content_base64" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("id" as never, data.attachmentId as never)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("File not found");
+    const file = row as unknown as {
+      file_name: string;
+      content_type: string | null;
+      storage_path: string | null;
+      storage_bucket: string | null;
+      content_base64: string | null;
+    };
+    const previewType = filePreviewKind(file.content_type, file.file_name);
+    if (!previewType) return { kind: "unsupported" as const };
+    if (file.storage_bucket === COMPANY_DOCUMENTS_BUCKET) {
+      if (!file.storage_path?.startsWith(`${data.companyId}/`))
+        throw new Error("File not found");
+      const { data: signed, error: signedError } = await context.supabase.storage
+        .from(COMPANY_DOCUMENTS_BUCKET)
+        .createSignedUrl(file.storage_path, 120);
+      if (signedError || !signed)
+        throw new Error(signedError?.message ?? "Could not load the preview");
+      return { kind: "url" as const, url: signed.signedUrl, previewType };
+    }
+    if (!file.content_base64) throw new Error("This file's content is not available.");
+    return {
+      kind: "inline" as const,
+      contentBase64: file.content_base64,
+      contentType: file.content_type!,
+      previewType,
+    };
+  });
+
 export const deleteAttachment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { companyId: string; attachmentId: string }) => ({
@@ -313,6 +360,7 @@ export const listCompanyFiles = createServerFn({ method: "GET" })
       companyId: string;
       search?: string;
       entityType?: string;
+      sort?: string;
       page?: number;
       pageSize?: number;
       folderId?: string | null;
@@ -320,6 +368,7 @@ export const listCompanyFiles = createServerFn({ method: "GET" })
     }) => ({
       companyId: assertUuid(input.companyId),
       search: (input.search ?? "").trim().slice(0, 80),
+      sort: parseFileSort(input.sort),
       entityType: input.entityType && input.entityType !== "all" ? input.entityType : null,
       folderId: input.folderId ? assertUuid(input.folderId) : null,
       unfiledOnly: input.unfiledOnly === true,
@@ -340,12 +389,14 @@ export const listCompanyFiles = createServerFn({ method: "GET" })
     if (data.search)
       q = q.ilike("file_name" as never, `%${escapeLikeLiteral(data.search)}%` as never);
     const from = data.page * data.pageSize;
-    const {
-      data: rows,
-      error,
-      count,
-    } = await q
-      .order("created_at" as never, { ascending: false } as never)
+    // Order before pagination. Sorting only the returned page gives incorrect global results.
+    const order = fileSortOrder(data.sort);
+    const { data: rows, error, count } = await q
+      .order(order.column as never, {
+        ascending: order.ascending,
+        nullsFirst: false,
+      } as never)
+      .order("id" as never, { ascending: true } as never)
       .range(from, from + data.pageSize - 1);
     if (error) {
       if (error.code === "42703") throw new Error(MIGRATION_HINT);

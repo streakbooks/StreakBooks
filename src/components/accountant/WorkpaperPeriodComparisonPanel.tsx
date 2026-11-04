@@ -1,10 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import {
-  listAccountWorkpapers,
-  listWorkpaperLedger,
-} from "@/lib/accountant/workpapers.functions";
+import { listAccountWorkpapers, listWorkpaperLedger } from "@/lib/accountant/workpapers.functions";
 import {
   compareWorkpaperPeriods,
   type ComparedLedgerAccount,
@@ -121,7 +118,8 @@ export function WorkpaperPeriodComparisonPanel({
     const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = "linkbooks-workpaper-period-variance-" + previousAsOf + "-to-" + asOf + ".csv";
+    anchor.download =
+      "linkbooks-workpaper-period-variance-" + previousAsOf + "-to-" + asOf + ".csv";
     anchor.click();
     URL.revokeObjectURL(url);
   };

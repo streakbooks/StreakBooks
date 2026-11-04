@@ -242,7 +242,7 @@ begin
      case when c.days_until < 0 then 'overdue'
        when c.days_until=0 then 'due today' else 'due in 3 days' end,
    'Open your LinkBooks document request to upload the required client file.',
-   'action_document_request',c.request_id,'/documents','open'
+   'action_document_request',c.request_id,'/firm','open'
  from candidate c
  on conflict (company_id,recipient_user_id,event_key) do nothing;
  get diagnostics sent=row_count;

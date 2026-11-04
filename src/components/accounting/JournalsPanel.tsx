@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useState } from "react";
+import { JournalQualityReviewPanel } from "@/components/accountant/JournalQualityReviewPanel";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ChevronDown, ChevronRight } from "lucide-react";
@@ -12,6 +13,7 @@ import {
   type JournalListItem,
 } from "@/lib/accounting/accounting.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { toCsv } from "@/lib/sales/csv";
 import { roleHasPermission } from "@/lib/permissions";
 import { useFormat } from "@/hooks/use-format";
 import { SortableHead } from "@/components/common/sortable-head";
@@ -132,6 +134,36 @@ export function JournalsPanel({
                 : j.total_debit_minor,
         sort.dir,
       );
+  const exportVisibleJournals = () => {
+    const csv = toCsv(
+      [
+        "Journal number",
+        "Date",
+        "Source",
+        "Narration",
+        "Total debit (ledger minor units)",
+        "Currency code",
+        "Status",
+        "Reversed",
+      ],
+      rows.map((row) => [
+        row.journal_number,
+        row.journal_date,
+        row.source_type,
+        row.memo,
+        row.total_debit_minor,
+        row.currency_code,
+        row.status,
+        row.reversed_by_journal_id ? "Yes" : "No",
+      ]),
+    );
+    const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "linkbooks-journals-visible.csv";
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
   const headProps = (key: "number" | "date" | "source" | "amount") => ({
     active: sort?.key === key,
     dir: sort?.dir ?? ("asc" as const),
@@ -140,6 +172,7 @@ export function JournalsPanel({
 
   return (
     <div className="space-y-4">
+      <JournalQualityReviewPanel companyId={companyId} />
       <div className="flex flex-wrap items-end gap-2">
         <Input
           aria-label="Search journals"
@@ -191,6 +224,20 @@ export function JournalsPanel({
             Clear filters
           </Button>
         ) : null}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={query.isPending || query.isError || rows.length === 0}
+          onClick={exportVisibleJournals}
+        >
+          Export displayed journals CSV
+        </Button>
+        <span className="text-xs text-muted-foreground">
+          Export includes the currently loaded and filtered journals only (maximum 500).
+        </span>
       </div>
 
       {query.isPending ? (
@@ -340,7 +387,7 @@ export function JournalsPanel({
               })}
             </TableBody>
           </Table>
-          {rows.length >= limit ? (
+          {rows.length >= limit && limit < 500 ? (
             <Button
               variant="outline"
               size="sm"
@@ -348,6 +395,11 @@ export function JournalsPanel({
             >
               Show more
             </Button>
+          ) : null}
+          {rows.length >= 500 ? (
+            <p className="text-xs text-muted-foreground">
+              Showing up to 500 journals. Narrow the date or source filters to view older entries.
+            </p>
           ) : null}
         </>
       )}

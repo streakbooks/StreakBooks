@@ -10,13 +10,17 @@ export function canPostDeferralEntry(
   today: string,
   postingDate: string,
 ): boolean {
-  const iso = /^\d{4}-\d{2}-\d{2}$/;
+  const isDate = (date: string) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
+    const parsed = new Date(`${date}T00:00:00Z`);
+    return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === date;
+  };
   return (
     scheduleStatus === "active" &&
     !entry.journal_id &&
-    iso.test(today) &&
-    iso.test(postingDate) &&
-    iso.test(entry.due_on) &&
+    isDate(today) &&
+    isDate(postingDate) &&
+    isDate(entry.due_on) &&
     entry.due_on <= today &&
     entry.due_on <= postingDate &&
     postingDate <= today

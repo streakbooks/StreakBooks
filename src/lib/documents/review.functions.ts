@@ -87,20 +87,16 @@ export const listDocumentReviewQueue = createServerFn({ method: "GET" })
       .select("id, file_name, content_type, size_bytes, created_at" as never)
       .eq("company_id" as never, data.companyId as never)
       .eq("entity_type" as never, "company" as never)
-      .in(
-        "id" as never,
-        reviews.map((row) => row.attachment_id) as never,
-      );
+      .in("id" as never, reviews.map((row) => row.attachment_id) as never);
     if (attachments.error) throw new Error(attachments.error.message);
-    const lookup = new Map(
-      ((attachments.data ?? []) as unknown as Array<{
-        id: string;
-        file_name: string;
-        content_type: string | null;
-        size_bytes: number | null;
-        created_at: string;
-      }>).map((row) => [row.id, row]),
-    );
+    const attachmentRows = (attachments.data ?? []) as unknown as Array<{
+      id: string;
+      file_name: string;
+      content_type: string | null;
+      size_bytes: number | null;
+      created_at: string;
+    }>;
+    const lookup = new Map(attachmentRows.map((row) => [row.id, row]));
     return {
       rows: reviews.flatMap((review): ReviewQueueItem[] => {
         const file = lookup.get(review.attachment_id);

@@ -17,7 +17,7 @@ export function journalPageRange(
 export function journalPageInfo(rowCount: number, pageSize: number, page: number) {
   return {
     hasNext: rowCount > pageSize,
-    first: page * pageSize + (rowCount > 0 ? 1 : 0),
+    first: rowCount > 0 ? page * pageSize + 1 : 0,
     last: rowCount > 0 ? page * pageSize + Math.min(rowCount, pageSize) : 0,
   };
 }

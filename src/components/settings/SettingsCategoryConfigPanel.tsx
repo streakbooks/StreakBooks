@@ -277,8 +277,8 @@ export function SettingsCategoryConfigPanel({
                   const id = "settings-" + category + "-" + key;
                   const options = ENUM_OPTIONS[category + "." + key];
                   const error = fieldErrors[key];
-                  const isNumeric = typeof defaults[key] === "number" ||
-                    isNullableNumericSetting(category, key);
+                  const isNumeric =
+                    typeof defaults[key] === "number" || isNullableNumericSetting(category, key);
 
                   if (typeof value === "boolean") {
                     return (

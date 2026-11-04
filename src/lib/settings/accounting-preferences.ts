@@ -36,3 +36,23 @@ export function hasUnsavedAccountingSettings(
 ): boolean {
   return lockDraftDirty || preferencesDraftDirty;
 }
+
+export type LockPolicyDraftInput = {
+  everyone: string;
+  advisers: string;
+  conversion: string;
+  requireOverrideReason: boolean;
+  reason: string;
+};
+
+/** Preserve explicit false and normalize blank HTML date inputs to null. */
+export function prepareLockPolicyPayload(companyId: string, draft: LockPolicyDraftInput) {
+  return {
+    companyId,
+    lockDateEveryone: draft.everyone || null,
+    lockDateExceptAdvisors: draft.advisers || null,
+    conversionDate: draft.conversion || null,
+    requireOverrideReason: draft.requireOverrideReason,
+    reason: draft.reason,
+  };
+}

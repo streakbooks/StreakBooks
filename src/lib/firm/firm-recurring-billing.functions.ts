@@ -56,8 +56,8 @@ async function loadRecurring(db: Db, billingCompanyId: string, recurringId: stri
   const { data: row, error } = await db
     .from("sales_recurring_invoices" as never)
     .select(
-        "id,name,company_id,frequency,next_due_date,is_active,auto_authorise,currency_code" as never,
-      )
+      "id,name,company_id,frequency,next_due_date,is_active,auto_authorise,currency_code" as never,
+    )
     .eq("id" as never, recurringId as never)
     .eq("company_id" as never, billingCompanyId as never)
     .maybeSingle();
@@ -194,12 +194,11 @@ export const generateFirmEngagementDraft = createServerFn({ method: "POST" })
       .maybeSingle();
     if (v2Error) throw new Error(v2Error.message);
     if (v2) {
-      const schedules = (v2 as {
-        recurring_schedules:
-          | Array<{ auto_authorise: boolean; is_paused: boolean }>
-          | { auto_authorise: boolean; is_paused: boolean }
-          | null;
-      }).recurring_schedules;
+      type ScheduleFlags = { auto_authorise: boolean; is_paused: boolean };
+      const record = v2 as {
+        recurring_schedules: ScheduleFlags[] | ScheduleFlags | null;
+      };
+      const schedules = record.recurring_schedules;
       const rows = schedules ? (Array.isArray(schedules) ? schedules : [schedules]) : [];
       if (rows.some((row) => row.auto_authorise || row.is_paused)) {
         throw new Error(

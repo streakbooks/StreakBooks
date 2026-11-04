@@ -2,6 +2,53 @@
 
 export type ContactKind = "customer" | "supplier" | "both" | "employee";
 
+export const CONTACT_SORT_FIELDS = {
+  name: "name",
+  account: "account_number",
+  roles: "kind",
+  email: "email",
+  phone: "phone",
+  terms: "payment_terms_days",
+  city: "billing_city",
+  state: "billing_region",
+  postal: "billing_postal",
+  country: "billing_country",
+  legal: "legal_name",
+  tax: "tax_number",
+  currency: "default_currency",
+  credit: "credit_limit_minor",
+  status: "is_active",
+  created: "created_at",
+  modified: "updated_at",
+} as const;
+
+export type ContactSortField = keyof typeof CONTACT_SORT_FIELDS;
+
+/** A strict allowlist prevents client-supplied sort keys becoming database column names. */
+export function resolveContactSort(sort: string, view = "all") {
+  if (sort === "recent" || (!sort && view === "recent")) {
+    return { column: "created_at", ascending: false };
+  }
+  if (sort === "updated" || (!sort && view === "updated")) {
+    return { column: "updated_at", ascending: false };
+  }
+  for (const [field, column] of Object.entries(CONTACT_SORT_FIELDS)) {
+    if (sort === `${field}_asc`) return { column, ascending: true };
+    if (sort === `${field}_desc`) return { column, ascending: false };
+  }
+  return { column: "name", ascending: true };
+}
+
+export function nextContactSort(
+  currentSort: string,
+  field: ContactSortField,
+  view = "all",
+): string {
+  const effectiveSort =
+    currentSort === "default" && view !== "recent" && view !== "updated" ? "name_asc" : currentSort;
+  return effectiveSort === `${field}_asc` ? `${field}_desc` : `${field}_asc`;
+}
+
 export function normalizeContactName(name: string): string {
   return name.trim().toLowerCase().replace(/\s+/g, " ");
 }
@@ -24,10 +71,7 @@ export function dueDateFromTerms(invoiceDateIso: string, termsDays: number): str
 /** Escape CSV cell; prefix formula-like values with apostrophe. */
 export function csvEscape(value: string | number | null | undefined): string {
   const raw = value == null ? "" : String(value);
-  const safe =
-    raw.startsWith("=") || raw.startsWith("+") || raw.startsWith("-") || raw.startsWith("@")
-      ? `'${raw}`
-      : raw;
+  const safe = /^[\s\uFEFF]*[=+\-@]/.test(raw) ? `'${raw}` : raw;
   if (/[",\n\r]/.test(safe)) return `"${safe.replace(/"/g, '""')}"`;
   return safe;
 }
@@ -42,35 +86,70 @@ export function buildContactsCsv(
 }
 
 export function parseContactsCsv(text: string): { headers: string[]; rows: string[][] } {
-  const lines = text
-    .replace(/^\uFEFF/, "")
-    .split(/\r?\n/)
-    .filter((l) => l.trim().length > 0);
-  if (lines.length === 0) return { headers: [], rows: [] };
-  const parseLine = (line: string): string[] => {
-    const out: string[] = [];
-    let cur = "";
-    let inQ = false;
-    for (let i = 0; i < line.length; i++) {
-      const ch = line[i]!;
-      if (inQ) {
-        if (ch === '"' && line[i + 1] === '"') {
-          cur += '"';
-          i++;
-        } else if (ch === '"') inQ = false;
-        else cur += ch;
-      } else if (ch === '"') inQ = true;
-      else if (ch === ",") {
-        out.push(cur);
-        cur = "";
-      } else cur += ch;
-    }
-    out.push(cur);
-    return out;
+  // RFC 4180-style state machine: quoted newlines, CRLF and escaped quotes
+  // are all part of the field, rather than creating an extra import row.
+  const source = text.replace(/^\uFEFF/, "");
+  const records: string[][] = [];
+  let record: string[] = [];
+  let field = "";
+  let quoted = false;
+  let justClosedQuote = false;
+  let atStart = true;
+
+  const pushRecord = () => {
+    record.push(field);
+    if (record.some((cell) => cell.trim().length > 0)) records.push(record);
+    record = [];
+    field = "";
+    atStart = true;
+    justClosedQuote = false;
   };
-  const headers = parseLine(lines[0]!).map((h) => h.trim().toLowerCase());
-  const rows = lines.slice(1).map(parseLine);
-  return { headers, rows };
+
+  for (let i = 0; i < source.length; i++) {
+    const ch = source[i]!;
+    if (quoted) {
+      if (ch === '"') {
+        if (source[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else {
+          quoted = false;
+          justClosedQuote = true;
+        }
+      } else {
+        field += ch;
+      }
+      continue;
+    }
+    if (ch === '"') {
+      if (!atStart || justClosedQuote) throw new Error("Invalid quote in contact CSV");
+      quoted = true;
+      atStart = false;
+      continue;
+    }
+    if (ch === ",") {
+      record.push(field);
+      field = "";
+      atStart = true;
+      justClosedQuote = false;
+      continue;
+    }
+    if (ch === "\n" || ch === "\r") {
+      if (ch === "\r" && source[i + 1] === "\n") i++;
+      pushRecord();
+      continue;
+    }
+    if (justClosedQuote && ch !== " " && ch !== "\t") {
+      throw new Error("Unexpected text after quoted CSV value");
+    }
+    if (!justClosedQuote) field += ch;
+    atStart = false;
+  }
+  if (quoted) throw new Error("Unclosed quoted field in contact CSV");
+  if (field.length || record.length) pushRecord();
+  if (!records.length) return { headers: [], rows: [] };
+  const [heading, ...rows] = records;
+  return { headers: heading!.map((h) => h.trim().toLowerCase()), rows };
 }
 
 export function contactImportTemplateCsv(): string {

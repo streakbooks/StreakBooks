@@ -280,3 +280,41 @@ test("view-only practice workspace does not offer membership or assignment mutat
     0,
   );
 });
+
+test("contact import retains upstream mapping, quoted preview and partial failure results", async ({
+  page,
+}) => {
+  await page.goto("/?flow=contact-import");
+  await page
+    .getByLabel("Choose contact CSV")
+    .setInputFiles({
+      name: "contacts.csv",
+      mimeType: "text/csv",
+      buffer: Buffer.from('Customer,Mail\n"River, Co",river@example.test\nNorthfield,invalid'),
+    });
+  await expect(page.getByRole("button", { name: "Confirm import" })).toBeDisabled();
+  await page.getByLabel("Contact name (required)").selectOption("0");
+  await page.getByLabel("Email", { exact: true }).selectOption("1");
+  await expect(page.getByRole("cell", { name: "River, Co", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Confirm import" }).click();
+  await expect(page.getByRole("status")).toContainText("Created 1 · Skipped 0 · Failed 1");
+  await expect(page.getByText("Row 3: Email address is invalid")).toBeVisible();
+});
+test("empty replacement CSV clears the prior preview and blocks import", async ({ page }) => {
+  await page.goto("/?flow=contact-import");
+  const input = page.getByLabel("Choose contact CSV");
+  await input.setInputFiles({
+    name: "contacts.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from("name,email\nRiver,river@example.test"),
+  });
+  await expect(page.getByRole("button", { name: "Confirm import" })).toBeEnabled();
+  await input.setInputFiles({ name: "empty.csv", mimeType: "text/csv", buffer: Buffer.from(" ") });
+  await expect(page.getByRole("button", { name: "Confirm import" })).toBeDisabled();
+  await expect(page.getByRole("region", { name: "Mapped contact preview" })).toHaveCount(0);
+});
+test("contact import respects view-only permission after integration", async ({ page }) => {
+  await page.goto("/?flow=contact-import&readonly=true");
+  await expect(page.getByLabel("Choose contact CSV")).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Confirm import" })).toBeDisabled();
+});

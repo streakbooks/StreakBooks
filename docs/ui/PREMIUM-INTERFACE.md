@@ -174,7 +174,7 @@ The user's permanent final reporting requirements are persisted in `AGENTS.md` a
 `docs/engineering/FINAL-REPORT-STANDARD.md`. Authenticated staging remains conditional on
 repository staging configuration and dedicated test credentials; fixtures do not replace it.
 
-### Completion verification
+### Completion verification before subsequent upstream integration
 
 - 1,998 unit tests passed across 274 files; zero failures.
 - 121 browser fixture tests passed: UI 38, reporting 23, themes 5, navigation 5,
@@ -193,3 +193,19 @@ No SQL migration or deployment is required or executed by this UI change. Existi
 migration application is outside this verification. Authenticated staging credentials remain
 unavailable; real company journeys, provider callbacks, every-route manual accessibility and
 production performance still require dedicated staging/manual review.
+
+### Subsequent upstream integration
+
+Main advanced to `8d78541` while PR #52 was awaiting merge. The integration retains the new
+contact segmentation, task ownership/reminders, CRM timeline and atomic currency settings.
+Contact import keeps the newer column mapping and cache invalidation, with accessible file
+selection and truthful partial-failure feedback. A duplicate raw preview is omitted in favor
+of the newer mapped preview. Three browser regressions exercise the actual import page with
+browser-local responses: quoted mapping/partial results, empty replacement files and view-only
+permissions. No remote contact writes occur in these tests.
+
+New contact group/tag/view and assignee selectors use the shared searchable lookup. Activity,
+settings and currency enums and the uploaded CSV column schema remain explicit enumerations.
+The refreshed source inventory covers 387 TSX files and 130 route definitions; lookup contracts
+cover 157 shared declarations with zero violations. The new merged revision must pass fresh
+GitHub CI before merge; earlier counts above belong to the prior revision.

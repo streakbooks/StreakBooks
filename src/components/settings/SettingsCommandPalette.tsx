@@ -8,7 +8,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { categoryMeta, searchSettings } from "@/lib/settings/registry";
+import { searchSettings } from "@/lib/settings/registry";
 import { navItems } from "@/lib/nav";
 
 type Props = {
@@ -19,15 +19,22 @@ type Props = {
 
 export function SettingsCommandPalette({ open, onOpenChange, onSelectSection }: Props) {
   const navigate = useNavigate();
-  const [q, setQ] = useState("");
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
-    if (!open) setQ("");
+    if (!open) setQuery("");
   }, [open]);
 
-  const matches = searchSettings(q);
+  const matches = searchSettings(query);
+  const modules = navItems.filter(
+    (item) =>
+      item.to !== "/settings" &&
+      (!query || item.label.toLowerCase().includes(query.trim().toLowerCase())),
+  );
+
   const onLinkClick = (event: MouseEvent<HTMLAnchorElement>) => {
-    // Preserve the original command palette on modified/new-tab clicks.
+    // Native links keep Ctrl/Cmd-click, keyboard navigation and new-tab behavior.
+    // Stop propagation so one pointer click does not also run CommandItem.onSelect.
     event.stopPropagation();
     if (
       event.button === 0 &&
@@ -44,73 +51,49 @@ export function SettingsCommandPalette({ open, onOpenChange, onSelectSection }: 
     <CommandDialog open={open} onOpenChange={onOpenChange}>
       <CommandInput
         placeholder="Search settings or jump to a module…"
-        value={q}
-        onValueChange={setQ}
+        value={query}
+        onValueChange={setQuery}
       />
       <CommandList>
-        <CommandEmpty>No matching settings.</CommandEmpty>
-        <CommandGroup heading="Settings">
-          {matches.map((c) => (
-            <CommandItem
-              key={c.id}
-              value={`${c.label} ${c.synonyms.join(" ")}`}
-              onSelect={() => {
-                onSelectSection(c.id);
-                onOpenChange(false);
-              }}
-            >
-              <Link
-                to="/settings"
-                search={{ section: c.id }}
-                onClick={onLinkClick}
-                className="flex w-full items-center"
-              >
-                <span className="font-medium">{c.label}</span>
-                <span className="ml-2 text-xs text-muted-foreground">{c.availability}</span>
-              </Link>
-            </CommandItem>
-          ))}
-        </CommandGroup>
-        <CommandGroup heading="Modules">
-          {navItems
-            .filter((n) => !q || n.label.toLowerCase().includes(q.toLowerCase()))
-            .map((n) => (
+        <CommandEmpty>No matching settings or modules.</CommandEmpty>
+        {matches.length > 0 ? (
+          <CommandGroup heading="Settings">
+            {matches.map((category) => (
               <CommandItem
-                key={n.to}
-                value={n.label}
+                key={category.id}
+                value={[category.label, category.description, ...category.synonyms].join(" ")}
                 onSelect={() => {
-                  if (n.to === "/settings") {
-                    void navigate({ to: "/settings", search: { section: "overview" } });
-                  } else {
-                    void navigate({ to: n.to });
-                  }
+                  onSelectSection(category.id);
                   onOpenChange(false);
                 }}
-              >
-                <Link to={n.to as never} onClick={onLinkClick} className="block w-full">
-                  {n.label}
-                </Link>
-              </CommandItem>
-            ))}
-        </CommandGroup>
-        {!q ? (
-          <CommandGroup heading="All categories">
-            {categoryMeta.slice(0, 8).map((c) => (
-              <CommandItem
-                key={`all-${c.id}`}
-                value={`all ${c.label}`}
-                onSelect={() => {
-                  onSelectSection(c.id);
-                  onOpenChange(false);
-                }}
+                className="py-2"
               >
                 <Link
                   to="/settings"
-                  search={{ section: c.id }}
+                  search={{ section: category.id }}
                   onClick={onLinkClick}
-                  className="block w-full"
+                  className="flex w-full flex-col items-start gap-1"
                 >
-                  {c.label}
+                  <span className="font-medium">{category.label}</span>
+                  <span className="text-xs text-muted-foreground">{category.description}</span>
+                </Link>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        ) : null}
+        {modules.length > 0 ? (
+          <CommandGroup heading="Modules">
+            {modules.map((item) => (
+              <CommandItem
+                key={item.to}
+                value={item.label}
+                onSelect={() => {
+                  void navigate({ to: item.to });
+                  onOpenChange(false);
+                }}
+              >
+                <Link to={item.to as never} onClick={onLinkClick} className="block w-full">
+                  {item.label}
                 </Link>
               </CommandItem>
             ))}

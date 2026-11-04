@@ -8,6 +8,7 @@ import {
   setOrganisationFeature,
 } from "@/lib/settings/settings-centre.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { filterFeatureSettings } from "@/lib/settings/feature-search";
 import type { FeatureStateCode } from "@/lib/settings/feature-catalog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +16,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Link } from "@tanstack/react-router";
 
 const stateLabel: Record<FeatureStateCode, string> = {
   unavailable: "Unavailable",
@@ -32,6 +36,7 @@ export function SettingsFeatureManager({ companyId, canEdit }: Props) {
   const setFeat = useServerFn(setOrganisationFeature);
   const evalChange = useServerFn(evaluateFeatureChange);
   const [pendingKey, setPendingKey] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
   const q = useQuery({
     queryKey: ["organisation-features", companyId],
@@ -73,12 +78,19 @@ export function SettingsFeatureManager({ companyId, canEdit }: Props) {
     },
   });
 
+  const results = filterFeatureSettings(q.data ?? [], search);
+
   if (q.isPending) return <Skeleton className="h-40 w-full" />;
   if (q.isError) {
     return (
       <Alert variant="destructive">
         <AlertTitle>Could not load features</AlertTitle>
-        <AlertDescription>{friendlyAuthError(q.error)}</AlertDescription>
+        <AlertDescription className="space-y-3">
+          <p>{friendlyAuthError(q.error)}</p>
+          <Button size="sm" variant="outline" onClick={() => void q.refetch()}>
+            Retry
+          </Button>
+        </AlertDescription>
       </Alert>
     );
   }
@@ -93,8 +105,30 @@ export function SettingsFeatureManager({ companyId, canEdit }: Props) {
         </AlertDescription>
       </Alert>
 
+      <div className="flex flex-wrap items-end justify-between gap-3 rounded-xl border bg-card p-4">
+        <div className="w-full max-w-sm space-y-2">
+          <Label htmlFor="feature-manager-search">Find features</Label>
+          <Input
+            id="feature-manager-search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search by feature or module…"
+          />
+        </div>
+        <p role="status" className="text-xs text-muted-foreground">
+          Showing {results.length} of {(q.data ?? []).length} features
+        </p>
+      </div>
+      {results.length === 0 ? (
+        <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+          No features match your search.
+          <Button variant="link" onClick={() => setSearch("")}>
+            Clear search
+          </Button>
+        </div>
+      ) : null}
       <div className="grid gap-3">
-        {(q.data ?? []).map((f) => {
+        {results.map((f) => {
           const toggleable =
             canEdit &&
             f.state !== "unavailable" &&
@@ -102,8 +136,8 @@ export function SettingsFeatureManager({ companyId, canEdit }: Props) {
             f.implementation !== "unavailable";
           return (
             <Card key={f.key}>
-              <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-                <div>
+              <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0 pb-2">
+                <div className="min-w-0 flex-1">
                   <CardTitle className="text-base">{f.label}</CardTitle>
                   <CardDescription>{f.description}</CardDescription>
                 </div>
@@ -126,11 +160,19 @@ export function SettingsFeatureManager({ companyId, canEdit }: Props) {
                 <span>Modules: {f.consumerModules.join(", ")}</span>
                 {f.state === "enabled_needs_config" ? (
                   <Button size="sm" variant="link" className="h-auto p-0" asChild>
-                    <a
-                      href={`/settings?section=${f.key === "late_fees" ? "sales" : f.key === "ai_assistant" ? "automation" : "products"}`}
+                    <Link
+                      to="/settings"
+                      search={{
+                        section:
+                          f.key === "late_fees"
+                            ? "sales"
+                            : f.key === "ai_assistant"
+                              ? "automation"
+                              : "products",
+                      }}
                     >
                       Configure
-                    </a>
+                    </Link>
                   </Button>
                 ) : null}
               </CardContent>

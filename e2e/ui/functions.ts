@@ -170,3 +170,17 @@ export async function removeFirmAssignment() {
 export async function saveFirmAssignment() {
   throw new Error("Fixture prevents membership writes");
 }
+
+export const useCanDo = (_permission: string) => scenario().get("readonly") !== "true";
+export async function getContactImportTemplate() {
+  return { csv: "name,email\nExample,example@example.test" };
+}
+// Browser-local import response only; no contact record or remote write is made.
+export async function importContactsCsv() {
+  return {
+    created: 1,
+    skipped: 0,
+    failed: 1,
+    errors: [{ row: 3, message: "Email address is invalid" }],
+  };
+}

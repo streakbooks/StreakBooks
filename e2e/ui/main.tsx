@@ -1,3 +1,4 @@
+import { Route as ContactImportRoute } from "@/routes/_authenticated/contacts/import";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { FirmStaffAssignments } from "@/components/firm/FirmStaffAssignments";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -215,6 +216,13 @@ function QueryFailureFixture() {
 function Scenario() {
   const params = new URLSearchParams(window.location.search);
   const Batch = BatchRoute.options.component!;
+  const ContactImport = ContactImportRoute.options.component!;
+  if (params.get("flow") === "contact-import")
+    return (
+      <main className="p-4">
+        <ContactImport />
+      </main>
+    );
   if (params.get("flow") === "query-error") return <QueryFailureFixture />;
   if (params.get("flow") === "staff")
     return (

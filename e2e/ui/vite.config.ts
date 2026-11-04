@@ -11,6 +11,8 @@ export default defineConfig({
       ...[
         "@tanstack/react-start",
         "@/hooks/use-active-company",
+        "@/hooks/use-can",
+        "@/lib/contacts/contacts.functions",
         "@/components/portals/use-portal",
         "@/integrations/supabase/client",
         "@/lib/purchases/purchases.functions",

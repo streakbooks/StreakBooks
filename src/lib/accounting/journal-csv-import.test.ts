@@ -56,8 +56,8 @@ describe("manual journal CSV import", () => {
   });
 
   it("rejects unbalanced journals, non-decimals, both-sided entries, and zero lines", () => {
-    expect(
-      () => importJournalLinesCsv(goodCsv.replace("100.00", "99.00"), accounts, "GBP"),
+    expect(() =>
+      importJournalLinesCsv(goodCsv.replace("100.00", "99.00"), accounts, "GBP"),
     ).toThrow("must balance");
     expect(() => importJournalLinesCsv(goodCsv.replace("100.00", "1e2"), accounts, "GBP")).toThrow(
       "non-negative decimal",
@@ -69,19 +69,18 @@ describe("manual journal CSV import", () => {
         "GBP",
       ),
     ).toThrow("exactly one");
-    expect(
-      () =>
-        importJournalLinesCsv(
-          goodCsv.replace("500,Accrual,100.00,", "500,Accrual,0,"),
-          accounts,
-          "GBP",
-        ),
+    expect(() =>
+      importJournalLinesCsv(
+        goodCsv.replace("500,Accrual,100.00,", "500,Accrual,0,"),
+        accounts,
+        "GBP",
+      ),
     ).toThrow("exactly one");
   });
 
   it("never silently rounds currency minor units or converts unsafe numbers", () => {
-    expect(
-      () => importJournalLinesCsv(goodCsv.replace("100.00", "100.001"), accounts, "GBP"),
+    expect(() =>
+      importJournalLinesCsv(goodCsv.replace("100.00", "100.001"), accounts, "GBP"),
     ).toThrow("decimal precision");
     expect(() =>
       importJournalLinesCsv(

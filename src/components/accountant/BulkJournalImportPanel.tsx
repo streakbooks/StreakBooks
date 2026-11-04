@@ -89,7 +89,9 @@ export function BulkJournalImportPanel({
   const posting = useMutation({
     mutationFn: async () => {
       if (!canPost || !fingerprint) throw new Error("Review and upload a valid batch first.");
-      const toPost = preview.filter((journal) => selected[journal.key] && !completed.current.has(journal.key));
+      const toPost = preview.filter(
+        (journal) => selected[journal.key] && !completed.current.has(journal.key),
+      );
       let successes = 0;
       let failures = 0;
       for (const journal of toPost) {
@@ -133,35 +135,44 @@ export function BulkJournalImportPanel({
         await qc.invalidateQueries({ queryKey: ["accountant-journal-quality", companyId] });
         await qc.invalidateQueries({ queryKey: ["account-workpapers-trial", companyId] });
       }
-      if (result.failures) toast.error(result.failures + " journals were not posted. Review the errors.");
+      if (result.failures)
+        toast.error(result.failures + " journals were not posted. Review the errors.");
       if (result.successes) toast.success(result.successes + " journals successfully posted.");
     },
     onError: (cause) => setError(friendlyAuthError(cause)),
   });
 
-  const pending = preview.filter((journal) => selected[journal.key] && !completed.current.has(journal.key));
+  const pending = preview.filter(
+    (journal) => selected[journal.key] && !completed.current.has(journal.key),
+  );
   const confirmPosting = () => {
     if (!pending.length || posting.isPending) return;
     if (
       !window.confirm(
-        "Post " + pending.length + " selected manual journals to the live ledger? " +
+        "Post " +
+          pending.length +
+          " selected manual journals to the live ledger? " +
           "This is NOT a dry run. Each journal is posted separately; failures do not roll back successful entries. " +
           "Locked periods and organisation permissions will be checked by the posting engine.",
       )
-    ) return;
+    )
+      return;
     posting.mutate();
   };
 
   if (!canPost) return null;
 
   return (
-    <section className="rounded-lg border p-4" aria-label="Controlled multiple manual journal import">
+    <section
+      className="rounded-lg border p-4"
+      aria-label="Controlled multiple manual journal import"
+    >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-base font-semibold">Controlled multiple-journal import</h2>
           <p className="max-w-3xl text-sm text-muted-foreground">
-            Validate up to 25 manual journals and 200 lines from CSV, preview every posting,
-            then explicitly confirm selected journals. No automatic posting on upload.
+            Validate up to 25 manual journals and 200 lines from CSV, preview every posting, then
+            explicitly confirm selected journals. No automatic posting on upload.
           </p>
         </div>
         <Button
@@ -170,7 +181,11 @@ export function BulkJournalImportPanel({
           aria-expanded={expanded}
           onClick={() => setExpanded((current) => !current)}
         >
-          {expanded ? <ChevronDown className="mr-1 size-4" /> : <ChevronRight className="mr-1 size-4" />}
+          {expanded ? (
+            <ChevronDown className="mr-1 size-4" />
+          ) : (
+            <ChevronRight className="mr-1 size-4" />
+          )}
           {expanded ? "Hide import" : "Import journals"}
         </Button>
       </div>
@@ -189,7 +204,8 @@ export function BulkJournalImportPanel({
               onChange={(event) => {
                 const file = event.target.files?.[0];
                 event.target.value = "";
-                if (file) void importFile(file).catch((cause) => setError(friendlyAuthError(cause)));
+                if (file)
+                  void importFile(file).catch((cause) => setError(friendlyAuthError(cause)));
               }}
             />
           </div>
@@ -206,14 +222,24 @@ export function BulkJournalImportPanel({
               onRetry={() => void accountsQ.refetch()}
             />
           ) : null}
-          {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
+          {error ? (
+            <p role="alert" className="text-sm text-destructive">
+              {error}
+            </p>
+          ) : null}
           {preview.length ? (
             <>
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="secondary">{preview.length} journals validated</Badge>
                 <Badge variant="outline">{completed.current.size} confirmed posted</Badge>
-                <Button size="sm" disabled={!pending.length || posting.isPending} onClick={confirmPosting}>
-                  {posting.isPending ? "Posting selected journals…" : "Confirm and post selected (" + pending.length + ")"}
+                <Button
+                  size="sm"
+                  disabled={!pending.length || posting.isPending}
+                  onClick={confirmPosting}
+                >
+                  {posting.isPending
+                    ? "Posting selected journals…"
+                    : "Confirm and post selected (" + pending.length + ")"}
                 </Button>
               </div>
               <div className="overflow-x-auto">
@@ -249,7 +275,9 @@ export function BulkJournalImportPanel({
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
                             <strong>{journal.key}</strong>
-                            <div className="text-xs text-muted-foreground">{journal.date} · {journal.lines.length} lines</div>
+                            <div className="text-xs text-muted-foreground">
+                              {journal.date} · {journal.lines.length} lines
+                            </div>
                           </TableCell>
                           <TableCell>{journal.memo}</TableCell>
                           <TableCell className="text-right tabular-nums">
@@ -259,7 +287,9 @@ export function BulkJournalImportPanel({
                             {result?.state === "posted" ? (
                               <Badge variant="secondary">Posted</Badge>
                             ) : result?.state === "failed" ? (
-                              <p role="alert" className="text-xs text-destructive">{result.message}</p>
+                              <p role="alert" className="text-xs text-destructive">
+                                {result.message}
+                              </p>
                             ) : (
                               <Badge variant="outline">Awaiting confirmation</Badge>
                             )}
@@ -272,8 +302,8 @@ export function BulkJournalImportPanel({
               </div>
               <p className="text-xs text-muted-foreground">
                 Every journal posts through the existing permission-checked accounting engine.
-                Partial failures are shown per journal; successful journals are not retried.
-                Posting is not a multi-journal atomic transaction and is not an approval workflow.
+                Partial failures are shown per journal; successful journals are not retried. Posting
+                is not a multi-journal atomic transaction and is not an approval workflow.
               </p>
             </>
           ) : null}

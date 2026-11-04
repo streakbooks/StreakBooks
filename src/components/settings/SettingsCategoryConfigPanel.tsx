@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useBlocker } from "@tanstack/react-router";
 import { SettingsDestinationLink } from "./ModuleSettingsLinks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -23,6 +24,14 @@ import { friendlyAuthError } from "@/lib/auth-helpers";
 import { settingsFieldPresentation } from "@/lib/settings/field-presentation";
 import { CheckCircle2, CircleAlert, Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -115,16 +124,6 @@ export function SettingsCategoryConfigPanel({
     });
   }, [q.data, category, scope]);
 
-  useEffect(() => {
-    if (!dirty) return;
-    const warnBeforeUnload = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-      event.returnValue = "";
-    };
-    window.addEventListener("beforeunload", warnBeforeUnload);
-    return () => window.removeEventListener("beforeunload", warnBeforeUnload);
-  }, [dirty]);
-
   const mut = useMutation({
     mutationFn: (input: { document: SettingsDocument; expectedVersion: number }) =>
       save({
@@ -158,6 +157,14 @@ export function SettingsCategoryConfigPanel({
       toast.error(friendlyAuthError(error));
       void q.refetch();
     },
+  });
+
+  // Blocks internal SPA navigation and browser unload while edits are unsaved.
+  // The resolver keeps the draft intact until the user explicitly discards it.
+  const navigationBlocker = useBlocker({
+    shouldBlockFn: () => dirty,
+    enableBeforeUnload: dirty,
+    withResolver: true,
   });
 
   const resetDraft = () => {
@@ -485,6 +492,43 @@ export function SettingsCategoryConfigPanel({
           </CardContent>
         </Card>
       )}
+      <AlertDialog
+        open={navigationBlocker.status === "blocked"}
+        onOpenChange={(open) => {
+          if (!open && navigationBlocker.status === "blocked") navigationBlocker.reset();
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave with unsaved settings?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your changes to {meta.label} have not been saved. Leaving now will discard the
+              current draft.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                if (navigationBlocker.status === "blocked") navigationBlocker.reset();
+              }}
+            >
+              Stay and keep editing
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={mut.isPending}
+              onClick={() => {
+                if (navigationBlocker.status === "blocked") navigationBlocker.proceed();
+              }}
+            >
+              Discard and leave
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -266,7 +266,11 @@ export function SettingsCommunicationsPanel({
               value={doc.email_from_name}
               maxLength={120}
               aria-invalid={Boolean(validationErrors?.email_from_name?.length)}
-              aria-describedby={validationErrors?.email_from_name?.length ? "communication-from-name-error" : undefined}
+              aria-describedby={
+                validationErrors?.email_from_name?.length
+                  ? "communication-from-name-error"
+                  : undefined
+              }
               disabled={savingBlocked}
               placeholder="e.g. LinkBooks Accounts"
               onChange={(e) => set("email_from_name", e.target.value)}
@@ -287,7 +291,9 @@ export function SettingsCommunicationsPanel({
               type="email"
               value={doc.reply_to}
               aria-invalid={Boolean(validationErrors?.reply_to?.length)}
-              aria-describedby={validationErrors?.reply_to?.length ? "communication-reply-to-error" : undefined}
+              aria-describedby={
+                validationErrors?.reply_to?.length ? "communication-reply-to-error" : undefined
+              }
               disabled={savingBlocked}
               placeholder="accounts@example.com"
               onChange={(e) => set("reply_to", e.target.value)}
@@ -361,7 +367,13 @@ export function SettingsCommunicationsPanel({
               Discard changes
             </Button>
             <span role="status" aria-live="polite" className="text-xs text-muted-foreground">
-              {!canEdit ? "Read-only" : serverChanged ? "Server version changed" : dirty ? "Unsaved changes" : "All changes saved"}
+              {!canEdit
+                ? "Read-only"
+                : serverChanged
+                  ? "Server version changed"
+                  : dirty
+                    ? "Unsaved changes"
+                    : "All changes saved"}
             </span>
           </div>
         </CardContent>

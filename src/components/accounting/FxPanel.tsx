@@ -11,6 +11,12 @@ import {
   processDueAutoReversals,
   type RevaluationPreview,
 } from "@/lib/accounting/fx.functions";
+import {
+  filterAutoReversals,
+  fxRevaluationCsv,
+  fxReviewSignature,
+  type ReversalFilter,
+} from "@/lib/accounting/fx-review";
 import { isPositiveRate, nextDay } from "@/lib/accounting/fx-reval";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { useFormat } from "@/hooks/use-format";
@@ -40,6 +46,8 @@ export function FxPanel({ companyId, currency }: { companyId: string; currency: 
   const [rates, setRates] = useState<Record<string, string>>({});
   const [note, setNote] = useState("");
   const [preview, setPreview] = useState<RevaluationPreview | null>(null);
+  const [reviewedInput, setReviewedInput] = useState("");
+  const [reversalFilter, setReversalFilter] = useState<ReversalFilter>("due");
 
   const overview = useQuery({
     queryKey: ["fx-overview", companyId],
@@ -55,22 +63,30 @@ export function FxPanel({ companyId, currency }: { companyId: string; currency: 
     mutationFn: () => doPreview({ data: { companyId, asOfDate: asOf, rates } }),
     onSuccess: (r) => {
       setPreview(r);
-      // Pre-fill the rate boxes from stored rates so the user sees (and can override) what is used.
-      setRates((cur) => {
-        const next = { ...cur };
-        for (const l of r.lines) {
-          if (next[l.currency_code] === undefined && l.rate != null) {
-            next[l.currency_code] = String(l.rate);
-          }
+      // Show the effective stored rates explicitly; the posting payload uses the reviewed values.
+      const next = { ...rates };
+      for (const line of r.lines) {
+        if (next[line.currency_code] === undefined && line.rate != null) {
+          next[line.currency_code] = String(line.rate);
         }
-        return next;
-      });
+      }
+      setRates(next);
+      setReviewedInput(fxReviewSignature(companyId, asOf, next));
     },
-    onError: (e) => toast.error(friendlyAuthError(e)),
+    onError: (e) => {
+      setPreview(null);
+      setReviewedInput("");
+      toast.error(friendlyAuthError(e));
+    },
   });
 
   const postM = useMutation({
-    mutationFn: () => doPost({ data: { companyId, asOfDate: asOf, rates, note } }),
+    mutationFn: () => {
+      if (!preview || !reviewedInput || reviewedInput !== fxReviewSignature(companyId, asOf, rates)) {
+        throw new Error("Exchange rates have changed. Recalculate and review before posting.");
+      }
+      return doPost({ data: { companyId, asOfDate: asOf, rates, note } });
+    },
     onSuccess: async (r) => {
       if (r.posted) {
         toast.success(`Revaluation posted. It reverses on ${f.date(r.reverse_on)}.`);
@@ -78,6 +94,7 @@ export function FxPanel({ companyId, currency }: { companyId: string; currency: 
         toast.message(r.message ?? "Nothing to revalue.");
       }
       setPreview(null);
+      setReviewedInput("");
       await refreshAll();
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
@@ -121,14 +138,30 @@ export function FxPanel({ companyId, currency }: { companyId: string; currency: 
     );
   }
 
+  const previewCurrent =
+    preview !== null &&
+    Boolean(reviewedInput) &&
+    reviewedInput === fxReviewSignature(companyId, asOf, rates);
   const ratesComplete =
     preview !== null &&
     preview.lines.length > 0 &&
     [...new Set(preview.lines.map((l) => l.currency_code))].every((c) => isPositiveRate(rates[c]));
   const toAdjust = preview?.lines.filter((l) => (l.adjustment_minor ?? 0) !== 0).length ?? 0;
-  const dueCount = ov.autoReversals.filter(
-    (r) => (r.status === "pending" || r.status === "failed") && r.reverse_on <= today,
-  ).length;
+  const dueReversals = filterAutoReversals(ov.autoReversals, "due", today);
+  const dueCount = dueReversals.length;
+  const displayedReversals = filterAutoReversals(ov.autoReversals, reversalFilter, today);
+  const exportPreview = () => {
+    if (!preview || !previewCurrent) return;
+    const csv = fxRevaluationCsv(preview);
+    const url = URL.createObjectURL(
+      new Blob([String.fromCharCode(0xfeff), csv], { type: "text/csv;charset=utf-8" }),
+    );
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `linkbooks-fx-revaluation-preview-${asOf}.csv`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="space-y-4">
@@ -153,16 +186,18 @@ export function FxPanel({ companyId, currency }: { companyId: string; currency: 
                     id="fx-asof"
                     type="date"
                     max={today}
+                    disabled={previewM.isPending || postM.isPending}
                     value={asOf}
                     onChange={(e) => {
                       setAsOf(e.target.value);
                       setPreview(null);
+                      setReviewedInput("");
                     }}
                   />
                 </div>
                 <Button
                   variant="outline"
-                  disabled={!asOf || previewM.isPending}
+                  disabled={!asOf || previewM.isPending || postM.isPending}
                   onClick={() => previewM.mutate()}
                 >
                   {previewM.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
@@ -232,6 +267,7 @@ export function FxPanel({ companyId, currency }: { companyId: string; currency: 
                               inputMode="decimal"
                               className="w-36"
                               value={rates[c] ?? ""}
+                              disabled={previewM.isPending || postM.isPending}
                               onChange={(e) => setRates((cur) => ({ ...cur, [c]: e.target.value }))}
                             />
                             <p className="text-xs text-muted-foreground">

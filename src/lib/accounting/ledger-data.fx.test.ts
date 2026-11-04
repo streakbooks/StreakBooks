@@ -50,12 +50,10 @@ describe("historical ledger FX provenance", () => {
   });
 
   it("rejects unsafe JSON numeric minor units before reinterpreting them as exact", () => {
-    expect(() => rawLineToPosted(fixture(Number.MAX_SAFE_INTEGER + 1, "1") as never, "GBP")).toThrow(
-      /unsafe integer/,
-    );
-    expect(() => rawLineToPosted(fixture("12.50", "1") as never, "GBP")).toThrow(
-      /not an integer/,
-    );
+    expect(() =>
+      rawLineToPosted(fixture(Number.MAX_SAFE_INTEGER + 1, "1") as never, "GBP"),
+    ).toThrow(/unsafe integer/);
+    expect(() => rawLineToPosted(fixture("12.50", "1") as never, "GBP")).toThrow(/not an integer/);
   });
 
   it("keeps exact very large source amounts when supplied as integer text", () => {

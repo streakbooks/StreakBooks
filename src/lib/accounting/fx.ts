@@ -140,11 +140,7 @@ export function lineToBaseMinor(
     return minor;
   }
   if (fxRateToBase == null) {
-    if (
-      txnCurrency &&
-      baseCurrency &&
-      txnCurrency.toUpperCase() !== baseCurrency.toUpperCase()
-    ) {
+    if (txnCurrency && baseCurrency && txnCurrency.toUpperCase() !== baseCurrency.toUpperCase()) {
       throw new Error(
         `Missing posted exchange-rate snapshot for ${txnCurrency.toUpperCase()} to ${baseCurrency.toUpperCase()}`,
       );

@@ -157,8 +157,6 @@ describe("FX report fail-closed invariants", () => {
     expect(() => lineToBaseMinor(unsafe, "1", "GBP", "GBP")).toThrow(/safe integer/);
     expect(() => scaleMinorByRate(unsafe, "0.8")).toThrow(/safe integer/);
     expect(() => convertMinorToBase(unsafe, "0.8", "USD", "GBP")).toThrow(/safe integer/);
-    expect(lineToBaseMinor(9007199254740993n, null, "GBP", "GBP")).toBe(
-      9007199254740993n,
-    );
+    expect(lineToBaseMinor(9007199254740993n, null, "GBP", "GBP")).toBe(9007199254740993n);
   });
 });

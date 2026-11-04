@@ -1,4 +1,5 @@
 import { PracticeWorkBoard } from "@/components/accountant/PracticeWorkBoard";
+import { FirmClientPortfolio } from "@/components/firm/FirmClientPortfolio";
 import { setActiveCompany } from "@/lib/company.functions";
 import { useCanDo } from "@/hooks/use-can";
 import { useState } from "react";
@@ -37,7 +38,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/_authenticated/firm")({
   head: () => ({ meta: [{ title: "Firm — LinkBooks" }] }),
@@ -237,50 +237,22 @@ function FirmPage() {
               description="Link an organisation you administer."
             />
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Access</TableHead>
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {clientsQ.data!.map((c) => (
-                  <TableRow key={c.id}>
-                    <TableCell>{c.companies?.name ?? c.company_id.slice(0, 8)}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{c.access_level}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={openClient.isPending}
-                        onClick={() => openClient.mutate(c.company_id)}
-                      >
-                        Open books
-                      </Button>{" "}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={revokeM.isPending || !firmAdmin}
-                        onClick={() => {
-                          if (
-                            window.confirm(
-                              "Revoke this firm link and its tracked access grants? Independent and legacy memberships will be retained for separate review.",
-                            )
-                          )
-                            revokeM.mutate(c.company_id);
-                        }}
-                      >
-                        Revoke
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <FirmClientPortfolio
+              key={firmId}
+              firmId={firmId}
+              clients={clientsQ.data ?? []}
+              canManage={firmAdmin}
+              busy={openClient.isPending || revokeM.isPending}
+              onOpen={(companyId) => openClient.mutate(companyId)}
+              onRevoke={(companyId) => {
+                if (
+                  window.confirm(
+                    "Revoke this firm link and its tracked access grants? Independent and legacy memberships will be retained for separate review.",
+                  )
+                )
+                  revokeM.mutate(companyId);
+              }}
+            />
           )}
           <PracticeWorkBoard key={firmId} firmId={firmId} />
           <p className="mt-4 text-sm text-muted-foreground">

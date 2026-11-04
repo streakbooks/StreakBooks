@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { ACCOUNTANT_WORKSPACE_TABS, parseAccountantWorkspaceTab } from "./workspace-navigation";
 
 describe("accountant workspace navigation", () => {
-  it("exposes six distinct, named workspaces", () => {
-    expect(new Set(ACCOUNTANT_WORKSPACE_TABS.map((tab) => tab.id)).size).toBe(6);
+  it("exposes seven distinct, named workspaces", () => {
+    expect(new Set(ACCOUNTANT_WORKSPACE_TABS.map((tab) => tab.id)).size).toBe(7);
     expect(ACCOUNTANT_WORKSPACE_TABS.every((tab) => tab.label.length > 0)).toBe(true);
   });
 

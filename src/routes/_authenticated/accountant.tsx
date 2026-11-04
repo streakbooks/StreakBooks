@@ -1,6 +1,7 @@
 import { PeriodClosePanel } from "@/components/accounting/PeriodClosePanel";
 import { JournalsPanel } from "@/components/accounting/JournalsPanel";
 import { PracticeWorkBoard } from "@/components/accountant/PracticeWorkBoard";
+import { AccountWorkpapersPanel } from "@/components/accountant/AccountWorkpapersPanel";
 import { useCanDo } from "@/hooks/use-can";
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -277,6 +278,9 @@ function AccountantTools() {
         </TabsContent>
         <TabsContent value="client-work">
           <PracticeWorkBoard key={companyId} companyId={companyId} />
+        </TabsContent>
+        <TabsContent value="workpapers">
+          <AccountWorkpapersPanel companyId={companyId} currency={currency} />
         </TabsContent>
         <TabsContent value="journals" className="space-y-4">
           <div className="flex flex-wrap gap-2">

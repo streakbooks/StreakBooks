@@ -76,8 +76,8 @@ export const listFirmPracticeRecurringTemplates = createServerFn({ method: "GET"
     const { data: rows, error } = await context.supabase
       .from("sales_recurring_invoices" as never)
       .select(
-      "id,name,company_id,frequency,next_due_date,is_active,auto_authorise,currency_code" as never,
-    )
+        "id,name,company_id,frequency,next_due_date,is_active,auto_authorise,currency_code" as never,
+      )
       .eq("company_id" as never, data.billingCompanyId as never)
       .order("name" as never)
       .limit(101);

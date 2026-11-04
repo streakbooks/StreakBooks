@@ -24,6 +24,12 @@ const OPTIONS = [
     title: "Document requests",
     detail: "Documents colleagues have requested from you",
   },
+  {
+    id: "contact_followup",
+    title: "Contact follow-up reminders",
+    detail:
+      "Opt in to scheduled in-app alerts for tasks assigned to you. Email and push are not enabled.",
+  },
 ] as const;
 
 type Category = (typeof OPTIONS)[number]["id"];
@@ -93,7 +99,9 @@ export function NotificationPreferences({
         {!prefs.isPending &&
           !prefs.isError &&
           OPTIONS.map((option) => {
-            const enabled = prefs.data?.find((p) => p.category === option.id)?.enabled ?? true;
+            const enabled =
+              prefs.data?.find((p) => p.category === option.id)?.enabled ??
+              option.id !== "contact_followup";
             return (
               <label
                 key={option.id}

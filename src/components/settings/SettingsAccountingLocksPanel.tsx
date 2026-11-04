@@ -118,7 +118,9 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
 
   const lockMut = useMutation({
     mutationFn: () => {
-      if (lockServerChanged) throw new Error("Lock dates changed on the server. Reload latest values.");
+      if (lockServerChanged) {
+        throw new Error("Lock dates changed on the server. Reload latest values.");
+      }
       return saveLock({
         data: {
           companyId,
@@ -280,12 +282,18 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
           ) : null}
           <div className="flex flex-wrap items-center gap-2 border-t pt-4">
             <Button
-              disabled={!canLock || !lockTouched || !reason.trim() || lockMut.isPending || lockServerChanged}
+              disabled={
+                !canLock || !lockTouched || !reason.trim() || lockMut.isPending || lockServerChanged
+              }
               onClick={() => lockMut.mutate()}
             >
               {lockMut.isPending ? "Saving…" : "Save lock policy"}
             </Button>
-            <Button variant="outline" disabled={!lockTouched || lockMut.isPending} onClick={resetLockDraft}>
+            <Button
+              variant="outline"
+              disabled={!lockTouched || lockMut.isPending}
+              onClick={resetLockDraft}
+            >
               Discard changes
             </Button>
             <span role="status" className="text-xs text-muted-foreground">
@@ -321,24 +329,39 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
           </div>
           <div className="flex items-center justify-between">
             <Label htmlFor="settings-warn-duplicate">Warn on duplicate document numbers</Label>
-            <Switch id="settings-warn-duplicate" checked={warnDup} disabled={!canEdit || !cfgQ.data} onCheckedChange={(value) => {
-              setWarnDup(value);
-              setCfgTouched(true);
-            }} />
+            <Switch
+              id="settings-warn-duplicate"
+              checked={warnDup}
+              disabled={!canEdit || !cfgQ.data}
+              onCheckedChange={(value) => {
+                setWarnDup(value);
+                setCfgTouched(true);
+              }}
+            />
           </div>
           <div className="flex items-center justify-between">
             <Label htmlFor="settings-warn-control">Warn posting to control accounts</Label>
-            <Switch id="settings-warn-control" checked={warnControl} disabled={!canEdit || !cfgQ.data} onCheckedChange={(value) => {
-              setWarnControl(value);
-              setCfgTouched(true);
-            }} />
+            <Switch
+              id="settings-warn-control"
+              checked={warnControl}
+              disabled={!canEdit || !cfgQ.data}
+              onCheckedChange={(value) => {
+                setWarnControl(value);
+                setCfgTouched(true);
+              }}
+            />
           </div>
           <div className="flex items-center justify-between">
             <Label htmlFor="settings-warn-bank">Warn bank-account direct posting</Label>
-            <Switch id="settings-warn-bank" checked={warnBank} disabled={!canEdit || !cfgQ.data} onCheckedChange={(value) => {
-              setWarnBank(value);
-              setCfgTouched(true);
-            }} />
+            <Switch
+              id="settings-warn-bank"
+              checked={warnBank}
+              disabled={!canEdit || !cfgQ.data}
+              onCheckedChange={(value) => {
+                setWarnBank(value);
+                setCfgTouched(true);
+              }}
+            />
           </div>
           <div className="space-y-1">
             <Label htmlFor="settings-backdated-days">Warn back-dated entries beyond (days)</Label>
@@ -347,7 +370,9 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
               value={backdated}
               inputMode="numeric"
               aria-invalid={Boolean(cfgErrors["warn_backdated_days"])}
-              aria-describedby={cfgErrors["warn_backdated_days"] ? "settings-backdated-error" : undefined}
+              aria-describedby={
+                cfgErrors["warn_backdated_days"] ? "settings-backdated-error" : undefined
+              }
               disabled={!canEdit || !cfgQ.data}
               onChange={(e) => {
                 setBackdated(e.target.value);
@@ -358,10 +383,15 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
           </div>
           <div className="flex items-center justify-between">
             <Label htmlFor="settings-auto-credits">Auto-apply credits / prepayments</Label>
-            <Switch id="settings-auto-credits" checked={autoCredits} disabled={!canEdit || !cfgQ.data} onCheckedChange={(value) => {
-              setAutoCredits(value);
-              setCfgTouched(true);
-            }} />
+            <Switch
+              id="settings-auto-credits"
+              checked={autoCredits}
+              disabled={!canEdit || !cfgQ.data}
+              onCheckedChange={(value) => {
+                setAutoCredits(value);
+                setCfgTouched(true);
+              }}
+            />
           </div>
           {cfgServerChanged ? (
             <Alert variant="destructive">
@@ -386,13 +416,24 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
             </Alert>
           ) : null}
           {cfgMut.isError ? (
-            <p role="alert" className="text-sm text-destructive">{friendlyAuthError(cfgMut.error)}</p>
+            <p role="alert" className="text-sm text-destructive">
+              {friendlyAuthError(cfgMut.error)}
+            </p>
           ) : null}
           <div className="flex flex-wrap items-center gap-2 border-t pt-4">
-            <Button disabled={!canEdit || !cfgQ.data || !cfgTouched || cfgMut.isPending || cfgServerChanged} onClick={savePreferences}>
+            <Button
+              disabled={
+                !canEdit || !cfgQ.data || !cfgTouched || cfgMut.isPending || cfgServerChanged
+              }
+              onClick={savePreferences}
+            >
               {cfgMut.isPending ? "Saving…" : "Save preferences"}
             </Button>
-            <Button variant="outline" disabled={!cfgTouched || cfgMut.isPending} onClick={resetCfgDraft}>
+            <Button
+              variant="outline"
+              disabled={!cfgTouched || cfgMut.isPending}
+              onClick={resetCfgDraft}
+            >
               Discard changes
             </Button>
             <span role="status" className="text-xs text-muted-foreground">

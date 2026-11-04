@@ -28,3 +28,11 @@ export function prepareAccountingPreferences(
     auto_apply_credits: input.autoApplyCredits,
   });
 }
+
+/** Preserve both Accounting drafts when either save action is still outstanding. */
+export function hasUnsavedAccountingSettings(
+  lockDraftDirty: boolean,
+  preferencesDraftDirty: boolean,
+): boolean {
+  return lockDraftDirty || preferencesDraftDirty;
+}

@@ -1,9 +1,5 @@
 import type { SettingsDocument } from "./settings-centre.functions";
-import {
-  CATEGORY_SCHEMAS,
-  defaultDocumentFor,
-  type SettingsCategory,
-} from "./registry";
+import { CATEGORY_SCHEMAS, defaultDocumentFor, type SettingsCategory } from "./registry";
 
 export function areSettingsDocumentsEqual(a: SettingsDocument, b: SettingsDocument): boolean {
   const keys = Object.keys(a);
@@ -60,8 +56,10 @@ export function validateSettingsDraft(
 
   for (const [key, defaultValue] of Object.entries(defaults)) {
     const value = normalized[key];
-    if ((typeof defaultValue === "number" || isNullableNumericSetting(category, key)) &&
-        typeof value === "string") {
+    if (
+      (typeof defaultValue === "number" || isNullableNumericSetting(category, key)) &&
+      typeof value === "string"
+    ) {
       const text = value.trim();
       if (!text && isNullableNumericSetting(category, key)) {
         normalized[key] = null;

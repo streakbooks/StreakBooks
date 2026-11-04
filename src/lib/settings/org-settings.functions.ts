@@ -5,6 +5,7 @@ import { assertUuid } from "@/lib/company-validation";
 import type { CompanyRole } from "@/lib/company-constants";
 import { normaliseAdjustments, type AccessAdjustment } from "@/lib/access-catalogue";
 import { normalizeCurrencySelection } from "@/lib/settings/currency-selection";
+import type { BrandingSnapshot, LocalisationSnapshot, SequenceSnapshot } from "@/lib/settings/legacy-snapshots";
 
 const DOCUMENT_TYPES = [
   "sales_invoice",
@@ -53,24 +54,24 @@ export const getOrgExtendedSettings = createServerFn({ method: "GET" })
       .maybeSingle();
     if (error) throw new Error(error.message);
 
-    const { data: branding } = await context.supabase
+    const { data: branding, error: brandingError } = await context.supabase
       .from("company_branding" as never)
       .select("trading_name, letterhead_line, invoice_email, invoice_phone, logo_url" as never)
       .eq("company_id" as never, data.companyId as never)
       .maybeSingle();
 
-    const { data: sequences } = await context.supabase
+    const { data: sequences, error: sequencesError } = await context.supabase
       .from("document_sequences" as never)
       .select("document_type, prefix, next_number, padding" as never)
       .eq("company_id" as never, data.companyId as never)
       .order("document_type" as never);
 
-    const { data: currencies } = await context.supabase
+    const { data: currencies, error: currenciesError } = await context.supabase
       .from("company_currencies" as never)
       .select("currency_code" as never)
       .eq("company_id" as never, data.companyId as never);
 
-    const { data: rates } = await context.supabase
+    const { data: rates, error: ratesError } = await context.supabase
       .from("exchange_rates" as never)
       .select(
         "id, from_currency, to_currency, rate_date, rate, note, voided_at, created_at" as never,
@@ -78,6 +79,10 @@ export const getOrgExtendedSettings = createServerFn({ method: "GET" })
       .eq("company_id" as never, data.companyId as never)
       .order("rate_date" as never, { ascending: false })
       .limit(50);
+
+    for (const loadError of [brandingError, sequencesError, currenciesError, ratesError]) {
+      if (loadError) throw new Error(loadError.message);
+    }
 
     return {
       company: company as {
@@ -131,53 +136,45 @@ export const updateLocalization = createServerFn({ method: "POST" })
   .inputValidator(
     (input: {
       companyId: string;
+      expected: LocalisationSnapshot;
       locale: string;
       date_format: string;
       invoice_footer: string;
       document_theme_color: string;
     }) => {
-      const locale = LOCALES.includes(input.locale as (typeof LOCALES)[number])
-        ? input.locale
-        : "en-GB";
-      const date_format = DATE_FORMATS.includes(input.date_format as (typeof DATE_FORMATS)[number])
-        ? input.date_format
-        : "DD/MM/YYYY";
-      const color = (input.document_theme_color ?? "").trim();
-      if (color && !/^#[0-9A-Fa-f]{6}$/.test(color))
-        throw new Error("Theme colour must be #RRGGBB");
+      if (!LOCALES.includes(input.locale as (typeof LOCALES)[number])) {
+        throw new Error("Unsupported locale");
+      }
+      if (!DATE_FORMATS.includes(input.date_format as (typeof DATE_FORMATS)[number])) {
+        throw new Error("Unsupported date format");
+      }
+      const color = input.document_theme_color.trim();
+      if (!/^#[0-9A-Fa-f]{6}$/.test(color)) throw new Error("Theme colour must be #RRGGBB");
+      if (input.invoice_footer.length > 2000) throw new Error("Invoice footer is too long");
       return {
         companyId: assertUuid(input.companyId),
-        locale,
-        date_format,
-        invoice_footer: (input.invoice_footer ?? "").slice(0, 2000),
-        document_theme_color: color || "#0F766E",
+        expected: input.expected,
+        desired: {
+          locale: input.locale,
+          date_format: input.date_format,
+          invoice_footer: input.invoice_footer,
+          document_theme_color: color,
+        },
       };
     },
   )
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "company.settings.edit");
-    const { error } = await context.supabase
-      .from("companies" as never)
-      .update({
-        locale: data.locale,
-        date_format: data.date_format,
-        invoice_footer: data.invoice_footer,
-        document_theme_color: data.document_theme_color,
-      } as never)
-      .eq("id" as never, data.companyId as never);
-    if (error) throw new Error(error.message);
-    await audit(
-      context.supabase as never,
-      data.companyId,
-      "settings.localization",
-      "company",
-      data.companyId,
+    const { data: saved, error } = await context.supabase.rpc(
+      "save_company_localisation_if_unchanged" as never,
       {
-        locale: data.locale,
-        date_format: data.date_format,
-      },
+        _company_id: data.companyId,
+        _expected: data.expected,
+        _desired: data.desired,
+      } as never,
     );
-    return { ok: true };
+    if (error) throw new Error(error.message);
+    return { ok: true, saved };
   });
 
 export const upsertBranding = createServerFn({ method: "POST" })
@@ -185,44 +182,60 @@ export const upsertBranding = createServerFn({ method: "POST" })
   .inputValidator(
     (input: {
       companyId: string;
+      expected: BrandingSnapshot;
       trading_name: string;
       letterhead_line: string;
       invoice_email: string;
       invoice_phone: string;
       logo_url: string;
-    }) => ({
-      companyId: assertUuid(input.companyId),
-      trading_name: (input.trading_name ?? "").trim().slice(0, 160) || null,
-      letterhead_line: (input.letterhead_line ?? "").trim().slice(0, 200) || null,
-      invoice_email: (input.invoice_email ?? "").trim().slice(0, 160) || null,
-      invoice_phone: (input.invoice_phone ?? "").trim().slice(0, 40) || null,
-      logo_url: (input.logo_url ?? "").trim().slice(0, 500) || null,
-    }),
+    }) => {
+      const trimmed = {
+        trading_name: input.trading_name.trim(),
+        letterhead_line: input.letterhead_line.trim(),
+        invoice_email: input.invoice_email.trim(),
+        invoice_phone: input.invoice_phone.trim(),
+        logo_url: input.logo_url.trim(),
+      };
+      if (
+        trimmed.trading_name.length > 160 ||
+        trimmed.letterhead_line.length > 200 ||
+        trimmed.invoice_email.length > 160 ||
+        trimmed.invoice_phone.length > 40 ||
+        trimmed.logo_url.length > 500
+      ) {
+        throw new Error("Branding field exceeds its allowed length");
+      }
+      if (trimmed.invoice_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed.invoice_email)) {
+        throw new Error("Invoice email is invalid");
+      }
+      if (trimmed.logo_url && !/^https:\/\//i.test(trimmed.logo_url)) {
+        throw new Error("Logo URL must begin with HTTPS");
+      }
+      return {
+        companyId: assertUuid(input.companyId),
+        expected: input.expected,
+        desired: {
+          trading_name: trimmed.trading_name || null,
+          letterhead_line: trimmed.letterhead_line || null,
+          invoice_email: trimmed.invoice_email || null,
+          invoice_phone: trimmed.invoice_phone || null,
+          logo_url: trimmed.logo_url || null,
+        },
+      };
+    },
   )
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "company.settings.edit");
-    const { error } = await context.supabase.from("company_branding" as never).upsert(
+    const { data: saved, error } = await context.supabase.rpc(
+      "save_company_branding_if_unchanged" as never,
       {
-        company_id: data.companyId,
-        trading_name: data.trading_name,
-        letterhead_line: data.letterhead_line,
-        invoice_email: data.invoice_email,
-        invoice_phone: data.invoice_phone,
-        logo_url: data.logo_url,
-        updated_at: new Date().toISOString(),
+        _company_id: data.companyId,
+        _expected: data.expected,
+        _desired: data.desired,
       } as never,
-      { onConflict: "company_id" },
     );
     if (error) throw new Error(error.message);
-    await audit(
-      context.supabase as never,
-      data.companyId,
-      "settings.branding",
-      "company",
-      data.companyId,
-      {},
-    );
-    return { ok: true };
+    return { ok: true, saved };
   });
 
 export const updateDocumentSequence = createServerFn({ method: "POST" })
@@ -230,6 +243,7 @@ export const updateDocumentSequence = createServerFn({ method: "POST" })
   .inputValidator(
     (input: {
       companyId: string;
+      expected: SequenceSnapshot;
       document_type: string;
       prefix: string;
       next_number: number;
@@ -238,44 +252,36 @@ export const updateDocumentSequence = createServerFn({ method: "POST" })
       if (!(DOCUMENT_TYPES as readonly string[]).includes(input.document_type)) {
         throw new Error("Unknown document type");
       }
-      const next = Number(input.next_number);
-      const pad = Number(input.padding);
-      if (!Number.isInteger(next) || next < 1) throw new Error("Next number must be ≥ 1");
-      if (!Number.isInteger(pad) || pad < 1 || pad > 10) throw new Error("Padding must be 1–10");
+      if (!Number.isSafeInteger(input.next_number) || input.next_number < 1 ||
+          input.next_number >= 2147483647) {
+        throw new Error("Next number must be an integer between 1 and 2147483646");
+      }
+      if (!Number.isInteger(input.padding) || input.padding < 1 || input.padding > 10) {
+        throw new Error("Padding must be an integer between 1 and 10");
+      }
+      const prefix = input.prefix.trim();
+      if (prefix.length > 20) throw new Error("Prefix must be 20 characters or fewer");
       return {
         companyId: assertUuid(input.companyId),
         document_type: input.document_type,
-        prefix: (input.prefix ?? "").trim().slice(0, 20),
-        next_number: next,
-        padding: pad,
+        expected: input.expected,
+        desired: { prefix, next_number: input.next_number, padding: input.padding },
       };
     },
   )
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "company.settings.edit");
-    const { error } = await context.supabase.from("document_sequences" as never).upsert(
+    const { data: saved, error } = await context.supabase.rpc(
+      "save_document_sequence_if_unchanged" as never,
       {
-        company_id: data.companyId,
-        document_type: data.document_type,
-        prefix: data.prefix,
-        next_number: data.next_number,
-        padding: data.padding,
+        _company_id: data.companyId,
+        _document_type: data.document_type,
+        _expected: data.expected,
+        _desired: data.desired,
       } as never,
-      { onConflict: "company_id,document_type" },
     );
     if (error) throw new Error(error.message);
-    await audit(
-      context.supabase as never,
-      data.companyId,
-      "settings.sequence",
-      "document_sequence",
-      null,
-      {
-        document_type: data.document_type,
-        next_number: data.next_number,
-      },
-    );
-    return { ok: true };
+    return { ok: true, saved };
   });
 
 export const setEnabledCurrencies = createServerFn({ method: "POST" })

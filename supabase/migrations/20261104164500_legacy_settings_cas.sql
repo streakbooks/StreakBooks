@@ -19,8 +19,9 @@ BEGIN
      OR pg_catalog.jsonb_typeof(_desired) <> 'object' THEN
     RAISE EXCEPTION 'Expected and desired localisation settings are required';
   END IF;
-  IF _desired->>'locale' NOT IN ('en-GB','en-US','en-AU','en-NZ','en-IE','en-CA')
-     OR _desired->>'date_format' NOT IN ('DD/MM/YYYY','MM/DD/YYYY','YYYY-MM-DD')
+  IF _desired->>'locale' IS NULL OR _desired->>'locale' NOT IN ('en-GB','en-US','en-AU','en-NZ','en-IE','en-CA')
+     OR _desired->>'date_format' IS NULL OR _desired->>'date_format' NOT IN ('DD/MM/YYYY','MM/DD/YYYY','YYYY-MM-DD')
+     OR _desired->>'invoice_footer' IS NULL
      OR pg_catalog.length(COALESCE(_desired->>'invoice_footer','')) > 2000
      OR COALESCE(_desired->>'document_theme_color','') !~ '^#[0-9A-Fa-f]{6}$' THEN
     RAISE EXCEPTION 'Invalid localisation preferences';
@@ -97,11 +98,11 @@ BEGIN
 
   IF _exists THEN
     UPDATE public.company_branding SET
-      trading_name=pg_catalog.nullif(pg_catalog.btrim(_desired->>'trading_name'),''),
-      letterhead_line=pg_catalog.nullif(pg_catalog.btrim(_desired->>'letterhead_line'),''),
-      invoice_email=pg_catalog.nullif(pg_catalog.btrim(_desired->>'invoice_email'),''),
-      invoice_phone=pg_catalog.nullif(pg_catalog.btrim(_desired->>'invoice_phone'),''),
-      logo_url=pg_catalog.nullif(pg_catalog.btrim(_desired->>'logo_url'),''),
+      trading_name=NULLIF(pg_catalog.btrim(_desired->>'trading_name'),''),
+      letterhead_line=NULLIF(pg_catalog.btrim(_desired->>'letterhead_line'),''),
+      invoice_email=NULLIF(pg_catalog.btrim(_desired->>'invoice_email'),''),
+      invoice_phone=NULLIF(pg_catalog.btrim(_desired->>'invoice_phone'),''),
+      logo_url=NULLIF(pg_catalog.btrim(_desired->>'logo_url'),''),
       updated_at=pg_catalog.now()
     WHERE company_id=_company_id;
   ELSE
@@ -109,11 +110,11 @@ BEGIN
       company_id,trading_name,letterhead_line,invoice_email,invoice_phone,logo_url
     ) VALUES (
       _company_id,
-      pg_catalog.nullif(pg_catalog.btrim(_desired->>'trading_name'),''),
-      pg_catalog.nullif(pg_catalog.btrim(_desired->>'letterhead_line'),''),
-      pg_catalog.nullif(pg_catalog.btrim(_desired->>'invoice_email'),''),
-      pg_catalog.nullif(pg_catalog.btrim(_desired->>'invoice_phone'),''),
-      pg_catalog.nullif(pg_catalog.btrim(_desired->>'logo_url'),'')
+      NULLIF(pg_catalog.btrim(_desired->>'trading_name'),''),
+      NULLIF(pg_catalog.btrim(_desired->>'letterhead_line'),''),
+      NULLIF(pg_catalog.btrim(_desired->>'invoice_email'),''),
+      NULLIF(pg_catalog.btrim(_desired->>'invoice_phone'),''),
+      NULLIF(pg_catalog.btrim(_desired->>'logo_url'),'')
     );
   END IF;
   PERFORM public.record_audit_event(
@@ -131,7 +132,7 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY INVOKER SET search_path = ''
 AS $$
 DECLARE
   _before jsonb;
-  _number integer;
+  _number bigint;
   _padding integer;
   _prefix text;
 BEGIN

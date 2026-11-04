@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { prepareAccountingPreferences } from "./accounting-preferences";
 import { defaultDocumentFor } from "./registry";
+import type { SettingsDocument } from "./settings-centre.functions";
 
 const input = {
   reportingBasis: "cash" as const,
@@ -24,7 +25,7 @@ describe("legacy accounting preferences save", () => {
   });
 
   it("rejects blank and malformed backdated-day limits instead of storing zero", () => {
-    const baseline = defaultDocumentFor("accounting");
+    const baseline = defaultDocumentFor("accounting") as SettingsDocument;
     for (const backdatedDays of ["", "  ", "abc", "-4", "8.5", "5000"]) {
       const result = prepareAccountingPreferences(baseline, { ...input, backdatedDays });
       expect(result.ok).toBe(false);
@@ -33,7 +34,7 @@ describe("legacy accounting preferences save", () => {
   });
 
   it("accepts a deliberate zero-day warning threshold", () => {
-    const result = prepareAccountingPreferences(defaultDocumentFor("accounting"), {
+    const result = prepareAccountingPreferences(defaultDocumentFor("accounting") as SettingsDocument, {
       ...input,
       backdatedDays: "0",
     });

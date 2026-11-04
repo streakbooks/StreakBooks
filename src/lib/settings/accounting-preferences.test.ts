@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { hasUnsavedAccountingSettings, prepareAccountingPreferences } from "./accounting-preferences";
+import {
+  hasUnsavedAccountingSettings,
+  prepareAccountingPreferences,
+} from "./accounting-preferences";
 import { defaultDocumentFor } from "./registry";
 import type { SettingsDocument } from "./settings-centre.functions";
 

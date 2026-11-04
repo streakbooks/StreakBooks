@@ -42,7 +42,10 @@ describe("Settings Centre category routing and search", () => {
     ] as const) {
       const meta = categoryMeta.find((item) => item.id === category);
       expect(meta?.moduleLinks?.length, category).toBeGreaterThan(0);
-      expect(meta?.moduleLinks?.every((item) => item.to.startsWith("/")), category).toBe(true);
+      expect(
+        meta?.moduleLinks?.every((item) => item.to.startsWith("/")),
+        category,
+      ).toBe(true);
     }
   });
 

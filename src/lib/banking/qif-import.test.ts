@@ -42,9 +42,9 @@ describe("single-account QIF statement intake", () => {
     const mapped = applyMapping(parseCsvText(result.csvText).rows, QIF_MAPPING, "USD");
     expect(mapped.rows[0]?.txnDate).toBe("2026-12-31");
     expect(mapped.rows[0]?.amountMinor).toBe(-450n);
-    expect(() =>
-      parseQifStatement(statement(entry("12/31'26", "-4.50")), "day-first"),
-    ).toThrow(/Invalid QIF date/);
+    expect(() => parseQifStatement(statement(entry("12/31'26", "-4.50")), "day-first")).toThrow(
+      /Invalid QIF date/,
+    );
   });
 
   it("supports ISO, compact bank dates, named months and leap years", () => {
@@ -126,6 +126,8 @@ describe("single-account QIF statement intake", () => {
     expect(() => parseQifStatement("x".repeat(5 * 1024 * 1024 + 1), "day-first")).toThrow();
     expect(() => parseQifStatement("", "day-first")).toThrow();
     expect(() => parseQifStatement(statement(), "" as never)).toThrow(/Choose/);
-    expect(() => parseQifStatement(statement().replace("D03/11'26", "D03/11'26\u0000"), "day-first")).toThrow();
+    expect(() =>
+      parseQifStatement(statement().replace("D03/11'26", "D03/11'26\u0000"), "day-first"),
+    ).toThrow();
   });
 });

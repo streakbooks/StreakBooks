@@ -40,7 +40,7 @@ function qifDate(value: string, order: QifDateOrder): string | null {
   if (/^\d{1,2}[\s/.-]+[A-Za-z]{3,}/.test(raw)) {
     return parseDateValue(raw, "DD-MMM-YYYY");
   }
-  const numeric = /^\d{1,2}[\/.-]\d{1,2}[\/.-](\d{2}|\d{4})$/.exec(raw);
+  const numeric = /^\d{1,2}[/.-]\d{1,2}[/.-](\d{2}|\d{4})$/.exec(raw);
   if (!numeric) return null;
   const shortYear = numeric[1]!.length === 2;
   const format =
@@ -68,7 +68,10 @@ export function parseQifStatement(
   }
   if (input.includes("\0")) throw new Error("QIF statement contains an invalid character");
 
-  const lines = input.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n").split("\n");
+  const lines = input
+    .replace(/^\uFEFF/, "")
+    .replace(/\r\n?/g, "\n")
+    .split("\n");
   const rows: string[][] = [];
   let section: "Bank" | "CCard" | null = null;
   let transaction: Transaction = {};
@@ -104,7 +107,8 @@ export function parseQifStatement(
       const payee = transaction.P?.trim() ?? "";
       const memo = transaction.M?.trim() ?? "";
       const reference = transaction.N?.trim() ?? "";
-      const description = [payee, memo].filter(Boolean).join(" — ") || reference || "Bank transaction";
+      const description =
+        [payee, memo].filter(Boolean).join(" — ") || reference || "Bank transaction";
       rows.push([date, description, amount, payee, reference]);
       if (rows.length > 10000) {
         throw new Error("Statement exceeds 10,000 transactions; split it by date range");
@@ -137,10 +141,7 @@ export function parseQifStatement(
   if (started) throw new Error("Incomplete QIF transaction: missing ^ terminator");
 
   return {
-    csvText: [
-      ["Date", "Description", "Amount", "Payee", "Reference"],
-      ...rows,
-    ]
+    csvText: [["Date", "Description", "Amount", "Payee", "Reference"], ...rows]
       .map((cells) => cells.map(csvCell).join(","))
       .join("\r\n"),
     transactionCount: rows.length,

@@ -392,8 +392,8 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
           <h2 className="font-semibold">Prepare your bank statement</h2>
           <p className="text-sm text-muted-foreground">
             Export CSV, OFX, QFX or QIF from your bank, or use the LinkBooks CSV template. Import
-            one bank account at a time. Positive amounts are money received and negative amounts
-            are money spent.
+            one bank account at a time. Positive amounts are money received and negative amounts are
+            money spent.
           </p>
           <Button type="button" size="sm" variant="outline" onClick={downloadBankTemplate}>
             <Download className="mr-2 size-4" /> Download CSV template
@@ -498,8 +498,8 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
           ) : null}
           <p className="text-xs text-muted-foreground">
             Bank and credit-card CSV, OFX/QFX and QIF statements are supported. QIF split and
-            multiple-account exports, QBO, PDF, investment statements and OFX correction records
-            are not supported. Imported statement lines remain uncategorised until coded or reconciled.
+            multiple-account exports, QBO, PDF, investment statements and OFX correction records are
+            not supported. Imported statement lines remain uncategorised until coded or reconciled.
           </p>
         </div>
       </section>

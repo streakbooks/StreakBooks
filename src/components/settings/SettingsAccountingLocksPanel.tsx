@@ -13,6 +13,7 @@ import { friendlyAuthError } from "@/lib/auth-helpers";
 import {
   hasUnsavedAccountingSettings,
   prepareAccountingPreferences,
+  prepareLockPolicyPayload,
 } from "@/lib/settings/accounting-preferences";
 import type { SettingsDocument } from "@/lib/settings/settings-centre.functions";
 import { LedgerHealthPanel } from "@/components/accounting/LedgerHealthPanel";
@@ -53,6 +54,7 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
   const [everyone, setEveryone] = useState("");
   const [advisors, setAdvisors] = useState("");
   const [conversion, setConversion] = useState("");
+  const [requireOverrideReason, setRequireOverrideReason] = useState(true);
   const [reason, setReason] = useState("");
   const [warnDup, setWarnDup] = useState(true);
   const [warnControl, setWarnControl] = useState(true);
@@ -71,6 +73,7 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
     setEveryone(lockQ.data.lock_date_everyone ?? "");
     setAdvisors(lockQ.data.lock_date_except_advisors ?? "");
     setConversion(lockQ.data.conversion_date ?? "");
+    setRequireOverrideReason(lockQ.data.require_override_reason ?? true);
     setLockBaselineUpdatedAt(lockQ.data.updated_at ?? null);
   }, [lockQ.data, lockTouched]);
 
@@ -106,6 +109,7 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
     setEveryone(lockQ.data.lock_date_everyone ?? "");
     setAdvisors(lockQ.data.lock_date_except_advisors ?? "");
     setConversion(lockQ.data.conversion_date ?? "");
+    setRequireOverrideReason(lockQ.data.require_override_reason ?? true);
     setReason("");
     setLockTouched(false);
     setLockBaselineUpdatedAt(lockQ.data.updated_at ?? null);
@@ -131,13 +135,13 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
         throw new Error("Lock dates changed on the server. Reload latest values.");
       }
       return saveLock({
-        data: {
-          companyId,
-          lockDateEveryone: everyone || null,
-          lockDateExceptAdvisors: advisors || null,
-          conversionDate: conversion || null,
+        data: prepareLockPolicyPayload(companyId, {
+          everyone,
+          advisers: advisors,
+          conversion,
+          requireOverrideReason,
           reason,
-        },
+        }),
       });
     },
     onSuccess: async () => {
@@ -264,6 +268,25 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
               </Link>{" "}
               — it sets this date and posts one balanced opening journal.
             </p>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <div className="space-y-1">
+              <Label htmlFor="settings-require-override-reason">
+                Require a reason when overriding an adviser lock
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Keep an explanation for permitted adviser-exception postings.
+              </p>
+            </div>
+            <Switch
+              id="settings-require-override-reason"
+              checked={requireOverrideReason}
+              disabled={!canLock || !lockQ.data}
+              onCheckedChange={(value) => {
+                setRequireOverrideReason(value);
+                setLockTouched(true);
+              }}
+            />
           </div>
           <div className="space-y-1">
             <Label htmlFor="settings-lock-reason">Reason (required, audited)</Label>

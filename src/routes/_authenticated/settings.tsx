@@ -500,13 +500,27 @@ export function SettingsForCompany({
   });
 
   const currenciesM = useMutation({
-    mutationFn: () => saveCurrencies({ data: { companyId, currencies: enabledFx } }),
+    mutationFn: () =>
+      saveCurrencies({
+        data: {
+          companyId,
+          currencies: enabledFx,
+          // Capture the original snapshot, not a possibly refreshed query.
+          // The database compares this while holding a company-scoped lock.
+          expectedCurrencies: JSON.parse(currenciesBaseline || "[]") as string[],
+        },
+      }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["org-extended", companyId] });
       setCurrenciesDirty(false);
       toast.success("Enabled currencies saved");
     },
-    onError: (e) => toast.error(friendlyAuthError(e)),
+    onError: async (error) => {
+      // A stale-write rejection needs a fresh server snapshot so the editor's
+      // conflict warning and Reload latest action can recover correctly.
+      await queryClient.invalidateQueries({ queryKey: ["org-extended", companyId] });
+      toast.error(friendlyAuthError(error));
+    },
   });
 
   const rateM = useMutation({

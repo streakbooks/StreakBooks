@@ -100,7 +100,7 @@ export function FirmOnboardingPanel({
   return (
     <section className="space-y-5" aria-label="Client onboarding">
       <div>
-        <h2 className="text-lg font-semibold">Client onboarding & offboarding</h2>
+        <h2 className="text-lg font-semibold">Client onboarding checklist</h2>
         <p className="text-sm text-muted-foreground">
           Track opening records, scope, access and independent client setup work. Completion does
           not automatically grant access or change accounting data.

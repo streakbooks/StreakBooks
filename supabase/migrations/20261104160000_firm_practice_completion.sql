@@ -249,3 +249,36 @@ begin
  return sent;
 end $$;
 revoke all on function private.firm_request_due_notifications() from public,anon,authenticated;
+
+-- Immutable assignment identity and immutable request/invoice linkage prevent
+-- reparenting records into another firm or company.
+create function private.firm_assignment_identity_guard()
+returns trigger language plpgsql security invoker set search_path='' as $$
+begin
+  if new.firm_id is distinct from old.firm_id
+     or new.company_id is distinct from old.company_id
+     or new.user_id is distinct from old.user_id
+     or new.created_at is distinct from old.created_at then
+    raise exception 'Practice assignment identity is immutable' using errcode='42501';
+  end if;
+  if new.updated_by is distinct from auth.uid() then
+    raise exception 'Updated-by must be current user' using errcode='42501';
+  end if;
+  new.updated_at:=now();
+  return new;
+end $$;
+create trigger firm_assignment_identity_guard before update on public.firm_client_assignments
+  for each row execute function private.firm_assignment_identity_guard();
+revoke all on function private.firm_assignment_identity_guard() from public,anon,authenticated;
+
+-- Idempotent daily scheduling. All delivery stays in LinkBooks' notification centre.
+do $$
+begin
+  if not exists(select 1 from cron.job where jobname='linkbooks-firm-document-reminders') then
+    perform cron.schedule(
+      'linkbooks-firm-document-reminders',
+      '15 1 * * *',
+      'SELECT private.firm_request_due_notifications();'
+    );
+  end if;
+end $$;

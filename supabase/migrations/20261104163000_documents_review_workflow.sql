@@ -87,6 +87,9 @@ BEGIN
     END IF;
     NEW.version := OLD.version + 1;
   END IF;
+  IF NEW.status IN ('ready', 'approved') AND NEW.document_type = 'unclassified' THEN
+    RAISE EXCEPTION 'Classify the document before review approval';
+  END IF;
   NEW.updated_at := now();
   NEW.updated_by := auth.uid();
   IF NEW.status = 'approved' THEN
@@ -133,8 +136,11 @@ CREATE POLICY document_review_events_read ON public.document_review_events FOR S
 CREATE OR REPLACE FUNCTION public.audit_document_review()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
-  IF TG_OP = 'INSERT'
-    OR ROW(NEW.status, NEW.document_type, NEW.reference, NEW.supplier_name,
+  IF TG_OP = 'INSERT' THEN
+    INSERT INTO public.document_review_events
+      (company_id, review_id, old_status, new_status, old_type, new_type, actor_user_id)
+    VALUES (NEW.company_id, NEW.id, NULL, NEW.status, NULL, NEW.document_type, auth.uid());
+  ELSIF ROW(NEW.status, NEW.document_type, NEW.reference, NEW.supplier_name,
            NEW.document_date, NEW.currency_code, NEW.total_minor, NEW.note)
        IS DISTINCT FROM
        ROW(OLD.status, OLD.document_type, OLD.reference, OLD.supplier_name,
@@ -142,11 +148,8 @@ BEGIN
     INSERT INTO public.document_review_events
       (company_id, review_id, old_status, new_status, old_type, new_type, actor_user_id)
     VALUES (
-      NEW.company_id, NEW.id,
-      CASE WHEN TG_OP = 'INSERT' THEN NULL ELSE OLD.status END,
-      NEW.status,
-      CASE WHEN TG_OP = 'INSERT' THEN NULL ELSE OLD.document_type END,
-      NEW.document_type, auth.uid()
+      NEW.company_id, NEW.id, OLD.status, NEW.status,
+      OLD.document_type, NEW.document_type, auth.uid()
     );
   END IF;
   RETURN NEW;

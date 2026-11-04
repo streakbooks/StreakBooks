@@ -39,7 +39,7 @@ DECLARE
  c1 uuid:=current_setting('test.fcp_c1')::uuid;
  c2 uuid:=current_setting('test.fcp_c2')::uuid;
  billing uuid:=current_setting('test.fcp_billing')::uuid;
- fid uuid; request_id uuid; engagement_id uuid; invoice_id uuid; contact_id uuid;
+ fid uuid; new_request_id uuid; new_engagement_id uuid; new_invoice_id uuid; contact_id uuid;
 BEGIN
  fid:=public.create_practice_firm('Firm completion test');
  INSERT INTO public.firm_members(firm_id,user_id,role) VALUES(fid,u2,'member');
@@ -64,13 +64,13 @@ BEGIN
    RAISE EXCEPTION 'TEST: cross-client assignment accepted';
  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 
- request_id:=public.create_firm_document_request(
+ new_request_id:=public.create_firm_document_request(
    fid,c1,u2,'November statements','Upload company bank files',current_date+3
  );
  IF NOT EXISTS(SELECT 1 FROM public.firm_document_request_tracking
-    WHERE request_id=request_id AND firm_id=fid AND company_id=c1)
+    WHERE request_id=new_request_id AND firm_id=fid AND company_id=c1)
  THEN RAISE EXCEPTION 'Firm tracking request missing'; END IF;
- PERFORM set_config('test.fcp_request',request_id::text,true);
+ PERFORM set_config('test.fcp_request',new_request_id::text,true);
  BEGIN
    PERFORM public.create_firm_document_request(
       fid,c2,u2,'Wrong company','Do not allow',current_date+3);
@@ -82,21 +82,21 @@ BEGIN
  INSERT INTO public.sales_invoices(company_id,contact_id,invoice_number,
   invoice_date,due_date,currency_code,status,created_by)
  VALUES(billing,contact_id,'FCP-TEST',current_date,current_date+30,'GBP','draft',u1)
- RETURNING id INTO invoice_id;
+ RETURNING id INTO new_invoice_id;
  INSERT INTO public.firm_engagements(
    firm_id,company_id,name,frequency,status,start_date,created_by,updated_by
  ) VALUES(fid,c1,'Monthly bookkeeping','monthly','active',current_date,u1,u1)
- RETURNING id INTO engagement_id;
+ RETURNING id INTO new_engagement_id;
  INSERT INTO public.firm_engagement_invoice_links(
    engagement_id,invoice_id,firm_id,company_id,billing_company_id,created_by
- ) VALUES(engagement_id,invoice_id,fid,c1,billing,u1);
+ ) VALUES(new_engagement_id,new_invoice_id,fid,c1,billing,u1);
  IF NOT EXISTS(SELECT 1 FROM public.firm_engagement_invoice_links
-    WHERE engagement_id=engagement_id AND invoice_id=invoice_id)
+    WHERE engagement_id=new_engagement_id AND invoice_id=new_invoice_id)
  THEN RAISE EXCEPTION 'Invoice link not persisted'; END IF;
  BEGIN
    INSERT INTO public.firm_engagement_invoice_links(
      engagement_id,invoice_id,firm_id,company_id,billing_company_id,created_by
-   ) VALUES(engagement_id,gen_random_uuid(),fid,c1,billing,u1);
+   ) VALUES(new_engagement_id,gen_random_uuid(),fid,c1,billing,u1);
    RAISE EXCEPTION 'TEST: unknown invoice accepted';
  EXCEPTION WHEN foreign_key_violation THEN NULL; END;
 END $$;

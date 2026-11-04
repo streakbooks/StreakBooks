@@ -81,7 +81,7 @@ export function DocumentReviewQueue({
     queryKey: ["document-review-queue", companyId, status, page],
     queryFn: () =>
       loadQueue({
-        data: { companyId, status: status === "all" ? undefined : status, page, pageSize: 25 },
+        data: { companyId, ...(status === "all" ? {} : { status }), page, pageSize: 25 },
       }),
   });
   const selected = queue.data?.rows.find((item) => item.id === selectedId) ?? null;

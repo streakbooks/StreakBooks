@@ -46,3 +46,17 @@ No new npm dependencies, competitor source files, CSS, templates, icons, transla
 
 These are **links**, not included third-party code or copied wording.
 
+
+## 4 November banking and tax clean-room implementation record
+
+| Feature | Concepts reviewed | Independent LinkBooks work |
+|---|---|---|
+| QIF single-account intake, PR #26 | Published Westpac Australia and New Zealand QIF statement field descriptions and date variants; historical QIF file behaviors only | Original `src/lib/banking/qif-import.ts` and tests, explicit date order UI, integration with existing LinkBooks preview/permission pipeline; no reused source/branding/layout |
+| Bank input integrity, PR #27 | Double-entry ledger and standard numeric/date correctness | Original pure request validation and tests, safe minor-unit boundary; existing bank database permissions and posted records unchanged |
+| Tax numeric input integrity, PR #28 | Mathematical precision and typed inclusive/exclusive tax contracts, no copied competitor logic | Guarded BigInt/Number, quantity precision and treatment handling within original LinkBooks tax engine; no new rates or country filing logic |
+
+Public bank format references:
+- https://www.westpac.com.au/content/dam/public/wbc/documents/pdf/col/accountsexportformats.pdf
+- https://assets.dam.westpac.co.nz/is/content/wnzl/dist/ways-to-bank/digital/business-online/Business-Online_Transaction-Import-and-Export-File-Formats_guide.pdf
+
+No competitor code, SQL, CSS, templates, icons, imagery, translations or layouts were imported for these milestones.

@@ -20,3 +20,6 @@ The current `package.json` and `package-lock.json` declare React/TanStack/Vite, 
 
 ## 4 November 2026 accounting milestones
 PR #21 (ledger-health contract), PR #22 (year-end exactness) and PR #23 (Ledger Health workspace) added **no new direct or transitive npm dependencies**. Existing React, TanStack, Supabase and Node tooling were reused; lockfiles are unchanged in these PRs. The existing dependency tree still requires a separate full transitive license and vulnerability review.
+
+## Banking QIF and tax/amount guard milestones, 4 November 2026
+PR #26, #27 and #28 add **zero new npm packages** and make no package-lock changes. They reuse pre-existing React, TanStack, Vitest, TypeScript, SHA-256/content deduplication and BigInt helpers. Public bank QIF specifications were consulted for concepts only, with no source files, layouts, artwork or copied templates included. Existing transitive package license and vulnerability review remains a separate release gate.

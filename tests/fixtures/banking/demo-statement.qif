@@ -1,0 +1,13 @@
+!Type:Bank
+D03/11'26
+T250.00
+PExample customer payment
+MSynthetic test receipt
+NDEMO-001
+^
+D04/11'26
+T-12.35
+PExample office supply
+MSynthetic test purchase
+NDEMO-002
+^

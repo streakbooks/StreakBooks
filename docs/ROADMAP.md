@@ -56,3 +56,11 @@ This section records **evidence**, not blanket completion of acceptance criteria
 - **Milestones 3–16:** implementation/acceptance pending as listed above. Existing code and data models must be reviewed before any feature is classified Missing or Done.
 
 See the up-to-date [REVIEW_GUIDE](REVIEW_GUIDE.md) for exact commit hashes, manual acceptance and limitations.
+
+## 4 November 2026 banking and tax progress
+- **Banking import, milestone 5 (partial):** [PR #26](https://github.com/linkbusinessadvisory/LinkBooks/pull/26) adds independent QIF intake for single-account bank/credit-card statements with explicit date-order review; [PR #27](https://github.com/linkbusinessadvisory/LinkBooks/pull/27) hardens the shared server-side date, numeric, ID and row validation for CSV/OFX/QFX/QIF. Bank-feed providers, transaction matching, posted-GL reconciliation, FX and negative multi-tenant staging acceptance remain unfinished.
+- **Tax computation, milestone 3 (partial):** [PR #28](https://github.com/linkbusinessadvisory/LinkBooks/pull/28) prevents silent unsafe numeric conversion and excess quantity precision. Country-specific US/UK/AU/NZ tax source truth tables, return reconciliation, professional sign-off, filing regulators and genuine integration receipts remain unfinished.
+- **Security, milestone 2 (partial):** read-only checks under the PostgreSQL `anon` role and a simulated JWT for an outsider with no company membership showed zero visible rows for five selected financial/membership tables. See [SECURITY_REVIEW_20261104](SECURITY_REVIEW_20261104.md) for boundaries and advisor triage. **This is not a signed-in browser authorization certification.**
+- **Broader reporting:** independent PR #25 extended account-focused selections to budget, asset and tax ledger reports, and passed main CI. Full server-side report-history pagination and immutable all-matching export are still pending.
+
+See [REVIEW_GUIDE](REVIEW_GUIDE.md) for exact merge commits and manual acceptance.

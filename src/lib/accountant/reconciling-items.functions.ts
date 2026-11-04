@@ -7,17 +7,14 @@ const uuid = z.string().uuid();
 const minor = z
   .string()
   .regex(/^-?[0-9]+$/)
-  .refine(
-    (value) => {
-      const amount = BigInt(value);
-      return (
-        amount !== 0n &&
-        amount <= BigInt(Number.MAX_SAFE_INTEGER) &&
-        amount >= -BigInt(Number.MAX_SAFE_INTEGER)
-      );
-    },
-    "Enter a nonzero amount within the safe minor-unit range.",
-  );
+  .refine((value) => {
+    const amount = BigInt(value);
+    return (
+      amount !== 0n &&
+      amount <= BigInt(Number.MAX_SAFE_INTEGER) &&
+      amount >= -BigInt(Number.MAX_SAFE_INTEGER)
+    );
+  }, "Enter a nonzero amount within the safe minor-unit range.");
 
 export type WorkpaperReconcilingItem = {
   id: string;

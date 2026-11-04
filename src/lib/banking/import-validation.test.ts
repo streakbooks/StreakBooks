@@ -14,15 +14,13 @@ const row = (over: Record<string, unknown> = {}) => ({
 
 describe("bank import input integrity", () => {
   it("accepts valid signed exact minor units and normalizes optional strings", () => {
-    expect(validateBankImportRows([row()])).toEqual([
-      { ...row(), force: false },
-    ]);
-    expect(validateBankImportRows([row({ amountMinor: Number.MAX_SAFE_INTEGER })])[0]?.amountMinor).toBe(
-      Number.MAX_SAFE_INTEGER,
-    );
-    expect(validateBankImportRows([row({ amountMinor: -Number.MAX_SAFE_INTEGER })])[0]?.amountMinor).toBe(
-      -Number.MAX_SAFE_INTEGER,
-    );
+    expect(validateBankImportRows([row()])).toEqual([{ ...row(), force: false }]);
+    expect(
+      validateBankImportRows([row({ amountMinor: Number.MAX_SAFE_INTEGER })])[0]?.amountMinor,
+    ).toBe(Number.MAX_SAFE_INTEGER);
+    expect(
+      validateBankImportRows([row({ amountMinor: -Number.MAX_SAFE_INTEGER })])[0]?.amountMinor,
+    ).toBe(-Number.MAX_SAFE_INTEGER);
     expect(validateBankImportRows([row({ reference: "", payee: null })])[0]).toMatchObject({
       reference: null,
       payee: null,
@@ -30,10 +28,15 @@ describe("bank import input integrity", () => {
   });
 
   it("validates real bank dates including leap day and date separators", () => {
-    expect(validateBankImportRows([row({ txnDate: "2028-02-29" })])[0]?.txnDate).toBe(
-      "2028-02-29",
-    );
-    for (const badDate of ["2026-02-29", "2026-02-31", "2026-13-01", "2026-11-31", "11/04/2026", "2026-1-04"]) {
+    expect(validateBankImportRows([row({ txnDate: "2028-02-29" })])[0]?.txnDate).toBe("2028-02-29");
+    for (const badDate of [
+      "2026-02-29",
+      "2026-02-31",
+      "2026-13-01",
+      "2026-11-31",
+      "11/04/2026",
+      "2026-1-04",
+    ]) {
       expect(() => validateBankImportRows([row({ txnDate: badDate })])).toThrow(/calendar date/);
     }
   });
@@ -58,9 +61,9 @@ describe("bank import input integrity", () => {
   });
 
   it("rejects duplicate row numbers to protect forced-import identity", () => {
-    expect(() =>
-      validateBankImportRows([row(), row({ externalId: "different" })]),
-    ).toThrow(/row number/);
+    expect(() => validateBankImportRows([row(), row({ externalId: "different" })])).toThrow(
+      /row number/,
+    );
   });
 
   it("rejects non-boolean forced imports and nonsensical optional types", () => {

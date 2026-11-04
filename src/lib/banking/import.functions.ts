@@ -13,10 +13,7 @@ import {
 import { chunk, fetchAllPages } from "@/lib/banking/fetch-all";
 import { isMissingSchema } from "@/lib/banking/rpc";
 import { loadBankAccount, type AnyClient } from "@/lib/banking/server-helpers";
-import {
-  validateBankImportRows,
-  type ImportRowInput,
-} from "@/lib/banking/import-validation";
+import { validateBankImportRows, type ImportRowInput } from "@/lib/banking/import-validation";
 
 const INSERT_CHUNK = 500;
 

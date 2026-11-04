@@ -118,7 +118,6 @@ export function SettingsNav({ section, embedded = false, showDemo, filter }: Pro
               {items.map((c) => (
                 <Link
                   key={c.id}
-                  aria-current={section === c.id ? "page" : undefined}
                   to={embedded ? pathname : "/settings"}
                   search={
                     embedded

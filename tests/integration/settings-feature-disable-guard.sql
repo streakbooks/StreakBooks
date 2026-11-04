@@ -65,6 +65,43 @@ BEGIN
     RAISE EXCEPTION 'Safe disable did not persist';
   END IF;
 
+  -- A direct currency INSERT must not evade the feature guard once disabled.
+  BEGIN
+    INSERT INTO public.company_currencies(company_id, currency_code)
+    VALUES (c, 'USD');
+    RAISE EXCEPTION 'Direct currency insertion bypassed disabled feature';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM NOT ILIKE '%Enable multicurrency before adding%' THEN RAISE; END IF;
+  END;
+  IF EXISTS (SELECT 1 FROM public.company_currencies WHERE company_id=c) THEN
+    RAISE EXCEPTION 'Rejected direct INSERT left a currency row';
+  END IF;
+
+  -- The atomic RPC must obey the same DB constraint; re-enable first.
+  BEGIN
+    PERFORM public.replace_company_currencies_atomic(
+      c, ARRAY['USD']::text[], ARRAY[]::text[]
+    );
+    RAISE EXCEPTION 'Currency RPC bypassed explicitly disabled feature';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM NOT ILIKE '%Enable multicurrency before adding%' THEN RAISE; END IF;
+  END;
+
+  PERFORM public.set_organisation_feature(c, 'multicurrency', true);
+  PERFORM public.replace_company_currencies_atomic(
+    c, ARRAY['USD']::text[], ARRAY[]::text[]
+  );
+  BEGIN
+    PERFORM public.set_organisation_feature(c, 'multicurrency', false);
+    RAISE EXCEPTION 'A newly configured currency did not prevent disabling';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM NOT ILIKE '%Multicurrency cannot be disabled%' THEN RAISE; END IF;
+  END;
+  PERFORM public.replace_company_currencies_atomic(
+    c, ARRAY[]::text[], ARRAY['USD']::text[]
+  );
+  PERFORM public.set_organisation_feature(c, 'multicurrency', false);
+
   -- Existing transaction + audit guarantees must still roll back mutations.
   PERFORM set_config('test.fail_audit', 'on', true);
   BEGIN

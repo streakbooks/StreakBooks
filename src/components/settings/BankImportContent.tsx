@@ -381,7 +381,7 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
         {["1. Upload", "2. Map fields", "3. Review", "4. Import"].map((step, i) => (
           <span
             key={step}
-            className={`rounded-full border px-3 py-1.5 text-xs font-medium ${(csvText ? (mapped ? 2 : 1) : 0) === i ? "border-primary bg-primary/10 text-primary" : "text-muted-foreground"}`}
+            className={`rounded-full border px-3 py-1.5 text-xs font-medium ${(csvText ? (mapped ? 2 : 1) : qifText !== null ? 1 : 0) === i ? "border-primary bg-primary/10 text-primary" : "text-muted-foreground"}`}
           >
             {step}
           </span>
@@ -391,9 +391,9 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
         <div className="space-y-2">
           <h2 className="font-semibold">Prepare your bank statement</h2>
           <p className="text-sm text-muted-foreground">
-            Export CSV, OFX or QFX from your bank, or use the LinkBooks CSV template. Import one
-            bank account at a time. Positive amounts are money received and negative amounts are
-            money spent.
+            Export CSV, OFX, QFX or QIF from your bank, or use the LinkBooks CSV template. Import
+            one bank account at a time. Positive amounts are money received and negative amounts
+            are money spent.
           </p>
           <Button type="button" size="sm" variant="outline" onClick={downloadBankTemplate}>
             <Download className="mr-2 size-4" /> Download CSV template
@@ -438,16 +438,16 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
             <UploadCloud className="size-8 text-muted-foreground" />
             <span className="text-sm font-medium">Drag and drop your file or click to browse</span>
             <span className="text-xs text-muted-foreground">
-              CSV, TXT, OFX or QFX · Maximum 5 MB
+              CSV, TXT, OFX, QFX or QIF · Maximum 5 MB
             </span>
             <span className="rounded-md border bg-background px-3 py-1.5 text-sm">
-              {csvText ? filename : "Choose file"}
+              {csvText || qifText !== null ? filename : "Choose file"}
             </span>
           </label>
           <input
             id={`${uiId}-csv-file`}
             type="file"
-            accept=".csv,.txt,.ofx,.qfx,text/csv,text/plain,application/x-ofx"
+            accept=".csv,.txt,.ofx,.qfx,.qif,text/csv,text/plain,application/x-ofx"
             className="sr-only"
             onChange={(e) => {
               const file = e.target.files?.[0];
@@ -455,6 +455,30 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
               e.currentTarget.value = "";
             }}
           />
+          {qifText !== null ? (
+            <div className="space-y-2 rounded-md border bg-muted/30 p-3">
+              <Label htmlFor={`${uiId}-qif-order`}>QIF date order (required)</Label>
+              <Select
+                value={qifDateOrder ?? ""}
+                onValueChange={(value) => {
+                  if (value === "day-first" || value === "month-first") chooseQifDateOrder(value);
+                }}
+              >
+                <SelectTrigger id={`${uiId}-qif-order`} aria-label="QIF date order">
+                  <SelectValue placeholder="Choose how dates appear in the statement" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="day-first">Day / month / year (UK, AU, NZ)</SelectItem>
+                  <SelectItem value="month-first">Month / day / year (US)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                QIF files do not specify currency or account identity. Verify the selected bank
+                account and review normalized transaction dates and duplicates before importing.
+                Exported QIF categories and transfers are not automatically posted.
+              </p>
+            </div>
+          ) : null}
           {ofxInfo ? (
             <p className="mb-3 text-sm">
               OFX account ending {ofxInfo.accountId.slice(-4)} · {ofxInfo.currency}. Verify the
@@ -473,9 +497,9 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
             </p>
           ) : null}
           <p className="text-xs text-muted-foreground">
-            Bank and credit-card OFX/QFX and CSV statements are supported. QBO, QIF, PDF, investment
-            statements and OFX correction records are not supported. Imported statement lines remain
-            uncategorised until coded or reconciled.
+            Bank and credit-card CSV, OFX/QFX and QIF statements are supported. QIF split and
+            multiple-account exports, QBO, PDF, investment statements and OFX correction records
+            are not supported. Imported statement lines remain uncategorised until coded or reconciled.
           </p>
         </div>
       </section>
@@ -486,7 +510,11 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <h2 className="font-semibold">Column mapping</h2>
               <Badge variant="secondary">
-                {mappingSource === "saved" ? "Saved for this account" : "Guessed from the file"}
+                {qifText !== null
+                  ? "QIF statement mapping"
+                  : mappingSource === "saved"
+                    ? "Saved for this account"
+                    : "Guessed from the file"}
               </Badge>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -777,7 +805,7 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
           description={friendlyAuthError(importsQ.error)}
         />
       ) : (importsQ.data ?? []).length === 0 ? (
-        <EmptyState title="No imports yet" description="Upload a CSV, OFX or QFX statement." />
+        <EmptyState title="No imports yet" description="Upload a CSV, OFX, QFX or QIF statement." />
       ) : (
         <Table>
           <TableHeader>

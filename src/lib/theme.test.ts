@@ -16,6 +16,58 @@ import {
 } from "./theme";
 
 describe("appearance modes and palettes", () => {
+  it("keeps text and focus readable for custom midtones, extreme colours and both modes", () => {
+    const luminance = (hex: string) => {
+      const channels = [1, 3, 5]
+        .map((offset) => parseInt(hex.slice(offset, offset + 2), 16) / 255)
+        .map((value) => (value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4));
+      return channels[0]! * 0.2126 + channels[1]! * 0.7152 + channels[2]! * 0.0722;
+    };
+    const contrast = (a: string, b: string) => {
+      const x = luminance(a),
+        y = luminance(b);
+      return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+    };
+    for (const primary of [
+      "#777777",
+      "#747474",
+      "#ff0000",
+      "#00ff00",
+      "#0000ff",
+      "#ffffff",
+      "#000000",
+    ]) {
+      for (const canvas of ["#777777", "#ffffff", "#000000", "#123456"]) {
+        for (const dark of [false, true]) {
+          const tokens = computeCustomTokens(
+            { primary, sidebar: canvas, lightBackground: canvas, darkBackground: canvas },
+            dark,
+          );
+          for (const [foreground, background] of [
+            ["--primary-foreground", "--primary"],
+            ["--foreground", "--background"],
+            ["--card-foreground", "--card"],
+            ["--secondary-foreground", "--secondary"],
+            ["--accent-foreground", "--accent"],
+            ["--muted-foreground", "--muted"],
+            ["--sidebar-accent-foreground", "--sidebar-accent"],
+            ["--sidebar-foreground", "--sidebar"],
+            ["--sidebar-active-foreground", "--sidebar-active"],
+            ["--link-ink", "--background"],
+            ["--link-ink", "--card"],
+            ["--muted-foreground", "--background"],
+            ["--muted-foreground", "--card"],
+          ]) {
+            expect(
+              contrast(tokens[foreground!]!, tokens[background!]!),
+              `${primary} / ${canvas} / ${dark}: ${foreground}`,
+            ).toBeGreaterThanOrEqual(4.5);
+          }
+          expect(contrast(tokens["--ring"]!, canvas)).toBeGreaterThanOrEqual(3);
+        }
+      }
+    }
+  });
   it("retains the original light, dark and system behaviour", () => {
     expect(resolveTheme("light", true)).toBe("light");
     expect(resolveTheme("dark", false)).toBe("dark");

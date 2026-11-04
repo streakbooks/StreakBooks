@@ -227,6 +227,22 @@ export function PortalInvoiceDetail({ invoiceId }: { invoiceId: string }) {
   const lines = (data["lines"] as Row[]) ?? [];
   const printable = toPrintDocument(invoice, lines, current.contact_name, branding);
   const payable = Number(data["payable_minor"] ?? 0);
+  const checkoutMode = String(data["checkout_mode"] ?? "instructions");
+  const canCheckout =
+    Boolean(data["settlement_ready"]) && ["stripe", "razorpay", "sandbox"].includes(checkoutMode);
+  const sandbox = checkoutMode === "sandbox";
+  let amountError = "";
+  if (amount.trim()) {
+    try {
+      const minor = Number(
+        toMinorUnits(amount, String(invoice["currency_code"] ?? current.currency ?? "GBP")),
+      );
+      if (minor <= 0) amountError = "Enter an amount greater than zero.";
+      else if (minor > payable) amountError = "The amount exceeds the available invoice balance.";
+    } catch {
+      amountError = "Enter a valid payment amount.";
+    }
+  }
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2 print:hidden">
@@ -240,35 +256,64 @@ export function PortalInvoiceDetail({ invoiceId }: { invoiceId: string }) {
       {payable > 0 ? (
         <Card className="print:hidden">
           <CardHeader>
-            <CardTitle className="text-base">Pay this invoice</CardTitle>
+            <CardTitle className="text-base">
+              {canCheckout
+                ? sandbox
+                  ? "Sandbox payment"
+                  : data["checkout_live"]
+                    ? "Pay this invoice"
+                    : "Test checkout"
+                : "Pay by bank transfer"}
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              Up to {money(payable, invoice["currency_code"], current.locale)} can be paid now,
-              after amounts already in progress.
-              {data["settlement_ready"]
-                ? ""
-                : " The organisation has not finished payment setup, so the invoice shows bank details instead."}
+              {canCheckout
+                ? `Up to ${money(payable, invoice["currency_code"], current.locale)} is available to pay, after payments already in progress.`
+                : "Online checkout is unavailable. Use the bank details and payment reference on this invoice, or contact the organisation for instructions."}
             </p>
-            <div className="flex flex-wrap items-end gap-2">
-              <div>
-                <Label htmlFor="pay-amount">Amount</Label>
-                <Input
-                  id="pay-amount"
-                  inputMode="decimal"
-                  value={amount}
-                  onChange={(event) => setAmount(event.target.value)}
-                />
+            {canCheckout ? (
+              <div className="flex flex-wrap items-end gap-2">
+                <div>
+                  <Label htmlFor="pay-amount">Amount</Label>
+                  <Input
+                    id="pay-amount"
+                    inputMode="decimal"
+                    aria-invalid={Boolean(amountError)}
+                    aria-describedby={amountError ? "pay-amount-error" : undefined}
+                    disabled={payment.isPending}
+                    value={amount}
+                    onChange={(event) => setAmount(event.target.value)}
+                  />
+                </div>
+                <Button
+                  disabled={payment.isPending || !amount.trim() || Boolean(amountError)}
+                  aria-busy={payment.isPending}
+                  onClick={() => payment.mutate()}
+                >
+                  {payment.isPending
+                    ? "Opening checkout…"
+                    : sandbox
+                      ? "Review sandbox payment"
+                      : data["checkout_live"]
+                        ? "Continue to payment"
+                        : "Open test checkout"}
+                </Button>
               </div>
-              <Button disabled={payment.isPending || !amount} onClick={() => payment.mutate()}>
-                {payment.isPending ? "Opening checkout…" : "Continue to payment"}
-              </Button>
-            </div>
-            {data["allow_sandbox"] ? (
-              <p className="text-xs text-muted-foreground">
-                If card checkout is not configured, a sandbox payment posts a real receipt and does
-                not collect card funds.
+            ) : null}
+            {amountError && canCheckout ? (
+              <p id="pay-amount-error" role="alert" className="text-sm text-destructive">
+                {amountError}
               </p>
+            ) : null}
+            {canCheckout && sandbox ? (
+              <p className="text-xs text-muted-foreground">
+                No funds are collected. Confirming a sandbox payment posts a real receipt in this
+                organisation.
+              </p>
+            ) : null}
+            {canCheckout && !sandbox && !data["checkout_live"] ? (
+              <p className="text-sm text-warning-ink">Test mode. No live payment is collected.</p>
             ) : null}
           </CardContent>
         </Card>

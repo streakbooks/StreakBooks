@@ -76,12 +76,16 @@ export const getPortalInvoice = createServerFn({ method: "GET" })
     ...membershipInput(input),
     invoiceId: assertUuid(input?.invoiceId, "invoice"),
   }))
-  .handler(async ({ data, context }) =>
-    rpc(context.supabase, "portal_get_invoice", {
+  .handler(async ({ data, context }) => {
+    const invoice = await rpc<Record<string, PortalJson>>(context.supabase, "portal_get_invoice", {
       membership_id: data.membershipId,
       invoice_id: data.invoiceId,
-    }),
-  );
+    });
+    const { checkoutModeFor } = await import("@/lib/portals/portal-payments.server");
+    // Public capability only. Credentials and payment authorization stay server-side.
+    const checkout = checkoutModeFor(Boolean(invoice["allow_sandbox"]));
+    return { ...invoice, checkout_mode: checkout.mode, checkout_live: checkout.livemode };
+  });
 
 export const listPortalCredits = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

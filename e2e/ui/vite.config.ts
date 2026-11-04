@@ -1,0 +1,23 @@
+import path from "node:path";
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import tailwind from "@tailwindcss/vite";
+export default defineConfig({
+  root: import.meta.dirname,
+  cacheDir: path.resolve(import.meta.dirname, "../../node_modules/.vite-ui"),
+  plugins: [react(), tailwind()],
+  resolve: {
+    alias: [
+      ...[
+        "@tanstack/react-start",
+        "@/hooks/use-active-company",
+        "@/components/portals/use-portal",
+        "@/integrations/supabase/client",
+        "@/lib/purchases/purchases.functions",
+        "@/lib/portals/portals.functions",
+      ].map((find) => ({ find, replacement: path.resolve(import.meta.dirname, "functions.ts") })),
+      { find: "@", replacement: path.resolve(import.meta.dirname, "../../src") },
+    ],
+  },
+  server: { host: "127.0.0.1", port: 8100, strictPort: true },
+});

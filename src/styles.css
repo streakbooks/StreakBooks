@@ -1,6 +1,18 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
+@import "@fontsource/ibm-plex-mono/latin-400.css";
+@import "@fontsource/ibm-plex-mono/latin-500.css";
+@import "@fontsource/ibm-plex-mono/latin-600.css";
+
+/* Serve the existing typefaces locally; a blocked font host must not delay sign-in. */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("@fontsource-variable/inter/files/inter-latin-wght-normal.woff2") format("woff2");
+}
 
 @custom-variant dark (&:is(.dark *));
 
@@ -81,7 +93,7 @@
 }
 
 :root {
-  --radius: 0.5rem;
+  --radius: 0.625rem;
 
   --background: oklch(0.982 0.003 250);
   --foreground: oklch(0.22 0.03 255);
@@ -515,13 +527,16 @@
  * for desktop, collapsed and mobile navigation. No copied vendor UI assets.
  */
 .lb-premium-sidebar {
-  background: linear-gradient(166deg, var(--sidebar-top) 0%, var(--sidebar) 42%, var(--sidebar-bottom) 100%);
+  background: var(--sidebar);
   color: var(--sidebar-foreground);
 }
 
 .lb-nav-link {
   color: var(--sidebar-foreground);
-  transition: background-color 150ms ease, color 150ms ease, box-shadow 150ms ease;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .lb-nav-link:not([data-active="true"]):hover {
@@ -530,11 +545,11 @@
 }
 
 .lb-nav-link[data-active="true"] {
-  background: linear-gradient(105deg, var(--sidebar-active), var(--sidebar-active-strong));
+  background: var(--sidebar-active);
   border-color: var(--sidebar-active-border);
   color: var(--sidebar-active-foreground);
   font-weight: 650;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12), 0 5px 15px rgb(0 0 0 / 0.2);
+  box-shadow: none;
 }
 
 .lb-nav-link[data-active="true"]::before {
@@ -557,7 +572,6 @@
     transition: none;
   }
 }
-
 
 /* Optional premium presets; Classic intentionally inherits the original LinkBooks theme. */
 /* sapphire — coherent light/dark surface, action and navigator palette. */
@@ -1051,6 +1065,45 @@
 }
 
 /* Persistent voice target remains visible when focus moves to assistant controls. */
-[data-voice-active="true"] { outline: 2px solid var(--primary); outline-offset: 3px; }
+[data-voice-active="true"] {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
 
-.voice-signal[data-wake="on"] .voice-signal-pill { border-color: var(--primary); }
+.voice-signal[data-wake="on"] .voice-signal-pill {
+  border-color: var(--primary);
+}
+
+/* The custom accent is preserved on buttons; links use separately contrast-tested ink. */
+[data-linkbooks-palette="custom"] .text-primary {
+  color: var(--link-ink);
+}
+
+@layer base {
+  html {
+    scroll-padding-top: 6rem;
+  }
+  body {
+    overflow-wrap: break-word;
+  }
+  input,
+  textarea,
+  select {
+    accent-color: var(--primary);
+  }
+  :where(input, textarea, select):disabled {
+    cursor: not-allowed;
+  }
+  @media (forced-colors: active) {
+    [aria-current="page"],
+    [aria-selected="true"] {
+      outline: 2px solid Highlight;
+    }
+    button,
+    input,
+    select,
+    textarea {
+      border-color: ButtonText;
+    }
+  }
+}

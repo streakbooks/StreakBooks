@@ -8,6 +8,7 @@ import { PlatformResource } from "@/components/platform/PlatformResource";
 import { PlatformHealth } from "@/components/platform/PlatformHealth";
 import { PlatformApprovals } from "@/components/platform/PlatformApprovals";
 import { parsePlatformSearch } from "@/lib/platform/navigation";
+import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
 export const Route = createFileRoute("/_authenticated/platform/")({
   validateSearch: parsePlatformSearch,
   component: PlatformHome,
@@ -22,30 +23,28 @@ function PlatformHome() {
     staleTime: 30000,
     retry: false,
   });
-  if (query.isPending) return <p role="status">Loading platform permissions…</p>;
+  if (query.isPending) return <LoadingState rows={4} />;
   if (query.isError)
     return (
-      <div role="alert">
-        <p>{query.error.message}</p>
-        <button className="mt-3 underline" onClick={() => void query.refetch()}>
-          Retry platform access
-        </button>
-      </div>
+      <ErrorState
+        title="Could not load platform access"
+        description={query.error.message}
+        onRetry={() => void query.refetch()}
+      />
     );
-  if (!query.data) return <p>No platform context returned.</p>;
   const allowed = visibleSections(query.data.permissions);
   const current = allowed.find(([id]) => id === section) ?? allowed[0];
-  if (!current) return <p>No platform permissions assigned.</p>;
+  if (!current)
+    return (
+      <EmptyState
+        title="No platform access assigned"
+        description="Your account does not have access to platform administration. Contact your administrator if you need access."
+      />
+    );
   const [id, title, description] = current;
   return (
     <>
-      <div>
-        <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-primary">
-          Platform operations
-        </p>
-        <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
-        <p className="mt-2 max-w-3xl text-sm text-muted-foreground">{description}</p>
-      </div>
+      <PageHeader title={title} description={description} />
       {id === "approvals" ? (
         <PlatformApprovals
           canManage={query.data.permissions.includes("approvals.manage")}

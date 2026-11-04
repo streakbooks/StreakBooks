@@ -99,7 +99,10 @@ export function FormField({
 export function FormActions({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <div
-      className={cn("flex flex-wrap items-center justify-end gap-2 pt-4 print:hidden", className)}
+      className={cn(
+        "flex flex-wrap items-center justify-end gap-2 border-t border-border pt-5 print:hidden",
+        className,
+      )}
     >
       {children}
     </div>

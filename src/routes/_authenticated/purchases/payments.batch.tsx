@@ -14,7 +14,7 @@ import { fromMinorUnits } from "@/lib/accounting/money";
 import { buildBatchPayments, type BatchBill } from "@/lib/purchases/batch-payment";
 import { useCanDo } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, LoadingState, EmptyState } from "@/components/common/states";
+import { PageHeader, LoadingState, EmptyState, ErrorState } from "@/components/common/states";
 import { AccountLookup } from "@/components/lookup";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -110,6 +110,14 @@ function BatchPayment() {
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (billsQ.isPending) return <LoadingState />;
+  if (billsQ.isError)
+    return (
+      <ErrorState
+        title="Could not load bills to pay"
+        description={friendlyAuthError(billsQ.error)}
+        onRetry={() => void billsQ.refetch()}
+      />
+    );
 
   return (
     <>
@@ -123,10 +131,19 @@ function BatchPayment() {
         }
       />
       <div className="max-w-4xl space-y-4">
+        {accountsQ.isError ? (
+          <ErrorState
+            compact
+            title="Could not load payment accounts"
+            description={friendlyAuthError(accountsQ.error)}
+            onRetry={() => void accountsQ.refetch()}
+          />
+        ) : null}
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label>Bank / cash account</Label>
+            <Label htmlFor="batch-bank">Bank / cash account</Label>
             <AccountLookup
+              id="batch-bank"
               ariaLabel="Bank / cash account"
               accounts={(accountsQ.data ?? []) as Array<{ id: string; code: string; name: string }>}
               value={bankAccountId}
@@ -134,13 +151,19 @@ function BatchPayment() {
               companyId={companyId}
               purpose="posting"
               createKind="bank"
-              placeholder="Paid from (bank or cash account)"
+              disabled={accountsQ.isPending || accountsQ.isError || mutation.isPending}
+              placeholder={
+                accountsQ.isPending
+                  ? "Loading payment accounts…"
+                  : "Paid from (bank or cash account)"
+              }
               allowClear={false}
             />
           </div>
           <div className="space-y-2">
-            <Label>Payment date</Label>
+            <Label htmlFor="batch-payment-date">Payment date</Label>
             <Input
+              id="batch-payment-date"
               type="date"
               value={paymentDate}
               onChange={(e) => setPaymentDate(e.target.value)}
@@ -191,7 +214,7 @@ function BatchPayment() {
           </Table>
         )}
 
-        <div className="flex items-center justify-between rounded-md border p-3 text-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-4 text-sm">
           <span>
             {chosen.length} bill{chosen.length === 1 ? "" : "s"} → {payments.length} payment
             {payments.length === 1 ? "" : "s"}
@@ -199,12 +222,15 @@ function BatchPayment() {
           <Button
             disabled={
               !canPay ||
+              accountsQ.isPending ||
+              accountsQ.isError ||
               !bankAccountId ||
               !paymentDate ||
               payments.length === 0 ||
               mutation.isPending
             }
             onClick={() => mutation.mutate()}
+            aria-busy={mutation.isPending}
           >
             {mutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Pay selected

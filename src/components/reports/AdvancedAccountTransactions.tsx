@@ -406,6 +406,7 @@ export function AdvancedAccountTransactionsView({ ctx }: { ctx: ReportCtx }) {
                   }
                 >
                   <option value="">All types</option>
+                  {/* lookup-fixed-enum: Known journal source types, not selectable business records. */}
                   {Object.entries(SOURCE_LABELS).map(([id, label]) => (
                     <option key={id} value={id}>
                       {label}
@@ -566,6 +567,7 @@ export function AdvancedAccountTransactionsView({ ctx }: { ctx: ReportCtx }) {
                           })
                         }
                       >
+                        {/* lookup-fixed-enum: Fixed page-size choices. */}
                         {[25, 50, 100, 200].map((size) => (
                           <option key={size} value={size}>
                             {size}

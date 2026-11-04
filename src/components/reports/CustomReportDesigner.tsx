@@ -94,7 +94,7 @@ export function CustomReportDesigner({
                     [{r.id}] · {r.kind}
                   </span>
                 </button>
-                <div className="mt-2 flex gap-1">
+                <div className="mt-2 flex flex-wrap gap-1">
                   <Button
                     size="sm"
                     variant="ghost"

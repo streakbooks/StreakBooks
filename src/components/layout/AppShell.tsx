@@ -1,8 +1,8 @@
 import { SettingsSurface } from "@/components/settings/SettingsSurface";
-import { InPlaceSettingsPanel } from "@/components/settings/InPlaceSettingsPanel";
 import { parseSettingsPanel, panelLabel } from "@/lib/settings/panels";
 import { WorkspaceSettingsShortcut } from "@/components/settings/ModuleSettingsLinks";
-import { useEffect, useId, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { LoadingState } from "@/components/common/states";
 import {
   Link,
   useNavigate,
@@ -52,6 +52,11 @@ import { Badge } from "@/components/ui/badge";
 import { PlatformAnnouncements } from "@/components/platform/PlatformAnnouncements";
 
 const COLLAPSE_KEY = "linkbooks-sidebar-collapsed";
+const InPlaceSettingsPanel = lazy(() =>
+  import("@/components/settings/InPlaceSettingsPanel").then((module) => ({
+    default: module.InPlaceSettingsPanel,
+  })),
+);
 
 function UserMenu() {
   const { user } = useRouteContext({ from: "/_authenticated" });
@@ -170,10 +175,7 @@ function NavLink({
         collapsed && "justify-center px-0",
       )}
     >
-      <item.icon
-        className={cn("size-4 shrink-0", active && "drop-shadow-[0_0_5px_rgba(140,205,255,0.32)]")}
-        aria-hidden
-      />
+      <item.icon className="size-4 shrink-0" aria-hidden />
       {collapsed ? null : <span className="truncate">{item.label}</span>}
     </Link>
   );
@@ -499,11 +501,20 @@ function AppShellLayout({ children }: { children: ReactNode }) {
   const { user } = useRouteContext({ from: "/_authenticated" });
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const mainRef = useRef<HTMLElement>(null);
+  const previousPath = useRef(pathname);
   const { company, isPending } = useActiveCompany();
   const title = useRouterState({
     select: (s) =>
       activeNavLabel(s.location.pathname, (s.location.search as Record<string, unknown>)["from"]),
   });
+
+  useEffect(() => {
+    if (previousPath.current === pathname) return;
+    previousPath.current = pathname;
+    // Announce a new page without stealing focus on filter/search updates.
+    mainRef.current?.focus({ preventScroll: true });
+  }, [pathname]);
 
   // Read the saved sidebar state after mount so server and first client render agree.
   useEffect(() => {
@@ -582,7 +593,7 @@ function AppShellLayout({ children }: { children: ReactNode }) {
           collapsed ? "lg:pl-[4.5rem]" : "lg:pl-64",
         )}
       >
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border bg-card/95 px-3 backdrop-blur print:hidden md:gap-3 md:px-6">
+        <header className="sticky top-0 z-30 flex min-h-16 items-center gap-1 border-b border-border bg-card px-3 py-2 print:hidden sm:gap-2 md:px-6">
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open menu">
@@ -626,28 +637,39 @@ function AppShellLayout({ children }: { children: ReactNode }) {
           >
             <div className="flex flex-wrap items-center gap-2 text-sm">
               <Badge variant="warning">Demo Company</Badge>
-              <span className="font-medium text-foreground">
-                Sample data only — not real financial records.
+              <span className="text-foreground">
+                Sample data · Your live organisations are separate.
               </span>
-              <span className="text-muted-foreground">
-                Same ledger engine and permissions as live organisations. Reset from Settings →
-                Demo.
-              </span>
+              <Link
+                to="/settings"
+                search={{ section: "demo" }}
+                className="ml-auto rounded-sm text-sm font-medium underline underline-offset-4"
+              >
+                Manage demo
+              </Link>
             </div>
           </div>
         ) : null}
 
         <main
+          ref={mainRef}
           key={`${user.id}:${company?.id ?? ""}`}
           id="main-content"
+          aria-label={title}
           tabIndex={-1}
           className={cn(
-            "mx-auto w-full max-w-[1400px] px-4 py-6 outline-none md:px-6 md:py-8 print:max-w-none print:p-0",
+            "mx-auto w-full min-w-0 max-w-[1440px] px-4 py-6 outline-none md:px-7 md:py-8 xl:px-9 print:max-w-none print:p-0",
           )}
         >
           <SettingsSurface
             active={Boolean(settingsPanel && pathname !== "/settings")}
-            detail={settingsPanel ? <InPlaceSettingsPanel panel={settingsPanel} /> : null}
+            detail={
+              settingsPanel ? (
+                <Suspense fallback={<LoadingState />}>
+                  <InPlaceSettingsPanel panel={settingsPanel} />
+                </Suspense>
+              ) : null
+            }
           >
             <WorkspaceSettingsShortcut pathname={pathname} />
             {children}

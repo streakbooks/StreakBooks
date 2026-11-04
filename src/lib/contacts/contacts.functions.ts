@@ -14,7 +14,7 @@ import {
 } from "@/lib/contacts/contact-helpers";
 
 const CONTACT_SELECT =
-  "id, name, email, phone, tax_number, payment_terms_days, is_active, kind, created_at, updated_at, account_number, legal_name, website, default_currency, credit_limit_minor, notes, billing_address_line1, billing_city, billing_country, archived_at";
+  "id, name, email, phone, tax_number, payment_terms_days, is_active, kind, created_at, updated_at, account_number, legal_name, website, default_currency, credit_limit_minor, notes, billing_address_line1, billing_city, billing_region, billing_postal, billing_country, delivery_address_line1, delivery_city, delivery_region, delivery_postal, delivery_country, archived_at";
 
 type OpenDocClient = Parameters<typeof assertCompanyMember>[0];
 
@@ -104,7 +104,17 @@ export const listContacts = createServerFn({ method: "GET" })
     }
 
     const search = buildIlikeOr(
-      ["name", "email", "phone", "account_number", "tax_number", "legal_name"],
+      [
+        "name",
+        "email",
+        "phone",
+        "account_number",
+        "tax_number",
+        "legal_name",
+        "billing_city",
+        "billing_region",
+        "billing_country",
+      ],
       data.q,
     );
     if (search) q = q.or(search as never);
@@ -145,7 +155,17 @@ export const countContacts = createServerFn({ method: "GET" })
       q = q.eq("kind" as never, "both" as never);
     }
     const search = buildIlikeOr(
-      ["name", "email", "phone", "account_number", "tax_number", "legal_name"],
+      [
+        "name",
+        "email",
+        "phone",
+        "account_number",
+        "tax_number",
+        "legal_name",
+        "billing_city",
+        "billing_region",
+        "billing_country",
+      ],
       data.q,
     );
     if (search) q = q.or(search as never);
@@ -856,6 +876,89 @@ export const setContactTags = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/**
+ * Add an existing group or tag to the selected contacts without replacing their
+ * current assignments. Permission, company, status and label checks precede
+ * the single atomic, idempotent database upsert.
+ */
+export const bulkAddContactLabel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      contactIds: string[];
+      labelKind: "group" | "tag";
+      labelId: string;
+    }) => {
+      if (
+        !Array.isArray(input.contactIds) ||
+        !input.contactIds.length ||
+        input.contactIds.length > 50
+      ) {
+        throw new Error("Select between 1 and 50 contacts from the current page");
+      }
+      const contactIds = input.contactIds.map((id) => assertUuid(id));
+      if (new Set(contactIds).size !== contactIds.length) {
+        throw new Error("Contact selection contains duplicate IDs");
+      }
+      if (input.labelKind !== "group" && input.labelKind !== "tag") {
+        throw new Error("Invalid group or tag selection");
+      }
+      return {
+        companyId: assertUuid(input.companyId),
+        contactIds,
+        labelKind: input.labelKind,
+        labelId: assertUuid(input.labelId),
+      };
+    },
+  )
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "contacts.manage");
+
+    const { data: contacts, error: contactError } = await context.supabase
+      .from("contacts" as never)
+      .select("id" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("is_active" as never, true as never)
+      .is("archived_at" as never, null as never)
+      .in("id" as never, data.contactIds as never);
+    if (contactError) throw new Error(contactError.message);
+    if ((contacts ?? []).length !== data.contactIds.length) {
+      throw new Error("Some selected contacts are inactive or outside this organisation");
+    }
+
+    const labelTable = data.labelKind === "group" ? "contact_groups" : "contact_tags";
+    const relationTable =
+      data.labelKind === "group" ? "contact_group_members" : "contact_tag_assignments";
+    const labelColumn = data.labelKind === "group" ? "group_id" : "tag_id";
+
+    const { data: label, error: labelError } = await context.supabase
+      .from(labelTable as never)
+      .select("id" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("id" as never, data.labelId as never)
+      .eq("is_active" as never, true as never)
+      .maybeSingle();
+    if (labelError) throw new Error(labelError.message);
+    if (!label) throw new Error("Choose an active group or tag from this organisation");
+
+    const assignments = data.contactIds.map((contact_id) => ({
+      company_id: data.companyId,
+      contact_id,
+      [labelColumn]: data.labelId,
+    }));
+    // ON CONFLICT DO NOTHING retains all existing memberships and makes retries safe.
+    const { error, count } = await context.supabase
+      .from(relationTable as never)
+      .upsert(assignments as never, {
+        onConflict: `${labelColumn},contact_id`,
+        ignoreDuplicates: true,
+        count: "exact",
+      });
+    if (error) throw new Error(error.message);
+    return { selected: data.contactIds.length, added: count ?? 0 };
+  });
+
 /* ── Settings ── */
 export const getContactSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -966,7 +1069,17 @@ export const exportContactsCsv = createServerFn({ method: "POST" })
         q = q.eq("kind" as never, "both" as never);
       }
       const search = buildIlikeOr(
-        ["name", "email", "phone", "account_number", "tax_number", "legal_name"],
+        [
+          "name",
+          "email",
+          "phone",
+          "account_number",
+          "tax_number",
+          "legal_name",
+          "billing_city",
+          "billing_region",
+          "billing_country",
+        ],
         data.q,
       );
       if (search) q = q.or(search as never);

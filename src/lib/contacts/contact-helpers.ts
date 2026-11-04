@@ -9,6 +9,17 @@ export const CONTACT_SORT_FIELDS = {
   email: "email",
   phone: "phone",
   terms: "payment_terms_days",
+  city: "billing_city",
+  state: "billing_region",
+  postal: "billing_postal",
+  country: "billing_country",
+  legal: "legal_name",
+  tax: "tax_number",
+  currency: "default_currency",
+  credit: "credit_limit_minor",
+  status: "is_active",
+  created: "created_at",
+  modified: "updated_at",
 } as const;
 
 export type ContactSortField = keyof typeof CONTACT_SORT_FIELDS;

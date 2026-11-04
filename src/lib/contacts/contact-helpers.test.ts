@@ -62,6 +62,22 @@ describe("contact-helpers", () => {
       ascending: true,
     });
     expect(resolveContactSort("roles_desc")).toEqual({ column: "kind", ascending: false });
+    expect(resolveContactSort("city_asc")).toEqual({
+      column: "billing_city",
+      ascending: true,
+    });
+    expect(resolveContactSort("state_desc")).toEqual({
+      column: "billing_region",
+      ascending: false,
+    });
+    expect(resolveContactSort("country_asc")).toEqual({
+      column: "billing_country",
+      ascending: true,
+    });
+    expect(resolveContactSort("credit_desc")).toEqual({
+      column: "credit_limit_minor",
+      ascending: false,
+    });
     expect(resolveContactSort("email_asc")).toEqual({ column: "email", ascending: true });
     expect(resolveContactSort("phone_desc")).toEqual({ column: "phone", ascending: false });
     expect(resolveContactSort("terms_asc")).toEqual({

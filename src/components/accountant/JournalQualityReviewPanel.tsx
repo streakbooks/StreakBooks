@@ -51,7 +51,15 @@ export function JournalQualityReviewPanel({ companyId }: { companyId: string }) 
   const exportCsv = () => {
     if (!query.data) return;
     const csv = toCsv(
-      ["Journal", "Posting date", "Severity", "Finding", "Reason", "Related journal", "Review status"],
+      [
+        "Journal",
+        "Posting date",
+        "Severity",
+        "Finding",
+        "Reason",
+        "Related journal",
+        "Review status",
+      ],
       query.data.findings.map((finding) => [
         finding.journalNumber,
         finding.journalDate,
@@ -77,7 +85,8 @@ export function JournalQualityReviewPanel({ companyId }: { companyId: string }) 
           <h2 className="text-base font-semibold">Manual journal quality review</h2>
           <p className="max-w-3xl text-sm text-muted-foreground">
             Identify possible duplicate postings, missing narrations and ledger-line exceptions.
-            Record investigation notes with independent review. Findings never change posted journals.
+            Record investigation notes with independent review. Findings never change posted
+            journals.
           </p>
         </div>
         <Button
@@ -243,7 +252,9 @@ export function JournalQualityReviewPanel({ companyId }: { companyId: string }) 
               )}
               {selectedFinding ? (
                 <JournalExceptionReviewDetails
-                  key={selectedFinding.id + ":" + (reviewByKey.get(selectedFinding.id)?.version ?? 0)}
+                  key={
+                    selectedFinding.id + ":" + (reviewByKey.get(selectedFinding.id)?.version ?? 0)
+                  }
                   companyId={companyId}
                   finding={selectedFinding}
                   record={reviewByKey.get(selectedFinding.id)}

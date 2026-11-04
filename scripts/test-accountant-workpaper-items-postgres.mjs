@@ -50,7 +50,7 @@ try {
   }
   if (!ready) throw new Error("Isolated PostgreSQL did not become ready");
   sql("tests/fixtures/accountant-workpaper-items/baseline.sql");
-  sql("supabase/migrations/20261104075100_workpaper_reconciling_items.sql");
+  sql("supabase/migrations/20261104080519_workpaper_reconciling_items.sql");
   console.log(sql("tests/integration/accountant-workpaper-reconciling-items.sql").trim());
 } finally {
   try {

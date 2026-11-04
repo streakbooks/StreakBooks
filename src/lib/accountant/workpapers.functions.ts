@@ -13,13 +13,10 @@ const listInput = z.object({
 const minorString = z
   .string()
   .regex(/^-?\d+$/, "Enter an integer amount in minor units")
-  .refine(
-    (value) => {
-      const n = BigInt(value);
-      return n >= -9007199254740991n && n <= 9007199254740991n;
-    },
-    "Amount exceeds the safe workpaper range",
-  );
+  .refine((value) => {
+    const n = BigInt(value);
+    return n >= -9007199254740991n && n <= 9007199254740991n;
+  }, "Amount exceeds the safe workpaper range");
 
 const saveInput = z.object({
   companyId: z.string().uuid(),

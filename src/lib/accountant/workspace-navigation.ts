@@ -5,6 +5,7 @@
 export const ACCOUNTANT_WORKSPACE_TABS = [
   { id: "overview", label: "Overview" },
   { id: "client-work", label: "Client work" },
+  { id: "workpapers", label: "Workpapers" },
   { id: "journals", label: "Journals" },
   { id: "reconciliation", label: "Reconciliation" },
   { id: "period-close", label: "Period close" },

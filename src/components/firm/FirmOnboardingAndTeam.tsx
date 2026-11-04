@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
   ONBOARDING_TEMPLATE,
+  OFFBOARDING_TEMPLATE,
+  initializeFirmOffboarding,
   initializeFirmOnboarding,
   listFirmOnboardingSteps,
   listFirmTeam,
@@ -65,6 +67,7 @@ export function FirmOnboardingPanel({
   const [notes, setNotes] = useState<Record<string, string>>({});
   const list = useServerFn(listFirmOnboardingSteps);
   const initialize = useServerFn(initializeFirmOnboarding);
+  const initializeOffboarding = useServerFn(initializeFirmOffboarding);
   const update = useServerFn(updateFirmOnboardingStep);
   const qc = useQueryClient();
   const queryKey = ["firm-onboarding-steps", firmId, clientId];
@@ -78,6 +81,14 @@ export function FirmOnboardingPanel({
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey });
       toast.success("Standard onboarding checklist added");
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+  const offboardM = useMutation({
+    mutationFn: () => initializeOffboarding({ data: { firmId, companyId: clientId } }),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey });
+      toast.success("Offboarding checklist added without revoking client access");
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
@@ -142,19 +153,29 @@ export function FirmOnboardingPanel({
                   </p>
                 </div>
                 {canManage ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={createM.isPending}
-                    onClick={() => createM.mutate()}
-                  >
-                    {createM.isPending ? "Creating…" : "Add missing standard steps"}
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        disabled={createM.isPending}
+                                        onClick={() => createM.mutate()}
+                                      >
+                                        {createM.isPending ? "Creating…" : "Add missing standard steps"}
+                                      </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={offboardM.isPending}
+                      onClick={() => offboardM.mutate()}
+                    >
+                      {offboardM.isPending ? "Creating…" : "Add offboarding steps"}
+                    </Button>
+                  </div>
                 ) : null}
               </div>
               {steps.length === 0 ? (
                 <div className="rounded-lg border border-dashed p-5 text-sm text-muted-foreground">
-                  The template contains {ONBOARDING_TEMPLATE.length} steps. A firm administrator can
+                  The onboarding template contains {ONBOARDING_TEMPLATE.length} steps; the offboarding template contains {OFFBOARDING_TEMPLATE.length}. A firm administrator can
                   add them without overwriting previously completed work.
                 </div>
               ) : (

@@ -1,4 +1,5 @@
 import { parseOfxStatement, OFX_MAPPING } from "@/lib/banking/ofx-import";
+import { parseQifStatement, QIF_MAPPING, type QifDateOrder } from "@/lib/banking/qif-import";
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useRouterState } from "@tanstack/react-router";
 import { useId, useEffect, useMemo, useState } from "react";
@@ -158,6 +159,9 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
   );
   const [filename, setFilename] = useState("statement.csv");
   const [csvText, setCsvText] = useState("");
+  const [qifText, setQifText] = useState<string | null>(null);
+  const [qifDateOrder, setQifDateOrder] = useState<QifDateOrder | null>(null);
+  const [fileRevision, setFileRevision] = useState(0);
   const [mapping, setMapping] = useState<ImportMapping | null>(null);
   const [mappingSource, setMappingSource] = useState<"guess" | "saved">("guess");
   const [includeDuplicates, setIncludeDuplicates] = useState(false);
@@ -167,11 +171,13 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
   async function loadCsvFile(file: File) {
     setFileError("");
     setCsvText("");
+    setMapping(null);
     setOfxInfo(null);
-    if (!/\.(csv|txt|ofx|qfx)$/i.test(file.name)) {
-      setFileError(
-        "Use CSV, TXT, OFX or QFX. PDF, QIF and investment statements are not supported.",
-      );
+    setQifText(null);
+    setQifDateOrder(null);
+    setFileRevision((value) => value + 1);
+    if (!/\.(csv|txt|ofx|qfx|qif)$/i.test(file.name)) {
+      setFileError("Use CSV, TXT, OFX, QFX or QIF. PDF and investment files are not supported.");
       return;
     }
     if (file.size > MAX_FILE_CHARS) {
@@ -181,14 +187,37 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
     try {
       const text = await file.text();
       if (!text.trim()) throw new Error("The selected file is empty.");
+      setFilename(file.name);
+      setIncludeDuplicates(false);
+      if (/\.qif$/i.test(file.name)) {
+        // Unlike OFX, QIF has no declared date order: require an explicit choice.
+        setQifText(text);
+        return;
+      }
       const ofx = /\.(ofx|qfx)$/i.test(file.name) ? parseOfxStatement(text) : null;
       setOfxInfo(ofx ? { currency: ofx.currency, accountId: ofx.accountId } : null);
-      setFilename(file.name);
       setCsvText(ofx?.csvText ?? text);
       setMapping(ofx ? { ...OFX_MAPPING } : null);
-      setIncludeDuplicates(false);
     } catch (error) {
       setFileError(error instanceof Error ? error.message : "Could not read statement");
+    }
+  }
+
+  function chooseQifDateOrder(order: QifDateOrder) {
+    if (qifText === null) return;
+    setQifDateOrder(order);
+    setFileError("");
+    setFileRevision((value) => value + 1);
+    try {
+      const converted = parseQifStatement(qifText, order);
+      setCsvText(converted.csvText);
+      setMapping({ ...QIF_MAPPING });
+      setMappingSource("guess");
+      setIncludeDuplicates(false);
+    } catch (error) {
+      setCsvText("");
+      setMapping(null);
+      setFileError(error instanceof Error ? error.message : "Could not read QIF statement");
     }
   }
 
@@ -220,8 +249,8 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
   // Pick the starting mapping when a file is loaded: saved mapping (server, then this browser), else a guess.
   useEffect(() => {
     if (!csvText.trim() || !companyId || !bankAccountId || savedQ.isPending) return;
-    if (ofxInfo) {
-      setMapping({ ...OFX_MAPPING });
+    if (ofxInfo || qifText !== null) {
+      setMapping({ ...(ofxInfo ? OFX_MAPPING : QIF_MAPPING) });
       setMappingSource("guess");
       return;
     }
@@ -232,7 +261,7 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
       saved && validateMapping(saved, base.rows[0]?.length ?? 0).length === 0 ? saved : null;
     setMapping(usable ?? guessMapping(base.rows, "auto"));
     setMappingSource(usable ? "saved" : "guess");
-  }, [csvText, companyId, bankAccountId, savedQ.isPending, savedQ.data, ofxInfo]);
+  }, [csvText, companyId, bankAccountId, savedQ.isPending, savedQ.data, ofxInfo, qifText]);
 
   const columnCount = Math.max(0, ...(parsed?.rows ?? []).slice(0, 50).map((r) => r.length));
   const headerRow = parsed?.rows[0] ?? [];
@@ -256,6 +285,7 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
       companyId,
       bankAccountId,
       csvText.length,
+      fileRevision,
       filename,
       mappingKey,
       currency,
@@ -301,11 +331,13 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
             .join("; "),
         },
       });
-      // Remember the mapping for this bank account (database, with this browser as a fallback).
-      writeLocalMapping(companyId!, bankAccountId, mapping!);
-      await saveMapping({
-        data: { companyId: companyId!, bankAccountId, mapping: mapping! },
-      }).catch(() => null);
+      // QIF columns are fixed; do not overwrite the user's saved CSV mapping.
+      if (qifText === null) {
+        writeLocalMapping(companyId!, bankAccountId, mapping!);
+        await saveMapping({
+          data: { companyId: companyId!, bankAccountId, mapping: mapping! },
+        }).catch(() => null);
+      }
       return result;
     },
     onSuccess: async (r) => {
@@ -318,6 +350,9 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
         `Imported ${r.imported}. Already present (skipped): ${r.duplicates}. Rows with problems: ${r.parseErrors}. Status: ${r.status}`,
       );
       setCsvText("");
+      setQifText(null);
+      setQifDateOrder(null);
+      setOfxInfo(null);
       setMapping(null);
       setIncludeDuplicates(false);
     },

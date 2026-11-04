@@ -271,6 +271,7 @@ export function AccountingWorkspace({
 
         <TabsContent value="journals" className="mt-4">
           <JournalsPanel
+            key={companyId}
             companyId={companyId}
             currency={currency}
             initialOpenJournalId={search.journal}

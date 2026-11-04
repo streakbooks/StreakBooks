@@ -3,6 +3,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
 import { postJournal, reverseJournal } from "@/lib/accounting/posting-engine";
+import { journalPageRange } from "@/lib/accounting/journal-paging";
 
 function companyIdInput(input: { companyId: string }) {
   return { companyId: assertUuid(input?.companyId) };
@@ -115,15 +116,18 @@ export const listJournals = createServerFn({ method: "GET" })
       from?: string;
       to?: string;
       limit?: number;
+      offset?: number;
     }) => {
       const date = (v: string | undefined) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null);
+      const page = journalPageRange(input.offset, input.limit);
       return {
         companyId: assertUuid(input?.companyId),
+        offset: page.from,
         search: (input.search ?? "").trim().slice(0, 80),
         source: (input.source ?? "").trim().slice(0, 40),
         from: date(input.from),
         to: date(input.to),
-        limit: Math.min(500, Math.max(1, Math.floor(input.limit ?? 100))),
+        limit: page.limit,
       };
     },
   )
@@ -137,7 +141,7 @@ export const listJournals = createServerFn({ method: "GET" })
       .eq("company_id" as never, data.companyId as never)
       .order("journal_date" as never, { ascending: false } as never)
       .order("journal_number" as never, { ascending: false } as never)
-      .limit(data.limit);
+      .range(data.offset, data.offset + data.limit - 1);
     if (data.source) query = query.eq("source_type" as never, data.source as never);
     if (data.from) query = query.gte("journal_date" as never, data.from as never);
     if (data.to) query = query.lte("journal_date" as never, data.to as never);

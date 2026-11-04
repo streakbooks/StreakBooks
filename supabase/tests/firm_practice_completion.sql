@@ -3,19 +3,20 @@
 BEGIN;
 DO $$
 DECLARE
- u1 uuid:=gen_random_uuid(); u2 uuid:=gen_random_uuid();
+ u1 uuid:=gen_random_uuid(); u2 uuid:=gen_random_uuid(); u3 uuid:=gen_random_uuid();
  c1 uuid:=gen_random_uuid(); c2 uuid:=gen_random_uuid(); billing uuid:=gen_random_uuid();
 BEGIN
  INSERT INTO auth.users(id,email,raw_user_meta_data) VALUES
   (u1,'firm-completion-'||u1||'@example.invalid','{}'),
-  (u2,'firm-completion-'||u2||'@example.invalid','{}');
+  (u2,'firm-completion-'||u2||'@example.invalid','{}'),
+  (u3,'firm-completion-'||u3||'@example.invalid','{}');
  INSERT INTO auth.mfa_factors(id,user_id,factor_type,status,created_at,updated_at)
  VALUES (gen_random_uuid(),u1,'totp','verified',now(),now());
  INSERT INTO public.companies(id,name,country_code,base_currency,
   fiscal_year_end_month,fiscal_year_end_day,timezone,created_by)
  VALUES (c1,'Firm completion client','GB','GBP',12,31,'UTC',u1),
         (c2,'Unrelated company','GB','GBP',12,31,'UTC',u2),
-        (billing,'Practice billing company','GB','GBP',12,31,'UTC',u1);
+        (billing,'Practice billing company','GB','GBP',12,31,'UTC',u3);
  PERFORM set_config('linkbooks.trusted','on',true);
  INSERT INTO public.company_members(company_id,user_id,role) VALUES
   (c1,u1,'owner'),(c1,u2,'accountant'),(c2,u2,'owner'),(billing,u1,'owner')

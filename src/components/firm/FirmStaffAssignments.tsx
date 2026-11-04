@@ -112,6 +112,13 @@ export function FirmStaffAssignments({
           Assign existing authorised colleagues. Assignments do not grant accounting permissions or
           send invitations. Use the existing Users &amp; Access workspace for external invitations.
         </p>
+        <Link
+          to="/settings"
+          search={{ settingsPanel: "category:users" }}
+          className="text-sm underline"
+        >
+          Open Users &amp; Access invitations
+        </Link>
       </div>
       {!companyId ? (
         <EmptyState title="No linked clients" description="Link a client to manage its team." />

@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { HealthCheck, HealthReport } from "./ledger-health";
-import {
-  filteredHealthChecks,
-  healthStatusCounts,
-  ledgerHealthCsv,
-} from "./ledger-health-view";
+import { filteredHealthChecks, healthStatusCounts, ledgerHealthCsv } from "./ledger-health-view";
 
 function check(
   key: string,
@@ -78,8 +74,8 @@ describe("ledger health report presentation", () => {
       linesChecked: 0,
       checks: [
         check("orphans", "fail", {
-          label: "=HYPERLINK(\"https://bad.example\")",
-          items: [{ memo: "quoted \"value\", newline\n=1+2" }],
+          label: '=HYPERLINK("https://bad.example")',
+          items: [{ memo: 'quoted "value", newline\n=1+2' }],
         }),
       ],
     };

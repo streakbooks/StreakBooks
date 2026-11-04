@@ -1,4 +1,5 @@
 import { PeriodClosePanel } from "@/components/accounting/PeriodClosePanel";
+import { JournalsPanel } from "@/components/accounting/JournalsPanel";
 import { PracticeWorkBoard } from "@/components/accountant/PracticeWorkBoard";
 import { useCanDo } from "@/hooks/use-can";
 import { useState } from "react";
@@ -8,6 +9,12 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { getAccountantChecklist } from "@/lib/accountant/accountant.functions";
+import {
+  ACCOUNTANT_WORKSPACE_TABS,
+  parseAccountantWorkspaceTab,
+  type AccountantWorkspaceTab,
+} from "@/lib/accountant/workspace-navigation";
+import { nativeTabLinkClass, handleNativeTabKeyDown } from "@/lib/navigation/native-tab";
 import { listAccounts } from "@/lib/accounting/accounting.functions";
 import { postTaxAdjustment } from "@/lib/tax/tax.functions";
 import { toMinorUnits } from "@/lib/accounting/money";
@@ -35,10 +42,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/_authenticated/accountant")({
   head: () => ({
     meta: [{ title: "Accountant tools — LinkBooks" }],
+  }),
+  validateSearch: (raw: Record<string, unknown>): { tab?: AccountantWorkspaceTab } => ({
+    tab: parseAccountantWorkspaceTab(raw["tab"]),
   }),
   component: AccountantPage,
 });
@@ -49,8 +60,8 @@ function AccountantPage() {
 }
 
 function AccountantTools() {
+  const tab = Route.useSearch().tab ?? "overview";
   const canAdjust = useCanDo("tax.settings");
-  const [showPeriodClose, setShowPeriodClose] = useState(false);
   const { company, isPending } = useActiveCompany();
   const companyId = company?.id;
   const currency = company?.base_currency ?? "GBP";
@@ -63,12 +74,12 @@ function AccountantTools() {
 
   const query = useQuery({
     queryKey: ["accountant-checklist", companyId, asOf],
-    enabled: Boolean(companyId),
+    enabled: Boolean(companyId) && tab === "overview",
     queryFn: () => fetch({ data: { companyId: companyId!, asOf } }),
   });
   const accountsQ = useQuery({
     queryKey: ["accounts", companyId],
-    enabled: Boolean(companyId),
+    enabled: Boolean(companyId) && tab === "tax-adjustments",
     queryFn: () => fetchAccounts({ data: { companyId: companyId! } }),
   });
 
@@ -100,6 +111,10 @@ function AccountantTools() {
     onSuccess: async (r) => {
       await qc.invalidateQueries({ queryKey: ["accountant-checklist", companyId] });
       toast.success(`Tax adjustment posted (journal ${r.journalId.slice(0, 8)}…)`);
+      setAmount("");
+      setMemo("");
+      // Keep the reference stable for retries, but rotate it after a confirmed post.
+      setAdjKey(`adj-${new Date().toISOString().slice(0, 10)}-${window.crypto.randomUUID()}`);
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
@@ -128,70 +143,210 @@ function AccountantTools() {
     <>
       <PageHeader
         title="Accountant tools"
-        description="Period-end checklist, journal review, reconciliation queues and tax adjustments."
+        description="A connected workspace for review queues, client work, journals, reconciliations, financial close and tax adjustments."
       />
-      <div className="mb-4">
-        <Button variant="outline" asChild>
-          <Link to="/accounting" search={{ tab: "corrections" }}>
-            Open transaction corrections
-          </Link>
-        </Button>
-      </div>
-      <PracticeWorkBoard key={companyId} companyId={companyId} />
-      <div className="my-6 space-y-4">
-        <Button variant="outline" onClick={() => setShowPeriodClose((value) => !value)}>
-          {showPeriodClose ? "Hide financial close checks" : "Open financial close checks"}
-        </Button>
-        {showPeriodClose && <PeriodClosePanel key={companyId} companyId={companyId} />}
-      </div>
-      <label className="mb-4 block max-w-xs text-sm">
-        Review balances and queues through
-        <Input
-          aria-label="Checklist as of"
-          type="date"
-          value={asOf}
-          onChange={(e) => setAsOf(e.target.value)}
-        />
-      </label>
-      {query.isPending ? (
-        <LoadingState />
-      ) : query.isError ? (
-        <ErrorState title="Could not load checklist" description={friendlyAuthError(query.error)} />
-      ) : (
-        <>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <CheckCard
-              title="Unlocked periods"
-              count={query.data!.unlockedPeriods}
-              href="/accounting"
+      <Tabs value={tab}>
+        <TabsList
+          onKeyDown={handleNativeTabKeyDown}
+          className="mb-6 flex h-auto flex-wrap justify-start gap-1"
+          aria-label="Accountant tools sections"
+        >
+          {ACCOUNTANT_WORKSPACE_TABS.map((item) => (
+            <Link
+              key={item.id}
+              className={nativeTabLinkClass}
+              role="tab"
+              aria-selected={tab === item.id}
+              data-state={tab === item.id ? "active" : "inactive"}
+              to="/accountant"
+              search={{ tab: item.id }}
+              resetScroll={false}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </TabsList>
+        <TabsContent value="overview" className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Dated exception counts and the latest journal activity for the active organisation. Each
+            review action opens its authoritative module.
+          </p>
+          <label className="mb-4 block max-w-xs text-sm">
+            Review balances and queues through
+            <Input
+              aria-label="Checklist as of"
+              type="date"
+              value={asOf}
+              onChange={(e) => setAsOf(e.target.value)}
             />
-            <CheckCard
-              title="Draft invoices"
-              count={query.data!.draftInvoices}
-              href="/sales/invoices"
+          </label>
+          {query.isPending ? (
+            <LoadingState />
+          ) : query.isError ? (
+            <ErrorState
+              title="Could not load checklist"
+              description={friendlyAuthError(query.error)}
             />
-            <CheckCard
-              title="Draft / awaiting approval bills"
-              count={query.data!.draftBills}
-              href="/purchases/bills"
-            />
-            <CheckCard
-              title="Uncategorised bank"
-              count={query.data!.uncategorisedBank}
-              href="/banking/transactions"
-            />
-            <CheckCard
-              title="Matched, not reconciled"
-              count={query.data!.matchedAwaitingReconcile}
-              href="/banking/reconcile"
-            />
-            <CheckCard
-              title="Open recon sessions"
-              count={query.data!.openReconciliationSessions}
-              href="/banking/reconcile"
-            />
-          </div>
+          ) : (
+            <>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <CheckCard
+                  title="Unlocked periods"
+                  count={query.data!.unlockedPeriods}
+                  href="/accounting"
+                />
+                <CheckCard
+                  title="Draft invoices"
+                  count={query.data!.draftInvoices}
+                  href="/sales/invoices"
+                />
+                <CheckCard
+                  title="Draft / awaiting approval bills"
+                  count={query.data!.draftBills}
+                  href="/purchases/bills"
+                />
+                <CheckCard
+                  title="Uncategorised bank"
+                  count={query.data!.uncategorisedBank}
+                  href="/banking/transactions"
+                />
+                <CheckCard
+                  title="Matched, not reconciled"
+                  count={query.data!.matchedAwaitingReconcile}
+                  href="/banking/reconcile"
+                />
+                <CheckCard
+                  title="Open recon sessions"
+                  count={query.data!.openReconciliationSessions}
+                  href="/banking/reconcile"
+                />
+              </div>
 
+              <h2 className="mt-8 mb-3 text-sm font-medium text-muted-foreground">
+                Recent journals
+              </h2>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>#</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Source</TableHead>
+                    <TableHead>Memo</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(
+                    query.data!.recentJournals as Array<{
+                      id: string;
+                      journal_number: number;
+                      journal_date: string;
+                      status: string;
+                      source_type: string;
+                      memo: string | null;
+                    }>
+                  ).map((j) => (
+                    <TableRow key={j.id}>
+                      <TableCell>{j.journal_number}</TableCell>
+                      <TableCell>{j.journal_date}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{j.status}</Badge>
+                      </TableCell>
+                      <TableCell>{j.source_type}</TableCell>
+                      <TableCell>{j.memo ?? "—"}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" asChild>
+                  <Link to="/reports">Open reports</Link>
+                </Button>
+                <Button size="sm" variant="outline" asChild>
+                  <Link to="/firm">Firm &amp; clients</Link>
+                </Button>
+                <Button size="sm" variant="outline" asChild>
+                  <Link to="/tax">Tax configuration</Link>
+                </Button>
+                <Button size="sm" variant="outline" asChild>
+                  <Link to="/accounting">Lock periods</Link>
+                </Button>
+              </div>
+            </>
+          )}
+        </TabsContent>
+        <TabsContent value="client-work">
+          <PracticeWorkBoard key={companyId} companyId={companyId} />
+        </TabsContent>
+        <TabsContent value="journals" className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" asChild>
+              <Link to="/accounting" search={{ tab: "post" }}>
+                Create manual journal
+              </Link>
+            </Button>
+            <Button size="sm" variant="outline" asChild>
+              <Link to="/recurring-journals">Recurring journals</Link>
+            </Button>
+            <Button size="sm" variant="outline" asChild>
+              <Link to="/accounting" search={{ tab: "corrections" }}>
+                Transaction corrections
+              </Link>
+            </Button>
+          </div>
+          <JournalsPanel companyId={companyId} currency={currency} />
+        </TabsContent>
+        <TabsContent value="reconciliation" className="space-y-4">
+          <h2 className="text-lg font-semibold">Reconciliation and transaction review</h2>
+          <p className="text-sm text-muted-foreground">
+            Review bank matches, unsettled transactions and accounting corrections in the existing
+            controlled workflows. Reconciliation and posting actions remain subject to their own
+            permissions and period locks.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild>
+              <Link to="/banking/reconcile">Bank reconciliation</Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="/banking/transactions">Review bank transactions</Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="/accounting" search={{ tab: "corrections" }}>
+                Transaction corrections
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="/accounting" search={{ tab: "health" }}>
+                Ledger health
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="/reports">Financial reports</Link>
+            </Button>
+          </div>
+        </TabsContent>
+        <TabsContent value="period-close" className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Review live close checks before any year-end posting or period lock. Existing
+            server-side permissions remain authoritative.
+          </p>
+          <PeriodClosePanel key={companyId} companyId={companyId} />
+        </TabsContent>
+        <TabsContent value="tax-adjustments" className="space-y-4">
+          {!canAdjust && (
+            <Alert>
+              <AlertDescription>
+                You can review this workspace, but tax adjustment posting requires the tax settings
+                permission.
+              </AlertDescription>
+            </Alert>
+          )}
+          {accountsQ.isError && (
+            <ErrorState
+              title="Could not load posting accounts"
+              description={friendlyAuthError(accountsQ.error)}
+            />
+          )}
           <h2 className="mt-8 mb-3 text-sm font-medium text-muted-foreground">
             Tax adjustment (period-end)
           </h2>
@@ -268,7 +423,16 @@ function AccountantTools() {
             </div>
             <Button
               size="sm"
-              disabled={!canAdjust || adjustM.isPending || !taxAcc || !offsetAcc || !amount}
+              disabled={
+                !canAdjust ||
+                adjustM.isPending ||
+                accountsQ.isPending ||
+                !taxAcc ||
+                !offsetAcc ||
+                taxAcc === offsetAcc ||
+                !(Number(amount) > 0) ||
+                adjKey.trim().length < 4
+              }
               onClick={() => {
                 if (window.confirm("Post this tax adjustment to the active organisation’s ledger?"))
                   adjustM.mutate();
@@ -277,57 +441,8 @@ function AccountantTools() {
               Post tax adjustment
             </Button>
           </div>
-
-          <h2 className="mt-8 mb-3 text-sm font-medium text-muted-foreground">Recent journals</h2>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>#</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Source</TableHead>
-                <TableHead>Memo</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {(
-                query.data!.recentJournals as Array<{
-                  id: string;
-                  journal_number: number;
-                  journal_date: string;
-                  status: string;
-                  source_type: string;
-                  memo: string | null;
-                }>
-              ).map((j) => (
-                <TableRow key={j.id}>
-                  <TableCell>{j.journal_number}</TableCell>
-                  <TableCell>{j.journal_date}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{j.status}</Badge>
-                  </TableCell>
-                  <TableCell>{j.source_type}</TableCell>
-                  <TableCell>{j.memo ?? "—"}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Button size="sm" variant="outline" asChild>
-              <Link to="/reports">Open reports</Link>
-            </Button>
-            <Button size="sm" variant="outline" asChild>
-              <Link to="/firm">Firm &amp; clients</Link>
-            </Button>
-            <Button size="sm" variant="outline" asChild>
-              <Link to="/tax">Tax configuration</Link>
-            </Button>
-            <Button size="sm" variant="outline" asChild>
-              <Link to="/accounting">Lock periods</Link>
-            </Button>
-          </div>
-        </>
-      )}
+        </TabsContent>
+      </Tabs>
     </>
   );
 }

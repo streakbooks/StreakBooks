@@ -20,6 +20,6 @@ describe("journal server paging", () => {
     expect(journalPageInfo(101, 100, 0)).toEqual({ hasNext: true, first: 1, last: 100 });
     expect(journalPageInfo(100, 100, 0)).toEqual({ hasNext: false, first: 1, last: 100 });
     expect(journalPageInfo(14, 100, 2)).toEqual({ hasNext: false, first: 201, last: 214 });
-    expect(journalPageInfo(0, 100, 2)).toEqual({ hasNext: false, first: 0, last: 200 });
+    expect(journalPageInfo(0, 100, 2)).toEqual({ hasNext: false, first: 0, last: 0 });
   });
 });

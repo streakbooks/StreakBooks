@@ -100,6 +100,9 @@ try {
     throw new Error("Expected exactly one accounting workflow migration");
   sql(read(`supabase/migrations/${migrations[0]}`));
   sql(read("tests/integration/accounting-workflows.sql"));
+  sql(read("tests/fixtures/workflows/settings-currencies-baseline.sql"));
+  sql(read("supabase/migrations/20261104123000_settings_currencies_atomic.sql"));
+  sql(read("tests/integration/settings-currencies-atomic.sql"));
   console.log(
     "Workflow migration compiled. Atomic rollback, permissions, two-tenant RLS, PO edit/conversion, sales lifecycle, deferrals and real shared posting-engine balance/lock scenarios passed.",
   );

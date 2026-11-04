@@ -43,7 +43,8 @@ BEGIN
     SELECT 1 FROM public.document_reviews
     WHERE id=review_id AND reviewed_by=u AND reviewed_at IS NOT NULL AND version=3
   ) THEN RAISE EXCEPTION 'Authorised review approval failed'; END IF;
-  SELECT count(*) INTO n FROM public.document_review_events WHERE review_id=review_id;
+  SELECT count(*) INTO n FROM public.document_review_events
+    WHERE review_id=(SELECT id FROM public.document_reviews WHERE attachment_id=file_id);
   IF n <> 3 THEN RAISE EXCEPTION 'Missing review audit events: %',n; END IF;
   UPDATE public.document_reviews SET status='ready' WHERE id=review_id AND version=1;
   GET DIAGNOSTICS n=ROW_COUNT;

@@ -1,7 +1,7 @@
 import { nativeTabLinkClass, handleNativeTabKeyDown } from "@/lib/navigation/native-tab";
 import { SettingsDestinationLink } from "@/components/settings/ModuleSettingsLinks";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -13,6 +13,9 @@ import {
   Upload,
   Settings2,
   Users,
+  Filter,
+  Bookmark,
+  Plus,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
@@ -25,8 +28,18 @@ import {
   listContactGroups,
   listContactTags,
   bulkAddContactLabel,
+  upsertContactGroup,
+  upsertContactTag,
 } from "@/lib/contacts/contacts.functions";
 import { fromMinorUnits } from "@/lib/accounting/money";
+import {
+  DEFAULT_CONTACT_ADVANCED_FILTERS,
+  normalizeContactAdvancedFilters,
+  normalizeContactSavedViews,
+  countActiveContactFilters,
+  type ContactSavedView,
+  type ContactAdvancedFilters,
+} from "@/lib/contacts/contact-advanced-filters";
 import {
   buildContactsCsv,
   nextContactSort,
@@ -56,6 +69,8 @@ import {
 import { TableCard } from "@/components/common/table-card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Label } from "@/components/ui/label";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -263,6 +278,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
   const companyId = company?.id;
   const currency = company?.base_currency ?? "GBP";
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const fetch = useServerFn(listContacts);
   const fetchCount = useServerFn(countContacts);
   const fetchSummary = useServerFn(getContactsDirectorySummary);
@@ -270,6 +286,8 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
   const fetchGroups = useServerFn(listContactGroups);
   const fetchTags = useServerFn(listContactTags);
   const bulkAdd = useServerFn(bulkAddContactLabel);
+  const createGroup = useServerFn(upsertContactGroup);
+  const createTag = useServerFn(upsertContactTag);
   const canManage = useCanDo("contacts.manage");
 
   const { view: requestedView } = Route.useSearch();
@@ -277,6 +295,21 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
   const [page, setPage] = useState(0);
   const [q, setQ] = useState("");
   const [sort, setSort] = useState("default");
+  const [filters, setFilters] = useState<ContactAdvancedFilters>({
+    ...DEFAULT_CONTACT_ADVANCED_FILTERS,
+  });
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [savedViewName, setSavedViewName] = useState("");
+  const [selectedSavedViewId, setSelectedSavedViewId] = useState("");
+  const [savedViewPreferences, setSavedViewPreferences] = useState<{
+    companyId: string | undefined;
+    views: ContactSavedView[];
+  }>({ companyId: undefined, views: [] });
+  const [newGroupName, setNewGroupName] = useState("");
+  const [newTagName, setNewTagName] = useState("");
+  const savedViews = savedViewPreferences.companyId === companyId ? savedViewPreferences.views : [];
+  const filterCount = countActiveContactFilters(filters);
+  const filterScope = JSON.stringify(filters);
   const [columnPreferences, setColumnPreferences] = useState<{
     companyId: string | undefined;
     columns: ContactDirectoryColumnId[];
@@ -292,7 +325,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
     columnPreferences.companyId === companyId
       ? columnPreferences.columns
       : DEFAULT_CONTACT_DIRECTORY_COLUMNS;
-  const scope = `${companyId ?? ""}|${view}|${q}|${sort}|${page}`;
+  const scope = `${companyId ?? ""}|${view}|${q}|${sort}|${filterScope}|${page}`;
 
   useEffect(() => {
     if (!companyId) return;
@@ -308,6 +341,86 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
       columns: normalizeContactDirectoryColumns(stored),
     });
   }, [companyId]);
+
+  useEffect(() => {
+    if (!companyId) return;
+    let stored: unknown = null;
+    try {
+      const raw = window.localStorage.getItem(`linkbooks:contact-saved-views:${companyId}`);
+      stored = raw ? JSON.parse(raw) : null;
+    } catch {
+      // Stored views are optional; contacts remain fully usable without browser storage.
+    }
+    setSavedViewPreferences({ companyId, views: normalizeContactSavedViews(stored) });
+    setSelectedSavedViewId("");
+  }, [companyId]);
+
+  const saveViewPreferences = (views: ContactSavedView[]) => {
+    const next = normalizeContactSavedViews(views);
+    setSavedViewPreferences({ companyId, views: next });
+    if (companyId) {
+      try {
+        window.localStorage.setItem(
+          `linkbooks:contact-saved-views:${companyId}`,
+          JSON.stringify(next),
+        );
+      } catch {
+        toast.message(
+          "Saved views are available for this session, but browser storage is disabled",
+        );
+      }
+    }
+  };
+
+  const updateFilter = (key: keyof ContactAdvancedFilters, value: string) => {
+    setFilters((current) => ({ ...current, [key]: value }));
+    setPage(0);
+    setSelectedSavedViewId("");
+  };
+
+  const saveCurrentView = () => {
+    const name = savedViewName.trim().slice(0, 60);
+    if (!name) return;
+    const existing = savedViews.find((saved) => saved.name.toLowerCase() === name.toLowerCase());
+    if (!existing && savedViews.length >= 20) {
+      toast.error("You can save up to 20 contact views per organisation");
+      return;
+    }
+    const saved: ContactSavedView = {
+      id: existing?.id ?? `${Date.now()}`,
+      name,
+      view,
+      query: q,
+      sort,
+      filters,
+    };
+    saveViewPreferences(
+      existing
+        ? savedViews.map((item) => (item.id === existing.id ? saved : item))
+        : [...savedViews, saved],
+    );
+    setSelectedSavedViewId(saved.id);
+    setSavedViewName("");
+    toast.success(existing ? "Saved view updated" : "Contact view saved");
+  };
+
+  const applySavedView = (id: string) => {
+    const selected = savedViews.find((saved) => saved.id === id);
+    if (!selected) return;
+    setQ(selected.query);
+    setSort(selected.sort);
+    setFilters(selected.filters);
+    setPage(0);
+    setSelectedSavedViewId(id);
+    void navigate({ to: "/contacts", search: { view: selected.view } });
+  };
+
+  const deleteSavedView = () => {
+    if (!selectedSavedViewId) return;
+    saveViewPreferences(savedViews.filter((saved) => saved.id !== selectedSavedViewId));
+    setSelectedSavedViewId("");
+    toast.success("Saved view removed");
+  };
 
   const saveColumns = (columns: ContactDirectoryColumnId[]) => {
     const next = normalizeContactDirectoryColumns(columns);
@@ -327,7 +440,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
   }, [view]);
 
   const query = useQuery({
-    queryKey: ["contacts", companyId, view, q, sort, page],
+    queryKey: ["contacts", companyId, view, q, sort, filters, page],
     enabled: Boolean(companyId),
     queryFn: () =>
       fetch({
@@ -336,6 +449,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
           kind: kindForApi,
           view,
           ...(q ? { q } : {}),
+          filters,
           includeInactive: view === "inactive" || view === "archived",
           limit: PAGE_SIZE,
           offset: page * PAGE_SIZE,
@@ -345,10 +459,12 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
   });
 
   const countQ = useQuery({
-    queryKey: ["contacts-count", companyId, view, q],
+    queryKey: ["contacts-count", companyId, view, q, filters],
     enabled: Boolean(companyId),
     queryFn: () =>
-      fetchCount({ data: { companyId: companyId!, kind: kindForApi, view, ...(q ? { q } : {}) } }),
+      fetchCount({
+        data: { companyId: companyId!, kind: kindForApi, view, ...(q ? { q } : {}), filters },
+      }),
   });
 
   const pageRows = (query.data ?? []) as ContactRow[];
@@ -414,6 +530,48 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
 
+  const createAndAssignM = useMutation({
+    mutationFn: async ({ labelKind, name }: { labelKind: "group" | "tag"; name: string }) => {
+      if (!canManage || !selectionIsActive || !selectedIds.length) {
+        throw new Error("Select active contacts before creating a group or tag");
+      }
+      const created =
+        labelKind === "group"
+          ? await createGroup({ data: { companyId: companyId!, name } })
+          : await createTag({ data: { companyId: companyId!, name } });
+      try {
+        const assignment = await bulkAdd({
+          data: {
+            companyId: companyId!,
+            contactIds: selectedIds,
+            labelKind,
+            labelId: created.id,
+          },
+        });
+        return { id: created.id, assignment };
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : "Unknown error";
+        throw new Error(`The ${labelKind} was created, but assigning contacts failed: ${detail}`);
+      }
+    },
+    onSuccess: async ({ id, assignment }, input) => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["contact-groups", companyId] }),
+        qc.invalidateQueries({ queryKey: ["contact-tags", companyId] }),
+        qc.invalidateQueries({ queryKey: ["contact", companyId] }),
+      ]);
+      if (input.labelKind === "group") {
+        setGroupId(id);
+        setNewGroupName("");
+      } else {
+        setTagId(id);
+        setNewTagName("");
+      }
+      toast.success(`Created ${input.labelKind} and assigned ${assignment.selected} contacts`);
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+
   const exportSelected = () => {
     const headers = visibleColumns.map(
       (column) => CONTACT_DIRECTORY_COLUMNS.find((item) => item.id === column)!.label,
@@ -445,7 +603,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
   const exportM = useMutation({
     mutationFn: () =>
       exportFn({
-        data: { companyId: companyId!, kind: kindForApi, view, ...(q ? { q } : {}) },
+        data: { companyId: companyId!, kind: kindForApi, view, ...(q ? { q } : {}), filters },
       }),
     onSuccess: (res) => {
       const blob = new Blob([res.csv], { type: "text/csv;charset=utf-8" });
@@ -679,6 +837,165 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            <Popover open={filterOpen} onOpenChange={setFilterOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" aria-label="Advanced contact filters">
+                  <Filter className="mr-1 size-4" />
+                  Filters{filterCount ? ` (${filterCount})` : ""}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-80 max-w-[calc(100vw-2rem)] space-y-3">
+                <h3 className="font-medium">Advanced filters</h3>
+                <p className="text-xs text-muted-foreground">
+                  Filters apply to every page, the total count and full CSV export.
+                </p>
+                <div className="space-y-1">
+                  <Label htmlFor="contact-filter-city">Billing city</Label>
+                  <Input
+                    id="contact-filter-city"
+                    value={filters.city}
+                    placeholder="Contains..."
+                    onChange={(event) => updateFilter("city", event.target.value)}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="contact-filter-region">Billing state / region</Label>
+                  <Input
+                    id="contact-filter-region"
+                    value={filters.region}
+                    placeholder="Contains..."
+                    onChange={(event) => updateFilter("region", event.target.value)}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="contact-filter-country">Billing country</Label>
+                  <Input
+                    id="contact-filter-country"
+                    value={filters.country}
+                    placeholder="Contains..."
+                    onChange={(event) => updateFilter("country", event.target.value)}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>Contact currency override</Label>
+                  <Select
+                    value={filters.currency || "any"}
+                    onValueChange={(value) =>
+                      updateFilter("currency", value === "any" ? "" : value)
+                    }
+                  >
+                    <SelectTrigger aria-label="Filter by contact currency override">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="any">Any currency</SelectItem>
+                      {["GBP", "USD", "EUR", "AUD", "NZD", "INR", "CAD", "SGD", "AED", "ZAR"].map(
+                        (code) => (
+                          <SelectItem key={code} value={code}>
+                            {code}
+                          </SelectItem>
+                        ),
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label>Payment terms</Label>
+                  <Select
+                    value={filters.terms}
+                    onValueChange={(value) => updateFilter("terms", value)}
+                  >
+                    <SelectTrigger aria-label="Filter by payment terms">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Any payment terms</SelectItem>
+                      <SelectItem value="immediate">Due immediately (0 days)</SelectItem>
+                      <SelectItem value="up_to_30">1 to 30 days</SelectItem>
+                      <SelectItem value="over_30">More than 30 days</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!filterCount}
+                    onClick={() => {
+                      setFilters({ ...DEFAULT_CONTACT_ADVANCED_FILTERS });
+                      setPage(0);
+                      setSelectedSavedViewId("");
+                    }}
+                  >
+                    Clear filters
+                  </Button>
+                  <Button size="sm" onClick={() => setFilterOpen(false)}>
+                    Done
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Bookmark className="mr-1 size-4" /> Saved views
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-80 max-w-[calc(100vw-2rem)] space-y-3">
+                <h3 className="font-medium">Saved contact views</h3>
+                <p className="text-xs text-muted-foreground">
+                  Save search, filters, sort and role tab for this organisation and browser.
+                </p>
+                <div className="space-y-1">
+                  <Label>Open saved view</Label>
+                  <Select
+                    value={selectedSavedViewId || "none"}
+                    onValueChange={(value) => {
+                      if (value === "none") {
+                        setSelectedSavedViewId("");
+                      } else {
+                        applySavedView(value);
+                      }
+                    }}
+                  >
+                    <SelectTrigger aria-label="Open a saved contact view">
+                      <SelectValue placeholder="Choose saved view" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Choose a view</SelectItem>
+                      {savedViews.map((saved) => (
+                        <SelectItem key={saved.id} value={saved.id}>
+                          {saved.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="contact-save-view-name">Save current view as</Label>
+                  <Input
+                    id="contact-save-view-name"
+                    maxLength={60}
+                    value={savedViewName}
+                    placeholder="e.g. UK suppliers, 30-day terms"
+                    onChange={(event) => setSavedViewName(event.target.value)}
+                  />
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" disabled={!savedViewName.trim()} onClick={saveCurrentView}>
+                    Save view
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={!selectedSavedViewId}
+                    onClick={deleteSavedView}
+                  >
+                    Delete selected
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
             <Input
               placeholder="Search name, email, phone, account #, tax ID…"
               className="lg:max-w-sm"
@@ -756,6 +1073,75 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                     >
                       Add tag
                     </Button>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={
+                            bulkM.isPending ||
+                            createAndAssignM.isPending ||
+                            query.isFetching ||
+                            !selectionIsActive
+                          }
+                        >
+                          <Plus className="mr-1 size-4" /> New group / tag
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent align="end" className="w-80 space-y-4">
+                        <div className="space-y-2">
+                          <h3 className="text-sm font-medium">Create group and assign</h3>
+                          <p className="text-xs text-muted-foreground">
+                            Creates a group and adds all selected contacts without replacing
+                            existing groups.
+                          </p>
+                          <Label htmlFor="contact-new-bulk-group">Group name</Label>
+                          <Input
+                            id="contact-new-bulk-group"
+                            maxLength={80}
+                            value={newGroupName}
+                            onChange={(event) => setNewGroupName(event.target.value)}
+                            placeholder="e.g. Wholesale customers"
+                          />
+                          <Button
+                            size="sm"
+                            disabled={
+                              !newGroupName.trim() || createAndAssignM.isPending || bulkM.isPending
+                            }
+                            onClick={() =>
+                              createAndAssignM.mutate({
+                                labelKind: "group",
+                                name: newGroupName.trim(),
+                              })
+                            }
+                          >
+                            Create and assign group
+                          </Button>
+                        </div>
+                        <div className="space-y-2 border-t pt-3">
+                          <h3 className="text-sm font-medium">Create tag and assign</h3>
+                          <Label htmlFor="contact-new-bulk-tag">Tag name</Label>
+                          <Input
+                            id="contact-new-bulk-tag"
+                            maxLength={60}
+                            value={newTagName}
+                            onChange={(event) => setNewTagName(event.target.value)}
+                            placeholder="e.g. priority"
+                          />
+                          <Button
+                            size="sm"
+                            disabled={
+                              !newTagName.trim() || createAndAssignM.isPending || bulkM.isPending
+                            }
+                            onClick={() =>
+                              createAndAssignM.mutate({ labelKind: "tag", name: newTagName.trim() })
+                            }
+                          >
+                            Create and assign tag
+                          </Button>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
                     <Link
                       to="/contacts/settings"
                       className="text-xs underline-offset-2 hover:underline"

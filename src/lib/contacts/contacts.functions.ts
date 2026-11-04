@@ -4,7 +4,11 @@ import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-compa
 import { assertUuid } from "@/lib/company-validation";
 import { isMissingFunctionError } from "@/lib/purchases/db-safety";
 import { aggregateOutstanding } from "@/lib/contacts/balances";
-import { buildIlikeOr, escapeLikeTerm } from "@/lib/purchases/search-terms";
+import { buildIlikeOr, escapeLikeTerm, ilikePattern } from "@/lib/purchases/search-terms";
+import {
+  normalizeContactAdvancedFilters,
+  type ContactAdvancedFilters,
+} from "@/lib/contacts/contact-advanced-filters";
 import {
   buildContactsCsv,
   contactImportTemplateCsv,
@@ -62,6 +66,7 @@ export const listContacts = createServerFn({ method: "GET" })
       limit?: number;
       offset?: number;
       sort?: string;
+      filters?: Partial<ContactAdvancedFilters>;
     }) => ({
       companyId: assertUuid(input.companyId),
       kind: (input.kind ?? "all").trim(),
@@ -71,6 +76,7 @@ export const listContacts = createServerFn({ method: "GET" })
       limit: Math.min(500, Math.max(1, Number(input.limit ?? 200) || 200)),
       offset: Math.min(1_000_000, Math.max(0, Math.floor(Number(input.offset ?? 0) || 0))),
       sort: (input.sort ?? "").trim().slice(0, 40),
+      filters: normalizeContactAdvancedFilters(input.filters),
     }),
   )
   .handler(async ({ data, context }) => {
@@ -118,6 +124,27 @@ export const listContacts = createServerFn({ method: "GET" })
       data.q,
     );
     if (search) q = q.or(search as never);
+    if (data.filters.city) {
+      q = q.ilike("billing_city" as never, ilikePattern(data.filters.city) as never);
+    }
+    if (data.filters.region) {
+      q = q.ilike("billing_region" as never, ilikePattern(data.filters.region) as never);
+    }
+    if (data.filters.country) {
+      q = q.ilike("billing_country" as never, ilikePattern(data.filters.country) as never);
+    }
+    if (data.filters.currency) {
+      q = q.eq("default_currency" as never, data.filters.currency as never);
+    }
+    if (data.filters.terms === "immediate") {
+      q = q.eq("payment_terms_days" as never, 0 as never);
+    } else if (data.filters.terms === "up_to_30") {
+      q = q
+        .gte("payment_terms_days" as never, 1 as never)
+        .lte("payment_terms_days" as never, 30 as never);
+    } else if (data.filters.terms === "over_30") {
+      q = q.gt("payment_terms_days" as never, 30 as never);
+    }
 
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
@@ -127,12 +154,21 @@ export const listContacts = createServerFn({ method: "GET" })
 /** Exact count for the same server-side directory filters; never infer total from a full page. */
 export const countContacts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; kind?: string; q?: string; view?: string }) => ({
-    companyId: assertUuid(input.companyId),
-    kind: (input.kind ?? "all").trim(),
-    q: (input.q ?? "").trim().slice(0, 100),
-    view: (input.view ?? "all").trim(),
-  }))
+  .inputValidator(
+    (input: {
+      companyId: string;
+      kind?: string;
+      q?: string;
+      view?: string;
+      filters?: Partial<ContactAdvancedFilters>;
+    }) => ({
+      companyId: assertUuid(input.companyId),
+      kind: (input.kind ?? "all").trim(),
+      q: (input.q ?? "").trim().slice(0, 100),
+      view: (input.view ?? "all").trim(),
+      filters: normalizeContactAdvancedFilters(input.filters),
+    }),
+  )
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     let q = context.supabase
@@ -169,6 +205,28 @@ export const countContacts = createServerFn({ method: "GET" })
       data.q,
     );
     if (search) q = q.or(search as never);
+    if (data.filters.city) {
+      q = q.ilike("billing_city" as never, ilikePattern(data.filters.city) as never);
+    }
+    if (data.filters.region) {
+      q = q.ilike("billing_region" as never, ilikePattern(data.filters.region) as never);
+    }
+    if (data.filters.country) {
+      q = q.ilike("billing_country" as never, ilikePattern(data.filters.country) as never);
+    }
+    if (data.filters.currency) {
+      q = q.eq("default_currency" as never, data.filters.currency as never);
+    }
+    if (data.filters.terms === "immediate") {
+      q = q.eq("payment_terms_days" as never, 0 as never);
+    } else if (data.filters.terms === "up_to_30") {
+      q = q
+        .gte("payment_terms_days" as never, 1 as never)
+        .lte("payment_terms_days" as never, 30 as never);
+    } else if (data.filters.terms === "over_30") {
+      q = q.gt("payment_terms_days" as never, 30 as never);
+    }
+
     const { count, error } = await q;
     if (error) throw new Error(error.message);
     return { count: count ?? 0 };
@@ -1022,12 +1080,21 @@ export const saveContactSettings = createServerFn({ method: "POST" })
 /* ── CSV export / import ── */
 export const exportContactsCsv = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; kind?: string; view?: string; q?: string }) => ({
-    companyId: assertUuid(input.companyId),
-    kind: (input.kind ?? "all").trim(),
-    view: (input.view ?? "all").trim(),
-    q: (input.q ?? "").trim().slice(0, 100),
-  }))
+  .inputValidator(
+    (input: {
+      companyId: string;
+      kind?: string;
+      view?: string;
+      q?: string;
+      filters?: Partial<ContactAdvancedFilters>;
+    }) => ({
+      companyId: assertUuid(input.companyId),
+      kind: (input.kind ?? "all").trim(),
+      view: (input.view ?? "all").trim(),
+      q: (input.q ?? "").trim().slice(0, 100),
+      filters: normalizeContactAdvancedFilters(input.filters),
+    }),
+  )
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const columns = [
@@ -1083,6 +1150,28 @@ export const exportContactsCsv = createServerFn({ method: "POST" })
         data.q,
       );
       if (search) q = q.or(search as never);
+      if (data.filters.city) {
+        q = q.ilike("billing_city" as never, ilikePattern(data.filters.city) as never);
+      }
+      if (data.filters.region) {
+        q = q.ilike("billing_region" as never, ilikePattern(data.filters.region) as never);
+      }
+      if (data.filters.country) {
+        q = q.ilike("billing_country" as never, ilikePattern(data.filters.country) as never);
+      }
+      if (data.filters.currency) {
+        q = q.eq("default_currency" as never, data.filters.currency as never);
+      }
+      if (data.filters.terms === "immediate") {
+        q = q.eq("payment_terms_days" as never, 0 as never);
+      } else if (data.filters.terms === "up_to_30") {
+        q = q
+          .gte("payment_terms_days" as never, 1 as never)
+          .lte("payment_terms_days" as never, 30 as never);
+      } else if (data.filters.terms === "over_30") {
+        q = q.gt("payment_terms_days" as never, 30 as never);
+      }
+
       const { data: page, error } = await q;
       if (error) throw new Error(error.message);
       rows.push(...((page ?? []) as Array<Record<string, string | number | null>>));

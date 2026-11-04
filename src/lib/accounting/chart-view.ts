@@ -74,7 +74,7 @@ export function chartViewRows(
     let parentId = account.parentId;
     const visited = new Set([account.id]);
     while (parentId && !visited.has(parentId)) {
-      if (collapsed.has(parentId)) return true;
+      if (byId.has(parentId) && collapsed.has(parentId)) return true;
       visited.add(parentId);
       parentId = byId.get(parentId)?.parentId ?? null;
     }

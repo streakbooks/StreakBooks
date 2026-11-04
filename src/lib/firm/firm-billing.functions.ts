@@ -100,7 +100,7 @@ export const linkFirmEngagementInvoice = createServerFn({ method: "POST" })
       .maybeSingle();
     if (invoiceError) throw new Error(invoiceError.message);
     if (!invoice) throw new Error("Invoice must exist in your practice billing organisation");
-    const { data: link, error } = await sb
+    const { error } = await sb
       .from("firm_engagement_invoice_links" as never)
       .upsert(
         {
@@ -116,7 +116,7 @@ export const linkFirmEngagementInvoice = createServerFn({ method: "POST" })
       .select("invoice_id" as never)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    return { linked: Boolean(link) || true };
+    return { linked: true };
   });
 
 export const unlinkFirmEngagementInvoice = createServerFn({ method: "POST" })

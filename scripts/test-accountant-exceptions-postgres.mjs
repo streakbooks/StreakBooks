@@ -51,7 +51,7 @@ try {
   }
   if (!ready) throw new Error("Isolated PostgreSQL never became ready");
   sql("tests/fixtures/accountant-exceptions/baseline.sql");
-  sql("supabase/migrations/20261104073500_accountant_journal_exception_reviews.sql");
+  sql("supabase/migrations/20261104072943_accountant_journal_exception_reviews.sql");
   console.log(sql("tests/integration/accountant-exception-reviews.sql").trim());
 } finally {
   try {

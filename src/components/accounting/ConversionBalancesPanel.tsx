@@ -156,7 +156,7 @@ export function ConversionBalancesPanel({
         ...(setup.data?.suppliers ?? []),
       ]);
       const url = URL.createObjectURL(
-        new Blob(["\\uFEFF", csv], { type: "text/csv;charset=utf-8" }),
+        new Blob([String.fromCharCode(0xfeff), csv], { type: "text/csv;charset=utf-8" }),
       );
       const anchor = document.createElement("a");
       anchor.href = url;

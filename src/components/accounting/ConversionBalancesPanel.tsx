@@ -413,8 +413,8 @@ export function ConversionBalancesPanel({
       </Alert>
       {hasUnsavedDraft ? (
         <p role="status" className="text-xs text-muted-foreground">
-          Unsaved draft. Entries are not stored until they are posted. Export the posting review
-          CSV before leaving this tab.
+          Unsaved draft. Entries are not stored until they are posted. Export the posting review CSV
+          before leaving this tab.
         </p>
       ) : null}
 

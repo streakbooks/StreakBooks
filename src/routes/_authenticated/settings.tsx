@@ -34,7 +34,11 @@ import {
   timezones,
 } from "@/lib/company-constants";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { categoryMeta, type SettingsCategory } from "@/lib/settings/registry";
+import {
+  categoryMeta,
+  resolveSettingsCategory,
+  type SettingsCategory,
+} from "@/lib/settings/registry";
 import { ErrorState, LoadingState, PageHeader } from "@/components/common/states";
 import { PortalSettingsPanel } from "@/components/portals/staff-panels";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -116,7 +120,7 @@ export const Route = createFileRoute("/_authenticated/settings")({
         ? search["interval"]
         : undefined;
     return {
-      section: typeof raw === "string" && raw.length > 0 ? raw : "overview",
+      section: resolveSettingsCategory(raw),
       ...(plan ? { plan } : {}),
       ...(interval ? { interval } : {}),
     };
@@ -186,7 +190,7 @@ export function SettingsForCompany({
       ? currentSearch["interval"]
       : undefined;
   const detail = embeddedSection ? undefined : parseSettingsPanel(currentSearch["settingsPanel"]);
-  const section = (sectionRaw || "overview") as SettingsCategory;
+  const section = resolveSettingsCategory(sectionRaw);
   const [navFilter, setNavFilter] = useState("");
   const [cmdOpen, setCmdOpen] = useState(false);
 

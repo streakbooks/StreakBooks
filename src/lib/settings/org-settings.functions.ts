@@ -4,6 +4,7 @@ import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-compa
 import { assertUuid } from "@/lib/company-validation";
 import type { CompanyRole } from "@/lib/company-constants";
 import { normaliseAdjustments, type AccessAdjustment } from "@/lib/access-catalogue";
+import { normalizeCurrencySelection } from "@/lib/settings/currency-selection";
 
 const DOCUMENT_TYPES = [
   "sales_invoice",
@@ -279,46 +280,28 @@ export const updateDocumentSequence = createServerFn({ method: "POST" })
 
 export const setEnabledCurrencies = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; currencies: string[] }) => ({
-    companyId: assertUuid(input.companyId),
-    currencies: [
-      ...new Set(
-        (input.currencies ?? []).map((c) => c.toUpperCase()).filter((c) => /^[A-Z]{3}$/.test(c)),
-      ),
-    ],
-  }))
+  .inputValidator(
+    (input: { companyId: string; currencies: string[]; expectedCurrencies: string[] }) => ({
+      companyId: assertUuid(input.companyId),
+      currencies: normalizeCurrencySelection(input.currencies, { enforceSupported: true }),
+      expectedCurrencies: normalizeCurrencySelection(input.expectedCurrencies),
+    }),
+  )
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "company.settings.edit");
-    const { data: company } = await context.supabase
-      .from("companies")
-      .select("base_currency")
-      .eq("id", data.companyId)
-      .maybeSingle();
-    const base = company?.base_currency ?? "GBP";
-    await context.supabase
-      .from("company_currencies" as never)
-      .delete()
-      .eq("company_id" as never, data.companyId as never);
-    const rows = data.currencies
-      .filter((c) => c !== base)
-      .map((currency_code) => ({ company_id: data.companyId, currency_code }));
-    if (rows.length) {
-      const { error } = await context.supabase
-        .from("company_currencies" as never)
-        .insert(rows as never);
-      if (error) throw new Error(error.message);
-    }
-    await audit(
-      context.supabase as never,
-      data.companyId,
-      "settings.currencies",
-      "company",
-      data.companyId,
+
+    // This RPC is the sole write path. Do not fall back to delete-then-insert:
+    // the old multi-request implementation could lose the original list.
+    const { data: saved, error } = await context.supabase.rpc(
+      "replace_company_currencies_atomic" as never,
       {
-        currencies: data.currencies,
-      },
+        _company_id: data.companyId,
+        _currencies: data.currencies,
+        _expected_currencies: data.expectedCurrencies,
+      } as never,
     );
-    return { ok: true };
+    if (error) throw new Error(error.message);
+    return { ok: true, currencies: saved as string[] };
   });
 
 export const createExchangeRate = createServerFn({ method: "POST" })

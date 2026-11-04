@@ -23,3 +23,6 @@ PR #21 (ledger-health contract), PR #22 (year-end exactness) and PR #23 (Ledger 
 
 ## Banking QIF and tax/amount guard milestones, 4 November 2026
 PR #26, #27 and #28 add **zero new npm packages** and make no package-lock changes. They reuse pre-existing React, TanStack, Vitest, TypeScript, SHA-256/content deduplication and BigInt helpers. Public bank QIF specifications were consulted for concepts only, with no source files, layouts, artwork or copied templates included. Existing transitive package license and vulnerability review remains a separate release gate.
+
+## FX posting and historical ledger reporting, 4 November 2026
+PR #32 and #33 added **no new npm dependencies**, no external libraries, no migrations, no imported source/brand assets, and no lockfile changes. Both extend the existing TypeScript posting and reporting helpers. Transitive dependency license/security checks remain a separate release requirement.

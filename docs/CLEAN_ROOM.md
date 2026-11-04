@@ -60,3 +60,13 @@ Public bank format references:
 - https://assets.dam.westpac.co.nz/is/content/wnzl/dist/ways-to-bank/digital/business-online/Business-Online_Transaction-Import-and-Export-File-Formats_guide.pdf
 
 No competitor code, SQL, CSS, templates, icons, imagery, translations or layouts were imported for these milestones.
+
+## Original accounting FX safety work, 4 November 2026
+
+| Feature | General accounting concept | Independently written LinkBooks code |
+|---|---|---|
+| PR #32 journal posting and source rates | Exchange rates must be date-specific, positive and explicitly verified for foreign currencies; invalid financial inputs cannot post | Added fail-closed rate handling, exact minor-unit transport and calendar validation in the existing LinkBooks `posting-engine.ts`. No borrowed vendor code or design. |
+| PR #33 posted rate lineage | Historical reports must use posted snapshot exchange rates and must not fabricate a 1:1 conversion; values must remain numerically exact | Original checks in LinkBooks `fx.ts` and `ledger-data.ts`, with synthetic conversion/incomplete-snapshot tests. |
+| PR #31 cash reporting pagination | Bounded report pages with continuous opening/running balances | Other agent's original LinkBooks cash recognition and paging implementation, separate from this FX work. |
+
+These milestones add no competitor source, report artwork, UI templates, brand assets, fonts or third-party translations.

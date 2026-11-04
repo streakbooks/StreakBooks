@@ -124,18 +124,16 @@ export const initializeFirmOnboarding = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => firmClientScope.parse(input))
   .handler(async ({ data, context }) => {
     await checkScope(context, data.firmId, data.companyId, true);
-    const { error } = await context.supabase
-      .from("firm_client_onboarding_steps" as never)
-      .upsert(
-        ONBOARDING_TEMPLATE.map((task) => ({
-          firm_id: data.firmId,
-          company_id: data.companyId,
-          task_key: task.key,
-          title: task.title,
-          updated_by: context.userId,
-        })) as never,
-        { onConflict: "firm_id,company_id,task_key", ignoreDuplicates: true },
-      );
+    const { error } = await context.supabase.from("firm_client_onboarding_steps" as never).upsert(
+      ONBOARDING_TEMPLATE.map((task) => ({
+        firm_id: data.firmId,
+        company_id: data.companyId,
+        task_key: task.key,
+        title: task.title,
+        updated_by: context.userId,
+      })) as never,
+      { onConflict: "firm_id,company_id,task_key", ignoreDuplicates: true },
+    );
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -171,7 +169,8 @@ export const updateFirmOnboardingStep = createServerFn({ method: "POST" })
       )
       .maybeSingle();
     if (error) throw new Error(error.message);
-    if (!updated) throw new Error("Checklist changed or access was revoked. Refresh before retrying.");
+    if (!updated)
+      throw new Error("Checklist changed or access was revoked. Refresh before retrying.");
     return updated as FirmOnboardingStep;
   });
 
@@ -199,13 +198,7 @@ export const saveFirmEngagement = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => engagementInput.parse(input))
   .handler(async ({ data, context }): Promise<FirmEngagement> => {
     await checkScope(context, data.firmId, data.companyId, true);
-    const {
-      firmId,
-      companyId,
-      id,
-      version,
-      ...fields
-    } = data;
+    const { firmId, companyId, id, version, ...fields } = data;
     const columns =
       "id,firm_id,company_id,name,status,frequency,start_date,end_date,agreed_fee,currency_code,notes,version,updated_at";
     if (!id) {
@@ -233,7 +226,8 @@ export const saveFirmEngagement = createServerFn({ method: "POST" })
       .select(columns as never)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    if (!saved) throw new Error("Engagement changed or access was revoked. Refresh before retrying.");
+    if (!saved)
+      throw new Error("Engagement changed or access was revoked. Refresh before retrying.");
     return saved as FirmEngagement;
   });
 
@@ -247,9 +241,7 @@ export type FirmTeamMember = {
 
 export const listFirmTeam = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ firmId: z.string().uuid() }).strict().parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ firmId: z.string().uuid() }).strict().parse(input))
   .handler(async ({ data, context }): Promise<FirmTeamMember[]> => {
     const sb = context.supabase;
     const { data: membership, error: memberError } = await sb
@@ -267,13 +259,20 @@ export const listFirmTeam = createServerFn({ method: "GET" })
       .limit(201);
     if (error) throw new Error(error.message);
     if ((rows ?? []).length > 200) throw new Error("Firm staff directory exceeds 200 people");
-    const team = (rows ?? []) as Array<{ user_id: string; role: FirmTeamMember["role"]; created_at: string }>;
+    const team = (rows ?? []) as Array<{
+      user_id: string;
+      role: FirmTeamMember["role"];
+      created_at: string;
+    }>;
     if (!team.length) return [];
     // Profiles RLS only reveals details to an independently authorised colleague.
     const { data: people, error: profilesError } = await sb
       .from("profiles")
       .select("id,full_name,email")
-      .in("id", team.map((row) => row.user_id));
+      .in(
+        "id",
+        team.map((row) => row.user_id),
+      );
     if (profilesError) throw new Error(profilesError.message);
     const names = new Map((people ?? []).map((p) => [p.id, p]));
     return team.map((member) => ({

@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  signedWorkpaperLedger,
-  workpaperReviewState,
-  type AccountWorkpaper,
-} from "./workpapers";
+import { signedWorkpaperLedger, workpaperReviewState, type AccountWorkpaper } from "./workpapers";
 
 const row: AccountWorkpaper = {
   id: "00000000-0000-4000-8000-000000000001",
@@ -26,9 +22,7 @@ describe("accountant workpaper evidence", () => {
   it("uses signed debit less credit without rounding or precision loss", () => {
     expect(signedWorkpaperLedger(0, 12000)).toBe(-12000);
     expect(signedWorkpaperLedger(8000, 2500)).toBe(5500);
-    expect(() => signedWorkpaperLedger(Number.MAX_SAFE_INTEGER, -1)).toThrow(
-      "safe integer",
-    );
+    expect(() => signedWorkpaperLedger(Number.MAX_SAFE_INTEGER, -1)).toThrow("safe integer");
     expect(() => signedWorkpaperLedger(1.5, 0)).toThrow("safe integer");
   });
 
@@ -39,14 +33,12 @@ describe("accountant workpaper evidence", () => {
   });
 
   it("flags missing or mismatched evidence before showing saved status", () => {
-    expect(
-      workpaperReviewState({ ...row, supporting_balance_minor: null }, -12000),
-    ).toBe("missing_evidence");
-    expect(
-      workpaperReviewState({ ...row, supporting_balance_minor: 12000 }, -12000),
-    ).toBe("difference");
-    expect(workpaperReviewState({ ...row, status: "prepared" }, -12000)).toBe(
-      "prepared",
+    expect(workpaperReviewState({ ...row, supporting_balance_minor: null }, -12000)).toBe(
+      "missing_evidence",
     );
+    expect(workpaperReviewState({ ...row, supporting_balance_minor: 12000 }, -12000)).toBe(
+      "difference",
+    );
+    expect(workpaperReviewState({ ...row, status: "prepared" }, -12000)).toBe("prepared");
   });
 });

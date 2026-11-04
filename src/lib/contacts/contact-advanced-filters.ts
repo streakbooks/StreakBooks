@@ -5,6 +5,8 @@ export const DEFAULT_CONTACT_ADVANCED_FILTERS = {
   country: "",
   currency: "",
   terms: "all",
+  groupId: "",
+  tagId: "",
 } as const;
 
 export type ContactAdvancedFilters = {
@@ -13,6 +15,8 @@ export type ContactAdvancedFilters = {
   country: string;
   currency: string;
   terms: "all" | "immediate" | "up_to_30" | "over_30";
+  groupId: string;
+  tagId: string;
 };
 
 export function normalizeContactAdvancedFilters(value: unknown): ContactAdvancedFilters {
@@ -25,20 +29,46 @@ export function normalizeContactAdvancedFilters(value: unknown): ContactAdvanced
   const currency =
     typeof source["currency"] === "string" ? source["currency"].trim().toUpperCase() : "";
   const terms = source["terms"];
+  const validLabelId = (key: "groupId" | "tagId") => {
+    const candidate = source[key];
+    return typeof candidate === "string" &&
+      /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(candidate)
+      ? candidate.toLowerCase()
+      : "";
+  };
   return {
     city: text("city"),
     region: text("region"),
     country: text("country"),
     currency: /^[A-Z]{3}$/.test(currency) ? currency : "",
     terms: terms === "immediate" || terms === "up_to_30" || terms === "over_30" ? terms : "all",
+    groupId: validLabelId("groupId"),
+    tagId: validLabelId("tagId"),
   };
 }
 
 export function countActiveContactFilters(filters: ContactAdvancedFilters): number {
   return (
     [filters.city, filters.region, filters.country, filters.currency].filter(Boolean).length +
-    (filters.terms !== "all" ? 1 : 0)
+    (filters.terms !== "all" ? 1 : 0) +
+    (filters.groupId ? 1 : 0) +
+    (filters.tagId ? 1 : 0)
   );
+}
+
+/**
+ * Request scoped, inner-joined membership rows only when filtering by labels.
+ * The embedded relation names are compile-time constants, never user input.
+ * This must be shared by list, count and CSV export to avoid mismatched results.
+ */
+export function contactDirectoryMembershipSelect(
+  columns: string,
+  filters: Pick<ContactAdvancedFilters, "groupId" | "tagId">,
+): string {
+  const projections = [columns];
+  if (filters.groupId) projections.push("contact_group_members!inner(group_id)");
+  if (filters.tagId) projections.push("contact_tag_assignments!inner(tag_id)");
+  return projections.join(",");
 }
 
 export type ContactSavedView = {

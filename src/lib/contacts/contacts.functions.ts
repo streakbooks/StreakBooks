@@ -7,6 +7,7 @@ import { aggregateOutstanding } from "@/lib/contacts/balances";
 import { buildIlikeOr, escapeLikeTerm, ilikePattern } from "@/lib/purchases/search-terms";
 import {
   normalizeContactAdvancedFilters,
+  contactDirectoryMembershipSelect,
   type ContactAdvancedFilters,
 } from "@/lib/contacts/contact-advanced-filters";
 import {
@@ -83,7 +84,7 @@ export const listContacts = createServerFn({ method: "GET" })
     await assertCompanyMember(context.supabase, data.companyId);
     let q = context.supabase
       .from("contacts" as never)
-      .select(CONTACT_SELECT as never)
+      .select(contactDirectoryMembershipSelect(CONTACT_SELECT, data.filters) as never)
       .eq("company_id" as never, data.companyId as never)
       .range(data.offset, data.offset + data.limit - 1);
 
@@ -145,6 +146,12 @@ export const listContacts = createServerFn({ method: "GET" })
     } else if (data.filters.terms === "over_30") {
       q = q.gt("payment_terms_days" as never, 30 as never);
     }
+    if (data.filters.groupId) {
+      q = q.eq("contact_group_members.group_id" as never, data.filters.groupId as never);
+    }
+    if (data.filters.tagId) {
+      q = q.eq("contact_tag_assignments.tag_id" as never, data.filters.tagId as never);
+    }
 
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
@@ -173,7 +180,10 @@ export const countContacts = createServerFn({ method: "GET" })
     await assertCompanyMember(context.supabase, data.companyId);
     let q = context.supabase
       .from("contacts" as never)
-      .select("id" as never, { count: "exact", head: true })
+      .select(contactDirectoryMembershipSelect("id", data.filters) as never, {
+        count: "exact",
+        head: true,
+      })
       .eq("company_id" as never, data.companyId as never);
 
     if (data.view === "archived") {
@@ -225,6 +235,12 @@ export const countContacts = createServerFn({ method: "GET" })
         .lte("payment_terms_days" as never, 30 as never);
     } else if (data.filters.terms === "over_30") {
       q = q.gt("payment_terms_days" as never, 30 as never);
+    }
+    if (data.filters.groupId) {
+      q = q.eq("contact_group_members.group_id" as never, data.filters.groupId as never);
+    }
+    if (data.filters.tagId) {
+      q = q.eq("contact_tag_assignments.tag_id" as never, data.filters.tagId as never);
     }
 
     const { count, error } = await q;
@@ -1017,6 +1033,81 @@ export const bulkAddContactLabel = createServerFn({ method: "POST" })
     return { selected: data.contactIds.length, added: count ?? 0 };
   });
 
+/**
+ * Remove one specific membership from up to 50 active contacts.
+ * Contacts, other groups/tags, accounting references and activity are untouched.
+ */
+export const bulkRemoveContactLabel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      contactIds: string[];
+      labelKind: "group" | "tag";
+      labelId: string;
+      confirm: boolean;
+    }) => {
+      if (input.confirm !== true) throw new Error("Removing memberships requires confirmation");
+      if (
+        !Array.isArray(input.contactIds) ||
+        input.contactIds.length < 1 ||
+        input.contactIds.length > 50
+      ) {
+        throw new Error("Select between 1 and 50 contacts from the current page");
+      }
+      const contactIds = input.contactIds.map((id) => assertUuid(id));
+      if (new Set(contactIds).size !== contactIds.length) {
+        throw new Error("Contact selection contains duplicate IDs");
+      }
+      if (input.labelKind !== "group" && input.labelKind !== "tag") {
+        throw new Error("Invalid group or tag selection");
+      }
+      return {
+        companyId: assertUuid(input.companyId),
+        contactIds,
+        labelKind: input.labelKind,
+        labelId: assertUuid(input.labelId),
+      };
+    },
+  )
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "contacts.manage");
+
+    const { data: contacts, error: contactError } = await context.supabase
+      .from("contacts" as never)
+      .select("id" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("is_active" as never, true as never)
+      .is("archived_at" as never, null as never)
+      .in("id" as never, data.contactIds as never);
+    if (contactError) throw new Error(contactError.message);
+    if ((contacts ?? []).length !== data.contactIds.length) {
+      throw new Error("Some selected contacts are inactive or outside this organisation");
+    }
+
+    const labelTable = data.labelKind === "group" ? "contact_groups" : "contact_tags";
+    const relationTable =
+      data.labelKind === "group" ? "contact_group_members" : "contact_tag_assignments";
+    const labelColumn = data.labelKind === "group" ? "group_id" : "tag_id";
+    const { data: label, error: labelError } = await context.supabase
+      .from(labelTable as never)
+      .select("id" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("id" as never, data.labelId as never)
+      .maybeSingle();
+    if (labelError) throw new Error(labelError.message);
+    if (!label) throw new Error("The group or tag does not belong to this organisation");
+
+    const { error, count } = await context.supabase
+      .from(relationTable as never)
+      .delete({ count: "exact" })
+      .eq("company_id" as never, data.companyId as never)
+      .eq(labelColumn as never, data.labelId as never)
+      .in("contact_id" as never, data.contactIds as never);
+    if (error) throw new Error(error.message);
+    return { selected: data.contactIds.length, removed: count ?? 0 };
+  });
+
 /* ── Settings ── */
 export const getContactSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -1116,7 +1207,7 @@ export const exportContactsCsv = createServerFn({ method: "POST" })
     for (let from = 0; ; from += 1000) {
       let q = context.supabase
         .from("contacts" as never)
-        .select(columns.join(",") as never)
+        .select(contactDirectoryMembershipSelect(columns.join(","), data.filters) as never)
         .eq("company_id" as never, data.companyId as never)
         .order("name" as never)
         .order("id" as never)
@@ -1170,6 +1261,12 @@ export const exportContactsCsv = createServerFn({ method: "POST" })
           .lte("payment_terms_days" as never, 30 as never);
       } else if (data.filters.terms === "over_30") {
         q = q.gt("payment_terms_days" as never, 30 as never);
+      }
+      if (data.filters.groupId) {
+        q = q.eq("contact_group_members.group_id" as never, data.filters.groupId as never);
+      }
+      if (data.filters.tagId) {
+        q = q.eq("contact_tag_assignments.tag_id" as never, data.filters.tagId as never);
       }
 
       const { data: page, error } = await q;

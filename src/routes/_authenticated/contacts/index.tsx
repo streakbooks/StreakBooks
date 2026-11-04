@@ -28,6 +28,7 @@ import {
   listContactGroups,
   listContactTags,
   bulkAddContactLabel,
+  bulkRemoveContactLabel,
   upsertContactGroup,
   upsertContactTag,
 } from "@/lib/contacts/contacts.functions";
@@ -71,6 +72,17 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -200,6 +212,53 @@ function formattedContactValue(
   return String(raw);
 }
 
+function ConfirmContactLabelRemoval({
+  kind,
+  name,
+  count,
+  disabled,
+  onConfirm,
+}: {
+  kind: "group" | "tag";
+  name: string;
+  count: number;
+  disabled: boolean;
+  onConfirm: () => void;
+}) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={disabled}
+          aria-label={`Remove selected ${kind}`}
+        >
+          Remove {kind}
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Remove {kind} from selected contacts?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This will remove {name} from up to {count} selected contacts on this page. Contact
+            records, transactions and all other groups and tags will remain unchanged.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            onClick={onConfirm}
+          >
+            Remove {kind}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
 function ContactDirectoryCell({
   contact,
   column,
@@ -286,6 +345,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
   const fetchGroups = useServerFn(listContactGroups);
   const fetchTags = useServerFn(listContactTags);
   const bulkAdd = useServerFn(bulkAddContactLabel);
+  const bulkRemove = useServerFn(bulkRemoveContactLabel);
   const createGroup = useServerFn(upsertContactGroup);
   const createTag = useServerFn(upsertContactTag);
   const canManage = useCanDo("contacts.manage");
@@ -495,12 +555,12 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
 
   const groupsQ = useQuery({
     queryKey: ["contact-groups", companyId],
-    enabled: Boolean(companyId && canManage && someSelected),
+    enabled: Boolean(companyId),
     queryFn: () => fetchGroups({ data: { companyId: companyId! } }),
   });
   const tagsQ = useQuery({
     queryKey: ["contact-tags", companyId],
-    enabled: Boolean(companyId && canManage && someSelected),
+    enabled: Boolean(companyId),
     queryFn: () => fetchTags({ data: { companyId: companyId! } }),
   });
   const groups = (
@@ -521,11 +581,40 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
         },
       }),
     onSuccess: async (result, input) => {
-      await qc.invalidateQueries({ queryKey: ["contact", companyId] });
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["contact", companyId] }),
+        qc.invalidateQueries({ queryKey: ["contacts", companyId] }),
+        qc.invalidateQueries({ queryKey: ["contacts-count", companyId] }),
+      ]);
       const label = input.labelKind === "group" ? "group" : "tag";
       toast.success(
         `Applied ${label} to ${result.selected} selected contacts (${result.added} new memberships)`,
       );
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+
+  const bulkRemoveM = useMutation({
+    mutationFn: (input: { labelKind: "group" | "tag"; labelId: string }) =>
+      bulkRemove({
+        data: {
+          companyId: companyId!,
+          contactIds: selectedIds,
+          labelKind: input.labelKind,
+          labelId: input.labelId,
+          confirm: true,
+        },
+      }),
+    onSuccess: async (result, input) => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["contact", companyId] }),
+        qc.invalidateQueries({ queryKey: ["contacts", companyId] }),
+        qc.invalidateQueries({ queryKey: ["contacts-count", companyId] }),
+      ]);
+      toast.success(
+        `Removed ${input.labelKind} membership from ${result.removed} of ${result.selected} selected contacts`,
+      );
+      setSelection({ scope, ids: [] });
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
@@ -559,6 +648,8 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
         qc.invalidateQueries({ queryKey: ["contact-groups", companyId] }),
         qc.invalidateQueries({ queryKey: ["contact-tags", companyId] }),
         qc.invalidateQueries({ queryKey: ["contact", companyId] }),
+        qc.invalidateQueries({ queryKey: ["contacts", companyId] }),
+        qc.invalidateQueries({ queryKey: ["contacts-count", companyId] }),
       ]);
       if (input.labelKind === "group") {
         setGroupId(id);
@@ -877,6 +968,49 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                   />
                 </div>
                 <div className="space-y-1">
+                  <Label>Group membership</Label>
+                  <Select
+                    value={filters.groupId || "any"}
+                    onValueChange={(value) => updateFilter("groupId", value === "any" ? "" : value)}
+                  >
+                    <SelectTrigger aria-label="Filter contacts by group">
+                      <SelectValue placeholder="Any group" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="any">Any group</SelectItem>
+                      {groups.map((group) => (
+                        <SelectItem key={group.id} value={group.id}>
+                          {group.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label>Tag membership</Label>
+                  <Select
+                    value={filters.tagId || "any"}
+                    onValueChange={(value) => updateFilter("tagId", value === "any" ? "" : value)}
+                  >
+                    <SelectTrigger aria-label="Filter contacts by tag">
+                      <SelectValue placeholder="Any tag" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="any">Any tag</SelectItem>
+                      {tags.map((tag) => (
+                        <SelectItem key={tag.id} value={tag.id}>
+                          {tag.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {(groupsQ.isError || tagsQ.isError) && (
+                  <p role="alert" className="text-xs text-destructive">
+                    Could not load groups or tags. Refresh this page to retry.
+                  </p>
+                )}
+                <div className="space-y-1">
                   <Label>Contact currency override</Label>
                   <Select
                     value={filters.currency || "any"}
@@ -1048,6 +1182,20 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                     >
                       Add to group
                     </Button>
+                    <ConfirmContactLabelRemoval
+                      kind="group"
+                      name={groups.find((group) => group.id === groupId)?.name ?? "this group"}
+                      count={selectedIds.length}
+                      disabled={
+                        bulkM.isPending ||
+                        bulkRemoveM.isPending ||
+                        createAndAssignM.isPending ||
+                        query.isFetching ||
+                        !selectionIsActive ||
+                        !groups.some((group) => group.id === groupId)
+                      }
+                      onConfirm={() => bulkRemoveM.mutate({ labelKind: "group", labelId: groupId })}
+                    />
                     <Select value={tagId} onValueChange={setTagId}>
                       <SelectTrigger className="w-44" aria-label="Choose a contact tag">
                         <SelectValue placeholder="Choose tag" />
@@ -1073,6 +1221,20 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                     >
                       Add tag
                     </Button>
+                    <ConfirmContactLabelRemoval
+                      kind="tag"
+                      name={tags.find((tag) => tag.id === tagId)?.name ?? "this tag"}
+                      count={selectedIds.length}
+                      disabled={
+                        bulkM.isPending ||
+                        bulkRemoveM.isPending ||
+                        createAndAssignM.isPending ||
+                        query.isFetching ||
+                        !selectionIsActive ||
+                        !tags.some((tag) => tag.id === tagId)
+                      }
+                      onConfirm={() => bulkRemoveM.mutate({ labelKind: "tag", labelId: tagId })}
+                    />
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button

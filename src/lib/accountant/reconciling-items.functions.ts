@@ -4,11 +4,20 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyPermission } from "@/lib/assert-company-access";
 
 const uuid = z.string().uuid();
-const minor = z.string().regex(/^-?[0-9]+$/).refine((value) => {
-  const amount = BigInt(value);
-  return amount !== 0n && amount <= BigInt(Number.MAX_SAFE_INTEGER) &&
-    amount >= -BigInt(Number.MAX_SAFE_INTEGER);
-}, "Enter a nonzero amount within the safe minor-unit range.");
+const minor = z
+  .string()
+  .regex(/^-?[0-9]+$/)
+  .refine(
+    (value) => {
+      const amount = BigInt(value);
+      return (
+        amount !== 0n &&
+        amount <= BigInt(Number.MAX_SAFE_INTEGER) &&
+        amount >= -BigInt(Number.MAX_SAFE_INTEGER)
+      );
+    },
+    "Enter a nonzero amount within the safe minor-unit range.",
+  );
 
 export type WorkpaperReconcilingItem = {
   id: string;
@@ -37,30 +46,46 @@ const eventInput = z.object({ companyId: uuid, workpaperId: uuid, itemId: uuid }
 const saveInput = z.object({
   companyId: uuid,
   workpaperId: uuid,
-  payload: z.object({
-    action: z.enum(["add", "update", "resolve", "reopen"]),
-    id: uuid.optional(),
-    version: z.number().int().positive().optional(),
-    description: z.string().trim().min(3).max(500).optional(),
-    amountMinor: minor.optional(),
-    evidenceReference: z.string().max(300).optional(),
-    reason: z.string().trim().max(2000).optional(),
-  }).strict().superRefine((data, context) => {
-    if (data.action === "add" && (data.id || data.version)) {
-      context.addIssue({ code: "custom", message: "A new item cannot contain a saved identity." });
-    }
-    if (data.action !== "add" && (!data.id || !data.version)) {
-      context.addIssue({ code: "custom", message: "Refresh the item before changing it." });
-    }
-    if ((data.action === "add" || data.action === "update") &&
-        (!data.description || !data.amountMinor)) {
-      context.addIssue({ code: "custom", message: "A description and exact amount are required." });
-    }
-    if ((data.action === "resolve" || data.action === "reopen") &&
-        (!data.reason || data.reason.length < 3)) {
-      context.addIssue({ code: "custom", message: "A resolution or reopening reason is required." });
-    }
-  }),
+  payload: z
+    .object({
+      action: z.enum(["add", "update", "resolve", "reopen"]),
+      id: uuid.optional(),
+      version: z.number().int().positive().optional(),
+      description: z.string().trim().min(3).max(500).optional(),
+      amountMinor: minor.optional(),
+      evidenceReference: z.string().max(300).optional(),
+      reason: z.string().trim().max(2000).optional(),
+    })
+    .strict()
+    .superRefine((data, context) => {
+      if (data.action === "add" && (data.id || data.version)) {
+        context.addIssue({
+          code: "custom",
+          message: "A new item cannot contain a saved identity.",
+        });
+      }
+      if (data.action !== "add" && (!data.id || !data.version)) {
+        context.addIssue({ code: "custom", message: "Refresh the item before changing it." });
+      }
+      if (
+        (data.action === "add" || data.action === "update") &&
+        (!data.description || !data.amountMinor)
+      ) {
+        context.addIssue({
+          code: "custom",
+          message: "A description and exact amount are required.",
+        });
+      }
+      if (
+        (data.action === "resolve" || data.action === "reopen") &&
+        (!data.reason || data.reason.length < 3)
+      ) {
+        context.addIssue({
+          code: "custom",
+          message: "A resolution or reopening reason is required.",
+        });
+      }
+    }),
 });
 
 export const listWorkpaperReconcilingItems = createServerFn({ method: "GET" })

@@ -35,7 +35,9 @@ const calls: Array<[string, ...unknown[]]> = [];
 
 function fakeDb() {
   const builder = {
-    select() { return this; },
+    select() {
+      return this;
+    },
     eq(key: string, value: unknown) {
       calls.push(["eq", key, value]);
       return this;

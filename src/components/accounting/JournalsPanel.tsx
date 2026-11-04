@@ -296,140 +296,138 @@ export function JournalsPanel({
         </div>
       ) : (
         <>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-8" />
-                  <SortableHead label="#" {...headProps("number")} />
-                  <SortableHead label="Date" {...headProps("date")} />
-                  <SortableHead label="Source" {...headProps("source")} />
-                  <TableHead>Narration</TableHead>
-                  <SortableHead label="Amount" align="right" {...headProps("amount")} />
-                  <TableHead>Status</TableHead>
-                  <TableHead />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((j) => {
-                  const expanded = open === j.id;
-                  return (
-                    <Fragment key={j.id}>
-                      <TableRow
-                        className="cursor-pointer"
-                        onClick={() => setOpen(expanded ? null : j.id)}
-                      >
-                        <TableCell>
-                          <button
-                            type="button"
-                            aria-expanded={expanded}
-                            aria-label={`${expanded ? "Hide" : "Show"} lines of journal ${j.journal_number}`}
-                            className="rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpen(expanded ? null : j.id);
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-8" />
+                <SortableHead label="#" {...headProps("number")} />
+                <SortableHead label="Date" {...headProps("date")} />
+                <SortableHead label="Source" {...headProps("source")} />
+                <TableHead>Narration</TableHead>
+                <SortableHead label="Amount" align="right" {...headProps("amount")} />
+                <TableHead>Status</TableHead>
+                <TableHead />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((j) => {
+                const expanded = open === j.id;
+                return (
+                  <Fragment key={j.id}>
+                    <TableRow
+                      className="cursor-pointer"
+                      onClick={() => setOpen(expanded ? null : j.id)}
+                    >
+                      <TableCell>
+                        <button
+                          type="button"
+                          aria-expanded={expanded}
+                          aria-label={`${expanded ? "Hide" : "Show"} lines of journal ${j.journal_number}`}
+                          className="rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpen(expanded ? null : j.id);
+                          }}
+                        >
+                          {expanded ? (
+                            <ChevronDown className="size-4" />
+                          ) : (
+                            <ChevronRight className="size-4" />
+                          )}
+                        </button>
+                      </TableCell>
+                      <TableCell>{j.journal_number}</TableCell>
+                      <TableCell>{fmt.date(j.journal_date)}</TableCell>
+                      <TableCell>{SOURCE_LABEL[j.source_type] ?? j.source_type}</TableCell>
+                      <TableCell className="max-w-[260px] truncate">{j.memo ?? "—"}</TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {fmt.amount(j.total_debit_minor, j.currency_code || currency)}
+                      </TableCell>
+                      <TableCell className="space-x-1">
+                        <Badge variant="secondary" className="capitalize">
+                          {j.status}
+                        </Badge>
+                        {j.reversed_by_journal_id ? (
+                          <Badge variant="outline">reversed</Badge>
+                        ) : null}
+                      </TableCell>
+                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                        {canReverse && canReverseHere(j) ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={reverseM.isPending}
+                            onClick={() => {
+                              if (
+                                confirm(
+                                  `Reverse journal ${j.journal_number}? A new journal will post the opposite entries.`,
+                                )
+                              ) {
+                                reverseM.mutate(j.id);
+                              }
                             }}
                           >
-                            {expanded ? (
-                              <ChevronDown className="size-4" />
-                            ) : (
-                              <ChevronRight className="size-4" />
-                            )}
-                          </button>
-                        </TableCell>
-                        <TableCell>{j.journal_number}</TableCell>
-                        <TableCell>{fmt.date(j.journal_date)}</TableCell>
-                        <TableCell>{SOURCE_LABEL[j.source_type] ?? j.source_type}</TableCell>
-                        <TableCell className="max-w-[260px] truncate">{j.memo ?? "—"}</TableCell>
-                        <TableCell className="text-right tabular-nums">
-                          {fmt.amount(j.total_debit_minor, j.currency_code || currency)}
-                        </TableCell>
-                        <TableCell className="space-x-1">
-                          <Badge variant="secondary" className="capitalize">
-                            {j.status}
-                          </Badge>
-                          {j.reversed_by_journal_id ? (
-                            <Badge variant="outline">reversed</Badge>
-                          ) : null}
-                        </TableCell>
-                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                          {canReverse && canReverseHere(j) ? (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              disabled={reverseM.isPending}
-                              onClick={() => {
-                                if (
-                                  confirm(
-                                    `Reverse journal ${j.journal_number}? A new journal will post the opposite entries.`,
-                                  )
-                                ) {
-                                  reverseM.mutate(j.id);
-                                }
-                              }}
-                            >
-                              Reverse
-                            </Button>
-                          ) : j.status === "posted" &&
-                            !j.reversed_by_journal_id &&
-                            j.source_type !== "reversal" ? (
-                            <span className="text-xs text-muted-foreground">
-                              Void the source document
-                            </span>
-                          ) : null}
+                            Reverse
+                          </Button>
+                        ) : j.status === "posted" &&
+                          !j.reversed_by_journal_id &&
+                          j.source_type !== "reversal" ? (
+                          <span className="text-xs text-muted-foreground">
+                            Void the source document
+                          </span>
+                        ) : null}
+                      </TableCell>
+                    </TableRow>
+                    {expanded ? (
+                      <TableRow>
+                        <TableCell />
+                        <TableCell colSpan={7}>
+                          {detail.isPending ? (
+                            <p className="py-2 text-sm text-muted-foreground">Loading lines…</p>
+                          ) : detail.isError ? (
+                            <p className="py-2 text-sm text-destructive">
+                              {friendlyAuthError(detail.error)}
+                            </p>
+                          ) : (
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Account</TableHead>
+                                  <TableHead>Description</TableHead>
+                                  <TableHead className="text-right">Debit</TableHead>
+                                  <TableHead className="text-right">Credit</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {detail.data?.lines.map((line) => (
+                                  <TableRow key={line.id}>
+                                    <TableCell>
+                                      {line.account_code} {line.account_name}
+                                    </TableCell>
+                                    <TableCell>{line.description ?? "—"}</TableCell>
+                                    <TableCell className="text-right tabular-nums">
+                                      {line.debit_minor
+                                        ? fmt.amount(line.debit_minor, currency)
+                                        : ""}
+                                    </TableCell>
+                                    <TableCell className="text-right tabular-nums">
+                                      {line.credit_minor
+                                        ? fmt.amount(line.credit_minor, currency)
+                                        : ""}
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          )}
                         </TableCell>
                       </TableRow>
-                      {expanded ? (
-                        <TableRow>
-                          <TableCell />
-                          <TableCell colSpan={7}>
-                            {detail.isPending ? (
-                              <p className="py-2 text-sm text-muted-foreground">Loading lines…</p>
-                            ) : detail.isError ? (
-                              <p className="py-2 text-sm text-destructive">
-                                {friendlyAuthError(detail.error)}
-                              </p>
-                            ) : (
-                              <Table>
-                                <TableHeader>
-                                  <TableRow>
-                                    <TableHead>Account</TableHead>
-                                    <TableHead>Description</TableHead>
-                                    <TableHead className="text-right">Debit</TableHead>
-                                    <TableHead className="text-right">Credit</TableHead>
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                  {detail.data?.lines.map((line) => (
-                                    <TableRow key={line.id}>
-                                      <TableCell>
-                                        {line.account_code} {line.account_name}
-                                      </TableCell>
-                                      <TableCell>{line.description ?? "—"}</TableCell>
-                                      <TableCell className="text-right tabular-nums">
-                                        {line.debit_minor
-                                          ? fmt.amount(line.debit_minor, currency)
-                                          : ""}
-                                      </TableCell>
-                                      <TableCell className="text-right tabular-nums">
-                                        {line.credit_minor
-                                          ? fmt.amount(line.credit_minor, currency)
-                                          : ""}
-                                      </TableCell>
-                                    </TableRow>
-                                  ))}
-                                </TableBody>
-                              </Table>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ) : null}
-                    </Fragment>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
+                    ) : null}
+                  </Fragment>
+                );
+              })}
+            </TableBody>
+          </Table>
           <div className="flex flex-wrap items-center justify-between gap-3 py-2">
             <p role="status" className="text-xs text-muted-foreground">
               Showing journals {pageInfo.first}–{pageInfo.last} · Page {page + 1}

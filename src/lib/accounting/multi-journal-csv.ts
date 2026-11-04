@@ -1,4 +1,8 @@
-import { parseCsvCells, importJournalLinesCsv, type JournalImportAccount } from "@/lib/accounting/journal-csv-import";
+import {
+  parseCsvCells,
+  importJournalLinesCsv,
+  type JournalImportAccount,
+} from "@/lib/accounting/journal-csv-import";
 import { toMinorUnits, fromMinorUnits } from "@/lib/accounting/money";
 
 export const MULTI_JOURNAL_CSV_HEADERS = [
@@ -51,20 +55,35 @@ export function previewMultiJournalCsv(
   const groups = new Map<string, { date: string; memo: string; lines: string[][] }>();
   for (const [index, row] of dataRows.entries()) {
     if (row.length !== 7) throw new Error("Row " + (index + 2) + " must contain 7 columns.");
-    const [rawKey = "", rawDate = "", rawMemo = "", account = "", description = "", debit = "", credit = ""] = row;
+    const [
+      rawKey = "",
+      rawDate = "",
+      rawMemo = "",
+      account = "",
+      description = "",
+      debit = "",
+      credit = "",
+    ] = row;
     const key = rawKey.trim();
     const date = rawDate.trim();
     const memo = rawMemo.trim();
     if (!/^[A-Za-z0-9_-]{1,60}$/.test(key)) {
-      throw new Error("Row " + (index + 2) + ": journal_key must have 1–60 letters, numbers, underscores or hyphens.");
+      throw new Error(
+        "Row " +
+          (index + 2) +
+          ": journal_key must have 1–60 letters, numbers, underscores or hyphens.",
+      );
     }
-    if (!validDay(date)) throw new Error("Row " + (index + 2) + ": journal_date must be a real YYYY-MM-DD date.");
+    if (!validDay(date))
+      throw new Error("Row " + (index + 2) + ": journal_date must be a real YYYY-MM-DD date.");
     if (memo.length < 3 || memo.length > 500) {
       throw new Error("Row " + (index + 2) + ": memo must have 3–500 characters.");
     }
     const group = groups.get(key);
     if (group && (group.date !== date || group.memo !== memo)) {
-      throw new Error("Row " + (index + 2) + ": journal_key " + key + " has inconsistent date or memo.");
+      throw new Error(
+        "Row " + (index + 2) + ": journal_key " + key + " has inconsistent date or memo.",
+      );
     }
     if (!group) {
       if (groups.size >= 25) throw new Error("Import at most 25 journals in one file.");
@@ -81,16 +100,25 @@ export function previewMultiJournalCsv(
       ...group.lines.map((line) => line.map(quote).join(",")),
     ].join("\r\n");
     const lines = importJournalLinesCsv(singleCsv, accounts, currency);
-    const totalMinor = lines.reduce((total, line) => total + toMinorUnits(line.debit, currency), 0n);
+    const totalMinor = lines.reduce(
+      (total, line) => total + toMinorUnits(line.debit, currency),
+      0n,
+    );
     const fingerprint = JSON.stringify([
       group.date,
       group.memo,
       [...lines]
-        .map((line) => [line.accountId, toMinorUnits(line.debit, currency).toString(), toMinorUnits(line.credit, currency).toString()])
+        .map((line) => [
+          line.accountId,
+          toMinorUnits(line.debit, currency).toString(),
+          toMinorUnits(line.credit, currency).toString(),
+        ])
         .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))),
     ]);
     if (seen.has(fingerprint)) {
-      throw new Error("Two journal groups contain identical date, narration and accounting lines. Remove the duplicate or change the import file after review.");
+      throw new Error(
+        "Two journal groups contain identical date, narration and accounting lines. Remove the duplicate or change the import file after review.",
+      );
     }
     seen.add(fingerprint);
     return {
@@ -106,9 +134,13 @@ export function previewMultiJournalCsv(
 
 /** Stable idempotency across retries and reuploads of the same company + file. */
 export async function journalBatchFingerprint(companyId: string, text: string): Promise<string> {
-  const bytes = new TextEncoder().encode(companyId + "\n" + text.replace(/^\uFEFF/, "").replace(/\r\n/g, "\n"));
+  const bytes = new TextEncoder().encode(
+    companyId + "\n" + text.replace(/^\uFEFF/, "").replace(/\r\n/g, "\n"),
+  );
   const digest = await crypto.subtle.digest("SHA-256", bytes);
-  return Array.from(new Uint8Array(digest), (value) => value.toString(16).padStart(2, "0")).join("");
+  return Array.from(new Uint8Array(digest), (value) => value.toString(16).padStart(2, "0")).join(
+    "",
+  );
 }
 
 export function journalBatchIdempotencyKey(fingerprint: string, index: number): string {

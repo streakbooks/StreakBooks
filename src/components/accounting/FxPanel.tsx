@@ -295,11 +295,35 @@ export function FxPanel({ companyId, currency }: { companyId: string; currency: 
                     {toAdjust === 0 && ratesComplete ? (
                       <p>The balances already agree with these rates. Nothing to post.</p>
                     ) : null}
+                    {!previewCurrent ? (
+                      <p role="alert" className="text-sm text-destructive">
+                        The rates or date have changed since this preview. Recalculate before posting.
+                      </p>
+                    ) : null}
 
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Button
-                        disabled={!ratesComplete || toAdjust === 0 || postM.isPending}
-                        onClick={() => postM.mutate()}
+                        variant="outline"
+                        disabled={!previewCurrent || previewM.isPending || postM.isPending}
+                        onClick={exportPreview}
+                      >
+                        Export preview CSV
+                      </Button>
+                      <Button
+                        disabled={
+                          !ratesComplete ||
+                          !previewCurrent ||
+                          toAdjust === 0 ||
+                          previewM.isPending ||
+                          postM.isPending
+                        }
+                        onClick={() => {
+                          if (
+                            window.confirm(
+                              `Post FX revaluation dated ${asOf}? ${toAdjust} account balance(s) require adjustment. Revaluation journals automatically reverse on ${nextDay(asOf) ?? "the following day"}.`,
+                            )
+                          ) postM.mutate();
+                        }}
                       >
                         {postM.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
                         Post revaluation
@@ -327,7 +351,13 @@ export function FxPanel({ companyId, currency }: { companyId: string; currency: 
                 size="sm"
                 variant="outline"
                 disabled={processM.isPending}
-                onClick={() => processM.mutate()}
+                onClick={() => {
+                  if (
+                    window.confirm(
+                      `Process due auto-reversals now? ${dueCount} due items are visible in this overview. The server will determine all currently due journals and may post reversal entries.`,
+                    )
+                  ) processM.mutate();
+                }}
               >
                 {processM.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
                 Process due reversals{dueCount ? ` (${dueCount})` : ""}
@@ -342,8 +372,30 @@ export function FxPanel({ companyId, currency }: { companyId: string; currency: 
             <code>select public.process_due_auto_reversals_system();</code> daily (see the Wave 2 E
             notes).
           </p>
-          {ov.autoReversals.length === 0 ? (
-            <p>No auto-reversing journals yet.</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Label htmlFor="reversal-status">Show reversals</Label>
+            <select
+              id="reversal-status"
+              className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+              value={reversalFilter}
+              onChange={(event) => setReversalFilter(event.target.value as ReversalFilter)}
+            >
+              {/* lookup-fixed-enum: Fixed status filter, not business records. */}
+              <option value="due">Due or overdue ({dueCount})</option>
+              <option value="all">All recent reversals</option>
+              <option value="pending">Pending</option>
+              <option value="failed">Failed</option>
+              <option value="done">Completed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+            <span className="text-xs text-muted-foreground">
+              Showing {displayedReversals.length} of {ov.autoReversals.length} recently loaded reversals.
+            </span>
+          </div>
+          {displayedReversals.length === 0 ? (
+            <p className="text-muted-foreground">
+              No reversals match this filter. Choose All recent reversals to view history.
+            </p>
           ) : (
             <div className="overflow-auto rounded-md border">
               <table className="w-full">
@@ -357,7 +409,7 @@ export function FxPanel({ companyId, currency }: { companyId: string; currency: 
                   </tr>
                 </thead>
                 <tbody>
-                  {ov.autoReversals.map((r) => (
+                  {displayedReversals.map((r) => (
                     <tr key={r.id} className="border-t align-top">
                       <td className="p-2">
                         #{r.journal_number ?? "—"} {f.date(r.journal_date)}
@@ -391,7 +443,13 @@ export function FxPanel({ companyId, currency }: { companyId: string; currency: 
                             size="sm"
                             variant="ghost"
                             disabled={cancelM.isPending}
-                            onClick={() => cancelM.mutate(r.journal_id)}
+                            onClick={() => {
+                              if (
+                                window.confirm(
+                                  `Cancel the scheduled auto-reversal for journal #${r.journal_number ?? "unknown"} on ${r.reverse_on}? The original journal remains posted.`,
+                                )
+                              ) cancelM.mutate(r.journal_id);
+                            }
                           >
                             Cancel
                           </Button>

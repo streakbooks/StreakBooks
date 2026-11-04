@@ -28,19 +28,19 @@ SELECT set_config('request.jwt.claims',
 
 DO $$
 DECLARE
-  company_id uuid := '10000000-0000-4000-8000-000000000001';
+  fixture_company_id uuid := '10000000-0000-4000-8000-000000000001';
   other_company_id uuid := '10000000-0000-4000-8000-000000000002';
   saved text[];
   actual text[];
 BEGIN
   saved := public.replace_company_currencies_atomic(
-    company_id, ARRAY['EUR','CAD','EUR'], ARRAY['CAD','USD']
+    fixture_company_id, ARRAY['EUR','CAD','EUR'], ARRAY['CAD','USD']
   );
   IF saved <> ARRAY['CAD','EUR'] THEN
     RAISE EXCEPTION 'Atomic currency save returned unexpected selection: %', saved;
   END IF;
   SELECT array_agg(btrim(currency_code::text) ORDER BY currency_code) INTO actual
-    FROM public.company_currencies WHERE company_currencies.company_id=company_id;
+    FROM public.company_currencies WHERE company_currencies.company_id=fixture_company_id;
   IF actual <> ARRAY['CAD','EUR'] THEN
     RAISE EXCEPTION 'Atomic currency replace failed: %', actual;
   END IF;
@@ -48,7 +48,7 @@ BEGIN
   -- Retry from an outdated browser must not clobber newer values.
   BEGIN
     PERFORM public.replace_company_currencies_atomic(
-      company_id, ARRAY['INR'], ARRAY['CAD','USD']
+      fixture_company_id, ARRAY['INR'], ARRAY['CAD','USD']
     );
     RAISE EXCEPTION 'Stale edit was accepted';
   EXCEPTION WHEN OTHERS THEN
@@ -59,7 +59,7 @@ BEGIN
   PERFORM set_config('test.fail_currency', 'on', true);
   BEGIN
     PERFORM public.replace_company_currencies_atomic(
-      company_id, ARRAY['INR'], ARRAY['CAD','EUR']
+      fixture_company_id, ARRAY['INR'], ARRAY['CAD','EUR']
     );
     RAISE EXCEPTION 'Injected insert failure was ignored';
   EXCEPTION WHEN OTHERS THEN
@@ -71,7 +71,7 @@ BEGIN
   PERFORM set_config('test.fail_audit', 'on', true);
   BEGIN
     PERFORM public.replace_company_currencies_atomic(
-      company_id, ARRAY['NZD'], ARRAY['CAD','EUR']
+      fixture_company_id, ARRAY['NZD'], ARRAY['CAD','EUR']
     );
     RAISE EXCEPTION 'Injected audit failure was ignored';
   EXCEPTION WHEN OTHERS THEN
@@ -80,7 +80,7 @@ BEGIN
   PERFORM set_config('test.fail_audit', 'off', true);
 
   SELECT array_agg(btrim(currency_code::text) ORDER BY currency_code) INTO actual
-    FROM public.company_currencies WHERE company_currencies.company_id=company_id;
+    FROM public.company_currencies WHERE company_currencies.company_id=fixture_company_id;
   IF actual <> ARRAY['CAD','EUR'] THEN
     RAISE EXCEPTION 'Failed save changed the currency set: %', actual;
   END IF;
@@ -97,7 +97,7 @@ BEGIN
   -- Invalid codes are rejected without changing the saved selection.
   BEGIN
     PERFORM public.replace_company_currencies_atomic(
-      company_id, ARRAY['CA1'], ARRAY['CAD','EUR']
+      fixture_company_id, ARRAY['CA1'], ARRAY['CAD','EUR']
     );
     RAISE EXCEPTION 'Invalid currency was accepted';
   EXCEPTION WHEN OTHERS THEN

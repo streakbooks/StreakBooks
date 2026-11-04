@@ -9,7 +9,12 @@ import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
 import { nextSort } from "@/lib/sort";
-import { canSelectForArchive, chartViewRows, type ChartSort, type ChartSortKey } from "@/lib/accounting/chart-view";
+import {
+  canSelectForArchive,
+  chartViewRows,
+  type ChartSort,
+  type ChartSortKey,
+} from "@/lib/accounting/chart-view";
 import {
   archiveChartAccount,
   copyChartAccounts,
@@ -153,7 +158,9 @@ export function ChartAccountsPanel({
   const selectedAccounts = (chartQuery.data?.accounts ?? []).filter(
     (account) => selected.has(account.id) && canSelectForArchive(account),
   );
-  const eligibleDisplayedIds = rows.filter((row) => canSelectForArchive(row.account)).map((row) => row.account.id);
+  const eligibleDisplayedIds = rows
+    .filter((row) => canSelectForArchive(row.account))
+    .map((row) => row.account.id);
   const allDisplayedSelected =
     eligibleDisplayedIds.length > 0 && eligibleDisplayedIds.every((id) => selected.has(id));
   const someDisplayedSelected = eligibleDisplayedIds.some((id) => selected.has(id));
@@ -163,7 +170,7 @@ export function ChartAccountsPanel({
       type="button"
       className="inline-flex items-center gap-1 text-left hover:text-foreground focus-visible:rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
       onClick={() => setSort((current) => nextSort(current, key))}
-      aria-label={label + ", " + (sort.key === key ? (sort.dir === "asc" ? "ascending" : "descending") : "not sorted") + ". Sort column"}
+      aria-label={`${label}: ${sort.key === key ? sort.dir : "not sorted"}. Sort column`}
     >
       {label}
       <span aria-hidden="true">{sort.key === key ? (sort.dir === "asc" ? "↑" : "↓") : "↕"}</span>
@@ -201,10 +208,9 @@ export function ChartAccountsPanel({
     onSuccess: async ({ archived, failed }) => {
       await refresh();
       setSelected(new Set(failed.map((entry) => entry.id)));
-      if (archived) toast.success(archived + " account" + (archived === 1 ? "" : "s") + " archived");
+      if (archived) toast.success(`Archived ${archived} account(s).`);
       if (failed.length) {
-        toast.error(failed.length + " account" + (failed.length === 1 ? "" : "s") +
-          " could not be archived. " + failed[0]!.reason);
+        toast.error(`${failed.length} could not be archived. ${failed[0]!.reason}`);
       }
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
@@ -387,8 +393,12 @@ export function ChartAccountsPanel({
         >
           Export all CSV
         </Button>
-        <Button type="button" variant="outline" disabled={rows.length === 0}
-          onClick={() => downloadCsv(rows.map((row) => row.account))}>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={rows.length === 0}
+          onClick={() => downloadCsv(rows.map((row) => row.account))}
+        >
           Export displayed CSV
         </Button>
         <Button type="button" variant="outline" onClick={() => setTemplateOpen(true)}>
@@ -405,10 +415,14 @@ export function ChartAccountsPanel({
         <Button
           type="button"
           variant="outline"
-          disabled={!canManageAccounts || selectedAccounts.length === 0 || bulkArchiveMutation.isPending}
+          disabled={
+            !canManageAccounts || selectedAccounts.length === 0 || bulkArchiveMutation.isPending
+          }
           onClick={() => {
-            if (!window.confirm("Archive " + selectedAccounts.length +
-              " selected active account(s)? Accounts with balances, activity or dependencies may be blocked.")) return;
+            const accepted = window.confirm(
+              `Archive ${selectedAccounts.length} selected active accounts? Accounts with balances, activity or dependencies may be blocked.`,
+            );
+            if (!accepted) return;
             bulkArchiveMutation.mutate(selectedAccounts.map((account) => account.id));
           }}
         >
@@ -474,9 +488,15 @@ export function ChartAccountsPanel({
               type="checkbox"
               aria-label="Select all eligible displayed accounts"
               title="Select all eligible displayed accounts"
-              disabled={!canManageAccounts || eligibleDisplayedIds.length === 0 || bulkArchiveMutation.isPending}
+              disabled={
+                !canManageAccounts ||
+                eligibleDisplayedIds.length === 0 ||
+                bulkArchiveMutation.isPending
+              }
               checked={allDisplayedSelected}
-              ref={(node) => { if (node) node.indeterminate = someDisplayedSelected && !allDisplayedSelected; }}
+              ref={(node) => {
+                if (node) node.indeterminate = someDisplayedSelected && !allDisplayedSelected;
+              }}
               onChange={(event) => {
                 const checked = event.target.checked;
                 setSelected((current) => {
@@ -493,7 +513,9 @@ export function ChartAccountsPanel({
             {sortButton("name", "Name")}
             {sortButton("type", "Type")}
             {sortButton("balance", "Balance")}
-            <span title={showYtd ? balanceLabel : "Transactions"}>{sortButton("activity", showYtd ? "Year to date" : "Transactions")}</span>
+            <span title={showYtd ? balanceLabel : "Transactions"}>
+              {sortButton("activity", showYtd ? "Year to date" : "Transactions")}
+            </span>
             <span />
           </div>
           <div
@@ -526,7 +548,11 @@ export function ChartAccountsPanel({
                       type="checkbox"
                       aria-label={"Select " + account.code + " " + account.name}
                       checked={selected.has(account.id) && canSelectForArchive(account)}
-                      disabled={!canManageAccounts || !canSelectForArchive(account) || bulkArchiveMutation.isPending}
+                      disabled={
+                        !canManageAccounts ||
+                        !canSelectForArchive(account) ||
+                        bulkArchiveMutation.isPending
+                      }
                       onChange={(event) => {
                         const checked = event.target.checked;
                         setSelected((current) => {
@@ -613,7 +639,11 @@ export function ChartAccountsPanel({
                           Duplicate
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          disabled={!canManageAccounts || !canSelectForArchive(account) || archiveMutation.isPending}
+                          disabled={
+                            !canManageAccounts ||
+                            !canSelectForArchive(account) ||
+                            archiveMutation.isPending
+                          }
                           onClick={() => archiveMutation.mutate(account.id)}
                         >
                           Archive

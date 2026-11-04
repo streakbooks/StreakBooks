@@ -56,9 +56,14 @@ export function JournalExceptionReviewDetails({
 
   const status = record?.status ?? "untracked";
   return (
-    <div className="mt-4 space-y-3 rounded-lg border p-4" aria-label="Journal exception disposition">
+    <div
+      className="mt-4 space-y-3 rounded-lg border p-4"
+      aria-label="Journal exception disposition"
+    >
       <div className="flex flex-wrap items-center gap-2">
-        <strong className="text-sm">Journal #{finding.journalNumber}: {finding.kind}</strong>
+        <strong className="text-sm">
+          Journal #{finding.journalNumber}: {finding.kind}
+        </strong>
         <Badge variant="outline">
           {status === "untracked"
             ? "Not investigated"
@@ -135,14 +140,10 @@ export function JournalExceptionReviewDetails({
       {record ? (
         <>
           <p className="text-xs text-muted-foreground">
-            Version {record.version} · Prepared by {record.prepared_by?.slice(0, 8) ?? "pending"}
-            · Reviewed by {record.reviewed_by?.slice(0, 8) ?? "pending"}
+            Version {record.version} · Prepared by {record.prepared_by?.slice(0, 8) ?? "pending"} ·
+            Reviewed by {record.reviewed_by?.slice(0, 8) ?? "pending"}
           </p>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setShowHistory((current) => !current)}
-          >
+          <Button size="sm" variant="ghost" onClick={() => setShowHistory((current) => !current)}>
             {showHistory ? "Hide review history" : "View immutable review history"}
           </Button>
           {showHistory ? (

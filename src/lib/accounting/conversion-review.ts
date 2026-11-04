@@ -67,12 +67,8 @@ export function conversionReviewCsv(
       "Requires explicit confirmation",
       result.summary.openingDate,
       base,
-      result.summary.difference < 0n
-        ? fromMinorUnits(-result.summary.difference, base)
-        : "",
-      result.summary.difference > 0n
-        ? fromMinorUnits(result.summary.difference, base)
-        : "",
+      result.summary.difference < 0n ? fromMinorUnits(-result.summary.difference, base) : "",
+      result.summary.difference > 0n ? fromMinorUnits(result.summary.difference, base) : "",
       "",
     ]);
   }

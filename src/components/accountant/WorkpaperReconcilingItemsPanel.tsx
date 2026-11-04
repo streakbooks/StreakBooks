@@ -143,8 +143,8 @@ export function WorkpaperReconcilingItemsPanel({
         </Button>
       </div>
       <p className="text-xs text-muted-foreground">
-        Record identified balance differences and resolution evidence. Items do not alter the
-        posted ledger or automatically explain a GL movement. Unresolved items block workpaper preparation
+        Record identified balance differences and resolution evidence. Items do not alter the posted
+        ledger or automatically explain a GL movement. Unresolved items block workpaper preparation
         at the database level.
       </p>
       {list.isPending ? (

@@ -121,14 +121,14 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
     setRecordId(null);
     setImportedCount(parsed.length);
     setError(null);
-    toast.success("Loaded " + parsed.length + " balanced journal lines for review. Nothing posted.");
+    toast.success(
+      "Loaded " + parsed.length + " balanced journal lines for review. Nothing posted.",
+    );
   }
 
   function downloadCsvTemplate() {
     const csv = toCsv([...JOURNAL_CSV_HEADERS], []);
-    const url = URL.createObjectURL(
-      new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }),
-    );
+    const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
     const anchor = document.createElement("a");
     anchor.href = url;
     anchor.download = "linkbooks-manual-journal-import-template.csv";

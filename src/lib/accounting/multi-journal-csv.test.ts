@@ -50,11 +50,11 @@ describe("controlled multi-manual-journal staging", () => {
   });
 
   it("rejects invalid dates and inconsistent metadata within one journal key", () => {
-    expect(
-      () => previewMultiJournalCsv(data.replace("2026-11-30", "2026-11-31"), accounts, "GBP"),
+    expect(() =>
+      previewMultiJournalCsv(data.replace("2026-11-30", "2026-11-31"), accounts, "GBP"),
     ).toThrow("real YYYY-MM-DD");
-    expect(
-      () => previewMultiJournalCsv(data.replace("November accrual", "Different memo"), accounts, "GBP"),
+    expect(() =>
+      previewMultiJournalCsv(data.replace("November accrual", "Different memo"), accounts, "GBP"),
     ).toThrow("inconsistent date or memo");
   });
 
@@ -70,8 +70,8 @@ describe("controlled multi-manual-journal staging", () => {
   });
 
   it("reuses source journal control-account, precision and balance safeguards", () => {
-    expect(
-      () => previewMultiJournalCsv(data.replace("500,Expense", "200,Expense"), accounts, "GBP"),
+    expect(() =>
+      previewMultiJournalCsv(data.replace("500,Expense", "200,Expense"), accounts, "GBP"),
     ).toThrow("not allowed");
     expect(() => previewMultiJournalCsv(data.replace("100.00", "101.00"), accounts, "GBP")).toThrow(
       "must balance",
@@ -90,11 +90,11 @@ describe("controlled multi-manual-journal staging", () => {
       ]).flat(),
     ].join("\n");
     expect(() => previewMultiJournalCsv(many, accounts, "GBP")).toThrow("25 journals");
-    expect(
-      () => previewMultiJournalCsv(data.replace("journal_key", "unknown"), accounts, "GBP"),
+    expect(() =>
+      previewMultiJournalCsv(data.replace("journal_key", "unknown"), accounts, "GBP"),
     ).toThrow("Required columns");
-    expect(
-      () => previewMultiJournalCsv(data.replace("oct,2026", "bad key,2026"), accounts, "GBP"),
+    expect(() =>
+      previewMultiJournalCsv(data.replace("oct,2026", "bad key,2026"), accounts, "GBP"),
     ).toThrow("journal_key");
   });
 

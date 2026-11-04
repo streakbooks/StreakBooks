@@ -42,6 +42,20 @@ function toSettingsDocument(raw: unknown): SettingsDocument {
   return out;
 }
 
+/** Count configured foreign currencies; unknown database counts must not be treated as zero. */
+async function countConfiguredForeignCurrencies(
+  supabase: Parameters<typeof assertCompanyMember>[0],
+  companyId: string,
+): Promise<number> {
+  const { count, error } = await supabase
+    .from("company_currencies" as never)
+    .select("currency_code" as never, { count: "exact", head: true })
+    .eq("company_id" as never, companyId as never);
+  if (error) throw new Error(error.message);
+  if (count == null) throw new Error("Unable to verify configured foreign currencies");
+  return count;
+}
+
 export const getOrganisationConfig = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { companyId: string; category: string }) => ({
@@ -224,9 +238,16 @@ export const setOrganisationFeature = createServerFn({ method: "POST" })
     }
 
     if (!data.enabled) {
+      // The write handler must enforce the same safety rule as its preview.
+      // The check is conservative: any configured foreign currency blocks disable.
+      const configuredForeignCurrencies =
+        data.featureKey === "multicurrency"
+          ? await countConfiguredForeignCurrencies(context.supabase, data.companyId)
+          : 0;
       const impact = evaluateSettingsChange({
         changeType: "disable_feature",
         featureKey: data.featureKey,
+        context: { foreignCurrencyBalances: configuredForeignCurrencies },
       });
       if (impact.verdict === "blocked") {
         throw new Error(impact.explanation);
@@ -483,12 +504,10 @@ export const evaluateFeatureChange = createServerFn({ method: "POST" })
     let foreignCurrencyBalances = 0;
     const openFxDocuments = 0;
     if (data.featureKey === "multicurrency" && !data.enabled) {
-      const { count, error: currencyError } = await context.supabase
-        .from("company_currencies" as never)
-        .select("currency_code" as never, { count: "exact", head: true })
-        .eq("company_id" as never, data.companyId as never);
-      if (currencyError) throw new Error(currencyError.message);
-      foreignCurrencyBalances = count ?? 0;
+      foreignCurrencyBalances = await countConfiguredForeignCurrencies(
+        context.supabase,
+        data.companyId,
+      );
     }
 
     return evaluateSettingsChange({

@@ -1,0 +1,49 @@
+name: One-time firm code format
+
+on:
+  push:
+    branches:
+      - feature/firm-staff-invites-recurring-links-20261104
+    paths:
+      - .github/workflows/firm-format-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.event.head_commit.message == 'chore: run one-time firm formatter'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install locked dependencies without running scripts
+        run: npm ci --ignore-scripts
+      - name: Format only this PR's TypeScript source files
+        run: |
+          npx --no-install prettier --write \
+            src/lib/firm/invite-link.ts \
+            src/lib/firm/invite-link.test.ts \
+            src/lib/firm/firm-invites.functions.ts \
+            src/lib/firm/practice-recurring-rules.ts \
+            src/lib/firm/practice-recurring-rules.test.ts \
+            src/lib/firm/firm-recurring-billing.functions.ts \
+            src/components/firm/FirmInvitationsPanel.tsx \
+            src/components/firm/FirmRecurringBillingPanel.tsx \
+            src/components/firm/FirmBillingAnalytics.tsx \
+            'src/routes/_authenticated/firm-invite.$token.tsx' \
+            src/routes/_authenticated/firm.tsx
+      - name: Commit and push formatter results to feature branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/lib/firm/ src/components/firm/ src/routes/_authenticated/firm.tsx 'src/routes/_authenticated/firm-invite.$token.tsx'
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'style(firm): apply locked Prettier formatting'
+          git push origin "HEAD:${{ github.ref_name }}"

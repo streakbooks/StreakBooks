@@ -38,7 +38,12 @@ describe("legacy settings compare-and-save snapshots", () => {
   });
 
   it("compares the exact sequence state without a document-type field", () => {
-    const fetchedSequence = { document_type: "sales_invoice", prefix: "INV-", next_number: 22, padding: 4 };
+    const fetchedSequence = {
+      document_type: "sales_invoice",
+      prefix: "INV-",
+      next_number: 22,
+      padding: 4,
+    };
     expect(sequenceSnapshot(fetchedSequence)).toEqual({
       prefix: "INV-",
       next_number: 22,

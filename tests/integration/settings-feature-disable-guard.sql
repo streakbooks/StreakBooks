@@ -133,7 +133,7 @@ BEGIN
 END $$;
 
 RESET ROLE;
-DO $
+DO $$
 BEGIN
   -- Even a privileged accidental row reassignment must be rejected by the guard.
   BEGIN
@@ -155,6 +155,6 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'Anonymous feature guard or mutation execution is enabled';
   END IF;
-END $;
+END $$;
 
 SELECT 'PASS: multicurrency disable blocked transactionally; rollback and tenant protection verified' AS result;

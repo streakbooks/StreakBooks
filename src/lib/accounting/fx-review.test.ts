@@ -2,10 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { AutoReversalRow, RevaluationPreview } from "./fx.functions";
 import { filterAutoReversals, fxRevaluationCsv, fxReviewSignature } from "./fx-review";
 
-const reverse = (
-  status: AutoReversalRow["status"],
-  reverse_on: string,
-): AutoReversalRow => ({
+const reverse = (status: AutoReversalRow["status"], reverse_on: string): AutoReversalRow => ({
   id: `${status}-${reverse_on}`,
   journal_id: "j",
   reverse_on,
@@ -49,20 +46,22 @@ describe("FX review safety", () => {
       base_currency: "GBP",
       as_of_date: "2026-11-01",
       missing: [],
-      lines: [{
-        account_id: "acc",
-        account_code: "100",
-        account_name: "=EVIL()",
-        currency_code: "EUR",
-        txn_net_minor: 10000,
-        booked_base_minor: 9000,
-        rate: 0.95,
-        rate_source: "manual",
-        rate_date: null,
-        closing_base_minor: 9500,
-        adjustment_minor: 500,
-        stale: false,
-      }],
+      lines: [
+        {
+          account_id: "acc",
+          account_code: "100",
+          account_name: "=EVIL()",
+          currency_code: "EUR",
+          txn_net_minor: 10000,
+          booked_base_minor: 9000,
+          rate: 0.95,
+          rate_source: "manual",
+          rate_date: null,
+          closing_base_minor: 9500,
+          adjustment_minor: 500,
+          stale: false,
+        },
+      ],
     };
     const csv = fxRevaluationCsv(preview);
     expect(csv).toContain("'=EVIL()");

@@ -23,7 +23,7 @@
 - No production migration should be applied before passing SQL/security validation in CI.
 
 ## Migration
-- Additive SQL: supabase/migrations/20261104073500_accountant_journal_exception_reviews.sql
+- Additive SQL: supabase/migrations/20261104072943_accountant_journal_exception_reviews.sql
 - Creates accountant_journal_exception_reviews and accountant_journal_exception_events, RLS policies and save_accountant_journal_exception RPC.
 - No existing table rows, financial reports, posted journal entries or period locks are modified.
 

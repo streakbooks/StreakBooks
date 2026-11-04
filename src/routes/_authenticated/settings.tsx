@@ -990,7 +990,7 @@ export function SettingsForCompany({
                             value={themeColor}
                             aria-invalid={!isValidThemeColor(themeColor)}
                             aria-describedby="org-document-color-hint"
-                            disabled={!canEdit}
+                            disabled={!canEdit || !extendedQuery.data}
                             onChange={(e) => {
                               setThemeColor(e.target.value);
                               setLocalizationDirty(true);
@@ -1006,7 +1006,7 @@ export function SettingsForCompany({
                             id="org-invoice-footer"
                             value={invoiceFooter}
                             maxLength={2000}
-                            disabled={!canEdit}
+                            disabled={!canEdit || !extendedQuery.data}
                             onChange={(e) => {
                               setInvoiceFooter(e.target.value);
                               setLocalizationDirty(true);

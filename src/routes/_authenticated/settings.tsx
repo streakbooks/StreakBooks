@@ -500,7 +500,16 @@ export function SettingsForCompany({
   });
 
   const currenciesM = useMutation({
-    mutationFn: () => saveCurrencies({ data: { companyId, currencies: enabledFx } }),
+    mutationFn: () =>
+      saveCurrencies({
+        data: {
+          companyId,
+          currencies: enabledFx,
+          // Capture the original snapshot, not a possibly refreshed query.
+          // The database compares this while holding a company-scoped lock.
+          expectedCurrencies: JSON.parse(currenciesBaseline || "[]") as string[],
+        },
+      }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["org-extended", companyId] });
       setCurrenciesDirty(false);

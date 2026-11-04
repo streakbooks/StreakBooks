@@ -1,5 +1,6 @@
 import { buildIntegrationHealth } from "./integration-health";
 import { assertSettingsCategory } from "@/lib/settings/categories";
+import { parseExpectedSettingsVersion } from "@/lib/settings/validation";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
@@ -92,8 +93,7 @@ export const upsertOrganisationConfig = createServerFn({ method: "POST" })
       companyId: assertUuid(input.companyId),
       category: assertSettingsCategory(input.category),
       document: toSettingsDocument(input.document ?? {}),
-      expectedVersion:
-        input.expectedVersion == null ? null : Math.floor(Number(input.expectedVersion)),
+      expectedVersion: parseExpectedSettingsVersion(input.expectedVersion),
       reason: (input.reason ?? "").trim().slice(0, 500),
     }),
   )

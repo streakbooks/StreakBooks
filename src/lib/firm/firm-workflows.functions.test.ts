@@ -53,15 +53,10 @@ describe("firm onboarding and engagement validation", () => {
   });
 
   it("rejects invalid date ranges and forged update versions", () => {
+    expect(engagementInput.safeParse({ ...valid, end_date: "2026-10-31" }).success).toBe(false);
+    expect(engagementInput.safeParse({ ...valid, start_date: "2026-02-30" }).success).toBe(false);
     expect(
-      engagementInput.safeParse({ ...valid, end_date: "2026-10-31" }).success,
-    ).toBe(false);
-    expect(
-      engagementInput.safeParse({ ...valid, start_date: "2026-02-30" }).success,
-    ).toBe(false);
-    expect(
-      engagementInput.safeParse({ ...valid, id: "e5bc8abc-dd70-4a73-8324-b05200386a69" })
-        .success,
+      engagementInput.safeParse({ ...valid, id: "e5bc8abc-dd70-4a73-8324-b05200386a69" }).success,
     ).toBe(false);
   });
 });

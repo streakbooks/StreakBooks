@@ -97,12 +97,14 @@ export function SettingsNav({ section, embedded = false, showDemo, filter }: Pro
           );
         });
         if (items.length === 0) return null;
-        const isOpen = open[group.label] !== false;
+        const isOpen = Boolean(q) || open[group.label] !== false;
         return (
           <Collapsible
             key={group.label}
             open={isOpen}
-            onOpenChange={(v) => persist({ ...open, [group.label]: v })}
+            onOpenChange={(v) => {
+              if (!q) persist({ ...open, [group.label]: v });
+            }}
           >
             <CollapsibleTrigger asChild>
               <Button
@@ -124,6 +126,7 @@ export function SettingsNav({ section, embedded = false, showDemo, filter }: Pro
                           openSettingsPanel(previous, `category:${c.id}` as SettingsPanelId)
                       : { section: c.id }
                   }
+                  aria-current={section === c.id ? "page" : undefined}
                   className={cn(
                     "flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm transition-colors",
                     section === c.id
@@ -147,6 +150,18 @@ export function SettingsNav({ section, embedded = false, showDemo, filter }: Pro
           </Collapsible>
         );
       })}
+      {q &&
+      !categoryMeta.some(
+        (category) =>
+          (category.id !== "demo" || showDemo) &&
+          (category.label.toLowerCase().includes(q) ||
+            category.description.toLowerCase().includes(q) ||
+            category.synonyms.some((synonym) => synonym.toLowerCase().includes(q))),
+      ) ? (
+        <p role="status" className="px-2 py-3 text-sm text-muted-foreground">
+          No matching settings categories.
+        </p>
+      ) : null}
     </nav>
   );
 }

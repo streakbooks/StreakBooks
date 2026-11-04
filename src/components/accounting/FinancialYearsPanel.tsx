@@ -4,11 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  listPeriods,
-  unlockPeriod,
-  type PeriodRow,
-} from "@/lib/accounting/accounting.functions";
+import { listPeriods, unlockPeriod, type PeriodRow } from "@/lib/accounting/accounting.functions";
 import { useCanDo } from "@/hooks/use-can";
 import {
   assertPeriodStillLocked,
@@ -58,7 +54,10 @@ export function FinancialYearsPanel({ companyId }: { companyId: string }) {
   const unlock = useMutation({
     mutationFn: async (period: PeriodRow) => {
       const latest = await fetchPeriods({ data: { companyId } });
-      assertPeriodStillLocked(period, latest.find((row) => row.id === period.id));
+      assertPeriodStillLocked(
+        period,
+        latest.find((row) => row.id === period.id),
+      );
       return doUnlock({ data: { periodId: period.id } });
     },
     onSuccess: async () => {
@@ -107,7 +106,10 @@ export function FinancialYearsPanel({ companyId }: { companyId: string }) {
                 onChange={(e) => setDate(e.target.value)}
               />
             </div>
-            <Button disabled={!canCreate || !date || create.isPending} onClick={() => create.mutate()}>
+            <Button
+              disabled={!canCreate || !date || create.isPending}
+              onClick={() => create.mutate()}
+            >
               {create.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
               Create financial year
             </Button>
@@ -160,8 +162,8 @@ export function FinancialYearsPanel({ companyId }: { companyId: string }) {
               </Button>
             </div>
             <p role="status" className="text-xs text-muted-foreground">
-              {counts.open} open · {counts.locked} locked · {counts.total} total.
-              Showing {shown.length} matching periods. Export includes the full catalogue.
+              {counts.open} open · {counts.locked} locked · {counts.total} total. Showing{" "}
+              {shown.length} matching periods. Export includes the full catalogue.
             </p>
             {shown.length === 0 ? (
               <p className="rounded-md border p-4 text-sm text-muted-foreground">
@@ -194,11 +196,8 @@ export function FinancialYearsPanel({ companyId }: { companyId: string }) {
                       variant="outline"
                       disabled={unlock.isPending}
                       onClick={() => {
-                        if (
-                          window.confirm(
-                            `Unlock ${p.name} (${p.start_date} to ${p.end_date})? This reopens the period for new and backdated postings. Check with your financial controller before proceeding.`,
-                          )
-                        ) unlock.mutate(p);
+                        const message = `Unlock ${p.name} (${p.start_date} to ${p.end_date})? This reopens the period for new and backdated postings. Check with your financial controller before proceeding.`;
+                        if (window.confirm(message)) unlock.mutate(p);
                       }}
                     >
                       Unlock

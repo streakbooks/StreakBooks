@@ -301,7 +301,7 @@ export function AccountingWorkspace({
         </TabsContent>
 
         <TabsContent value="conversion" className="mt-4">
-          <ConversionBalancesPanel companyId={companyId} currency={currency} />
+          <ConversionBalancesPanel key={companyId} companyId={companyId} currency={currency} />
         </TabsContent>
 
         <TabsContent value="fx" className="mt-4">

@@ -144,10 +144,13 @@ export function FirmRecurringBillingPanel({
       await qc.invalidateQueries({
         queryKey: ["firm-recurring-templates", firmId, companyId, billingCompanyId],
       });
-      if (result.linked) toast.success("Practice invoice draft generated and linked");
-      else toast.warning(
-        "Invoice created in the practice billing company, but reference linking failed. Open Sales to locate it.",
-      );
+      if (result.linked) {
+        toast.success("Practice invoice draft generated and linked");
+      } else {
+        toast.warning(
+          "Invoice created in the practice billing company, but reference linking failed. Open Sales to locate it.",
+        );
+      }
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
@@ -198,8 +201,8 @@ export function FirmRecurringBillingPanel({
                 <SelectContent>
                   {engagements.map((item) => (
                     <SelectItem key={item.id} value={item.id}>
-                        {item.name}
-                      </SelectItem>
+                      {item.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -258,7 +261,9 @@ export function FirmRecurringBillingPanel({
                               window.confirm(
                                 "Generate a due DRAFT Sales invoice in the practice billing company? No client books will be changed.",
                               )
-                            ) generateM.mutate(item.recurring_id);
+                            ) {
+                              generateM.mutate(item.recurring_id);
+                            }
                           }}
                         >
                           Generate due draft

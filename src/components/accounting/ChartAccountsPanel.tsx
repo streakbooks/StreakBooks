@@ -337,8 +337,9 @@ export function ChartAccountsPanel({
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-2">
         <div className="min-w-56 flex-1 space-y-1">
-          <Label>Search</Label>
+          <Label htmlFor="chart-account-search">Search</Label>
           <Input
+            id="chart-account-search"
             value={search}
             placeholder="Code, name, or description"
             onChange={(event) => setSearch(event.target.value)}
@@ -384,7 +385,11 @@ export function ChartAccountsPanel({
           variant="outline"
           onClick={() => downloadCsv(chartQuery.data.accounts)}
         >
-          Export CSV
+          Export all CSV
+        </Button>
+        <Button type="button" variant="outline" disabled={rows.length === 0}
+          onClick={() => downloadCsv(rows.map((row) => row.account))}>
+          Export displayed CSV
         </Button>
         <Button type="button" variant="outline" onClick={() => setTemplateOpen(true)}>
           Starter charts
@@ -400,21 +405,21 @@ export function ChartAccountsPanel({
         <Button
           type="button"
           variant="outline"
-          disabled={selected.size === 0 || archiveMutation.isPending}
-          onClick={async () => {
-            for (const accountId of selected) {
-              try {
-                await archive({ data: { companyId, accountId } });
-              } catch (error) {
-                toast.error(friendlyAuthError(error));
-              }
-            }
-            setSelected(new Set());
-            await refresh();
+          disabled={!canManageAccounts || selectedAccounts.length === 0 || bulkArchiveMutation.isPending}
+          onClick={() => {
+            if (!window.confirm("Archive " + selectedAccounts.length +
+              " selected active account(s)? Accounts with balances, activity or dependencies may be blocked.")) return;
+            bulkArchiveMutation.mutate(selectedAccounts.map((account) => account.id));
           }}
         >
-          Archive selected
+          {bulkArchiveMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+          Archive selected ({selectedAccounts.length})
         </Button>
+        {selectedAccounts.length > 0 ? (
+          <Button type="button" variant="ghost" onClick={() => setSelected(new Set())}>
+            Clear selection
+          </Button>
+        ) : null}
       </div>
       <div className="flex flex-wrap gap-2">
         <Input
@@ -442,6 +447,11 @@ export function ChartAccountsPanel({
           </Button>
         ))}
       </div>
+      <p className="text-xs text-muted-foreground" role="status">
+        Showing {rows.length} of {chartQuery.data.accounts.length} accounts.
+        {selectedAccounts.length ? " " + selectedAccounts.length + " eligible selected." : ""}
+        {mode === "tree" ? " Sorting applies within each account hierarchy." : ""}
+      </p>
       {review.misclassified.length > 0 || review.duplicates.length > 0 ? (
         <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm">
           {review.misclassified.map((flag) => (
@@ -458,18 +468,37 @@ export function ChartAccountsPanel({
           description="Change the filters or create an account."
         />
       ) : (
-        <div className="overflow-hidden rounded-lg border border-border">
-          <div className="grid grid-cols-[2rem_7rem_1fr_10rem_8rem_5rem_2rem] gap-2 border-b border-border bg-muted/50 px-3 py-2 text-xs font-medium text-muted-foreground">
-            <span />
-            <span>Code</span>
-            <span>Name</span>
-            <span>Type</span>
-            <span>Balance</span>
-            <span>{showYtd ? balanceLabel : "Transactions"}</span>
+        <div className="overflow-x-auto rounded-lg border border-border">
+          <div className="grid min-w-[840px] grid-cols-[2rem_7rem_1fr_10rem_8rem_8rem_2rem] gap-2 border-b border-border bg-muted/50 px-3 py-2 text-xs font-medium text-muted-foreground">
+            <input
+              type="checkbox"
+              aria-label="Select all eligible displayed accounts"
+              title="Select all eligible displayed accounts"
+              disabled={!canManageAccounts || eligibleDisplayedIds.length === 0 || bulkArchiveMutation.isPending}
+              checked={allDisplayedSelected}
+              ref={(node) => { if (node) node.indeterminate = someDisplayedSelected && !allDisplayedSelected; }}
+              onChange={(event) => {
+                const checked = event.target.checked;
+                setSelected((current) => {
+                  const next = new Set(current);
+                  for (const id of eligibleDisplayedIds) {
+                    if (checked) next.add(id);
+                    else next.delete(id);
+                  }
+                  return next;
+                });
+              }}
+            />
+            {sortButton("code", "Code")}
+            {sortButton("name", "Name")}
+            {sortButton("type", "Type")}
+            {sortButton("balance", "Balance")}
+            <span title={showYtd ? balanceLabel : "Transactions"}>{sortButton("activity", showYtd ? "Year to date" : "Transactions")}</span>
             <span />
           </div>
           <div
-            className="max-h-[32rem] overflow-auto"
+            ref={scrollRef}
+            className="max-h-[32rem] min-w-[840px] overflow-y-auto"
             onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
           >
             <div style={{ height: rows.length * ROW_HEIGHT, position: "relative" }}>
@@ -490,17 +519,22 @@ export function ChartAccountsPanel({
                       const source = chartQuery.data.accounts.find((item) => item.id === sourceId);
                       if (source) void reparent(source, account.id);
                     }}
-                    className="absolute grid w-full grid-cols-[2rem_7rem_1fr_10rem_8rem_5rem_2rem] items-center gap-2 px-3 text-sm"
+                    className="absolute grid w-full grid-cols-[2rem_7rem_1fr_10rem_8rem_8rem_2rem] items-center gap-2 px-3 text-sm"
                     style={{ top: (start + index) * ROW_HEIGHT, height: ROW_HEIGHT }}
                   >
                     <input
                       type="checkbox"
-                      checked={selected.has(account.id)}
+                      aria-label={"Select " + account.code + " " + account.name}
+                      checked={selected.has(account.id) && canSelectForArchive(account)}
+                      disabled={!canManageAccounts || !canSelectForArchive(account) || bulkArchiveMutation.isPending}
                       onChange={(event) => {
-                        const next = new Set(selected);
-                        if (event.target.checked) next.add(account.id);
-                        else next.delete(account.id);
-                        setSelected(next);
+                        const checked = event.target.checked;
+                        setSelected((current) => {
+                          const next = new Set(current);
+                          if (checked) next.add(account.id);
+                          else next.delete(account.id);
+                          return next;
+                        });
                       }}
                     />
                     <button
@@ -579,7 +613,7 @@ export function ChartAccountsPanel({
                           Duplicate
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          disabled={account.isSystem || account.isLocked}
+                          disabled={!canManageAccounts || !canSelectForArchive(account) || archiveMutation.isPending}
                           onClick={() => archiveMutation.mutate(account.id)}
                         >
                           Archive

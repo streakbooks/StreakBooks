@@ -22,6 +22,7 @@ import { IndustryCoaPanel } from "@/components/accounting/IndustryCoaPanel";
 import { LedgerHealthPanel } from "@/components/accounting/LedgerHealthPanel";
 import { JournalsPanel } from "@/components/accounting/JournalsPanel";
 import { PeriodClosePanel } from "@/components/accounting/PeriodClosePanel";
+import { validPeriodDeepLink } from "@/lib/accounting/financial-years-review";
 import { ManualJournalPanel } from "@/components/create-new/JournalPanels";
 
 const ACCOUNTING_TABS = [
@@ -38,7 +39,11 @@ const ACCOUNTING_TABS = [
   "deferrals",
 ] as const;
 type AccountingTab = (typeof ACCOUNTING_TABS)[number];
-type AccountingSearch = { tab?: AccountingTab | undefined; journal?: string | undefined };
+type AccountingSearch = {
+  tab?: AccountingTab | undefined;
+  journal?: string | undefined;
+  period?: string | undefined;
+};
 
 export const Route = createFileRoute("/_authenticated/accounting")({
   head: () => ({
@@ -57,6 +62,7 @@ export const Route = createFileRoute("/_authenticated/accounting")({
     return {
       tab: ACCOUNTING_TABS.find((t) => t === tab),
       journal: typeof journal === "string" && journal ? journal : undefined,
+      period: validPeriodDeepLink(raw["period"]),
     };
   },
   component: Accounting,
@@ -284,17 +290,21 @@ export function AccountingWorkspace({
               <CardTitle className="text-base">Manual journal</CardTitle>
             </CardHeader>
             <CardContent className="max-w-4xl">
-              <ManualJournalPanel />
+              <ManualJournalPanel key={companyId} />
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="periods" className="mt-4">
-          <FinancialYearsPanel companyId={companyId} />
+          <FinancialYearsPanel key={companyId} companyId={companyId} />
         </TabsContent>
 
         <TabsContent value="close" className="mt-4">
-          <PeriodClosePanel companyId={companyId} />
+          <PeriodClosePanel
+            key={companyId}
+            companyId={companyId}
+            initialPeriodId={search.period}
+          />
         </TabsContent>
 
         <TabsContent value="health" className="mt-4">

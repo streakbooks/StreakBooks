@@ -2,7 +2,7 @@
 
 ## Delivery boundary
 
-This change extends the **real company-attachment repository**, rather than reviving a disconnected metadata-only inbox. New company uploads and existing company files are enrolled into a persisted review queue when migration `20261104163000_documents_review_workflow.sql` is applied.
+This change extends the **real company-attachment repository**, rather than reviving a disconnected metadata-only inbox. New company uploads and existing company files are enrolled into a persisted review queue when migration `20261104054143_documents_review_workflow.sql` is applied.
 
 The work does not create bills, post ledger entries, modify bank reconciliation, imply that malware scanning or OCR is running, or claim an email receiving address exists.
 

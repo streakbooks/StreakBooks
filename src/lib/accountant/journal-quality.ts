@@ -78,7 +78,11 @@ export function reviewManualJournals(rows: ManualJournalReviewRow[]): JournalQua
     if (!memo) add("missing_memo", "review", "No journal narration is recorded.");
     const lines = journal.journal_lines ?? [];
     if (!lines.length) {
-      add("missing_lines", "critical", "No posted journal lines were returned. Verify ledger integrity and access.");
+      add(
+        "missing_lines",
+        "critical",
+        "No posted journal lines were returned. Verify ledger integrity and access.",
+      );
       continue;
     }
     let debitTotal = 0n;
@@ -91,7 +95,13 @@ export function reviewManualJournals(rows: ManualJournalReviewRow[]): JournalQua
       const credit = minorValue(line.credit_minor);
       if (debit === null || credit === null || !line.account_id) {
         invalid = true;
-        add("invalid_amount", "critical", "The journal contains an invalid or unsafe ledger amount or account.", undefined, ":" + index);
+        add(
+          "invalid_amount",
+          "critical",
+          "The journal contains an invalid or unsafe ledger amount or account.",
+          undefined,
+          ":" + index,
+        );
         continue;
       }
       debitTotal += debit;
@@ -99,12 +109,22 @@ export function reviewManualJournals(rows: ManualJournalReviewRow[]): JournalQua
       if (!debit && !credit)
         add("zero_line", "review", "An entry line has no debit or credit.", undefined, ":" + index);
       if (debit > 0n && credit > 0n)
-        add("both_sides", "critical", "A single journal line contains both a debit and a credit.", undefined, ":" + index);
+        add(
+          "both_sides",
+          "critical",
+          "A single journal line contains both a debit and a credit.",
+          undefined,
+          ":" + index,
+        );
       signature.push(JSON.stringify([line.account_id, String(debit), String(credit)]));
     }
     if (invalid) continue;
     if (debitTotal !== creditTotal)
-      add("imbalanced", "critical", "Posted debits and credits do not balance in ledger minor units.");
+      add(
+        "imbalanced",
+        "critical",
+        "Posted debits and credits do not balance in ledger minor units.",
+      );
     // A duplicate candidate requires identical date, currency, memo and every
     // account/amount line. Reversed entries and nonmanual source posts are excluded.
     if (
@@ -127,7 +147,9 @@ export function reviewManualJournals(rows: ManualJournalReviewRow[]): JournalQua
       add(
         "possible_duplicate",
         "review",
-        "Same posting date, currency, narration and ledger lines as journal " + previous.number + ". Verify both entries before changing anything.",
+        "Same posting date, currency, narration and ledger lines as journal " +
+          previous.number +
+          ". Verify both entries before changing anything.",
         previous,
       );
     } else {
@@ -136,6 +158,8 @@ export function reviewManualJournals(rows: ManualJournalReviewRow[]): JournalQua
   }
   return findings.sort((a, b) => {
     const severity = Number(b.severity === "critical") - Number(a.severity === "critical");
-    return severity || b.journalDate.localeCompare(a.journalDate) || b.journalNumber - a.journalNumber;
+    return (
+      severity || b.journalDate.localeCompare(a.journalDate) || b.journalNumber - a.journalNumber
+    );
   });
 }

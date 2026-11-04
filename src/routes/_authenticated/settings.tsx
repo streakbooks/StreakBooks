@@ -473,7 +473,9 @@ export function SettingsForCompany({
       saveLocalization({
         data: {
           companyId,
-          expected: localisationSnapshot(JSON.parse(localizationBaseline || "{}") as LocalisationSnapshot),
+          expected: localisationSnapshot(
+            JSON.parse(localizationBaseline || "{}") as LocalisationSnapshot,
+          ),
           locale,
           date_format: dateFormat,
           invoice_footer: invoiceFooter,
@@ -496,7 +498,9 @@ export function SettingsForCompany({
       saveBranding({
         data: {
           companyId,
-          expected: brandingSnapshot(JSON.parse(brandingBaseline || "{}") as BrandingSnapshot),
+          expected: brandingSnapshot(
+            JSON.parse(brandingBaseline || "{}") as BrandingSnapshot,
+          ),
           trading_name: tradingName,
           letterhead_line: letterhead,
           invoice_email: invoiceEmail,

@@ -29,7 +29,3 @@ CREATE POLICY "No feature writes" ON public.organisation_features
   FOR ALL TO authenticated
   USING (false) WITH CHECK (false);
 GRANT SELECT ON public.organisation_features TO authenticated;
-REVOKE ALL ON FUNCTION public.set_organisation_feature(uuid,text,boolean,jsonb,text,text)
-  FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.set_organisation_feature(uuid,text,boolean,jsonb,text,text)
-  TO authenticated;

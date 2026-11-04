@@ -76,6 +76,14 @@ import { SettingsCommandPalette } from "@/components/settings/SettingsCommandPal
 import { maxFiscalYearEndDay, formatDocumentNumberPreview } from "@/lib/settings/dimension-helpers";
 import { SettingsSaveBar } from "@/components/settings/SettingsSaveBar";
 import {
+  brandingSnapshot,
+  localisationSnapshot,
+  sequenceSnapshot,
+  type BrandingSnapshot,
+  type LocalisationSnapshot,
+  type SequenceSnapshot,
+} from "@/lib/settings/legacy-snapshots";
+import {
   isValidOptionalEmail,
   isValidPositiveFxRate,
   isValidThemeColor,
@@ -465,6 +473,7 @@ export function SettingsForCompany({
       saveLocalization({
         data: {
           companyId,
+          expected: localisationSnapshot(JSON.parse(localizationBaseline || "{}") as LocalisationSnapshot),
           locale,
           date_format: dateFormat,
           invoice_footer: invoiceFooter,
@@ -476,7 +485,10 @@ export function SettingsForCompany({
       setLocalizationDirty(false);
       toast.success("Localization saved");
     },
-    onError: (e) => toast.error(friendlyAuthError(e)),
+    onError: async (e) => {
+      await queryClient.invalidateQueries({ queryKey: ["org-extended", companyId] });
+      toast.error(friendlyAuthError(e));
+    },
   });
 
   const brandingM = useMutation({
@@ -484,6 +496,7 @@ export function SettingsForCompany({
       saveBranding({
         data: {
           companyId,
+          expected: brandingSnapshot(JSON.parse(brandingBaseline || "{}") as BrandingSnapshot),
           trading_name: tradingName,
           letterhead_line: letterhead,
           invoice_email: invoiceEmail,
@@ -496,7 +509,10 @@ export function SettingsForCompany({
       setBrandingDirty(false);
       toast.success("Document branding saved");
     },
-    onError: (e) => toast.error(friendlyAuthError(e)),
+    onError: async (e) => {
+      await queryClient.invalidateQueries({ queryKey: ["org-extended", companyId] });
+      toast.error(friendlyAuthError(e));
+    },
   });
 
   const currenciesM = useMutation({
@@ -1321,16 +1337,23 @@ export function SettingsForCompany({
                                   key={seq.document_type}
                                   seq={seq}
                                   disabled={!canEdit}
-                                  onSave={(patch) =>
-                                    saveSequence({
-                                      data: { companyId, ...seq, ...patch },
-                                    }).then(async () => {
+                                  onSave={async (patch, expected) => {
+                                    try {
+                                      await saveSequence({
+                                        data: {
+                                          companyId,
+                                          document_type: seq.document_type,
+                                          ...patch,
+                                          expected,
+                                        },
+                                      });
+                                      toast.success("Sequence updated");
+                                    } finally {
                                       await queryClient.invalidateQueries({
                                         queryKey: ["org-extended", companyId],
                                       });
-                                      toast.success("Sequence updated");
-                                    })
-                                  }
+                                    }
+                                  }}
                                 />
                               ))}
                             </TableBody>
@@ -1634,7 +1657,7 @@ function SequenceRow({
 }: {
   seq: { document_type: string; prefix: string; next_number: number; padding: number };
   disabled: boolean;
-  onSave: (patch: { prefix: string; next_number: number; padding: number }) => Promise<unknown>;
+  onSave: (patch: SequenceSnapshot, expected: SequenceSnapshot) => Promise<unknown>;
 }) {
   const [prefix, setPrefix] = useState(seq.prefix);
   const [next, setNext] = useState(String(seq.next_number));
@@ -1676,7 +1699,7 @@ function SequenceRow({
     if (!parsed.ok || serverChanged || disabled || pending || !dirty) return;
     setPending(true);
     try {
-      await onSave(parsed.value);
+      await onSave(parsed.value, sequenceSnapshot(JSON.parse(baseline) as SequenceSnapshot));
       setDirty(false);
     } catch (e) {
       toast.error(friendlyAuthError(e));

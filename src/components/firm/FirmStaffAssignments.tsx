@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { Link } from "@tanstack/react-router";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { getFirmClientName, type FirmClientRow } from "@/lib/firm/client-portfolio";
 import {

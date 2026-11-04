@@ -17,7 +17,7 @@ create index firm_engagement_recurring_portfolio_idx
 create index firm_engagement_recurring_created_by_idx
  on public.firm_engagement_recurring_links(created_by);
 alter table public.firm_engagement_recurring_links enable row level security;
-revoke all on public.firm_engagement_recurring_links from public,anon;
+revoke all on public.firm_engagement_recurring_links from public,anon,authenticated;
 grant select,insert,delete on public.firm_engagement_recurring_links to authenticated;
 
 create policy firm_engagement_recurring_read

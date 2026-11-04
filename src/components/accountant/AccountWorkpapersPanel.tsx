@@ -5,9 +5,10 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { useCanDo } from "@/hooks/use-can";
 import { useFormat } from "@/hooks/use-format";
-import { getTrialBalance } from "@/lib/reports/report.functions";
+
 import {
   listAccountWorkpapers,
+  listWorkpaperLedger,
   saveAccountWorkpaper,
 } from "@/lib/accountant/workpapers.functions";
 import {
@@ -53,7 +54,7 @@ export function AccountWorkpapersPanel({
   const canManage = useCanDo("accounting.post");
   const fmt = useFormat();
   const qc = useQueryClient();
-  const fetchTrial = useServerFn(getTrialBalance);
+  const fetchTrial = useServerFn(listWorkpaperLedger);
   const fetchPapers = useServerFn(listAccountWorkpapers);
   const submit = useServerFn(saveAccountWorkpaper);
   const [asOf, setAsOf] = useState(new Date().toISOString().slice(0, 10));
@@ -64,7 +65,7 @@ export function AccountWorkpapersPanel({
   const [note, setNote] = useState("");
   const trial = useQuery({
     queryKey: ["account-workpapers-trial", companyId, asOf],
-    queryFn: () => fetchTrial({ data: { companyId, to: asOf } }),
+    queryFn: () => fetchTrial({ data: { companyId, asOf } }),
   });
   const papers = useQuery({
     queryKey: ["account-workpapers", companyId, asOf],

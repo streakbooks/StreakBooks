@@ -645,6 +645,17 @@ export function SettingsForCompany({
               ) : null}
             </div>
           ) : null}
+          {!detail && extendedQuery.isError && ["organisation", "documents", "currencies"].includes(section) ? (
+            <Alert variant="destructive">
+              <AlertTitle>Additional organisation settings could not be loaded</AlertTitle>
+              <AlertDescription className="flex flex-wrap items-center gap-3">
+                <span>{friendlyAuthError(extendedQuery.error)}</span>
+                <Button variant="outline" size="sm" onClick={() => void extendedQuery.refetch()}>
+                  Retry
+                </Button>
+              </AlertDescription>
+            </Alert>
+          ) : null}
           {detail ? (
             <InPlaceSettingsPanel panel={detail} insideCentre />
           ) : (
@@ -901,24 +912,17 @@ export function SettingsForCompany({
                             }}
                           />
                         </div>
-                        <div className="sm:col-span-2">
-                          {canEdit ? (
-                            <Button
-                              size="sm"
-                              disabled={saveMutation.isPending}
-                              onClick={() => saveMutation.mutate()}
-                            >
-                              {saveMutation.isPending ? (
-                                <Loader2 className="size-4 animate-spin" />
-                              ) : null}
-                              Save changes
-                            </Button>
-                          ) : (
-                            <p className="text-sm text-muted-foreground">
-                              Only owners and administrators can edit organisation settings.
-                            </p>
-                          )}
-                        </div>
+                        <SettingsSaveBar
+                          label="Save organisation details"
+                          dirty={detailsDirty}
+                          valid={detailsValid}
+                          canEdit={canEdit}
+                          pending={saveMutation.isPending}
+                          serverChanged={detailsServerChanged}
+                          error={saveMutation.isError ? friendlyAuthError(saveMutation.error) : null}
+                          onSave={() => saveMutation.mutate()}
+                          onDiscard={resetDetails}
+                        />
                       </CardContent>
                     </Card>
 
@@ -996,15 +1000,17 @@ export function SettingsForCompany({
                             }}
                           />
                         </div>
-                        {canEdit ? (
-                          <Button
-                            size="sm"
-                            disabled={localizationM.isPending}
-                            onClick={() => localizationM.mutate()}
-                          >
-                            Save localization
-                          </Button>
-                        ) : null}
+                        <SettingsSaveBar
+                          label="Save localisation"
+                          dirty={localizationDirty}
+                          valid={localizationValid && Boolean(extendedQuery.data)}
+                          canEdit={canEdit}
+                          pending={localizationM.isPending}
+                          serverChanged={localizationServerChanged}
+                          error={localizationM.isError ? friendlyAuthError(localizationM.error) : null}
+                          onSave={() => localizationM.mutate()}
+                          onDiscard={resetLocalization}
+                        />
                       </CardContent>
                     </Card>
                   </TabsContent>
@@ -1117,20 +1123,17 @@ export function SettingsForCompany({
                             .
                           </p>
                         </div>
-                        <div className="sm:col-span-2">
-                          {canEdit ? (
-                            <Button
-                              size="sm"
-                              disabled={saveMutation.isPending}
-                              onClick={() => saveMutation.mutate()}
-                            >
-                              {saveMutation.isPending ? (
-                                <Loader2 className="size-4 animate-spin" />
-                              ) : null}
-                              Save financial settings
-                            </Button>
-                          ) : null}
-                        </div>
+                        <SettingsSaveBar
+                          label="Save financial settings"
+                          dirty={detailsDirty}
+                          valid={detailsValid}
+                          canEdit={canEdit}
+                          pending={saveMutation.isPending}
+                          serverChanged={detailsServerChanged}
+                          error={saveMutation.isError ? friendlyAuthError(saveMutation.error) : null}
+                          onSave={() => saveMutation.mutate()}
+                          onDiscard={resetDetails}
+                        />
                       </CardContent>
                     </Card>
                   </TabsContent>
@@ -1216,15 +1219,17 @@ export function SettingsForCompany({
                             placeholder="https://… (no file upload integration yet)"
                           />
                         </div>
-                        {canEdit ? (
-                          <Button
-                            size="sm"
-                            disabled={brandingM.isPending}
-                            onClick={() => brandingM.mutate()}
-                          >
-                            Save branding
-                          </Button>
-                        ) : null}
+                        <SettingsSaveBar
+                          label="Save branding"
+                          dirty={brandingDirty}
+                          valid={brandingValid && Boolean(extendedQuery.data)}
+                          canEdit={canEdit}
+                          pending={brandingM.isPending}
+                          serverChanged={brandingServerChanged}
+                          error={brandingM.isError ? friendlyAuthError(brandingM.error) : null}
+                          onSave={() => brandingM.mutate()}
+                          onDiscard={resetBranding}
+                        />
                       </CardContent>
                     </Card>
 
@@ -1319,15 +1324,17 @@ export function SettingsForCompany({
                               </label>
                             ))}
                         </div>
-                        {canEdit ? (
-                          <Button
-                            size="sm"
-                            disabled={currenciesM.isPending}
-                            onClick={() => currenciesM.mutate()}
-                          >
-                            Save currencies
-                          </Button>
-                        ) : null}
+                        <SettingsSaveBar
+                          label="Save currencies"
+                          dirty={currenciesDirty}
+                          valid={Boolean(extendedQuery.data)}
+                          canEdit={canEdit}
+                          pending={currenciesM.isPending}
+                          serverChanged={currenciesServerChanged}
+                          error={currenciesM.isError ? friendlyAuthError(currenciesM.error) : null}
+                          onSave={() => currenciesM.mutate()}
+                          onDiscard={resetCurrencies}
+                        />
                       </CardContent>
                     </Card>
 

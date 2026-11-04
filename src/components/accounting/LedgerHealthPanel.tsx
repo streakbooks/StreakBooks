@@ -206,43 +206,43 @@ export function LedgerHealthPanel({ companyId }: { companyId: string }) {
               </p>
             ) : (
               <ul className="divide-y rounded-md border">
-              {visibleChecks.map((c) => {
-                const Icon = ICON[c.status];
-                const href = checkHref(c.key);
-                return (
-                  <li key={c.key} className="space-y-1 p-3">
-                    <div className="flex items-start gap-2">
-                      <Icon className={cn("mt-0.5 h-4 w-4 shrink-0", TONE[c.status])} aria-hidden />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-sm font-medium">{c.label}</span>
-                          <span className={cn("text-xs", TONE[c.status])}>{WORD[c.status]}</span>
+                {visibleChecks.map((c) => {
+                  const Icon = ICON[c.status];
+                  const href = checkHref(c.key);
+                  return (
+                    <li key={c.key} className="space-y-1 p-3">
+                      <div className="flex items-start gap-2">
+                        <Icon className={cn("mt-0.5 h-4 w-4 shrink-0", TONE[c.status])} aria-hidden />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-sm font-medium">{c.label}</span>
+                            <span className={cn("text-xs", TONE[c.status])}>{WORD[c.status]}</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{c.summary}</p>
                         </div>
-                        <p className="text-sm text-muted-foreground">{c.summary}</p>
-                      </div>
-                      {href && (c.status === "fail" || c.status === "warn") ? (
-                        <Button asChild size="sm" variant="ghost">
-                          <Link to={href as never}>Review</Link>
-                        </Button>
-                      ) : null}
-                    </div>
-                    {c.status !== "pass" && c.status !== "na" && c.items.length > 0 ? (
-                      <ul className="ml-6 space-y-0.5 text-xs text-muted-foreground">
-                        {c.items.map((item, i) => (
-                          <li key={i}>
-                            {itemText(item, report.baseCurrency, (minor, cur) =>
-                              fmt.amount(minor, cur),
-                            )}
-                          </li>
-                        ))}
-                        {c.count > c.items.length ? (
-                          <li>…and {c.count - c.items.length} more.</li>
+                        {href && (c.status === "fail" || c.status === "warn") ? (
+                          <Button asChild size="sm" variant="ghost">
+                            <Link to={href as never}>Review</Link>
+                          </Button>
                         ) : null}
-                      </ul>
-                    ) : null}
-                  </li>
-                );
-              })}
+                      </div>
+                      {c.status !== "pass" && c.status !== "na" && c.items.length > 0 ? (
+                        <ul className="ml-6 space-y-0.5 text-xs text-muted-foreground">
+                          {c.items.map((item, i) => (
+                            <li key={i}>
+                              {itemText(item, report.baseCurrency, (minor, cur) =>
+                                fmt.amount(minor, cur),
+                              )}
+                            </li>
+                          ))}
+                          {c.count > c.items.length ? (
+                            <li>…and {c.count - c.items.length} more.</li>
+                          ) : null}
+                        </ul>
+                      ) : null}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </>

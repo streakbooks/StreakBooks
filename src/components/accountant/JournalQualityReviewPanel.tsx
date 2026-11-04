@@ -5,6 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AlertTriangle, ChevronDown, ChevronRight } from "lucide-react";
 import { scanManualJournalQuality } from "@/lib/accountant/journal-quality.functions";
+import { listAccountantExceptionReviews } from "@/lib/accountant/exception-reviews.functions";
+import { JournalExceptionReviewDetails } from "@/components/accountant/JournalExceptionReviewDetails";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { toCsv } from "@/lib/sales/csv";
 import { LoadingState, ErrorState } from "@/components/common/states";
@@ -22,7 +24,9 @@ import {
 
 export function JournalQualityReviewPanel({ companyId }: { companyId: string }) {
   const scan = useServerFn(scanManualJournalQuality);
+  const fetchReviews = useServerFn(listAccountantExceptionReviews);
   const [expanded, setExpanded] = useState(false);
+  const [selectedFindingId, setSelectedFindingId] = useState("");
   const [from, setFrom] = useState(() => format(subDays(new Date(), 90), "yyyy-MM-dd"));
   const [to, setTo] = useState(() => format(new Date(), "yyyy-MM-dd"));
   const datesValid = Boolean(from && to && from <= to);
@@ -33,10 +37,29 @@ export function JournalQualityReviewPanel({ companyId }: { companyId: string }) 
     staleTime: 30_000,
   });
 
+  const journalIds = Array.from(
+    new Set((query.data?.findings ?? []).map((finding) => finding.journalId)),
+  );
+  const reviews = useQuery({
+    queryKey: ["accountant-exception-reviews", companyId, journalIds],
+    enabled: expanded && datesValid && journalIds.length > 0,
+    queryFn: () => fetchReviews({ data: { companyId, journalIds } }),
+  });
+  const reviewByKey = new Map((reviews.data ?? []).map((record) => [record.finding_key, record]));
+  const selectedFinding = query.data?.findings.find((finding) => finding.id === selectedFindingId);
+
   const exportCsv = () => {
     if (!query.data) return;
     const csv = toCsv(
-      ["Journal", "Posting date", "Severity", "Finding", "Reason", "Related journal"],
+      [
+        "Journal",
+        "Posting date",
+        "Severity",
+        "Finding",
+        "Reason",
+        "Related journal",
+        "Review status",
+      ],
       query.data.findings.map((finding) => [
         finding.journalNumber,
         finding.journalDate,
@@ -44,6 +67,7 @@ export function JournalQualityReviewPanel({ companyId }: { companyId: string }) 
         finding.kind,
         finding.reason,
         finding.relatedJournalNumber ?? "",
+        reviewByKey.get(finding.id)?.status ?? "untracked",
       ]),
     );
     const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
@@ -61,7 +85,8 @@ export function JournalQualityReviewPanel({ companyId }: { companyId: string }) 
           <h2 className="text-base font-semibold">Manual journal quality review</h2>
           <p className="max-w-3xl text-sm text-muted-foreground">
             Identify possible duplicate postings, missing narrations and ledger-line exceptions.
-            This is a read-only aid, not an approval, reconciliation or correction process.
+            Record investigation notes with independent review. Findings never change posted
+            journals.
           </p>
         </div>
         <Button
@@ -143,6 +168,11 @@ export function JournalQualityReviewPanel({ companyId }: { companyId: string }) 
                 ) : null}
               </div>
               <p className="text-xs text-muted-foreground">{query.data.disclaimer}</p>
+              {reviews.isError ? (
+                <p role="alert" className="text-sm text-destructive">
+                  Review history unavailable: {friendlyAuthError(reviews.error)}
+                </p>
+              ) : null}
               {query.data.findings.length ? (
                 <div className="overflow-x-auto">
                   <Table>
@@ -152,6 +182,7 @@ export function JournalQualityReviewPanel({ companyId }: { companyId: string }) 
                         <TableHead>Date</TableHead>
                         <TableHead>Severity</TableHead>
                         <TableHead>Review evidence</TableHead>
+                        <TableHead>Disposition</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -194,6 +225,20 @@ export function JournalQualityReviewPanel({ companyId }: { companyId: string }) 
                               </Link>
                             ) : null}
                           </TableCell>
+                          <TableCell>
+                            <div className="space-y-2">
+                              <Badge variant="outline">
+                                {reviewByKey.get(finding.id)?.status ?? "Not investigated"}
+                              </Badge>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setSelectedFindingId(finding.id)}
+                              >
+                                Review finding
+                              </Button>
+                            </div>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -205,6 +250,16 @@ export function JournalQualityReviewPanel({ companyId }: { companyId: string }) 
                   replace period-end review.
                 </p>
               )}
+              {selectedFinding ? (
+                <JournalExceptionReviewDetails
+                  key={
+                    selectedFinding.id + ":" + (reviewByKey.get(selectedFinding.id)?.version ?? 0)
+                  }
+                  companyId={companyId}
+                  finding={selectedFinding}
+                  record={reviewByKey.get(selectedFinding.id)}
+                />
+              ) : null}
             </>
           ) : null}
         </div>

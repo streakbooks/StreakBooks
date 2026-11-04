@@ -145,7 +145,6 @@ function FilesPage() {
     if (folderId && view === "to-file") setView("all");
   }, [folderId, view]);
 
-
   const canUpload = ATTACHMENT_ENTITIES.company.manage.some((p) => can(p));
 
   const foldersQ = useQuery({
@@ -224,8 +223,7 @@ function FilesPage() {
   const previewQ = useQuery({
     queryKey: ["company-file-preview", companyId, selectedFile],
     enabled: Boolean(companyId && selectedFile),
-    queryFn: () =>
-      fetchPreview({ data: { companyId: companyId!, attachmentId: selectedFile! } }),
+    queryFn: () => fetchPreview({ data: { companyId: companyId!, attachmentId: selectedFile! } }),
     retry: false,
   });
   useEffect(() => {
@@ -349,11 +347,7 @@ function FilesPage() {
   const allSelected = selectableIds.length > 0 && currentSelection.length === selectableIds.length;
   const preview = previewQ.data;
   const previewUrl =
-    preview?.kind === "url"
-      ? preview.url
-      : preview?.kind === "inline"
-        ? inlinePreviewUrl
-        : null;
+    preview?.kind === "url" ? preview.url : preview?.kind === "inline" ? inlinePreviewUrl : null;
 
   return (
     <>
@@ -572,19 +566,27 @@ function FilesPage() {
         <Button
           size="sm"
           variant={view === "all" ? "default" : "outline"}
-          onClick={() => { setView("all"); setPage(0); }}
+          onClick={() => {
+            setView("all");
+            setPage(0);
+          }}
         >
           All files
         </Button>
         <Button
           size="sm"
           variant={view === "to-file" ? "default" : "outline"}
-          onClick={() => { setView("to-file"); setPage(0); setFolderId(null); }}
+          onClick={() => {
+            setView("to-file");
+            setPage(0);
+            setFolderId(null);
+          }}
         >
           To file
         </Button>
         <span className="text-xs text-muted-foreground">
-          To file shows unlinked uploads that have not been assigned a folder. Email intake is not configured here.
+          To file shows unlinked uploads that have not been assigned a folder. Email intake is not
+          configured here.
         </span>
       </div>
       <div className="mb-4 flex flex-wrap gap-3">
@@ -619,7 +621,10 @@ function FilesPage() {
         </Select>
         <Select
           value={sort}
-          onValueChange={(v) => { setSort(v as typeof sort); setPage(0); }}
+          onValueChange={(v) => {
+            setSort(v as typeof sort);
+            setPage(0);
+          }}
         >
           <SelectTrigger className="w-48" aria-label="Sort files">
             <ArrowUpDown className="mr-2 size-4" />
@@ -690,8 +695,14 @@ function FilesPage() {
               Preview is not available for this format. Download to view it.
             </p>
           ) : previewUrl ? (
-            (preview?.kind === "url" || preview?.kind === "inline") && preview.previewType === "image" ? (
-              <img src={previewUrl} alt={`Preview of ${selected.file_name}`} className="mt-3 max-h-96 max-w-full rounded border object-contain" referrerPolicy="no-referrer" />
+            (preview?.kind === "url" || preview?.kind === "inline") &&
+            preview.previewType === "image" ? (
+              <img
+                src={previewUrl}
+                alt={`Preview of ${selected.file_name}`}
+                className="mt-3 max-h-96 max-w-full rounded border object-contain"
+                referrerPolicy="no-referrer"
+              />
             ) : (
               <iframe
                 src={previewUrl}
@@ -723,7 +734,7 @@ function FilesPage() {
                 ? "No unlinked, unfiled uploads need organising."
                 : canUpload
                   ? `Upload a file here or attach one to an invoice or bill. Up to ${formatFileSize(MAX_FILE_BYTES)} each.`
-                : "No files have been added yet."
+                  : "No files have been added yet."
           }
         />
       ) : (
@@ -739,7 +750,9 @@ function FilesPage() {
                 <SelectContent>
                   <SelectItem value="unfiled">Unfiled</SelectItem>
                   {folders.map((folder) => (
-                    <SelectItem key={folder.id} value={folder.id}>{folder.name}</SelectItem>
+                    <SelectItem key={folder.id} value={folder.id}>
+                      {folder.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </RecordLookupSelect>
@@ -753,7 +766,11 @@ function FilesPage() {
                   })
                 }
               >
-                {bulkMoveM.isPending ? <Loader2 className="mr-1 size-4 animate-spin" /> : <FolderInput className="mr-1 size-4" />}
+                {bulkMoveM.isPending ? (
+                  <Loader2 className="mr-1 size-4 animate-spin" />
+                ) : (
+                  <FolderInput className="mr-1 size-4" />
+                )}
                 Move selected
               </Button>
               <Button size="sm" variant="ghost" onClick={() => setSelectedIds([])}>

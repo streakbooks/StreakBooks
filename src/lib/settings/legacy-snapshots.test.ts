@@ -20,16 +20,15 @@ describe("legacy settings compare-and-save snapshots", () => {
   });
 
   it("preserves null for branding not yet configured", () => {
-    expect(
-      brandingSnapshot({
-        trading_name: null,
-        letterhead_line: null,
-        invoice_email: null,
-        invoice_phone: null,
-        logo_url: null,
-        updated_at: "2026-11-04T00:00:00Z",
-      }),
-    ).toEqual({
+    const fetchedBranding = {
+      trading_name: null,
+      letterhead_line: null,
+      invoice_email: null,
+      invoice_phone: null,
+      logo_url: null,
+      updated_at: "2026-11-04T00:00:00Z",
+    };
+    expect(brandingSnapshot(fetchedBranding)).toEqual({
       trading_name: null,
       letterhead_line: null,
       invoice_email: null,
@@ -39,8 +38,11 @@ describe("legacy settings compare-and-save snapshots", () => {
   });
 
   it("compares the exact sequence state without a document-type field", () => {
-    expect(
-      sequenceSnapshot({ document_type: "sales_invoice", prefix: "INV-", next_number: 22, padding: 4 }),
-    ).toEqual({ prefix: "INV-", next_number: 22, padding: 4 });
+    const fetchedSequence = { document_type: "sales_invoice", prefix: "INV-", next_number: 22, padding: 4 };
+    expect(sequenceSnapshot(fetchedSequence)).toEqual({
+      prefix: "INV-",
+      next_number: 22,
+      padding: 4,
+    });
   });
 });

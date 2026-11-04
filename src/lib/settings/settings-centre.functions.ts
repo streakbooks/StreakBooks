@@ -1,6 +1,6 @@
 import { buildIntegrationHealth } from "./integration-health";
 import { assertSettingsCategory } from "@/lib/settings/categories";
-import { parseExpectedSettingsVersion } from "@/lib/settings/validation";
+import { assertSettingsBoolean, parseExpectedSettingsVersion } from "@/lib/settings/validation";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
@@ -211,7 +211,7 @@ export const setOrganisationFeature = createServerFn({ method: "POST" })
     (input: { companyId: string; featureKey: string; enabled: boolean; reason?: string }) => ({
       companyId: assertUuid(input.companyId),
       featureKey: String(input.featureKey || "").slice(0, 64),
-      enabled: Boolean(input.enabled),
+      enabled: assertSettingsBoolean(input.enabled),
       reason: (input.reason ?? "").trim().slice(0, 500),
     }),
   )
@@ -475,7 +475,7 @@ export const evaluateFeatureChange = createServerFn({ method: "POST" })
   .inputValidator((input: { companyId: string; featureKey: string; enabled: boolean }) => ({
     companyId: assertUuid(input.companyId),
     featureKey: String(input.featureKey || "").slice(0, 64),
-    enabled: Boolean(input.enabled),
+    enabled: assertSettingsBoolean(input.enabled),
   }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);

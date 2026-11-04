@@ -210,8 +210,6 @@ function NavLink({
 }
 
 const NAV_PINS_KEY = "linkbooks.workspace.pins.v1";
-const NAV_RECENT_KEY = "linkbooks.workspace.recent.v1";
-const NAV_MAX_RECENT = 4;
 const NAV_MAX_PINS = 8;
 
 function readWorkspacePaths(key: string, max: number): string[] {
@@ -243,29 +241,11 @@ function NavList({
   const searchId = useId();
   const [query, setQuery] = useState("");
   const [pins, setPins] = useState<string[]>([]);
-  const [recent, setRecent] = useState<string[]>([]);
   const [closedGroups, setClosedGroups] = useState<string[]>([]);
 
   useEffect(() => {
     setPins(readWorkspacePaths(NAV_PINS_KEY, NAV_MAX_PINS));
-    setRecent(readWorkspacePaths(NAV_RECENT_KEY, NAV_MAX_RECENT));
   }, []);
-
-  useEffect(() => {
-    if (!activeTo || activeTo === "/") return;
-    setRecent((previous) => {
-      const updated = [activeTo, ...previous.filter((p) => p !== activeTo)].slice(
-        0,
-        NAV_MAX_RECENT,
-      );
-      try {
-        window.localStorage.setItem(NAV_RECENT_KEY, JSON.stringify(updated));
-      } catch {
-        /* browser storage unavailable */
-      }
-      return updated;
-    });
-  }, [activeTo]);
 
   function togglePin(path: string) {
     setPins((previous) => {
@@ -303,9 +283,7 @@ function NavList({
   const renderGroup = (g: (typeof NAV_GROUPS)[number], index: number) => {
     const items = navItems.filter(
       (n) =>
-        n.group === g.id &&
-        matches(n) &&
-        (collapsed || (!pins.includes(n.to) && (Boolean(search) || !recent.includes(n.to)))),
+        n.group === g.id && matches(n) && (collapsed || !pins.includes(n.to) || Boolean(search)),
     );
     if (items.length === 0) return null;
     const headingId = "nav-group-" + g.id;
@@ -350,7 +328,6 @@ function NavList({
     );
   };
   const pinnedItems = shortcutItems(pins);
-  const recentItems = shortcutItems(recent.filter((path) => !pins.includes(path)));
   return (
     <TooltipProvider delayDuration={150}>
       <nav aria-label="Main" className="flex min-h-0 flex-1 flex-col px-3 pb-3">
@@ -379,14 +356,6 @@ function NavList({
                 Favourites
               </div>
               <div className="space-y-0.5">{pinnedItems.map(makeLink)}</div>
-            </div>
-          ) : null}
-          {!collapsed && recentItems.length > 0 && !search ? (
-            <div role="group" aria-label="Recently visited" className="mb-3">
-              <div className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/65">
-                Recently visited
-              </div>
-              <div className="space-y-0.5">{recentItems.map(makeLink)}</div>
             </div>
           ) : null}
           {main.map(renderGroup)}

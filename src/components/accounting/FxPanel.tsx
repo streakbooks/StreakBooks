@@ -82,7 +82,11 @@ export function FxPanel({ companyId, currency }: { companyId: string; currency: 
 
   const postM = useMutation({
     mutationFn: () => {
-      if (!preview || !reviewedInput || reviewedInput !== fxReviewSignature(companyId, asOf, rates)) {
+      if (
+        !preview ||
+        !reviewedInput ||
+        reviewedInput !== fxReviewSignature(companyId, asOf, rates)
+      ) {
         throw new Error("Exchange rates have changed. Recalculate and review before posting.");
       }
       return doPost({ data: { companyId, asOfDate: asOf, rates, note } });
@@ -297,7 +301,7 @@ export function FxPanel({ companyId, currency }: { companyId: string; currency: 
                     ) : null}
                     {!previewCurrent ? (
                       <p role="alert" className="text-sm text-destructive">
-                        The rates or date have changed since this preview. Recalculate before posting.
+                        Rates or date changed after this preview. Recalculate before posting.
                       </p>
                     ) : null}
 
@@ -318,11 +322,8 @@ export function FxPanel({ companyId, currency }: { companyId: string; currency: 
                           postM.isPending
                         }
                         onClick={() => {
-                          if (
-                            window.confirm(
-                              `Post FX revaluation dated ${asOf}? ${toAdjust} account balance(s) require adjustment. Revaluation journals automatically reverse on ${nextDay(asOf) ?? "the following day"}.`,
-                            )
-                          ) postM.mutate();
+                          const message = `Post FX revaluation dated ${asOf}? ${toAdjust} account balance(s) require adjustment. Revaluation journals automatically reverse on ${nextDay(asOf) ?? "the following day"}.`;
+                          if (window.confirm(message)) postM.mutate();
                         }}
                       >
                         {postM.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
@@ -352,11 +353,8 @@ export function FxPanel({ companyId, currency }: { companyId: string; currency: 
                 variant="outline"
                 disabled={processM.isPending}
                 onClick={() => {
-                  if (
-                    window.confirm(
-                      `Process due auto-reversals now? ${dueCount} due items are visible in this overview. The server will determine all currently due journals and may post reversal entries.`,
-                    )
-                  ) processM.mutate();
+                  const message = `Process due auto-reversals now? ${dueCount} due items are visible in this overview. The server will determine all currently due journals and may post reversal entries.`;
+                  if (window.confirm(message)) processM.mutate();
                 }}
               >
                 {processM.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
@@ -389,7 +387,7 @@ export function FxPanel({ companyId, currency }: { companyId: string; currency: 
               <option value="cancelled">Cancelled</option>
             </select>
             <span className="text-xs text-muted-foreground">
-              Showing {displayedReversals.length} of {ov.autoReversals.length} recently loaded reversals.
+              {displayedReversals.length} of {ov.autoReversals.length} recent reversals shown.
             </span>
           </div>
           {displayedReversals.length === 0 ? (
@@ -444,11 +442,8 @@ export function FxPanel({ companyId, currency }: { companyId: string; currency: 
                             variant="ghost"
                             disabled={cancelM.isPending}
                             onClick={() => {
-                              if (
-                                window.confirm(
-                                  `Cancel the scheduled auto-reversal for journal #${r.journal_number ?? "unknown"} on ${r.reverse_on}? The original journal remains posted.`,
-                                )
-                              ) cancelM.mutate(r.journal_id);
+                              const message = `Cancel auto-reversal for journal #${r.journal_number ?? "unknown"} scheduled ${r.reverse_on}? The original journal remains posted.`;
+                              if (window.confirm(message)) cancelM.mutate(r.journal_id);
                             }}
                           >
                             Cancel

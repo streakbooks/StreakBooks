@@ -23,7 +23,9 @@ function asBig(v: bigint | number | undefined): bigint {
   if (v === undefined) return 0n;
   if (typeof v === "number") {
     if (!Number.isSafeInteger(v)) {
-      throw new Error("Money amounts must be safe integer minor units; use bigint for larger values");
+      throw new Error(
+        "Money amounts must be safe integer minor units; use bigint for larger values",
+      );
     }
     return BigInt(v);
   }
@@ -45,11 +47,7 @@ function extendedMinor(input: TaxLineInput): bigint {
   // Reject extra precision instead of silently rounding the user's quantity.
   const scaled = input.quantity * 1_000_000;
   const nearest = Math.round(scaled);
-  if (
-    !Number.isSafeInteger(nearest) ||
-    nearest < 1 ||
-    Math.abs(scaled - nearest) > 0.000001
-  ) {
+  if (!Number.isSafeInteger(nearest) || nearest < 1 || Math.abs(scaled - nearest) > 0.000001) {
     throw new Error("Quantity must have at most six decimal places");
   }
   const unit = asBig(input.unit_price_minor);

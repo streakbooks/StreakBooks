@@ -100,9 +100,9 @@ describe("tax calculation input integrity", () => {
   });
 
   it("rejects unsupported runtime tax treatments instead of assuming inclusive", () => {
-    expect(() =>
-      computeTaxLine({ ...line, treatment: "unknown" as never }),
-    ).toThrow(/Unknown tax treatment/);
+    expect(() => computeTaxLine({ ...line, treatment: "unknown" as never })).toThrow(
+      /Unknown tax treatment/,
+    );
   });
 
   it("retains exact bigint arithmetic beyond the safe number range", () => {
@@ -114,8 +114,8 @@ describe("tax calculation input integrity", () => {
   });
 
   it("does not accept unsafe quantity multiplication at any tax rate", () => {
-    expect(() =>
-      computeTaxLine({ ...line, quantity: Number.MAX_SAFE_INTEGER }),
-    ).toThrow(/Quantity/);
+    expect(() => computeTaxLine({ ...line, quantity: Number.MAX_SAFE_INTEGER })).toThrow(
+      /Quantity/,
+    );
   });
 });

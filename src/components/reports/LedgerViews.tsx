@@ -618,17 +618,56 @@ export function TaxSummaryView({ ctx }: { ctx: ReportCtx }) {
   });
   const d = q.data;
   const basis = d?.basis ?? basisChoice ?? "accrual";
+  const accountIds = ctx.search.accountIds?.split(",") ?? null;
+  const taxAccounts = [
+    ...new Map(
+      (d?.detail ?? []).map((line) => [
+        line.account_id,
+        { id: line.account_id, code: line.account_code, name: line.account_name },
+      ]),
+    ).values(),
+  ];
+  const ledgerRows = accountIds
+    ? (d?.detail ?? []).filter((line) => accountIds.includes(line.account_id))
+    : (d?.detail ?? []);
   return (
     <ReportShell
       title="Tax Summary"
       ctx={ctx}
       mode="range"
-      basis={`Document tax lines, ${basis} basis; ledger movements below`}
+      basis={`Document tax lines, ${basis} basis; full-company tax totals remain unchanged when ledger accounts are selected`}
+      extraControls={
+        <>
+          <div className="space-y-1">
+            <Label htmlFor="tax-basis">Accounting basis</Label>
+            <select
+              id="tax-basis"
+              className={selectCls}
+              value={basis}
+              onChange={(e) =>
+                ctx.setSearch({ basis: e.target.value === "cash" ? "cash" : "accrual" })
+              }
+            >
+              <option value="accrual">Accrual (invoice date)</option>
+              <option value="cash">Cash (payment date)</option>
+            </select>
+          </div>
+          <ReportAccountMultiSelect
+            label="Tax ledger accounts"
+            accounts={taxAccounts}
+            selected={accountIds ?? undefined}
+            onChange={(ids) =>
+              ctx.setSearch({ accountIds: ids?.join(",") || undefined, explorePage: undefined })
+            }
+            disabled={!d || taxAccounts.length === 0}
+          />
+        </>
+      }
       getCsv={() =>
         d
           ? {
               headers: ["Date", "Journal", "Source", "Account", "Debit", "Credit"],
-              rows: d.detail.map((l) => [
+              rows: ledgerRows.map((l) => [
                 l.journal_date,
                 l.journal_number,
                 sourceLabel(l.source_type),
@@ -636,6 +675,9 @@ export function TaxSummaryView({ ctx }: { ctx: ReportCtx }) {
                 csvMoney(l.debit_minor, ctx.currency),
                 csvMoney(l.credit_minor, ctx.currency),
               ]),
+              basis: accountIds
+                ? "Selected tax ledger transaction lines only; document tax totals and full ledger control figures are unfiltered."
+                : "Full tax-control ledger transaction lines.",
             }
           : null
       }
@@ -657,25 +699,11 @@ export function TaxSummaryView({ ctx }: { ctx: ReportCtx }) {
                 </Link>
               </AlertDescription>
             </Alert>
-            <div className="mb-3 flex flex-wrap items-center gap-2">
-              <Label htmlFor="tax-basis">Basis</Label>
-              <select
-                id="tax-basis"
-                className={selectCls}
-                value={basis}
-                onChange={(e) =>
-                  ctx.setSearch({ basis: e.target.value === "cash" ? "cash" : "accrual" })
-                }
-              >
-                <option value="accrual">Accrual (invoice date)</option>
-                <option value="cash">Cash (payment date)</option>
-              </select>
-              {d.settingsBasis !== basis ? (
-                <span className="text-xs text-muted-foreground">
-                  The company files on the {d.settingsBasis} basis.
-                </span>
-              ) : null}
-            </div>
+            {d.settingsBasis !== basis ? (
+              <p className="mb-3 text-xs text-muted-foreground">
+                The company files on the {d.settingsBasis} basis.
+              </p>
+            ) : null}
             <div className="mb-2 grid gap-3 sm:grid-cols-3">
               <Stat
                 label="Output tax (from documents)"
@@ -735,7 +763,13 @@ export function TaxSummaryView({ ctx }: { ctx: ReportCtx }) {
                 </TableBody>
               </Table>
             ) : null}
-            <p className="mb-2 text-sm font-medium">Ledger movements on the tax accounts</p>
+            <p className="mb-2 text-sm font-medium">
+              Ledger movements on the tax accounts
+              {accountIds ? " · selected accounts shown below" : ""}
+            </p>
+            <p className="mb-2 text-xs text-muted-foreground">
+              Full-company control totals below are not filtered by the account selection.
+            </p>
             <div className="mb-4 grid gap-3 sm:grid-cols-3">
               <Stat
                 label="Output (credits)"
@@ -756,7 +790,7 @@ export function TaxSummaryView({ ctx }: { ctx: ReportCtx }) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {d.detail.map((l, i) => (
+                {ledgerRows.map((l, i) => (
                   <TableRow key={`${l.journal_id}-${i}`}>
                     <TableCell>{fmt.date(l.journal_date)}</TableCell>
                     <TableCell>
@@ -776,6 +810,13 @@ export function TaxSummaryView({ ctx }: { ctx: ReportCtx }) {
                     </TableCell>
                   </TableRow>
                 ))}
+                {ledgerRows.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                      No posted tax ledger lines match the selected accounts.
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </>

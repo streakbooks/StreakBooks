@@ -10,7 +10,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Search } from "lucide-react";
+import { Loader2, Search, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany, companyContextKey } from "@/hooks/use-active-company";
 import { getCompanyDetails, updateCompany } from "@/lib/company.functions";
@@ -43,6 +43,7 @@ import { ErrorState, LoadingState, PageHeader } from "@/components/common/states
 import { PortalSettingsPanel } from "@/components/portals/staff-panels";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -242,6 +243,7 @@ export function SettingsForCompany({
   const extendedQuery = useQuery({
     queryKey: ["org-extended", companyId],
     queryFn: () => fetchExtended({ data: { companyId } }),
+    enabled: !detail && ["organisation", "documents", "currencies"].includes(section),
   });
 
   const [auditAction, setAuditAction] = useState("");
@@ -249,6 +251,7 @@ export function SettingsForCompany({
 
   const auditQuery = useQuery({
     queryKey: ["org-audit", companyId, auditAction, auditEntity],
+    enabled: !detail && section === "audit",
     queryFn: () =>
       fetchAudit({
         data: {
@@ -438,12 +441,14 @@ export function SettingsForCompany({
       {!embeddedSection && (
         <PageHeader
           title="Settings Centre"
-          description="Organisation configuration — search settings with Ctrl/Cmd+Shift+K (Ctrl/Cmd+K searches everything). Preferences never override posting, period locks or journal immutability."
+          description="Manage your organisation, financial controls and connected workflows in one place."
           actions={
             <Button variant="outline" size="sm" onClick={() => setCmdOpen(true)}>
               <Search className="mr-1.5 size-3.5" />
               Search
-              <kbd className="ml-2 hidden rounded border px-1 text-[10px] sm:inline">⌘⇧K</kbd>
+              <kbd className="ml-2 hidden rounded border px-1 text-[10px] sm:inline">
+                Ctrl/⌘ Shift K
+              </kbd>
             </Button>
           }
         />
@@ -457,25 +462,71 @@ export function SettingsForCompany({
         />
       )}
 
-      <div className={embeddedSection ? "" : "grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]"}>
+      {!embeddedSection && (
+        <div className="mb-4 lg:hidden">
+          <Label htmlFor="mobile-settings-section" className="mb-2 block text-sm font-medium">
+            Settings section
+          </Label>
+          <Select value={section} onValueChange={selectSection}>
+            <SelectTrigger id="mobile-settings-section" aria-label="Choose settings section">
+              <SelectValue placeholder="Choose a settings section" />
+            </SelectTrigger>
+            <SelectContent>
+              {categoryMeta
+                .filter((item) => item.id !== "demo" || isDemo)
+                .map((item) => (
+                  <SelectItem key={item.id} value={item.id}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      <div className={embeddedSection ? "" : "grid gap-5 lg:grid-cols-[260px_minmax(0,1fr)]"}>
         {!embeddedSection && (
-          <aside className="space-y-3 lg:sticky lg:top-4 lg:self-start">
-            <Input
-              value={navFilter}
-              onChange={(e) => setNavFilter(e.target.value)}
-              placeholder="Filter categories…"
-              aria-label="Filter settings categories"
-            />
-            <SettingsNav
-              section={section}
-              embedded={Boolean(embeddedSection)}
-              showDemo={isDemo}
-              filter={navFilter}
-            />
+          <aside className="hidden lg:sticky lg:top-4 lg:block lg:self-start">
+            <div className="rounded-xl border bg-card p-3 shadow-sm">
+              <div className="mb-3 flex items-center gap-2 px-2 text-sm font-semibold">
+                <Settings2 className="size-4 text-primary" aria-hidden />
+                All settings
+              </div>
+              <Input
+                value={navFilter}
+                onChange={(e) => setNavFilter(e.target.value)}
+                placeholder="Find a setting…"
+                aria-label="Filter settings categories"
+                className="mb-3"
+              />
+              <div className="max-h-[calc(100vh-16rem)] overflow-y-auto pr-1">
+                <SettingsNav
+                  section={section}
+                  embedded={false}
+                  showDemo={isDemo}
+                  filter={navFilter}
+                />
+              </div>
+            </div>
           </aside>
         )}
 
-        <div className="min-w-0 space-y-4">
+        <div className="min-w-0 space-y-5">
+          {!detail && sectionMeta && !embeddedSection ? (
+            <div className="flex flex-wrap items-start justify-between gap-3 rounded-xl border bg-card/60 p-4 shadow-sm sm:p-5">
+              <div className="min-w-0">
+                <h2 className="text-lg font-semibold tracking-tight sm:text-xl">
+                  {sectionMeta.label}
+                </h2>
+                <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                  {sectionMeta.description}
+                </p>
+              </div>
+              {sectionMeta.availability === "unavailable" ? (
+                <Badge variant="outline">Not available</Badge>
+              ) : null}
+            </div>
+          ) : null}
           {detail ? (
             <InPlaceSettingsPanel panel={detail} insideCentre />
           ) : (

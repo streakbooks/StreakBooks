@@ -46,9 +46,7 @@ export type FirmClientProfileInput = z.infer<typeof schema>;
 
 export const listFirmClientProfiles = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ firmId: z.string().uuid() }).strict().parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ firmId: z.string().uuid() }).strict().parse(input))
   .handler(async ({ data, context }): Promise<FirmClientProfile[]> => {
     const { data: membership, error: memberError } = await context.supabase
       .from("firm_members" as never)
@@ -71,7 +69,9 @@ export const listFirmClientProfiles = createServerFn({ method: "GET" })
       .limit(1001);
     if (error) throw new Error(error.message);
     if ((rows ?? []).length > 1000)
-      throw new Error("Portfolio has more than 1,000 client profiles; narrow the scope before export");
+      throw new Error(
+        "Portfolio has more than 1,000 client profiles; narrow the scope before export",
+      );
     return (rows ?? []) as FirmClientProfile[];
   });
 

@@ -59,12 +59,15 @@ export const listWorkpaperLedger = createServerFn({ method: "GET" })
         .in("account_type", ["asset", "liability", "equity"])
         .order("code")
         .limit(5001),
-      context.supabase.rpc("ledger_balances" as never, {
-        _company_id: data.companyId,
-        _from: null,
-        _to: data.asOf,
-        _exclude_year_end_close: false,
-      } as never),
+      context.supabase.rpc(
+        "ledger_balances" as never,
+        {
+          _company_id: data.companyId,
+          _from: null,
+          _to: data.asOf,
+          _exclude_year_end_close: false,
+        } as never,
+      ),
     ]);
     if (accounts.error) throw new Error(accounts.error.message);
     if (balances.error) throw new Error(balances.error.message);

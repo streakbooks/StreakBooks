@@ -49,6 +49,8 @@ export function SettingsCommunicationsPanel({
   const sendDigest = useServerFn(sendCommunicationsDigest);
   const client = useQueryClient();
   const [doc, setDoc] = useState<Config>(DEFAULTS);
+  const [dirty, setDirty] = useState(false);
+  const [loadedVersion, setLoadedVersion] = useState<number | null>(null);
 
   const config = useQuery({
     queryKey: ["organisation-config", companyId, "notifications"],
@@ -59,25 +61,58 @@ export function SettingsCommunicationsPanel({
     queryFn: () => getStatus({ data: { companyId } }),
   });
   useEffect(() => {
+    if (!config.data || dirty) return;
+    const parsed = notificationsConfigSchema.safeParse(config.data.document);
+    if (parsed.success) {
+      setDoc(parsed.data);
+      setLoadedVersion(config.data.version);
+    }
+  }, [config.data, dirty]);
+
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+
+  const serverChanged = Boolean(dirty && config.data && loadedVersion !== config.data.version);
+  const validatedDoc = notificationsConfigSchema.safeParse(doc);
+  const validationErrors = validatedDoc.success ? null : validatedDoc.error.flatten().fieldErrors;
+  const resetDraft = () => {
     if (!config.data) return;
     const parsed = notificationsConfigSchema.safeParse(config.data.document);
-    if (parsed.success) setDoc(parsed.data);
-  }, [config.data]);
+    if (!parsed.success) return;
+    setDoc(parsed.data);
+    setLoadedVersion(config.data.version);
+    setDirty(false);
+  };
 
   const save = useMutation({
     mutationFn: () => {
+      if (!config.data || serverChanged || !dirty) {
+        throw new Error("Reload the latest settings before saving.");
+      }
       const validated = notificationsConfigSchema.parse(doc);
       return saveConfig({
         data: {
           companyId,
           category: "notifications",
           document: validated,
-          expectedVersion: config.data?.version ?? 0,
+          expectedVersion: loadedVersion ?? config.data.version,
           reason: "Notifications & Communications preferences updated",
         },
       });
     },
-    onSuccess: async () => {
+    onSuccess: async (result) => {
+      const parsed = notificationsConfigSchema.safeParse(result.document);
+      if (parsed.success) setDoc(parsed.data);
+      client.setQueryData(["organisation-config", companyId, "notifications"], result);
+      setLoadedVersion(result.version);
+      setDirty(false);
       await client.invalidateQueries({
         queryKey: ["organisation-config", companyId, "notifications"],
       });
@@ -101,12 +136,15 @@ export function SettingsCommunicationsPanel({
     },
     onError: (error) => notify.error(error, "Digest could not be sent"),
   });
-  const savingBlocked = !canEdit || save.isPending || config.isPending || config.isError;
+  const savingBlocked =
+    !canEdit || save.isPending || config.isPending || config.isError || serverChanged;
   const providerReady = Boolean(status.data?.configured);
   const canTest = Boolean(providerReady && status.data?.canSend && status.data?.recipient);
   const canDigest = Boolean(providerReady && status.data?.canDigest && status.data?.recipient);
-  const set = <K extends keyof Config>(key: K, value: Config[K]) =>
+  const set = <K extends keyof Config>(key: K, value: Config[K]) => {
+    setDirty(true);
     setDoc((old) => ({ ...old, [key]: value }));
+  };
   return (
     <section className="space-y-4" aria-label="Notifications and communications settings">
       <div>
@@ -200,9 +238,26 @@ export function SettingsCommunicationsPanel({
         </CardHeader>
         <CardContent className="grid max-w-xl gap-4">
           {config.isError && (
-            <p role="alert" className="text-sm text-destructive">
-              Could not load settings: {friendlyAuthError(config.error)}
-            </p>
+            <Alert variant="destructive">
+              <AlertTitle>Could not load communication settings</AlertTitle>
+              <AlertDescription className="space-y-2">
+                <p>{friendlyAuthError(config.error)}</p>
+                <Button size="sm" variant="outline" onClick={() => void config.refetch()}>
+                  Retry
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+          {serverChanged && (
+            <Alert variant="destructive">
+              <AlertTitle>These settings changed in another session</AlertTitle>
+              <AlertDescription className="space-y-2">
+                <p>Your unsaved edits are preserved. Reload the latest values before saving.</p>
+                <Button size="sm" variant="outline" onClick={resetDraft}>
+                  Reload latest settings
+                </Button>
+              </AlertDescription>
+            </Alert>
           )}
           <div className="space-y-1">
             <Label htmlFor="communication-from-name">Email From Name</Label>
@@ -210,6 +265,8 @@ export function SettingsCommunicationsPanel({
               id="communication-from-name"
               value={doc.email_from_name}
               maxLength={120}
+              aria-invalid={Boolean(validationErrors?.email_from_name?.length)}
+              aria-describedby={validationErrors?.email_from_name?.length ? "communication-from-name-error" : undefined}
               disabled={savingBlocked}
               placeholder="e.g. LinkBooks Accounts"
               onChange={(e) => set("email_from_name", e.target.value)}
@@ -217,6 +274,11 @@ export function SettingsCommunicationsPanel({
             <p className="text-xs text-muted-foreground">
               Used on actual outgoing document and digest emails, subject to provider settings.
             </p>
+            {validationErrors?.email_from_name?.[0] ? (
+              <p id="communication-from-name-error" className="text-xs text-destructive">
+                {validationErrors.email_from_name[0]}
+              </p>
+            ) : null}
           </div>
           <div className="space-y-1">
             <Label htmlFor="communication-reply-to">Reply To</Label>
@@ -224,6 +286,8 @@ export function SettingsCommunicationsPanel({
               id="communication-reply-to"
               type="email"
               value={doc.reply_to}
+              aria-invalid={Boolean(validationErrors?.reply_to?.length)}
+              aria-describedby={validationErrors?.reply_to?.length ? "communication-reply-to-error" : undefined}
               disabled={savingBlocked}
               placeholder="accounts@example.com"
               onChange={(e) => set("reply_to", e.target.value)}
@@ -232,6 +296,11 @@ export function SettingsCommunicationsPanel({
               Replies to LinkBooks document emails and notification digests are directed here when
               set.
             </p>
+            {validationErrors?.reply_to?.[0] ? (
+              <p id="communication-reply-to-error" className="text-xs text-destructive">
+                {validationErrors.reply_to[0]}
+              </p>
+            ) : null}
           </div>
           <div className="flex items-center justify-between rounded-md border p-3">
             <div>
@@ -276,12 +345,25 @@ export function SettingsCommunicationsPanel({
               </p>
             </div>
           )}
-          <Button
-            disabled={savingBlocked || !notificationsConfigSchema.safeParse(doc).success}
-            onClick={() => save.mutate()}
-          >
-            {save.isPending ? "Saving…" : "Save communication settings"}
-          </Button>
+          {save.isError ? (
+            <p role="alert" className="text-sm text-destructive">
+              {friendlyAuthError(save.error)}
+            </p>
+          ) : null}
+          <div className="flex flex-wrap items-center gap-3 border-t pt-4">
+            <Button
+              disabled={savingBlocked || !dirty || !validatedDoc.success}
+              onClick={() => save.mutate()}
+            >
+              {save.isPending ? "Saving…" : "Save communication settings"}
+            </Button>
+            <Button variant="outline" disabled={!dirty || save.isPending} onClick={resetDraft}>
+              Discard changes
+            </Button>
+            <span role="status" aria-live="polite" className="text-xs text-muted-foreground">
+              {!canEdit ? "Read-only" : serverChanged ? "Server version changed" : dirty ? "Unsaved changes" : "All changes saved"}
+            </span>
+          </div>
         </CardContent>
       </Card>
       {status.data?.userId && (

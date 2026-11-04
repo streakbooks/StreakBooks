@@ -18,7 +18,7 @@ import {
   setContactGroups,
   setContactTags,
 } from "@/lib/contacts/contacts.functions";
-import { fromMinorUnits } from "@/lib/accounting/money";
+import { fromMinorUnits, toMinorUnits, toSafeMinorNumber } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
@@ -58,6 +58,8 @@ export const Route = createFileRoute("/_authenticated/contacts/$contactId")({
   component: ContactDetail,
 });
 
+const HISTORY_PAGE_SIZE = 50;
+
 function ContactDetail() {
   const { contactId } = Route.useParams();
   const { tab } = Route.useSearch();
@@ -66,6 +68,8 @@ function ContactDetail() {
   const currency = company?.base_currency ?? "GBP";
   const qc = useQueryClient();
   const canManage = useCanDo("contacts.manage");
+  const [invoicePage, setInvoicePage] = useState(0);
+  const [billPage, setBillPage] = useState(0);
 
   const fetchContact = useServerFn(getContact);
   const fetchBalances = useServerFn(getContactBalances);
@@ -84,9 +88,18 @@ function ContactDetail() {
     queryFn: () => fetchContact({ data: { companyId: companyId!, contactId } }),
   });
   const balQ = useQuery({
-    queryKey: ["contact-balances", companyId, contactId],
+    queryKey: ["contact-balances", companyId, contactId, invoicePage, billPage],
     enabled: Boolean(companyId),
-    queryFn: () => fetchBalances({ data: { companyId: companyId!, contactId } }),
+    queryFn: () =>
+      fetchBalances({
+        data: {
+          companyId: companyId!,
+          contactId,
+          limit: HISTORY_PAGE_SIZE,
+          invoiceOffset: invoicePage * HISTORY_PAGE_SIZE,
+          billOffset: billPage * HISTORY_PAGE_SIZE,
+        },
+      }),
   });
   const groupsQ = useQuery({
     queryKey: ["contact-groups", companyId],
@@ -112,8 +125,21 @@ function ContactDetail() {
         legal_name?: unknown;
         website?: unknown;
         billing_address_line1?: unknown;
+        billing_address_line2?: unknown;
         billing_city?: unknown;
+        billing_region?: unknown;
+        billing_postal?: unknown;
         billing_country?: unknown;
+        delivery_address_line1?: unknown;
+        delivery_address_line2?: unknown;
+        delivery_city?: unknown;
+        delivery_region?: unknown;
+        delivery_postal?: unknown;
+        delivery_country?: unknown;
+        default_currency?: unknown;
+        credit_limit_minor?: unknown;
+        sales_tax_inclusive?: unknown;
+        purchase_tax_inclusive?: unknown;
         archived_at?: unknown;
       }
     | undefined;
@@ -129,8 +155,21 @@ function ContactDetail() {
   const [legalName, setLegalName] = useState("");
   const [website, setWebsite] = useState("");
   const [billingLine1, setBillingLine1] = useState("");
+  const [billingLine2, setBillingLine2] = useState("");
   const [billingCity, setBillingCity] = useState("");
+  const [billingRegion, setBillingRegion] = useState("");
+  const [billingPostal, setBillingPostal] = useState("");
   const [billingCountry, setBillingCountry] = useState("");
+  const [deliveryLine1, setDeliveryLine1] = useState("");
+  const [deliveryLine2, setDeliveryLine2] = useState("");
+  const [deliveryCity, setDeliveryCity] = useState("");
+  const [deliveryRegion, setDeliveryRegion] = useState("");
+  const [deliveryPostal, setDeliveryPostal] = useState("");
+  const [deliveryCountry, setDeliveryCountry] = useState("");
+  const [defaultCurrency, setDefaultCurrency] = useState("");
+  const [creditLimit, setCreditLimit] = useState("");
+  const [salesTaxInclusive, setSalesTaxInclusive] = useState("default");
+  const [purchaseTaxInclusive, setPurchaseTaxInclusive] = useState("default");
   const [personFirst, setPersonFirst] = useState("");
   const [personLast, setPersonLast] = useState("");
   const [personEmail, setPersonEmail] = useState("");
@@ -139,6 +178,11 @@ function ContactDetail() {
   const [transactionSearch, setTransactionSearch] = useState("");
   const [transactionStatus, setTransactionStatus] = useState("all");
   const [transactionSort, setTransactionSort] = useState("newest");
+
+  useEffect(() => {
+    setInvoicePage(0);
+    setBillPage(0);
+  }, [contactId]);
 
   useEffect(() => {
     if (!c) return;
@@ -153,9 +197,33 @@ function ContactDetail() {
     setLegalName(String(c.legal_name ?? ""));
     setWebsite(String(c.website ?? ""));
     setBillingLine1(String(c.billing_address_line1 ?? ""));
+    setBillingLine2(String(c.billing_address_line2 ?? ""));
     setBillingCity(String(c.billing_city ?? ""));
+    setBillingRegion(String(c.billing_region ?? ""));
+    setBillingPostal(String(c.billing_postal ?? ""));
     setBillingCountry(String(c.billing_country ?? ""));
-  }, [c]);
+    setDeliveryLine1(String(c.delivery_address_line1 ?? ""));
+    setDeliveryLine2(String(c.delivery_address_line2 ?? ""));
+    setDeliveryCity(String(c.delivery_city ?? ""));
+    setDeliveryRegion(String(c.delivery_region ?? ""));
+    setDeliveryPostal(String(c.delivery_postal ?? ""));
+    setDeliveryCountry(String(c.delivery_country ?? ""));
+    setDefaultCurrency(String(c.default_currency ?? ""));
+    const limit = c.credit_limit_minor;
+    setCreditLimit(
+      limit == null ? "" : fromMinorUnits(Number(limit), String(c.default_currency || currency)),
+    );
+    setSalesTaxInclusive(
+      c.sales_tax_inclusive == null ? "default" : c.sales_tax_inclusive ? "inclusive" : "exclusive",
+    );
+    setPurchaseTaxInclusive(
+      c.purchase_tax_inclusive == null
+        ? "default"
+        : c.purchase_tax_inclusive
+          ? "inclusive"
+          : "exclusive",
+    );
+  }, [c, currency]);
 
   useEffect(() => {
     const g = (contactQ.data?.groups ?? []) as Array<{
@@ -171,6 +239,17 @@ function ContactDetail() {
   }, [contactQ.data]);
 
   const validTerms = /^\d+$/.test(terms) && Number(terms) <= 3650;
+  const effectiveCurrency = (defaultCurrency || currency).toUpperCase();
+  const validCurrency = !defaultCurrency || /^[A-Z]{3}$/i.test(defaultCurrency);
+  const validCreditLimit = (() => {
+    if (!creditLimit.trim()) return true;
+    try {
+      const minor = toMinorUnits(creditLimit, effectiveCurrency);
+      return minor >= 0n && minor <= BigInt(Number.MAX_SAFE_INTEGER);
+    } catch {
+      return false;
+    }
+  })();
 
   const saveM = useMutation({
     mutationFn: () =>
@@ -189,8 +268,28 @@ function ContactDetail() {
           legalName,
           website,
           billingAddressLine1: billingLine1,
+          billingAddressLine2: billingLine2,
           billingCity,
+          billingRegion,
+          billingPostal,
           billingCountry,
+          deliveryAddressLine1: deliveryLine1,
+          deliveryAddressLine2: deliveryLine2,
+          deliveryCity,
+          deliveryRegion,
+          deliveryPostal,
+          deliveryCountry,
+          defaultCurrency,
+          creditLimitMinor: creditLimit.trim()
+            ? toSafeMinorNumber(
+                toMinorUnits(creditLimit, effectiveCurrency),
+                "Contact credit limit",
+              )
+            : null,
+          salesTaxInclusive:
+            salesTaxInclusive === "default" ? null : salesTaxInclusive === "inclusive",
+          purchaseTaxInclusive:
+            purchaseTaxInclusive === "default" ? null : purchaseTaxInclusive === "inclusive",
         },
       }),
     onSuccess: async () => {
@@ -473,17 +572,100 @@ function ContactDetail() {
               <Input value={website} onChange={(e) => setWebsite(e.target.value)} />
             </Field>
           </div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <Field label="Billing line 1">
-              <Input value={billingLine1} onChange={(e) => setBillingLine1(e.target.value)} />
-            </Field>
-            <Field label="City">
-              <Input value={billingCity} onChange={(e) => setBillingCity(e.target.value)} />
-            </Field>
-            <Field label="Country">
-              <Input value={billingCountry} onChange={(e) => setBillingCountry(e.target.value)} />
-            </Field>
-          </div>
+          <section className="space-y-3 rounded-lg border p-4">
+            <h3 className="font-medium">Financial defaults</h3>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Default currency (ISO code)">
+                <Input
+                  value={defaultCurrency}
+                  maxLength={3}
+                  placeholder={currency}
+                  onChange={(e) => setDefaultCurrency(e.target.value.toUpperCase())}
+                />
+              </Field>
+              <Field label={`Credit limit (${effectiveCurrency})`}>
+                <Input
+                  inputMode="decimal"
+                  value={creditLimit}
+                  placeholder="No limit"
+                  onChange={(e) => setCreditLimit(e.target.value)}
+                />
+              </Field>
+              <Field label="Sales tax default">
+                <Select value={salesTaxInclusive} onValueChange={setSalesTaxInclusive}>
+                  <SelectTrigger aria-label="Sales tax default">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="default">Use company default</SelectItem>
+                    <SelectItem value="inclusive">Tax inclusive</SelectItem>
+                    <SelectItem value="exclusive">Tax exclusive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Purchase tax default">
+                <Select value={purchaseTaxInclusive} onValueChange={setPurchaseTaxInclusive}>
+                  <SelectTrigger aria-label="Purchase tax default">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="default">Use company default</SelectItem>
+                    <SelectItem value="inclusive">Tax inclusive</SelectItem>
+                    <SelectItem value="exclusive">Tax exclusive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+            </div>
+          </section>
+          <section className="space-y-3 rounded-lg border p-4">
+            <h3 className="font-medium">Billing address</h3>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Line 1">
+                <Input value={billingLine1} onChange={(e) => setBillingLine1(e.target.value)} />
+              </Field>
+              <Field label="Line 2">
+                <Input value={billingLine2} onChange={(e) => setBillingLine2(e.target.value)} />
+              </Field>
+              <Field label="City">
+                <Input value={billingCity} onChange={(e) => setBillingCity(e.target.value)} />
+              </Field>
+              <Field label="Region / state">
+                <Input value={billingRegion} onChange={(e) => setBillingRegion(e.target.value)} />
+              </Field>
+              <Field label="Postal code">
+                <Input value={billingPostal} onChange={(e) => setBillingPostal(e.target.value)} />
+              </Field>
+              <Field label="Country">
+                <Input value={billingCountry} onChange={(e) => setBillingCountry(e.target.value)} />
+              </Field>
+            </div>
+          </section>
+          <section className="space-y-3 rounded-lg border p-4">
+            <h3 className="font-medium">Delivery address</h3>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Line 1">
+                <Input value={deliveryLine1} onChange={(e) => setDeliveryLine1(e.target.value)} />
+              </Field>
+              <Field label="Line 2">
+                <Input value={deliveryLine2} onChange={(e) => setDeliveryLine2(e.target.value)} />
+              </Field>
+              <Field label="City">
+                <Input value={deliveryCity} onChange={(e) => setDeliveryCity(e.target.value)} />
+              </Field>
+              <Field label="Region / state">
+                <Input value={deliveryRegion} onChange={(e) => setDeliveryRegion(e.target.value)} />
+              </Field>
+              <Field label="Postal code">
+                <Input value={deliveryPostal} onChange={(e) => setDeliveryPostal(e.target.value)} />
+              </Field>
+              <Field label="Country">
+                <Input
+                  value={deliveryCountry}
+                  onChange={(e) => setDeliveryCountry(e.target.value)}
+                />
+              </Field>
+            </div>
+          </section>
           <Field label={`Internal notes (${notes.length}/4000)`}>
             <Textarea
               value={notes}
@@ -501,8 +683,25 @@ function ContactDetail() {
               Payment terms must be a whole number from 0 to 3650 days.
             </p>
           ) : null}
+          {!validCurrency ? (
+            <p role="alert" className="text-sm text-destructive">
+              Currency must be a three-letter ISO code.
+            </p>
+          ) : null}
+          {!validCreditLimit ? (
+            <p role="alert" className="text-sm text-destructive">
+              Enter a non-negative credit limit within the supported precision and range.
+            </p>
+          ) : null}
           <Button
-            disabled={!canManage || saveM.isPending || !name.trim() || !validTerms}
+            disabled={
+              !canManage ||
+              saveM.isPending ||
+              !name.trim() ||
+              !validTerms ||
+              !validCurrency ||
+              !validCreditLimit
+            }
             onClick={() => saveM.mutate()}
           >
             Save changes
@@ -657,16 +856,16 @@ function ContactDetail() {
             <>
               <div className="mb-4 flex flex-wrap items-end gap-3" aria-label="Transaction filters">
                 <div className="min-w-48 flex-1 space-y-1">
-                  <Label htmlFor="contact-transaction-search">Search transactions</Label>
+                  <Label htmlFor="contact-transaction-search">Search current page</Label>
                   <Input
                     id="contact-transaction-search"
-                    placeholder="Number, status, date or amount"
+                    placeholder="Number, status, date or amount in loaded rows"
                     value={transactionSearch}
                     onChange={(e) => setTransactionSearch(e.target.value)}
                   />
                 </div>
                 <div className="w-40 space-y-1">
-                  <Label>Status</Label>
+                  <Label>Status (current page)</Label>
                   <Select value={transactionStatus} onValueChange={setTransactionStatus}>
                     <SelectTrigger aria-label="Filter transaction status">
                       <SelectValue />
@@ -683,7 +882,7 @@ function ContactDetail() {
                   </Select>
                 </div>
                 <div className="w-40 space-y-1">
-                  <Label>Sort</Label>
+                  <Label>Sort current page</Label>
                   <Select value={transactionSort} onValueChange={setTransactionSort}>
                     <SelectTrigger aria-label="Sort transactions">
                       <SelectValue />
@@ -697,7 +896,35 @@ function ContactDetail() {
                   </Select>
                 </div>
               </div>
-              <h3 className="mb-2 text-sm text-muted-foreground">Sales invoices</h3>
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <h3 className="text-sm font-medium">Sales invoices</h3>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span>
+                    {balQ.data!.invoiceCount
+                      ? `${invoicePage * HISTORY_PAGE_SIZE + 1}–${Math.min(
+                          (invoicePage + 1) * HISTORY_PAGE_SIZE,
+                          balQ.data!.invoiceCount,
+                        )} of ${balQ.data!.invoiceCount}`
+                      : "No invoices"}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={invoicePage === 0}
+                    onClick={() => setInvoicePage((page) => Math.max(0, page - 1))}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={(invoicePage + 1) * HISTORY_PAGE_SIZE >= balQ.data!.invoiceCount}
+                    onClick={() => setInvoicePage((page) => page + 1)}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -784,7 +1011,35 @@ function ContactDetail() {
                     ))}
                 </TableBody>
               </Table>
-              <h3 className="mb-2 mt-6 text-sm text-muted-foreground">Purchase bills</h3>
+              <div className="mb-2 mt-6 flex flex-wrap items-center justify-between gap-2">
+                <h3 className="text-sm font-medium">Purchase bills</h3>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span>
+                    {balQ.data!.billCount
+                      ? `${billPage * HISTORY_PAGE_SIZE + 1}–${Math.min(
+                          (billPage + 1) * HISTORY_PAGE_SIZE,
+                          balQ.data!.billCount,
+                        )} of ${balQ.data!.billCount}`
+                      : "No bills"}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={billPage === 0}
+                    onClick={() => setBillPage((page) => Math.max(0, page - 1))}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={(billPage + 1) * HISTORY_PAGE_SIZE >= balQ.data!.billCount}
+                    onClick={() => setBillPage((page) => page + 1)}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
               <Table>
                 <TableHeader>
                   <TableRow>

@@ -446,6 +446,21 @@ export const upsertContact = createServerFn({ method: "POST" })
       for (const [field, column] of Object.entries(optionalColumns)) {
         if (!data.providedFields.includes(field)) delete patch[column];
       }
+      // Explicitly submitted null values clear previously configured overrides.
+      // Omitting a field remains a no-op for partial editors.
+      const nullableOverrides = {
+        billingAddressLine2: ["billing_address_line2", data.billingAddressLine2],
+        deliveryAddressLine2: ["delivery_address_line2", data.deliveryAddressLine2],
+        deliveryRegion: ["delivery_region", data.deliveryRegion],
+        deliveryPostal: ["delivery_postal", data.deliveryPostal],
+        defaultSalesAccountId: ["default_sales_account_id", data.defaultSalesAccountId],
+        defaultPurchaseAccountId: ["default_purchase_account_id", data.defaultPurchaseAccountId],
+        salesTaxInclusive: ["sales_tax_inclusive", data.salesTaxInclusive],
+        purchaseTaxInclusive: ["purchase_tax_inclusive", data.purchaseTaxInclusive],
+      } as const;
+      for (const [field, [column, value]] of Object.entries(nullableOverrides)) {
+        if (data.providedFields.includes(field)) patch[column] = value;
+      }
       const { data: row, error } = await context.supabase
         .from("contacts" as never)
         .update(patch as never)
@@ -510,35 +525,61 @@ export const archiveContact = createServerFn({ method: "POST" })
 
 export const getContactBalances = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; contactId: string }) => ({
-    companyId: assertUuid(input.companyId),
-    contactId: assertUuid(input.contactId),
-  }))
+  .inputValidator(
+    (input: {
+      companyId: string;
+      contactId: string;
+      limit?: number;
+      invoiceOffset?: number;
+      billOffset?: number;
+    }) => ({
+      companyId: assertUuid(input.companyId),
+      contactId: assertUuid(input.contactId),
+      limit: Math.min(100, Math.max(1, Math.floor(Number(input.limit ?? 50) || 50))),
+      invoiceOffset: Math.min(
+        1_000_000,
+        Math.max(0, Math.floor(Number(input.invoiceOffset ?? 0) || 0)),
+      ),
+      billOffset: Math.min(1_000_000, Math.max(0, Math.floor(Number(input.billOffset ?? 0) || 0))),
+    }),
+  )
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
 
-    const { data: invoices, error: iErr } = await context.supabase
+    const {
+      data: invoices,
+      count: invoiceCount,
+      error: iErr,
+    } = await context.supabase
       .from("sales_invoices" as never)
       .select(
         "id, invoice_date, due_date, status, total_minor, amount_paid_minor, amount_credited_minor, invoice_number, currency_code" as never,
+        { count: "exact" },
       )
       .eq("company_id" as never, data.companyId as never)
       .eq("contact_id" as never, data.contactId as never)
       .neq("status" as never, "void" as never)
       .order("invoice_date" as never, { ascending: false })
-      .limit(100);
+      .order("id" as never)
+      .range(data.invoiceOffset, data.invoiceOffset + data.limit - 1);
     if (iErr) throw new Error(iErr.message);
 
-    const { data: bills, error: bErr } = await context.supabase
+    const {
+      data: bills,
+      count: billCount,
+      error: bErr,
+    } = await context.supabase
       .from("purchase_bills" as never)
       .select(
         "id, bill_date, due_date, status, total_minor, amount_paid_minor, amount_credited_minor, bill_number, supplier_invoice_number, currency_code" as never,
+        { count: "exact" },
       )
       .eq("company_id" as never, data.companyId as never)
       .eq("contact_id" as never, data.contactId as never)
       .neq("status" as never, "void" as never)
       .order("bill_date" as never, { ascending: false })
-      .limit(100);
+      .order("id" as never)
+      .range(data.billOffset, data.billOffset + data.limit - 1);
     if (bErr) throw new Error(bErr.message);
 
     const { data: company } = await context.supabase
@@ -548,7 +589,7 @@ export const getContactBalances = createServerFn({ method: "GET" })
       .maybeSingle();
     const baseCurrency = (company?.base_currency ?? "GBP").toUpperCase();
     const today = new Date().toISOString().slice(0, 10);
-    // Totals come from ALL open documents, not the 100 most recent shown in the lists.
+    // Totals come from ALL open documents, not the paginated history rows.
     const { recv, pay } = await loadOpenDocs(context.supabase, data.companyId, data.contactId);
     const r = aggregateOutstanding(recv, today, baseCurrency);
     const p = aggregateOutstanding(pay, today, baseCurrency);
@@ -556,6 +597,8 @@ export const getContactBalances = createServerFn({ method: "GET" })
     return {
       invoices: invoices ?? [],
       bills: bills ?? [],
+      invoiceCount: invoiceCount ?? 0,
+      billCount: billCount ?? 0,
       baseCurrency,
       receivableMinor: r.base.outstandingMinor,
       payableMinor: p.base.outstandingMinor,
@@ -1129,8 +1172,10 @@ export const mergeContacts = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "contacts.manage");
 
-    // Preferred path: one transaction over every table that references contacts.
-    const rpc = await context.supabase.rpc(
+    // Merging touches many foreign-key relationships. A multi-request fallback
+    // can leave accounting references split across contacts if interrupted.
+    // Require the audited database transaction rather than pretending undo is atomic.
+    const { data: merged, error } = await context.supabase.rpc(
       "merge_contacts" as never,
       {
         _company_id: data.companyId,
@@ -1138,108 +1183,19 @@ export const mergeContacts = createServerFn({ method: "POST" })
         _merge_id: data.mergeId,
       } as never,
     );
-    if (!rpc.error) {
-      const result = (rpc.data ?? {}) as { rows_moved?: number };
-      return {
-        survivorId: data.survivorId,
-        mergedId: data.mergeId,
-        rowsMoved: Number(result.rows_moved ?? 0),
-        atomic: true,
-      };
-    }
-    if (!isMissingFunctionError(rpc.error)) throw new Error(rpc.error.message);
-
-    // Fallback until the migration is applied: checked updates by row id, undone if one fails.
-    const exists = async (id: string) => {
-      const { data: row, error } = await context.supabase
-        .from("contacts" as never)
-        .select("id" as never)
-        .eq("id" as never, id as never)
-        .eq("company_id" as never, data.companyId as never)
-        .maybeSingle();
-      if (error) throw new Error(error.message);
-      return Boolean(row);
-    };
-    if (!(await exists(data.survivorId)) || !(await exists(data.mergeId))) {
-      throw new Error("Both contacts must exist in this organisation");
-    }
-
-    const targets: Array<[string, string]> = [
-      ["sales_invoices", "contact_id"],
-      ["sales_quotes", "contact_id"],
-      ["sales_credit_notes", "contact_id"],
-      ["sales_receipts", "contact_id"],
-      ["sales_recurring_invoices", "contact_id"],
-      ["purchase_bills", "contact_id"],
-      ["purchase_credit_notes", "contact_id"],
-      ["purchase_orders", "contact_id"],
-      ["purchase_expenses", "contact_id"],
-      ["supplier_payments", "contact_id"],
-      ["recurring_bills", "contact_id"],
-      ["recurring_templates", "contact_id"],
-      ["money_documents", "contact_id"],
-      ["projects", "contact_id"],
-      ["purchase_bill_lines", "customer_contact_id"],
-      ["contact_people", "contact_id"],
-      ["contact_addresses", "contact_id"],
-    ];
-    const moved: Array<{ table: string; column: string; ids: string[] }> = [];
-    const undo = async () => {
-      for (const m of moved.reverse()) {
-        if (m.ids.length === 0) continue;
-        await context.supabase
-          .from(m.table as never)
-          .update({ [m.column]: data.mergeId } as never)
-          .in("id" as never, m.ids as never);
+    if (error) {
+      if (isMissingFunctionError(error)) {
+        throw new Error(
+          "Contact merging needs the merge_contacts database migration. No contacts were changed.",
+        );
       }
-    };
-    try {
-      for (const [table, column] of targets) {
-        const { data: found, error: findErr } = await context.supabase
-          .from(table as never)
-          .select("id" as never)
-          .eq("company_id" as never, data.companyId as never)
-          .eq(column as never, data.mergeId as never);
-        if (findErr) throw new Error(`${table}: ${findErr.message}`);
-        const ids = ((found ?? []) as unknown as Array<{ id: string }>).map((r) => r.id);
-        if (ids.length === 0) continue;
-        const { error: upErr } = await context.supabase
-          .from(table as never)
-          .update({ [column]: data.survivorId } as never)
-          .in("id" as never, ids as never);
-        if (upErr) throw new Error(`${table}: ${upErr.message}`);
-        moved.push({ table, column, ids });
-      }
-      const { data: notesRow } = await context.supabase
-        .from("contacts" as never)
-        .select("notes" as never)
-        .eq("id" as never, data.mergeId as never)
-        .eq("company_id" as never, data.companyId as never)
-        .maybeSingle();
-      const priorNotes = ((notesRow as { notes: string | null } | null)?.notes ?? "").trim();
-      const note = `Merged into ${data.survivorId} on ${new Date().toISOString().slice(0, 10)}`;
-      const { error: archErr } = await context.supabase
-        .from("contacts" as never)
-        .update({
-          is_active: false,
-          archived_at: new Date().toISOString(),
-          notes: priorNotes ? `${priorNotes}\n${note}` : note,
-          updated_at: new Date().toISOString(),
-        } as never)
-        .eq("id" as never, data.mergeId as never)
-        .eq("company_id" as never, data.companyId as never);
-      if (archErr) throw new Error(archErr.message);
-    } catch (e) {
-      await undo();
-      throw new Error(
-        `Merge failed and was undone: ${e instanceof Error ? e.message : "unknown error"}`,
-      );
+      throw new Error(error.message);
     }
-    // Group / tag links are left on the archived contact in this fallback (they can clash).
+    const result = (merged ?? {}) as { rows_moved?: number };
     return {
       survivorId: data.survivorId,
       mergedId: data.mergeId,
-      rowsMoved: moved.reduce((n, m) => n + m.ids.length, 0),
-      atomic: false,
+      rowsMoved: Number(result.rows_moved ?? 0),
+      atomic: true,
     };
   });

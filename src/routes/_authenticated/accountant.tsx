@@ -9,7 +9,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { getAccountantChecklist } from "@/lib/accountant/accountant.functions";
-import { ACCOUNTANT_WORKSPACE_TABS, parseAccountantWorkspaceTab } from "@/lib/accountant/workspace-navigation";
+import { ACCOUNTANT_WORKSPACE_TABS, parseAccountantWorkspaceTab, type AccountantWorkspaceTab } from "@/lib/accountant/workspace-navigation";
 import { nativeTabLinkClass, handleNativeTabKeyDown } from "@/lib/navigation/native-tab";
 import { listAccounts } from "@/lib/accounting/accounting.functions";
 import { postTaxAdjustment } from "@/lib/tax/tax.functions";
@@ -44,7 +44,7 @@ export const Route = createFileRoute("/_authenticated/accountant")({
   head: () => ({
     meta: [{ title: "Accountant tools — LinkBooks" }],
   }),
-  validateSearch: (raw: Record<string, unknown>) => ({
+  validateSearch: (raw: Record<string, unknown>): { tab?: AccountantWorkspaceTab } => ({
     tab: parseAccountantWorkspaceTab(raw["tab"]),
   }),
   component: AccountantPage,
@@ -56,7 +56,7 @@ function AccountantPage() {
 }
 
 function AccountantTools() {
-  const tab = Route.useSearch().tab;
+  const tab = Route.useSearch().tab ?? "overview";
   const canAdjust = useCanDo("tax.settings");
   const { company, isPending } = useActiveCompany();
   const companyId = company?.id;

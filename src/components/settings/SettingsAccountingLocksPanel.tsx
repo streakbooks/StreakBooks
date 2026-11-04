@@ -10,7 +10,10 @@ import {
   upsertOrganisationConfig,
 } from "@/lib/settings/settings-centre.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { prepareAccountingPreferences } from "@/lib/settings/accounting-preferences";
+import {
+  hasUnsavedAccountingSettings,
+  prepareAccountingPreferences,
+} from "@/lib/settings/accounting-preferences";
 import type { SettingsDocument } from "@/lib/settings/settings-centre.functions";
 import { LedgerHealthPanel } from "@/components/accounting/LedgerHealthPanel";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -84,7 +87,7 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
   }, [cfgQ.data, cfgTouched]);
 
   // Protect both in-app navigation and browser unload while either draft is unsaved.
-  const dirty = lockTouched || cfgTouched;
+  const dirty = hasUnsavedAccountingSettings(lockTouched, cfgTouched);
   const navigationBlocker = useBlocker({
     shouldBlockFn: () => dirty,
     enableBeforeUnload: dirty,

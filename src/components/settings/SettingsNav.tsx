@@ -136,7 +136,7 @@ export function SettingsNav({ section, embedded = false, showDemo, filter }: Pro
                   <span className="truncate">{c.label}</span>
                   {c.availability === "unavailable" ? (
                     <Badge variant="outline" className="ml-1 shrink-0 text-[10px]">
-                      Soon
+                      Unavailable
                     </Badge>
                   ) : c.availability === "partial" ? (
                     <Badge variant="secondary" className="ml-1 shrink-0 text-[10px]">

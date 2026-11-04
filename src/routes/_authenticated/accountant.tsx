@@ -185,6 +185,7 @@ function AccountantTools() {
             <LoadingState />
           ) : query.isError ? (
             <ErrorState
+              onRetry={() => void query.refetch()}
               title="Could not load checklist"
               description={friendlyAuthError(query.error)}
             />
@@ -347,6 +348,7 @@ function AccountantTools() {
           )}
           {accountsQ.isError && (
             <ErrorState
+              onRetry={() => void accountsQ.refetch()}
               title="Could not load posting accounts"
               description={friendlyAuthError(accountsQ.error)}
             />

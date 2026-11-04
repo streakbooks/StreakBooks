@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -17,13 +18,7 @@ import { FirmRecurringBillingPanel } from "@/components/firm/FirmRecurringBillin
 import { LookupSelect } from "@/components/lookup";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ErrorState, LoadingState, EmptyState } from "@/components/common/states";
 
 export function FirmBillingPanel({
@@ -177,6 +172,7 @@ export function FirmBillingPanel({
             <LoadingState rows={2} />
           ) : engagementsQ.isError ? (
             <ErrorState
+              onRetry={() => void engagementsQ.refetch()}
               title="Could not load engagements"
               description={friendlyAuthError(engagementsQ.error)}
             />
@@ -189,7 +185,11 @@ export function FirmBillingPanel({
             <>
               <div className="max-w-md space-y-1">
                 <Label>Engagement</Label>
-                <Select value={currentEngagementId} onValueChange={setEngagementId}>
+                <RecordLookupSelect
+                  required
+                  value={currentEngagementId}
+                  onValueChange={setEngagementId}
+                >
                   <SelectTrigger aria-label="Choose engagement">
                     <SelectValue />
                   </SelectTrigger>
@@ -200,12 +200,13 @@ export function FirmBillingPanel({
                       </SelectItem>
                     ))}
                   </SelectContent>
-                </Select>
+                </RecordLookupSelect>
               </div>
               {linksQ.isPending ? (
                 <LoadingState rows={2} />
               ) : linksQ.isError ? (
                 <ErrorState
+                  onRetry={() => void linksQ.refetch()}
                   title="Could not load linked invoices"
                   description={friendlyAuthError(linksQ.error)}
                 />
@@ -255,6 +256,7 @@ export function FirmBillingPanel({
                   <LoadingState rows={2} />
                 ) : invoicesQ.isError ? (
                   <ErrorState
+                    onRetry={() => void invoicesQ.refetch()}
                     title="Could not list practice invoices"
                     description={friendlyAuthError(invoicesQ.error)}
                   />
@@ -266,7 +268,11 @@ export function FirmBillingPanel({
                   <div className="flex flex-wrap items-end gap-3 rounded-lg border bg-card p-4">
                     <div className="min-w-56 flex-1 space-y-1">
                       <Label>Existing invoice in {activeCompanyName}</Label>
-                      <Select value={currentInvoiceId} onValueChange={setInvoiceId}>
+                      <RecordLookupSelect
+                        required
+                        value={currentInvoiceId}
+                        onValueChange={setInvoiceId}
+                      >
                         <SelectTrigger aria-label="Practice invoice">
                           <SelectValue />
                         </SelectTrigger>
@@ -277,7 +283,7 @@ export function FirmBillingPanel({
                             </SelectItem>
                           ))}
                         </SelectContent>
-                      </Select>
+                      </RecordLookupSelect>
                     </div>
                     <Button
                       disabled={!currentInvoiceId || !currentEngagementId || linkM.isPending}
@@ -313,6 +319,7 @@ export function FirmAnalyticsPanel({ firmId }: { firmId: string }) {
   if (pulse.isError)
     return (
       <ErrorState
+        onRetry={() => void pulse.refetch()}
         title="Could not load practice insights"
         description={friendlyAuthError(pulse.error)}
       />

@@ -321,6 +321,7 @@ function AiAssistant() {
             <LoadingState rows={3} />
           ) : suggestionsQ.isError ? (
             <ErrorState
+              onRetry={() => void suggestionsQ.refetch()}
               title="Could not load suggestions"
               description={friendlyAuthError(suggestionsQ.error)}
             />

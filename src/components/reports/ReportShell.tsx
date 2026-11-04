@@ -209,7 +209,11 @@ export function ReportShell({
         )}
       </header>
 
-      <div className="flex flex-wrap items-end gap-3 print:hidden">
+      <div
+        role="group"
+        aria-label="Report controls"
+        className="flex min-w-0 flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4 print:hidden"
+      >
         <ReportPeriodSelect
           from={ctx.from}
           to={ctx.to}

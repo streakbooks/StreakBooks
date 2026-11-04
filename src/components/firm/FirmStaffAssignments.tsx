@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -186,7 +187,7 @@ export function FirmStaffAssignments({
                 <div className="grid gap-3 rounded-lg border bg-card p-4 sm:grid-cols-[minmax(0,1fr)_200px_auto] sm:items-end">
                   <div className="space-y-1">
                     <Label>Colleague</Label>
-                    <Select value={selectedUser} onValueChange={setAssignee}>
+                    <RecordLookupSelect required value={selectedUser} onValueChange={setAssignee}>
                       <SelectTrigger aria-label="Assign colleague">
                         <SelectValue placeholder="Choose colleague" />
                       </SelectTrigger>
@@ -197,7 +198,7 @@ export function FirmStaffAssignments({
                           </SelectItem>
                         ))}
                       </SelectContent>
-                    </Select>
+                    </RecordLookupSelect>
                   </div>
                   <div className="space-y-1">
                     <Label>Responsibility</Label>
@@ -205,6 +206,7 @@ export function FirmStaffAssignments({
                       value={responsibility}
                       onValueChange={(v) => setResponsibility(v as typeof responsibility)}
                     >
+                      {/* lookup-fixed-enum: Responsibility uses fixed practice roles, not staff records. */}
                       <SelectTrigger aria-label="Responsibility">
                         <SelectValue />
                       </SelectTrigger>
@@ -240,6 +242,7 @@ export function FirmStaffAssignments({
                 <LoadingState rows={2} />
               ) : candidatesQ.isError ? (
                 <ErrorState
+                  onRetry={() => void candidatesQ.refetch()}
                   title="Could not load eligible colleagues"
                   description={friendlyAuthError(candidatesQ.error)}
                 />
@@ -250,7 +253,11 @@ export function FirmStaffAssignments({
               ) : (
                 <div className="flex flex-wrap items-center gap-3">
                   <div className="min-w-56 flex-1">
-                    <Select value={selectedCandidate} onValueChange={setCandidate}>
+                    <RecordLookupSelect
+                      required
+                      value={selectedCandidate}
+                      onValueChange={setCandidate}
+                    >
                       <SelectTrigger aria-label="Existing company colleague">
                         <SelectValue />
                       </SelectTrigger>
@@ -261,7 +268,7 @@ export function FirmStaffAssignments({
                           </SelectItem>
                         ))}
                       </SelectContent>
-                    </Select>
+                    </RecordLookupSelect>
                   </div>
                   <Button
                     disabled={!selectedCandidate || addM.isPending}

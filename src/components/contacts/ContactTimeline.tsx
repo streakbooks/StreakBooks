@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -74,7 +75,7 @@ function ContactTaskAssignment({
     <div className="grid gap-2 rounded-md border bg-muted/30 p-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
       <div className="space-y-1">
         <Label>Responsible team member</Label>
-        <Select value={owner} onValueChange={setOwner}>
+        <RecordLookupSelect required value={owner} onValueChange={setOwner}>
           <SelectTrigger aria-label={`Assign task ${task.title}`}>
             <SelectValue placeholder="Choose assignee" />
           </SelectTrigger>
@@ -89,7 +90,7 @@ function ContactTaskAssignment({
               <SelectItem value={task.assigned_to}>Former or inactive member</SelectItem>
             ) : null}
           </SelectContent>
-        </Select>
+        </RecordLookupSelect>
       </div>
       <div className="space-y-1">
         <Label htmlFor={`contact-task-remind-${task.id}`}>Reminder date</Label>
@@ -265,6 +266,8 @@ export function ContactTimeline({
                 value={kind}
                 onValueChange={(value) => setKind(value as ContactInteractionKind)}
               >
+                {/* lookup-fixed-enum: Activity types are a fixed interaction classification. */}
+
                 <SelectTrigger aria-label="Choose interaction type">
                   <SelectValue />
                 </SelectTrigger>
@@ -293,7 +296,7 @@ export function ContactTimeline({
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1">
                 <Label>Task owner</Label>
-                <Select value={assignedTo} onValueChange={setAssignedTo}>
+                <RecordLookupSelect required value={assignedTo} onValueChange={setAssignedTo}>
                   <SelectTrigger aria-label="Assign new follow-up task">
                     <SelectValue placeholder="Assign to" />
                   </SelectTrigger>
@@ -307,7 +310,7 @@ export function ContactTimeline({
                         </SelectItem>
                       ))}
                   </SelectContent>
-                </Select>
+                </RecordLookupSelect>
               </div>
               <div className="space-y-1">
                 <Label htmlFor="contact-timeline-reminder">In-app reminder date (optional)</Label>

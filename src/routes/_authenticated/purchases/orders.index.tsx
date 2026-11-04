@@ -98,7 +98,11 @@ function OrdersList() {
       {query.isPending ? (
         <ListSkeleton />
       ) : query.isError ? (
-        <ErrorState title="Could not load orders" description={friendlyAuthError(query.error)} />
+        <ErrorState
+          onRetry={() => void query.refetch()}
+          title="Could not load orders"
+          description={friendlyAuthError(query.error)}
+        />
       ) : !query.data?.total && !search && status === "all" ? (
         <EmptyState title="No purchase orders" description="Create a PO for a supplier." />
       ) : (

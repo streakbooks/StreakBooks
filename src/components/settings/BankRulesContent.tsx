@@ -511,7 +511,11 @@ export function BankRulesContent({ embedded = false }: { embedded?: boolean }) {
       {rulesQ.isPending ? (
         <LoadingState />
       ) : rulesQ.isError ? (
-        <ErrorState title="Could not load rules" description={friendlyAuthError(rulesQ.error)} />
+        <ErrorState
+          onRetry={() => void rulesQ.refetch()}
+          title="Could not load rules"
+          description={friendlyAuthError(rulesQ.error)}
+        />
       ) : (rulesQ.data ?? []).length === 0 ? (
         <EmptyState title="No rules" description="Create a matching rule above." />
       ) : (

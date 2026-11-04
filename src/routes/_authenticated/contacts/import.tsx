@@ -86,7 +86,9 @@ function ContactImportPage() {
         queryClient.invalidateQueries({ queryKey: ["contacts-count", companyId] }),
         queryClient.invalidateQueries({ queryKey: ["contact-duplicates", companyId] }),
       ]);
-      toast.success(`Import finished: ${res.created} created`);
+      if (res.failed > 0)
+        toast.warning(`Import finished with ${res.failed} row errors. Review the results below.`);
+      else toast.success(`Import finished: ${res.created} created`);
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
@@ -146,7 +148,8 @@ function ContactImportPage() {
             type="file"
             disabled={!canManage || importM.isPending}
             accept=".csv,text/csv"
-            className="hidden"
+            className="sr-only"
+            aria-label="Choose contact CSV"
             onChange={async (e) => {
               const file = e.target.files?.[0];
               if (!file) return;
@@ -217,6 +220,8 @@ function ContactImportPage() {
                     setResult(null);
                   }}
                 >
+                  {/* lookup-fixed-enum: Uploaded CSV column schema is fixed for this file. */}
+
                   <option value="none">Not mapped</option>
                   {parsed.value.headers.map((header, index) => (
                     <option key={index} value={String(index)}>
@@ -232,7 +237,12 @@ function ContactImportPage() {
               Map a contact name column to continue.
             </p>
           ) : null}
-          <div className="overflow-x-auto">
+          <div
+            className="overflow-x-auto"
+            role="region"
+            aria-label="Mapped contact preview"
+            tabIndex={0}
+          >
             <table className="w-full text-left text-sm">
               <caption className="mb-2 text-left text-xs text-muted-foreground">
                 Preview of the first five contacts. Import has not started.
@@ -266,7 +276,7 @@ function ContactImportPage() {
       </Button>
 
       {result ? (
-        <div className="mt-6 space-y-2 text-sm">
+        <div role="status" className="mt-6 space-y-2 rounded-xl border bg-card p-4 text-sm">
           <p>
             Created {result.created} · Skipped {result.skipped} · Failed {result.failed}
           </p>

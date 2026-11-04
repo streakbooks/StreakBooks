@@ -176,6 +176,7 @@ export function DocumentReviewQueue({
             setPage(0);
           }}
         >
+          {/* lookup-fixed-enum: Review status filter uses fixed lifecycle values. */}
           <SelectTrigger className="w-56" aria-label="Review status filter">
             <SelectValue />
           </SelectTrigger>
@@ -342,6 +343,7 @@ export function DocumentReviewQueue({
                   disabled={!canManage}
                   onValueChange={(value) => update({ documentType: value as ReviewType })}
                 >
+                  {/* lookup-fixed-enum: Document types are a fixed classifier enumeration. */}
                   <SelectTrigger id="review-type">
                     <SelectValue />
                   </SelectTrigger>
@@ -361,6 +363,7 @@ export function DocumentReviewQueue({
                   disabled={!canManage || (selected.status === "approved" && !canApprove)}
                   onValueChange={(value) => update({ status: value as ReviewStatus })}
                 >
+                  {/* lookup-fixed-enum: Review status uses fixed lifecycle values. */}
                   <SelectTrigger id="review-status">
                     <SelectValue />
                   </SelectTrigger>

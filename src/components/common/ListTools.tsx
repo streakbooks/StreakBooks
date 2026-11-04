@@ -1,8 +1,6 @@
 import { useMemo, useState } from "react";
-import { Download } from "lucide-react";
 import { csvFilename, downloadCsv, toCsv, type CsvCell } from "@/lib/reports/csv";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { DataTableToolbar } from "./data-table-toolbar";
 
 /** Case-insensitive match: every word of the query must appear in the row's searchable text. */
 export function matchesQuery(text: string, query: string): boolean {
@@ -17,9 +15,7 @@ export function useListSearch<T>(rows: readonly T[], textOf: (row: T) => string)
   const [query, setQuery] = useState("");
   const filtered = useMemo(
     () => rows.filter((r) => matchesQuery(textOf(r), query)),
-    // textOf is a stable inline mapper at every call site; rows and query drive the result.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [rows, query],
+    [rows, query, textOf],
   );
   return { query, setQuery, filtered };
 }
@@ -50,40 +46,32 @@ export function ListToolbar({
   };
 }) {
   return (
-    <div className="mb-3 flex flex-wrap items-center gap-3 print:hidden">
-      <Input
-        className="max-w-xs"
-        aria-label={placeholder}
-        placeholder={placeholder}
-        value={query}
-        onChange={(e) => onQuery(e.target.value)}
-      />
-      <span className="text-sm text-muted-foreground">
-        {shown === total ? `${total} rows` : `${shown} of ${total} rows`}
-      </span>
-      {exportCsv ? (
-        <Button
-          size="sm"
-          variant="outline"
-          className="ml-auto"
-          disabled={shown === 0}
-          onClick={() => {
-            const text = toCsv(
-              {
-                company: exportCsv.company,
-                report: exportCsv.title,
-                period: "All dates",
-                currency: exportCsv.currency,
-              },
-              exportCsv.headers,
-              exportCsv.rows,
-            );
-            downloadCsv(csvFilename(exportCsv.title, new Date().toISOString().slice(0, 10)), text);
-          }}
-        >
-          <Download className="mr-1 size-4" /> Export CSV
-        </Button>
-      ) : null}
-    </div>
+    <DataTableToolbar
+      search={query}
+      onSearchChange={onQuery}
+      searchPlaceholder={placeholder}
+      summary={shown === total ? `${total} records` : `${shown} of ${total} records`}
+      exportDisabled={shown === 0}
+      onExport={
+        exportCsv
+          ? () => {
+              const text = toCsv(
+                {
+                  company: exportCsv.company,
+                  report: exportCsv.title,
+                  period: "All dates",
+                  currency: exportCsv.currency,
+                },
+                exportCsv.headers,
+                exportCsv.rows,
+              );
+              downloadCsv(
+                csvFilename(exportCsv.title, new Date().toISOString().slice(0, 10)),
+                text,
+              );
+            }
+          : undefined
+      }
+    />
   );
 }

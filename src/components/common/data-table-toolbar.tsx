@@ -1,17 +1,8 @@
 import type { ReactNode } from "react";
-import { Columns3, Download, Loader2, Rows3, Search, X } from "lucide-react";
+import { Download, Loader2, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { TableAppearanceControls } from "./TableAppearanceControls";
 import type { Density } from "@/lib/table-prefs";
 
 export type ToolbarColumn = { id: string; label: string; visible: boolean };
@@ -37,6 +28,8 @@ export function DataTableToolbar({
   selectedCount = 0,
   onClearSelection,
   bulkActions,
+  summary,
+  exportDisabled,
 }: {
   search?: string;
   onSearchChange?: (q: string) => void;
@@ -46,11 +39,13 @@ export function DataTableToolbar({
   onToggleColumn?: (id: string) => void;
   density?: Density;
   onDensityChange?: (d: Density) => void;
-  onExport?: () => void;
+  onExport?: (() => void) | undefined;
   exporting?: boolean;
   selectedCount?: number;
   onClearSelection?: () => void;
   bulkActions?: ReactNode;
+  summary?: ReactNode;
+  exportDisabled?: boolean;
 }) {
   if (selectedCount > 0) {
     return (
@@ -73,71 +68,61 @@ export function DataTableToolbar({
     );
   }
   return (
-    <div className="mb-4 flex flex-wrap items-center gap-2 print:hidden" role="search">
+    <div
+      className="mb-4 flex min-w-0 flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-3 print:hidden"
+      role="search"
+      aria-label="Filter records"
+    >
       {onSearchChange ? (
-        <div className="relative w-full sm:w-72">
+        <div className="relative w-full sm:w-64 sm:flex-1 sm:max-w-sm">
           <Search
             className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
             aria-hidden
           />
           <Input
-            className="pl-8"
+            className="pl-9 pr-10"
             type="search"
             placeholder={searchPlaceholder}
             aria-label={searchPlaceholder}
             value={search ?? ""}
             onChange={(e) => onSearchChange(e.target.value)}
           />
+          {search ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="absolute right-0 top-0 size-9"
+              aria-label="Clear search"
+              onClick={() => onSearchChange("")}
+            >
+              <X className="size-3.5" aria-hidden />
+            </Button>
+          ) : null}
         </div>
       ) : null}
       {filters}
-      <div className="ml-auto flex items-center gap-2">
-        {columns && onToggleColumn ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Columns3 />
-                Columns
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuLabel>Show columns</DropdownMenuLabel>
-              {columns.map((c) => (
-                <DropdownMenuCheckboxItem
-                  key={c.id}
-                  checked={c.visible}
-                  onCheckedChange={() => onToggleColumn(c.id)}
-                  onSelect={(e) => e.preventDefault()}
-                >
-                  {c.label}
-                </DropdownMenuCheckboxItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : null}
-        {density && onDensityChange ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" aria-label="Row density">
-                <Rows3 />
-                Density
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Row density</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuRadioGroup
-                value={density}
-                onValueChange={(v) => onDensityChange(v as Density)}
-              >
-                <DropdownMenuRadioItem value="comfortable">Comfortable</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="compact">Compact</DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : null}
+      {summary ? (
+        <span className="text-xs text-muted-foreground" role="status">
+          {summary}
+        </span>
+      ) : null}
+      <div className="ml-auto flex max-w-full flex-wrap items-center gap-2">
+        <TableAppearanceControls
+          columns={columns ?? []}
+          hidden={columns?.filter((column) => !column.visible).map((column) => column.id) ?? []}
+          density={density}
+          onToggleColumn={onToggleColumn}
+          onDensityChange={onDensityChange}
+        />
         {onExport ? (
-          <Button variant="outline" size="sm" onClick={onExport} disabled={exporting}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onExport}
+            disabled={exporting || exportDisabled}
+            aria-busy={exporting || undefined}
+          >
             {exporting ? <Loader2 className="animate-spin" /> : <Download />}
             Export CSV
           </Button>

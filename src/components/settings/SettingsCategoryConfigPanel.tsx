@@ -324,6 +324,8 @@ export function SettingsCategoryConfigPanel({
                             disabled={disabled}
                             onValueChange={(selected) => updateField(key, selected)}
                           >
+                            {/* lookup-fixed-enum: Settings values come from the fixed ENUM_OPTIONS schema. */}
+
                             <SelectTrigger
                               id={id}
                               aria-invalid={Boolean(error)}

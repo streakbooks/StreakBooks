@@ -11,8 +11,14 @@ const read = (path) => readFileSync(resolve(process.cwd(), path), "utf8");
 const failures = [];
 const required = [
   ["src/components/layout/AppShell.tsx", ["<Link", "<NavLink", 'aria-label="Main"']],
-  ["src/components/common/ModuleSubnav.tsx", ["<Link", "SettingsDestinationLink"]],
-  ["src/components/banking/BankingSubnav.tsx", ["<Link", 'aria-label="Banking sections"']],
+  [
+    "src/components/common/ModuleSubnav.tsx",
+    ["<Link", "SettingsDestinationLink", "aria-current", "search={item.search"],
+  ],
+  [
+    "src/components/banking/BankingSubnav.tsx",
+    ["<ModuleSubnav", 'label="Banking"', 'to: "/banking/transactions"', 'to: "/banking/reconcile"'],
+  ],
   ["src/components/settings/SettingsNav.tsx", ["<Link"]],
   ["src/components/settings/SettingsOverviewPanel.tsx", ["<Link", 'to="/settings"']],
   ["src/components/settings/SettingsCommandPalette.tsx", ["<Link", "onLinkClick"]],

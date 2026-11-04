@@ -155,7 +155,7 @@ export function SortHead({
       <button
         type="button"
         className={cn(
-          "inline-flex items-center gap-1 rounded-sm uppercase tracking-wide hover:text-foreground",
+          "inline-flex items-center gap-1 rounded-sm font-semibold hover:text-foreground",
           right && "flex-row-reverse",
           active && "text-foreground",
         )}

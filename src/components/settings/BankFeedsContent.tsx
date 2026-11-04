@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { listBankAccounts } from "@/lib/banking/banking.functions";
-import { PageHeader, EmptyState, LoadingState } from "@/components/common/states";
+import { PageHeader, EmptyState, LoadingState, ErrorState } from "@/components/common/states";
+import { friendlyAuthError } from "@/lib/auth-helpers";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,16 +44,31 @@ export function BankFeedsContent({ embedded = false }: { embedded?: boolean }) {
       )}
 
       <Alert className="mb-4">
-        <AlertTitle>No feed provider configured</AlertTitle>
+        <AlertTitle>Bank feed availability</AlertTitle>
         <AlertDescription>
-          LinkBooks does not fabricate live syncs. When a provider (e.g. TrueLayer / Plaid) is
-          connected with credentials, accounts will show connected / syncing / error statuses from{" "}
-          <code>bank_feed_connections</code>. Until then, use Import CSV.
+          Connection status is shown for each account below. If your bank is not connected, you can
+          import a CSV statement to continue bookkeeping.
         </AlertDescription>
       </Alert>
 
       {accountsQ.isPending ? (
         <LoadingState />
+      ) : accountsQ.isError ? (
+        <ErrorState
+          title="Could not load bank connections"
+          description={friendlyAuthError(accountsQ.error)}
+          onRetry={() => void accountsQ.refetch()}
+        />
+      ) : !accountsQ.data?.length ? (
+        <EmptyState
+          title="No bank accounts yet"
+          description="Add a bank account before importing a statement or reviewing connections."
+          action={
+            <Button asChild>
+              <Link to="/banking">Open bank accounts</Link>
+            </Button>
+          }
+        />
       ) : (
         <Table>
           <TableHeader>

@@ -363,7 +363,13 @@ function ContactDetail() {
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (contactQ.isPending) return <LoadingState />;
   if (contactQ.isError || !c) {
-    return <ErrorState title="Contact not found" description={friendlyAuthError(contactQ.error)} />;
+    return (
+      <ErrorState
+        onRetry={() => void contactQ.refetch()}
+        title="Contact not found"
+        description={friendlyAuthError(contactQ.error)}
+      />
+    );
   }
 
   const people = (contactQ.data?.people ?? []) as Array<{
@@ -868,6 +874,7 @@ function ContactDetail() {
             <LoadingState />
           ) : balQ.isError ? (
             <ErrorState
+              onRetry={() => void balQ.refetch()}
               title="Could not load balances"
               description={friendlyAuthError(balQ.error)}
             />

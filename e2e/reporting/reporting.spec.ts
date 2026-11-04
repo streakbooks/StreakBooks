@@ -237,7 +237,7 @@ test("standard statements apply real comparison and presentation options and pre
 }) => {
   await page.goto("/");
   const region = page.getByRole("region", { name: "Standard statement fixture", exact: true });
-  await region.getByRole("button", { name: "Customize report", exact: true }).click();
+  await region.getByRole("button", { name: "Customize statement", exact: true }).click();
   await page.getByRole("combobox", { name: "Compare selected period with", exact: true }).click();
   await page.getByRole("option", { name: "Previous year", exact: true }).click();
   await page.getByLabel("Show change in amount", { exact: true }).check();
@@ -264,7 +264,7 @@ test("standard statements apply real comparison and presentation options and pre
     .getByRole("button", { name: "Persist standard statement settings", exact: true })
     .click();
   await page.reload();
-  await region.getByRole("button", { name: "Customize report", exact: true }).click();
+  await region.getByRole("button", { name: "Customize statement", exact: true }).click();
   await expect(page.getByLabel("Show percentage change", { exact: true })).toBeChecked();
   await page.getByRole("tab", { name: "Rows & numbers", exact: true }).click();
   await expect(page.getByRole("combobox", { name: "Decimal places", exact: true })).toContainText(
@@ -278,7 +278,7 @@ test("standard customization validates comparison dates and filters before apply
 }) => {
   await page.goto("/");
   const region = page.getByRole("region", { name: "Standard statement fixture", exact: true });
-  await region.getByRole("button", { name: "Customize report", exact: true }).click();
+  await region.getByRole("button", { name: "Customize statement", exact: true }).click();
   await page.getByRole("combobox", { name: "Compare selected period with", exact: true }).click();
   await page.getByRole("option", { name: "Custom comparison period", exact: true }).click();
   await expect(page.getByLabel("Comparison from", { exact: true })).toBeVisible();
@@ -321,7 +321,7 @@ test("standard report comparison and filter shortcuts open the relevant controls
 test("standard filters accept and retain a single-day inclusive range", async ({ page }) => {
   await page.goto("/");
   const region = page.getByRole("region", { name: "Standard statement fixture", exact: true });
-  await region.getByRole("button", { name: "Customize report", exact: true }).click();
+  await region.getByRole("button", { name: "Customize statement", exact: true }).click();
   await page.getByRole("tab", { name: "Filters", exact: true }).click();
   await page.getByRole("button", { name: "Add condition", exact: true }).click();
   await page.getByRole("combobox", { name: "Condition 1 field", exact: true }).click();
@@ -336,7 +336,7 @@ test("standard filters accept and retain a single-day inclusive range", async ({
     .getByRole("button", { name: "Persist standard statement settings", exact: true })
     .click();
   await page.reload();
-  await region.getByRole("button", { name: "Customize report", exact: true }).click();
+  await region.getByRole("button", { name: "Customize statement", exact: true }).click();
   await page.getByRole("tab", { name: "Filters", exact: true }).click();
   await expect(page.getByLabel("Condition 1 value 1", { exact: true })).toHaveValue("2026-01-15");
   await expect(page.getByLabel("Condition 1 value 2", { exact: true })).toHaveValue("2026-01-15");

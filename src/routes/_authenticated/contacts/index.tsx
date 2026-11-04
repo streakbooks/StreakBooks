@@ -1,3 +1,4 @@
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { nativeTabLinkClass, handleNativeTabKeyDown } from "@/lib/navigation/native-tab";
 import { SettingsDestinationLink } from "@/components/settings/ModuleSettingsLinks";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
@@ -972,7 +973,8 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                 </div>
                 <div className="space-y-1">
                   <Label>Group membership</Label>
-                  <Select
+                  <RecordLookupSelect
+                    required
                     value={filters.groupId || "any"}
                     onValueChange={(value) => updateFilter("groupId", value === "any" ? "" : value)}
                   >
@@ -987,11 +989,12 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                         </SelectItem>
                       ))}
                     </SelectContent>
-                  </Select>
+                  </RecordLookupSelect>
                 </div>
                 <div className="space-y-1">
                   <Label>Tag membership</Label>
-                  <Select
+                  <RecordLookupSelect
+                    required
                     value={filters.tagId || "any"}
                     onValueChange={(value) => updateFilter("tagId", value === "any" ? "" : value)}
                   >
@@ -1006,7 +1009,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                         </SelectItem>
                       ))}
                     </SelectContent>
-                  </Select>
+                  </RecordLookupSelect>
                 </div>
                 {(groupsQ.isError || tagsQ.isError) && (
                   <p role="alert" className="text-xs text-destructive">
@@ -1021,6 +1024,8 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                       updateFilter("currency", value === "any" ? "" : value)
                     }
                   >
+                    {/* lookup-fixed-enum: Currency filter uses the fixed supported currency-code enumeration. */}
+
                     <SelectTrigger aria-label="Filter by contact currency override">
                       <SelectValue />
                     </SelectTrigger>
@@ -1085,7 +1090,8 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                 </p>
                 <div className="space-y-1">
                   <Label>Open saved view</Label>
-                  <Select
+                  <RecordLookupSelect
+                    required
                     value={selectedSavedViewId || "none"}
                     onValueChange={(value) => {
                       if (value === "none") {
@@ -1106,7 +1112,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                         </SelectItem>
                       ))}
                     </SelectContent>
-                  </Select>
+                  </RecordLookupSelect>
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="contact-save-view-name">Save current view as</Label>
@@ -1160,7 +1166,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                 </Button>
                 {canManage ? (
                   <>
-                    <Select value={groupId} onValueChange={setGroupId}>
+                    <RecordLookupSelect required value={groupId} onValueChange={setGroupId}>
                       <SelectTrigger className="w-44" aria-label="Choose a contact group">
                         <SelectValue placeholder="Choose group" />
                       </SelectTrigger>
@@ -1171,7 +1177,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                           </SelectItem>
                         ))}
                       </SelectContent>
-                    </Select>
+                    </RecordLookupSelect>
                     <Button
                       size="sm"
                       variant="outline"
@@ -1199,7 +1205,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                       }
                       onConfirm={() => bulkRemoveM.mutate({ labelKind: "group", labelId: groupId })}
                     />
-                    <Select value={tagId} onValueChange={setTagId}>
+                    <RecordLookupSelect required value={tagId} onValueChange={setTagId}>
                       <SelectTrigger className="w-44" aria-label="Choose a contact tag">
                         <SelectValue placeholder="Choose tag" />
                       </SelectTrigger>
@@ -1210,7 +1216,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                           </SelectItem>
                         ))}
                       </SelectContent>
-                    </Select>
+                    </RecordLookupSelect>
                     <Button
                       size="sm"
                       variant="outline"
@@ -1340,6 +1346,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
             <ListSkeleton />
           ) : query.isError ? (
             <ErrorState
+              onRetry={() => void query.refetch()}
               title="Could not load contacts"
               description={friendlyAuthError(query.error)}
             />

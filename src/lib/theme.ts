@@ -174,20 +174,58 @@ export function computeCustomTokens(colors: CustomPalette, dark: boolean): Recor
     return channels[0]! * 0.2126 + channels[1]! * 0.7152 + channels[2]! * 0.0722;
   };
   const ink = (hex: string): string => {
-    const l = luminance(hex);
-    return (l + 0.05) / 0.05 >= 1.05 / (l + 0.05) ? "#142033" : "#ffffff";
+    const ratio = (foreground: string) => {
+      const a = luminance(hex),
+        b = luminance(foreground);
+      return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+    };
+    // Compare the actual navy ink, rather than the luminance of pure black.
+    if (ratio("#142033") >= 4.5) return "#142033";
+    if (ratio("#ffffff") >= 4.5) return "#ffffff";
+    return "#000000";
+  };
+  const readable = (preferred: string, background: string, minimum = 4.5): string => {
+    const ratio = (a: string, b: string) => {
+      const x = luminance(a),
+        y = luminance(b);
+      return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+    };
+    if (ratio(preferred, background) >= minimum) return preferred;
+    const target = ink(background);
+    for (let step = 1; step <= 20; step++) {
+      const candidate = blend(preferred, target, step / 20);
+      if (ratio(candidate, background) >= minimum) return candidate;
+    }
+    return target;
   };
   const primary = colors.primary;
   const sidebar = colors.sidebar;
   const canvas = dark ? colors.darkBackground : colors.lightBackground;
   const foreground = ink(canvas);
-  const card = blend(canvas, foreground === "#ffffff" ? "#ffffff" : "#ffffff", dark ? 0.075 : 0.5);
+  // Keep surfaces on the same side of the contrast boundary, including unusual
+  // custom canvases. A bright card on a black light-mode canvas cannot share ink.
+  const card = blend(canvas, foreground === "#ffffff" ? "#000000" : "#ffffff", 0.04);
   const cardInk = ink(card);
   const active = primary;
+  const activeBackground = blend(active, sidebar, 0.13);
+  const secondary = blend(canvas, foreground === "#ffffff" ? "#000000" : "#ffffff", 0.06);
+  const muted = blend(canvas, foreground === "#ffffff" ? "#000000" : "#ffffff", 0.065);
+  // Hover surfaces inherit the page's text in tables and links. Reduce the tint
+  // when it would cross the contrast boundary for a custom midtone canvas.
+  const tint = (background: string, accent: string, text: string): string => {
+    for (let step = 12; step >= 0; step--) {
+      const candidate = blend(background, accent, step / 100);
+      const a = luminance(candidate),
+        b = luminance(text);
+      if ((Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05) >= 4.5) return candidate;
+    }
+    return background;
+  };
   return {
     "--primary": primary,
     "--primary-foreground": ink(primary),
-    "--ring": primary,
+    "--ring": readable(readable(primary, canvas, 3), card, 3),
+    "--link-ink": readable(readable(primary, canvas), card),
     "--chart-1": primary,
     "--background": canvas,
     "--foreground": foreground,
@@ -195,27 +233,30 @@ export function computeCustomTokens(colors: CustomPalette, dark: boolean): Recor
     "--card-foreground": cardInk,
     "--popover": card,
     "--popover-foreground": cardInk,
-    "--secondary": blend(canvas, foreground, 0.06),
-    "--secondary-foreground": foreground,
-    "--muted": blend(canvas, foreground, 0.065),
-    "--muted-foreground": blend(foreground, canvas, 0.3),
-    "--accent": blend(canvas, primary, 0.12),
+    "--secondary": secondary,
+    "--secondary-foreground": ink(secondary),
+    "--muted": muted,
+    "--muted-foreground": readable(
+      readable(readable(blend(foreground, canvas, 0.3), canvas), card),
+      muted,
+    ),
+    "--accent": tint(canvas, primary, foreground),
     "--accent-foreground": foreground,
     "--border": blend(canvas, foreground, 0.2),
-    "--input": blend(canvas, foreground, 0.28),
+    "--input": readable(readable(blend(canvas, foreground, 0.28), canvas, 3), card, 3),
     "--sidebar": sidebar,
     "--sidebar-top": blend(sidebar, "#ffffff", 0.05),
     "--sidebar-bottom": blend(sidebar, "#000000", 0.09),
     "--sidebar-foreground": ink(sidebar),
     "--sidebar-primary": primary,
     "--sidebar-primary-foreground": ink(primary),
-    "--sidebar-accent": blend(sidebar, ink(sidebar), 0.12),
+    "--sidebar-accent": tint(sidebar, ink(sidebar), ink(sidebar)),
     "--sidebar-accent-foreground": ink(sidebar),
     "--sidebar-border": blend(sidebar, ink(sidebar), 0.25),
-    "--sidebar-ring": primary,
-    "--sidebar-active": blend(active, sidebar, 0.13),
+    "--sidebar-ring": readable(primary, sidebar, 3),
+    "--sidebar-active": activeBackground,
     "--sidebar-active-strong": active,
-    "--sidebar-active-foreground": ink(active),
+    "--sidebar-active-foreground": ink(activeBackground),
     "--sidebar-active-border": blend(active, ink(active), 0.22),
     "--sidebar-active-indicator": blend(active, ink(active), 0.3),
   };

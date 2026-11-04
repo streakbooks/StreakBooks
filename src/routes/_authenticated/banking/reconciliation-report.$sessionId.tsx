@@ -46,7 +46,13 @@ function ReconciliationReport() {
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (q.isPending) return <LoadingState />;
   if (q.isError)
-    return <ErrorState title="Could not load report" description={friendlyAuthError(q.error)} />;
+    return (
+      <ErrorState
+        onRetry={() => void q.refetch()}
+        title="Could not load report"
+        description={friendlyAuthError(q.error)}
+      />
+    );
 
   const r = q.data;
   const ccy = r.bankAccount.currencyCode;

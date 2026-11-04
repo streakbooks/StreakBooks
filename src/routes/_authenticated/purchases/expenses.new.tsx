@@ -1,3 +1,4 @@
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -107,6 +108,10 @@ export function NewExpense() {
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
+
+  const requiredQueries = [accountsQ, paymentAccountsQ];
+  if (requiredQueries.some((query) => query.isError && query.data === undefined))
+    return <QueryErrorState queries={requiredQueries} title="Could not load expense accounts" />;
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   if (accountsQ.isPending || paymentAccountsQ.isPending) return <LoadingState />;

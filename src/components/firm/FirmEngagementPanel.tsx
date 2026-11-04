@@ -166,6 +166,7 @@ export function FirmEngagementPanel({
             <LoadingState />
           ) : engagementsQ.isError ? (
             <ErrorState
+              onRetry={() => void engagementsQ.refetch()}
               title="Could not load engagements"
               description={friendlyAuthError(engagementsQ.error)}
             />
@@ -267,6 +268,7 @@ export function FirmEngagementPanel({
                     }))
                   }
                 >
+                  {/* lookup-fixed-enum: Engagement status uses fixed lifecycle values. */}
                   <SelectTrigger aria-label="Engagement status">
                     <SelectValue />
                   </SelectTrigger>
@@ -290,6 +292,7 @@ export function FirmEngagementPanel({
                     }))
                   }
                 >
+                  {/* lookup-fixed-enum: Service frequency is a fixed schedule enumeration. */}
                   <SelectTrigger aria-label="Service frequency">
                     <SelectValue />
                   </SelectTrigger>

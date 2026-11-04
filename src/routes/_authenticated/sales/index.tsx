@@ -192,6 +192,7 @@ function SalesOverview() {
         <LoadingState />
       ) : invoicesQ.isError ? (
         <ErrorState
+          onRetry={() => void invoicesQ.refetch()}
           title="Could not load invoices"
           description={friendlyAuthError(invoicesQ.error)}
         />

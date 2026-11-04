@@ -73,13 +73,16 @@ export function PortalShell() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border">
+      <a href="#portal-content" className="skip-link">
+        Skip to portal content
+      </a>
+      <header className="border-b border-border bg-card">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <div>
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
               LinkBooks portal
             </p>
-            <h1 className="text-lg font-semibold">{current?.company_name}</h1>
+            <p className="text-lg font-semibold">{current?.company_name}</p>
             <p className="text-sm text-muted-foreground">
               {current?.contact_name} · {current?.role === "supplier" ? "Supplier" : "Customer"}
             </p>
@@ -111,9 +114,10 @@ export function PortalShell() {
             return (
               <Link
                 key={item.to}
+                aria-current={active ? "page" : undefined}
                 to={item.to}
                 className={cn(
-                  "-mb-px shrink-0 border-b-2 border-transparent px-3 py-2 text-sm text-muted-foreground",
+                  "-mb-px shrink-0 border-b-2 border-transparent px-3 py-3 text-sm font-medium text-muted-foreground focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
                   active && "border-primary text-foreground",
                 )}
               >
@@ -123,7 +127,11 @@ export function PortalShell() {
           })}
         </nav>
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-6">
+      <main
+        id="portal-content"
+        tabIndex={-1}
+        className="mx-auto min-w-0 max-w-6xl px-4 py-6 outline-none md:py-8"
+      >
         {current && !current.enabled ? (
           <p className="mb-4 rounded-md border border-border bg-muted px-3 py-2 text-sm">
             This organisation has turned the portal off. Historical invitations stay in place, and

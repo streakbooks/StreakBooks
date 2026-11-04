@@ -597,6 +597,8 @@ export function SettingsForCompany({
             Settings section
           </Label>
           <Select value={section} onValueChange={selectSection}>
+            {/* lookup-fixed-enum: Settings sections are a fixed navigation enumeration. */}
+
             <SelectTrigger id="mobile-settings-section" aria-label="Choose settings section">
               <SelectValue placeholder="Choose a settings section" />
             </SelectTrigger>

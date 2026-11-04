@@ -1,3 +1,4 @@
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { CustomerStatementSheet } from "@/components/documents/CustomerStatementSheet";
 import { mapBranding } from "@/lib/documents/mappers";
 import { useState } from "react";
@@ -77,6 +78,10 @@ export function Statements() {
     ((customersQ.data ?? []) as Array<{ id: string; name: string }>).find((c) => c.id === contactId)
       ?.name ?? "Customer";
 
+  const requiredQueries = [customersQ, brandingQ, deliveryQ];
+  if (requiredQueries.some((query) => query.isError && query.data === undefined))
+    return <QueryErrorState queries={requiredQueries} title="Could not load statement options" />;
+
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
 
   return (
@@ -131,7 +136,11 @@ export function Statements() {
       ) : stmtQ.isPending ? (
         <LoadingState />
       ) : stmtQ.isError ? (
-        <ErrorState title="Could not load statement" description={friendlyAuthError(stmtQ.error)} />
+        <ErrorState
+          onRetry={() => void stmtQ.refetch()}
+          title="Could not load statement"
+          description={friendlyAuthError(stmtQ.error)}
+        />
       ) : (
         <div className="space-y-6">
           <div className="overflow-auto">

@@ -147,7 +147,11 @@ export function FirmInvitationsPanel({
       {q.isPending ? (
         <LoadingState rows={3} />
       ) : q.isError ? (
-        <ErrorState title="Could not load invitations" description={friendlyAuthError(q.error)} />
+        <ErrorState
+          onRetry={() => void q.refetch()}
+          title="Could not load invitations"
+          description={friendlyAuthError(q.error)}
+        />
       ) : !q.data?.length ? (
         <EmptyState
           title="No invitations yet"

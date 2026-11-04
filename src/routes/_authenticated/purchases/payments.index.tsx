@@ -73,7 +73,11 @@ function PaymentsList() {
       {query.isPending ? (
         <ListSkeleton />
       ) : query.isError ? (
-        <ErrorState title="Could not load payments" description={friendlyAuthError(query.error)} />
+        <ErrorState
+          onRetry={() => void query.refetch()}
+          title="Could not load payments"
+          description={friendlyAuthError(query.error)}
+        />
       ) : (query.data ?? []).length === 0 ? (
         <EmptyState title="No payments" description="Record a payment against open bills." />
       ) : (

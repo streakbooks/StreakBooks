@@ -58,11 +58,11 @@ export function StatCard({
   const TrendIcon =
     trend?.direction === "up" ? ArrowUpRight : trend?.direction === "down" ? ArrowDownRight : Minus;
   const body = (
-    <CardContent className="p-5">
+    <CardContent className="min-w-0 p-5">
       <div className="flex items-start justify-between gap-3">
-        <span className="text-xs font-medium text-muted-foreground">{label}</span>
+        <span className="text-sm font-medium text-muted-foreground">{label}</span>
         {Icon ? (
-          <span className="grid size-7 place-items-center rounded-md bg-secondary text-muted-foreground">
+          <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
             <Icon className="size-4" aria-hidden />
           </span>
         ) : null}
@@ -70,7 +70,12 @@ export function StatCard({
       {loading ? (
         <Skeleton className="mt-3 h-8 w-32" />
       ) : (
-        <div className={cn("numeric mt-2 text-2xl font-semibold tracking-tight", TONE_CLASS[tone])}>
+        <div
+          className={cn(
+            "numeric mt-3 break-words text-2xl font-semibold tracking-tight",
+            TONE_CLASS[tone],
+          )}
+        >
           {value}
         </div>
       )}
@@ -96,7 +101,7 @@ export function StatCard({
     </CardContent>
   );
   return href ? (
-    <Card className="transition-shadow hover:shadow-raised">
+    <Card className="transition-shadow hover:border-primary/40 hover:shadow-sm">
       <Link
         to={href as never}
         className="block rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2"

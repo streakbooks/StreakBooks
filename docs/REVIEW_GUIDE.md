@@ -83,3 +83,37 @@ Existing LinkBooks users sign in normally; **no new usernames, passwords or user
 
 ## Next engineering milestone
 Proceed from [ROADMAP.md](ROADMAP.md), starting with complete **authenticated accounting integrity and multi-company authorization fixtures**, then region-specific tax and bank controls. Reuse existing accounting SQL and routes, avoid destructive changes, and require a feature design, tests, financial sign-off and rollback evidence for every major module.
+
+## 4 November 2026 continuation — banking and tax safeguards
+
+| Area | PR | Merge checkpoint | Delivered and validated |
+|---|---|---|---|
+| Account-focused reports (concurrent independent work) | [#25](https://github.com/linkbusinessadvisory/LinkBooks/pull/25) | `6340e270` | Budget/asset/tax GL account focus. CI green; signed-in financial acceptance still required. |
+| QIF bank statements | [#26](https://github.com/linkbusinessadvisory/LinkBooks/pull/26) | `5b947a21` | New original Bank/CCard QIF parser, explicit date-order selection, normalized import preview, duplicate review, retained tenant-scoped server workflow. |
+| Bank import input integrity | [#27](https://github.com/linkbusinessadvisory/LinkBooks/pull/27) | `faa08c84` | Real date validation, no lossy minor-unit conversion, strict duplicate/row IDs and bounded request types for CSV, OFX/QFX and QIF. |
+| Tax input safety | [#28](https://github.com/linkbusinessadvisory/LinkBooks/pull/28) | `e1ae798b` | Reject invalid/unsafe monetary Numbers, unknown tax treatment and quantity precision beyond six decimals. Existing tax formulas remain unchanged. |
+
+**CI:** [PR #26](https://github.com/linkbusinessadvisory/LinkBooks/actions/runs/41756745252), [PR #27](https://github.com/linkbusinessadvisory/LinkBooks/actions/runs/41757833009) and [PR #28](https://github.com/linkbusinessadvisory/LinkBooks/actions/runs/41758651721) all passed exact-head full quality gates. The latest PR #28 head had **1,881 passing unit tests across 253 files**, 4 repository-hygiene tests, TypeScript, changed-file ESLint, isolated PostgreSQL checks, navigation discovery and production build. Post-merge `main` CI must also be checked for the latest merge and this documentation update. Authenticated staging browser checks remain **skipped**.
+
+### Local manual review — QIF
+1. Update local `main` following the PowerShell commands in this guide. Keep your existing `.env` and use an authorized login.
+2. Select a **Demo Company or a separate synthetic test company**. Confirm it has a test bank account in the expected currency (e.g. GBP).
+3. Open **Banking → Import statement**, choose that bank account and select `tests/fixtures/banking/demo-statement.qif`.
+4. Choose **Day / month / year**. Confirm the preview contains two rows dated **2026-11-03** and **2026-11-04**, with amounts **+250.00** and **−12.35** in a two-decimal bank currency, payees and demo references. If the bank account currency differs, verify the file's amounts using that account's declared currency; QIF itself does not specify currency.
+5. On a **disposable test company only**, import. Expect uncategorised statement lines, not posted sales/purchase journals. Re-upload the same file to review duplicate detection. Do not bypass duplicate warnings without a reason.
+6. Change the date order to **Month / day / year** and verify ambiguous source dates are interpreted differently; do not import the wrong interpretation. QIF split records, multi-account exports and investment records are expressly unsupported.
+7. Confirm previously saved CSV column mappings still work after QIF import. Test invalid bank dates via a synthetic CSV and ensure submission is refused.
+
+### Local regression review — tax and ledger
+- Run `npm test`, `npm run typecheck`, `npm run lint` and `npm run build`.
+- Unit tests in `src/lib/tax/tax-math.test.ts` verify a 20% exclusive and inclusive calculation, numeric-safety failures, quantities with up to six decimals, and exact BigInt values.
+- In synthetic invoices/bills, verify legitimate decimal quantities still calculate as before. More than six decimal quantity places now cause an explicit validation error rather than being silently truncated.
+- **Do not** run unverified filing flows or post/reverse real client transactions for QA. Country packs remain configuration scaffolds and are not regulator-certified.
+
+### Pending user-side access and external requirements
+No new demo login was created; use your existing authorized test account. Authenticated negative tests need **separate non-production company memberships and roles**. Regional filing needs HMRC/ATO/IRD or approved partner access and sign-off, and US sales tax needs state-by-state jurisdiction and nexus controls. No tax submission or live client posting was carried out.
+
+### Remaining backlog after this batch
+**P0:** authenticated cross-tenant/RLS negative matrix, privileged-function audit, period locks and complete GL↔TB↔BS↔AR/AP reconciliations, bank-feed/large-ledger controls, regional tax return evidence, exact full-result exports. **P1:** FX revaluation, fixed-asset inventory/COGS costs, consolidation and intercompany eliminations, scheduled report email, practice management workflows. **P2:** payroll integration and advanced automation. Browser accessibility, 100k+ row performance, dependency licensing, npm advisories and country compliance require independent completion.
+
+This checkpoint includes two operationally important *limits*: QIF imports lack bank-generated FITIDs (heuristic duplicates), and tax input validation does **not** guarantee country-specific return accuracy.

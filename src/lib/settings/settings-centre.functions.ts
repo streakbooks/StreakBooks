@@ -351,20 +351,24 @@ export const getSettingsOverview = createServerFn({ method: "GET" })
       isDemo: (company as { is_demo: boolean }).is_demo,
     });
 
-    const { data: lock, error: lockError } = await context.supabase
-      .from("organisation_lock_policy" as never)
-      .select("lock_date_everyone, lock_date_except_advisors, conversion_date" as never)
-      .eq("company_id" as never, data.companyId as never)
-      .maybeSingle();
-    if (lockError) throw new Error(lockError.message);
-
-    const { count: memberCount, error: memberError } = await context.supabase
-      .from("company_members" as never)
-      .select("id" as never, { count: "exact", head: true })
-      .eq("company_id" as never, data.companyId as never);
-    if (memberError) throw new Error(memberError.message);
-
-    const features = await listOrganisationFeatures({ data: { companyId: data.companyId } });
+    // These reads are independent after organisation membership is checked.
+    // Parallel requests reduce overview latency without changing permissions or results.
+    const [lockResult, memberResult, features] = await Promise.all([
+      context.supabase
+        .from("organisation_lock_policy" as never)
+        .select("lock_date_everyone, lock_date_except_advisors, conversion_date" as never)
+        .eq("company_id" as never, data.companyId as never)
+        .maybeSingle(),
+      context.supabase
+        .from("company_members" as never)
+        .select("id" as never, { count: "exact", head: true })
+        .eq("company_id" as never, data.companyId as never),
+      listOrganisationFeatures({ data: { companyId: data.companyId } }),
+    ]);
+    if (lockResult.error) throw new Error(lockResult.error.message);
+    if (memberResult.error) throw new Error(memberResult.error.message);
+    const lock = lockResult.data;
+    const memberCount = memberResult.count;
 
     const warnings: Array<{ severity: "high" | "medium" | "low"; message: string; href?: string }> =
       [];

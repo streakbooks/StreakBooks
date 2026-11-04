@@ -336,6 +336,8 @@ export function DeferralsPanel({ companyId, currency }: { companyId: string; cur
         </div>
         <span className="text-xs text-muted-foreground" role="status">
           {counts.dueEntries} due entries · {counts.reversedEntries} reversed entries.
+        </span>
+        <span className="text-xs text-muted-foreground">
           Showing {shown.length} of {counts.schedules} schedules on page {page}.
         </span>
         <Button

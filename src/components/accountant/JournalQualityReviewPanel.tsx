@@ -36,14 +36,7 @@ export function JournalQualityReviewPanel({ companyId }: { companyId: string }) 
   const exportCsv = () => {
     if (!query.data) return;
     const csv = toCsv(
-      [
-        "Journal",
-        "Posting date",
-        "Severity",
-        "Finding",
-        "Reason",
-        "Related journal",
-      ],
+      ["Journal", "Posting date", "Severity", "Finding", "Reason", "Related journal"],
       query.data.findings.map((finding) => [
         finding.journalNumber,
         finding.journalDate,
@@ -53,9 +46,7 @@ export function JournalQualityReviewPanel({ companyId }: { companyId: string }) 
         finding.relatedJournalNumber ?? "",
       ]),
     );
-    const url = URL.createObjectURL(
-      new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }),
-    );
+    const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
     const anchor = document.createElement("a");
     anchor.href = url;
     anchor.download = "linkbooks-manual-journal-quality.csv";
@@ -79,7 +70,11 @@ export function JournalQualityReviewPanel({ companyId }: { companyId: string }) 
           aria-expanded={expanded}
           onClick={() => setExpanded((value) => !value)}
         >
-          {expanded ? <ChevronDown className="mr-1 size-4" /> : <ChevronRight className="mr-1 size-4" />}
+          {expanded ? (
+            <ChevronDown className="mr-1 size-4" />
+          ) : (
+            <ChevronRight className="mr-1 size-4" />
+          )}
           {expanded ? "Hide review" : "Review journals"}
         </Button>
       </div>
@@ -142,8 +137,8 @@ export function JournalQualityReviewPanel({ companyId }: { companyId: string }) 
                 <Badge variant="outline">{query.data.findings.length} findings</Badge>
                 {query.data.limited ? (
                   <span role="alert" className="text-amber-700 dark:text-amber-400">
-                    Only the latest 500 entries in this range were scanned. Narrow the date range for
-                    more complete coverage.
+                    Only the latest 500 entries in this range were scanned. Narrow the date range
+                    for more complete coverage.
                   </span>
                 ) : null}
               </div>
@@ -173,7 +168,11 @@ export function JournalQualityReviewPanel({ companyId }: { companyId: string }) 
                           </TableCell>
                           <TableCell>{finding.journalDate}</TableCell>
                           <TableCell>
-                            <Badge variant={finding.severity === "critical" ? "destructive" : "secondary"}>
+                            <Badge
+                              variant={
+                                finding.severity === "critical" ? "destructive" : "secondary"
+                              }
+                            >
                               {finding.severity === "critical" ? (
                                 <AlertTriangle className="mr-1 size-3" />
                               ) : null}

@@ -64,9 +64,9 @@ export function compareWorkpaperPeriods(
       }
       const currentPaper = currentPaperByAccount.get(row.account_id);
       const previousPaper = previousPaperByAccount.get(row.account_id);
-      const currentState =
+      const currentState: WorkpaperPeriodComparisonRow["currentState"] =
         currentMinor === null ? "unsafe" : workpaperReviewState(currentPaper, currentMinor);
-      const previousState =
+      const previousState: WorkpaperPeriodComparisonRow["previousState"] =
         !old
           ? "not_available"
           : previousMinor === null

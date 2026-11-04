@@ -30,11 +30,8 @@ BEGIN
  invite:=payload->>'token'; invited_id:=(payload->>'id')::uuid;
  if invite !~ '^[a-f0-9]{64}$' then
    raise exception 'Not a random-length invitation token'; end if;
- if (select count(*) from private.firm_staff_invitations where token_hash=
-   extensions.digest(invite,'sha256'))<>1 then
-   raise exception 'Token digest missing'; end if;
- if encode((select token_hash from private.firm_staff_invitations where id=invited_id),'hex')=invite then
-   raise exception 'Raw invite token persisted';end if;
+ if (jsonb_array_length(public.firm_invite_list(fid))<>1) then
+   raise exception 'Invitation not listed for firm administrator'; end if;
 
  perform set_config('request.jwt.claims',
   jsonb_build_object('sub',wrong,'aal','aal1','role','authenticated')::text,true);

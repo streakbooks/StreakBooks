@@ -67,8 +67,21 @@ export function chartViewRows(
     }
   };
   for (const root of children.get("") ?? []) visit(root, 0);
-  // Filtering can remove a parent; still show its matching descendants as root rows.
-  // A cycle with no root must not hide accounts or recurse indefinitely.
-  for (const account of ordered) if (!seen.has(account.id)) visit(account, 0);
+  // Filtering may remove a parent. Recover genuine orphans and cycles but do not
+  // reveal descendants intentionally hidden behind a collapsed ancestor.
+  const byId = new Map(ordered.map((account) => [account.id, account]));
+  const hiddenByCollapse = (account: ChartAccount) => {
+    let parentId = account.parentId;
+    const visited = new Set([account.id]);
+    while (parentId && !visited.has(parentId)) {
+      if (collapsed.has(parentId)) return true;
+      visited.add(parentId);
+      parentId = byId.get(parentId)?.parentId ?? null;
+    }
+    return false;
+  };
+  for (const account of ordered) {
+    if (!seen.has(account.id) && !hiddenByCollapse(account)) visit(account, 0);
+  }
   return rows;
 }

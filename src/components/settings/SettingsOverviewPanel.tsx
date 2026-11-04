@@ -1,8 +1,10 @@
-import { integrationStatusLabel } from "@/lib/settings/integration-health";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { AlertTriangle, ArrowUpRight, CheckCircle2, CircleDashed, RefreshCcw } from "lucide-react";
+import { integrationStatusLabel } from "@/lib/settings/integration-health";
 import { getSettingsOverview } from "@/lib/settings/settings-centre.functions";
+import { resolveSettingsCategory } from "@/lib/settings/registry";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,6 +12,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 
 type Props = { companyId: string };
+
+const SHORTCUTS = [
+  { label: "Company details", section: "organisation", description: "Identity and localisation" },
+  { label: "Financial controls", section: "accounting", description: "Lock dates and accounting" },
+  { label: "Users and access", section: "users", description: "Roles and permissions" },
+  { label: "Features", section: "features", description: "Module availability" },
+  { label: "Documents", section: "documents", description: "Branding and numbering" },
+  { label: "Notifications", section: "notifications", description: "Delivery and preferences" },
+] as const;
 
 export function SettingsOverviewPanel({ companyId }: Props) {
   const fetch = useServerFn(getSettingsOverview);
@@ -20,9 +31,13 @@ export function SettingsOverviewPanel({ companyId }: Props) {
 
   if (q.isPending) {
     return (
-      <div className="space-y-3">
+      <div aria-label="Loading Settings Centre overview" className="space-y-4">
         <Skeleton className="h-24 w-full" />
-        <Skeleton className="h-24 w-full" />
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {Array.from({ length: 4 }, (_, index) => (
+            <Skeleton key={index} className="h-24 w-full" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -31,129 +46,198 @@ export function SettingsOverviewPanel({ companyId }: Props) {
     return (
       <Alert variant="destructive">
         <AlertTitle>Could not load overview</AlertTitle>
-        <AlertDescription>{(q.error as Error)?.message ?? "Unknown error"}</AlertDescription>
+        <AlertDescription className="space-y-3">
+          <p>{(q.error as Error)?.message ?? "Unknown error"}</p>
+          <Button size="sm" variant="outline" onClick={() => void q.refetch()}>
+            Retry
+          </Button>
+        </AlertDescription>
       </Alert>
     );
   }
 
   const d = q.data;
+  const counts = [
+    {
+      label: "Operational features",
+      value: d.featureSummary.operational,
+      icon: CheckCircle2,
+      hint: "Enabled and ready",
+    },
+    {
+      label: "Need configuration",
+      value: d.featureSummary.needsConfig,
+      icon: AlertTriangle,
+      hint: "Enabled, setup incomplete",
+    },
+    {
+      label: "Available but off",
+      value: d.featureSummary.disabled,
+      icon: CircleDashed,
+      hint: "Optional capabilities",
+    },
+    {
+      label: "Unavailable",
+      value: d.featureSummary.unavailable,
+      icon: CircleDashed,
+      hint: "Not yet implemented",
+    },
+  ];
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Setup status</CardTitle>
-          <CardDescription>
-            {d.company?.name ?? "Organisation"} · {d.company?.base_currency} · {d.memberCount}{" "}
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3">
+        <div className="min-w-0">
+          <p className="truncate font-medium">{d.company?.name ?? "Organisation"}</p>
+          <p className="text-xs text-muted-foreground">
+            {d.company?.base_currency ?? "Currency not configured"} · {d.memberCount}{" "}
             member{d.memberCount === 1 ? "" : "s"}
-            {d.company?.is_demo ? " · Demo" : ""}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-2">
-          <Badge variant="secondary">{d.featureSummary.operational} operational</Badge>
-          <Badge variant="outline">{d.featureSummary.disabled} available off</Badge>
-          <Badge variant="outline">{d.featureSummary.needsConfig} need config</Badge>
-          <Badge variant="outline">{d.featureSummary.unavailable} unavailable</Badge>
-        </CardContent>
-      </Card>
+            {d.company?.is_demo ? " · Demo organisation" : ""}
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={q.isFetching}
+          onClick={() => void q.refetch()}
+          aria-label="Refresh setup overview"
+        >
+          <RefreshCcw className="mr-2 size-4" aria-hidden />
+          {q.isFetching ? "Refreshing…" : "Refresh"}
+        </Button>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Feature setup status">
+        {counts.map((item) => (
+          <Card key={item.label} className="shadow-sm">
+            <CardContent className="p-4">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <span className="text-xs font-medium text-muted-foreground">{item.label}</span>
+                <item.icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+              </div>
+              <p className="text-2xl font-semibold tabular-nums">{item.value}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{item.hint}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
       {d.warnings.length > 0 ? (
-        <div className="space-y-2">
-          {d.warnings.map((w) => (
-            <Alert key={w.message} variant={w.severity === "high" ? "destructive" : "default"}>
-              <AlertTitle>
-                {w.severity === "high"
-                  ? "Security / integrity"
-                  : w.severity === "medium"
-                    ? "Configuration"
-                    : "Info"}
-              </AlertTitle>
-              <AlertDescription className="flex flex-wrap items-center justify-between gap-2">
-                <span>{w.message}</span>
-                {w.href?.includes("section=") ? (
-                  <Button size="sm" variant="outline" asChild>
-                    <Link
-                      to="/settings"
-                      search={{
-                        section: w.href!.split("section=")[1]?.split("&")[0] ?? "overview",
-                      }}
-                    >
-                      Open
-                    </Link>
-                  </Button>
-                ) : null}
-              </AlertDescription>
-            </Alert>
-          ))}
-        </div>
+        <section aria-labelledby="settings-attention-title" className="space-y-2">
+          <h3 id="settings-attention-title" className="text-sm font-semibold">
+            Needs attention ({d.warnings.length})
+          </h3>
+          {d.warnings.map((warning) => {
+            const section = warning.href?.includes("section=")
+              ? resolveSettingsCategory(warning.href.split("section=")[1]?.split("&")[0])
+              : null;
+            return (
+              <Alert
+                key={warning.message}
+                variant={warning.severity === "high" ? "destructive" : "default"}
+              >
+                <AlertTitle>
+                  {warning.severity === "high"
+                    ? "Security or accounting integrity"
+                    : warning.severity === "medium"
+                      ? "Configuration"
+                      : "Information"}
+                </AlertTitle>
+                <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
+                  <span>{warning.message}</span>
+                  {section ? (
+                    <Button size="sm" variant="outline" asChild>
+                      <Link to="/settings" search={{ section }}>
+                        Review
+                      </Link>
+                    </Button>
+                  ) : null}
+                </AlertDescription>
+              </Alert>
+            );
+          })}
+        </section>
       ) : null}
 
       {d.incompleteConfigurations.length > 0 ? (
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Incomplete configurations</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Configurations to finish</CardTitle>
+            <CardDescription>
+              Enabled features may need additional configuration before they can operate.
+            </CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-wrap gap-2">
-            {d.incompleteConfigurations.map((name) => (
-              <Badge key={name} variant="outline">
-                {name}
-              </Badge>
-            ))}
-            <Button size="sm" variant="secondary" asChild>
+          <CardContent className="space-y-3">
+            <div className="flex flex-wrap gap-2">
+              {d.incompleteConfigurations.map((name) => (
+                <Badge key={name} variant="outline">
+                  {name}
+                </Badge>
+              ))}
+            </div>
+            <Button size="sm" variant="outline" asChild>
               <Link to="/settings" search={{ section: "features" }}>
-                Feature Manager
+                Review Feature Manager
               </Link>
             </Button>
           </CardContent>
         </Card>
       ) : null}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Integration health</CardTitle>
-          <CardDescription>
-            Configuration status. A configured transport still needs delivery verification.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-2 sm:grid-cols-2">
-          {d.integrations.map((i) => (
-            <div key={i.name} className="rounded-md border px-3 py-2 text-sm">
-              <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-                <span>{i.name}</span>
-                <Badge variant="outline">{integrationStatusLabel(i.status)}</Badge>
+      <div className="grid items-start gap-4 xl:grid-cols-2">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Manage your settings</CardTitle>
+            <CardDescription>Go straight to the most-used configuration areas.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-2 sm:grid-cols-2">
+            {SHORTCUTS.map((shortcut) => (
+              <Link
+                key={shortcut.section}
+                to="/settings"
+                search={{ section: shortcut.section }}
+                className="group flex min-h-16 items-start justify-between gap-2 rounded-lg border p-3 transition-colors hover:border-primary/40 hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium">{shortcut.label}</span>
+                  <span className="mt-1 block text-xs text-muted-foreground">
+                    {shortcut.description}
+                  </span>
+                </span>
+                <ArrowUpRight
+                  className="mt-0.5 size-4 shrink-0 text-muted-foreground group-hover:text-primary"
+                  aria-hidden
+                />
+              </Link>
+            ))}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Integration health</CardTitle>
+            <CardDescription>
+              Configuration status only. Delivery is not verified by configuration alone.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {d.integrations.map((integration) => (
+              <div
+                key={integration.name}
+                className="flex flex-wrap items-start justify-between gap-2 rounded-lg border px-3 py-2"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium">{integration.name}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{integration.detail}</p>
+                </div>
+                <Badge variant="outline">{integrationStatusLabel(integration.status)}</Badge>
               </div>
-              <p className="text-xs text-muted-foreground">{i.detail}</p>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Quick access</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-2">
-          <Button size="sm" variant="outline" asChild>
-            <Link to="/settings" search={{ section: "accounting" }}>
-              Lock dates
-            </Link>
-          </Button>
-          <Button size="sm" variant="outline" asChild>
-            <Link to="/settings" search={{ section: "features" }}>
-              Feature Manager
-            </Link>
-          </Button>
-          <Button size="sm" variant="outline" asChild>
-            <Link to="/accounting">Accounting periods</Link>
-          </Button>
-          <Button size="sm" variant="outline" asChild>
-            <Link to="/tax">Tax</Link>
-          </Button>
-          <Button size="sm" variant="outline" asChild>
-            <Link to="/purchases/bills/new">New bill</Link>
-          </Button>
-        </CardContent>
-      </Card>
+            ))}
+            {d.integrations.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No integrations to show.</p>
+            ) : null}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

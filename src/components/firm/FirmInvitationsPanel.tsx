@@ -78,8 +78,8 @@ export function FirmInvitationsPanel({
       <div>
         <h2 className="text-lg font-semibold">Invite firm staff</h2>
         <p className="text-sm text-muted-foreground">
-          Invited colleagues must verify their email, sign in, and accept a single-use link.
-          Joining the firm never grants automatic access to client accounting books.
+          Invited colleagues must verify their email, sign in, and accept a single-use link. Joining
+          the firm never grants automatic access to client accounting books.
         </p>
       </div>
       <form

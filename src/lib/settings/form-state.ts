@@ -25,6 +25,11 @@ export function areSettingsDocumentsEqual(a: SettingsDocument, b: SettingsDocume
   });
 }
 
+/** A nullable number still needs a text editor; its empty value means no threshold. */
+export function isNullableNumericSetting(category: SettingsCategory, key: string): boolean {
+  return category === "purchases" && key === "approval_threshold_minor";
+}
+
 type ValidSettingsDraft = {
   ok: true;
   document: SettingsDocument;
@@ -55,12 +60,16 @@ export function validateSettingsDraft(
 
   for (const [key, defaultValue] of Object.entries(defaults)) {
     const value = normalized[key];
-    if (typeof defaultValue === "number" && typeof value === "string") {
+    if ((typeof defaultValue === "number" || isNullableNumericSetting(category, key)) &&
+        typeof value === "string") {
       const text = value.trim();
-      if (!text || !Number.isFinite(Number(text))) {
+      if (!text && isNullableNumericSetting(category, key)) {
+        normalized[key] = null;
+      } else if (!text || !Number.isFinite(Number(text))) {
         return { ok: false, errors: { [key]: "Enter a valid number." } };
+      } else {
+        normalized[key] = Number(text);
       }
-      normalized[key] = Number(text);
     }
   }
 

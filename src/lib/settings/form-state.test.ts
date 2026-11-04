@@ -30,7 +30,7 @@ describe("Settings Centre draft validation", () => {
       warn_backdated_days: "365",
     });
     expect(result.ok).toBe(true);
-    if (result.ok) expect(result.document.warn_backdated_days).toBe(365);
+    if (result.ok) expect(result.document["warn_backdated_days"]).toBe(365);
   });
 
   it("rejects blank, invalid and out-of-range numbers instead of silently saving zero", () => {
@@ -41,7 +41,7 @@ describe("Settings Centre draft validation", () => {
         warn_backdated_days: raw,
       });
       expect(result.ok).toBe(false);
-      if (!result.ok) expect(result.errors.warn_backdated_days).toBeTruthy();
+      if (!result.ok) expect(result.errors["warn_backdated_days"]).toBeTruthy();
     }
   });
 
@@ -52,14 +52,14 @@ describe("Settings Centre draft validation", () => {
       approval_threshold_minor: "12500",
     });
     expect(amount.ok).toBe(true);
-    if (amount.ok) expect(amount.document.approval_threshold_minor).toBe(12500);
+    if (amount.ok) expect(amount.document["approval_threshold_minor"]).toBe(12500);
 
     const cleared = validateSettingsDraft("purchases", {
       ...defaults,
       approval_threshold_minor: "",
     });
     expect(cleared.ok).toBe(true);
-    if (cleared.ok) expect(cleared.document.approval_threshold_minor).toBeNull();
+    if (cleared.ok) expect(cleared.document["approval_threshold_minor"]).toBeNull();
   });
 
   it("rejects invalid enum settings and accepts allowed choices", () => {

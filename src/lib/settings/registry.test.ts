@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveSettingsCategory, searchSettings } from "./registry";
+import { categoryMeta, resolveSettingsCategory, searchSettings } from "./registry";
 
 describe("Settings Centre category routing and search", () => {
   it("keeps valid deep links and falls back for invalid or unsafe categories", () => {
@@ -17,4 +17,18 @@ describe("Settings Centre category routing and search", () => {
     expect(searchSettings("bank feeds").some((item) => item.id === "banking")).toBe(true);
     expect(searchSettings("not-a-real-category-keyword")).toHaveLength(0);
   });
+  it("provides real workspace destinations for import and fixed assets", () => {
+    const importMeta = categoryMeta.find((item) => item.id === "import_migration");
+    const assetsMeta = categoryMeta.find((item) => item.id === "fixed_assets");
+    expect(importMeta?.moduleLinks).toContainEqual({
+      label: "Data Import Centre",
+      to: "/imports",
+    });
+    expect(assetsMeta?.moduleLinks).toContainEqual({
+      label: "Fixed Assets workspace",
+      to: "/fixed-assets",
+    });
+    expect(assetsMeta?.availability).toBe("partial");
+  });
+
 });

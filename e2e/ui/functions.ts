@@ -184,3 +184,7 @@ export async function importContactsCsv() {
     errors: [{ row: 3, message: "Email address is invalid" }],
   };
 }
+
+export function useCan() {
+  return { can: useCanDo, role: "owner", ready: true };
+}

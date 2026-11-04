@@ -34,10 +34,13 @@ describe("legacy accounting preferences save", () => {
   });
 
   it("accepts a deliberate zero-day warning threshold", () => {
-    const result = prepareAccountingPreferences(defaultDocumentFor("accounting") as SettingsDocument, {
-      ...input,
-      backdatedDays: "0",
-    });
+    const result = prepareAccountingPreferences(
+      defaultDocumentFor("accounting") as SettingsDocument,
+      {
+        ...input,
+        backdatedDays: "0",
+      },
+    );
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.document["warn_backdated_days"]).toBe(0);
   });

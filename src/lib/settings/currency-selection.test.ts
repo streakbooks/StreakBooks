@@ -3,10 +3,9 @@ import { normalizeCurrencySelection } from "./currency-selection";
 
 describe("settings currency selection", () => {
   it("normalises to an ordered unique list without silently removing values", () => {
-    expect(normalizeCurrencySelection(["usd", " EUR ", "USD"], { enforceSupported: true })).toEqual([
-      "EUR",
-      "USD",
-    ]);
+    expect(normalizeCurrencySelection(["usd", " EUR ", "USD"], { enforceSupported: true })).toEqual(
+      ["EUR", "USD"],
+    );
     expect(normalizeCurrencySelection([])).toEqual([]);
   });
 

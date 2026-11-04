@@ -72,28 +72,28 @@ export const engagementInput = firmClientScope
 export type EngagementInput = z.infer<typeof engagementInput>;
 
 async function checkScope(
-  context: { supabase: any; userId: string },
+  context: { supabase: Parameters<typeof assertCompanyPermission>[0]; userId: string },
   firmId: string,
   companyId: string,
   mustManage: boolean,
 ) {
   const sb = context.supabase;
   const { data: member, error: membershipError } = await sb
-    .from("firm_members")
-    .select("role")
-    .eq("firm_id", firmId)
-    .eq("user_id", context.userId)
+    .from("firm_members" as never)
+    .select("role" as never)
+    .eq("firm_id" as never, firmId as never)
+    .eq("user_id" as never, context.userId as never)
     .maybeSingle();
   if (membershipError) throw new Error(membershipError.message);
   if (!member) throw new Error("Firm membership required");
-  if (mustManage && !["owner", "admin"].includes(member.role))
+  if (mustManage && !["owner", "admin"].includes((member as { role: string }).role))
     throw new Error("Firm administrator access required");
   const { data: link, error: linkError } = await sb
-    .from("firm_client_links")
-    .select("id")
-    .eq("firm_id", firmId)
-    .eq("company_id", companyId)
-    .is("revoked_at", null)
+    .from("firm_client_links" as never)
+    .select("id" as never)
+    .eq("firm_id" as never, firmId as never)
+    .eq("company_id" as never, companyId as never)
+    .is("revoked_at" as never, null)
     .maybeSingle();
   if (linkError) throw new Error(linkError.message);
   if (!link) throw new Error("Client is not linked to this firm");

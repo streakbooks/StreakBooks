@@ -6,6 +6,8 @@ import { isoDate } from "@/lib/accountant/practice-work";
 
 export type TrackedDocumentRequest = {
   request_id: string;
+  viewer_can_complete: boolean;
+  viewer_can_cancel: boolean;
   due_date: string;
   created_at: string;
   action_document_requests: {
@@ -35,7 +37,11 @@ export const listFirmTrackedRequests = createServerFn({method:"GET"})
       .limit(201);
     if(error)throw new Error(error.message);
     if((rows??[]).length>200)throw new Error("Document requests exceed 200; narrow your scope");
-    return (rows??[]) as TrackedDocumentRequest[];
+    return ((rows??[]) as Omit<TrackedDocumentRequest,"viewer_can_complete"|"viewer_can_cancel">[]).map(row=>({
+      ...row,
+      viewer_can_complete:row.action_document_requests?.requested_from===context.userId,
+      viewer_can_cancel:row.action_document_requests?.requested_by===context.userId,
+    }));
   });
 
 export const listFirmRequestRecipients = createServerFn({method:"GET"})

@@ -24,25 +24,21 @@ describe("firm practice billing safeguards", () => {
     expect(practiceDraftDue(schedule, "2026-11-04")).toBe(true);
   });
   it("blocks automatic authorisation, inactive templates and future occurrences", () => {
-    expect(
-      compatiblePracticeRecurring(engagement, { ...schedule, auto_authorise: true }),
-    ).toBe(false);
+    const auto = compatiblePracticeRecurring(engagement, { ...schedule, auto_authorise: true });
+    expect(auto).toBe(false);
     expect(practiceDraftDue({ ...schedule, auto_authorise: true }, "2026-11-04")).toBe(false);
-    expect(practiceDraftDue({ ...schedule, next_due_date: "2026-12-01" }, "2026-11-04")).toBe(false);
+    const future = practiceDraftDue({ ...schedule, next_due_date: "2026-12-01" }, "2026-11-04");
+    expect(future).toBe(false);
     expect(compatiblePracticeRecurring(engagement, { ...schedule, is_active: false })).toBe(false);
   });
   it("rejects mismatched currencies, frequencies and inactive engagements", () => {
-    expect(
-      compatiblePracticeRecurring(engagement, { ...schedule, currency_code: "USD" }),
-    ).toBe(false);
-    expect(
-      compatiblePracticeRecurring(engagement, { ...schedule, frequency: "yearly" }),
-    ).toBe(false);
-    expect(
-      compatiblePracticeRecurring({ ...engagement, status: "cancelled" }, schedule),
-    ).toBe(false);
-    expect(
-      compatiblePracticeRecurring({ ...engagement, frequency: "one_off" }, schedule),
-    ).toBe(false);
+    const currency = compatiblePracticeRecurring(engagement, { ...schedule, currency_code: "USD" });
+    expect(currency).toBe(false);
+    const frequency = compatiblePracticeRecurring(engagement, { ...schedule, frequency: "yearly" });
+    expect(frequency).toBe(false);
+    const cancelled = compatiblePracticeRecurring({ ...engagement, status: "cancelled" }, schedule);
+    expect(cancelled).toBe(false);
+    const once = compatiblePracticeRecurring({ ...engagement, frequency: "one_off" }, schedule);
+    expect(once).toBe(false);
   });
 });

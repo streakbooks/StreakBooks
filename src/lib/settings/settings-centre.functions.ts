@@ -1,4 +1,5 @@
 import { buildIntegrationHealth } from "./integration-health";
+import { assertSettingsCategory } from "@/lib/settings/categories";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
@@ -22,7 +23,7 @@ export type SettingsDocument = Record<
 >;
 
 function asCategory(raw: string): SettingsCategory {
-  return raw as SettingsCategory;
+  return assertSettingsCategory(raw);
 }
 
 function toSettingsDocument(raw: unknown): SettingsDocument {
@@ -44,7 +45,7 @@ export const getOrganisationConfig = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { companyId: string; category: string }) => ({
     companyId: assertUuid(input.companyId),
-    category: String(input.category || "").slice(0, 64),
+    category: assertSettingsCategory(input.category),
   }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
@@ -89,7 +90,7 @@ export const upsertOrganisationConfig = createServerFn({ method: "POST" })
       reason?: string;
     }) => ({
       companyId: assertUuid(input.companyId),
-      category: String(input.category || "").slice(0, 64),
+      category: assertSettingsCategory(input.category),
       document: toSettingsDocument(input.document ?? {}),
       expectedVersion:
         input.expectedVersion == null ? null : Math.floor(Number(input.expectedVersion)),

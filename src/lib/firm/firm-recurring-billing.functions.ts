@@ -214,6 +214,7 @@ export const generateFirmEngagementDraft = createServerFn({ method: "POST" })
       context.userId,
       data.billingCompanyId,
       data.recurringId,
+      { forceDraft: true },
     );
 
     // The invoice already exists at this point; report a linkage failure without

@@ -21,7 +21,13 @@ export type TaxLineResult = {
 
 function asBig(v: bigint | number | undefined): bigint {
   if (v === undefined) return 0n;
-  return typeof v === "number" ? BigInt(v) : v;
+  if (typeof v === "number") {
+    if (!Number.isSafeInteger(v)) {
+      throw new Error("Money amounts must be safe integer minor units; use bigint for larger values");
+    }
+    return BigInt(v);
+  }
+  return v;
 }
 
 function halfUpDiv(numer: bigint, denom: bigint): bigint {
@@ -35,6 +41,17 @@ function extendedMinor(input: TaxLineInput): bigint {
   if (!(input.quantity > 0) || !Number.isFinite(input.quantity)) {
     throw new Error("Quantity must be a positive number");
   }
+  // Six fractional places are supported by the existing posting calculation.
+  // Reject extra precision instead of silently rounding the user's quantity.
+  const scaled = input.quantity * 1_000_000;
+  const nearest = Math.round(scaled);
+  if (
+    !Number.isSafeInteger(nearest) ||
+    nearest < 1 ||
+    Math.abs(scaled - nearest) > 0.000001
+  ) {
+    throw new Error("Quantity must have at most six decimal places");
+  }
   const unit = asBig(input.unit_price_minor);
   if (unit < 0n) throw new Error("Unit price cannot be negative");
   const discount = asBig(input.discount_minor);
@@ -43,7 +60,7 @@ function extendedMinor(input: TaxLineInput): bigint {
   if (!Number.isInteger(bps) || bps < 0 || bps > 10000) {
     throw new Error("Tax rate must be 0–10000 basis points");
   }
-  const qtyScaled = BigInt(Math.round(input.quantity * 1_000_000));
+  const qtyScaled = BigInt(nearest);
   const extended = (unit * qtyScaled) / 1_000_000n;
   const afterDiscount = extended - discount;
   if (afterDiscount < 0n) throw new Error("Discount exceeds line amount");
@@ -55,6 +72,9 @@ function extendedMinor(input: TaxLineInput): bigint {
  * Inclusive: price is gross; net = round(gross * 10000 / (10000+bps)); tax = gross − net.
  */
 export function computeTaxLine(input: TaxLineInput): TaxLineResult {
+  if (input.treatment !== "exclusive" && input.treatment !== "inclusive") {
+    throw new Error("Unknown tax treatment; choose inclusive or exclusive");
+  }
   const amount = extendedMinor(input);
   const bps = BigInt(input.tax_rate_bps);
 

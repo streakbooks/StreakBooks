@@ -46,6 +46,7 @@ BEGIN
 END $$;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA auth, private, public TO authenticated;
 GRANT SELECT ON public.test_audit_events TO authenticated;
+GRANT SELECT ON public.account_workpapers TO authenticated;
 INSERT INTO auth.users (id) VALUES ('00000000-0000-4000-8000-000000000001');
 INSERT INTO public.companies (id) VALUES
   ('10000000-0000-4000-8000-000000000001'),

@@ -3,6 +3,7 @@ import { FirmClientPortfolio } from "@/components/firm/FirmClientPortfolio";
 import { FirmOnboardingPanel, FirmTeamPanel } from "@/components/firm/FirmOnboardingAndTeam";
 import { FirmEngagementPanel } from "@/components/firm/FirmEngagementPanel";
 import { FirmStaffAssignments } from "@/components/firm/FirmStaffAssignments";
+import { FirmInvitationsPanel } from "@/components/firm/FirmInvitationsPanel";
 import { FirmRequestsPanel } from "@/components/firm/FirmRequestsPanel";
 import { FirmAnalyticsPanel, FirmBillingPanel } from "@/components/firm/FirmBillingAnalytics";
 import { setActiveCompany } from "@/lib/company.functions";
@@ -84,6 +85,7 @@ function FirmPage() {
 
   const firmAdmin =
     firmsQ.data?.some((f) => f.firmId === firmId && ["owner", "admin"].includes(f.role)) ?? false;
+  const firmOwner = firmsQ.data?.some((f) => f.firmId === firmId && f.role === "owner") ?? false;
   const activityCompany = clientsQ.data?.some((c) => c.company_id === activityCompanyId)
     ? activityCompanyId
     : clientsQ.data?.[0]?.company_id || "";
@@ -228,6 +230,7 @@ function FirmPage() {
               <TabsTrigger value="billing">Practice billing</TabsTrigger>
               <TabsTrigger value="insights">Insights</TabsTrigger>
               <TabsTrigger value="team">Team</TabsTrigger>
+              <TabsTrigger value="invitations">Staff invitations</TabsTrigger>
               <TabsTrigger value="activity">Client activity</TabsTrigger>
               <TabsTrigger value="setup">Firm settings</TabsTrigger>
             </TabsList>
@@ -375,6 +378,15 @@ function FirmPage() {
 
             <TabsContent value="insights">
               <FirmAnalyticsPanel key={firmId} firmId={firmId} />
+            </TabsContent>
+
+            <TabsContent value="invitations">
+              <FirmInvitationsPanel
+                key={firmId}
+                firmId={firmId}
+                canManage={firmAdmin}
+                isOwner={firmOwner}
+              />
             </TabsContent>
 
             <TabsContent value="activity" className="space-y-4">

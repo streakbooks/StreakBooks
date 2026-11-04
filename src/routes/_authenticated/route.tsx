@@ -64,7 +64,9 @@ function CompanyLayout() {
   const onOnboarding =
     pathname.startsWith("/onboarding") ||
     pathname === "/profile" ||
-    pathname.startsWith("/invite/");
+    pathname === "/firm" ||
+    pathname.startsWith("/invite/") ||
+    pathname.startsWith("/firm-invite/");
 
   useEffect(() => {
     if (isPending || isError) return;

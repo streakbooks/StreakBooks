@@ -133,15 +133,28 @@ BEGIN
 END $$;
 
 RESET ROLE;
-DO $$
+DO $
 BEGIN
+  -- Even a privileged accidental row reassignment must be rejected by the guard.
+  BEGIN
+    UPDATE public.company_currencies
+    SET company_id='10000000-0000-4000-8000-000000000001'
+    WHERE company_id='10000000-0000-4000-8000-000000000002'
+      AND currency_code='AUD';
+    RAISE EXCEPTION 'Currency row reassignment across organisations was allowed';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM NOT ILIKE '%cannot be reassigned%' THEN RAISE; END IF;
+  END;
+
   IF has_function_privilege(
     'anon', 'public.guard_multicurrency_feature_disable()', 'EXECUTE'
+  ) OR has_function_privilege(
+    'anon', 'public.guard_currency_add_when_feature_disabled()', 'EXECUTE'
   ) OR has_function_privilege(
     'anon', 'public.set_organisation_feature(uuid,text,boolean,jsonb,text,text)', 'EXECUTE'
   ) THEN
     RAISE EXCEPTION 'Anonymous feature guard or mutation execution is enabled';
   END IF;
-END $$;
+END $;
 
 SELECT 'PASS: multicurrency disable blocked transactionally; rollback and tenant protection verified' AS result;

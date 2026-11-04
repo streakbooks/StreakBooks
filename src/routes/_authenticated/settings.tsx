@@ -74,6 +74,13 @@ import { SettingsUnavailablePanel } from "@/components/settings/SettingsUnavaila
 import { SubscriptionPanel } from "@/components/billing/SubscriptionPanel";
 import { SettingsCommandPalette } from "@/components/settings/SettingsCommandPalette";
 import { maxFiscalYearEndDay, formatDocumentNumberPreview } from "@/lib/settings/dimension-helpers";
+import { SettingsSaveBar } from "@/components/settings/SettingsSaveBar";
+import {
+  isValidOptionalEmail,
+  isValidPositiveFxRate,
+  isValidThemeColor,
+  validateDocumentSequenceDraft,
+} from "@/lib/settings/legacy-form-validation";
 
 const LEGACY_TAB_BY_SECTION: Partial<Record<SettingsCategory, string>> = {
   organisation: "organisation",
@@ -281,8 +288,102 @@ export function SettingsForCompany({
   const [rateFrom, setRateFrom] = useState("USD");
   const [rateDate, setRateDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [rateValue, setRateValue] = useState("1.25");
+  const [detailsDirty, setDetailsDirty] = useState(false);
+  const [localizationDirty, setLocalizationDirty] = useState(false);
+  const [brandingDirty, setBrandingDirty] = useState(false);
+  const [currenciesDirty, setCurrenciesDirty] = useState(false);
+  const [detailsBaseline, setDetailsBaseline] = useState("");
+  const [localizationBaseline, setLocalizationBaseline] = useState("");
+  const [brandingBaseline, setBrandingBaseline] = useState("");
+  const [currenciesBaseline, setCurrenciesBaseline] = useState("");
 
   useEffect(() => {
+    const d = detailsQuery.data;
+    if (!d || detailsDirty) return;
+    setDetailsBaseline(JSON.stringify(d));
+    setName(d.name);
+    setLegalName(d.legal_name ?? "");
+    setCountryCode(d.country_code);
+    setCurrency(d.base_currency);
+    setTimezone(d.timezone);
+    setFyMonth(String(d.fiscal_year_end_month));
+    setFyDay(String(d.fiscal_year_end_day));
+    setTaxRegime(d.tax?.tax_regime ?? "none");
+    setRegNumber(d.tax?.registration_number ?? "");
+    setPricesIncludeTax(Boolean(d.tax?.prices_include_tax));
+  }, [detailsQuery.data, detailsDirty]);
+
+  useEffect(() => {
+    const e = extendedQuery.data;
+    if (!e?.company) return;
+    if (!localizationDirty) {
+      setLocalizationBaseline(JSON.stringify(e.company));
+      setLocale(e.company.locale || "en-GB");
+      setDateFormat(e.company.date_format || "DD/MM/YYYY");
+      setInvoiceFooter(e.company.invoice_footer || "");
+      setThemeColor(e.company.document_theme_color || "#0F766E");
+    }
+    if (!brandingDirty) {
+      setBrandingBaseline(JSON.stringify(e.branding));
+      setTradingName(e.branding.trading_name ?? "");
+      setLetterhead(e.branding.letterhead_line ?? "");
+      setInvoiceEmail(e.branding.invoice_email ?? "");
+      setInvoicePhone(e.branding.invoice_phone ?? "");
+      setLogoUrl(e.branding.logo_url ?? "");
+    }
+    if (!currenciesDirty) {
+      setCurrenciesBaseline(JSON.stringify(e.enabledCurrencies));
+      setEnabledFx(e.enabledCurrencies);
+    }
+  }, [extendedQuery.data, localizationDirty, brandingDirty, currenciesDirty]);
+
+  const detailsServerChanged = Boolean(
+    detailsDirty &&
+      detailsQuery.data &&
+      JSON.stringify(detailsQuery.data) !== detailsBaseline,
+  );
+  const localizationServerChanged = Boolean(
+    localizationDirty &&
+      extendedQuery.data?.company &&
+      JSON.stringify(extendedQuery.data.company) !== localizationBaseline,
+  );
+  const brandingServerChanged = Boolean(
+    brandingDirty &&
+      extendedQuery.data &&
+      JSON.stringify(extendedQuery.data.branding) !== brandingBaseline,
+  );
+  const currenciesServerChanged = Boolean(
+    currenciesDirty &&
+      extendedQuery.data &&
+      JSON.stringify(extendedQuery.data.enabledCurrencies) !== currenciesBaseline,
+  );
+  const detailsValid =
+    name.trim().length >= 2 &&
+    name.trim().length <= 160 &&
+    legalName.trim().length <= 200 &&
+    Number.isInteger(Number(fyDay)) &&
+    Number(fyDay) >= 1 &&
+    Number(fyDay) <= maxFiscalYearEndDay(Number(fyMonth));
+  const localizationValid = isValidThemeColor(themeColor) && invoiceFooter.length <= 2000;
+  const brandingValid =
+    isValidOptionalEmail(invoiceEmail) &&
+    (!logoUrl.trim() || /^https:\/\//i.test(logoUrl.trim()));
+  const fxRateValid =
+    isValidPositiveFxRate(rateValue) &&
+    rateFrom !== (detailsQuery.data?.base_currency ?? "GBP") &&
+    /^\d{4}-\d{2}-\d{2}$/.test(rateDate);
+
+  useEffect(() => {
+    if (!detailsDirty && !localizationDirty && !brandingDirty && !currenciesDirty) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [detailsDirty, localizationDirty, brandingDirty, currenciesDirty]);
+
+  const resetDetails = () => {
     const d = detailsQuery.data;
     if (!d) return;
     setName(d.name);
@@ -295,22 +396,40 @@ export function SettingsForCompany({
     setTaxRegime(d.tax?.tax_regime ?? "none");
     setRegNumber(d.tax?.registration_number ?? "");
     setPricesIncludeTax(Boolean(d.tax?.prices_include_tax));
-  }, [detailsQuery.data]);
+    setDetailsBaseline(JSON.stringify(d));
+    setDetailsDirty(false);
+  };
 
-  useEffect(() => {
-    const e = extendedQuery.data;
-    if (!e?.company) return;
-    setLocale(e.company.locale || "en-GB");
-    setDateFormat(e.company.date_format || "DD/MM/YYYY");
-    setInvoiceFooter(e.company.invoice_footer || "");
-    setThemeColor(e.company.document_theme_color || "#0F766E");
-    setTradingName(e.branding.trading_name ?? "");
-    setLetterhead(e.branding.letterhead_line ?? "");
-    setInvoiceEmail(e.branding.invoice_email ?? "");
-    setInvoicePhone(e.branding.invoice_phone ?? "");
-    setLogoUrl(e.branding.logo_url ?? "");
-    setEnabledFx(e.enabledCurrencies);
-  }, [extendedQuery.data]);
+  const resetLocalization = () => {
+    const e = extendedQuery.data?.company;
+    if (!e) return;
+    setLocale(e.locale || "en-GB");
+    setDateFormat(e.date_format || "DD/MM/YYYY");
+    setInvoiceFooter(e.invoice_footer || "");
+    setThemeColor(e.document_theme_color || "#0F766E");
+    setLocalizationBaseline(JSON.stringify(e));
+    setLocalizationDirty(false);
+  };
+
+  const resetBranding = () => {
+    const b = extendedQuery.data?.branding;
+    if (!b) return;
+    setTradingName(b.trading_name ?? "");
+    setLetterhead(b.letterhead_line ?? "");
+    setInvoiceEmail(b.invoice_email ?? "");
+    setInvoicePhone(b.invoice_phone ?? "");
+    setLogoUrl(b.logo_url ?? "");
+    setBrandingBaseline(JSON.stringify(b));
+    setBrandingDirty(false);
+  };
+
+  const resetCurrencies = () => {
+    const list = extendedQuery.data?.enabledCurrencies;
+    if (!list) return;
+    setEnabledFx(list);
+    setCurrenciesBaseline(JSON.stringify(list));
+    setCurrenciesDirty(false);
+  };
 
   const canEdit = useCanDo("company.settings.edit");
   const canLock = useCanDo("periods.lock");
@@ -338,6 +457,7 @@ export function SettingsForCompany({
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["company-details", companyId] });
       await queryClient.invalidateQueries({ queryKey: companyContextKey });
+      setDetailsDirty(false);
       toast.success("Organisation settings saved");
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
@@ -356,6 +476,7 @@ export function SettingsForCompany({
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["org-extended", companyId] });
+      setLocalizationDirty(false);
       toast.success("Localization saved");
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
@@ -375,6 +496,7 @@ export function SettingsForCompany({
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["org-extended", companyId] });
+      setBrandingDirty(false);
       toast.success("Document branding saved");
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
@@ -384,6 +506,7 @@ export function SettingsForCompany({
     mutationFn: () => saveCurrencies({ data: { companyId, currencies: enabledFx } }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["org-extended", companyId] });
+      setCurrenciesDirty(false);
       toast.success("Enabled currencies saved");
     },
     onError: (e) => toast.error(friendlyAuthError(e)),

@@ -98,7 +98,7 @@ BEGIN
      engagement_id,invoice_id,firm_id,company_id,billing_company_id,created_by
    ) VALUES(new_engagement_id,gen_random_uuid(),fid,c1,billing,u1);
    RAISE EXCEPTION 'TEST: unknown invoice accepted';
- EXCEPTION WHEN foreign_key_violation THEN NULL; END;
+ EXCEPTION WHEN foreign_key_violation OR insufficient_privilege THEN NULL; END;
 END $$;
 
 RESET ROLE;

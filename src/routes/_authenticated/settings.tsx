@@ -498,9 +498,7 @@ export function SettingsForCompany({
       saveBranding({
         data: {
           companyId,
-          expected: brandingSnapshot(
-            JSON.parse(brandingBaseline || "{}") as BrandingSnapshot,
-          ),
+          expected: brandingSnapshot(JSON.parse(brandingBaseline || "{}") as BrandingSnapshot),
           trading_name: tradingName,
           letterhead_line: letterhead,
           invoice_email: invoiceEmail,

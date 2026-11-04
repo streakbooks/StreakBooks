@@ -2,6 +2,9 @@ import { PracticeWorkBoard } from "@/components/accountant/PracticeWorkBoard";
 import { FirmClientPortfolio } from "@/components/firm/FirmClientPortfolio";
 import { FirmOnboardingPanel, FirmTeamPanel } from "@/components/firm/FirmOnboardingAndTeam";
 import { FirmEngagementPanel } from "@/components/firm/FirmEngagementPanel";
+import { FirmStaffAssignments } from "@/components/firm/FirmStaffAssignments";
+import { FirmRequestsPanel } from "@/components/firm/FirmRequestsPanel";
+import { FirmAnalyticsPanel, FirmBillingPanel } from "@/components/firm/FirmBillingAnalytics";
 import { setActiveCompany } from "@/lib/company.functions";
 import { useCanDo } from "@/hooks/use-can";
 import { useState } from "react";
@@ -221,6 +224,9 @@ function FirmPage() {
               <TabsTrigger value="work">Work & deadlines</TabsTrigger>
               <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
               <TabsTrigger value="engagements">Engagements</TabsTrigger>
+              <TabsTrigger value="requests">Client requests</TabsTrigger>
+              <TabsTrigger value="billing">Practice billing</TabsTrigger>
+              <TabsTrigger value="insights">Insights</TabsTrigger>
               <TabsTrigger value="team">Team</TabsTrigger>
               <TabsTrigger value="activity">Client activity</TabsTrigger>
               <TabsTrigger value="setup">Firm settings</TabsTrigger>
@@ -310,8 +316,65 @@ function FirmPage() {
               )}
             </TabsContent>
 
-            <TabsContent value="team">
+            <TabsContent value="team" className="space-y-6">
               <FirmTeamPanel key={firmId} firmId={firmId} />
+              {clientsQ.isPending ? (
+                <LoadingState />
+              ) : clientsQ.isError ? (
+                <ErrorState
+                  title="Could not load clients"
+                  description={friendlyAuthError(clientsQ.error)}
+                />
+              ) : (
+                <FirmStaffAssignments
+                  key={firmId}
+                  firmId={firmId}
+                  clients={clientsQ.data ?? []}
+                  canManage={firmAdmin}
+                />
+              )}
+            </TabsContent>
+
+            <TabsContent value="requests">
+              {clientsQ.isPending ? (
+                <LoadingState />
+              ) : clientsQ.isError ? (
+                <ErrorState
+                  title="Could not load clients"
+                  description={friendlyAuthError(clientsQ.error)}
+                />
+              ) : (
+                <FirmRequestsPanel
+                  key={firmId}
+                  firmId={firmId}
+                  clients={clientsQ.data ?? []}
+                  canManage={firmAdmin}
+                />
+              )}
+            </TabsContent>
+
+            <TabsContent value="billing">
+              {clientsQ.isPending ? (
+                <LoadingState />
+              ) : clientsQ.isError ? (
+                <ErrorState
+                  title="Could not load clients"
+                  description={friendlyAuthError(clientsQ.error)}
+                />
+              ) : (
+                <FirmBillingPanel
+                  key={firmId}
+                  firmId={firmId}
+                  clients={clientsQ.data ?? []}
+                  canManage={firmAdmin}
+                  activeCompanyId={company?.id ?? ""}
+                  activeCompanyName={company?.name ?? "No organisation selected"}
+                />
+              )}
+            </TabsContent>
+
+            <TabsContent value="insights">
+              <FirmAnalyticsPanel key={firmId} firmId={firmId} />
             </TabsContent>
 
             <TabsContent value="activity" className="space-y-4">

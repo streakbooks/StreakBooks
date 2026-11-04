@@ -294,7 +294,7 @@ export function DeferralsPanel({ companyId, currency }: { companyId: string; cur
                   `Create a ${periods}-month ${kind === "prepaid_expense" ? "prepaid expense" : "deferred income"} schedule for ${amount} ${currency}? The original bill or invoice must already be posted to the deferral account.`,
                 )
               ) createM.mutate();
-            }
+            }}
           >
             Create schedule
           </Button>
@@ -414,7 +414,7 @@ export function DeferralsPanel({ companyId, currency }: { companyId: string; cur
                                       `Post recognition of ${fmt.money(e.amount_minor, currency)} for ${s.name} (period ${e.period_no}) on ${postingDate || q.data.today}? This creates a ledger journal.`,
                                     )
                                   ) postM.mutate(e.id);
-                                }
+                                }}
                               >
                                 Post recognition
                               </Button>

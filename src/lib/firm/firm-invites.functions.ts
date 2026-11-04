@@ -18,11 +18,7 @@ const tokenInput = z
 const revokeInput = z.object({ inviteId: z.string().uuid() }).strict();
 
 type InviteDeliveryStatus =
-  | "not_attempted"
-  | "provider_accepted"
-  | "failed"
-  | "not_configured"
-  | "domain_unverified";
+  "not_attempted" | "provider_accepted" | "failed" | "not_configured" | "domain_unverified";
 
 export type FirmStaffInvitation = {
   id: string;

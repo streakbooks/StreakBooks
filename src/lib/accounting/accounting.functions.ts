@@ -4,6 +4,7 @@ import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-compa
 import { assertUuid } from "@/lib/company-validation";
 import { postJournal, reverseJournal } from "@/lib/accounting/posting-engine";
 import { journalPageRange } from "@/lib/accounting/journal-paging";
+import { assertManualJournalPosting } from "@/lib/accounting/manual-journal-posting";
 
 function companyIdInput(input: { companyId: string }) {
   return { companyId: assertUuid(input?.companyId) };
@@ -254,20 +255,8 @@ export const postManualJournal = createServerFn({ method: "POST" })
       }>;
     }) => {
       const companyId = assertUuid(input?.companyId);
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(input.journalDate ?? "")) {
-        throw new Error("Choose a valid posting date.");
-      }
       const autoReverseOn = (input.autoReverseOn ?? "").trim() || undefined;
-      if (autoReverseOn !== undefined) {
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(autoReverseOn))
-          throw new Error("Choose a valid reversal date.");
-        if (autoReverseOn <= input.journalDate) {
-          throw new Error("The reversal date must be after the journal date.");
-        }
-      }
-      if (!Array.isArray(input.lines) || input.lines.length < 2) {
-        throw new Error("Enter at least two journal lines.");
-      }
+      assertManualJournalPosting(input.journalDate, autoReverseOn, input.lines);
       return {
         companyId,
         journalDate: input.journalDate,
@@ -277,8 +266,8 @@ export const postManualJournal = createServerFn({ method: "POST" })
         lines: input.lines.map((l) => ({
           accountId: assertUuid(l.accountId, "account"),
           description: (l.description ?? "").trim().slice(0, 300),
-          debitMinor: Number(l.debitMinor) || 0,
-          creditMinor: Number(l.creditMinor) || 0,
+          debitMinor: l.debitMinor,
+          creditMinor: l.creditMinor,
         })),
       };
     },

@@ -16,6 +16,14 @@ export const ONBOARDING_TEMPLATE = [
   { key: "opening_review", title: "Complete initial bookkeeping review" },
 ] as const;
 
+export const OFFBOARDING_TEMPLATE = [
+  { key: "offboard_work", title: "Offboarding — finish open engagements and work" },
+  { key: "offboard_records", title: "Offboarding — prepare records and document handover" },
+  { key: "offboard_balances", title: "Offboarding — confirm final balances and deliverables" },
+  { key: "offboard_approval", title: "Offboarding — obtain handover acknowledgement" },
+  { key: "offboard_access", title: "Offboarding — review all retained company access" },
+] as const;
+
 export type FirmOnboardingStep = {
   firm_id: string;
   company_id: string;
@@ -130,6 +138,25 @@ export const initializeFirmOnboarding = createServerFn({ method: "POST" })
         company_id: data.companyId,
         task_key: task.key,
         title: task.title,
+        updated_by: context.userId,
+      })) as never,
+      { onConflict: "firm_id,company_id,task_key", ignoreDuplicates: true },
+    );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const initializeFirmOffboarding = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => firmClientScope.parse(input))
+  .handler(async ({ data, context }) => {
+    await checkScope(context, data.firmId, data.companyId, true);
+    const { error } = await context.supabase.from("firm_client_onboarding_steps" as never).upsert(
+      OFFBOARDING_TEMPLATE.map((step) => ({
+        firm_id: data.firmId,
+        company_id: data.companyId,
+        task_key: step.key,
+        title: step.title,
         updated_by: context.userId,
       })) as never,
       { onConflict: "firm_id,company_id,task_key", ignoreDuplicates: true },

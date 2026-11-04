@@ -1,6 +1,11 @@
 import { buildIntegrationHealth } from "./integration-health";
 import { assertSettingsCategory } from "@/lib/settings/categories";
-import { assertSettingsBoolean, parseExpectedSettingsVersion } from "@/lib/settings/validation";
+import {
+  assertSettingsBoolean,
+  parseExpectedSettingsVersion,
+  parseOptionalLockDate,
+  parseOptionalOverrideReason,
+} from "@/lib/settings/validation";
 import { countConfiguredForeignCurrencies } from "@/lib/settings/foreign-currency-safety";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -300,10 +305,10 @@ export const setLockPolicy = createServerFn({ method: "POST" })
       reason: string;
     }) => ({
       companyId: assertUuid(input.companyId),
-      lockDateEveryone: input.lockDateEveryone || null,
-      lockDateExceptAdvisors: input.lockDateExceptAdvisors || null,
-      conversionDate: input.conversionDate || null,
-      requireOverrideReason: input.requireOverrideReason !== false,
+      lockDateEveryone: parseOptionalLockDate(input.lockDateEveryone),
+      lockDateExceptAdvisors: parseOptionalLockDate(input.lockDateExceptAdvisors),
+      conversionDate: parseOptionalLockDate(input.conversionDate),
+      requireOverrideReason: parseOptionalOverrideReason(input.requireOverrideReason),
       reason: String(input.reason || "").trim(),
     }),
   )

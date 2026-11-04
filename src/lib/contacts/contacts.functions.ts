@@ -10,6 +10,7 @@ import {
   contactImportTemplateCsv,
   duplicateScore,
   parseContactsCsv,
+  resolveContactSort,
 } from "@/lib/contacts/contact-helpers";
 
 const CONTACT_SELECT =
@@ -69,9 +70,7 @@ export const listContacts = createServerFn({ method: "GET" })
       view: (input.view ?? "all").trim(),
       limit: Math.min(500, Math.max(1, Number(input.limit ?? 200) || 200)),
       offset: Math.min(1_000_000, Math.max(0, Math.floor(Number(input.offset ?? 0) || 0))),
-      sort: ["name_asc", "name_desc", "recent", "updated"].includes(input.sort ?? "")
-        ? input.sort!
-        : "",
+      sort: (input.sort ?? "").trim().slice(0, 40),
     }),
   )
   .handler(async ({ data, context }) => {
@@ -82,14 +81,9 @@ export const listContacts = createServerFn({ method: "GET" })
       .eq("company_id" as never, data.companyId as never)
       .range(data.offset, data.offset + data.limit - 1);
 
-    // One primary sort, chosen by the view (C-02).
-    if (data.sort === "recent" || (!data.sort && data.view === "recent")) {
-      q = q.order("created_at" as never, { ascending: false });
-    } else if (data.sort === "updated" || (!data.sort && data.view === "updated")) {
-      q = q.order("updated_at" as never, { ascending: false });
-    } else {
-      q = q.order("name" as never, { ascending: data.sort !== "name_desc" });
-    }
+    // Sort in Postgres before pagination, not just within the visible page.
+    const order = resolveContactSort(data.sort, data.view);
+    q = q.order(order.column as never, { ascending: order.ascending, nullsFirst: false });
     // Stable pagination even when two contacts share the same sort value.
     q = q.order("id" as never);
 

@@ -4,7 +4,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Download, Upload, Settings2, Users } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Download, Upload, Settings2, Users } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
@@ -15,6 +15,7 @@ import {
   exportContactsCsv,
 } from "@/lib/contacts/contacts.functions";
 import { fromMinorUnits } from "@/lib/accounting/money";
+import { nextContactSort, type ContactSortField } from "@/lib/contacts/contact-helpers";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { PageHeader, ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
@@ -74,6 +75,50 @@ type ContactRow = {
 };
 
 const PAGE_SIZE = 50;
+
+function SortableContactHead({
+  label,
+  field,
+  sort,
+  view,
+  onSort,
+}: {
+  label: string;
+  field: ContactSortField;
+  sort: string;
+  view: string;
+  onSort: (field: ContactSortField) => void;
+}) {
+  const effectiveSort =
+    sort === "default" && view !== "recent" && view !== "updated" ? "name_asc" : sort;
+  const direction =
+    effectiveSort === `${field}_asc`
+      ? "ascending"
+      : effectiveSort === `${field}_desc`
+        ? "descending"
+        : "none";
+  const nextDirection = direction === "ascending" ? "descending" : "ascending";
+
+  return (
+    <TableHead aria-sort={direction}>
+      <button
+        type="button"
+        className="inline-flex items-center gap-1.5 rounded-sm py-1 text-left font-semibold hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+        onClick={() => onSort(field)}
+        aria-label={`Sort ${label} ${nextDirection}`}
+      >
+        {label}
+        {direction === "ascending" ? (
+          <ArrowUp className="size-3.5" aria-hidden="true" />
+        ) : direction === "descending" ? (
+          <ArrowDown className="size-3.5" aria-hidden="true" />
+        ) : (
+          <ArrowUpDown className="size-3.5 opacity-50" aria-hidden="true" />
+        )}
+      </button>
+    </TableHead>
+  );
+}
 
 function ContactRecordLink({ contactId, children }: { contactId: string; children: ReactNode }) {
   return (
@@ -322,13 +367,23 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                 setPage(0);
               }}
             >
-              <SelectTrigger className="w-44" aria-label="Sort contacts">
+              <SelectTrigger className="w-52" aria-label="Sort contacts">
                 <SelectValue placeholder="Sort contacts" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="default">Default order</SelectItem>
                 <SelectItem value="name_asc">Name A–Z</SelectItem>
                 <SelectItem value="name_desc">Name Z–A</SelectItem>
+                <SelectItem value="account_asc">Account number A–Z</SelectItem>
+                <SelectItem value="account_desc">Account number Z–A</SelectItem>
+                <SelectItem value="roles_asc">Role A–Z</SelectItem>
+                <SelectItem value="roles_desc">Role Z–A</SelectItem>
+                <SelectItem value="email_asc">Email A–Z</SelectItem>
+                <SelectItem value="email_desc">Email Z–A</SelectItem>
+                <SelectItem value="phone_asc">Phone A–Z</SelectItem>
+                <SelectItem value="phone_desc">Phone Z–A</SelectItem>
+                <SelectItem value="terms_asc">Payment terms shortest</SelectItem>
+                <SelectItem value="terms_desc">Payment terms longest</SelectItem>
                 <SelectItem value="recent">Newest first</SelectItem>
                 <SelectItem value="updated">Recently updated</SelectItem>
               </SelectContent>
@@ -364,12 +419,28 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Account #</TableHead>
-                    <TableHead>Roles</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>Terms</TableHead>
+                    {(
+                      [
+                        ["name", "Name"],
+                        ["account", "Account #"],
+                        ["roles", "Roles"],
+                        ["email", "Email"],
+                        ["phone", "Phone"],
+                        ["terms", "Terms"],
+                      ] as const
+                    ).map(([field, label]) => (
+                      <SortableContactHead
+                        key={field}
+                        label={label}
+                        field={field}
+                        sort={sort}
+                        view={view}
+                        onSort={(key) => {
+                          setSort(nextContactSort(sort, key, view));
+                          setPage(0);
+                        }}
+                      />
+                    ))}
                   </TableRow>
                 </TableHeader>
                 <TableBody>

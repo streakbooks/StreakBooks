@@ -2,6 +2,42 @@
 
 export type ContactKind = "customer" | "supplier" | "both" | "employee";
 
+export const CONTACT_SORT_FIELDS = {
+  name: "name",
+  account: "account_number",
+  roles: "kind",
+  email: "email",
+  phone: "phone",
+  terms: "payment_terms_days",
+} as const;
+
+export type ContactSortField = keyof typeof CONTACT_SORT_FIELDS;
+
+/** A strict allowlist prevents client-supplied sort keys becoming database column names. */
+export function resolveContactSort(sort: string, view = "all") {
+  if (sort === "recent" || (!sort && view === "recent")) {
+    return { column: "created_at", ascending: false };
+  }
+  if (sort === "updated" || (!sort && view === "updated")) {
+    return { column: "updated_at", ascending: false };
+  }
+  for (const [field, column] of Object.entries(CONTACT_SORT_FIELDS)) {
+    if (sort === `${field}_asc`) return { column, ascending: true };
+    if (sort === `${field}_desc`) return { column, ascending: false };
+  }
+  return { column: "name", ascending: true };
+}
+
+export function nextContactSort(
+  currentSort: string,
+  field: ContactSortField,
+  view = "all",
+): string {
+  const effectiveSort =
+    currentSort === "default" && view !== "recent" && view !== "updated" ? "name_asc" : currentSort;
+  return effectiveSort === `${field}_asc` ? `${field}_desc` : `${field}_asc`;
+}
+
 export function normalizeContactName(name: string): string {
   return name.trim().toLowerCase().replace(/\s+/g, " ");
 }

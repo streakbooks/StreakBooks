@@ -12,6 +12,8 @@ import {
   saveRecurringJournalTemplate,
 } from "@/lib/create-new/money-documents.functions";
 import { fromMinorUnits, toMinorUnits } from "@/lib/accounting/money";
+import { importJournalLinesCsv, JOURNAL_CSV_HEADERS } from "@/lib/accounting/journal-csv-import";
+import { toCsv } from "@/lib/sales/csv";
 import { validateAutoReverseDate } from "@/lib/accounting/fx-reval";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import {
@@ -79,6 +81,7 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
   const [recordId, setRecordId] = useState<string | null>(null);
   const recordRef = useRef<DocumentRecordHandle>(null);
   const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
+  const [importedCount, setImportedCount] = useState(0);
 
   const allAccounts = (accountsQ.data ?? []) as unknown as AccountRow[];
   // Control accounts (receivables, payables, tax) are written by their own documents, not by hand.
@@ -107,6 +110,32 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
     !reverseError &&
     (mode === "post" || name.trim().length > 0);
 
+  async function handleCsvImport(file: File) {
+    if (file.size > 256000) throw new Error("CSV file exceeds the 256 KB import limit.");
+    if (accountsQ.isPending || accountsQ.isError) {
+      throw new Error("Wait until the chart of accounts has loaded before importing.");
+    }
+    const parsed = importJournalLinesCsv(await file.text(), accounts, currency);
+    setLines(parsed);
+    setIdempotencyKey(crypto.randomUUID());
+    setRecordId(null);
+    setImportedCount(parsed.length);
+    setError(null);
+    toast.success(
+      "Loaded " + parsed.length + " balanced journal lines for review. Nothing posted.",
+    );
+  }
+
+  function downloadCsvTemplate() {
+    const csv = toCsv([...JOURNAL_CSV_HEADERS], []);
+    const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "linkbooks-manual-journal-import-template.csv";
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
   function updateLine(index: number, patch: Partial<Line>) {
     setLines((current) => current.map((item, i) => (i === index ? { ...item, ...patch } : item)));
   }
@@ -124,6 +153,7 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
 
   function reset() {
     setLines([emptyLine(), emptyLine()]);
+    setImportedCount(0);
     setMemo("");
     setName("");
     setAutoReverseOn("");
@@ -281,6 +311,41 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
           </>
         ) : null}
       </div>
+
+      {mode === "post" ? (
+        <section aria-label="Import manual journal CSV" className="space-y-2 rounded-md border p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <Label htmlFor="journal-csv-import">Import manual journal lines (CSV)</Label>
+            <Button type="button" size="sm" variant="outline" onClick={downloadCsvTemplate}>
+              Download CSV template
+            </Button>
+          </div>
+          <Input
+            id="journal-csv-import"
+            aria-label="Select journal lines CSV"
+            type="file"
+            accept=".csv,text/csv"
+            disabled={saveM.isPending || accountsQ.isPending || accountsQ.isError}
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              event.target.value = "";
+              if (!file) return;
+              void handleCsvImport(file).catch((e) => setError(friendlyAuthError(e)));
+            }}
+          />
+          <p className="text-xs text-muted-foreground">
+            Columns: account_code, description, debit, credit. Imports one balanced journal (2–200
+            lines). Use posting-enabled account codes, exclude tax and AR/AP control accounts, and
+            review the populated lines before pressing Post journal. Uploading never posts.
+          </p>
+          {importedCount > 0 ? (
+            <p role="status" className="text-sm">
+              {importedCount} lines imported into this draft. Check the date, narration and accounts
+              before posting.
+            </p>
+          ) : null}
+        </section>
+      ) : null}
 
       <div className="space-y-2">
         <div className="hidden grid-cols-12 gap-2 text-xs font-medium text-muted-foreground sm:grid">

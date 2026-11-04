@@ -502,8 +502,8 @@ export function SettingsCategoryConfigPanel({
           <AlertDialogHeader>
             <AlertDialogTitle>Leave with unsaved settings?</AlertDialogTitle>
             <AlertDialogDescription>
-              Your changes to {meta.label} have not been saved. Leaving now will discard the
-              current draft.
+              Your changes to {meta.label} have not been saved. Leaving now will discard the current
+              draft.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

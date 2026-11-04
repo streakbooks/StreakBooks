@@ -55,6 +55,11 @@ import {
   toggleContactDirectoryColumn,
   type ContactDirectoryColumnId,
 } from "@/lib/contacts/contact-directory-columns";
+import {
+  getContactDirectoryPreferences,
+  saveContactDirectoryPreference,
+} from "@/lib/contacts/contact-directory-preferences.functions";
+import type { ContactPreferenceKind } from "@/lib/contacts/contact-directory-preferences";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { PageHeader, ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
 import { ContactFollowUpsPanel } from "@/components/contacts/ContactFollowUpsPanel";
@@ -350,6 +355,8 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
   const bulkRemove = useServerFn(bulkRemoveContactLabel);
   const createGroup = useServerFn(upsertContactGroup);
   const createTag = useServerFn(upsertContactTag);
+  const getCloudPreferences = useServerFn(getContactDirectoryPreferences);
+  const persistCloudPreference = useServerFn(saveContactDirectoryPreference);
   const canManage = useCanDo("contacts.manage");
 
   const { view: requestedView } = Route.useSearch();
@@ -382,12 +389,73 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
   });
   const [groupId, setGroupId] = useState("");
   const [tagId, setTagId] = useState("");
+  const [legacyPreferences, setLegacyPreferences] = useState<{
+    companyId: string | undefined;
+    columns: ContactDirectoryColumnId[] | null;
+    views: ContactSavedView[] | null;
+  }>({ companyId: undefined, columns: null, views: null });
   const preferenceKey = companyId ? `linkbooks:contact-columns:${companyId}` : "";
   const visibleColumns =
     columnPreferences.companyId === companyId
       ? columnPreferences.columns
       : DEFAULT_CONTACT_DIRECTORY_COLUMNS;
   const scope = `${companyId ?? ""}|${view}|${q}|${sort}|${filterScope}|${page}`;
+
+  const cloudPreferencesQ = useQuery({
+    queryKey: ["contact-directory-preferences", companyId],
+    enabled: Boolean(companyId),
+    queryFn: () => getCloudPreferences({ data: { companyId: companyId! } }),
+  });
+
+  const saveCloudM = useMutation({
+    mutationFn: (input: { kind: ContactPreferenceKind; value: unknown }) =>
+      persistCloudPreference({
+        data: { companyId: companyId!, kind: input.kind, value: input.value },
+      }),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["contact-directory-preferences", companyId] });
+    },
+    onError: () =>
+      toast.error("Account sync failed. The browser copy is retained; retry saving to sync."),
+  });
+
+  const importLegacyM = useMutation({
+    mutationFn: async () => {
+      if (!companyId || legacyPreferences.companyId !== companyId) return 0;
+      let imported = 0;
+      // Import only missing account settings; never overwrite another device's saved data.
+      if (cloudPreferencesQ.data?.columns === null && legacyPreferences.columns) {
+        await persistCloudPreference({
+          data: { companyId, kind: "columns", value: legacyPreferences.columns },
+        });
+        imported += 1;
+      }
+      if (cloudPreferencesQ.data?.views === null && legacyPreferences.views) {
+        await persistCloudPreference({
+          data: { companyId, kind: "views", value: legacyPreferences.views },
+        });
+        imported += 1;
+      }
+      return imported;
+    },
+    onSuccess: async (count) => {
+      await qc.invalidateQueries({ queryKey: ["contact-directory-preferences", companyId] });
+      if (count > 0) toast.success("Browser preferences imported to your account");
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+
+  const preferenceBusy =
+    cloudPreferencesQ.isPending ||
+    cloudPreferencesQ.isFetching ||
+    saveCloudM.isPending ||
+    importLegacyM.isPending;
+  const canImportBrowserPreferences =
+    legacyPreferences.companyId === companyId &&
+    !cloudPreferencesQ.isPending &&
+    !cloudPreferencesQ.isError &&
+    ((cloudPreferencesQ.data?.columns === null && legacyPreferences.columns !== null) ||
+      (cloudPreferencesQ.data?.views === null && legacyPreferences.views !== null));
 
   useEffect(() => {
     if (!companyId) return;
@@ -402,6 +470,11 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
       companyId,
       columns: normalizeContactDirectoryColumns(stored),
     });
+    setLegacyPreferences((previous) => ({
+      ...previous,
+      companyId,
+      columns: stored === null ? null : normalizeContactDirectoryColumns(stored),
+    }));
   }, [companyId]);
 
   useEffect(() => {
@@ -414,10 +487,32 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
       // Stored views are optional; contacts remain fully usable without browser storage.
     }
     setSavedViewPreferences({ companyId, views: normalizeContactSavedViews(stored) });
+    setLegacyPreferences((previous) => ({
+      ...previous,
+      companyId,
+      views: stored === null ? null : normalizeContactSavedViews(stored),
+    }));
     setSelectedSavedViewId("");
   }, [companyId]);
 
-  const saveViewPreferences = (views: ContactSavedView[]) => {
+  useEffect(() => {
+    if (!companyId || !cloudPreferencesQ.data) return;
+    if (cloudPreferencesQ.data.columns !== null) {
+      setColumnPreferences({
+        companyId,
+        columns: normalizeContactDirectoryColumns(cloudPreferencesQ.data.columns),
+      });
+    }
+    if (cloudPreferencesQ.data.views !== null) {
+      setSavedViewPreferences({
+        companyId,
+        views: normalizeContactSavedViews(cloudPreferencesQ.data.views),
+      });
+    }
+  }, [companyId, cloudPreferencesQ.data]);
+
+  const saveViewPreferences = (views: ContactSavedView[], confirmation: string) => {
+    if (preferenceBusy) return;
     const next = normalizeContactSavedViews(views);
     setSavedViewPreferences({ companyId, views: next });
     if (companyId) {
@@ -432,6 +527,10 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
         );
       }
     }
+    saveCloudM.mutate(
+      { kind: "views", value: next },
+      { onSuccess: () => toast.success(confirmation) },
+    );
   };
 
   const updateFilter = (key: keyof ContactAdvancedFilters, value: string) => {
@@ -441,6 +540,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
   };
 
   const saveCurrentView = () => {
+    if (preferenceBusy) return;
     const name = savedViewName.trim().slice(0, 60);
     if (!name) return;
     const existing = savedViews.find((saved) => saved.name.toLowerCase() === name.toLowerCase());
@@ -460,10 +560,10 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
       existing
         ? savedViews.map((item) => (item.id === existing.id ? saved : item))
         : [...savedViews, saved],
+      existing ? "Saved view updated across your devices" : "Contact view synced across devices",
     );
     setSelectedSavedViewId(saved.id);
     setSavedViewName("");
-    toast.success(existing ? "Saved view updated" : "Contact view saved");
   };
 
   const applySavedView = (id: string) => {
@@ -478,13 +578,16 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
   };
 
   const deleteSavedView = () => {
-    if (!selectedSavedViewId) return;
-    saveViewPreferences(savedViews.filter((saved) => saved.id !== selectedSavedViewId));
+    if (!selectedSavedViewId || preferenceBusy) return;
+    saveViewPreferences(
+      savedViews.filter((saved) => saved.id !== selectedSavedViewId),
+      "Saved view removed from your account",
+    );
     setSelectedSavedViewId("");
-    toast.success("Saved view removed");
   };
 
   const saveColumns = (columns: ContactDirectoryColumnId[]) => {
+    if (preferenceBusy) return;
     const next = normalizeContactDirectoryColumns(columns);
     setColumnPreferences({ companyId, columns: next });
     if (preferenceKey) {
@@ -494,6 +597,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
         toast.message("Columns changed for this session; browser storage is unavailable");
       }
     }
+    saveCloudM.mutate({ kind: "columns", value: next });
   };
   const kindForApi = useMemo(() => {
     if (view === "customers") return "customers";
@@ -913,7 +1017,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                   <DropdownMenuCheckboxItem
                     key={column.id}
                     checked={visibleColumns.includes(column.id)}
-                    disabled={column.id === "name"}
+                    disabled={column.id === "name" || preferenceBusy}
                     onCheckedChange={(checked) =>
                       saveColumns(
                         toggleContactDirectoryColumn(visibleColumns, column.id, checked === true),
@@ -926,10 +1030,27 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                 ))}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
+                  disabled={preferenceBusy}
                   onSelect={() => saveColumns([...DEFAULT_CONTACT_DIRECTORY_COLUMNS])}
                 >
                   Reset to default
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                  {cloudPreferencesQ.isError
+                    ? "Cloud unavailable — browser preferences only"
+                    : preferenceBusy
+                      ? "Loading or syncing preferences…"
+                      : "Column preferences sync to your account"}
+                </DropdownMenuLabel>
+                {canImportBrowserPreferences ? (
+                  <DropdownMenuItem
+                    disabled={preferenceBusy}
+                    onSelect={() => importLegacyM.mutate()}
+                  >
+                    Import this browser's settings
+                  </DropdownMenuItem>
+                ) : null}
               </DropdownMenuContent>
             </DropdownMenu>
             <Popover open={filterOpen} onOpenChange={setFilterOpen}>
@@ -1086,8 +1207,29 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
               <PopoverContent align="end" className="w-80 max-w-[calc(100vw-2rem)] space-y-3">
                 <h3 className="font-medium">Saved contact views</h3>
                 <p className="text-xs text-muted-foreground">
-                  Save search, filters, sort and role tab for this organisation and browser.
+                  Save search, filters, sort and role tab for your account across devices.
                 </p>
+                {cloudPreferencesQ.isError ? (
+                  <p role="alert" className="text-xs text-destructive">
+                    Cloud settings could not be loaded. Browser-only views remain available.
+                  </p>
+                ) : null}
+                {canImportBrowserPreferences ? (
+                  <div className="space-y-2 rounded-md border p-2">
+                    <p className="text-xs text-muted-foreground">
+                      Older settings from this browser can be imported without replacing existing
+                      account preferences.
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={preferenceBusy}
+                      onClick={() => importLegacyM.mutate()}
+                    >
+                      Import browser settings
+                    </Button>
+                  </div>
+                ) : null}
                 <div className="space-y-1">
                   <Label>Open saved view</Label>
                   <RecordLookupSelect
@@ -1125,13 +1267,17 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                   />
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button size="sm" disabled={!savedViewName.trim()} onClick={saveCurrentView}>
+                  <Button
+                    size="sm"
+                    disabled={!savedViewName.trim() || preferenceBusy}
+                    onClick={saveCurrentView}
+                  >
                     Save view
                   </Button>
                   <Button
                     size="sm"
                     variant="outline"
-                    disabled={!selectedSavedViewId}
+                    disabled={!selectedSavedViewId || preferenceBusy}
                     onClick={deleteSavedView}
                   >
                     Delete selected

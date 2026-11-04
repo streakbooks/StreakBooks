@@ -49,6 +49,7 @@ BEGIN
   VALUES (_company_id, _action, _entity_type, _entity_id);
 END $$;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA auth, private, public TO authenticated;
+GRANT SELECT ON public.test_audit_events TO authenticated;
 
 INSERT INTO auth.users (id) VALUES
   ('00000000-0000-4000-8000-000000000001'),

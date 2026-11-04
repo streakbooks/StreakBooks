@@ -58,9 +58,12 @@ SECURITY INVOKER
 SET search_path = ''
 AS $$
 BEGIN
-  IF TG_OP = 'UPDATE' AND NEW.company_id IS DISTINCT FROM OLD.company_id THEN
-    RAISE EXCEPTION 'Currency entries cannot be reassigned to another organisation.'
-      USING ERRCODE = '23514';
+  -- OLD is not populated for INSERT triggers. Read it only on UPDATE.
+  IF TG_OP = 'UPDATE' THEN
+    IF NEW.company_id IS DISTINCT FROM OLD.company_id THEN
+      RAISE EXCEPTION 'Currency entries cannot be reassigned to another organisation.'
+        USING ERRCODE = '23514';
+    END IF;
   END IF;
 
   PERFORM pg_catalog.pg_advisory_xact_lock(

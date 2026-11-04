@@ -155,13 +155,13 @@ export function FirmOnboardingPanel({
                 {canManage ? (
                   <div className="flex flex-wrap gap-2">
                     <Button
-                                        size="sm"
-                                        variant="outline"
-                                        disabled={createM.isPending}
-                                        onClick={() => createM.mutate()}
-                                      >
-                                        {createM.isPending ? "Creating…" : "Add missing standard steps"}
-                                      </Button>
+                      size="sm"
+                      variant="outline"
+                      disabled={createM.isPending}
+                      onClick={() => createM.mutate()}
+                    >
+                      {createM.isPending ? "Creating…" : "Add missing standard steps"}
+                    </Button>
                     <Button
                       size="sm"
                       variant="outline"
@@ -175,8 +175,9 @@ export function FirmOnboardingPanel({
               </div>
               {steps.length === 0 ? (
                 <div className="rounded-lg border border-dashed p-5 text-sm text-muted-foreground">
-                  The onboarding template contains {ONBOARDING_TEMPLATE.length} steps; the offboarding template contains {OFFBOARDING_TEMPLATE.length}. A firm administrator can
-                  add them without overwriting previously completed work.
+                  The onboarding template contains {ONBOARDING_TEMPLATE.length} steps; the
+                  offboarding template contains {OFFBOARDING_TEMPLATE.length}. A firm administrator
+                  can add them without overwriting previously completed work.
                 </div>
               ) : (
                 <div className="space-y-3">

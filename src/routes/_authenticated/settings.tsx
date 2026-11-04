@@ -871,7 +871,7 @@ export function SettingsForCompany({
                           </RecordLookupSelect>
                         </div>
                         <div className="space-y-2">
-                          <Label>Tax regime</Label>
+                          <Label htmlFor="org-tax-regime">Tax regime</Label>
                           <Select
                             value={taxRegime}
                             disabled={!canEdit || saveMutation.isPending}
@@ -882,7 +882,7 @@ export function SettingsForCompany({
                           >
                             {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
 
-                            <SelectTrigger>
+                            <SelectTrigger id="org-tax-regime">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -940,14 +940,14 @@ export function SettingsForCompany({
                       </CardHeader>
                       <CardContent className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-2">
-                          <Label>Locale</Label>
-                          <Select value={locale} disabled={!canEdit} onValueChange={(value) => {
+                          <Label htmlFor="org-locale">Locale</Label>
+                          <Select value={locale} disabled={!canEdit || !extendedQuery.data} onValueChange={(value) => {
                               setLocale(value);
                               setLocalizationDirty(true);
                             }}>
                             {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
 
-                            <SelectTrigger>
+                            <SelectTrigger id="org-locale">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -960,10 +960,10 @@ export function SettingsForCompany({
                           </Select>
                         </div>
                         <div className="space-y-2">
-                          <Label>Date format</Label>
+                          <Label htmlFor="org-date-format">Date format</Label>
                           <Select
                             value={dateFormat}
-                            disabled={!canEdit}
+                            disabled={!canEdit || !extendedQuery.data}
                             onValueChange={(value) => {
                               setDateFormat(value);
                               setLocalizationDirty(true);
@@ -971,7 +971,7 @@ export function SettingsForCompany({
                           >
                             {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
 
-                            <SelectTrigger>
+                            <SelectTrigger id="org-date-format">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -1177,8 +1177,9 @@ export function SettingsForCompany({
                       </CardHeader>
                       <CardContent className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-2">
-                          <Label>Trading name</Label>
+                          <Label htmlFor="org-trading-name">Trading name</Label>
                           <Input
+                            id="org-trading-name"
                             value={tradingName}
                             disabled={!canEdit || !extendedQuery.data}
                             onChange={(e) => {
@@ -1188,8 +1189,9 @@ export function SettingsForCompany({
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label>Letterhead line</Label>
+                          <Label htmlFor="org-letterhead">Letterhead line</Label>
                           <Input
+                            id="org-letterhead"
                             value={letterhead}
                             disabled={!canEdit || !extendedQuery.data}
                             onChange={(e) => {
@@ -1217,8 +1219,9 @@ export function SettingsForCompany({
                           </p>
                         </div>
                         <div className="space-y-2">
-                          <Label>Invoice phone</Label>
+                          <Label htmlFor="org-invoice-phone">Invoice phone</Label>
                           <Input
+                            id="org-invoice-phone"
                             value={invoicePhone}
                             disabled={!canEdit || !extendedQuery.data}
                             onChange={(e) => {

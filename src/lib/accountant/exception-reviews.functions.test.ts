@@ -12,7 +12,7 @@ vi.mock("@tanstack/react-start", () => ({
         return this;
       },
       handler(fn: (args: { data: unknown; context: unknown }) => unknown) {
-        return (args: { data: unknown; context: unknown }) =>
+        return async (args: { data: unknown; context: unknown }) =>
           fn({ ...args, data: validate(args.data) });
       },
     };

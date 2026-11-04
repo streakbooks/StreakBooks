@@ -1,8 +1,5 @@
 import { toCsv } from "@/lib/sales/csv";
-import type {
-  AutoReversalRow,
-  RevaluationPreview,
-} from "@/lib/accounting/fx.functions";
+import type { AutoReversalRow, RevaluationPreview } from "@/lib/accounting/fx.functions";
 
 export type ReversalFilter = "all" | "due" | "pending" | "failed" | "done" | "cancelled";
 

@@ -1,0 +1,25 @@
+import { describe, expect, it } from "vitest";
+import { filePreviewKind, fileSortOrder, parseFileSort } from "./file-workspace";
+
+describe("Files workspace", () => {
+  it("allows only known sort columns and keeps a stable default", () => {
+    expect(parseFileSort("name")).toBe("name");
+    expect(parseFileSort("largest")).toBe("largest");
+    expect(parseFileSort("company_id")).toBe("newest");
+    expect(parseFileSort(null)).toBe("newest");
+    expect(fileSortOrder("name")).toEqual({ column: "file_name", ascending: true });
+    expect(fileSortOrder("largest")).toEqual({ column: "size_bytes", ascending: false });
+    expect(fileSortOrder("oldest")).toEqual({ column: "created_at", ascending: true });
+  });
+
+  it("previews supported files only when MIME and extension agree", () => {
+    expect(filePreviewKind("application/pdf", "bill.pdf")).toBe("pdf");
+    expect(filePreviewKind("image/jpeg", "photo.JPEG")).toBe("image");
+    expect(filePreviewKind("text/plain; charset=utf-8", "notes.txt")).toBe("text");
+    expect(filePreviewKind("text/csv", "ledger.csv")).toBe("text");
+    expect(filePreviewKind("text/html", "invoice.html")).toBeNull();
+    expect(filePreviewKind("image/svg+xml", "invoice.svg")).toBeNull();
+    expect(filePreviewKind("application/pdf", "invoice.html")).toBeNull();
+    expect(filePreviewKind(null, "invoice.pdf")).toBeNull();
+  });
+});

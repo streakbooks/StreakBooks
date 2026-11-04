@@ -178,10 +178,10 @@ export function SettingsCategoryConfigPanel({
         : current,
     );
     setFieldErrors((previous) => {
-      if (!previous[key] && !previous._form) return previous;
+      if (!previous[key] && !previous["_form"]) return previous;
       const next = { ...previous };
       delete next[key];
-      delete next._form;
+      delete next["_form"];
       return next;
     });
   };
@@ -383,8 +383,8 @@ export function SettingsCategoryConfigPanel({
                   return null;
                 })}
 
-                {fieldErrors._form ? (
-                  <p className="text-sm text-destructive">{fieldErrors._form}</p>
+                {fieldErrors["_form"] ? (
+                  <p className="text-sm text-destructive">{fieldErrors["_form"]}</p>
                 ) : null}
                 <div className="flex flex-wrap items-center gap-2 border-t pt-4">
                   <Button disabled={disabled || !dirty || serverChanged} onClick={saveDraft}>

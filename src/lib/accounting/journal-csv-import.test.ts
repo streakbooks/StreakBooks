@@ -36,12 +36,8 @@ describe("manual journal CSV import", () => {
     expect(() => importJournalLinesCsv("code,debit,credit\n", accounts, "GBP")).toThrow(
       "Expected CSV columns",
     );
-    expect(() => parseCsvCells('code,description\n500,"unclosed')).toThrow(
-      "Unclosed quoted",
-    );
-    expect(() => parseCsvCells('code,description\n500,bad"quote')).toThrow(
-      "Malformed CSV",
-    );
+    expect(() => parseCsvCells('code,description\n500,"unclosed')).toThrow("Unclosed quoted");
+    expect(() => parseCsvCells('code,description\n500,bad"quote')).toThrow("Malformed CSV");
   });
 
   it("rejects unknown, inactive, control or ambiguous ledger accounts", () => {
@@ -51,29 +47,42 @@ describe("manual journal CSV import", () => {
       ).toThrow("not allowed");
     }
     expect(() =>
-      importJournalLinesCsv(goodCsv, [...accounts, { ...accounts[0]!, id: "duplicate-code" }], "GBP"),
+      importJournalLinesCsv(
+        goodCsv,
+        [...accounts, { ...accounts[0]!, id: "duplicate-code" }],
+        "GBP",
+      ),
     ).toThrow("ambiguous");
   });
 
   it("rejects unbalanced journals, non-decimals, both-sided entries, and zero lines", () => {
-    expect(() => importJournalLinesCsv(goodCsv.replace("100.00", "99.00"), accounts, "GBP")).toThrow(
-      "must balance",
-    );
+    expect(
+      () => importJournalLinesCsv(goodCsv.replace("100.00", "99.00"), accounts, "GBP"),
+    ).toThrow("must balance");
     expect(() => importJournalLinesCsv(goodCsv.replace("100.00", "1e2"), accounts, "GBP")).toThrow(
       "non-negative decimal",
     );
     expect(() =>
-      importJournalLinesCsv(goodCsv.replace("500,Accrual,100.00,", "500,Accrual,100.00,10.00"), accounts, "GBP"),
+      importJournalLinesCsv(
+        goodCsv.replace("500,Accrual,100.00,", "500,Accrual,100.00,10.00"),
+        accounts,
+        "GBP",
+      ),
     ).toThrow("exactly one");
-    expect(() => importJournalLinesCsv(goodCsv.replace("500,Accrual,100.00,", "500,Accrual,0,"), accounts, "GBP")).toThrow(
-      "exactly one",
-    );
+    expect(
+      () =>
+        importJournalLinesCsv(
+          goodCsv.replace("500,Accrual,100.00,", "500,Accrual,0,"),
+          accounts,
+          "GBP",
+        ),
+    ).toThrow("exactly one");
   });
 
   it("never silently rounds currency minor units or converts unsafe numbers", () => {
-    expect(() => importJournalLinesCsv(goodCsv.replace("100.00", "100.001"), accounts, "GBP")).toThrow(
-      "decimal precision",
-    );
+    expect(
+      () => importJournalLinesCsv(goodCsv.replace("100.00", "100.001"), accounts, "GBP"),
+    ).toThrow("decimal precision");
     expect(() =>
       importJournalLinesCsv(
         "account_code,description,debit,credit\n500,Accrual,90071992547409.92,\n210,Accrual,,90071992547409.92",
@@ -81,14 +90,16 @@ describe("manual journal CSV import", () => {
         "GBP",
       ),
     ).toThrow("safe integer");
-    expect(() => importJournalLinesCsv(goodCsv, accounts, "JPY")).toThrow(
-      "decimal precision",
-    );
+    expect(() => importJournalLinesCsv(goodCsv, accounts, "JPY")).toThrow("decimal precision");
   });
 
   it("restricts imports to one 2–200 line manual journal and bounded file input", () => {
     expect(() =>
-      importJournalLinesCsv("account_code,description,debit,credit\n500,Only one,1,", accounts, "GBP"),
+      importJournalLinesCsv(
+        "account_code,description,debit,credit\n500,Only one,1,",
+        accounts,
+        "GBP",
+      ),
     ).toThrow("2 to 200");
     expect(() => parseCsvCells("a".repeat(256001))).toThrow("256 KB");
     expect(() => parseCsvCells("a\n".repeat(202))).toThrow("at most 200");

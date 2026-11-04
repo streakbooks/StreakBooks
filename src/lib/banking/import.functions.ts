@@ -13,48 +13,14 @@ import {
 import { chunk, fetchAllPages } from "@/lib/banking/fetch-all";
 import { isMissingSchema } from "@/lib/banking/rpc";
 import { loadBankAccount, type AnyClient } from "@/lib/banking/server-helpers";
+import {
+  validateBankImportRows,
+  type ImportRowInput,
+} from "@/lib/banking/import-validation";
 
-const MAX_IMPORT_ROWS = 20000;
 const INSERT_CHUNK = 500;
 
-export type ImportRowInput = {
-  rowNumber: number;
-  txnDate: string;
-  amountMinor: number;
-  description: string;
-  reference: string | null;
-  payee: string | null;
-  externalId: string;
-  /** Import a row that looks like a duplicate anyway (confirmed by the user). */
-  force?: boolean;
-};
-
-function validateRows(rows: unknown): ImportRowInput[] {
-  if (!Array.isArray(rows) || rows.length === 0) throw new Error("There are no rows to import");
-  if (rows.length > MAX_IMPORT_ROWS)
-    throw new Error(`At most ${MAX_IMPORT_ROWS} rows can be imported at once`);
-  return rows.map((raw, i) => {
-    const r = raw as Partial<ImportRowInput>;
-    if (typeof r.txnDate !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(r.txnDate)) {
-      throw new Error(`Row ${i + 1}: invalid date`);
-    }
-    const amount = Number(r.amountMinor);
-    if (!Number.isSafeInteger(amount) || amount === 0)
-      throw new Error(`Row ${i + 1}: invalid amount`);
-    if (typeof r.externalId !== "string" || !r.externalId)
-      throw new Error(`Row ${i + 1}: missing id`);
-    return {
-      rowNumber: Number.isInteger(r.rowNumber) ? Number(r.rowNumber) : i + 1,
-      txnDate: r.txnDate,
-      amountMinor: amount,
-      description: String(r.description ?? "").slice(0, 500),
-      reference: r.reference ? String(r.reference).slice(0, 120) : null,
-      payee: r.payee ? String(r.payee).slice(0, 200) : null,
-      externalId: r.externalId.slice(0, 200),
-      force: r.force === true,
-    };
-  });
-}
+export type { ImportRowInput } from "./import-validation";
 
 /** Saved column mapping for this bank account (null when none, or when the table is not installed yet). */
 export const getBankImportMapping = createServerFn({ method: "GET" })
@@ -121,7 +87,7 @@ export const previewBankImport = createServerFn({ method: "POST" })
     (input: { companyId: string; bankAccountId: string; rows: ImportRowInput[] }) => ({
       companyId: assertUuid(input.companyId),
       bankAccountId: assertUuid(input.bankAccountId),
-      rows: validateRows(input.rows),
+      rows: validateBankImportRows(input.rows),
     }),
   )
   .handler(async ({ data, context }) => {
@@ -203,7 +169,7 @@ export const importBankStatement = createServerFn({ method: "POST" })
       companyId: assertUuid(input.companyId),
       bankAccountId: assertUuid(input.bankAccountId),
       filename: (input.filename ?? "statement.csv").trim().slice(0, 200) || "statement.csv",
-      rows: validateRows(input.rows),
+      rows: validateBankImportRows(input.rows),
       parseErrorCount: Math.max(
         0,
         Math.min(1_000_000, Math.round(Number(input.parseErrorCount ?? 0)) || 0),

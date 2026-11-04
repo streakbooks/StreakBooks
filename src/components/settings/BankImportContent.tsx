@@ -9,7 +9,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Download, Loader2, UploadCloud } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
-import { fromMinorUnits } from "@/lib/accounting/money";
+import { fromMinorUnits, toSafeMinorNumber } from "@/lib/accounting/money";
 import {
   getImportDefinition,
   importTemplateCsv,
@@ -296,7 +296,7 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
       const rows = keyed.map((r) => ({
         rowNumber: r.rowNumber,
         txnDate: r.txnDate,
-        amountMinor: Number(r.amountMinor),
+        amountMinor: toSafeMinorNumber(r.amountMinor, `Bank row ${r.rowNumber} amount`),
         description: r.description,
         reference: r.reference,
         payee: r.payee,

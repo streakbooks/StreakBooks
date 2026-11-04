@@ -145,6 +145,8 @@ export const listOrganisationFeatures = createServerFn({ method: "GET" })
       } as never,
     );
 
+    if (canEdit.error) throw new Error(canEdit.error.message);
+
     const { data: rows, error } = await context.supabase
       .from("organisation_features" as never)
       .select("feature_key, enabled, config" as never)
@@ -161,10 +163,11 @@ export const listOrganisationFeatures = createServerFn({ method: "GET" })
       ).map((r) => [r.feature_key, r]),
     );
 
-    const { data: configs } = await context.supabase
+    const { data: configs, error: configError } = await context.supabase
       .from("organisation_config" as never)
       .select("category, document" as never)
       .eq("company_id" as never, data.companyId as never);
+    if (configError) throw new Error(configError.message);
     const configByCat = new Map(
       ((configs ?? []) as Array<{ category: string; document: Record<string, unknown> }>).map(
         (c) => [c.category, c.document],
@@ -340,16 +343,18 @@ export const getSettingsOverview = createServerFn({ method: "GET" })
       isDemo: (company as { is_demo: boolean }).is_demo,
     });
 
-    const { data: lock } = await context.supabase
+    const { data: lock, error: lockError } = await context.supabase
       .from("organisation_lock_policy" as never)
       .select("lock_date_everyone, lock_date_except_advisors, conversion_date" as never)
       .eq("company_id" as never, data.companyId as never)
       .maybeSingle();
+    if (lockError) throw new Error(lockError.message);
 
-    const { count: memberCount } = await context.supabase
+    const { count: memberCount, error: memberError } = await context.supabase
       .from("company_members" as never)
       .select("id" as never, { count: "exact", head: true })
       .eq("company_id" as never, data.companyId as never);
+    if (memberError) throw new Error(memberError.message);
 
     const features = await listOrganisationFeatures({ data: { companyId: data.companyId } });
 
@@ -478,10 +483,11 @@ export const evaluateFeatureChange = createServerFn({ method: "POST" })
     let foreignCurrencyBalances = 0;
     const openFxDocuments = 0;
     if (data.featureKey === "multicurrency" && !data.enabled) {
-      const { count } = await context.supabase
+      const { count, error: currencyError } = await context.supabase
         .from("company_currencies" as never)
         .select("currency_code" as never, { count: "exact", head: true })
         .eq("company_id" as never, data.companyId as never);
+      if (currencyError) throw new Error(currencyError.message);
       foreignCurrencyBalances = count ?? 0;
     }
 
@@ -522,12 +528,13 @@ export const isDimensionFeatureEnabled = createServerFn({ method: "GET" })
   }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
-    const { data: row } = await context.supabase
+    const { data: row, error } = await context.supabase
       .from("organisation_features" as never)
       .select("enabled" as never)
       .eq("company_id" as never, data.companyId as never)
       .eq("feature_key" as never, data.featureKey as never)
       .maybeSingle();
+    if (error) throw new Error(error.message);
     if (!row) {
       // Default: classes/locations/projects on for backward compatibility
       return [

@@ -277,7 +277,7 @@ export function FirmEngagementPanel({
                   <SelectContent>
                     {STATUSES.map((value) => (
                       <SelectItem key={value} value={value}>
-                        {value[0].toUpperCase() + value.slice(1)}
+                        {value.charAt(0).toUpperCase() + value.slice(1)}
                       </SelectItem>
                     ))}
                   </SelectContent>

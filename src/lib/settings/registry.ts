@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { type SettingsCategory } from "./categories";
+import { SETTINGS_CATEGORIES, type SettingsCategory } from "./categories";
 export { SETTINGS_CATEGORIES, type SettingsCategory } from "./categories";
 
 export type CategoryMeta = {
@@ -252,6 +252,12 @@ export const categoryMeta: CategoryMeta[] = [
     availability: "partial",
   },
 ];
+
+export function resolveSettingsCategory(value: unknown): SettingsCategory {
+  return typeof value === "string" && SETTINGS_CATEGORIES.includes(value as SettingsCategory)
+    ? (value as SettingsCategory)
+    : "overview";
+}
 
 export const searchSynonyms: Record<string, SettingsCategory[]> = {
   vat: ["tax"],

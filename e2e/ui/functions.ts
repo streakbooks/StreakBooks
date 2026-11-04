@@ -29,7 +29,7 @@ export function usePortal() {
     isPending: false,
   };
 }
-export const supabase = { auth: { mfa: {} } };
+export const supabase = { auth: { mfa: {}, getUser: async () => ({ data: { user: null } }) } };
 let failed = false;
 export async function listBills() {
   if (scenario().get("bills") === "error" && !failed) {

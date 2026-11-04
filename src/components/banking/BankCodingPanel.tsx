@@ -7,7 +7,8 @@ import { fromMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { codeBankTransaction, type listCodingOptions } from "@/lib/banking/coding.functions";
 import { computeSplitTotals, type CodingTaxCode } from "@/lib/banking/coding";
-import { MoneyField, moneyFieldMinor } from "@/components/banking/MoneyField";
+import { MoneyField } from "@/components/banking/MoneyField";
+import { moneyFieldMinor } from "@/lib/banking/money-field";
 import { AccountLookup, ContactLookup, TaxLookup } from "@/components/lookup";
 import {
   AccountCreateForm,

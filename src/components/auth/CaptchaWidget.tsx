@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { captchaConfig, type CaptchaProvider } from "@/lib/auth-helpers";
 
 type WidgetApi = {
@@ -47,7 +47,7 @@ function loadProvider(provider: CaptchaProvider): Promise<WidgetApi> {
 
 export type CaptchaHandle = { reset: () => void };
 
-const CaptchaWidget = forwardRef<CaptchaHandle, { onToken: (token: string | null) => void }>(
+export const CaptchaWidget = forwardRef<CaptchaHandle, { onToken: (token: string | null) => void }>(
   function CaptchaWidget({ onToken }, ref) {
     const containerRef = useRef<HTMLDivElement>(null);
     const widgetId = useRef<string | null>(null);
@@ -100,23 +100,3 @@ const CaptchaWidget = forwardRef<CaptchaHandle, { onToken: (token: string | null
     );
   },
 );
-
-/** Captcha tokens are single-use: call `reset()` after every auth request. */
-export function useCaptcha() {
-  const ref = useRef<CaptchaHandle>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const enabled = captchaConfig !== null;
-  const reset = useCallback(() => {
-    setToken(null);
-    ref.current?.reset();
-  }, []);
-  const widget = enabled ? <CaptchaWidget ref={ref} onToken={setToken} /> : null;
-  return {
-    enabled,
-    widget,
-    reset,
-    /** Spread into Supabase auth call options. */
-    options: token ? { captchaToken: token } : {},
-    ready: !enabled || Boolean(token),
-  };
-}

@@ -85,11 +85,8 @@ import {
   DocumentRecordPanel,
   type DocumentRecordHandle,
 } from "@/components/documents/DocumentRecordPanel";
-import {
-  PurchasesDocumentLines,
-  emptyPurchaseLine,
-  type PurchaseLineFormState,
-} from "@/components/purchases/PurchasesDocumentLines";
+import { PurchasesDocumentLines } from "@/components/purchases/PurchasesDocumentLines";
+import { emptyPurchaseLine, type PurchaseLineFormState } from "@/lib/purchases/line-form-state";
 import { BillWorkspaceLayout } from "@/components/purchases/BillWorkspaceLayout";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";

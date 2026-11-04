@@ -52,6 +52,7 @@ export type LookupSelectProps = {
   id?: string | undefined;
   ariaLabel?: string | undefined;
   describedBy?: string | undefined;
+  labelledBy?: string | undefined;
   className?: string | undefined;
   /** When false, options are already filtered (server search). Grouping still applies. */
   clientFilter?: boolean | undefined;
@@ -90,6 +91,7 @@ export function LookupSelect({
   id,
   ariaLabel,
   describedBy,
+  labelledBy,
   className,
   clientFilter = true,
   search: controlledSearch,
@@ -257,6 +259,7 @@ export function LookupSelect({
             aria-required={required || undefined}
             aria-invalid={invalid || undefined}
             aria-describedby={describedBy}
+            aria-labelledby={labelledBy}
             disabled={disabled}
             onKeyDown={onKeyDown}
             className="h-9 min-w-0 flex-1 shrink justify-between bg-background px-2.5 text-sm font-normal"

@@ -19,7 +19,8 @@ import {
 } from "@/lib/purchases/purchases.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { PageHeader, ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
-import { ListToolbar, useListSearch } from "@/components/common/ListTools";
+import { ListToolbar } from "@/components/common/ListTools";
+
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { Button } from "@/components/ui/button";
 import { TableCard } from "@/components/common/table-card";

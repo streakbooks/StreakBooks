@@ -55,11 +55,8 @@ import {
   BillMakePaymentPanel,
   type BillPaymentAllocation,
 } from "@/components/purchases/BillMakePaymentPanel";
-import {
-  PurchasesDocumentLines,
-  emptyPurchaseLine,
-  type PurchaseLineFormState,
-} from "@/components/purchases/PurchasesDocumentLines";
+import { PurchasesDocumentLines } from "@/components/purchases/PurchasesDocumentLines";
+import { emptyPurchaseLine, type PurchaseLineFormState } from "@/lib/purchases/line-form-state";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { StatusBadge } from "@/components/common/stat-card";
 import { Button } from "@/components/ui/button";

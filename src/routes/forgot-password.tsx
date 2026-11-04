@@ -4,7 +4,7 @@ import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { OtpCodeInput } from "@/components/auth/OtpCodeInput";
-import { useCaptcha } from "@/components/auth/CaptchaWidget";
+import { useCaptcha } from "@/hooks/use-captcha";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

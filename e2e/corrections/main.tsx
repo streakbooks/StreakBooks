@@ -46,7 +46,7 @@ const line: CorrectionLine = {
     reconciled_date: "2026-10-31",
   },
 };
-function Fixture() {
+export function Fixture() {
   const [lastFilters, setLastFilters] = useState<CorrectionFilter | null>(null);
   const [history, setHistory] = useState<CorrectionBatch[]>([]),
     [keys, setKeys] = useState<string[]>([]);

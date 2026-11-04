@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { useCaptcha } from "@/components/auth/CaptchaWidget";
+import { useCaptcha } from "@/hooks/use-captcha";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyAuthError, validateEmail, validatePassword } from "@/lib/auth-helpers";
 import { authCallbackUrl, rememberLastMethod, rememberNext } from "@/lib/auth-session";

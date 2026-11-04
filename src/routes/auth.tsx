@@ -7,7 +7,7 @@ import { PasswordInput } from "@/components/auth/PasswordInput";
 import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
 import { OtpCodeInput } from "@/components/auth/OtpCodeInput";
 import { SocialSignIn } from "@/components/auth/SocialSignIn";
-import { useCaptcha } from "@/components/auth/CaptchaWidget";
+import { useCaptcha } from "@/hooks/use-captcha";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

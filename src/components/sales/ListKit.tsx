@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { type ListState } from "@/lib/sales/list-state";
+
+import { type ReactNode } from "react";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import { DataTableToolbar } from "@/components/common/data-table-toolbar";
 import { TableCard } from "@/components/common/table-card";
@@ -15,50 +17,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TableHead } from "@/components/ui/table";
-
-/** Debounce a fast-changing value (search box) before it hits the server. */
-export function useDebounced<T>(value: T, ms = 300): T {
-  const [v, setV] = useState(value);
-  useEffect(() => {
-    const t = setTimeout(() => setV(value), ms);
-    return () => clearTimeout(t);
-  }, [value, ms]);
-  return v;
-}
-
-export function downloadCsv(filename: string, csv: string): void {
-  const blob = new Blob(["\ufeff", csv], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
-
-export type ListState = {
-  q: string;
-  status: string;
-  from: string;
-  to: string;
-  sort: string;
-  dir: "asc" | "desc";
-  page: number;
-  pageSize: number;
-};
-
-export const initialListState = (sort: string): ListState => ({
-  q: "",
-  status: "all",
-  from: "",
-  to: "",
-  sort,
-  dir: "desc",
-  page: 0,
-  pageSize: 50,
-});
 
 type ToolbarProps = {
   state: ListState;

@@ -1,3 +1,5 @@
+import { useId } from "react";
+
 import { Input } from "@/components/ui/input";
 import { tryParseMinor, type MoneyInputOptions } from "@/lib/banking/money-input";
 import { cn } from "@/lib/utils";
@@ -27,14 +29,18 @@ export function MoneyField({
   disabled?: boolean;
   id?: string;
 }) {
+  const generatedId = useId();
+  const inputId = id ?? generatedId;
+  const errorId = `${inputId}-error`;
   const trimmed = value.trim();
   const invalid = trimmed !== "" && tryParseMinor(trimmed, currency, options) === null;
   return (
     <div className={cn("space-y-1", className)}>
       <Input
-        id={id}
+        id={inputId}
         aria-label={label}
         aria-invalid={invalid}
+        aria-describedby={invalid ? errorId : undefined}
         inputMode="decimal"
         autoComplete="off"
         disabled={disabled}
@@ -43,17 +49,11 @@ export function MoneyField({
         onChange={(e) => onChange(e.target.value)}
         className={cn("numeric", invalid && "border-destructive")}
       />
-      {invalid ? <p className="text-xs text-destructive">Not a valid amount</p> : null}
+      {invalid ? (
+        <p id={errorId} role="alert" className="text-xs text-destructive-ink">
+          Not a valid amount
+        </p>
+      ) : null}
     </div>
   );
-}
-
-/** Parse a MoneyField value to minor units (null when empty or invalid). */
-export function moneyFieldMinor(
-  value: string,
-  currency: string,
-  options?: MoneyInputOptions,
-): bigint | null {
-  if (!value.trim()) return null;
-  return tryParseMinor(value, currency, options);
 }

@@ -1,24 +1,5 @@
-import { useMemo, useState } from "react";
 import { csvFilename, downloadCsv, toCsv, type CsvCell } from "@/lib/reports/csv";
 import { DataTableToolbar } from "./data-table-toolbar";
-
-/** Case-insensitive match: every word of the query must appear in the row's searchable text. */
-export function matchesQuery(text: string, query: string): boolean {
-  const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return true;
-  const hay = text.toLowerCase();
-  return words.every((w) => hay.includes(w));
-}
-
-/** Search box state for a list that is already loaded in the browser. */
-export function useListSearch<T>(rows: readonly T[], textOf: (row: T) => string) {
-  const [query, setQuery] = useState("");
-  const filtered = useMemo(
-    () => rows.filter((r) => matchesQuery(textOf(r), query)),
-    [rows, query, textOf],
-  );
-  return { query, setQuery, filtered };
-}
 
 /**
  * Search plus CSV export for the rows currently shown. The export is exactly the filtered rows, so

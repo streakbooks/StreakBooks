@@ -22,7 +22,7 @@ const task: PracticeTask = {
   completed_at: null,
   updated_at: "2026-11-01T00:00:00Z",
 };
-function Fixture() {
+export function Fixture() {
   const [workspace, setWorkspace] = useState<PracticeWorkspace>({
     clients: [
       { id: c1, name: "Writable client", canManage: true },

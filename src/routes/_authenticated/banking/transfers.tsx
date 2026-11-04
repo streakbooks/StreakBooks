@@ -16,7 +16,8 @@ import {
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { ConfirmButton } from "@/components/banking/ConfirmButton";
-import { MoneyField, moneyFieldMinor } from "@/components/banking/MoneyField";
+import { MoneyField } from "@/components/banking/MoneyField";
+import { moneyFieldMinor } from "@/lib/banking/money-field";
 import {
   DocumentRecordPanel,
   type DocumentRecordHandle,

@@ -41,16 +41,8 @@ jobs:
       - name: TypeScript typecheck
         run: npm run typecheck
 
-      - name: ESLint changed files (legacy errors tracked separately)
-        shell: bash
-        run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            BASE="${{ github.event.pull_request.base.sha }}"
-          else
-            BASE="$(git rev-parse HEAD^ 2>/dev/null || git rev-parse HEAD)"
-          fi
-          mapfile -t changed < <(git diff --name-only "$BASE" HEAD | grep -E '\.(js|jsx|ts|tsx)$' || true)
-          if [ ${#changed[@]} -gt 0 ]; then npx eslint "${changed[@]}"; fi
+      - name: ESLint (zero errors or warnings)
+        run: npm run lint -- --max-warnings=0
 
       - name: Unit tests
         run: npm test
@@ -140,7 +132,7 @@ jobs:
         run: npm ci
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-      - name: Shared interface, financial error states and mobile themes
+      - name: Shared interface, accessibility and mobile themes
         run: npm run test:ui
       - name: Reporting workflows and responsive lookups
         run: npm run test:reporting
@@ -154,3 +146,7 @@ jobs:
         run: npm run test:practice
       - name: Platform workflows and permissions
         run: npm run test:platform
+      - name: Voice navigation and permission regressions
+        run: npm run test:voice
+      - name: Wake-word and verification regressions
+        run: npm run test:wake

@@ -52,12 +52,15 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
   const [lockTouched, setLockTouched] = useState(false);
   const [cfgTouched, setCfgTouched] = useState(false);
   const [cfgErrors, setCfgErrors] = useState<Record<string, string>>({});
+  const [cfgBaselineVersion, setCfgBaselineVersion] = useState<number | null>(null);
+  const [lockBaselineUpdatedAt, setLockBaselineUpdatedAt] = useState<string | null>(null);
 
   useEffect(() => {
     if (!lockQ.data || lockTouched) return;
     setEveryone(lockQ.data.lock_date_everyone ?? "");
     setAdvisors(lockQ.data.lock_date_except_advisors ?? "");
     setConversion(lockQ.data.conversion_date ?? "");
+    setLockBaselineUpdatedAt(lockQ.data.updated_at ?? null);
   }, [lockQ.data, lockTouched]);
 
   useEffect(() => {
@@ -69,6 +72,7 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
     setBackdated(String(d["warn_backdated_days"] ?? 90));
     setAutoCredits(Boolean(d["auto_apply_credits"] ?? false));
     setBasis((d["reporting_basis"] as "accrual" | "cash") ?? "accrual");
+    setCfgBaselineVersion(cfgQ.data.version);
   }, [cfgQ.data, cfgTouched]);
 
   useEffect(() => {
@@ -81,6 +85,13 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
     return () => window.removeEventListener("beforeunload", warn);
   }, [lockTouched, cfgTouched]);
 
+  const cfgServerChanged = Boolean(
+    cfgTouched && cfgQ.data && cfgBaselineVersion !== cfgQ.data.version,
+  );
+  const lockServerChanged = Boolean(
+    lockTouched && lockQ.data && lockBaselineUpdatedAt !== (lockQ.data.updated_at ?? null),
+  );
+
   const resetLockDraft = () => {
     if (!lockQ.data) return;
     setEveryone(lockQ.data.lock_date_everyone ?? "");
@@ -88,6 +99,7 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
     setConversion(lockQ.data.conversion_date ?? "");
     setReason("");
     setLockTouched(false);
+    setLockBaselineUpdatedAt(lockQ.data.updated_at ?? null);
   };
 
   const resetCfgDraft = () => {
@@ -101,11 +113,13 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
     setBasis((d["reporting_basis"] as "accrual" | "cash") ?? "accrual");
     setCfgErrors({});
     setCfgTouched(false);
+    setCfgBaselineVersion(cfgQ.data?.version ?? null);
   };
 
   const lockMut = useMutation({
-    mutationFn: () =>
-      saveLock({
+    mutationFn: () => {
+      if (lockServerChanged) throw new Error("Lock dates changed on the server. Reload latest values.");
+      return saveLock({
         data: {
           companyId,
           lockDateEveryone: everyone || null,
@@ -113,7 +127,8 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
           conversionDate: conversion || null,
           reason,
         },
-      }),
+      });
+    },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["lock-policy", companyId] });
       await qc.invalidateQueries({ queryKey: ["settings-overview", companyId] });
@@ -137,6 +152,7 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
       }),
     onSuccess: async (result) => {
       qc.setQueryData(["organisation-config", companyId, "accounting"], result);
+      setCfgBaselineVersion(result.version);
       setCfgTouched(false);
       setCfgErrors({});
       await qc.invalidateQueries({ queryKey: ["organisation-config", companyId, "accounting"] });
@@ -146,7 +162,7 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
   });
 
   const savePreferences = () => {
-    if (!cfgQ.data || !canEdit || cfgMut.isPending) return;
+    if (!cfgQ.data || !canEdit || cfgMut.isPending || cfgServerChanged) return;
     const validated = prepareAccountingPreferences(cfgQ.data.document, {
       reportingBasis: basis,
       warnDuplicateNumbers: warnDup,
@@ -251,9 +267,20 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
               placeholder="e.g. Month-end close March 2026"
             />
           </div>
+          {lockServerChanged ? (
+            <Alert variant="destructive">
+              <AlertTitle>Lock policy changed on the server</AlertTitle>
+              <AlertDescription className="space-y-2">
+                <p>Review the latest lock dates before saving another policy.</p>
+                <Button variant="outline" size="sm" onClick={resetLockDraft}>
+                  Reload latest policy
+                </Button>
+              </AlertDescription>
+            </Alert>
+          ) : null}
           <div className="flex flex-wrap items-center gap-2 border-t pt-4">
             <Button
-              disabled={!canLock || !lockTouched || !reason.trim() || lockMut.isPending}
+              disabled={!canLock || !lockTouched || !reason.trim() || lockMut.isPending || lockServerChanged}
               onClick={() => lockMut.mutate()}
             >
               {lockMut.isPending ? "Saving…" : "Save lock policy"}
@@ -336,6 +363,17 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
               setCfgTouched(true);
             }} />
           </div>
+          {cfgServerChanged ? (
+            <Alert variant="destructive">
+              <AlertTitle>Accounting preferences changed on the server</AlertTitle>
+              <AlertDescription className="space-y-2">
+                <p>Your draft is preserved. Reload the latest preferences before saving.</p>
+                <Button variant="outline" size="sm" onClick={resetCfgDraft}>
+                  Reload latest preferences
+                </Button>
+              </AlertDescription>
+            </Alert>
+          ) : null}
           {cfgErrors["warn_backdated_days"] ? (
             <p id="settings-backdated-error" className="text-sm text-destructive">
               {cfgErrors["warn_backdated_days"]}
@@ -351,7 +389,7 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
             <p role="alert" className="text-sm text-destructive">{friendlyAuthError(cfgMut.error)}</p>
           ) : null}
           <div className="flex flex-wrap items-center gap-2 border-t pt-4">
-            <Button disabled={!canEdit || !cfgQ.data || !cfgTouched || cfgMut.isPending} onClick={savePreferences}>
+            <Button disabled={!canEdit || !cfgQ.data || !cfgTouched || cfgMut.isPending || cfgServerChanged} onClick={savePreferences}>
               {cfgMut.isPending ? "Saving…" : "Save preferences"}
             </Button>
             <Button variant="outline" disabled={!cfgTouched || cfgMut.isPending} onClick={resetCfgDraft}>

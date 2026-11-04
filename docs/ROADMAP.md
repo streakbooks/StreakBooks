@@ -64,3 +64,13 @@ See the up-to-date [REVIEW_GUIDE](REVIEW_GUIDE.md) for exact commit hashes, manu
 - **Broader reporting:** independent PR #25 extended account-focused selections to budget, asset and tax ledger reports, and passed main CI. Full server-side report-history pagination and immutable all-matching export are still pending.
 
 See [REVIEW_GUIDE](REVIEW_GUIDE.md) for exact merge commits and manual acceptance.
+
+## 4 November 2026 — FX P0 integrity and report paging
+
+- **Milestone 1 (partial, posting controls):** [PR #32](https://github.com/linkbusinessadvisory/LinkBooks/pull/32) makes the existing posting service reject invalid actual posting/reversal dates, unsafe minor amounts and unverifiable FX rates. The `post_journal` RPC remains the only posting authority, and period permissions and locks continue to be enforced by SQL.
+- **Milestone 6 (partial, cash pagination):** independent [PR #30](https://github.com/linkbusinessadvisory/LinkBooks/pull/30) introduced source-recognized cash-basis Account Transactions, and [PR #31](https://github.com/linkbusinessadvisory/LinkBooks/pull/31) added cash-ledger page navigation with intact opening/running balance and explicit page export scope. Server-side pagination and complete exports for **all** reports remain pending.
+- **Milestone 8 (partial, FX history):** [PR #33](https://github.com/linkbusinessadvisory/LinkBooks/pull/33) rejects absent known-foreign journal FX snapshots and lossy numeric minor-unit conversions in canonical ledger report adapters. It does not yet certify realized/unrealized revaluations, settlement reversals or cross-entity translation.
+- **Database evidence (read-only):** 38 posted journals were inspected; zero were foreign currency, so no actual foreign-history acceptance is claimed. The deployed FX rate lookup already checks membership; neither production rates nor grants were changed.
+- **Next P0 dependencies:** authenticated multi-company accounting acceptance, SQL function permissions, full historical AR/AP and GL reconciliation, server-backed all-matching exports, verified tax return math and per-country regulator integrations.
+
+Review the [updated manual acceptance and known limits](REVIEW_GUIDE.md) before a rollout.

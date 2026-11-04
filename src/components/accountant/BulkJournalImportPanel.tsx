@@ -110,12 +110,7 @@ export function BulkJournalImportPanel({
               })),
             },
           });
-          const id =
-            result && "journalId" in result
-              ? String(result.journalId)
-              : result && "id" in result
-                ? String(result.id)
-                : "confirmed by server";
+          const id = result.journalId;
           completed.current.add(journal.key);
           setResults((current) => ({
             ...current,

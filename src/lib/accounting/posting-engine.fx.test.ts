@@ -28,16 +28,17 @@ describe("posting currency and date safeguards", () => {
     const rpc = vi.fn();
     for (const auto_reverse_on of ["2026-11-04", "2026-02-30", "2026-11-03"]) {
       await expect(
-        postJournal(
-          { rpc } as never,
-          input({ currency_code: "USD", auto_reverse_on }),
-        ),
+        postJournal({ rpc } as never, input({ currency_code: "USD", auto_reverse_on })),
       ).rejects.toThrow(/reversal date|calendar date/);
     }
     await expect(
       postJournal(
         { rpc } as never,
-        input({ currency_code: "USD", auto_reverse_on: "2026-11-05", source_type: "sales_invoice" }),
+        input({
+          currency_code: "USD",
+          auto_reverse_on: "2026-11-05",
+          source_type: "sales_invoice",
+        }),
       ),
     ).rejects.toThrow(/Only manual/);
     expect(rpc).not.toHaveBeenCalled();
@@ -68,7 +69,12 @@ describe("posting currency and date safeguards", () => {
     await postJournal({ rpc } as never, input({ currency_code: "GBP", fx_rate_to_base: 1 }));
     expect(rpc).toHaveBeenCalledTimes(1);
     const request = rpc.mock.calls[0]?.[1]?.payload;
-    expect(request.lines.map((line: { debit_minor: number; credit_minor: number }) => line.debit_minor - line.credit_minor)).toEqual([100, -100]);
+    expect(
+      request.lines.map(
+        (line: { debit_minor: number; credit_minor: number }) =>
+          line.debit_minor - line.credit_minor,
+      ),
+    ).toEqual([100, -100]);
     expect(request.fx_rate_to_base).toBe(1);
   });
 
@@ -90,9 +96,9 @@ describe("posting currency and date safeguards", () => {
     "rejects invalid explicit FX rates instead of posting at that rate",
     async (fx_rate_to_base) => {
       const rpc = vi.fn();
-      await expect(
-        resolveFxRate({ rpc } as never, input({ fx_rate_to_base })),
-      ).rejects.toThrow(/positive finite/);
+      await expect(resolveFxRate({ rpc } as never, input({ fx_rate_to_base }))).rejects.toThrow(
+        /positive finite/,
+      );
       expect(rpc).not.toHaveBeenCalled();
     },
   );
@@ -138,9 +144,9 @@ describe("posting currency and date safeguards", () => {
       data: null,
       error: { message: "No exchange rate for JPY → GBP on or before 2026-11-04" },
     });
-    await expect(
-      postJournal({ rpc } as never, input({ currency_code: "JPY" })),
-    ).rejects.toThrow(/No exchange rate/);
+    await expect(postJournal({ rpc } as never, input({ currency_code: "JPY" }))).rejects.toThrow(
+      /No exchange rate/,
+    );
     expect(rpc).toHaveBeenCalledOnce();
     expect(rpc.mock.calls[0]?.[0]).toBe("lookup_fx_rate_to_base");
   });
@@ -167,7 +173,9 @@ describe("posting currency and date safeguards", () => {
       amount_minor: Number.MAX_SAFE_INTEGER + 1,
       idempotency_key: "bank:unsafe",
     };
-    await expect(categoriseBankTransaction({ rpc } as never, args)).rejects.toThrow(/exact integer/);
+    await expect(categoriseBankTransaction({ rpc } as never, args)).rejects.toThrow(
+      /exact integer/,
+    );
     expect(rpc).not.toHaveBeenCalled();
   });
 });

@@ -190,10 +190,8 @@ export async function resolveFxRate(
 
   // PostgreSQL NUMERIC may reach the client as a number or a decimal string.
   if (
-    !(
-      (typeof data === "number" && Number.isFinite(data)) ||
-      (typeof data === "string" && /^\d+(?:\.\d+)?$/.test(data))
-    )
+    (typeof data !== "number" || !Number.isFinite(data)) &&
+    (typeof data !== "string" || !/^\d+(?:\.\d+)?$/.test(data))
   ) {
     throw new Error(`Exchange-rate lookup returned an invalid rate for ${currency}`);
   }

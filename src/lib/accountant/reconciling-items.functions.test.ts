@@ -43,7 +43,10 @@ function fakeDb() {
       return this;
     },
     order() {
-      return Promise.resolve({ data: [], error: null });
+      return this;
+    },
+    then(resolve: (value: { data: never[]; error: null }) => unknown) {
+      return Promise.resolve({ data: [] as never[], error: null }).then(resolve);
     },
     limit() {
       return Promise.resolve({ data: [], error: null });

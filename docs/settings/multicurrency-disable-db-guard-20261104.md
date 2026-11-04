@@ -11,7 +11,7 @@ behaviour. The base currency is implicit and is never removed.
 ## Implementation
 
 Migration:
-`supabase/migrations/20261104182500_multicurrency_feature_disable_guard.sql`
+`supabase/migrations/20261104181716_multicurrency_feature_disable_guard.sql`
 
 - `guard_multicurrency_feature_disable` rejects `false` feature writes when
   that tenant has configured additional currencies.

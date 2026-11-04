@@ -68,6 +68,8 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
   const accountIds = ctx.search.accountIds ?? (cashBasis ? ctx.search.account : undefined);
   const accountScope = ctx.search.accountScope ?? "balance";
   const accountGroup = ctx.search.accountGroup ?? "code";
+  const page = Math.max(0, (ctx.search.page ?? 1) - 1);
+  const pageSize = ctx.search.txnPageSize ?? 100;
   const accountsQ = useQuery({
     queryKey: ["report-account-options", ctx.companyId],
     queryFn: () => fetchAccounts({ data: { companyId: ctx.companyId } }),
@@ -87,7 +89,17 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
       }),
   });
   const cashQ = useQuery({
-    queryKey: ["report-cash-gl-all", ctx.companyId, ctx.from, ctx.to, accountIds, accountScope],
+    queryKey: [
+      "report-cash-gl-all",
+      ctx.companyId,
+      ctx.from,
+      ctx.to,
+      accountIds,
+      accountScope,
+      accountGroup,
+      page,
+      pageSize,
+    ],
     enabled: cashBasis,
     queryFn: () =>
       fetchCashGl({
@@ -97,6 +109,9 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
           to: ctx.to,
           ...(accountIds ? { accountIds } : {}),
           accountScope,
+          accountGroup,
+          page,
+          pageSize,
         },
       }),
   });
@@ -173,6 +188,7 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
                 ctx.setSearch({
                   accountScope: event.target.value === "balance" ? undefined : event.target.value,
                   explorePage: undefined,
+                  page: undefined,
                 })
               }
             >
@@ -193,6 +209,7 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
                 ctx.setSearch({
                   accountGroup: event.target.value === "code" ? undefined : event.target.value,
                   explorePage: undefined,
+                  page: undefined,
                 })
               }
             >
@@ -201,6 +218,29 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
               <option value="type">Account type, then code</option>
             </select>
           </div>
+          {cashBasis && (
+            <div className="space-y-1">
+              <Label htmlFor="cash-ledger-page-size">Rows per page</Label>
+              <select
+                id="cash-ledger-page-size"
+                className={selectCls}
+                value={pageSize}
+                onChange={(event) =>
+                  ctx.setSearch({
+                    txnPageSize: Number(event.target.value) as 25 | 50 | 100 | 200,
+                    page: undefined,
+                    explorePage: undefined,
+                  })
+                }
+              >
+                {[25, 50, 100, 200].map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </>
       }
       getCsv={() =>
@@ -220,9 +260,10 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
                 "Journal ID",
                 "Source ID",
               ],
-              basis: cashBasis
-                ? "Cash recognition ledger; full cash history used for opening balances. This is not the posted accrual journal."
-                : "Accrual posted ledger; full posting history used for opening balances.",
+              basis:
+                cashBasis && cashQ.data
+                  ? `Cash recognition ledger, page ${cashQ.data.page + 1} of ${Math.max(1, Math.ceil(cashQ.data.totalCount / cashQ.data.pageSize))}; ${cashQ.data.lineCount} of ${cashQ.data.totalLineCount} cash movements loaded. Export contains only these displayed report rows. Opening and closing balances are for the complete reporting period.`
+                  : "Accrual posted ledger; full posting history used for opening balances.",
               rows: orderedAccounts.flatMap((a) => [
                 [
                   `${a.account.code} ${a.account.name}`,
@@ -264,73 +305,96 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
         emptyDescription="No accounts match the period and selection. Choose All accounts or include zero balances."
       >
         {d ? (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Journal</TableHead>
-                <TableHead>Source</TableHead>
-                <TableHead>Memo</TableHead>
-                <TableHead className="text-right">Debit</TableHead>
-                <TableHead className="text-right">Credit</TableHead>
-                <TableHead className="text-right">Balance</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {orderedAccounts.map((a) => (
-                <Fragment key={a.account.id}>
-                  <TableRow className="bg-muted/40">
-                    <TableCell colSpan={6} className="font-semibold">
-                      <Link
-                        to="/reports/$reportId"
-                        params={{ reportId: "general-ledger" }}
-                        search={{
-                          account: a.account.id,
-                          from: ctx.from,
-                          to: ctx.to,
-                          ...(cashBasis ? { basis: "cash" as const } : {}),
-                        }}
-                        className="underline-offset-2 hover:underline"
-                      >
-                        {accountGroup === "type" ? `${a.account.account_type} · ` : ""}
-                        {a.account.code} {a.account.name}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="text-right text-xs">
-                      Opening {fmt.amount(a.opening_balance_minor, ctx.currency)}
-                    </TableCell>
-                  </TableRow>
-                  {a.rows.map((r, i) => (
-                    <TableRow key={`${r.journal_id}-${i}`}>
-                      <TableCell>{fmt.date(r.journal_date)}</TableCell>
-                      <TableCell>
-                        <JournalLink journalId={r.journal_id} number={r.journal_number} />
+          <div className="space-y-3">
+            {cashBasis && cashQ.data && (
+              <p className="text-xs text-muted-foreground">
+                Showing report page {cashQ.data.page + 1} · {cashQ.data.lineCount} of{" "}
+                {cashQ.data.totalLineCount} recognized cash movements across{" "}
+                {cashQ.data.totalAccountCount} accounts. Downloads contain only this page. All
+                opening and closing balances cover the entire selected period.
+              </p>
+            )}
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Journal</TableHead>
+                  <TableHead>Source</TableHead>
+                  <TableHead>Memo</TableHead>
+                  <TableHead className="text-right">Debit</TableHead>
+                  <TableHead className="text-right">Credit</TableHead>
+                  <TableHead className="text-right">Balance</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {orderedAccounts.map((a) => (
+                  <Fragment key={a.account.id}>
+                    <TableRow className="bg-muted/40">
+                      <TableCell colSpan={6} className="font-semibold">
+                        <Link
+                          to="/reports/$reportId"
+                          params={{ reportId: "general-ledger" }}
+                          search={{
+                            account: a.account.id,
+                            from: ctx.from,
+                            to: ctx.to,
+                            ...(cashBasis ? { basis: "cash" as const } : {}),
+                          }}
+                          className="underline-offset-2 hover:underline"
+                        >
+                          {accountGroup === "type" ? `${a.account.account_type} · ` : ""}
+                          {a.account.code} {a.account.name}
+                        </Link>
                       </TableCell>
-                      <TableCell>
-                        <SourceLink type={r.source_type} id={r.source_id} />
-                      </TableCell>
-                      <TableCell>{r.memo ?? "—"}</TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {fmt.amount(r.debit_minor, ctx.currency)}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {fmt.amount(r.credit_minor, ctx.currency)}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {fmt.amount(r.running_balance_minor, ctx.currency)}
+                      <TableCell className="text-right text-xs">
+                        Opening {fmt.amount(a.opening_balance_minor, ctx.currency)}
                       </TableCell>
                     </TableRow>
-                  ))}
-                  <TableRow className="font-medium">
-                    <TableCell colSpan={6}>Closing balance</TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {fmt.amount(a.closing_balance_minor, ctx.currency)}
-                    </TableCell>
-                  </TableRow>
-                </Fragment>
-              ))}
-            </TableBody>
-          </Table>
+                    {a.rows.map((r, i) => (
+                      <TableRow key={`${r.journal_id}-${i}`}>
+                        <TableCell>{fmt.date(r.journal_date)}</TableCell>
+                        <TableCell>
+                          <JournalLink journalId={r.journal_id} number={r.journal_number} />
+                        </TableCell>
+                        <TableCell>
+                          <SourceLink type={r.source_type} id={r.source_id} />
+                        </TableCell>
+                        <TableCell>{r.memo ?? "—"}</TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {fmt.amount(r.debit_minor, ctx.currency)}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {fmt.amount(r.credit_minor, ctx.currency)}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {fmt.amount(r.running_balance_minor, ctx.currency)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    <TableRow className="font-medium">
+                      <TableCell colSpan={6}>Closing balance</TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {fmt.amount(a.closing_balance_minor, ctx.currency)}
+                      </TableCell>
+                    </TableRow>
+                  </Fragment>
+                ))}
+              </TableBody>
+            </Table>
+            {cashBasis && cashQ.data && (
+              <PagerBar
+                page={cashQ.data.page}
+                pageSize={cashQ.data.pageSize}
+                total={cashQ.data.totalCount}
+                onPage={(p) =>
+                  ctx.setSearch({
+                    page: p === 0 ? undefined : p + 1,
+                    explorePage: undefined,
+                  })
+                }
+              />
+            )}
+          </div>
         ) : null}
       </ReportPane>
     </ReportShell>

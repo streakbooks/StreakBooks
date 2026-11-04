@@ -21,6 +21,11 @@ export const getCashGeneralLedgerAll = createServerFn({ method: "POST" })
         to: z.string().refine(isReportDate),
         accountIds: z.string().optional(),
         accountScope: z.enum(["transactions", "balance", "all"]).default("balance"),
+        accountGroup: z.enum(["code", "name", "type"]).default("code"),
+        page: z.number().int().min(0).max(100000).default(0),
+        pageSize: z
+          .union([z.literal(25), z.literal(50), z.literal(100), z.literal(200)])
+          .default(100),
       })
       .parse(input),
   )
@@ -43,6 +48,7 @@ export const getCashGeneralLedgerAll = createServerFn({ method: "POST" })
     const { loadCashProfitLossInput } = await import("./cash-profit-loss.server");
     const { cashLedger } = await import("./cash-ledger");
     const { buildCashGeneralLedger } = await import("./cash-general-ledger");
+    const { paginateCashGeneralLedger } = await import("./cash-ledger-pagination");
     const input = await loadCashProfitLossInput(context.supabase, facts, data.to);
     // Full history is necessary for an accurate opening balance.
     const entries = cashLedger(input, { from: "0001-01-01", to: data.to });
@@ -54,9 +60,11 @@ export const getCashGeneralLedgerAll = createServerFn({ method: "POST" })
       selectedIds,
       accountScope: data.accountScope,
     });
-    if (result.lineCount > 2000)
-      throw new Error(
-        "More than 2,000 cash recognition rows match this report. Narrow the dates or choose fewer accounts to export a complete, accurate result.",
-      );
-    return result;
+    // The complete recognition history is validated first, then a bounded
+    // deterministic page is returned. Never publish incomplete financial totals.
+    return paginateCashGeneralLedger(result, {
+      page: data.page,
+      pageSize: data.pageSize,
+      groupBy: data.accountGroup,
+    });
   });

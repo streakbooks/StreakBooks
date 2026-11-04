@@ -18,7 +18,8 @@ import {
   saveBankRule,
   setBankRuleActive,
 } from "@/lib/banking/rules.functions";
-import { MoneyField, moneyFieldMinor } from "@/components/banking/MoneyField";
+import { MoneyField } from "@/components/banking/MoneyField";
+import { moneyFieldMinor } from "@/lib/banking/money-field";
 import { ConfirmButton } from "@/components/banking/ConfirmButton";
 import { AccountLookup, LookupSelect, type LookupCreateContext } from "@/components/lookup";
 import {

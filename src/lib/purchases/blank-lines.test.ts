@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { emptyPurchaseLine } from "@/components/purchases/PurchasesDocumentLines";
+import { emptyPurchaseLine } from "@/lib/purchases/line-form-state";
 import {
   cleanupBlankPurchaseLines,
   incompletePurchaseLines,

@@ -1,5 +1,7 @@
 "use client";
 
+import { type PurchaseLineFormState, emptyPurchaseLine } from "@/lib/purchases/line-form-state";
+
 import { useVoiceSession } from "@/components/ai-voice/voice-context";
 
 import { isPurchaseTaxCode } from "@/lib/purchases/tax-code-eligibility";
@@ -25,38 +27,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-export type PurchaseLineFormState = {
-  productId: string;
-  description: string;
-  accountId: string;
-  quantity: string;
-  unitPrice: string;
-  discount: string;
-  taxRateBps: string;
-  taxCodeId: string;
-  classOptionId: string;
-  locationOptionId: string;
-  projectOptionId: string;
-  customerContactId: string;
-  isBillable: boolean;
-};
-
-export const emptyPurchaseLine = (): PurchaseLineFormState => ({
-  productId: "",
-  description: "",
-  accountId: "",
-  quantity: "1",
-  unitPrice: "0.00",
-  discount: "0",
-  taxRateBps: "0",
-  taxCodeId: "",
-  classOptionId: "",
-  locationOptionId: "",
-  projectOptionId: "",
-  customerContactId: "",
-  isBillable: false,
-});
 
 type ProductOption = {
   id: string;

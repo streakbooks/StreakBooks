@@ -6,6 +6,11 @@ export default defineConfig({
   root: import.meta.dirname,
   cacheDir: path.resolve(import.meta.dirname, "../../node_modules/.vite-ui"),
   plugins: [react(), tailwind()],
+  // Public fixture-only configuration. The browser test supplies an in-memory widget API.
+  define: {
+    "import.meta.env.VITE_CAPTCHA_PROVIDER": JSON.stringify("turnstile"),
+    "import.meta.env.VITE_CAPTCHA_SITE_KEY": JSON.stringify("fixture-public-site-key"),
+  },
   resolve: {
     alias: [
       ...[

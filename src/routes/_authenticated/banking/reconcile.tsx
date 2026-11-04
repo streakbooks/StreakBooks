@@ -17,7 +17,8 @@ import {
   voidReconciliationSession,
 } from "@/lib/banking/reconcile.functions";
 import { ConfirmButton } from "@/components/banking/ConfirmButton";
-import { MoneyField, moneyFieldMinor } from "@/components/banking/MoneyField";
+import { MoneyField } from "@/components/banking/MoneyField";
+import { moneyFieldMinor } from "@/lib/banking/money-field";
 import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";

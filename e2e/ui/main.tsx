@@ -1,3 +1,9 @@
+import { useCaptcha } from "@/hooks/use-captcha";
+import { SettingsCommandPalette } from "@/components/settings/SettingsCommandPalette";
+import { MoneyField } from "@/components/banking/MoneyField";
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
+import { SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { CheckoutForm } from "@/components/billing/CheckoutForm";
 import { Route as ContactImportRoute } from "@/routes/_authenticated/contacts/import";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { FirmStaffAssignments } from "@/components/firm/FirmStaffAssignments";
@@ -10,7 +16,8 @@ import { createRoot } from "react-dom/client";
 import { createRootRoute, createRoute, createRouter, RouterProvider } from "@tanstack/react-router";
 import { PageHeader, EmptyState, ErrorState, ListSkeleton } from "@/components/common/states";
 import { ModuleSubnav } from "@/components/common/ModuleSubnav";
-import { ListToolbar, matchesQuery } from "@/components/common/ListTools";
+import { ListToolbar } from "@/components/common/ListTools";
+import { matchesQuery } from "@/lib/list-search";
 import { DataTableToolbar } from "@/components/common/data-table-toolbar";
 import { CsvImportPreview } from "@/components/common/CsvImportPreview";
 import { FormSection, FormField } from "@/components/common/form-layout";
@@ -213,8 +220,123 @@ function QueryFailureFixture() {
     </main>
   );
 }
+function AccessibilityFixture() {
+  const [amount, setAmount] = useState("invalid");
+  const [secondAmount, setSecondAmount] = useState("invalid");
+  const [customer, setCustomer] = useState("");
+  const [open, setOpen] = useState(false);
+  const [section, setSection] = useState("none");
+  return (
+    <main className="min-h-screen space-y-5 bg-background p-5 text-foreground">
+      <h1 className="text-xl font-semibold">Accessible financial entry</h1>
+      <label htmlFor="transfer-amount">Transfer amount</label>
+      <MoneyField id="transfer-amount" value={amount} onChange={setAmount} currency="GBP" />
+      <p id="destination-label">Destination amount</p>
+      <MoneyField
+        label="Destination amount"
+        value={secondAmount}
+        onChange={setSecondAmount}
+        currency="GBP"
+      />
+      <label id="customer-label" htmlFor="customer-record">
+        Customer record
+      </label>
+      <p id="customer-help">Choose the customer for this transaction.</p>
+      <RecordLookupSelect required value={customer} onValueChange={setCustomer}>
+        <SelectTrigger
+          id="customer-record"
+          aria-labelledby="customer-label"
+          aria-describedby={customer ? "customer-help" : "customer-help customer-error"}
+          aria-invalid={!customer}
+        >
+          <SelectValue placeholder="Choose customer" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="river" id="option-must-not-be-control-id">
+            River &amp; Co
+          </SelectItem>
+          <SelectItem value="inactive" disabled>
+            Inactive customer
+          </SelectItem>
+        </SelectContent>
+      </RecordLookupSelect>
+      {!customer ? (
+        <p id="customer-error" role="alert" className="text-sm text-destructive-ink">
+          A customer is required.
+        </p>
+      ) : null}
+      <Button type="button" onClick={() => setOpen(true)}>
+        Search settings
+      </Button>
+      <p>Settings destination: {section}</p>
+      <SettingsCommandPalette open={open} onOpenChange={setOpen} onSelectSection={setSection} />
+    </main>
+  );
+}
+function CheckoutFixture() {
+  const [revision, setRevision] = useState(0);
+  const [razorpay, setRazorpay] = useState(true);
+  const [handoffs, setHandoffs] = useState(0);
+  return (
+    <main className="min-h-screen bg-background p-4 text-foreground">
+      <h1>Review subscription</h1>
+      <Button type="button" onClick={() => setRevision(revision + 1)}>
+        Rerender checkout
+      </Button>
+      <Button type="button" onClick={() => setRazorpay(false)}>
+        Disable Razorpay fixture
+      </Button>
+      <p role="status">
+        Checkout handoffs: {handoffs}; render: {revision}
+      </p>
+      <CheckoutForm
+        planName="Business"
+        interval="monthly"
+        monthly={{ GBP: 20, USD: 20, AUD: 20, NZD: 20, INR: 2000 }}
+        annualFreeMonths={0}
+        companyName="Acme Studio"
+        defaultCountry="IN"
+        busy={false}
+        serverError={null}
+        providers={{ stripe: true, razorpay }}
+        quote={{
+          currency: "INR",
+          interval: "monthly",
+          listMinor: 200000,
+          discountMinor: 0,
+          dueMinor: 200000,
+          recurringMinor: 200000,
+          promoDurationMonths: null,
+          freeMonths: 0,
+          trialDays: 0,
+          offerCode: null,
+        }}
+        quoteLoading={false}
+        quoteError={null}
+        onBack={() => {}}
+        onPay={() => setHandoffs(handoffs + 1)}
+      />
+    </main>
+  );
+}
+function CaptchaFixture() {
+  const captcha = useCaptcha();
+  return (
+    <main className="p-4">
+      <h1>Verification state</h1>
+      {captcha.widget}
+      <p role="status">Verification {captcha.ready ? "ready" : "required"}</p>
+      <Button type="button" disabled={!captcha.ready} onClick={captcha.reset}>
+        Finish fixture request
+      </Button>
+    </main>
+  );
+}
 function Scenario() {
   const params = new URLSearchParams(window.location.search);
+  if (params.get("flow") === "captcha") return <CaptchaFixture />;
+  if (params.get("flow") === "accessibility") return <AccessibilityFixture />;
+  if (params.get("flow") === "checkout") return <CheckoutFixture />;
   const Batch = BatchRoute.options.component!;
   const ContactImport = ContactImportRoute.options.component!;
   if (params.get("flow") === "contact-import")

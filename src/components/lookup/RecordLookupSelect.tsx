@@ -13,6 +13,8 @@ export function RecordLookupSelect({
   className,
   "aria-label": ariaLabel,
   "aria-invalid": invalid,
+  "aria-describedby": describedBy,
+  "aria-labelledby": labelledBy,
   placeholder,
 }: {
   children: ReactNode;
@@ -25,10 +27,13 @@ export function RecordLookupSelect({
   className?: string | undefined;
   "aria-label"?: string | undefined;
   "aria-invalid"?: boolean | "true" | "false" | undefined;
+  "aria-describedby"?: string | undefined;
+  "aria-labelledby"?: string | undefined;
   placeholder?: string | undefined;
 }) {
   const [internal, setInternal] = useState(defaultValue);
   const declared = declaredLookupOptions(children);
+  const validation = invalid ?? declared.invalid;
   return (
     <LookupSelect
       options={declared.options}
@@ -37,12 +42,14 @@ export function RecordLookupSelect({
         setInternal(next);
         onValueChange?.(next);
       }}
-      disabled={disabled}
+      disabled={disabled ?? declared.disabled}
       required={required}
       id={id ?? declared.id}
       ariaLabel={ariaLabel ?? declared.ariaLabel ?? declared.placeholder ?? "Choose record"}
+      describedBy={describedBy ?? declared.describedBy}
+      labelledBy={labelledBy ?? declared.labelledBy}
       placeholder={placeholder ?? declared.placeholder ?? "Select record"}
-      invalid={invalid === true || invalid === "true"}
+      invalid={validation !== undefined && validation !== false && validation !== "false"}
       allowClear={!required && declared.placeholder !== undefined}
       className={className}
     />

@@ -8,6 +8,9 @@ type DeclaredNode = {
   id?: string;
   className?: string;
   "aria-label"?: string;
+  "aria-labelledby"?: string;
+  "aria-describedby"?: string;
+  "aria-invalid"?: boolean | "true" | "false" | "grammar" | "spelling";
   placeholder?: string;
 };
 function nodeText(node: ReactNode): string {
@@ -23,22 +26,24 @@ function nodeText(node: ReactNode): string {
     .replace(/\s+/g, " ")
     .trim();
 }
-/** Extract stable record options from legacy declarative selectors. */
-export function declaredLookupOptions(children: ReactNode): {
+type DeclaredLookup = {
   options: LookupOption[];
   placeholder?: string;
   id?: string;
   ariaLabel?: string;
-} {
-  const result: { options: LookupOption[]; placeholder?: string; id?: string; ariaLabel?: string } =
-    { options: [] };
+  labelledBy?: string;
+  describedBy?: string;
+  invalid?: DeclaredNode["aria-invalid"];
+  disabled?: boolean;
+};
+
+/** Preserve record options and trigger accessibility when adapting declarative selectors. */
+export function declaredLookupOptions(children: ReactNode): DeclaredLookup {
+  const result: DeclaredLookup = { options: [] };
   function visit(nodes: ReactNode, group?: string) {
     Children.forEach(nodes, (node) => {
       if (!isValidElement<DeclaredNode>(node)) return;
       const p = node.props;
-      if (p.id) result.id = p.id;
-      if (p["aria-label"]) result.ariaLabel = p["aria-label"];
-      if (p.placeholder) result.placeholder = p.placeholder;
       if (p.value !== undefined) {
         const id = String(p.value);
         const label = nodeText(p.children);
@@ -54,6 +59,14 @@ export function declaredLookupOptions(children: ReactNode): {
         });
         return;
       }
+      // Option metadata must never overwrite the selected control's accessibility state.
+      if (p.id) result.id = p.id;
+      if (p["aria-label"]) result.ariaLabel = p["aria-label"];
+      if (p["aria-labelledby"]) result.labelledBy = p["aria-labelledby"];
+      if (p["aria-describedby"]) result.describedBy = p["aria-describedby"];
+      if (p["aria-invalid"] !== undefined) result.invalid = p["aria-invalid"];
+      if (p.disabled !== undefined) result.disabled = p.disabled;
+      if (p.placeholder) result.placeholder = p.placeholder;
       const nextGroup = p.label ?? group;
       visit(p.children, nextGroup);
     });

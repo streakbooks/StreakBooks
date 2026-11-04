@@ -5,6 +5,15 @@
 
 import { decimalPlacesFor } from "@/lib/accounting/money";
 
+/** Never turn a rounded JS Number into a purportedly exact ledger amount. */
+function exactMinor(value: bigint | number): bigint {
+  if (typeof value === "bigint") return value;
+  if (!Number.isSafeInteger(value)) {
+    throw new Error("Financial amount is not a safe integer in minor units");
+  }
+  return BigInt(value);
+}
+
 /** Half-up rounding of a non-negative rational (numerator/denominator) to bigint. */
 export function roundHalfUpRational(numerator: bigint, denominator: bigint): bigint {
   if (denominator <= 0n) throw new Error("denominator must be positive");
@@ -19,7 +28,7 @@ export function roundHalfUpRational(numerator: bigint, denominator: bigint): big
 
 /** Multiply minor units by a decimal rate with half-up rounding (same decimal places). */
 export function scaleMinorByRate(txnMinor: bigint | number, rate: number | string): bigint {
-  const minor = typeof txnMinor === "number" ? BigInt(txnMinor) : txnMinor;
+  const minor = exactMinor(txnMinor);
   const rateStr = String(rate).trim();
   if (!/^\d+(\.\d+)?$/.test(rateStr) || Number(rateStr) <= 0) {
     throw new Error("fx rate must be a positive decimal");
@@ -45,7 +54,7 @@ export function convertMinorToBase(
   txnCurrency: string,
   baseCurrency: string,
 ): bigint {
-  const minor = typeof txnMinor === "number" ? BigInt(txnMinor) : txnMinor;
+  const minor = exactMinor(txnMinor);
   if (txnCurrency.toUpperCase() === baseCurrency.toUpperCase()) return minor;
   const rateStr = String(rate).trim();
   if (!/^\d+(\.\d+)?$/.test(rateStr) || Number(rateStr) <= 0) {
@@ -116,8 +125,9 @@ export function computeUnrealizedFx(
 
 /**
  * Apply the journal snapshot rate to convert a posted line amount to base for reporting.
- * When both currencies are known this is the decimal-aware converter (RP-07); otherwise it falls
- * back to a plain rate multiplication (legacy callers that do not carry currencies).
+ * When both currencies are known this is the decimal-aware converter (RP-07).
+ * Missing snapshots for known foreign currencies are errors, not 1:1 conversions.
+ * Legacy callers without currency metadata retain the original plain-rate path.
  */
 export function lineToBaseMinor(
   amountMinor: bigint | number,
@@ -125,11 +135,24 @@ export function lineToBaseMinor(
   txnCurrency?: string | null,
   baseCurrency?: string | null,
 ): bigint {
-  const minor = typeof amountMinor === "number" ? BigInt(amountMinor) : amountMinor;
+  const minor = exactMinor(amountMinor);
   if (txnCurrency && baseCurrency && txnCurrency.toUpperCase() === baseCurrency.toUpperCase()) {
     return minor;
   }
-  if (fxRateToBase == null) return minor;
+  if (fxRateToBase == null) {
+    if (
+      txnCurrency &&
+      baseCurrency &&
+      txnCurrency.toUpperCase() !== baseCurrency.toUpperCase()
+    ) {
+      throw new Error(
+        `Missing posted exchange-rate snapshot for ${txnCurrency.toUpperCase()} to ${baseCurrency.toUpperCase()}`,
+      );
+    }
+    // Legacy records without a declared transaction currency are base-currency
+    // amounts. A foreign currency with no rate is never assumed to be 1:1.
+    return minor;
+  }
   if (txnCurrency && baseCurrency) {
     return convertMinorToBase(minor, fxRateToBase, txnCurrency, baseCurrency);
   }

@@ -45,10 +45,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ContactTimeline } from "@/components/contacts/ContactTimeline";
 
 export const Route = createFileRoute("/_authenticated/contacts/$contactId")({
   validateSearch: (search: Record<string, unknown>): { tab?: string } => ({
-    tab: ["overview", "edit", "people", "groups", "activity", "portal"].includes(
+    tab: ["overview", "edit", "people", "groups", "activity", "timeline", "portal"].includes(
       String(search["tab"]),
     )
       ? String(search["tab"])
@@ -500,6 +501,18 @@ function ContactDetail() {
           <Link
             className={nativeTabLinkClass}
             role="tab"
+            aria-selected={tab === "timeline"}
+            data-state={tab === "timeline" ? "active" : "inactive"}
+            to="/contacts/$contactId"
+            params={{ contactId }}
+            search={{ tab: "timeline" }}
+            resetScroll={false}
+          >
+            Timeline
+          </Link>
+          <Link
+            className={nativeTabLinkClass}
+            role="tab"
             aria-selected={tab === "portal"}
             data-state={tab === "portal" ? "active" : "inactive"}
             to="/contacts/$contactId"
@@ -831,6 +844,12 @@ function ContactDetail() {
               Create groups and tags under Contacts → Settings.
             </p>
           </div>
+        </TabsContent>
+
+        <TabsContent value="timeline" className="mt-4">
+          {companyId ? (
+            <ContactTimeline companyId={companyId} contactId={contactId} canManage={canManage} />
+          ) : null}
         </TabsContent>
 
         <TabsContent value="portal" className="mt-4">

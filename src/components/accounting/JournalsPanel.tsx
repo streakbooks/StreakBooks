@@ -2,6 +2,7 @@
 
 import { Fragment, useState } from "react";
 import { JournalQualityReviewPanel } from "@/components/accountant/JournalQualityReviewPanel";
+import { BulkJournalImportPanel } from "@/components/accountant/BulkJournalImportPanel";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ChevronDown, ChevronRight } from "lucide-react";
@@ -173,6 +174,7 @@ export function JournalsPanel({
   return (
     <div className="space-y-4">
       <JournalQualityReviewPanel companyId={companyId} />
+      <BulkJournalImportPanel companyId={companyId} currency={currency} />
       <div className="flex flex-wrap items-end gap-2">
         <Input
           aria-label="Search journals"

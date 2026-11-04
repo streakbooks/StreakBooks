@@ -258,7 +258,7 @@ export function AccountingWorkspace({
           <DeferralsPanel key={companyId} companyId={companyId} currency={currency} />
         </TabsContent>
         <TabsContent value="coa" className="mt-4">
-          <ChartAccountsPanel companyId={companyId} currency={currency} />
+          <ChartAccountsPanel key={companyId} companyId={companyId} currency={currency} />
         </TabsContent>
 
         <TabsContent value="industry" className="mt-4">

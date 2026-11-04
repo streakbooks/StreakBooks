@@ -300,11 +300,7 @@ export function AccountingWorkspace({
         </TabsContent>
 
         <TabsContent value="close" className="mt-4">
-          <PeriodClosePanel
-            key={companyId}
-            companyId={companyId}
-            initialPeriodId={search.period}
-          />
+          <PeriodClosePanel key={companyId} companyId={companyId} initialPeriodId={search.period} />
         </TabsContent>
 
         <TabsContent value="health" className="mt-4">

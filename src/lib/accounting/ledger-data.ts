@@ -104,8 +104,8 @@ type RawLine = {
   id: string;
   line_no: number;
   account_id: string;
-  debit_minor: number;
-  credit_minor: number;
+  debit_minor: number | string;
+  credit_minor: number | string;
   description: string | null;
   journals: {
     id: string;
@@ -140,15 +140,25 @@ export type LineFilter = {
   journalIds?: string[] | undefined;
 };
 
+function exactDatabaseMinor(value: number | string, field: string): bigint {
+  if (typeof value === "number" && !Number.isSafeInteger(value)) {
+    throw new Error(`Ledger ${field} is an unsafe integer; request exact minor-unit text`);
+  }
+  if (typeof value === "string" && !/^-?\d+$/.test(value)) {
+    throw new Error(`Ledger ${field} is not an integer minor-unit amount`);
+  }
+  return BigInt(value);
+}
+
 export function rawLineToPosted(r: RawLine, baseCurrency: string): PostedLine {
   const debit = lineToBaseMinor(
-    BigInt(r.debit_minor),
+    exactDatabaseMinor(r.debit_minor, "debit"),
     r.journals.fx_rate_to_base,
     r.journals.currency_code,
     baseCurrency,
   );
   const credit = lineToBaseMinor(
-    BigInt(r.credit_minor),
+    exactDatabaseMinor(r.credit_minor, "credit"),
     r.journals.fx_rate_to_base,
     r.journals.currency_code,
     baseCurrency,

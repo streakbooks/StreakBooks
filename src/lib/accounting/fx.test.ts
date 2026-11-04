@@ -131,3 +131,32 @@ describe("integer FX snapshot rates", () => {
     expect(scaleMinorByRate(9007199254740993n, "2")).toBe(18014398509481986n);
   });
 });
+
+describe("FX report fail-closed invariants", () => {
+  it("requires a recorded snapshot for known foreign journal currencies", () => {
+    expect(() => lineToBaseMinor(1000n, null, "USD", "GBP")).toThrow(
+      /Missing posted exchange-rate snapshot/,
+    );
+    expect(() => lineToBaseMinor(1000n, undefined, "JPY", "GBP")).toThrow(
+      /Missing posted exchange-rate snapshot/,
+    );
+    expect(() => lineToBaseMinor(1000n, null, "GBP", "USD")).toThrow(
+      /Missing posted exchange-rate snapshot/,
+    );
+  });
+
+  it("retains exact base identity and explicit cross-currency decimal conversion", () => {
+    expect(lineToBaseMinor(1000n, null, "GBP", "GBP")).toBe(1000n);
+    expect(lineToBaseMinor(1000n, "0.82", "USD", "GBP")).toBe(820n);
+    expect(lineToBaseMinor(1000n, "0.0067", "JPY", "USD")).toBe(670n);
+    expect(lineToBaseMinor(1000n, null)).toBe(1000n);
+  });
+
+  it("never converts unsafe JavaScript Numbers into exact minor units", () => {
+    const unsafe = Number.MAX_SAFE_INTEGER + 1;
+    expect(() => lineToBaseMinor(unsafe, "1", "GBP", "GBP")).toThrow(/safe integer/);
+    expect(() => scaleMinorByRate(unsafe, "0.8")).toThrow(/safe integer/);
+    expect(() => convertMinorToBase(unsafe, "0.8", "USD", "GBP")).toThrow(/safe integer/);
+    expect(lineToBaseMinor(9007199254740993n, null, "GBP", "GBP")).toBe(9007199254740993n);
+  });
+});

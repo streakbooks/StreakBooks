@@ -1,6 +1,11 @@
 import { buildIntegrationHealth } from "./integration-health";
 import { assertSettingsCategory } from "@/lib/settings/categories";
-import { assertSettingsBoolean, parseExpectedSettingsVersion, parseOptionalLockDate, parseOptionalOverrideReason } from "@/lib/settings/validation";
+import {
+  assertSettingsBoolean,
+  parseExpectedSettingsVersion,
+  parseOptionalLockDate,
+  parseOptionalOverrideReason,
+} from "@/lib/settings/validation";
 import { countConfiguredForeignCurrencies } from "@/lib/settings/foreign-currency-safety";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";

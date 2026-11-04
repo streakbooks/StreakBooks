@@ -378,8 +378,8 @@ export function PeriodClosePanel({ companyId }: { companyId: string }) {
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            A locked period rejects new postings. The checklist is checked again before locking.
-            If the results have changed, review them again. An owner or accountant can unlock the
+            A locked period rejects new postings. The checklist is checked again before locking. If
+            the results have changed, review them again. An owner or accountant can unlock the
             period from the Financial years tab.
           </p>
           {summary && !summary.clean ? (

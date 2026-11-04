@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useBlocker } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -14,6 +14,14 @@ import { prepareAccountingPreferences } from "@/lib/settings/accounting-preferen
 import type { SettingsDocument } from "@/lib/settings/settings-centre.functions";
 import { LedgerHealthPanel } from "@/components/accounting/LedgerHealthPanel";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -75,15 +83,13 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
     setCfgBaselineVersion(cfgQ.data.version);
   }, [cfgQ.data, cfgTouched]);
 
-  useEffect(() => {
-    if (!lockTouched && !cfgTouched) return;
-    const warn = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-      event.returnValue = "";
-    };
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [lockTouched, cfgTouched]);
+  // Protect both in-app navigation and browser unload while either draft is unsaved.
+  const dirty = lockTouched || cfgTouched;
+  const navigationBlocker = useBlocker({
+    shouldBlockFn: () => dirty,
+    enableBeforeUnload: dirty,
+    withResolver: true,
+  });
 
   const cfgServerChanged = Boolean(
     cfgTouched && cfgQ.data && cfgBaselineVersion !== cfgQ.data.version,
@@ -444,6 +450,43 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
       </Card>
 
       <LedgerHealthPanel companyId={companyId} />
+
+      <AlertDialog
+        open={navigationBlocker.status === "blocked"}
+        onOpenChange={(open) => {
+          if (!open && navigationBlocker.status === "blocked") navigationBlocker.reset();
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave with unsaved accounting settings?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your unsaved lock dates or accounting preferences will be discarded if you leave.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                if (navigationBlocker.status === "blocked") navigationBlocker.reset();
+              }}
+            >
+              Stay and keep editing
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={lockMut.isPending || cfgMut.isPending}
+              onClick={() => {
+                if (navigationBlocker.status === "blocked") navigationBlocker.proceed();
+              }}
+            >
+              Discard and leave
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

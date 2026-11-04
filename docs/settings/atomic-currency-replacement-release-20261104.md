@@ -19,7 +19,7 @@ The frontend passes the original baseline to the RPC and no longer has an unsafe
 ## Rollout order — required
 
 1. Run the full GitHub quality gates (typecheck, ESLint, unit tests, isolated PostgreSQL workflow/security tests, navigation checks and production build).
-2. Apply `supabase/migrations/20261104123000_settings_currencies_atomic.sql` **only to the verified LinkBooks Supabase project** using migration tooling. Confirm the function exists and anonymous execution is revoked.
+2. Apply `supabase/migrations/20261104115821_settings_currencies_atomic.sql` **only to the verified LinkBooks Supabase project** using migration tooling. Confirm the function exists and anonymous execution is revoked.
 3. Deploy the matching application build from **linkbusinessadvisory/LinkBooks** (not the old rohitmehra86 repository). If the RPC is absent, the new save path will error rather than silently use the unsafe implementation.
 4. In authenticated staging, save and reload currencies, test simultaneous edits, verify a warning on stale edits and check audit events. Confirm other organisations and existing posted documents are unchanged.
 5. Verify production source SHA, database migration status and an authenticated end-to-end flow before marking deployment complete.

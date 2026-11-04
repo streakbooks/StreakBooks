@@ -103,6 +103,9 @@ try {
   sql(read("tests/fixtures/workflows/settings-currencies-baseline.sql"));
   sql(read("supabase/migrations/20261104115821_settings_currencies_atomic.sql"));
   sql(read("tests/integration/settings-currencies-atomic.sql"));
+  sql(read("tests/fixtures/workflows/settings-legacy-cas-baseline.sql"));
+  sql(read("supabase/migrations/20261104164500_legacy_settings_cas.sql"));
+  sql(read("tests/integration/settings-legacy-cas.sql"));
   console.log(
     "Workflow migration compiled. Atomic rollback, permissions, two-tenant RLS, PO edit/conversion, sales lifecycle, deferrals and real shared posting-engine balance/lock scenarios passed.",
   );

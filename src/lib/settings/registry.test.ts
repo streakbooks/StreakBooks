@@ -48,5 +48,4 @@ describe("Settings Centre category routing and search", () => {
       ).toBe(true);
     }
   });
-
 });

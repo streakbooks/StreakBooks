@@ -2,6 +2,7 @@ import { PracticeWorkBoard } from "@/components/accountant/PracticeWorkBoard";
 import { FirmClientPortfolio } from "@/components/firm/FirmClientPortfolio";
 import { FirmOnboardingPanel, FirmTeamPanel } from "@/components/firm/FirmOnboardingAndTeam";
 import { FirmEngagementPanel } from "@/components/firm/FirmEngagementPanel";
+import { FirmClientRequestsPanel } from "@/components/firm/FirmClientRequestsPanel";
 import { setActiveCompany } from "@/lib/company.functions";
 import { useCanDo } from "@/hooks/use-can";
 import { useState } from "react";
@@ -221,6 +222,7 @@ function FirmPage() {
               <TabsTrigger value="work">Work & deadlines</TabsTrigger>
               <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
               <TabsTrigger value="engagements">Engagements</TabsTrigger>
+              <TabsTrigger value="requests">Client requests</TabsTrigger>
               <TabsTrigger value="team">Team</TabsTrigger>
               <TabsTrigger value="activity">Client activity</TabsTrigger>
               <TabsTrigger value="setup">Firm settings</TabsTrigger>
@@ -302,6 +304,24 @@ function FirmPage() {
                 />
               ) : (
                 <FirmEngagementPanel
+                  key={firmId}
+                  firmId={firmId}
+                  clients={clientsQ.data ?? []}
+                  canManage={firmAdmin}
+                />
+              )}
+            </TabsContent>
+
+            <TabsContent value="requests">
+              {clientsQ.isPending ? (
+                <LoadingState />
+              ) : clientsQ.isError ? (
+                <ErrorState
+                  title="Could not load clients"
+                  description={friendlyAuthError(clientsQ.error)}
+                />
+              ) : (
+                <FirmClientRequestsPanel
                   key={firmId}
                   firmId={firmId}
                   clients={clientsQ.data ?? []}

@@ -12,8 +12,12 @@ describe("manual journal server posting guard", () => {
   });
 
   it("refuses invalid calendar dates and reversal ordering", () => {
-    expect(() => assertManualJournalPosting("2026-02-30", undefined, lines)).toThrow("valid posting date");
-    expect(() => assertManualJournalPosting("2026-10-31", "2026-11-31", lines)).toThrow("valid reversal date");
+    expect(() => assertManualJournalPosting("2026-02-30", undefined, lines)).toThrow(
+      "valid posting date",
+    );
+    expect(() => assertManualJournalPosting("2026-10-31", "2026-11-31", lines)).toThrow(
+      "valid reversal date",
+    );
     expect(() => assertManualJournalPosting("2026-10-31", "2026-10-31", lines)).toThrow("after");
   });
 
@@ -29,18 +33,26 @@ describe("manual journal server posting guard", () => {
   });
 
   it("refuses double-sided, empty, oversized and unbalanced journal lines", () => {
-    expect(() => assertManualJournalPosting("2026-10-31", undefined, [
-      { debitMinor: 100, creditMinor: 100 },
-      lines[1]!,
-    ])).toThrow("Journal line 1");
-    expect(() => assertManualJournalPosting("2026-10-31", undefined, [
-      { debitMinor: 0, creditMinor: 0 },
-      lines[1]!,
-    ])).toThrow("Journal line 1");
-    expect(() => assertManualJournalPosting("2026-10-31", undefined, [lines[0]!])).toThrow("between 2");
-    expect(() => assertManualJournalPosting("2026-10-31", undefined, [
-      lines[0]!,
-      { debitMinor: 0, creditMinor: 10000 },
-    ])).toThrow("balanced");
+    expect(() =>
+      assertManualJournalPosting("2026-10-31", undefined, [
+        { debitMinor: 100, creditMinor: 100 },
+        lines[1]!,
+      ]),
+    ).toThrow("Journal line 1");
+    expect(() =>
+      assertManualJournalPosting("2026-10-31", undefined, [
+        { debitMinor: 0, creditMinor: 0 },
+        lines[1]!,
+      ]),
+    ).toThrow("Journal line 1");
+    expect(() => assertManualJournalPosting("2026-10-31", undefined, [lines[0]!])).toThrow(
+      "between 2",
+    );
+    expect(() =>
+      assertManualJournalPosting("2026-10-31", undefined, [
+        lines[0]!,
+        { debitMinor: 0, creditMinor: 10000 },
+      ]),
+    ).toThrow("balanced");
   });
 });

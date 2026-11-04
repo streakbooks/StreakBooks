@@ -50,9 +50,9 @@ describe("chart of accounts display", () => {
     const debit = { ...account("d", "1", "Debit"), debitMinor: 200, ytdDebitMinor: 500, transactionCount: 1 };
     const credit = {
       ...account("c", "2", "Credit"), normalBalance: "credit" as const,
-      creditMinor: 300, debitMinor: 100, ytdCreditMinor: 700, transactionCount: 4,
+      creditMinor: 400, debitMinor: 100, ytdCreditMinor: 700, transactionCount: 4,
     };
-    expect(accountSignedMinor(credit)).toBe(200);
+    expect(accountSignedMinor(credit)).toBe(300);
     expect(chartViewRows([debit, credit], new Set(), "flat", { key: "balance", dir: "desc" }, true)[0]?.account.id).toBe("c");
     expect(chartViewRows([debit, credit], new Set(), "flat", { key: "activity", dir: "desc" }, true)[0]?.account.id).toBe("c");
     expect(chartViewRows([debit, credit], new Set(), "flat", { key: "activity", dir: "desc" }, false)[0]?.account.id).toBe("c");

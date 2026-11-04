@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  minorValue,
-  reviewManualJournals,
-  type ManualJournalReviewRow,
-} from "./journal-quality";
+import { minorValue, reviewManualJournals, type ManualJournalReviewRow } from "./journal-quality";
 
 const base: ManualJournalReviewRow = {
   id: "journal-1",
@@ -77,12 +73,12 @@ describe("manual journal review", () => {
 
   it("excludes posted source documents, reversals and already reversed manual journals from duplication", () => {
     expect(kinds([base, { ...base, id: "x", source_type: "sales_invoice" }])).toEqual([]);
-    expect(
-      kinds([base, { ...base, id: "x", reverses_journal_id: "original" }]),
-    ).not.toContain("possible_duplicate");
-    expect(
-      kinds([base, { ...base, id: "x", reversed_by_journal_id: "reversal" }]),
-    ).not.toContain("possible_duplicate");
+    expect(kinds([base, { ...base, id: "x", reverses_journal_id: "original" }])).not.toContain(
+      "possible_duplicate",
+    );
+    expect(kinds([base, { ...base, id: "x", reversed_by_journal_id: "reversal" }])).not.toContain(
+      "possible_duplicate",
+    );
   });
 
   it("detects posted entries that are not balanced or have invalid line amounts", () => {
@@ -98,7 +94,9 @@ describe("manual journal review", () => {
       ]),
     ).toContain("imbalanced");
     expect(
-      kinds([{ ...base, journal_lines: [{ account_id: "expense", debit_minor: 1.5, credit_minor: 0 }] }]),
+      kinds([
+        { ...base, journal_lines: [{ account_id: "expense", debit_minor: 1.5, credit_minor: 0 }] },
+      ]),
     ).toContain("invalid_amount");
   });
 
@@ -121,6 +119,11 @@ describe("manual journal review", () => {
   });
 
   it("ignores draft, voided and nonmanual journals and never emits posting actions", () => {
-    expect(kinds([{ ...base, status: "draft" }, { ...base, source_type: "tax_adjustment" }])).toEqual([]);
+    expect(
+      kinds([
+        { ...base, status: "draft" },
+        { ...base, source_type: "tax_adjustment" },
+      ]),
+    ).toEqual([]);
   });
 });

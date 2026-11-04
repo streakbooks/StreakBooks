@@ -515,7 +515,12 @@ export function SettingsForCompany({
       setCurrenciesDirty(false);
       toast.success("Enabled currencies saved");
     },
-    onError: (e) => toast.error(friendlyAuthError(e)),
+    onError: async (error) => {
+      // A stale-write rejection needs a fresh server snapshot so the editor's
+      // conflict warning and Reload latest action can recover correctly.
+      await queryClient.invalidateQueries({ queryKey: ["org-extended", companyId] });
+      toast.error(friendlyAuthError(error));
+    },
   });
 
   const rateM = useMutation({

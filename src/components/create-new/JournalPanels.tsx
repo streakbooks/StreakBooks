@@ -131,7 +131,10 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
         accountId: line.accountId,
         description: line.description || memo || name,
         debitMinor: toSafeMinorNumber(tryParseMinor(line.debit, currency) ?? 0n, "Journal debit"),
-        creditMinor: toSafeMinorNumber(tryParseMinor(line.credit, currency) ?? 0n, "Journal credit"),
+        creditMinor: toSafeMinorNumber(
+          tryParseMinor(line.credit, currency) ?? 0n,
+          "Journal credit",
+        ),
       }));
   }
 

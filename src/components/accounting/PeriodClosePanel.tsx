@@ -54,7 +54,13 @@ const WORD: Record<CloseCheckStatus, string> = {
 };
 
 /** AC-09: one place to check, optionally close the year, and lock a period. */
-export function PeriodClosePanel({ companyId }: { companyId: string }) {
+export function PeriodClosePanel({
+  companyId,
+  initialPeriodId,
+}: {
+  companyId: string;
+  initialPeriodId?: string;
+}) {
   const canLock = useCanDo("periods.lock");
   const canPostClose = useCanDo("journals.manual");
   const qc = useQueryClient();
@@ -67,7 +73,7 @@ export function PeriodClosePanel({ companyId }: { companyId: string }) {
   const doPreview = useServerFn(previewYearEndClose);
   const doClose = useServerFn(postYearEndClose);
 
-  const [periodId, setPeriodId] = useState<string>("");
+  const [periodId, setPeriodId] = useState<string>(initialPeriodId ?? "");
   const [ack, setAck] = useState(false);
   const [confirmClose, setConfirmClose] = useState(false);
 
@@ -80,9 +86,13 @@ export function PeriodClosePanel({ companyId }: { companyId: string }) {
     [periods.data],
   );
   useEffect(() => {
-    const first = openPeriods[0];
-    if (!periodId && first) setPeriodId(first.id);
-  }, [openPeriods, periodId]);
+    if (initialPeriodId) setPeriodId(initialPeriodId);
+  }, [initialPeriodId]);
+  useEffect(() => {
+    if (!periods.data) return;
+    if (openPeriods.some((row) => row.id === periodId)) return;
+    setPeriodId(openPeriods[0]?.id ?? "");
+  }, [openPeriods, periodId, periods.data]);
   const period = openPeriods.find((p) => p.id === periodId);
   const end = period?.end_date;
 
@@ -231,6 +241,15 @@ export function PeriodClosePanel({ companyId }: { companyId: string }) {
 
   return (
     <div className="space-y-4">
+      {initialPeriodId && !openPeriods.some((row) => row.id === initialPeriodId) ? (
+        <Alert>
+          <AlertTitle>The linked period is no longer open</AlertTitle>
+          <AlertDescription>
+            It may have been locked or changed. Review an open period below, or return to Financial
+            years to inspect its current status.
+          </AlertDescription>
+        </Alert>
+      ) : null}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Period close</CardTitle>

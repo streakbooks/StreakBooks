@@ -22,6 +22,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LookupSelect } from "@/components/lookup";
 import {
   Select,
@@ -57,6 +58,7 @@ function FirmPage() {
   const doRevoke = useServerFn(revokeFirmClient);
 
   const [firmName, setFirmName] = useState("");
+  const [tab, setTab] = useState("clients");
   const [selectedFirmId, setSelectedFirmId] = useState("");
   const [accessLevel, setAccessLevel] = useState("view");
   const [activityCompanyId, setActivityCompanyId] = useState("");
@@ -83,7 +85,7 @@ function FirmPage() {
 
   const activityQ = useQuery({
     queryKey: ["firm-client-activity", firmId, activityCompany],
-    enabled: Boolean(firmId && activityCompany),
+    enabled: Boolean(firmId && activityCompany && tab === "activity"),
     queryFn: () => fetchActivity({ data: { firmId, companyId: activityCompany } }),
   });
 
@@ -136,190 +138,241 @@ function FirmPage() {
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
 
-  return (
-    <>
-      <PageHeader
-        title="Firm & clients"
-        description="Review client work, manage deadlines and coordinate month-end preparation and independent sign-off."
+  const createPanel = (
+    <div className="grid max-w-lg gap-3 rounded-lg border bg-card p-5">
+      <div>
+        <h2 className="font-semibold">Create another firm</h2>
+        <p className="text-sm text-muted-foreground">
+          A separate practice keeps client access and workspaces isolated.
+        </p>
+      </div>
+      <Label htmlFor="firm-name">Firm name</Label>
+      <Input
+        id="firm-name"
+        maxLength={120}
+        placeholder="Firm name"
+        value={firmName}
+        onChange={(event) => setFirmName(event.target.value)}
       />
-      <Alert className="mb-6">
-        <AlertDescription>
-          Linking requires you to be owner/admin of the active organisation. Revoking removes
-          memberships created and tracked by this workflow. Independent, modified and legacy access
-          is preserved. Review Users & Access for retained memberships.
-        </AlertDescription>
-      </Alert>
-
-      <div className="mb-8 grid max-w-lg gap-3 rounded-md border p-4">
-        <Label htmlFor="firm-name">Create firm</Label>
-        <Input
-          id="firm-name"
-          maxLength={120}
-          placeholder="Firm name"
-          value={firmName}
-          onChange={(e) => setFirmName(e.target.value)}
-        />
+      <div>
         <Button
           size="sm"
           disabled={createM.isPending || firmName.trim().length < 2}
           onClick={() => createM.mutate()}
         >
-          Create
+          {createM.isPending ? "Creating…" : "Create firm"}
         </Button>
       </div>
+    </div>
+  );
 
+  return (
+    <>
+      <PageHeader
+        title="Firm & clients"
+        description="Manage your client portfolio, practice work, deadlines, and firm access in one workspace."
+      />
       {firmsQ.isPending ? (
         <LoadingState />
       ) : firmsQ.isError ? (
         <ErrorState title="Could not load firms" description={friendlyAuthError(firmsQ.error)} />
       ) : (firmsQ.data ?? []).length === 0 ? (
-        <EmptyState
-          title="No firms yet"
-          description="Create a firm to manage client organisations."
-        />
+        <div className="space-y-4">
+          <EmptyState
+            title="Create your first firm"
+            description="A firm workspace lets your authorised team coordinate work across clients."
+          />
+          {createPanel}
+        </div>
       ) : (
         <>
-          <div className="mb-4 max-w-sm space-y-1">
-            <Label>Active firm</Label>
-            <LookupSelect
-              ariaLabel="Active firm"
-              allowClear={false}
-              value={firmId}
-              onChange={(id) => {
-                setSelectedFirmId(id);
-                setActivityCompanyId("");
-              }}
-              searchPlaceholder="Search firm"
-              options={(firmsQ.data ?? []).map((f) => ({
-                id: f.firmId,
-                name: f.name,
-                label: f.name,
-                meta: f.role,
-                keywords: `${f.name} ${f.role}`,
-              }))}
-            />
-          </div>
-
-          <div className="mb-6 grid max-w-lg gap-3 rounded-md border p-4">
-            <Label>Link active organisation as client</Label>
-            <p className="text-sm text-muted-foreground">
-              Active org: <strong>{company?.name ?? "none selected"}</strong>
-            </p>
-            <Select value={accessLevel} onValueChange={setAccessLevel}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="view">View (read_only)</SelectItem>
-                <SelectItem value="bookkeep">Bookkeep</SelectItem>
-                <SelectItem value="full">Full (accountant)</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button
-              size="sm"
-              disabled={linkM.isPending || !company?.id || !firmAdmin || !canLinkCompany}
-              onClick={() => linkM.mutate()}
-            >
-              Link client
-            </Button>
-          </div>
-
-          {clientsQ.isPending ? (
-            <LoadingState />
-          ) : clientsQ.isError ? (
-            <ErrorState
-              title="Could not load clients"
-              description={friendlyAuthError(clientsQ.error)}
-            />
-          ) : (clientsQ.data ?? []).length === 0 ? (
-            <EmptyState
-              title="No linked clients"
-              description="Link an organisation you administer."
-            />
-          ) : (
-            <FirmClientPortfolio
-              key={firmId}
-              firmId={firmId}
-              clients={clientsQ.data ?? []}
-              canManage={firmAdmin}
-              busy={openClient.isPending || revokeM.isPending}
-              onOpen={(companyId) => openClient.mutate(companyId)}
-              onRevoke={(companyId) => {
-                if (
-                  window.confirm(
-                    "Revoke this firm link and its tracked access grants? Independent and legacy memberships will be retained for separate review.",
-                  )
-                )
-                  revokeM.mutate(companyId);
-              }}
-            />
-          )}
-          <PracticeWorkBoard key={firmId} firmId={firmId} />
-          <p className="mt-4 text-sm text-muted-foreground">
-            Switch into a client via the company switcher once membership is granted. Multi-org
-            users always see the active organisation name in the header.{" "}
-            <Link className="underline" to="/accountant">
-              Accountant checklist
-            </Link>
-          </p>
-
-          {(clientsQ.data ?? []).length > 0 ? (
-            <div className="mt-8 space-y-3">
-              <Label>Client activity history</Label>
+          <div className="mb-5 flex flex-col gap-3 rounded-lg border bg-card p-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="w-full max-w-sm space-y-1">
+              <Label>Active firm</Label>
               <LookupSelect
-                className="max-w-sm"
-                ariaLabel="Client"
+                ariaLabel="Active firm"
                 allowClear={false}
-                value={activityCompany}
-                onChange={setActivityCompanyId}
-                placeholder="Select client"
-                searchPlaceholder="Search client"
-                options={(clientsQ.data ?? []).map((c) => {
-                  const name = c.companies?.name ?? c.company_id.slice(0, 8);
-                  return {
-                    id: c.company_id,
-                    name,
-                    label: name,
-                    keywords: name,
-                  };
-                })}
+                value={firmId}
+                onChange={(id) => {
+                  setSelectedFirmId(id);
+                  setActivityCompanyId("");
+                  setTab("clients");
+                }}
+                searchPlaceholder="Search firm"
+                options={(firmsQ.data ?? []).map((f) => ({
+                  id: f.firmId,
+                  name: f.name,
+                  label: f.name,
+                  meta: f.role,
+                  keywords: `${f.name} ${f.role}`,
+                }))}
               />
-              {activityQ.isPending ? (
-                <LoadingState rows={3} />
-              ) : activityQ.isError ? (
+            </div>
+            <div className="text-sm text-muted-foreground">
+              {firmAdmin ? "Firm administrator" : "Firm team member"}
+              <div className="text-xs">Client accounting permissions remain company-specific.</div>
+            </div>
+          </div>
+          <Tabs className="space-y-5" value={tab} onValueChange={setTab}>
+            <TabsList className="flex h-auto flex-wrap justify-start gap-1">
+              <TabsTrigger value="clients">Clients & overview</TabsTrigger>
+              <TabsTrigger value="work">Work & deadlines</TabsTrigger>
+              <TabsTrigger value="activity">Client activity</TabsTrigger>
+              <TabsTrigger value="setup">Firm settings</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="clients" className="space-y-4">
+              {clientsQ.isPending ? (
+                <LoadingState />
+              ) : clientsQ.isError ? (
                 <ErrorState
-                  title="Could not load activity"
-                  description={friendlyAuthError(activityQ.error)}
+                  title="Could not load clients"
+                  description={friendlyAuthError(clientsQ.error)}
                 />
-              ) : (activityQ.data ?? []).length === 0 ? (
+              ) : (clientsQ.data ?? []).length === 0 ? (
+                <div className="space-y-3">
+                  <EmptyState
+                    title="No linked clients"
+                    description="Link an organisation you administer to start using your practice portfolio."
+                  />
+                  <Button variant="outline" onClick={() => setTab("setup")}>
+                    Open firm settings
+                  </Button>
+                </div>
+              ) : (
+                <FirmClientPortfolio
+                  key={firmId}
+                  firmId={firmId}
+                  clients={clientsQ.data ?? []}
+                  canManage={firmAdmin}
+                  busy={openClient.isPending || revokeM.isPending}
+                  onOpen={(companyId) => openClient.mutate(companyId)}
+                  onRevoke={(companyId) => {
+                    if (
+                      window.confirm(
+                        "Revoke this firm link and its tracked access grants? Independent and legacy memberships will be retained for separate review.",
+                      )
+                    )
+                      revokeM.mutate(companyId);
+                  }}
+                />
+              )}
+            </TabsContent>
+
+            <TabsContent value="work" className="space-y-4">
+              <PracticeWorkBoard key={firmId} firmId={firmId} />
+              <p className="text-sm text-muted-foreground">
+                Company permissions determine which client tasks you can access.{" "}
+                <Link className="underline" to="/accountant">
+                  Open Accountant tools
+                </Link>
+              </p>
+            </TabsContent>
+
+            <TabsContent value="activity" className="space-y-4">
+              <h2 className="text-lg font-semibold">Client activity history</h2>
+              {(clientsQ.data ?? []).length === 0 ? (
                 <EmptyState
-                  title="No audit events yet"
-                  description="Actions on this client will appear here."
+                  title="No linked clients"
+                  description="Client activity is available after your first organisation is linked."
                 />
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>When</TableHead>
-                      <TableHead>Action</TableHead>
-                      <TableHead>Entity</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {activityQ.data!.map((a) => (
-                      <TableRow key={a.id}>
-                        <TableCell className="text-xs whitespace-nowrap">
-                          {new Date(a.created_at).toLocaleString()}
-                        </TableCell>
-                        <TableCell>{a.action}</TableCell>
-                        <TableCell className="text-xs">{a.entity_type}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                <>
+                  <LookupSelect
+                    className="max-w-sm"
+                    ariaLabel="Client"
+                    allowClear={false}
+                    value={activityCompany}
+                    onChange={setActivityCompanyId}
+                    placeholder="Select client"
+                    searchPlaceholder="Search client"
+                    options={(clientsQ.data ?? []).map((client) => {
+                      const name = client.companies?.name ?? "Restricted client";
+                      return {
+                        id: client.company_id,
+                        name,
+                        label: name,
+                        keywords: name,
+                      };
+                    })}
+                  />
+                  {activityQ.isPending ? (
+                    <LoadingState rows={3} />
+                  ) : activityQ.isError ? (
+                    <ErrorState
+                      title="Could not load activity"
+                      description={friendlyAuthError(activityQ.error)}
+                    />
+                  ) : (activityQ.data ?? []).length === 0 ? (
+                    <EmptyState
+                      title="No audit events yet"
+                      description="Authorised activity on this client will appear here."
+                    />
+                  ) : (
+                    <div className="overflow-x-auto rounded-lg border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>When</TableHead>
+                            <TableHead>Action</TableHead>
+                            <TableHead>Entity</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {activityQ.data!.map((item) => (
+                            <TableRow key={item.id}>
+                              <TableCell className="whitespace-nowrap text-xs">
+                                {new Date(item.created_at).toLocaleString()}
+                              </TableCell>
+                              <TableCell>{item.action}</TableCell>
+                              <TableCell className="text-xs">{item.entity_type}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </>
               )}
-            </div>
-          ) : null}
+            </TabsContent>
+
+            <TabsContent value="setup" className="space-y-5">
+              <Alert>
+                <AlertDescription>
+                  Linking requires owner/admin rights in the active organisation. Revocation only
+                  removes tracked, unchanged managed grants; independently assigned and legacy
+                  access remains. Review Users & Access after revocation.
+                </AlertDescription>
+              </Alert>
+              <div className="grid max-w-lg gap-3 rounded-lg border bg-card p-5">
+                <h2 className="font-semibold">Link client organisation</h2>
+                <p className="text-sm text-muted-foreground">
+                  Active organisation: <strong>{company?.name ?? "none selected"}</strong>
+                </p>
+                <Label>Practice access level</Label>
+                <Select value={accessLevel} onValueChange={setAccessLevel}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="view">View (read_only)</SelectItem>
+                    <SelectItem value="bookkeep">Bookkeep</SelectItem>
+                    <SelectItem value="full">Full (accountant)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div>
+                  <Button
+                    size="sm"
+                    disabled={linkM.isPending || !company?.id || !firmAdmin || !canLinkCompany}
+                    onClick={() => linkM.mutate()}
+                  >
+                    {linkM.isPending ? "Linking…" : "Link client"}
+                  </Button>
+                </div>
+              </div>
+              {createPanel}
+            </TabsContent>
+          </Tabs>
         </>
       )}
     </>

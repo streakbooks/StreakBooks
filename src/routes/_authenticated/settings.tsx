@@ -823,6 +823,8 @@ export function SettingsForCompany({
                           <Label htmlFor="org-name">Organisation name</Label>
                           <Input
                             id="org-name"
+                            aria-invalid={name.trim().length < 2 || name.trim().length > 160}
+                            aria-describedby="org-name-hint"
                             value={name}
                             disabled={!canEdit || saveMutation.isPending}
                             onChange={(e) => {
@@ -830,6 +832,9 @@ export function SettingsForCompany({
                               setDetailsDirty(true);
                             }}
                           />
+                          <p id="org-name-hint" className="text-xs text-muted-foreground">
+                            Organisation name must contain 2–160 characters.
+                          </p>
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="org-legal">Legal name</Label>
@@ -979,20 +984,28 @@ export function SettingsForCompany({
                           </Select>
                         </div>
                         <div className="space-y-2">
-                          <Label>Document theme colour</Label>
+                          <Label htmlFor="org-document-color">Document theme colour</Label>
                           <Input
+                            id="org-document-color"
                             value={themeColor}
+                            aria-invalid={!isValidThemeColor(themeColor)}
+                            aria-describedby="org-document-color-hint"
                             disabled={!canEdit}
                             onChange={(e) => {
                               setThemeColor(e.target.value);
                               setLocalizationDirty(true);
                             }}
                           />
+                          <p id="org-document-color-hint" className="text-xs text-muted-foreground">
+                            Enter a six-digit colour code, such as #0F766E.
+                          </p>
                         </div>
                         <div className="space-y-2 sm:col-span-2">
-                          <Label>Default invoice footer</Label>
+                          <Label htmlFor="org-invoice-footer">Default invoice footer</Label>
                           <Input
+                            id="org-invoice-footer"
                             value={invoiceFooter}
+                            maxLength={2000}
                             disabled={!canEdit}
                             onChange={(e) => {
                               setInvoiceFooter(e.target.value);
@@ -1167,7 +1180,7 @@ export function SettingsForCompany({
                           <Label>Trading name</Label>
                           <Input
                             value={tradingName}
-                            disabled={!canEdit}
+                            disabled={!canEdit || !extendedQuery.data}
                             onChange={(e) => {
                               setTradingName(e.target.value);
                               setBrandingDirty(true);
@@ -1178,7 +1191,7 @@ export function SettingsForCompany({
                           <Label>Letterhead line</Label>
                           <Input
                             value={letterhead}
-                            disabled={!canEdit}
+                            disabled={!canEdit || !extendedQuery.data}
                             onChange={(e) => {
                               setLetterhead(e.target.value);
                               setBrandingDirty(true);
@@ -1186,21 +1199,28 @@ export function SettingsForCompany({
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label>Invoice email</Label>
+                          <Label htmlFor="org-invoice-email">Invoice email</Label>
                           <Input
+                            id="org-invoice-email"
+                            type="email"
                             value={invoiceEmail}
-                            disabled={!canEdit}
+                            aria-invalid={!isValidOptionalEmail(invoiceEmail)}
+                            aria-describedby="org-invoice-email-hint"
+                            disabled={!canEdit || !extendedQuery.data}
                             onChange={(e) => {
                               setInvoiceEmail(e.target.value);
                               setBrandingDirty(true);
                             }}
                           />
+                          <p id="org-invoice-email-hint" className="text-xs text-muted-foreground">
+                            Optional. Enter a valid address for customer-facing invoice replies.
+                          </p>
                         </div>
                         <div className="space-y-2">
                           <Label>Invoice phone</Label>
                           <Input
                             value={invoicePhone}
-                            disabled={!canEdit}
+                            disabled={!canEdit || !extendedQuery.data}
                             onChange={(e) => {
                               setInvoicePhone(e.target.value);
                               setBrandingDirty(true);
@@ -1208,16 +1228,24 @@ export function SettingsForCompany({
                           />
                         </div>
                         <div className="space-y-2 sm:col-span-2">
-                          <Label>Logo URL</Label>
+                          <Label htmlFor="org-logo-url">Logo URL</Label>
                           <Input
+                            id="org-logo-url"
+                            inputMode="url"
                             value={logoUrl}
-                            disabled={!canEdit}
+                            aria-invalid={Boolean(logoUrl.trim() && !/^https:\/\//i.test(logoUrl.trim()))}
+                            aria-describedby="org-logo-url-hint"
+                            disabled={!canEdit || !extendedQuery.data}
                             onChange={(e) => {
                               setLogoUrl(e.target.value);
                               setBrandingDirty(true);
                             }}
                             placeholder="https://… (no file upload integration yet)"
                           />
+                          <p id="org-logo-url-hint" className="text-xs text-muted-foreground">
+                            Optional. Use a secure HTTPS image URL; uploading is available on the
+                            dedicated document-branding page.
+                          </p>
                         </div>
                         <SettingsSaveBar
                           label="Save branding"
@@ -1312,7 +1340,7 @@ export function SettingsForCompany({
                                 <input
                                   type="checkbox"
                                   checked={enabledFx.includes(c)}
-                                  disabled={!canEdit}
+                                  disabled={!canEdit || !extendedQuery.data}
                                   onChange={(e) => {
                                     setEnabledFx((prev) =>
                                       e.target.checked ? [...prev, c] : prev.filter((x) => x !== c),
@@ -1374,8 +1402,11 @@ export function SettingsForCompany({
                               />
                             </div>
                             <div className="space-y-1">
-                              <Label>Rate → {baseCurrency}</Label>
+                              <Label htmlFor="org-fx-rate">Rate → {baseCurrency}</Label>
                               <Input
+                                id="org-fx-rate"
+                                inputMode="decimal"
+                                aria-invalid={!isValidPositiveFxRate(rateValue)}
                                 value={rateValue}
                                 onChange={(e) => setRateValue(e.target.value)}
                               />
@@ -1383,7 +1414,7 @@ export function SettingsForCompany({
                             <div className="flex items-end">
                               <Button
                                 size="sm"
-                                disabled={rateM.isPending}
+                                disabled={rateM.isPending || !fxRateValid}
                                 onClick={() => rateM.mutate()}
                               >
                                 Record rate

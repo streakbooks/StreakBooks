@@ -76,6 +76,7 @@ export function ConversionBalancesPanel({
   const [reason, setReason] = useState("");
   const [nextKey, setNextKey] = useState(1);
   const [reviewedFingerprint, setReviewedFingerprint] = useState("");
+  const [posted, setPosted] = useState(false);
 
   const overview = useQuery({
     queryKey: ["conversion-overview", companyId],
@@ -139,13 +140,13 @@ export function ConversionBalancesPanel({
     bills.length > 0;
 
   useEffect(() => {
-    if (!hasUnsavedDraft) return;
+    if (!hasUnsavedDraft || posted) return;
     const warn = (event: BeforeUnloadEvent) => {
       event.preventDefault();
     };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
-  }, [hasUnsavedDraft]);
+  }, [hasUnsavedDraft, posted]);
 
   const exportReview = () => {
     if (!validation.canPost) return;
@@ -178,6 +179,7 @@ export function ConversionBalancesPanel({
     },
     onSuccess: async () => {
       setReviewedFingerprint("");
+      setPosted(true);
       toast.success("Conversion balances posted");
       await qc.invalidateQueries({ queryKey: ["conversion-overview", companyId] });
       await qc.invalidateQueries({ queryKey: ["journals", companyId] });
@@ -551,7 +553,41 @@ export function ConversionBalancesPanel({
           </div>
           <Button
             disabled={!validation.canPost || nothingEntered || post.isPending}
-            onClick={() => post.mutate()}
+            onClick={exportReview}
+            variant="outline"
+          >
+            Export posting review CSV
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            This CSV shows entered accounts and documents in their row currencies,
+            plus base-currency totals. Export does not create accounting entries.
+          </p>
+          <div className="flex items-start gap-2">
+            <Checkbox
+              id="conv-review-confirm"
+              checked={reviewMatches}
+              disabled={!validation.canPost || nothingEntered || post.isPending}
+              onCheckedChange={(checked) =>
+                setReviewedFingerprint(checked === true ? reviewFingerprint : "")
+              }
+            />
+            <Label htmlFor="conv-review-confirm" className="text-sm leading-relaxed">
+              I have reviewed the conversion date, trial balance, and opening invoices and bills
+              {s.plugMinor > 0n ? ", including the Opening Balance Equity adjustment" : ""}.
+            </Label>
+          </div>
+          <Button
+            disabled={!validation.canPost || nothingEntered || !reviewMatches || post.isPending}
+            onClick={() => {
+              const adjustment =
+                s.plugMinor > 0n
+                  ? ` Difference ${f.money(s.plugMinor)} will be posted to Opening Balance Equity.`
+                  : "";
+              const accepted = window.confirm(
+                `Post opening balances dated ${s.openingDate ?? ""} in ${currency}? Debits ${f.money(s.debits)}, credits ${f.money(s.credits)}.${adjustment} This creates accounting entries and opening documents.`,
+              );
+              if (accepted) post.mutate();
+            }}
           >
             {post.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
             Post conversion balances

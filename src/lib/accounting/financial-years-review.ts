@@ -37,10 +37,7 @@ export function financialYearsCsv(rows: readonly PeriodRow[]): string {
 }
 
 /** Reject stale or changed period records before a requested unlock. */
-export function assertPeriodStillLocked(
-  reviewed: PeriodRow,
-  latest: PeriodRow | undefined,
-): void {
+export function assertPeriodStillLocked(reviewed: PeriodRow, latest: PeriodRow | undefined): void {
   if (
     !latest ||
     latest.id !== reviewed.id ||
@@ -48,7 +45,9 @@ export function assertPeriodStillLocked(
     latest.end_date !== reviewed.end_date ||
     latest.status !== "locked"
   ) {
-    throw new Error("The period changed or is no longer locked. Refresh and review before unlocking.");
+    throw new Error(
+      "The period changed or is no longer locked. Refresh and review before unlocking.",
+    );
   }
 }
 

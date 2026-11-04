@@ -15,11 +15,13 @@ import {
   Folder,
   Pencil,
   FolderInput,
+  ClipboardCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
 import { useFormat } from "@/hooks/use-format";
+import { DocumentReviewQueue } from "@/components/documents/DocumentReviewQueue";
 import {
   deleteAttachment,
   getAttachmentDownload,
@@ -127,7 +129,7 @@ function FilesPage() {
   const [page, setPage] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [sort, setSort] = useState<"newest" | "oldest" | "name" | "largest">("newest");
-  const [view, setView] = useState<"all" | "to-file">("all");
+  const [view, setView] = useState<"all" | "to-file" | "review">("all");
   const activeView = folderId ? "all" : view;
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkTarget, setBulkTarget] = useState("unfiled");
@@ -201,7 +203,7 @@ function FilesPage() {
   });
   const filesQ = useQuery({
     queryKey: ["company-files", companyId, debounced, type, folderId, page, sort, view],
-    enabled: Boolean(companyId),
+    enabled: Boolean(companyId) && activeView !== "review",
     placeholderData: keepPreviousData,
     queryFn: () =>
       fetchFiles({
@@ -347,15 +349,44 @@ function FilesPage() {
   const previewUrl =
     preview?.kind === "url" ? preview.url : preview?.kind === "inline" ? inlinePreviewUrl : null;
 
+  if (activeView === "review") {
+    return (
+      <>
+        <PageHeader
+          title="Document review"
+          description="Organise and approve uploaded documents without changing accounting records."
+          actions={
+            <Button size="sm" variant="outline" onClick={() => setView("all")}>
+              Back to Files
+            </Button>
+          }
+        />
+        <DocumentReviewQueue companyId={companyId} onClose={() => setView("all")} />
+      </>
+    );
+  }
+
   return (
     <>
       <PageHeader
         title="Files"
         description="Everything attached to invoices, bills, contacts and journals, plus files you upload here. You only see files for records you are allowed to view."
         actions={
-          canUpload ? (
-            <>
-              <input
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setView("review");
+                setFolderId(null);
+              }}
+            >
+              <ClipboardCheck className="mr-1 size-4" />
+              Document review
+            </Button>
+            {canUpload ? (
+              <>
+                <input
                 ref={inputRef}
                 type="file"
                 multiple
@@ -376,8 +407,9 @@ function FilesPage() {
                 )}
                 Upload files
               </Button>
-            </>
-          ) : undefined
+              </>
+            ) : null}
+          </>
         }
       />
       {error ? (

@@ -3,7 +3,12 @@ import { filterFeatureSettings } from "./feature-search";
 
 const features = [
   { key: "fx", label: "Multicurrency", description: "Exchange rates", consumerModules: ["Sales"] },
-  { key: "dimensions", label: "Tracking", description: "Assign classes", consumerModules: ["Bills"] },
+  {
+    key: "dimensions",
+    label: "Tracking",
+    description: "Assign classes",
+    consumerModules: ["Bills"],
+  },
 ];
 
 describe("Feature Manager search", () => {

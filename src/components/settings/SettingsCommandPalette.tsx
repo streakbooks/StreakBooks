@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useEffect, useState, type MouseEvent } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
   CommandDialog,
   CommandEmpty,
@@ -32,6 +32,21 @@ export function SettingsCommandPalette({ open, onOpenChange, onSelectSection }: 
       (!query || item.label.toLowerCase().includes(query.trim().toLowerCase())),
   );
 
+  const onLinkClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    // Native links keep Ctrl/Cmd-click, keyboard navigation and new-tab behavior.
+    // Stop propagation so one pointer click does not also run CommandItem.onSelect.
+    event.stopPropagation();
+    if (
+      event.button === 0 &&
+      !event.metaKey &&
+      !event.ctrlKey &&
+      !event.shiftKey &&
+      !event.altKey
+    ) {
+      onOpenChange(false);
+    }
+  };
+
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
       <CommandInput
@@ -51,10 +66,17 @@ export function SettingsCommandPalette({ open, onOpenChange, onSelectSection }: 
                   onSelectSection(category.id);
                   onOpenChange(false);
                 }}
-                className="flex flex-col items-start gap-1 py-2"
+                className="py-2"
               >
-                <span className="font-medium">{category.label}</span>
-                <span className="text-xs text-muted-foreground">{category.description}</span>
+                <Link
+                  to="/settings"
+                  search={{ section: category.id }}
+                  onClick={onLinkClick}
+                  className="flex w-full flex-col items-start gap-1"
+                >
+                  <span className="font-medium">{category.label}</span>
+                  <span className="text-xs text-muted-foreground">{category.description}</span>
+                </Link>
               </CommandItem>
             ))}
           </CommandGroup>
@@ -70,7 +92,9 @@ export function SettingsCommandPalette({ open, onOpenChange, onSelectSection }: 
                   onOpenChange(false);
                 }}
               >
-                {item.label}
+                <Link to={item.to as never} onClick={onLinkClick} className="block w-full">
+                  {item.label}
+                </Link>
               </CommandItem>
             ))}
           </CommandGroup>

@@ -1,24 +1,15 @@
 import { describe, expect, it } from "vitest";
-import {
-  areSettingsDocumentsEqual,
-  validateSettingsDraft,
-} from "./form-state";
+import { areSettingsDocumentsEqual, validateSettingsDraft } from "./form-state";
 import { defaultDocumentFor } from "./registry";
 import type { SettingsDocument } from "./settings-centre.functions";
 
 describe("Settings Centre draft validation", () => {
   it("compares documents by values, including array order, not key insertion order", () => {
     expect(
-      areSettingsDocumentsEqual(
-        { enabled: true, days: [1, 7] },
-        { days: [1, 7], enabled: true },
-      ),
+      areSettingsDocumentsEqual({ enabled: true, days: [1, 7] }, { days: [1, 7], enabled: true }),
     ).toBe(true);
     expect(
-      areSettingsDocumentsEqual(
-        { enabled: true, days: [1, 7] },
-        { enabled: true, days: [7, 1] },
-      ),
+      areSettingsDocumentsEqual({ enabled: true, days: [1, 7] }, { enabled: true, days: [7, 1] }),
     ).toBe(false);
     expect(areSettingsDocumentsEqual({ value: 0 }, { value: "0" })).toBe(false);
   });
@@ -67,9 +58,9 @@ describe("Settings Centre draft validation", () => {
     expect(
       validateSettingsDraft("reports", { ...defaults, default_basis: "something_else" }).ok,
     ).toBe(false);
-    expect(
-      validateSettingsDraft("reports", { ...defaults, default_basis: "cash" }).ok,
-    ).toBe(true);
+    expect(validateSettingsDraft("reports", { ...defaults, default_basis: "cash" }).ok).toBe(
+      true,
+    );
   });
 
   it("does not create pretend configuration for categories without an editable schema", () => {

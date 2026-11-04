@@ -107,6 +107,10 @@ function AccountantTools() {
     onSuccess: async (r) => {
       await qc.invalidateQueries({ queryKey: ["accountant-checklist", companyId] });
       toast.success(`Tax adjustment posted (journal ${r.journalId.slice(0, 8)}…)`);
+      setAmount("");
+      setMemo("");
+      // Keep the reference stable for retries, but rotate it after a confirmed post.
+      setAdjKey(`adj-${new Date().toISOString().slice(0, 10)}-${window.crypto.randomUUID()}`);
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });

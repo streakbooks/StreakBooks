@@ -128,6 +128,7 @@ function FilesPage() {
   const [error, setError] = useState<string | null>(null);
   const [sort, setSort] = useState<"newest" | "oldest" | "name" | "largest">("newest");
   const [view, setView] = useState<"all" | "to-file">("all");
+  const activeView = folderId ? "all" : view;
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkTarget, setBulkTarget] = useState("unfiled");
   const [inlinePreviewUrl, setInlinePreviewUrl] = useState<string | null>(null);
@@ -141,10 +142,7 @@ function FilesPage() {
     }, 300);
     return () => clearTimeout(t);
   }, [search]);
-  useEffect(() => {
-    if (folderId && view === "to-file") setView("all");
-  }, [folderId, view]);
-
+  // Folder navigation temporarily shows all files without discarding the chosen workspace view.
   const canUpload = ATTACHMENT_ENTITIES.company.manage.some((p) => can(p));
 
   const foldersQ = useQuery({
@@ -210,9 +208,9 @@ function FilesPage() {
         data: {
           companyId: companyId!,
           search: debounced,
-          entityType: view === "to-file" ? "company" : type,
-          folderId: view === "to-file" ? null : folderId,
-          unfiledOnly: view === "to-file",
+          entityType: activeView === "to-file" ? "company" : type,
+          folderId: activeView === "to-file" ? null : folderId,
+          unfiledOnly: activeView === "to-file",
           sort,
           page,
           pageSize: PAGE_SIZE,
@@ -420,7 +418,10 @@ function FilesPage() {
               search={{ folder: undefined, file: undefined }}
               className="text-sm underline"
               onClick={(e) => {
-                if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) setPage(0);
+                if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {
+                  setPage(0);
+                  setView("all");
+                }
               }}
             >
               All files
@@ -565,7 +566,7 @@ function FilesPage() {
       <div className="mb-4 flex flex-wrap items-center gap-2" aria-label="Files workspace views">
         <Button
           size="sm"
-          variant={view === "all" ? "default" : "outline"}
+          variant={activeView === "all" ? "default" : "outline"}
           onClick={() => {
             setView("all");
             setPage(0);
@@ -575,7 +576,7 @@ function FilesPage() {
         </Button>
         <Button
           size="sm"
-          variant={view === "to-file" ? "default" : "outline"}
+          variant={activeView === "to-file" ? "default" : "outline"}
           onClick={() => {
             setView("to-file");
             setPage(0);
@@ -599,7 +600,7 @@ function FilesPage() {
         />
         <Select
           value={type}
-          disabled={view === "to-file"}
+          disabled={activeView === "to-file"}
           onValueChange={(v) => {
             setType(v);
             setPage(0);
@@ -730,7 +731,7 @@ function FilesPage() {
           description={
             debounced || type !== "all"
               ? "No files match this search."
-              : view === "to-file"
+              : activeView === "to-file"
                 ? "No unlinked, unfiled uploads need organising."
                 : canUpload
                   ? `Upload a file here or attach one to an invoice or bill. Up to ${formatFileSize(MAX_FILE_BYTES)} each.`

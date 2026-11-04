@@ -279,10 +279,21 @@ export function JournalsPanel({
           onRetry={() => void query.refetch()}
         />
       ) : rows.length === 0 ? (
-        <EmptyState
-          title="No journals found"
-          description="Change the filters, or post a manual journal."
-        />
+        <div className="space-y-3">
+          <EmptyState
+            title="No journals found"
+            description={
+              page > 0
+                ? "No journals remain on this page. Return to the previous page."
+                : "Change the filters, or post a manual journal."
+            }
+          />
+          {page > 0 ? (
+            <Button variant="outline" size="sm" onClick={() => setPage((value) => value - 1)}>
+              Previous page
+            </Button>
+          ) : null}
+        </div>
       ) : (
         <>
           <div className="overflow-x-auto">

@@ -101,29 +101,29 @@ export function TransactionCorrections({ companyId }: { companyId: string }) {
   return (
     <div className="space-y-5">
       <TransactionCorrectionsView
-      key={companyId}
-      companyId={companyId}
-      setup={setup.data}
-      busy={
-        findM.isPending ||
-        previewM.isPending ||
-        applyM.isPending ||
-        submitM.isPending ||
-        undoM.isPending
-      }
-      onSearch={findM.mutateAsync}
-      onPreview={previewM.mutateAsync}
-      onApply={applyM.mutateAsync}
-      approvalRequired={approvalSettings.data.required}
-      onSubmitApproval={submitM.mutateAsync}
-      onUndo={undoM.mutateAsync}
-      history={history.data ?? { rows: [], has_more: false, page }}
-      historyLoading={history.isPending}
-      historyError={history.isError ? friendlyAuthError(history.error) : ""}
-      onHistoryPage={setPage}
-      onHistoryRefresh={() => {
-        void history.refetch();
-      }}
+        key={companyId}
+        companyId={companyId}
+        setup={setup.data}
+        busy={
+          findM.isPending ||
+          previewM.isPending ||
+          applyM.isPending ||
+          submitM.isPending ||
+          undoM.isPending
+        }
+        onSearch={findM.mutateAsync}
+        onPreview={previewM.mutateAsync}
+        onApply={applyM.mutateAsync}
+        approvalRequired={approvalSettings.data.required}
+        onSubmitApproval={submitM.mutateAsync}
+        onUndo={undoM.mutateAsync}
+        history={history.data ?? { rows: [], has_more: false, page }}
+        historyLoading={history.isPending}
+        historyError={history.isError ? friendlyAuthError(history.error) : ""}
+        onHistoryPage={setPage}
+        onHistoryRefresh={() => {
+          void history.refetch();
+        }}
       />
       <CorrectionApprovalsPanel
         companyId={companyId}

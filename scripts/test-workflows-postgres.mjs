@@ -132,6 +132,9 @@ try {
   );
   sql(read("supabase/migrations/20261105041953_settings_lock_policy_cas.sql"));
   sql(read("tests/integration/settings-lock-policy-cas.sql"));
+  sql(read("tests/fixtures/workflows/contact-numbering-baseline.sql"));
+  sql(read("supabase/migrations/20261105065500_contacts_atomic_number_allocation.sql"));
+  sql(read("tests/integration/contact-numbering-atomic.sql"));
   console.log(
     "Workflow migration compiled. Atomic rollback, permissions, two-tenant RLS, PO edit/conversion, sales lifecycle, deferrals and real shared posting-engine balance/lock scenarios passed.",
   );

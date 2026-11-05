@@ -440,25 +440,10 @@ export const upsertContact = createServerFn({ method: "POST" })
     );
     if (conflict) throw new Error(`A contact named "${conflict.name}" already exists`);
 
-    let accountNumber = data.accountNumber;
-    if (!data.id && !accountNumber) {
-      const { data: settings } = await context.supabase
-        .from("company_contact_settings" as never)
-        .select("account_number_prefix, next_account_number" as never)
-        .eq("company_id" as never, data.companyId as never)
-        .maybeSingle();
-      const s = settings as { account_number_prefix?: string; next_account_number?: number } | null;
-      if (s?.next_account_number) {
-        accountNumber = `${s.account_number_prefix ?? "C"}${s.next_account_number}`;
-        await context.supabase
-          .from("company_contact_settings" as never)
-          .update({
-            next_account_number: (s.next_account_number ?? 1001) + 1,
-            updated_at: new Date().toISOString(),
-          } as never)
-          .eq("company_id" as never, data.companyId as never);
-      }
-    }
+    // The database BEFORE INSERT trigger allocates missing numbers atomically,
+    // in the same transaction as contact creation. Never read/increment this
+    // sequence in a separate request; that can duplicate or burn numbers.
+    const accountNumber = data.accountNumber;
 
     const payload = {
       name: data.name,

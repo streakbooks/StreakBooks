@@ -29,7 +29,7 @@ export function buildSettingsAuditCsv(rows: readonly SettingsAuditExportRow[]): 
   return lines.join("\r\n") + "\r\n";
 }
 
-/** A page shorter than the page size proves there are no more records. */
+/** Request one extra row to distinguish an exact final page from a next page. */
 export function hasNextSettingsAuditPage(recordCount: number): boolean {
-  return recordCount === AUDIT_PAGE_SIZE;
+  return recordCount > AUDIT_PAGE_SIZE;
 }

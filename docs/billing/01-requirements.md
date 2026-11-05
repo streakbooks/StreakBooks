@@ -17,7 +17,7 @@ Nothing here is live in production until the hosted migration gate in
 | 5     | Razorpay/Stripe adapters, router, durable webhooks, checkout, renewals, upgrades                  | **Implemented and tested locally (test mode)**, not applied to hosted; see [06-payment-integration.md](06-payment-integration.md) |
 | 6     | Invoices, payments, refunds, credit notes, tax                                                    | **Implemented and tested locally**, not applied to hosted; see [08-tax-and-accounting.md](08-tax-and-accounting.md)               |
 | 7     | Coupons                                                                                           | **Implemented and tested locally**, not applied to hosted; see [03-coupons.md](03-coupons.md)                                     |
-| 8     | CA partners, referrals, commission ledger (payouts disabled)                                      | Planned                                                                                                                           |
+| 8     | CA partners, referrals, commission ledger (payouts disabled)                                      | **Implemented and tested locally**, not applied to hosted; see [09-referral-commission.md](09-referral-commission.md)             |
 | 9     | REST `/api/v1` + OpenAPI                                                                          | Planned                                                                                                                           |
 | 10    | Admin analytics, E2E, runbook                                                                     | Planned                                                                                                                           |
 

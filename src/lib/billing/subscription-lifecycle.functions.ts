@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { clientAddressHash } from "@/lib/billing/client-address.server";
 import { CANCELLATION_REASONS } from "@/lib/billing/domain/lifecycle";
 
 /**
@@ -67,16 +67,6 @@ const cancelInput = z
 const platformInput = z
   .object({ companyId: z.string().uuid(), reason: z.string().trim().min(3).max(500) })
   .strict();
-
-/** Keyed hash of the client address; without a configured secret nothing is stored. */
-async function clientAddressHash(): Promise<string | null> {
-  const secret = (process.env["BILLING_IP_HASH_SECRET"] ?? "").trim();
-  const forwarded = getRequestHeader("x-forwarded-for")?.split(",")[0]?.trim();
-  const address = forwarded || getRequestHeader("x-real-ip")?.trim();
-  if (!secret || !address) return null;
-  const { createHmac } = await import("node:crypto");
-  return createHmac("sha256", secret).update(address).digest("hex");
-}
 
 export const getSubscriptionState = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

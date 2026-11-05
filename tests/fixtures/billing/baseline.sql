@@ -138,6 +138,33 @@ $function$;
 GRANT EXECUTE ON FUNCTION public.has_company_permission(uuid, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION private.customer_access_ok(), private.mfa_requirement_met() TO authenticated;
 
+-- Practice firms and the partner directory (20261102310000_partners.sql), as live.
+CREATE TYPE public.firm_member_role AS ENUM ('owner', 'admin', 'member');
+CREATE TABLE public.firms (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL CHECK (length(trim(name)) > 0),
+  created_by uuid NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE public.firm_members (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  firm_id uuid NOT NULL REFERENCES public.firms(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  role public.firm_member_role NOT NULL DEFAULT 'member',
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (firm_id, user_id)
+);
+CREATE TABLE public.platform_partners (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL UNIQUE CHECK (length(trim(name)) BETWEEN 2 AND 80),
+  revenue_share_minor integer CHECK (revenue_share_minor IS NULL OR revenue_share_minor >= 0),
+  created_by uuid NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE public.platform_partners ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.platform_partners FROM PUBLIC, anon, authenticated;
+
 -- Existing data present before the billing migrations run (exercises the backfill).
 INSERT INTO auth.users (id, email) VALUES
   ('00000000-0000-0000-0000-0000000000a1', 'owner-a@example.test'),

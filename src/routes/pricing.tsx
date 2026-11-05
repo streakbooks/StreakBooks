@@ -9,6 +9,7 @@ import { LookupSelect } from "@/components/lookup";
 import { getPublicPriceList } from "@/lib/billing/country-pricing.functions";
 import { planPrice } from "@/lib/billing/domain/country-pricing";
 import { formatMinorAmount } from "@/lib/billing/domain/money";
+import { normaliseReferralCode, REFERRAL_STORAGE_KEY } from "@/lib/billing/domain/partners";
 import { listPublicBillingPlans } from "@/lib/billing/platform.functions";
 import { formatMinor } from "@/lib/billing/pricing";
 import { ISO_COUNTRIES } from "@/lib/billing/reference/iso-reference-data";
@@ -112,6 +113,14 @@ function PricingPage() {
     void supabase.auth.getSession().then(({ data }) => {
       setSignedIn(Boolean(data.session));
     });
+    const referral = normaliseReferralCode(new URLSearchParams(window.location.search).get("ref"));
+    if (referral) {
+      try {
+        window.localStorage.setItem(REFERRAL_STORAGE_KEY, referral);
+      } catch {
+        // Without storage the customer can still type the code in billing settings.
+      }
+    }
   }, []);
 
   return (

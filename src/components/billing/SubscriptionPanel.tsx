@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { CheckoutForm } from "@/components/billing/CheckoutForm";
 import { BillingDocuments } from "@/components/billing/BillingDocuments";
+import { ReferralPanel } from "@/components/billing/ReferralPanel";
 import { SubscriptionLifecycle } from "@/components/billing/SubscriptionLifecycle";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -284,6 +285,7 @@ export function SubscriptionPanel({
       />
       {data.ready && !data.isDemo ? <SubscriptionLifecycle companyId={companyId} /> : null}
       {data.ready && !data.isDemo ? <BillingDocuments companyId={companyId} /> : null}
+      {data.ready && !data.isDemo ? <ReferralPanel companyId={companyId} /> : null}
 
       {checkingOut && target ? (
         <CheckoutForm

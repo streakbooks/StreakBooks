@@ -79,6 +79,16 @@ immutability triggers); gapless numbering; tax arithmetic; invoice issue on reco
 refund workflow; customer document functions; checkout price with tax; country readiness check;
 private `billing-documents` storage bucket.
 
+## Phase 8 migration
+
+`20261105224027_billing_partners.sql` (details in [09-referral-commission.md](09-referral-commission.md)):
+`platform_partners` extended (firm, status, verification); `billing.partner_users`,
+`partner_program` (singleton: attribution model and window, payouts flag) with two-person
+`partner_program_changes`; `referral_codes`, `referral_touches` (each with its disclosure
+acceptance) and `referral_attributions`; `commission_rules` (second-owner approval, frozen once
+approved); append-only `commission_ledger` fed by triggers on invoices and credit notes;
+`partner_payouts` (manual, two-person, disabled by default).
+
 ## Phase 7 migration
 
 `20261105223023_billing_coupons.sql` (details in [03-coupons.md](03-coupons.md)): `billing_offers`
@@ -148,9 +158,17 @@ link requires an active account within its `company_limit` (row-locked check).
   `tests/integration/billing-02-plans.sql` (59 assertions) and
   `tests/integration/billing-03-pricing.sql` (60 assertions), `tests/integration/billing-04-provider-payments.sql`
   (54 assertions), `tests/integration/billing-05-subscriptions.sql` (52 assertions) and
-  `tests/integration/billing-06-tax-invoicing.sql` (60 assertions) and `tests/integration/billing-07-coupons.sql`
-  (37 assertions). Suites run in file-name order on one database. The legacy fixture also carries the platform worker tables and the production
+  `tests/integration/billing-06-tax-invoicing.sql` (60 assertions) , `tests/integration/billing-07-coupons.sql`
+  (37 assertions) and `tests/integration/billing-08-partners.sql` (57 assertions). Suites run in file-name order on one database. The legacy fixture also carries the platform worker tables and the production
   worker tick so the lifecycle job runs through the real scheduler.
+- Phase 8 rehearsal on the restored production copy: applied twice; a firm applied after accepting
+  the partner terms; its owner could not approve it, and approval without recorded evidence was
+  refused; codes were refused while pending; referrals were refused until a second owner set the
+  attribution window; enabling payouts without a regulatory reference was refused; the customer's
+  disclosure acceptance was recorded; a rule drafted by one owner was approved by the other; a
+  ₹999 invoice (₹846.61 net) accrued ₹84.66 at a rehearsal-only 10% and a half refund reversed
+  ₹42.33; the ledger could not be edited; payouts were refused while disabled and, once enabled,
+  could not be requested or approved by partner members or the requester.
 - Phase 6 rehearsal on the restored production copy: applied twice; opening India was refused while
   no seller or rule existed; seller activation and rule approval were refused for their author and
   done by the other owner; an overlapping rule and an exclusive rule for Razorpay were refused; a ₹999
@@ -195,7 +213,7 @@ link requires an active account within its `company_limit` (row-locked check).
 
 ## Hosted apply procedure
 
-Phases 1 to 7 are **not applied** to project `ipxflpzfcqwtenodbxwc`. When approved:
+Phases 1 to 8 are **not applied** to project `ipxflpzfcqwtenodbxwc`. When approved:
 
 Production has since received other migrations with later timestamps (for example payroll,
 `20261105153211`–`20261105181000`), so the billing series must be applied with

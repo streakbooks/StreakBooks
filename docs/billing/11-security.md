@@ -82,6 +82,18 @@
 | Changing a discount customers already received | Terms locked after reservation, redemption or provider mapping          | SQL suite and rehearsal |
 | Clients redeeming codes                        | Service-role only redemption                                            | SQL suite               |
 
+## Phase 8 controls
+
+| Threat                                           | Control                                                                                                                     | Verified by             |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| Paying commission before terms are agreed        | No rule seeded; programme closed until a window is set; payouts off                                                         | SQL suite               |
+| One person enabling payouts or changing settings | Two-person programme changes; regulatory reference required; server switch                                                  | SQL suite and rehearsal |
+| Self-dealing                                     | Partner members cannot approve their partnership, partner rules, payouts or adjustments, or refer organisations they manage | SQL suite and rehearsal |
+| Rewriting commission history                     | Append-only ledger; reversals and adjustments only; approved rules frozen                                                   | SQL suite               |
+| Over-reversal on refunds                         | Proportional reversal capped at what remains                                                                                | SQL suite               |
+| Undisclosed referrals                            | Each touch requires acceptance of the published partner disclosure                                                          | SQL suite               |
+| Automatic money movement                         | None; payouts are manual records with a bank reference                                                                      | Code review             |
+
 ## Rules for later phases
 
 - Payment and tax secrets stay server-side (`*.server.ts`, Edge Function secrets); `VITE_*`

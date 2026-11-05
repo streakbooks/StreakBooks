@@ -9,6 +9,7 @@ import { CountryPricingAdmin } from "@/components/platform/billing/CountryPricin
 import { CouponsAdmin } from "@/components/platform/billing/CouponsAdmin";
 import { FinanceAdmin } from "@/components/platform/billing/FinanceAdmin";
 import { LegalDocumentsAdmin } from "@/components/platform/billing/LegalDocumentsAdmin";
+import { PartnerProgramAdmin } from "@/components/platform/billing/PartnerProgramAdmin";
 import { PaymentOperationsAdmin } from "@/components/platform/billing/PaymentOperationsAdmin";
 import { formatMinorAmount } from "@/lib/billing/domain/money";
 import { getPlatformBilling } from "@/lib/billing/platform.functions";
@@ -81,6 +82,7 @@ function PlatformBillingPage() {
       <PaymentOperationsAdmin canEdit={editor} isOwner={owner} />
       <FinanceAdmin canEdit={editor} isOwner={owner} />
       <CouponsAdmin canEdit={editor} />
+      <PartnerProgramAdmin canEdit={editor} isOwner={owner} />
       <CountryPricingAdmin canEdit={editor} />
       <LegalDocumentsAdmin canEdit={editor} isOwner={owner} />
       <h2 className="pt-4 text-xl font-semibold">Legacy plan prices and versions</h2>

@@ -139,7 +139,9 @@ export function auditFxRevaluationRun(
   const expectedGain = units(run.total_gain_minor);
   const expectedLoss = units(run.total_loss_minor);
   if (expectedGain === null || expectedLoss === null) {
-    differences.push("Stored revaluation gain or loss is not an exact nonnegative minor-unit amount.");
+    differences.push(
+      "Stored revaluation gain or loss is not an exact nonnegative minor-unit amount.",
+    );
   }
   if (!run.journal_ids.length) {
     differences.push("A posted revaluation run has no linked journals.");

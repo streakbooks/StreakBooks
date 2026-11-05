@@ -41,9 +41,7 @@ const tables: Record<string, unknown[]> = {
       credit_account_id: "asset",
     },
   ],
-  deferral_entries: [
-    { id: entryId, period_no: 1, amount_minor: "100", journal_id: journalId },
-  ],
+  deferral_entries: [{ id: entryId, period_no: 1, amount_minor: "100", journal_id: journalId }],
   journals: [
     {
       id: journalId,

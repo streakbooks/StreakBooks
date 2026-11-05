@@ -77,6 +77,7 @@ import { SettingsOverviewPanel } from "@/components/settings/SettingsOverviewPan
 import { SettingsFeatureManager } from "@/components/settings/SettingsFeatureManager";
 import { SettingsAccountingLocksPanel } from "@/components/settings/SettingsAccountingLocksPanel";
 import { SettingsCategoryConfigPanel } from "@/components/settings/SettingsCategoryConfigPanel";
+import { ContactSettingsContent } from "@/components/settings/ContactSettingsContent";
 import { SettingsCommunicationsPanel } from "@/components/settings/SettingsCommunicationsPanel";
 import { SubscriptionPanel } from "@/components/billing/SubscriptionPanel";
 import { SettingsCommandPalette } from "@/components/settings/SettingsCommandPalette";
@@ -124,7 +125,6 @@ const CONFIG_SECTIONS: SettingsCategory[] = [
   "tax",
   "products",
   "reports",
-  "contacts",
   "expenses",
   "import_migration",
   "fixed_assets",
@@ -722,6 +722,7 @@ export function SettingsForCompany({
               {section === "notifications" ? (
                 <SettingsCommunicationsPanel companyId={companyId} canEdit={canEdit} />
               ) : null}
+              {section === "contacts" ? <ContactSettingsContent embedded /> : null}
               {CONFIG_SECTIONS.includes(section) ? (
                 <SettingsCategoryConfigPanel
                   companyId={companyId}

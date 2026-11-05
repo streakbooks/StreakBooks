@@ -46,11 +46,7 @@ describe("scoped correction undo review endpoint", () => {
       context: { supabase },
     });
     expect(result).toEqual(batch);
-    expect(assertCompanyPermission).toHaveBeenCalledWith(
-      supabase,
-      "company-1",
-      "accounting.view",
-    );
+    expect(assertCompanyPermission).toHaveBeenCalledWith(supabase, "company-1", "accounting.view");
     expect(builder.eq).toHaveBeenCalledWith("company_id", "company-1");
     expect(builder.eq).toHaveBeenCalledWith("id", "batch-1");
   });

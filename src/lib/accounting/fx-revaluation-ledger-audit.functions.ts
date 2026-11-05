@@ -102,15 +102,17 @@ export const auditFxRevaluationLedger = createServerFn({ method: "GET" })
         .select("journal_id, account_id, debit_minor, credit_minor" as never)
         .eq("company_id" as never, data.companyId as never)
         .in("journal_id" as never, relatedIds as never)
-        .limit(2001);
+        .limit(1000);
       if (linesError) throw new Error(linesError.message);
       lines = (rawLines ?? []) as unknown as FxRunAuditLine[];
-      if (lines.length > 2000) {
-        throw new Error("Ledger lines exceed the safe audit limit; no incomplete result was returned.");
+      if (lines.length >= 1000) {
+        throw new Error(
+          "Ledger lines exceed the safe audit limit; no incomplete result was returned.",
+        );
       }
 
       const accountIds = [...new Set(lines.map((line) => line.account_id))];
-      if (accountIds.length > 2000) {
+      if (accountIds.length >= 1000) {
         throw new Error("Accounts exceed the safe audit limit.");
       }
       if (accountIds.length) {
@@ -119,10 +121,10 @@ export const auditFxRevaluationLedger = createServerFn({ method: "GET" })
           .select("id, code, name, account_type" as never)
           .eq("company_id" as never, data.companyId as never)
           .in("id" as never, accountIds as never)
-          .limit(2001);
+          .limit(1000);
         if (accountsError) throw new Error(accountsError.message);
         accounts = (rawAccounts ?? []) as unknown as FxRunAuditAccount[];
-        if (accounts.length > 2000) throw new Error("Account evidence was truncated.");
+        if (accounts.length >= 1000) throw new Error("Account evidence was truncated.");
       }
     }
 

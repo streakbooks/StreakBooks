@@ -49,7 +49,11 @@ export function filterCorrectionHistory(
       batch.plan.target.name,
       ...batch.plan.rows.map((row) => row.journal_number),
       ...batch.plan.rows.map((row) => row.source_reference),
-    ].some((value) => String(value ?? "").toLocaleLowerCase().includes(term));
+    ].some((value) =>
+      String(value ?? "")
+        .toLocaleLowerCase()
+        .includes(term),
+    );
   });
 }
 

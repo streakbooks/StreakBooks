@@ -33,3 +33,8 @@ export function buildSettingsAuditCsv(rows: readonly SettingsAuditExportRow[]): 
 export function hasNextSettingsAuditPage(recordCount: number): boolean {
   return recordCount > AUDIT_PAGE_SIZE;
 }
+
+export function formatSettingsAuditPageLabel(offset: number, count: number): string {
+  if (count === 0) return "No matching events";
+  return `Showing ${offset + 1}–${offset + count} matching events (page size ${AUDIT_PAGE_SIZE}).`;
+}

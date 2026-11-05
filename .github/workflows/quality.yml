@@ -155,3 +155,5 @@ jobs:
         run: npm run test:wake
       - name: Actual anonymous app, recovery and portal entry
         run: npm run test:public-ui
+      - name: Global Create panels and route prefill isolation
+        run: npm run test:create-panels

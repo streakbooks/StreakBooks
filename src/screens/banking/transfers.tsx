@@ -1,4 +1,4 @@
-import { getRouteApi } from "@tanstack/react-router";
+import type { Search } from "@/lib/navigation/workspace-search";
 
 import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { useEffect, useRef, useState } from "react";
@@ -38,12 +38,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-const routeApi = getRouteApi("/_authenticated/banking/transfers");
 
-export function Transfers() {
+const EMPTY_PREFILL: Search = {};
+
+export function Transfers({
+  initialSearch = EMPTY_PREFILL,
+}: { initialSearch?: Search | undefined } = {}) {
   const { company } = useActiveCompany();
   const companyId = company?.id;
-  const search = routeApi.useSearch();
+  const search = initialSearch;
   const today = new Date().toISOString().slice(0, 10);
   const qc = useQueryClient();
   const fetchAccounts = useServerFn(listBankAccounts);

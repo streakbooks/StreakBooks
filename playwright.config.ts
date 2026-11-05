@@ -18,6 +18,7 @@ export default defineConfig({
     "**/themes/**",
     "**/ui/**",
     "**/public-ui/**",
+    "**/create-panels/**",
     "**/reporting/**",
     "**/navigation/**",
     "**/platform/**",

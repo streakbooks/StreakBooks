@@ -129,14 +129,25 @@ export function ContactSettingsContent({
       if (!canManage || !settingsQ.data || serverChanged || !parsed.ok) {
         throw new Error("Review current contact settings before saving.");
       }
-      return saveSettings({ data: { companyId: companyId!, ...parsed.value } });
+      const revision = (settingsQ.data as { updated_at?: unknown }).updated_at;
+      return saveSettings({
+        data: {
+          companyId: companyId!,
+          ...parsed.value,
+          expectedUpdatedAt: typeof revision === "string" ? revision : null,
+        },
+      });
     },
     onSuccess: async () => {
       setDirty(false);
       await qc.invalidateQueries({ queryKey: ["contact-settings", companyId] });
       toast.success("Settings saved — existing account numbers are not renumbered");
     },
-    onError: (e) => toast.error(friendlyAuthError(e)),
+    onError: (e) => {
+      toast.error(friendlyAuthError(e));
+      // Preserve the draft but show the latest revision after a rejected save.
+      void settingsQ.refetch();
+    },
   });
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;

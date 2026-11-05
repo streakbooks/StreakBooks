@@ -2,6 +2,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
+import {
+  CONTACT_SETTINGS_CONFLICT_MESSAGE,
+  nextContactSettingsRevision,
+  parseContactSettingsRevision,
+} from "@/lib/contacts/contact-settings-cas";
 import { normalizeContactSettingsValues } from "@/lib/contacts/contact-settings-validation";
 import { isMissingFunctionError } from "@/lib/purchases/db-safety";
 import { aggregateOutstanding } from "@/lib/contacts/balances";
@@ -1128,6 +1133,7 @@ export const getContactSettings = createServerFn({ method: "GET" })
       account_number_prefix: "C",
       next_account_number: 1001,
       default_payment_terms_days: 30,
+      updated_at: null,
     };
   });
 
@@ -1140,25 +1146,42 @@ export const saveContactSettings = createServerFn({ method: "POST" })
       accountNumberPrefix?: string;
       nextAccountNumber?: number;
       defaultPaymentTermsDays?: number;
+      expectedUpdatedAt: string | null;
     }) => ({
       companyId: assertUuid(input.companyId),
       ...normalizeContactSettingsValues(input),
+      expectedUpdatedAt: parseContactSettingsRevision(input.expectedUpdatedAt),
     }),
   )
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "contacts.manage");
-    const { error } = await context.supabase.from("company_contact_settings" as never).upsert(
-      {
-        company_id: data.companyId,
-        default_kind: data.defaultKind,
-        account_number_prefix: data.accountNumberPrefix,
-        next_account_number: data.nextAccountNumber,
-        default_payment_terms_days: data.defaultPaymentTermsDays,
-        updated_at: new Date().toISOString(),
-      } as never,
-      { onConflict: "company_id" },
-    );
-    if (error) throw new Error(error.message);
+    const payload = {
+      company_id: data.companyId,
+      default_kind: data.defaultKind,
+      account_number_prefix: data.accountNumberPrefix,
+      next_account_number: data.nextAccountNumber,
+      default_payment_terms_days: data.defaultPaymentTermsDays,
+      updated_at: nextContactSettingsRevision(data.expectedUpdatedAt),
+    };
+    if (data.expectedUpdatedAt === null) {
+      // The first save must not overwrite settings created after this page loaded.
+      const { error } = await context.supabase
+        .from("company_contact_settings" as never)
+        .insert(payload as never);
+      if (error?.code === "23505") throw new Error(CONTACT_SETTINGS_CONFLICT_MESSAGE);
+      if (error) throw new Error(error.message);
+    } else {
+      // WHERE is evaluated by PostgreSQL inside this one atomic UPDATE.
+      const { data: updated, error } = await context.supabase
+        .from("company_contact_settings" as never)
+        .update(payload as never)
+        .eq("company_id" as never, data.companyId as never)
+        .eq("updated_at" as never, data.expectedUpdatedAt as never)
+        .select("updated_at" as never)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      if (!updated) throw new Error(CONTACT_SETTINGS_CONFLICT_MESSAGE);
+    }
     return { ok: true };
   });
 

@@ -80,6 +80,34 @@ export function previewDeferralSplit(
   };
 }
 
+
+/** A read-only reconciliation of the loaded schedule. No ledger values are inferred. */
+export function deferralScheduleReconciliation(schedule: DeferralSchedule) {
+  if (!Number.isSafeInteger(schedule.total_minor) || schedule.total_minor < 0) return null;
+  let scheduled = 0n;
+  let recognized = 0n;
+  let reversed = 0n;
+  let unposted = 0n;
+  for (const entry of schedule.deferral_entries) {
+    if (!Number.isSafeInteger(entry.amount_minor) || entry.amount_minor < 0) return null;
+    const amount = BigInt(entry.amount_minor);
+    scheduled += amount;
+    if (!entry.journal_id) unposted += amount;
+    else if (entry.journals?.reversed_by_journal_id) reversed += amount;
+    else recognized += amount;
+  }
+  const total = BigInt(schedule.total_minor);
+  return {
+    total,
+    scheduled,
+    recognized,
+    reversed,
+    unposted,
+    difference: scheduled - total,
+    entryCountMatches: schedule.deferral_entries.length === schedule.periods,
+  };
+}
+
 /** Export only the currently loaded page, including every loaded schedule entry. */
 export function deferralPageCsv(rows: readonly DeferralSchedule[]): string {
   return toCsv(

@@ -35,9 +35,10 @@ describe("Settings Centre Reports default basis", () => {
         { default_basis: "cash", default_comparison: "prior_period" },
       ),
     ).toEqual({ basis: "cash", columns: "prior_period" });
-    expect(
-      applyOrganisationReportDefaults({}, { default_comparison: "prior_year" }),
-    ).toEqual({ basis: "accrual", columns: "prior_year" });
+    expect(applyOrganisationReportDefaults({}, { default_comparison: "prior_year" })).toEqual({
+      basis: "accrual",
+      columns: "prior_year",
+    });
   });
 
   it("respects an explicit basis while still applying an unset comparison default", () => {

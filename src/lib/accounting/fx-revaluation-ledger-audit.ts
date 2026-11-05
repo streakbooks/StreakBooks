@@ -171,27 +171,34 @@ export function auditFxRevaluationRun(
       issues.push("The revaluation journal is missing or cannot be accessed.");
       rowValid = false;
     } else {
-      if (journal.status !== "posted") issues.push("Revaluation journal is not posted.");
+      if (journal.status !== "posted") {
+        issues.push("Revaluation journal is not posted.");
+        rowValid = false;
+      }
       if (journal.source_type !== "fx_revaluation" || journal.source_id !== run.id) {
         issues.push("Journal source does not identify this revaluation run.");
+        rowValid = false;
       }
       if (journal.journal_date !== run.as_of_date) {
         issues.push("Journal posting date differs from the revaluation date.");
+        rowValid = false;
       }
       if (journal.currency_code.trim().toUpperCase() !== baseCurrency.toUpperCase()) {
         issues.push("Journal is not denominated in the organisation base currency.");
+        rowValid = false;
       }
       if (!isOne(journal.fx_rate_to_base)) {
         issues.push("Base-currency journal FX rate is not one.");
+        rowValid = false;
       }
     }
 
     if (!tag || tag.kind !== "revaluation" || !/^[A-Z]{3}$/.test(currency ?? "")) {
       issues.push("Revaluation currency tag is missing or invalid.");
-    } else if (
-      journal?.idempotency_key !== `fx_reval:${run.id}:${currency}`
-    ) {
+      rowValid = false;
+    } else if (journal?.idempotency_key !== `fx_reval:${run.id}:${currency}`) {
       issues.push("Journal idempotency key does not match its run and currency.");
+      rowValid = false;
     }
 
     const postedLines = journalLines.get(id) ?? [];
@@ -221,24 +228,29 @@ export function auditFxRevaluationRun(
       if (kind === "gain") {
         if (account.account_type !== "income" || credit < debit) {
           issues.push("Unrealised gain was posted to an incorrect account or debit side.");
+          rowValid = false;
         } else {
           rowGain += credit - debit;
         }
       } else if (kind === "loss") {
         if (account.account_type !== "expense" || debit < credit) {
           issues.push("Unrealised loss was posted to an incorrect account or credit side.");
+          rowValid = false;
         } else {
           rowLoss += debit - credit;
         }
       } else if (account.account_type === "income" || account.account_type === "expense") {
         issues.push("Unexpected profit-and-loss account in the revaluation journal.");
+        rowValid = false;
       }
     }
     if (rowValid && debitTotal !== creditTotal) {
       issues.push("Posted revaluation journal debits and credits do not balance.");
+      rowValid = false;
     }
     if (rowGain > 0n && rowLoss > 0n) {
       issues.push("A currency journal contains both unrealised gains and losses.");
+      rowValid = false;
     }
     if (rowValid) {
       gain += rowGain;

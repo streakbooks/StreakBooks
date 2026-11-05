@@ -98,7 +98,9 @@ export function ContactSettingsContent({
   }, [settingsQ.data, dirty]);
 
   const parsed = parseContactSettingsDraft({ defaultKind, prefix, nextNum, terms });
-  const serverChanged = Boolean(dirty && settingsQ.data && JSON.stringify(settingsQ.data) !== baseline);
+  const serverChanged = Boolean(
+    dirty && settingsQ.data && JSON.stringify(settingsQ.data) !== baseline,
+  );
   const navigationBlocker = useBlocker({
     shouldBlockFn: () => dirty,
     enableBeforeUnload: dirty,

@@ -211,6 +211,30 @@ describe("router", () => {
     expect(unknown.status).toBe(401);
   });
 
+  it("serves analytics to keys with billing:analytics and to staff through their own check", async () => {
+    adminRpc = (fn) =>
+      fn === "billing_api_key_authenticate"
+        ? { keyId: "k2", scopes: ["billing:analytics"] }
+        : { mrr: [], range: { from: "a", to: "b" } };
+    const keyed = await call("GET", "/api/v1/admin/billing/analytics", {
+      headers: { "x-api-key": "raw-key" },
+    });
+    expect(keyed.status).toBe(200);
+    expect(calls.some((c) => c.fn === "billing_api_analytics")).toBe(true);
+    calls.length = 0;
+    userRpc = () => ({ mrr: [] });
+    const staff = await call(
+      "GET",
+      "/api/v1/admin/billing/analytics?from=2026-10-01T00:00:00Z&to=2026-11-01T00:00:00Z",
+      { headers: bearer },
+    );
+    expect(staff.status).toBe(200);
+    expect(calls.map((c) => c.fn)).toEqual([
+      "platform_billing_api_access",
+      "platform_billing_analytics",
+    ]);
+  });
+
   it("requires the platform check for staff using their own token", async () => {
     userRpc = (fn) => {
       if (fn === "platform_billing_api_access") {

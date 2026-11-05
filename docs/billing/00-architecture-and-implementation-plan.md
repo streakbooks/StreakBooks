@@ -1,6 +1,6 @@
 # LinkBooks Subscription & Billing Platform — Architecture and Implementation Plan
 
-Status: **Approved 5 November 2026. Phases 1 to 9 implemented and tested locally** (see
+Status: **Approved 5 November 2026. Phases 1 to 10 implemented and tested locally** (see
 [01-requirements.md](01-requirements.md)); not applied to the hosted database, not pushed.
 Branch: `feature/rohit-dev`. Date: 5 November 2026.
 
@@ -488,7 +488,7 @@ application services as the server functions.
 
 - **Envelope**: `{ data, error: { code, message, details }, meta: { requestId } }`.
 - **Inputs and outputs**: zod contracts, used to generate an OpenAPI 3.1 document at
-  `docs/billing/openapi.yaml`.
+  `docs/billing/openapi.json` (JSON rather than YAML: no YAML library is installed).
 - **Auth**: Supabase JWT bearer for users. External systems such as Spring Boot use scoped API keys
   (hashed, stored, rotatable), reusing `platform_api_keys`.
 - **Mutations** accept an `Idempotency-Key` header.
@@ -601,7 +601,7 @@ Each phase ends with the report format required in §21 of the brief and a rehea
 
 **Phase 8 — CA partners and commissions (payouts disabled)**: `<ts>_billing_partners.sql`, `domain/commission.ts`, `application/partner.service.ts`, `src/routes/partners.register.tsx`, `src/routes/_authenticated/partner/*`, admin partner/commission/payout UI; docs `09-referral-commission.md`
 
-**Phase 9 — REST API v1 and OpenAPI**: `src/lib/billing/api/v1/**`, router wiring in `src/server.ts`, API-key auth, `docs/billing/openapi.yaml`, docs `05-api-reference.md`
+**Phase 9 — REST API v1 and OpenAPI**: `src/lib/billing/api/v1/**`, router wiring in `src/server.ts`, API-key auth, `docs/billing/openapi.json`, docs `05-api-reference.md`
 
 **Phase 10 — Admin analytics, hardening, E2E, runbook**: revenue analytics (reuse MRR movements), `playwright.billing.config.ts` suites, security suites, docs `02`, `03`, `12`, `13`
 

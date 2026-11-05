@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ApiKeysAdmin } from "@/components/platform/billing/ApiKeysAdmin";
+import { BillingAnalyticsAdmin } from "@/components/platform/billing/BillingAnalyticsAdmin";
 import { CountryPricingAdmin } from "@/components/platform/billing/CountryPricingAdmin";
 import { CouponsAdmin } from "@/components/platform/billing/CouponsAdmin";
 import { FinanceAdmin } from "@/components/platform/billing/FinanceAdmin";
@@ -80,6 +81,7 @@ function PlatformBillingPage() {
         subscribers keep their current version until you migrate them. Publishing asks for an active
         multi-factor authentication session. Tax applies only through approved tax rules.
       </p>
+      <BillingAnalyticsAdmin />
       <PaymentOperationsAdmin canEdit={editor} isOwner={owner} />
       <FinanceAdmin canEdit={editor} isOwner={owner} />
       <CouponsAdmin canEdit={editor} />

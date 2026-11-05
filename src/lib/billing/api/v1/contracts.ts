@@ -449,6 +449,23 @@ export const API_ROUTES: ApiRoute[] = [
       .strict(),
     response: page(looseObject({ companyId: uuid, status: z.string() }, "Subscription")),
   },
+  {
+    id: "adminAnalytics",
+    method: "GET",
+    path: "/api/v1/admin/billing/analytics",
+    tag: "Admin",
+    summary: "Billing analytics per currency (MRR, revenue, lifecycle, partners, webhooks)",
+    auth: "platform",
+    scope: "billing:analytics",
+    query: z.object({ from: isoDateTime.optional(), to: isoDateTime.optional() }).strict(),
+    response: looseObject(
+      {
+        range: z.object({ from: z.string(), to: z.string() }),
+        mrr: z.array(looseObject({ currency: z.string(), mrrMinor: money }, "MRR")),
+      },
+      "Analytics snapshot; ranges are limited to one year",
+    ),
+  },
 ];
 
 export function matchRoute(

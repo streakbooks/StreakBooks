@@ -177,6 +177,21 @@ CREATE TABLE public.platform_api_keys (
 ALTER TABLE public.platform_api_keys ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.platform_api_keys FROM PUBLIC, anon, authenticated;
 
+-- Stored MRR movements (20261102140000_mrr_movements.sql), as live.
+CREATE TABLE public.mrr_movements (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  captured_at timestamptz NOT NULL DEFAULT now(),
+  company_id uuid NOT NULL REFERENCES public.companies(id) ON DELETE RESTRICT,
+  currency text NOT NULL,
+  previous_mrr_minor bigint NOT NULL CHECK (previous_mrr_minor >= 0),
+  current_mrr_minor bigint NOT NULL CHECK (current_mrr_minor >= 0),
+  movement text NOT NULL CHECK (movement IN ('baseline', 'new', 'expansion', 'contraction', 'churn')),
+  delta_minor bigint NOT NULL,
+  captured_by uuid
+);
+ALTER TABLE public.mrr_movements ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.mrr_movements FROM PUBLIC, anon, authenticated;
+
 -- Existing data present before the billing migrations run (exercises the backfill).
 INSERT INTO auth.users (id, email) VALUES
   ('00000000-0000-0000-0000-0000000000a1', 'owner-a@example.test'),

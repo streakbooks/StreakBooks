@@ -105,6 +105,14 @@
 | Server code in the browser bundle  | Shared handlers wrapped with `createServerOnlyFn`; build import protection                        | Build and bundle scan      |
 | Cross-origin browser calls         | No CORS headers                                                                                   | Code review                |
 
+## Phase 10 controls
+
+| Threat                          | Control                                                                                               | Verified by             |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------- | ----------------------- |
+| Revenue data exposed to tenants | Analytics need an aal2 platform session with `billing.view`; the service variant is service-role only | SQL suite and rehearsal |
+| Misleading totals               | Per-currency figures, no conversion, demo organisations excluded, figures reconciled to tables        | SQL suite               |
+| Expensive queries               | Ranges limited to one year                                                                            | SQL suite               |
+
 ## Rules for later phases
 
 - Payment and tax secrets stay server-side (`*.server.ts`, Edge Function secrets); `VITE_*`

@@ -247,6 +247,12 @@ const HANDLERS: Record<string, Handler> = {
       _after: query["cursor"] ?? null,
       _limit: query["limit"] ?? null,
     }),
+  adminAnalytics: async ({ caller, query }) => {
+    const args = { _from: query["from"] ?? null, _to: query["to"] ?? null };
+    return caller.kind === "user"
+      ? rpc(caller.client, "platform_billing_analytics", args)
+      : adminRead("billing_api_analytics", args);
+  },
   adminSubscriptions: async ({ query }) =>
     adminRead("billing_api_subscriptions", {
       _after: query["cursor"] ?? null,

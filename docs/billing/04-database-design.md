@@ -79,6 +79,12 @@ immutability triggers); gapless numbering; tax arithmetic; invoice issue on reco
 refund workflow; customer document functions; checkout price with tax; country readiness check;
 private `billing-documents` storage bucket.
 
+## Phase 10 migration
+
+`20261105231127_billing_analytics.sql` (details in [02-admin-analytics.md](02-admin-analytics.md)):
+read-only `billing.analytics_snapshot` behind `platform_billing_analytics` (aal2, `billing.view`)
+and the service-role `billing_api_analytics` for API keys with `billing:analytics`.
+
 ## Phase 9 migration
 
 `20261105230114_billing_api_v1.sql` (details in [05-api-reference.md](05-api-reference.md)):
@@ -167,8 +173,12 @@ link requires an active account within its `company_limit` (row-locked check).
   (54 assertions), `tests/integration/billing-05-subscriptions.sql` (52 assertions) and
   `tests/integration/billing-06-tax-invoicing.sql` (60 assertions) , `tests/integration/billing-07-coupons.sql`
   (37 assertions) , `tests/integration/billing-08-partners.sql` (57 assertions) and
-  `tests/integration/billing-09-api.sql` (34 assertions). Suites run in file-name order on one database. The legacy fixture also carries the platform worker tables and the production
+  `tests/integration/billing-09-api.sql` (34 assertions) and `tests/integration/billing-10-analytics.sql`
+  (19 assertions). Suites run in file-name order on one database. The legacy fixture also carries the platform worker tables and the production
   worker tick so the lifecycle job runs through the real scheduler.
+- Phase 10 rehearsal on the restored production copy: Phases 8 to 10 applied twice; a platform owner
+  read a 90-day snapshot (one non-demo subscription, trialing; no paid MRR yet); a range over a
+  year, a non-MFA session and client calls to the service variant were refused.
 - Phase 9 rehearsal on the restored production copy: applied twice with Phase 8; a platform owner
   granted `billing:read` to a key; the key authenticated with that scope; clients were refused the
   read models; the three existing subscriptions were listed; idempotency keys started cleanly.
@@ -224,7 +234,7 @@ link requires an active account within its `company_limit` (row-locked check).
 
 ## Hosted apply procedure
 
-Phases 1 to 9 are **not applied** to project `ipxflpzfcqwtenodbxwc`. When approved:
+Phases 1 to 10 are **not applied** to project `ipxflpzfcqwtenodbxwc`. When approved:
 
 Production has since received other migrations with later timestamps (for example payroll,
 `20261105153211`–`20261105181000`), so the billing series must be applied with

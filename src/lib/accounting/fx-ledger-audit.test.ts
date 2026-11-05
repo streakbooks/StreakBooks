@@ -82,12 +82,8 @@ describe("realised FX journal audit", () => {
     const absent = audit([record], [], [], []);
     expect(absent.rows[0]!.status).toBe("mismatch");
     const repeated = audit([record, { ...record, id: "fx2" }]);
-    expect(repeated.rows[1]!.issues).toContain(
-      "Journal is linked to multiple FX posting records.",
-    );
-    const unsafe = audit([
-      { ...record, gain_loss_base_minor: Number.MAX_SAFE_INTEGER + 1 },
-    ]);
+    expect(repeated.rows[1]!.issues).toContain("Journal is linked to multiple FX posting records.");
+    const unsafe = audit([{ ...record, gain_loss_base_minor: Number.MAX_SAFE_INTEGER + 1 }]);
     expect(unsafe.rows[0]!.gainLossMinor).toBeNull();
     expect(unsafe.rows[0]!.status).toBe("mismatch");
   });

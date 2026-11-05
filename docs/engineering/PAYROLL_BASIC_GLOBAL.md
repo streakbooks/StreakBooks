@@ -5,7 +5,8 @@
 | **Module route** | `/payroll` (authenticated) |
 | **Branch foundation** | `feature/basic-global-payroll-batch-1-foundation` |
 | **Batch 7 focus** | Security smoke tests, docs honesty, UI polish, unit test coverage |
-| **Production claim** | **Not production-ready** until migrations below are applied on the target Supabase project |
+| **Production claim** | **Not production-ready** for live payroll until staging smoke passes (migrations alone are insufficient) |
+| **LinkBooks production DB** | Foundation migrations applied **2026-11-05** on the linkbook Supabase project; `/payroll` is reachable — still verify on staging before claiming readiness |
 
 ## Scope (what ships in code)
 
@@ -65,6 +66,6 @@ Bulk employee create/update is implemented on **Payroll → Employees** (CSV upl
 
 ## Remaining limitations
 
-- Migrations must be applied and payroll enabled per organisation before live use.
+- Migrations must be applied and payroll enabled per organisation before live use (linkbook production has foundation migrations as of 2026-11-05; org-level enablement and staging smoke still required).
 - No Playwright payroll module smoke (auth/setup cost); rely on unit + SQL integration smokes.
 - Statutory compliance, pension APIs, and pay-file bank formats are out of scope for Basic Global Payroll.

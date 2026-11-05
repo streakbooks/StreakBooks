@@ -13,6 +13,7 @@ import {
   savePayrollPaySchedule,
   savePayrollSettings,
 } from "@/lib/payroll/payroll.functions";
+import type { PayrollGlAccountSuggestions } from "@/lib/payroll/account-suggestions";
 import {
   assertPaymentMethod,
   assertRoundingMode,
@@ -43,6 +44,35 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+
+function applyBlankAccountSuggestions(
+  draft: PayrollSettingsDraft,
+  suggestions: PayrollGlAccountSuggestions | null | undefined,
+): PayrollSettingsDraft {
+  if (!suggestions) return draft;
+  const pick = (current: string, suggested: string | null) =>
+    current.trim() ? current : (suggested ?? "");
+  return {
+    ...draft,
+    salaryExpenseAccountId: pick(draft.salaryExpenseAccountId, suggestions.salaryExpenseAccountId),
+    netPayLiabilityAccountId: pick(
+      draft.netPayLiabilityAccountId,
+      suggestions.netPayLiabilityAccountId,
+    ),
+    deductionLiabilityAccountId: pick(
+      draft.deductionLiabilityAccountId,
+      suggestions.deductionLiabilityAccountId,
+    ),
+    employerExpenseAccountId: pick(
+      draft.employerExpenseAccountId,
+      suggestions.employerExpenseAccountId,
+    ),
+    employerLiabilityAccountId: pick(
+      draft.employerLiabilityAccountId,
+      suggestions.employerLiabilityAccountId,
+    ),
+  };
+}
 
 function emptySettingsDraft(country: string, currency: string): PayrollSettingsDraft {
   return {
@@ -123,34 +153,34 @@ export function PayrollSettingsPage() {
   useEffect(() => {
     if (!page.data) return;
     const settings = page.data.settings;
-    setDraft(
-      settings
-        ? {
-            enabled: settings.enabled,
-            operatingCountryCode: settings.operating_country_code,
-            payrollCurrency: settings.payroll_currency,
-            defaultPayScheduleId: settings.default_pay_schedule_id ?? "",
-            payrollStartDate: settings.payroll_start_date ?? "",
-            defaultWorkingDaysPerWeek: String(settings.default_working_days_per_week),
-            defaultWorkingHoursPerDay: String(settings.default_working_hours_per_day),
-            paymentDateOffsetDays: String(settings.payment_date_offset_days),
-            salaryExpenseAccountId: settings.salary_expense_account_id ?? "",
-            netPayLiabilityAccountId: settings.net_pay_liability_account_id ?? "",
-            deductionLiabilityAccountId: settings.deduction_liability_account_id ?? "",
-            employerExpenseAccountId: settings.employer_expense_account_id ?? "",
-            employerLiabilityAccountId: settings.employer_liability_account_id ?? "",
-            defaultPaymentMethod: assertPaymentMethod(settings.default_payment_method),
-            requiresApproval: settings.requires_approval,
-            roundingMode: assertRoundingMode(settings.rounding_mode),
-            payslipShowEmployerCosts: settings.payslip_show_employer_costs,
-            payslipFooterNote: settings.payslip_footer_note ?? "",
-            payslipBrandingName: settings.payslip_branding_name ?? "",
-            employeeNumberPrefix: settings.employee_number_prefix,
-            disclaimerAcknowledged: settings.disclaimer_acknowledged,
-            version: settings.version,
-          }
-        : emptySettingsDraft(page.data.company.country_code, page.data.company.base_currency),
-    );
+    const suggestions = page.data.accountSuggestions;
+    const baseDraft = settings
+      ? {
+          enabled: settings.enabled,
+          operatingCountryCode: settings.operating_country_code,
+          payrollCurrency: settings.payroll_currency,
+          defaultPayScheduleId: settings.default_pay_schedule_id ?? "",
+          payrollStartDate: settings.payroll_start_date ?? "",
+          defaultWorkingDaysPerWeek: String(settings.default_working_days_per_week),
+          defaultWorkingHoursPerDay: String(settings.default_working_hours_per_day),
+          paymentDateOffsetDays: String(settings.payment_date_offset_days),
+          salaryExpenseAccountId: settings.salary_expense_account_id ?? "",
+          netPayLiabilityAccountId: settings.net_pay_liability_account_id ?? "",
+          deductionLiabilityAccountId: settings.deduction_liability_account_id ?? "",
+          employerExpenseAccountId: settings.employer_expense_account_id ?? "",
+          employerLiabilityAccountId: settings.employer_liability_account_id ?? "",
+          defaultPaymentMethod: assertPaymentMethod(settings.default_payment_method),
+          requiresApproval: settings.requires_approval,
+          roundingMode: assertRoundingMode(settings.rounding_mode),
+          payslipShowEmployerCosts: settings.payslip_show_employer_costs,
+          payslipFooterNote: settings.payslip_footer_note ?? "",
+          payslipBrandingName: settings.payslip_branding_name ?? "",
+          employeeNumberPrefix: settings.employee_number_prefix,
+          disclaimerAcknowledged: settings.disclaimer_acknowledged,
+          version: settings.version,
+        }
+      : emptySettingsDraft(page.data.company.country_code, page.data.company.base_currency);
+    setDraft(applyBlankAccountSuggestions(baseDraft, suggestions));
     const run = page.data.sequences.find((s) => s.document_type === "payroll_run");
     const slip = page.data.sequences.find((s) => s.document_type === "payslip");
     setSeqDraft({

@@ -12,6 +12,10 @@ import {
   type PayrollSettingsRow,
 } from "@/lib/payroll/types";
 import {
+  suggestPayrollGlAccounts,
+  type PayrollGlAccountSuggestions,
+} from "@/lib/payroll/account-suggestions";
+import {
   assertPaymentMethod,
   assertRoundingMode,
   parseComponentDraft,
@@ -21,6 +25,11 @@ import {
   type PayScheduleDraft,
   type PayrollSettingsDraft,
 } from "@/lib/payroll/settings-draft";
+
+export type PayrollSetupCounts = {
+  activeEmployees: number;
+  payrollRuns: number;
+};
 
 export const PAYROLL_MIGRATION =
   "Basic Global Payroll is not available yet: the database updates 20261105153211 and 20261105153212 have not been applied.";
@@ -44,6 +53,80 @@ function pick(row: Record<string, unknown>, key: string): unknown {
 
 function str(value: unknown): string {
   return typeof value === "string" ? value : String(value ?? "");
+}
+
+function todayIsoDate(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+async function loadPayrollSetupCounts(sb: Sb, companyId: string): Promise<PayrollSetupCounts> {
+  const [employees, runs] = await Promise.all([
+    sb
+      .from("payroll_employees" as never)
+      .select("id" as never, { count: "exact", head: true })
+      .eq("company_id" as never, companyId as never)
+      .eq("status" as never, "active" as never),
+    sb
+      .from("payroll_runs" as never)
+      .select("id" as never, { count: "exact", head: true })
+      .eq("company_id" as never, companyId as never),
+  ]);
+  if (employees.error && !isMissingRelation(employees.error)) {
+    throw new Error(employees.error.message);
+  }
+  if (runs.error && !isMissingRelation(runs.error)) {
+    throw new Error(runs.error.message);
+  }
+  return {
+    activeEmployees: employees.count ?? 0,
+    payrollRuns: runs.count ?? 0,
+  };
+}
+
+async function ensureDefaultPayScheduleIfEmpty(
+  supabase: Parameters<typeof callRpc>[0],
+  sb: Sb,
+  companyId: string,
+  payload: Record<string, unknown>,
+): Promise<void> {
+  const { data: schedules, error } = await sb
+    .from("payroll_pay_schedules" as never)
+    .select("id, is_active" as never)
+    .eq("company_id" as never, companyId as never);
+  if (error) {
+    if (isMissingRelation(error)) return;
+    throw new Error(error.message);
+  }
+  const activeCount = (schedules ?? []).filter((row) => {
+    const r = row as { is_active?: boolean };
+    return r.is_active !== false;
+  }).length;
+  if (activeCount > 0) return;
+
+  const anchorRaw = payload["payroll_start_date"];
+  const anchor =
+    typeof anchorRaw === "string" && /^\d{4}-\d{2}-\d{2}$/.test(anchorRaw)
+      ? anchorRaw
+      : todayIsoDate();
+  const offset = num(payload["payment_date_offset_days"]);
+
+  await callRpc(
+    supabase,
+    "save_payroll_pay_schedule",
+    {
+      _company_id: companyId,
+      _payload: {
+        id: null,
+        name: "Monthly",
+        frequency: "monthly",
+        anchor_date: anchor,
+        payment_offset_days: offset,
+        is_default: true,
+        is_active: true,
+      },
+    },
+    PAYROLL_MIGRATION,
+  );
 }
 
 function strOrNull(value: unknown): string | null {
@@ -196,6 +279,8 @@ export const getPayrollSettingsPage = createServerFn({ method: "GET" })
           sequences: [] as PayrollDocumentSequenceRow[],
           disclaimer: BASIC_PAYROLL_DISCLAIMER,
           accounts: [] as AccountOption[],
+          accountSuggestions: null as PayrollGlAccountSuggestions | null,
+          setupCounts: { activeEmployees: 0, payrollRuns: 0 } satisfies PayrollSetupCounts,
           migrationMessage: PAYROLL_MIGRATION,
         };
       }
@@ -218,7 +303,15 @@ export const getPayrollSettingsPage = createServerFn({ method: "GET" })
       is_active: account.is_active,
       is_postable: account.is_postable,
     }));
-    return { ...page, accounts, migrationMessage: null as string | null };
+    const accountSuggestions = suggestPayrollGlAccounts(metas);
+    const setupCounts = await loadPayrollSetupCounts(sb, data.companyId);
+    return {
+      ...page,
+      accounts,
+      accountSuggestions,
+      setupCounts,
+      migrationMessage: null as string | null,
+    };
   });
 
 export const savePayrollSettings = createServerFn({ method: "POST" })
@@ -237,6 +330,8 @@ export const savePayrollSettings = createServerFn({ method: "POST" })
       { _company_id: data.companyId, _payload: parsed.value },
       PAYROLL_MIGRATION,
     );
+    const sb = context.supabase as unknown as Sb;
+    await ensureDefaultPayScheduleIfEmpty(context.supabase, sb, data.companyId, parsed.value);
     return normaliseSettings(saved);
   });
 

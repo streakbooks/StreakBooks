@@ -29,6 +29,7 @@
     "test:workflows:postgres": "node scripts/test-workflows-postgres.mjs",
     "test:documents:postgres": "node scripts/test-document-review-postgres.mjs",
     "test:accountant:postgres": "node scripts/test-accountant-exceptions-postgres.mjs",
+    "test:correction-approvals:postgres": "node scripts/test-correction-approvals-postgres.mjs",
     "test:ui": "playwright test --config playwright.ui.config.ts",
     "test:workpaper-items:postgres": "node scripts/test-accountant-workpaper-items-postgres.mjs",
     "check:ui": "node scripts/check-ui-contracts.mjs",

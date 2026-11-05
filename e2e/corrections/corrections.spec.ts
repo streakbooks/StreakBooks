@@ -211,3 +211,30 @@ test("correction history filters, exports loaded evidence and links to source jo
     /accounting/,
   );
 });
+
+test("required maker-checker policy submits a review without posting a journal", async ({
+  page,
+}) => {
+  page.on("dialog", (dialog) => dialog.accept());
+  await page.goto("/?approval=1");
+  await plan(page, "Independent review for correction");
+  await expect(
+    page.getByRole("button", { name: "Post correction batch", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Submit for independent approval", exact: true }),
+  ).toBeDisabled();
+  await page.getByLabel("Acknowledge correction posting", { exact: true }).check();
+  await page.getByRole("button", { name: "Submit for independent approval", exact: true }).click();
+  await expect(page.locator('p[role="status"]')).toContainText("submitted (pending)");
+  const reviewKeys = JSON.parse(
+    (await page.getByLabel("Approval request references", { exact: true }).textContent()) || "[]",
+  );
+  expect(reviewKeys).toHaveLength(1);
+  expect(
+    JSON.parse(
+      (await page.getByLabel("Posted request references", { exact: true }).textContent()) || "[]",
+    ),
+  ).toEqual([]);
+  await expect(page.locator("summary")).toHaveCount(0);
+});

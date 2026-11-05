@@ -44,6 +44,8 @@ type Props = {
   onSearch: (input: CorrectionFilter) => Promise<CorrectionSearch>;
   onPreview: (input: CorrectionInput) => Promise<CorrectionPlan>;
   onApply: (input: PostRequest) => Promise<CorrectionBatch>;
+  approvalRequired?: boolean;
+  onSubmitApproval?: (input: PostRequest) => Promise<{ id: string; status: string }>;
   onUndo: (input: {
     batch: CorrectionBatch;
     date: string;
@@ -75,6 +77,8 @@ export function TransactionCorrectionsView({
   onSearch,
   onPreview,
   onApply,
+  approvalRequired = false,
+  onSubmitApproval,
   onUndo,
   history,
   historyLoading,
@@ -817,8 +821,10 @@ export function TransactionCorrectionsView({
               checked={ack}
               onChange={(e) => setAck(e.target.checked)}
             />
-            I reviewed the accounts, dates and reason. I understand this posts real general-ledger
-            entries.
+            I reviewed the accounts, dates and reason.{" "}
+            {approvalRequired
+              ? "This submits an immutable plan for independent review; it does not post the ledger."
+              : "I understand this posts real general-ledger entries."}
           </label>
           <div className="flex flex-wrap gap-2">
             <Button
@@ -833,16 +839,28 @@ export function TransactionCorrectionsView({
                 busy ||
                 !ack ||
                 !setup.can_apply ||
+                (approvalRequired && !onSubmitApproval) ||
                 (!!review.plan.impact?.cross_statement_lines && !crossAck)
               }
               onClick={async () => {
-                if (!window.confirm("Post this correction batch to the general ledger?")) return;
+                const message = approvalRequired
+                  ? "Submit this exact correction plan for independent approval? Nothing posts yet."
+                  : "Post this correction batch to the general ledger?";
+                if (!window.confirm(message)) return;
                 setError("");
                 try {
-                  const batch = await onApply(review.request);
-                  setSuccess(
-                    `Correction ${batch.id} recorded (${batch.status}); ${batch.journal_ids.length} journal(s).`,
-                  );
+                  if (approvalRequired) {
+                    if (!onSubmitApproval) throw new Error("Approval workflow is unavailable.");
+                    const request = await onSubmitApproval(review.request);
+                    setSuccess(
+                      `Approval request ${request.id} submitted (${request.status}). A separate approver must review it before posting.`,
+                    );
+                  } else {
+                    const batch = await onApply(review.request);
+                    setSuccess(
+                      `Correction ${batch.id} recorded (${batch.status}); ${batch.journal_ids.length} journal(s).`,
+                    );
+                  }
                   setSelection({});
                   setResult(null);
                   clearReview();
@@ -851,12 +869,13 @@ export function TransactionCorrectionsView({
                 }
               }}
             >
-              Post correction batch
+              {approvalRequired ? "Submit for independent approval" : "Post correction batch"}
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            A retry uses the same request reference. If a response is lost, check history or retry
-            before creating a different correction.
+            A retry uses the same request reference. If a response is lost, check
+            {approvalRequired ? " the approval queue" : " correction history"} or retry before
+            creating a different correction.
           </p>
         </div>
       )}

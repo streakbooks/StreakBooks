@@ -56,6 +56,9 @@ jobs:
       - name: Isolated accountant exception review security tests
         run: npm run test:accountant:postgres
 
+      - name: Isolated correction maker-checker approval security tests
+        run: npm run test:correction-approvals:postgres
+
       - name: Isolated workpaper reconciling item security tests
         run: npm run test:workpaper-items:postgres
 

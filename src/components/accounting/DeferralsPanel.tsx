@@ -508,14 +508,13 @@ function DeferralReconciliationSummary({
       <span>Recognized: {fmt.money(result.recognized, currency)}</span>
       <span>Unposted: {fmt.money(result.unposted, currency)}</span>
       {result.reversed !== 0n ? (
-        <span className="text-destructive">
-          Reversed: {fmt.money(result.reversed, currency)}
-        </span>
+        <span className="text-destructive">Reversed: {fmt.money(result.reversed, currency)}</span>
       ) : null}
       {result.difference !== 0n || !result.entryCountMatches ? (
         <span className="text-destructive" role="alert">
-          Schedule mismatch: allocated difference {fmt.money(result.difference, currency)};
-          {" "}{schedule.deferral_entries.length} of {schedule.periods} periods loaded. Review before posting.
+          Schedule mismatch: allocated difference {fmt.money(result.difference, currency)};{" "}
+          {schedule.deferral_entries.length} of {schedule.periods} periods loaded. Review before
+          posting.
         </span>
       ) : null}
     </div>

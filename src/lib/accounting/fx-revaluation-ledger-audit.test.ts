@@ -144,6 +144,21 @@ describe("unrealised FX revaluation to ledger audit", () => {
     );
   });
 
+  it("rejects revaluation adjustments posted against equity accounts", () => {
+    const result = check(
+      run,
+      [journal],
+      [queue],
+      lines,
+      [tag],
+      [{ ...accounts[0]!, account_type: "equity" }, accounts[1]!],
+    );
+    expect(result.actualGainMinor).toBeNull();
+    expect(result.items[0]!.issues).toContain(
+      "Revaluation adjustment must affect an asset or liability account.",
+    );
+  });
+
   it("flags missing and failed reversal work rather than silently reporting balanced", () => {
     expect(check(run, [journal], []).items[0]!.issues).toContain(
       "Scheduled automatic reversal is missing.",

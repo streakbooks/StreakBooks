@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { Plus, Trash2 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -17,6 +18,7 @@ import {
   type PaymentDetailsDraft,
   type PayrollEmployeeDraft,
   type SalaryAssignDraft,
+  type SalaryAssignLineDraft,
 } from "@/lib/payroll/employee-draft";
 import {
   assignPayrollEmployeeSalary,
@@ -52,6 +54,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+
+function emptySalaryAssignLine(components: PayrollComponentTypeRow[]): SalaryAssignLineDraft {
+  const active = components.filter((c) => c.is_active);
+  return {
+    componentTypeId: active[0]?.id ?? "",
+    amount: "0",
+    rate: "0",
+    percentage: "0",
+    isRecurring: true,
+    notes: "",
+  };
+}
 
 export function PayrollEmployeeDetailPage({ employeeId }: { employeeId: string }) {
   const { company, isPending } = useActiveCompany();
@@ -90,6 +104,13 @@ export function PayrollEmployeeDetailPage({ employeeId }: { employeeId: string }
     for (const c of pageQ.data?.components ?? []) map.set(c.id, c);
     return map;
   }, [pageQ.data?.components]);
+
+  const activeComponents = useMemo(
+    () => (pageQ.data?.components ?? []).filter((c) => c.is_active),
+    [pageQ.data?.components],
+  );
+
+  const customLinesOnly = !salaryDraft.structureId;
 
   const saveProfileM = useMutation({
     mutationFn: (draft: PayrollEmployeeDraft) =>
@@ -130,6 +151,12 @@ export function PayrollEmployeeDetailPage({ employeeId }: { employeeId: string }
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ["payroll-employee-page", company?.id, employeeId],
+      });
+      setSalaryDraft({
+        structureId: "",
+        effectiveFrom: new Date().toISOString().slice(0, 10),
+        changeReason: "",
+        customLines: [],
       });
       toast.success("Salary assigned");
     },
@@ -554,9 +581,16 @@ export function PayrollEmployeeDetailPage({ employeeId }: { employeeId: string }
                     <Label htmlFor="salary-structure">Salary structure</Label>
                     <Select
                       value={salaryDraft.structureId || "none"}
-                      onValueChange={(v) =>
-                        setSalaryDraft({ ...salaryDraft, structureId: v === "none" ? "" : v })
-                      }
+                      onValueChange={(v) => {
+                        const structureId = v === "none" ? "" : v;
+                        setSalaryDraft((prev) => {
+                          const next = { ...prev, structureId };
+                          if (!structureId && next.customLines.length === 0) {
+                            next.customLines = [emptySalaryAssignLine(activeComponents)];
+                          }
+                          return next;
+                        });
+                      }}
                     >
                       <SelectTrigger id="salary-structure">
                         <SelectValue placeholder="Optional" />
@@ -594,6 +628,157 @@ export function PayrollEmployeeDetailPage({ employeeId }: { employeeId: string }
                     }
                   />
                 </div>
+                {customLinesOnly ? (
+                  <div className="space-y-2 rounded-md border border-dashed p-3">
+                    <p className="text-xs text-muted-foreground">
+                      Custom lines only: add at least one pay component and fixed amount before pay
+                      runs can calculate this employee&apos;s salary. Create missing components
+                      under{" "}
+                      <Link to="/payroll/settings" className="text-primary hover:underline">
+                        Payroll settings
+                      </Link>
+                      .
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium">Custom salary lines</p>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          setSalaryDraft({
+                            ...salaryDraft,
+                            customLines: [
+                              ...salaryDraft.customLines,
+                              emptySalaryAssignLine(activeComponents),
+                            ],
+                          })
+                        }
+                      >
+                        <Plus className="mr-1 h-4 w-4" />
+                        Add line
+                      </Button>
+                    </div>
+                    {salaryDraft.customLines.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        No lines yet — add a component.
+                      </p>
+                    ) : (
+                      <div className="space-y-3">
+                        {salaryDraft.customLines.map((line, index) => (
+                          <div
+                            key={index}
+                            className="grid gap-2 rounded-md border p-3 sm:grid-cols-2"
+                          >
+                            <div className="flex items-start justify-between gap-2 sm:col-span-2">
+                              <div className="min-w-0 flex-1 space-y-1">
+                                <Label>Pay component</Label>
+                                <Select
+                                  value={line.componentTypeId || "none"}
+                                  onValueChange={(v) => {
+                                    const customLines = [...salaryDraft.customLines];
+                                    customLines[index] = {
+                                      ...line,
+                                      componentTypeId: v === "none" ? "" : v,
+                                    };
+                                    setSalaryDraft({ ...salaryDraft, customLines });
+                                  }}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Choose component" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {activeComponents.map((c) => (
+                                      <SelectItem key={c.id} value={c.id}>
+                                        {c.code} — {c.name} ({c.kind})
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                className="mt-6 shrink-0"
+                                aria-label="Remove line"
+                                onClick={() => {
+                                  const customLines = salaryDraft.customLines.filter(
+                                    (_, i) => i !== index,
+                                  );
+                                  setSalaryDraft({ ...salaryDraft, customLines });
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            <div className="space-y-1">
+                              <Label>Fixed amount ({currency})</Label>
+                              <Input
+                                value={line.amount}
+                                inputMode="decimal"
+                                onChange={(e) => {
+                                  const customLines = [...salaryDraft.customLines];
+                                  customLines[index] = { ...line, amount: e.target.value };
+                                  setSalaryDraft({ ...salaryDraft, customLines });
+                                }}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label>Rate ({currency})</Label>
+                              <Input
+                                value={line.rate}
+                                inputMode="decimal"
+                                onChange={(e) => {
+                                  const customLines = [...salaryDraft.customLines];
+                                  customLines[index] = { ...line, rate: e.target.value };
+                                  setSalaryDraft({ ...salaryDraft, customLines });
+                                }}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label>Percentage</Label>
+                              <Input
+                                value={line.percentage}
+                                inputMode="decimal"
+                                onChange={(e) => {
+                                  const customLines = [...salaryDraft.customLines];
+                                  customLines[index] = { ...line, percentage: e.target.value };
+                                  setSalaryDraft({ ...salaryDraft, customLines });
+                                }}
+                              />
+                            </div>
+                            <label className="flex items-center gap-2 text-sm sm:col-span-2">
+                              <Checkbox
+                                checked={line.isRecurring}
+                                onCheckedChange={(c) => {
+                                  const customLines = [...salaryDraft.customLines];
+                                  customLines[index] = {
+                                    ...line,
+                                    isRecurring: c === true,
+                                  };
+                                  setSalaryDraft({ ...salaryDraft, customLines });
+                                }}
+                              />
+                              Recurring each pay run
+                            </label>
+                            <div className="space-y-1 sm:col-span-2">
+                              <Label>Notes (optional)</Label>
+                              <Input
+                                value={line.notes}
+                                onChange={(e) => {
+                                  const customLines = [...salaryDraft.customLines];
+                                  customLines[index] = { ...line, notes: e.target.value };
+                                  setSalaryDraft({ ...salaryDraft, customLines });
+                                }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : null}
                 <Button
                   size="sm"
                   disabled={assignSalaryM.isPending}

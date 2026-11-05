@@ -12,7 +12,8 @@
 
 - Organisation payroll settings, pay schedules, and component catalogue.
 - Employee master, masked payment details (writes via RPC; no full bank numbers via client SELECT).
-- Salary structures and effective-dated assignments.
+- Salary structures and effective-dated assignments (including **custom lines only** on the employee page when no structure is selected).
+- Payslip print uses the shared document print stylesheet (`DocumentSheet` / `document.title` for PDF filenames).
 - Pay runs (calculate → review → approve), payslip snapshots, ledger accrual posting.
 - Net-pay payments with payslip allocations and generic bank CSV export (manual upload only).
 - Payment recording uses major-unit money inputs (same pattern as purchases); allocations are validated before submit.

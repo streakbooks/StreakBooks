@@ -1,3 +1,4 @@
+import { useEffect, useMemo } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -6,6 +7,7 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
 import { useFormat } from "@/hooks/use-format";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { documentFileName } from "@/lib/documents/helpers";
 import {
   type PayslipSnapshot,
   payslipDeductions,
@@ -14,14 +16,46 @@ import {
 } from "@/lib/payroll/payslip-snapshot";
 import { getPayrollPayslipPage } from "@/lib/payroll/runs.functions";
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
+import { PRINT_CSS } from "@/components/documents/DocumentSheet";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 
 function parseSnapshot(raw: PayslipSnapshot): PayslipSnapshot | null {
   if (raw.version !== 1) return null;
   return raw;
+}
+
+function PayslipLineTable({
+  rows,
+  currency,
+  fmtMoney,
+}: {
+  rows: { code: string; name: string; amountMinor: number }[];
+  currency: string;
+  fmtMoney: (minor: number, code: string) => string;
+}) {
+  if (rows.length === 0) {
+    return <p className="text-sm text-muted-foreground">None</p>;
+  }
+  return (
+    <table className="w-full text-sm">
+      <thead>
+        <tr>
+          <th className="pb-1 text-left font-semibold text-muted-foreground">Description</th>
+          <th className="num pb-1 text-right font-semibold text-muted-foreground">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((line) => (
+          <tr key={line.code} className="doc-keep">
+            <td className="py-1 pr-4">{line.name}</td>
+            <td className="num py-1 font-mono">{fmtMoney(line.amountMinor, currency)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
 }
 
 export function PayrollPayslipDetailPage({ payslipId }: { payslipId: string }) {
@@ -35,6 +69,20 @@ export function PayrollPayslipDetailPage({ payslipId }: { payslipId: string }) {
     queryFn: () => fetchPage({ data: { companyId: company!.id, payslipId } }),
     enabled: Boolean(company?.id) && canView,
   });
+
+  const printFileName = useMemo(() => {
+    if (!pageQ.data) return null;
+    return documentFileName("Payslip", pageQ.data.payslip.payslip_number, payslipId);
+  }, [pageQ.data, payslipId]);
+
+  useEffect(() => {
+    if (!printFileName) return;
+    const previous = document.title;
+    document.title = printFileName;
+    return () => {
+      document.title = previous;
+    };
+  }, [printFileName]);
 
   if (isPending) return <LoadingState />;
   if (!company) {
@@ -66,42 +114,39 @@ export function PayrollPayslipDetailPage({ payslipId }: { payslipId: string }) {
   const deductions = snapshot ? payslipDeductions(snapshot) : [];
   const employer = snapshot ? payslipEmployerLines(snapshot) : [];
   const totals = snapshot?.totals;
+  const brandingName =
+    snapshot?.branding.brandingName ?? snapshot?.branding.companyName ?? company.name;
+  const footerNote = payslip.footer_note ?? snapshot?.branding.footerNote;
 
   return (
     <>
-      <style>{`
-        @media print {
-          nav[aria-label="Payroll sections"],
-          header,
-          .payslip-no-print { display: none !important; }
-          .payslip-print-area { box-shadow: none !important; border: none !important; }
-        }
-      `}</style>
-      <PageHeader
-        title={payslip.payslip_number}
-        description={`Pay run ${run.run_number}`}
-        actions={
-          <div className="payslip-no-print flex gap-2">
-            <Button asChild variant="outline" size="sm">
-              <Link to="/payroll/payslips">All payslips</Link>
-            </Button>
-            <Button size="sm" variant="secondary" onClick={() => window.print()}>
-              <Printer className="mr-2 h-4 w-4" />
-              Print
-            </Button>
-          </div>
-        }
-      />
-      <div className="payslip-no-print">
+      <div className="print:hidden">
+        <PageHeader
+          title={payslip.payslip_number}
+          description={`Pay run ${run.run_number}`}
+          actions={
+            <div className="flex flex-wrap gap-2">
+              <Button asChild variant="outline" size="sm">
+                <Link to="/payroll/payslips">All payslips</Link>
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => window.print()}>
+                <Printer className="mr-2 h-4 w-4" />
+                Print / Save as PDF
+              </Button>
+            </div>
+          }
+        />
         <PayrollSubnav current="payslips" />
+        <p className="mb-4 hidden text-xs text-muted-foreground sm:block">
+          In the print dialog choose &ldquo;Save as PDF&rdquo; as the destination to download a PDF.
+        </p>
       </div>
 
-      <article className="payslip-print-area mx-auto max-w-3xl rounded-lg border bg-card p-8 shadow-sm">
-        <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
+      <article className="doc-sheet relative mx-auto max-w-[820px] rounded-md border border-border bg-card p-8 shadow-sm print:max-w-none print:border-0 print:p-0 print:shadow-none">
+        <style>{PRINT_CSS}</style>
+        <header className="doc-keep mb-6 flex flex-wrap items-start justify-between gap-4 border-b pb-4">
           <div>
-            <h2 className="text-xl font-semibold">
-              {snapshot?.branding.brandingName ?? snapshot?.branding.companyName ?? company.name}
-            </h2>
+            <h2 className="text-xl font-semibold">{brandingName}</h2>
             <p className="text-sm text-muted-foreground">Payslip · {payslip.payslip_number}</p>
           </div>
           <div className="text-right text-sm">
@@ -114,7 +159,7 @@ export function PayrollPayslipDetailPage({ payslipId }: { payslipId: string }) {
         </header>
 
         {snapshot ? (
-          <div className="mb-6 text-sm">
+          <div className="doc-keep mb-6 text-sm">
             <p className="font-medium">{snapshot.employee.displayName}</p>
             <p className="text-muted-foreground">{snapshot.employee.employeeNumber}</p>
             {snapshot.employee.department ? (
@@ -127,34 +172,14 @@ export function PayrollPayslipDetailPage({ payslipId }: { payslipId: string }) {
           <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Earnings
           </h3>
-          <ul className="space-y-1 text-sm">
-            {earnings.map((line) => (
-              <li key={line.code} className="flex justify-between gap-4">
-                <span>{line.name}</span>
-                <span className="font-mono">{fmt.money(line.amountMinor, currency)}</span>
-              </li>
-            ))}
-            {earnings.length === 0 ? (
-              <li className="text-muted-foreground">No earnings lines</li>
-            ) : null}
-          </ul>
+          <PayslipLineTable rows={earnings} currency={currency} fmtMoney={fmt.money} />
         </section>
 
         <section className="mb-6">
           <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Deductions
           </h3>
-          <ul className="space-y-1 text-sm">
-            {deductions.map((line) => (
-              <li key={line.code} className="flex justify-between gap-4">
-                <span>{line.name}</span>
-                <span className="font-mono">{fmt.money(line.amountMinor, currency)}</span>
-              </li>
-            ))}
-            {deductions.length === 0 ? (
-              <li className="text-muted-foreground">No deductions</li>
-            ) : null}
-          </ul>
+          <PayslipLineTable rows={deductions} currency={currency} fmtMoney={fmt.money} />
         </section>
 
         {snapshot?.branding.showEmployerCosts && employer.length > 0 ? (
@@ -162,21 +187,12 @@ export function PayrollPayslipDetailPage({ payslipId }: { payslipId: string }) {
             <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               Employer contributions
             </h3>
-            <ul className="space-y-1 text-sm">
-              {employer.map((line) => (
-                <li key={line.code} className="flex justify-between gap-4">
-                  <span>{line.name}</span>
-                  <span className="font-mono">{fmt.money(line.amountMinor, currency)}</span>
-                </li>
-              ))}
-            </ul>
+            <PayslipLineTable rows={employer} currency={currency} fmtMoney={fmt.money} />
           </section>
         ) : null}
 
-        <Separator className="my-4" />
-
         {totals ? (
-          <dl className="grid gap-2 text-sm sm:grid-cols-2">
+          <dl className="doc-keep grid gap-2 border-t pt-4 text-sm sm:grid-cols-2">
             <div className="flex justify-between sm:block">
               <dt className="text-muted-foreground">Gross earnings</dt>
               <dd className="font-mono font-medium">
@@ -198,9 +214,9 @@ export function PayrollPayslipDetailPage({ payslipId }: { payslipId: string }) {
           </dl>
         ) : null}
 
-        {payslip.footer_note || snapshot?.branding.footerNote ? (
-          <footer className="mt-8 border-t pt-4 text-xs text-muted-foreground">
-            {payslip.footer_note ?? snapshot?.branding.footerNote}
+        {footerNote ? (
+          <footer className="doc-keep mt-8 border-t pt-4 text-xs text-muted-foreground">
+            {footerNote}
           </footer>
         ) : null}
       </article>

@@ -43,6 +43,35 @@ Yearly prices and annual discount, extra-seat pricing, CA commission rate/durati
 payout, payment retry schedule, grace period, tax rules, legal cancellation wording, FX provider
 and rounding rules. See the decision register (D1–D22) in the plan.
 
+## Decisions taken (5 November 2026)
+
+| # | Decision | Outcome |
+|---|---|---|
+| D1 | Period for STANDARD's 50 invoices / 50 bills & expenses | **Per calendar month** (matches `get_entitlements` usage counters) |
+| D2 | Legacy plans `starter`, `growth`, `premium`, `practice` | **Hidden from sale**; rows and history kept |
+| D19 | Not-yet-built features (OCR, inventory, customer API) | Entitlement configured, shown as **"Coming soon"** on pricing pages |
+
+## Phase 2 findings that shape the implementation
+
+- `public.billing_plans.monthly_gbp/usd/inr` are `NOT NULL` and `createBillingCheckout` prices from
+  them. New plans must not get placeholder prices: phase 2 adds a pricing-source flag and a
+  database guard so the legacy checkout refuses STANDARD/PRO/BUSINESS until phase 3 publishes prices.
+- `attach_company_subscription` auto-starts a trial on every new company (plan from
+  `billing_settings.trial_plan_code`, currently `growth`, 14 days) and puts demo companies on
+  `practice` as complimentary. Phase 2 moves trial length/enablement to the plan and adds
+  eligibility rules; demo companies stay complimentary (`is_demo` may gate billing).
+- `enforce_company_allowance` ranks plans with a hardcoded `practice > pro > growth` list and
+  `private.platform_price_action` allows only `starter/growth/pro/practice`; both move to data.
+- `plan_version_limits` + `winning_entitlements` remain the entitlement engine. New feature keys
+  (quotes, recurring, payment reminders, bank rules, tracking, advanced reporting, OCR, purchase
+  orders, advanced permissions, priority support, tax reports) are registered in
+  `billing_features` and `src/lib/platform/feature-registry.ts`.
+- Live subscriptions to migrate: one real company trialing on `growth` (→ `pro`, trial dates
+  kept) and two demo companies complimentary on `practice` (unchanged).
+- Feature allocation for keys the brief does not list: STANDARD copies `starter` v1, PRO copies
+  `growth` v1, BUSINESS copies the current top-tier `pro` v1 (no `premium` version exists), then
+  the brief's mapping overrides them.
+
 ## Phase 1 defaults applied
 
 - A company's billing country starts from its organisation country with source `USER_SELECTED`;

@@ -509,7 +509,7 @@ export function FxPanel({ companyId, currency }: { companyId: string; currency: 
         </CardContent>
       </Card>
 
-      <FxRealisedLedgerAudit companyId={companyId} />
+      <FxRealisedLedgerAudit key={companyId} companyId={companyId} />
 
       {ov.runs.length > 0 ? (
         <Card>

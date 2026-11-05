@@ -80,7 +80,6 @@ export function previewDeferralSplit(
   };
 }
 
-
 /** A read-only reconciliation of the loaded schedule. No ledger values are inferred. */
 export function deferralScheduleReconciliation(schedule: DeferralSchedule) {
   if (!Number.isSafeInteger(schedule.total_minor) || schedule.total_minor < 0) return null;

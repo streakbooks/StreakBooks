@@ -265,6 +265,8 @@ export type NormalisedPayment = {
   currency: string;
   /** Tax the provider reports it charged (exclusive pricing); null when it did not compute tax. */
   taxMinor: number | null;
+  /** Discount the provider reports it applied (Stripe); null when not reported. */
+  discountMinor: number | null;
   method: string | null;
   paidAt: string;
   periodStart: string | null;
@@ -302,6 +304,10 @@ export function stripeInvoicePayment(
     : typeof invoice["tax"] === "number"
       ? (invoice["tax"] as number)
       : null;
+  const discounts = invoice["total_discount_amounts"];
+  const discountMinor = Array.isArray(discounts)
+    ? discounts.reduce((sum: number, entry) => sum + Number(obj(entry)["amount"] ?? 0), 0)
+    : 0;
   const firstLine = obj((obj(invoice["lines"])["data"] as unknown[] | undefined)?.[0]);
   const period = obj(firstLine["period"]);
   return {
@@ -311,6 +317,7 @@ export function stripeInvoicePayment(
     amountMinor: amount,
     currency: currency.toUpperCase(),
     taxMinor: taxMinor != null && taxMinor > 0 ? taxMinor : null,
+    discountMinor: discountMinor > 0 ? discountMinor : null,
     method: null,
     paidAt:
       unixToIso(obj(invoice["status_transitions"])["paid_at"]) ??
@@ -343,6 +350,7 @@ export function razorpayPayment(event: RazorpayPaymentEvent): NormalisedPayment 
     amountMinor: amount,
     currency: currency.toUpperCase(),
     taxMinor: null,
+    discountMinor: null,
     method: str(payment["method"]),
     paidAt:
       unixToIso(payment["created_at"]) ?? unixToIso(event.created_at) ?? new Date().toISOString(),

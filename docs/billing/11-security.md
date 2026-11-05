@@ -72,6 +72,16 @@
 | Clients recording payments or completing refunds | Service-role only functions                                                                                | SQL suite (`42501`)     |
 | Guessing tax                                     | No seeded rates; missing configuration leaves payments pending with a reason                               | SQL suite and rehearsal |
 
+## Phase 7 controls
+
+| Threat                                         | Control                                                                 | Verified by             |
+| ---------------------------------------------- | ----------------------------------------------------------------------- | ----------------------- |
+| Discounts beyond policy                        | Existing 50% cap; amount capped at the price; computed server-side      | SQL suite               |
+| Exceeding use limits under concurrency         | Code row locked on reservation; reservations count for 24 hours         | SQL suite               |
+| Using someone else's checkout                  | Codes attach only to the caller's own open checkout with billing.manage | SQL suite               |
+| Changing a discount customers already received | Terms locked after reservation, redemption or provider mapping          | SQL suite and rehearsal |
+| Clients redeeming codes                        | Service-role only redemption                                            | SQL suite               |
+
 ## Rules for later phases
 
 - Payment and tax secrets stay server-side (`*.server.ts`, Edge Function secrets); `VITE_*`

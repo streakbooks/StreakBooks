@@ -430,7 +430,7 @@ function PlanPicker({
     (plan) =>
       plan.pricePublished && (plan.monthlyMinor !== null || plan.listPrice?.yearlyMinor != null),
   );
-  const anyPromo = plans.some((plan) => plan.pricePublished && plan.monthlyMinor !== null);
+  const anyPromo = anyPriced;
   const trialPlan = plans.find((plan) => plan.code === data.settings.trialPlanCode);
   return (
     <>

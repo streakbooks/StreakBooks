@@ -1,6 +1,6 @@
 -- Billing phase 5 assertions: provider routing, checkout snapshots, provider price mappings,
 -- the provider event applier, provider-confirmed cancellation and plan changes, and the durable
--- webhook store. Runs after billing-pricing.sql (published launch prices) on the same database.
+-- webhook store. Runs after billing-03-pricing.sql (published launch prices) on the same database.
 -- Statements run as the database owner stand for the server's service-role calls.
 \set ON_ERROR_STOP 1
 SET client_min_messages = notice;
@@ -91,7 +91,7 @@ SET ROLE authenticated;
 SELECT pg_temp.act('00000000-0000-0000-0000-0000000000f1', 'aal2');
 SELECT pg_temp.expect_error($$SELECT public.platform_set_country_billing('IN', true, 'finance')$$, '42501', 'Finance staff cannot open a country');
 RESET ROLE;
--- Opening a country also needs a seller and an approved tax rule (covered in billing-tax-invoicing.sql);
+-- Opening a country also needs a seller and an approved tax rule (covered in billing-06-tax-invoicing.sql);
 -- here the countries are opened directly as test setup.
 UPDATE billing.countries SET billing_enabled = true WHERE code IN ('IN', 'GB');
 SELECT pg_temp.expect_error(format($$INSERT INTO public.billing_checkouts (company_id, plan_code, billing_interval, provider, currency,

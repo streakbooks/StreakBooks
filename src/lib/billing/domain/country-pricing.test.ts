@@ -7,7 +7,7 @@ import {
   type PriceList,
 } from "./country-pricing";
 
-// The same vectors are asserted against billing.fx_convert in tests/integration/billing-pricing.sql.
+// The same vectors are asserted against billing.fx_convert in tests/integration/billing-03-pricing.sql.
 const vectors = [
   { base: 1000n, to: "AUD", rate: "1.523456789012", markup: 0, mode: "HALF_UP", expected: 1523n },
   { base: 5000n, to: "JPY", rate: "151.37", markup: 0, mode: "HALF_UP", expected: 7569n },

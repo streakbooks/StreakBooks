@@ -53,6 +53,36 @@ CREATE TABLE public.billing_features (
     version_no integer DEFAULT 1 NOT NULL
 );
 
+CREATE TABLE public.billing_offers (
+    code text NOT NULL,
+    name text NOT NULL,
+    kind text NOT NULL,
+    percent_bps integer DEFAULT 0 NOT NULL,
+    amount_minor integer DEFAULT 0 NOT NULL,
+    amount_currency character(3),
+    extra_trial_days integer DEFAULT 0 NOT NULL,
+    extra_free_months integer DEFAULT 0 NOT NULL,
+    intervals text DEFAULT 'any'::text NOT NULL,
+    plan_codes text[],
+    starts_on date,
+    ends_on date,
+    max_redemptions integer,
+    redemption_count integer DEFAULT 0 NOT NULL,
+    is_active boolean DEFAULT false NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    duration_months integer,
+    CONSTRAINT billing_offers_amount_minor_check CHECK ((amount_minor >= 0)),
+    CONSTRAINT billing_offers_duration_months_check CHECK (((duration_months IS NULL) OR ((duration_months >= 1) AND (duration_months <= 36)))),
+    CONSTRAINT billing_offers_extra_free_months_check CHECK (((extra_free_months >= 0) AND (extra_free_months <= 11))),
+    CONSTRAINT billing_offers_extra_trial_days_check CHECK (((extra_trial_days >= 0) AND (extra_trial_days <= 365))),
+    CONSTRAINT billing_offers_intervals_check CHECK ((intervals = ANY (ARRAY['any'::text, 'month'::text, 'year'::text]))),
+    CONSTRAINT billing_offers_kind_check CHECK ((kind = ANY (ARRAY['percent'::text, 'amount'::text, 'extra_trial_days'::text, 'extra_free_months'::text, 'price_lock'::text]))),
+    CONSTRAINT billing_offers_max_redemptions_check CHECK (((max_redemptions IS NULL) OR (max_redemptions >= 0))),
+    CONSTRAINT billing_offers_percent_bps_check CHECK (((percent_bps >= 0) AND (percent_bps <= 10000))),
+    CONSTRAINT billing_offers_redemption_count_check CHECK ((redemption_count >= 0)),
+    CONSTRAINT billing_offers_window CHECK (((ends_on IS NULL) OR (starts_on IS NULL) OR (ends_on >= starts_on)))
+);
+
 CREATE TABLE public.billing_plans (
     code text NOT NULL,
     name text NOT NULL,
@@ -277,6 +307,9 @@ ALTER TABLE ONLY public.billing_events
 
 ALTER TABLE ONLY public.billing_features
     ADD CONSTRAINT billing_features_pkey PRIMARY KEY (key);
+
+ALTER TABLE ONLY public.billing_offers
+    ADD CONSTRAINT billing_offers_pkey PRIMARY KEY (code);
 
 ALTER TABLE ONLY public.billing_plans
     ADD CONSTRAINT billing_plans_pkey PRIMARY KEY (code);
@@ -1088,6 +1121,8 @@ INSERT INTO public.billing_features (key, label, description, category, module, 
 	('fixed_assets', 'Fixed assets module', 'Fixed asset writes.', 'module', 'fixed_assets', 'none', NULL, 'live', true, 1),
 	('documents', 'Documents module', 'Document writes.', 'module', 'documents', 'none', NULL, 'live', true, 1),
 	('reporting', 'Reporting ecosystem', 'Custom financial reports, management analysis, review packs and scheduled reporting.', 'module', 'reporting', 'none', NULL, 'live', true, 1);
+INSERT INTO public.billing_offers (code, name, kind, percent_bps, amount_minor, amount_currency, extra_trial_days, extra_free_months, intervals, plan_codes, starts_on, ends_on, max_redemptions, redemption_count, is_active, updated_at, duration_months) VALUES
+	('WELCOME20', 'Welcome 20% off', 'percent', 2000, 0, NULL, 0, 0, 'any', NULL, NULL, NULL, NULL, 0, false, '2026-10-30 09:05:44.040316+00', NULL);
 INSERT INTO public.billing_plans (code, name, audience, summary, monthly_gbp, monthly_usd, monthly_inr, users_included, invoices_per_month, bills_per_month, multi_currency, highlights, sort_order, is_public, is_active, updated_at) VALUES
 	('growth', 'Growth', 'Growing businesses', 'The plan most businesses start on after the trial.', 2400, 3000, 249900, 5, NULL, NULL, true, '["Most popular", "5 users and 2 accountant seats", "3 companies", "Unlimited invoices and bills"]', 2, true, true, '2026-10-30 09:06:04.595888+00'),
 	('pro', 'Pro', 'Established businesses', 'Inventory, projects, budgeting and API access.', 4700, 6000, 499900, 15, NULL, NULL, true, '["15 users and 3 accountant seats", "10 companies", "Inventory, projects and budgeting", "API access"]', 3, true, true, '2026-10-30 09:06:04.595888+00'),

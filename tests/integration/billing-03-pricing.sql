@@ -1,5 +1,5 @@
 -- Billing phase 3 assertions: country pricing, exchange rates, exact conversion and publication.
--- Runs after billing-plans.sql on the same database.
+-- Runs after billing-02-plans.sql on the same database.
 \set ON_ERROR_STOP 1
 SET client_min_messages = notice;
 

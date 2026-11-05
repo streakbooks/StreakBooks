@@ -40,6 +40,8 @@ export type BillingDocument = {
   taxMinor: number;
   totalMinor: number;
   reason?: string | null;
+  discountMinor?: number;
+  offerCode?: string | null;
   periodStart?: string | null;
   periodEnd?: string | null;
   lines: Array<{
@@ -180,7 +182,18 @@ export async function renderBillingDocumentPdf(doc: BillingDocument): Promise<Ui
     doc.tax.rateBps != null && doc.tax.treatment === "standard"
       ? ` (${(doc.tax.rateBps / 100).toFixed(2)}%)`
       : "";
+  const discountRows: Array<[string, string, number]> =
+    doc.discountMinor && doc.discountMinor > 0
+      ? [
+          [
+            `Discount${doc.offerCode ? ` (${doc.offerCode})` : ""}`,
+            `−${money(doc.discountMinor)}`,
+            9,
+          ],
+        ]
+      : [];
   for (const [label, value, size] of [
+    ...discountRows,
     ["Subtotal", money(doc.subtotalMinor), 9],
     [`${taxLabel}${rate}`, money(doc.taxMinor), 9],
     [doc.kind === "invoice" ? "Total paid" : "Total credited", money(doc.totalMinor), 11],

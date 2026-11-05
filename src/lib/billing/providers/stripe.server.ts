@@ -93,6 +93,7 @@ export function stripePriceCheckoutBody(input: {
   email: string | null;
   trialEndUnix: number | null;
   taxRateId?: string | null;
+  couponId?: string | null;
 }): URLSearchParams {
   const body = new URLSearchParams();
   body.set("mode", "subscription");
@@ -102,6 +103,7 @@ export function stripePriceCheckoutBody(input: {
   body.set("line_items[0][price]", input.priceId);
   body.set("line_items[0][quantity]", "1");
   if (input.taxRateId) body.set("line_items[0][tax_rates][0]", input.taxRateId);
+  if (input.couponId) body.set("discounts[0][coupon]", input.couponId);
   for (const target of ["metadata", "subscription_data[metadata]"]) {
     body.set(`${target}[checkout_id]`, input.checkoutId);
     body.set(`${target}[company_id]`, input.companyId);
@@ -214,4 +216,43 @@ export async function createStripeRefund(
           ? "failed"
           : "pending",
   };
+}
+
+export type CouponTerms = {
+  code: string;
+  kind: "percent" | "amount";
+  percentBps: number;
+  amountMinor: number;
+  currency: string;
+  durationType: "once" | "repeating" | "forever";
+  durationMonths: number | null;
+};
+
+/** One Stripe coupon per LinkBooks code and currency (the database keeps the mapping). */
+export async function createStripeCoupon(
+  client: StripeClient,
+  terms: CouponTerms,
+): Promise<string> {
+  const body = new URLSearchParams();
+  body.set("name", terms.code);
+  if (terms.kind === "percent") {
+    body.set("percent_off", (terms.percentBps / 100).toFixed(2));
+  } else {
+    body.set("amount_off", String(terms.amountMinor));
+    body.set("currency", terms.currency.toLowerCase());
+  }
+  body.set("duration", terms.durationType);
+  if (terms.durationType === "repeating" && terms.durationMonths) {
+    body.set("duration_in_months", String(terms.durationMonths));
+  }
+  body.set("metadata[linkbooks_code]", terms.code);
+  const coupon = await client.request(
+    "POST",
+    "coupons",
+    body,
+    `linkbooks-coupon-${terms.code}-${terms.currency}`,
+  );
+  const id = typeof coupon["id"] === "string" ? coupon["id"] : "";
+  if (!id) throw new Error("Stripe did not return a coupon.");
+  return id;
 }

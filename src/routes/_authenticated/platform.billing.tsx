@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CountryPricingAdmin } from "@/components/platform/billing/CountryPricingAdmin";
+import { CouponsAdmin } from "@/components/platform/billing/CouponsAdmin";
 import { FinanceAdmin } from "@/components/platform/billing/FinanceAdmin";
 import { LegalDocumentsAdmin } from "@/components/platform/billing/LegalDocumentsAdmin";
 import { PaymentOperationsAdmin } from "@/components/platform/billing/PaymentOperationsAdmin";
@@ -79,6 +80,7 @@ function PlatformBillingPage() {
       </p>
       <PaymentOperationsAdmin canEdit={editor} isOwner={owner} />
       <FinanceAdmin canEdit={editor} isOwner={owner} />
+      <CouponsAdmin canEdit={editor} />
       <CountryPricingAdmin canEdit={editor} />
       <LegalDocumentsAdmin canEdit={editor} isOwner={owner} />
       <h2 className="pt-4 text-xl font-semibold">Legacy plan prices and versions</h2>

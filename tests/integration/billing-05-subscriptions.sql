@@ -1,5 +1,5 @@
 -- Billing phase 4 assertions: lifecycle history, cancellation, legal documents, pause/resume and
--- the lifecycle sweep. Runs after billing-pricing.sql on the same database.
+-- the lifecycle sweep. Runs after billing-03-pricing.sql on the same database.
 \set ON_ERROR_STOP 1
 SET client_min_messages = notice;
 

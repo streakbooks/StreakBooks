@@ -186,8 +186,8 @@ export async function processStoredEvent(
         },
       );
       results.push(result);
-      if (event.kind === "checkout_completed" && result.result === "applied" && result.offerCode) {
-        await client.rpc("redeem_billing_offer" as never, { _code: result.offerCode } as never);
+      if (event.kind === "checkout_completed" && result.result === "applied") {
+        await rpc(client, "billing_redeem_coupon", { _checkout_id: event.data.checkoutId });
       }
       if (event.kind === "payment_failed" && result.result === "applied")
         await notifyPaymentFailed();

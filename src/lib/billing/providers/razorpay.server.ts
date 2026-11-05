@@ -94,6 +94,7 @@ export function razorpaySubscriptionRequest(input: {
   companyId: string;
   planCode: string;
   startAtUnix: number | null;
+  offerId?: string | null;
 }): Record<string, unknown> {
   return {
     plan_id: input.planId,
@@ -106,6 +107,7 @@ export function razorpaySubscriptionRequest(input: {
       plan_code: input.planCode,
     },
     ...(input.startAtUnix != null ? { start_at: input.startAtUnix } : {}),
+    ...(input.offerId ? { offer_id: input.offerId } : {}),
   };
 }
 

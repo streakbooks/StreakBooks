@@ -141,3 +141,55 @@ describe("Razorpay client", () => {
     ).toMatchObject({ total_count: 120, notes: { checkout_id: "c" } });
   });
 });
+
+describe("coupons at the provider", () => {
+  it("creates a Stripe coupon once per code and currency", async () => {
+    const { createStripeCoupon } = await import("./stripe.server");
+    const { fetch, calls } = mockFetch([{ body: { id: "co_1" } }]);
+    const id = await createStripeCoupon(createStripeClient(stripeEnv, fetch), {
+      code: "LAUNCH10",
+      kind: "percent",
+      percentBps: 1000,
+      amountMinor: 0,
+      currency: "INR",
+      durationType: "repeating",
+      durationMonths: 3,
+    });
+    const body = new URLSearchParams(String(calls[0]!.init.body));
+    expect(id).toBe("co_1");
+    expect(body.get("percent_off")).toBe("10.00");
+    expect(body.get("duration")).toBe("repeating");
+    expect(body.get("duration_in_months")).toBe("3");
+    expect((calls[0]!.init.headers as Record<string, string>)["Idempotency-Key"]).toBe(
+      "linkbooks-coupon-LAUNCH10-INR",
+    );
+  });
+
+  it("passes the coupon to Stripe Checkout and the offer to Razorpay", async () => {
+    const { stripePriceCheckoutBody } = await import("./stripe.server");
+    const body = stripePriceCheckoutBody({
+      priceId: "price_1",
+      checkoutId: "c",
+      companyId: "co",
+      planCode: "pro",
+      successUrl: "s",
+      cancelUrl: "c",
+      customerId: null,
+      email: null,
+      trialEndUnix: null,
+      couponId: "co_1",
+    });
+    expect(body.get("discounts[0][coupon]")).toBe("co_1");
+    expect(
+      razorpaySubscriptionRequest({
+        planId: "p",
+        interval: "month",
+        checkoutId: "c",
+        companyId: "co",
+        planCode: "pro",
+        startAtUnix: null,
+        offerId: "offer_1",
+      }),
+    ).toMatchObject({ offer_id: "offer_1" });
+  });
+});

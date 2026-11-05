@@ -7,7 +7,7 @@ import {
   type CheckoutTax,
 } from "./tax";
 
-// The same vectors are asserted against the database in tests/integration/billing-tax-invoicing.sql.
+// The same vectors are asserted against the database in tests/integration/billing-06-tax-invoicing.sql.
 describe("tax arithmetic", () => {
   it("splits tax out of an inclusive price", () => {
     expect(inclusiveTax(99900n, 1800)).toBe(15239n);

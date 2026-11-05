@@ -1,5 +1,5 @@
 -- Billing phase 2 assertions: STANDARD / PRO / BUSINESS catalogue, trials and entitlements.
--- Runs after billing-accounts.sql on the same database; uses its own users and companies.
+-- Runs after billing-01-accounts.sql on the same database; uses its own users and companies.
 \set ON_ERROR_STOP 1
 SET client_min_messages = notice;
 

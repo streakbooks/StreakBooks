@@ -671,6 +671,7 @@ export const createBillingCheckout = createServerFn({ method: "POST" })
         payMethod: method.id,
         price: priced.checkout,
         trialEndsAt: existing?.trial_ends_at ?? null,
+        offerCode: priced.quote.offerCode,
       });
     }
 
@@ -733,6 +734,7 @@ async function openPriceBookCheckout(input: {
   payMethod: PayMethodId;
   price: CheckoutPrice;
   trialEndsAt: string | null;
+  offerCode: string | null;
 }): Promise<{ url: string; provider: "stripe" | "razorpay" }> {
   const { ensureProviderPrice, ensureStripeTaxRate } =
     await import("@/lib/billing/providers/price-mapping.server");
@@ -774,6 +776,25 @@ async function openPriceBookCheckout(input: {
   if (insertError) throw new Error(insertError.message);
   const checkoutId = (inserted as { id: string }).id;
   const trialEndUnix = trialEndUnixOrNull(input.trialEndsAt, new Date());
+  let providerCouponId: string | null = null;
+  if (input.offerCode) {
+    const { data: reserved, error: reserveError } = await input.supabase.rpc(
+      "billing_attach_coupon" as never,
+      { _checkout_id: checkoutId, _code: input.offerCode } as never,
+    );
+    if (reserveError) throw new Error(reserveError.message);
+    const coupon = reserved as CouponQuote;
+    const { ensureProviderCoupon } = await import("@/lib/billing/providers/price-mapping.server");
+    providerCouponId = await ensureProviderCoupon(input.provider, {
+      code: coupon.code,
+      kind: coupon.kind,
+      percentBps: coupon.percentBps,
+      amountMinor: coupon.amountMinor,
+      currency: input.price.currency,
+      durationType: coupon.durationType,
+      durationMonths: coupon.durationMonths,
+    });
+  }
   let session: { id: string; url: string };
   if (stripe) {
     const secret = process.env["STRIPE_SECRET_KEY"] ?? "";
@@ -800,6 +821,7 @@ async function openPriceBookCheckout(input: {
                 country: input.price.country,
               })
             : null,
+        couponId: providerCouponId,
       }),
       `linkbooks-checkout-${checkoutId}`,
     );
@@ -815,6 +837,7 @@ async function openPriceBookCheckout(input: {
         companyId: input.companyId,
         planCode: input.price.planCode,
         startAtUnix: trialEndUnix,
+        offerId: providerCouponId,
       }),
     );
     session = { id: String(created["id"] ?? ""), url: String(created["short_url"] ?? "") };
@@ -923,6 +946,18 @@ type CheckoutPrice = {
   providers: Array<"stripe" | "razorpay">;
   totalMinor?: number;
   tax?: CheckoutTax | null;
+  coupon?: CouponQuote | null;
+};
+
+type CouponQuote = {
+  code: string;
+  kind: "percent" | "amount";
+  percentBps: number;
+  amountMinor: number;
+  currency: string;
+  discountMinor: number;
+  durationType: "once" | "repeating" | "forever";
+  durationMonths: number | null;
 };
 
 /** Country price-book plans: the published snapshot for the organisation country. */
@@ -933,15 +968,23 @@ async function priceBookSelection(
   interval: BillingInterval,
   offerCode: string,
 ) {
-  if (offerCode) {
-    throw new Error("Promo codes for Standard, Pro and Business arrive with the coupon update.");
-  }
-  const { data, error } = await supabase.rpc(
-    "billing_checkout_price" as never,
-    { _company_id: companyId, _plan_code: row.code, _interval: interval } as never,
-  );
+  const { data, error } = offerCode
+    ? await supabase.rpc(
+        "billing_quote_coupon" as never,
+        {
+          _company_id: companyId,
+          _plan_code: row.code,
+          _interval: interval,
+          _code: offerCode,
+        } as never,
+      )
+    : await supabase.rpc(
+        "billing_checkout_price" as never,
+        { _company_id: companyId, _plan_code: row.code, _interval: interval } as never,
+      );
   if (error) throw new Error(error.message);
   const checkout = data as CheckoutPrice;
+  const coupon = checkout.coupon ?? null;
   if (!isBillingCurrency(checkout.currency)) {
     throw new Error(`Online payment in ${checkout.currency} is not available yet.`);
   }
@@ -951,13 +994,20 @@ async function priceBookSelection(
     currency: checkout.currency,
     interval,
     listMinor: amount,
-    discountMinor: 0,
+    discountMinor: coupon?.discountMinor ?? 0,
     dueMinor: total,
     recurringMinor: total,
-    promoDurationMonths: null,
+    promoDurationMonths:
+      coupon == null
+        ? null
+        : coupon.durationType === "repeating"
+          ? (coupon.durationMonths ?? 1)
+          : coupon.durationType === "once"
+            ? 1
+            : null,
     freeMonths: 0,
     trialDays: row.trial_days ?? DEFAULT_TRIAL_DAYS,
-    offerCode: null,
+    offerCode: coupon?.code ?? null,
     ...(checkout.tax && checkout.tax.taxMinor > 0
       ? {
           taxMinor: checkout.tax.taxMinor,

@@ -78,3 +78,39 @@ export async function ensureStripeTaxRate(input: {
   if (recorded.error) throw new Error(recorded.error.message);
   return String(recorded.data);
 }
+
+/**
+ * Provider coupon for a reserved code. Stripe coupons are created once per code and currency;
+ * Razorpay offers must be created in the Razorpay Dashboard and linked by platform staff.
+ */
+export async function ensureProviderCoupon(
+  provider: ProviderId,
+  terms: import("@/lib/billing/providers/stripe.server").CouponTerms,
+): Promise<string> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const admin = supabaseAdmin as unknown as Admin;
+  const mode = provider === "stripe" ? createStripeClient().mode : createRazorpayClient().mode;
+  const existing = await admin.rpc(
+    "billing_provider_coupon" as never,
+    { _code: terms.code, _provider: provider, _mode: mode, _currency: terms.currency } as never,
+  );
+  if (existing.error) throw new Error(existing.error.message);
+  if (typeof existing.data === "string" && existing.data) return existing.data;
+  if (provider === "razorpay") {
+    throw new Error("This promo code is not available for UPI or e-mandate payments yet.");
+  }
+  const { createStripeCoupon } = await import("@/lib/billing/providers/stripe.server");
+  const created = await createStripeCoupon(createStripeClient(), terms);
+  const recorded = await admin.rpc(
+    "billing_record_provider_coupon" as never,
+    {
+      _code: terms.code,
+      _provider: provider,
+      _mode: mode,
+      _currency: terms.currency,
+      _coupon_id: created,
+    } as never,
+  );
+  if (recorded.error) throw new Error(recorded.error.message);
+  return String(recorded.data);
+}

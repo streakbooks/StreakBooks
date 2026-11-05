@@ -333,8 +333,6 @@ async function computeAndPersistRun(
   const runEmployeeIdToEmployeeId = new Map(
     runEmployees.map((re) => [re.id, re.employee_id] as const),
   );
-  const { adjustmentsByEmployee, variableLinesByEmployee } =
-    buildCalculationAdjustmentsFromRunLines(runLines, runEmployeeIdToEmployeeId);
   const variableComponentTypeIds = runLines
     .filter((line) => line.is_variable && line.component_type_id)
     .map((line) => line.component_type_id as string);
@@ -346,6 +344,9 @@ async function computeAndPersistRun(
     runEmployees,
     variableComponentTypeIds,
   );
+  const componentById = new Map(inputs.components.map((c) => [c.id, c] as const));
+  const { adjustmentsByEmployee, variableLinesByEmployee } =
+    buildCalculationAdjustmentsFromRunLines(runLines, runEmployeeIdToEmployeeId, componentById);
   const result = computeRunCalculation({
     periodStart: run.period_start,
     periodEnd: run.period_end,
@@ -601,6 +602,9 @@ export const adjustPayrollRunEmployee = createServerFn({ method: "POST" })
     for (const line of data.lines) {
       if (!Number.isInteger(line.amountMinor)) {
         throw new Error("Line amounts must be whole minor units.");
+      }
+      if (line.quantityMicro != null && !Number.isInteger(line.quantityMicro)) {
+        throw new Error("Line quantities must be whole micro-units.");
       }
     }
     const payload = {

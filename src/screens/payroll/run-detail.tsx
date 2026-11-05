@@ -22,8 +22,10 @@ import {
   postPayrollRun,
   reversePayrollRunAccrual,
 } from "@/lib/payroll/payments.functions";
+import { formatQuantityFromMicro, parseQuantityMicroOrThrow } from "@/lib/payroll/run-calculation";
 import type {
   PayrollComponentTypeRow,
+  PayrollRunLineRow,
   PayrollRunPage,
   PayrollRunStatus,
 } from "@/lib/payroll/types";
@@ -64,6 +66,26 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+
+function hourlyUnitComponentsOnRun(
+  empLines: PayrollRunLineRow[],
+  components: PayrollComponentTypeRow[],
+): PayrollComponentTypeRow[] {
+  const byId = new Map(components.map((c) => [c.id, c]));
+  const seen = new Set<string>();
+  const out: PayrollComponentTypeRow[] = [];
+  for (const line of empLines) {
+    const id = line.component_type_id;
+    if (!id || seen.has(id)) continue;
+    const component = byId.get(id);
+    if (!component?.is_active) continue;
+    if (component.calculation_method === "hourly" || component.calculation_method === "unit") {
+      seen.add(id);
+      out.push(component);
+    }
+  }
+  return out.sort((a, b) => a.sort_order - b.sort_order);
+}
 
 const STATUS_LABEL: Record<PayrollRunStatus, string> = {
   draft: "Draft",
@@ -109,6 +131,7 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
     runEmployeeId: string;
   } | null>(null);
   const [adjustAmounts, setAdjustAmounts] = useState<Record<string, string>>({});
+  const [adjustQuantities, setAdjustQuantities] = useState<Record<string, string>>({});
 
   const pageQ = useQuery({
     queryKey: ["payroll-run", company?.id, runId],
@@ -212,17 +235,39 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
     mutationFn: () => {
       if (!adjustTarget) throw new Error("No employee selected");
       const currency = pageQ.data?.run.currency ?? "GBP";
-      const manualComponents = (settingsQ.data?.components ?? []).filter(
+      const allComponents = settingsQ.data?.components ?? [];
+      const manualComponents = allComponents.filter(
         (c: PayrollComponentTypeRow) => c.calculation_method === "manual" && c.is_active,
       );
-      const lines = manualComponents
-        .map((c: PayrollComponentTypeRow) => {
-          const raw = adjustAmounts[c.id];
-          if (raw === undefined || raw.trim() === "") return null;
-          const amountMinor = Number(parseMinorOrThrow(raw, currency, c.name));
-          return { componentTypeId: c.id, amountMinor };
-        })
-        .filter((line): line is { componentTypeId: string; amountMinor: number } => line !== null);
+      const empLines = linesByRunEmployee.get(adjustTarget.runEmployeeId) ?? [];
+      const quantityComponents = hourlyUnitComponentsOnRun(empLines, allComponents);
+
+      const lines: Array<{
+        componentTypeId: string;
+        amountMinor: number;
+        quantityMicro?: number;
+      }> = [];
+
+      for (const c of manualComponents) {
+        const raw = adjustAmounts[c.id];
+        if (raw === undefined || raw.trim() === "") continue;
+        const amountMinor = Number(parseMinorOrThrow(raw, currency, c.name));
+        lines.push({ componentTypeId: c.id, amountMinor });
+      }
+
+      for (const c of quantityComponents) {
+        const raw = adjustQuantities[c.id];
+        if (raw === undefined || raw.trim() === "") continue;
+        const unitLabel =
+          c.calculation_method === "hourly" ? `Hours for ${c.name}` : `Quantity for ${c.name}`;
+        const quantityMicro = parseQuantityMicroOrThrow(raw, unitLabel);
+        lines.push({ componentTypeId: c.id, amountMinor: 0, quantityMicro });
+      }
+
+      if (lines.length === 0) {
+        throw new Error("Enter at least one adjustment before saving.");
+      }
+
       return adjustEmployee({
         data: {
           companyId: company!.id,
@@ -236,6 +281,7 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
       toast.success("Adjustments saved — use Recalculate to apply them to run totals");
       setAdjustTarget(null);
       setAdjustAmounts({});
+      setAdjustQuantities({});
       invalidate();
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
@@ -268,25 +314,37 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
     pageQ.data as PayrollRunPage;
   const isMutable = !["approved", "posted", "paid", "complete", "void"].includes(run.status);
   const canReverseAccrual = canPost && Boolean(run.accrual_journal_id) && run.net_paid_minor === 0;
-  const manualComponents = (settingsQ.data?.components ?? []).filter(
-    (c: PayrollComponentTypeRow) => c.calculation_method === "manual" && c.is_active,
-  );
   const linesByRunEmployee = new Map<string, typeof lines>();
   for (const line of lines) {
     const list = linesByRunEmployee.get(line.run_employee_id) ?? [];
     list.push(line);
     linesByRunEmployee.set(line.run_employee_id, list);
   }
+  const settingsComponents = settingsQ.data?.components ?? [];
+  const manualComponents = settingsComponents.filter(
+    (c: PayrollComponentTypeRow) => c.calculation_method === "manual" && c.is_active,
+  );
+  const adjustHourlyUnitComponents = adjustTarget
+    ? hourlyUnitComponentsOnRun(
+        linesByRunEmployee.get(adjustTarget.runEmployeeId) ?? [],
+        settingsComponents,
+      )
+    : [];
 
   const openEmployeeAdjust = (employeeId: string, name: string, runEmployeeId: string) => {
     const empLines = linesByRunEmployee.get(runEmployeeId) ?? [];
-    const initial: Record<string, string> = {};
+    const initialAmounts: Record<string, string> = {};
+    const initialQuantities: Record<string, string> = {};
     for (const line of empLines) {
-      if (line.is_variable && line.component_type_id) {
-        initial[line.component_type_id] = fromMinorUnits(line.amount_minor, run.currency);
+      if (!line.is_variable || !line.component_type_id) continue;
+      if (line.quantity_micro != null) {
+        initialQuantities[line.component_type_id] = formatQuantityFromMicro(line.quantity_micro);
+      } else {
+        initialAmounts[line.component_type_id] = fromMinorUnits(line.amount_minor, run.currency);
       }
     }
-    setAdjustAmounts(initial);
+    setAdjustAmounts(initialAmounts);
+    setAdjustQuantities(initialQuantities);
     setAdjustTarget({ employeeId, name, runEmployeeId });
   };
 
@@ -698,49 +756,96 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={adjustTarget !== null} onOpenChange={(open) => !open && setAdjustTarget(null)}>
+      <Dialog
+        open={adjustTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAdjustTarget(null);
+            setAdjustAmounts({});
+            setAdjustQuantities({});
+          }
+        }}
+      >
         <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Adjust manual components</DialogTitle>
+            <DialogTitle>Adjust run inputs</DialogTitle>
             <DialogDescription>
               {adjustTarget
-                ? `One-off manual amounts for ${adjustTarget.name}. Saved adjustments apply on the next Calculate or Recalculate.`
+                ? `Period hours, units, or one-off amounts for ${adjustTarget.name}. Saved values apply on the next Calculate or Recalculate.`
                 : null}
             </DialogDescription>
           </DialogHeader>
           {settingsQ.isPending ? (
             <LoadingState />
-          ) : manualComponents.length === 0 ? (
+          ) : manualComponents.length === 0 && adjustHourlyUnitComponents.length === 0 ? (
             <EmptyState
-              title="No manual components"
-              description="Add manual component types in payroll settings to adjust amounts on a run."
+              title="Nothing to adjust yet"
+              description="Calculate the run first so hourly or unit lines appear, or add manual component types in payroll settings."
             />
           ) : (
-            <ul className="space-y-3">
-              {manualComponents.map((c: PayrollComponentTypeRow) => (
-                <li key={c.id} className="grid gap-1">
-                  <Label htmlFor={`adj-${c.id}`}>
-                    {c.name} ({c.code})
-                  </Label>
-                  <Input
-                    id={`adj-${c.id}`}
-                    inputMode="decimal"
-                    placeholder={`Amount (${run.currency})`}
-                    value={adjustAmounts[c.id] ?? ""}
-                    onChange={(e) =>
-                      setAdjustAmounts((prev) => ({ ...prev, [c.id]: e.target.value }))
-                    }
-                  />
-                </li>
-              ))}
-            </ul>
+            <div className="space-y-6">
+              {adjustHourlyUnitComponents.length > 0 ? (
+                <section className="space-y-3">
+                  <h3 className="text-sm font-medium">Hours &amp; units</h3>
+                  <ul className="space-y-3">
+                    {adjustHourlyUnitComponents.map((c: PayrollComponentTypeRow) => (
+                      <li key={c.id} className="grid gap-1">
+                        <Label htmlFor={`adj-qty-${c.id}`}>
+                          {c.name} ({c.code})
+                        </Label>
+                        <Input
+                          id={`adj-qty-${c.id}`}
+                          inputMode="decimal"
+                          placeholder={
+                            c.calculation_method === "hourly"
+                              ? "Hours this period"
+                              : "Units this period"
+                          }
+                          value={adjustQuantities[c.id] ?? ""}
+                          onChange={(e) =>
+                            setAdjustQuantities((prev) => ({ ...prev, [c.id]: e.target.value }))
+                          }
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
+              {manualComponents.length > 0 ? (
+                <section className="space-y-3">
+                  <h3 className="text-sm font-medium">Manual amounts</h3>
+                  <ul className="space-y-3">
+                    {manualComponents.map((c: PayrollComponentTypeRow) => (
+                      <li key={c.id} className="grid gap-1">
+                        <Label htmlFor={`adj-${c.id}`}>
+                          {c.name} ({c.code})
+                        </Label>
+                        <Input
+                          id={`adj-${c.id}`}
+                          inputMode="decimal"
+                          placeholder={`Amount (${run.currency})`}
+                          value={adjustAmounts[c.id] ?? ""}
+                          onChange={(e) =>
+                            setAdjustAmounts((prev) => ({ ...prev, [c.id]: e.target.value }))
+                          }
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
+            </div>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setAdjustTarget(null)}>
               Cancel
             </Button>
             <Button
-              disabled={adjustMut.isPending || manualComponents.length === 0 || settingsQ.isPending}
+              disabled={
+                adjustMut.isPending ||
+                settingsQ.isPending ||
+                (manualComponents.length === 0 && adjustHourlyUnitComponents.length === 0)
+              }
               onClick={() => adjustMut.mutate()}
             >
               Save adjustments

@@ -5,6 +5,7 @@
 import { toSafeMinorNumber } from "@/lib/accounting/money";
 import {
   calculatePayrollRun,
+  HOURS_MICRO_SCALE,
   type CalculationResult,
   type EmployeeCalcInput,
   type EmployeePeriodAdjustments,
@@ -24,6 +25,32 @@ export type VariableLineValues = {
   rateMinor: number | null;
   percentageBps: number | null;
 };
+
+const QUANTITY_MICRO_SCALE_NUMBER = Number(HOURS_MICRO_SCALE);
+
+/** Human-readable hours/units → micro-units (same scale as calculation-engine). */
+export function parseQuantityMicroOrThrow(raw: string, fieldLabel: string): number {
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    throw new Error(`${fieldLabel} is required.`);
+  }
+  const n = Number(trimmed);
+  if (!Number.isFinite(n) || n < 0) {
+    throw new Error(`${fieldLabel} must be a non-negative number.`);
+  }
+  const micro = Math.round(n * QUANTITY_MICRO_SCALE_NUMBER);
+  if (!Number.isSafeInteger(micro)) {
+    throw new Error(`${fieldLabel} is too large.`);
+  }
+  return micro;
+}
+
+export function formatQuantityFromMicro(micro: number | null | undefined): string {
+  if (micro == null) return "";
+  const value = micro / QUANTITY_MICRO_SCALE_NUMBER;
+  if (Number.isInteger(value)) return String(value);
+  return value.toFixed(6).replace(/\.?0+$/, "");
+}
 
 export type RunCalculationPersistEmployee = {
   employeeId: string;
@@ -87,6 +114,7 @@ function pickEffectiveLines(
 export function buildCalculationAdjustmentsFromRunLines(
   runLines: PayrollRunLineRow[],
   runEmployeeIdToEmployeeId: Map<string, string>,
+  componentById?: Map<string, PayrollComponentTypeRow>,
 ): {
   adjustmentsByEmployee: Record<string, EmployeePeriodAdjustments>;
   variableLinesByEmployee: Record<string, Record<string, VariableLineValues>>;
@@ -111,14 +139,25 @@ export function buildCalculationAdjustmentsFromRunLines(
   for (const [employeeId, byComponent] of Object.entries(variableLinesByEmployee)) {
     const manualAmountMinor: Record<string, bigint> = {};
     const quantityMicroByComponent: Record<string, bigint> = {};
+
     for (const [componentTypeId, values] of Object.entries(byComponent)) {
+      const method = componentById?.get(componentTypeId)?.calculation_method;
+
+      if (method === "hourly" || method === "unit") {
+        if (values.quantityMicro != null) {
+          quantityMicroByComponent[componentTypeId] = BigInt(values.quantityMicro);
+        }
+        continue;
+      }
+
       manualAmountMinor[componentTypeId] = BigInt(values.amountMinor);
       if (values.quantityMicro != null) {
         quantityMicroByComponent[componentTypeId] = BigInt(values.quantityMicro);
       }
     }
+
     adjustmentsByEmployee[employeeId] = {
-      manualAmountMinor,
+      ...(Object.keys(manualAmountMinor).length > 0 ? { manualAmountMinor } : {}),
       ...(Object.keys(quantityMicroByComponent).length > 0 ? { quantityMicroByComponent } : {}),
     };
   }

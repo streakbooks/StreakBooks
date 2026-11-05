@@ -18,7 +18,7 @@
 - Net-pay payments with payslip allocations and generic bank CSV export (manual upload only).
 - Payment recording uses major-unit money inputs (same pattern as purchases); allocations are validated before submit.
 - Reverse posted accruals (when no net pay has been paid) and reverse posted payroll payments.
-- Per-employee manual component adjustments on draft/calculated/reviewed runs; amounts are loaded into calculate/recalculate so gross, net, and accrual stay aligned with saved variable lines.
+- Per-employee run adjustments on draft/calculated/reviewed runs: manual amounts (major-unit money), period **hours** for hourly components, and **units** for unit-based components. Values persist as variable run lines and load into calculate/recalculate (quantity in micro-units, same as the calculation engine).
 - Pay schedule and component catalogue edit/deactivate in settings (no new migration).
 - Payslip list filters (payment status, employee) and payments list filter by run (`?runId=`).
 - Payment detail sheet (allocations, unallocated balance, journal link, reverse).
@@ -44,6 +44,7 @@ Every settings page and overview surfaces this compliance notice from the server
 | 4 | Runs, calculation, payslips | `20261105173000_basic_global_payroll_runs.sql` |
 | 5–6 | Posting, payments, reports (app layer) | `20261105180000_basic_global_payroll_payments.sql` |
 | 7 | Hardening, RLS smoke, docs, UX polish | (no new migration — tests and polish only; overview checklist links, permission-gated empty states, `basic_payroll` configComplete in Feature Manager) |
+| 7b | Run period hours / OT / unit quantity entry | `20261105181000_basic_global_payroll_run_hours_adjust.sql` (extends `adjust_payroll_run_employee` for hourly/unit) |
 
 ## Permissions (summary)
 

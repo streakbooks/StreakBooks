@@ -101,7 +101,7 @@ export async function loadCashProfitLossInput(
       "cash_opening_evidence",
       "id,company_id,document_id,source_kind,posted_journal_id,control_account_id,equity_account_id,currency_code,gross_minor::text,components,mode,version,effective_from,effective_to,status,policy_note,evidence_reference,source_journal_snapshot,tax_lines,approved_by,approved_at",
     ),
-    read("cash_inventory_evidence", "*,cost_minor::text"),
+    read("cash_inventory_evidence", "*,cost_minor::text,opening_paid_minor::text"),
   ]);
   return cashInputFromRows(
     {

@@ -30,11 +30,13 @@ Approved records are immutable. Revisions append versions and preserve audit his
 1. `20261104081033_cash_source_links_and_report_snapshots.sql`: source links, dated allocation history/sequence, frozen cash source and basis propagation. No duplicate accounting entries.
 2. `20261105070334_verified_cash_classification.sql`: policies, opening evidence, inventory evidence, exceptions and append-only audit; authorized approval/revision functions, RLS and captured classification snapshots.
 
+3. `20261105083928_cash_inventory_acquisition_evidence.sql`: verified direct/opening acquisition sources, exact historical paid-cost carry, approved opening equity, immutable payment snapshots and direct-source exception identities.
+
 These files are migrations for review. Local isolated PostgreSQL verification does not apply them to a hosted database. Deploy compatible application code and migrations together through the existing release process.
 
 ## Limits requiring source evidence
 
-No production classifications have been fabricated or approved. Actual unresolved balances continue to raise explicit exceptions until reviewed. Inventory cost tracing currently accepts verified posted purchase-bill sources; direct cash acquisitions, imported opening inventory and complex returned-stock payment reallocation need exact source-cost history and remain explicit exceptions when unavailable. Noncash balance adjustments cannot be converted to cash expenses merely by selecting an expense account. Multi-currency payroll history with incompatible component currencies also remains an exception rather than an inferred split.
+No production classifications have been fabricated or approved. Actual unresolved balances continue to raise explicit exceptions until reviewed. Inventory tracing supports posted purchase bills, direct cash/credit-card purchases established by the shared cash ledger, and reviewed opening inventory with exact historical paid-cost carry. Opening paid inventory is removed from cash-basis assets against the explicitly approved opening equity account; its unpaid portion remains. Original payment unapplications and supplier refund reversals replay against the approved return source. Future credit applications do not change earlier traces. Cross-source credit applications and reallocations after refunded stock still require exact source/payment-slice evidence and remain explicit exceptions when it is unavailable. Noncash balance adjustments cannot be converted to cash expenses merely by selecting an expense account. Mixed-currency payroll is reconciled using the posted base-currency liability amounts and original exchange rates. Realised-FX adjustments require their own approved posted proof; overpayments and missing FX evidence remain exceptions.
 
 Automated isolated fixtures verify supported paths, not all historical company records. Authenticated staging, responsive/keyboard review, hosted migrations and production reconciliation remain release checks.
 
@@ -52,3 +54,7 @@ npm run test:reporting -- --grep 'cash basis selector|cash Balance Sheet' --time
 ```
 
 Both PostgreSQL scripts create disposable PostgreSQL containers with network disabled. They do not access a hosted database.
+
+## Hosted release status
+
+On 2026-11-05, the two migrations merged in PR #101 were applied to the linked LinkBooks project. Their migration history was aligned with repository versions `20261104081033` and `20261105070334` after the managed service assigned execution timestamps. This was reporting metadata/schema work; no company classification was approved and no new accounting journal was posted. The acquisition extension is a separate follow-up migration and must pass verification before release.

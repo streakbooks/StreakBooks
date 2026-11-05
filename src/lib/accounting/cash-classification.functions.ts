@@ -103,9 +103,12 @@ export const listCashClassifications = createServerFn({ method: "GET" })
     const [policies, opening, inventory, exceptions, audit] = await Promise.all([
       read<CashPolicyRecord>("cash_classification_policies", "*"),
       read<CashOpeningRecord>("cash_opening_evidence", "*,gross_minor::text"),
-      read<CashInventoryRecord>("cash_inventory_evidence", "*,cost_minor::text"),
+      read<CashInventoryRecord>(
+        "cash_inventory_evidence",
+        "*,cost_minor::text,opening_paid_minor::text",
+      ),
       read<CashExceptionRecord>("cash_classification_exceptions", "*,amount_minor::text"),
-      read<CashClassificationAudit>("cash_classification_audit", "*"),
+      read<CashClassificationAudit>("cash_classification_audit", "*,details::text"),
     ]);
     return {
       policies,

@@ -1,3 +1,4 @@
+import { lineToBaseMinor } from "@/lib/accounting/fx";
 import type { AccountMeta } from "@/lib/accounting/ledger-data";
 import type { CashJournal, CashPnlInput } from "./cash-profit-loss";
 import { isReportDate } from "./date-validation";
@@ -367,13 +368,34 @@ export function cashClassificationContext(
         Boolean(
           j &&
           (j.sourceType === "opening_balance" ||
+            j.sourceType === "fx_realised" ||
+            (j.reverses && journals.get(j.reverses)?.sourceType === "fx_realised") ||
             j.lines.some(
               (l) => l.accountId === policy.recognitionAccountId && l.debit !== l.credit,
             )),
         ),
       );
+      const payrollBase = (j: CashJournal, value: bigint): bigint => {
+        try {
+          return lineToBaseMinor(value, j.rate, j.currency, input.baseCurrency);
+        } catch {
+          return fail(
+            "Payroll history needs verified original exchange rates.",
+            ["Posted source exchange rates for each payroll component and settlement"],
+            j,
+            accountId,
+            value,
+            documentId,
+          );
+        }
+      };
       const sourceNet = (j: CashJournal) =>
-        j.lines.reduce((sum, l) => sum + (l.accountId === accountId ? l.credit - l.debit : 0n), 0n);
+        j.lines.reduce(
+          (sum, l) =>
+            sum +
+            (l.accountId === accountId ? payrollBase(j, l.credit) - payrollBase(j, l.debit) : 0n),
+          0n,
+        );
       const relevant = input.journals.filter(
         (j) =>
           j.date <= date && j.lines.some((l) => l.accountId === accountId && l.debit !== l.credit),
@@ -403,21 +425,39 @@ export function cashClassificationContext(
           .map((p) => p.sourceAccountId),
       );
       const invalidSplit = support.some((j) => {
-        if (j.sourceType === "opening_balance") return false;
+        if (
+          j.sourceType === "opening_balance" ||
+          j.sourceType === "fx_realised" ||
+          (j.reverses && journals.get(j.reverses)?.sourceType === "fx_realised")
+        )
+          return false;
         const expense = j.lines.reduce(
-          (sum, l) => sum + (l.accountId === policy.recognitionAccountId ? l.debit - l.credit : 0n),
+          (sum, l) =>
+            sum +
+            (l.accountId === policy.recognitionAccountId
+              ? payrollBase(j, l.debit) - payrollBase(j, l.credit)
+              : 0n),
           0n,
         );
         const liabilities = j.lines.reduce(
-          (sum, l) => sum + (sharedSources.has(l.accountId) ? l.credit - l.debit : 0n),
+          (sum, l) =>
+            sum +
+            (sharedSources.has(l.accountId)
+              ? payrollBase(j, l.credit) - payrollBase(j, l.debit)
+              : 0n),
           0n,
         );
         return expense >= 0n ? liabilities > expense : liabilities < expense;
       });
       if (
-        !support.length ||
+        !support.some(
+          (j) =>
+            j.sourceType === "opening_balance" ||
+            j.lines.some(
+              (l) => l.accountId === policy.recognitionAccountId && l.debit !== l.credit,
+            ),
+        ) ||
         nonCash.some((j) => !support.some((s) => s.id === j.id)) ||
-        relevant.some((j) => j.currency !== journal.currency) ||
         accrued < 0n ||
         paid < 0n ||
         paid > accrued ||
@@ -438,17 +478,17 @@ export function cashClassificationContext(
   }
 
   function conversion(accountId: string, journal: CashJournal, amount: bigint): string {
-    const policy = policies
+    const latest = policies
       .filter(
         (p) =>
           p.companyId === input.companyId &&
           p.sourceAccountId === accountId &&
-          p.kind === "conversion" &&
           p.status === "approved" &&
           p.effectiveFrom <= journal.date &&
           (!p.effectiveTo || p.effectiveTo >= journal.date),
       )
       .sort((a, b) => b.version - a.version)[0];
+    const policy = latest?.kind === "conversion" ? latest : undefined;
     const account = accounts.get(accountId)!;
     if (!policy && !["income", "expense"].includes(account.account_type)) return accountId;
     if (

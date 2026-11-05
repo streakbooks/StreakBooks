@@ -22,7 +22,21 @@ function attributeCashLines(entries: CashPnlEntry[], input: CashPnlInput): Attri
     const entry = raw as AttributedCashEntry;
     if (entry.sourceLineId || entry.sourceDescription !== undefined) return [entry];
     const source = journals.get(entry.sourceJournalId);
-    const sourceLines = source?.lines.filter((line) => line.accountId === entry.accountId) ?? [];
+    if (source?.sourceType === "opening_balance" && entry.sourceId) {
+      const evidence = input.openingEvidence?.find((item) => item.documentId === entry.sourceId);
+      if (evidence)
+        return [
+          {
+            ...entry,
+            sourceDescription: `Opening document · ${evidence.evidenceReference}`,
+            sourceLineId: `opening:${evidence.id}:${entry.sourceAccountId ?? entry.accountId}`,
+          },
+        ];
+    }
+    const sourceLines =
+      source?.lines.filter(
+        (line) => line.accountId === (entry.sourceAccountId ?? entry.accountId),
+      ) ?? [];
     if (!source || sourceLines.length === 0) return [entry];
     if (sourceLines.length === 1)
       return [

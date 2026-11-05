@@ -1,3 +1,9 @@
+import {
+  CashClassificationError,
+  cashEvidenceMatches,
+  type CashJournalEvidenceSnapshot,
+} from "@/lib/reports/cash-classification";
+import type { CashJournal } from "@/lib/reports/cash-profit-loss";
 /**
  * Loads document tax lines for a return period and turns them into `TaxFact`s (TX-01).
  *
@@ -142,12 +148,12 @@ export type TaxFactsResult = {
   skippedNoRate: number;
 };
 
-type CodeInfo = { treatment: string; recoverable: boolean };
+type CodeInfo = { treatment: string; recoverable: boolean; rateBps?: number };
 
 async function loadCodes(sb: Sb, companyId: string): Promise<Map<string, CodeInfo>> {
   const rows = await fetchAllPages<Row>((from, to) =>
     table(sb, "tax_codes")
-      .select("id, treatment, is_recoverable")
+      .select("id, treatment, is_recoverable, tax_rates(rate_bps)")
       .eq("company_id", companyId)
       .order("id")
       .range(from, to),
@@ -157,6 +163,9 @@ async function loadCodes(sb: Sb, companyId: string): Promise<Map<string, CodeInf
     map.set(str(r, "id"), {
       treatment: str(r, "treatment") || "standard",
       recoverable: r["is_recoverable"] !== false,
+      ...(r["tax_rates"] && typeof (r["tax_rates"] as Row)["rate_bps"] === "number"
+        ? { rateBps: Number((r["tax_rates"] as Row)["rate_bps"]) }
+        : {}),
     });
   }
   return map;
@@ -379,6 +388,128 @@ async function loadRefundedCredits(
   return positions;
 }
 
+/** Imported source tax is never reconstructed from current paid counters or account labels. */
+async function verifiedOpeningTaxLines(
+  sb: Sb,
+  companyId: string,
+  source: Source,
+  header: Row,
+  period: { from: string; to: string },
+  codes: Map<string, CodeInfo>,
+): Promise<Row[]> {
+  const id = str(header, "id"),
+    journalId = str(header, "posted_journal_id");
+  const fail = (missing: string): never => {
+    throw new CashClassificationError([
+      {
+        code: "cash_opening_tax_evidence_required",
+        message: "Cash tax reporting needs verified original opening-document tax details.",
+        companyId,
+        sourceAccountId: null,
+        journalId: journalId || null,
+        documentId: id,
+        amountMinor: big(header, "total_minor").toString(),
+        currency: str(header, "currency_code"),
+        date: str(header, source.dateCol),
+        period,
+        missingEvidence: [missing],
+      },
+    ]);
+  };
+  const rows = await fetchAllPages<Row>((from, to) =>
+    table(sb, "cash_opening_evidence")
+      .select("*,gross_minor::text")
+      .eq("company_id", companyId)
+      .eq("document_id", id)
+      .eq("status", "approved")
+      .order("id")
+      .range(from, to),
+  );
+  const evidence = rows
+    .filter((r) => str(r, "effective_from") <= period.to)
+    .sort((a, b) => Number(b["version"]) - Number(a["version"]))[0];
+  if (
+    !evidence ||
+    str(evidence, "source_kind") !== source.kind ||
+    str(evidence, "posted_journal_id") !== journalId ||
+    big(evidence, "gross_minor") !== big(header, "total_minor") ||
+    str(evidence, "currency_code") !== str(header, "currency_code") ||
+    !str(evidence, "approved_by") ||
+    !str(evidence, "approved_at")
+  )
+    return fail(
+      "Approve the exact original opening source, its historical recognition policy and tax-code lines",
+    );
+  const journals = await fetchAllPages<Row>((from, to) =>
+    table(sb, "journals")
+      .select(
+        "id,company_id,journal_date,journal_number,currency_code,fx_rate_to_base,source_type,source_id,status",
+      )
+      .eq("company_id", companyId)
+      .eq("id", journalId)
+      .eq("status", "posted")
+      .order("id")
+      .range(from, to),
+  );
+  const journal = journals[0];
+  if (!journal || str(journal, "source_type") !== "opening_balance")
+    return fail("Matching posted opening journal");
+  const lines = await fetchAllPages<Row>((from, to) =>
+    table(sb, "journal_lines")
+      .select("id,account_id,debit_minor,credit_minor")
+      .eq("company_id", companyId)
+      .eq("journal_id", journalId)
+      .order("id")
+      .range(from, to),
+  );
+  const actual: CashJournal = {
+    id: journalId,
+    companyId,
+    date: str(journal, "journal_date"),
+    number: str(journal, "journal_number"),
+    currency: str(journal, "currency_code"),
+    rate: journal["fx_rate_to_base"] == null ? null : String(journal["fx_rate_to_base"]),
+    sourceType: str(journal, "source_type"),
+    sourceId: str(journal, "source_id") || null,
+    reverses: null,
+    lines: lines.map((line) => ({
+      lineId: str(line, "id"),
+      accountId: str(line, "account_id"),
+      debit: big(line, "debit_minor"),
+      credit: big(line, "credit_minor"),
+    })),
+  };
+  if (
+    !cashEvidenceMatches(actual, evidence["source_journal_snapshot"] as CashJournalEvidenceSnapshot)
+  )
+    return fail("The original posted source must still match the approved immutable evidence");
+  if (evidence["mode"] === "already_recognized") return [];
+  const details = evidence["tax_lines"] as Row[] | undefined;
+  if (
+    !details?.length ||
+    details.reduce((sum, line) => sum + big(line, "net_minor") + big(line, "tax_minor"), 0n) !==
+      big(header, "total_minor")
+  )
+    return fail(
+      "Enter verified original tax lines and company tax codes reconciling to the document gross",
+    );
+  return details.map((line) => {
+    const code = codes.get(str(line, "tax_code_id"));
+    if (!code) return fail("Each original tax line needs a company tax code");
+    if (
+      isSelfAssessedReverseCharge(code.treatment, big(line, "tax_minor")) &&
+      code.rateBps === undefined
+    )
+      return fail("Original reverse-charge rate evidence");
+    return {
+      ...line,
+      id: str(line, "id") || `${id}:verified-tax`,
+      [source.lines!.fk]: id,
+      tax_rate_bps: code.rateBps ?? 0,
+    };
+  });
+}
+
 export async function loadTaxFacts(
   sb: Sb,
   args: {
@@ -524,6 +655,16 @@ export async function loadTaxFacts(
           .order("id")
           .range(f, t),
       );
+      if (useCash)
+        for (const id of ids) {
+          if (lines.some((line) => str(line, lineSpec.fk) === id)) continue;
+          const doc = docs.get(id)!;
+          if (doc.fraction && !doc.fraction[0].events.some((event) => event.date >= from)) continue;
+          const header = headers.find((row) => str(row, "id") === id)!;
+          lines.push(
+            ...(await verifiedOpeningTaxLines(sb, companyId, src, header, { from, to }, codes)),
+          );
+        }
       for (const line of lines) {
         const d = docs.get(str(line, lineSpec.fk));
         if (!d) continue;

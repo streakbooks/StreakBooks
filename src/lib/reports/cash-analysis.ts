@@ -34,12 +34,15 @@ export function cashDocumentTotals(
   side: "income" | "expense",
 ) {
   const byJournal = new Map(documents.map((doc) => [doc.posted_journal_id, doc]));
+  const byId = new Map(documents.map((doc) => [doc.id, doc]));
   const sums = new Map<
     string,
     { document: CashAnalysisDocument; net: bigint; tax: bigint; transactionNet: bigint }
   >();
   for (const entry of entries) {
-    const doc = byJournal.get(entry.sourceJournalId);
+    const doc =
+      (entry.sourceId ? byId.get(entry.sourceId) : undefined) ??
+      byJournal.get(entry.sourceJournalId);
     if (!doc || entry.reason !== "settlement") continue;
     const value = (entry.debit - entry.credit) * (side === "income" ? -1n : 1n);
     const row = sums.get(doc.id) ?? { document: doc, net: 0n, tax: 0n, transactionNet: 0n };

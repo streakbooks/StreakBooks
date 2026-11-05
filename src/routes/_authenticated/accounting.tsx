@@ -1,3 +1,4 @@
+import { CashClassificationPanel } from "@/components/accounting/CashClassificationPanel";
 import { DeferralsPanel } from "@/components/accounting/DeferralsPanel";
 import { nativeTabLinkClass, handleNativeTabKeyDown } from "@/lib/navigation/native-tab";
 import { TransactionCorrections } from "@/components/accounting/corrections/TransactionCorrections";
@@ -37,6 +38,7 @@ const ACCOUNTING_TABS = [
   "fx",
   "corrections",
   "deferrals",
+  "cash-classification",
 ] as const;
 type AccountingTab = (typeof ACCOUNTING_TABS)[number];
 type AccountingSearch = {
@@ -137,6 +139,17 @@ export function AccountingWorkspace({
 
       <Tabs value={tab}>
         <TabsList onKeyDown={handleNativeTabKeyDown} className="flex-wrap">
+          <Link
+            className={nativeTabLinkClass}
+            role="tab"
+            aria-selected={tab === "cash-classification"}
+            data-state={tab === "cash-classification" ? "active" : "inactive"}
+            to="/accounting"
+            search={{ tab: "cash-classification" }}
+            resetScroll={false}
+          >
+            Cash classification
+          </Link>
           <Link
             className={nativeTabLinkClass}
             role="tab"
@@ -313,6 +326,9 @@ export function AccountingWorkspace({
 
         <TabsContent value="fx" className="mt-4">
           <FxPanel key={companyId} companyId={companyId} currency={currency} />
+        </TabsContent>
+        <TabsContent value="cash-classification" className="mt-4">
+          <CashClassificationPanel companyId={companyId} currency={currency} />
         </TabsContent>
       </Tabs>
     </>

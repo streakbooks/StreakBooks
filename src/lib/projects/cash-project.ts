@@ -80,9 +80,18 @@ export function cashProjectProfitability(
       original = journals.get(original.reverses);
     }
     if (!original) continue;
-    const sourceId = original.sourceId ?? sourceIds.get(original.id) ?? entry.sourceId;
+    const sourceId =
+      entry.reason === "settlement"
+        ? entry.sourceId
+        : (original.sourceId ?? sourceIds.get(original.id) ?? entry.sourceId);
     if (!sourceId) continue;
-    let grouped = weights.get(key(original.sourceType, sourceId, entry.accountId));
+    let grouped = weights.get(
+      key(
+        entry.reason === "settlement" ? entry.sourceType : original.sourceType,
+        sourceId,
+        entry.sourceAccountId ?? entry.accountId,
+      ),
+    );
     if (!grouped && direct.has(sourceId)) grouped = new Map([[direct.get(sourceId) ?? null, 1n]]);
     if (!grouped || ![...grouped.keys()].some((id) => id !== null)) continue;
     const parts = [...grouped]

@@ -1,6 +1,11 @@
 import type { CashPnlInput, CashJournal, CashPayment, CashRefund } from "./cash-profit-loss";
 import { isReportDate } from "./date-validation";
 import type { ReportingFacts } from "./report-document";
+import type {
+  CashClassificationKind,
+  CashJournalEvidenceSnapshot,
+  CashOpeningEvidence,
+} from "./cash-classification";
 type Row = Record<string, unknown>;
 function text(row: Row, key: string): string {
   if (typeof row[key] !== "string") throw new Error(`Cash source is missing ${key}`);
@@ -249,6 +254,82 @@ export function cashInputFromRows(
     companyId,
     baseCurrency: facts.company.baseCurrency,
     accounts: facts.accounts,
+    classificationPolicies: (source["cash_classification_policies"] ?? []).map((row) => ({
+      id: text(row, "id"),
+      companyId: text(row, "company_id"),
+      sourceAccountId: text(row, "source_account_id"),
+      recognitionAccountId: text(row, "recognition_account_id"),
+      kind: text(row, "kind") as CashClassificationKind,
+      version: Number(integer(row, "version")),
+      effectiveFrom: text(row, "effective_from"),
+      effectiveTo: optional(row, "effective_to"),
+      status: text(row, "status"),
+      policyNote: text(row, "policy_note"),
+      evidenceReference: text(row, "evidence_reference"),
+      evidenceJournalIds: Array.isArray(row["evidence_journal_ids"])
+        ? (row["evidence_journal_ids"] as string[])
+        : [],
+      evidenceJournalSnapshots: Array.isArray(row["evidence_journal_snapshots"])
+        ? (row["evidence_journal_snapshots"] as CashJournalEvidenceSnapshot[])
+        : [],
+      approvedBy: optional(row, "approved_by"),
+      approvedAt: optional(row, "approved_at"),
+    })),
+    inventoryEvidence: (source["cash_inventory_evidence"] ?? []).map((row) => ({
+      id: text(row, "id"),
+      companyId: text(row, "company_id"),
+      purchaseDocumentId: text(row, "purchase_document_id"),
+      purchaseJournalId: text(row, "purchase_journal_id"),
+      inventoryAccountId: text(row, "inventory_account_id"),
+      movementJournalId: text(row, "movement_journal_id"),
+      movementKind: text(row, "movement_kind") as "sale" | "customer_return" | "supplier_return",
+      costMinor: integer(row, "cost_minor"),
+      reversesEvidenceId: optional(row, "reverses_evidence_id"),
+      supersedesId: optional(row, "supersedes_id"),
+      version: Number(integer(row, "version")),
+      status: text(row, "status"),
+      policyNote: text(row, "policy_note"),
+      evidenceReference: text(row, "evidence_reference"),
+      purchaseJournalSnapshot: row["purchase_journal_snapshot"] as CashJournalEvidenceSnapshot,
+      movementJournalSnapshot: row["movement_journal_snapshot"] as CashJournalEvidenceSnapshot,
+      approvedBy: optional(row, "approved_by"),
+      approvedAt: optional(row, "approved_at"),
+    })),
+    openingEvidence: (source["cash_opening_evidence"] ?? []).map((row): CashOpeningEvidence => ({
+      id: text(row, "id"),
+      companyId: text(row, "company_id"),
+      documentId: text(row, "document_id"),
+      sourceKind: text(row, "source_kind") as CashOpeningEvidence["sourceKind"],
+      postedJournalId: text(row, "posted_journal_id"),
+      controlAccountId: text(row, "control_account_id"),
+      equityAccountId: text(row, "equity_account_id"),
+      currency: text(row, "currency_code"),
+      grossMinor: integer(row, "gross_minor"),
+      components: (row["components"] as Row[]).map((component) => ({
+        accountId: text(component, "account_id"),
+        amountMinor: integer(component, "amount_minor"),
+      })),
+      mode: text(row, "mode") as CashOpeningEvidence["mode"],
+      version: Number(integer(row, "version")),
+      effectiveFrom: text(row, "effective_from"),
+      effectiveTo: optional(row, "effective_to"),
+      status: text(row, "status"),
+      policyNote: text(row, "policy_note"),
+      evidenceReference: text(row, "evidence_reference"),
+      approvedBy: optional(row, "approved_by"),
+      approvedAt: optional(row, "approved_at"),
+      sourceJournalSnapshot: row["source_journal_snapshot"] as CashJournalEvidenceSnapshot,
+      ...(Array.isArray(row["tax_lines"])
+        ? {
+            taxLines: (row["tax_lines"] as Row[]).map((line) => ({
+              id: text(line, "id"),
+              netMinor: integer(line, "net_minor"),
+              taxMinor: integer(line, "tax_minor"),
+              taxCodeId: optional(line, "tax_code_id"),
+            })),
+          }
+        : {}),
+    })),
     cashAccountIds: [
       ...new Set([
         ...banks.map((row) => text(row, "gl_account_id")),

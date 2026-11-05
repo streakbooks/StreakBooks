@@ -557,3 +557,97 @@ it("orders same-day void and replacement allocations by their source dependency"
     "a-new",
   ]);
 });
+
+function importedTaxTables() {
+  const t = baseTables();
+  t.sales_invoice_lines = [];
+  t.journals = [
+    {
+      id: "j1",
+      company_id: C,
+      journal_date: "2026-09-01",
+      journal_number: "opening",
+      currency_code: "GBP",
+      fx_rate_to_base: "1",
+      source_type: "opening_balance",
+      source_id: null,
+      status: "posted",
+    },
+  ];
+  t.journal_lines = [
+    {
+      id: "opening-ar",
+      company_id: C,
+      journal_id: "j1",
+      account_id: "ar",
+      debit_minor: "12000",
+      credit_minor: "0",
+    },
+    {
+      id: "opening-equity",
+      company_id: C,
+      journal_id: "j1",
+      account_id: "equity",
+      debit_minor: "0",
+      credit_minor: "12000",
+    },
+  ];
+  t.cash_opening_evidence = [
+    {
+      id: "approved-opening",
+      status: "approved",
+      company_id: C,
+      document_id: "inv1",
+      source_kind: "sales_invoice",
+      posted_journal_id: "j1",
+      currency_code: "GBP",
+      gross_minor: "12000",
+      version: 1,
+      effective_from: "2026-09-01",
+      mode: "recognize_on_settlement",
+      approved_by: "reviewer",
+      approved_at: "2026-10-01",
+      tax_lines: [
+        { id: "original-line", net_minor: "10000", tax_minor: "2000", tax_code_id: "std" },
+      ],
+      source_journal_snapshot: {
+        id: "j1",
+        company_id: C,
+        journal_date: "2026-09-01",
+        currency_code: "GBP",
+        fx_rate_to_base: "1.00000000",
+        source_type: "opening_balance",
+        source_id: null,
+        status: "posted",
+        lines: t.journal_lines.map((l) => ({
+          id: l.id,
+          account_id: l.account_id,
+          debit_minor: l.debit_minor,
+          credit_minor: l.credit_minor,
+        })),
+      },
+    },
+  ];
+  return t;
+}
+it("uses approved original opening tax evidence on actual cash dates", async () => {
+  const t = importedTaxTables();
+  expect(computeReturnTotals((await cashPeriod(t, "10")).facts).outputTax).toBe(2000n);
+  expect(computeReturnTotals((await cashPeriod(t, "11")).facts).outputTax).toBe(0n);
+});
+it("does not repeat tax already recognized before conversion", async () => {
+  const t = importedTaxTables();
+  t.cash_opening_evidence![0]!.mode = "already_recognized";
+  expect(computeReturnTotals((await cashPeriod(t, "10")).facts).outputTax).toBe(0n);
+});
+it.each(["missing", "drift", "tax-code"])(
+  "reports unresolved opening tax evidence: %s",
+  async (kind) => {
+    const t = importedTaxTables();
+    if (kind === "missing") t.cash_opening_evidence = [];
+    if (kind === "drift") t.journal_lines![0]!.debit_minor = "12001";
+    if (kind === "tax-code")
+      (t.cash_opening_evidence![0]!.tax_lines as Row[])[0]!.tax_code_id = "foreign-code";
+    await expect(cashPeriod(t, "10")).rejects.toThrow("CASH_CLASSIFICATION_EXCEPTION:");
+  },
+);

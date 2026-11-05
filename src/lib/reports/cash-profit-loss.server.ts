@@ -37,6 +37,9 @@ export async function loadCashProfitLossInput(
     bills,
     customerCredits,
     supplierCredits,
+    classificationPolicies,
+    openingEvidence,
+    inventoryEvidence,
   ] = await Promise.all([
     fetchAllPages<Row>(
       (from, end) =>
@@ -90,6 +93,15 @@ export async function loadCashProfitLossInput(
     read("purchase_bills", "id,company_id,posted_journal_id,bill_date"),
     read("sales_credit_notes", "id,company_id,posted_journal_id,credit_date"),
     read("purchase_credit_notes", "id,company_id,posted_journal_id,credit_date"),
+    read(
+      "cash_classification_policies",
+      "id,company_id,source_account_id,recognition_account_id,kind,version,effective_from,effective_to,status,policy_note,evidence_reference,evidence_journal_ids,evidence_journal_snapshots,approved_by,approved_at",
+    ),
+    read(
+      "cash_opening_evidence",
+      "id,company_id,document_id,source_kind,posted_journal_id,control_account_id,equity_account_id,currency_code,gross_minor::text,components,mode,version,effective_from,effective_to,status,policy_note,evidence_reference,source_journal_snapshot,tax_lines,approved_by,approved_at",
+    ),
+    read("cash_inventory_evidence", "*,cost_minor::text"),
   ]);
   return cashInputFromRows(
     {
@@ -108,6 +120,9 @@ export async function loadCashProfitLossInput(
       purchase_bills: bills,
       sales_credit_notes: customerCredits,
       purchase_credit_notes: supplierCredits,
+      cash_classification_policies: classificationPolicies,
+      cash_opening_evidence: openingEvidence,
+      cash_inventory_evidence: inventoryEvidence,
     },
     facts,
   );

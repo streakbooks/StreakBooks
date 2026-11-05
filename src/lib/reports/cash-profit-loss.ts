@@ -7,7 +7,13 @@ import {
   apportionCumulativeCash,
   type CashSourceDocument,
 } from "./cash-settlement";
+import type { CashInventoryEvidence } from "./cash-inventory";
 import { isReportDate } from "./date-validation";
+import {
+  cashClassificationContext,
+  type CashClassificationPolicy,
+  type CashOpeningEvidence,
+} from "./cash-classification";
 
 export type CashJournal = {
   id: string;
@@ -60,6 +66,9 @@ export type CashPnlInput = {
   payments: CashPayment[];
   allocations: CashAllocation[];
   refunds: CashRefund[];
+  classificationPolicies?: CashClassificationPolicy[];
+  openingEvidence?: CashOpeningEvidence[];
+  inventoryEvidence?: CashInventoryEvidence[];
   /** Authoritative document foreign keys supplement legacy journals without a source_id. */
   documentJournalLinks?: Array<{
     documentId: string;
@@ -79,6 +88,8 @@ export type CashPnlInput = {
 };
 export type CashPnlEntry = {
   accountId: string;
+  /** Original posted component, retained when approved cash classification changes the account. */
+  sourceAccountId?: string;
   date: string;
   journalId: string;
   journalNumber: string;
@@ -188,13 +199,7 @@ export function cashProfitLoss(
     throw new Error("Choose a valid cash reporting period");
   const accounts = new Map(input.accounts.map((account) => [account.id, account]));
   const cash = new Set(input.cashAccountIds);
-  const needsCashPolicy = (accountId: string) => {
-    const account = accounts.get(accountId);
-    if (account?.account_type === "income" || account?.account_type === "expense") return false;
-    return /inventory|stock|prepaid|prepayment|deferred|accrued|payroll|wages/.test(
-      [account?.account_kind, account?.subtype, account?.system_key].join(" ").toLowerCase(),
-    );
-  };
+  const classification = cashClassificationContext(input, period);
   const ar = new Set(
     findControlAccountIds(
       input.accounts.map((a) => ({ ...a, is_active: true })),
@@ -248,6 +253,14 @@ export function cashProfitLoss(
     )
       throw new Error("Cash source document does not match its posted journal");
     sources.set(link.documentId, { ...journal, sourceId: link.documentId });
+  }
+  for (const documentId of classification.opening.keys()) {
+    const source = classification.openingSource(documentId);
+    if (source) {
+      if (sources.has(documentId))
+        throw new Error("Opening source evidence conflicts with a posted source document");
+      sources.set(documentId, source);
+    }
   }
   const inPeriod = (date: string) => date >= period.from && date <= period.to;
   const base = (amount: bigint, currency: string, rate: string | null) => {
@@ -333,8 +346,15 @@ export function cashProfitLoss(
           ? "purchase_credit_note"
           : "purchase_bill";
     if (!original || original.sourceType !== expected)
-      throw new Error(
+      return classification.fail(
         "A cash allocation has no matching posted invoice, bill or credit note; imported opening balances need source detail",
+        [
+          "Matching posted source document or approved opening document gross, component and control/equity evidence",
+        ],
+        settlement,
+        null,
+        amount,
+        documentId,
       );
     if (original.date > settlement.date)
       throw new Error("A cash allocation cannot precede its posted source document");
@@ -347,16 +367,12 @@ export function cashProfitLoss(
         control.has(line.accountId) ? sum + (line.debit - line.credit) * orientation : sum,
       0n,
     );
-    const key = original.id;
+    const key = documentId;
     let document = documents.get(key);
     if (!document) {
       const grouped = new Map<string, bigint>();
       for (const line of original.lines) {
         if (control.has(line.accountId)) continue;
-        if (needsCashPolicy(line.accountId))
-          throw new Error(
-            "Inventory, prepayment, deferred or payroll/accrual accounts need a reviewed cash-recognition policy; they cannot be silently omitted from cash P&L.",
-          );
         grouped.set(
           line.accountId,
           (grouped.get(line.accountId) ?? 0n) + (line.debit - line.credit) * orientation,
@@ -708,17 +724,26 @@ export function cashProfitLoss(
           remaining === 0n
             ? ids.map(() => 0n)
             : apportionCumulativeCash(cumulative, weights, remaining);
-        for (const [index, accountId] of ids.entries()) {
+        for (const [index, sourceAccountId] of ids.entries()) {
           const amount = after[index]! - recognised[index]!;
-          if (
-            !amount ||
-            !inPeriod(event.date) ||
-            (!ledger && !["income", "expense"].includes(accounts.get(accountId)!.account_type))
-          )
-            continue;
+          if (!amount || !inPeriod(event.date)) continue;
           const signed = amount * (document.side === "income" ? -1n : 1n) * document.sign;
+          const opening = classification.opening.get(document.source.id);
+          const accountId =
+            opening?.mode === "already_recognized"
+              ? opening.controlAccountId
+              : classification.classify(
+                  sourceAccountId,
+                  document.journal,
+                  event.date,
+                  signed,
+                  document.source.id,
+                );
+          if (!ledger && !["income", "expense"].includes(accounts.get(accountId)!.account_type))
+            continue;
           result.push({
             accountId,
+            sourceAccountId,
             date: event.date,
             journalId: event.journal.id,
             journalNumber: event.journal.number,
@@ -771,21 +796,29 @@ export function cashProfitLoss(
         recognisedBaseMinor: shares[index]! * (target < 0n ? -1n : 1n),
       }));
       for (const component of components) {
-        const account = accounts.get(component.accountId)!;
         const normal = (document.side === "income" ? -1n : 1n) * document.sign;
         const signed = component.recognisedBaseMinor * normal;
         const before = componentPositions.get(component.accountId) ?? 0n;
         const after = before + signed;
         componentPositions.set(component.accountId, after);
-        if (
-          (!ledger && !["income", "expense"].includes(account.account_type)) ||
-          component.recognisedBaseMinor === 0n ||
-          !inPeriod(recognition.settledOn)
-        )
+        if (component.recognisedBaseMinor === 0n || !inPeriod(recognition.settledOn)) continue;
+        const opening = classification.opening.get(document.source.id);
+        const accountId =
+          opening?.mode === "already_recognized"
+            ? opening.controlAccountId
+            : classification.classify(
+                component.accountId,
+                document.journal,
+                recognition.settledOn,
+                signed,
+                document.source.id,
+              );
+        if (!ledger && !["income", "expense"].includes(accounts.get(accountId)!.account_type))
           continue;
         // Source orientation, rather than the account's normal side, preserves contra accounts.
         result.push({
-          accountId: component.accountId,
+          accountId,
+          sourceAccountId: component.accountId,
           date: recognition.settledOn,
           journalId: settlement.id,
           journalNumber: settlement.number,
@@ -812,19 +845,22 @@ export function cashProfitLoss(
       )
     )
       continue;
-    if (journal.lines.some((line) => needsCashPolicy(line.accountId)))
-      throw new Error(
-        "A cash movement settles inventory, prepayment, deferred or payroll/accrual balances requiring a reviewed cash-recognition policy.",
-      );
     if (journal.lines.some((line) => ar.has(line.accountId) || ap.has(line.accountId)))
       throw new Error(
         "A posted bank movement uses receivables/payables without complete cash allocation detail",
       );
     for (const line of journal.lines) {
-      if (!ledger && !["income", "expense"].includes(accounts.get(line.accountId)!.account_type))
+      const accountId = classification.classify(
+        line.accountId,
+        journal,
+        journal.date,
+        line.debit - line.credit,
+      );
+      if (!ledger && !["income", "expense"].includes(accounts.get(accountId)!.account_type))
         continue;
       result.push({
-        accountId: line.accountId,
+        accountId,
+        sourceAccountId: line.accountId,
         date: journal.date,
         journalId: journal.id,
         journalNumber: journal.number,

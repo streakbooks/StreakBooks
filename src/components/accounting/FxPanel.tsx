@@ -22,6 +22,7 @@ import { isPositiveRate, nextDay } from "@/lib/accounting/fx-reval";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { useFormat } from "@/hooks/use-format";
 import { ErrorState, LoadingState } from "@/components/common/states";
+import { FxRealisedLedgerAudit } from "@/components/accounting/FxRealisedLedgerAudit";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -507,6 +508,8 @@ export function FxPanel({ companyId, currency }: { companyId: string; currency: 
           )}
         </CardContent>
       </Card>
+
+      <FxRealisedLedgerAudit companyId={companyId} />
 
       {ov.runs.length > 0 ? (
         <Card>

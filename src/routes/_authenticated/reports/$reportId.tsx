@@ -70,7 +70,8 @@ function ReportPage() {
   const report = getReportById(reportId);
   const getConfig = useServerFn(getOrganisationConfig);
   const isStatement = report?.runner === "profit_loss" || report?.runner === "balance_sheet";
-  const needsDefault = isStatement && !search.basis && !search.settings;
+  const needsDefault =
+    isStatement && !search.settings && (!search.basis || (!search.columns && !search.compare));
   const reportDefaults = useQuery({
     queryKey: ["organisation-config", company?.id ?? null, "reports"],
     enabled: Boolean(company?.id && needsDefault),

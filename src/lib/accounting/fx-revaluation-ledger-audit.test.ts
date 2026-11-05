@@ -169,6 +169,56 @@ describe("unrealised FX revaluation to ledger audit", () => {
     expect(result.actualGainMinor).toBe(large);
   });
 
+  it("rejects two run journals for the same foreign currency", () => {
+    const duplicateJournal: FxRunAuditJournal = {
+      ...journal,
+      id: "j2",
+    };
+    const duplicatedLines: FxRunAuditLine[] = lines.map((line) => ({
+      ...line,
+      journal_id: "j2",
+    }));
+    const result = check(
+      { ...run, journal_ids: ["j1", "j2"], total_gain_minor: "1000" },
+      [journal, duplicateJournal],
+      [queue, { ...queue, journal_id: "j2" }],
+      [...lines, ...duplicatedLines],
+      [tag, { ...tag, journal_id: "j2" }],
+    );
+    expect(result.items[1]!.issues).toContain(
+      "Multiple journals represent the same foreign currency in this run.",
+    );
+    expect(result.actualGainMinor).toBeNull();
+  });
+
+  it("rejects a base-currency revaluation tag and invalid gain journal line side", () => {
+    const wrongCurrency = check(
+      run,
+      [journal],
+      [queue],
+      lines,
+      [{ ...tag, currency_code: "GBP" }],
+    );
+    expect(wrongCurrency.items[0]!.issues).toContain(
+      "Revaluation currency must differ from the organisation base currency.",
+    );
+    expect(wrongCurrency.actualGainMinor).toBeNull();
+
+    const crossed = check(
+      run,
+      [journal],
+      [queue],
+      [
+        { ...lines[0]!, debit_minor: "499" },
+        { ...lines[1]!, debit_minor: "1", credit_minor: "500" },
+      ],
+    );
+    expect(crossed.items[0]!.issues).toContain(
+      "Unrealised gain was posted to an incorrect account or debit side.",
+    );
+    expect(crossed.actualGainMinor).toBeNull();
+  });
+
   it("supports a zero-net revaluation currency and a valid loss account", () => {
     const lossAccount: FxRunAuditAccount = {
       id: "loss",

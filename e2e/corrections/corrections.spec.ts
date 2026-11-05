@@ -50,6 +50,8 @@ test("search, exclusions, preview invalidation, posting evidence, history and un
   await page
     .getByLabel("Correction undo reason", { exact: true })
     .fill("Undo correction after review");
+  await expect(page.getByRole("button", { name: "Post undo journals", exact: true })).toBeDisabled();
+  await page.getByLabel("Acknowledge correction undo review", { exact: true }).check();
   await page.getByRole("button", { name: "Post undo journals", exact: true }).click();
   await expect(page.locator('p[role="status"]')).toContainText("undone");
   await expect(page.locator("summary")).toContainText("Undone");

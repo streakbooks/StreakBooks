@@ -5,5 +5,10 @@ import { NewCreditNote } from "@/screens/purchases/credit-notes.new";
 export const Route = createFileRoute("/_authenticated/purchases/credit-notes/new")({
   validateSearch: (s: Record<string, unknown>): { billId?: string } =>
     typeof s["billId"] === "string" && s["billId"] ? { billId: s["billId"] } : {},
-  component: NewCreditNote,
+  component: NewCreditNoteRoute,
 });
+
+function NewCreditNoteRoute() {
+  const { billId } = Route.useSearch();
+  return <NewCreditNote initialBillId={typeof billId === "string" ? billId : undefined} />;
+}

@@ -1,4 +1,3 @@
-import { getRouteApi } from "@tanstack/react-router";
 import type { PurchaseOrderDetail } from "@/lib/purchases/purchase-order-data";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { impliedDiscountMinor } from "@/lib/purchases/po-convert";
@@ -33,11 +32,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-const routeApi = getRouteApi("/_authenticated/purchases/orders/new");
 
-export function NewOrder() {
+export function NewOrder({ initialEditId }: { initialEditId?: string | undefined } = {}) {
   const { company } = useActiveCompany();
-  const { edit } = routeApi.useSearch();
+  const edit = initialEditId;
   // Remount the draft when switching companies; never carry supplier/account IDs across tenants.
   return company ? (
     <OrderLoader

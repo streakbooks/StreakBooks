@@ -1,4 +1,3 @@
-import { getRouteApi } from "@tanstack/react-router";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -36,7 +35,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-const routeApi = getRouteApi("/_authenticated/purchases/credit-notes/new");
 
 let lineKeySeed = 0;
 const newKey = () => `l${++lineKeySeed}`;
@@ -48,10 +46,9 @@ const blankLine = (): CreditFormLine => ({
   tax: "0.00",
 });
 
-export function NewCreditNote() {
+export function NewCreditNote({ initialBillId }: { initialBillId?: string | undefined } = {}) {
   const { company } = useActiveCompany();
   const navigate = useNavigate();
-  const search = routeApi.useSearch();
   const queryClient = useQueryClient();
   const fetchSuppliers = useServerFn(listSuppliers);
   const fetchAccounts = useServerFn(listAccounts);
@@ -67,7 +64,7 @@ export function NewCreditNote() {
   const [creditDate, setCreditDate] = useState(today);
   const [memo, setMemo] = useState("");
   const [lines, setLines] = useState<CreditFormLine[]>([blankLine()]);
-  const [billId, setBillId] = useState(search.billId ?? "");
+  const [billId, setBillId] = useState(initialBillId ?? "");
   const [fxRate, setFxRate] = useState("");
   const [billCurrency, setBillCurrency] = useState<string | null>(null);
 
@@ -92,9 +89,9 @@ export function NewCreditNote() {
 
   // Arriving from a bill (?billId=) fills the supplier and lines once.
   const prefillQ = useQuery({
-    queryKey: ["credit-note-prefill", companyId, search.billId],
-    enabled: Boolean(companyId && search.billId),
-    queryFn: () => fetchBill({ data: { companyId: companyId!, billId: search.billId! } }),
+    queryKey: ["credit-note-prefill", companyId, initialBillId],
+    enabled: Boolean(companyId && initialBillId),
+    queryFn: () => fetchBill({ data: { companyId: companyId!, billId: initialBillId! } }),
   });
 
   const supplierCurrency = (

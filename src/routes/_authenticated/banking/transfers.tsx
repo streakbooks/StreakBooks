@@ -16,5 +16,23 @@ export const Route = createFileRoute("/_authenticated/banking/transfers")({
     return out;
   },
   head: () => ({ meta: [{ title: "Transfers — LinkBooks" }] }),
-  component: Transfers,
+  component: TransfersRoute,
 });
+
+function TransfersRoute() {
+  const search = Route.useSearch();
+  // Router search can retain raw parent values. Never pass numeric/JSON values to money inputs.
+  return (
+    <Transfers
+      initialSearch={{
+        ...(typeof search.bankAccountId === "string"
+          ? { bankAccountId: search.bankAccountId }
+          : {}),
+        ...(typeof search.amount === "string" ? { amount: search.amount } : {}),
+        ...(search.direction === "in" || search.direction === "out"
+          ? { direction: search.direction }
+          : {}),
+      }}
+    />
+  );
+}

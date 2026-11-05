@@ -116,6 +116,7 @@ INSERT INTO public.test_permissions(company_id,user_id,permission) VALUES
 ('10000000-0000-4000-8000-000000000002','00000000-0000-4000-8000-000000000003','accounting.view'),
 ('10000000-0000-4000-8000-000000000002','00000000-0000-4000-8000-000000000003','journals.approve');
 
+GRANT SELECT ON public.test_audit_events TO authenticated;
 GRANT EXECUTE ON FUNCTION auth.uid() TO authenticated;
 GRANT EXECUTE ON FUNCTION private.mfa_requirement_met() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.has_company_permission(uuid,text) TO authenticated;

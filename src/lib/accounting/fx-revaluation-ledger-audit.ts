@@ -158,6 +158,7 @@ export function auditFxRevaluationRun(
   let gain = 0n;
   let loss = 0n;
   let totalsValid = true;
+  const reviewedCurrencies = new Set<string>();
 
   const items = run.journal_ids.map((id): FxRunAuditItem => {
     const issues: string[] = [];
@@ -198,9 +199,20 @@ export function auditFxRevaluationRun(
     if (!tag || tag.kind !== "revaluation" || !/^[A-Z]{3}$/.test(currency ?? "")) {
       issues.push("Revaluation currency tag is missing or invalid.");
       rowValid = false;
-    } else if (journal?.idempotency_key !== `fx_reval:${run.id}:${currency}`) {
-      issues.push("Journal idempotency key does not match its run and currency.");
-      rowValid = false;
+    } else {
+      if (currency === baseCurrency.trim().toUpperCase()) {
+        issues.push("Revaluation currency must differ from the organisation base currency.");
+        rowValid = false;
+      }
+      if (reviewedCurrencies.has(currency)) {
+        issues.push("Multiple journals represent the same foreign currency in this run.");
+        rowValid = false;
+      }
+      reviewedCurrencies.add(currency);
+      if (journal?.idempotency_key !== `fx_reval:${run.id}:${currency}`) {
+        issues.push("Journal idempotency key does not match its run and currency.");
+        rowValid = false;
+      }
     }
 
     const postedLines = journalLines.get(id) ?? [];
@@ -228,14 +240,14 @@ export function auditFxRevaluationRun(
       }
       const kind = fxAccountKind(account);
       if (kind === "gain") {
-        if (account.account_type !== "income" || credit < debit) {
+        if (account.account_type !== "income" || debit !== 0n || credit === 0n) {
           issues.push("Unrealised gain was posted to an incorrect account or debit side.");
           rowValid = false;
         } else {
           rowGain += credit - debit;
         }
       } else if (kind === "loss") {
-        if (account.account_type !== "expense" || debit < credit) {
+        if (account.account_type !== "expense" || credit !== 0n || debit === 0n) {
           issues.push("Unrealised loss was posted to an incorrect account or credit side.");
           rowValid = false;
         } else {

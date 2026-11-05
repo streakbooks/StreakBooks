@@ -23,14 +23,11 @@ export function parseSalesDefaultsDraft(draft: SalesDefaultsDraft) {
   const quoteText = draft.quoteDays.trim();
   const quoteValue = /^\d+$/.test(quoteText) ? Number(quoteText) : NaN;
   const quoteDays =
-    Number.isSafeInteger(quoteValue) && quoteValue >= 1 && quoteValue <= 365
-      ? quoteValue
-      : null;
+    Number.isSafeInteger(quoteValue) && quoteValue >= 1 && quoteValue <= 365 ? quoteValue : null;
   if (terms === null) errors["terms"] = "Enter whole days between 0 and 3650.";
   if (quoteDays === null) errors["quoteDays"] = "Enter whole days between 1 and 365.";
   if (draft.notes.length > 2000) errors["notes"] = "Use at most 2,000 characters.";
-  if (draft.instructions.length > 2000)
-    errors["instructions"] = "Use at most 2,000 characters.";
+  if (draft.instructions.length > 2000) errors["instructions"] = "Use at most 2,000 characters.";
   if (Object.keys(errors).length > 0 || terms === null || quoteDays === null) {
     return { ok: false as const, errors };
   }

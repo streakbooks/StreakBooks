@@ -755,12 +755,14 @@ function OpeningForm({
 
 function InventoryForm({
   previous,
+  acquisitionsSupported,
   companyId,
   currency,
   accounts,
   saleOptions,
   onApproved,
 }: {
+  acquisitionsSupported: boolean;
   companyId: string;
   currency: string;
   accounts: AccountRow[];
@@ -852,6 +854,12 @@ function InventoryForm({
           Enter the cost in {currency}. Paid purchases determine cash expense; this link tracks the
           paid cost sold without adding a second expense.
         </p>
+        {!acquisitionsSupported ? (
+          <p role="status" className="text-sm text-muted-foreground">
+            Direct and opening acquisition approvals need the accounting database update. Existing
+            bill classifications remain available.
+          </p>
+        ) : null}
         <Label>Verified acquisition source</Label>
         <select
           aria-label="Inventory acquisition source kind"
@@ -867,8 +875,12 @@ function InventoryForm({
         >
           {/* lookup-fixed-enum: Verified inventory acquisition source types. */}
           <option value="purchase_bill">Posted purchase bill</option>
-          <option value="direct_cash">Direct cash / credit-card purchase</option>
-          <option value="opening_inventory">Verified opening inventory</option>
+          <option value="direct_cash" disabled={!acquisitionsSupported}>
+            Direct cash / credit-card purchase
+          </option>
+          <option value="opening_inventory" disabled={!acquisitionsSupported}>
+            Verified opening inventory
+          </option>
         </select>
         {sourceKind === "purchase_bill" ? (
           <DocumentLookup
@@ -1323,6 +1335,7 @@ export function CashClassificationPanel({
             <InventoryForm
               key={previousInventory?.id ?? "new"}
               previous={previousInventory}
+              acquisitionsSupported={data.acquisitionsSupported}
               companyId={companyId}
               currency={currency}
               accounts={activeAccounts}

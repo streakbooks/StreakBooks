@@ -1,3 +1,4 @@
+import { loadCashInventoryEvidenceRows } from "@/lib/reports/cash-inventory-source.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -100,20 +101,18 @@ export const listCashClassifications = createServerFn({ method: "GET" })
             .order("id" as never)
             .range(from, to) as unknown as PromiseLike<PageResult<T>>,
       );
-    const [policies, opening, inventory, exceptions, audit] = await Promise.all([
+    const [policies, opening, inventorySource, exceptions, audit] = await Promise.all([
       read<CashPolicyRecord>("cash_classification_policies", "*"),
       read<CashOpeningRecord>("cash_opening_evidence", "*,gross_minor::text"),
-      read<CashInventoryRecord>(
-        "cash_inventory_evidence",
-        "*,cost_minor::text,opening_paid_minor::text",
-      ),
+      loadCashInventoryEvidenceRows(context.supabase, data.companyId),
       read<CashExceptionRecord>("cash_classification_exceptions", "*,amount_minor::text"),
       read<CashClassificationAudit>("cash_classification_audit", "*,details::text"),
     ]);
     return {
       policies,
       opening,
-      inventory,
+      inventory: inventorySource.rows as unknown as CashInventoryRecord[],
+      acquisitionsSupported: inventorySource.acquisitionsSupported,
       exceptions,
       audit: audit.map((row) => ({
         ...row,
@@ -148,6 +147,13 @@ export const approveCashInventory = createServerFn({ method: "POST" })
   .inputValidator((input: CashInventoryInput) => cashInventoryInput.parse(input))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "accounting.post");
+    if (
+      data.payload.source_kind !== "purchase_bill" &&
+      !(await loadCashInventoryEvidenceRows(context.supabase, data.companyId)).acquisitionsSupported
+    )
+      throw new Error(
+        "The inventory acquisition database update is required before this approval.",
+      );
     return workflowRpc<string>(context.supabase, "approve_cash_inventory_evidence", {
       _company_id: data.companyId,
       _payload: data.payload,

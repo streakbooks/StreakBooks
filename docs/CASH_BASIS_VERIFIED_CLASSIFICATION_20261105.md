@@ -58,3 +58,5 @@ Both PostgreSQL scripts create disposable PostgreSQL containers with network dis
 ## Hosted release status
 
 On 2026-11-05, the two migrations merged in PR #101 were applied to the linked LinkBooks project. Their migration history was aligned with repository versions `20261104081033` and `20261105070334` after the managed service assigned execution timestamps. This was reporting metadata/schema work; no company classification was approved and no new accounting journal was posted. The acquisition extension is a separate follow-up migration and must pass verification before release.
+
+The hosted acquisition-extension migration was rejected by automatic approval review because the follow-up branch had not yet been merged or explicitly release-approved for this production mutation. It was not applied. The application checks extension availability using a narrowly scoped missing-column fallback: existing bill reports remain available, while advanced acquisition approvals stay disabled until the extension is released. Permission and unexpected database errors are propagated rather than treated as a missing schema.

@@ -15,10 +15,7 @@ export function applyOrganisationReportDefaults(
     defaultComparison === "prior_period" || defaultComparison === "prior_year"
       ? defaultComparison
       : undefined;
-  const applyComparison = Boolean(columns && !search.columns && !search.compare);
-  return {
-    ...search,
-    basis: search.basis ?? basis,
-    ...(applyComparison ? { columns } : {}),
-  };
+  const merged: ReportSearch = { ...search, basis: search.basis ?? basis };
+  if (columns && !search.columns && !search.compare) merged.columns = columns;
+  return merged;
 }

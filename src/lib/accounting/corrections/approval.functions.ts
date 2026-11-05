@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyPermission } from "@/lib/assert-company-access";
-import { correctionInput, type CorrectionInput } from "./contracts";
+import { correctionInput, type CorrectionInput, type CorrectionPlan } from "./contracts";
 
 const company = z.object({ companyId: z.string().uuid() });
 const approvalStatus = z.enum(["pending", "approved", "rejected", "posted"]);
@@ -21,6 +21,7 @@ export type CorrectionApprovalRequest = {
   request_hash: string;
   preview_hash: string;
   input: CorrectionInput;
+  plan: CorrectionPlan;
   status: z.infer<typeof approvalStatus>;
   submitted_by: string;
   submitted_at: string;
@@ -67,7 +68,7 @@ export const listCorrectionApprovalRequests = createServerFn({ method: "GET" })
     const { data: approvals, error } = await context.supabase
       .from("correction_approval_requests" as never)
       .select(
-        "id,company_id,request_key,request_hash,preview_hash,input,status,submitted_by,submitted_at,decided_by,decided_at,decision_note,posted_by,posted_at,posted_batch_id,version" as never,
+        "id,company_id,request_key,request_hash,preview_hash,input,plan,status,submitted_by,submitted_at,decided_by,decided_at,decision_note,posted_by,posted_at,posted_batch_id,version" as never,
       )
       .eq("company_id" as never, data.companyId as never)
       .order("submitted_at" as never, { ascending: false })

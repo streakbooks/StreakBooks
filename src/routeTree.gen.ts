@@ -65,6 +65,7 @@ import { Route as AuthenticatedDocumentsBrandingRouteImport } from './routes/_au
 import { Route as AuthenticatedFirmInviteTokenRouteImport } from './routes/_authenticated/firm-invite.$token'
 import { Route as AuthenticatedInviteTokenRouteImport } from './routes/_authenticated/invite.$token'
 import { Route as AuthenticatedPayrollIndexRouteImport } from './routes/_authenticated/payroll/index'
+import { Route as AuthenticatedPayrollReportsRouteImport } from './routes/_authenticated/payroll/reports'
 import { Route as AuthenticatedPayrollSalaryStructuresRouteImport } from './routes/_authenticated/payroll/salary-structures'
 import { Route as AuthenticatedPayrollSettingsRouteImport } from './routes/_authenticated/payroll/settings'
 import { Route as AuthenticatedPlatformIndexRouteImport } from './routes/_authenticated/platform.index'
@@ -456,6 +457,12 @@ const AuthenticatedPayrollIndexRoute =
   AuthenticatedPayrollIndexRouteImport.update({
     id: '/',
     path: '/',
+    getParentRoute: () => AuthenticatedPayrollRouteRoute,
+  } as any)
+const AuthenticatedPayrollReportsRoute =
+  AuthenticatedPayrollReportsRouteImport.update({
+    id: '/reports',
+    path: '/reports',
     getParentRoute: () => AuthenticatedPayrollRouteRoute,
   } as any)
 const AuthenticatedPayrollSalaryStructuresRoute =
@@ -999,6 +1006,7 @@ export interface FileRoutesByFullPath {
   '/documents/branding': typeof AuthenticatedDocumentsBrandingRoute
   '/firm-invite/$token': typeof AuthenticatedFirmInviteTokenRoute
   '/invite/$token': typeof AuthenticatedInviteTokenRoute
+  '/payroll/reports': typeof AuthenticatedPayrollReportsRoute
   '/payroll/salary-structures': typeof AuthenticatedPayrollSalaryStructuresRoute
   '/payroll/settings': typeof AuthenticatedPayrollSettingsRoute
   '/platform/automation': typeof AuthenticatedPlatformAutomationRoute
@@ -1133,6 +1141,7 @@ export interface FileRoutesByTo {
   '/documents/branding': typeof AuthenticatedDocumentsBrandingRoute
   '/firm-invite/$token': typeof AuthenticatedFirmInviteTokenRoute
   '/invite/$token': typeof AuthenticatedInviteTokenRoute
+  '/payroll/reports': typeof AuthenticatedPayrollReportsRoute
   '/payroll/salary-structures': typeof AuthenticatedPayrollSalaryStructuresRoute
   '/payroll/settings': typeof AuthenticatedPayrollSettingsRoute
   '/platform/automation': typeof AuthenticatedPlatformAutomationRoute
@@ -1273,6 +1282,7 @@ export interface FileRoutesById {
   '/_authenticated/documents/branding': typeof AuthenticatedDocumentsBrandingRoute
   '/_authenticated/firm-invite/$token': typeof AuthenticatedFirmInviteTokenRoute
   '/_authenticated/invite/$token': typeof AuthenticatedInviteTokenRoute
+  '/_authenticated/payroll/reports': typeof AuthenticatedPayrollReportsRoute
   '/_authenticated/payroll/salary-structures': typeof AuthenticatedPayrollSalaryStructuresRoute
   '/_authenticated/payroll/settings': typeof AuthenticatedPayrollSettingsRoute
   '/_authenticated/platform/automation': typeof AuthenticatedPlatformAutomationRoute
@@ -1416,6 +1426,7 @@ export interface FileRouteTypes {
     | '/documents/branding'
     | '/firm-invite/$token'
     | '/invite/$token'
+    | '/payroll/reports'
     | '/payroll/salary-structures'
     | '/payroll/settings'
     | '/platform/automation'
@@ -1550,6 +1561,7 @@ export interface FileRouteTypes {
     | '/documents/branding'
     | '/firm-invite/$token'
     | '/invite/$token'
+    | '/payroll/reports'
     | '/payroll/salary-structures'
     | '/payroll/settings'
     | '/platform/automation'
@@ -1689,6 +1701,7 @@ export interface FileRouteTypes {
     | '/_authenticated/documents/branding'
     | '/_authenticated/firm-invite/$token'
     | '/_authenticated/invite/$token'
+    | '/_authenticated/payroll/reports'
     | '/_authenticated/payroll/salary-structures'
     | '/_authenticated/payroll/settings'
     | '/_authenticated/platform/automation'
@@ -2185,6 +2198,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/payroll/'
       preLoaderRoute: typeof AuthenticatedPayrollIndexRouteImport
+      parentRoute: typeof AuthenticatedPayrollRouteRoute
+    }
+    '/_authenticated/payroll/reports': {
+      id: '/_authenticated/payroll/reports'
+      path: '/reports'
+      fullPath: '/payroll/reports'
+      preLoaderRoute: typeof AuthenticatedPayrollReportsRouteImport
       parentRoute: typeof AuthenticatedPayrollRouteRoute
     }
     '/_authenticated/payroll/salary-structures': {
@@ -2817,6 +2837,7 @@ const AuthenticatedBankingRouteRouteWithChildren =
   )
 
 interface AuthenticatedPayrollRouteRouteChildren {
+  AuthenticatedPayrollReportsRoute: typeof AuthenticatedPayrollReportsRoute
   AuthenticatedPayrollSalaryStructuresRoute: typeof AuthenticatedPayrollSalaryStructuresRoute
   AuthenticatedPayrollSettingsRoute: typeof AuthenticatedPayrollSettingsRoute
   AuthenticatedPayrollIndexRoute: typeof AuthenticatedPayrollIndexRoute
@@ -2831,6 +2852,7 @@ interface AuthenticatedPayrollRouteRouteChildren {
 
 const AuthenticatedPayrollRouteRouteChildren: AuthenticatedPayrollRouteRouteChildren =
   {
+    AuthenticatedPayrollReportsRoute: AuthenticatedPayrollReportsRoute,
     AuthenticatedPayrollSalaryStructuresRoute:
       AuthenticatedPayrollSalaryStructuresRoute,
     AuthenticatedPayrollSettingsRoute: AuthenticatedPayrollSettingsRoute,

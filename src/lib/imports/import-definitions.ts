@@ -254,10 +254,19 @@ const defs: ImportDefinition[] = [
     documentType: "Employee master",
     writeStatus: "not_implemented",
     fields: [
-      field("employee_id", "Employee ID", true, "EMP-001", "Unique employee reference"),
-      field("name", "Name", true, "Example Employee", "Employee name"),
-      field("country", "Country", true, "AU", "Payroll jurisdiction"),
-      field("start_date", "Start Date", true, "2026-10-01", "Employment start date"),
+      field(
+        "employee_number",
+        "Employee number",
+        true,
+        "EMP-001",
+        "Import via Payroll → Employees (CSV upload). This Imports Centre template documents the column contract only.",
+      ),
+      field("first_name", "First name", true, "Alex", "Given name"),
+      field("last_name", "Last name", true, "Example", "Family name"),
+      field("email", "Email", false, "alex@example.com", "Work email"),
+      field("hire_date", "Hire date", true, "2026-10-01", "Employment start date (YYYY-MM-DD)"),
+      field("department", "Department", false, "Operations", "Department label"),
+      field("payroll_country_code", "Payroll country", true, "GB", "ISO country code"),
     ],
   },
   {

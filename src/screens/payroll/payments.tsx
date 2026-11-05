@@ -235,7 +235,7 @@ export function PayrollPaymentsPage() {
                   disabled={exportMut.isPending}
                   onClick={() => exportMut.mutate()}
                 >
-                  Generic bank CSV
+                  Generic bank CSV (Batch 5)
                 </Button>
                 <Button size="sm" onClick={() => setRecordOpen(true)}>
                   Record payment
@@ -250,8 +250,8 @@ export function PayrollPaymentsPage() {
       {canPay ? (
         <Alert className="mb-4">
           <AlertDescription>
-            Generic bank CSV is for manual review only. Downloading it does not mark payslips as
-            paid or record a payment in LinkBooks.
+            Generic bank CSV (Batch 5) is a non bank-specific export for manual review only.
+            Downloading it does not mark payslips as paid or record a payment in LinkBooks.
           </AlertDescription>
         </Alert>
       ) : null}

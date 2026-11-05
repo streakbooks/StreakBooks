@@ -12,6 +12,7 @@ const ITEMS = [
   { label: "Runs", to: "/payroll/runs" as const, key: "runs" as const },
   { label: "Payslips", to: "/payroll/payslips" as const, key: "payslips" as const },
   { label: "Payments", to: "/payroll/payments" as const, key: "payments" as const },
+  { label: "Reports", to: "/payroll/reports" as const, key: "reports" as const },
   { label: "Settings", to: "/payroll/settings" as const, key: "settings" as const },
 ] as const;
 

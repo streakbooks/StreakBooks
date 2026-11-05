@@ -143,8 +143,8 @@ export function PayrollOverviewPage() {
             <CardHeader>
               <CardTitle className="text-base">What is available now</CardTitle>
               <CardDescription>
-                Foundation settings, employees, salary structures, pay runs and payslips through
-                approval. Journal posting, payments and statutory filing follow in later batches.
+                Settings, employees, salary structures, pay runs, payslips, payments, and payroll
+                reports for approved and posted runs.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-2">
@@ -159,6 +159,12 @@ export function PayrollOverviewPage() {
               </Button>
               <Button asChild variant="outline" size="sm">
                 <Link to="/payroll/payslips">Payslips</Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/payroll/payments">Payments</Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/payroll/reports">Reports</Link>
               </Button>
               <Button asChild variant="outline" size="sm">
                 <Link to="/payroll/settings">Configure payroll settings</Link>

@@ -74,12 +74,12 @@ CREATE INDEX correction_approval_event_history
 ALTER TABLE public.correction_approval_policies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.correction_approval_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.correction_approval_events ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON public.correction_approval_policies,
-  public.correction_approval_requests, public.correction_approval_events
-  FROM PUBLIC, anon, authenticated;
-GRANT SELECT ON public.correction_approval_policies,
-  public.correction_approval_requests, public.correction_approval_events
-  TO authenticated;
+REVOKE ALL ON public.correction_approval_policies FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON public.correction_approval_requests FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON public.correction_approval_events FROM PUBLIC, anon, authenticated;
+GRANT SELECT ON public.correction_approval_policies TO authenticated;
+GRANT SELECT ON public.correction_approval_requests TO authenticated;
+GRANT SELECT ON public.correction_approval_events TO authenticated;
 
 CREATE POLICY correction_approval_policy_read ON public.correction_approval_policies
   FOR SELECT TO authenticated USING (

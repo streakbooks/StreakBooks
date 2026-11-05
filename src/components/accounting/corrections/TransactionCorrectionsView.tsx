@@ -863,6 +863,49 @@ export function TransactionCorrectionsView({
             Refresh correction history
           </Button>
         </div>
+        <div className="flex flex-wrap items-end gap-3">
+          <p role="status" className="text-xs text-muted-foreground">
+            Page {history.page + 1}: {historyCounts.applied} applied · {historyCounts.undone}{" "}
+            undone · {historyCounts.needsReview} needing evidence review. These counts and filters
+            cover the 50 loaded batches on this page only.
+          </p>
+          <label className="space-y-1 text-sm">
+            Batch status
+            <select
+              aria-label="Correction history status"
+              className="block h-9 rounded-md border border-input bg-background px-2 text-sm"
+              value={historyStatus}
+              onChange={(event) =>
+                setHistoryStatus(event.target.value as CorrectionHistoryFilter)
+              }
+            >
+              {/* lookup-fixed-enum: Correction status is a fixed server-defined enumeration. */}
+              <option value="all">All batches</option>
+              <option value="applied">Applied</option>
+              <option value="undone">Undone</option>
+              <option value="needs_review">Missing evidence links</option>
+            </select>
+          </label>
+          <Input
+            aria-label="Search loaded correction history"
+            className="h-9 w-60"
+            placeholder="Batch, reference, account or reason"
+            value={historyQuery}
+            onChange={(event) => setHistoryQuery(event.target.value)}
+          />
+          <Button
+            variant="outline"
+            disabled={busy || historyLoading || !setup.can_export || history.rows.length === 0}
+            onClick={() =>
+              download(
+                correctionHistoryCsv(history.rows),
+                `linkbooks-correction-batches-page-${history.page + 1}.csv`,
+              )
+            }
+          >
+            Export loaded history CSV
+          </Button>
+        </div>
         {historyError && (
           <p role="alert" className="text-destructive">
             {historyError}
@@ -871,9 +914,13 @@ export function TransactionCorrectionsView({
         {historyLoading ? (
           <p role="status">Loading correction history…</p>
         ) : history.rows.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No correction batches yet.</p>
+          <p className="text-sm text-muted-foreground">No correction batches on this page.</p>
+        ) : filteredHistory.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No loaded batches match this filter. Choose All batches or browse another page.
+          </p>
         ) : (
-          history.rows.map((b) => (
+          filteredHistory.map((b) => (
             <details key={b.id} className="rounded-lg border p-3">
               <summary className="cursor-pointer text-sm">
                 <strong>{b.status === "undone" ? "Undone" : "Applied"}</strong> · {b.created_at} ·{" "}
@@ -883,6 +930,12 @@ export function TransactionCorrectionsView({
                 <p>
                   Batch: {b.id} · Created by: {b.created_by}
                 </p>
+                {correctionEvidenceIssue(b) ? (
+                  <p role="alert" className="text-sm text-destructive">
+                    Evidence review required: {correctionEvidenceIssue(b)}. Check linked journals
+                    and refresh history before any undo.
+                  </p>
+                ) : null}
                 <p>
                   Posting dates: {[...new Set(b.plan.rows.map((r) => r.posting_date))].join(", ")}
                 </p>
@@ -902,7 +955,15 @@ export function TransactionCorrectionsView({
                 <ul className="space-y-1">
                   {b.plan.rows.map((r) => (
                     <li key={r.id}>
-                      Journal #{r.journal_number}, {r.source_account_code} → {b.plan.target.code},{" "}
+                      Source{" "}
+                      <Link
+                        to="/accounting"
+                        search={{ tab: "journals", journal: r.journal_id }}
+                        className="underline"
+                      >
+                        journal #{r.journal_number}
+                      </Link>
+                      , {r.source_account_code} → {b.plan.target.code},{" "}
                       {money(BigInt(r.debit_minor) + BigInt(r.credit_minor))}{" "}
                       {BigInt(r.debit_minor) > 0n ? "Dr" : "Cr"}, posting {r.posting_date}
                     </li>

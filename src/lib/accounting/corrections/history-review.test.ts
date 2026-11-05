@@ -85,9 +85,7 @@ describe("correction history review", () => {
       undo_journal_ids: [],
     };
     expect(correctionEvidenceIssue(incomplete)).toBe("Undo journal links are missing");
-    expect(filterCorrectionHistory([batch, incomplete], "needs_review", "")).toEqual([
-      incomplete,
-    ]);
+    expect(filterCorrectionHistory([batch, incomplete], "needs_review", "")).toEqual([incomplete]);
     const csv = correctionHistoryCsv([batch]);
     expect(csv).toContain("'=EVIL() reclassification");
     expect(csv).toContain("correction-journal-1");
@@ -97,9 +95,9 @@ describe("correction history review", () => {
   it("detects a stale status, altered journal identifiers or changed posting amounts", () => {
     expect(() => assertCorrectionUndoSnapshot(batch, batch)).not.toThrow();
     expect(() => assertCorrectionUndoSnapshot(batch, null)).toThrow("changed");
-    expect(() =>
-      assertCorrectionUndoSnapshot(batch, { ...batch, status: "undone" }),
-    ).toThrow("already undone");
+    expect(() => assertCorrectionUndoSnapshot(batch, { ...batch, status: "undone" })).toThrow(
+      "already undone",
+    );
     expect(() =>
       assertCorrectionUndoSnapshot(batch, { ...batch, journal_ids: ["different"] }),
     ).toThrow("evidence changed");
@@ -116,15 +114,11 @@ describe("correction history review", () => {
 
   it("guards reason, dates and unsupported undo states", () => {
     expect(correctionUndoDateIssue(batch, "2026-11-05", "Fix classification")).toBeNull();
-    expect(correctionUndoDateIssue(batch, "2026-10-30", "Fix classification")).toMatch(
-      /before/,
-    );
-    expect(correctionUndoDateIssue(batch, "2026-11-31", "Fix classification")).toMatch(
-      /real/,
-    );
+    expect(correctionUndoDateIssue(batch, "2026-10-30", "Fix classification")).toMatch(/before/);
+    expect(correctionUndoDateIssue(batch, "2026-11-31", "Fix classification")).toMatch(/real/);
     expect(correctionUndoDateIssue(batch, "2026-11-05", "x")).toMatch(/reason/);
-    expect(
-      correctionUndoDateIssue({ ...batch, status: "undone" }, "2026-11-05", "Reason"),
-    ).toMatch(/applied/);
+    expect(correctionUndoDateIssue({ ...batch, status: "undone" }, "2026-11-05", "Reason")).toMatch(
+      /applied/,
+    );
   });
 });

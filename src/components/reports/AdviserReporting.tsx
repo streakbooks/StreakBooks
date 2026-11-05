@@ -54,16 +54,32 @@ export function AdviserReporting({ from, to }: { from: string; to: string }) {
     : clients;
   const totals = new Map<
     string,
-    { revenue: bigint; profit: bigint; cash: bigint; count: number }
+    {
+      currency: string;
+      basis: "cash" | "accrual";
+      revenue: bigint;
+      profit: bigint;
+      cash: bigint;
+      count: number;
+    }
   >();
   for (const c of selectedClients) {
     const currency = c.metrics.company.baseCurrency,
-      total = totals.get(currency) ?? { revenue: 0n, profit: 0n, cash: 0n, count: 0 };
+      basis = c.metrics.accountingBasis,
+      key = `${currency}:${basis}`,
+      total = totals.get(key) ?? {
+        currency,
+        basis,
+        revenue: 0n,
+        profit: 0n,
+        cash: 0n,
+        count: 0,
+      };
     total.revenue += BigInt(c.metrics.metrics.revenue.value);
     total.profit += BigInt(c.metrics.metrics.net_profit.value);
     total.cash += BigInt(c.metrics.metrics.cash.value);
     total.count++;
-    totals.set(currency, total);
+    totals.set(key, total);
   }
   return (
     <div className="space-y-6">
@@ -123,20 +139,23 @@ export function AdviserReporting({ from, to }: { from: string; to: string }) {
       ) : (
         <>
           <div className="grid gap-3 md:grid-cols-3">
-            {[...totals].map(([currency, total]) => (
-              <div key={currency} className="rounded border p-4">
+            {[...totals].map(([key, total]) => (
+              <div key={key} className="rounded border p-4">
                 <p className="text-sm text-muted-foreground">
-                  {total.count} selected {currency} clients
+                  {total.count} selected {total.currency} clients ·{" "}
+                  {total.basis === "cash" ? "Cash" : "Accrual"} basis
                 </p>
-                <p className="font-semibold">Revenue: {fromMinorUnits(total.revenue, currency)}</p>
-                <p>Net profit: {fromMinorUnits(total.profit, currency)}</p>
-                <p>Cash: {fromMinorUnits(total.cash, currency)}</p>
+                <p className="font-semibold">
+                  Revenue: {fromMinorUnits(total.revenue, total.currency)}
+                </p>
+                <p>Net profit: {fromMinorUnits(total.profit, total.currency)}</p>
+                <p>Cash: {fromMinorUnits(total.cash, total.currency)}</p>
               </div>
             ))}
           </div>
           <p className="text-xs text-muted-foreground">
-            Portfolio indicators combine the selected clients separately by currency. They do not
-            apply intercompany eliminations or currency translation.
+            Portfolio indicators combine the selected clients separately by currency and accounting
+            basis. They do not apply intercompany eliminations or currency translation.
           </p>
           <div className="overflow-x-auto rounded border">
             <table className="w-full text-left text-sm">
@@ -175,8 +194,10 @@ export function AdviserReporting({ from, to }: { from: string; to: string }) {
                       <td className="p-3">
                         <p className="font-medium">{c.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {c.metrics.company.baseCurrency} · financial year end{" "}
-                          {c.metrics.company.fyEndDay}/{c.metrics.company.fyEndMonth}
+                          {c.metrics.company.baseCurrency} ·{" "}
+                          {c.metrics.accountingBasis === "cash" ? "Cash" : "Accrual"} basis ·
+                          financial year end {c.metrics.company.fyEndDay}/
+                          {c.metrics.company.fyEndMonth}
                         </p>
                         {!c.metrics.hasActivity && (
                           <p className="text-xs text-muted-foreground">

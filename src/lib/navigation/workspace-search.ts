@@ -10,9 +10,11 @@ export const ACCOUNTING_TABS = [
   "fx",
   "corrections",
   "deferrals",
+  "cash-classification",
 ] as const;
 export type AccountingTab = (typeof ACCOUNTING_TABS)[number];
 export type AccountingSearch = {
+  cashReview?: string | undefined;
   tab?: AccountingTab | undefined;
   journal?: string | undefined;
   period?: string | undefined;

@@ -508,10 +508,14 @@ export function ProfitWidget({ data }: { data: DashboardData }) {
   return (
     <WidgetCard
       title="Profit and loss"
-      description={`This financial year (from ${fmt.date(data.financialYear.start)}) vs last full year`}
+      description={`${data.accountingBasis === "cash" ? "Cash" : "Accrual"} basis · This financial year (from ${fmt.date(data.financialYear.start)}) vs last full year`}
       action={
         <Button size="sm" variant="ghost" asChild>
-          <Link to="/reports/$reportId" params={{ reportId: "profit-and-loss" }}>
+          <Link
+            to="/reports/$reportId"
+            params={{ reportId: "profit-and-loss" }}
+            search={{ from: data.financialYear.start, to: data.asOf, basis: data.accountingBasis }}
+          >
             Report <ArrowRight />
           </Link>
         </Button>
@@ -521,7 +525,11 @@ export function ProfitWidget({ data }: { data: DashboardData }) {
         <EmptyState
           compact
           title="No profit and loss yet"
-          description="Income and expenses appear here once documents are posted."
+          description={
+            data.accountingBasis === "cash"
+              ? "Income and expenses appear when receipts and payments are allocated."
+              : "Income and expenses appear here once documents are posted."
+          }
         />
       ) : (
         <>
@@ -651,7 +659,12 @@ export function WatchlistWidget({ data }: { data: DashboardData }) {
               <Link
                 to="/reports/$reportId"
                 params={{ reportId: "general-ledger" }}
-                search={{ account: a.id }}
+                search={{
+                  account: a.id,
+                  from: data.financialYear.start,
+                  to: data.asOf,
+                  basis: data.accountingBasis,
+                }}
                 className="min-w-0 truncate underline-offset-2 hover:underline"
               >
                 <span className="text-muted-foreground">{a.code}</span> {a.name}

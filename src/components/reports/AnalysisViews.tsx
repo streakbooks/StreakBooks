@@ -133,8 +133,16 @@ export function ExecutiveSummaryView({ ctx }: { ctx: ReportCtx }) {
   const fmt = useFormat();
   const fetchFn = useServerFn(getExecutiveSummary);
   const q = useQuery({
-    queryKey: ["report-exec", ctx.companyId, ctx.from, ctx.to],
-    queryFn: () => fetchFn({ data: { companyId: ctx.companyId, from: ctx.from, to: ctx.to } }),
+    queryKey: ["report-exec", ctx.companyId, ctx.from, ctx.to, ctx.search.basis],
+    queryFn: () =>
+      fetchFn({
+        data: {
+          companyId: ctx.companyId,
+          from: ctx.from,
+          to: ctx.to,
+          ...(ctx.search.basis ? { basis: ctx.search.basis } : {}),
+        },
+      }),
   });
   const d = q.data;
   return (
@@ -142,7 +150,7 @@ export function ExecutiveSummaryView({ ctx }: { ctx: ReportCtx }) {
       title="Executive Summary"
       ctx={ctx}
       mode="range"
-      basis="Accrual basis, posted ledger. Compared with the previous period of the same length."
+      basis={`${ctx.search.basis === "cash" ? "Cash" : "Accrual"} basis. Compared with the previous period of the same length.`}
       getCsv={() =>
         d
           ? {
@@ -275,7 +283,12 @@ export function CashSummaryView({ ctx }: { ctx: ReportCtx }) {
     {
       header: "Bank account",
       cell: (r) => (
-        <AccountLink accountId={r.gl_account_id} from={ctx.from} to={ctx.to}>
+        <AccountLink
+          accountId={r.gl_account_id}
+          from={ctx.from}
+          to={ctx.to}
+          basis={ctx.search.basis}
+        >
           {r.bank_account_name}
         </AccountLink>
       ),
@@ -349,8 +362,16 @@ export function GlSummaryView({ ctx }: { ctx: ReportCtx }) {
     queryFn: () => fetchAccounts({ data: { companyId: ctx.companyId } }),
   });
   const q = useQuery({
-    queryKey: ["report-gl-summary", ctx.companyId, ctx.from, ctx.to],
-    queryFn: () => fetchFn({ data: { companyId: ctx.companyId, from: ctx.from, to: ctx.to } }),
+    queryKey: ["report-gl-summary", ctx.companyId, ctx.from, ctx.to, ctx.search.basis],
+    queryFn: () =>
+      fetchFn({
+        data: {
+          companyId: ctx.companyId,
+          from: ctx.from,
+          to: ctx.to,
+          ...(ctx.search.basis ? { basis: ctx.search.basis } : {}),
+        },
+      }),
   });
   const d = q.data;
   const selectedIds = ctx.search.accountIds?.split(",") ?? null;
@@ -381,7 +402,7 @@ export function GlSummaryView({ ctx }: { ctx: ReportCtx }) {
     {
       header: "Account",
       cell: (r) => (
-        <AccountLink accountId={r.account_id} from={ctx.from} to={ctx.to}>
+        <AccountLink accountId={r.account_id} from={ctx.from} to={ctx.to} basis={ctx.search.basis}>
           <span className="mr-2 text-muted-foreground">{r.account_code}</span>
           {r.account_name}
         </AccountLink>
@@ -405,7 +426,7 @@ export function GlSummaryView({ ctx }: { ctx: ReportCtx }) {
       title="General Ledger Summary"
       ctx={ctx}
       mode="range"
-      basis="Debits and credits per selected account from posted journals. Opening and closing are signed debit minus credit."
+      basis={`${ctx.search.basis === "cash" ? "Cash" : "Accrual"} basis · Opening and closing are signed debit minus credit.`}
       extraControls={
         <ReportAccountMultiSelect
           accounts={accountsQ.data ?? []}
@@ -490,8 +511,16 @@ export function SalesByContactView({ ctx }: { ctx: ReportCtx }) {
   const fmt = useFormat();
   const fetchFn = useServerFn(getSalesByContact);
   const q = useQuery({
-    queryKey: ["report-sales-contact", ctx.companyId, ctx.from, ctx.to],
-    queryFn: () => fetchFn({ data: { companyId: ctx.companyId, from: ctx.from, to: ctx.to } }),
+    queryKey: ["report-sales-contact", ctx.companyId, ctx.from, ctx.to, ctx.search.basis],
+    queryFn: () =>
+      fetchFn({
+        data: {
+          companyId: ctx.companyId,
+          from: ctx.from,
+          to: ctx.to,
+          ...(ctx.search.basis ? { basis: ctx.search.basis } : {}),
+        },
+      }),
   });
   const d = q.data;
   type Row = NonNullable<typeof d>["rows"][number];
@@ -542,7 +571,11 @@ export function SalesByContactView({ ctx }: { ctx: ReportCtx }) {
       ctx={ctx}
       mode="range"
       extraControls={<AnalysisRowFilters ctx={ctx} label="customers" />}
-      basis="Posted invoices less credit notes, in base currency by invoice date"
+      basis={
+        ctx.search.basis === "cash"
+          ? "Cash basis · Allocated customer receipts less refunds on their cash dates"
+          : "Posted invoices less credit notes, in base currency by invoice date"
+      }
       getCsv={() => (d ? csvFor(filteredRows, cols) : null)}
     >
       <ReportPane
@@ -561,8 +594,16 @@ export function SalesByItemView({ ctx }: { ctx: ReportCtx }) {
   const fmt = useFormat();
   const fetchFn = useServerFn(getSalesByItem);
   const q = useQuery({
-    queryKey: ["report-sales-item", ctx.companyId, ctx.from, ctx.to],
-    queryFn: () => fetchFn({ data: { companyId: ctx.companyId, from: ctx.from, to: ctx.to } }),
+    queryKey: ["report-sales-item", ctx.companyId, ctx.from, ctx.to, ctx.search.basis],
+    queryFn: () =>
+      fetchFn({
+        data: {
+          companyId: ctx.companyId,
+          from: ctx.from,
+          to: ctx.to,
+          ...(ctx.search.basis ? { basis: ctx.search.basis } : {}),
+        },
+      }),
   });
   const d = q.data;
   type Row = NonNullable<typeof d>["rows"][number];
@@ -614,7 +655,11 @@ export function SalesByItemView({ ctx }: { ctx: ReportCtx }) {
       ctx={ctx}
       mode="range"
       extraControls={<AnalysisRowFilters ctx={ctx} label="items" />}
-      basis="Posted invoice lines less credit-note lines, in base currency. Quantities are summed as entered."
+      basis={
+        ctx.search.basis === "cash"
+          ? "Cash basis · Settled invoice components less refunds on their cash dates"
+          : "Posted invoice lines less credit-note lines, in base currency. Quantities are summed as entered."
+      }
       getCsv={() => (d ? csvFor(filteredRows, cols) : null)}
     >
       <ReportPane
@@ -635,8 +680,16 @@ export function PurchasesBySupplierView({ ctx }: { ctx: ReportCtx }) {
   const fmt = useFormat();
   const fetchFn = useServerFn(getPurchasesBySupplier);
   const q = useQuery({
-    queryKey: ["report-purchases-supplier", ctx.companyId, ctx.from, ctx.to],
-    queryFn: () => fetchFn({ data: { companyId: ctx.companyId, from: ctx.from, to: ctx.to } }),
+    queryKey: ["report-purchases-supplier", ctx.companyId, ctx.from, ctx.to, ctx.search.basis],
+    queryFn: () =>
+      fetchFn({
+        data: {
+          companyId: ctx.companyId,
+          from: ctx.from,
+          to: ctx.to,
+          ...(ctx.search.basis ? { basis: ctx.search.basis } : {}),
+        },
+      }),
   });
   const d = q.data;
   type Row = NonNullable<typeof d>["rows"][number];
@@ -687,7 +740,11 @@ export function PurchasesBySupplierView({ ctx }: { ctx: ReportCtx }) {
       ctx={ctx}
       mode="range"
       extraControls={<AnalysisRowFilters ctx={ctx} label="suppliers" />}
-      basis="Posted bills less credit notes, in base currency by bill date. Direct expenses are not included."
+      basis={
+        ctx.search.basis === "cash"
+          ? "Cash basis · Allocated supplier payments less refunds on their cash dates. Direct expenses are not included."
+          : "Posted bills less credit notes, in base currency by bill date. Direct expenses are not included."
+      }
       getCsv={() => (d ? csvFor(filteredRows, cols) : null)}
     >
       <ReportPane
@@ -724,7 +781,12 @@ export function BankReconSummaryView({ ctx }: { ctx: ReportCtx }) {
     {
       header: "Bank account",
       cell: (r) => (
-        <AccountLink accountId={r.gl_account_id} from={ctx.from} to={ctx.to}>
+        <AccountLink
+          accountId={r.gl_account_id}
+          from={ctx.from}
+          to={ctx.to}
+          basis={ctx.search.basis}
+        >
           {r.bank_account_name}
         </AccountLink>
       ),
@@ -839,8 +901,16 @@ export function CashFlowIndirectView({ ctx }: { ctx: ReportCtx }) {
   const fmt = useFormat();
   const fetchFn = useServerFn(getCashFlowIndirect);
   const q = useQuery({
-    queryKey: ["report-cf-indirect", ctx.companyId, ctx.from, ctx.to],
-    queryFn: () => fetchFn({ data: { companyId: ctx.companyId, from: ctx.from, to: ctx.to } }),
+    queryKey: ["report-cf-indirect", ctx.companyId, ctx.from, ctx.to, ctx.search.basis],
+    queryFn: () =>
+      fetchFn({
+        data: {
+          companyId: ctx.companyId,
+          from: ctx.from,
+          to: ctx.to,
+          ...(ctx.search.basis ? { basis: ctx.search.basis } : {}),
+        },
+      }),
   });
   const d = q.data;
   const sections = d
@@ -949,7 +1019,12 @@ function FlowSection({
         <TableRow key={`${r.accountId ?? r.label}-${i}`}>
           <TableCell className="pl-6">
             {r.accountId ? (
-              <AccountLink accountId={r.accountId} from={ctx.from} to={ctx.to}>
+              <AccountLink
+                accountId={r.accountId}
+                from={ctx.from}
+                to={ctx.to}
+                basis={ctx.search.basis}
+              >
                 {r.label}
               </AccountLink>
             ) : (

@@ -1,3 +1,9 @@
+import {
+  CashClassificationError,
+  cashEvidenceMatches,
+  type CashJournalEvidenceSnapshot,
+} from "@/lib/reports/cash-classification";
+import type { CashJournal } from "@/lib/reports/cash-profit-loss";
 /**
  * Loads document tax lines for a return period and turns them into `TaxFact`s (TX-01).
  *
@@ -7,6 +13,7 @@
  * approval are left out. Foreign-currency documents convert at the rate of their posted journal.
  */
 
+import { normalizeCashAllocationHistory } from "@/lib/reports/cash-source";
 import { fetchAllPages } from "@/lib/accounting/fetch-all";
 import { convertMinorToBase } from "@/lib/accounting/fx";
 import type { Sb } from "@/lib/accounting/ledger-data";
@@ -45,8 +52,9 @@ function str(row: Row, key: string): string {
 
 function big(row: Row, key: string): bigint {
   const v = row[key];
-  if (typeof v === "number" && Number.isFinite(v)) return BigInt(Math.round(v));
+  if (typeof v === "number" && Number.isSafeInteger(v)) return BigInt(v);
   if (typeof v === "string" && /^-?\d+$/.test(v)) return BigInt(v);
+  if (v != null) throw new Error(`Invalid or unsafe tax amount: ${key}`);
   return 0n;
 }
 
@@ -69,6 +77,7 @@ type Source = {
     /** Parent statuses to ignore. */
     skipStatuses: string[];
   };
+  refundKind?: "customer_refund" | "supplier_refund";
 };
 
 const SOURCES: Source[] = [
@@ -95,6 +104,7 @@ const SOURCES: Source[] = [
     header: "sales_credit_notes",
     dateCol: "credit_date",
     lines: { table: "sales_credit_note_lines", fk: "credit_note_id", hasCode: false },
+    refundKind: "customer_refund",
   },
   {
     kind: "purchase_bill",
@@ -119,6 +129,7 @@ const SOURCES: Source[] = [
     header: "purchase_credit_notes",
     dateCol: "credit_date",
     lines: { table: "purchase_credit_note_lines", fk: "credit_note_id", hasCode: false },
+    refundKind: "supplier_refund",
   },
   {
     kind: "purchase_expense",
@@ -180,42 +191,323 @@ async function loadJournalRates(
   return map;
 }
 
-/** Cash basis: per-document amount allocated by payments dated inside the period. */
+type CashPosition = {
+  before: bigint;
+  through: bigint;
+  events: Array<{ date: string; amount: bigint; id: string; sequence: number }>;
+};
+
+function addPosition(
+  positions: Map<string, CashPosition>,
+  documentId: string,
+  date: string,
+  amount: bigint,
+  from: string,
+  to: string,
+  eventId: string,
+) {
+  if (date > to) return;
+  const position = positions.get(documentId) ?? { before: 0n, through: 0n, events: [] };
+  position.events.push({ date, amount, id: eventId, sequence: position.events.length });
+  position.through += amount;
+  if (date < from) position.before += amount;
+  positions.set(documentId, position);
+}
+
+async function reversalDates(sb: Sb, companyId: string, parents: Row[]) {
+  const dates = new Map<string, string>();
+  const ids = [...new Set(parents.map((p) => str(p, "void_journal_id")).filter(Boolean))];
+  for (const batch of chunks(ids, CHUNK)) {
+    const rows = await fetchAllPages<Row>((f, t) =>
+      table(sb, "journals")
+        .select("id,journal_date")
+        .eq("company_id", companyId)
+        .eq("status", "posted")
+        .in("id", batch)
+        .order("id")
+        .range(f, t),
+    );
+    for (const row of rows) dates.set(str(row, "id"), str(row, "journal_date"));
+  }
+  return dates;
+}
+
+/** Cumulative positions preserve prior-period pennies and dated reversals. */
 async function loadAllocatedInPeriod(
   sb: Sb,
   companyId: string,
   a: NonNullable<Source["allocations"]>,
   from: string,
   to: string,
-): Promise<Map<string, bigint>> {
+): Promise<Map<string, CashPosition>> {
   const parents = await fetchAllPages<Row>((f, t) =>
     table(sb, a.parentTable)
-      .select(`id, status, ${a.parentDate}`)
+      .select(`id, company_id, status, posted_journal_id, void_journal_id, ${a.parentDate}`)
       .eq("company_id", companyId)
-      .gte(a.parentDate, from)
       .lte(a.parentDate, to)
       .order("id")
       .range(f, t),
   );
-  const okParents = parents
-    .filter((p) => !a.skipStatuses.includes(str(p, "status")))
-    .map((p) => str(p, "id"));
-  const byDoc = new Map<string, bigint>();
-  for (const ids of chunks(okParents, CHUNK)) {
+  const postedParents = parents.filter((p) => Boolean(str(p, "posted_journal_id")));
+  const parentMap = new Map(postedParents.map((p) => [str(p, "id"), p]));
+  const voidDates = await reversalDates(sb, companyId, postedParents);
+  const byDoc = new Map<string, CashPosition>();
+  for (const ids of chunks([...parentMap.keys()], CHUNK)) {
     const rows = await fetchAllPages<Row>((f, t) =>
       table(sb, a.table)
-        .select(`${a.docFk}, amount_minor`)
+        .select(
+          `id, company_id, ${a.docFk}, ${a.parentFk}, amount_minor, allocated_on${a.parentTable === "sales_receipts" ? ", reversed_on" : ""}`,
+        )
         .eq("company_id", companyId)
         .in(a.parentFk, ids)
         .order("id")
         .range(f, t),
     );
-    for (const r of rows) {
+    const normalized =
+      a.parentTable === "supplier_payments"
+        ? normalizeCashAllocationHistory(
+            rows,
+            await fetchAllPages<Row>((f, t) =>
+              table(sb, "cash_allocation_history")
+                .select(
+                  "id,company_id,source_table,allocation_id,operation,source_row,recorded_at,event_seq",
+                )
+                .eq("company_id", companyId)
+                .eq("source_table", a.table)
+                .order("id")
+                .range(f, t),
+            ),
+            {
+              companyId,
+              sourceTable: a.table,
+              parentKey: a.parentFk,
+              parents: postedParents.filter((p) => ids.includes(str(p, "id"))),
+              parentDateKey: a.parentDate,
+              journalDates: voidDates,
+            },
+          )
+        : rows;
+    for (const r of normalized) {
       const doc = str(r, a.docFk);
-      byDoc.set(doc, (byDoc.get(doc) ?? 0n) + big(r, "amount_minor"));
+      const parent = parentMap.get(str(r, a.parentFk))!;
+      const date = [str(parent, a.parentDate), str(r, "allocated_on")].sort().at(-1)!;
+      const amount = big(r, "amount_minor");
+      addPosition(byDoc, doc, date, amount, from, to, str(r, "id"));
+      const reversedOn = str(r, "reversed_on") || voidDates.get(str(parent, "void_journal_id"));
+      if (reversedOn)
+        addPosition(byDoc, doc, reversedOn, -amount, from, to, `${str(r, "id")}:reversal`);
+      else if (["void", "voided"].includes(str(parent, "status")))
+        throw new Error("Voided cash tax payment requires a posted reversal date");
     }
   }
   return byDoc;
+}
+
+/** An unused/noncash credit note has no cash tax movement. */
+async function loadRefundedCredits(
+  sb: Sb,
+  companyId: string,
+  src: Source,
+  from: string,
+  to: string,
+): Promise<Map<string, CashPosition>> {
+  const parents = await fetchAllPages<Row>((f, t) =>
+    table(sb, "money_documents")
+      .select("id,status,posted_journal_id,void_journal_id,document_date")
+      .eq("company_id", companyId)
+      .eq("kind", src.refundKind)
+      .lte("document_date", to)
+      .order("id")
+      .range(f, t),
+  );
+  const posted = new Map(
+    parents.filter((p) => str(p, "posted_journal_id")).map((p) => [str(p, "id"), p]),
+  );
+  const voidDates = await reversalDates(sb, companyId, [...posted.values()]);
+  const positions = new Map<string, CashPosition>();
+  for (const ids of chunks([...posted.keys()], CHUNK)) {
+    const uses = await fetchAllPages<Row>((f, t) =>
+      table(sb, "money_document_credit_uses")
+        .select("id,document_id,source_id,amount_minor")
+        .eq("company_id", companyId)
+        .eq("source_kind", src.kind)
+        .in("document_id", ids)
+        .order("id")
+        .range(f, t),
+    );
+    const history = await fetchAllPages<Row>((f, t) =>
+      table(sb, "cash_allocation_history")
+        .select("id,operation,source_row")
+        .eq("company_id", companyId)
+        .eq("source_table", "money_document_credit_uses")
+        .order("id")
+        .range(f, t),
+    );
+    for (const event of history) {
+      const row = event["source_row"] as Row | undefined;
+      if (!row || row["source_kind"] !== src.kind || !ids.includes(str(row, "document_id")))
+        continue;
+      if (
+        event["operation"] !== "DELETE" ||
+        uses.some((u) => u["id"] === row["id"]) ||
+        !str(posted.get(str(row, "document_id"))!, "void_journal_id")
+      )
+        throw new Error("Cash tax refunds require verified credit-use history");
+      uses.push(row);
+    }
+    for (const use of uses) {
+      const parent = posted.get(str(use, "document_id"))!;
+      const amount = big(use, "amount_minor");
+      addPosition(
+        positions,
+        str(use, "source_id"),
+        str(parent, "document_date"),
+        amount,
+        from,
+        to,
+        str(use, "id"),
+      );
+      const reversedOn = voidDates.get(str(parent, "void_journal_id"));
+      if (reversedOn)
+        addPosition(
+          positions,
+          str(use, "source_id"),
+          reversedOn,
+          -amount,
+          from,
+          to,
+          `${str(use, "id")}:reversal`,
+        );
+      else if (str(parent, "status") === "void")
+        throw new Error("Cash tax refund requires a posted reversal date");
+    }
+  }
+  return positions;
+}
+
+/** Imported source tax is never reconstructed from current paid counters or account labels. */
+async function verifiedOpeningTaxLines(
+  sb: Sb,
+  companyId: string,
+  source: Source,
+  header: Row,
+  period: { from: string; to: string },
+  codes: Map<string, CodeInfo>,
+): Promise<Row[]> {
+  const id = str(header, "id"),
+    journalId = str(header, "posted_journal_id");
+  const fail = (missing: string): never => {
+    throw new CashClassificationError([
+      {
+        code: "cash_opening_tax_evidence_required",
+        message: "Cash tax reporting needs verified original opening-document tax details.",
+        companyId,
+        sourceAccountId: null,
+        journalId: journalId || null,
+        documentId: id,
+        amountMinor: big(header, "total_minor").toString(),
+        currency: str(header, "currency_code"),
+        date: str(header, source.dateCol),
+        period,
+        missingEvidence: [missing],
+      },
+    ]);
+  };
+  const rows = await fetchAllPages<Row>((from, to) =>
+    table(sb, "cash_opening_evidence")
+      .select("*,gross_minor::text")
+      .eq("company_id", companyId)
+      .eq("document_id", id)
+      .eq("status", "approved")
+      .order("id")
+      .range(from, to),
+  );
+  const evidence = rows
+    .filter((r) => str(r, "effective_from") <= period.to)
+    .sort((a, b) => Number(b["version"]) - Number(a["version"]))[0];
+  if (
+    !evidence ||
+    str(evidence, "source_kind") !== source.kind ||
+    str(evidence, "posted_journal_id") !== journalId ||
+    big(evidence, "gross_minor") !== big(header, "total_minor") ||
+    str(evidence, "currency_code") !== str(header, "currency_code") ||
+    !str(evidence, "approved_by") ||
+    !str(evidence, "approved_at")
+  )
+    return fail(
+      "Approve the exact original opening source, its historical recognition policy and tax-code lines",
+    );
+  const journals = await fetchAllPages<Row>((from, to) =>
+    table(sb, "journals")
+      .select(
+        "id,company_id,journal_date,journal_number,currency_code,fx_rate_to_base,source_type,source_id,status",
+      )
+      .eq("company_id", companyId)
+      .eq("id", journalId)
+      .eq("status", "posted")
+      .order("id")
+      .range(from, to),
+  );
+  const journal = journals[0];
+  if (!journal || str(journal, "source_type") !== "opening_balance")
+    return fail("Matching posted opening journal");
+  const lines = await fetchAllPages<Row>((from, to) =>
+    table(sb, "journal_lines")
+      .select("id,account_id,debit_minor,credit_minor")
+      .eq("company_id", companyId)
+      .eq("journal_id", journalId)
+      .order("id")
+      .range(from, to),
+  );
+  const actual: CashJournal = {
+    id: journalId,
+    companyId,
+    date: str(journal, "journal_date"),
+    number: str(journal, "journal_number"),
+    currency: str(journal, "currency_code"),
+    rate: journal["fx_rate_to_base"] == null ? null : String(journal["fx_rate_to_base"]),
+    sourceType: str(journal, "source_type"),
+    sourceId: str(journal, "source_id") || null,
+    reverses: null,
+    lines: lines.map((line) => ({
+      lineId: str(line, "id"),
+      accountId: str(line, "account_id"),
+      debit: big(line, "debit_minor"),
+      credit: big(line, "credit_minor"),
+    })),
+  };
+  if (
+    !cashEvidenceMatches(actual, evidence["source_journal_snapshot"] as CashJournalEvidenceSnapshot)
+  )
+    return fail("The original posted source must still match the approved immutable evidence");
+  if (evidence["mode"] === "already_recognized") return [];
+  const details = evidence["tax_lines"] as Row[] | undefined;
+  if (
+    !details?.length ||
+    details.reduce((sum, line) => sum + big(line, "net_minor") + big(line, "tax_minor"), 0n) !==
+      big(header, "total_minor")
+  )
+    return fail(
+      "Enter verified original tax lines and company tax codes reconciling to the document gross",
+    );
+  return details.map((line) => {
+    const code = codes.get(str(line, "tax_code_id"));
+    if (!code) return fail("Each original tax line needs a company tax code");
+    if (
+      isSelfAssessedReverseCharge(code.treatment, big(line, "tax_minor")) &&
+      (typeof line["tax_rate_bps"] !== "number" ||
+        !Number.isInteger(line["tax_rate_bps"]) ||
+        Number(line["tax_rate_bps"]) < 0 ||
+        Number(line["tax_rate_bps"]) > 100000)
+    )
+      return fail("Original reverse-charge rate evidence");
+    return {
+      ...line,
+      id: str(line, "id") || `${id}:verified-tax`,
+      [source.lines!.fk]: id,
+      tax_rate_bps: line["tax_rate_bps"] ?? 0,
+    };
+  });
 }
 
 export async function loadTaxFacts(
@@ -235,12 +527,13 @@ export async function loadTaxFacts(
   let skippedNoRate = 0;
 
   for (const src of SOURCES) {
-    // Cash basis applies to invoices and bills that are paid by allocation. Credit notes and
-    // expenses are always taken on their own date.
-    const useCash = basis === "cash" && Boolean(src.allocations);
-    const allocated = useCash
-      ? await loadAllocatedInPeriod(sb, companyId, src.allocations!, from, to)
-      : null;
+    const useCash = basis === "cash" && Boolean(src.allocations || src.refundKind);
+    const allocated =
+      useCash && src.allocations
+        ? await loadAllocatedInPeriod(sb, companyId, src.allocations!, from, to)
+        : useCash && src.refundKind
+          ? await loadRefundedCredits(sb, companyId, src, from, to)
+          : null;
 
     const columns = [
       "id",
@@ -290,7 +583,8 @@ export async function loadTaxFacts(
       id: string;
       currency: string;
       rate: string | null;
-      fraction: [bigint, bigint] | null;
+      date: string;
+      fraction: [CashPosition, bigint] | null;
     };
     const docs = new Map<string, Doc>();
     for (const h of headers) {
@@ -298,16 +592,48 @@ export async function loadTaxFacts(
       const foreign = currency !== baseCurrency.toUpperCase();
       const rate = foreign ? (rates.get(str(h, "posted_journal_id")) ?? null) : null;
       if (foreign && rate === null) {
+        const id = str(h, "id");
+        if (
+          useCash &&
+          allocated?.get(id)?.events.some((event) => event.date >= from && event.date <= to)
+        )
+          throw new CashClassificationError([
+            {
+              code: "cash_tax_fx_evidence_required",
+              message: "Cash tax reporting requires the original posted exchange rate.",
+              companyId,
+              sourceAccountId: null,
+              journalId: str(h, "posted_journal_id") || null,
+              documentId: id,
+              amountMinor: big(h, "total_minor").toString(),
+              currency,
+              date: str(h, src.dateCol),
+              period: { from, to },
+              missingEvidence: [
+                "Verified posted source exchange rate for this foreign-currency cash recognition",
+              ],
+            },
+          ]);
         skippedNoRate += 1;
         continue;
       }
       const id = str(h, "id");
-      const paid = allocated?.get(id) ?? 0n;
+      const paid = allocated?.get(id) ?? { before: 0n, through: 0n, events: [] };
       const total = big(h, "total_minor");
+      if (
+        allocated &&
+        (total <= 0n ||
+          paid.before < 0n ||
+          paid.through < 0n ||
+          paid.before > total ||
+          paid.through > total)
+      )
+        throw new Error("Cash tax allocations exceed the source document total");
       docs.set(id, {
         id,
         currency,
         rate,
+        date: str(h, src.dateCol),
         fraction: allocated ? [paid, total] : null,
       });
     }
@@ -316,7 +642,10 @@ export async function loadTaxFacts(
     const toBase = (d: Doc, minor: bigint): bigint =>
       d.rate === null ? minor : convertMinorToBase(minor, d.rate, d.currency, baseCurrency);
     const scale = (d: Doc, base: bigint): bigint =>
-      d.fraction ? scaleByFraction(base, d.fraction[0], d.fraction[1]) : base;
+      d.fraction
+        ? scaleByFraction(base, d.fraction[0].through, d.fraction[1]) -
+          scaleByFraction(base, d.fraction[0].before, d.fraction[1])
+        : base;
 
     if (src.headerOnly) {
       for (const h of headers) {
@@ -324,6 +653,7 @@ export async function loadTaxFacts(
         if (!d) continue;
         const tax = big(h, "tax_minor");
         facts.push({
+          source: { type: src.kind, id: d.id, lineId: d.id, date: d.date },
           side: src.side,
           sign: src.sign,
           treatment: null,
@@ -347,6 +677,16 @@ export async function loadTaxFacts(
           .order("id")
           .range(f, t),
       );
+      if (useCash)
+        for (const id of ids) {
+          if (lines.some((line) => str(line, lineSpec.fk) === id)) continue;
+          const doc = docs.get(id)!;
+          if (doc.fraction && !doc.fraction[0].events.some((event) => event.date >= from)) continue;
+          const header = headers.find((row) => str(row, "id") === id)!;
+          lines.push(
+            ...(await verifiedOpeningTaxLines(sb, companyId, src, header, { from, to }, codes)),
+          );
+        }
       for (const line of lines) {
         const d = docs.get(str(line, lineSpec.fk));
         if (!d) continue;
@@ -361,16 +701,115 @@ export async function loadTaxFacts(
         if (selfAssessed) {
           taxMinor = reverseChargeTaxMinor(netMinor, Number(big(line, "tax_rate_bps")));
         }
-        facts.push({
-          side: src.side,
-          sign: src.sign,
-          treatment: code?.treatment ?? null,
-          recoverable: code ? code.recoverable : true,
-          netBase: scale(d, toBase(d, netMinor)),
-          taxBase: scale(d, toBase(d, taxMinor)),
-          coded: Boolean(code),
-          ...(selfAssessed ? { selfAssessed: true } : {}),
-        });
+        const netBase = toBase(d, netMinor),
+          taxBase = toBase(d, taxMinor);
+        const movements: Array<{ date: string; id?: string; net: bigint; tax: bigint }> = [];
+        if (d.fraction) {
+          const total = d.fraction[1];
+          type Slice = { start: bigint; end: bigint };
+          const free: Slice[] = [{ start: 0n, end: total }];
+          const used = new Map<string, Slice[]>();
+          const ordered = [...d.fraction[0].events].sort(
+            (a, b) =>
+              a.date.localeCompare(b.date) || a.sequence - b.sequence || a.id.localeCompare(b.id),
+          );
+          // Dates have day precision. Apply a known reversal before a replacement,
+          // and retain the dependency when an allocation and its void share a day.
+          const pending = [...ordered];
+          while (pending.length) {
+            const day = pending[0]!.date;
+            const available = free.reduce((sum, part) => sum + part.end - part.start, 0n);
+            const sameDay = (event: (typeof pending)[number]) => event.date === day;
+            let index = pending.findIndex(
+              (event) =>
+                sameDay(event) && event.amount < 0n && used.has(event.id.replace(/:reversal$/, "")),
+            );
+            if (index < 0)
+              index = pending.findIndex(
+                (event) =>
+                  sameDay(event) &&
+                  event.amount > 0n &&
+                  event.amount <= available &&
+                  pending.some(
+                    (other) => other.date === day && other.id === `${event.id}:reversal`,
+                  ),
+              );
+            if (index < 0)
+              index = pending.findIndex(
+                (event) => sameDay(event) && event.amount > 0n && event.amount <= available,
+              );
+            if (index < 0)
+              throw new Error(
+                "Cash tax event has no matching original allocation or exceeds its balance",
+              );
+            const event = pending.splice(index, 1)[0]!;
+            let slices: Slice[];
+            if (event.amount > 0n) {
+              if (used.has(event.id)) throw new Error("Duplicate cash tax event");
+              let remaining = event.amount;
+              slices = [];
+              while (remaining > 0n && free.length) {
+                const first = free[0]!;
+                const amount =
+                  remaining < first.end - first.start ? remaining : first.end - first.start;
+                slices.push({ start: first.start, end: first.start + amount });
+                first.start += amount;
+                remaining -= amount;
+                if (first.start === first.end) free.shift();
+              }
+              if (remaining !== 0n)
+                throw new Error("Cash tax event exceeds the source document balance");
+              used.set(event.id, slices);
+            } else {
+              const originalId = event.id.replace(/:reversal$/, "");
+              const original = used.get(originalId);
+              if (
+                !original ||
+                original.reduce((sum, part) => sum + part.end - part.start, 0n) !== -event.amount
+              )
+                throw new Error("Cash tax reversal has no matching original allocation");
+              slices = original;
+              used.delete(originalId);
+              free.push(...original.map((part) => ({ ...part })));
+              free.sort((a, b) => (a.start < b.start ? -1 : a.start > b.start ? 1 : 0));
+            }
+            const signed = event.amount < 0n ? -1n : 1n;
+            const portion = (base: bigint) =>
+              signed *
+              slices.reduce(
+                (sum, part) =>
+                  sum +
+                  scaleByFraction(base, part.end, total) -
+                  scaleByFraction(base, part.start, total),
+                0n,
+              );
+            if (event.date >= from)
+              movements.push({
+                date: event.date,
+                id: event.id,
+                net: portion(netBase),
+                tax: portion(taxBase),
+              });
+          }
+        } else movements.push({ date: d.date, net: netBase, tax: taxBase });
+        for (const movement of movements)
+          facts.push({
+            side: src.side,
+            sign: src.sign,
+            treatment: code?.treatment ?? null,
+            recoverable: code ? code.recoverable : true,
+            netBase: movement.net,
+            taxBase: movement.tax,
+            coded: Boolean(code),
+            source: {
+              type: src.kind,
+              id: d.id,
+              lineId: str(line, "id"),
+              date: movement.date,
+              ...(movement.id ? { settlementId: movement.id } : {}),
+            },
+            ...(selfAssessed ? { selfAssessed: true } : {}),
+          });
       }
     }
   }

@@ -1,4 +1,8 @@
-import { resolveStandardSettings, encodeStandardSettings } from "./standard-settings";
+import {
+  standardSettingsSchema,
+  resolveStandardSettings,
+  encodeStandardSettings,
+} from "./standard-settings";
 import { buildCapturedStandardStatement } from "./standard-captured";
 /** Immutable report document shared by preview, PDF, XLSX, CSV and the delivery worker. */
 import { z } from "zod";
@@ -19,6 +23,10 @@ import { buildIndirectCashFlow } from "./indirect-cash-flow";
 import { reportFiltersSchema, filterFingerprint, describeReportFilters } from "./report-filters";
 import { customDefinitionSchema, executeCustomReport, decimalValue } from "./custom-definition";
 import { fromMinorUnits, decimalPlacesFor } from "@/lib/accounting/money";
+import { cashInputFromRows } from "./cash-source";
+import { cashCustomFacts } from "./cash-custom";
+import { CASH_POLICY } from "./cash-standard";
+import { cashReportingFacts } from "./cash-report-facts";
 
 const integer = z.union([z.string().regex(/^-?\d+$/), z.number().int().safe()]).transform(String);
 const balance = z.object({
@@ -200,14 +208,47 @@ export function buildReportDocument(
   raw: unknown,
   definition: { name: string; reportId?: string; config: Record<string, unknown> },
 ): ReportDocument {
+  const requestedBasis = definition.config["_builder"]
+    ? "accrual"
+    : definition.config["basis"] === "cash" || definition.config["basis"] === "accrual"
+      ? definition.config["basis"]
+      : typeof definition.config["settings"] === "string"
+        ? standardSettingsSchema.parse(JSON.parse(definition.config["settings"])).basis
+        : "accrual";
+  if (definition.config["_builder"]) {
+    const builder = customDefinitionSchema.parse(definition.config["_builder"]);
+    let facts = factsSchema.parse(raw);
+    if (facts.cashSource) {
+      if (builder.basis !== "cash" || facts.cashSourceVersion !== 1)
+        throw new Error("Custom cash snapshot does not match the requested accounting basis");
+      facts = cashCustomFacts(facts, cashInputFromRows(facts.cashSource, facts), builder);
+    }
+    if (builder.basis === "cash" && (facts.basis !== "cash" || facts.cashPolicy !== CASH_POLICY))
+      throw new Error("Custom cash-basis facts were not captured by the cash recognition engine");
+    if (builder.basis === "accrual" && facts.basis === "cash")
+      throw new Error("Cash facts cannot be rendered as accrual figures");
+    raw = facts;
+  }
   if (
-    definition.config["basis"] === "cash" &&
-    !definition.config["settings"] &&
+    requestedBasis === "cash" &&
+    !(
+      typeof definition.config["settings"] === "string" &&
+      (definition.reportId === "profit-and-loss" || definition.reportId === "balance-sheet")
+    ) &&
     !definition.config["_builder"]
-  )
-    throw new Error(
-      "Cash reports require captured cash settings; refresh the report before exporting",
-    );
+  ) {
+    let facts = factsSchema.parse(raw);
+    if (facts.cashSource) {
+      if (facts.cashSourceVersion !== 1)
+        throw new Error("Cash snapshot version does not match the cash recognition engine");
+      facts = cashReportingFacts(facts, cashInputFromRows(facts.cashSource, facts));
+    }
+    if (facts.basis !== "cash" || facts.cashPolicy !== CASH_POLICY)
+      throw new Error(
+        "Cash reports require captured cash settings; refresh the report before exporting",
+      );
+    raw = facts;
+  }
   if (
     typeof definition.config["settings"] === "string" &&
     (definition.reportId === "profit-and-loss" || definition.reportId === "balance-sheet") &&
@@ -230,10 +271,13 @@ export function buildReportDocument(
     return document;
   }
   const { f, current, prior, bs, tb } = documentFigures(raw);
+  if (!definition.config["_builder"] && requestedBasis === "accrual" && f.basis === "cash")
+    throw new Error("Cash facts cannot be rendered as accrual figures");
   const currency = f.company.baseCurrency;
   const config = definition.config;
   const builder = config["_builder"] ? customDefinitionSchema.parse(config["_builder"]) : null;
   const doc: ReportDocument = {
+    ...(f.basis ? { basis: f.basis } : {}),
     title: builder?.title ?? definition.name,
     subtitle: builder?.subtitle ?? String(config["subtitle"] ?? ""),
     company: f.company.name,
@@ -265,7 +309,26 @@ export function buildReportDocument(
     orientation: builder?.orientation ?? "portrait",
     sections: [],
   };
+  if (f.basis === "cash" && !builder) {
+    doc.subtitle = [doc.subtitle, "Cash basis"].filter(Boolean).join(" · ");
+    doc.notes = [
+      "Cash basis: recognized receipts, payments and refunds use the same cash ledger as the cash financial statements.",
+      doc.notes,
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
   if (builder) {
+    doc.basis = builder.basis;
+    if (builder.basis === "cash") {
+      doc.subtitle = [doc.subtitle, "Cash basis"].filter(Boolean).join(" · ");
+      doc.notes = [
+        "Cash basis: allocated receipts, payments and refunds use their cash recognition dates; unapplied advances remain on the balance sheet. Custom columns, formulas and exports use the same recognized ledger as the standard cash statements.",
+        doc.notes,
+      ]
+        .filter(Boolean)
+        .join("\n");
+    }
     if (builder.filters.clauses.length || f.appliedFilters?.clauses.length) {
       if (
         !f.appliedFilters ||

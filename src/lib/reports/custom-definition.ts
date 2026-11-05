@@ -50,6 +50,7 @@ export const reportDisplaySchema = z.object({
 export const customDefinitionSchema = z
   .object({
     version: z.literal(1),
+    basis: z.enum(["accrual", "cash"]).default("accrual"),
     title: z.string().trim().min(1).max(80),
     subtitle: z.string().max(300).default(""),
     notes: z.string().max(4000).default(""),

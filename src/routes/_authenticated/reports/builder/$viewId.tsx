@@ -1,3 +1,5 @@
+import { getReportingBasis } from "@/lib/reports/accounting-basis.functions";
+import { withSavedReportBasis, type AccountingBasis } from "@/lib/reports/accounting-basis";
 import { parseReportSearch } from "@/lib/reports/search";
 import { useReportActivity } from "@/hooks/use-report-activity";
 import { ReportingFeatureGate } from "@/components/reports/ReportingFeatureGate";
@@ -47,6 +49,12 @@ function BuilderPage() {
     enabled: !!company,
     queryFn: () => accountsFn({ data: { companyId: company!.id } }),
   });
+  const loadBasis = useServerFn(getReportingBasis);
+  const companyBasis = useQuery({
+    queryKey: ["reporting-basis", company?.id],
+    enabled: Boolean(company),
+    queryFn: () => loadBasis({ data: { companyId: company!.id } }),
+  });
   const filterOptionsFn = useServerFn(getReportFilterOptions);
   const filterOptions = useQuery({
     queryKey: ["report-filter-options", company?.id],
@@ -63,6 +71,7 @@ function BuilderPage() {
   if (
     isPending ||
     accounts.isPending ||
+    companyBasis.isPending ||
     filterOptions.isPending ||
     (viewId !== "new" && saved.isPending)
   )
@@ -74,13 +83,16 @@ function BuilderPage() {
         description="Open an organisation to build a report."
       />
     );
-  if (accounts.isError || filterOptions.isError || saved.isError)
+  if (accounts.isError || filterOptions.isError || saved.isError || companyBasis.isError)
     return (
       <ErrorState
         title="Could not load report builder"
-        description={friendlyAuthError(accounts.error ?? filterOptions.error ?? saved.error)}
+        description={friendlyAuthError(
+          accounts.error ?? filterOptions.error ?? saved.error ?? companyBasis.error,
+        )}
         onRetry={() => {
           void accounts.refetch();
+          void companyBasis.refetch();
           void filterOptions.refetch();
           if (viewId !== "new") void saved.refetch();
         }}
@@ -91,6 +103,7 @@ function BuilderPage() {
       <BuilderEditor
         key={`${company.id}-${viewId}-${saved.data?.updated_at ?? "new"}-${openingPeriod.from ?? ""}-${openingPeriod.to ?? ""}`}
         companyId={company.id}
+        defaultBasis={openingPeriod.basis ?? companyBasis.data ?? "accrual"}
         defaultFrom={fiscalYearStart(
           todayIso(),
           company.fiscal_year_end_month,
@@ -106,12 +119,14 @@ function BuilderPage() {
 function BuilderEditor({
   companyId,
   defaultFrom,
+  defaultBasis,
   accounts,
   filterOptions,
   saved,
 }: {
   companyId: string;
   defaultFrom: string;
+  defaultBasis: AccountingBasis;
   accounts: Awaited<ReturnType<typeof getReportAccounts>>;
   filterOptions: Awaited<ReturnType<typeof getReportFilterOptions>>;
   saved?: SavedReport | undefined;
@@ -124,8 +139,8 @@ function BuilderEditor({
     exportFn = useServerFn(exportReportDocument);
   const [definition, setDefinition] = useState<CustomDefinition>(() =>
     saved?.config["_builder"]
-      ? customDefinitionSchema.parse(saved.config["_builder"])
-      : starterDefinition(),
+      ? customDefinitionSchema.parse(withSavedReportBasis(saved.config, defaultBasis)["_builder"])
+      : { ...starterDefinition(), basis: defaultBasis },
   );
   const openingPeriod = Route.useSearch();
   const [from, setFrom] = useState(
@@ -151,7 +166,13 @@ function BuilderEditor({
   const save = useMutation({
     mutationFn: async (): Promise<{ id?: string; ok?: boolean }> => {
       customDefinitionSchema.parse(definition);
-      const config = { ...(saved?.config ?? {}), from, to, _builder: definition };
+      const config = {
+        ...(saved?.config ?? {}),
+        from,
+        to,
+        basis: definition.basis,
+        _builder: definition,
+      };
       return saved
         ? update({
             data: {

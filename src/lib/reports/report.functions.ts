@@ -1,3 +1,6 @@
+import { parseAccountingBasis, type AccountingBasis } from "./accounting-basis";
+import { resolveReportingBasis } from "./accounting-basis.server";
+import { loadCashReportLines } from "./cash-report.server";
 import { assertCurrentPayablesDate, payableOutstandingInBase } from "./payables-integrity";
 import { shouldIncludeLedgerAccount } from "./account-scope";
 import { parseReportAccountIds } from "./report-account-selection";
@@ -77,15 +80,22 @@ export type Ctx = {
   meta: CompanyMeta;
   accounts: AccountMeta[];
   byId: Map<string, AccountMeta>;
+  accountingBasis: AccountingBasis;
 };
 
-export async function loadCtx(supabase: Sb, id: string): Promise<Ctx> {
+export async function loadCtx(supabase: Sb, id: string, basis?: AccountingBasis): Promise<Ctx> {
   await assertCompanyPermission(supabase, id, "reports.view");
   const [meta, accounts] = await Promise.all([
     loadCompanyMeta(supabase, id),
     loadAccountMetas(supabase, id),
   ]);
-  return { supabase, meta, accounts, byId: accountMap(accounts) };
+  return {
+    supabase,
+    meta,
+    accounts,
+    byId: accountMap(accounts),
+    accountingBasis: await resolveReportingBasis(supabase, id, basis),
+  };
 }
 
 function num(v: bigint): number {
@@ -97,6 +107,11 @@ function num(v: bigint): number {
 /* ------------------------------------------------------------------ */
 
 export async function plFor(ctx: Ctx, from: string, to: string) {
+  if (ctx.accountingBasis === "cash")
+    return buildProfitAndLoss(await loadCashReportLines(ctx.supabase, ctx.meta.id, from, to), {
+      from,
+      to,
+    });
   const bal = await fetchLedgerBalances(ctx.supabase, ctx.meta.id, ctx.meta.baseCurrency, {
     from,
     to,
@@ -111,6 +126,11 @@ export async function plFor(ctx: Ctx, from: string, to: string) {
 export async function bsFor(ctx: Ctx, asOf: string) {
   const fyStart = fiscalYearStart(asOf, ctx.meta.fyEndMonth, ctx.meta.fyEndDay);
   const priorEnd = addDaysIso(fyStart, -1);
+  if (ctx.accountingBasis === "cash")
+    return buildBalanceSheet(
+      await loadCashReportLines(ctx.supabase, ctx.meta.id, "0001-01-01", asOf),
+      { asOf, fyStart },
+    );
   const [prior, current] = await Promise.all([
     fetchLedgerBalances(ctx.supabase, ctx.meta.id, ctx.meta.baseCurrency, { to: priorEnd }),
     fetchLedgerBalances(ctx.supabase, ctx.meta.id, ctx.meta.baseCurrency, {
@@ -135,19 +155,46 @@ function serialiseStatement(lines: StatementLine[]) {
 
 export const getTrialBalance = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; from?: string; to?: string }) => ({
-    companyId: companyId(input),
-    from: optIsoDate(input.from, "From"),
-    to: optIsoDate(input.to, "To"),
-  }))
+  .inputValidator(
+    (input: {
+      companyId: string;
+      from?: string;
+      to?: string;
+      basis?: AccountingBasis | undefined;
+    }) => ({
+      companyId: companyId(input),
+      basis: parseAccountingBasis(input.basis),
+      from: optIsoDate(input.from, "From"),
+      to: optIsoDate(input.to, "To"),
+    }),
+  )
   .handler(async ({ data, context }) => {
-    const ctx = await loadCtx(context.supabase, data.companyId);
+    const ctx = await loadCtx(
+      context.supabase,
+      data.companyId,
+      "basis" in data ? parseAccountingBasis(data.basis) : undefined,
+    );
     const to = data.to ?? todayIso();
     const base = ctx.meta.baseCurrency;
     let result: ReturnType<typeof buildTrialBalance> & { priorYearsEarningsMinor?: bigint };
     let fyStart: string | null = null;
     let basis: string;
-    if (data.from) {
+    if (ctx.accountingBasis === "cash") {
+      const lines = await loadCashReportLines(
+        ctx.supabase,
+        ctx.meta.id,
+        data.from ?? "0001-01-01",
+        to,
+      );
+      if (data.from) {
+        result = buildTrialBalance(lines);
+        basis = `Cash basis; activity ${data.from} to ${to}`;
+      } else {
+        fyStart = fiscalYearStart(to, ctx.meta.fyEndMonth, ctx.meta.fyEndDay);
+        result = buildFiscalTrialBalance(lines, { to, fyStart });
+        basis = `Cash basis; as at ${to}; income and expenses from ${fyStart}`;
+      }
+    } else if (data.from) {
       const bal = await fetchLedgerBalances(ctx.supabase, ctx.meta.id, base, {
         from: data.from,
         to,
@@ -171,6 +218,7 @@ export const getTrialBalance = createServerFn({ method: "GET" })
     return {
       fyStart,
       basis,
+      accountingBasis: ctx.accountingBasis,
       priorYearsEarningsMinor: num(result.priorYearsEarningsMinor ?? 0n),
       rows: result.rows.map((r) => ({
         ...r,
@@ -207,22 +255,37 @@ export function plColumns(mode: ColumnMode, from: string, to: string): DateColum
 export const getProfitAndLoss = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (input: { companyId: string; from: string; to: string; columns?: ColumnMode }) => ({
+    (input: {
+      companyId: string;
+      from: string;
+      to: string;
+      columns?: ColumnMode;
+      basis?: AccountingBasis | undefined;
+    }) => ({
       companyId: companyId(input),
       from: isoDate(input.from, "From"),
       to: isoDate(input.to, "To"),
       columns: columnMode(input.columns),
+      basis: parseAccountingBasis(input.basis),
     }),
   )
   .handler(async ({ data, context }) => {
     if (data.to < data.from) throw new Error("'To' date cannot be before 'From' date.");
-    const ctx = await loadCtx(context.supabase, data.companyId);
+    const ctx = await loadCtx(
+      context.supabase,
+      data.companyId,
+      "basis" in data ? parseAccountingBasis(data.basis) : undefined,
+    );
     const columns = plColumns(data.columns, data.from, data.to);
     const results = await Promise.all(columns.map((c) => plFor(ctx, c.from, c.to)));
     const main =
       results[data.columns === "month" || data.columns === "quarter" ? results.length - 1 : 0]!;
     return {
-      basis: "Accrual basis, posted ledger (year-end closing journals excluded)",
+      basis:
+        ctx.accountingBasis === "cash"
+          ? "Cash basis, allocated receipts, payments and direct cash movements"
+          : "Accrual basis, posted ledger (year-end closing journals excluded)",
+      accountingBasis: ctx.accountingBasis,
       columns,
       statement: serialiseStatement(buildPnlStatement(results)),
       income: num(main.income),
@@ -247,10 +310,12 @@ export const getBalanceSheet = createServerFn({ method: "GET" })
     (input: {
       companyId: string;
       asOf: string;
+      basis?: AccountingBasis | undefined;
       compare?: "none" | "prior_year" | "prior_month" | "months";
     }) => ({
       companyId: companyId(input),
       asOf: isoDate(input.asOf, "As at"),
+      basis: parseAccountingBasis(input.basis),
       compare: (["none", "prior_year", "prior_month", "months"] as const).includes(
         input.compare as never,
       )
@@ -259,7 +324,11 @@ export const getBalanceSheet = createServerFn({ method: "GET" })
     }),
   )
   .handler(async ({ data, context }) => {
-    const ctx = await loadCtx(context.supabase, data.companyId);
+    const ctx = await loadCtx(
+      context.supabase,
+      data.companyId,
+      "basis" in data ? parseAccountingBasis(data.basis) : undefined,
+    );
     const dates: Array<{ label: string; asOf: string }> = [{ label: data.asOf, asOf: data.asOf }];
     if (data.compare === "prior_year") {
       const d = shiftYear(data.asOf, -1);
@@ -278,7 +347,8 @@ export const getBalanceSheet = createServerFn({ method: "GET" })
     const results = await Promise.all(dates.map((d) => bsFor(ctx, d.asOf)));
     const main = results[0]!;
     return {
-      basis: `As at ${data.asOf}; earnings split at financial-year start ${main.fyStart ?? "n/a"}`,
+      accountingBasis: ctx.accountingBasis,
+      basis: `${ctx.accountingBasis === "cash" ? "Cash basis; " : ""}As at ${data.asOf}; earnings split at financial-year start ${main.fyStart ?? "n/a"}`,
       columns: dates,
       statement: serialiseStatement(buildBalanceSheetStatement(results)),
       fyStart: main.fyStart,
@@ -297,13 +367,25 @@ export const getBalanceSheet = createServerFn({ method: "GET" })
 
 export const getEquityChanges = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; from: string; to: string }) => ({
-    companyId: companyId(input),
-    from: isoDate(input.from, "From"),
-    to: isoDate(input.to, "To"),
-  }))
+  .inputValidator(
+    (input: {
+      companyId: string;
+      from: string;
+      to: string;
+      basis?: AccountingBasis | undefined;
+    }) => ({
+      companyId: companyId(input),
+      basis: parseAccountingBasis(input.basis),
+      from: isoDate(input.from, "From"),
+      to: isoDate(input.to, "To"),
+    }),
+  )
   .handler(async ({ data, context }) => {
-    const ctx = await loadCtx(context.supabase, data.companyId);
+    const ctx = await loadCtx(
+      context.supabase,
+      data.companyId,
+      "basis" in data ? parseAccountingBasis(data.basis) : undefined,
+    );
     const openingDate = addDaysIso(data.from, -1);
     const [opening, closing, pl] = await Promise.all([
       bsFor(ctx, openingDate),
@@ -342,7 +424,11 @@ export const getEquityChanges = createServerFn({ method: "GET" })
       profit -
       movements.reduce((a, m) => a + BigInt(m.movement), 0n);
     return {
-      basis: "Simple statement of changes in equity from the posted ledger",
+      basis:
+        ctx.accountingBasis === "cash"
+          ? "Cash basis statement of changes in equity"
+          : "Simple statement of changes in equity from the posted ledger",
+      accountingBasis: ctx.accountingBasis,
       openingEquity: num(opening.equity),
       closingEquity: num(closing.equity),
       netProfit: num(profit),
@@ -362,6 +448,7 @@ export const getAccountTransactions = createServerFn({ method: "GET" })
     (input: {
       companyId: string;
       accountId: string;
+      basis?: AccountingBasis | undefined;
       from: string;
       to: string;
       page?: number;
@@ -375,6 +462,7 @@ export const getAccountTransactions = createServerFn({ method: "GET" })
     }) => ({
       companyId: companyId(input),
       accountId: assertUuid(input.accountId, "account"),
+      basis: parseAccountingBasis(input.basis),
       from: isoDate(input.from, "From"),
       to: isoDate(input.to, "To"),
       page: Math.min(100000, Math.max(0, Math.floor(Number(input.page ?? 0)) || 0)),
@@ -398,6 +486,11 @@ export const getAccountTransactions = createServerFn({ method: "GET" })
     if (data.to < data.from) throw new Error("'To' date cannot be before 'From' date.");
     await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
     const meta = await loadCompanyMeta(context.supabase, data.companyId);
+    const accountingBasis = await resolveReportingBasis(
+      context.supabase,
+      data.companyId,
+      data.basis,
+    );
     const { data: acct, error } = await context.supabase
       .from("accounts" as never)
       .select("id, code, name, account_type, normal_balance" as never)
@@ -442,7 +535,7 @@ export const getAccountTransactions = createServerFn({ method: "GET" })
       data.sort !== "date_asc",
     );
     let page: AccountTxnPage;
-    if (!filtered) {
+    if (!filtered && accountingBasis === "accrual") {
       page = await fetchAccountTransactionsPage(context.supabase, meta.id, meta.baseCurrency, {
         accountId: data.accountId,
         from: data.from,
@@ -451,20 +544,36 @@ export const getAccountTransactions = createServerFn({ method: "GET" })
         offset: data.page * data.pageSize,
       });
     } else {
-      const [opening, lines] = await Promise.all([
-        fetchAccountBalanceAsOf(
-          context.supabase,
-          meta.id,
-          meta.baseCurrency,
-          data.accountId,
-          addDaysIso(data.from, -1),
-        ),
-        loadPostedLines(context.supabase, meta.id, meta.baseCurrency, {
-          from: data.from,
-          to: data.to,
-          accountIds: [data.accountId],
-        }),
-      ]);
+      const cashLines =
+        accountingBasis === "cash"
+          ? await loadCashReportLines(context.supabase, meta.id, "0001-01-01", data.to)
+          : null;
+      const [opening, lines] = cashLines
+        ? ([
+            cashLines
+              .filter((line) => line.account_id === data.accountId && line.journal_date < data.from)
+              .reduce(
+                (sum, line) => sum + BigInt(line.debit_minor) - BigInt(line.credit_minor),
+                0n,
+              ),
+            cashLines.filter(
+              (line) => line.account_id === data.accountId && line.journal_date >= data.from,
+            ),
+          ] as const)
+        : await Promise.all([
+            fetchAccountBalanceAsOf(
+              context.supabase,
+              meta.id,
+              meta.baseCurrency,
+              data.accountId,
+              addDaysIso(data.from, -1),
+            ),
+            loadPostedLines(context.supabase, meta.id, meta.baseCurrency, {
+              from: data.from,
+              to: data.to,
+              accountIds: [data.accountId],
+            }),
+          ]);
       lines.sort(
         (a, b) =>
           a.journal_date.localeCompare(b.journal_date) ||
@@ -550,7 +659,8 @@ export const getAccountTransactions = createServerFn({ method: "GET" })
         name: account.name,
         normalBalance: account.normal_balance,
       },
-      // Opening/closing balances are for the FULL posted account, not just the filtered rows.
+      accountingBasis,
+      // Opening/closing balances are for the full selected-basis account.
       opening_balance_minor: num(page.opening_balance_minor * sign),
       closing_balance_minor: num(page.closing_balance_minor * sign),
       total_count: page.total_count,
@@ -590,11 +700,13 @@ export const getGeneralLedgerAll = createServerFn({ method: "GET" })
       from: string;
       to: string;
       accountIds?: string;
+      basis?: AccountingBasis | undefined;
       accountScope?: "transactions" | "balance" | "all";
     }) => ({
       companyId: companyId(input),
       from: isoDate(input.from, "From"),
       to: isoDate(input.to, "To"),
+      basis: parseAccountingBasis(input.basis),
       accountIds: parseReportAccountIds(input.accountIds),
       accountScope:
         input.accountScope === "transactions" || input.accountScope === "all"
@@ -605,21 +717,43 @@ export const getGeneralLedgerAll = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     if (data.to < data.from) throw new Error("'To' date cannot be before 'From' date.");
     await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
-    const ctx = await loadCtx(context.supabase, data.companyId);
+    const ctx = await loadCtx(
+      context.supabase,
+      data.companyId,
+      "basis" in data ? parseAccountingBasis(data.basis) : undefined,
+    );
     if (data.accountIds.length > 100) throw new Error("Too many selected accounts.");
     // Never silently accept a cross-organisation account ID.
     if (data.accountIds.some((id) => !ctx.byId.has(id))) throw new Error("Account not found.");
     const selected = data.accountIds.length ? new Set(data.accountIds) : null;
     const base = ctx.meta.baseCurrency;
     const openingDate = addDaysIso(data.from, -1);
-    const [openingBal, lines] = await Promise.all([
-      fetchLedgerBalances(ctx.supabase, ctx.meta.id, base, { to: openingDate }),
-      loadPostedLines(ctx.supabase, ctx.meta.id, base, { from: data.from, to: data.to }),
-    ]);
+    const cashLines =
+      ctx.accountingBasis === "cash"
+        ? await loadCashReportLines(ctx.supabase, ctx.meta.id, "0001-01-01", data.to)
+        : null;
+    const [openingBal, lines] = cashLines
+      ? ([
+          cashLines
+            .filter((line) => line.journal_date < data.from)
+            .map((line) => ({
+              account_id: line.account_id,
+              debit_minor: BigInt(line.debit_minor),
+              credit_minor: BigInt(line.credit_minor),
+            })),
+          cashLines.filter((line) => line.journal_date >= data.from),
+        ] as const)
+      : await Promise.all([
+          fetchLedgerBalances(ctx.supabase, ctx.meta.id, base, { to: openingDate }),
+          loadPostedLines(ctx.supabase, ctx.meta.id, base, { from: data.from, to: data.to }),
+        ]);
     const opening = new Map<string, bigint>();
     for (const b of openingBal) {
       if (!selected || selected.has(b.account_id))
-        opening.set(b.account_id, b.debit_minor - b.credit_minor);
+        opening.set(
+          b.account_id,
+          (opening.get(b.account_id) ?? 0n) + b.debit_minor - b.credit_minor,
+        );
     }
     const byAccount = new Map<string, PostedLine[]>();
     for (const l of lines) {
@@ -676,7 +810,11 @@ export const getGeneralLedgerAll = createServerFn({ method: "GET" })
           rows,
         };
       });
-    return { accounts, lineCount: accounts.reduce((sum, a) => sum + a.rows.length, 0) };
+    return {
+      accounts,
+      lineCount: accounts.reduce((sum, a) => sum + a.rows.length, 0),
+      accountingBasis: ctx.accountingBasis,
+    };
   });
 
 /* ------------------------------------------------------------------ */
@@ -738,7 +876,11 @@ export const getAgedReceivables = createServerFn({ method: "GET" })
     asOf: isoDate(input.asOf, "As at"),
   }))
   .handler(async ({ data, context }) => {
-    const ctx = await loadCtx(context.supabase, data.companyId);
+    const ctx = await loadCtx(
+      context.supabase,
+      data.companyId,
+      "basis" in data ? parseAccountingBasis(data.basis) : undefined,
+    );
     type Row = {
       id: string;
       contact_id: string;
@@ -807,7 +949,11 @@ export const getAgedPayables = createServerFn({ method: "GET" })
     asOf: isoDate(input.asOf, "As at"),
   }))
   .handler(async ({ data, context }) => {
-    const ctx = await loadCtx(context.supabase, data.companyId);
+    const ctx = await loadCtx(
+      context.supabase,
+      data.companyId,
+      "basis" in data ? parseAccountingBasis(data.basis) : undefined,
+    );
     const defaults = await loadCompanyDefaults(context.supabase, data.companyId);
     assertCurrentPayablesDate(data.asOf, defaults.today);
     type Row = {
@@ -904,13 +1050,25 @@ const JOURNAL_ID_CHUNK = 120;
 
 export const getCashFlow = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; from: string; to: string }) => ({
-    companyId: companyId(input),
-    from: isoDate(input.from, "From"),
-    to: isoDate(input.to, "To"),
-  }))
+  .inputValidator(
+    (input: {
+      companyId: string;
+      from: string;
+      to: string;
+      basis?: AccountingBasis | undefined;
+    }) => ({
+      companyId: companyId(input),
+      basis: parseAccountingBasis(input.basis),
+      from: isoDate(input.from, "From"),
+      to: isoDate(input.to, "To"),
+    }),
+  )
   .handler(async ({ data, context }) => {
-    const ctx = await loadCtx(context.supabase, data.companyId);
+    const ctx = await loadCtx(
+      context.supabase,
+      data.companyId,
+      "basis" in data ? parseAccountingBasis(data.basis) : undefined,
+    );
     const base = ctx.meta.baseCurrency;
     const bankIds = await bankAccountIds(ctx);
     const openingDate = addDaysIso(data.from, -1);
@@ -980,6 +1138,7 @@ export const getCashFlow = createServerFn({ method: "GET" })
       detail: result.detail.map((d) => ({ ...d, amount_minor: num(d.amount_minor) })),
       bankAccountCount: bankIds.length,
       method: "bank_direct_classified",
+      accountingBasis: ctx.accountingBasis,
       limitation: result.limitation,
     };
   });
@@ -994,11 +1153,15 @@ export const getTaxReport = createServerFn({ method: "GET" })
     companyId: companyId(input),
     from: isoDate(input.from, "From"),
     to: isoDate(input.to, "To"),
-    basis: (input.basis === "cash" ? "cash" : input.basis === "accrual" ? "accrual" : null) as
-      "cash" | "accrual" | null,
+    basis: parseAccountingBasis(input.basis),
   }))
   .handler(async ({ data, context }) => {
-    const ctx = await loadCtx(context.supabase, data.companyId);
+    if (data.to < data.from) throw new Error("'To' date cannot be before 'From' date.");
+    const ctx = await loadCtx(
+      context.supabase,
+      data.companyId,
+      "basis" in data ? parseAccountingBasis(data.basis) : undefined,
+    );
     const { data: settings } = await context.supabase
       .from("company_tax_settings" as never)
       .select(
@@ -1040,6 +1203,28 @@ export const getTaxReport = createServerFn({ method: "GET" })
       taxAccountCount: taxIds.length,
       basis,
       settingsBasis,
+      detailMode: basis === "cash" ? ("cash_recognition" as const) : ("posted_controls" as const),
+      cashRecognitionDetails:
+        basis === "cash"
+          ? taxFacts.facts.map((fact) => {
+              if (!fact.source)
+                throw new Error("Cash tax recognition is missing its source transaction");
+              const recognised = computeReturnTotals([fact]);
+              return {
+                source_type: fact.source.type,
+                source_id: fact.source.id,
+                source_line_id: fact.source.lineId,
+                recognition_date: fact.source.date,
+                settlement_id: fact.source.settlementId ?? null,
+                side: fact.side,
+                treatment: fact.treatment,
+                net_minor: num(recognised.salesNet + recognised.purchasesNet),
+                output_tax_minor: num(recognised.outputTax),
+                input_tax_minor: num(recognised.inputTax),
+                net_tax_minor: num(recognised.netTax),
+              };
+            })
+          : [],
       documents: {
         count: taxFacts.documents,
         skippedNoRate: taxFacts.skippedNoRate,
@@ -1082,7 +1267,9 @@ export const getTaxReport = createServerFn({ method: "GET" })
         credit_minor: num(BigInt(l.credit_minor)),
       })),
       complianceNote:
-        "The totals at the top come from document tax lines on the chosen basis, the same way the VAT return is calculated. The table below lists movements on the tax control accounts by posting date (includes payments to the tax authority), so it can differ on cash basis or when tax was paid.",
+        basis === "cash"
+          ? "Cash recognition details use the same dated allocations and source tax lines as the totals. Posted tax-control movements are shown separately and include payments to the tax authority."
+          : "The totals at the top come from document tax lines on the chosen basis, the same way the VAT return is calculated. The table below lists movements on the tax control accounts by posting date (includes payments to the tax authority), so it can differ when tax was paid.",
     };
   });
 

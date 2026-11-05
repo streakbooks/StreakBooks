@@ -4,7 +4,7 @@
  * Caller must provide authenticated, organisation-scoped, posted source facts
  * including dated allocations and reversal/refund events. Non-cash credits are
  * deliberately not recognised as receipts/payments. Unsupported allocation history,
- * advance-payment, inventory/COGS and opening-balance sources must fail explicitly.
+ * inventory/COGS and opening-balance sources require verified source classification.
  *
  * All amounts are transaction-currency minor units (bigint). A settlement's
  * recognised net and tax components add to its exact cash delta. FX rounding
@@ -30,6 +30,8 @@ export type CashSettlement = {
   /** Same-day ordering from the immutable source ledger. */
   sequence: number;
   status: "posted" | "void";
+  /** A dated void/unapplication returns the exact component slices of this settlement. */
+  reversesSettlementId?: string;
 };
 export type CashSourceDocument = {
   id: string;
@@ -81,6 +83,34 @@ export function apportionCashAmount(
   return shares.map((share) => share.whole);
 }
 
+/** Highest-averages cumulative allocation is house-monotone: adding a penny
+ * cannot remove a penny previously recognized on another account. Largest
+ * remainder, although appropriate for a single split, has the Alabama paradox
+ * when recalculated for consecutive partial payments. Jefferson's lower-quota
+ * property lets us start at proportional floors and assign fewer than n extras,
+ * so runtime depends on component count, never the size of the monetary amount.
+ */
+export function apportionCumulativeCash(
+  cumulative: bigint,
+  weights: bigint[],
+  total: bigint,
+): bigint[] {
+  // Reuse the public single-split validation without floating point arithmetic.
+  apportionCashAmount(0n, weights, total);
+  if (cumulative < 0n) throw new Error("Invalid cash apportionment totals");
+  const shares = weights.map((weight) => (cumulative * weight) / total);
+  const extras = cumulative - shares.reduce((sum, value) => sum + value, 0n);
+  for (let remaining = extras; remaining > 0n; remaining--) {
+    let best = 0;
+    for (let index = 1; index < weights.length; index++) {
+      if (weights[index]! * (shares[best]! + 1n) > weights[best]! * (shares[index]! + 1n))
+        best = index;
+    }
+    shares[best] = shares[best]! + 1n;
+  }
+  return shares;
+}
+
 function assertRate(rate: string) {
   if (!/^\d{1,12}(\.\d{1,12})?$/.test(rate) || !/[1-9]/.test(rate)) {
     throw new Error("Cash settlement requires a positive posted FX rate");
@@ -124,7 +154,20 @@ export function recogniseCashSettlements(
       a.settledOn.localeCompare(b.settledOn) || a.sequence - b.sequence || a.id.localeCompare(b.id),
   );
   let cumulative = 0n;
-  let before = weights.map(() => 0n);
+  type Slice = { from: bigint; to: bigint };
+  let free: Slice[] = [{ from: 0n, to: source.totalMinor }];
+  const held = new Map<string, Slice[]>();
+  function release(slices: Slice[]) {
+    free.push(...slices);
+    free.sort((a, b) => (a.from < b.from ? -1 : a.from > b.from ? 1 : 0));
+    const merged: Slice[] = [];
+    for (const slice of free) {
+      const previous = merged.at(-1);
+      if (previous?.to === slice.from) previous.to = slice.to;
+      else merged.push({ ...slice });
+    }
+    free = merged;
+  }
   const seen = new Set<string>();
   const recognised: CashRecognition[] = [];
   for (const settlement of ordered) {
@@ -160,15 +203,76 @@ export function recogniseCashSettlements(
     if (next < 0n || next > source.totalMinor - source.nonCashCreditMinor) {
       throw new Error("Cash settlement exceeds uncredited document balance");
     }
-    const after = apportionCashAmount(next, weights, source.totalMinor);
+    const slices: Slice[] = [];
+    if (settlement.cashDeltaMinor > 0n) {
+      if (settlement.reversesSettlementId)
+        throw new Error("A cash reversal must have a negative amount");
+      let remaining = settlement.cashDeltaMinor;
+      while (remaining > 0n && free.length) {
+        const first = free[0]!;
+        const available = first.to - first.from;
+        const used = remaining < available ? remaining : available;
+        slices.push({ from: first.from, to: first.from + used });
+        first.from += used;
+        remaining -= used;
+        if (first.from === first.to) free.shift();
+      }
+      if (remaining > 0n) throw new Error("Cash settlement exceeds available source components");
+      held.set(
+        settlement.id,
+        slices.map((slice) => ({ ...slice })),
+      );
+    } else if (settlement.reversesSettlementId) {
+      const original = held.get(settlement.reversesSettlementId);
+      if (
+        !original ||
+        original.reduce((sum, slice) => sum + slice.to - slice.from, 0n) !==
+          -settlement.cashDeltaMinor
+      )
+        throw new Error("Cash reversal does not match an unreversed original settlement");
+      slices.push(...original.map((slice) => ({ ...slice })));
+      held.delete(settlement.reversesSettlementId);
+      release(slices);
+    } else {
+      // A source-level refund without an original settlement identity returns
+      // the latest occupied component slices. Named voids always use the exact
+      // original slices above, including after later partial payments.
+      let remaining = -settlement.cashDeltaMinor;
+      const occupied = [...held]
+        .flatMap(([id, rows]) => rows.map((slice) => ({ id, slice })))
+        .sort((a, b) => (a.slice.to > b.slice.to ? -1 : a.slice.to < b.slice.to ? 1 : 0));
+      for (const { slice } of occupied) {
+        if (remaining === 0n) break;
+        const available = slice.to - slice.from;
+        const used = remaining < available ? remaining : available;
+        slices.push({ from: slice.to - used, to: slice.to });
+        slice.to -= used;
+        remaining -= used;
+      }
+      if (remaining > 0n) throw new Error("Cash refund exceeds recognized source components");
+      for (const [id, rows] of held)
+        held.set(
+          id,
+          rows.filter((slice) => slice.from < slice.to),
+        );
+      release(slices);
+    }
+    const delta = weights.map(() => 0n);
+    for (const slice of slices) {
+      const before = apportionCumulativeCash(slice.from, weights, source.totalMinor);
+      const after = apportionCumulativeCash(slice.to, weights, source.totalMinor);
+      for (const index of delta.keys())
+        delta[index] =
+          delta[index]! +
+          (after[index]! - before[index]!) * (settlement.cashDeltaMinor < 0n ? -1n : 1n);
+    }
     const pieces = source.components.map((component, index) => {
-      const recognisedMinor = after[index]! - before[index]!;
+      const recognisedMinor = delta[index]!;
       if (
         (settlement.cashDeltaMinor > 0n && recognisedMinor < 0n) ||
         (settlement.cashDeltaMinor < 0n && recognisedMinor > 0n)
       ) {
-        // Rare largest-remainder paradox: do not report negative revenue on
-        // a receipt or positive revenue on a refund; require review.
+        // A violation indicates inconsistent cumulative allocation state.
         throw new Error("Cash allocation rounding requires manual reconciliation");
       }
       return {
@@ -204,7 +308,6 @@ export function recogniseCashSettlements(
         components: pieces,
       });
     }
-    before = after;
     cumulative = next;
   }
   return recognised;

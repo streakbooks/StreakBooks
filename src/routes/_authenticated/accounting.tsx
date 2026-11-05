@@ -24,6 +24,10 @@ export const Route = createFileRoute("/_authenticated/accounting")({
       tab: ACCOUNTING_TABS.find((t) => t === tab),
       journal: typeof journal === "string" && journal ? journal : undefined,
       period: validPeriodDeepLink(raw["period"]),
+      cashReview:
+        typeof raw["cashReview"] === "string" && raw["cashReview"].length <= 8000
+          ? raw["cashReview"]
+          : undefined,
     };
   },
   component: Accounting,

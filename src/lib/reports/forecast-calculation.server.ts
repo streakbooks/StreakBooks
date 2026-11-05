@@ -1,5 +1,7 @@
 import type { Sb } from "@/lib/accounting/ledger-data";
 import { addMonthsIso, monthEnd, todayIso } from "@/lib/accounting/fiscal-year";
+import { resolveReportingBasis } from "./accounting-basis.server";
+import { captureCashReportFacts } from "./cash-report-facts.server";
 import { callRpc } from "@/lib/planning/rpc";
 import { documentFigures } from "./report-document";
 import { forecastProjection } from "./management";
@@ -10,17 +12,21 @@ export async function captureForecast(supabase: Sb, companyId: string, input: Fo
   const config = forecastSchema.parse(input);
   if (config.baselineFrom.slice(8) !== "01" || monthEnd(config.baselineTo) !== config.baselineTo)
     throw new Error("Forecast baseline must contain complete calendar months");
+  const accountingBasis = await resolveReportingBasis(supabase, companyId, config.basis);
   async function capture(from: string, to: string) {
-    const raw = await callRpc(
-      supabase,
-      "capture_reporting_facts",
-      {
-        _company_id: companyId,
-        _from: from,
-        _to: to,
-      },
-      "The reporting ecosystem database update is required.",
-    );
+    const raw =
+      accountingBasis === "cash"
+        ? await captureCashReportFacts(supabase, companyId, from, to)
+        : await callRpc(
+            supabase,
+            "capture_reporting_facts",
+            {
+              _company_id: companyId,
+              _from: from,
+              _to: to,
+            },
+            "The reporting ecosystem database update is required.",
+          );
     const figures = documentFigures(raw);
     if (figures.f.company.id !== companyId || figures.f.from !== from || figures.f.to !== to)
       throw new Error("Forecast ledger capture does not match the requested company or dates");
@@ -49,6 +55,7 @@ export async function captureForecast(supabase: Sb, companyId: string, input: Fo
   }
   return {
     company: base.f.company,
+    accountingBasis,
     capturedAt: new Date().toISOString(),
     projections: forecastProjection(
       config,

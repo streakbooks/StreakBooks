@@ -233,7 +233,7 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
       });
     },
     onSuccess: () => {
-      toast.success("Adjustments saved — recalculate to refresh totals");
+      toast.success("Adjustments saved — use Recalculate to apply them to run totals");
       setAdjustTarget(null);
       setAdjustAmounts({});
       invalidate();
@@ -323,7 +323,9 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
             ) : null}
             {run.accrual_journal_id ? (
               <Button asChild variant="outline" size="sm">
-                <Link to="/payroll/payments">Payments</Link>
+                <Link to="/payroll/payments" search={{ runId: run.id }}>
+                  Payments
+                </Link>
               </Button>
             ) : null}
           </div>
@@ -370,12 +372,18 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
               </Button>
             ) : null}
             {canApprove &&
-            (run.status === "calculated" ||
-              run.status === "reviewed" ||
-              (!run.requires_approval && run.calculated_at)) ? (
+            ((run.requires_approval && run.status === "reviewed") ||
+              (!run.requires_approval &&
+                run.calculated_at &&
+                (run.status === "calculated" || run.status === "reviewed"))) ? (
               <Button size="sm" disabled={busy} onClick={() => approveMut.mutate()}>
                 Approve &amp; generate payslips
               </Button>
+            ) : null}
+            {canApprove && run.requires_approval && run.status === "calculated" ? (
+              <span className="text-sm text-muted-foreground self-center">
+                Mark reviewed before approval
+              </span>
             ) : null}
             <Button
               size="sm"
@@ -696,7 +704,7 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
             <DialogTitle>Adjust manual components</DialogTitle>
             <DialogDescription>
               {adjustTarget
-                ? `One-off manual amounts for ${adjustTarget.name}. Save, then recalculate the run.`
+                ? `One-off manual amounts for ${adjustTarget.name}. Saved adjustments apply on the next Calculate or Recalculate.`
                 : null}
             </DialogDescription>
           </DialogHeader>

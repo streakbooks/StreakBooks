@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
@@ -12,9 +12,11 @@ import { buildGenericPayrollBankCsv } from "@/lib/payroll/payroll-bank-export";
 import { validatePayrollPaymentAllocations } from "@/lib/payroll/payroll-payment-allocation";
 import {
   exportPayrollBankCsvRows,
+  getPayrollPayment,
   listPayrollPayments,
   recordPayrollPayment,
   reversePayrollPayment,
+  type PayrollPaymentDetailPage,
 } from "@/lib/payroll/payments.functions";
 import { parseMinorOrThrow, tryParseMinor } from "@/lib/purchases/money-input";
 import { listPayrollPayslips } from "@/lib/payroll/runs.functions";
@@ -70,10 +72,12 @@ const METHOD_LABELS: Record<string, string> = {
   other: "Other",
 };
 
-export function PayrollPaymentsPage() {
+export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | null }) {
   const { company, isPending } = useActiveCompany();
   const canView = useCanDo("payroll.view");
   const canPay = useCanDo("payroll.pay");
+  const canAccountingView = useCanDo("accounting.view");
+  const navigate = useNavigate({ from: "/payroll/payments/" });
   const fmt = useFormat();
   const queryClient = useQueryClient();
   const fetchPayments = useServerFn(listPayrollPayments);
@@ -92,15 +96,29 @@ export function PayrollPaymentsPage() {
   const [alloc, setAlloc] = useState<Record<string, string>>({});
   const [idempotencyKey, setIdempotencyKey] = useState(() => `pr-pay-${crypto.randomUUID()}`);
   const [reverseTarget, setReverseTarget] = useState<{ id: string; currency: string } | null>(null);
+  const [detailPaymentId, setDetailPaymentId] = useState<string | null>(null);
   const [reversalDate, setReversalDate] = useState(() => new Date().toISOString().slice(0, 10));
   const reversePayment = useServerFn(reversePayrollPayment);
+  const fetchPaymentDetail = useServerFn(getPayrollPayment);
 
   const payCurrency = (company?.base_currency ?? "GBP").toUpperCase();
 
   const paymentsQ = useQuery({
-    queryKey: ["payroll-payments", company?.id],
-    queryFn: () => fetchPayments({ data: { companyId: company!.id } }),
+    queryKey: ["payroll-payments", company?.id, runIdFilter ?? null],
+    queryFn: () =>
+      fetchPayments({
+        data: { companyId: company!.id, runId: runIdFilter ?? null },
+      }),
     enabled: Boolean(company?.id) && canView,
+  });
+
+  const paymentDetailQ = useQuery({
+    queryKey: ["payroll-payment-detail", company?.id, detailPaymentId],
+    queryFn: () =>
+      fetchPaymentDetail({
+        data: { companyId: company!.id, paymentId: detailPaymentId! },
+      }),
+    enabled: Boolean(company?.id) && canView && detailPaymentId !== null,
   });
 
   const payslipsQ = useQuery({
@@ -306,6 +324,21 @@ export function PayrollPaymentsPage() {
       />
       <PayrollSubnav current="payments" />
 
+      {runIdFilter ? (
+        <Alert className="mb-4">
+          <AlertDescription className="flex flex-wrap items-center justify-between gap-2">
+            <span>Showing payments linked to this payroll run.</span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => void navigate({ search: { runId: undefined } })}
+            >
+              Clear run filter
+            </Button>
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
       {canPay ? (
         <Alert className="mb-4">
           <AlertDescription>
@@ -341,7 +374,7 @@ export function PayrollPaymentsPage() {
                 <TableHead className="text-right">Amount</TableHead>
                 <TableHead>Reference</TableHead>
                 <TableHead>Status</TableHead>
-                {canPay ? <TableHead className="w-[100px]" /> : null}
+                <TableHead className="w-[180px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -354,9 +387,12 @@ export function PayrollPaymentsPage() {
                   </TableCell>
                   <TableCell className="text-muted-foreground">{p.reference ?? "—"}</TableCell>
                   <TableCell>{p.status === "reversed" ? "Reversed" : "Posted"}</TableCell>
-                  {canPay ? (
-                    <TableCell>
-                      {p.status === "posted" ? (
+                  <TableCell>
+                    <div className="flex flex-wrap gap-2">
+                      <Button size="sm" variant="outline" onClick={() => setDetailPaymentId(p.id)}>
+                        Details
+                      </Button>
+                      {canPay && p.status === "posted" ? (
                         <Button
                           size="sm"
                           variant="outline"
@@ -368,8 +404,8 @@ export function PayrollPaymentsPage() {
                           Reverse
                         </Button>
                       ) : null}
-                    </TableCell>
-                  ) : null}
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -503,6 +539,104 @@ export function PayrollPaymentsPage() {
               Record payment
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={detailPaymentId !== null}
+        onOpenChange={(open) => !open && setDetailPaymentId(null)}
+      >
+        <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Payment details</DialogTitle>
+            <DialogDescription>
+              Allocations, unallocated balance, and linked journal entry.
+            </DialogDescription>
+          </DialogHeader>
+          {paymentDetailQ.isPending ? (
+            <LoadingState />
+          ) : paymentDetailQ.isError ? (
+            <p className="text-sm text-destructive">{friendlyAuthError(paymentDetailQ.error)}</p>
+          ) : paymentDetailQ.data ? (
+            (() => {
+              const detail = paymentDetailQ.data as PayrollPaymentDetailPage;
+              const { payment, allocations } = detail;
+              return (
+                <div className="space-y-4 text-sm">
+                  <dl className="grid grid-cols-2 gap-2">
+                    <dt className="text-muted-foreground">Date</dt>
+                    <dd>{fmt.date(payment.payment_date)}</dd>
+                    <dt className="text-muted-foreground">Amount</dt>
+                    <dd className="font-mono">
+                      {fmt.money(payment.amount_minor, payment.currency)}
+                    </dd>
+                    <dt className="text-muted-foreground">Unallocated</dt>
+                    <dd className="font-mono">
+                      {fmt.money(payment.unallocated_minor, payment.currency)}
+                    </dd>
+                    <dt className="text-muted-foreground">Status</dt>
+                    <dd>{payment.status === "reversed" ? "Reversed" : "Posted"}</dd>
+                    <dt className="text-muted-foreground">Reference</dt>
+                    <dd>{payment.reference ?? "—"}</dd>
+                    {payment.memo ? (
+                      <>
+                        <dt className="text-muted-foreground">Memo</dt>
+                        <dd>{payment.memo}</dd>
+                      </>
+                    ) : null}
+                  </dl>
+                  {payment.journal_id && canAccountingView ? (
+                    <p>
+                      <Link
+                        to="/accounting"
+                        search={{ tab: "journals", journal: payment.journal_id }}
+                        className="text-primary hover:underline"
+                      >
+                        Open payment journal
+                      </Link>
+                    </p>
+                  ) : null}
+                  <div>
+                    <p className="mb-2 font-medium">Allocations</p>
+                    {allocations.length === 0 ? (
+                      <p className="text-muted-foreground">
+                        No payslip allocations on this payment.
+                      </p>
+                    ) : (
+                      <ul className="space-y-2 rounded-md border p-3">
+                        {allocations.map((row) => (
+                          <li key={row.allocation.id} className="flex justify-between gap-2">
+                            <span>
+                              {row.payslip_number} · {row.employee_name}
+                              <span className="block text-xs text-muted-foreground">
+                                Run {row.run_number}
+                              </span>
+                            </span>
+                            <span className="font-mono">
+                              {fmt.money(row.allocation.amount_minor, payment.currency)}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                  {canPay && payment.status === "posted" ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setDetailPaymentId(null);
+                        setReversalDate(new Date().toISOString().slice(0, 10));
+                        setReverseTarget({ id: payment.id, currency: payment.currency });
+                      }}
+                    >
+                      Reverse payment
+                    </Button>
+                  ) : null}
+                </div>
+              );
+            })()
+          ) : null}
         </DialogContent>
       </Dialog>
 

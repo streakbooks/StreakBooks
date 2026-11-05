@@ -15,7 +15,15 @@ import type {
   PayrollEmployeeRow,
   PayrollEmployeeSalaryLineRow,
   PayrollRoundingMode,
+  PayrollRunLineRow,
 } from "@/lib/payroll/types";
+
+export type VariableLineValues = {
+  amountMinor: number;
+  quantityMicro: number | null;
+  rateMinor: number | null;
+  percentageBps: number | null;
+};
 
 export type RunCalculationPersistEmployee = {
   employeeId: string;
@@ -76,6 +84,79 @@ function pickEffectiveLines(
   return [...byComponent.values()];
 }
 
+export function buildCalculationAdjustmentsFromRunLines(
+  runLines: PayrollRunLineRow[],
+  runEmployeeIdToEmployeeId: Map<string, string>,
+): {
+  adjustmentsByEmployee: Record<string, EmployeePeriodAdjustments>;
+  variableLinesByEmployee: Record<string, Record<string, VariableLineValues>>;
+} {
+  const variableLinesByEmployee: Record<string, Record<string, VariableLineValues>> = {};
+
+  for (const line of runLines) {
+    if (!line.is_variable || !line.component_type_id) continue;
+    const employeeId = runEmployeeIdToEmployeeId.get(line.run_employee_id);
+    if (!employeeId) continue;
+    const byComponent =
+      variableLinesByEmployee[employeeId] ?? (variableLinesByEmployee[employeeId] = {});
+    byComponent[line.component_type_id] = {
+      amountMinor: line.amount_minor,
+      quantityMicro: line.quantity_micro,
+      rateMinor: line.rate_minor,
+      percentageBps: line.percentage_bps,
+    };
+  }
+
+  const adjustmentsByEmployee: Record<string, EmployeePeriodAdjustments> = {};
+  for (const [employeeId, byComponent] of Object.entries(variableLinesByEmployee)) {
+    const manualAmountMinor: Record<string, bigint> = {};
+    const quantityMicroByComponent: Record<string, bigint> = {};
+    for (const [componentTypeId, values] of Object.entries(byComponent)) {
+      manualAmountMinor[componentTypeId] = BigInt(values.amountMinor);
+      if (values.quantityMicro != null) {
+        quantityMicroByComponent[componentTypeId] = BigInt(values.quantityMicro);
+      }
+    }
+    adjustmentsByEmployee[employeeId] = {
+      manualAmountMinor,
+      ...(Object.keys(quantityMicroByComponent).length > 0 ? { quantityMicroByComponent } : {}),
+    };
+  }
+
+  return { adjustmentsByEmployee, variableLinesByEmployee };
+}
+
+function ensureLineInputsForVariableComponents(
+  lineInputs: LineInput[],
+  variableLines: Record<string, VariableLineValues>,
+  componentById: Map<string, PayrollComponentTypeRow>,
+): LineInput[] {
+  const existing = new Set(lineInputs.map((l) => l.componentTypeId));
+  const out = [...lineInputs];
+  for (const [componentTypeId, values] of Object.entries(variableLines)) {
+    if (existing.has(componentTypeId)) continue;
+    const component = componentById.get(componentTypeId);
+    if (!component || component.calculation_method !== "manual") continue;
+    out.push({
+      lineId: null,
+      componentTypeId,
+      componentCode: component.code,
+      kind: component.kind,
+      calculationMethod: component.calculation_method,
+      percentageBase: component.percentage_base,
+      isTaxable: component.is_taxable,
+      sortOrder: component.sort_order,
+      amountMinor: BigInt(values.amountMinor),
+      rateMinor: values.rateMinor != null ? BigInt(values.rateMinor) : 0n,
+      percentageBps: values.percentageBps ?? 0,
+      isRecurring: false,
+      ...(values.quantityMicro != null ? { quantityMicro: BigInt(values.quantityMicro) } : {}),
+    });
+    existing.add(componentTypeId);
+  }
+  return out;
+}
+
 function toLineInput(
   salaryLine: PayrollEmployeeSalaryLineRow,
   component: PayrollComponentTypeRow,
@@ -125,11 +206,15 @@ export function computeRunCalculation(input: {
   const calcEmployees: EmployeeCalcInput[] = input.employees.map((emp) => {
     const empLines = input.allSalaryLines.filter((l) => l.employee_id === emp.id);
     const effective = pickEffectiveLines(empLines, input.periodStart, input.periodEnd);
-    const lineInputs: LineInput[] = [];
+    let lineInputs: LineInput[] = [];
     for (const salaryLine of effective) {
       const component = componentById.get(salaryLine.component_type_id);
       if (!component) continue;
       lineInputs.push(toLineInput(salaryLine, component));
+    }
+    const variableForEmp = input.variableLinesByEmployee?.[emp.id];
+    if (variableForEmp) {
+      lineInputs = ensureLineInputsForVariableComponents(lineInputs, variableForEmp, componentById);
     }
     const calc: EmployeeCalcInput = {
       employeeId: emp.id,

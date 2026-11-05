@@ -20,6 +20,8 @@ import {
   parseComponentDraft,
   parsePayScheduleDraft,
   parsePayrollSettingsDraft,
+  type ComponentDraft,
+  type PayScheduleDraft,
   type PayrollSettingsDraft,
 } from "@/lib/payroll/settings-draft";
 import {
@@ -120,15 +122,17 @@ export function PayrollSettingsPage() {
   });
 
   const [draft, setDraft] = useState<PayrollSettingsDraft | null>(null);
-  const [scheduleDraft, setScheduleDraft] = useState({
+  const emptyScheduleDraft = (): PayScheduleDraft => ({
     name: "Monthly",
     frequency: "monthly",
     anchorDate: new Date().toISOString().slice(0, 10),
     paymentOffsetDays: "0",
-    isDefault: true,
+    isDefault: false,
     isActive: true,
   });
-  const [componentDraft, setComponentDraft] = useState({
+
+  const [scheduleDraft, setScheduleDraft] = useState<PayScheduleDraft>(emptyScheduleDraft);
+  const [componentDraft, setComponentDraft] = useState<ComponentDraft>({
     code: "",
     name: "",
     kind: "earning",
@@ -193,6 +197,11 @@ export function PayrollSettingsPage() {
     });
   }, [page.data]);
 
+  const editingComponentIsSystem = useMemo(() => {
+    if (!componentDraft.id || !page.data?.components) return false;
+    return page.data.components.some((c) => c.id === componentDraft.id && c.is_system);
+  }, [componentDraft.id, page.data?.components]);
+
   const expenseAccounts = useMemo(
     () => (page.data?.accounts ?? []).filter((a) => a.account_type === "expense"),
     [page.data?.accounts],
@@ -217,29 +226,44 @@ export function PayrollSettingsPage() {
   });
 
   const scheduleMut = useMutation({
-    mutationFn: () => {
+    mutationFn: (draftOverride?: PayScheduleDraft) => {
       if (!company) throw new Error("No organisation selected.");
-      const parsed = parsePayScheduleDraft(scheduleDraft);
+      const draft = draftOverride ?? scheduleDraft;
+      const parsed = parsePayScheduleDraft(draft);
       if (!parsed.ok) throw new Error(parsed.error);
-      return saveSchedule({ data: { companyId: company.id, draft: scheduleDraft } });
+      return saveSchedule({ data: { companyId: company.id, draft } });
     },
     onSuccess: async () => {
-      toast.success("Pay schedule saved");
+      toast.success(scheduleDraft.id ? "Pay schedule updated" : "Pay schedule added");
+      setScheduleDraft(emptyScheduleDraft());
       await queryClient.invalidateQueries({ queryKey: ["payroll-settings-page", company?.id] });
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
 
   const componentMut = useMutation({
-    mutationFn: () => {
+    mutationFn: (draftOverride?: ComponentDraft) => {
       if (!company) throw new Error("No organisation selected.");
-      const parsed = parseComponentDraft(componentDraft);
+      const draft = draftOverride ?? componentDraft;
+      const parsed = parseComponentDraft(draft);
       if (!parsed.ok) throw new Error(parsed.error);
-      return saveComponent({ data: { companyId: company.id, draft: componentDraft } });
+      return saveComponent({ data: { companyId: company.id, draft } });
     },
     onSuccess: async () => {
-      toast.success("Pay component saved");
-      setComponentDraft((prev) => ({ ...prev, code: "", name: "" }));
+      toast.success(componentDraft.id ? "Pay component updated" : "Pay component added");
+      setComponentDraft({
+        code: "",
+        name: "",
+        kind: "earning",
+        calculationMethod: "fixed",
+        percentageBase: "gross",
+        isTaxable: true,
+        isRecurringDefault: true,
+        isActive: true,
+        sortOrder: "200",
+        expenseAccountId: "",
+        liabilityAccountId: "",
+      });
       await queryClient.invalidateQueries({ queryKey: ["payroll-settings-page", company?.id] });
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
@@ -500,8 +524,14 @@ export function PayrollSettingsPage() {
                   ))}
                 </select>
               </Field>
-              <div className="flex items-center justify-between gap-3 rounded-md border p-3">
-                <Label htmlFor={`${uiId}-approval`}>Require payroll approval before posting</Label>
+              <div className="flex items-center justify-between gap-3 rounded-md border p-3 md:col-span-2">
+                <div>
+                  <Label htmlFor={`${uiId}-approval`}>Require review before approval</Label>
+                  <p className="text-sm text-muted-foreground">
+                    When enabled, preparers must mark a calculated run as reviewed before approvers
+                    can generate payslips (separation of duties).
+                  </p>
+                </div>
                 <Switch
                   id={`${uiId}-approval`}
                   checked={draft.requiresApproval}
@@ -654,7 +684,32 @@ export function PayrollSettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <ScheduleTable schedules={data.schedules} />
+              <ScheduleTable
+                schedules={data.schedules}
+                canEdit={canEdit}
+                onEdit={(schedule) =>
+                  setScheduleDraft({
+                    id: schedule.id,
+                    name: schedule.name,
+                    frequency: schedule.frequency,
+                    anchorDate: schedule.anchor_date,
+                    paymentOffsetDays: String(schedule.payment_offset_days),
+                    isDefault: schedule.is_default,
+                    isActive: schedule.is_active,
+                  })
+                }
+                onToggleActive={(schedule) => {
+                  scheduleMut.mutate({
+                    id: schedule.id,
+                    name: schedule.name,
+                    frequency: schedule.frequency,
+                    anchorDate: schedule.anchor_date,
+                    paymentOffsetDays: String(schedule.payment_offset_days),
+                    isDefault: schedule.is_default,
+                    isActive: !schedule.is_active,
+                  });
+                }}
+              />
               <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                 <Field label="Name" htmlFor={`${uiId}-sched-name`}>
                   <Input
@@ -717,14 +772,26 @@ export function PayrollSettingsPage() {
                   />
                 </div>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={!canEdit || scheduleMut.isPending}
-                onClick={() => scheduleMut.mutate()}
-              >
-                Add pay schedule
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={!canEdit || scheduleMut.isPending}
+                  onClick={() => scheduleMut.mutate()}
+                >
+                  {scheduleDraft.id ? "Save schedule changes" : "Add pay schedule"}
+                </Button>
+                {scheduleDraft.id ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    disabled={scheduleMut.isPending}
+                    onClick={() => setScheduleDraft(emptyScheduleDraft())}
+                  >
+                    Cancel edit
+                  </Button>
+                ) : null}
+              </div>
             </CardContent>
           </Card>
 
@@ -819,13 +886,48 @@ export function PayrollSettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <ComponentTable components={data.components} />
+              <ComponentTable
+                components={data.components}
+                canEdit={canEdit}
+                onEdit={(component) =>
+                  setComponentDraft({
+                    id: component.id,
+                    code: component.code,
+                    name: component.name,
+                    kind: component.kind,
+                    calculationMethod: component.calculation_method,
+                    percentageBase: component.percentage_base ?? "gross",
+                    isTaxable: component.is_taxable,
+                    isRecurringDefault: component.is_recurring_default,
+                    isActive: component.is_active,
+                    sortOrder: String(component.sort_order),
+                    expenseAccountId: component.expense_account_id ?? "",
+                    liabilityAccountId: component.liability_account_id ?? "",
+                  })
+                }
+                onToggleActive={(component) => {
+                  componentMut.mutate({
+                    id: component.id,
+                    code: component.code,
+                    name: component.name,
+                    kind: component.kind,
+                    calculationMethod: component.calculation_method,
+                    percentageBase: component.percentage_base ?? "gross",
+                    isTaxable: component.is_taxable,
+                    isRecurringDefault: component.is_recurring_default,
+                    isActive: !component.is_active,
+                    sortOrder: String(component.sort_order),
+                    expenseAccountId: component.expense_account_id ?? "",
+                    liabilityAccountId: component.liability_account_id ?? "",
+                  });
+                }}
+              />
               <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                 <Field label="Code" htmlFor={`${uiId}-comp-code`}>
                   <Input
                     id={`${uiId}-comp-code`}
                     value={componentDraft.code}
-                    disabled={!canEdit}
+                    disabled={!canEdit || editingComponentIsSystem}
                     onChange={(e) =>
                       setComponentDraft((prev) => ({ ...prev, code: e.target.value.toUpperCase() }))
                     }
@@ -912,14 +1014,40 @@ export function PayrollSettingsPage() {
                   />
                 </Field>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={!canEdit || componentMut.isPending}
-                onClick={() => componentMut.mutate()}
-              >
-                Add custom component
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={!canEdit || componentMut.isPending}
+                  onClick={() => componentMut.mutate()}
+                >
+                  {componentDraft.id ? "Save component changes" : "Add custom component"}
+                </Button>
+                {componentDraft.id ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    disabled={componentMut.isPending}
+                    onClick={() =>
+                      setComponentDraft({
+                        code: "",
+                        name: "",
+                        kind: "earning",
+                        calculationMethod: "fixed",
+                        percentageBase: "gross",
+                        isTaxable: true,
+                        isRecurringDefault: true,
+                        isActive: true,
+                        sortOrder: "200",
+                        expenseAccountId: "",
+                        liabilityAccountId: "",
+                      })
+                    }
+                  >
+                    Cancel edit
+                  </Button>
+                ) : null}
+              </div>
             </CardContent>
           </Card>
 
@@ -1007,7 +1135,17 @@ function AccountField({
   );
 }
 
-function ScheduleTable({ schedules }: { schedules: PayrollPayScheduleRow[] }) {
+function ScheduleTable({
+  schedules,
+  canEdit,
+  onEdit,
+  onToggleActive,
+}: {
+  schedules: PayrollPayScheduleRow[];
+  canEdit: boolean;
+  onEdit: (schedule: PayrollPayScheduleRow) => void;
+  onToggleActive: (schedule: PayrollPayScheduleRow) => void;
+}) {
   if (schedules.length === 0) {
     return <p className="text-sm text-muted-foreground">No pay schedules yet.</p>;
   }
@@ -1020,6 +1158,7 @@ function ScheduleTable({ schedules }: { schedules: PayrollPayScheduleRow[] }) {
             <th className="px-3 py-2 font-medium">Frequency</th>
             <th className="px-3 py-2 font-medium">Anchor</th>
             <th className="px-3 py-2 font-medium">Status</th>
+            {canEdit ? <th className="px-3 py-2 font-medium">Actions</th> : null}
           </tr>
         </thead>
         <tbody>
@@ -1036,6 +1175,28 @@ function ScheduleTable({ schedules }: { schedules: PayrollPayScheduleRow[] }) {
               <td className="px-3 py-2 capitalize">{schedule.frequency}</td>
               <td className="px-3 py-2">{schedule.anchor_date}</td>
               <td className="px-3 py-2">{schedule.is_active ? "Active" : "Inactive"}</td>
+              {canEdit ? (
+                <td className="px-3 py-2">
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onEdit(schedule)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => onToggleActive(schedule)}
+                    >
+                      {schedule.is_active ? "Deactivate" : "Reactivate"}
+                    </Button>
+                  </div>
+                </td>
+              ) : null}
             </tr>
           ))}
         </tbody>
@@ -1044,7 +1205,17 @@ function ScheduleTable({ schedules }: { schedules: PayrollPayScheduleRow[] }) {
   );
 }
 
-function ComponentTable({ components }: { components: PayrollComponentTypeRow[] }) {
+function ComponentTable({
+  components,
+  canEdit,
+  onEdit,
+  onToggleActive,
+}: {
+  components: PayrollComponentTypeRow[];
+  canEdit: boolean;
+  onEdit: (component: PayrollComponentTypeRow) => void;
+  onToggleActive: (component: PayrollComponentTypeRow) => void;
+}) {
   if (components.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
@@ -1062,6 +1233,7 @@ function ComponentTable({ components }: { components: PayrollComponentTypeRow[] 
             <th className="px-3 py-2 font-medium">Kind</th>
             <th className="px-3 py-2 font-medium">Method</th>
             <th className="px-3 py-2 font-medium">Flags</th>
+            {canEdit ? <th className="px-3 py-2 font-medium">Actions</th> : null}
           </tr>
         </thead>
         <tbody>
@@ -1080,6 +1252,30 @@ function ComponentTable({ components }: { components: PayrollComponentTypeRow[] 
                   ) : null}
                 </div>
               </td>
+              {canEdit ? (
+                <td className="px-3 py-2">
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onEdit(component)}
+                    >
+                      Edit
+                    </Button>
+                    {!component.is_system ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => onToggleActive(component)}
+                      >
+                        {component.is_active ? "Deactivate" : "Reactivate"}
+                      </Button>
+                    ) : null}
+                  </div>
+                </td>
+              ) : null}
             </tr>
           ))}
         </tbody>

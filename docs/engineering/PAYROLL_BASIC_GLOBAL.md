@@ -18,7 +18,11 @@
 - Net-pay payments with payslip allocations and generic bank CSV export (manual upload only).
 - Payment recording uses major-unit money inputs (same pattern as purchases); allocations are validated before submit.
 - Reverse posted accruals (when no net pay has been paid) and reverse posted payroll payments.
-- Per-employee manual component adjustments on draft/calculated/reviewed runs before recalculation.
+- Per-employee manual component adjustments on draft/calculated/reviewed runs; amounts are loaded into calculate/recalculate so gross, net, and accrual stay aligned with saved variable lines.
+- Pay schedule and component catalogue edit/deactivate in settings (no new migration).
+- Payslip list filters (payment status, employee) and payments list filter by run (`?runId=`).
+- Payment detail sheet (allocations, unallocated balance, journal link, reverse).
+- When **Require review before approval** is on, approvers must mark a run reviewed before payslip generation (client + server guard).
 - Operational payroll reports for approved/posted runs.
 
 ## Explicit non-goals / disclaimer

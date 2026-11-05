@@ -3,6 +3,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { callRpc, companyIdOf, isMissingRelation, num } from "@/lib/planning/rpc";
 import {
+  buildCalculationAdjustmentsFromRunLines,
   computeRunCalculation,
   serialiseRunCalculationForRpc,
 } from "@/lib/payroll/run-calculation";
@@ -206,6 +207,7 @@ async function loadRunCalculationInputs(
   companyId: string,
   run: PayrollRunRow,
   runEmployees: PayrollRunEmployeeRow[],
+  variableComponentTypeIds: string[] = [],
 ) {
   const settingsRes = await supabase
     .from("payroll_settings" as never)
@@ -222,7 +224,7 @@ async function loadRunCalculationInputs(
     .eq("company_id" as never, companyId as never)
     .eq("is_active" as never, true as never);
   if (componentsRes.error) throw new Error(componentsRes.error.message);
-  const components = (componentsRes.data ?? []).map((raw) => {
+  const mapComponentRow = (raw: unknown): PayrollComponentTypeRow => {
     const row = asRecord(raw);
     return {
       id: str(pick(row, "id")),
@@ -243,8 +245,25 @@ async function loadRunCalculationInputs(
       sort_order: num(pick(row, "sort_order") || 100),
       expense_account_id: strOrNull(pick(row, "expense_account_id")),
       liability_account_id: strOrNull(pick(row, "liability_account_id")),
-    } satisfies PayrollComponentTypeRow;
-  });
+    };
+  };
+
+  const components = (componentsRes.data ?? []).map(mapComponentRow);
+  const componentIds = new Set(components.map((c) => c.id));
+  const missingVariableIds = [...new Set(variableComponentTypeIds)].filter(
+    (id) => id && !componentIds.has(id),
+  );
+  if (missingVariableIds.length > 0) {
+    const extraRes = await supabase
+      .from("payroll_component_types" as never)
+      .select("*" as never)
+      .eq("company_id" as never, companyId as never)
+      .in("id" as never, missingVariableIds as never);
+    if (extraRes.error) throw new Error(extraRes.error.message);
+    for (const raw of extraRes.data ?? []) {
+      components.push(mapComponentRow(raw));
+    }
+  }
 
   const employeeIds = runEmployees.map((re) => re.employee_id);
   const employeesRes = await supabase
@@ -309,7 +328,24 @@ async function computeAndPersistRun(
     ? employeesPayload.map((item) => normaliseRunEmployee(pick(asRecord(item), "run_employee")))
     : [];
 
-  const inputs = await loadRunCalculationInputs(supabase, companyId, run, runEmployees);
+  const linesPayload = pick(page, "lines");
+  const runLines = Array.isArray(linesPayload) ? linesPayload.map(normaliseRunLine) : [];
+  const runEmployeeIdToEmployeeId = new Map(
+    runEmployees.map((re) => [re.id, re.employee_id] as const),
+  );
+  const { adjustmentsByEmployee, variableLinesByEmployee } =
+    buildCalculationAdjustmentsFromRunLines(runLines, runEmployeeIdToEmployeeId);
+  const variableComponentTypeIds = runLines
+    .filter((line) => line.is_variable && line.component_type_id)
+    .map((line) => line.component_type_id as string);
+
+  const inputs = await loadRunCalculationInputs(
+    supabase,
+    companyId,
+    run,
+    runEmployees,
+    variableComponentTypeIds,
+  );
   const result = computeRunCalculation({
     periodStart: run.period_start,
     periodEnd: run.period_end,
@@ -320,6 +356,8 @@ async function computeAndPersistRun(
     employees: inputs.employees,
     allSalaryLines: inputs.allSalaryLines,
     components: inputs.components,
+    adjustmentsByEmployee,
+    variableLinesByEmployee,
   });
 
   const payload = serialiseRunCalculationForRpc(result, inputs.components, inputs.employees);
@@ -508,6 +546,20 @@ export const approvePayrollRun = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "payroll.run.approve");
+
+    const pageRaw = await callRpc<unknown>(
+      context.supabase,
+      "get_payroll_run_page",
+      { _company_id: data.companyId, _run_id: data.runId },
+      PAYROLL_RUNS_MIGRATION,
+    );
+    const runBefore = normaliseRun(pick(asRecord(pageRaw), "run"));
+    if (runBefore.requires_approval && runBefore.status !== "reviewed") {
+      throw new Error(
+        "This run must be marked reviewed before approval when payroll settings require a review step.",
+      );
+    }
+
     const saved = await callRpc<unknown>(
       context.supabase,
       "approve_payroll_run",

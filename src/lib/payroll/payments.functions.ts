@@ -76,6 +76,28 @@ export type PayrollRunJournalSummary = {
   lines: PayrollRunJournalLine[];
 };
 
+export type PayrollPaymentAllocationRow = {
+  id: string;
+  company_id: string;
+  payment_id: string;
+  payslip_id: string;
+  run_id: string;
+  amount_minor: number;
+};
+
+export type PayrollPaymentDetailAllocation = {
+  allocation: PayrollPaymentAllocationRow;
+  payslip_number: string;
+  employee_name: string;
+  run_number: string;
+};
+
+export type PayrollPaymentDetailPage = {
+  available: true;
+  payment: PayrollPaymentRow;
+  allocations: PayrollPaymentDetailAllocation[];
+};
+
 function normalisePayment(raw: unknown): PayrollPaymentRow {
   const row = asRecord(raw);
   return {
@@ -108,6 +130,79 @@ async function probePaymentsTable(
   if (probe.error) throw new Error(probe.error.message);
   return true;
 }
+
+export const getPayrollPayment = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; paymentId: string }) => ({
+    companyId: companyIdOf(input),
+    paymentId: input.paymentId,
+  }))
+  .handler(async ({ data, context }) => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    await assertCompanyPermission(context.supabase, data.companyId, "payroll.view");
+    const ok = await probePaymentsTable(context.supabase, data.companyId);
+    if (!ok) throw new Error(PAYROLL_PAYMENTS_MIGRATION);
+
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "get_payroll_payment",
+      { _company_id: data.companyId, _payment_id: data.paymentId },
+      PAYROLL_PAYMENTS_MIGRATION,
+    );
+    const payload = asRecord(raw);
+    const paymentRaw = pick(payload, "payment");
+    const allocsRaw = pick(payload, "allocations");
+    const allocationRows = Array.isArray(allocsRaw)
+      ? allocsRaw.map((item) => {
+          const row = asRecord(item);
+          const allocation = asRecord(pick(row, "allocation"));
+          const employee = asRecord(pick(row, "employee"));
+          const payslip = asRecord(pick(row, "payslip"));
+          return {
+            allocation: {
+              id: str(pick(allocation, "id")),
+              company_id: str(pick(allocation, "company_id")),
+              payment_id: str(pick(allocation, "payment_id")),
+              payslip_id: str(pick(allocation, "payslip_id")),
+              run_id: str(pick(allocation, "run_id")),
+              amount_minor: num(pick(allocation, "amount_minor")),
+            },
+            payslip_number: str(pick(payslip, "payslip_number")),
+            employee_name:
+              `${str(pick(employee, "first_name"))} ${str(pick(employee, "last_name"))}`.trim(),
+            run_id: str(pick(allocation, "run_id")),
+          };
+        })
+      : [];
+
+    const runIds = [...new Set(allocationRows.map((a) => a.run_id).filter(Boolean))];
+    const runNumberById = new Map<string, string>();
+    if (runIds.length > 0) {
+      const runRes = await context.supabase
+        .from("payroll_runs" as never)
+        .select("id, run_number" as never)
+        .eq("company_id" as never, data.companyId as never)
+        .in("id" as never, runIds as never);
+      if (runRes.error) throw new Error(runRes.error.message);
+      for (const row of runRes.data ?? []) {
+        const r = row as { id: string; run_number: string };
+        runNumberById.set(r.id, r.run_number);
+      }
+    }
+
+    const allocations: PayrollPaymentDetailAllocation[] = allocationRows.map((row) => ({
+      allocation: row.allocation,
+      payslip_number: row.payslip_number,
+      employee_name: row.employee_name,
+      run_number: runNumberById.get(row.run_id) ?? "—",
+    }));
+
+    return {
+      available: true as const,
+      payment: normalisePayment(paymentRaw),
+      allocations,
+    } satisfies PayrollPaymentDetailPage;
+  });
 
 export const listPayrollPayments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

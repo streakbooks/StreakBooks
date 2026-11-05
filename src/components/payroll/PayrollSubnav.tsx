@@ -9,6 +9,8 @@ const ITEMS = [
     to: "/payroll/salary-structures" as const,
     key: "salary-structures" as const,
   },
+  { label: "Runs", to: "/payroll/runs" as const, key: "runs" as const },
+  { label: "Payslips", to: "/payroll/payslips" as const, key: "payslips" as const },
   { label: "Settings", to: "/payroll/settings" as const, key: "settings" as const },
 ] as const;
 

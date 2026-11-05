@@ -1,5 +1,7 @@
 /** Shared Basic Global Payroll domain types (Batch 1 foundation). */
 
+import type { PayslipSnapshot } from "@/lib/payroll/payslip-snapshot";
+
 export const PAY_FREQUENCIES = ["weekly", "biweekly", "semimonthly", "monthly"] as const;
 export type PayFrequency = (typeof PAY_FREQUENCIES)[number];
 
@@ -221,4 +223,131 @@ export type PayrollCalculationPreviewTotals = {
   netPayMinor: number;
   employerContributionsMinor: number;
   totalEmployerCostMinor: number;
+};
+
+export const PAYROLL_RUN_STATUSES = [
+  "draft",
+  "calculated",
+  "reviewed",
+  "approved",
+  "posted",
+  "paid",
+  "complete",
+  "void",
+] as const;
+export type PayrollRunStatus = (typeof PAYROLL_RUN_STATUSES)[number];
+
+export const PAYSLIP_PAYMENT_STATUSES = ["unpaid", "partial", "paid"] as const;
+export type PayslipPaymentStatus = (typeof PAYSLIP_PAYMENT_STATUSES)[number];
+
+export type PayrollRunRow = {
+  id: string;
+  company_id: string;
+  run_number: string;
+  pay_schedule_id: string;
+  period_start: string;
+  period_end: string;
+  payment_date: string;
+  status: PayrollRunStatus;
+  currency: string;
+  gross_minor: number;
+  deductions_minor: number;
+  net_minor: number;
+  employer_minor: number;
+  employer_cost_minor: number;
+  requires_approval: boolean;
+  approved_by: string | null;
+  approved_at: string | null;
+  calculated_at: string | null;
+  reviewed_at: string | null;
+  version: number;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PayrollRunEmployeeRow = {
+  id: string;
+  company_id: string;
+  run_id: string;
+  employee_id: string;
+  status: "included" | "excluded" | "error";
+  gross_minor: number;
+  deductions_minor: number;
+  net_minor: number;
+  employer_minor: number;
+  employer_cost_minor: number;
+  hours_leave_snapshot: {
+    proration?: {
+      periodWorkingDays: number;
+      eligibleWorkingDays: number;
+      unpaidLeaveDays: number;
+    };
+  } | null;
+};
+
+export type PayrollRunLineRow = {
+  id: string;
+  company_id: string;
+  run_employee_id: string;
+  component_type_id: string | null;
+  kind: PayrollComponentKind;
+  code: string;
+  name: string;
+  amount_minor: number;
+  quantity_micro: number | null;
+  rate_minor: number | null;
+  percentage_bps: number | null;
+  is_employer: boolean;
+  is_variable: boolean;
+  sort_order: number;
+};
+
+export type PayrollPayslipRow = {
+  id: string;
+  company_id: string;
+  run_id: string;
+  run_employee_id: string;
+  employee_id: string;
+  payslip_number: string;
+  issued_at: string;
+  payment_status: PayslipPaymentStatus;
+  snapshot: PayslipSnapshot;
+  branding_name: string | null;
+  footer_note: string | null;
+  show_employer_costs: boolean;
+};
+
+export type PayrollRunsListPage = {
+  available: boolean;
+  runs: PayrollRunRow[];
+  migrationMessage: string | null;
+};
+
+export type PayrollRunPage = {
+  available: true;
+  run: PayrollRunRow;
+  schedule: PayrollPayScheduleRow | null;
+  employees: {
+    run_employee: PayrollRunEmployeeRow;
+    employee: PayrollEmployeeRow;
+  }[];
+  lines: PayrollRunLineRow[];
+};
+
+export type PayrollPayslipsListPage = {
+  available: boolean;
+  payslips: {
+    payslip: PayrollPayslipRow;
+    employee: PayrollEmployeeRow;
+    run: PayrollRunRow;
+  }[];
+  migrationMessage: string | null;
+};
+
+export type PayrollPayslipPage = {
+  available: true;
+  payslip: PayrollPayslipRow;
+  employee: PayrollEmployeeRow;
+  run: PayrollRunRow;
 };

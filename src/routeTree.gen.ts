@@ -106,6 +106,10 @@ import { Route as AuthenticatedBankingJournalJournalIdRouteImport } from './rout
 import { Route as AuthenticatedBankingReconciliationReportSessionIdRouteImport } from './routes/_authenticated/banking/reconciliation-report.$sessionId'
 import { Route as AuthenticatedPayrollEmployeesIndexRouteImport } from './routes/_authenticated/payroll/employees.index'
 import { Route as AuthenticatedPayrollEmployeesEmployeeIdRouteImport } from './routes/_authenticated/payroll/employees.$employeeId'
+import { Route as AuthenticatedPayrollPayslipsIndexRouteImport } from './routes/_authenticated/payroll/payslips.index'
+import { Route as AuthenticatedPayrollPayslipsPayslipIdRouteImport } from './routes/_authenticated/payroll/payslips.$payslipId'
+import { Route as AuthenticatedPayrollRunsIndexRouteImport } from './routes/_authenticated/payroll/runs.index'
+import { Route as AuthenticatedPayrollRunsRunIdRouteImport } from './routes/_authenticated/payroll/runs.$runId'
 import { Route as AuthenticatedPurchasesBillsIndexRouteImport } from './routes/_authenticated/purchases/bills.index'
 import { Route as AuthenticatedPurchasesBillsBillIdRouteImport } from './routes/_authenticated/purchases/bills.$billId'
 import { Route as AuthenticatedPurchasesBillsNewRouteImport } from './routes/_authenticated/purchases/bills.new'
@@ -683,6 +687,30 @@ const AuthenticatedPayrollEmployeesEmployeeIdRoute =
     path: '/employees/$employeeId',
     getParentRoute: () => AuthenticatedPayrollRouteRoute,
   } as any)
+const AuthenticatedPayrollPayslipsIndexRoute =
+  AuthenticatedPayrollPayslipsIndexRouteImport.update({
+    id: '/payslips/',
+    path: '/payslips/',
+    getParentRoute: () => AuthenticatedPayrollRouteRoute,
+  } as any)
+const AuthenticatedPayrollPayslipsPayslipIdRoute =
+  AuthenticatedPayrollPayslipsPayslipIdRouteImport.update({
+    id: '/payslips/$payslipId',
+    path: '/payslips/$payslipId',
+    getParentRoute: () => AuthenticatedPayrollRouteRoute,
+  } as any)
+const AuthenticatedPayrollRunsIndexRoute =
+  AuthenticatedPayrollRunsIndexRouteImport.update({
+    id: '/runs/',
+    path: '/runs/',
+    getParentRoute: () => AuthenticatedPayrollRouteRoute,
+  } as any)
+const AuthenticatedPayrollRunsRunIdRoute =
+  AuthenticatedPayrollRunsRunIdRouteImport.update({
+    id: '/runs/$runId',
+    path: '/runs/$runId',
+    getParentRoute: () => AuthenticatedPayrollRouteRoute,
+  } as any)
 const AuthenticatedPurchasesBillsIndexRoute =
   AuthenticatedPurchasesBillsIndexRouteImport.update({
     id: '/bills/',
@@ -1008,6 +1036,8 @@ export interface FileRoutesByFullPath {
   '/banking/journal/$journalId': typeof AuthenticatedBankingJournalJournalIdRoute
   '/banking/reconciliation-report/$sessionId': typeof AuthenticatedBankingReconciliationReportSessionIdRoute
   '/payroll/employees/$employeeId': typeof AuthenticatedPayrollEmployeesEmployeeIdRoute
+  '/payroll/payslips/$payslipId': typeof AuthenticatedPayrollPayslipsPayslipIdRoute
+  '/payroll/runs/$runId': typeof AuthenticatedPayrollRunsRunIdRoute
   '/purchases/bills/$billId': typeof AuthenticatedPurchasesBillsBillIdRouteWithChildren
   '/purchases/bills/new': typeof AuthenticatedPurchasesBillsNewRoute
   '/purchases/credit-notes/$creditNoteId': typeof AuthenticatedPurchasesCreditNotesCreditNoteIdRoute
@@ -1030,6 +1060,8 @@ export interface FileRoutesByFullPath {
   '/sales/receipts/new': typeof AuthenticatedSalesReceiptsNewRoute
   '/portal/app/invoices/$invoiceId': typeof PortalAppInvoicesInvoiceIdRoute
   '/payroll/employees/': typeof AuthenticatedPayrollEmployeesIndexRoute
+  '/payroll/payslips/': typeof AuthenticatedPayrollPayslipsIndexRoute
+  '/payroll/runs/': typeof AuthenticatedPayrollRunsIndexRoute
   '/purchases/bills/': typeof AuthenticatedPurchasesBillsIndexRoute
   '/purchases/credit-notes/': typeof AuthenticatedPurchasesCreditNotesIndexRoute
   '/purchases/expenses/': typeof AuthenticatedPurchasesExpensesIndexRoute
@@ -1137,6 +1169,8 @@ export interface FileRoutesByTo {
   '/banking/journal/$journalId': typeof AuthenticatedBankingJournalJournalIdRoute
   '/banking/reconciliation-report/$sessionId': typeof AuthenticatedBankingReconciliationReportSessionIdRoute
   '/payroll/employees/$employeeId': typeof AuthenticatedPayrollEmployeesEmployeeIdRoute
+  '/payroll/payslips/$payslipId': typeof AuthenticatedPayrollPayslipsPayslipIdRoute
+  '/payroll/runs/$runId': typeof AuthenticatedPayrollRunsRunIdRoute
   '/purchases/bills/$billId': typeof AuthenticatedPurchasesBillsBillIdRouteWithChildren
   '/purchases/bills/new': typeof AuthenticatedPurchasesBillsNewRoute
   '/purchases/credit-notes/$creditNoteId': typeof AuthenticatedPurchasesCreditNotesCreditNoteIdRoute
@@ -1156,6 +1190,8 @@ export interface FileRoutesByTo {
   '/sales/receipts/new': typeof AuthenticatedSalesReceiptsNewRoute
   '/portal/app/invoices/$invoiceId': typeof PortalAppInvoicesInvoiceIdRoute
   '/payroll/employees': typeof AuthenticatedPayrollEmployeesIndexRoute
+  '/payroll/payslips': typeof AuthenticatedPayrollPayslipsIndexRoute
+  '/payroll/runs': typeof AuthenticatedPayrollRunsIndexRoute
   '/purchases/bills': typeof AuthenticatedPurchasesBillsIndexRoute
   '/purchases/credit-notes': typeof AuthenticatedPurchasesCreditNotesIndexRoute
   '/purchases/expenses': typeof AuthenticatedPurchasesExpensesIndexRoute
@@ -1272,6 +1308,8 @@ export interface FileRoutesById {
   '/_authenticated/banking/journal/$journalId': typeof AuthenticatedBankingJournalJournalIdRoute
   '/_authenticated/banking/reconciliation-report/$sessionId': typeof AuthenticatedBankingReconciliationReportSessionIdRoute
   '/_authenticated/payroll/employees/$employeeId': typeof AuthenticatedPayrollEmployeesEmployeeIdRoute
+  '/_authenticated/payroll/payslips/$payslipId': typeof AuthenticatedPayrollPayslipsPayslipIdRoute
+  '/_authenticated/payroll/runs/$runId': typeof AuthenticatedPayrollRunsRunIdRoute
   '/_authenticated/purchases/bills/$billId': typeof AuthenticatedPurchasesBillsBillIdRouteWithChildren
   '/_authenticated/purchases/bills/new': typeof AuthenticatedPurchasesBillsNewRoute
   '/_authenticated/purchases/credit-notes/$creditNoteId': typeof AuthenticatedPurchasesCreditNotesCreditNoteIdRoute
@@ -1294,6 +1332,8 @@ export interface FileRoutesById {
   '/_authenticated/sales/receipts/new': typeof AuthenticatedSalesReceiptsNewRoute
   '/portal/app/invoices/$invoiceId': typeof PortalAppInvoicesInvoiceIdRoute
   '/_authenticated/payroll/employees/': typeof AuthenticatedPayrollEmployeesIndexRoute
+  '/_authenticated/payroll/payslips/': typeof AuthenticatedPayrollPayslipsIndexRoute
+  '/_authenticated/payroll/runs/': typeof AuthenticatedPayrollRunsIndexRoute
   '/_authenticated/purchases/bills/': typeof AuthenticatedPurchasesBillsIndexRoute
   '/_authenticated/purchases/credit-notes/': typeof AuthenticatedPurchasesCreditNotesIndexRoute
   '/_authenticated/purchases/expenses/': typeof AuthenticatedPurchasesExpensesIndexRoute
@@ -1410,6 +1450,8 @@ export interface FileRouteTypes {
     | '/banking/journal/$journalId'
     | '/banking/reconciliation-report/$sessionId'
     | '/payroll/employees/$employeeId'
+    | '/payroll/payslips/$payslipId'
+    | '/payroll/runs/$runId'
     | '/purchases/bills/$billId'
     | '/purchases/bills/new'
     | '/purchases/credit-notes/$creditNoteId'
@@ -1432,6 +1474,8 @@ export interface FileRouteTypes {
     | '/sales/receipts/new'
     | '/portal/app/invoices/$invoiceId'
     | '/payroll/employees/'
+    | '/payroll/payslips/'
+    | '/payroll/runs/'
     | '/purchases/bills/'
     | '/purchases/credit-notes/'
     | '/purchases/expenses/'
@@ -1539,6 +1583,8 @@ export interface FileRouteTypes {
     | '/banking/journal/$journalId'
     | '/banking/reconciliation-report/$sessionId'
     | '/payroll/employees/$employeeId'
+    | '/payroll/payslips/$payslipId'
+    | '/payroll/runs/$runId'
     | '/purchases/bills/$billId'
     | '/purchases/bills/new'
     | '/purchases/credit-notes/$creditNoteId'
@@ -1558,6 +1604,8 @@ export interface FileRouteTypes {
     | '/sales/receipts/new'
     | '/portal/app/invoices/$invoiceId'
     | '/payroll/employees'
+    | '/payroll/payslips'
+    | '/payroll/runs'
     | '/purchases/bills'
     | '/purchases/credit-notes'
     | '/purchases/expenses'
@@ -1673,6 +1721,8 @@ export interface FileRouteTypes {
     | '/_authenticated/banking/journal/$journalId'
     | '/_authenticated/banking/reconciliation-report/$sessionId'
     | '/_authenticated/payroll/employees/$employeeId'
+    | '/_authenticated/payroll/payslips/$payslipId'
+    | '/_authenticated/payroll/runs/$runId'
     | '/_authenticated/purchases/bills/$billId'
     | '/_authenticated/purchases/bills/new'
     | '/_authenticated/purchases/credit-notes/$creditNoteId'
@@ -1695,6 +1745,8 @@ export interface FileRouteTypes {
     | '/_authenticated/sales/receipts/new'
     | '/portal/app/invoices/$invoiceId'
     | '/_authenticated/payroll/employees/'
+    | '/_authenticated/payroll/payslips/'
+    | '/_authenticated/payroll/runs/'
     | '/_authenticated/purchases/bills/'
     | '/_authenticated/purchases/credit-notes/'
     | '/_authenticated/purchases/expenses/'
@@ -2409,6 +2461,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPayrollEmployeesEmployeeIdRouteImport
       parentRoute: typeof AuthenticatedPayrollRouteRoute
     }
+    '/_authenticated/payroll/payslips/': {
+      id: '/_authenticated/payroll/payslips/'
+      path: '/payslips'
+      fullPath: '/payroll/payslips/'
+      preLoaderRoute: typeof AuthenticatedPayrollPayslipsIndexRouteImport
+      parentRoute: typeof AuthenticatedPayrollRouteRoute
+    }
+    '/_authenticated/payroll/payslips/$payslipId': {
+      id: '/_authenticated/payroll/payslips/$payslipId'
+      path: '/payslips/$payslipId'
+      fullPath: '/payroll/payslips/$payslipId'
+      preLoaderRoute: typeof AuthenticatedPayrollPayslipsPayslipIdRouteImport
+      parentRoute: typeof AuthenticatedPayrollRouteRoute
+    }
+    '/_authenticated/payroll/runs/': {
+      id: '/_authenticated/payroll/runs/'
+      path: '/runs'
+      fullPath: '/payroll/runs/'
+      preLoaderRoute: typeof AuthenticatedPayrollRunsIndexRouteImport
+      parentRoute: typeof AuthenticatedPayrollRouteRoute
+    }
+    '/_authenticated/payroll/runs/$runId': {
+      id: '/_authenticated/payroll/runs/$runId'
+      path: '/runs/$runId'
+      fullPath: '/payroll/runs/$runId'
+      preLoaderRoute: typeof AuthenticatedPayrollRunsRunIdRouteImport
+      parentRoute: typeof AuthenticatedPayrollRouteRoute
+    }
     '/_authenticated/purchases/bills/': {
       id: '/_authenticated/purchases/bills/'
       path: '/bills'
@@ -2721,7 +2801,11 @@ interface AuthenticatedPayrollRouteRouteChildren {
   AuthenticatedPayrollSettingsRoute: typeof AuthenticatedPayrollSettingsRoute
   AuthenticatedPayrollIndexRoute: typeof AuthenticatedPayrollIndexRoute
   AuthenticatedPayrollEmployeesEmployeeIdRoute: typeof AuthenticatedPayrollEmployeesEmployeeIdRoute
+  AuthenticatedPayrollPayslipsPayslipIdRoute: typeof AuthenticatedPayrollPayslipsPayslipIdRoute
+  AuthenticatedPayrollRunsRunIdRoute: typeof AuthenticatedPayrollRunsRunIdRoute
   AuthenticatedPayrollEmployeesIndexRoute: typeof AuthenticatedPayrollEmployeesIndexRoute
+  AuthenticatedPayrollPayslipsIndexRoute: typeof AuthenticatedPayrollPayslipsIndexRoute
+  AuthenticatedPayrollRunsIndexRoute: typeof AuthenticatedPayrollRunsIndexRoute
 }
 
 const AuthenticatedPayrollRouteRouteChildren: AuthenticatedPayrollRouteRouteChildren =
@@ -2732,8 +2816,14 @@ const AuthenticatedPayrollRouteRouteChildren: AuthenticatedPayrollRouteRouteChil
     AuthenticatedPayrollIndexRoute: AuthenticatedPayrollIndexRoute,
     AuthenticatedPayrollEmployeesEmployeeIdRoute:
       AuthenticatedPayrollEmployeesEmployeeIdRoute,
+    AuthenticatedPayrollPayslipsPayslipIdRoute:
+      AuthenticatedPayrollPayslipsPayslipIdRoute,
+    AuthenticatedPayrollRunsRunIdRoute: AuthenticatedPayrollRunsRunIdRoute,
     AuthenticatedPayrollEmployeesIndexRoute:
       AuthenticatedPayrollEmployeesIndexRoute,
+    AuthenticatedPayrollPayslipsIndexRoute:
+      AuthenticatedPayrollPayslipsIndexRoute,
+    AuthenticatedPayrollRunsIndexRoute: AuthenticatedPayrollRunsIndexRoute,
   }
 
 const AuthenticatedPayrollRouteRouteWithChildren =

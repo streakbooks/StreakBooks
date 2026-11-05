@@ -218,9 +218,9 @@ test("required maker-checker policy submits a review without posting a journal",
   page.on("dialog", (dialog) => dialog.accept());
   await page.goto("/?approval=1");
   await plan(page, "Independent review for correction");
-  await expect(page.getByRole("button", { name: "Post correction batch", exact: true })).toHaveCount(
-    0,
-  );
+  await expect(
+    page.getByRole("button", { name: "Post correction batch", exact: true }),
+  ).toHaveCount(0);
   await expect(
     page.getByRole("button", { name: "Submit for independent approval", exact: true }),
   ).toBeDisabled();

@@ -6,8 +6,8 @@ import { InPlaceSettingsPanel } from "@/components/settings/InPlaceSettingsPanel
 import { parseSettingsPanel } from "@/lib/settings/panels";
 import { ModuleSettingsLinks } from "@/components/settings/ModuleSettingsLinks";
 import { WakeSettings } from "@/components/ai-voice/WakeSettings";
-import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useBlocker, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Search, Settings2 } from "lucide-react";
@@ -36,6 +36,14 @@ import {
 import { ErrorState, LoadingState, PageHeader } from "@/components/common/states";
 import { PortalSettingsPanel } from "@/components/portals/staff-panels";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -74,6 +82,7 @@ import { SubscriptionPanel } from "@/components/billing/SubscriptionPanel";
 import { SettingsCommandPalette } from "@/components/settings/SettingsCommandPalette";
 import { maxFiscalYearEndDay, formatDocumentNumberPreview } from "@/lib/settings/dimension-helpers";
 import { SettingsSaveBar } from "@/components/settings/SettingsSaveBar";
+import { hasUnsavedLegacySettings } from "@/lib/settings/legacy-navigation";
 import {
   brandingSnapshot,
   localisationSnapshot,
@@ -266,6 +275,16 @@ export function SettingsForCompany({
   const [localizationBaseline, setLocalizationBaseline] = useState("");
   const [brandingBaseline, setBrandingBaseline] = useState("");
   const [currenciesBaseline, setCurrenciesBaseline] = useState("");
+  const [dirtySequences, setDirtySequences] = useState<Record<string, boolean>>({});
+  const reportSequenceDirty = useCallback((documentType: string, isDirty: boolean) => {
+    setDirtySequences((previous) => {
+      if (Boolean(previous[documentType]) === isDirty) return previous;
+      const next = { ...previous };
+      if (isDirty) next[documentType] = true;
+      else delete next[documentType];
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     const d = detailsQuery.data;
@@ -340,15 +359,18 @@ export function SettingsForCompany({
     rateFrom !== (detailsQuery.data?.base_currency ?? "GBP") &&
     /^\d{4}-\d{2}-\d{2}$/.test(rateDate);
 
-  useEffect(() => {
-    if (!detailsDirty && !localizationDirty && !brandingDirty && !currenciesDirty) return;
-    const warn = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-      event.returnValue = "";
-    };
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [detailsDirty, localizationDirty, brandingDirty, currenciesDirty]);
+  const hasUnsavedChanges = hasUnsavedLegacySettings({
+    organisation: detailsDirty,
+    localisation: localizationDirty,
+    branding: brandingDirty,
+    currencies: currenciesDirty,
+    sequences: dirtySequences,
+  });
+  const navigationBlocker = useBlocker({
+    shouldBlockFn: () => hasUnsavedChanges,
+    enableBeforeUnload: hasUnsavedChanges,
+    withResolver: true,
+  });
 
   const resetDetails = () => {
     const d = detailsQuery.data;
@@ -1298,6 +1320,7 @@ export function SettingsForCompany({
                                   key={seq.document_type}
                                   seq={seq}
                                   disabled={!canEdit}
+                                  onDirtyChange={reportSequenceDirty}
                                   onSave={async (patch, expected) => {
                                     try {
                                       await saveSequence({
@@ -1607,6 +1630,48 @@ export function SettingsForCompany({
           )}
         </div>
       </div>
+      <AlertDialog
+        open={navigationBlocker.status === "blocked"}
+        onOpenChange={(open) => {
+          if (!open && navigationBlocker.status === "blocked") navigationBlocker.reset();
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave with unsaved Settings Centre changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your unsaved organisation, branding, currency or document numbering changes will be
+              discarded if you leave this page.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                if (navigationBlocker.status === "blocked") navigationBlocker.reset();
+              }}
+            >
+              Stay and keep editing
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={
+                saveMutation.isPending ||
+                localizationM.isPending ||
+                brandingM.isPending ||
+                currenciesM.isPending
+              }
+              onClick={() => {
+                if (navigationBlocker.status === "blocked") navigationBlocker.proceed();
+              }}
+            >
+              Discard and leave
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
@@ -1614,10 +1679,12 @@ export function SettingsForCompany({
 function SequenceRow({
   seq,
   disabled,
+  onDirtyChange,
   onSave,
 }: {
   seq: { document_type: string; prefix: string; next_number: number; padding: number };
   disabled: boolean;
+  onDirtyChange: (documentType: string, dirty: boolean) => void;
   onSave: (patch: SequenceSnapshot, expected: SequenceSnapshot) => Promise<unknown>;
 }) {
   const [prefix, setPrefix] = useState(seq.prefix);
@@ -1636,14 +1703,9 @@ function SequenceRow({
   }, [seq, dirty]);
 
   useEffect(() => {
-    if (!dirty) return;
-    const warn = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-      event.returnValue = "";
-    };
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty]);
+    onDirtyChange(seq.document_type, dirty);
+    return () => onDirtyChange(seq.document_type, false);
+  }, [dirty, onDirtyChange, seq.document_type]);
 
   const parsed = validateDocumentSequenceDraft({ prefix, next, padding: pad });
   const serverChanged = dirty && JSON.stringify(seq) !== baseline;

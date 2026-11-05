@@ -113,6 +113,24 @@ CREATE TABLE public.company_subscriptions (
     CONSTRAINT company_subscriptions_status_check CHECK ((status = ANY (ARRAY['trialing'::text, 'active'::text, 'past_due'::text, 'cancelled'::text, 'expired'::text, 'complimentary'::text, 'paused'::text])))
 );
 
+CREATE TABLE public.email_outbox (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    company_id uuid NOT NULL,
+    entity_type text NOT NULL,
+    entity_id uuid,
+    template text NOT NULL,
+    to_addresses text[] NOT NULL,
+    subject text NOT NULL,
+    provider text NOT NULL,
+    provider_message_id text,
+    status text NOT NULL,
+    error text,
+    sent_by uuid,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT email_outbox_recipients CHECK (((cardinality(to_addresses) >= 1) AND (cardinality(to_addresses) <= 10))),
+    CONSTRAINT email_outbox_status_check CHECK ((status = ANY (ARRAY['sent'::text, 'failed'::text])))
+);
+
 CREATE TABLE public.entitlement_overrides (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     feature_key text NOT NULL,
@@ -257,6 +275,9 @@ ALTER TABLE ONLY public.billing_settings
 ALTER TABLE ONLY public.company_subscriptions
     ADD CONSTRAINT company_subscriptions_pkey PRIMARY KEY (company_id);
 
+ALTER TABLE ONLY public.email_outbox
+    ADD CONSTRAINT email_outbox_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY public.entitlement_overrides
     ADD CONSTRAINT entitlement_overrides_pkey PRIMARY KEY (id);
 
@@ -294,6 +315,10 @@ CREATE INDEX platform_request_buckets_minute ON private.platform_request_buckets
 
 CREATE INDEX billing_checkouts_company_idx ON public.billing_checkouts USING btree (company_id, created_at DESC);
 
+CREATE INDEX email_outbox_company_idx ON public.email_outbox USING btree (company_id, created_at DESC);
+
+CREATE INDEX email_outbox_entity_idx ON public.email_outbox USING btree (company_id, entity_type, entity_id, created_at DESC);
+
 CREATE INDEX entitlement_overrides_lookup ON public.entitlement_overrides USING btree (feature_key, scope, scope_id) WHERE (approval_status = 'approved'::text);
 
 CREATE INDEX firm_client_links_company_idx ON public.firm_client_links USING btree (company_id);
@@ -304,8 +329,94 @@ CREATE INDEX platform_audit_date ON public.platform_audit USING btree (created_a
 
 CREATE INDEX platform_audit_entity ON public.platform_audit USING btree (entity_type, entity_id, created_at DESC);
 
+CREATE TABLE private.platform_job_schedules (
+    kind text NOT NULL,
+    interval_seconds integer NOT NULL,
+    next_run_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT platform_job_schedules_interval_seconds_check CHECK (((interval_seconds >= 60) AND (interval_seconds <= 86400))),
+    CONSTRAINT platform_job_schedules_kind_check CHECK ((kind = ANY (ARRAY['expire_support'::text, 'check_operations'::text])))
+);
+
+CREATE TABLE private.platform_worker_state (
+    singleton boolean DEFAULT true NOT NULL,
+    enabled boolean DEFAULT true NOT NULL,
+    started_at timestamp with time zone,
+    finished_at timestamp with time zone,
+    last_jobs integer,
+    error_code text,
+    CONSTRAINT platform_worker_state_singleton_check CHECK (singleton)
+);
+
+CREATE TABLE public.platform_job_runs (
+    id bigint NOT NULL,
+    job_id uuid NOT NULL,
+    attempt integer NOT NULL,
+    started_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
+    finished_at timestamp with time zone,
+    status text NOT NULL,
+    error_code text,
+    result jsonb,
+    CONSTRAINT platform_job_runs_status_check CHECK ((status = ANY (ARRAY['running'::text, 'succeeded'::text, 'failed'::text])))
+);
+
+ALTER TABLE public.platform_job_runs ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.platform_job_runs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+CREATE TABLE public.platform_jobs (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    name text NOT NULL,
+    status text NOT NULL,
+    created_by uuid,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    kind text,
+    origin text DEFAULT 'operator'::text NOT NULL,
+    attempts integer DEFAULT 0 NOT NULL,
+    max_attempts integer DEFAULT 5 NOT NULL,
+    next_run_at timestamp with time zone DEFAULT now() NOT NULL,
+    started_at timestamp with time zone,
+    finished_at timestamp with time zone,
+    last_error text,
+    result jsonb,
+    row_version integer DEFAULT 1 NOT NULL,
+    CONSTRAINT platform_jobs_actor CHECK (((created_by IS NOT NULL) OR (origin = 'schedule'::text))),
+    CONSTRAINT platform_jobs_attempts_check CHECK ((attempts >= 0)),
+    CONSTRAINT platform_jobs_kind_check CHECK ((kind = ANY (ARRAY['expire_support'::text, 'check_operations'::text]))),
+    CONSTRAINT platform_jobs_max_attempts_check CHECK (((max_attempts >= 1) AND (max_attempts <= 30))),
+    CONSTRAINT platform_jobs_name_check CHECK (((length(TRIM(BOTH FROM name)) >= 2) AND (length(TRIM(BOTH FROM name)) <= 80))),
+    CONSTRAINT platform_jobs_origin_check CHECK ((origin = ANY (ARRAY['operator'::text, 'schedule'::text]))),
+    CONSTRAINT platform_jobs_row_version_check CHECK ((row_version > 0)),
+    CONSTRAINT platform_jobs_status_check CHECK ((status = ANY (ARRAY['queued'::text, 'running'::text, 'succeeded'::text, 'failed'::text, 'cancelled'::text])))
+);
+
+ALTER TABLE ONLY private.platform_job_schedules
+    ADD CONSTRAINT platform_job_schedules_pkey PRIMARY KEY (kind);
+
+ALTER TABLE ONLY private.platform_worker_state
+    ADD CONSTRAINT platform_worker_state_pkey PRIMARY KEY (singleton);
+
+ALTER TABLE ONLY public.platform_job_runs
+    ADD CONSTRAINT platform_job_runs_job_id_attempt_key UNIQUE (job_id, attempt);
+
+ALTER TABLE ONLY public.platform_job_runs
+    ADD CONSTRAINT platform_job_runs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY public.platform_jobs
+    ADD CONSTRAINT platform_jobs_pkey PRIMARY KEY (id);
+
+CREATE UNIQUE INDEX platform_jobs_one_queued ON public.platform_jobs USING btree (name) WHERE (status = 'queued'::text);
+
+CREATE INDEX platform_jobs_ready ON public.platform_jobs USING btree (next_run_at, created_at) WHERE ((status = 'queued'::text) AND (kind IS NOT NULL));
+
 -- Reduced stubs for objects outside the subscription stack.
 CREATE FUNCTION private.platform_session_ok() RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT auth.uid() IS NOT NULL $$;
+CREATE FUNCTION private.platform_expire_support_jobs() RETURNS jsonb LANGUAGE sql AS $$ SELECT '{}'::jsonb $$;
+CREATE FUNCTION private.platform_check_operations() RETURNS jsonb LANGUAGE sql AS $$ SELECT '{}'::jsonb $$;
 CREATE TABLE public.sales_invoices (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), company_id uuid NOT NULL, created_at timestamptz NOT NULL DEFAULT now());
 CREATE TABLE public.purchase_bills (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), company_id uuid NOT NULL, created_at timestamptz NOT NULL DEFAULT now());
 CREATE TABLE public.document_attachments (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), company_id uuid NOT NULL, size_bytes bigint NOT NULL DEFAULT 0);
@@ -896,6 +1007,39 @@ DECLARE n integer; BEGIN
 END $function$
 ;
 
+CREATE OR REPLACE FUNCTION private.platform_worker_tick() RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
+DECLARE j public.platform_jobs; schedule record; count_jobs integer:=0; run_id bigint; output jsonb; code text;
+BEGIN
+ IF auth.uid() IS NOT NULL THEN RAISE EXCEPTION 'Scheduled worker requires system execution' USING ERRCODE='42501'; END IF;
+ IF NOT pg_try_advisory_xact_lock(483925016) THEN RETURN jsonb_build_object('skipped','Worker already running'); END IF;
+ IF NOT EXISTS(SELECT 1 FROM private.platform_worker_state WHERE singleton AND enabled) THEN RETURN jsonb_build_object('skipped','Worker disabled'); END IF;
+ UPDATE private.platform_worker_state SET started_at=clock_timestamp(),error_code=NULL WHERE singleton;
+ FOR schedule IN SELECT * FROM private.platform_job_schedules WHERE next_run_at<=now() ORDER BY kind FOR UPDATE LOOP
+  IF NOT EXISTS(SELECT 1 FROM public.platform_jobs WHERE kind=schedule.kind AND origin='schedule' AND status='failed') THEN
+  INSERT INTO public.platform_jobs(name,kind,status,created_by,origin) VALUES(schedule.kind,schedule.kind,'queued',NULL,'schedule') ON CONFLICT(name) WHERE status='queued' DO NOTHING;
+  END IF;
+  UPDATE private.platform_job_schedules SET next_run_at=date_trunc('minute',now())+make_interval(secs=>schedule.interval_seconds) WHERE kind=schedule.kind;
+ END LOOP;
+ FOR j IN SELECT * FROM public.platform_jobs WHERE status='queued' AND kind IS NOT NULL AND next_run_at<=now() AND attempts<max_attempts ORDER BY next_run_at,created_at,id LIMIT 5 FOR UPDATE SKIP LOCKED LOOP
+  UPDATE public.platform_jobs SET status='running',attempts=attempts+1,started_at=clock_timestamp(),finished_at=NULL,last_error=NULL,row_version=row_version+1 WHERE id=j.id RETURNING * INTO j;
+  INSERT INTO public.platform_job_runs(job_id,attempt,status) VALUES(j.id,j.attempts,'running') RETURNING id INTO run_id;
+  BEGIN
+   CASE j.kind WHEN 'expire_support' THEN output:=private.platform_expire_support_jobs(); WHEN 'check_operations' THEN output:=private.platform_check_operations(); ELSE RAISE EXCEPTION 'Unsupported job handler'; END CASE;
+   UPDATE public.platform_jobs SET status='succeeded',finished_at=clock_timestamp(),result=output,row_version=row_version+1 WHERE id=j.id;
+   UPDATE public.platform_job_runs SET status='succeeded',finished_at=clock_timestamp(),result=output WHERE id=run_id;
+   PERFORM private.platform_log('job.succeed','platform_job',j.id::text,NULL,output,'Bounded operational handler completed');
+  EXCEPTION WHEN OTHERS THEN
+   GET STACKED DIAGNOSTICS code=RETURNED_SQLSTATE;
+   UPDATE public.platform_jobs SET status=CASE WHEN attempts>=max_attempts THEN 'failed' ELSE 'queued' END,next_run_at=now()+make_interval(secs=>least(3600,60*power(2,least(attempts-1,6))::integer)),finished_at=clock_timestamp(),last_error='Handler failed ('||code||')',row_version=row_version+1 WHERE id=j.id;
+   UPDATE public.platform_job_runs SET status='failed',finished_at=clock_timestamp(),error_code=code WHERE id=run_id;
+   PERFORM private.platform_log('job.fail','platform_job',j.id::text,NULL,jsonb_build_object('code',code,'attempt',j.attempts,'retrying',j.attempts<j.max_attempts),'Operational handler failed; details remain redacted');
+  END;
+  count_jobs:=count_jobs+1;
+ END LOOP;
+ UPDATE private.platform_worker_state SET finished_at=clock_timestamp(),last_jobs=count_jobs WHERE singleton;
+ RETURN jsonb_build_object('processed',count_jobs);
+END $$;
+
 CREATE TRIGGER companies_attach_subscription AFTER INSERT ON public.companies FOR EACH ROW EXECUTE FUNCTION attach_company_subscription();
 CREATE TRIGGER companies_plan_allowance BEFORE INSERT ON public.companies FOR EACH ROW EXECUTE FUNCTION enforce_company_allowance();
 CREATE TRIGGER company_members_subscription_seats BEFORE INSERT OR UPDATE ON public.company_members FOR EACH ROW EXECUTE FUNCTION enforce_subscription_seats();
@@ -1035,6 +1179,9 @@ INSERT INTO public.plan_version_limits (version_id, feature_key, enabled, limit_
 	('7f4488f5-41d8-4b56-9e08-30451b3ba5f8', 'white_label', true, NULL),
 	('7f4488f5-41d8-4b56-9e08-30451b3ba5f8', 'api', true, NULL),
 	('7f4488f5-41d8-4b56-9e08-30451b3ba5f8', 'audit_centre', true, NULL);
+
+INSERT INTO private.platform_worker_state (singleton) VALUES (true);
+INSERT INTO private.platform_job_schedules (kind, interval_seconds) VALUES ('expire_support', 60), ('check_operations', 60);
 
 -- Subscriptions present before the billing platform series (exercises the catalogue data migration).
 INSERT INTO public.company_subscriptions (company_id, plan_code, status, provider, currency, trial_started_at, trial_ends_at)

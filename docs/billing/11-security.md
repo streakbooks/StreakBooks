@@ -35,6 +35,18 @@
 | Client-chosen country changing a charge   | Country selection on the pricing page is display-only; checkout (phase 5) uses the verified billing address         | Design; enforced in phase 5             |
 | Reading or writing pricing internals      | `billing` tables not exposed; admin functions need an aal2 platform session and are not executable by `anon`        | SQL suite                               |
 
+## Phase 4 controls
+
+| Threat                                       | Control                                                                                              | Verified by                            |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| Cancelling someone else's subscription       | `billing.manage` on that organisation, re-checked in the database                                    | SQL suite: staff and outsiders refused |
+| Cancelling on terms the customer did not see | Current policy id must be confirmed; changed policy refused (`40001`); version and acceptance stored | SQL suite and rehearsal                |
+| A provider charging after cancellation       | Provider subscriptions are cancelled through the provider until phase 5                              | SQL suite                              |
+| Rewriting history or legal text              | Events, acceptances and approved/published documents are immutable; requests cannot be edited        | SQL suite                              |
+| One person publishing legal text             | Approval by a platform owner other than the author; finance staff cannot approve                     | SQL suite and rehearsal                |
+| Storing client addresses                     | Only an HMAC with a server secret, or nothing                                                        | Code review                            |
+| Pause misuse                                 | Platform staff with an aal2 session only; audited in both audit trails                               | SQL suite                              |
+
 ## Rules for later phases
 
 - Payment and tax secrets stay server-side (`*.server.ts`, Edge Function secrets); `VITE_*`

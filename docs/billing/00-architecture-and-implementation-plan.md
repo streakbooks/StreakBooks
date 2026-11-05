@@ -1,6 +1,6 @@
 # LinkBooks Subscription & Billing Platform — Architecture and Implementation Plan
 
-Status: **Approved 5 November 2026. Phases 1 to 3 implemented and tested locally** (see
+Status: **Approved 5 November 2026. Phases 1 to 4 implemented and tested locally** (see
 [01-requirements.md](01-requirements.md)); not applied to the hosted database, not pushed.
 Branch: `feature/rohit-dev`. Date: 5 November 2026.
 

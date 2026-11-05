@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CountryPricingAdmin } from "@/components/platform/billing/CountryPricingAdmin";
+import { LegalDocumentsAdmin } from "@/components/platform/billing/LegalDocumentsAdmin";
 import { formatMinorAmount } from "@/lib/billing/domain/money";
 import { getPlatformBilling } from "@/lib/billing/platform.functions";
 import {
@@ -75,6 +76,7 @@ function PlatformBillingPage() {
         multi-factor authentication session. Tax collection is not enabled.
       </p>
       <CountryPricingAdmin canEdit={editor} />
+      <LegalDocumentsAdmin canEdit={editor} isOwner={owner} />
       <h2 className="pt-4 text-xl font-semibold">Legacy plan prices and versions</h2>
       {editor ? (
         <form

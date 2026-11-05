@@ -142,9 +142,7 @@ export const undoCorrection = createServerFn({ method: "POST" })
  */
 export const getCorrectionUndoSnapshot = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    company.extend({ batchId: z.string().uuid() }).parse(input),
-  )
+  .inputValidator((input: unknown) => company.extend({ batchId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }): Promise<CorrectionUndoSnapshot> => {
     await assertCompanyPermission(context.supabase, data.companyId, "accounting.view");
     const { data: batch, error } = await context.supabase

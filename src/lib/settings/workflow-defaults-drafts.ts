@@ -26,11 +26,11 @@ export function parseSalesDefaultsDraft(draft: SalesDefaultsDraft) {
     Number.isSafeInteger(quoteValue) && quoteValue >= 1 && quoteValue <= 365
       ? quoteValue
       : null;
-  if (terms === null) errors.terms = "Enter whole days between 0 and 3650.";
-  if (quoteDays === null) errors.quoteDays = "Enter whole days between 1 and 365.";
-  if (draft.notes.length > 2000) errors.notes = "Use at most 2,000 characters.";
+  if (terms === null) errors["terms"] = "Enter whole days between 0 and 3650.";
+  if (quoteDays === null) errors["quoteDays"] = "Enter whole days between 1 and 365.";
+  if (draft.notes.length > 2000) errors["notes"] = "Use at most 2,000 characters.";
   if (draft.instructions.length > 2000)
-    errors.instructions = "Use at most 2,000 characters.";
+    errors["instructions"] = "Use at most 2,000 characters.";
   if (Object.keys(errors).length > 0 || terms === null || quoteDays === null) {
     return { ok: false as const, errors };
   }
@@ -50,8 +50,8 @@ export function parseSalesDefaultsDraft(draft: SalesDefaultsDraft) {
 export function parsePurchasesDefaultsDraft(draft: PurchasesDefaultsDraft) {
   const errors: Errors = {};
   const terms = parsePaymentTermsDays(draft.terms);
-  if (terms === null) errors.terms = "Enter whole days between 0 and 3650.";
-  if (draft.notes.length > 2000) errors.notes = "Use at most 2,000 characters.";
+  if (terms === null) errors["terms"] = "Enter whole days between 0 and 3650.";
+  if (draft.notes.length > 2000) errors["notes"] = "Use at most 2,000 characters.";
   if (Object.keys(errors).length > 0 || terms === null) {
     return { ok: false as const, errors };
   }

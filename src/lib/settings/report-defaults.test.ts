@@ -30,7 +30,10 @@ describe("Settings Centre Reports default basis", () => {
   });
   it("applies the saved comparison to statements without report-specific options", () => {
     expect(
-      applyOrganisationReportDefaults({}, { default_basis: "cash", default_comparison: "prior_period" }),
+      applyOrganisationReportDefaults(
+        {},
+        { default_basis: "cash", default_comparison: "prior_period" },
+      ),
     ).toEqual({ basis: "cash", columns: "prior_period" });
     expect(
       applyOrganisationReportDefaults({}, { default_comparison: "prior_year" }),
@@ -48,10 +51,7 @@ describe("Settings Centre Reports default basis", () => {
 
   it("never replaces explicit column or comparison choices", () => {
     expect(
-      applyOrganisationReportDefaults(
-        { columns: "month" },
-        { default_comparison: "prior_year" },
-      ),
+      applyOrganisationReportDefaults({ columns: "month" }, { default_comparison: "prior_year" }),
     ).toEqual({ basis: "accrual", columns: "month" });
     expect(
       applyOrganisationReportDefaults(
@@ -60,5 +60,4 @@ describe("Settings Centre Reports default basis", () => {
       ),
     ).toEqual({ basis: "accrual", compare: "months" });
   });
-
 });

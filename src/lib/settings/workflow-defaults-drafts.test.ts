@@ -52,12 +52,9 @@ describe("purchases workflow settings drafts", () => {
     });
   });
 
-  it.each(["", " ", "-1", "1.5", "3651", "1e2"])(
-    "rejects invalid purchase terms: %s",
-    (terms) => {
-      expect(parsePurchasesDefaultsDraft({ ...purchases, terms }).ok).toBe(false);
-    },
-  );
+  it.each(["", " ", "-1", "1.5", "3651", "1e2"])("rejects invalid purchase terms: %s", (terms) => {
+    expect(parsePurchasesDefaultsDraft({ ...purchases, terms }).ok).toBe(false);
+  });
 
   it("rejects overlong purchase notes", () => {
     expect(parsePurchasesDefaultsDraft({ ...purchases, notes: "x".repeat(2001) }).ok).toBe(false);

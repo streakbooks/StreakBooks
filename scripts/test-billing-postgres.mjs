@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 
 // Billing component tests against an isolated, network-less Postgres 17 container.
-// Loads the synthetic billing fixture, applies every *_billing_*.sql migration verbatim twice
+// Loads the synthetic billing fixtures, applies every *_billing_*.sql migration verbatim twice
 // (proving idempotency), then runs tests/integration/billing-*.sql once each.
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const env = { ...process.env };
@@ -83,7 +83,8 @@ try {
   }
   if (!ready) throw new Error("Isolated Postgres did not start");
 
-  psql(readFileSync(path.join(root, "tests/fixtures/billing/baseline.sql"), "utf8"));
+  for (const fixture of ["baseline.sql", "legacy-catalogue.sql"])
+    psql(readFileSync(path.join(root, "tests/fixtures/billing", fixture), "utf8"));
   for (const pass of [1, 2]) {
     for (const file of migrations)
       psql(readFileSync(path.join(root, "supabase/migrations", file), "utf8"));

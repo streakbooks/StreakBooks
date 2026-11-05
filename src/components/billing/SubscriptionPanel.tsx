@@ -41,6 +41,12 @@ import { cn } from "@/lib/utils";
 
 const billingKey = (companyId: string) => ["billing-overview", companyId] as const;
 
+function visiblePlans(data: BillingOverview): BillingPlanView[] {
+  return data.plans
+    .filter((plan) => plan.active && (plan.isPublic || plan.code === data.subscription?.planCode))
+    .sort((a, b) => a.rank - b.rank);
+}
+
 function paidSubscription(sub: BillingOverview["subscription"]): boolean {
   if (!sub) return false;
   if (sub.provider !== "stripe" && sub.provider !== "razorpay") return false;
@@ -113,9 +119,9 @@ export function SubscriptionPanel({
 
   useEffect(() => {
     if (openedFromLink.current || !data?.ready || !initialPlan) return;
-    const plan = data.plans.find((item) => item.code === initialPlan && item.active);
+    const plan = visiblePlans(data).find((item) => item.code === initialPlan);
     openedFromLink.current = true;
-    if (!plan) return;
+    if (!plan?.pricePublished) return;
     const paid = paidSubscription(data.subscription);
     if (paid && data.subscription?.planCode === plan.code) return;
     setIntent(paid ? "switch" : "subscribe");
@@ -128,7 +134,7 @@ export function SubscriptionPanel({
   }
 
   function openPlan(plan: BillingPlanView) {
-    if (!data) return;
+    if (!data || !plan.pricePublished) return;
     const paid = paidSubscription(data.subscription);
     if (paid && data.subscription?.planCode === plan.code) return;
     setIntent(paid ? "switch" : "subscribe");
@@ -147,9 +153,9 @@ export function SubscriptionPanel({
       toast.error(data.message ?? "Subscriptions are not available yet.");
       return;
     }
-    const targets = data.plans.filter((plan) => plan.active);
+    const targets = visiblePlans(data).filter((plan) => plan.pricePublished);
     if (targets.length === 0) {
-      toast.error("There are no active plans to price.");
+      toast.error("Promo codes can be used once plan prices are published.");
       return;
     }
     try {
@@ -252,9 +258,11 @@ export function SubscriptionPanel({
 
   const busy = checkout.isPending || planChange.isPending;
   const quote = target ? (quotes[target.code] ?? null) : null;
-  const due = target
-    ? (quote?.dueMinor ?? listAmount(target.monthlyMinor, interval, data.settings.annualFreeMonths))
-    : 0;
+  const due =
+    target && target.monthlyMinor !== null
+      ? (quote?.dueMinor ??
+        listAmount(target.monthlyMinor, interval, data.settings.annualFreeMonths))
+      : 0;
   const checkingOut = target != null && intent === "subscribe";
 
   return (
@@ -394,11 +402,14 @@ function PlanPicker({
   onApply: () => void;
   onChoose: (plan: BillingPlanView) => void;
 }) {
+  const plans = visiblePlans(data);
+  const anyPriced = plans.some((plan) => plan.pricePublished);
+  const trialPlan = plans.find((plan) => plan.code === data.settings.trialPlanCode);
   return (
     <>
       <div className="flex flex-col items-center gap-3">
         <div
-          className="inline-flex rounded-full border bg-muted/40 p-1"
+          className={cn("inline-flex rounded-full border bg-muted/40 p-1", !anyPriced && "hidden")}
           role="group"
           aria-label="Billing period"
         >
@@ -422,7 +433,7 @@ function PlanPicker({
             {data.settings.annualFreeMonths > 0 ? " · 2 months free" : ""}
           </Button>
         </div>
-        {showPromo ? (
+        {!anyPriced ? null : showPromo ? (
           <form
             className="flex flex-wrap items-end justify-center gap-2"
             onSubmit={(event) => {
@@ -458,27 +469,31 @@ function PlanPicker({
         )}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {data.plans
-          .filter((plan) => plan.active)
-          .map((plan) => (
-            <PlanCard
-              key={plan.code}
-              plan={plan}
-              overview={data}
-              interval={interval}
-              quote={quotes[plan.code] ?? null}
-              busy={busy}
-              onChoose={() => onChoose(plan)}
-            />
-          ))}
+      <div
+        className={cn(
+          "grid gap-4 md:grid-cols-2",
+          plans.length > 3 ? "xl:grid-cols-4" : "xl:grid-cols-3",
+        )}
+      >
+        {plans.map((plan) => (
+          <PlanCard
+            key={plan.code}
+            plan={plan}
+            overview={data}
+            interval={interval}
+            quote={quotes[plan.code] ?? null}
+            busy={busy}
+            onChoose={() => onChoose(plan)}
+          />
+        ))}
       </div>
 
       <p className="text-center text-xs text-muted-foreground">
-        Prices are per organisation and exclude local tax. Yearly billing is ten times the monthly
-        price. A new organisation starts a {data.settings.trialDays}-day{" "}
-        {data.settings.trialPlanCode.replace(/^./, (letter) => letter.toUpperCase())} trial with no
-        card. The ledger is the same on every plan.
+        Prices are per organisation and exclude local tax.
+        {trialPlan?.trialEnabled
+          ? ` A new organisation starts a ${trialPlan.trialDays}-day ${trialPlan.name} trial with no card.`
+          : ""}{" "}
+        The ledger is the same on every plan.
       </p>
     </>
   );
@@ -570,8 +585,11 @@ function PlanCard({
 }) {
   const current = overview.subscription?.planCode === plan.code;
   const paidHere = current && paidSubscription(overview.subscription);
-  const recommended = plan.code === "growth" && !current;
-  const list = listAmount(plan.monthlyMinor, interval, overview.settings.annualFreeMonths);
+  const recommended = plan.code === overview.settings.trialPlanCode && !current;
+  const list =
+    plan.monthlyMinor === null
+      ? null
+      : listAmount(plan.monthlyMinor, interval, overview.settings.annualFreeMonths);
   const due = quote?.dueMinor ?? list;
   return (
     <article
@@ -587,18 +605,28 @@ function PlanCard({
           <p className="text-xs text-muted-foreground">{plan.audience}</p>
         </div>
         {current ? <Badge>Current</Badge> : null}
-        {recommended ? <Badge variant="info">Most popular</Badge> : null}
+        {recommended ? <Badge variant="info">Recommended</Badge> : null}
       </div>
-      <p className="mt-5">
-        <span className="text-3xl font-semibold tracking-tight">
-          {formatMinor(due, overview.currency)}
-        </span>
-        <span className="text-sm text-muted-foreground">
-          {" "}
-          / {interval === "year" ? "year" : "month"}
-        </span>
-      </p>
-      {quote && quote.discountMinor > 0 ? (
+      {due === null ? (
+        <p className="mt-5 text-xl font-semibold tracking-tight">Price coming soon</p>
+      ) : (
+        <p className="mt-5">
+          <span className="text-3xl font-semibold tracking-tight">
+            {formatMinor(due, overview.currency)}
+          </span>
+          <span className="text-sm text-muted-foreground">
+            {" "}
+            / {interval === "year" ? "year" : "month"}
+          </span>
+        </p>
+      )}
+      {due === null ? (
+        <p className="mt-1 text-xs text-muted-foreground">
+          {plan.trialEnabled
+            ? `${plan.trialDays}-day free trial, no card needed`
+            : "Not yet on sale"}
+        </p>
+      ) : quote && quote.discountMinor > 0 ? (
         <p className="mt-1 text-xs text-muted-foreground">
           List {formatMinor(quote.listMinor, overview.currency)} with {quote.offerCode}
         </p>
@@ -611,14 +639,16 @@ function PlanCard({
         type="button"
         className="mt-4 w-full"
         variant={recommended ? "default" : "outline"}
-        disabled={busy || paidHere}
+        disabled={busy || paidHere || !plan.pricePublished}
         onClick={onChoose}
       >
-        {paidHere
+        {paidHere || (current && !plan.pricePublished)
           ? "Current plan"
-          : paidSubscription(overview.subscription)
-            ? "Switch plan"
-            : "Subscribe"}
+          : !plan.pricePublished
+            ? "Available soon"
+            : paidSubscription(overview.subscription)
+              ? "Switch plan"
+              : "Subscribe"}
       </Button>
       <p className="mt-4 text-sm">{plan.summary}</p>
       <ul className="mt-3 space-y-2 text-sm text-muted-foreground">

@@ -21,12 +21,20 @@
 export const BILLING_CURRENCIES = ["USD", "GBP", "AUD", "NZD", "INR"] as const;
 export type BillingCurrency = (typeof BILLING_CURRENCIES)[number];
 
-export const PLAN_CODES = ["starter", "growth", "pro", "practice", "standard", "premium"] as const;
+export const PLAN_CODES = [
+  "starter",
+  "growth",
+  "pro",
+  "practice",
+  "standard",
+  "premium",
+  "business",
+] as const;
 export type PlanCode = (typeof PLAN_CODES)[number];
 
-export const DEFAULT_TRIAL_DAYS = 14;
+export const DEFAULT_TRIAL_DAYS = 30;
 export const DEFAULT_ANNUAL_FREE_MONTHS = 2;
-export const DEFAULT_TRIAL_PLAN: PlanCode = "growth";
+export const DEFAULT_TRIAL_PLAN: PlanCode = "pro";
 export const DEFAULT_GRACE_DAYS = 7;
 
 export type PlanLimits = {
@@ -47,6 +55,10 @@ export type CatalogPlan = {
   highlights: string[];
 };
 
+/**
+ * Legacy plan prices only. STANDARD, PRO and BUSINESS (pricing_source 'price_book') are never
+ * priced from here, so the retired top-tier "pro" prices below never apply to the new PRO.
+ */
 export const CATALOG: readonly CatalogPlan[] = [
   {
     code: "starter",

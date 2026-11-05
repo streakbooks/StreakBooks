@@ -19,6 +19,8 @@ import {
   type PayMethodId,
 } from "@/lib/billing/checkout-payload";
 import {
+  DEFAULT_TRIAL_DAYS,
+  DEFAULT_TRIAL_PLAN,
   isBillingCurrency,
   isPlanCode,
   planByCode,
@@ -39,7 +41,9 @@ export type BillingPlanView = {
   name: string;
   audience: string;
   summary: string;
-  monthlyMinor: number;
+  /** Null until the plan has a published price (price-book plans before phase 3). */
+  monthlyMinor: number | null;
+  pricePublished: boolean;
   monthlyGbp: number;
   monthlyUsd: number;
   monthlyInr: number;
@@ -49,6 +53,10 @@ export type BillingPlanView = {
   multiCurrency: boolean;
   highlights: string[];
   active: boolean;
+  isPublic: boolean;
+  rank: number;
+  trialEnabled: boolean;
+  trialDays: number;
 };
 
 export type BillingOfferView = {
@@ -139,9 +147,19 @@ type PlanRow = {
   highlights: unknown;
   sort_order: number;
   is_active: boolean;
+  is_public?: boolean;
+  plan_rank?: number;
+  trial_enabled?: boolean;
+  trial_days?: number;
+  pricing_source?: string;
 };
 
-function monthlyMinor(plan: PlanRow, currency: BillingCurrency): number {
+function hasLegacyPrice(plan: PlanRow): boolean {
+  return (plan.pricing_source ?? "legacy") === "legacy";
+}
+
+function monthlyMinor(plan: PlanRow, currency: BillingCurrency): number | null {
+  if (!hasLegacyPrice(plan)) return null;
   if (currency === "USD") return plan.monthly_usd;
   if (currency === "INR") return plan.monthly_inr;
   if (currency === "GBP") return plan.monthly_gbp;
@@ -155,6 +173,7 @@ function toPlanView(plan: PlanRow, currency: BillingCurrency): BillingPlanView {
     audience: plan.audience,
     summary: plan.summary,
     monthlyMinor: monthlyMinor(plan, currency),
+    pricePublished: hasLegacyPrice(plan),
     monthlyGbp: plan.monthly_gbp,
     monthlyUsd: plan.monthly_usd,
     monthlyInr: plan.monthly_inr,
@@ -164,6 +183,10 @@ function toPlanView(plan: PlanRow, currency: BillingCurrency): BillingPlanView {
     multiCurrency: plan.multi_currency,
     highlights: highlightsOf(plan.highlights),
     active: plan.is_active,
+    isPublic: plan.is_public ?? true,
+    rank: plan.plan_rank ?? plan.sort_order,
+    trialEnabled: plan.trial_enabled ?? true,
+    trialDays: plan.trial_days ?? DEFAULT_TRIAL_DAYS,
   };
 }
 
@@ -307,8 +330,8 @@ async function assertOperator(supabase: Client): Promise<void> {
 }
 
 const EMPTY_SETTINGS = {
-  trialDays: 30,
-  trialPlanCode: "standard",
+  trialDays: DEFAULT_TRIAL_DAYS,
+  trialPlanCode: DEFAULT_TRIAL_PLAN as string,
   annualFreeMonths: 2,
   pastDueGraceDays: 7,
 };
@@ -381,17 +404,18 @@ export const getBillingOverview = createServerFn({ method: "GET" })
       annual_free_months: number;
       past_due_grace_days: number;
     } | null;
+    const plans = ((plansRes.data ?? []) as unknown as PlanRow[]).map((plan) =>
+      toPlanView(plan, currency),
+    );
+    const trialPlan = plans.find((plan) => plan.code === settingsRow?.trial_plan_code);
     const settings = settingsRow
       ? {
-          trialDays: settingsRow.trial_days,
+          trialDays: trialPlan?.trialDays ?? settingsRow.trial_days,
           trialPlanCode: settingsRow.trial_plan_code,
           annualFreeMonths: settingsRow.annual_free_months,
           pastDueGraceDays: settingsRow.past_due_grace_days,
         }
       : EMPTY_SETTINGS;
-    const plans = ((plansRes.data ?? []) as unknown as PlanRow[]).map((plan) =>
-      toPlanView(plan, currency),
-    );
     const sub = subRes.data as {
       plan_code: string;
       status: string;
@@ -688,6 +712,12 @@ async function priceSelection(
   }
   const row = plan as PlanRow | null;
   if (!row || !row.is_active) throw new Error("That plan is not available.");
+  const monthly = monthlyMinor(row, currency);
+  if (monthly === null) {
+    throw new Error(
+      `${row.name} prices are not published yet. Your trial and existing records are not affected.`,
+    );
+  }
   const { data: settings, error: settingsError } = await supabase
     .from("billing_settings" as never)
     .select("trial_days, annual_free_months" as never)
@@ -697,11 +727,11 @@ async function priceSelection(
   const settingsRow = settings as { trial_days: number; annual_free_months: number } | null;
   const offer = offerCode ? await loadOffer(supabase, offerCode) : null;
   const quote = quotePrice({
-    monthlyMinor: monthlyMinor(row, currency),
+    monthlyMinor: monthly,
     interval,
     annualFreeMonths: settingsRow?.annual_free_months ?? 2,
     currency,
-    trialDays: settingsRow?.trial_days ?? 30,
+    trialDays: row.trial_days ?? settingsRow?.trial_days ?? DEFAULT_TRIAL_DAYS,
     offer,
     now: new Date(),
     planCode,
@@ -885,6 +915,17 @@ export const saveBillingSettings = createServerFn({ method: "POST" })
       } as never)
       .eq("id" as never, true as never);
     if (error) throw new Error(error.message);
+    // Signup trials read the length from the trial plan, so keep it in step.
+    const { error: trialError } = await supabase.rpc(
+      "platform_set_plan_trial" as never,
+      {
+        _plan_code: data.trialPlanCode,
+        _enabled: data.trialDays > 0,
+        _days: data.trialDays > 0 ? data.trialDays : DEFAULT_TRIAL_DAYS,
+        _reason: "Billing settings updated",
+      } as never,
+    );
+    if (trialError && !missingTable(trialError)) throw new Error(trialError.message);
     return { ok: true as const };
   });
 
@@ -916,6 +957,17 @@ export const saveBillingPlan = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     await assertOperator(supabase);
+    const { data: existing, error: existingError } = await supabase
+      .from("billing_plans" as never)
+      .select("*" as never)
+      .eq("code" as never, data.code as never)
+      .maybeSingle();
+    if (existingError) throw new Error(existingError.message);
+    if (existing && !hasLegacyPrice(existing as unknown as PlanRow)) {
+      throw new Error(
+        "This plan is priced from the price book. Change its limits as a new plan version instead.",
+      );
+    }
     assertPriceFloor("GBP", "month", data.monthlyGbp);
     assertPriceFloor("USD", "month", data.monthlyUsd);
     assertPriceFloor("INR", "month", data.monthlyInr);

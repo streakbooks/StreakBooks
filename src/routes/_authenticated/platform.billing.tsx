@@ -27,7 +27,7 @@ function PlatformBillingPage() {
     queryFn: () => load(),
     retry: false,
   });
-  const [planCode, setPlanCode] = useState("growth");
+  const [planCode, setPlanCode] = useState("pro");
   const [currency, setCurrency] = useState("USD");
   const [interval, setInterval] = useState("month");
   const [amount, setAmount] = useState("3000");
@@ -89,10 +89,14 @@ function PlatformBillingPage() {
               value={planCode}
               onChange={(event) => setPlanCode(event.target.value)}
             >
-              <option value="starter">Starter</option>
-              <option value="growth">Growth</option>
+              <option value="standard">Standard</option>
               <option value="pro">Pro</option>
-              <option value="practice">Practice</option>
+              <option value="business">Business</option>
+              <optgroup label="Legacy plans (hidden from sale)">
+                <option value="starter">Starter</option>
+                <option value="growth">Growth</option>
+                <option value="practice">Practice</option>
+              </optgroup>
             </select>
           </label>
           <label className="text-sm">

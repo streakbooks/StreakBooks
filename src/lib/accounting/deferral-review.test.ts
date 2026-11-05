@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { DeferralSchedule } from "./deferrals.functions";
 import {
   canPostDeferralEntry,
+  deferralScheduleReconciliation,
   deferralPageCounts,
   deferralPageCsv,
   filterDeferralPage,
@@ -40,6 +41,42 @@ const example: DeferralSchedule = {
 };
 
 describe("deferral review", () => {
+  it("reconciles exact scheduled, recognized, reversed and unposted minor amounts", () => {
+    const result = deferralScheduleReconciliation(example);
+    expect(result).toMatchObject({
+      total: 12000n,
+      scheduled: 2000n,
+      recognized: 0n,
+      reversed: 1000n,
+      unposted: 1000n,
+      difference: -10000n,
+      entryCountMatches: false,
+    });
+    const complete: DeferralSchedule = {
+      ...example,
+      total_minor: 2000,
+      periods: 2,
+      deferral_entries: [
+        example.deferral_entries[0]!,
+        { ...example.deferral_entries[1]!, journals: { reversed_by_journal_id: null } },
+      ],
+    };
+    expect(deferralScheduleReconciliation(complete)).toMatchObject({
+      difference: 0n,
+      recognized: 1000n,
+      reversed: 0n,
+      unposted: 1000n,
+      entryCountMatches: true,
+    });
+  });
+
+  it("rejects unsafe numeric amounts instead of fabricating a balanced result", () => {
+    expect(deferralScheduleReconciliation({ ...example, total_minor: Number.MAX_SAFE_INTEGER + 1 })).toBeNull();
+    expect(deferralScheduleReconciliation({ ...example, deferral_entries: [
+      { ...example.deferral_entries[0]!, amount_minor: -1 },
+    ] })).toBeNull();
+  });
+
   it("guards future posting, pre-due catch-up and already-posted entries", () => {
     const due = example.deferral_entries[0]!;
     expect(canPostDeferralEntry(due, "active", "2026-11-04", "2026-11-04")).toBe(true);

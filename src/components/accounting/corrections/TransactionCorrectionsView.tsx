@@ -23,6 +23,14 @@ import {
 import { sourceLabel } from "@/lib/reports/links";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { toCsv } from "@/lib/sales/csv";
+import {
+  correctionEvidenceIssue,
+  correctionHistoryCounts,
+  correctionHistoryCsv,
+  correctionUndoDateIssue,
+  filterCorrectionHistory,
+  type CorrectionHistoryFilter,
+} from "@/lib/accounting/corrections/history-review";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -36,7 +44,7 @@ type Props = {
   onSearch: (input: CorrectionFilter) => Promise<CorrectionSearch>;
   onPreview: (input: CorrectionInput) => Promise<CorrectionPlan>;
   onApply: (input: PostRequest) => Promise<CorrectionBatch>;
-  onUndo: (input: { batchId: string; date: string; reason: string }) => Promise<CorrectionBatch>;
+  onUndo: (input: { batch: CorrectionBatch; date: string; reason: string }) => Promise<CorrectionBatch>;
   history: { rows: CorrectionBatch[]; has_more: boolean; page: number };
   historyLoading: boolean;
   historyError: string;
@@ -95,9 +103,18 @@ export function TransactionCorrectionsView({
     [success, setSuccess] = useState("");
   const [undoBatch, setUndoBatch] = useState(""),
     [undoDate, setUndoDate] = useState(today),
-    [undoReason, setUndoReason] = useState("");
+    [undoReason, setUndoReason] = useState(""),
+    [undoAcknowledged, setUndoAcknowledged] = useState(false);
+  const [historyStatus, setHistoryStatus] = useState<CorrectionHistoryFilter>("all");
+  const [historyQuery, setHistoryQuery] = useState("");
   const searchVersion = useRef(0);
   const rows = Object.values(selection);
+  const historyCounts = correctionHistoryCounts(history.rows);
+  const filteredHistory = filterCorrectionHistory(history.rows, historyStatus, historyQuery);
+  const selectedUndo = history.rows.find((batch) => batch.id === undoBatch);
+  const undoIssue = selectedUndo
+    ? correctionUndoDateIssue(selectedUndo, undoDate, undoReason)
+    : null;
   const money = (n: string | bigint) => `${setup.currency} ${exactMoney(n, setup.decimals)}`;
   const clearReview = () => {
     setReview(null);

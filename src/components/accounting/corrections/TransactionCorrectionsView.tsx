@@ -44,7 +44,11 @@ type Props = {
   onSearch: (input: CorrectionFilter) => Promise<CorrectionSearch>;
   onPreview: (input: CorrectionInput) => Promise<CorrectionPlan>;
   onApply: (input: PostRequest) => Promise<CorrectionBatch>;
-  onUndo: (input: { batch: CorrectionBatch; date: string; reason: string }) => Promise<CorrectionBatch>;
+  onUndo: (input: {
+    batch: CorrectionBatch;
+    date: string;
+    reason: string;
+  }) => Promise<CorrectionBatch>;
   history: { rows: CorrectionBatch[]; has_more: boolean; page: number };
   historyLoading: boolean;
   historyError: string;
@@ -865,9 +869,9 @@ export function TransactionCorrectionsView({
         </div>
         <div className="flex flex-wrap items-end gap-3">
           <p role="status" className="text-xs text-muted-foreground">
-            Page {history.page + 1}: {historyCounts.applied} applied · {historyCounts.undone}{" "}
-            undone · {historyCounts.needsReview} needing evidence review. These counts and filters
-            cover the 50 loaded batches on this page only.
+            Page {history.page + 1}: {historyCounts.applied} applied · {historyCounts.undone} undone
+            · {historyCounts.needsReview} needing evidence review. These counts and filters cover
+            the 50 loaded batches on this page only.
           </p>
           <label className="space-y-1 text-sm">
             Batch status
@@ -875,9 +879,7 @@ export function TransactionCorrectionsView({
               aria-label="Correction history status"
               className="block h-9 rounded-md border border-input bg-background px-2 text-sm"
               value={historyStatus}
-              onChange={(event) =>
-                setHistoryStatus(event.target.value as CorrectionHistoryFilter)
-              }
+              onChange={(event) => setHistoryStatus(event.target.value as CorrectionHistoryFilter)}
             >
               {/* lookup-fixed-enum: Correction status is a fixed server-defined enumeration. */}
               <option value="all">All batches</option>
@@ -1022,7 +1024,9 @@ export function TransactionCorrectionsView({
                       e.preventDefault();
                       const issue = correctionUndoDateIssue(b, undoDate, undoReason);
                       if (issue || !undoAcknowledged) {
-                        setError(issue ?? "Review and acknowledge the financial effects before undo.");
+                        setError(
+                          issue ?? "Review and acknowledge the financial effects before undo.",
+                        );
                         return;
                       }
                       const message = `Undo correction ${b.id} on ${undoDate}? This can post reversals for ${b.journal_ids.length} correction journal(s). Existing exact reversals keep their recorded dates.`;

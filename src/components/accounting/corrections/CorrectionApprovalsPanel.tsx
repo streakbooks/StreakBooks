@@ -130,7 +130,8 @@ export function CorrectionApprovalsPanel({
       <p className="text-xs text-muted-foreground">
         Review permission: {settings.can_approve ? "granted" : "not granted"}. A maker cannot
         approve their own work. Decision notes, identities, timestamps and exact preview hashes are
-        retained as audit evidence. Existing company and journal posting permissions remain required.
+        retained as audit evidence. Existing company and journal posting permissions remain
+        required.
       </p>
       <div className="flex flex-wrap items-end gap-3">
         <label className="space-y-1 text-sm">
@@ -196,8 +197,8 @@ export function CorrectionApprovalsPanel({
               </p>
               <p>
                 Policy: {request.input.mode} · {request.plan.line_count} selected lines ·{" "}
-                {request.plan.journal_count} correction journals ·{" "}
-                {request.plan.currency} {exactMoney(request.plan.gross_minor, decimals)} gross
+                {request.plan.journal_count} correction journals · {request.plan.currency}{" "}
+                {exactMoney(request.plan.gross_minor, decimals)} gross
               </p>
               <p>Preview fingerprint: {request.preview_hash}</p>
               {request.plan.impact ? (
@@ -309,9 +310,7 @@ export function CorrectionApprovalsPanel({
                 <div className="space-y-1 rounded border p-3">
                   <h4 className="font-medium">Immutable approval events (first 100)</h4>
                   {eventsQ.isPending ? <p>Loading audit evidence…</p> : null}
-                  {eventsQ.isError ? (
-                    <p role="alert">{friendlyAuthError(eventsQ.error)}</p>
-                  ) : null}
+                  {eventsQ.isError ? <p role="alert">{friendlyAuthError(eventsQ.error)}</p> : null}
                   {eventsQ.data?.map((event) => (
                     <p key={event.id}>
                       {event.created_at} · {event.action} · {event.actor_id} · v{event.version}

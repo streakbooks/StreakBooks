@@ -31,6 +31,14 @@ DECLARE
   messages integer := 0;
 BEGIN
   PERFORM set_config('test.mfa', 'on', true);
+  -- A single active owner must not be allowed to enable a two-person policy.
+  PERFORM set_config('request.jwt.claim.sub', outsider::text, true);
+  BEGIN
+    PERFORM public.set_correction_approval_policy(other_company, true);
+    RAISE EXCEPTION 'TEST: single-member organisation enabled approval policy';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM NOT LIKE 'Invite a separate active owner%' THEN RAISE; END IF;
+  END;
   PERFORM set_config('request.jwt.claim.sub', maker::text, true);
   plan := private.correction_plan(
     c, items, destination, 'adjustment', '2026-10-31', 'Correct account classification'

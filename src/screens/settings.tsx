@@ -1640,8 +1640,8 @@ export function SettingsForCompany({
           <AlertDialogHeader>
             <AlertDialogTitle>Leave with unsaved Settings Centre changes?</AlertDialogTitle>
             <AlertDialogDescription>
-              Your unsaved organisation, branding, currency or document numbering changes
-              will be discarded if you leave this page.
+              Your unsaved organisation, branding, currency or document numbering changes will be
+              discarded if you leave this page.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

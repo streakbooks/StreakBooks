@@ -142,6 +142,22 @@ BEGIN
     RAISE EXCEPTION 'Organisation settings permission required' USING ERRCODE = '42501';
   END IF;
   IF _required IS NULL THEN RAISE EXCEPTION 'Choose an approval policy'; END IF;
+  -- Do not accidentally deadlock a one-person practice. Different active
+  -- members must be capable of maker posting and independent checking.
+  IF _required AND NOT EXISTS (
+    SELECT 1 FROM public.company_members maker
+    JOIN public.company_members checker
+      ON checker.company_id = maker.company_id
+     AND checker.user_id <> maker.user_id
+    WHERE maker.company_id = _company_id
+      AND maker.status = 'active' AND checker.status = 'active'
+      AND maker.role IN ('owner', 'admin', 'accountant', 'bookkeeper')
+      AND checker.role IN ('owner', 'admin', 'accountant')
+  ) THEN
+    RAISE EXCEPTION
+      'Invite a separate active owner, admin or accountant to review corrections before enabling required approvals'
+      USING ERRCODE = '42501';
+  END IF;
   PERFORM pg_advisory_xact_lock(hashtextextended(_company_id::text, 29));
   SELECT p.required INTO _old FROM public.correction_approval_policies p
   WHERE p.company_id = _company_id FOR UPDATE;

@@ -868,7 +868,7 @@ export function TransactionCorrectionsView({
           </Button>
         </div>
         <div className="flex flex-wrap items-end gap-3">
-          <p role="status" className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             Page {history.page + 1}: {historyCounts.applied} applied · {historyCounts.undone} undone
             · {historyCounts.needsReview} needing evidence review. These counts and filters cover
             the 50 loaded batches on this page only.

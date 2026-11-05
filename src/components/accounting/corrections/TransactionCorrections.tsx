@@ -7,12 +7,18 @@ import {
   previewCorrection,
   applyCorrection,
   undoCorrection,
+  getCorrectionUndoSnapshot,
   listCorrectionHistory,
 } from "@/lib/accounting/corrections/correction.functions";
 import {
   type CorrectionFilter,
   type CorrectionInput,
+  type CorrectionBatch,
 } from "@/lib/accounting/corrections/contracts";
+import {
+  assertCorrectionUndoSnapshot,
+  correctionUndoDateIssue,
+} from "@/lib/accounting/corrections/history-review";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { ErrorState, LoadingState } from "@/components/common/states";
 import { TransactionCorrectionsView } from "./TransactionCorrectionsView";
@@ -22,6 +28,7 @@ export function TransactionCorrections({ companyId }: { companyId: string }) {
     preview = useServerFn(previewCorrection),
     apply = useServerFn(applyCorrection),
     undo = useServerFn(undoCorrection),
+    liveUndo = useServerFn(getCorrectionUndoSnapshot),
     historyFn = useServerFn(listCorrectionHistory);
   const [page, setPage] = useState(0);
   const qc = useQueryClient();
@@ -47,8 +54,15 @@ export function TransactionCorrections({ companyId }: { companyId: string }) {
     onSuccess: invalidate,
   });
   const undoM = useMutation({
-    mutationFn: (data: { batchId: string; date: string; reason: string }) =>
-      undo({ data: { ...data, companyId } }),
+    mutationFn: async (data: { batch: CorrectionBatch; date: string; reason: string }) => {
+      const issue = correctionUndoDateIssue(data.batch, data.date, data.reason);
+      if (issue) throw new Error(issue);
+      const latest = await liveUndo({ data: { companyId, batchId: data.batch.id } });
+      assertCorrectionUndoSnapshot(data.batch, latest);
+      return undo({
+        data: { companyId, batchId: data.batch.id, date: data.date, reason: data.reason },
+      });
+    },
     onSuccess: invalidate,
   });
   if (setup.isPending) return <LoadingState />;

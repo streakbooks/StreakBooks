@@ -172,3 +172,38 @@ test("search results export exact source and base amounts", async ({ page }) => 
   expect(report[2]![report[0]!.indexOf("Document total (base currency)")]).toBe("150.00");
   expect(report[2]![report[0]!.indexOf("Exclusion reason")]).toContain("Foreign-currency");
 });
+
+test("correction history filters, exports loaded evidence and links to source journals", async ({
+  page,
+}) => {
+  page.on("dialog", (dialog) => dialog.accept());
+  await page.goto("/");
+  await plan(page);
+  await page.getByLabel("Acknowledge correction posting", { exact: true }).check();
+  await page.getByRole("button", { name: "Post correction batch", exact: true }).click();
+  await expect(page.locator('p[role="status"]')).toContainText("recorded (applied)");
+
+  await page.getByLabel("Correction history status", { exact: true }).selectOption("applied");
+  await page.getByLabel("Search loaded correction history", { exact: true }).fill("Office expenses");
+  await expect(page.locator("summary")).toContainText("Applied");
+  await page.getByLabel("Correction history status", { exact: true }).selectOption("undone");
+  await expect(page.getByText(/No loaded batches match this filter/)).toBeVisible();
+  await page.getByLabel("Correction history status", { exact: true }).selectOption("all");
+  await page.getByLabel("Search loaded correction history", { exact: true }).fill("");
+
+  const downloading = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export loaded history CSV", exact: true }).click();
+  const file = await downloading;
+  expect(file.suggestedFilename()).toBe("linkbooks-correction-batches-page-1.csv");
+  const report = parseImportCsv(await readFile((await file.path())!, "utf8"));
+  expect(report[0]).toContain("Batch ID");
+  expect(report[0]).toContain("Correction journal IDs");
+  expect(report[0]).toContain("Undo journal IDs");
+  expect(report).toHaveLength(2);
+
+  await page.locator("summary").filter({ hasText: "Applied" }).click();
+  await expect(page.getByRole("link", { name: "journal #123" })).toHaveAttribute(
+    "href",
+    /accounting/,
+  );
+});

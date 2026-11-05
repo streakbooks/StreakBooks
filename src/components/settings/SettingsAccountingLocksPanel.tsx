@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useBlocker } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -10,10 +10,22 @@ import {
   upsertOrganisationConfig,
 } from "@/lib/settings/settings-centre.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { prepareAccountingPreferences } from "@/lib/settings/accounting-preferences";
+import {
+  hasUnsavedAccountingSettings,
+  prepareAccountingPreferences,
+  prepareLockPolicyPayload,
+} from "@/lib/settings/accounting-preferences";
 import type { SettingsDocument } from "@/lib/settings/settings-centre.functions";
 import { LedgerHealthPanel } from "@/components/accounting/LedgerHealthPanel";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -42,6 +54,7 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
   const [everyone, setEveryone] = useState("");
   const [advisors, setAdvisors] = useState("");
   const [conversion, setConversion] = useState("");
+  const [requireOverrideReason, setRequireOverrideReason] = useState(true);
   const [reason, setReason] = useState("");
   const [warnDup, setWarnDup] = useState(true);
   const [warnControl, setWarnControl] = useState(true);
@@ -53,14 +66,15 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
   const [cfgTouched, setCfgTouched] = useState(false);
   const [cfgErrors, setCfgErrors] = useState<Record<string, string>>({});
   const [cfgBaselineVersion, setCfgBaselineVersion] = useState<number | null>(null);
-  const [lockBaselineUpdatedAt, setLockBaselineUpdatedAt] = useState<string | null>(null);
+  const [lockBaselineVersion, setLockBaselineVersion] = useState<number | null>(null);
 
   useEffect(() => {
     if (!lockQ.data || lockTouched) return;
     setEveryone(lockQ.data.lock_date_everyone ?? "");
     setAdvisors(lockQ.data.lock_date_except_advisors ?? "");
     setConversion(lockQ.data.conversion_date ?? "");
-    setLockBaselineUpdatedAt(lockQ.data.updated_at ?? null);
+    setRequireOverrideReason(lockQ.data.require_override_reason ?? true);
+    setLockBaselineVersion(lockQ.data.version);
   }, [lockQ.data, lockTouched]);
 
   useEffect(() => {
@@ -75,21 +89,19 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
     setCfgBaselineVersion(cfgQ.data.version);
   }, [cfgQ.data, cfgTouched]);
 
-  useEffect(() => {
-    if (!lockTouched && !cfgTouched) return;
-    const warn = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-      event.returnValue = "";
-    };
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [lockTouched, cfgTouched]);
+  // Protect both in-app navigation and browser unload while either draft is unsaved.
+  const dirty = hasUnsavedAccountingSettings(lockTouched, cfgTouched);
+  const navigationBlocker = useBlocker({
+    shouldBlockFn: () => dirty,
+    enableBeforeUnload: dirty,
+    withResolver: true,
+  });
 
   const cfgServerChanged = Boolean(
     cfgTouched && cfgQ.data && cfgBaselineVersion !== cfgQ.data.version,
   );
   const lockServerChanged = Boolean(
-    lockTouched && lockQ.data && lockBaselineUpdatedAt !== (lockQ.data.updated_at ?? null),
+    lockTouched && lockQ.data && lockBaselineVersion !== lockQ.data.version,
   );
 
   const resetLockDraft = () => {
@@ -97,9 +109,10 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
     setEveryone(lockQ.data.lock_date_everyone ?? "");
     setAdvisors(lockQ.data.lock_date_except_advisors ?? "");
     setConversion(lockQ.data.conversion_date ?? "");
+    setRequireOverrideReason(lockQ.data.require_override_reason ?? true);
     setReason("");
     setLockTouched(false);
-    setLockBaselineUpdatedAt(lockQ.data.updated_at ?? null);
+    setLockBaselineVersion(lockQ.data.version);
   };
 
   const resetCfgDraft = () => {
@@ -123,11 +136,14 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
       }
       return saveLock({
         data: {
-          companyId,
-          lockDateEveryone: everyone || null,
-          lockDateExceptAdvisors: advisors || null,
-          conversionDate: conversion || null,
-          reason,
+          ...prepareLockPolicyPayload(companyId, {
+            everyone,
+            advisers: advisors,
+            conversion,
+            requireOverrideReason,
+            reason,
+          }),
+          expectedVersion: lockBaselineVersion,
         },
       });
     },
@@ -267,6 +283,25 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
               </Link>{" "}
               — it sets this date and posts one balanced opening journal.
             </p>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <div className="space-y-1">
+              <Label htmlFor="settings-require-override-reason">
+                Require a reason when overriding an adviser lock
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Keep an explanation for permitted adviser-exception postings.
+              </p>
+            </div>
+            <Switch
+              id="settings-require-override-reason"
+              checked={requireOverrideReason}
+              disabled={!canLock || !lockQ.data}
+              onCheckedChange={(value) => {
+                setRequireOverrideReason(value);
+                setLockTouched(true);
+              }}
+            />
           </div>
           <div className="space-y-1">
             <Label htmlFor="settings-lock-reason">Reason (required, audited)</Label>
@@ -456,6 +491,43 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
       </Card>
 
       <LedgerHealthPanel companyId={companyId} />
+
+      <AlertDialog
+        open={navigationBlocker.status === "blocked"}
+        onOpenChange={(open) => {
+          if (!open && navigationBlocker.status === "blocked") navigationBlocker.reset();
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave with unsaved accounting settings?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your unsaved lock dates or accounting preferences will be discarded if you leave.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                if (navigationBlocker.status === "blocked") navigationBlocker.reset();
+              }}
+            >
+              Stay and keep editing
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={lockMut.isPending || cfgMut.isPending}
+              onClick={() => {
+                if (navigationBlocker.status === "blocked") navigationBlocker.proceed();
+              }}
+            >
+              Discard and leave
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

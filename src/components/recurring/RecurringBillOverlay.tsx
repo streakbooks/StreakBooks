@@ -32,7 +32,7 @@ import {
   getRecurringBill,
   setRecurringBillActive,
 } from "@/lib/purchases/purchases.functions";
-import { NewBill, type RecurringBillSeed } from "@/routes/_authenticated/purchases/bills.new";
+import { NewBill, type RecurringBillSeed } from "@/screens/purchases/bills.new";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 
 type Props = {

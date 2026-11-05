@@ -27,3 +27,5 @@ Distinguish local changes, GitHub main, deployment, isolated fixtures, authentic
 production verification. Never fabricate test counts or successful migrations/deployments.
 The user workstation is `D:\MyApp\LinkBooks`; the development URL is `http://localhost:8080`.
 A separate cloud checkout does not modify the user's Windows project.
+
+- Reusable route screens live in `src/screens/`. TSX file routes export only the `Route` runtime value (types are allowed); overlays import screens directly. Keep URL validators and metadata in route registration. Why: reusable route exports defeat component splitting and inflate bootstrap imports. `check:ui` and `check:bundle` enforce this boundary.

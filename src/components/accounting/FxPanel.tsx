@@ -15,12 +15,14 @@ import {
   filterAutoReversals,
   fxRevaluationCsv,
   fxReviewSignature,
+  localCalendarDate,
   type ReversalFilter,
 } from "@/lib/accounting/fx-review";
 import { isPositiveRate, nextDay } from "@/lib/accounting/fx-reval";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { useFormat } from "@/hooks/use-format";
 import { ErrorState, LoadingState } from "@/components/common/states";
+import { FxRealisedLedgerAudit } from "@/components/accounting/FxRealisedLedgerAudit";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,7 +43,7 @@ export function FxPanel({ companyId, currency }: { companyId: string; currency: 
   const doProcess = useServerFn(processDueAutoReversals);
   const doCancel = useServerFn(cancelAutoReversal);
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localCalendarDate(new Date());
   const [asOf, setAsOf] = useState(today);
   const [rates, setRates] = useState<Record<string, string>>({});
   const [note, setNote] = useState("");
@@ -506,6 +508,8 @@ export function FxPanel({ companyId, currency }: { companyId: string; currency: 
           )}
         </CardContent>
       </Card>
+
+      <FxRealisedLedgerAudit key={companyId} companyId={companyId} />
 
       {ov.runs.length > 0 ? (
         <Card>

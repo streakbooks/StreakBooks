@@ -49,7 +49,8 @@ const line: CorrectionLine = {
 export function Fixture() {
   const [lastFilters, setLastFilters] = useState<CorrectionFilter | null>(null);
   const [history, setHistory] = useState<CorrectionBatch[]>([]),
-    [keys, setKeys] = useState<string[]>([]);
+    [keys, setKeys] = useState<string[]>([]),
+    [reviewKeys, setReviewKeys] = useState<string[]>([]);
   const batches = useRef(new Map<string, CorrectionBatch>());
   const lastPlan = useRef<CorrectionPlan | null>(null);
   return (
@@ -69,6 +70,11 @@ export function Fixture() {
           ],
         }}
         busy={false}
+        approvalRequired={location.search.includes("approval=1")}
+        onSubmitApproval={async (request) => {
+          setReviewKeys((current) => [...current, request.requestKey]);
+          return { id: "00000000-0000-4000-8000-000000000010", status: "pending" };
+        }}
         history={{ rows: history, has_more: false, page: 0 }}
         historyLoading={false}
         historyError=""
@@ -183,6 +189,7 @@ export function Fixture() {
         }}
       />
       <output aria-label="Posted request references">{JSON.stringify(keys)}</output>
+      <output aria-label="Approval request references">{JSON.stringify(reviewKeys)}</output>
     </main>
   );
 }

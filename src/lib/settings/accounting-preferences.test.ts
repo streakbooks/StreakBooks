@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { prepareAccountingPreferences } from "./accounting-preferences";
+import {
+  hasUnsavedAccountingSettings,
+  prepareAccountingPreferences,
+  prepareLockPolicyPayload,
+} from "./accounting-preferences";
 import { defaultDocumentFor } from "./registry";
 import type { SettingsDocument } from "./settings-centre.functions";
 
@@ -43,5 +47,53 @@ describe("legacy accounting preferences save", () => {
     );
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.document["warn_backdated_days"]).toBe(0);
+  });
+});
+
+describe("accounting settings navigation safety", () => {
+  it.each([
+    [false, false, false],
+    [true, false, true],
+    [false, true, true],
+    [true, true, true],
+  ])(
+    "protects both independent drafts (lock=%s, preferences=%s)",
+    (lockDraftDirty, preferencesDraftDirty, expected) => {
+      expect(hasUnsavedAccountingSettings(lockDraftDirty, preferencesDraftDirty)).toBe(expected);
+    },
+  );
+});
+
+describe("Accounting lock policy draft serialization", () => {
+  it("keeps explicit false when override reasons are disabled", () => {
+    expect(
+      prepareLockPolicyPayload("company", {
+        everyone: "2026-11-04",
+        advisers: "",
+        conversion: "",
+        requireOverrideReason: false,
+        reason: "Review policy",
+      }),
+    ).toEqual({
+      companyId: "company",
+      lockDateEveryone: "2026-11-04",
+      lockDateExceptAdvisors: null,
+      conversionDate: null,
+      requireOverrideReason: false,
+      reason: "Review policy",
+    });
+  });
+
+  it("preserves an enabled override requirement and explicit date values", () => {
+    const result = prepareLockPolicyPayload("company", {
+      everyone: "",
+      advisers: "2026-10-31",
+      conversion: "2025-01-01",
+      requireOverrideReason: true,
+      reason: "Period close",
+    });
+    expect(result.requireOverrideReason).toBe(true);
+    expect(result.lockDateExceptAdvisors).toBe("2026-10-31");
+    expect(result.conversionDate).toBe("2025-01-01");
   });
 });

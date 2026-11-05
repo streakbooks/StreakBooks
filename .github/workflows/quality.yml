@@ -56,6 +56,9 @@ jobs:
       - name: Isolated accountant exception review security tests
         run: npm run test:accountant:postgres
 
+      - name: Isolated correction maker-checker approval security tests
+        run: npm run test:correction-approvals:postgres
+
       - name: Isolated workpaper reconciling item security tests
         run: npm run test:workpaper-items:postgres
 
@@ -78,6 +81,9 @@ jobs:
 
       - name: Production build
         run: npm run build
+
+      - name: Client bootstrap JS budget
+        run: npm run check:bundle
 
   staging-browser:
     # Enabled only for trusted repository PRs and after all static/compile tests pass.
@@ -150,3 +156,7 @@ jobs:
         run: npm run test:voice
       - name: Wake-word and verification regressions
         run: npm run test:wake
+      - name: Actual anonymous app, recovery and portal entry
+        run: npm run test:public-ui
+      - name: Global Create panels and route prefill isolation
+        run: npm run test:create-panels

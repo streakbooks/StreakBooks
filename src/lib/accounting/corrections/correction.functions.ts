@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyPermission } from "@/lib/assert-company-access";
+import type { CorrectionUndoSnapshot } from "./history-review";
 import {
   correctionFilter,
   correctionInput,
@@ -135,6 +136,26 @@ export const undoCorrection = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return batch as CorrectionBatch;
   });
+/**
+ * A read-after-review snapshot for Undo. The underlying RPC remains the final
+ * authority for concurrent postings, permissions, locks and idempotency.
+ */
+export const getCorrectionUndoSnapshot = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => company.extend({ batchId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }): Promise<CorrectionUndoSnapshot> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "accounting.view");
+    const { data: batch, error } = await context.supabase
+      .from("transaction_correction_batches" as never)
+      .select("id,company_id,request_key,status,created_at,plan,journal_ids" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("id" as never, data.batchId as never)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!batch) throw new Error("Correction batch not found. Refresh correction history.");
+    return batch as CorrectionUndoSnapshot;
+  });
+
 export const listCorrectionHistory = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>

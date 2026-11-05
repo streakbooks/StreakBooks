@@ -6,6 +6,9 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { getReportById } from "@/lib/reports/catalog";
 import { parseReportSearch, type ReportSearch } from "@/lib/reports/search";
+import { getOrganisationConfig } from "@/lib/settings/settings-centre.functions";
+import { applyOrganisationReportDefaults } from "@/lib/settings/report-defaults";
+import { friendlyAuthError } from "@/lib/auth-helpers";
 import { fiscalYearStart, todayIso } from "@/lib/accounting/fiscal-year";
 import { ReportShellFallbackLink } from "@/components/reports/ReportFallback";
 import type { ReportCtx } from "@/components/reports/ReportShell";
@@ -41,7 +44,7 @@ import {
 } from "@/components/reports/PlanningViews";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { EmptyState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
 
 export const Route = createFileRoute("/_authenticated/reports/$reportId")({
   validateSearch: (raw: Record<string, unknown>): ReportSearch => parseReportSearch(raw),
@@ -72,6 +75,15 @@ function ReportPage() {
     enabled: Boolean(company),
     queryFn: () => loadBasis({ data: { companyId: company!.id } }),
   });
+  const getConfig = useServerFn(getOrganisationConfig);
+  const isStatement = report?.runner === "profit_loss" || report?.runner === "balance_sheet";
+  const needsDefault =
+    isStatement && !search.settings && (!search.basis || (!search.columns && !search.compare));
+  const reportDefaults = useQuery({
+    queryKey: ["organisation-config", company?.id ?? null, "reports"],
+    enabled: Boolean(company?.id && needsDefault),
+    queryFn: () => getConfig({ data: { companyId: company!.id, category: "reports" } }),
+  });
 
   const today = useMemo(() => todayIso(), []);
   const defaultFrom = company
@@ -88,6 +100,17 @@ function ReportPage() {
       <EmptyState
         title="No organisation selected"
         description="Open an organisation to run ledger reports."
+      />
+    );
+  }
+
+  if (needsDefault && reportDefaults.isPending) return <LoadingState />;
+  if (needsDefault && reportDefaults.isError) {
+    return (
+      <ErrorState
+        title="Could not load report defaults"
+        description={friendlyAuthError(reportDefaults.error)}
+        onRetry={() => void reportDefaults.refetch()}
       />
     );
   }
@@ -135,6 +158,18 @@ function ReportPage() {
       </Alert>
     );
 
+  const effectiveSearch =
+    needsDefault && reportDefaults.data
+      ? applyOrganisationReportDefaults(search, {
+          default_basis: companyBasis.data ?? "accrual",
+          ...reportDefaults.data.document,
+        })
+      : {
+          ...search,
+          ...(search.basis === undefined && search.settings === undefined && report.runner !== "tax"
+            ? { basis: companyBasis.data ?? "accrual" }
+            : {}),
+        };
   const ctx: ReportCtx = {
     reportId: report.id,
     companyId: company.id,
@@ -144,13 +179,7 @@ function ReportPage() {
     fyEndDay: company.fiscal_year_end_day ?? 31,
     from: search.from ?? defaultFrom,
     to: search.to ?? today,
-    search: {
-      ...search,
-      // Explicit report and saved-view choices take precedence over the company default.
-      ...(search.basis === undefined && search.settings === undefined && report.runner !== "tax"
-        ? { basis: companyBasis.data ?? "accrual" }
-        : {}),
-    },
+    search: effectiveSearch,
     setSearch: (patch) => {
       void navigate({
         search: (prev: ReportSearch) => {

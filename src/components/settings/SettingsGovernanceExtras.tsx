@@ -1,7 +1,7 @@
 import { getIntegrationHealth } from "@/lib/settings/integration-health.functions";
 import { integrationStatusLabel } from "@/lib/settings/integration-health";
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useBlocker } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -12,6 +12,14 @@ import {
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { parsePaymentTermsDays } from "@/lib/settings/workflow-defaults-validation";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,6 +51,11 @@ export function SettingsAutomationPanel({ companyId, canEdit }: Props) {
   const [requireMemo, setRequireMemo] = useState(false);
   const [csvFmt, setCsvFmt] = useState("YYYY-MM-DD");
   const [dirty, setDirty] = useState(false);
+  const navigationBlocker = useBlocker({
+    shouldBlockFn: () => dirty,
+    enableBeforeUnload: dirty,
+    withResolver: true,
+  });
 
   useEffect(() => {
     if (!q.data || dirty) return;
@@ -242,6 +255,40 @@ export function SettingsAutomationPanel({ companyId, canEdit }: Props) {
           </span>
         </div>
       </CardContent>
+      <AlertDialog
+        open={navigationBlocker.status === "blocked"}
+        onOpenChange={(open) => {
+          if (!open && navigationBlocker.status === "blocked") navigationBlocker.reset();
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave with unsaved workflow defaults?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Unsaved payment terms, banking CSV preferences or workflow rules will be discarded.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (navigationBlocker.status === "blocked") navigationBlocker.reset();
+              }}
+            >
+              Stay and keep editing
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={saveM.isPending}
+              onClick={() => {
+                if (navigationBlocker.status === "blocked") navigationBlocker.proceed();
+              }}
+            >
+              Discard and leave
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

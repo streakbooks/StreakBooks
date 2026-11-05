@@ -99,6 +99,7 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
   const fetchSettings = useServerFn(getPayrollSettingsPage);
 
   const [accrualReverseOpen, setAccrualReverseOpen] = useState(false);
+  const [voidConfirmOpen, setVoidConfirmOpen] = useState(false);
   const [accrualReversalDate, setAccrualReversalDate] = useState(() =>
     new Date().toISOString().slice(0, 10),
   );
@@ -178,6 +179,7 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
     mutationFn: () => voidRun({ data: { companyId: company!.id, runId } }),
     onSuccess: () => {
       toast.success("Run voided");
+      setVoidConfirmOpen(false);
       invalidate();
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
@@ -379,7 +381,7 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
               size="sm"
               variant="destructive"
               disabled={busy}
-              onClick={() => voidMut.mutate()}
+              onClick={() => setVoidConfirmOpen(true)}
             >
               Void run
             </Button>
@@ -634,6 +636,28 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
           )}
         </TabsContent>
       </Tabs>
+
+      <AlertDialog open={voidConfirmOpen} onOpenChange={setVoidConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Void this payroll run?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This cancels the run in draft or calculated state. Generated figures are discarded and
+              the run cannot be approved or posted unless you create a new run.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={voidMut.isPending}>Cancel</AlertDialogCancel>
+            <Button
+              variant="destructive"
+              disabled={voidMut.isPending}
+              onClick={() => voidMut.mutate()}
+            >
+              Void run
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={accrualReverseOpen} onOpenChange={setAccrualReverseOpen}>
         <AlertDialogContent>

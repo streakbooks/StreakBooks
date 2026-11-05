@@ -26,6 +26,7 @@ import {
   savePayrollEmployee,
   savePayrollEmployeePaymentDetails,
 } from "@/lib/payroll/employees.functions";
+import { listPayrollPayslips } from "@/lib/payroll/runs.functions";
 import type { PayrollComponentTypeRow } from "@/lib/payroll/types";
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { AttachmentsPanel } from "@/components/documents/AttachmentsPanel";
@@ -77,10 +78,20 @@ export function PayrollEmployeeDetailPage({ employeeId }: { employeeId: string }
   const saveEmployeeFn = useServerFn(savePayrollEmployee);
   const savePaymentFn = useServerFn(savePayrollEmployeePaymentDetails);
   const assignSalaryFn = useServerFn(assignPayrollEmployeeSalary);
+  const fetchRecentPayslips = useServerFn(listPayrollPayslips);
 
   const pageQ = useQuery({
     queryKey: ["payroll-employee-page", company?.id, employeeId],
     queryFn: () => fetchPage({ data: { companyId: company!.id, employeeId } }),
+    enabled: Boolean(company?.id) && canView,
+  });
+
+  const recentPayslipsQ = useQuery({
+    queryKey: ["payroll-employee-payslips", company?.id, employeeId],
+    queryFn: () =>
+      fetchRecentPayslips({
+        data: { companyId: company!.id, employeeId, limit: 5 },
+      }),
     enabled: Boolean(company?.id) && canView,
   });
 
@@ -202,6 +213,12 @@ export function PayrollEmployeeDetailPage({ employeeId }: { employeeId: string }
       data.payment.account_name ||
       data.payment.bank_name),
   );
+  const structureById = new Map(data.structures.map((s) => [s.id, s.name] as const));
+  const salaryHistory = [...data.salary_versions]
+    .sort((a, b) => b.effective_from.localeCompare(a.effective_from))
+    .slice(0, 3);
+  const recentPayslips =
+    recentPayslipsQ.data?.available === true ? recentPayslipsQ.data.payslips : [];
 
   return (
     <>
@@ -795,6 +812,76 @@ export function PayrollEmployeeDetailPage({ employeeId }: { employeeId: string }
                 </Button>
               </div>
             ) : null}
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-2">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Recent payroll activity</CardTitle>
+            <CardDescription>Latest payslips and salary assignment history.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Payslips</p>
+              {recentPayslipsQ.isPending ? (
+                <p className="text-sm text-muted-foreground">Loading…</p>
+              ) : recentPayslipsQ.isError ? (
+                <p className="text-sm text-muted-foreground">Could not load payslips.</p>
+              ) : recentPayslips.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No payslips issued yet.</p>
+              ) : (
+                <ul className="space-y-2 text-sm">
+                  {recentPayslips.map(({ payslip, run }) => (
+                    <li
+                      key={payslip.id}
+                      className="flex flex-wrap items-baseline justify-between gap-2 rounded-md border px-3 py-2"
+                    >
+                      <Link
+                        to="/payroll/payslips/$payslipId"
+                        params={{ payslipId: payslip.id }}
+                        className="font-medium text-primary hover:underline"
+                      >
+                        {payslip.payslip_number}
+                      </Link>
+                      <span className="text-muted-foreground">
+                        {fmt.date(payslip.issued_at)} · {run.run_number}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <Button asChild variant="link" size="sm" className="h-auto px-0">
+                <Link to="/payroll/payslips">All payslips</Link>
+              </Button>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Salary assignments</p>
+              {salaryHistory.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No salary history yet.</p>
+              ) : (
+                <ul className="space-y-2 text-sm">
+                  {salaryHistory.map((version) => {
+                    const structureLabel = version.structure_id
+                      ? (structureById.get(version.structure_id) ?? "Structure")
+                      : "Custom lines";
+                    const range = version.effective_to
+                      ? `${fmt.date(version.effective_from)} – ${fmt.date(version.effective_to)}`
+                      : `From ${fmt.date(version.effective_from)}`;
+                    return (
+                      <li key={version.id} className="rounded-md border px-3 py-2">
+                        <p className="font-medium">{structureLabel}</p>
+                        <p className="text-muted-foreground">{range}</p>
+                        {version.change_reason ? (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {version.change_reason}
+                          </p>
+                        ) : null}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
           </CardContent>
         </Card>
 

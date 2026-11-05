@@ -591,12 +591,69 @@ export const voidPayrollRun = createServerFn({ method: "POST" })
     return normaliseRun(saved);
   });
 
+async function listPayslipsForEmployee(
+  supabase: Parameters<typeof probeRunsTable>[0],
+  companyId: string,
+  employeeId: string,
+  limit: number,
+): Promise<PayrollPayslipsListPage["payslips"]> {
+  const payslipRes = await supabase
+    .from("payroll_payslips" as never)
+    .select("*" as never)
+    .eq("company_id" as never, companyId as never)
+    .eq("employee_id" as never, employeeId as never)
+    .order("issued_at" as never, { ascending: false })
+    .limit(limit);
+  if (payslipRes.error) throw new Error(payslipRes.error.message);
+
+  const payslips = (payslipRes.data ?? []).map(normalisePayslip);
+  if (payslips.length === 0) return [];
+
+  const runIds = [...new Set(payslips.map((p) => p.run_id))];
+  const runRes = await supabase
+    .from("payroll_runs" as never)
+    .select("*" as never)
+    .eq("company_id" as never, companyId as never)
+    .in("id" as never, runIds as never);
+  if (runRes.error) throw new Error(runRes.error.message);
+  const runById = new Map(
+    (runRes.data ?? []).map((raw) => {
+      const run = normaliseRun(raw);
+      return [run.id, run] as const;
+    }),
+  );
+
+  const employeeRes = await supabase
+    .from("payroll_employees" as never)
+    .select("*" as never)
+    .eq("company_id" as never, companyId as never)
+    .eq("id" as never, employeeId as never)
+    .maybeSingle();
+  if (employeeRes.error) throw new Error(employeeRes.error.message);
+  const employee = employeeRes.data ? normaliseEmployee(employeeRes.data) : null;
+
+  return payslips.flatMap((payslip) => {
+    const run = runById.get(payslip.run_id);
+    if (!run || !employee) return [];
+    return [{ payslip, employee, run }];
+  });
+}
+
 export const listPayrollPayslips = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; runId?: string | null }) => ({
-    companyId: companyIdOf(input),
-    runId: input.runId?.trim() || null,
-  }))
+  .inputValidator(
+    (input: {
+      companyId: string;
+      runId?: string | null;
+      employeeId?: string | null;
+      limit?: number;
+    }) => ({
+      companyId: companyIdOf(input),
+      runId: input.runId?.trim() || null,
+      employeeId: input.employeeId?.trim() || null,
+      limit: input.limit == null ? null : Math.min(Math.max(1, Number(input.limit)), 50),
+    }),
+  )
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     await assertCompanyPermission(context.supabase, data.companyId, "payroll.view");
@@ -606,6 +663,21 @@ export const listPayrollPayslips = createServerFn({ method: "GET" })
         available: false,
         payslips: [],
         migrationMessage: missing.migrationMessage,
+      } satisfies PayrollPayslipsListPage;
+    }
+
+    if (data.employeeId) {
+      const limit = data.limit ?? 5;
+      const payslips = await listPayslipsForEmployee(
+        context.supabase,
+        data.companyId,
+        data.employeeId,
+        limit,
+      );
+      return {
+        available: true as const,
+        payslips,
+        migrationMessage: null as string | null,
       } satisfies PayrollPayslipsListPage;
     }
 

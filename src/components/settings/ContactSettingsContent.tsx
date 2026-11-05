@@ -60,12 +60,12 @@ export function ContactSettingsContent({
   });
   const groupsQ = useQuery({
     queryKey: ["contact-groups", companyId],
-    enabled: Boolean(companyId),
+    enabled: Boolean(companyId && !embedded),
     queryFn: () => fetchGroups({ data: { companyId: companyId! } }),
   });
   const tagsQ = useQuery({
     queryKey: ["contact-tags", companyId],
-    enabled: Boolean(companyId),
+    enabled: Boolean(companyId && !embedded),
     queryFn: () => fetchTags({ data: { companyId: companyId! } }),
   });
 
@@ -272,7 +272,12 @@ export function ContactSettingsContent({
         </div>
       </section>
 
-      <section className="mb-8 max-w-lg space-y-3 rounded-md border p-4">
+      {embedded ? (
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/contacts/settings">Manage contact groups and tags in Contacts</Link>
+        </Button>
+      ) : null}
+      <section hidden={embedded} className="mb-8 max-w-lg space-y-3 rounded-md border p-4">
         <h2 className="text-sm font-medium">Groups</h2>
         <div className="flex gap-2">
           <Input
@@ -318,7 +323,7 @@ export function ContactSettingsContent({
         </ul>
       </section>
 
-      <section className="max-w-lg space-y-3 rounded-md border p-4">
+      <section hidden={embedded} className="max-w-lg space-y-3 rounded-md border p-4">
         <h2 className="text-sm font-medium">Tags</h2>
         <div className="flex gap-2">
           <Input

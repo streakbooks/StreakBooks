@@ -76,7 +76,7 @@ try {
   if (!ready) throw new Error("Isolated correction approval PostgreSQL did not become ready");
 
   runSql("tests/fixtures/correction-approvals/baseline.sql");
-  runSql("supabase/migrations/20261105210000_correction_maker_checker_approvals.sql");
+  runSql("supabase/migrations/20261105043716_correction_maker_checker_approvals.sql");
   console.log(runSql("tests/integration/correction-maker-checker.sql").trim());
   console.log(
     "Maker/checker enforcement, self-approval denial, tenant RLS, request versioning, " +

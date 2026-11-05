@@ -560,8 +560,8 @@ it("orders same-day void and replacement allocations by their source dependency"
 
 function importedTaxTables() {
   const t = baseTables();
-  t.sales_invoice_lines = [];
-  t.journals = [
+  t["sales_invoice_lines"] = [];
+  t["journals"] = [
     {
       id: "j1",
       company_id: C,
@@ -574,7 +574,7 @@ function importedTaxTables() {
       status: "posted",
     },
   ];
-  t.journal_lines = [
+  t["journal_lines"] = [
     {
       id: "opening-ar",
       company_id: C,
@@ -592,7 +592,7 @@ function importedTaxTables() {
       credit_minor: "12000",
     },
   ];
-  t.cash_opening_evidence = [
+  t["cash_opening_evidence"] = [
     {
       id: "approved-opening",
       status: "approved",
@@ -619,11 +619,11 @@ function importedTaxTables() {
         source_type: "opening_balance",
         source_id: null,
         status: "posted",
-        lines: t.journal_lines.map((l) => ({
-          id: l.id,
-          account_id: l.account_id,
-          debit_minor: l.debit_minor,
-          credit_minor: l.credit_minor,
+        lines: t["journal_lines"].map((l) => ({
+          id: l["id"],
+          account_id: l["account_id"],
+          debit_minor: l["debit_minor"],
+          credit_minor: l["credit_minor"],
         })),
       },
     },
@@ -637,29 +637,29 @@ it("uses approved original opening tax evidence on actual cash dates", async () 
 });
 it("does not repeat tax already recognized before conversion", async () => {
   const t = importedTaxTables();
-  t.cash_opening_evidence![0]!.mode = "already_recognized";
+  t["cash_opening_evidence"]![0]!["mode"] = "already_recognized";
   expect(computeReturnTotals((await cashPeriod(t, "10")).facts).outputTax).toBe(0n);
 });
 it.each(["missing", "drift", "tax-code"])(
   "reports unresolved opening tax evidence: %s",
   async (kind) => {
     const t = importedTaxTables();
-    if (kind === "missing") t.cash_opening_evidence = [];
-    if (kind === "drift") t.journal_lines![0]!.debit_minor = "12001";
+    if (kind === "missing") t["cash_opening_evidence"] = [];
+    if (kind === "drift") t["journal_lines"]![0]!["debit_minor"] = "12001";
     if (kind === "tax-code")
-      (t.cash_opening_evidence![0]!.tax_lines as Row[])[0]!.tax_code_id = "foreign-code";
+      (t["cash_opening_evidence"]![0]!["tax_lines"] as Row[])[0]!["tax_code_id"] = "foreign-code";
     await expect(cashPeriod(t, "10")).rejects.toThrow("CASH_CLASSIFICATION_EXCEPTION:");
   },
 );
 it("requires the verified historical reverse-charge rate instead of today's code rate", async () => {
   const t = importedTaxTables();
-  t.sales_receipts = [];
-  t.purchase_bill_lines = [];
-  t.purchase_bills![0]!.posted_journal_id = "j1";
-  t.supplier_payments = [
+  t["sales_receipts"] = [];
+  t["purchase_bill_lines"] = [];
+  t["purchase_bills"]![0]!["posted_journal_id"] = "j1";
+  t["supplier_payments"] = [
     { id: "p", company_id: C, status: "paid", posted_journal_id: "pj", payment_date: "2026-10-05" },
   ];
-  t.supplier_payment_allocations = [
+  t["supplier_payment_allocations"] = [
     {
       id: "pa",
       company_id: C,
@@ -669,21 +669,21 @@ it("requires the verified historical reverse-charge rate instead of today's code
       allocated_on: "2026-10-05",
     },
   ];
-  Object.assign(t.cash_opening_evidence![0]!, {
+  Object.assign(t["cash_opening_evidence"]![0]!, {
     document_id: "b1",
     source_kind: "purchase_bill",
     gross_minor: "10000",
     tax_lines: [{ id: "historical", net_minor: "10000", tax_minor: "0", tax_code_id: "rc" }],
   });
-  t.tax_codes!.find((c) => c.id === "rc")!.tax_rates = { rate_bps: 5000 };
+  t["tax_codes"]!.find((c) => c["id"] === "rc")!["tax_rates"] = { rate_bps: 5000 };
   await expect(cashPeriod(t, "10")).rejects.toThrow("Original reverse-charge rate evidence");
-  (t.cash_opening_evidence![0]!.tax_lines as Row[])[0]!.tax_rate_bps = 2000;
+  (t["cash_opening_evidence"]![0]!["tax_lines"] as Row[])[0]!["tax_rate_bps"] = 2000;
   const result = computeReturnTotals((await cashPeriod(t, "10")).facts);
   expect(result.inputTax).toBe(2000n);
   expect(result.outputTax).toBe(2000n);
 });
 it("reports missing foreign source FX instead of omitting material cash tax", async () => {
   const t = baseTables();
-  t.sales_invoices![0]!.currency_code = "USD";
+  t["sales_invoices"]![0]!["currency_code"] = "USD";
   await expect(cashPeriod(t, "10")).rejects.toThrow("cash_tax_fx_evidence_required");
 });

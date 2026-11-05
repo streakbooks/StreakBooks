@@ -191,6 +191,11 @@ export const ACCESS_AREAS: readonly AccessArea[] = [
         detail: "Draft and post a journal.",
       },
       {
+        permission: "journals.approve",
+        label: "Approve correction journals",
+        detail: "Independent approval of financial correction posting plans.",
+      },
+      {
         permission: "accounts.manage",
         label: "Chart of accounts",
         detail: "Add and edit accounts, assets, budgets and projects.",

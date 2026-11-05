@@ -236,7 +236,7 @@ export function SettingsForCompany({
       fetchAudit({
         data: {
           companyId,
-          limit: AUDIT_PAGE_SIZE,
+          limit: AUDIT_PAGE_SIZE + 1,
           offset: auditOffset,
           ...(auditAction ? { action: auditAction } : {}),
           ...(auditEntity ? { entityType: auditEntity } : {}),
@@ -245,9 +245,10 @@ export function SettingsForCompany({
         },
       }),
   });
+  const auditPageRows = (auditQuery.data ?? []).slice(0, AUDIT_PAGE_SIZE);
   const exportAuditPage = () => {
-    if (!auditQuery.data?.length) return;
-    const csv = buildSettingsAuditCsv(auditQuery.data);
+    if (!auditPageRows.length) return;
+    const csv = buildSettingsAuditCsv(auditPageRows);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -1573,7 +1574,7 @@ export function SettingsForCompany({
                           <Button
                             variant="outline"
                             size="sm"
-                            disabled={!auditQuery.data?.length || auditQuery.isFetching}
+                            disabled={!auditPageRows.length || auditQuery.isFetching}
                             onClick={exportAuditPage}
                           >
                             Export current page (CSV)
@@ -1604,7 +1605,7 @@ export function SettingsForCompany({
                             description={friendlyAuthError(auditQuery.error)}
                             onRetry={() => auditQuery.refetch()}
                           />
-                        ) : (auditQuery.data ?? []).length === 0 ? (
+                        ) : auditPageRows.length === 0 ? (
                           <p className="text-sm text-muted-foreground">
                             No events match these filters.
                           </p>
@@ -1619,7 +1620,7 @@ export function SettingsForCompany({
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {(auditQuery.data ?? []).map((a) => (
+                              {auditPageRows.map((a) => (
                                 <TableRow key={a.id}>
                                   <TableCell className="whitespace-nowrap text-xs">
                                     {new Date(a.created_at).toLocaleString()}
@@ -1640,8 +1641,8 @@ export function SettingsForCompany({
                         {auditDatesValid && !auditQuery.isPending && !auditQuery.isError ? (
                           <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-3">
                             <p role="status" className="text-xs text-muted-foreground">
-                              Showing {auditQuery.data?.length ? auditOffset + 1 : 0}–
-                              {auditOffset + (auditQuery.data?.length ?? 0)} of matching events
+                              Showing {auditPageRows.length ? auditOffset + 1 : 0}–
+                              {auditOffset + auditPageRows.length} of matching events
                               (page size {AUDIT_PAGE_SIZE}).
                             </p>
                             <div className="flex gap-2">

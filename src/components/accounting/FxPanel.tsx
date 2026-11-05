@@ -15,6 +15,7 @@ import {
   filterAutoReversals,
   fxRevaluationCsv,
   fxReviewSignature,
+  localCalendarDate,
   type ReversalFilter,
 } from "@/lib/accounting/fx-review";
 import { isPositiveRate, nextDay } from "@/lib/accounting/fx-reval";
@@ -41,7 +42,7 @@ export function FxPanel({ companyId, currency }: { companyId: string; currency: 
   const doProcess = useServerFn(processDueAutoReversals);
   const doCancel = useServerFn(cancelAutoReversal);
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localCalendarDate(new Date());
   const [asOf, setAsOf] = useState(today);
   const [rates, setRates] = useState<Record<string, string>>({});
   const [note, setNote] = useState("");

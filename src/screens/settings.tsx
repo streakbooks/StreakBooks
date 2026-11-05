@@ -128,6 +128,7 @@ const CONFIG_SECTIONS: SettingsCategory[] = [
   "expenses",
   "import_migration",
   "fixed_assets",
+  "payroll",
   "accountant",
 ];
 

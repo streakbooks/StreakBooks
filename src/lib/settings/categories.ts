@@ -25,6 +25,7 @@ export const SETTINGS_CATEGORIES = [
   "notifications",
   "portals",
   "fixed_assets",
+  "payroll",
   "import_migration",
 ] as const;
 

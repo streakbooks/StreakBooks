@@ -17,9 +17,10 @@ describe("Settings Centre category routing and search", () => {
     expect(searchSettings("bank feeds").some((item) => item.id === "banking")).toBe(true);
     expect(searchSettings("not-a-real-category-keyword")).toHaveLength(0);
   });
-  it("provides real workspace destinations for import and fixed assets", () => {
+  it("provides real workspace destinations for import, fixed assets and payroll", () => {
     const importMeta = categoryMeta.find((item) => item.id === "import_migration");
     const assetsMeta = categoryMeta.find((item) => item.id === "fixed_assets");
+    const payrollMeta = categoryMeta.find((item) => item.id === "payroll");
     expect(importMeta?.moduleLinks).toContainEqual({
       label: "Data Import Centre",
       to: "/imports",
@@ -29,6 +30,11 @@ describe("Settings Centre category routing and search", () => {
       to: "/fixed-assets",
     });
     expect(assetsMeta?.availability).toBe("partial");
+    expect(payrollMeta?.moduleLinks).toContainEqual({
+      label: "Payroll settings",
+      to: "/payroll/settings",
+    });
+    expect(payrollMeta?.availability).toBe("partial");
   });
 
   it("never strands users in categories without an editable Settings Centre schema", () => {
@@ -38,6 +44,7 @@ describe("Settings Centre category routing and search", () => {
       "import_migration",
       "accountant",
       "fixed_assets",
+      "payroll",
       "tax",
     ] as const) {
       const meta = categoryMeta.find((item) => item.id === category);

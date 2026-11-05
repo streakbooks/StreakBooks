@@ -17,6 +17,8 @@ const DOCUMENT_TYPES = [
   "sales_quote",
   "sales_credit_note",
   "purchase_credit_note",
+  "payroll_run",
+  "payslip",
 ] as const;
 
 const LOCALES = ["en-GB", "en-US", "en-AU", "en-NZ", "en-IE", "en-CA"] as const;

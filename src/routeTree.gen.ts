@@ -27,6 +27,7 @@ import { Route as AuthenticatedHelpRouteImport } from './routes/_authenticated/h
 import { Route as AuthenticatedImportsRouteImport } from './routes/_authenticated/imports'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
+import { Route as AuthenticatedPayrollRouteRouteImport } from './routes/_authenticated/payroll/route'
 import { Route as AuthenticatedPlatformRouteImport } from './routes/_authenticated/platform'
 import { Route as AuthenticatedProductsServicesRouteImport } from './routes/_authenticated/products-services'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
@@ -63,6 +64,8 @@ import { Route as AuthenticatedContactsSettingsRouteImport } from './routes/_aut
 import { Route as AuthenticatedDocumentsBrandingRouteImport } from './routes/_authenticated/documents.branding'
 import { Route as AuthenticatedFirmInviteTokenRouteImport } from './routes/_authenticated/firm-invite.$token'
 import { Route as AuthenticatedInviteTokenRouteImport } from './routes/_authenticated/invite.$token'
+import { Route as AuthenticatedPayrollIndexRouteImport } from './routes/_authenticated/payroll/index'
+import { Route as AuthenticatedPayrollSettingsRouteImport } from './routes/_authenticated/payroll/settings'
 import { Route as AuthenticatedPlatformIndexRouteImport } from './routes/_authenticated/platform.index'
 import { Route as AuthenticatedPlatformAutomationRouteImport } from './routes/_authenticated/platform.automation'
 import { Route as AuthenticatedPlatformBillingRouteImport } from './routes/_authenticated/platform.billing'
@@ -232,6 +235,12 @@ const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPayrollRouteRoute =
+  AuthenticatedPayrollRouteRouteImport.update({
+    id: '/payroll',
+    path: '/payroll',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPlatformRoute = AuthenticatedPlatformRouteImport.update({
   id: '/platform',
   path: '/platform',
@@ -434,6 +443,18 @@ const AuthenticatedInviteTokenRoute =
     id: '/invite/$token',
     path: '/invite/$token',
     getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPayrollIndexRoute =
+  AuthenticatedPayrollIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedPayrollRouteRoute,
+  } as any)
+const AuthenticatedPayrollSettingsRoute =
+  AuthenticatedPayrollSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedPayrollRouteRoute,
   } as any)
 const AuthenticatedPlatformIndexRoute =
   AuthenticatedPlatformIndexRouteImport.update({
@@ -878,6 +899,7 @@ export interface FileRoutesByFullPath {
   '/pricing': typeof PricingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/banking': typeof AuthenticatedBankingRouteRouteWithChildren
+  '/payroll': typeof AuthenticatedPayrollRouteRouteWithChildren
   '/purchases': typeof AuthenticatedPurchasesRouteRouteWithChildren
   '/sales': typeof AuthenticatedSalesRouteRouteWithChildren
   '/portal/app': typeof PortalAppRouteRouteWithChildren
@@ -921,6 +943,7 @@ export interface FileRoutesByFullPath {
   '/documents/branding': typeof AuthenticatedDocumentsBrandingRoute
   '/firm-invite/$token': typeof AuthenticatedFirmInviteTokenRoute
   '/invite/$token': typeof AuthenticatedInviteTokenRoute
+  '/payroll/settings': typeof AuthenticatedPayrollSettingsRoute
   '/platform/automation': typeof AuthenticatedPlatformAutomationRoute
   '/platform/billing': typeof AuthenticatedPlatformBillingRoute
   '/platform/operations': typeof AuthenticatedPlatformOperationsRoute
@@ -954,6 +977,7 @@ export interface FileRoutesByFullPath {
   '/banking/': typeof AuthenticatedBankingIndexRoute
   '/budgets/': typeof AuthenticatedBudgetsIndexRoute
   '/contacts/': typeof AuthenticatedContactsIndexRoute
+  '/payroll/': typeof AuthenticatedPayrollIndexRoute
   '/platform/': typeof AuthenticatedPlatformIndexRoute
   '/purchases/': typeof AuthenticatedPurchasesIndexRoute
   '/reports/': typeof AuthenticatedReportsIndexRoute
@@ -1045,6 +1069,7 @@ export interface FileRoutesByTo {
   '/documents/branding': typeof AuthenticatedDocumentsBrandingRoute
   '/firm-invite/$token': typeof AuthenticatedFirmInviteTokenRoute
   '/invite/$token': typeof AuthenticatedInviteTokenRoute
+  '/payroll/settings': typeof AuthenticatedPayrollSettingsRoute
   '/platform/automation': typeof AuthenticatedPlatformAutomationRoute
   '/platform/billing': typeof AuthenticatedPlatformBillingRoute
   '/platform/operations': typeof AuthenticatedPlatformOperationsRoute
@@ -1078,6 +1103,7 @@ export interface FileRoutesByTo {
   '/banking': typeof AuthenticatedBankingIndexRoute
   '/budgets': typeof AuthenticatedBudgetsIndexRoute
   '/contacts': typeof AuthenticatedContactsIndexRoute
+  '/payroll': typeof AuthenticatedPayrollIndexRoute
   '/platform': typeof AuthenticatedPlatformIndexRoute
   '/purchases': typeof AuthenticatedPurchasesIndexRoute
   '/reports': typeof AuthenticatedReportsIndexRoute
@@ -1130,6 +1156,7 @@ export interface FileRoutesById {
   '/pricing': typeof PricingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/banking': typeof AuthenticatedBankingRouteRouteWithChildren
+  '/_authenticated/payroll': typeof AuthenticatedPayrollRouteRouteWithChildren
   '/_authenticated/purchases': typeof AuthenticatedPurchasesRouteRouteWithChildren
   '/_authenticated/sales': typeof AuthenticatedSalesRouteRouteWithChildren
   '/portal/app': typeof PortalAppRouteRouteWithChildren
@@ -1174,6 +1201,7 @@ export interface FileRoutesById {
   '/_authenticated/documents/branding': typeof AuthenticatedDocumentsBrandingRoute
   '/_authenticated/firm-invite/$token': typeof AuthenticatedFirmInviteTokenRoute
   '/_authenticated/invite/$token': typeof AuthenticatedInviteTokenRoute
+  '/_authenticated/payroll/settings': typeof AuthenticatedPayrollSettingsRoute
   '/_authenticated/platform/automation': typeof AuthenticatedPlatformAutomationRoute
   '/_authenticated/platform/billing': typeof AuthenticatedPlatformBillingRoute
   '/_authenticated/platform/operations': typeof AuthenticatedPlatformOperationsRoute
@@ -1207,6 +1235,7 @@ export interface FileRoutesById {
   '/_authenticated/banking/': typeof AuthenticatedBankingIndexRoute
   '/_authenticated/budgets/': typeof AuthenticatedBudgetsIndexRoute
   '/_authenticated/contacts/': typeof AuthenticatedContactsIndexRoute
+  '/_authenticated/payroll/': typeof AuthenticatedPayrollIndexRoute
   '/_authenticated/platform/': typeof AuthenticatedPlatformIndexRoute
   '/_authenticated/purchases/': typeof AuthenticatedPurchasesIndexRoute
   '/_authenticated/reports/': typeof AuthenticatedReportsIndexRoute
@@ -1263,6 +1292,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/reset-password'
     | '/banking'
+    | '/payroll'
     | '/purchases'
     | '/sales'
     | '/portal/app'
@@ -1306,6 +1336,7 @@ export interface FileRouteTypes {
     | '/documents/branding'
     | '/firm-invite/$token'
     | '/invite/$token'
+    | '/payroll/settings'
     | '/platform/automation'
     | '/platform/billing'
     | '/platform/operations'
@@ -1339,6 +1370,7 @@ export interface FileRouteTypes {
     | '/banking/'
     | '/budgets/'
     | '/contacts/'
+    | '/payroll/'
     | '/platform/'
     | '/purchases/'
     | '/reports/'
@@ -1430,6 +1462,7 @@ export interface FileRouteTypes {
     | '/documents/branding'
     | '/firm-invite/$token'
     | '/invite/$token'
+    | '/payroll/settings'
     | '/platform/automation'
     | '/platform/billing'
     | '/platform/operations'
@@ -1463,6 +1496,7 @@ export interface FileRouteTypes {
     | '/banking'
     | '/budgets'
     | '/contacts'
+    | '/payroll'
     | '/platform'
     | '/purchases'
     | '/reports'
@@ -1514,6 +1548,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/reset-password'
     | '/_authenticated/banking'
+    | '/_authenticated/payroll'
     | '/_authenticated/purchases'
     | '/_authenticated/sales'
     | '/portal/app'
@@ -1558,6 +1593,7 @@ export interface FileRouteTypes {
     | '/_authenticated/documents/branding'
     | '/_authenticated/firm-invite/$token'
     | '/_authenticated/invite/$token'
+    | '/_authenticated/payroll/settings'
     | '/_authenticated/platform/automation'
     | '/_authenticated/platform/billing'
     | '/_authenticated/platform/operations'
@@ -1591,6 +1627,7 @@ export interface FileRouteTypes {
     | '/_authenticated/banking/'
     | '/_authenticated/budgets/'
     | '/_authenticated/contacts/'
+    | '/_authenticated/payroll/'
     | '/_authenticated/platform/'
     | '/_authenticated/purchases/'
     | '/_authenticated/reports/'
@@ -1778,6 +1815,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/payroll': {
+      id: '/_authenticated/payroll'
+      path: '/payroll'
+      fullPath: '/payroll'
+      preLoaderRoute: typeof AuthenticatedPayrollRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/platform': {
@@ -2031,6 +2075,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/invite/$token'
       preLoaderRoute: typeof AuthenticatedInviteTokenRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/payroll/': {
+      id: '/_authenticated/payroll/'
+      path: '/'
+      fullPath: '/payroll/'
+      preLoaderRoute: typeof AuthenticatedPayrollIndexRouteImport
+      parentRoute: typeof AuthenticatedPayrollRouteRoute
+    }
+    '/_authenticated/payroll/settings': {
+      id: '/_authenticated/payroll/settings'
+      path: '/settings'
+      fullPath: '/payroll/settings'
+      preLoaderRoute: typeof AuthenticatedPayrollSettingsRouteImport
+      parentRoute: typeof AuthenticatedPayrollRouteRoute
     }
     '/_authenticated/platform/': {
       id: '/_authenticated/platform/'
@@ -2598,6 +2656,22 @@ const AuthenticatedBankingRouteRouteWithChildren =
     AuthenticatedBankingRouteRouteChildren,
   )
 
+interface AuthenticatedPayrollRouteRouteChildren {
+  AuthenticatedPayrollSettingsRoute: typeof AuthenticatedPayrollSettingsRoute
+  AuthenticatedPayrollIndexRoute: typeof AuthenticatedPayrollIndexRoute
+}
+
+const AuthenticatedPayrollRouteRouteChildren: AuthenticatedPayrollRouteRouteChildren =
+  {
+    AuthenticatedPayrollSettingsRoute: AuthenticatedPayrollSettingsRoute,
+    AuthenticatedPayrollIndexRoute: AuthenticatedPayrollIndexRoute,
+  }
+
+const AuthenticatedPayrollRouteRouteWithChildren =
+  AuthenticatedPayrollRouteRoute._addFileChildren(
+    AuthenticatedPayrollRouteRouteChildren,
+  )
+
 interface AuthenticatedPurchasesBillsBillIdRouteChildren {
   AuthenticatedPurchasesBillsBillIdEditRoute: typeof AuthenticatedPurchasesBillsBillIdEditRoute
 }
@@ -2819,6 +2893,7 @@ const AuthenticatedPlatformRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedBankingRouteRoute: typeof AuthenticatedBankingRouteRouteWithChildren
+  AuthenticatedPayrollRouteRoute: typeof AuthenticatedPayrollRouteRouteWithChildren
   AuthenticatedPurchasesRouteRoute: typeof AuthenticatedPurchasesRouteRouteWithChildren
   AuthenticatedSalesRouteRoute: typeof AuthenticatedSalesRouteRouteWithChildren
   AuthenticatedAccountantRoute: typeof AuthenticatedAccountantRoute
@@ -2858,6 +2933,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBankingRouteRoute: AuthenticatedBankingRouteRouteWithChildren,
+  AuthenticatedPayrollRouteRoute: AuthenticatedPayrollRouteRouteWithChildren,
   AuthenticatedPurchasesRouteRoute:
     AuthenticatedPurchasesRouteRouteWithChildren,
   AuthenticatedSalesRouteRoute: AuthenticatedSalesRouteRouteWithChildren,

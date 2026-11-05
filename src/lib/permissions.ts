@@ -48,6 +48,14 @@ export const PERMISSIONS = [
   "recurring.auto_authorise",
   "accounting.conversion.manage",
   "accounting.conversion.override",
+  "payroll.view",
+  "payroll.settings.edit",
+  "payroll.employees.manage",
+  "payroll.run.prepare",
+  "payroll.run.approve",
+  "payroll.run.post",
+  "payroll.pay",
+  "payroll.reports.view",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -95,6 +103,14 @@ export const ROLE_PERMISSION_MATRIX: Record<CompanyRole, readonly Permission[]> 
     "ai.apply_suggestion",
     "recurring.auto_authorise",
     "accounting.conversion.manage",
+    "payroll.view",
+    "payroll.settings.edit",
+    "payroll.employees.manage",
+    "payroll.run.prepare",
+    "payroll.run.approve",
+    "payroll.run.post",
+    "payroll.pay",
+    "payroll.reports.view",
   ],
   accountant: [
     "company.view",
@@ -130,6 +146,14 @@ export const ROLE_PERMISSION_MATRIX: Record<CompanyRole, readonly Permission[]> 
     "ai.apply_suggestion",
     "recurring.auto_authorise",
     "accounting.conversion.manage",
+    "payroll.view",
+    "payroll.settings.edit",
+    "payroll.employees.manage",
+    "payroll.run.prepare",
+    "payroll.run.approve",
+    "payroll.run.post",
+    "payroll.pay",
+    "payroll.reports.view",
   ],
   bookkeeper: [
     "company.view",
@@ -158,6 +182,11 @@ export const ROLE_PERMISSION_MATRIX: Record<CompanyRole, readonly Permission[]> 
     "products.manage",
     "ai.use",
     "ai.apply_suggestion",
+    "payroll.view",
+    "payroll.employees.manage",
+    "payroll.run.prepare",
+    "payroll.pay",
+    "payroll.reports.view",
   ],
   staff: [
     "company.view",
@@ -172,6 +201,7 @@ export const ROLE_PERMISSION_MATRIX: Record<CompanyRole, readonly Permission[]> 
     "reports.view",
     "contacts.manage",
     "ai.use",
+    "payroll.view",
   ],
   read_only: [
     "company.view",
@@ -183,6 +213,8 @@ export const ROLE_PERMISSION_MATRIX: Record<CompanyRole, readonly Permission[]> 
     "reports.export",
     "audit.view",
     "ai.use",
+    "payroll.view",
+    "payroll.reports.view",
   ],
 };
 

@@ -173,6 +173,16 @@ export const FEATURE_CATALOG: FeatureDefinition[] = [
     preservesHistory: true,
   },
   {
+    key: "basic_payroll",
+    label: "Basic Global Payroll",
+    description:
+      "Employee payroll with configurable earnings and deductions. Statutory tax and filings stay manual.",
+    implementation: "available",
+    requiresConfigCategory: "payroll",
+    consumerModules: ["payroll"],
+    preservesHistory: true,
+  },
+  {
     key: "portals",
     label: "Portals",
     description: "Customer and supplier portals.",

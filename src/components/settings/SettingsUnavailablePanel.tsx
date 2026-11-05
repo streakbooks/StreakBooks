@@ -12,7 +12,9 @@ export function SettingsUnavailablePanel({ meta }: { meta: CategoryMeta }) {
         <AlertDescription>
           {meta.id === "fixed_assets"
             ? "Manage your assets and depreciation in the Fixed assets workspace. Additional configuration is not available here yet."
-            : `${meta.label} cannot be configured in this version of LinkBooks.`}
+            : meta.id === "payroll"
+              ? "Configure Basic Global Payroll in the Payroll workspace. Statutory tax engines are not included."
+              : `${meta.label} cannot be configured in this version of LinkBooks.`}
         </AlertDescription>
       </Alert>
       <Card>
@@ -24,6 +26,10 @@ export function SettingsUnavailablePanel({ meta }: { meta: CategoryMeta }) {
           {meta.id === "fixed_assets" ? (
             <Button asChild>
               <Link to="/fixed-assets">Open fixed assets</Link>
+            </Button>
+          ) : meta.id === "payroll" ? (
+            <Button asChild>
+              <Link to="/payroll/settings">Open payroll settings</Link>
             </Button>
           ) : (
             "Your existing organisation settings are unchanged."

@@ -17,6 +17,7 @@ import {
   FolderOpen,
   PiggyBank,
   Warehouse,
+  WalletCards,
   type LucideIcon,
 } from "lucide-react";
 
@@ -120,6 +121,13 @@ export const navItems: NavItem[] = [
     icon: Warehouse,
     group: "accounting",
     description: "Asset register and depreciation",
+  },
+  {
+    label: "Payroll",
+    to: "/payroll",
+    icon: WalletCards,
+    group: "accounting",
+    description: "Basic Global Payroll settings and processing",
   },
   {
     label: "Reports",

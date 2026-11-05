@@ -249,6 +249,26 @@ export const categoryMeta: CategoryMeta[] = [
     availability: "partial",
   },
   {
+    id: "payroll",
+    label: "Basic Global Payroll",
+    description:
+      "Enable payroll, pay schedules, default accounts, numbering and earnings/deduction components. Statutory calculations remain manual.",
+    synonyms: [
+      "payroll",
+      "salary",
+      "payslip",
+      "wages",
+      "pay run",
+      "employees payroll",
+      "deductions",
+    ],
+    moduleLinks: [
+      { label: "Payroll overview", to: "/payroll" },
+      { label: "Payroll settings", to: "/payroll/settings" },
+    ],
+    availability: "partial",
+  },
+  {
     id: "import_migration",
     label: "Import & Migration",
     description: "Guided migration from other accounting systems.",

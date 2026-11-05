@@ -46,4 +46,15 @@ describe("role permissions matrix", () => {
       expect(roleHasPermission(role, "company.view")).toBe(true);
     }
   });
+
+  it("gates payroll settings edits to qualified roles", () => {
+    for (const role of ["owner", "admin", "accountant"] as const) {
+      expect(roleHasPermission(role, "payroll.view")).toBe(true);
+      expect(roleHasPermission(role, "payroll.settings.edit")).toBe(true);
+    }
+    for (const role of ["bookkeeper", "staff", "read_only"] as const) {
+      expect(roleHasPermission(role, "payroll.view")).toBe(true);
+      expect(roleHasPermission(role, "payroll.settings.edit")).toBe(false);
+    }
+  });
 });

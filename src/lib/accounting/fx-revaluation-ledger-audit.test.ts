@@ -169,6 +169,38 @@ describe("unrealised FX revaluation to ledger audit", () => {
     expect(result.actualGainMinor).toBe(large);
   });
 
+  it("reconciles distinct USD gains and EUR losses in a single run", () => {
+    const eurJournal: FxRunAuditJournal = {
+      ...journal,
+      id: "j2",
+      idempotency_key: "fx_reval:run1:EUR",
+    };
+    const result = check(
+      {
+        ...run,
+        journal_ids: ["j1", "j2"],
+        total_gain_minor: "500",
+        total_loss_minor: "200",
+      },
+      [journal, eurJournal],
+      [queue, { ...queue, journal_id: "j2" }],
+      [
+        ...lines,
+        { journal_id: "j2", account_id: "receivable", debit_minor: "0", credit_minor: "200" },
+        { journal_id: "j2", account_id: "loss", debit_minor: "200", credit_minor: "0" },
+      ],
+      [tag, { journal_id: "j2", kind: "revaluation", currency_code: "EUR" }],
+      [
+        ...accounts,
+        { id: "loss", code: "7730", name: "Unrealised FX losses", account_type: "expense" },
+      ],
+    );
+    expect(result.exceptionCount).toBe(0);
+    expect(result.journalCount).toBe(2);
+    expect(result.actualGainMinor).toBe("500");
+    expect(result.actualLossMinor).toBe("200");
+  });
+
   it("rejects two run journals for the same foreign currency", () => {
     const duplicateJournal: FxRunAuditJournal = {
       ...journal,

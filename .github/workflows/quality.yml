@@ -65,6 +65,9 @@
 #       - name: Isolated platform permission and lifecycle tests
 #         run: npm run test:platform:postgres
 
+#       - name: Isolated billing account, reference data and audit chain tests
+#         run: npm run test:billing:postgres
+
 #       - name: Cash history and delivery PostgreSQL checks
 #         run: python3 scripts/test-cash-history-postgres.py
 

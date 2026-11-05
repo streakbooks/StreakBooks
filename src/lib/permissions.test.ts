@@ -8,6 +8,15 @@ describe("role permissions matrix", () => {
     expect(roleHasPermission("owner", "members.grant_owner")).toBe(true);
   });
 
+  it("restricts independent journal approvals to qualified reviewing roles", () => {
+    for (const role of ["owner", "admin", "accountant"] as const) {
+      expect(roleHasPermission(role, "journals.approve")).toBe(true);
+    }
+    for (const role of ["bookkeeper", "staff", "read_only"] as const) {
+      expect(roleHasPermission(role, "journals.approve")).toBe(false);
+    }
+  });
+
   it("prevents read_only from posting or managing members", () => {
     expect(roleHasPermission("read_only", "accounting.post")).toBe(false);
     expect(roleHasPermission("read_only", "members.manage")).toBe(false);

@@ -92,7 +92,9 @@ export const listCorrectionApprovalEvents = createServerFn({ method: "GET" })
     await assertCompanyPermission(context.supabase, data.companyId, "accounting.view");
     const { data: records, error } = await context.supabase
       .from("correction_approval_events" as never)
-      .select("id,approval_id,actor_id,action,from_status,to_status,note,created_at,version" as never)
+      .select(
+        "id,approval_id,actor_id,action,from_status,to_status,note,created_at,version" as never,
+      )
       .eq("company_id" as never, data.companyId as never)
       .eq("approval_id" as never, data.approvalId as never)
       .order("created_at" as never, { ascending: true })

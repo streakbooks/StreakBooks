@@ -174,9 +174,7 @@ try {
       END IF;
     END $;`,
   );
-  console.log(
-    "Four concurrent contact creates received C1005–C1008, no duplicates or gaps.",
-  );
+  console.log("Four concurrent contact creates received C1005–C1008, no duplicates or gaps.");
   console.log(
     "Workflow migration compiled. Atomic rollback, permissions, two-tenant RLS, PO edit/conversion, sales lifecycle, deferrals and real shared posting-engine balance/lock scenarios passed.",
   );

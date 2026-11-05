@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { AutoReversalRow, RevaluationPreview } from "./fx.functions";
-import { filterAutoReversals, fxRevaluationCsv, fxReviewSignature, localCalendarDate } from "./fx-review";
+import {
+  filterAutoReversals,
+  fxRevaluationCsv,
+  fxReviewSignature,
+  localCalendarDate,
+} from "./fx-review";
 
 const reverse = (status: AutoReversalRow["status"], reverse_on: string): AutoReversalRow => ({
   id: `${status}-${reverse_on}`,

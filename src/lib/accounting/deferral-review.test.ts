@@ -71,10 +71,15 @@ describe("deferral review", () => {
   });
 
   it("rejects unsafe numeric amounts instead of fabricating a balanced result", () => {
-    expect(deferralScheduleReconciliation({ ...example, total_minor: Number.MAX_SAFE_INTEGER + 1 })).toBeNull();
-    expect(deferralScheduleReconciliation({ ...example, deferral_entries: [
-      { ...example.deferral_entries[0]!, amount_minor: -1 },
-    ] })).toBeNull();
+    expect(
+      deferralScheduleReconciliation({ ...example, total_minor: Number.MAX_SAFE_INTEGER + 1 }),
+    ).toBeNull();
+    expect(
+      deferralScheduleReconciliation({
+        ...example,
+        deferral_entries: [{ ...example.deferral_entries[0]!, amount_minor: -1 }],
+      }),
+    ).toBeNull();
   });
 
   it("guards future posting, pre-due catch-up and already-posted entries", () => {

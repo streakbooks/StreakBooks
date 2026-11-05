@@ -79,6 +79,9 @@ jobs:
       - name: Production build
         run: npm run build
 
+      - name: Client bootstrap JS budget
+        run: npm run check:bundle
+
   staging-browser:
     # Enabled only for trusted repository PRs and after all static/compile tests pass.
     needs: validate
@@ -150,3 +153,5 @@ jobs:
         run: npm run test:voice
       - name: Wake-word and verification regressions
         run: npm run test:wake
+      - name: Actual anonymous app, recovery and portal entry
+        run: npm run test:public-ui

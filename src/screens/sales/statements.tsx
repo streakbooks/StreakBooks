@@ -1,0 +1,240 @@
+import { QueryErrorState } from "@/components/common/QueryErrorState";
+import { CustomerStatementSheet } from "@/components/documents/CustomerStatementSheet";
+import { mapBranding } from "@/lib/documents/mappers";
+import { useState } from "react";
+
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { Mail, Printer } from "lucide-react";
+import { useActiveCompany } from "@/hooks/use-active-company";
+import { listCustomers } from "@/lib/sales/sales.functions";
+import { getCustomerStatement } from "@/lib/sales/sales-statements.functions";
+import { useCan } from "@/hooks/use-can";
+import { useFormat } from "@/hooks/use-format";
+import { getDocumentBranding, getDocumentDelivery } from "@/lib/documents/documents.functions";
+import { renderEmail } from "@/lib/documents/email-templates";
+import { EmailDocumentDialog } from "@/components/documents/EmailDocumentDialog";
+import { friendlyAuthError } from "@/lib/auth-helpers";
+import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { ContactLookup } from "@/components/lookup";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+export function Statements() {
+  const { company } = useActiveCompany();
+  const companyId = company?.id;
+  const fetchCustomers = useServerFn(listCustomers);
+  const fetchStatement = useServerFn(getCustomerStatement);
+  const [contactId, setContactId] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [emailOpen, setEmailOpen] = useState(false);
+  const { can } = useCan();
+  const fmt = useFormat();
+  const queryClient = useQueryClient();
+  const fetchBranding = useServerFn(getDocumentBranding);
+  const fetchDelivery = useServerFn(getDocumentDelivery);
+
+  const customersQ = useQuery({
+    queryKey: ["customers", companyId],
+    enabled: Boolean(companyId),
+    queryFn: () => fetchCustomers({ data: { companyId: companyId! } }),
+  });
+  const stmtQ = useQuery({
+    queryKey: ["customer-statement", companyId, contactId, from, to],
+    enabled: Boolean(companyId && contactId),
+    queryFn: () =>
+      fetchStatement({
+        data: {
+          companyId: companyId!,
+          contactId,
+          ...(from ? { from } : {}),
+          ...(to ? { to } : {}),
+        },
+      }),
+  });
+
+  const brandingQ = useQuery({
+    queryKey: ["document-branding", companyId],
+    enabled: Boolean(companyId),
+    queryFn: () => fetchBranding({ data: { companyId: companyId!, kind: "customer_statement" } }),
+  });
+  const deliveryQ = useQuery({
+    queryKey: ["document-delivery", companyId, "customer_statement", contactId],
+    enabled: Boolean(companyId && contactId),
+    queryFn: () =>
+      fetchDelivery({
+        data: { companyId: companyId!, kind: "customer_statement", id: contactId },
+      }),
+  });
+
+  const customerName =
+    ((customersQ.data ?? []) as Array<{ id: string; name: string }>).find((c) => c.id === contactId)
+      ?.name ?? "Customer";
+
+  const requiredQueries = [customersQ, brandingQ, deliveryQ];
+  if (requiredQueries.some((query) => query.isError && query.data === undefined))
+    return <QueryErrorState queries={requiredQueries} title="Could not load statement options" />;
+
+  if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
+
+  return (
+    <>
+      <PageHeader
+        title="Customer statements"
+        description="Chronological activity from posted invoices, receipts and credit notes, with a running balance. Print or save as PDF, or email the statement."
+        actions={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!contactId || !stmtQ.data}
+              onClick={() => setEmailOpen(true)}
+            >
+              <Mail className="mr-1 size-4" /> Email…
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => window.print()}>
+              <Printer className="mr-1 size-4" /> Print / PDF
+            </Button>
+          </>
+        }
+      />
+      <div className="mb-6 flex flex-wrap gap-3">
+        <div className="w-64 space-y-1">
+          <Label>Customer</Label>
+          <ContactLookup
+            ariaLabel="Customer"
+            contacts={(customersQ.data ?? []) as Array<{ id: string; name: string }>}
+            value={contactId}
+            onChange={setContactId}
+            companyId={companyId}
+            createKind="customer"
+            placeholder="Search customers"
+            allowClear={false}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label>From</Label>
+          <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+        </div>
+        <div className="space-y-1">
+          <Label>To</Label>
+          <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+        </div>
+      </div>
+      {!contactId ? (
+        <EmptyState
+          title="Choose a customer"
+          description="Select a customer to view their statement."
+        />
+      ) : stmtQ.isPending ? (
+        <LoadingState />
+      ) : stmtQ.isError ? (
+        <ErrorState
+          onRetry={() => void stmtQ.refetch()}
+          title="Could not load statement"
+          description={friendlyAuthError(stmtQ.error)}
+        />
+      ) : (
+        <div className="space-y-6">
+          <div className="overflow-auto">
+            <CustomerStatementSheet
+              statement={stmtQ.data}
+              customerName={customerName}
+              branding={
+                brandingQ.data?.branding ?? mapBranding({ name: company?.name }, null, null)
+              }
+              locale={brandingQ.data?.locale ?? "en-GB"}
+              dateFormat={brandingQ.data?.dateFormat ?? null}
+            />
+          </div>
+          {deliveryQ.data && !deliveryQ.data.emailConfigured ? (
+            <p className="text-xs text-muted-foreground print:hidden">
+              Email sending is not configured. Download the PDF, copy the link, or use your own
+              email program.
+            </p>
+          ) : null}
+          {deliveryQ.data && deliveryQ.data.history.length > 0 ? (
+            <div className="print:hidden">
+              <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Send history
+              </h3>
+              <ul className="divide-y divide-border rounded border border-border text-sm">
+                {deliveryQ.data.history.map((h) => (
+                  <li key={h.id} className="flex flex-wrap justify-between gap-2 px-3 py-2">
+                    <span>
+                      to {h.to_addresses.join(", ")}
+                      {h.error ? <span className="text-destructive"> — {h.error}</span> : null}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {h.status === "sent" ? "Sent" : "Failed"} · {fmt.dateTime(h.created_at)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </div>
+      )}
+      {contactId && stmtQ.data && deliveryQ.data && brandingQ.data ? (
+        <EmailDocumentDialog
+          open={emailOpen}
+          onOpenChange={setEmailOpen}
+          companyId={companyId}
+          kind="customer_statement"
+          id={contactId}
+          title={`Email statement to ${customerName}`}
+          templates={["statement"]}
+          defaultTemplate="statement"
+          defaultTo={
+            ((customersQ.data ?? []) as Array<{ id: string; email?: string | null }>).find(
+              (c) => c.id === contactId,
+            )?.email ?? ""
+          }
+          emailConfigured={deliveryQ.data.emailConfigured}
+          blockedReason={deliveryQ.data.blockedReason}
+          canSend={can("sales.draft")}
+          extra={{
+            ...(stmtQ.data.from ? { from: stmtQ.data.from } : {}),
+            ...(stmtQ.data.to ? { toDate: stmtQ.data.to } : {}),
+          }}
+          preview={(t, message) => {
+            const r = renderEmail(t, {
+              companyName: brandingQ.data.branding.displayName,
+              partyName: customerName,
+              documentLabel: "Statement",
+              documentNumber: null,
+              currency: fmt.baseCurrency,
+              totalMinor: 0,
+              dueMinor: null,
+              issueDate: null,
+              dueDate: null,
+              daysOverdue: 0,
+              link: null,
+              customMessage: message.trim() || null,
+              locale: brandingQ.data.locale,
+              dateFormat: brandingQ.data.dateFormat,
+              bankDetails: brandingQ.data.branding.bankDetails,
+              statement: {
+                from: stmtQ.data.from ?? null,
+                to: stmtQ.data.to ?? null,
+                rows: stmtQ.data.currencies.map((c) => ({
+                  currency: c.currency_code,
+                  openingMinor: c.opening_balance_minor,
+                  closingMinor: c.closing_balance_minor,
+                })),
+              },
+            });
+            return { subject: r.subject, body: r.text };
+          }}
+          onSent={() =>
+            void queryClient.invalidateQueries({
+              queryKey: ["document-delivery", companyId, "customer_statement", contactId],
+            })
+          }
+        />
+      ) : null}
+    </>
+  );
+}

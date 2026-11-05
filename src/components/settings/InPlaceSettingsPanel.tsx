@@ -13,12 +13,12 @@ const Contacts = lazy(() =>
   import("./ContactSettingsContent").then((m) => ({ default: m.ContactSettingsContent })),
 );
 const Branding = lazy(() =>
-  import("@/routes/_authenticated/documents.branding").then((m) => ({
+  import("@/screens/documents.branding").then((m) => ({
     default: m.BrandingWorkspace,
   })),
 );
 const Settings = lazy(() =>
-  import("@/routes/_authenticated/settings").then((m) => ({ default: m.SettingsForCompany })),
+  import("@/screens/settings").then((m) => ({ default: m.SettingsForCompany })),
 );
 const SalesDefaults = lazy(() =>
   import("./SalesDefaultsForm").then((m) => ({ default: m.SalesDefaultsForm })),

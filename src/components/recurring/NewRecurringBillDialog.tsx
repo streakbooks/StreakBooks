@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { NewBill } from "@/routes/_authenticated/purchases/bills.new";
+import { NewBill } from "@/screens/purchases/bills.new";
 
 type Props = {
   companyId: string;

@@ -130,7 +130,7 @@ try {
     "REVOKE ALL ON FUNCTION public.set_organisation_lock_policy(uuid,date,date,date,boolean,text) FROM PUBLIC, anon; " +
       "GRANT EXECUTE ON FUNCTION public.set_organisation_lock_policy(uuid,date,date,date,boolean,text) TO authenticated;",
   );
-  sql(read("supabase/migrations/20261105025000_settings_lock_policy_cas.sql"));
+  sql(read("supabase/migrations/20261105041953_settings_lock_policy_cas.sql"));
   sql(read("tests/integration/settings-lock-policy-cas.sql"));
   console.log(
     "Workflow migration compiled. Atomic rollback, permissions, two-tenant RLS, PO edit/conversion, sales lifecycle, deferrals and real shared posting-engine balance/lock scenarios passed.",

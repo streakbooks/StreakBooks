@@ -37,7 +37,9 @@ export const auditRecentRealisedFx = createServerFn({ method: "GET" })
     const fetched = (rawRows ?? []) as unknown as FxRealisedAuditRow[];
     const hasMore = fetched.length > 50;
     const records = fetched.slice(0, 50);
-    const ids = [...new Set(records.map((record) => record.journal_id).filter((id): id is string => !!id))];
+    const ids = [
+      ...new Set(records.map((record) => record.journal_id).filter((id): id is string => !!id)),
+    ];
     let journals: FxRealisedAuditJournal[] = [];
     let lines: FxRealisedAuditLine[] = [];
     let tags: FxRealisedAuditTag[] = [];

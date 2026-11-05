@@ -6,7 +6,7 @@
 | **Branch foundation** | `feature/basic-global-payroll-batch-1-foundation` |
 | **Batch 7 focus** | Security smoke tests, docs honesty, UX polish (setup checklist, empty states, Feature Manager readiness), unit test coverage |
 | **Production claim** | **Not production-ready** for live payroll until staging smoke passes (migrations alone are insufficient) |
-| **LinkBooks production DB** | Foundation migrations applied **2026-11-05** on the linkbook Supabase project; `/payroll` is reachable — still verify on staging before claiming readiness |
+| **LinkBooks production DB** | Foundation + hours-adjust migrations applied **2026-11-05** on the linkbook Supabase project (`…180000` payments and `…181000` run hours adjust); `/payroll` is reachable — still verify on staging before claiming readiness |
 
 ## Scope (what ships in code)
 

@@ -18,17 +18,17 @@ export function forecastReportDocument(
     value === null ? "Unavailable" : decimalValue({ n: value, d: "100" }, 2);
   return {
     title,
+    basis: result.accountingBasis,
     company: result.company.name,
     currency,
     from: config.start,
     to: monthEnd(addMonthsIso(config.start, config.months - 1)),
     capturedAt: result.capturedAt,
-    subtitle:
-      "Operating forecast versus completed-month actuals · projections are not ledger balances",
+    subtitle: `${result.accountingBasis === "cash" ? "Cash" : "Accrual"} basis · Operating forecast versus completed-month actuals · projections are not ledger balances`,
     header: "",
     footer: "LinkBooks · Operating forecast",
     orientation: "landscape",
-    notes: `Baseline: ${config.baselineFrom} to ${config.baselineTo}. Projections use a complete-month historical average and compound scenario growth. These are operating projections, not cash forecasts. Actuals include completed months only. Variance is actual minus projected; percentage denominators use the absolute projection. Lower expense variance is favourable. Missing actuals and zero-denominator percentages are Unavailable.`,
+    notes: `${result.accountingBasis === "cash" ? "Cash" : "Accrual"} basis is used for both the baseline and completed-month actuals. Baseline: ${config.baselineFrom} to ${config.baselineTo}. Projections use a complete-month historical average and compound scenario growth. These are operating projections, not cash forecasts. Actuals include completed months only. Variance is actual minus projected; percentage denominators use the absolute projection. Lower expense variance is favourable. Missing actuals and zero-denominator percentages are Unavailable.`,
     sections: result.projections.map((output) => ({
       id: output.scenario.id,
       title: output.scenario.name,

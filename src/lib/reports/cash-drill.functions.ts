@@ -1,3 +1,5 @@
+import { reportFiltersSchema } from "./report-filters";
+import { filterCashEntries } from "./cash-report";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -16,6 +18,7 @@ export const getCashProfitLossTransactions = createServerFn({ method: "POST" })
         accountId: z.string().uuid(),
         from: z.string().refine(isReportDate),
         to: z.string().refine(isReportDate),
+        filters: reportFiltersSchema.default(() => reportFiltersSchema.parse({})),
       })
       .parse(input),
   )
@@ -42,10 +45,12 @@ export const getCashProfitLossTransactions = createServerFn({ method: "POST" })
     const { cashProfitLoss } = await import("./cash-profit-loss");
     const input = await loadCashProfitLossInput(context.supabase, facts, data.to);
     const { cashLedger } = await import("./cash-ledger");
-    const entries = (
+    const entries = filterCashEntries(
       data.report === "balance-sheet"
         ? cashLedger(input, { from: "0001-01-01", to: data.to })
-        : cashProfitLoss(input, data)
+        : cashProfitLoss(input, data),
+      input,
+      data.filters,
     ).filter((entry) => entry.accountId === data.accountId);
     if (entries.length > 2000)
       throw new Error("More than 2,000 cash recognition rows; narrow the reporting period");

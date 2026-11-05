@@ -84,6 +84,12 @@ function database() {
     cash_allocation_history: [],
     money_documents: [],
     money_document_credit_uses: [],
+    sales_invoices: [
+      { id: "invoice", company_id: testCompany, posted_journal_id: "invoice-journal" },
+    ],
+    purchase_bills: [{ id: "bill", company_id: testCompany, posted_journal_id: "bill-journal" }],
+    sales_credit_notes: [],
+    purchase_credit_notes: [],
   };
   const calls: Array<{ table: string; key: string; value: unknown }> = [];
   const valueAt = (row: Row, key: string): unknown =>
@@ -119,6 +125,53 @@ function database() {
   return { sb: { from } as unknown as Sb, facts, calls, data };
 }
 describe("cash source adapter", () => {
+  it("resolves real document foreign keys when legacy posted journals have no source_id", async () => {
+    const db = database();
+    for (const line of db.data["journal_lines"]!) {
+      const header = line["journals"] as Row;
+      if (["sales_invoice", "purchase_bill"].includes(String(header["source_type"])))
+        header["source_id"] = null;
+    }
+    const input = await loadCashProfitLossInput(db.sb, db.facts, "2026-11-30");
+    const rows = cashProfitLoss(input, { from: "2026-11-01", to: "2026-11-30" });
+    expect(rows.reduce((sum, row) => sum + row.credit - row.debit, 0n)).toBe(1000n);
+    expect(rows.map((row) => row.sourceId)).toEqual(["invoice", "bill"]);
+    expect(db.data["journal_lines"]![0]!["journals"]).toHaveProperty("source_id", null);
+  });
+  it("keeps a receipt applied to a future-dated posted invoice as an advance until that invoice date", async () => {
+    const db = database();
+    db.data["sales_invoices"]![0]!["invoice_date"] = "2026-12-10";
+    for (const line of db.data["journal_lines"]!) {
+      const header = line["journals"] as Row;
+      if (header["id"] === "invoice-journal") header["journal_date"] = "2026-12-10";
+    }
+    const november = await loadCashProfitLossInput(db.sb, db.facts, "2026-11-30");
+    expect(
+      cashProfitLoss(november, { from: "2026-11-01", to: "2026-11-30" }).reduce(
+        (sum, row) => sum + row.credit - row.debit,
+        0n,
+      ),
+    ).toBe(-4000n);
+    const december = await loadCashProfitLossInput(db.sb, db.facts, "2026-12-31");
+    expect(
+      cashProfitLoss(december, { from: "2026-12-01", to: "2026-12-31" }).reduce(
+        (sum, row) => sum + row.credit - row.debit,
+        0n,
+      ),
+    ).toBe(5000n);
+  });
+  it("rejects cross-company and contradictory document journal mappings", async () => {
+    const db = database();
+    db.data["sales_invoices"]![0]!["posted_journal_id"] = "bill-journal";
+    const input = await loadCashProfitLossInput(db.sb, db.facts, "2026-11-30");
+    expect(() => cashProfitLoss(input, { from: "2026-11-01", to: "2026-11-30" })).toThrow(
+      "does not match",
+    );
+    input.documentJournalLinks![0]!.companyId = "other";
+    expect(() => cashProfitLoss(input, { from: "2026-11-01", to: "2026-11-30" })).toThrow(
+      "Cross-company",
+    );
+  });
   it("pages actual journal/allocation shapes, scopes every table to company, and computes cash P&L", async () => {
     const db = database();
     db.data["sales_receipts"]!.push({
@@ -187,6 +240,52 @@ describe("cash source adapter", () => {
     await expect(loadCashProfitLossInput(db.sb, db.facts, "2026-11-30")).rejects.toThrow(
       "reallocation recognition history",
     );
+  });
+  it("ignores archived compensation for supplier payments and refunds that never posted", async () => {
+    const db = database();
+    const draftPayment = {
+      ...db.data["supplier_payments"]![0],
+      id: "draft-payment",
+      posted_journal_id: null,
+    };
+    db.data["supplier_payments"]!.push(draftPayment);
+    db.data["money_documents"]!.push({
+      id: "failed-refund",
+      company_id: testCompany,
+      posted_journal_id: null,
+    });
+    db.data["cash_allocation_history"] = [
+      {
+        id: "failed-payment-split",
+        company_id: testCompany,
+        source_table: "supplier_payment_allocations",
+        allocation_id: "draft-allocation",
+        operation: "DELETE",
+        source_row: {
+          ...db.data["supplier_payment_allocations"]![0],
+          id: "draft-allocation",
+          payment_id: "draft-payment",
+        },
+      },
+      {
+        id: "failed-refund-use",
+        company_id: testCompany,
+        source_table: "money_document_credit_uses",
+        allocation_id: "failed-use",
+        operation: "DELETE",
+        source_row: { id: "failed-use", company_id: testCompany, document_id: "failed-refund" },
+      },
+    ];
+    const input = await loadCashProfitLossInput(db.sb, db.facts, "2026-11-30");
+    expect(input.payments).toHaveLength(2);
+    expect(input.refunds).toEqual([]);
+    expect(input.allocations).toHaveLength(2);
+    expect(
+      cashProfitLoss(input, { from: "2026-11-01", to: "2026-11-30" }).reduce(
+        (sum, row) => sum + row.credit - row.debit,
+        0n,
+      ),
+    ).toBe(1000n);
   });
   it.each(["profit-and-loss", "balance-sheet"] as const)(
     "renders frozen %s cash delivery facts with the same engine as preview and PDF export",

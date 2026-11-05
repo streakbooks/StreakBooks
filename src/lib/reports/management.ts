@@ -22,6 +22,7 @@ export function managementMetrics(raw: unknown) {
   const ratio = (a: bigint, b: bigint) => (b > 0n ? roundDiv(a * 10000n, b).toString() : null);
   return {
     company: f.company,
+    accountingBasis: f.basis ?? "accrual",
     from: f.from,
     to: f.to,
     capturedAt: f.capturedAt,

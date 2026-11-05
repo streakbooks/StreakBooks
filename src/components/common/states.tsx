@@ -1,3 +1,5 @@
+import { cashClassificationExceptions } from "@/lib/reports/cash-classification";
+import { CashClassificationErrorState } from "@/components/accounting/CashClassificationErrorState";
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { AlertTriangle, ChevronRight, Inbox, RotateCw } from "lucide-react";
@@ -251,6 +253,9 @@ export function ErrorState({
   onRetry?: () => void;
   compact?: boolean;
 }) {
+  const exceptions = cashClassificationExceptions(description);
+  if (exceptions.length)
+    return <CashClassificationErrorState exceptions={exceptions} onRetry={onRetry} />;
   return (
     <div
       role="alert"

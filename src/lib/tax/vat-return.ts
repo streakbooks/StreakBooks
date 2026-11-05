@@ -12,6 +12,8 @@ import type { PostJournalInput } from "@/lib/accounting/posting-engine";
 export type TaxSide = "sales" | "purchases";
 
 export type TaxFact = {
+  /** Original document and the actual recognition event for reconciled drill-down. */
+  source?: { type: string; id: string; lineId: string; date: string; settlementId?: string };
   side: TaxSide;
   /** +1 for invoices, bills and expenses; -1 for credit notes. */
   sign: 1 | -1;

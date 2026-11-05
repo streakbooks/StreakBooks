@@ -119,10 +119,6 @@ export function StandardStatementView({
               basis={settings.basis}
               report={report}
               onChange={(basis) => {
-                if (basis === "cash" && settings.filters.clauses.length) {
-                  toast.error("Clear posted-line filters before switching to cash basis.");
-                  return;
-                }
                 ctx.setSearch({ basis, settings: encodeStandardSettings({ ...settings, basis }) });
               }}
             />
@@ -240,6 +236,7 @@ export function StandardStatementView({
           key={`${ctx.companyId}-${cashDrill.accountId}-${cashDrill.from}-${cashDrill.to}`}
           companyId={ctx.companyId}
           {...cashDrill}
+          filters={settings.filters}
           onClose={() => setCashDrill(null)}
         />
       )}

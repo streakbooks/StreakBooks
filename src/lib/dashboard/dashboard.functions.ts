@@ -13,6 +13,7 @@ import {
 } from "@/lib/accounting/fiscal-year";
 import {
   accountMap,
+  aggregateLines,
   balancesToLines,
   fetchAccountBalanceAsOf,
   fetchLedgerBalances,
@@ -21,6 +22,9 @@ import {
   loadPostedLines,
   type Sb,
 } from "@/lib/accounting/ledger-data";
+import { resolveReportingBasis } from "@/lib/reports/accounting-basis.server";
+import { loadCashReportLines } from "@/lib/reports/cash-report.server";
+import { parseAccountingBasis, type AccountingBasis } from "@/lib/reports/accounting-basis";
 import { buildProfitAndLoss } from "@/lib/accounting/reporting";
 import { billOutstanding } from "@/lib/purchases/line-math";
 import { invoiceOutstanding } from "@/lib/sales/line-helpers";
@@ -97,10 +101,14 @@ async function openDocs(
  */
 export const getDashboardSnapshot = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; asOf?: string }) => {
+  .inputValidator((input: { companyId: string; asOf?: string; basis?: AccountingBasis }) => {
     if (input.asOf !== undefined && !ISO.test(input.asOf))
       throw new Error("asOf must be YYYY-MM-DD");
-    return { companyId: assertUuid(input.companyId), asOf: input.asOf ?? todayIso() };
+    return {
+      companyId: assertUuid(input.companyId),
+      asOf: input.asOf ?? todayIso(),
+      basis: parseAccountingBasis(input.basis),
+    };
   })
   .handler(async ({ data, context }) => {
     const sb = context.supabase;
@@ -120,9 +128,10 @@ export const getDashboardSnapshot = createServerFn({ method: "GET" })
       ),
     );
     const asOf = data.asOf;
-    const [meta, accounts] = await Promise.all([
+    const [meta, accounts, accountingBasis] = await Promise.all([
       loadCompanyMeta(sb, data.companyId),
       loadAccountMetas(sb, data.companyId),
+      resolveReportingBasis(sb, data.companyId, data.basis),
     ]);
     const base = meta.baseCurrency;
     const byId = accountMap(accounts);
@@ -251,13 +260,22 @@ export const getDashboardSnapshot = createServerFn({ method: "GET" })
       out_minor: Number(m.out_minor),
     }));
 
+    // One cash ledger population supplies profit comparisons and watchlist balances.
+    const cashLines =
+      accountingBasis === "cash"
+        ? await loadCashReportLines(sb, data.companyId, "0001-01-01", asOf)
+        : null;
     // Net profit this financial year vs last (year-end closing journals excluded)
     const profitFor = async (from: string, to: string) => {
-      const bal = await fetchLedgerBalances(sb, data.companyId, base, {
-        from,
-        to,
-        excludeYearEndClose: true,
-      });
+      const bal = cashLines
+        ? aggregateLines(
+            cashLines.filter((line) => line.journal_date >= from && line.journal_date <= to),
+          )
+        : await fetchLedgerBalances(sb, data.companyId, base, {
+            from,
+            to,
+            excludeYearEndClose: true,
+          });
       const lines = balancesToLines(bal, byId, to, base).filter(
         (l) => l.account_type === "income" || l.account_type === "expense",
       );
@@ -314,12 +332,19 @@ export const getDashboardSnapshot = createServerFn({ method: "GET" })
     const fyBalance = new Map(
       thisFy.balances.map((b) => [b.account_id, b.debit_minor - b.credit_minor]),
     );
+    const cashBalances = cashLines
+      ? new Map(
+          aggregateLines(cashLines).map((b) => [b.account_id, b.debit_minor - b.credit_minor]),
+        )
+      : null;
     const watchlist = await Promise.all(
       watch.map(async (a) => {
         const isPl = a.account_type === "income" || a.account_type === "expense";
         const net = isPl
           ? (fyBalance.get(a.id) ?? 0n)
-          : await fetchAccountBalanceAsOf(sb, data.companyId, base, a.id, asOf);
+          : cashBalances
+            ? (cashBalances.get(a.id) ?? 0n)
+            : await fetchAccountBalanceAsOf(sb, data.companyId, base, a.id, asOf);
         const normalDebit = a.account_type === "asset" || a.account_type === "expense";
         return {
           id: a.id,
@@ -362,6 +387,7 @@ export const getDashboardSnapshot = createServerFn({ method: "GET" })
 
     return {
       asOf,
+      accountingBasis,
       currency: base,
       financialYear: {
         start: fy.start,

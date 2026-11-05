@@ -1,3 +1,6 @@
+import { resolveReportingBasis } from "@/lib/reports/accounting-basis.server";
+import { parseAccountingBasis, type AccountingBasis } from "@/lib/reports/accounting-basis";
+import { loadCashReportLines } from "@/lib/reports/cash-report.server";
 import { createServerFn } from "@tanstack/react-start";
 import { prepareBudgetImportCsv } from "@/lib/imports/budget-import";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -100,7 +103,31 @@ async function monthlyActivity(
   companyId: string,
   from: string,
   to: string,
+  basis: AccountingBasis = "accrual",
 ): Promise<MonthActivity[]> {
+  if (basis === "cash") {
+    const lines = await loadCashReportLines(sb, companyId, from, to);
+    const months = new Map<
+      string,
+      { accountId: string; month: string; debit: bigint; credit: bigint }
+    >();
+    for (const line of lines) {
+      if (line.account_type !== "income" && line.account_type !== "expense") continue;
+      const month = monthStart(line.journal_date);
+      const key = `${line.account_id}:${month}`;
+      const row = months.get(key) ?? { accountId: line.account_id, month, debit: 0n, credit: 0n };
+      row.debit += BigInt(line.debit_minor);
+      row.credit += BigInt(line.credit_minor);
+      months.set(key, row);
+    }
+    return [...months.values()].map((row) => {
+      const debitMinor = Number(row.debit),
+        creditMinor = Number(row.credit);
+      if (!Number.isSafeInteger(debitMinor) || !Number.isSafeInteger(creditMinor))
+        throw new Error("Budget actuals exceed the supported amount range");
+      return { accountId: row.accountId, month: row.month, debitMinor, creditMinor };
+    });
+  }
   const rows = await callRpc<
     Array<{ account_id: string; month: string; debit_minor: number; credit_minor: number }>
   >(
@@ -356,19 +383,23 @@ export const deleteBudget = createServerFn({ method: "POST" })
  */
 export const getYearActuals = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; fiscalYearStart: string }) => ({
-    companyId: companyIdOf(input),
-    fiscalYearStart: isoDate(input.fiscalYearStart, "Fiscal year start"),
-  }))
+  .inputValidator(
+    (input: { companyId: string; fiscalYearStart: string; basis?: AccountingBasis }) => ({
+      companyId: companyIdOf(input),
+      fiscalYearStart: isoDate(input.fiscalYearStart, "Fiscal year start"),
+      basis: parseAccountingBasis(input.basis),
+    }),
+  )
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const sb = context.supabase as unknown as Sb;
     const start = monthStart(data.fiscalYearStart);
     const months = fiscalMonthStarts(start);
     const end = addDaysIso(addMonthsIso(start, 12), -1);
+    const accountingBasis = await resolveReportingBasis(sb, data.companyId, data.basis);
     const [accounts, activity] = await Promise.all([
       budgetAccounts(sb, data.companyId),
-      monthlyActivity(sb, data.companyId, start, end),
+      monthlyActivity(sb, data.companyId, start, end, accountingBasis),
     ]);
     const kindOf = new Map(accounts.map((a) => [a.id, a.kind]));
     const out = new Map<string, number[]>();
@@ -382,6 +413,7 @@ export const getYearActuals = createServerFn({ method: "GET" })
       out.set(a.accountId, row);
     }
     return {
+      accountingBasis,
       rows: [...out.entries()]
         .map(([accountId, m]) => ({ accountId, months: m }))
         .filter((r) => r.months.some((v) => v !== 0)),
@@ -392,12 +424,21 @@ const VIEWS: ReportView[] = ["month", "quarter", "ytd"];
 
 export const getBudgetVsActual = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; budgetId: string; view?: string; to?: string }) => ({
-    companyId: companyIdOf(input),
-    budgetId: assertUuid(input?.budgetId, "budget"),
-    view: (VIEWS.includes(input?.view as ReportView) ? input.view : "month") as ReportView,
-    to: input?.to ? isoDate(input.to, "To") : todayIso(),
-  }))
+  .inputValidator(
+    (input: {
+      companyId: string;
+      budgetId: string;
+      view?: string;
+      to?: string;
+      basis?: AccountingBasis;
+    }) => ({
+      companyId: companyIdOf(input),
+      budgetId: assertUuid(input?.budgetId, "budget"),
+      basis: parseAccountingBasis(input.basis),
+      view: (VIEWS.includes(input?.view as ReportView) ? input.view : "month") as ReportView,
+      to: input?.to ? isoDate(input.to, "To") : todayIso(),
+    }),
+  )
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const sb = context.supabase as unknown as Sb;
@@ -407,6 +448,7 @@ export const getBudgetVsActual = createServerFn({ method: "GET" })
       loadBudgetLines(sb, data.budgetId),
       budgetAccounts(sb, data.companyId),
     ]);
+    const accountingBasis = await resolveReportingBasis(sb, data.companyId, data.basis);
     const months = fiscalMonthStarts(head.fiscal_year_start);
     const yearEnd = addDaysIso(addMonthsIso(monthStart(head.fiscal_year_start), 12), -1);
     // Clamp the selected date into the budget's year so the report always has a sensible range.
@@ -416,6 +458,7 @@ export const getBudgetVsActual = createServerFn({ method: "GET" })
     if (columns.length === 0) {
       return {
         currency: meta.baseCurrency,
+        accountingBasis,
         budget: head,
         through,
         view: data.view,
@@ -424,7 +467,13 @@ export const getBudgetVsActual = createServerFn({ method: "GET" })
         unbudgetedActualsMinor: 0,
       };
     }
-    const activity = await monthlyActivity(sb, data.companyId, months[0]!, through);
+    const activity = await monthlyActivity(
+      sb,
+      data.companyId,
+      months[0]!,
+      through,
+      accountingBasis,
+    );
     const report = buildBudgetVsActual({ accounts, budget: lines, actuals: activity, columns });
     // Actuals on accounts that are archived or no longer postable are not hidden: surface the total.
     const known = new Set(accounts.map((a) => a.id));
@@ -442,6 +491,7 @@ export const getBudgetVsActual = createServerFn({ method: "GET" })
     }
     return {
       currency: meta.baseCurrency,
+      accountingBasis,
       budget: head,
       through,
       view: data.view,

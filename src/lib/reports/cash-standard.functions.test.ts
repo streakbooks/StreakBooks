@@ -162,17 +162,16 @@ describe("server-integrated cash P&L and downloads", () => {
     });
     expect(BigInt(drill.debit) - BigInt(drill.credit)).toBe(1200n);
   });
-  it("rejects accrual-only filters explicitly", async () => {
-    await expect(
-      execute<ReportDocument>(getStandardStatement, {
-        ...data,
-        settings: standardSettingsSchema.parse({
-          basis: "cash",
-          filters: { clauses: [{ field: "memo", op: "contains", values: ["test"] }] },
-        }),
+  it("applies cash filters to recognized rows before aggregation", async () => {
+    const doc = await execute<ReportDocument>(getStandardStatement, {
+      ...data,
+      settings: standardSettingsSchema.parse({
+        basis: "cash",
+        filters: { clauses: [{ field: "account_id", op: "eq", values: [revenueId] }] },
       }),
-    ).rejects.toThrow("Clear them");
-    expect(loadCashProfitLossInput).not.toHaveBeenCalled();
+    });
+    expect(doc.summary?.find((row) => row.label === "Net profit")?.value).toBe("50.00");
+    expect(loadCashProfitLossInput).toHaveBeenCalled();
   });
   it("denies financial access before loading settlement data", async () => {
     vi.mocked(assertCompanyPermission).mockRejectedValue(new Error("Denied"));

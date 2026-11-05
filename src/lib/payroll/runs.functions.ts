@@ -517,6 +517,63 @@ export const approvePayrollRun = createServerFn({ method: "POST" })
     return normaliseRun(saved);
   });
 
+export const adjustPayrollRunEmployee = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      runId: string;
+      employeeId: string;
+      lines: Array<{
+        componentTypeId: string;
+        amountMinor: number;
+        quantityMicro?: number | null;
+        rateMinor?: number | null;
+        percentageBps?: number | null;
+      }>;
+    }) => ({
+      companyId: companyIdOf(input),
+      runId: input.runId,
+      employeeId: input.employeeId,
+      lines: (input.lines ?? []).map((line) => ({
+        componentTypeId: line.componentTypeId,
+        amountMinor: Number(line.amountMinor),
+        quantityMicro: line.quantityMicro ?? null,
+        rateMinor: line.rateMinor ?? null,
+        percentageBps: line.percentageBps ?? null,
+      })),
+    }),
+  )
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "payroll.run.prepare");
+    for (const line of data.lines) {
+      if (!Number.isInteger(line.amountMinor)) {
+        throw new Error("Line amounts must be whole minor units.");
+      }
+    }
+    const payload = {
+      lines: data.lines.map((line) => ({
+        component_type_id: line.componentTypeId,
+        amount_minor: line.amountMinor,
+        quantity_micro: line.quantityMicro,
+        rate_minor: line.rateMinor,
+        percentage_bps: line.percentageBps,
+      })),
+    };
+    await callRpc<unknown>(
+      context.supabase,
+      "adjust_payroll_run_employee",
+      {
+        _company_id: data.companyId,
+        _run_id: data.runId,
+        _employee_id: data.employeeId,
+        _payload: payload,
+      },
+      PAYROLL_RUNS_MIGRATION,
+    );
+    return { ok: true as const };
+  });
+
 export const voidPayrollRun = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { companyId: string; runId: string }) => ({

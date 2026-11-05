@@ -15,6 +15,9 @@
 - Salary structures and effective-dated assignments.
 - Pay runs (calculate → review → approve), payslip snapshots, ledger accrual posting.
 - Net-pay payments with payslip allocations and generic bank CSV export (manual upload only).
+- Payment recording uses major-unit money inputs (same pattern as purchases); allocations are validated before submit.
+- Reverse posted accruals (when no net pay has been paid) and reverse posted payroll payments.
+- Per-employee manual component adjustments on draft/calculated/reviewed runs before recalculation.
 - Operational payroll reports for approved/posted runs.
 
 ## Explicit non-goals / disclaimer

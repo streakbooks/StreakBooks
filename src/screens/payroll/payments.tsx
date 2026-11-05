@@ -9,11 +9,14 @@ import { useFormat } from "@/hooks/use-format";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { buildGenericPayrollBankCsv } from "@/lib/payroll/payroll-bank-export";
+import { validatePayrollPaymentAllocations } from "@/lib/payroll/payroll-payment-allocation";
 import {
   exportPayrollBankCsvRows,
   listPayrollPayments,
   recordPayrollPayment,
+  reversePayrollPayment,
 } from "@/lib/payroll/payments.functions";
+import { parseMinorOrThrow, tryParseMinor } from "@/lib/purchases/money-input";
 import { listPayrollPayslips } from "@/lib/payroll/runs.functions";
 import { listPaymentAccounts } from "@/lib/purchases/purchases.functions";
 import type { PayslipSnapshot } from "@/lib/payroll/payslip-snapshot";
@@ -23,6 +26,15 @@ import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/c
 import { TableCard } from "@/components/common/table-card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
@@ -74,11 +86,16 @@ export function PayrollPaymentsPage() {
   const [paymentDate, setPaymentDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [paymentMethod, setPaymentMethod] = useState("bank_transfer");
   const [clearingAccountId, setClearingAccountId] = useState("");
-  const [amountMinor, setAmountMinor] = useState("");
+  const [amountMajor, setAmountMajor] = useState("");
   const [reference, setReference] = useState("");
   const [memo, setMemo] = useState("");
   const [alloc, setAlloc] = useState<Record<string, string>>({});
-  const [idempotencyKey] = useState(() => `pr-pay-${crypto.randomUUID()}`);
+  const [idempotencyKey, setIdempotencyKey] = useState(() => `pr-pay-${crypto.randomUUID()}`);
+  const [reverseTarget, setReverseTarget] = useState<{ id: string; currency: string } | null>(null);
+  const [reversalDate, setReversalDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const reversePayment = useServerFn(reversePayrollPayment);
+
+  const payCurrency = (company?.base_currency ?? "GBP").toUpperCase();
 
   const paymentsQ = useQuery({
     queryKey: ["payroll-payments", company?.id],
@@ -152,19 +169,35 @@ export function PayrollPaymentsPage() {
 
   const recordMut = useMutation({
     mutationFn: () => {
-      const amount = Number(amountMinor);
-      if (!Number.isInteger(amount) || amount <= 0) {
-        throw new Error("Enter the payment amount in minor units (whole pence/cents).");
-      }
+      const amountMinor = Number(parseMinorOrThrow(amountMajor, payCurrency, "Payment amount"));
       const allocations = Object.entries(alloc)
-        .map(([payslipId, v]) => ({ payslipId, amountMinor: Number(v) }))
-        .filter((a) => Number.isInteger(a.amountMinor) && a.amountMinor > 0);
+        .map(([payslipId, v]) => {
+          const parsed = tryParseMinor(v, payCurrency);
+          if (parsed === null || parsed <= 0n) return null;
+          return { payslipId, amountMinor: Number(parsed) };
+        })
+        .filter((a): a is { payslipId: string; amountMinor: number } => a !== null);
+
+      const validated = validatePayrollPaymentAllocations(
+        BigInt(amountMinor),
+        allocations.map((a) => ({
+          payslipId: a.payslipId,
+          amountMinor: BigInt(a.amountMinor),
+        })),
+        openPayslips.map((row) => ({
+          payslipId: row.payslip.id,
+          netMinor: BigInt(row.net),
+          paidMinor: BigInt(row.payslip.amount_paid_minor),
+        })),
+      );
+      if (!validated.ok) throw new Error(validated.error);
+
       return savePayment({
         data: {
           companyId: company!.id,
           paymentDate,
           paymentMethod,
-          amountMinor: amount,
+          amountMinor,
           clearingAccountId,
           reference,
           memo,
@@ -177,13 +210,38 @@ export function PayrollPaymentsPage() {
       toast.success("Payroll payment recorded");
       setRecordOpen(false);
       setAlloc({});
-      setAmountMinor("");
+      setAmountMajor("");
+      setIdempotencyKey(`pr-pay-${crypto.randomUUID()}`);
       queryClient.invalidateQueries({ queryKey: ["payroll-payments"] });
       queryClient.invalidateQueries({ queryKey: ["payroll-payslips"] });
       queryClient.invalidateQueries({ queryKey: ["payroll-run"] });
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
+
+  const reverseMut = useMutation({
+    mutationFn: () =>
+      reversePayment({
+        data: {
+          companyId: company!.id,
+          paymentId: reverseTarget!.id,
+          reversalDate,
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Payment reversed");
+      setReverseTarget(null);
+      queryClient.invalidateQueries({ queryKey: ["payroll-payments"] });
+      queryClient.invalidateQueries({ queryKey: ["payroll-payslips"] });
+      queryClient.invalidateQueries({ queryKey: ["payroll-run"] });
+    },
+    onError: (e) => toast.error(friendlyAuthError(e)),
+  });
+
+  const openRecordDialog = () => {
+    setIdempotencyKey(`pr-pay-${crypto.randomUUID()}`);
+    setRecordOpen(true);
+  };
 
   if (isPending) return <LoadingState />;
   if (!company) {
@@ -238,7 +296,7 @@ export function PayrollPaymentsPage() {
                 >
                   Generic bank CSV
                 </Button>
-                <Button size="sm" onClick={() => setRecordOpen(true)}>
+                <Button size="sm" onClick={openRecordDialog}>
                   Record payment
                 </Button>
               </>
@@ -264,7 +322,7 @@ export function PayrollPaymentsPage() {
             description="Post a payroll run, then record net-pay payments here."
             action={
               canPay ? (
-                <Button size="sm" onClick={() => setRecordOpen(true)}>
+                <Button size="sm" onClick={openRecordDialog}>
                   Record payment
                 </Button>
               ) : (
@@ -283,6 +341,7 @@ export function PayrollPaymentsPage() {
                 <TableHead className="text-right">Amount</TableHead>
                 <TableHead>Reference</TableHead>
                 <TableHead>Status</TableHead>
+                {canPay ? <TableHead className="w-[100px]" /> : null}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -295,6 +354,22 @@ export function PayrollPaymentsPage() {
                   </TableCell>
                   <TableCell className="text-muted-foreground">{p.reference ?? "—"}</TableCell>
                   <TableCell>{p.status === "reversed" ? "Reversed" : "Posted"}</TableCell>
+                  {canPay ? (
+                    <TableCell>
+                      {p.status === "posted" ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setReversalDate(new Date().toISOString().slice(0, 10));
+                            setReverseTarget({ id: p.id, currency: p.currency });
+                          }}
+                        >
+                          Reverse
+                        </Button>
+                      ) : null}
+                    </TableCell>
+                  ) : null}
                 </TableRow>
               ))}
             </TableBody>
@@ -360,13 +435,13 @@ export function PayrollPaymentsPage() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="pr-pay-amount">Amount (minor units)</Label>
+              <Label htmlFor="pr-pay-amount">Amount</Label>
               <Input
                 id="pr-pay-amount"
-                inputMode="numeric"
-                value={amountMinor}
-                onChange={(e) => setAmountMinor(e.target.value.replace(/\D/g, ""))}
-                placeholder="e.g. 250000 for £2,500.00"
+                inputMode="decimal"
+                value={amountMajor}
+                onChange={(e) => setAmountMajor(e.target.value)}
+                placeholder={`e.g. 2,500.00 ${payCurrency}`}
               />
             </div>
             <div className="grid gap-2">
@@ -401,13 +476,13 @@ export function PayrollPaymentsPage() {
                         </span>
                       </span>
                       <Input
-                        inputMode="numeric"
-                        placeholder="Allocation minor units"
+                        inputMode="decimal"
+                        placeholder={`Allocation (${row.run.currency})`}
                         value={alloc[row.payslip.id] ?? ""}
                         onChange={(e) =>
                           setAlloc((prev) => ({
                             ...prev,
-                            [row.payslip.id]: e.target.value.replace(/\D/g, ""),
+                            [row.payslip.id]: e.target.value,
                           }))
                         }
                       />
@@ -430,6 +505,40 @@ export function PayrollPaymentsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={reverseTarget !== null}
+        onOpenChange={(open) => !open && setReverseTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reverse payroll payment?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This posts a reversing journal entry and restores payslip payment balances. The
+              payment row stays on record as reversed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="grid gap-2 py-2">
+            <Label htmlFor="pr-reverse-date">Reversal date</Label>
+            <Input
+              id="pr-reverse-date"
+              type="date"
+              value={reversalDate}
+              onChange={(e) => setReversalDate(e.target.value)}
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={reverseMut.isPending}>Cancel</AlertDialogCancel>
+            <Button
+              variant="destructive"
+              disabled={reverseMut.isPending || !reversalDate}
+              onClick={() => reverseMut.mutate()}
+            >
+              Reverse payment
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

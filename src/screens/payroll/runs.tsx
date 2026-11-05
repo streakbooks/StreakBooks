@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -9,6 +9,7 @@ import { useCanDo } from "@/hooks/use-can";
 import { useFormat } from "@/hooks/use-format";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { getPayrollSettingsPage } from "@/lib/payroll/payroll.functions";
+import { suggestNextRunPeriod } from "@/lib/payroll/suggest-run-period";
 import { createPayrollRun, listPayrollRuns } from "@/lib/payroll/runs.functions";
 import { PAYROLL_RUN_STATUSES, type PayrollRunStatus } from "@/lib/payroll/types";
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
@@ -118,6 +119,24 @@ export function PayrollRunsPage() {
     },
     onError: (err) => toast.error(friendlyAuthError(err)),
   });
+
+  useEffect(() => {
+    if (!createOpen || !scheduleId) return;
+    const settings = settingsQ.data;
+    const list = listQ.data;
+    if (!settings || !list?.available) return;
+    const schedule = settings.schedules.find((s) => s.is_active && s.id === scheduleId);
+    if (!schedule) return;
+    const suggested = suggestNextRunPeriod({
+      schedule,
+      payrollStartDate: settings.settings?.payroll_start_date ?? null,
+      priorRuns: list.runs,
+    });
+    if (!suggested) return;
+    setPeriodStart(suggested.periodStart);
+    setPeriodEnd(suggested.periodEnd);
+    setPaymentDate(suggested.paymentDate);
+  }, [createOpen, scheduleId, settingsQ.data, listQ.data]);
 
   if (isPending) return <LoadingState />;
   if (!company) {

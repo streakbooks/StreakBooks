@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { callRpc, companyIdOf, isMissingRelation, num } from "@/lib/planning/rpc";
+import { validatePayrollPaymentAllocations } from "@/lib/payroll/payroll-payment-allocation";
 import type { PayrollPaymentMethod } from "@/lib/payroll/types";
 import { PAYROLL_RUNS_MIGRATION } from "@/lib/payroll/runs.functions";
 
@@ -179,6 +180,57 @@ export const recordPayrollPayment = createServerFn({ method: "POST" })
       }
     }
 
+    const paymentAmountMinor = BigInt(data.amountMinor);
+    const allocationInputs = data.allocations.map((a) => ({
+      payslipId: a.payslipId,
+      amountMinor: BigInt(a.amountMinor),
+    }));
+
+    if (allocationInputs.length > 0) {
+      const ids = data.allocations.map((a) => a.payslipId);
+      const slipRes = await context.supabase
+        .from("payroll_payslips" as never)
+        .select("id, amount_paid_minor, run_employee_id" as never)
+        .eq("company_id" as never, data.companyId as never)
+        .in("id" as never, ids as never);
+      if (slipRes.error) throw new Error(slipRes.error.message);
+
+      const runEmpIds = (slipRes.data ?? []).map(
+        (row) => (row as { run_employee_id: string }).run_employee_id,
+      );
+      const reRes = await context.supabase
+        .from("payroll_run_employees" as never)
+        .select("id, net_minor" as never)
+        .eq("company_id" as never, data.companyId as never)
+        .in("id" as never, runEmpIds as never);
+      if (reRes.error) throw new Error(reRes.error.message);
+      const netByRunEmp = new Map(
+        (reRes.data ?? []).map((row) => {
+          const r = row as { id: string; net_minor: number };
+          return [r.id, BigInt(r.net_minor)] as const;
+        }),
+      );
+
+      const payslipsForValidation = (slipRes.data ?? []).map((row) => {
+        const r = row as { id: string; amount_paid_minor: number; run_employee_id: string };
+        return {
+          payslipId: r.id,
+          netMinor: netByRunEmp.get(r.run_employee_id) ?? 0n,
+          paidMinor: BigInt(r.amount_paid_minor),
+        };
+      });
+
+      const validated = validatePayrollPaymentAllocations(
+        paymentAmountMinor,
+        allocationInputs,
+        payslipsForValidation,
+      );
+      if (!validated.ok) throw new Error(validated.error);
+    } else {
+      const validated = validatePayrollPaymentAllocations(paymentAmountMinor, [], []);
+      if (!validated.ok) throw new Error(validated.error);
+    }
+
     const result = await callRpc<unknown>(
       context.supabase,
       "record_payroll_payment",
@@ -323,4 +375,64 @@ export const postPayrollRun = createServerFn({ method: "POST" })
     );
     const row = asRecord(saved);
     return { id: str(pick(row, "id")), status: str(pick(row, "status")) };
+  });
+
+export const reversePayrollRunAccrual = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; runId: string; reversalDate: string }) => ({
+    companyId: companyIdOf(input),
+    runId: input.runId,
+    reversalDate: input.reversalDate.trim(),
+  }))
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "payroll.run.post");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(data.reversalDate)) {
+      throw new Error("Reversal date must be YYYY-MM-DD.");
+    }
+    const saved = await callRpc<unknown>(
+      context.supabase,
+      "reverse_payroll_run_accrual",
+      {
+        _company_id: data.companyId,
+        _run_id: data.runId,
+        _reversal_date: data.reversalDate,
+      },
+      PAYROLL_PAYMENTS_MIGRATION,
+    );
+    const payload = asRecord(saved);
+    const run = asRecord(pick(payload, "run"));
+    return {
+      runId: str(pick(run, "id")),
+      status: str(pick(run, "status")),
+      reversalJournalId: strOrNull(pick(payload, "reversal_journal_id")),
+    };
+  });
+
+export const reversePayrollPayment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; paymentId: string; reversalDate: string }) => ({
+    companyId: companyIdOf(input),
+    paymentId: input.paymentId,
+    reversalDate: input.reversalDate.trim(),
+  }))
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "payroll.pay");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(data.reversalDate)) {
+      throw new Error("Reversal date must be YYYY-MM-DD.");
+    }
+    const saved = await callRpc<unknown>(
+      context.supabase,
+      "reverse_payroll_payment",
+      {
+        _company_id: data.companyId,
+        _payment_id: data.paymentId,
+        _reversal_date: data.reversalDate,
+      },
+      PAYROLL_PAYMENTS_MIGRATION,
+    );
+    const payload = asRecord(saved);
+    return {
+      paymentId: str(pick(payload, "payment_id")),
+      reversalJournalId: strOrNull(pick(payload, "reversal_journal_id")),
+    };
   });

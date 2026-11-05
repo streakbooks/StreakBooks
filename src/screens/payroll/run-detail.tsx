@@ -8,6 +8,7 @@ import { useCanDo } from "@/hooks/use-can";
 import { useFormat } from "@/hooks/use-format";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import {
+  adjustPayrollRunEmployee,
   approvePayrollRun,
   calculatePayrollRunFn,
   getPayrollRunPage,
@@ -15,8 +16,19 @@ import {
   recalculatePayrollRunFn,
   voidPayrollRun,
 } from "@/lib/payroll/runs.functions";
-import { listPayrollRunJournals, postPayrollRun } from "@/lib/payroll/payments.functions";
-import type { PayrollRunPage, PayrollRunStatus } from "@/lib/payroll/types";
+import { getPayrollSettingsPage } from "@/lib/payroll/payroll.functions";
+import {
+  listPayrollRunJournals,
+  postPayrollRun,
+  reversePayrollRunAccrual,
+} from "@/lib/payroll/payments.functions";
+import type {
+  PayrollComponentTypeRow,
+  PayrollRunPage,
+  PayrollRunStatus,
+} from "@/lib/payroll/types";
+import { fromMinorUnits } from "@/lib/accounting/money";
+import { parseMinorOrThrow } from "@/lib/purchases/money-input";
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
@@ -24,6 +36,25 @@ import { TableCard } from "@/components/common/table-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -63,6 +94,20 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
   const approveRun = useServerFn(approvePayrollRun);
   const voidRun = useServerFn(voidPayrollRun);
   const postRun = useServerFn(postPayrollRun);
+  const reverseAccrual = useServerFn(reversePayrollRunAccrual);
+  const adjustEmployee = useServerFn(adjustPayrollRunEmployee);
+  const fetchSettings = useServerFn(getPayrollSettingsPage);
+
+  const [accrualReverseOpen, setAccrualReverseOpen] = useState(false);
+  const [accrualReversalDate, setAccrualReversalDate] = useState(() =>
+    new Date().toISOString().slice(0, 10),
+  );
+  const [adjustTarget, setAdjustTarget] = useState<{
+    employeeId: string;
+    name: string;
+    runEmployeeId: string;
+  } | null>(null);
+  const [adjustAmounts, setAdjustAmounts] = useState<Record<string, string>>({});
 
   const pageQ = useQuery({
     queryKey: ["payroll-run", company?.id, runId],
@@ -138,6 +183,62 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
 
+  const reverseAccrualMut = useMutation({
+    mutationFn: () =>
+      reverseAccrual({
+        data: {
+          companyId: company!.id,
+          runId,
+          reversalDate: accrualReversalDate,
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Accrual reversed — run returned to approved");
+      setAccrualReverseOpen(false);
+      invalidate();
+    },
+    onError: (e) => toast.error(friendlyAuthError(e)),
+  });
+
+  const settingsQ = useQuery({
+    queryKey: ["payroll-settings-page", company?.id],
+    queryFn: () => fetchSettings({ data: { companyId: company!.id } }),
+    enabled: Boolean(company?.id) && canPrepare && adjustTarget !== null,
+  });
+
+  const adjustMut = useMutation({
+    mutationFn: () => {
+      if (!adjustTarget) throw new Error("No employee selected");
+      const currency = pageQ.data?.run.currency ?? "GBP";
+      const manualComponents = (settingsQ.data?.components ?? []).filter(
+        (c: PayrollComponentTypeRow) => c.calculation_method === "manual" && c.is_active,
+      );
+      const lines = manualComponents
+        .map((c: PayrollComponentTypeRow) => {
+          const raw = adjustAmounts[c.id];
+          if (raw === undefined || raw.trim() === "") return null;
+          const amountMinor = Number(parseMinorOrThrow(raw, currency, c.name));
+          return { componentTypeId: c.id, amountMinor };
+        })
+        .filter((line): line is { componentTypeId: string; amountMinor: number } => line !== null);
+      return adjustEmployee({
+        data: {
+          companyId: company!.id,
+          runId,
+          employeeId: adjustTarget.employeeId,
+          lines,
+        },
+      });
+    },
+    onSuccess: () => {
+      toast.success("Adjustments saved — recalculate to refresh totals");
+      setAdjustTarget(null);
+      setAdjustAmounts({});
+      invalidate();
+    },
+    onError: (e) => toast.error(friendlyAuthError(e)),
+  });
+
   if (isPending) return <LoadingState />;
   if (!company) {
     return <CompanyEmptyState title="No organisation" description="Select a company first." />;
@@ -164,6 +265,10 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
   const { run, schedule, employees, lines, payments, net_outstanding_minor } =
     pageQ.data as PayrollRunPage;
   const isMutable = !["approved", "posted", "paid", "complete", "void"].includes(run.status);
+  const canReverseAccrual = canPost && Boolean(run.accrual_journal_id) && run.net_paid_minor === 0;
+  const manualComponents = (settingsQ.data?.components ?? []).filter(
+    (c: PayrollComponentTypeRow) => c.calculation_method === "manual" && c.is_active,
+  );
   const linesByRunEmployee = new Map<string, typeof lines>();
   for (const line of lines) {
     const list = linesByRunEmployee.get(line.run_employee_id) ?? [];
@@ -171,13 +276,27 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
     linesByRunEmployee.set(line.run_employee_id, list);
   }
 
+  const openEmployeeAdjust = (employeeId: string, name: string, runEmployeeId: string) => {
+    const empLines = linesByRunEmployee.get(runEmployeeId) ?? [];
+    const initial: Record<string, string> = {};
+    for (const line of empLines) {
+      if (line.is_variable && line.component_type_id) {
+        initial[line.component_type_id] = fromMinorUnits(line.amount_minor, run.currency);
+      }
+    }
+    setAdjustAmounts(initial);
+    setAdjustTarget({ employeeId, name, runEmployeeId });
+  };
+
   const busy =
     calcMut.isPending ||
     recalcMut.isPending ||
     reviewMut.isPending ||
     approveMut.isPending ||
     postMut.isPending ||
-    voidMut.isPending;
+    voidMut.isPending ||
+    reverseAccrualMut.isPending ||
+    adjustMut.isPending;
 
   return (
     <>
@@ -271,6 +390,19 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
             Post to ledger
           </Button>
         ) : null}
+        {canReverseAccrual ? (
+          <Button
+            size="sm"
+            variant="destructive"
+            disabled={busy}
+            onClick={() => {
+              setAccrualReversalDate(new Date().toISOString().slice(0, 10));
+              setAccrualReverseOpen(true);
+            }}
+          >
+            Reverse accrual
+          </Button>
+        ) : null}
       </div>
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -332,6 +464,7 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
                   <TableHead className="text-right">Deductions</TableHead>
                   <TableHead className="text-right">Net</TableHead>
                   <TableHead>Pay status</TableHead>
+                  {canPrepare && isMutable ? <TableHead className="w-[120px]" /> : null}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -364,6 +497,20 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
                     <TableCell>
                       {payslip ? <Badge variant="outline">{payslip.payment_status}</Badge> : "—"}
                     </TableCell>
+                    {canPrepare && isMutable ? (
+                      <TableCell>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={busy}
+                          onClick={() =>
+                            openEmployeeAdjust(emp.id, `${emp.first_name} ${emp.last_name}`, re.id)
+                          }
+                        >
+                          Adjust
+                        </Button>
+                      </TableCell>
+                    ) : null}
                   </TableRow>
                 ))}
               </TableBody>
@@ -401,7 +548,18 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
                 <section key={journal.id} className="rounded-md border p-3">
                   <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-sm">
                     <span className="font-medium">
-                      Journal #{journal.journal_number} · {fmt.date(journal.journal_date)}
+                      {canAccountingView ? (
+                        <Link
+                          to="/accounting"
+                          search={{ tab: "journals", journal: journal.id }}
+                          className="text-primary hover:underline"
+                        >
+                          Journal #{journal.journal_number}
+                        </Link>
+                      ) : (
+                        <>Journal #{journal.journal_number}</>
+                      )}{" "}
+                      · {fmt.date(journal.journal_date)}
                     </span>
                     <Badge variant="outline">{journal.source_type}</Badge>
                   </div>
@@ -476,6 +634,88 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
           )}
         </TabsContent>
       </Tabs>
+
+      <AlertDialog open={accrualReverseOpen} onOpenChange={setAccrualReverseOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reverse payroll accrual?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Posts a reversing journal and returns this run to approved. Only available when no
+              net-pay payments have been recorded for the run.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="grid gap-2 py-2">
+            <Label htmlFor="pr-accrual-reverse-date">Reversal date</Label>
+            <Input
+              id="pr-accrual-reverse-date"
+              type="date"
+              value={accrualReversalDate}
+              onChange={(e) => setAccrualReversalDate(e.target.value)}
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={reverseAccrualMut.isPending}>Cancel</AlertDialogCancel>
+            <Button
+              variant="destructive"
+              disabled={reverseAccrualMut.isPending || !accrualReversalDate}
+              onClick={() => reverseAccrualMut.mutate()}
+            >
+              Reverse accrual
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={adjustTarget !== null} onOpenChange={(open) => !open && setAdjustTarget(null)}>
+        <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Adjust manual components</DialogTitle>
+            <DialogDescription>
+              {adjustTarget
+                ? `One-off manual amounts for ${adjustTarget.name}. Save, then recalculate the run.`
+                : null}
+            </DialogDescription>
+          </DialogHeader>
+          {settingsQ.isPending ? (
+            <LoadingState />
+          ) : manualComponents.length === 0 ? (
+            <EmptyState
+              title="No manual components"
+              description="Add manual component types in payroll settings to adjust amounts on a run."
+            />
+          ) : (
+            <ul className="space-y-3">
+              {manualComponents.map((c: PayrollComponentTypeRow) => (
+                <li key={c.id} className="grid gap-1">
+                  <Label htmlFor={`adj-${c.id}`}>
+                    {c.name} ({c.code})
+                  </Label>
+                  <Input
+                    id={`adj-${c.id}`}
+                    inputMode="decimal"
+                    placeholder={`Amount (${run.currency})`}
+                    value={adjustAmounts[c.id] ?? ""}
+                    onChange={(e) =>
+                      setAdjustAmounts((prev) => ({ ...prev, [c.id]: e.target.value }))
+                    }
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAdjustTarget(null)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={adjustMut.isPending || manualComponents.length === 0 || settingsQ.isPending}
+              onClick={() => adjustMut.mutate()}
+            >
+              Save adjustments
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

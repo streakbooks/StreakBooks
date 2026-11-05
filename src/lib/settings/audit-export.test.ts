@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  AUDIT_PAGE_SIZE,
-  buildSettingsAuditCsv,
-  hasNextSettingsAuditPage,
-} from "./audit-export";
+import { AUDIT_PAGE_SIZE, buildSettingsAuditCsv, formatSettingsAuditPageLabel, hasNextSettingsAuditPage } from "./audit-export";
 
 describe("Settings audit history paging", () => {
   it("offers Next only when a full page was returned", () => {
@@ -11,6 +7,7 @@ describe("Settings audit history paging", () => {
     expect(hasNextSettingsAuditPage(AUDIT_PAGE_SIZE)).toBe(false);
     expect(hasNextSettingsAuditPage(AUDIT_PAGE_SIZE - 1)).toBe(false);
     expect(hasNextSettingsAuditPage(0)).toBe(false);
+    expect(formatSettingsAuditPageLabel(50, 3)).toContain("51–53");
   });
 });
 
@@ -34,7 +31,7 @@ describe("Settings audit history CSV", () => {
     const csv = buildSettingsAuditCsv([
       {
         created_at: "2026-11-05",
-        action: "=WEBSERVICE(\"url\")",
+        action: '=WEBSERVICE("url")',
         entity_type: "company\nrecord",
         entity_id: "+SUM(1,2)",
         actor_user_id: null,

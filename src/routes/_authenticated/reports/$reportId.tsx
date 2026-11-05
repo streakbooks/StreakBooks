@@ -69,14 +69,12 @@ function ReportPage() {
   const { company, isPending } = useActiveCompany();
   const report = getReportById(reportId);
   const getConfig = useServerFn(getOrganisationConfig);
-  const isStatement =
-    report?.runner === "profit_loss" || report?.runner === "balance_sheet";
+  const isStatement = report?.runner === "profit_loss" || report?.runner === "balance_sheet";
   const needsDefault = isStatement && !search.basis && !search.settings;
   const reportDefaults = useQuery({
     queryKey: ["organisation-config", company?.id ?? null, "reports"],
     enabled: Boolean(company?.id && needsDefault),
-    queryFn: () =>
-      getConfig({ data: { companyId: company!.id, category: "reports" } }),
+    queryFn: () => getConfig({ data: { companyId: company!.id, category: "reports" } }),
   });
 
   const today = useMemo(() => todayIso(), []);

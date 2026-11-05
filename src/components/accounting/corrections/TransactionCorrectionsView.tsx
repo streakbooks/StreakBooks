@@ -23,6 +23,14 @@ import {
 import { sourceLabel } from "@/lib/reports/links";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { toCsv } from "@/lib/sales/csv";
+import {
+  correctionEvidenceIssue,
+  correctionHistoryCounts,
+  correctionHistoryCsv,
+  correctionUndoDateIssue,
+  filterCorrectionHistory,
+  type CorrectionHistoryFilter,
+} from "@/lib/accounting/corrections/history-review";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -36,7 +44,11 @@ type Props = {
   onSearch: (input: CorrectionFilter) => Promise<CorrectionSearch>;
   onPreview: (input: CorrectionInput) => Promise<CorrectionPlan>;
   onApply: (input: PostRequest) => Promise<CorrectionBatch>;
-  onUndo: (input: { batchId: string; date: string; reason: string }) => Promise<CorrectionBatch>;
+  onUndo: (input: {
+    batch: CorrectionBatch;
+    date: string;
+    reason: string;
+  }) => Promise<CorrectionBatch>;
   history: { rows: CorrectionBatch[]; has_more: boolean; page: number };
   historyLoading: boolean;
   historyError: string;
@@ -95,9 +107,18 @@ export function TransactionCorrectionsView({
     [success, setSuccess] = useState("");
   const [undoBatch, setUndoBatch] = useState(""),
     [undoDate, setUndoDate] = useState(today),
-    [undoReason, setUndoReason] = useState("");
+    [undoReason, setUndoReason] = useState(""),
+    [undoAcknowledged, setUndoAcknowledged] = useState(false);
+  const [historyStatus, setHistoryStatus] = useState<CorrectionHistoryFilter>("all");
+  const [historyQuery, setHistoryQuery] = useState("");
   const searchVersion = useRef(0);
   const rows = Object.values(selection);
+  const historyCounts = correctionHistoryCounts(history.rows);
+  const filteredHistory = filterCorrectionHistory(history.rows, historyStatus, historyQuery);
+  const selectedUndo = history.rows.find((batch) => batch.id === undoBatch);
+  const undoIssue = selectedUndo
+    ? correctionUndoDateIssue(selectedUndo, undoDate, undoReason)
+    : null;
   const money = (n: string | bigint) => `${setup.currency} ${exactMoney(n, setup.decimals)}`;
   const clearReview = () => {
     setReview(null);
@@ -846,6 +867,47 @@ export function TransactionCorrectionsView({
             Refresh correction history
           </Button>
         </div>
+        <div className="flex flex-wrap items-end gap-3">
+          <p className="text-xs text-muted-foreground">
+            Page {history.page + 1}: {historyCounts.applied} applied · {historyCounts.undone} undone
+            · {historyCounts.needsReview} needing evidence review. These counts and filters cover
+            the 50 loaded batches on this page only.
+          </p>
+          <label className="space-y-1 text-sm">
+            Batch status
+            <select
+              aria-label="Correction history status"
+              className="block h-9 rounded-md border border-input bg-background px-2 text-sm"
+              value={historyStatus}
+              onChange={(event) => setHistoryStatus(event.target.value as CorrectionHistoryFilter)}
+            >
+              {/* lookup-fixed-enum: Correction status is a fixed server-defined enumeration. */}
+              <option value="all">All batches</option>
+              <option value="applied">Applied</option>
+              <option value="undone">Undone</option>
+              <option value="needs_review">Missing evidence links</option>
+            </select>
+          </label>
+          <Input
+            aria-label="Search loaded correction history"
+            className="h-9 w-60"
+            placeholder="Batch, reference, account or reason"
+            value={historyQuery}
+            onChange={(event) => setHistoryQuery(event.target.value)}
+          />
+          <Button
+            variant="outline"
+            disabled={busy || historyLoading || !setup.can_export || history.rows.length === 0}
+            onClick={() =>
+              download(
+                correctionHistoryCsv(history.rows),
+                `linkbooks-correction-batches-page-${history.page + 1}.csv`,
+              )
+            }
+          >
+            Export loaded history CSV
+          </Button>
+        </div>
         {historyError && (
           <p role="alert" className="text-destructive">
             {historyError}
@@ -854,9 +916,13 @@ export function TransactionCorrectionsView({
         {historyLoading ? (
           <p role="status">Loading correction history…</p>
         ) : history.rows.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No correction batches yet.</p>
+          <p className="text-sm text-muted-foreground">No correction batches on this page.</p>
+        ) : filteredHistory.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No loaded batches match this filter. Choose All batches or browse another page.
+          </p>
         ) : (
-          history.rows.map((b) => (
+          filteredHistory.map((b) => (
             <details key={b.id} className="rounded-lg border p-3">
               <summary className="cursor-pointer text-sm">
                 <strong>{b.status === "undone" ? "Undone" : "Applied"}</strong> · {b.created_at} ·{" "}
@@ -866,6 +932,12 @@ export function TransactionCorrectionsView({
                 <p>
                   Batch: {b.id} · Created by: {b.created_by}
                 </p>
+                {correctionEvidenceIssue(b) ? (
+                  <p role="alert" className="text-sm text-destructive">
+                    Evidence review required: {correctionEvidenceIssue(b)}. Check linked journals
+                    and refresh history before any undo.
+                  </p>
+                ) : null}
                 <p>
                   Posting dates: {[...new Set(b.plan.rows.map((r) => r.posting_date))].join(", ")}
                 </p>
@@ -885,7 +957,15 @@ export function TransactionCorrectionsView({
                 <ul className="space-y-1">
                   {b.plan.rows.map((r) => (
                     <li key={r.id}>
-                      Journal #{r.journal_number}, {r.source_account_code} → {b.plan.target.code},{" "}
+                      Source{" "}
+                      <Link
+                        to="/accounting"
+                        search={{ tab: "journals", journal: r.journal_id }}
+                        className="underline"
+                      >
+                        journal #{r.journal_number}
+                      </Link>
+                      , {r.source_account_code} → {b.plan.target.code},{" "}
                       {money(BigInt(r.debit_minor) + BigInt(r.credit_minor))}{" "}
                       {BigInt(r.debit_minor) > 0n ? "Dr" : "Cr"}, posting {r.posting_date}
                     </li>
@@ -921,8 +1001,9 @@ export function TransactionCorrectionsView({
                 {b.status === "applied" && (
                   <Button
                     variant="outline"
-                    disabled={busy || !setup.can_apply}
+                    disabled={busy || !setup.can_apply || Boolean(correctionEvidenceIssue(b))}
                     onClick={() => {
+                      setUndoAcknowledged(false);
                       setUndoBatch(b.id);
                       setUndoDate(
                         b.plan.rows.reduce(
@@ -941,16 +1022,19 @@ export function TransactionCorrectionsView({
                     className="space-y-3 rounded border p-3"
                     onSubmit={async (e) => {
                       e.preventDefault();
-                      if (
-                        !window.confirm(
-                          "Undo this batch with reversing journals? Existing exact reversals will be verified and reused at their actual dates.",
-                        )
-                      )
+                      const issue = correctionUndoDateIssue(b, undoDate, undoReason);
+                      if (issue || !undoAcknowledged) {
+                        setError(
+                          issue ?? "Review and acknowledge the financial effects before undo.",
+                        );
                         return;
+                      }
+                      const message = `Undo correction ${b.id} on ${undoDate}? This can post reversals for ${b.journal_ids.length} correction journal(s). Existing exact reversals keep their recorded dates.`;
+                      if (!window.confirm(message)) return;
                       setError("");
                       try {
                         const result = await onUndo({
-                          batchId: b.id,
+                          batch: b,
                           date: undoDate,
                           reason: undoReason,
                         });
@@ -958,6 +1042,7 @@ export function TransactionCorrectionsView({
                           `Correction ${result.id} undone. Reversal journals are linked in history.`,
                         );
                         setUndoBatch("");
+                        setUndoAcknowledged(false);
                         setSelection({});
                         setResult(null);
                         clearReview();
@@ -980,7 +1065,10 @@ export function TransactionCorrectionsView({
                         required
                         disabled={busy}
                         value={undoDate}
-                        onChange={(e) => setUndoDate(e.target.value)}
+                        onChange={(e) => {
+                          setUndoDate(e.target.value);
+                          setUndoAcknowledged(false);
+                        }}
                       />
                     </label>
                     <label className="block">
@@ -992,12 +1080,31 @@ export function TransactionCorrectionsView({
                         required
                         disabled={busy}
                         value={undoReason}
-                        onChange={(e) => setUndoReason(e.target.value)}
+                        onChange={(e) => {
+                          setUndoReason(e.target.value);
+                          setUndoAcknowledged(false);
+                        }}
                       />
+                    </label>
+                    {undoIssue ? (
+                      <p role="alert" className="text-sm text-destructive">
+                        {undoIssue}
+                      </p>
+                    ) : null}
+                    <label className="flex items-start gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        aria-label="Acknowledge correction undo review"
+                        disabled={busy || Boolean(undoIssue)}
+                        checked={undoAcknowledged}
+                        onChange={(event) => setUndoAcknowledged(event.target.checked)}
+                      />
+                      I reviewed the correction journals, reversal date and ledger effect. This is
+                      an operator review acknowledgement, not an approval by a second person.
                     </label>
                     <Button
                       type="submit"
-                      disabled={busy || !setup.can_apply || undoReason.trim().length < 5}
+                      disabled={busy || !setup.can_apply || Boolean(undoIssue) || !undoAcknowledged}
                     >
                       Post undo journals
                     </Button>
@@ -1005,7 +1112,10 @@ export function TransactionCorrectionsView({
                       type="button"
                       variant="outline"
                       disabled={busy}
-                      onClick={() => setUndoBatch("")}
+                      onClick={() => {
+                        setUndoBatch("");
+                        setUndoAcknowledged(false);
+                      }}
                     >
                       Cancel undo
                     </Button>
@@ -1019,7 +1129,11 @@ export function TransactionCorrectionsView({
           <Button
             variant="outline"
             disabled={busy || historyLoading || history.page === 0}
-            onClick={() => onHistoryPage(history.page - 1)}
+            onClick={() => {
+              setUndoBatch("");
+              setUndoAcknowledged(false);
+              onHistoryPage(history.page - 1);
+            }}
           >
             Previous batches
           </Button>
@@ -1027,7 +1141,11 @@ export function TransactionCorrectionsView({
           <Button
             variant="outline"
             disabled={busy || historyLoading || !history.has_more}
-            onClick={() => onHistoryPage(history.page + 1)}
+            onClick={() => {
+              setUndoBatch("");
+              setUndoAcknowledged(false);
+              onHistoryPage(history.page + 1);
+            }}
           >
             Next batches
           </Button>

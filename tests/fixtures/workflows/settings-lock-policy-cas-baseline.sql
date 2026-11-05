@@ -1,13 +1,10 @@
--- Isolated PostgreSQL fixture matching the existing lock-policy schema.
-CREATE TABLE public.organisation_lock_policy (
-  company_id uuid PRIMARY KEY REFERENCES public.companies(id) ON DELETE CASCADE,
-  lock_date_everyone date,
-  lock_date_except_advisors date,
-  conversion_date date,
-  require_override_reason boolean NOT NULL DEFAULT true,
-  updated_at timestamptz NOT NULL DEFAULT now(),
-  updated_by uuid
-);
+-- Extend the existing minimal workflow lock-policy table with production columns.
+-- The baseline fixture already creates organisation_lock_policy for posting tests.
+ALTER TABLE public.organisation_lock_policy
+  ADD COLUMN require_override_reason boolean NOT NULL DEFAULT true,
+  ADD COLUMN updated_at timestamptz NOT NULL DEFAULT now(),
+  ADD COLUMN updated_by uuid;
+
 ALTER TABLE public.organisation_lock_policy ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Members read lock policy" ON public.organisation_lock_policy
   FOR SELECT TO authenticated

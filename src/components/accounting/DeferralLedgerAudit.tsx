@@ -41,28 +41,30 @@ export function DeferralLedgerAudit({
         <div className="space-y-2">
           <p role="status">
             {audit.data.entries.length} recognition periods checked · {audit.data.exceptionCount}{" "}
-            exception(s) · allocation difference {audit.data.differenceMinor ?? "unavailable"}{" "}
-            minor units
+            exception(s) · allocation difference {audit.data.differenceMinor ?? "unavailable"} minor
+            units
           </p>
           {audit.data.scheduleIssues.map((issue) => (
             <p key={issue} className="text-destructive" role="alert">
               {issue}
             </p>
           ))}
-          {audit.data.entries.filter((entry) => entry.status !== "matched").map((entry) => (
-            <div key={entry.entryId} className="rounded-md bg-muted/50 p-2">
-              Period {entry.periodNo}: {entry.status}
-              {entry.journalId ? ` · Journal ${entry.journalId}` : ""}
-              {entry.issues.map((issue) => (
-                <p key={issue} className="text-destructive">
-                  {issue}
-                </p>
-              ))}
-            </div>
-          ))}
+          {audit.data.entries
+            .filter((entry) => entry.status !== "matched")
+            .map((entry) => (
+              <div key={entry.entryId} className="rounded-md bg-muted/50 p-2">
+                Period {entry.periodNo}: {entry.status}
+                {entry.journalId ? ` · Journal ${entry.journalId}` : ""}
+                {entry.issues.map((issue) => (
+                  <p key={issue} className="text-destructive">
+                    {issue}
+                  </p>
+                ))}
+              </div>
+            ))}
           <p className="text-xs text-muted-foreground">
-            A reversed recognition requires review even if its original journal balanced.
-            This audit does not establish the balance of the source deferral account.
+            A reversed recognition requires review even if its original journal balanced. This audit
+            does not establish the balance of the source deferral account.
           </p>
         </div>
       ) : null}

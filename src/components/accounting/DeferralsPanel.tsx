@@ -26,6 +26,7 @@ import {
 } from "@/lib/accounting/deferral-review";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { AccountLookup } from "@/components/lookup";
+import { DeferralLedgerAudit } from "@/components/accounting/DeferralLedgerAudit";
 import { LoadingState, ErrorState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -432,6 +433,7 @@ export function DeferralsPanel({ companyId, currency }: { companyId: string; cur
                   </TableBody>
                 </Table>
               </div>
+              <DeferralLedgerAudit companyId={companyId} scheduleId={s.id} />
               {s.status === "active" &&
               !s.deferral_entries.some((e) => e.journal_id) &&
               can("accounting.post") ? (

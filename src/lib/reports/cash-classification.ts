@@ -360,11 +360,12 @@ export function cashClassificationContext(
       );
     if (policy.kind.startsWith("payroll_")) {
       // Liability settlement alone does not establish payroll expense. A posted
-      // accrual must independently evidence the selected wage/tax/deduction split.
+      // accrual or gross-pay posting must independently evidence the selected
+      // wage/tax/deduction split. Gross-pay cash journals establish withheld
+      // liabilities; they are not themselves payments of those liabilities.
       const support = evidence.filter((j): j is CashJournal =>
         Boolean(
           j &&
-          !j.lines.some((l) => input.cashAccountIds.includes(l.accountId)) &&
           (j.sourceType === "opening_balance" ||
             j.lines.some(
               (l) => l.accountId === policy.recognitionAccountId && l.debit !== l.credit,
@@ -381,7 +382,11 @@ export function cashClassificationContext(
         (j) => !j.lines.some((l) => input.cashAccountIds.includes(l.accountId)),
       );
       const paid = relevant
-        .filter((j) => j.lines.some((l) => input.cashAccountIds.includes(l.accountId)))
+        .filter(
+          (j) =>
+            j.lines.some((l) => input.cashAccountIds.includes(l.accountId)) &&
+            !support.some((s) => s.id === j.id),
+        )
         .reduce((sum, j) => sum - sourceNet(j), 0n);
       const accrued = support.reduce((sum, j) => sum + sourceNet(j), 0n);
       const sharedSources = new Set(

@@ -287,7 +287,12 @@ export function AccountingWorkspace({
           <FxPanel key={companyId} companyId={companyId} currency={currency} />
         </TabsContent>
         <TabsContent value="cash-classification" className="mt-4">
-          <CashClassificationPanel key={companyId} companyId={companyId} currency={currency} />
+          <CashClassificationPanel
+            key={companyId}
+            companyId={companyId}
+            currency={currency}
+            initialReview={search.cashReview}
+          />
         </TabsContent>
       </Tabs>
     </>

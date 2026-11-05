@@ -78,6 +78,7 @@ export const cashOpeningInput = z.object({
             net_minor: money,
             tax_minor: money,
             tax_code_id: uuid,
+            tax_rate_bps: z.number().int().min(0).max(100000).optional(),
           }),
         )
         .max(100)

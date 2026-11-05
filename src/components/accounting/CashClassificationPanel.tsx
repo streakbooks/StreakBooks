@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
+  recordCashClassificationException,
   getCashInventoryTrace,
   approveCashInventory,
   approveCashOpening,
@@ -17,6 +18,7 @@ import {
   type CashExceptionRecord,
   type CashSourceDocument,
 } from "@/lib/accounting/cash-classification.functions";
+import { cashClassificationExceptions } from "@/lib/reports/cash-classification";
 import { CASH_POLICY_KINDS } from "@/lib/accounting/cash-classification-contracts";
 import { listAccounts, listJournals, type AccountRow } from "@/lib/accounting/accounting.functions";
 import { exportVisibleReport } from "@/lib/reports/visible-export.functions";
@@ -477,6 +479,7 @@ function OpeningForm({
       net: fromMinorUnits(BigInt(line.net_minor), previous.currency_code),
       tax: fromMinorUnits(BigInt(line.tax_minor), previous.currency_code),
       code: line.tax_code_id,
+      rate: line.tax_rate_bps === undefined ? "" : String(line.tax_rate_bps),
     })) ?? [],
   );
   const [evidence, setEvidence] = useState(emptyEvidence);
@@ -512,6 +515,7 @@ function OpeningForm({
               net_minor: parseMinorOrThrow(line.net, selected.currency).toString(),
               tax_minor: parseMinorOrThrow(line.tax, selected.currency).toString(),
               tax_code_id: line.code,
+              ...(line.rate === "" ? {} : { tax_rate_bps: Number(line.rate) }),
             })),
             mode,
             effective_from: from,
@@ -693,26 +697,31 @@ function OpeningForm({
                   )
                 }
               />
-              <select
-                aria-label="Opening tax code"
-                className="rounded border bg-background"
-                value={line.code}
+              <Input
+                aria-label="Verified original tax rate in basis points (optional)"
+                placeholder="Original rate (bps), if reverse charge"
+                type="number"
+                min="0"
+                max="100000"
+                value={line.rate}
                 onChange={(e) =>
                   setTaxLines(
-                    taxLines.map((v, i) => (i === index ? { ...v, code: e.target.value } : v)),
+                    taxLines.map((v, i) => (i === index ? { ...v, rate: e.target.value } : v)),
                   )
                 }
-              >
-                <option value="">Select verified tax code</option>
-                {(codes.data ?? []).map((raw) => {
-                  const code = raw as unknown as { id: string; code: string; name: string };
-                  return (
-                    <option key={code.id} value={code.id}>
-                      {code.code} — {code.name}
-                    </option>
-                  );
+              />
+              <LookupSelect
+                ariaLabel="Opening tax code"
+                value={line.code}
+                onChange={(code) =>
+                  setTaxLines(taxLines.map((v, i) => (i === index ? { ...v, code } : v)))
+                }
+                options={(codes.data ?? []).map((raw) => {
+                  const c = raw as unknown as { id: string; code: string; name: string };
+                  return { id: c.id, label: `${c.code} — ${c.name}` };
                 })}
-              </select>
+              />
+
               <Button
                 type="button"
                 variant="outline"
@@ -726,7 +735,10 @@ function OpeningForm({
             type="button"
             variant="outline"
             onClick={() =>
-              setTaxLines([...taxLines, { id: crypto.randomUUID(), net: "", tax: "", code: "" }])
+              setTaxLines([
+                ...taxLines,
+                { id: crypto.randomUUID(), net: "", tax: "", code: "", rate: "" },
+              ])
             }
           >
             Add verified tax line
@@ -889,12 +901,28 @@ function InventoryForm({
 }
 
 export function CashClassificationPanel({
+  initialReview,
   companyId,
   currency,
 }: {
+  initialReview?: string | undefined;
   companyId: string;
   currency: string;
 }) {
+  const record = useServerFn(recordCashClassificationException);
+  const pending = cashClassificationExceptions(initialReview).filter(
+    (e) => e.companyId === companyId,
+  );
+  const recordMutation = useMutation({
+    mutationFn: async () => {
+      for (const exception of pending) await record({ data: { companyId, exception } });
+    },
+    onSuccess: async () => {
+      toast.success("Exception recorded for review");
+      await qc.invalidateQueries({ queryKey: ["cash-classifications", companyId] });
+    },
+    onError: (e) => toast.error(friendlyAuthError(e)),
+  });
   const fetch = useServerFn(listCashClassifications);
   const accountsFn = useServerFn(listAccounts);
   const resolve = useServerFn(resolveCashClassificationException);
@@ -1034,6 +1062,24 @@ export function CashClassificationPanel({
           </div>
         ) : null}
       </div>
+      {pending.length ? (
+        <section className="space-y-3 rounded border p-4">
+          <h3 className="font-semibold">Exception from report</h3>
+          {pending.map((e, index) => (
+            <p key={index}>
+              {e.message} · {money(e.amountMinor, e.currency)} · {e.period.from} to {e.period.to}
+              <br />
+              {e.missingEvidence.join("; ")}
+            </p>
+          ))}
+          <Button
+            disabled={recordMutation.isPending || recordMutation.isSuccess}
+            onClick={() => recordMutation.mutate()}
+          >
+            {recordMutation.isSuccess ? "Recorded for review" : "Record for review"}
+          </Button>
+        </section>
+      ) : null}
       <section className="space-y-3">
         <h3 className="font-semibold">Classification exceptions</h3>
         {data.exceptions.length ? (

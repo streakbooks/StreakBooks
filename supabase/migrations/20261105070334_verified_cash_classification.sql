@@ -193,6 +193,7 @@ BEGIN
  IF jsonb_typeof(COALESCE(_payload->'tax_lines','[]'))<>'array' OR jsonb_array_length(COALESCE(_payload->'tax_lines','[]'))>100 THEN RAISE EXCEPTION 'Invalid opening tax details'; END IF;
  FOR c IN SELECT * FROM jsonb_array_elements(COALESCE(_payload->'tax_lines','[]')) LOOP
   IF (c->>'net_minor')::bigint<0 OR (c->>'tax_minor')::bigint<0 OR NOT EXISTS(SELECT 1 FROM public.tax_codes WHERE id=(c->>'tax_code_id')::uuid AND company_id=_company_id) THEN RAISE EXCEPTION 'Opening tax detail needs a company tax code and verified amounts'; END IF;
+  IF c ? 'tax_rate_bps' AND (jsonb_typeof(c->'tax_rate_bps')<>'number' OR (c->>'tax_rate_bps')::numeric<>trunc((c->>'tax_rate_bps')::numeric) OR (c->>'tax_rate_bps')::numeric NOT BETWEEN 0 AND 100000) THEN RAISE EXCEPTION 'Original tax rate must be verified integer basis points'; END IF;
   tax_total:=tax_total+(c->>'net_minor')::bigint+(c->>'tax_minor')::bigint;
  END LOOP;
  IF jsonb_array_length(COALESCE(_payload->'tax_lines','[]'))>0 AND tax_total<>gross THEN RAISE EXCEPTION 'Opening tax details must equal the verified gross'; END IF;

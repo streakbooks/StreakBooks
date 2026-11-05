@@ -651,3 +651,39 @@ it.each(["missing", "drift", "tax-code"])(
     await expect(cashPeriod(t, "10")).rejects.toThrow("CASH_CLASSIFICATION_EXCEPTION:");
   },
 );
+it("requires the verified historical reverse-charge rate instead of today's code rate", async () => {
+  const t = importedTaxTables();
+  t.sales_receipts = [];
+  t.purchase_bill_lines = [];
+  t.purchase_bills![0]!.posted_journal_id = "j1";
+  t.supplier_payments = [
+    { id: "p", company_id: C, status: "paid", posted_journal_id: "pj", payment_date: "2026-10-05" },
+  ];
+  t.supplier_payment_allocations = [
+    {
+      id: "pa",
+      company_id: C,
+      payment_id: "p",
+      bill_id: "b1",
+      amount_minor: "10000",
+      allocated_on: "2026-10-05",
+    },
+  ];
+  Object.assign(t.cash_opening_evidence![0]!, {
+    document_id: "b1",
+    source_kind: "purchase_bill",
+    gross_minor: "10000",
+    tax_lines: [{ id: "historical", net_minor: "10000", tax_minor: "0", tax_code_id: "rc" }],
+  });
+  t.tax_codes!.find((c) => c.id === "rc")!.tax_rates = { rate_bps: 5000 };
+  await expect(cashPeriod(t, "10")).rejects.toThrow("Original reverse-charge rate evidence");
+  (t.cash_opening_evidence![0]!.tax_lines as Row[])[0]!.tax_rate_bps = 2000;
+  const result = computeReturnTotals((await cashPeriod(t, "10")).facts);
+  expect(result.inputTax).toBe(2000n);
+  expect(result.outputTax).toBe(2000n);
+});
+it("reports missing foreign source FX instead of omitting material cash tax", async () => {
+  const t = baseTables();
+  t.sales_invoices![0]!.currency_code = "USD";
+  await expect(cashPeriod(t, "10")).rejects.toThrow("cash_tax_fx_evidence_required");
+});

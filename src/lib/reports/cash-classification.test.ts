@@ -522,3 +522,19 @@ it("permits verified balance-sheet treatment without inventing income or expense
   expect(cashLedger(i, period).reduce((s, e) => s + e.debit - e.credit, 0n)).toBe(0n);
   expect(total(i, expenseId)).toBe(0n);
 });
+it("separates withheld payroll from directly expensed net cash wages", () => {
+  const i = empty();
+  account(i, "deductions", "liability", "payroll_deductions");
+  const wages = journal(i, "direct-payroll", "2026-11-02", "payroll", [
+    [expenseId, 120n, 0n],
+    ["deductions", 0n, 20n],
+    [bankId, 0n, 100n],
+  ]);
+  policy(i, "deductions", expenseId, "payroll_deductions", [wages]);
+  journal(i, "withholding-payment", "2026-12-02", "bank_transaction", [
+    ["deductions", 20n, 0n],
+    [bankId, 0n, 20n],
+  ]);
+  expect(total(i, expenseId)).toBe(100n);
+  expect(total(i, expenseId, { from: "2026-12-01", to: "2026-12-31" })).toBe(20n);
+});

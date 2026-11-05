@@ -1,8 +1,8 @@
 import { Link } from "@tanstack/react-router";
-import { useMutation } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import { recordCashClassificationException } from "@/lib/accounting/cash-classification.functions";
-import type { CashClassificationException } from "@/lib/reports/cash-classification";
+import {
+  CASH_CLASSIFICATION_EXCEPTION_PREFIX,
+  type CashClassificationException,
+} from "@/lib/reports/cash-classification";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { Button } from "@/components/ui/button";
 
@@ -14,13 +14,6 @@ export function CashClassificationErrorState({
   exceptions: CashClassificationException[];
   onRetry?: (() => void) | undefined;
 }) {
-  const record = useServerFn(recordCashClassificationException);
-  const mutation = useMutation({
-    mutationFn: async () => {
-      for (const exception of exceptions)
-        await record({ data: { companyId: exception.companyId, exception } });
-    },
-  });
   return (
     <div
       role="alert"
@@ -57,20 +50,15 @@ export function CashClassificationErrorState({
         ))}
       </ul>
       <div className="flex flex-wrap gap-2">
-        <Button
-          variant="outline"
-          disabled={mutation.isPending || mutation.isSuccess}
-          onClick={() => mutation.mutate()}
-        >
-          {mutation.isSuccess
-            ? "Recorded for review"
-            : mutation.isPending
-              ? "Recording…"
-              : "Record for review"}
-        </Button>
         <Button variant="outline" asChild>
-          <Link to="/accounting" search={{ tab: "cash-classification" }}>
-            Review classifications
+          <Link
+            to="/accounting"
+            search={{
+              tab: "cash-classification",
+              cashReview: CASH_CLASSIFICATION_EXCEPTION_PREFIX + JSON.stringify({ exceptions }),
+            }}
+          >
+            Review and record exception
           </Link>
         </Button>
         {onRetry && (
@@ -79,13 +67,6 @@ export function CashClassificationErrorState({
           </Button>
         )}
       </div>
-      {mutation.isError && (
-        <p className="text-sm text-destructive">
-          {mutation.error instanceof Error
-            ? mutation.error.message
-            : "Could not record the exception"}
-        </p>
-      )}
     </div>
   );
 }

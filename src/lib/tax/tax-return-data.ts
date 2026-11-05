@@ -148,12 +148,12 @@ export type TaxFactsResult = {
   skippedNoRate: number;
 };
 
-type CodeInfo = { treatment: string; recoverable: boolean; rateBps?: number };
+type CodeInfo = { treatment: string; recoverable: boolean };
 
 async function loadCodes(sb: Sb, companyId: string): Promise<Map<string, CodeInfo>> {
   const rows = await fetchAllPages<Row>((from, to) =>
     table(sb, "tax_codes")
-      .select("id, treatment, is_recoverable, tax_rates(rate_bps)")
+      .select("id, treatment, is_recoverable")
       .eq("company_id", companyId)
       .order("id")
       .range(from, to),
@@ -163,9 +163,6 @@ async function loadCodes(sb: Sb, companyId: string): Promise<Map<string, CodeInf
     map.set(str(r, "id"), {
       treatment: str(r, "treatment") || "standard",
       recoverable: r["is_recoverable"] !== false,
-      ...(r["tax_rates"] && typeof (r["tax_rates"] as Row)["rate_bps"] === "number"
-        ? { rateBps: Number((r["tax_rates"] as Row)["rate_bps"]) }
-        : {}),
     });
   }
   return map;
@@ -498,14 +495,17 @@ async function verifiedOpeningTaxLines(
     if (!code) return fail("Each original tax line needs a company tax code");
     if (
       isSelfAssessedReverseCharge(code.treatment, big(line, "tax_minor")) &&
-      code.rateBps === undefined
+      (typeof line["tax_rate_bps"] !== "number" ||
+        !Number.isInteger(line["tax_rate_bps"]) ||
+        Number(line["tax_rate_bps"]) < 0 ||
+        Number(line["tax_rate_bps"]) > 100000)
     )
       return fail("Original reverse-charge rate evidence");
     return {
       ...line,
       id: str(line, "id") || `${id}:verified-tax`,
       [source.lines!.fk]: id,
-      tax_rate_bps: code.rateBps ?? 0,
+      tax_rate_bps: line["tax_rate_bps"] ?? 0,
     };
   });
 }
@@ -592,6 +592,28 @@ export async function loadTaxFacts(
       const foreign = currency !== baseCurrency.toUpperCase();
       const rate = foreign ? (rates.get(str(h, "posted_journal_id")) ?? null) : null;
       if (foreign && rate === null) {
+        const id = str(h, "id");
+        if (
+          useCash &&
+          allocated?.get(id)?.events.some((event) => event.date >= from && event.date <= to)
+        )
+          throw new CashClassificationError([
+            {
+              code: "cash_tax_fx_evidence_required",
+              message: "Cash tax reporting requires the original posted exchange rate.",
+              companyId,
+              sourceAccountId: null,
+              journalId: str(h, "posted_journal_id") || null,
+              documentId: id,
+              amountMinor: big(h, "total_minor").toString(),
+              currency,
+              date: str(h, src.dateCol),
+              period: { from, to },
+              missingEvidence: [
+                "Verified posted source exchange rate for this foreign-currency cash recognition",
+              ],
+            },
+          ]);
         skippedNoRate += 1;
         continue;
       }

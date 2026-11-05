@@ -21,9 +21,9 @@ Other corrected gaps included report-level basis propagation, company defaults, 
 
 Open Accounting → Cash classification. Review requires existing reporting/accounting view permission; approvals require `accounting.post`. Report reads never approve policies or write exception records.
 
-A report with insufficient evidence shows the transaction/account, amount/currency, source date, reporting period and missing evidence. Select **Record for review** to persist the exception. Approve the actual source policy or opening document split with posted journal evidence, supporting reference, policy explanation and affirmative confirmation. Select the matching approval to resolve the exception and refresh the report. Resolution records do not bypass revalidation.
+A report with insufficient evidence shows the transaction/account, amount/currency, source date, reporting period and missing evidence. Select **Review and record exception**, then **Record for review** on the accounting review page to persist the exception. Approve the actual source policy or opening document split with posted journal evidence, supporting reference, policy explanation and affirmative confirmation. Select the matching approval to resolve the exception and refresh the report. Resolution records do not bypass revalidation.
 
-Approved records are immutable. Revisions append versions and preserve audit history. Opening documents separately specify future-settlement recognition or already-recognized historical activity. Optional verified original tax-code lines must reconcile to document gross before imported cash tax can be calculated. The inventory trace displays paid cost sold, held cost, returned cost awaiting refund and refund FX differences; its CSV uses the loaded trace.
+Approved records are immutable. Revisions append versions and preserve audit history. Opening documents separately specify future-settlement recognition or already-recognized historical activity. Optional verified original tax-code lines must reconcile to document gross before imported cash tax can be calculated. Reverse-charge lines require a verified original rate, independent of today’s tax-code rate. The inventory trace displays paid cost sold, held cost, returned cost awaiting refund and refund FX differences; its CSV uses the loaded trace.
 
 ## Database changes
 

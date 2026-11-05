@@ -100,6 +100,11 @@ INSERT INTO public.tax_codes VALUES('{uid(50)}','{C}'),('{uid(51)}','{OTHER}');
     denied(f"UPDATE cash_classification_policies SET policy_note='unaudited change';", "immutable")
     assert sql(f"SET ROLE authenticated; SET test.company='{OTHER}'; SELECT count(*) FROM cash_classification_policies") == "0"
     opening = dict(evidence, source_kind="sales_invoice", document_id=uid(41), posted_journal_id=uid(22), control_account_id=uid(4), equity_account_id=uid(6), currency_code="GBP", gross_minor="120", components=[dict(account_id=uid(3), amount_minor="100"), dict(account_id=uid(7), amount_minor="20")], tax_lines=[dict(id="original-line",net_minor="100",tax_minor="20",tax_code_id=uid(50))], mode="recognize_on_settlement",effective_from="2026-09-30")
+    try:
+        call("approve_cash_opening_evidence", dict(opening,tax_lines=[dict(id="bad-rate",net_minor="100",tax_minor="20",tax_code_id=uid(50),tax_rate_bps=-1)]))
+        raise AssertionError("negative original tax rate allowed")
+    except subprocess.CalledProcessError:
+        pass
     opening_id = call("approve_cash_opening_evidence", opening)
     assert sql(f"SELECT gross_minor FROM cash_opening_evidence WHERE id='{opening_id}'") == "120"
     try:

@@ -552,6 +552,17 @@ export function traceCashInventory(
       }
     }
     for (const source of touched) {
+      if (source.cost - size([...source.credited.values()].flat()) <= 0n && source.paid !== 0n)
+        fail(
+          "Fully credited inventory still has unreconciled payment slices.",
+          source.journal,
+          source.accountId,
+          source.paid,
+          [
+            "Verified original payment release and refund allocation before tracing fully credited stock",
+          ],
+          source.documentId,
+        );
       const value = position(source);
       const soldPaid = BigInt(value.cashPaidCostSoldMinor);
       if (date >= period.from)

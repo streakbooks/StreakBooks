@@ -112,8 +112,10 @@ describe("cash classification approval boundaries", () => {
     };
     expect(cashOpeningInput.parse(p).payload.gross_minor).toBe(amount);
     expect(
-      cashOpeningInput.safeParse({ ...p, payload: { ...p.payload, gross_minor: Number("9007199254740993") } })
-        .success,
+      cashOpeningInput.safeParse({
+        ...p,
+        payload: { ...p.payload, gross_minor: Number("9007199254740993") },
+      }).success,
     ).toBe(false);
   });
   it("requires a customer return to identify its original approved sale", () => {

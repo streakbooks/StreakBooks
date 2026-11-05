@@ -19,7 +19,8 @@ import {
 } from "@/lib/purchases/purchases.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { PageHeader, ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
-import { ListToolbar, useListSearch } from "@/components/common/ListTools";
+import { ListToolbar } from "@/components/common/ListTools";
+
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { Button } from "@/components/ui/button";
 import { TableCard } from "@/components/common/table-card";
@@ -98,7 +99,11 @@ function OrdersList() {
       {query.isPending ? (
         <ListSkeleton />
       ) : query.isError ? (
-        <ErrorState title="Could not load orders" description={friendlyAuthError(query.error)} />
+        <ErrorState
+          onRetry={() => void query.refetch()}
+          title="Could not load orders"
+          description={friendlyAuthError(query.error)}
+        />
       ) : !query.data?.total && !search && status === "all" ? (
         <EmptyState title="No purchase orders" description="Create a PO for a supplier." />
       ) : (

@@ -78,12 +78,16 @@ export function CheckoutForm({
   const dueMinor = quote && quote.currency === currency ? quote.dueMinor : null;
   const available = paymentMethodsFor(defaultCountry, providers).filter((item) => item.available);
 
+  const { stripe, razorpay } = providers;
+
   useEffect(() => {
     // Country comes from the server, not an editable country picker or browser locale.
     setBilling((current) => ({ ...current, country: defaultCountry }));
-    const choices = paymentMethodsFor(defaultCountry, providers).filter((item) => item.available);
+    const choices = paymentMethodsFor(defaultCountry, { stripe, razorpay }).filter(
+      (item) => item.available,
+    );
     setMethod(choices.find((item) => item.id === "upi")?.id ?? choices[0]?.id ?? "card");
-  }, [defaultCountry, providers.stripe, providers.razorpay]);
+  }, [defaultCountry, stripe, razorpay]);
 
   useEffect(() => {
     void supabase.auth.getUser().then(({ data }) => {
@@ -321,7 +325,9 @@ export function CheckoutForm({
             reviewed before going live. Payment methods will be confirmed by the hosted provider.
           </p>
           {error || serverError || quoteError ? (
-            <p className="text-sm text-destructive">{error || serverError || quoteError}</p>
+            <p role="alert" className="text-sm text-destructive-ink">
+              {error || serverError || quoteError}
+            </p>
           ) : null}
           <Button
             type="button"

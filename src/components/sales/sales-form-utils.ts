@@ -1,6 +1,6 @@
 import { fromMinorUnits, toMinorUnits } from "@/lib/accounting/money";
 import type { SalesLineInput } from "@/lib/sales/line-helpers";
-import type { SalesLineFormState } from "@/components/sales/SalesDocumentLines";
+import type { SalesLineFormState } from "@/lib/sales/line-form-state";
 
 /** Basis points <-> percent for display (2000 bps = "20"). */
 export function bpsToPercentString(bps: number | string): string {

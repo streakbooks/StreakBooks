@@ -94,7 +94,11 @@ function ProjectsPage() {
       {query.isPending ? (
         <LoadingState />
       ) : query.isError ? (
-        <ErrorState title="Could not load projects" description={friendlyAuthError(query.error)} />
+        <ErrorState
+          onRetry={() => void query.refetch()}
+          title="Could not load projects"
+          description={friendlyAuthError(query.error)}
+        />
       ) : !query.data.available ? (
         <Alert className="mb-6">
           <AlertDescription>

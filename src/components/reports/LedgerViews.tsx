@@ -15,6 +15,7 @@ import {
   getTaxReport,
 } from "@/lib/reports/report.functions";
 import { getAgedReceivablesAsAt } from "@/lib/sales/ar-reports.functions";
+import { getCashGeneralLedgerAll } from "@/lib/reports/cash-general-ledger.functions";
 import { SOURCE_LABELS, sourceLabel } from "@/lib/reports/links";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -49,7 +50,7 @@ const selectCls = "flex h-10 rounded-md border border-input bg-background px-3 t
 export function AccountTransactionsView({ ctx }: { ctx: ReportCtx }) {
   // A single-account drill-down retains the full posted-line metadata explorer.
   // The catalogue entry defaults to a multi-account report instead of a required selector.
-  return ctx.search.account ? (
+  return ctx.search.account && ctx.search.basis !== "cash" ? (
     <AdvancedAccountTransactionsView ctx={ctx} />
   ) : (
     <GeneralLedgerAllView ctx={ctx} />
@@ -61,15 +62,20 @@ export function AccountTransactionsView({ ctx }: { ctx: ReportCtx }) {
 export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
   const fmt = useFormat();
   const fetchGl = useServerFn(getGeneralLedgerAll);
+  const fetchCashGl = useServerFn(getCashGeneralLedgerAll);
   const fetchAccounts = useServerFn(listAccounts);
-  const accountIds = ctx.search.accountIds;
+  const cashBasis = ctx.search.basis === "cash";
+  const accountIds = ctx.search.accountIds ?? (cashBasis ? ctx.search.account : undefined);
   const accountScope = ctx.search.accountScope ?? "balance";
   const accountGroup = ctx.search.accountGroup ?? "code";
+  const page = Math.max(0, (ctx.search.page ?? 1) - 1);
+  const pageSize = ctx.search.txnPageSize ?? 100;
   const accountsQ = useQuery({
     queryKey: ["report-account-options", ctx.companyId],
     queryFn: () => fetchAccounts({ data: { companyId: ctx.companyId } }),
   });
-  const q = useQuery({
+  const accrualQ = useQuery({
+    enabled: !cashBasis,
     queryKey: [
       "report-gl-all",
       ctx.companyId,
@@ -91,6 +97,34 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
         },
       }),
   });
+  const cashQ = useQuery({
+    queryKey: [
+      "report-cash-gl-all",
+      ctx.companyId,
+      ctx.from,
+      ctx.to,
+      accountIds,
+      accountScope,
+      accountGroup,
+      page,
+      pageSize,
+    ],
+    enabled: cashBasis,
+    queryFn: () =>
+      fetchCashGl({
+        data: {
+          companyId: ctx.companyId,
+          from: ctx.from,
+          to: ctx.to,
+          ...(accountIds ? { accountIds } : {}),
+          accountScope,
+          accountGroup,
+          page,
+          pageSize,
+        },
+      }),
+  });
+  const q = cashBasis ? cashQ : accrualQ;
   const d = q.data;
   // Reorder account groups only; never recalculate transaction running balances.
   const orderedAccounts = [...(d?.accounts ?? [])].sort((a, b) => {
@@ -107,9 +141,12 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
   });
   const selectAccounts = (ids: string[] | undefined) => {
     ctx.setSearch({
-      account: ctx.reportId === "general-ledger" && ids?.length === 1 ? ids[0] : undefined,
+      account:
+        !cashBasis && ctx.reportId === "general-ledger" && ids?.length === 1 ? ids[0] : undefined,
       accountIds:
-        ids && (ctx.reportId !== "general-ledger" || ids.length > 1) ? ids.join(",") : undefined,
+        ids && (cashBasis || ctx.reportId !== "general-ledger" || ids.length > 1)
+          ? ids.join(",")
+          : undefined,
       page: undefined,
       explorePage: undefined,
     });
@@ -119,9 +156,31 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
       title={ctx.reportId === "general-ledger" ? "Account Transactions" : "General Ledger"}
       ctx={ctx}
       mode="range"
-      basis={`${ctx.search.basis === "cash" ? "Cash basis · Recognized settlements and direct cash movements" : "Accrual basis · Posted ledger"} · Account balances in date order`}
+      basis={
+        cashBasis
+          ? "Management cash-recognition basis · Recognised receipts and payments, not accrual posting dates. Cash reconciliation and supported recognition policies are required."
+          : "Posted accrual ledger · Account-level balances preserve all posted movements in date order"
+      }
       extraControls={
         <>
+          <div className="space-y-1">
+            <Label htmlFor="account-ledger-basis">Accounting method</Label>
+            <select
+              id="account-ledger-basis"
+              className={selectCls}
+              value={cashBasis ? "cash" : "accrual"}
+              onChange={(event) =>
+                ctx.setSearch({
+                  basis: event.target.value === "cash" ? "cash" : undefined,
+                  explorePage: undefined,
+                  page: undefined,
+                })
+              }
+            >
+              <option value="accrual">Accrual (posted ledger)</option>
+              <option value="cash">Cash (recognized settlements)</option>
+            </select>
+          </div>
           <ReportAccountMultiSelect
             accounts={accountsQ.data ?? []}
             selected={accountIds ? accountIds.split(",") : undefined}
@@ -138,10 +197,13 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
                 ctx.setSearch({
                   accountScope: event.target.value === "balance" ? undefined : event.target.value,
                   explorePage: undefined,
+                  page: undefined,
                 })
               }
             >
-              <option value="transactions">With posted transactions</option>
+              <option value="transactions">
+                {cashBasis ? "With recognized cash movements" : "With posted transactions"}
+              </option>
               <option value="balance">Transactions or opening balance</option>
               <option value="all">All accounts, including zero balances</option>
             </select>
@@ -156,6 +218,7 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
                 ctx.setSearch({
                   accountGroup: event.target.value === "code" ? undefined : event.target.value,
                   explorePage: undefined,
+                  page: undefined,
                 })
               }
             >
@@ -164,6 +227,30 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
               <option value="type">Account type, then code</option>
             </select>
           </div>
+          {cashBasis && (
+            <div className="space-y-1">
+              <Label htmlFor="cash-ledger-page-size">Rows per page</Label>
+              <select
+                id="cash-ledger-page-size"
+                className={selectCls}
+                value={pageSize}
+                onChange={(event) =>
+                  ctx.setSearch({
+                    txnPageSize: Number(event.target.value) as 25 | 50 | 100 | 200,
+                    page: undefined,
+                    explorePage: undefined,
+                  })
+                }
+              >
+                {/* lookup-fixed-enum: Fixed page-size choices. */}
+                {[25, 50, 100, 200].map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </>
       }
       getCsv={() =>
@@ -183,6 +270,10 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
                 "Journal ID",
                 "Source ID",
               ],
+              basis:
+                cashBasis && cashQ.data
+                  ? `Cash recognition ledger, page ${cashQ.data.page + 1} of ${Math.max(1, Math.ceil(cashQ.data.totalCount / cashQ.data.pageSize))}; ${cashQ.data.lineCount} of ${cashQ.data.totalLineCount} cash movements loaded. Export contains only these displayed report rows. Opening and closing balances are for the complete reporting period.`
+                  : "Accrual posted ledger; full posting history used for opening balances.",
               rows: orderedAccounts.flatMap((a) => [
                 [
                   `${a.account.code} ${a.account.name}`,
@@ -224,68 +315,96 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
         emptyDescription="No accounts match the period and selection. Choose All accounts or include zero balances."
       >
         {d ? (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Journal</TableHead>
-                <TableHead>Source</TableHead>
-                <TableHead>Memo</TableHead>
-                <TableHead className="text-right">Debit</TableHead>
-                <TableHead className="text-right">Credit</TableHead>
-                <TableHead className="text-right">Balance</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {orderedAccounts.map((a) => (
-                <Fragment key={a.account.id}>
-                  <TableRow className="bg-muted/40">
-                    <TableCell colSpan={6} className="font-semibold">
-                      <Link
-                        to="/reports/$reportId"
-                        params={{ reportId: "general-ledger" }}
-                        search={{ account: a.account.id, from: ctx.from, to: ctx.to }}
-                        className="underline-offset-2 hover:underline"
-                      >
-                        {accountGroup === "type" ? `${a.account.account_type} · ` : ""}
-                        {a.account.code} {a.account.name}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="text-right text-xs">
-                      Opening {fmt.amount(a.opening_balance_minor, ctx.currency)}
-                    </TableCell>
-                  </TableRow>
-                  {a.rows.map((r, i) => (
-                    <TableRow key={`${r.journal_id}-${i}`}>
-                      <TableCell>{fmt.date(r.journal_date)}</TableCell>
-                      <TableCell>
-                        <JournalLink journalId={r.journal_id} number={r.journal_number} />
+          <div className="space-y-3">
+            {cashBasis && cashQ.data && (
+              <p className="text-xs text-muted-foreground">
+                Showing report page {cashQ.data.page + 1} · {cashQ.data.lineCount} of{" "}
+                {cashQ.data.totalLineCount} recognized cash movements across{" "}
+                {cashQ.data.totalAccountCount} accounts. Downloads contain only this page. All
+                opening and closing balances cover the entire selected period.
+              </p>
+            )}
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Journal</TableHead>
+                  <TableHead>Source</TableHead>
+                  <TableHead>Memo</TableHead>
+                  <TableHead className="text-right">Debit</TableHead>
+                  <TableHead className="text-right">Credit</TableHead>
+                  <TableHead className="text-right">Balance</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {orderedAccounts.map((a) => (
+                  <Fragment key={a.account.id}>
+                    <TableRow className="bg-muted/40">
+                      <TableCell colSpan={6} className="font-semibold">
+                        <Link
+                          to="/reports/$reportId"
+                          params={{ reportId: "general-ledger" }}
+                          search={{
+                            account: a.account.id,
+                            from: ctx.from,
+                            to: ctx.to,
+                            ...(cashBasis ? { basis: "cash" as const } : {}),
+                          }}
+                          className="underline-offset-2 hover:underline"
+                        >
+                          {accountGroup === "type" ? `${a.account.account_type} · ` : ""}
+                          {a.account.code} {a.account.name}
+                        </Link>
                       </TableCell>
-                      <TableCell>
-                        <SourceLink type={r.source_type} id={r.source_id} />
-                      </TableCell>
-                      <TableCell>{r.memo ?? "—"}</TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {fmt.amount(r.debit_minor, ctx.currency)}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {fmt.amount(r.credit_minor, ctx.currency)}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {fmt.amount(r.running_balance_minor, ctx.currency)}
+                      <TableCell className="text-right text-xs">
+                        Opening {fmt.amount(a.opening_balance_minor, ctx.currency)}
                       </TableCell>
                     </TableRow>
-                  ))}
-                  <TableRow className="font-medium">
-                    <TableCell colSpan={6}>Closing balance</TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {fmt.amount(a.closing_balance_minor, ctx.currency)}
-                    </TableCell>
-                  </TableRow>
-                </Fragment>
-              ))}
-            </TableBody>
-          </Table>
+                    {a.rows.map((r, i) => (
+                      <TableRow key={`${r.journal_id}-${i}`}>
+                        <TableCell>{fmt.date(r.journal_date)}</TableCell>
+                        <TableCell>
+                          <JournalLink journalId={r.journal_id} number={r.journal_number} />
+                        </TableCell>
+                        <TableCell>
+                          <SourceLink type={r.source_type} id={r.source_id} />
+                        </TableCell>
+                        <TableCell>{r.memo ?? "—"}</TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {fmt.amount(r.debit_minor, ctx.currency)}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {fmt.amount(r.credit_minor, ctx.currency)}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {fmt.amount(r.running_balance_minor, ctx.currency)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    <TableRow className="font-medium">
+                      <TableCell colSpan={6}>Closing balance</TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {fmt.amount(a.closing_balance_minor, ctx.currency)}
+                      </TableCell>
+                    </TableRow>
+                  </Fragment>
+                ))}
+              </TableBody>
+            </Table>
+            {cashBasis && cashQ.data && (
+              <PagerBar
+                page={cashQ.data.page}
+                pageSize={cashQ.data.pageSize}
+                total={cashQ.data.totalCount}
+                onPage={(p) =>
+                  ctx.setSearch({
+                    page: p === 0 ? undefined : p + 1,
+                    explorePage: undefined,
+                  })
+                }
+              />
+            )}
+          </div>
         ) : null}
       </ReportPane>
     </ReportShell>
@@ -627,12 +746,51 @@ export function TaxSummaryView({ ctx }: { ctx: ReportCtx }) {
   });
   const d = q.data;
   const basis = d?.basis ?? basisChoice ?? "accrual";
+  const accountIds = ctx.search.accountIds?.split(",") ?? null;
+  const taxAccounts = [
+    ...new Map(
+      (d?.detail ?? []).map((line) => [
+        line.account_id,
+        { id: line.account_id, code: line.account_code, name: line.account_name },
+      ]),
+    ).values(),
+  ];
+  const ledgerRows = accountIds
+    ? (d?.detail ?? []).filter((line) => accountIds.includes(line.account_id))
+    : (d?.detail ?? []);
   return (
     <ReportShell
       title="Tax Summary"
       ctx={ctx}
       mode="range"
       basis={`Document tax lines, ${basis} basis; posted control reconciliation shown separately`}
+      extraControls={
+        <>
+          <div className="space-y-1">
+            <Label htmlFor="tax-basis">Accounting basis</Label>
+            <select
+              id="tax-basis"
+              className={selectCls}
+              value={basis}
+              onChange={(e) =>
+                ctx.setSearch({ basis: e.target.value === "cash" ? "cash" : "accrual" })
+              }
+            >
+              <option value="accrual">Accrual (invoice date)</option>
+              <option value="cash">Cash (payment date)</option>
+            </select>
+          </div>
+          <ReportAccountMultiSelect
+            label="Tax ledger accounts"
+            accounts={taxAccounts}
+            selected={accountIds ?? undefined}
+            onChange={(ids) =>
+              ctx.setSearch({ accountIds: ids?.join(",") || undefined, explorePage: undefined })
+            }
+            disabled={!d || taxAccounts.length === 0}
+          />
+        </>
+      }
       getCsv={() => {
         if (!d) return null;
         if (d.detailMode === "cash_recognition")
@@ -683,7 +841,10 @@ export function TaxSummaryView({ ctx }: { ctx: ReportCtx }) {
           };
         return {
           headers: ["Date", "Journal", "Source", "Account", "Debit", "Credit"],
-          rows: d.detail.map((line) => [
+          basis: accountIds
+            ? "Selected tax control lines; document tax totals remain for the full company."
+            : "Full tax-control ledger transaction lines.",
+          rows: ledgerRows.map((line) => [
             line.journal_date,
             line.journal_number,
             sourceLabel(line.source_type),
@@ -711,25 +872,11 @@ export function TaxSummaryView({ ctx }: { ctx: ReportCtx }) {
                 </Link>
               </AlertDescription>
             </Alert>
-            <div className="mb-3 flex flex-wrap items-center gap-2">
-              <Label htmlFor="tax-basis">Basis</Label>
-              <select
-                id="tax-basis"
-                className={selectCls}
-                value={basis}
-                onChange={(e) =>
-                  ctx.setSearch({ basis: e.target.value === "cash" ? "cash" : "accrual" })
-                }
-              >
-                <option value="accrual">Accrual (invoice date)</option>
-                <option value="cash">Cash (payment date)</option>
-              </select>
-              {d.settingsBasis !== basis ? (
-                <span className="text-xs text-muted-foreground">
-                  The company files on the {d.settingsBasis} basis.
-                </span>
-              ) : null}
-            </div>
+            {d.settingsBasis !== basis ? (
+              <p className="mb-3 text-xs text-muted-foreground">
+                The company files on the {d.settingsBasis} basis.
+              </p>
+            ) : null}
             <div className="mb-2 grid gap-3 sm:grid-cols-3">
               <Stat
                 label="Output tax (from documents)"
@@ -865,7 +1012,13 @@ export function TaxSummaryView({ ctx }: { ctx: ReportCtx }) {
                 </div>
               </section>
             )}
-            <p className="mb-2 text-sm font-medium">Posted tax-control reconciliation</p>
+            <p className="mb-2 text-sm font-medium">
+              Posted tax-control reconciliation
+              {accountIds ? " · selected accounts shown below" : ""}
+            </p>
+            <p className="mb-2 text-xs text-muted-foreground">
+              Full-company control totals below are not filtered by the account selection.
+            </p>
             <div className="mb-4 grid gap-3 sm:grid-cols-3">
               <Stat
                 label="Output (credits)"
@@ -886,7 +1039,7 @@ export function TaxSummaryView({ ctx }: { ctx: ReportCtx }) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {d.detail.map((l, i) => (
+                {ledgerRows.map((l, i) => (
                   <TableRow key={`${l.journal_id}-${i}`}>
                     <TableCell>{fmt.date(l.journal_date)}</TableCell>
                     <TableCell>
@@ -906,6 +1059,13 @@ export function TaxSummaryView({ ctx }: { ctx: ReportCtx }) {
                     </TableCell>
                   </TableRow>
                 ))}
+                {ledgerRows.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                      No posted tax ledger lines match the selected accounts.
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </>

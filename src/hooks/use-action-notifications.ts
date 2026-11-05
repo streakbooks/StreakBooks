@@ -4,7 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { notify } from "@/lib/notify";
 
 export type ActionCategory =
-  "bill_approval" | "overdue_invoice" | "bank_reconciliation" | "document_request" | "system";
+  | "bill_approval"
+  | "overdue_invoice"
+  | "bank_reconciliation"
+  | "document_request"
+  | "contact_followup"
+  | "system";
 export type ActionPriority = "low" | "medium" | "high" | "critical";
 export type ActionNotification = {
   id: string;
@@ -51,6 +56,11 @@ export function useActionNotifications(companyId: string | null, userId: string,
         } as never,
       );
       if (refreshError) throw refreshError;
+      const { error: followUpRefreshError } = await supabase.rpc(
+        "refresh_my_contact_followups" as never,
+        { _company_id: companyId } as never,
+      );
+      if (followUpRefreshError) throw followUpRefreshError;
       const { data, error } = await supabase
         .from("action_notifications" as never)
         .select(

@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { openSettingsPanel, type SettingsPanelId } from "@/lib/settings/panels";
 import { cn } from "@/lib/utils";
-import { categoryMeta, type SettingsCategory } from "@/lib/settings/registry";
+import { categoryMeta, searchSettings, type SettingsCategory } from "@/lib/settings/registry";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -82,6 +82,10 @@ export function SettingsNav({ section, embedded = false, showDemo, filter }: Pro
   };
 
   const q = (filter ?? "").trim().toLowerCase();
+  const matches = new Set(searchSettings(q).map((item) => item.id));
+  const hasVisibleMatches = categoryMeta.some(
+    (item) => matches.has(item.id) && (item.id !== "demo" || showDemo),
+  );
 
   return (
     <nav className="space-y-2" aria-label="Settings categories">
@@ -89,20 +93,17 @@ export function SettingsNav({ section, embedded = false, showDemo, filter }: Pro
         const items = categoryMeta.filter((c) => {
           if (!group.ids.includes(c.id)) return false;
           if (c.id === "demo" && !showDemo) return false;
-          if (!q) return true;
-          return (
-            c.label.toLowerCase().includes(q) ||
-            c.synonyms.some((s) => s.includes(q)) ||
-            c.description.toLowerCase().includes(q)
-          );
+          return matches.has(c.id);
         });
         if (items.length === 0) return null;
-        const isOpen = open[group.label] !== false;
+        const isOpen = Boolean(q) || open[group.label] !== false;
         return (
           <Collapsible
             key={group.label}
             open={isOpen}
-            onOpenChange={(v) => persist({ ...open, [group.label]: v })}
+            onOpenChange={(v) => {
+              if (!q) persist({ ...open, [group.label]: v });
+            }}
           >
             <CollapsibleTrigger asChild>
               <Button
@@ -124,6 +125,7 @@ export function SettingsNav({ section, embedded = false, showDemo, filter }: Pro
                           openSettingsPanel(previous, `category:${c.id}` as SettingsPanelId)
                       : { section: c.id }
                   }
+                  aria-current={section === c.id ? "page" : undefined}
                   className={cn(
                     "flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm transition-colors",
                     section === c.id
@@ -134,7 +136,7 @@ export function SettingsNav({ section, embedded = false, showDemo, filter }: Pro
                   <span className="truncate">{c.label}</span>
                   {c.availability === "unavailable" ? (
                     <Badge variant="outline" className="ml-1 shrink-0 text-[10px]">
-                      Soon
+                      Unavailable
                     </Badge>
                   ) : c.availability === "partial" ? (
                     <Badge variant="secondary" className="ml-1 shrink-0 text-[10px]">
@@ -147,6 +149,11 @@ export function SettingsNav({ section, embedded = false, showDemo, filter }: Pro
           </Collapsible>
         );
       })}
+      {q && !hasVisibleMatches ? (
+        <p role="status" className="px-2 py-3 text-sm text-muted-foreground">
+          No matching settings categories.
+        </p>
+      ) : null}
     </nav>
   );
 }

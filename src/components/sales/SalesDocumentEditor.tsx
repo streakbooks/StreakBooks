@@ -32,11 +32,8 @@ import { recordVoiceDraftOutcome } from "@/lib/ai-voice/voice-audit.functions";
 import { PageHeader, LoadingState, EmptyState } from "@/components/common/states";
 import { EntityCombobox } from "@/components/common/EntityCombobox";
 import { ContactCreateForm } from "@/components/lookup/create-forms";
-import {
-  SalesDocumentLines,
-  emptySalesLine,
-  type SalesLineFormState,
-} from "@/components/sales/SalesDocumentLines";
+import { SalesDocumentLines } from "@/components/sales/SalesDocumentLines";
+import { emptySalesLine, type SalesLineFormState } from "@/lib/sales/line-form-state";
 import {
   currencyOptions,
   lineFormToInput,

@@ -1,3 +1,4 @@
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -23,11 +24,8 @@ import { friendlyAuthError } from "@/lib/auth-helpers";
 import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
 import { EntityCombobox } from "@/components/common/EntityCombobox";
 import { ContactCreateForm } from "@/components/lookup/create-forms";
-import {
-  SalesDocumentLines,
-  emptySalesLine,
-  type SalesLineFormState,
-} from "@/components/sales/SalesDocumentLines";
+import { SalesDocumentLines } from "@/components/sales/SalesDocumentLines";
+import { emptySalesLine, type SalesLineFormState } from "@/lib/sales/line-form-state";
 import { lineFormToInput, lineRowToForm } from "@/components/sales/sales-form-utils";
 import { Button } from "@/components/ui/button";
 import { RunDueButton } from "@/components/recurring/RunDueButton";
@@ -252,6 +250,12 @@ export function RecurringInvoices() {
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
+
+  const requiredQueries = [customersQ, accountsQ, productsQ, configQ];
+  if (requiredQueries.some((query) => query.isError && query.data === undefined))
+    return (
+      <QueryErrorState queries={requiredQueries} title="Could not load recurring invoice options" />
+    );
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   const rows = listQ.data ?? [];

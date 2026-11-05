@@ -1,6 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { assertLinesBalance, type JournalLineDraft } from "@/lib/accounting/money";
+import {
+  assertLinesBalance,
+  toSafeMinorNumber,
+  type JournalLineDraft,
+} from "@/lib/accounting/money";
+import { parseDateValue } from "@/lib/banking/csv-mapping";
 
 type AuthedClient = SupabaseClient<Database>;
 
@@ -50,11 +55,43 @@ export async function postJournal(
   input: PostJournalInput,
 ): Promise<{ journalId: string }> {
   if (!input.company_id) throw new Error("company_id is required");
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.journal_date)) {
-    throw new Error("journal_date must be YYYY-MM-DD");
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(input.journal_date) ||
+    parseDateValue(input.journal_date, "YYYY-MM-DD") !== input.journal_date
+  ) {
+    throw new Error("journal_date must be a valid YYYY-MM-DD calendar date");
   }
   assertLinesBalance(input.lines);
 
+  if (input.auto_reverse_on) {
+    if (
+      !/^\d{4}-\d{2}-\d{2}$/.test(input.auto_reverse_on) ||
+      parseDateValue(input.auto_reverse_on, "YYYY-MM-DD") !== input.auto_reverse_on
+    ) {
+      throw new Error("auto_reverse_on must be a valid YYYY-MM-DD calendar date");
+    }
+    if (input.auto_reverse_on <= input.journal_date) {
+      throw new Error("The reversal date must be after the journal date.");
+    }
+    if ((input.source_type ?? "manual") !== "manual") {
+      throw new Error("Only manual journals can be auto-reversing");
+    }
+  }
+
+  // Validate exact amounts before an FX lookup or any database mutation.
+  // Converting an unsafe bigint to Number first would silently round it.
+  const lines = input.lines.map((line, index) => ({
+    account_id: line.account_id,
+    description: line.description ?? null,
+    debit_minor: toSafeMinorNumber(
+      typeof line.debit_minor === "bigint" ? line.debit_minor : BigInt(line.debit_minor),
+      `Journal line ${index + 1} debit`,
+    ),
+    credit_minor: toSafeMinorNumber(
+      typeof line.credit_minor === "bigint" ? line.credit_minor : BigInt(line.credit_minor),
+      `Journal line ${index + 1} credit`,
+    ),
+  }));
   const fxRate = await resolveFxRate(supabase, input);
 
   const payload = {
@@ -67,36 +104,8 @@ export async function postJournal(
     source_id: input.source_id ?? null,
     idempotency_key: input.idempotency_key ?? null,
     reverses_journal_id: input.reverses_journal_id ?? null,
-    lines: input.lines.map((l) => ({
-      account_id: l.account_id,
-      description: l.description ?? null,
-      debit_minor: Number(
-        typeof l.debit_minor === "bigint" ? l.debit_minor : BigInt(l.debit_minor),
-      ),
-      credit_minor: Number(
-        typeof l.credit_minor === "bigint" ? l.credit_minor : BigInt(l.credit_minor),
-      ),
-    })),
+    lines,
   };
-
-  // JSON numbers are fine for minor units within Number.MAX_SAFE_INTEGER (≈ 90 trillion currency units).
-  for (const line of payload.lines) {
-    if (!Number.isSafeInteger(line.debit_minor) || !Number.isSafeInteger(line.credit_minor)) {
-      throw new Error("Amount exceeds safe integer range for JSON transport");
-    }
-  }
-
-  if (input.auto_reverse_on) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(input.auto_reverse_on)) {
-      throw new Error("auto_reverse_on must be YYYY-MM-DD");
-    }
-    if (input.auto_reverse_on <= input.journal_date) {
-      throw new Error("The reversal date must be after the journal date.");
-    }
-    if ((input.source_type ?? "manual") !== "manual") {
-      throw new Error("Only manual journals can be auto-reversing");
-    }
-  }
 
   // An auto-reversing journal is posted by `post_auto_reversing_journal`, which calls post_journal
   // and records the reversal schedule in the same transaction.
@@ -130,11 +139,12 @@ export async function postJournal(
 }
 
 /**
- * The rate a journal is posted at. An explicit rate always wins. A foreign-currency journal with no
- * rate used to be posted at 1:1 (silently wrong books); it now uses the latest MANUAL rate on or before
- * the posting date from `exchange_rates`, and fails with a clear message when there is none. There is no
- * rate feed. Base-currency journals resolve to 1. If the lookup function is not deployed yet the old
- * default of 1 is kept so older databases keep working.
+ * Resolve the exchange-rate snapshot for a journal. Never manufacture a 1:1
+ * conversion for a currency the caller explicitly supplied: only a valid
+ * database lookup or a positive explicit rate can establish that value.
+ *
+ * When no currency is specified, the posting RPC uses the company's base
+ * currency; 1 is therefore the intentional default for base-only journals.
  */
 export async function resolveFxRate(
   supabase: AuthedClient,
@@ -143,9 +153,19 @@ export async function resolveFxRate(
     "company_id" | "journal_date" | "currency_code" | "fx_rate_to_base"
   >,
 ): Promise<number> {
-  if (input.fx_rate_to_base != null) return input.fx_rate_to_base;
-  const currency = input.currency_code?.trim().toUpperCase();
-  if (!currency) return 1;
+  if (input.fx_rate_to_base != null) {
+    if (!Number.isFinite(input.fx_rate_to_base) || input.fx_rate_to_base <= 0) {
+      throw new Error("FX rate must be a positive finite number");
+    }
+    return input.fx_rate_to_base;
+  }
+
+  if (input.currency_code === undefined || input.currency_code === null) return 1;
+  const currency = input.currency_code.trim().toUpperCase();
+  if (!/^[A-Z]{3}$/.test(currency)) {
+    throw new Error("Currency code must have three letters");
+  }
+
   const { data, error } = await supabase.rpc(
     "lookup_fx_rate_to_base" as never,
     {
@@ -160,11 +180,26 @@ export async function resolveFxRate(
         `No exchange rate for ${currency} on or before ${input.journal_date}. Enter the rate on the document, or add a manual rate in Settings, then try again.`,
       );
     }
-    if (isMissingRpcError(error)) return 1;
+    if (isMissingRpcError(error)) {
+      throw new Error(
+        "Exchange-rate lookup is unavailable. Apply the FX migration or supply an explicitly verified rate before posting.",
+      );
+    }
     throw new Error(error.message);
   }
+
+  // PostgreSQL NUMERIC may reach the client as a number or a decimal string.
+  if (
+    (typeof data !== "number" || !Number.isFinite(data)) &&
+    (typeof data !== "string" || !/^\d+(?:\.\d+)?$/.test(data))
+  ) {
+    throw new Error(`Exchange-rate lookup returned an invalid rate for ${currency}`);
+  }
   const rate = Number(data);
-  return Number.isFinite(rate) && rate > 0 ? rate : 1;
+  if (!Number.isFinite(rate) || rate <= 0) {
+    throw new Error(`Exchange-rate lookup returned an invalid rate for ${currency}`);
+  }
+  return rate;
 }
 
 export function isNoPeriodError(message: string | null | undefined): boolean {
@@ -239,6 +274,9 @@ export async function categoriseBankTransaction(
     idempotency_key: string;
   },
 ): Promise<{ journalId: string; linkId: string }> {
+  if (typeof args.amount_minor === "number" && !Number.isSafeInteger(args.amount_minor)) {
+    throw new Error("Bank amount must be an exact integer in minor units");
+  }
   const amount =
     typeof args.amount_minor === "number" ? BigInt(args.amount_minor) : args.amount_minor;
   if (amount === 0n) throw new Error("Bank amount cannot be zero");

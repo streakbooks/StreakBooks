@@ -37,6 +37,91 @@ test.describe("authenticated LinkBooks staging smoke", () => {
     await expect(page).not.toHaveURL(/\/auth/);
   });
 
+  test("Contacts directory exposes filter, column, saved-view and reminder controls", async ({
+    page,
+  }) => {
+    await signIn(page, "/contacts");
+
+    await expect(page.getByRole("heading", { name: "Contacts", exact: true })).toBeVisible();
+    await expect(page.getByRole("region", { name: "Contact follow-up reminders" })).toBeVisible();
+    await expect(
+      page.getByRole("combobox", { name: "Choose follow-up owner scope" }),
+    ).toBeVisible();
+
+    await page.getByRole("button", { name: "Choose visible contact columns" }).click();
+    await expect(
+      page.getByRole("menuitemcheckbox", { name: "Contact", exact: true }),
+    ).toHaveAttribute("aria-checked", "true");
+    await expect(page.getByRole("menuitemcheckbox", { name: "City", exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("menuitemcheckbox", { name: "State / Region", exact: true }),
+    ).toBeVisible();
+    await page.keyboard.press("Escape");
+
+    await page.getByRole("button", { name: "Advanced contact filters" }).click();
+    await expect(page.getByLabel("Billing city", { exact: true })).toBeVisible();
+    await expect(page.getByLabel("Billing state / region", { exact: true })).toBeVisible();
+    await page.keyboard.press("Escape");
+
+    await page.getByRole("button", { name: "Saved views", exact: true }).click();
+    await expect(page.getByLabel("Open a saved contact view")).toBeVisible();
+    await expect(page.getByLabel("Save current view as")).toBeVisible();
+  });
+
+  test("Contacts cloud columns synchronize between separate signed-in browsers", async ({
+    page,
+    browser,
+  }) => {
+    // This test uses the dedicated staging account only. Restore the original
+    // preference even if cross-browser verification fails. No financial data changes.
+    await signIn(page, "/contacts");
+    const columns = page.getByRole("button", { name: "Choose visible contact columns" });
+    await columns.click();
+    const city = page.getByRole("menuitemcheckbox", { name: "City", exact: true });
+    await expect(city).toBeVisible();
+    await expect(page.getByText("Column preferences sync to your account")).toBeVisible();
+    const originallyChecked = (await city.getAttribute("aria-checked")) === "true";
+    let changed = false;
+    try {
+      await city.click();
+      changed = true;
+      await expect(city).toHaveAttribute("aria-checked", String(!originallyChecked));
+      await expect(page.getByText("Column preferences sync to your account")).toBeVisible();
+
+      const secondContext = await browser.newContext({ baseURL: process.env.E2E_BASE_URL });
+      try {
+        const secondPage = await secondContext.newPage();
+        await signIn(secondPage, "/contacts");
+        await secondPage.getByRole("button", { name: "Choose visible contact columns" }).click();
+        await expect(
+          secondPage.getByRole("menuitemcheckbox", { name: "City", exact: true }),
+        ).toHaveAttribute("aria-checked", String(!originallyChecked));
+      } finally {
+        await secondContext.close();
+      }
+    } finally {
+      if (changed) {
+        await page.goto("/contacts");
+        await columns.click();
+        const restore = page.getByRole("menuitemcheckbox", { name: "City", exact: true });
+        await expect(restore).toHaveAttribute("aria-checked", String(!originallyChecked));
+        await restore.click();
+        await expect(restore).toHaveAttribute("aria-checked", String(originallyChecked));
+        await expect(page.getByText("Column preferences sync to your account")).toBeVisible();
+      }
+    }
+  });
+
+  test("Smart Action Center exposes opt-in contact reminders to authenticated users", async ({
+    page,
+  }) => {
+    await signIn(page, "/notifications");
+    await expect(page.getByRole("heading", { name: "Smart Action Center" })).toBeVisible();
+    await expect(page.getByRole("checkbox", { name: "Contact follow-up reminders" })).toBeVisible();
+    await page.getByRole("combobox", { name: "Filter by module" }).click();
+    await expect(page.getByRole("option", { name: "Contact follow-ups" })).toBeVisible();
+  });
+
   test("Sales and Purchases show existing permission-controlled filter views", async ({ page }) => {
     await signIn(page, "/sales/invoices");
     await expect(page.getByRole("button", { name: "Saved views" })).toBeVisible();

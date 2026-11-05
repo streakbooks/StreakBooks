@@ -3,6 +3,7 @@ import { resolveReportingBasis } from "./accounting-basis.server";
 import { loadCashReportLines } from "./cash-report.server";
 import { assertCurrentPayablesDate, payableOutstandingInBase } from "./payables-integrity";
 import { shouldIncludeLedgerAccount } from "./account-scope";
+import { parseReportAccountIds } from "./report-account-selection";
 import {
   filterTransactionRows,
   type TransactionFlow,
@@ -706,10 +707,7 @@ export const getGeneralLedgerAll = createServerFn({ method: "GET" })
       from: isoDate(input.from, "From"),
       to: isoDate(input.to, "To"),
       basis: parseAccountingBasis(input.basis),
-      accountIds:
-        input.accountIds && input.accountIds.length <= 3700
-          ? [...new Set(input.accountIds.split(",").map((id) => assertUuid(id, "report account")))]
-          : ([] as string[]),
+      accountIds: parseReportAccountIds(input.accountIds),
       accountScope:
         input.accountScope === "transactions" || input.accountScope === "all"
           ? input.accountScope

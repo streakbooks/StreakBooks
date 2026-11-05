@@ -61,6 +61,7 @@ import { Route as AuthenticatedContactsImportRouteImport } from './routes/_authe
 import { Route as AuthenticatedContactsNewRouteImport } from './routes/_authenticated/contacts/new'
 import { Route as AuthenticatedContactsSettingsRouteImport } from './routes/_authenticated/contacts/settings'
 import { Route as AuthenticatedDocumentsBrandingRouteImport } from './routes/_authenticated/documents.branding'
+import { Route as AuthenticatedFirmInviteTokenRouteImport } from './routes/_authenticated/firm-invite.$token'
 import { Route as AuthenticatedInviteTokenRouteImport } from './routes/_authenticated/invite.$token'
 import { Route as AuthenticatedPlatformIndexRouteImport } from './routes/_authenticated/platform.index'
 import { Route as AuthenticatedPlatformAutomationRouteImport } from './routes/_authenticated/platform.automation'
@@ -420,6 +421,12 @@ const AuthenticatedDocumentsBrandingRoute =
   AuthenticatedDocumentsBrandingRouteImport.update({
     id: '/documents/branding',
     path: '/documents/branding',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFirmInviteTokenRoute =
+  AuthenticatedFirmInviteTokenRouteImport.update({
+    id: '/firm-invite/$token',
+    path: '/firm-invite/$token',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedInviteTokenRoute =
@@ -912,6 +919,7 @@ export interface FileRoutesByFullPath {
   '/contacts/new': typeof AuthenticatedContactsNewRoute
   '/contacts/settings': typeof AuthenticatedContactsSettingsRoute
   '/documents/branding': typeof AuthenticatedDocumentsBrandingRoute
+  '/firm-invite/$token': typeof AuthenticatedFirmInviteTokenRoute
   '/invite/$token': typeof AuthenticatedInviteTokenRoute
   '/platform/automation': typeof AuthenticatedPlatformAutomationRoute
   '/platform/billing': typeof AuthenticatedPlatformBillingRoute
@@ -1035,6 +1043,7 @@ export interface FileRoutesByTo {
   '/contacts/new': typeof AuthenticatedContactsNewRoute
   '/contacts/settings': typeof AuthenticatedContactsSettingsRoute
   '/documents/branding': typeof AuthenticatedDocumentsBrandingRoute
+  '/firm-invite/$token': typeof AuthenticatedFirmInviteTokenRoute
   '/invite/$token': typeof AuthenticatedInviteTokenRoute
   '/platform/automation': typeof AuthenticatedPlatformAutomationRoute
   '/platform/billing': typeof AuthenticatedPlatformBillingRoute
@@ -1163,6 +1172,7 @@ export interface FileRoutesById {
   '/_authenticated/contacts/new': typeof AuthenticatedContactsNewRoute
   '/_authenticated/contacts/settings': typeof AuthenticatedContactsSettingsRoute
   '/_authenticated/documents/branding': typeof AuthenticatedDocumentsBrandingRoute
+  '/_authenticated/firm-invite/$token': typeof AuthenticatedFirmInviteTokenRoute
   '/_authenticated/invite/$token': typeof AuthenticatedInviteTokenRoute
   '/_authenticated/platform/automation': typeof AuthenticatedPlatformAutomationRoute
   '/_authenticated/platform/billing': typeof AuthenticatedPlatformBillingRoute
@@ -1294,6 +1304,7 @@ export interface FileRouteTypes {
     | '/contacts/new'
     | '/contacts/settings'
     | '/documents/branding'
+    | '/firm-invite/$token'
     | '/invite/$token'
     | '/platform/automation'
     | '/platform/billing'
@@ -1417,6 +1428,7 @@ export interface FileRouteTypes {
     | '/contacts/new'
     | '/contacts/settings'
     | '/documents/branding'
+    | '/firm-invite/$token'
     | '/invite/$token'
     | '/platform/automation'
     | '/platform/billing'
@@ -1544,6 +1556,7 @@ export interface FileRouteTypes {
     | '/_authenticated/contacts/new'
     | '/_authenticated/contacts/settings'
     | '/_authenticated/documents/branding'
+    | '/_authenticated/firm-invite/$token'
     | '/_authenticated/invite/$token'
     | '/_authenticated/platform/automation'
     | '/_authenticated/platform/billing'
@@ -2003,6 +2016,13 @@ declare module '@tanstack/react-router' {
       path: '/documents/branding'
       fullPath: '/documents/branding'
       preLoaderRoute: typeof AuthenticatedDocumentsBrandingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/firm-invite/$token': {
+      id: '/_authenticated/firm-invite/$token'
+      path: '/firm-invite/$token'
+      fullPath: '/firm-invite/$token'
+      preLoaderRoute: typeof AuthenticatedFirmInviteTokenRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/invite/$token': {
@@ -2826,6 +2846,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedContactsNewRoute: typeof AuthenticatedContactsNewRoute
   AuthenticatedContactsSettingsRoute: typeof AuthenticatedContactsSettingsRoute
   AuthenticatedDocumentsBrandingRoute: typeof AuthenticatedDocumentsBrandingRoute
+  AuthenticatedFirmInviteTokenRoute: typeof AuthenticatedFirmInviteTokenRoute
   AuthenticatedInviteTokenRoute: typeof AuthenticatedInviteTokenRoute
   AuthenticatedReportsReportIdRoute: typeof AuthenticatedReportsReportIdRoute
   AuthenticatedBudgetsIndexRoute: typeof AuthenticatedBudgetsIndexRoute
@@ -2865,6 +2886,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedContactsNewRoute: AuthenticatedContactsNewRoute,
   AuthenticatedContactsSettingsRoute: AuthenticatedContactsSettingsRoute,
   AuthenticatedDocumentsBrandingRoute: AuthenticatedDocumentsBrandingRoute,
+  AuthenticatedFirmInviteTokenRoute: AuthenticatedFirmInviteTokenRoute,
   AuthenticatedInviteTokenRoute: AuthenticatedInviteTokenRoute,
   AuthenticatedReportsReportIdRoute: AuthenticatedReportsReportIdRoute,
   AuthenticatedBudgetsIndexRoute: AuthenticatedBudgetsIndexRoute,

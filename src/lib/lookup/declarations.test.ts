@@ -26,6 +26,46 @@ describe("shared lookup migration adapter", () => {
     expect(options.ariaLabel).toBe("Choose contact");
     expect(options.options[0]!.id).toBe("contact-1");
   });
+  it("preserves trigger validation descriptions without letting option metadata overwrite them", () => {
+    const result = declaredLookupOptions([
+      createElement("button", {
+        id: "customer",
+        "aria-labelledby": "customer-label",
+        "aria-describedby": "customer-help customer-error",
+        "aria-invalid": true,
+        disabled: false,
+      }),
+      createElement(
+        "div",
+        {},
+        createElement(
+          "div",
+          {
+            id: "option-id",
+            value: "c-1",
+            "aria-label": "Option label",
+            "aria-invalid": false,
+            disabled: true,
+          },
+          "Inactive customer",
+        ),
+      ),
+    ]);
+    expect(result).toMatchObject({
+      id: "customer",
+      labelledBy: "customer-label",
+      describedBy: "customer-help customer-error",
+      invalid: true,
+      disabled: false,
+    });
+    expect(result.ariaLabel).toBeUndefined();
+    expect(result.options[0]).toMatchObject({ id: "c-1", disabled: true });
+  });
+  it("preserves an explicitly valid trigger state", () => {
+    expect(declaredLookupOptions(createElement("button", { "aria-invalid": false })).invalid).toBe(
+      false,
+    );
+  });
   it("replaying cached pages does not duplicate options or retain obsolete labels", () => {
     expect(
       appendUniqueLookupRows(

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Trash2 } from "lucide-react";
@@ -11,7 +11,11 @@ import {
   generateRecurringJournal,
   saveRecurringJournalTemplate,
 } from "@/lib/create-new/money-documents.functions";
-import { fromMinorUnits, toMinorUnits } from "@/lib/accounting/money";
+import { fromMinorUnits, toSafeMinorNumber } from "@/lib/accounting/money";
+import { tryParseMinor } from "@/lib/purchases/money-input";
+import { inspectManualJournal } from "@/lib/accounting/manual-journal-review";
+import { importJournalLinesCsv, JOURNAL_CSV_HEADERS } from "@/lib/accounting/journal-csv-import";
+import { toCsv } from "@/lib/sales/csv";
 import { validateAutoReverseDate } from "@/lib/accounting/fx-reval";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import {
@@ -44,14 +48,6 @@ export function RecurringJournalPanel() {
   return <JournalLines mode="template" />;
 }
 
-function safeMinor(value: string, currency: string): bigint {
-  try {
-    return toMinorUnits(value.trim() || "0", currency);
-  } catch {
-    return 0n;
-  }
-}
-
 function JournalLines({ mode }: { mode: "post" | "template" }) {
   const { company } = useActiveCompany();
   const companyId = company?.id;
@@ -79,51 +75,72 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
   const [recordId, setRecordId] = useState<string | null>(null);
   const recordRef = useRef<DocumentRecordHandle>(null);
   const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
+  const [importedCount, setImportedCount] = useState(0);
 
   const allAccounts = (accountsQ.data ?? []) as unknown as AccountRow[];
   // Control accounts (receivables, payables, tax) are written by their own documents, not by hand.
   const accounts = allAccounts.filter((a) => a.is_active && a.is_postable && !a.is_control);
 
-  const totals = useMemo(() => {
-    let debit = 0n;
-    let credit = 0n;
-    for (const line of lines) {
-      debit += safeMinor(line.debit, currency);
-      credit += safeMinor(line.credit, currency);
-    }
-    return { debit, credit, difference: debit - credit };
-  }, [lines, currency]);
-
-  const filled = lines.filter((line) => line.accountId);
-  const bothSides = lines.some(
-    (line) => safeMinor(line.debit, currency) > 0n && safeMinor(line.credit, currency) > 0n,
+  const review = inspectManualJournal(
+    lines,
+    currency,
+    accounts.map((account) => account.id),
   );
-  const balanced = totals.debit > 0n && totals.difference === 0n;
+  const totals = review;
+  const balanced = review.balanced;
   const reverseError = mode === "post" ? validateAutoReverseDate(date, autoReverseOn) : null;
-  const canSubmit =
-    balanced &&
-    filled.length >= 2 &&
-    !bothSides &&
-    !reverseError &&
-    (mode === "post" || name.trim().length > 0);
+  const canSubmit = review.canPost && !reverseError && (mode === "post" || name.trim().length > 0);
+
+  async function handleCsvImport(file: File) {
+    if (file.size > 256000) throw new Error("CSV file exceeds the 256 KB import limit.");
+    if (accountsQ.isPending || accountsQ.isError) {
+      throw new Error("Wait until the chart of accounts has loaded before importing.");
+    }
+    const parsed = importJournalLinesCsv(await file.text(), accounts, currency);
+    setLines(parsed);
+    setIdempotencyKey(crypto.randomUUID());
+    setRecordId(null);
+    setImportedCount(parsed.length);
+    setError(null);
+    toast.success(
+      "Loaded " + parsed.length + " balanced journal lines for review. Nothing posted.",
+    );
+  }
+
+  function downloadCsvTemplate() {
+    const csv = toCsv([...JOURNAL_CSV_HEADERS], []);
+    const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "linkbooks-manual-journal-import-template.csv";
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
 
   function updateLine(index: number, patch: Partial<Line>) {
     setLines((current) => current.map((item, i) => (i === index ? { ...item, ...patch } : item)));
   }
 
   function payloadLines() {
+    if (!review.canPost) {
+      throw new Error("Resolve invalid or unbalanced journal lines before continuing.");
+    }
     return lines
       .filter((line) => line.accountId)
       .map((line) => ({
         accountId: line.accountId,
         description: line.description || memo || name,
-        debitMinor: Number(safeMinor(line.debit, currency)),
-        creditMinor: Number(safeMinor(line.credit, currency)),
+        debitMinor: toSafeMinorNumber(tryParseMinor(line.debit, currency) ?? 0n, "Journal debit"),
+        creditMinor: toSafeMinorNumber(
+          tryParseMinor(line.credit, currency) ?? 0n,
+          "Journal credit",
+        ),
       }));
   }
 
   function reset() {
     setLines([emptyLine(), emptyLine()]);
+    setImportedCount(0);
     setMemo("");
     setName("");
     setAutoReverseOn("");
@@ -199,6 +216,19 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
       onSubmit={(event) => {
         event.preventDefault();
         setError(null);
+        if (!canSubmit) return;
+        if (mode === "post") {
+          const reverseText = autoReverseOn
+            ? ` It will be scheduled for auto-reversal on ${autoReverseOn}.`
+            : "";
+          const accepted = window.confirm(
+            `Post ${review.filledCount} journal lines dated ${date}? Debits ${fromMinorUnits(
+              totals.debit,
+              currency,
+            )} ${currency}; credits ${fromMinorUnits(totals.credit, currency)} ${currency}.${reverseText}`,
+          );
+          if (!accepted) return;
+        }
         saveM.mutate();
       }}
     >
@@ -281,6 +311,41 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
           </>
         ) : null}
       </div>
+
+      {mode === "post" ? (
+        <section aria-label="Import manual journal CSV" className="space-y-2 rounded-md border p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <Label htmlFor="journal-csv-import">Import manual journal lines (CSV)</Label>
+            <Button type="button" size="sm" variant="outline" onClick={downloadCsvTemplate}>
+              Download CSV template
+            </Button>
+          </div>
+          <Input
+            id="journal-csv-import"
+            aria-label="Select journal lines CSV"
+            type="file"
+            accept=".csv,text/csv"
+            disabled={saveM.isPending || accountsQ.isPending || accountsQ.isError}
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              event.target.value = "";
+              if (!file) return;
+              void handleCsvImport(file).catch((e) => setError(friendlyAuthError(e)));
+            }}
+          />
+          <p className="text-xs text-muted-foreground">
+            Columns: account_code, description, debit, credit. Imports one balanced journal (2–200
+            lines). Use posting-enabled account codes, exclude tax and AR/AP control accounts, and
+            review the populated lines before pressing Post journal. Uploading never posts.
+          </p>
+          {importedCount > 0 ? (
+            <p role="status" className="text-sm">
+              {importedCount} lines imported into this draft. Check the date, narration and accounts
+              before posting.
+            </p>
+          ) : null}
+        </section>
+      ) : null}
 
       <div className="space-y-2">
         <div className="hidden grid-cols-12 gap-2 text-xs font-medium text-muted-foreground sm:grid">
@@ -373,8 +438,12 @@ function JournalLines({ mode }: { mode: "post" | "template" }) {
           </Badge>
         )}
       </div>
-      {bothSides ? (
-        <p className="text-sm text-destructive">A line cannot have both a debit and a credit.</p>
+      {review.invalidLines.length > 0 ? (
+        <p role="alert" className="text-sm text-destructive">
+          Review line{review.invalidLines.length === 1 ? "" : "s"} {review.invalidLines.join(", ")}:
+          select an eligible account and enter one valid, non-negative debit or credit within the
+          supported amount limits. Invalid text is never treated as zero.
+        </p>
       ) : null}
 
       <DocumentRecordPanel

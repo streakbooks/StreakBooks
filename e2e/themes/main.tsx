@@ -28,7 +28,7 @@ type State = {
   defaults: Array<{ kind: ThemeKind; theme_id: string }>;
   logoUrls: Record<string, string>;
 };
-function Fixture() {
+export function Fixture() {
   const [state, setState] = useState<State>(() =>
     JSON.parse(
       localStorage.getItem("theme-fixture") ?? '{"themes":[],"defaults":[],"logoUrls":{}}',

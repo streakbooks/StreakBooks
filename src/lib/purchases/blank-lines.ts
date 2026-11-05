@@ -1,4 +1,4 @@
-import type { PurchaseLineFormState } from "@/components/purchases/PurchasesDocumentLines";
+import type { PurchaseLineFormState } from "@/lib/purchases/line-form-state";
 
 /** True when a line has no meaningful user input (safe to strip on save). */
 export function isCompletelyBlankPurchaseLine(line: PurchaseLineFormState): boolean {

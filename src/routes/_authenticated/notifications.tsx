@@ -61,6 +61,7 @@ const CATEGORIES: Record<string, string> = {
   overdue_invoice: "Overdue invoices",
   bank_reconciliation: "Bank reconciliation",
   document_request: "Document requests",
+  contact_followup: "Contact follow-ups",
   system: "System",
 };
 const PAGE_SIZE = 20;
@@ -349,13 +350,15 @@ function NotificationRow({
                 <a href={path}>
                   {n.category === "document_request"
                     ? "Upload document"
-                    : n.category === "bill_approval"
-                      ? "Review bill"
-                      : n.category === "overdue_invoice"
-                        ? "Review invoice"
-                        : n.category === "bank_reconciliation"
-                          ? "Reconcile bank"
-                          : "Review and act"}
+                    : n.category === "contact_followup"
+                      ? "Open follow-up"
+                      : n.category === "bill_approval"
+                        ? "Review bill"
+                        : n.category === "overdue_invoice"
+                          ? "Review invoice"
+                          : n.category === "bank_reconciliation"
+                            ? "Reconcile bank"
+                            : "Review and act"}
                   <ArrowUpRight className="ml-1 size-3" />
                 </a>
               </Button>

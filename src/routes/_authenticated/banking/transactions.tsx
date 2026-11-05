@@ -1,3 +1,4 @@
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { ProjectTagControl } from "@/components/projects/ProjectTagControl";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Eye, MoreHorizontal, Rows3, Table2 } from "lucide-react";
@@ -421,6 +422,10 @@ function BankTransactions() {
     },
   });
 
+  const requiredQueries = [accountsQ];
+  if (requiredQueries.some((query) => query.isError && query.data === undefined))
+    return <QueryErrorState queries={requiredQueries} title="Could not load bank accounts" />;
+
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
 
   const rows = (txnsQ.data?.rows ?? []) as BankTxnListRow[];
@@ -794,7 +799,11 @@ function BankTransactions() {
       {txnsQ.isPending ? (
         <ListSkeleton />
       ) : txnsQ.isError ? (
-        <ErrorState title="Could not load" description={friendlyAuthError(txnsQ.error)} />
+        <ErrorState
+          onRetry={() => void txnsQ.refetch()}
+          title="Could not load"
+          description={friendlyAuthError(txnsQ.error)}
+        />
       ) : rows.length === 0 ? (
         <EmptyState
           title="No transactions"

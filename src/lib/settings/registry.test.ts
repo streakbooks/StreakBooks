@@ -1,0 +1,51 @@
+import { describe, expect, it } from "vitest";
+import { categoryMeta, resolveSettingsCategory, searchSettings } from "./registry";
+
+describe("Settings Centre category routing and search", () => {
+  it("keeps valid deep links and falls back for invalid or unsafe categories", () => {
+    expect(resolveSettingsCategory("notifications")).toBe("notifications");
+    expect(resolveSettingsCategory("accounting")).toBe("accounting");
+    expect(resolveSettingsCategory("does_not_exist")).toBe("overview");
+    expect(resolveSettingsCategory("https://example.invalid")).toBe("overview");
+    expect(resolveSettingsCategory(null)).toBe("overview");
+    expect(resolveSettingsCategory(["sales"])).toBe("overview");
+  });
+
+  it("finds settings by human-friendly terms", () => {
+    expect(searchSettings("closing date").some((item) => item.id === "accounting")).toBe(true);
+    expect(searchSettings("mfa").some((item) => item.id === "users")).toBe(true);
+    expect(searchSettings("bank feeds").some((item) => item.id === "banking")).toBe(true);
+    expect(searchSettings("not-a-real-category-keyword")).toHaveLength(0);
+  });
+  it("provides real workspace destinations for import and fixed assets", () => {
+    const importMeta = categoryMeta.find((item) => item.id === "import_migration");
+    const assetsMeta = categoryMeta.find((item) => item.id === "fixed_assets");
+    expect(importMeta?.moduleLinks).toContainEqual({
+      label: "Data Import Centre",
+      to: "/imports",
+    });
+    expect(assetsMeta?.moduleLinks).toContainEqual({
+      label: "Fixed Assets workspace",
+      to: "/fixed-assets",
+    });
+    expect(assetsMeta?.availability).toBe("partial");
+  });
+
+  it("never strands users in categories without an editable Settings Centre schema", () => {
+    for (const category of [
+      "contacts",
+      "expenses",
+      "import_migration",
+      "accountant",
+      "fixed_assets",
+      "tax",
+    ] as const) {
+      const meta = categoryMeta.find((item) => item.id === category);
+      expect(meta?.moduleLinks?.length, category).toBeGreaterThan(0);
+      expect(
+        meta?.moduleLinks?.every((item) => item.to.startsWith("/")),
+        category,
+      ).toBe(true);
+    }
+  });
+});

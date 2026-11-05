@@ -156,6 +156,17 @@ export function StandardReportControls({
         <SlidersHorizontal className="mr-1 size-4" aria-hidden="true" />
         Customize statement
       </Button>
+      {report === "profit-and-loss" ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          aria-label="Filters"
+          onClick={() => openEditor("filters")}
+        >
+          Filters
+          {settings.filters.clauses.length > 0 ? ` (${settings.filters.clauses.length})` : ""}
+        </Button>
+      ) : null}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
           <DialogHeader>

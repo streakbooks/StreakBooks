@@ -195,6 +195,7 @@ function TaxConfigPage() {
   if (settingsQ.isError) {
     return (
       <ErrorState
+        onRetry={() => void settingsQ.refetch()}
         title="Could not load tax settings"
         description={friendlyAuthError(settingsQ.error)}
       />

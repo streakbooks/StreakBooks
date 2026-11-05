@@ -9,7 +9,8 @@ import {
   saveBankAccountDetails,
   type BankAccountDetailsMasked,
 } from "@/lib/banking/bank-ops.functions";
-import { moneyFieldMinor, MoneyField } from "@/components/banking/MoneyField";
+import { moneyFieldMinor } from "@/lib/banking/money-field";
+import { MoneyField } from "@/components/banking/MoneyField";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

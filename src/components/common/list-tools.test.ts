@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { matchesQuery } from "./ListTools";
+import { matchesQuery } from "@/lib/list-search";
 
 describe("matchesQuery", () => {
   it("matches everything for an empty query", () => {

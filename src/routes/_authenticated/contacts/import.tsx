@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
+import { useCanDo } from "@/hooks/use-can";
 import { getContactImportTemplate, importContactsCsv } from "@/lib/contacts/contacts.functions";
+import { buildContactsCsv, parseContactsCsv } from "@/lib/contacts/contact-helpers";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { PageHeader, EmptyState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
@@ -16,12 +18,26 @@ export const Route = createFileRoute("/_authenticated/contacts/import")({
   component: ContactImportPage,
 });
 
+const importColumns = [
+  ["name", "Contact name (required)"],
+  ["kind", "Role"],
+  ["email", "Email"],
+  ["phone", "Phone"],
+  ["tax_number", "Tax ID"],
+  ["payment_terms_days", "Payment terms (days)"],
+  ["account_number", "Account number"],
+  ["notes", "Internal notes"],
+] as const;
+
 function ContactImportPage() {
   const { company } = useActiveCompany();
   const companyId = company?.id;
+  const canManage = useCanDo("contacts.manage");
+  const queryClient = useQueryClient();
   const templateFn = useServerFn(getContactImportTemplate);
   const importFn = useServerFn(importContactsCsv);
   const [csvText, setCsvText] = useState("");
+  const [mapping, setMapping] = useState<Record<string, string>>({});
   const [skipDuplicates, setSkipDuplicates] = useState(true);
   const [result, setResult] = useState<{
     created: number;
@@ -30,11 +46,49 @@ function ContactImportPage() {
     errors: Array<{ row: number; message: string }>;
   } | null>(null);
 
+  const parsed = useMemo(() => {
+    if (!csvText) return { value: null, error: null };
+    try {
+      return { value: parseContactsCsv(csvText), error: null };
+    } catch (error) {
+      return {
+        value: null,
+        error: error instanceof Error ? error.message : "Could not read CSV",
+      };
+    }
+  }, [csvText]);
+  const sourceIndex = useCallback(
+    (column: string): number => {
+      const override = mapping[column];
+      if (override === "none") return -1;
+      if (override !== undefined) return Number(override);
+      return parsed.value?.headers.indexOf(column) ?? -1;
+    },
+    [mapping, parsed],
+  );
+  const mappedCsv = useMemo(() => {
+    if (!parsed.value || sourceIndex("name") < 0) return "";
+    const columns = importColumns.map(([column]) => column);
+    const records = parsed.value.rows.map((row) =>
+      Object.fromEntries(columns.map((column) => [column, row[sourceIndex(column)] ?? ""])),
+    );
+    return buildContactsCsv(records, columns);
+  }, [parsed, sourceIndex]);
+
   const importM = useMutation({
-    mutationFn: () => importFn({ data: { companyId: companyId!, csvText, skipDuplicates } }),
-    onSuccess: (res) => {
+    mutationFn: () =>
+      importFn({ data: { companyId: companyId!, csvText: mappedCsv, skipDuplicates } }),
+    onSuccess: async (res) => {
       setResult(res);
-      toast.success(`Import finished: ${res.created} created`);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["contacts", companyId] }),
+        queryClient.invalidateQueries({ queryKey: ["contacts-summary", companyId] }),
+        queryClient.invalidateQueries({ queryKey: ["contacts-count", companyId] }),
+        queryClient.invalidateQueries({ queryKey: ["contact-duplicates", companyId] }),
+      ]);
+      if (res.failed > 0)
+        toast.warning(`Import finished with ${res.failed} row errors. Review the results below.`);
+      else toast.success(`Import finished: ${res.created} created`);
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
@@ -61,6 +115,12 @@ function ContactImportPage() {
         <li>Upload and review results — retries skip already-created names when enabled</li>
       </ol>
 
+      {!canManage ? (
+        <p role="status" className="mb-4 text-sm text-muted-foreground">
+          You need contact management permission to import contacts.
+        </p>
+      ) : null}
+
       <div className="mb-4 flex flex-wrap gap-2">
         <Button
           variant="outline"
@@ -86,8 +146,10 @@ function ContactImportPage() {
           Choose CSV
           <input
             type="file"
+            disabled={!canManage || importM.isPending}
             accept=".csv,text/csv"
-            className="hidden"
+            className="sr-only"
+            aria-label="Choose contact CSV"
             onChange={async (e) => {
               const file = e.target.files?.[0];
               if (!file) return;
@@ -95,10 +157,23 @@ function ContactImportPage() {
                 toast.error("File too large (max ~1.5 MB)");
                 return;
               }
-              const text = await file.text();
-              setCsvText(text);
-              setResult(null);
-              toast.message(`Loaded ${file.name}`);
+              try {
+                const text = await file.text();
+                if (!text.trim()) {
+                  setCsvText("");
+                  setResult(null);
+                  toast.error("The selected CSV file is empty");
+                  return;
+                }
+                setCsvText(text);
+                setMapping({});
+                setResult(null);
+                toast.message(`Loaded ${file.name}`);
+              } catch {
+                setCsvText("");
+                setResult(null);
+                toast.error("Could not read the selected CSV file");
+              }
             }}
           />
         </Label>
@@ -109,19 +184,99 @@ function ContactImportPage() {
         Skip contacts that already exist (same name)
       </label>
 
-      {csvText ? (
-        <pre className="mb-4 max-h-48 overflow-auto rounded-md border bg-muted/30 p-3 text-xs">
-          {csvText.slice(0, 4000)}
-          {csvText.length > 4000 ? "\n…" : ""}
-        </pre>
+      {parsed.error ? (
+        <p role="alert" className="mb-4 text-sm text-destructive">
+          {parsed.error}
+        </p>
       ) : null}
 
-      <Button disabled={!csvText || importM.isPending} onClick={() => importM.mutate()}>
+      {parsed.value ? (
+        <section
+          className="mb-5 space-y-4 rounded-lg border bg-card p-4"
+          aria-label="CSV import preview"
+        >
+          <div>
+            <h2 className="font-medium">Review column mapping</h2>
+            <p className="text-sm text-muted-foreground">
+              {parsed.value.rows.length} contact rows detected. Select the corresponding CSV column
+              for each LinkBooks field, or leave an optional field unmapped.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {importColumns.map(([column, label]) => (
+              <div className="space-y-1" key={column}>
+                <Label htmlFor={`contact-map-${column}`}>{label}</Label>
+                <select
+                  id={`contact-map-${column}`}
+                  className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+                  value={
+                    mapping[column] ??
+                    (parsed.value!.headers.indexOf(column) >= 0
+                      ? String(parsed.value!.headers.indexOf(column))
+                      : "none")
+                  }
+                  onChange={(event) => {
+                    setMapping((current) => ({ ...current, [column]: event.target.value }));
+                    setResult(null);
+                  }}
+                >
+                  {/* lookup-fixed-enum: Uploaded CSV column schema is fixed for this file. */}
+
+                  <option value="none">Not mapped</option>
+                  {parsed.value.headers.map((header, index) => (
+                    <option key={index} value={String(index)}>
+                      {header || `Column ${index + 1}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ))}
+          </div>
+          {sourceIndex("name") < 0 ? (
+            <p role="alert" className="text-sm text-destructive">
+              Map a contact name column to continue.
+            </p>
+          ) : null}
+          <div
+            className="overflow-x-auto"
+            role="region"
+            aria-label="Mapped contact preview"
+            tabIndex={0}
+          >
+            <table className="w-full text-left text-sm">
+              <caption className="mb-2 text-left text-xs text-muted-foreground">
+                Preview of the first five contacts. Import has not started.
+              </caption>
+              <thead>
+                <tr className="border-b">
+                  <th className="p-2 font-medium">Name</th>
+                  <th className="p-2 font-medium">Role</th>
+                  <th className="p-2 font-medium">Email</th>
+                </tr>
+              </thead>
+              <tbody>
+                {parsed.value.rows.slice(0, 5).map((row, index) => (
+                  <tr key={index} className="border-b last:border-0">
+                    <td className="p-2">{row[sourceIndex("name")] ?? "—"}</td>
+                    <td className="p-2">{row[sourceIndex("kind")] ?? "customer"}</td>
+                    <td className="p-2">{row[sourceIndex("email")] ?? "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
+
+      <Button
+        disabled={!canManage || !mappedCsv || !parsed.value?.rows.length || importM.isPending}
+        onClick={() => importM.mutate()}
+      >
         {importM.isPending ? "Importing…" : "Confirm import"}
       </Button>
 
       {result ? (
-        <div className="mt-6 space-y-2 text-sm">
+        <div role="status" className="mt-6 space-y-2 rounded-xl border bg-card p-4 text-sm">
           <p>
             Created {result.created} · Skipped {result.skipped} · Failed {result.failed}
           </p>

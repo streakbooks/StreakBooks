@@ -23,6 +23,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AccountLink, ReportPane, ReportShell, Stat, type ReportCtx } from "./ReportShell";
+import { ReportAccountMultiSelect } from "./ReportAccountMultiSelect";
+import { listAccounts } from "@/lib/accounting/accounting.functions";
+import { focusBudgetReport } from "@/lib/reports/budget-focus";
 
 const selectCls = "flex h-10 rounded-md border border-input bg-background px-3 text-sm";
 
@@ -67,6 +70,11 @@ export function BudgetVsActualView({ ctx }: { ctx: ReportCtx }) {
       }),
   });
   const d = q.data;
+  const selectedIds = ctx.search.accountIds?.split(",") ?? null;
+  const report = d ? focusBudgetReport(d.report, selectedIds ?? undefined) : null;
+  const accountOptions = [...(d?.report.income.rows ?? []), ...(d?.report.expense.rows ?? [])].map(
+    (row) => ({ id: row.accountId, code: row.code, name: row.name }),
+  );
 
   const controls = (
     <>
@@ -104,6 +112,14 @@ export function BudgetVsActualView({ ctx }: { ctx: ReportCtx }) {
           <option value="ytd">Year to date only</option>
         </select>
       </div>
+      <ReportAccountMultiSelect
+        accounts={accountOptions}
+        selected={selectedIds ?? undefined}
+        onChange={(ids) =>
+          ctx.setSearch({ accountIds: ids?.join(",") || undefined, explorePage: undefined })
+        }
+        disabled={!d || d.notStarted}
+      />
     </>
   );
 
@@ -111,8 +127,8 @@ export function BudgetVsActualView({ ctx }: { ctx: ReportCtx }) {
   const pct = (v: number | null) => (v === null ? "–" : fmt.percentBps(v));
 
   const csv = () => {
-    if (!d) return null;
-    const cols = d.report.columns;
+    if (!d || !report) return null;
+    const cols = report.columns;
     const headers = [
       "Code",
       "Account",
@@ -138,11 +154,11 @@ export function BudgetVsActualView({ ctx }: { ctx: ReportCtx }) {
     return {
       headers,
       rows: [
-        ...section("Income", d.report.income),
-        ...section("Expenses", d.report.expense),
-        ["", "Net profit", ...cells(d.report.net)],
+        ...section("Income", report.income),
+        ...section("Expenses", report.expense),
+        ["", "Net profit", ...cells(report.net)],
       ],
-      basis: `${d.accountingBasis === "cash" ? "Cash" : "Accrual"} basis · ${d.budget.name}; variance: favourable is positive`,
+      basis: `${d.accountingBasis === "cash" ? "Cash" : "Accrual"} basis · ${d.budget.name}; variance: favourable is positive${selectedIds ? "; selected account subtotals only" : ""}`,
     };
   };
 
@@ -153,7 +169,7 @@ export function BudgetVsActualView({ ctx }: { ctx: ReportCtx }) {
       mode="asof"
       basis={
         d
-          ? `${d.accountingBasis === "cash" ? "Cash" : "Accrual"} basis · ${d.budget.name}, financial year from ${fmt.date(d.budget.fiscal_year_start)}`
+          ? `${d.accountingBasis === "cash" ? "Cash" : "Accrual"} basis · ${d.budget.name}, financial year from ${fmt.date(d.budget.fiscal_year_start)}${selectedIds ? " · selected accounts only" : ""}`
           : undefined
       }
       extraControls={controls}
@@ -205,7 +221,7 @@ export function BudgetVsActualView({ ctx }: { ctx: ReportCtx }) {
                 </p>
                 <div className="overflow-x-auto">
                   <BvaTable
-                    report={d.report}
+                    report={report ?? d.report}
                     ctx={ctx}
                     from={d.budget.fiscal_year_start}
                     to={d.through}
@@ -328,12 +344,22 @@ const METHOD_LABEL = new Map(DEPRECIATION_METHODS.map((m) => [m.value, m.label])
 export function FixedAssetRegisterView({ ctx }: { ctx: ReportCtx }) {
   const fmt = useFormat();
   const fetchFn = useServerFn(getFixedAssetRegister);
+  const fetchAccounts = useServerFn(listAccounts);
+  const accountsQ = useQuery({
+    queryKey: ["report-account-options", ctx.companyId],
+    queryFn: () => fetchAccounts({ data: { companyId: ctx.companyId } }),
+  });
   const q = useQuery({
     queryKey: ["report-fa-register", ctx.companyId, ctx.to],
     queryFn: () => fetchFn({ data: { companyId: ctx.companyId, asOf: ctx.to } }),
   });
   const d = q.data;
-  const rows = d?.rows ?? [];
+  const selectedIds = ctx.search.accountIds?.split(",") ?? null;
+  const rows = selectedIds
+    ? (d?.rows ?? []).filter((row) => selectedIds.includes(row.asset_account_id))
+    : (d?.rows ?? []);
+  const assetAccountIds = new Set((d?.rows ?? []).map((row) => row.asset_account_id));
+  const accountOptions = (accountsQ.data ?? []).filter((a) => assetAccountIds.has(a.id));
   const m = (v: number) => fmt.amount(v, ctx.currency);
   const total = (pick: (r: (typeof rows)[number]) => number) =>
     rows.reduce((n, r) => n + (r.disposal_date ? 0 : pick(r)), 0);
@@ -342,11 +368,25 @@ export function FixedAssetRegisterView({ ctx }: { ctx: ReportCtx }) {
       title="Fixed Asset Register"
       ctx={ctx}
       mode="asof"
-      basis="Cost less accumulated depreciation posted to the date. Disposed assets are listed but excluded from the totals."
+      basis={
+        "Cost less accumulated depreciation posted to the date. Disposed assets are listed but excluded from the totals." +
+        (selectedIds ? " Selected asset ledger accounts only." : "")
+      }
       extraControls={
-        <Button size="sm" variant="outline" asChild className="print:hidden">
-          <Link to="/fixed-assets">Manage assets</Link>
-        </Button>
+        <>
+          <ReportAccountMultiSelect
+            label="Asset accounts"
+            accounts={accountOptions}
+            selected={selectedIds ?? undefined}
+            onChange={(ids) =>
+              ctx.setSearch({ accountIds: ids?.join(",") || undefined, explorePage: undefined })
+            }
+            disabled={q.isPending || accountsQ.isPending}
+          />
+          <Button size="sm" variant="outline" asChild className="print:hidden">
+            <Link to="/fixed-assets">Manage assets</Link>
+          </Button>
+        </>
       }
       getCsv={() =>
         d
@@ -363,7 +403,7 @@ export function FixedAssetRegisterView({ ctx }: { ctx: ReportCtx }) {
                 "Disposed",
                 "Proceeds",
               ],
-              rows: d.rows.map((r) => [
+              rows: rows.map((r) => [
                 r.asset_number,
                 r.asset_name,
                 r.asset_type_name ?? "",
@@ -385,7 +425,7 @@ export function FixedAssetRegisterView({ ctx }: { ctx: ReportCtx }) {
         query={q}
         isEmpty={Boolean(d) && rows.length === 0}
         emptyTitle="No fixed assets"
-        emptyDescription="Register assets under Fixed assets to see them here."
+        emptyDescription="No registered fixed assets match these accounts. Choose All accounts to show the full register."
       >
         {d ? (
           <>

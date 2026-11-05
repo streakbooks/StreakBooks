@@ -1,3 +1,4 @@
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -68,6 +69,10 @@ function Statements() {
     ((suppliersQ.data ?? []) as Array<{ id: string; name: string }>).find((s) => s.id === contactId)
       ?.name ?? "Supplier";
 
+  const requiredQueries = [suppliersQ];
+  if (requiredQueries.some((query) => query.isError && query.data === undefined))
+    return <QueryErrorState queries={requiredQueries} title="Could not load suppliers" />;
+
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
 
   return (
@@ -134,7 +139,11 @@ function Statements() {
       ) : stmtQ.isPending ? (
         <LoadingState />
       ) : stmtQ.isError ? (
-        <ErrorState title="Could not load statement" description={friendlyAuthError(stmtQ.error)} />
+        <ErrorState
+          onRetry={() => void stmtQ.refetch()}
+          title="Could not load statement"
+          description={friendlyAuthError(stmtQ.error)}
+        />
       ) : (
         <div className="space-y-4">
           <div>

@@ -15,14 +15,17 @@ import {
   Folder,
   Pencil,
   FolderInput,
+  ClipboardCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
 import { useFormat } from "@/hooks/use-format";
+import { DocumentReviewQueue } from "@/components/documents/DocumentReviewQueue";
 import {
   deleteAttachment,
   getAttachmentDownload,
+  getAttachmentPreview,
   listCompanyFiles,
   registerAttachment,
 } from "@/lib/documents/attachments.functions";
@@ -98,6 +101,7 @@ function FilesPage() {
   const fetchFiles = useServerFn(listCompanyFiles);
   const register = useServerFn(registerAttachment);
   const fetchDownload = useServerFn(getAttachmentDownload);
+  const fetchPreview = useServerFn(getAttachmentPreview);
   const remove = useServerFn(deleteAttachment);
   const inputRef = useRef<HTMLInputElement>(null);
   const getFolders = useServerFn(listDocumentFolders);
@@ -125,6 +129,11 @@ function FilesPage() {
   const [page, setPage] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [sort, setSort] = useState<"newest" | "oldest" | "name" | "largest">("newest");
+  const [view, setView] = useState<"all" | "to-file" | "review">("all");
+  const activeView = folderId ? "all" : view;
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkTarget, setBulkTarget] = useState("unfiled");
+  const [inlinePreviewUrl, setInlinePreviewUrl] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null);
 
@@ -135,7 +144,7 @@ function FilesPage() {
     }, 300);
     return () => clearTimeout(t);
   }, [search]);
-
+  // Folder navigation temporarily shows all files without discarding the chosen workspace view.
   const canUpload = ATTACHMENT_ENTITIES.company.manage.some((p) => can(p));
 
   const foldersQ = useQuery({
@@ -193,21 +202,45 @@ function FilesPage() {
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
   const filesQ = useQuery({
-    queryKey: ["company-files", companyId, debounced, type, folderId, page],
-    enabled: Boolean(companyId),
+    queryKey: ["company-files", companyId, debounced, type, folderId, page, sort, view],
+    enabled: Boolean(companyId) && activeView !== "review",
     placeholderData: keepPreviousData,
     queryFn: () =>
       fetchFiles({
         data: {
           companyId: companyId!,
           search: debounced,
-          entityType: type,
-          folderId,
+          entityType: activeView === "to-file" ? "company" : type,
+          folderId: activeView === "to-file" ? null : folderId,
+          unfiledOnly: activeView === "to-file",
+          sort,
           page,
           pageSize: PAGE_SIZE,
         },
       }),
   });
+
+  const previewQ = useQuery({
+    queryKey: ["company-file-preview", companyId, selectedFile],
+    enabled: Boolean(companyId && selectedFile),
+    queryFn: () => fetchPreview({ data: { companyId: companyId!, attachmentId: selectedFile! } }),
+    retry: false,
+  });
+  useEffect(() => {
+    const data = previewQ.data;
+    if (data?.kind !== "inline") {
+      setInlinePreviewUrl(null);
+      return;
+    }
+    const raw = atob(data.contentBase64);
+    const bytes = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+    const url = URL.createObjectURL(new Blob([bytes], { type: data.contentType }));
+    setInlinePreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [previewQ.data]);
+  // Selection is deliberately limited to the current result page and its permissions.
+  useEffect(() => setSelectedIds([]), [companyId, debounced, type, folderId, page, sort, view]);
 
   const uploadM = useMutation({
     mutationFn: async (files: File[]) => {
@@ -257,6 +290,30 @@ function FilesPage() {
     },
   });
 
+  const bulkMoveM = useMutation({
+    mutationFn: async ({ ids, targetId }: { ids: string[]; targetId: string | null }) => {
+      let moved = 0;
+      for (const attachmentId of ids) {
+        try {
+          await moveFile({ data: { companyId: companyId!, attachmentId, folderId: targetId } });
+          moved += 1;
+        } catch (error) {
+          throw new Error(`Moved ${moved} of ${ids.length} files. ${friendlyAuthError(error)}`);
+        }
+      }
+      return moved;
+    },
+    onSuccess: async (count) => {
+      setSelectedIds([]);
+      await queryClient.invalidateQueries({ queryKey: ["company-files", companyId] });
+      toast.success(`Moved ${count} file${count === 1 ? "" : "s"}`);
+    },
+    onError: async (error) => {
+      await queryClient.invalidateQueries({ queryKey: ["company-files", companyId] });
+      toast.error(friendlyAuthError(error));
+    },
+  });
+
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
 
   const onPick = (list: FileList | null) => {
@@ -277,13 +334,37 @@ function FilesPage() {
 
   const data = filesQ.data;
   const pages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
-  const sortedFiles = [...(data?.files ?? [])].sort((a, b) => {
-    if (sort === "oldest") return a.created_at.localeCompare(b.created_at);
-    if (sort === "name") return a.file_name.localeCompare(b.file_name);
-    if (sort === "largest") return (b.size_bytes ?? 0) - (a.size_bytes ?? 0);
-    return b.created_at.localeCompare(a.created_at);
-  });
   const selected = data?.files.find((file) => file.id === selectedFile) ?? null;
+  const canManage = (entityType: string) =>
+    (entityType in ATTACHMENT_ENTITIES
+      ? ATTACHMENT_ENTITIES[entityType as keyof typeof ATTACHMENT_ENTITIES].manage
+      : []
+    ).some((permission) => can(permission));
+  const selectableIds = (data?.files ?? [])
+    .filter((file) => canManage(file.entity_type))
+    .map((file) => file.id);
+  const currentSelection = selectedIds.filter((id) => selectableIds.includes(id));
+  const allSelected = selectableIds.length > 0 && currentSelection.length === selectableIds.length;
+  const preview = previewQ.data;
+  const previewUrl =
+    preview?.kind === "url" ? preview.url : preview?.kind === "inline" ? inlinePreviewUrl : null;
+
+  if (activeView === "review") {
+    return (
+      <>
+        <PageHeader
+          title="Document review"
+          description="Organise and approve uploaded documents without changing accounting records."
+          actions={
+            <Button size="sm" variant="outline" onClick={() => setView("all")}>
+              Back to Files
+            </Button>
+          }
+        />
+        <DocumentReviewQueue companyId={companyId} onClose={() => setView("all")} />
+      </>
+    );
+  }
 
   return (
     <>
@@ -291,31 +372,44 @@ function FilesPage() {
         title="Files"
         description="Everything attached to invoices, bills, contacts and journals, plus files you upload here. You only see files for records you are allowed to view."
         actions={
-          canUpload ? (
-            <>
-              <input
-                ref={inputRef}
-                type="file"
-                multiple
-                hidden
-                accept={FILE_INPUT_ACCEPT}
-                aria-label="Choose files to upload"
-                onChange={(e) => onPick(e.target.files)}
-              />
-              <Button
-                size="sm"
-                disabled={uploadM.isPending}
-                onClick={() => inputRef.current?.click()}
-              >
-                {uploadM.isPending ? (
-                  <Loader2 className="mr-1 size-4 animate-spin" />
-                ) : (
-                  <Upload className="mr-1 size-4" />
-                )}
-                Upload files
-              </Button>
-            </>
-          ) : undefined
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setView("review");
+                setFolderId(null);
+              }}
+            >
+              <ClipboardCheck className="mr-1 size-4" />
+              Document review
+            </Button>
+            {canUpload ? (
+              <>
+                <input
+                  ref={inputRef}
+                  type="file"
+                  multiple
+                  hidden
+                  accept={FILE_INPUT_ACCEPT}
+                  aria-label="Choose files to upload"
+                  onChange={(e) => onPick(e.target.files)}
+                />
+                <Button
+                  size="sm"
+                  disabled={uploadM.isPending}
+                  onClick={() => inputRef.current?.click()}
+                >
+                  {uploadM.isPending ? (
+                    <Loader2 className="mr-1 size-4 animate-spin" />
+                  ) : (
+                    <Upload className="mr-1 size-4" />
+                  )}
+                  Upload files
+                </Button>
+              </>
+            ) : null}
+          </>
         }
       />
       {error ? (
@@ -356,7 +450,10 @@ function FilesPage() {
               search={{ folder: undefined, file: undefined }}
               className="text-sm underline"
               onClick={(e) => {
-                if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) setPage(0);
+                if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {
+                  setPage(0);
+                  setView("all");
+                }
               }}
             >
               All files
@@ -498,6 +595,33 @@ function FilesPage() {
           </div>
         ) : null}
       </section>
+      <div className="mb-4 flex flex-wrap items-center gap-2" aria-label="Files workspace views">
+        <Button
+          size="sm"
+          variant={activeView === "all" ? "default" : "outline"}
+          onClick={() => {
+            setView("all");
+            setPage(0);
+          }}
+        >
+          All files
+        </Button>
+        <Button
+          size="sm"
+          variant={activeView === "to-file" ? "default" : "outline"}
+          onClick={() => {
+            setView("to-file");
+            setPage(0);
+            setFolderId(null);
+          }}
+        >
+          To file
+        </Button>
+        <span className="text-xs text-muted-foreground">
+          To file shows unlinked uploads that have not been assigned a folder. Email intake is not
+          configured here.
+        </span>
+      </div>
       <div className="mb-4 flex flex-wrap gap-3">
         <Input
           className="w-64"
@@ -508,6 +632,7 @@ function FilesPage() {
         />
         <Select
           value={type}
+          disabled={activeView === "to-file"}
           onValueChange={(v) => {
             setType(v);
             setPage(0);
@@ -527,7 +652,13 @@ function FilesPage() {
             ))}
           </SelectContent>
         </Select>
-        <Select value={sort} onValueChange={(v) => setSort(v as typeof sort)}>
+        <Select
+          value={sort}
+          onValueChange={(v) => {
+            setSort(v as typeof sort);
+            setPage(0);
+          }}
+        >
           <SelectTrigger className="w-48" aria-label="Sort files">
             <ArrowUpDown className="mr-2 size-4" />
             <SelectValue />
@@ -586,6 +717,35 @@ function FilesPage() {
               Download
             </Button>
           </div>
+          {previewQ.isPending ? (
+            <p className="mt-3 text-sm text-muted-foreground">Loading secure preview…</p>
+          ) : previewQ.isError ? (
+            <p role="alert" className="mt-3 text-sm text-destructive">
+              Preview unavailable: {friendlyAuthError(previewQ.error)}
+            </p>
+          ) : preview?.kind === "unsupported" ? (
+            <p className="mt-3 text-sm text-muted-foreground">
+              Preview is not available for this format. Download to view it.
+            </p>
+          ) : previewUrl ? (
+            (preview?.kind === "url" || preview?.kind === "inline") &&
+            preview.previewType === "image" ? (
+              <img
+                src={previewUrl}
+                alt={`Preview of ${selected.file_name}`}
+                className="mt-3 max-h-96 max-w-full rounded border object-contain"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <iframe
+                src={previewUrl}
+                title={`Preview of ${selected.file_name}`}
+                sandbox=""
+                referrerPolicy="no-referrer"
+                className="mt-3 h-96 w-full rounded border bg-white"
+              />
+            )
+          ) : null}
         </section>
       ) : null}
 
@@ -603,16 +763,66 @@ function FilesPage() {
           description={
             debounced || type !== "all"
               ? "No files match this search."
-              : canUpload
-                ? `Upload a file here or attach one to an invoice or bill. Up to ${formatFileSize(MAX_FILE_BYTES)} each.`
-                : "No files have been added yet."
+              : activeView === "to-file"
+                ? "No unlinked, unfiled uploads need organising."
+                : canUpload
+                  ? `Upload a file here or attach one to an invoice or bill. Up to ${formatFileSize(MAX_FILE_BYTES)} each.`
+                  : "No files have been added yet."
           }
         />
       ) : (
         <>
+          {currentSelection.length > 0 ? (
+            <div className="mb-3 flex flex-wrap items-center gap-2 rounded-md border bg-muted/30 p-3">
+              <span className="text-sm font-medium">{currentSelection.length} selected</span>
+              <RecordLookupSelect value={bulkTarget} onValueChange={setBulkTarget}>
+                <SelectTrigger className="w-52" aria-label="Bulk move destination">
+                  <FolderInput className="mr-1 size-4" />
+                  <SelectValue placeholder="Select destination" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unfiled">Unfiled</SelectItem>
+                  {folders.map((folder) => (
+                    <SelectItem key={folder.id} value={folder.id}>
+                      {folder.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </RecordLookupSelect>
+              <Button
+                size="sm"
+                disabled={bulkMoveM.isPending}
+                onClick={() =>
+                  bulkMoveM.mutate({
+                    ids: currentSelection,
+                    targetId: bulkTarget === "unfiled" ? null : bulkTarget,
+                  })
+                }
+              >
+                {bulkMoveM.isPending ? (
+                  <Loader2 className="mr-1 size-4 animate-spin" />
+                ) : (
+                  <FolderInput className="mr-1 size-4" />
+                )}
+                Move selected
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setSelectedIds([])}>
+                Clear selection
+              </Button>
+            </div>
+          ) : null}
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">
+                  <input
+                    type="checkbox"
+                    aria-label="Select all manageable files on this page"
+                    checked={allSelected}
+                    disabled={selectableIds.length === 0 || bulkMoveM.isPending}
+                    onChange={(e) => setSelectedIds(e.target.checked ? selectableIds : [])}
+                  />
+                </TableHead>
                 <TableHead>File</TableHead>
                 <TableHead>Attached to</TableHead>
                 <TableHead>Folder</TableHead>
@@ -622,14 +832,25 @@ function FilesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedFiles.map((f) => {
-                const manageable = (
-                  f.entity_type in ATTACHMENT_ENTITIES
-                    ? ATTACHMENT_ENTITIES[f.entity_type as keyof typeof ATTACHMENT_ENTITIES].manage
-                    : []
-                ).some((p) => can(p));
+              {filesQ.data.files.map((f) => {
+                const manageable = canManage(f.entity_type);
                 return (
                   <TableRow key={f.id}>
+                    <TableCell>
+                      <input
+                        type="checkbox"
+                        aria-label={`Select ${f.file_name}`}
+                        checked={currentSelection.includes(f.id)}
+                        disabled={!manageable || bulkMoveM.isPending}
+                        onChange={(e) =>
+                          setSelectedIds((previous) =>
+                            e.target.checked
+                              ? [...previous.filter((id) => id !== f.id), f.id]
+                              : previous.filter((id) => id !== f.id),
+                          )
+                        }
+                      />
+                    </TableCell>
                     <TableCell className="max-w-xs">
                       <Link
                         to="/files"

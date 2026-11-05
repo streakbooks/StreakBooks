@@ -18,7 +18,8 @@ import {
   saveBankRule,
   setBankRuleActive,
 } from "@/lib/banking/rules.functions";
-import { MoneyField, moneyFieldMinor } from "@/components/banking/MoneyField";
+import { MoneyField } from "@/components/banking/MoneyField";
+import { moneyFieldMinor } from "@/lib/banking/money-field";
 import { ConfirmButton } from "@/components/banking/ConfirmButton";
 import { AccountLookup, LookupSelect, type LookupCreateContext } from "@/components/lookup";
 import {
@@ -511,7 +512,11 @@ export function BankRulesContent({ embedded = false }: { embedded?: boolean }) {
       {rulesQ.isPending ? (
         <LoadingState />
       ) : rulesQ.isError ? (
-        <ErrorState title="Could not load rules" description={friendlyAuthError(rulesQ.error)} />
+        <ErrorState
+          onRetry={() => void rulesQ.refetch()}
+          title="Could not load rules"
+          description={friendlyAuthError(rulesQ.error)}
+        />
       ) : (rulesQ.data ?? []).length === 0 ? (
         <EmptyState title="No rules" description="Create a matching rule above." />
       ) : (

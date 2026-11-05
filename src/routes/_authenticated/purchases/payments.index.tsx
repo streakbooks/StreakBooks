@@ -6,7 +6,8 @@ import { useFormat } from "@/hooks/use-format";
 import { listPayments } from "@/lib/purchases/purchases.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { PageHeader, ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
-import { ListToolbar, useListSearch } from "@/components/common/ListTools";
+import { ListToolbar } from "@/components/common/ListTools";
+import { useListSearch } from "@/hooks/use-list-search";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { Button } from "@/components/ui/button";
 import { TableCard } from "@/components/common/table-card";
@@ -73,7 +74,11 @@ function PaymentsList() {
       {query.isPending ? (
         <ListSkeleton />
       ) : query.isError ? (
-        <ErrorState title="Could not load payments" description={friendlyAuthError(query.error)} />
+        <ErrorState
+          onRetry={() => void query.refetch()}
+          title="Could not load payments"
+          description={friendlyAuthError(query.error)}
+        />
       ) : (query.data ?? []).length === 0 ? (
         <EmptyState title="No payments" description="Record a payment against open bills." />
       ) : (

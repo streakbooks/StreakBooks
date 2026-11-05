@@ -26,12 +26,20 @@
     "test:platform:postgres": "node scripts/test-platform-postgres.mjs",
     "check:lookups": "node scripts/check-lookup-architecture.mjs",
     "check:navigation": "node scripts/check-native-navigation.mjs",
-    "test:workflows:postgres": "node scripts/test-workflows-postgres.mjs"
+    "test:workflows:postgres": "node scripts/test-workflows-postgres.mjs",
+    "test:documents:postgres": "node scripts/test-document-review-postgres.mjs",
+    "test:accountant:postgres": "node scripts/test-accountant-exceptions-postgres.mjs",
+    "test:ui": "playwright test --config playwright.ui.config.ts",
+    "test:workpaper-items:postgres": "node scripts/test-accountant-workpaper-items-postgres.mjs",
+    "check:ui": "node scripts/check-ui-contracts.mjs",
+    "audit:ui": "node scripts/check-ui-contracts.mjs --write-audit"
   },
   "overrides": {
     "rolldown": "1.2.1"
   },
   "dependencies": {
+    "@fontsource-variable/inter": "5.3.0",
+    "@fontsource/ibm-plex-mono": "5.3.0",
     "@hookform/resolvers": "^5.2.2",
     "@pdf-lib/fontkit": "1.1.1",
     "@radix-ui/react-accordion": "^1.2.12",
@@ -91,6 +99,7 @@
     "zod": "4.6.7"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
     "@eslint/js": "^9.32.0",
     "@lovable.dev/vite-tanstack-config": "2.25.2",
     "@playwright/test": "^1.64.1",

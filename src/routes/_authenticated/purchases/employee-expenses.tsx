@@ -1,3 +1,4 @@
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -125,6 +126,10 @@ export function EmployeeExpensesPage() {
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
 
+  const requiredQueries = [accountsQ, paymentAccountsQ];
+  if (requiredQueries.some((query) => query.isError && query.data === undefined))
+    return <QueryErrorState queries={requiredQueries} title="Could not load expense accounts" />;
+
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
 
   return (
@@ -209,7 +214,11 @@ export function EmployeeExpensesPage() {
       {claimsQ.isPending ? (
         <LoadingState />
       ) : claimsQ.isError ? (
-        <ErrorState title="Could not load claims" description={friendlyAuthError(claimsQ.error)} />
+        <ErrorState
+          onRetry={() => void claimsQ.refetch()}
+          title="Could not load claims"
+          description={friendlyAuthError(claimsQ.error)}
+        />
       ) : (claimsQ.data ?? []).length === 0 ? (
         <EmptyState title="No claims" description="Submit an employee expense claim." />
       ) : (

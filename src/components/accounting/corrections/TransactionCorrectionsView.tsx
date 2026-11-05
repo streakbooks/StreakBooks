@@ -1,6 +1,6 @@
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { ZodError } from "zod";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { format } from "date-fns";
 import {
@@ -96,6 +96,7 @@ export function TransactionCorrectionsView({
   const [undoBatch, setUndoBatch] = useState(""),
     [undoDate, setUndoDate] = useState(today),
     [undoReason, setUndoReason] = useState("");
+  const searchVersion = useRef(0);
   const rows = Object.values(selection);
   const money = (n: string | bigint) => `${setup.currency} ${exactMoney(n, setup.decimals)}`;
   const clearReview = () => {
@@ -104,13 +105,19 @@ export function TransactionCorrectionsView({
     setCrossAck(false);
   };
   const changeFilter = (callback: () => void) => {
+    searchVersion.current += 1;
     callback();
+    setResult(null);
+    setSearched(null);
     setSelection({});
     clearReview();
   };
   async function search(page = 0, old?: CorrectionFilter) {
+    const request = ++searchVersion.current;
     setError("");
     setSuccess("");
+    setResult(null);
+    setSearched(null);
     setSelection({});
     clearReview();
     try {
@@ -142,9 +149,11 @@ export function TransactionCorrectionsView({
             page,
           });
       const found = await onSearch(filters);
+      if (request !== searchVersion.current) return;
       setResult(found);
       setSearched(filters);
     } catch (e) {
+      if (request !== searchVersion.current) return;
       setResult(null);
       setError(correctionError(e));
     }

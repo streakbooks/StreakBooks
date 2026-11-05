@@ -4,16 +4,22 @@ import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-compa
 import { assertUuid } from "@/lib/company-validation";
 import { isMissingFunctionError } from "@/lib/purchases/db-safety";
 import { aggregateOutstanding } from "@/lib/contacts/balances";
-import { buildIlikeOr, escapeLikeTerm } from "@/lib/purchases/search-terms";
+import { buildIlikeOr, escapeLikeTerm, ilikePattern } from "@/lib/purchases/search-terms";
+import {
+  normalizeContactAdvancedFilters,
+  contactDirectoryMembershipSelect,
+  type ContactAdvancedFilters,
+} from "@/lib/contacts/contact-advanced-filters";
 import {
   buildContactsCsv,
   contactImportTemplateCsv,
   duplicateScore,
   parseContactsCsv,
+  resolveContactSort,
 } from "@/lib/contacts/contact-helpers";
 
 const CONTACT_SELECT =
-  "id, name, email, phone, tax_number, payment_terms_days, is_active, kind, created_at, updated_at, account_number, legal_name, website, default_currency, credit_limit_minor, notes, billing_address_line1, billing_city, billing_country, archived_at";
+  "id, name, email, phone, tax_number, payment_terms_days, is_active, kind, created_at, updated_at, account_number, legal_name, website, default_currency, credit_limit_minor, notes, billing_address_line1, billing_city, billing_region, billing_postal, billing_country, delivery_address_line1, delivery_city, delivery_region, delivery_postal, delivery_country, archived_at";
 
 type OpenDocClient = Parameters<typeof assertCompanyMember>[0];
 
@@ -60,6 +66,8 @@ export const listContacts = createServerFn({ method: "GET" })
       view?: string;
       limit?: number;
       offset?: number;
+      sort?: string;
+      filters?: Partial<ContactAdvancedFilters>;
     }) => ({
       companyId: assertUuid(input.companyId),
       kind: (input.kind ?? "all").trim(),
@@ -67,32 +75,31 @@ export const listContacts = createServerFn({ method: "GET" })
       includeInactive: Boolean(input.includeInactive),
       view: (input.view ?? "all").trim(),
       limit: Math.min(500, Math.max(1, Number(input.limit ?? 200) || 200)),
-      offset: Math.max(0, Number(input.offset ?? 0) || 0),
+      offset: Math.min(1_000_000, Math.max(0, Math.floor(Number(input.offset ?? 0) || 0))),
+      sort: (input.sort ?? "").trim().slice(0, 40),
+      filters: normalizeContactAdvancedFilters(input.filters),
     }),
   )
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     let q = context.supabase
       .from("contacts" as never)
-      .select(CONTACT_SELECT as never)
+      .select(contactDirectoryMembershipSelect(CONTACT_SELECT, data.filters) as never)
       .eq("company_id" as never, data.companyId as never)
       .range(data.offset, data.offset + data.limit - 1);
 
-    // One primary sort, chosen by the view (C-02).
-    if (data.view === "recent") {
-      q = q.order("created_at" as never, { ascending: false });
-    } else if (data.view === "updated") {
-      q = q.order("updated_at" as never, { ascending: false });
-    } else {
-      q = q.order("name" as never);
-    }
+    // Sort in Postgres before pagination, not just within the visible page.
+    const order = resolveContactSort(data.sort, data.view);
+    q = q.order(order.column as never, { ascending: order.ascending, nullsFirst: false });
+    // Stable pagination even when two contacts share the same sort value.
+    q = q.order("id" as never);
 
     if (data.view === "archived") {
       q = q.not("archived_at" as never, "is" as never, null as never);
     } else if (!data.includeInactive && data.view !== "inactive") {
       q = q.eq("is_active" as never, true as never).is("archived_at" as never, null as never);
     } else if (data.view === "inactive") {
-      q = q.eq("is_active" as never, false as never);
+      q = q.eq("is_active" as never, false as never).is("archived_at" as never, null as never);
     }
 
     if (data.kind === "customers" || data.view === "customers") {
@@ -104,14 +111,141 @@ export const listContacts = createServerFn({ method: "GET" })
     }
 
     const search = buildIlikeOr(
-      ["name", "email", "phone", "account_number", "tax_number", "legal_name"],
+      [
+        "name",
+        "email",
+        "phone",
+        "account_number",
+        "tax_number",
+        "legal_name",
+        "billing_city",
+        "billing_region",
+        "billing_country",
+      ],
       data.q,
     );
     if (search) q = q.or(search as never);
+    if (data.filters.city) {
+      q = q.ilike("billing_city" as never, ilikePattern(data.filters.city) as never);
+    }
+    if (data.filters.region) {
+      q = q.ilike("billing_region" as never, ilikePattern(data.filters.region) as never);
+    }
+    if (data.filters.country) {
+      q = q.ilike("billing_country" as never, ilikePattern(data.filters.country) as never);
+    }
+    if (data.filters.currency) {
+      q = q.eq("default_currency" as never, data.filters.currency as never);
+    }
+    if (data.filters.terms === "immediate") {
+      q = q.eq("payment_terms_days" as never, 0 as never);
+    } else if (data.filters.terms === "up_to_30") {
+      q = q
+        .gte("payment_terms_days" as never, 1 as never)
+        .lte("payment_terms_days" as never, 30 as never);
+    } else if (data.filters.terms === "over_30") {
+      q = q.gt("payment_terms_days" as never, 30 as never);
+    }
+    if (data.filters.groupId) {
+      q = q.eq("contact_group_members.group_id" as never, data.filters.groupId as never);
+    }
+    if (data.filters.tagId) {
+      q = q.eq("contact_tag_assignments.tag_id" as never, data.filters.tagId as never);
+    }
 
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
     return rows ?? [];
+  });
+
+/** Exact count for the same server-side directory filters; never infer total from a full page. */
+export const countContacts = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      kind?: string;
+      q?: string;
+      view?: string;
+      filters?: Partial<ContactAdvancedFilters>;
+    }) => ({
+      companyId: assertUuid(input.companyId),
+      kind: (input.kind ?? "all").trim(),
+      q: (input.q ?? "").trim().slice(0, 100),
+      view: (input.view ?? "all").trim(),
+      filters: normalizeContactAdvancedFilters(input.filters),
+    }),
+  )
+  .handler(async ({ data, context }) => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    let q = context.supabase
+      .from("contacts" as never)
+      .select(contactDirectoryMembershipSelect("id", data.filters) as never, {
+        count: "exact",
+        head: true,
+      })
+      .eq("company_id" as never, data.companyId as never);
+
+    if (data.view === "archived") {
+      q = q.not("archived_at" as never, "is" as never, null as never);
+    } else if (data.view === "inactive") {
+      q = q.eq("is_active" as never, false as never).is("archived_at" as never, null as never);
+    } else {
+      q = q.eq("is_active" as never, true as never).is("archived_at" as never, null as never);
+    }
+    if (data.kind === "customers" || data.view === "customers") {
+      q = q.in("kind" as never, ["customer", "both"] as never);
+    } else if (data.kind === "suppliers" || data.view === "suppliers") {
+      q = q.in("kind" as never, ["supplier", "both"] as never);
+    } else if (data.view === "both") {
+      q = q.eq("kind" as never, "both" as never);
+    }
+    const search = buildIlikeOr(
+      [
+        "name",
+        "email",
+        "phone",
+        "account_number",
+        "tax_number",
+        "legal_name",
+        "billing_city",
+        "billing_region",
+        "billing_country",
+      ],
+      data.q,
+    );
+    if (search) q = q.or(search as never);
+    if (data.filters.city) {
+      q = q.ilike("billing_city" as never, ilikePattern(data.filters.city) as never);
+    }
+    if (data.filters.region) {
+      q = q.ilike("billing_region" as never, ilikePattern(data.filters.region) as never);
+    }
+    if (data.filters.country) {
+      q = q.ilike("billing_country" as never, ilikePattern(data.filters.country) as never);
+    }
+    if (data.filters.currency) {
+      q = q.eq("default_currency" as never, data.filters.currency as never);
+    }
+    if (data.filters.terms === "immediate") {
+      q = q.eq("payment_terms_days" as never, 0 as never);
+    } else if (data.filters.terms === "up_to_30") {
+      q = q
+        .gte("payment_terms_days" as never, 1 as never)
+        .lte("payment_terms_days" as never, 30 as never);
+    } else if (data.filters.terms === "over_30") {
+      q = q.gt("payment_terms_days" as never, 30 as never);
+    }
+    if (data.filters.groupId) {
+      q = q.eq("contact_group_members.group_id" as never, data.filters.groupId as never);
+    }
+    if (data.filters.tagId) {
+      q = q.eq("contact_tag_assignments.tag_id" as never, data.filters.tagId as never);
+    }
+
+    const { count, error } = await q;
+    if (error) throw new Error(error.message);
+    return { count: count ?? 0 };
   });
 
 export const getContactsDirectorySummary = createServerFn({ method: "GET" })
@@ -236,6 +370,7 @@ export const upsertContact = createServerFn({ method: "POST" })
       salesTaxInclusive?: boolean | null;
       purchaseTaxInclusive?: boolean | null;
     }) => {
+      const providedFields = Object.keys(input);
       const name = (input.name ?? "").trim();
       if (!name) throw new Error("Contact name is required");
       if (!["supplier", "customer", "both", "employee"].includes(input.kind)) {
@@ -244,6 +379,7 @@ export const upsertContact = createServerFn({ method: "POST" })
       const notes = (input.notes ?? "").trim().slice(0, 4000);
       return {
         companyId: assertUuid(input.companyId),
+        providedFields,
         id: input.id ? assertUuid(input.id) : undefined,
         name,
         kind: input.kind,
@@ -362,9 +498,60 @@ export const upsertContact = createServerFn({ method: "POST" })
     };
 
     if (data.id) {
+      // This endpoint is used by both the comprehensive creation form and
+      // smaller contact editors. Never erase undisplayed financial or address
+      // defaults merely because a caller did not submit those fields.
+      const patch: Record<string, unknown> = { ...payload };
+      const optionalColumns: Record<string, string> = {
+        email: "email",
+        phone: "phone",
+        taxNumber: "tax_number",
+        paymentTermsDays: "payment_terms_days",
+        notes: "notes",
+        isActive: "is_active",
+        accountNumber: "account_number",
+        legalName: "legal_name",
+        website: "website",
+        defaultCurrency: "default_currency",
+        creditLimitMinor: "credit_limit_minor",
+        billingAddressLine1: "billing_address_line1",
+        billingAddressLine2: "billing_address_line2",
+        billingCity: "billing_city",
+        billingRegion: "billing_region",
+        billingPostal: "billing_postal",
+        billingCountry: "billing_country",
+        deliveryAddressLine1: "delivery_address_line1",
+        deliveryAddressLine2: "delivery_address_line2",
+        deliveryCity: "delivery_city",
+        deliveryRegion: "delivery_region",
+        deliveryPostal: "delivery_postal",
+        deliveryCountry: "delivery_country",
+        defaultSalesAccountId: "default_sales_account_id",
+        defaultPurchaseAccountId: "default_purchase_account_id",
+        salesTaxInclusive: "sales_tax_inclusive",
+        purchaseTaxInclusive: "purchase_tax_inclusive",
+      };
+      for (const [field, column] of Object.entries(optionalColumns)) {
+        if (!data.providedFields.includes(field)) delete patch[column];
+      }
+      // Explicitly submitted null values clear previously configured overrides.
+      // Omitting a field remains a no-op for partial editors.
+      const nullableOverrides = {
+        billingAddressLine2: ["billing_address_line2", data.billingAddressLine2],
+        deliveryAddressLine2: ["delivery_address_line2", data.deliveryAddressLine2],
+        deliveryRegion: ["delivery_region", data.deliveryRegion],
+        deliveryPostal: ["delivery_postal", data.deliveryPostal],
+        defaultSalesAccountId: ["default_sales_account_id", data.defaultSalesAccountId],
+        defaultPurchaseAccountId: ["default_purchase_account_id", data.defaultPurchaseAccountId],
+        salesTaxInclusive: ["sales_tax_inclusive", data.salesTaxInclusive],
+        purchaseTaxInclusive: ["purchase_tax_inclusive", data.purchaseTaxInclusive],
+      } as const;
+      for (const [field, [column, value]] of Object.entries(nullableOverrides)) {
+        if (data.providedFields.includes(field)) patch[column] = value;
+      }
       const { data: row, error } = await context.supabase
         .from("contacts" as never)
-        .update(payload as never)
+        .update(patch as never)
         .eq("id" as never, data.id as never)
         .eq("company_id" as never, data.companyId as never)
         .select("id")
@@ -426,35 +613,61 @@ export const archiveContact = createServerFn({ method: "POST" })
 
 export const getContactBalances = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; contactId: string }) => ({
-    companyId: assertUuid(input.companyId),
-    contactId: assertUuid(input.contactId),
-  }))
+  .inputValidator(
+    (input: {
+      companyId: string;
+      contactId: string;
+      limit?: number;
+      invoiceOffset?: number;
+      billOffset?: number;
+    }) => ({
+      companyId: assertUuid(input.companyId),
+      contactId: assertUuid(input.contactId),
+      limit: Math.min(100, Math.max(1, Math.floor(Number(input.limit ?? 50) || 50))),
+      invoiceOffset: Math.min(
+        1_000_000,
+        Math.max(0, Math.floor(Number(input.invoiceOffset ?? 0) || 0)),
+      ),
+      billOffset: Math.min(1_000_000, Math.max(0, Math.floor(Number(input.billOffset ?? 0) || 0))),
+    }),
+  )
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
 
-    const { data: invoices, error: iErr } = await context.supabase
+    const {
+      data: invoices,
+      count: invoiceCount,
+      error: iErr,
+    } = await context.supabase
       .from("sales_invoices" as never)
       .select(
         "id, invoice_date, due_date, status, total_minor, amount_paid_minor, amount_credited_minor, invoice_number, currency_code" as never,
+        { count: "exact" },
       )
       .eq("company_id" as never, data.companyId as never)
       .eq("contact_id" as never, data.contactId as never)
       .neq("status" as never, "void" as never)
       .order("invoice_date" as never, { ascending: false })
-      .limit(100);
+      .order("id" as never)
+      .range(data.invoiceOffset, data.invoiceOffset + data.limit - 1);
     if (iErr) throw new Error(iErr.message);
 
-    const { data: bills, error: bErr } = await context.supabase
+    const {
+      data: bills,
+      count: billCount,
+      error: bErr,
+    } = await context.supabase
       .from("purchase_bills" as never)
       .select(
         "id, bill_date, due_date, status, total_minor, amount_paid_minor, amount_credited_minor, bill_number, supplier_invoice_number, currency_code" as never,
+        { count: "exact" },
       )
       .eq("company_id" as never, data.companyId as never)
       .eq("contact_id" as never, data.contactId as never)
       .neq("status" as never, "void" as never)
       .order("bill_date" as never, { ascending: false })
-      .limit(100);
+      .order("id" as never)
+      .range(data.billOffset, data.billOffset + data.limit - 1);
     if (bErr) throw new Error(bErr.message);
 
     const { data: company } = await context.supabase
@@ -464,7 +677,7 @@ export const getContactBalances = createServerFn({ method: "GET" })
       .maybeSingle();
     const baseCurrency = (company?.base_currency ?? "GBP").toUpperCase();
     const today = new Date().toISOString().slice(0, 10);
-    // Totals come from ALL open documents, not the 100 most recent shown in the lists.
+    // Totals come from ALL open documents, not the paginated history rows.
     const { recv, pay } = await loadOpenDocs(context.supabase, data.companyId, data.contactId);
     const r = aggregateOutstanding(recv, today, baseCurrency);
     const p = aggregateOutstanding(pay, today, baseCurrency);
@@ -472,6 +685,8 @@ export const getContactBalances = createServerFn({ method: "GET" })
     return {
       invoices: invoices ?? [],
       bills: bills ?? [],
+      invoiceCount: invoiceCount ?? 0,
+      billCount: billCount ?? 0,
       baseCurrency,
       receivableMinor: r.base.outstandingMinor,
       payableMinor: p.base.outstandingMinor,
@@ -735,6 +950,164 @@ export const setContactTags = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/**
+ * Add an existing group or tag to the selected contacts without replacing their
+ * current assignments. Permission, company, status and label checks precede
+ * the single atomic, idempotent database upsert.
+ */
+export const bulkAddContactLabel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      contactIds: string[];
+      labelKind: "group" | "tag";
+      labelId: string;
+    }) => {
+      if (
+        !Array.isArray(input.contactIds) ||
+        !input.contactIds.length ||
+        input.contactIds.length > 50
+      ) {
+        throw new Error("Select between 1 and 50 contacts from the current page");
+      }
+      const contactIds = input.contactIds.map((id) => assertUuid(id));
+      if (new Set(contactIds).size !== contactIds.length) {
+        throw new Error("Contact selection contains duplicate IDs");
+      }
+      if (input.labelKind !== "group" && input.labelKind !== "tag") {
+        throw new Error("Invalid group or tag selection");
+      }
+      return {
+        companyId: assertUuid(input.companyId),
+        contactIds,
+        labelKind: input.labelKind,
+        labelId: assertUuid(input.labelId),
+      };
+    },
+  )
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "contacts.manage");
+
+    const { data: contacts, error: contactError } = await context.supabase
+      .from("contacts" as never)
+      .select("id" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("is_active" as never, true as never)
+      .is("archived_at" as never, null as never)
+      .in("id" as never, data.contactIds as never);
+    if (contactError) throw new Error(contactError.message);
+    if ((contacts ?? []).length !== data.contactIds.length) {
+      throw new Error("Some selected contacts are inactive or outside this organisation");
+    }
+
+    const labelTable = data.labelKind === "group" ? "contact_groups" : "contact_tags";
+    const relationTable =
+      data.labelKind === "group" ? "contact_group_members" : "contact_tag_assignments";
+    const labelColumn = data.labelKind === "group" ? "group_id" : "tag_id";
+
+    const { data: label, error: labelError } = await context.supabase
+      .from(labelTable as never)
+      .select("id" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("id" as never, data.labelId as never)
+      .eq("is_active" as never, true as never)
+      .maybeSingle();
+    if (labelError) throw new Error(labelError.message);
+    if (!label) throw new Error("Choose an active group or tag from this organisation");
+
+    const assignments = data.contactIds.map((contact_id) => ({
+      company_id: data.companyId,
+      contact_id,
+      [labelColumn]: data.labelId,
+    }));
+    // ON CONFLICT DO NOTHING retains all existing memberships and makes retries safe.
+    const { error, count } = await context.supabase
+      .from(relationTable as never)
+      .upsert(assignments as never, {
+        onConflict: `${labelColumn},contact_id`,
+        ignoreDuplicates: true,
+        count: "exact",
+      });
+    if (error) throw new Error(error.message);
+    return { selected: data.contactIds.length, added: count ?? 0 };
+  });
+
+/**
+ * Remove one specific membership from up to 50 active contacts.
+ * Contacts, other groups/tags, accounting references and activity are untouched.
+ */
+export const bulkRemoveContactLabel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      contactIds: string[];
+      labelKind: "group" | "tag";
+      labelId: string;
+      confirm: boolean;
+    }) => {
+      if (input.confirm !== true) throw new Error("Removing memberships requires confirmation");
+      if (
+        !Array.isArray(input.contactIds) ||
+        input.contactIds.length < 1 ||
+        input.contactIds.length > 50
+      ) {
+        throw new Error("Select between 1 and 50 contacts from the current page");
+      }
+      const contactIds = input.contactIds.map((id) => assertUuid(id));
+      if (new Set(contactIds).size !== contactIds.length) {
+        throw new Error("Contact selection contains duplicate IDs");
+      }
+      if (input.labelKind !== "group" && input.labelKind !== "tag") {
+        throw new Error("Invalid group or tag selection");
+      }
+      return {
+        companyId: assertUuid(input.companyId),
+        contactIds,
+        labelKind: input.labelKind,
+        labelId: assertUuid(input.labelId),
+      };
+    },
+  )
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "contacts.manage");
+
+    const { data: contacts, error: contactError } = await context.supabase
+      .from("contacts" as never)
+      .select("id" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("is_active" as never, true as never)
+      .is("archived_at" as never, null as never)
+      .in("id" as never, data.contactIds as never);
+    if (contactError) throw new Error(contactError.message);
+    if ((contacts ?? []).length !== data.contactIds.length) {
+      throw new Error("Some selected contacts are inactive or outside this organisation");
+    }
+
+    const labelTable = data.labelKind === "group" ? "contact_groups" : "contact_tags";
+    const relationTable =
+      data.labelKind === "group" ? "contact_group_members" : "contact_tag_assignments";
+    const labelColumn = data.labelKind === "group" ? "group_id" : "tag_id";
+    const { data: label, error: labelError } = await context.supabase
+      .from(labelTable as never)
+      .select("id" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("id" as never, data.labelId as never)
+      .maybeSingle();
+    if (labelError) throw new Error(labelError.message);
+    if (!label) throw new Error("The group or tag does not belong to this organisation");
+
+    const { error, count } = await context.supabase
+      .from(relationTable as never)
+      .delete({ count: "exact" })
+      .eq("company_id" as never, data.companyId as never)
+      .eq(labelColumn as never, data.labelId as never)
+      .in("contact_id" as never, data.contactIds as never);
+    if (error) throw new Error(error.message);
+    return { selected: data.contactIds.length, removed: count ?? 0 };
+  });
+
 /* ── Settings ── */
 export const getContactSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -798,26 +1171,23 @@ export const saveContactSettings = createServerFn({ method: "POST" })
 /* ── CSV export / import ── */
 export const exportContactsCsv = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; kind?: string; includeInactive?: boolean }) => ({
-    companyId: assertUuid(input.companyId),
-    kind: (input.kind ?? "all").trim(),
-    includeInactive: Boolean(input.includeInactive),
-  }))
+  .inputValidator(
+    (input: {
+      companyId: string;
+      kind?: string;
+      view?: string;
+      q?: string;
+      filters?: Partial<ContactAdvancedFilters>;
+    }) => ({
+      companyId: assertUuid(input.companyId),
+      kind: (input.kind ?? "all").trim(),
+      view: (input.view ?? "all").trim(),
+      q: (input.q ?? "").trim().slice(0, 100),
+      filters: normalizeContactAdvancedFilters(input.filters),
+    }),
+  )
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
-    let q = context.supabase
-      .from("contacts" as never)
-      .select(
-        "name, kind, email, phone, tax_number, payment_terms_days, account_number, legal_name, website, notes, is_active" as never,
-      )
-      .eq("company_id" as never, data.companyId as never)
-      .order("name" as never)
-      .limit(5000);
-    if (!data.includeInactive) q = q.eq("is_active" as never, true as never);
-    if (data.kind === "customers") q = q.in("kind" as never, ["customer", "both"] as never);
-    else if (data.kind === "suppliers") q = q.in("kind" as never, ["supplier", "both"] as never);
-    const { data: rows, error } = await q;
-    if (error) throw new Error(error.message);
     const columns = [
       "name",
       "kind",
@@ -831,14 +1201,87 @@ export const exportContactsCsv = createServerFn({ method: "POST" })
       "notes",
       "is_active",
     ];
+    const rows: Array<Record<string, string | number | null>> = [];
+    // Export the matching directory dataset, not only the first loaded page.
+    // Reject oversized exports explicitly instead of returning a misleading partial file.
+    for (let from = 0; ; from += 1000) {
+      let q = context.supabase
+        .from("contacts" as never)
+        .select(contactDirectoryMembershipSelect(columns.join(","), data.filters) as never)
+        .eq("company_id" as never, data.companyId as never)
+        .order("name" as never)
+        .order("id" as never)
+        .range(from, from + 999);
+      if (data.view === "archived") {
+        q = q.not("archived_at" as never, "is" as never, null as never);
+      } else if (data.view === "inactive") {
+        q = q.eq("is_active" as never, false as never).is("archived_at" as never, null as never);
+      } else {
+        q = q.eq("is_active" as never, true as never).is("archived_at" as never, null as never);
+      }
+      if (data.kind === "customers" || data.view === "customers") {
+        q = q.in("kind" as never, ["customer", "both"] as never);
+      } else if (data.kind === "suppliers" || data.view === "suppliers") {
+        q = q.in("kind" as never, ["supplier", "both"] as never);
+      } else if (data.view === "both") {
+        q = q.eq("kind" as never, "both" as never);
+      }
+      const search = buildIlikeOr(
+        [
+          "name",
+          "email",
+          "phone",
+          "account_number",
+          "tax_number",
+          "legal_name",
+          "billing_city",
+          "billing_region",
+          "billing_country",
+        ],
+        data.q,
+      );
+      if (search) q = q.or(search as never);
+      if (data.filters.city) {
+        q = q.ilike("billing_city" as never, ilikePattern(data.filters.city) as never);
+      }
+      if (data.filters.region) {
+        q = q.ilike("billing_region" as never, ilikePattern(data.filters.region) as never);
+      }
+      if (data.filters.country) {
+        q = q.ilike("billing_country" as never, ilikePattern(data.filters.country) as never);
+      }
+      if (data.filters.currency) {
+        q = q.eq("default_currency" as never, data.filters.currency as never);
+      }
+      if (data.filters.terms === "immediate") {
+        q = q.eq("payment_terms_days" as never, 0 as never);
+      } else if (data.filters.terms === "up_to_30") {
+        q = q
+          .gte("payment_terms_days" as never, 1 as never)
+          .lte("payment_terms_days" as never, 30 as never);
+      } else if (data.filters.terms === "over_30") {
+        q = q.gt("payment_terms_days" as never, 30 as never);
+      }
+      if (data.filters.groupId) {
+        q = q.eq("contact_group_members.group_id" as never, data.filters.groupId as never);
+      }
+      if (data.filters.tagId) {
+        q = q.eq("contact_tag_assignments.tag_id" as never, data.filters.tagId as never);
+      }
+
+      const { data: page, error } = await q;
+      if (error) throw new Error(error.message);
+      rows.push(...((page ?? []) as Array<Record<string, string | number | null>>));
+      if (rows.length > 50_000) {
+        throw new Error("More than 50,000 contacts match. Narrow the filters before exporting.");
+      }
+      if ((page ?? []).length < 1000) break;
+    }
     const csv = buildContactsCsv(
-      ((rows ?? []) as Array<Record<string, string | number | null>>).map((r) => ({
-        ...r,
-        is_active: r["is_active"] ? "true" : "false",
-      })),
+      rows.map((r) => ({ ...r, is_active: r["is_active"] ? "true" : "false" })),
       columns,
     );
-    return { csv, count: (rows ?? []).length };
+    return { csv, count: rows.length };
   });
 
 export const getContactImportTemplate = createServerFn({ method: "GET" })
@@ -1022,8 +1465,10 @@ export const mergeContacts = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "contacts.manage");
 
-    // Preferred path: one transaction over every table that references contacts.
-    const rpc = await context.supabase.rpc(
+    // Merging touches many foreign-key relationships. A multi-request fallback
+    // can leave accounting references split across contacts if interrupted.
+    // Require the audited database transaction rather than pretending undo is atomic.
+    const { data: merged, error } = await context.supabase.rpc(
       "merge_contacts" as never,
       {
         _company_id: data.companyId,
@@ -1031,108 +1476,19 @@ export const mergeContacts = createServerFn({ method: "POST" })
         _merge_id: data.mergeId,
       } as never,
     );
-    if (!rpc.error) {
-      const result = (rpc.data ?? {}) as { rows_moved?: number };
-      return {
-        survivorId: data.survivorId,
-        mergedId: data.mergeId,
-        rowsMoved: Number(result.rows_moved ?? 0),
-        atomic: true,
-      };
-    }
-    if (!isMissingFunctionError(rpc.error)) throw new Error(rpc.error.message);
-
-    // Fallback until the migration is applied: checked updates by row id, undone if one fails.
-    const exists = async (id: string) => {
-      const { data: row, error } = await context.supabase
-        .from("contacts" as never)
-        .select("id" as never)
-        .eq("id" as never, id as never)
-        .eq("company_id" as never, data.companyId as never)
-        .maybeSingle();
-      if (error) throw new Error(error.message);
-      return Boolean(row);
-    };
-    if (!(await exists(data.survivorId)) || !(await exists(data.mergeId))) {
-      throw new Error("Both contacts must exist in this organisation");
-    }
-
-    const targets: Array<[string, string]> = [
-      ["sales_invoices", "contact_id"],
-      ["sales_quotes", "contact_id"],
-      ["sales_credit_notes", "contact_id"],
-      ["sales_receipts", "contact_id"],
-      ["sales_recurring_invoices", "contact_id"],
-      ["purchase_bills", "contact_id"],
-      ["purchase_credit_notes", "contact_id"],
-      ["purchase_orders", "contact_id"],
-      ["purchase_expenses", "contact_id"],
-      ["supplier_payments", "contact_id"],
-      ["recurring_bills", "contact_id"],
-      ["recurring_templates", "contact_id"],
-      ["money_documents", "contact_id"],
-      ["projects", "contact_id"],
-      ["purchase_bill_lines", "customer_contact_id"],
-      ["contact_people", "contact_id"],
-      ["contact_addresses", "contact_id"],
-    ];
-    const moved: Array<{ table: string; column: string; ids: string[] }> = [];
-    const undo = async () => {
-      for (const m of moved.reverse()) {
-        if (m.ids.length === 0) continue;
-        await context.supabase
-          .from(m.table as never)
-          .update({ [m.column]: data.mergeId } as never)
-          .in("id" as never, m.ids as never);
+    if (error) {
+      if (isMissingFunctionError(error)) {
+        throw new Error(
+          "Contact merging needs the merge_contacts database migration. No contacts were changed.",
+        );
       }
-    };
-    try {
-      for (const [table, column] of targets) {
-        const { data: found, error: findErr } = await context.supabase
-          .from(table as never)
-          .select("id" as never)
-          .eq("company_id" as never, data.companyId as never)
-          .eq(column as never, data.mergeId as never);
-        if (findErr) throw new Error(`${table}: ${findErr.message}`);
-        const ids = ((found ?? []) as unknown as Array<{ id: string }>).map((r) => r.id);
-        if (ids.length === 0) continue;
-        const { error: upErr } = await context.supabase
-          .from(table as never)
-          .update({ [column]: data.survivorId } as never)
-          .in("id" as never, ids as never);
-        if (upErr) throw new Error(`${table}: ${upErr.message}`);
-        moved.push({ table, column, ids });
-      }
-      const { data: notesRow } = await context.supabase
-        .from("contacts" as never)
-        .select("notes" as never)
-        .eq("id" as never, data.mergeId as never)
-        .eq("company_id" as never, data.companyId as never)
-        .maybeSingle();
-      const priorNotes = ((notesRow as { notes: string | null } | null)?.notes ?? "").trim();
-      const note = `Merged into ${data.survivorId} on ${new Date().toISOString().slice(0, 10)}`;
-      const { error: archErr } = await context.supabase
-        .from("contacts" as never)
-        .update({
-          is_active: false,
-          archived_at: new Date().toISOString(),
-          notes: priorNotes ? `${priorNotes}\n${note}` : note,
-          updated_at: new Date().toISOString(),
-        } as never)
-        .eq("id" as never, data.mergeId as never)
-        .eq("company_id" as never, data.companyId as never);
-      if (archErr) throw new Error(archErr.message);
-    } catch (e) {
-      await undo();
-      throw new Error(
-        `Merge failed and was undone: ${e instanceof Error ? e.message : "unknown error"}`,
-      );
+      throw new Error(error.message);
     }
-    // Group / tag links are left on the archived contact in this fallback (they can clash).
+    const result = (merged ?? {}) as { rows_moved?: number };
     return {
       survivorId: data.survivorId,
       mergedId: data.mergeId,
-      rowsMoved: moved.reduce((n, m) => n + m.ids.length, 0),
-      atomic: false,
+      rowsMoved: Number(result.rows_moved ?? 0),
+      atomic: true,
     };
   });

@@ -161,7 +161,11 @@ function BankingAccounts() {
       {query.isPending ? (
         <LoadingState />
       ) : query.isError ? (
-        <ErrorState title="Could not load accounts" description={friendlyAuthError(query.error)} />
+        <ErrorState
+          onRetry={() => void query.refetch()}
+          title="Could not load accounts"
+          description={friendlyAuthError(query.error)}
+        />
       ) : accounts.length === 0 ? (
         <EmptyState
           icon={Landmark}

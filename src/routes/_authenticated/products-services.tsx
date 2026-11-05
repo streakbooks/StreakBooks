@@ -1,3 +1,4 @@
+import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -267,6 +268,12 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
   }
 
   const rows = (productsQ.data ?? []) as ProductRow[];
+
+  const requiredQueries = [accountsQ, taxCodesQ];
+  if (requiredQueries.some((query) => query.isError && query.data === undefined))
+    return (
+      <QueryErrorState queries={requiredQueries} title="Could not load item accounting options" />
+    );
 
   return (
     <>

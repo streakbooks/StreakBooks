@@ -69,7 +69,9 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     process.stdout.write("Repository hygiene passed: no tracked .env or generated build files.\n");
   } catch (error) {
     process.stderr.write(
-      "Repository hygiene failed: " + (error instanceof Error ? error.message : String(error)) + "\n",
+      "Repository hygiene failed: " +
+        (error instanceof Error ? error.message : String(error)) +
+        "\n",
     );
     process.exitCode = 1;
   }

@@ -57,6 +57,7 @@ export function PracticeWorkBoard({ companyId, firmId }: { companyId?: string; f
   if (workspace.isError)
     return (
       <ErrorState
+        onRetry={() => void workspace.refetch()}
         title="Could not load practice work"
         description={friendlyAuthError(workspace.error)}
       />

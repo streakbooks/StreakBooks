@@ -153,3 +153,44 @@ export function summariseChecklist(items: CloseCheck[]): CloseSummary {
   const warnings = items.filter((i) => i.status === "warn").length;
   return { blockers, warnings, clean: blockers === 0 && warnings === 0 };
 }
+
+/**
+ * Client-side preflight for a destructive period lock.
+ * The caller must reload all underlying facts immediately before locking.
+ * This is not an atomic database check; database permissions/period locks remain authoritative.
+ */
+export function assertPeriodCloseReview({
+  periodId,
+  periodEnd,
+  latestPeriod,
+  reviewed,
+  latest,
+  acknowledged,
+}: {
+  periodId: string;
+  periodEnd: string;
+  latestPeriod: { id: string; end_date: string; status: string } | undefined;
+  reviewed: CloseCheck[];
+  latest: CloseCheck[];
+  acknowledged: boolean;
+}): void {
+  if (
+    !latestPeriod ||
+    latestPeriod.id !== periodId ||
+    latestPeriod.end_date !== periodEnd ||
+    latestPeriod.status !== "open"
+  ) {
+    throw new Error("The selected period changed or is already locked. Reload before continuing.");
+  }
+
+  const signature = (checks: CloseCheck[]) =>
+    JSON.stringify(checks.map(({ id, status, detail }) => [id, status, detail]));
+  if (signature(reviewed) !== signature(latest)) {
+    throw new Error("The close checklist has changed. Review the refreshed checks before locking.");
+  }
+
+  const summary = summariseChecklist(latest);
+  if (!summary.clean && !acknowledged) {
+    throw new Error("Acknowledge the outstanding close checklist items before locking.");
+  }
+}

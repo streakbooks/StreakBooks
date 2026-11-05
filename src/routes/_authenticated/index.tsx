@@ -13,16 +13,11 @@ import { getDashboardSnapshot } from "@/lib/dashboard/dashboard.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { PageHeader, ErrorState, LoadingState, CardGridSkeleton } from "@/components/common/states";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import {
-  GettingStarted,
-  KpiRow,
-  QuickActions,
-  ReconcileAction,
-} from "@/components/dashboard/DashboardWidgets";
+import { GettingStarted, KpiRow } from "@/components/dashboard/DashboardWidgets";
 import { PersonalizedDashboardWidgets } from "@/components/dashboard/PersonalizedDashboardWidgets";
 import { BookkeepingAttentionCentre } from "@/components/dashboard/BookkeepingAttentionCentre";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 
@@ -122,40 +117,36 @@ function Dashboard() {
   return (
     <>
       <PageHeader
-        title="Dashboard"
-        description={
-          isDemo
-            ? "Demo Company — sample data only. Every figure is read from the posted ledger and your documents."
-            : "Where your money stands today, from your posted ledger and documents."
-        }
+        title="Financial overview"
+        description={`${company?.name ?? "Your organisation"} · ${company?.base_currency ?? ""} · Balances from your posted ledger and documents.`}
         actions={
           <>
             <Button variant="ghost" size="sm" asChild>
               <Link to="/reports">Reports</Link>
             </Button>
-            {data ? <ReconcileAction data={data} /> : null}
             <Button variant="outline" size="sm" asChild>
               <a href="#bookkeeping-attention">Review tasks</a>
             </Button>
-            <QuickActions />
+            <Button size="sm" asChild>
+              <Link to="/sales/invoices/new">New invoice</Link>
+            </Button>
           </>
         }
       />
 
-      {isDemo ? (
-        <Alert className="mb-6 border-warning/40 bg-warning/10">
-          <AlertTitle className="flex items-center gap-2">
-            <Badge variant="outline">Demo Company</Badge>
-            Sample data — not real financial records
-          </AlertTitle>
+      {isDemo && demoSnapQ.isSuccess && (demoSnap?.journalLineCount ?? 0) === 0 ? (
+        <Alert className="mb-6 border-warning/40 bg-warning-soft">
+          <AlertTitle>Preparing demo records</AlertTitle>
           <AlertDescription>
-            Same database structure, posting engine and permissions as live organisations. Reset /
-            reseed from Settings → Demo.{" "}
-            {demoSnap?.matchesCanonicalDemoExpected
-              ? "Canonical demo totals verified against the known dataset."
-              : (demoSnap?.journalLineCount ?? 0) > 0
-                ? "Ledger present — open Reports to review TB / P&L / BS."
-                : "No journals yet — open Settings → Demo and reset to seed sample data."}
+            Sample records are being prepared. If this continues, open{" "}
+            <Link
+              to="/settings"
+              search={{ section: "demo" }}
+              className="font-medium underline underline-offset-4"
+            >
+              demo settings
+            </Link>{" "}
+            to review or reset the sample data.
           </AlertDescription>
         </Alert>
       ) : null}
@@ -180,24 +171,38 @@ function Dashboard() {
           <div className="grid gap-6 lg:grid-cols-3">
             {isDemo ? (
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Module coverage</CardTitle>
-                  <CardDescription>Honest status of each area in demo</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ul className="max-h-64 space-y-2 overflow-y-auto text-sm">
-                    {(modulesQ.data?.modules ?? []).map((m) => (
-                      <li key={m.path} className="flex items-start justify-between gap-2">
-                        <Link className="underline-offset-2 hover:underline" to={m.path}>
-                          {m.label}
-                        </Link>
-                        <Badge variant="outline" className="shrink-0 text-[10px]">
-                          {m.status}
-                        </Badge>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
+                <details>
+                  <summary className="cursor-pointer rounded-xl p-5 text-sm font-medium focus-visible:ring-2 focus-visible:ring-ring">
+                    Demo data and module status
+                  </summary>
+                  <CardContent>
+                    <p className="mb-3 text-xs text-muted-foreground">
+                      {demoSnap?.matchesCanonicalDemoExpected
+                        ? "Sample ledger totals verified."
+                        : "Explore the sample organisation using the same accounting workflows as your live companies."}
+                    </p>
+                    {modulesQ.isPending ? <LoadingState rows={2} /> : null}
+                    {modulesQ.isError ? (
+                      <ErrorState
+                        compact
+                        title="Could not load module status"
+                        onRetry={() => void modulesQ.refetch()}
+                      />
+                    ) : null}
+                    <ul className="max-h-64 space-y-2 overflow-y-auto text-sm">
+                      {(modulesQ.data?.modules ?? []).map((m) => (
+                        <li key={m.path} className="flex items-start justify-between gap-2">
+                          <Link className="underline-offset-2 hover:underline" to={m.path}>
+                            {m.label}
+                          </Link>
+                          <Badge variant="outline" className="shrink-0 text-[10px]">
+                            {m.status}
+                          </Badge>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </details>
               </Card>
             ) : null}
           </div>

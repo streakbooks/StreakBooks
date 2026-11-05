@@ -72,7 +72,13 @@ function OrderLoader({
   });
   if (edit && q.isPending) return <LoadingState />;
   if (edit && q.isError)
-    return <ErrorState title="Could not load order" description={friendlyAuthError(q.error)} />;
+    return (
+      <ErrorState
+        onRetry={() => void q.refetch()}
+        title="Could not load order"
+        description={friendlyAuthError(q.error)}
+      />
+    );
   if (q.data && (q.data.status !== "draft" || q.data.billed_bill_id))
     return (
       <EmptyState

@@ -1,6 +1,8 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
+import { JournalQualityReviewPanel } from "@/components/accountant/JournalQualityReviewPanel";
+import { BulkJournalImportPanel } from "@/components/accountant/BulkJournalImportPanel";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ChevronDown, ChevronRight } from "lucide-react";
@@ -12,10 +14,12 @@ import {
   type JournalListItem,
 } from "@/lib/accounting/accounting.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { toCsv } from "@/lib/sales/csv";
 import { roleHasPermission } from "@/lib/permissions";
 import { useFormat } from "@/hooks/use-format";
 import { SortableHead } from "@/components/common/sortable-head";
 import { nextSort, sortRows, type SortState } from "@/lib/sort";
+import { journalPageInfo } from "@/lib/accounting/journal-paging";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { Badge } from "@/components/ui/badge";
@@ -82,17 +86,25 @@ export function JournalsPanel({
   const [source, setSource] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
-  const [limit, setLimit] = useState(100);
+  const [pageSize, setPageSize] = useState(100);
+  const [page, setPage] = useState(0);
   const [open, setOpen] = useState<string | null>(initialOpenJournalId ?? null);
   const [sort, setSort] = useState<SortState<"number" | "date" | "source" | "amount"> | null>(null);
+  const invalidDateRange = Boolean(from && to && from > to);
+
+  useEffect(() => {
+    if (initialOpenJournalId) setOpen(initialOpenJournalId);
+  }, [initialOpenJournalId]);
 
   const query = useQuery({
-    queryKey: ["journals", companyId, search, source, from, to, limit],
+    queryKey: ["journals", companyId, search, source, from, to, pageSize, page],
+    enabled: !invalidDateRange,
     queryFn: () =>
       fetchJournals({
         data: {
           companyId,
-          limit,
+          limit: pageSize + 1,
+          offset: page * pageSize,
           ...(search ? { search } : {}),
           ...(source ? { source } : {}),
           ...(from ? { from } : {}),
@@ -118,10 +130,12 @@ export function JournalsPanel({
   });
 
   const fetched = query.data ?? [];
+  const pageInfo = journalPageInfo(fetched.length, pageSize, page);
+  const displayed = fetched.slice(0, pageSize);
   const rows = !sort
-    ? fetched
+    ? displayed
     : sortRows(
-        fetched,
+        displayed,
         (j) =>
           sort.key === "number"
             ? j.journal_number
@@ -132,6 +146,36 @@ export function JournalsPanel({
                 : j.total_debit_minor,
         sort.dir,
       );
+  const exportVisibleJournals = () => {
+    const csv = toCsv(
+      [
+        "Journal number",
+        "Date",
+        "Source",
+        "Narration",
+        "Total debit (ledger minor units)",
+        "Currency code",
+        "Status",
+        "Reversed",
+      ],
+      rows.map((row) => [
+        row.journal_number,
+        row.journal_date,
+        row.source_type,
+        row.memo,
+        row.total_debit_minor,
+        row.currency_code,
+        row.status,
+        row.reversed_by_journal_id ? "Yes" : "No",
+      ]),
+    );
+    const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "linkbooks-journals-visible.csv";
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
   const headProps = (key: "number" | "date" | "source" | "amount") => ({
     active: sort?.key === key,
     dir: sort?.dir ?? ("asc" as const),
@@ -140,19 +184,27 @@ export function JournalsPanel({
 
   return (
     <div className="space-y-4">
+      <JournalQualityReviewPanel companyId={companyId} />
+      <BulkJournalImportPanel companyId={companyId} currency={currency} />
       <div className="flex flex-wrap items-end gap-2">
         <Input
           aria-label="Search journals"
           className="h-9 w-56"
           placeholder="Search number or narration"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(0);
+          }}
         />
         <select
           aria-label="Journal source"
           className="h-9 rounded-md border border-input bg-background px-2 text-sm"
           value={source}
-          onChange={(e) => setSource(e.target.value)}
+          onChange={(e) => {
+            setSource(e.target.value);
+            setPage(0);
+          }}
         >
           {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
 
@@ -168,14 +220,20 @@ export function JournalsPanel({
           type="date"
           className="h-9 w-40"
           value={from}
-          onChange={(e) => setFrom(e.target.value)}
+          onChange={(e) => {
+            setFrom(e.target.value);
+            setPage(0);
+          }}
         />
         <Input
           aria-label="To date"
           type="date"
           className="h-9 w-40"
           value={to}
-          onChange={(e) => setTo(e.target.value)}
+          onChange={(e) => {
+            setTo(e.target.value);
+            setPage(0);
+          }}
         />
         {search || source || from || to ? (
           <Button
@@ -186,6 +244,7 @@ export function JournalsPanel({
               setSource("");
               setFrom("");
               setTo("");
+              setPage(0);
             }}
           >
             Clear filters
@@ -193,7 +252,25 @@ export function JournalsPanel({
         ) : null}
       </div>
 
-      {query.isPending ? (
+      <div className="flex flex-wrap items-center gap-3">
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={invalidDateRange || query.isPending || query.isError || rows.length === 0}
+          onClick={exportVisibleJournals}
+        >
+          Export displayed journals CSV
+        </Button>
+        <span className="text-xs text-muted-foreground">
+          Export contains the displayed page only. Sorting also applies within this page.
+        </span>
+      </div>
+
+      {invalidDateRange ? (
+        <p role="alert" className="text-sm text-destructive">
+          The From date must be on or before the To date. Change the dates to review journals.
+        </p>
+      ) : query.isPending ? (
         <LoadingState />
       ) : query.isError ? (
         <ErrorState
@@ -202,10 +279,21 @@ export function JournalsPanel({
           onRetry={() => void query.refetch()}
         />
       ) : rows.length === 0 ? (
-        <EmptyState
-          title="No journals found"
-          description="Change the filters, or post a manual journal."
-        />
+        <div className="space-y-3">
+          <EmptyState
+            title="No journals found"
+            description={
+              page > 0
+                ? "No journals remain on this page. Return to the previous page."
+                : "Change the filters, or post a manual journal."
+            }
+          />
+          {page > 0 ? (
+            <Button variant="outline" size="sm" onClick={() => setPage((value) => value - 1)}>
+              Previous page
+            </Button>
+          ) : null}
+        </div>
       ) : (
         <>
           <Table>
@@ -340,15 +428,54 @@ export function JournalsPanel({
               })}
             </TableBody>
           </Table>
-          {rows.length >= limit ? (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setLimit((n) => Math.min(500, n + 100))}
-            >
-              Show more
-            </Button>
-          ) : null}
+          <div className="flex flex-wrap items-center justify-between gap-3 py-2">
+            <p role="status" className="text-xs text-muted-foreground">
+              Showing journals {pageInfo.first}–{pageInfo.last} · Page {page + 1}
+              {pageInfo.hasNext ? " · More journals available" : " · End of results"}
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <label htmlFor="journal-page-size" className="text-xs text-muted-foreground">
+                Rows per page
+              </label>
+              <select
+                id="journal-page-size"
+                value={pageSize}
+                className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                onChange={(event) => {
+                  setPageSize(Number(event.target.value));
+                  setPage(0);
+                  setOpen(null);
+                }}
+              >
+                {/* lookup-fixed-enum: Short presentation enumeration, not business records. */}
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+                <option value={200}>200</option>
+              </select>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={query.isFetching || page === 0}
+                onClick={() => {
+                  setPage((current) => Math.max(0, current - 1));
+                  setOpen(null);
+                }}
+              >
+                Previous
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={query.isFetching || !pageInfo.hasNext}
+                onClick={() => {
+                  setPage((current) => current + 1);
+                  setOpen(null);
+                }}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
         </>
       )}
     </div>

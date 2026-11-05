@@ -10,9 +10,10 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Search } from "lucide-react";
+import { Loader2, Search, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany, companyContextKey } from "@/hooks/use-active-company";
+import { useCanDo } from "@/hooks/use-can";
 import { getCompanyDetails, updateCompany } from "@/lib/company.functions";
 import {
   createExchangeRate,
@@ -25,20 +26,18 @@ import {
   upsertBranding,
   voidExchangeRate,
 } from "@/lib/settings/org-settings.functions";
-import {
-  canManageCompany,
-  countries,
-  currencies,
-  months,
-  taxRegimes,
-  timezones,
-} from "@/lib/company-constants";
+import { countries, currencies, months, taxRegimes, timezones } from "@/lib/company-constants";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { categoryMeta, type SettingsCategory } from "@/lib/settings/registry";
+import {
+  categoryMeta,
+  resolveSettingsCategory,
+  type SettingsCategory,
+} from "@/lib/settings/registry";
 import { ErrorState, LoadingState, PageHeader } from "@/components/common/states";
 import { PortalSettingsPanel } from "@/components/portals/staff-panels";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -71,10 +70,24 @@ import { SettingsFeatureManager } from "@/components/settings/SettingsFeatureMan
 import { SettingsAccountingLocksPanel } from "@/components/settings/SettingsAccountingLocksPanel";
 import { SettingsCategoryConfigPanel } from "@/components/settings/SettingsCategoryConfigPanel";
 import { SettingsCommunicationsPanel } from "@/components/settings/SettingsCommunicationsPanel";
-import { SettingsUnavailablePanel } from "@/components/settings/SettingsUnavailablePanel";
 import { SubscriptionPanel } from "@/components/billing/SubscriptionPanel";
 import { SettingsCommandPalette } from "@/components/settings/SettingsCommandPalette";
 import { maxFiscalYearEndDay, formatDocumentNumberPreview } from "@/lib/settings/dimension-helpers";
+import { SettingsSaveBar } from "@/components/settings/SettingsSaveBar";
+import {
+  brandingSnapshot,
+  localisationSnapshot,
+  sequenceSnapshot,
+  type BrandingSnapshot,
+  type LocalisationSnapshot,
+  type SequenceSnapshot,
+} from "@/lib/settings/legacy-snapshots";
+import {
+  isValidOptionalEmail,
+  isValidPositiveFxRate,
+  isValidThemeColor,
+  validateDocumentSequenceDraft,
+} from "@/lib/settings/legacy-form-validation";
 
 const LEGACY_TAB_BY_SECTION: Partial<Record<SettingsCategory, string>> = {
   organisation: "organisation",
@@ -99,10 +112,9 @@ const CONFIG_SECTIONS: SettingsCategory[] = [
   "contacts",
   "expenses",
   "import_migration",
+  "fixed_assets",
   "accountant",
 ];
-
-const UNAVAILABLE_SECTIONS: SettingsCategory[] = ["fixed_assets"];
 
 export const Route = createFileRoute("/_authenticated/settings")({
   validateSearch: (
@@ -116,7 +128,7 @@ export const Route = createFileRoute("/_authenticated/settings")({
         ? search["interval"]
         : undefined;
     return {
-      section: typeof raw === "string" && raw.length > 0 ? raw : "overview",
+      section: resolveSettingsCategory(raw),
       ...(plan ? { plan } : {}),
       ...(interval ? { interval } : {}),
     };
@@ -186,7 +198,7 @@ export function SettingsForCompany({
       ? currentSearch["interval"]
       : undefined;
   const detail = embeddedSection ? undefined : parseSettingsPanel(currentSearch["settingsPanel"]);
-  const section = (sectionRaw || "overview") as SettingsCategory;
+  const section = resolveSettingsCategory(sectionRaw);
   const [navFilter, setNavFilter] = useState("");
   const [cmdOpen, setCmdOpen] = useState(false);
 
@@ -238,6 +250,7 @@ export function SettingsForCompany({
   const extendedQuery = useQuery({
     queryKey: ["org-extended", companyId],
     queryFn: () => fetchExtended({ data: { companyId } }),
+    enabled: !detail && ["organisation", "documents", "currencies"].includes(section),
   });
 
   const [auditAction, setAuditAction] = useState("");
@@ -245,6 +258,7 @@ export function SettingsForCompany({
 
   const auditQuery = useQuery({
     queryKey: ["org-audit", companyId, auditAction, auditEntity],
+    enabled: !detail && section === "audit",
     queryFn: () =>
       fetchAudit({
         data: {
@@ -280,8 +294,99 @@ export function SettingsForCompany({
   const [rateFrom, setRateFrom] = useState("USD");
   const [rateDate, setRateDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [rateValue, setRateValue] = useState("1.25");
+  const [detailsDirty, setDetailsDirty] = useState(false);
+  const [localizationDirty, setLocalizationDirty] = useState(false);
+  const [brandingDirty, setBrandingDirty] = useState(false);
+  const [currenciesDirty, setCurrenciesDirty] = useState(false);
+  const [detailsBaseline, setDetailsBaseline] = useState("");
+  const [localizationBaseline, setLocalizationBaseline] = useState("");
+  const [brandingBaseline, setBrandingBaseline] = useState("");
+  const [currenciesBaseline, setCurrenciesBaseline] = useState("");
 
   useEffect(() => {
+    const d = detailsQuery.data;
+    if (!d || detailsDirty) return;
+    setDetailsBaseline(JSON.stringify(d));
+    setName(d.name);
+    setLegalName(d.legal_name ?? "");
+    setCountryCode(d.country_code);
+    setCurrency(d.base_currency);
+    setTimezone(d.timezone);
+    setFyMonth(String(d.fiscal_year_end_month));
+    setFyDay(String(d.fiscal_year_end_day));
+    setTaxRegime(d.tax?.tax_regime ?? "none");
+    setRegNumber(d.tax?.registration_number ?? "");
+    setPricesIncludeTax(Boolean(d.tax?.prices_include_tax));
+  }, [detailsQuery.data, detailsDirty]);
+
+  useEffect(() => {
+    const e = extendedQuery.data;
+    if (!e?.company) return;
+    if (!localizationDirty) {
+      setLocalizationBaseline(JSON.stringify(e.company));
+      setLocale(e.company.locale || "en-GB");
+      setDateFormat(e.company.date_format || "DD/MM/YYYY");
+      setInvoiceFooter(e.company.invoice_footer || "");
+      setThemeColor(e.company.document_theme_color || "#0F766E");
+    }
+    if (!brandingDirty) {
+      setBrandingBaseline(JSON.stringify(e.branding));
+      setTradingName(e.branding.trading_name ?? "");
+      setLetterhead(e.branding.letterhead_line ?? "");
+      setInvoiceEmail(e.branding.invoice_email ?? "");
+      setInvoicePhone(e.branding.invoice_phone ?? "");
+      setLogoUrl(e.branding.logo_url ?? "");
+    }
+    if (!currenciesDirty) {
+      setCurrenciesBaseline(JSON.stringify(e.enabledCurrencies));
+      setEnabledFx(e.enabledCurrencies);
+    }
+  }, [extendedQuery.data, localizationDirty, brandingDirty, currenciesDirty]);
+
+  const detailsServerChanged = Boolean(
+    detailsDirty && detailsQuery.data && JSON.stringify(detailsQuery.data) !== detailsBaseline,
+  );
+  const localizationServerChanged = Boolean(
+    localizationDirty &&
+    extendedQuery.data?.company &&
+    JSON.stringify(extendedQuery.data.company) !== localizationBaseline,
+  );
+  const brandingServerChanged = Boolean(
+    brandingDirty &&
+    extendedQuery.data &&
+    JSON.stringify(extendedQuery.data.branding) !== brandingBaseline,
+  );
+  const currenciesServerChanged = Boolean(
+    currenciesDirty &&
+    extendedQuery.data &&
+    JSON.stringify(extendedQuery.data.enabledCurrencies) !== currenciesBaseline,
+  );
+  const detailsValid =
+    name.trim().length >= 2 &&
+    name.trim().length <= 160 &&
+    legalName.trim().length <= 200 &&
+    Number.isInteger(Number(fyDay)) &&
+    Number(fyDay) >= 1 &&
+    Number(fyDay) <= maxFiscalYearEndDay(Number(fyMonth));
+  const localizationValid = isValidThemeColor(themeColor) && invoiceFooter.length <= 2000;
+  const brandingValid =
+    isValidOptionalEmail(invoiceEmail) && (!logoUrl.trim() || /^https:\/\//i.test(logoUrl.trim()));
+  const fxRateValid =
+    isValidPositiveFxRate(rateValue) &&
+    rateFrom !== (detailsQuery.data?.base_currency ?? "GBP") &&
+    /^\d{4}-\d{2}-\d{2}$/.test(rateDate);
+
+  useEffect(() => {
+    if (!detailsDirty && !localizationDirty && !brandingDirty && !currenciesDirty) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [detailsDirty, localizationDirty, brandingDirty, currenciesDirty]);
+
+  const resetDetails = () => {
     const d = detailsQuery.data;
     if (!d) return;
     setName(d.name);
@@ -294,24 +399,43 @@ export function SettingsForCompany({
     setTaxRegime(d.tax?.tax_regime ?? "none");
     setRegNumber(d.tax?.registration_number ?? "");
     setPricesIncludeTax(Boolean(d.tax?.prices_include_tax));
-  }, [detailsQuery.data]);
+    setDetailsBaseline(JSON.stringify(d));
+    setDetailsDirty(false);
+  };
 
-  useEffect(() => {
-    const e = extendedQuery.data;
-    if (!e?.company) return;
-    setLocale(e.company.locale || "en-GB");
-    setDateFormat(e.company.date_format || "DD/MM/YYYY");
-    setInvoiceFooter(e.company.invoice_footer || "");
-    setThemeColor(e.company.document_theme_color || "#0F766E");
-    setTradingName(e.branding.trading_name ?? "");
-    setLetterhead(e.branding.letterhead_line ?? "");
-    setInvoiceEmail(e.branding.invoice_email ?? "");
-    setInvoicePhone(e.branding.invoice_phone ?? "");
-    setLogoUrl(e.branding.logo_url ?? "");
-    setEnabledFx(e.enabledCurrencies);
-  }, [extendedQuery.data]);
+  const resetLocalization = () => {
+    const e = extendedQuery.data?.company;
+    if (!e) return;
+    setLocale(e.locale || "en-GB");
+    setDateFormat(e.date_format || "DD/MM/YYYY");
+    setInvoiceFooter(e.invoice_footer || "");
+    setThemeColor(e.document_theme_color || "#0F766E");
+    setLocalizationBaseline(JSON.stringify(e));
+    setLocalizationDirty(false);
+  };
 
-  const canEdit = canManageCompany(detailsQuery.data?.role);
+  const resetBranding = () => {
+    const b = extendedQuery.data?.branding;
+    if (!b) return;
+    setTradingName(b.trading_name ?? "");
+    setLetterhead(b.letterhead_line ?? "");
+    setInvoiceEmail(b.invoice_email ?? "");
+    setInvoicePhone(b.invoice_phone ?? "");
+    setLogoUrl(b.logo_url ?? "");
+    setBrandingBaseline(JSON.stringify(b));
+    setBrandingDirty(false);
+  };
+
+  const resetCurrencies = () => {
+    const list = extendedQuery.data?.enabledCurrencies;
+    if (!list) return;
+    setEnabledFx(list);
+    setCurrenciesBaseline(JSON.stringify(list));
+    setCurrenciesDirty(false);
+  };
+
+  const canEdit = useCanDo("company.settings.edit");
+  const canLock = useCanDo("periods.lock");
   const isDemo = Boolean(detailsQuery.data?.is_demo);
   const maxDay = useMemo(() => maxFiscalYearEndDay(Number(fyMonth)), [fyMonth]);
   const baseCurrency = detailsQuery.data?.base_currency ?? "GBP";
@@ -336,6 +460,7 @@ export function SettingsForCompany({
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["company-details", companyId] });
       await queryClient.invalidateQueries({ queryKey: companyContextKey });
+      setDetailsDirty(false);
       toast.success("Organisation settings saved");
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
@@ -346,6 +471,9 @@ export function SettingsForCompany({
       saveLocalization({
         data: {
           companyId,
+          expected: localisationSnapshot(
+            JSON.parse(localizationBaseline || "{}") as LocalisationSnapshot,
+          ),
           locale,
           date_format: dateFormat,
           invoice_footer: invoiceFooter,
@@ -354,9 +482,13 @@ export function SettingsForCompany({
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["org-extended", companyId] });
+      setLocalizationDirty(false);
       toast.success("Localization saved");
     },
-    onError: (e) => toast.error(friendlyAuthError(e)),
+    onError: async (e) => {
+      await queryClient.invalidateQueries({ queryKey: ["org-extended", companyId] });
+      toast.error(friendlyAuthError(e));
+    },
   });
 
   const brandingM = useMutation({
@@ -364,6 +496,7 @@ export function SettingsForCompany({
       saveBranding({
         data: {
           companyId,
+          expected: brandingSnapshot(JSON.parse(brandingBaseline || "{}") as BrandingSnapshot),
           trading_name: tradingName,
           letterhead_line: letterhead,
           invoice_email: invoiceEmail,
@@ -373,18 +506,37 @@ export function SettingsForCompany({
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["org-extended", companyId] });
+      setBrandingDirty(false);
       toast.success("Document branding saved");
     },
-    onError: (e) => toast.error(friendlyAuthError(e)),
+    onError: async (e) => {
+      await queryClient.invalidateQueries({ queryKey: ["org-extended", companyId] });
+      toast.error(friendlyAuthError(e));
+    },
   });
 
   const currenciesM = useMutation({
-    mutationFn: () => saveCurrencies({ data: { companyId, currencies: enabledFx } }),
+    mutationFn: () =>
+      saveCurrencies({
+        data: {
+          companyId,
+          currencies: enabledFx,
+          // Capture the original snapshot, not a possibly refreshed query.
+          // The database compares this while holding a company-scoped lock.
+          expectedCurrencies: JSON.parse(currenciesBaseline || "[]") as string[],
+        },
+      }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["org-extended", companyId] });
+      setCurrenciesDirty(false);
       toast.success("Enabled currencies saved");
     },
-    onError: (e) => toast.error(friendlyAuthError(e)),
+    onError: async (error) => {
+      // A stale-write rejection needs a fresh server snapshot so the editor's
+      // conflict warning and Reload latest action can recover correctly.
+      await queryClient.invalidateQueries({ queryKey: ["org-extended", companyId] });
+      toast.error(friendlyAuthError(error));
+    },
   });
 
   const rateM = useMutation({
@@ -434,12 +586,14 @@ export function SettingsForCompany({
       {!embeddedSection && (
         <PageHeader
           title="Settings Centre"
-          description="Organisation configuration — search settings with Ctrl/Cmd+Shift+K (Ctrl/Cmd+K searches everything). Preferences never override posting, period locks or journal immutability."
+          description="Manage your organisation, financial controls and connected workflows in one place."
           actions={
             <Button variant="outline" size="sm" onClick={() => setCmdOpen(true)}>
               <Search className="mr-1.5 size-3.5" />
               Search
-              <kbd className="ml-2 hidden rounded border px-1 text-[10px] sm:inline">⌘⇧K</kbd>
+              <kbd className="ml-2 hidden rounded border px-1 text-[10px] sm:inline">
+                Ctrl/⌘ Shift K
+              </kbd>
             </Button>
           }
         />
@@ -453,25 +607,86 @@ export function SettingsForCompany({
         />
       )}
 
-      <div className={embeddedSection ? "" : "grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]"}>
+      {!embeddedSection && (
+        <div className="mb-4 lg:hidden">
+          <Label htmlFor="mobile-settings-section" className="mb-2 block text-sm font-medium">
+            Settings section
+          </Label>
+          <Select value={section} onValueChange={selectSection}>
+            {/* lookup-fixed-enum: Settings sections are a fixed navigation enumeration. */}
+
+            <SelectTrigger id="mobile-settings-section" aria-label="Choose settings section">
+              <SelectValue placeholder="Choose a settings section" />
+            </SelectTrigger>
+            <SelectContent>
+              {categoryMeta
+                .filter((item) => item.id !== "demo" || isDemo)
+                .map((item) => (
+                  <SelectItem key={item.id} value={item.id}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      <div className={embeddedSection ? "" : "grid gap-5 lg:grid-cols-[260px_minmax(0,1fr)]"}>
         {!embeddedSection && (
-          <aside className="space-y-3 lg:sticky lg:top-4 lg:self-start">
-            <Input
-              value={navFilter}
-              onChange={(e) => setNavFilter(e.target.value)}
-              placeholder="Filter categories…"
-              aria-label="Filter settings categories"
-            />
-            <SettingsNav
-              section={section}
-              embedded={Boolean(embeddedSection)}
-              showDemo={isDemo}
-              filter={navFilter}
-            />
+          <aside className="hidden lg:sticky lg:top-4 lg:block lg:self-start">
+            <div className="rounded-xl border bg-card p-3 shadow-sm">
+              <div className="mb-3 flex items-center gap-2 px-2 text-sm font-semibold">
+                <Settings2 className="size-4 text-primary" aria-hidden />
+                All settings
+              </div>
+              <Input
+                value={navFilter}
+                onChange={(e) => setNavFilter(e.target.value)}
+                placeholder="Find a setting…"
+                aria-label="Filter settings categories"
+                className="mb-3"
+              />
+              <div className="max-h-[calc(100vh-16rem)] overflow-y-auto pr-1">
+                <SettingsNav
+                  section={section}
+                  embedded={false}
+                  showDemo={isDemo}
+                  filter={navFilter}
+                />
+              </div>
+            </div>
           </aside>
         )}
 
-        <div className="min-w-0 space-y-4">
+        <div className="min-w-0 space-y-5">
+          {!detail && sectionMeta && !embeddedSection ? (
+            <div className="flex flex-wrap items-start justify-between gap-3 rounded-xl border bg-card/60 p-4 shadow-sm sm:p-5">
+              <div className="min-w-0">
+                <h2 className="text-lg font-semibold tracking-tight sm:text-xl">
+                  {sectionMeta.label}
+                </h2>
+                <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                  {sectionMeta.description}
+                </p>
+              </div>
+              {sectionMeta.availability === "unavailable" ? (
+                <Badge variant="outline">Not available</Badge>
+              ) : null}
+            </div>
+          ) : null}
+          {!detail &&
+          extendedQuery.isError &&
+          ["organisation", "documents", "currencies"].includes(section) ? (
+            <Alert variant="destructive">
+              <AlertTitle>Additional organisation settings could not be loaded</AlertTitle>
+              <AlertDescription className="flex flex-wrap items-center gap-3">
+                <span>{friendlyAuthError(extendedQuery.error)}</span>
+                <Button variant="outline" size="sm" onClick={() => void extendedQuery.refetch()}>
+                  Retry
+                </Button>
+              </AlertDescription>
+            </Alert>
+          ) : null}
           {detail ? (
             <InPlaceSettingsPanel panel={detail} insideCentre />
           ) : (
@@ -490,9 +705,6 @@ export function SettingsForCompany({
               ) : null}
               {section === "portals" ? (
                 <PortalSettingsPanel companyId={companyId} canEdit={canEdit} />
-              ) : null}
-              {UNAVAILABLE_SECTIONS.includes(section) && sectionMeta ? (
-                <SettingsUnavailablePanel meta={sectionMeta} />
               ) : null}
               {section === "notifications" ? (
                 <SettingsCommunicationsPanel companyId={companyId} canEdit={canEdit} />
@@ -621,7 +833,7 @@ export function SettingsForCompany({
                       <SettingsAccountingLocksPanel
                         companyId={companyId}
                         canEdit={canEdit}
-                        canLock={canEdit}
+                        canLock={canLock}
                       />
                     </div>
                   ) : null}
@@ -639,10 +851,18 @@ export function SettingsForCompany({
                           <Label htmlFor="org-name">Organisation name</Label>
                           <Input
                             id="org-name"
+                            aria-invalid={name.trim().length < 2 || name.trim().length > 160}
+                            aria-describedby="org-name-hint"
                             value={name}
                             disabled={!canEdit || saveMutation.isPending}
-                            onChange={(e) => setName(e.target.value)}
+                            onChange={(e) => {
+                              setName(e.target.value);
+                              setDetailsDirty(true);
+                            }}
                           />
+                          <p id="org-name-hint" className="text-xs text-muted-foreground">
+                            Organisation name must contain 2–160 characters.
+                          </p>
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="org-legal">Legal name</Label>
@@ -650,7 +870,10 @@ export function SettingsForCompany({
                             id="org-legal"
                             value={legalName}
                             disabled={!canEdit || saveMutation.isPending}
-                            onChange={(e) => setLegalName(e.target.value)}
+                            onChange={(e) => {
+                              setLegalName(e.target.value);
+                              setDetailsDirty(true);
+                            }}
                           />
                         </div>
                         <div className="space-y-2">
@@ -658,7 +881,10 @@ export function SettingsForCompany({
                           <RecordLookupSelect
                             value={countryCode}
                             disabled={!canEdit || saveMutation.isPending}
-                            onValueChange={setCountryCode}
+                            onValueChange={(value) => {
+                              setCountryCode(value);
+                              setDetailsDirty(true);
+                            }}
                           >
                             <SelectTrigger id="org-country">
                               <SelectValue />
@@ -673,15 +899,18 @@ export function SettingsForCompany({
                           </RecordLookupSelect>
                         </div>
                         <div className="space-y-2">
-                          <Label>Tax regime</Label>
+                          <Label htmlFor="org-tax-regime">Tax regime</Label>
                           <Select
                             value={taxRegime}
                             disabled={!canEdit || saveMutation.isPending}
-                            onValueChange={setTaxRegime}
+                            onValueChange={(value) => {
+                              setTaxRegime(value);
+                              setDetailsDirty(true);
+                            }}
                           >
                             {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
 
-                            <SelectTrigger>
+                            <SelectTrigger id="org-tax-regime">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -699,7 +928,10 @@ export function SettingsForCompany({
                             id="tax-reg"
                             value={regNumber}
                             disabled={!canEdit || saveMutation.isPending}
-                            onChange={(e) => setRegNumber(e.target.value)}
+                            onChange={(e) => {
+                              setRegNumber(e.target.value);
+                              setDetailsDirty(true);
+                            }}
                           />
                         </div>
                         <div className="flex items-center justify-between gap-4 sm:col-span-2">
@@ -707,27 +939,25 @@ export function SettingsForCompany({
                           <Switch
                             checked={pricesIncludeTax}
                             disabled={!canEdit || saveMutation.isPending}
-                            onCheckedChange={setPricesIncludeTax}
+                            onCheckedChange={(checked) => {
+                              setPricesIncludeTax(checked);
+                              setDetailsDirty(true);
+                            }}
                           />
                         </div>
-                        <div className="sm:col-span-2">
-                          {canEdit ? (
-                            <Button
-                              size="sm"
-                              disabled={saveMutation.isPending}
-                              onClick={() => saveMutation.mutate()}
-                            >
-                              {saveMutation.isPending ? (
-                                <Loader2 className="size-4 animate-spin" />
-                              ) : null}
-                              Save changes
-                            </Button>
-                          ) : (
-                            <p className="text-sm text-muted-foreground">
-                              Only owners and administrators can edit organisation settings.
-                            </p>
-                          )}
-                        </div>
+                        <SettingsSaveBar
+                          label="Save organisation details"
+                          dirty={detailsDirty}
+                          valid={detailsValid}
+                          canEdit={canEdit}
+                          pending={saveMutation.isPending}
+                          serverChanged={detailsServerChanged}
+                          error={
+                            saveMutation.isError ? friendlyAuthError(saveMutation.error) : null
+                          }
+                          onSave={() => saveMutation.mutate()}
+                          onDiscard={resetDetails}
+                        />
                       </CardContent>
                     </Card>
 
@@ -740,11 +970,18 @@ export function SettingsForCompany({
                       </CardHeader>
                       <CardContent className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-2">
-                          <Label>Locale</Label>
-                          <Select value={locale} disabled={!canEdit} onValueChange={setLocale}>
+                          <Label htmlFor="org-locale">Locale</Label>
+                          <Select
+                            value={locale}
+                            disabled={!canEdit || !extendedQuery.data}
+                            onValueChange={(value) => {
+                              setLocale(value);
+                              setLocalizationDirty(true);
+                            }}
+                          >
                             {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
 
-                            <SelectTrigger>
+                            <SelectTrigger id="org-locale">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -757,15 +994,18 @@ export function SettingsForCompany({
                           </Select>
                         </div>
                         <div className="space-y-2">
-                          <Label>Date format</Label>
+                          <Label htmlFor="org-date-format">Date format</Label>
                           <Select
                             value={dateFormat}
-                            disabled={!canEdit}
-                            onValueChange={setDateFormat}
+                            disabled={!canEdit || !extendedQuery.data}
+                            onValueChange={(value) => {
+                              setDateFormat(value);
+                              setLocalizationDirty(true);
+                            }}
                           >
                             {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
 
-                            <SelectTrigger>
+                            <SelectTrigger id="org-date-format">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -778,30 +1018,48 @@ export function SettingsForCompany({
                           </Select>
                         </div>
                         <div className="space-y-2">
-                          <Label>Document theme colour</Label>
+                          <Label htmlFor="org-document-color">Document theme colour</Label>
                           <Input
+                            id="org-document-color"
                             value={themeColor}
-                            disabled={!canEdit}
-                            onChange={(e) => setThemeColor(e.target.value)}
+                            aria-invalid={!isValidThemeColor(themeColor)}
+                            aria-describedby="org-document-color-hint"
+                            disabled={!canEdit || !extendedQuery.data}
+                            onChange={(e) => {
+                              setThemeColor(e.target.value);
+                              setLocalizationDirty(true);
+                            }}
                           />
+                          <p id="org-document-color-hint" className="text-xs text-muted-foreground">
+                            Enter a six-digit colour code, such as #0F766E.
+                          </p>
                         </div>
                         <div className="space-y-2 sm:col-span-2">
-                          <Label>Default invoice footer</Label>
+                          <Label htmlFor="org-invoice-footer">Default invoice footer</Label>
                           <Input
+                            id="org-invoice-footer"
                             value={invoiceFooter}
-                            disabled={!canEdit}
-                            onChange={(e) => setInvoiceFooter(e.target.value)}
+                            maxLength={2000}
+                            disabled={!canEdit || !extendedQuery.data}
+                            onChange={(e) => {
+                              setInvoiceFooter(e.target.value);
+                              setLocalizationDirty(true);
+                            }}
                           />
                         </div>
-                        {canEdit ? (
-                          <Button
-                            size="sm"
-                            disabled={localizationM.isPending}
-                            onClick={() => localizationM.mutate()}
-                          >
-                            Save localization
-                          </Button>
-                        ) : null}
+                        <SettingsSaveBar
+                          label="Save localisation"
+                          dirty={localizationDirty}
+                          valid={localizationValid && Boolean(extendedQuery.data)}
+                          canEdit={canEdit}
+                          pending={localizationM.isPending}
+                          serverChanged={localizationServerChanged}
+                          error={
+                            localizationM.isError ? friendlyAuthError(localizationM.error) : null
+                          }
+                          onSave={() => localizationM.mutate()}
+                          onDiscard={resetLocalization}
+                        />
                       </CardContent>
                     </Card>
                   </TabsContent>
@@ -821,7 +1079,10 @@ export function SettingsForCompany({
                           <RecordLookupSelect
                             value={currency}
                             disabled={!canEdit || saveMutation.isPending}
-                            onValueChange={setCurrency}
+                            onValueChange={(value) => {
+                              setCurrency(value);
+                              setDetailsDirty(true);
+                            }}
                           >
                             <SelectTrigger>
                               <SelectValue />
@@ -840,7 +1101,10 @@ export function SettingsForCompany({
                           <RecordLookupSelect
                             value={timezone}
                             disabled={!canEdit || saveMutation.isPending}
-                            onValueChange={setTimezone}
+                            onValueChange={(value) => {
+                              setTimezone(value);
+                              setDetailsDirty(true);
+                            }}
                           >
                             <SelectTrigger>
                               <SelectValue />
@@ -861,6 +1125,7 @@ export function SettingsForCompany({
                             disabled={!canEdit || saveMutation.isPending}
                             onValueChange={(m) => {
                               setFyMonth(m);
+                              setDetailsDirty(true);
                               const max = maxFiscalYearEndDay(Number(m));
                               if (Number(fyDay) > max) setFyDay(String(max));
                             }}
@@ -888,7 +1153,10 @@ export function SettingsForCompany({
                             max={maxDay}
                             value={fyDay}
                             disabled={!canEdit || saveMutation.isPending}
-                            onChange={(e) => setFyDay(e.target.value)}
+                            onChange={(e) => {
+                              setFyDay(e.target.value);
+                              setDetailsDirty(true);
+                            }}
                           />
                         </div>
                         <div className="sm:col-span-2 space-y-2 text-sm text-muted-foreground">
@@ -904,20 +1172,19 @@ export function SettingsForCompany({
                             .
                           </p>
                         </div>
-                        <div className="sm:col-span-2">
-                          {canEdit ? (
-                            <Button
-                              size="sm"
-                              disabled={saveMutation.isPending}
-                              onClick={() => saveMutation.mutate()}
-                            >
-                              {saveMutation.isPending ? (
-                                <Loader2 className="size-4 animate-spin" />
-                              ) : null}
-                              Save financial settings
-                            </Button>
-                          ) : null}
-                        </div>
+                        <SettingsSaveBar
+                          label="Save financial settings"
+                          dirty={detailsDirty}
+                          valid={detailsValid}
+                          canEdit={canEdit}
+                          pending={saveMutation.isPending}
+                          serverChanged={detailsServerChanged}
+                          error={
+                            saveMutation.isError ? friendlyAuthError(saveMutation.error) : null
+                          }
+                          onSave={() => saveMutation.mutate()}
+                          onDiscard={resetDetails}
+                        />
                       </CardContent>
                     </Card>
                   </TabsContent>
@@ -948,55 +1215,92 @@ export function SettingsForCompany({
                       </CardHeader>
                       <CardContent className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-2">
-                          <Label>Trading name</Label>
+                          <Label htmlFor="org-trading-name">Trading name</Label>
                           <Input
+                            id="org-trading-name"
                             value={tradingName}
-                            disabled={!canEdit}
-                            onChange={(e) => setTradingName(e.target.value)}
+                            disabled={!canEdit || !extendedQuery.data}
+                            onChange={(e) => {
+                              setTradingName(e.target.value);
+                              setBrandingDirty(true);
+                            }}
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label>Letterhead line</Label>
+                          <Label htmlFor="org-letterhead">Letterhead line</Label>
                           <Input
+                            id="org-letterhead"
                             value={letterhead}
-                            disabled={!canEdit}
-                            onChange={(e) => setLetterhead(e.target.value)}
+                            disabled={!canEdit || !extendedQuery.data}
+                            onChange={(e) => {
+                              setLetterhead(e.target.value);
+                              setBrandingDirty(true);
+                            }}
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label>Invoice email</Label>
+                          <Label htmlFor="org-invoice-email">Invoice email</Label>
                           <Input
+                            id="org-invoice-email"
+                            type="email"
                             value={invoiceEmail}
-                            disabled={!canEdit}
-                            onChange={(e) => setInvoiceEmail(e.target.value)}
+                            aria-invalid={!isValidOptionalEmail(invoiceEmail)}
+                            aria-describedby="org-invoice-email-hint"
+                            disabled={!canEdit || !extendedQuery.data}
+                            onChange={(e) => {
+                              setInvoiceEmail(e.target.value);
+                              setBrandingDirty(true);
+                            }}
                           />
+                          <p id="org-invoice-email-hint" className="text-xs text-muted-foreground">
+                            Optional. Enter a valid address for customer-facing invoice replies.
+                          </p>
                         </div>
                         <div className="space-y-2">
-                          <Label>Invoice phone</Label>
+                          <Label htmlFor="org-invoice-phone">Invoice phone</Label>
                           <Input
+                            id="org-invoice-phone"
                             value={invoicePhone}
-                            disabled={!canEdit}
-                            onChange={(e) => setInvoicePhone(e.target.value)}
+                            disabled={!canEdit || !extendedQuery.data}
+                            onChange={(e) => {
+                              setInvoicePhone(e.target.value);
+                              setBrandingDirty(true);
+                            }}
                           />
                         </div>
                         <div className="space-y-2 sm:col-span-2">
-                          <Label>Logo URL</Label>
+                          <Label htmlFor="org-logo-url">Logo URL</Label>
                           <Input
+                            id="org-logo-url"
+                            inputMode="url"
                             value={logoUrl}
-                            disabled={!canEdit}
-                            onChange={(e) => setLogoUrl(e.target.value)}
+                            aria-invalid={Boolean(
+                              logoUrl.trim() && !/^https:\/\//i.test(logoUrl.trim()),
+                            )}
+                            aria-describedby="org-logo-url-hint"
+                            disabled={!canEdit || !extendedQuery.data}
+                            onChange={(e) => {
+                              setLogoUrl(e.target.value);
+                              setBrandingDirty(true);
+                            }}
                             placeholder="https://… (no file upload integration yet)"
                           />
+                          <p id="org-logo-url-hint" className="text-xs text-muted-foreground">
+                            Optional. Use a secure HTTPS image URL; uploading is available on the
+                            dedicated document-branding page.
+                          </p>
                         </div>
-                        {canEdit ? (
-                          <Button
-                            size="sm"
-                            disabled={brandingM.isPending}
-                            onClick={() => brandingM.mutate()}
-                          >
-                            Save branding
-                          </Button>
-                        ) : null}
+                        <SettingsSaveBar
+                          label="Save branding"
+                          dirty={brandingDirty}
+                          valid={brandingValid && Boolean(extendedQuery.data)}
+                          canEdit={canEdit}
+                          pending={brandingM.isPending}
+                          serverChanged={brandingServerChanged}
+                          error={brandingM.isError ? friendlyAuthError(brandingM.error) : null}
+                          onSave={() => brandingM.mutate()}
+                          onDiscard={resetBranding}
+                        />
                       </CardContent>
                     </Card>
 
@@ -1030,16 +1334,23 @@ export function SettingsForCompany({
                                   key={seq.document_type}
                                   seq={seq}
                                   disabled={!canEdit}
-                                  onSave={(patch) =>
-                                    saveSequence({
-                                      data: { companyId, ...seq, ...patch },
-                                    }).then(async () => {
+                                  onSave={async (patch, expected) => {
+                                    try {
+                                      await saveSequence({
+                                        data: {
+                                          companyId,
+                                          document_type: seq.document_type,
+                                          ...patch,
+                                          expected,
+                                        },
+                                      });
+                                      toast.success("Sequence updated");
+                                    } finally {
                                       await queryClient.invalidateQueries({
                                         queryKey: ["org-extended", companyId],
                                       });
-                                      toast.success("Sequence updated");
-                                    })
-                                  }
+                                    }
+                                  }}
                                 />
                               ))}
                             </TableBody>
@@ -1079,26 +1390,29 @@ export function SettingsForCompany({
                                 <input
                                   type="checkbox"
                                   checked={enabledFx.includes(c)}
-                                  disabled={!canEdit}
+                                  disabled={!canEdit || !extendedQuery.data}
                                   onChange={(e) => {
                                     setEnabledFx((prev) =>
                                       e.target.checked ? [...prev, c] : prev.filter((x) => x !== c),
                                     );
+                                    setCurrenciesDirty(true);
                                   }}
                                 />
                                 {c}
                               </label>
                             ))}
                         </div>
-                        {canEdit ? (
-                          <Button
-                            size="sm"
-                            disabled={currenciesM.isPending}
-                            onClick={() => currenciesM.mutate()}
-                          >
-                            Save currencies
-                          </Button>
-                        ) : null}
+                        <SettingsSaveBar
+                          label="Save currencies"
+                          dirty={currenciesDirty}
+                          valid={Boolean(extendedQuery.data)}
+                          canEdit={canEdit}
+                          pending={currenciesM.isPending}
+                          serverChanged={currenciesServerChanged}
+                          error={currenciesM.isError ? friendlyAuthError(currenciesM.error) : null}
+                          onSave={() => currenciesM.mutate()}
+                          onDiscard={resetCurrencies}
+                        />
                       </CardContent>
                     </Card>
 
@@ -1138,8 +1452,11 @@ export function SettingsForCompany({
                               />
                             </div>
                             <div className="space-y-1">
-                              <Label>Rate → {baseCurrency}</Label>
+                              <Label htmlFor="org-fx-rate">Rate → {baseCurrency}</Label>
                               <Input
+                                id="org-fx-rate"
+                                inputMode="decimal"
+                                aria-invalid={!isValidPositiveFxRate(rateValue)}
                                 value={rateValue}
                                 onChange={(e) => setRateValue(e.target.value)}
                               />
@@ -1147,7 +1464,7 @@ export function SettingsForCompany({
                             <div className="flex items-end">
                               <Button
                                 size="sm"
-                                disabled={rateM.isPending}
+                                disabled={rateM.isPending || !fxRateValid}
                                 onClick={() => rateM.mutate()}
                               >
                                 Record rate
@@ -1337,73 +1654,138 @@ function SequenceRow({
 }: {
   seq: { document_type: string; prefix: string; next_number: number; padding: number };
   disabled: boolean;
-  onSave: (patch: { prefix: string; next_number: number; padding: number }) => Promise<unknown>;
+  onSave: (patch: SequenceSnapshot, expected: SequenceSnapshot) => Promise<unknown>;
 }) {
   const [prefix, setPrefix] = useState(seq.prefix);
   const [next, setNext] = useState(String(seq.next_number));
   const [pad, setPad] = useState(String(seq.padding));
   const [pending, setPending] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  const [baseline, setBaseline] = useState(JSON.stringify(seq));
 
   useEffect(() => {
+    if (dirty) return;
     setPrefix(seq.prefix);
     setNext(String(seq.next_number));
     setPad(String(seq.padding));
-  }, [seq]);
+    setBaseline(JSON.stringify(seq));
+  }, [seq, dirty]);
+
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+
+  const parsed = validateDocumentSequenceDraft({ prefix, next, padding: pad });
+  const serverChanged = dirty && JSON.stringify(seq) !== baseline;
+  const errorId = "sequence-" + seq.document_type + "-error";
+  const error = !parsed.ok ? Object.values(parsed.errors)[0] : null;
+  const discard = () => {
+    setPrefix(seq.prefix);
+    setNext(String(seq.next_number));
+    setPad(String(seq.padding));
+    setBaseline(JSON.stringify(seq));
+    setDirty(false);
+  };
+  const saveDraft = async () => {
+    if (!parsed.ok || serverChanged || disabled || pending || !dirty) return;
+    setPending(true);
+    try {
+      await onSave(parsed.value, sequenceSnapshot(JSON.parse(baseline) as SequenceSnapshot));
+      setDirty(false);
+    } catch (e) {
+      toast.error(friendlyAuthError(e));
+    } finally {
+      setPending(false);
+    }
+  };
 
   return (
     <TableRow>
       <TableCell className="font-mono text-xs">{seq.document_type}</TableCell>
       <TableCell>
         <Input
+          aria-label={seq.document_type + " number prefix"}
           className="h-8 w-24"
           value={prefix}
-          disabled={disabled}
-          onChange={(e) => setPrefix(e.target.value)}
+          maxLength={21}
+          aria-invalid={Boolean(!parsed.ok && parsed.errors["prefix"])}
+          disabled={disabled || pending}
+          onChange={(e) => {
+            setPrefix(e.target.value);
+            setDirty(true);
+          }}
         />
       </TableCell>
       <TableCell>
         <Input
+          aria-label={seq.document_type + " next number"}
           className="h-8 w-20"
+          inputMode="numeric"
           value={next}
-          disabled={disabled}
-          onChange={(e) => setNext(e.target.value)}
+          aria-invalid={Boolean(!parsed.ok && parsed.errors["next"])}
+          disabled={disabled || pending}
+          onChange={(e) => {
+            setNext(e.target.value);
+            setDirty(true);
+          }}
         />
       </TableCell>
       <TableCell>
         <Input
+          aria-label={seq.document_type + " number padding"}
           className="h-8 w-16"
+          inputMode="numeric"
           value={pad}
-          disabled={disabled}
-          onChange={(e) => setPad(e.target.value)}
+          aria-invalid={Boolean(!parsed.ok && parsed.errors["padding"])}
+          disabled={disabled || pending}
+          onChange={(e) => {
+            setPad(e.target.value);
+            setDirty(true);
+          }}
         />
       </TableCell>
       <TableCell className="font-mono text-xs text-muted-foreground">
-        {formatDocumentNumberPreview(prefix, Number(next) || 1, Number(pad) || 4)}
+        {parsed.ok
+          ? formatDocumentNumberPreview(
+              parsed.value.prefix,
+              parsed.value.next_number,
+              parsed.value.padding,
+            )
+          : "—"}
+        {error ? (
+          <span id={errorId} role="alert" className="mt-1 block max-w-40 text-xs text-destructive">
+            {error}
+          </span>
+        ) : serverChanged ? (
+          <span role="status" className="mt-1 block max-w-40 text-xs text-destructive">
+            Numbering changed on the server.
+          </span>
+        ) : null}
       </TableCell>
       <TableCell>
-        {disabled ? null : (
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={pending}
-            onClick={async () => {
-              setPending(true);
-              try {
-                await onSave({
-                  prefix,
-                  next_number: Number(next),
-                  padding: Number(pad),
-                });
-              } catch (e) {
-                toast.error(friendlyAuthError(e));
-              } finally {
-                setPending(false);
-              }
-            }}
-          >
-            Save
-          </Button>
-        )}
+        {!disabled ? (
+          <div className="flex flex-wrap gap-1">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!dirty || !parsed.ok || serverChanged || pending}
+              onClick={() => void saveDraft()}
+            >
+              {pending ? "Saving…" : "Save"}
+            </Button>
+            {dirty ? (
+              <Button size="sm" variant="ghost" disabled={pending} onClick={discard}>
+                {serverChanged ? "Reload" : "Discard"}
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
       </TableCell>
     </TableRow>
   );

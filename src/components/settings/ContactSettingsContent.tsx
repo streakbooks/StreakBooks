@@ -104,6 +104,7 @@ export function ContactSettingsContent({
   if (settingsQ.isError) {
     return (
       <ErrorState
+        onRetry={() => void settingsQ.refetch()}
         title="Could not load settings"
         description={friendlyAuthError(settingsQ.error)}
       />

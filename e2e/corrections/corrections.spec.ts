@@ -50,7 +50,9 @@ test("search, exclusions, preview invalidation, posting evidence, history and un
   await page
     .getByLabel("Correction undo reason", { exact: true })
     .fill("Undo correction after review");
-  await expect(page.getByRole("button", { name: "Post undo journals", exact: true })).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Post undo journals", exact: true }),
+  ).toBeDisabled();
   await page.getByLabel("Acknowledge correction undo review", { exact: true }).check();
   await page.getByRole("button", { name: "Post undo journals", exact: true }).click();
   await expect(page.locator('p[role="status"]')).toContainText("undone");
@@ -184,7 +186,9 @@ test("correction history filters, exports loaded evidence and links to source jo
   await expect(page.locator('p[role="status"]')).toContainText("recorded (applied)");
 
   await page.getByLabel("Correction history status", { exact: true }).selectOption("applied");
-  await page.getByLabel("Search loaded correction history", { exact: true }).fill("Office expenses");
+  await page
+    .getByLabel("Search loaded correction history", { exact: true })
+    .fill("Office expenses");
   await expect(page.locator("summary")).toContainText("Applied");
   await page.getByLabel("Correction history status", { exact: true }).selectOption("undone");
   await expect(page.getByText(/No loaded batches match this filter/)).toBeVisible();

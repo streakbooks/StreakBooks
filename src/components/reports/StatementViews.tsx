@@ -181,7 +181,7 @@ function StatementAccessView({
         />
         <Button
           variant="outline"
-          onClick={() => ctx.setSearch({ settings: undefined, basis: undefined })}
+          onClick={() => ctx.setSearch({ settings: undefined, basis: "accrual" })}
         >
           Open standard statement
         </Button>

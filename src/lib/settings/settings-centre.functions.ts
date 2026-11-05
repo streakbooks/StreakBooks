@@ -271,7 +271,7 @@ export const getLockPolicy = createServerFn({ method: "GET" })
     const { data: row, error } = await context.supabase
       .from("organisation_lock_policy" as never)
       .select(
-        "lock_date_everyone, lock_date_except_advisors, conversion_date, require_override_reason, updated_at" as never,
+        "lock_date_everyone, lock_date_except_advisors, conversion_date, require_override_reason, updated_at, version" as never,
       )
       .eq("company_id" as never, data.companyId as never)
       .maybeSingle();
@@ -283,12 +283,14 @@ export const getLockPolicy = createServerFn({ method: "GET" })
         conversion_date: string | null;
         require_override_reason: boolean;
         updated_at: string;
+        version: number;
       } | null) ?? {
         lock_date_everyone: null,
         lock_date_except_advisors: null,
         conversion_date: null,
         require_override_reason: true,
         updated_at: null as string | null,
+        version: null as number | null,
       }
     );
   });
@@ -298,6 +300,7 @@ export const setLockPolicy = createServerFn({ method: "POST" })
   .inputValidator(
     (input: {
       companyId: string;
+      expectedVersion?: number | null;
       lockDateEveryone?: string | null;
       lockDateExceptAdvisors?: string | null;
       conversionDate?: string | null;
@@ -305,6 +308,7 @@ export const setLockPolicy = createServerFn({ method: "POST" })
       reason: string;
     }) => ({
       companyId: assertUuid(input.companyId),
+      expectedVersion: parseExpectedSettingsVersion(input.expectedVersion),
       lockDateEveryone: parseOptionalLockDate(input.lockDateEveryone),
       lockDateExceptAdvisors: parseOptionalLockDate(input.lockDateExceptAdvisors),
       conversionDate: parseOptionalLockDate(input.conversionDate),
@@ -320,9 +324,10 @@ export const setLockPolicy = createServerFn({ method: "POST" })
     if (impact.verdict === "blocked") throw new Error(impact.explanation);
 
     const { data: result, error } = await context.supabase.rpc(
-      "set_organisation_lock_policy" as never,
+      "set_organisation_lock_policy_if_unchanged" as never,
       {
         _company_id: data.companyId,
+        _expected_version: data.expectedVersion,
         _lock_date_everyone: data.lockDateEveryone,
         _lock_date_except_advisors: data.lockDateExceptAdvisors,
         _conversion_date: data.conversionDate,

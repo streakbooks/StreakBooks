@@ -66,7 +66,7 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
   const [cfgTouched, setCfgTouched] = useState(false);
   const [cfgErrors, setCfgErrors] = useState<Record<string, string>>({});
   const [cfgBaselineVersion, setCfgBaselineVersion] = useState<number | null>(null);
-  const [lockBaselineUpdatedAt, setLockBaselineUpdatedAt] = useState<string | null>(null);
+  const [lockBaselineVersion, setLockBaselineVersion] = useState<number | null>(null);
 
   useEffect(() => {
     if (!lockQ.data || lockTouched) return;
@@ -74,7 +74,7 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
     setAdvisors(lockQ.data.lock_date_except_advisors ?? "");
     setConversion(lockQ.data.conversion_date ?? "");
     setRequireOverrideReason(lockQ.data.require_override_reason ?? true);
-    setLockBaselineUpdatedAt(lockQ.data.updated_at ?? null);
+    setLockBaselineVersion(lockQ.data.version);
   }, [lockQ.data, lockTouched]);
 
   useEffect(() => {
@@ -101,7 +101,7 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
     cfgTouched && cfgQ.data && cfgBaselineVersion !== cfgQ.data.version,
   );
   const lockServerChanged = Boolean(
-    lockTouched && lockQ.data && lockBaselineUpdatedAt !== (lockQ.data.updated_at ?? null),
+    lockTouched && lockQ.data && lockBaselineVersion !== lockQ.data.version,
   );
 
   const resetLockDraft = () => {
@@ -112,7 +112,7 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
     setRequireOverrideReason(lockQ.data.require_override_reason ?? true);
     setReason("");
     setLockTouched(false);
-    setLockBaselineUpdatedAt(lockQ.data.updated_at ?? null);
+    setLockBaselineVersion(lockQ.data.version);
   };
 
   const resetCfgDraft = () => {
@@ -135,13 +135,16 @@ export function SettingsAccountingLocksPanel({ companyId, canEdit, canLock }: Pr
         throw new Error("Lock dates changed on the server. Reload latest values.");
       }
       return saveLock({
-        data: prepareLockPolicyPayload(companyId, {
-          everyone,
-          advisers: advisors,
-          conversion,
-          requireOverrideReason,
-          reason,
-        }),
+        data: {
+          ...prepareLockPolicyPayload(companyId, {
+            everyone,
+            advisers: advisors,
+            conversion,
+            requireOverrideReason,
+            reason,
+          }),
+          expectedVersion: lockBaselineVersion,
+        },
       });
     },
     onSuccess: async () => {

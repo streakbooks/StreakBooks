@@ -78,6 +78,7 @@ import {
   AUDIT_PAGE_SIZE,
   buildSettingsAuditCsv,
   hasNextSettingsAuditPage,
+  formatSettingsAuditPageLabel,
 } from "@/lib/settings/audit-export";
 import {
   brandingSnapshot,
@@ -253,7 +254,7 @@ export function SettingsForCompany({
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `linkbooks-audit-${companyId.slice(0,8)}-${auditOffset + 1}.csv`;
+    link.download = `linkbooks-audit-${companyId.slice(0, 8)}-${auditOffset + 1}.csv`;
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -1641,16 +1642,18 @@ export function SettingsForCompany({
                         {auditDatesValid && !auditQuery.isPending && !auditQuery.isError ? (
                           <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-3">
                             <p role="status" className="text-xs text-muted-foreground">
-                              Showing {auditPageRows.length ? auditOffset + 1 : 0}–
-                              {auditOffset + auditPageRows.length} of matching events
-                              (page size {AUDIT_PAGE_SIZE}).
+                              {formatSettingsAuditPageLabel(auditOffset, auditPageRows.length)}
                             </p>
                             <div className="flex gap-2">
                               <Button
                                 variant="outline"
                                 size="sm"
                                 disabled={auditOffset === 0 || auditQuery.isFetching}
-                                onClick={() => setAuditOffset((previous) => Math.max(0, previous - AUDIT_PAGE_SIZE))}
+                                onClick={() =>
+                                  setAuditOffset((previous) =>
+                                    Math.max(0, previous - AUDIT_PAGE_SIZE),
+                                  )
+                                }
                               >
                                 Previous
                               </Button>
@@ -1661,7 +1664,9 @@ export function SettingsForCompany({
                                   auditQuery.isFetching ||
                                   !hasNextSettingsAuditPage(auditQuery.data?.length ?? 0)
                                 }
-                                onClick={() => setAuditOffset((previous) => previous + AUDIT_PAGE_SIZE)}
+                                onClick={() =>
+                                  setAuditOffset((previous) => previous + AUDIT_PAGE_SIZE)
+                                }
                               >
                                 Next
                               </Button>

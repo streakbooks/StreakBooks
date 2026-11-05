@@ -84,6 +84,12 @@ import { maxFiscalYearEndDay, formatDocumentNumberPreview } from "@/lib/settings
 import { SettingsSaveBar } from "@/components/settings/SettingsSaveBar";
 import { hasUnsavedLegacySettings } from "@/lib/settings/legacy-navigation";
 import {
+  AUDIT_PAGE_SIZE,
+  buildSettingsAuditCsv,
+  hasNextSettingsAuditPage,
+  formatSettingsAuditPageLabel,
+} from "@/lib/settings/audit-export";
+import {
   brandingSnapshot,
   localisationSnapshot,
   sequenceSnapshot,
@@ -228,20 +234,41 @@ export function SettingsForCompany({
 
   const [auditAction, setAuditAction] = useState("");
   const [auditEntity, setAuditEntity] = useState("");
+  const [auditFrom, setAuditFrom] = useState("");
+  const [auditTo, setAuditTo] = useState("");
+  const [auditOffset, setAuditOffset] = useState(0);
+  const auditDatesValid = !auditFrom || !auditTo || auditFrom <= auditTo;
 
   const auditQuery = useQuery({
-    queryKey: ["org-audit", companyId, auditAction, auditEntity],
-    enabled: !detail && section === "audit",
+    queryKey: ["org-audit", companyId, auditAction, auditEntity, auditFrom, auditTo, auditOffset],
+    enabled: !detail && section === "audit" && auditDatesValid,
     queryFn: () =>
       fetchAudit({
         data: {
           companyId,
-          limit: 80,
+          limit: AUDIT_PAGE_SIZE + 1,
+          offset: auditOffset,
           ...(auditAction ? { action: auditAction } : {}),
           ...(auditEntity ? { entityType: auditEntity } : {}),
+          ...(auditFrom ? { fromDate: auditFrom } : {}),
+          ...(auditTo ? { toDate: auditTo } : {}),
         },
       }),
   });
+  const auditPageRows = (auditQuery.data ?? []).slice(0, AUDIT_PAGE_SIZE);
+  const exportAuditPage = () => {
+    if (!auditPageRows.length) return;
+    const csv = buildSettingsAuditCsv(auditPageRows);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `linkbooks-audit-${companyId.slice(0, 8)}-${auditOffset + 1}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
 
   const [name, setName] = useState("");
   const [legalName, setLegalName] = useState("");
@@ -1529,17 +1556,72 @@ export function SettingsForCompany({
                       <CardContent className="space-y-3">
                         <div className="grid gap-2 sm:grid-cols-2">
                           <Input
+                            aria-label="Filter audit action"
                             placeholder="Filter action (e.g. settings, members, journal)"
                             value={auditAction}
-                            onChange={(e) => setAuditAction(e.target.value)}
+                            onChange={(e) => {
+                              setAuditAction(e.target.value);
+                              setAuditOffset(0);
+                            }}
                           />
                           <Input
+                            aria-label="Filter audit entity type"
                             placeholder="Entity type (e.g. company, exchange_rate)"
                             value={auditEntity}
-                            onChange={(e) => setAuditEntity(e.target.value)}
+                            onChange={(e) => {
+                              setAuditEntity(e.target.value);
+                              setAuditOffset(0);
+                            }}
+                          />
+                          <Input
+                            type="date"
+                            aria-label="Audit history from date"
+                            value={auditFrom}
+                            max={auditTo || undefined}
+                            onChange={(e) => {
+                              setAuditFrom(e.target.value);
+                              setAuditOffset(0);
+                            }}
+                          />
+                          <Input
+                            type="date"
+                            aria-label="Audit history to date"
+                            value={auditTo}
+                            min={auditFrom || undefined}
+                            onChange={(e) => {
+                              setAuditTo(e.target.value);
+                              setAuditOffset(0);
+                            }}
                           />
                         </div>
-                        {auditQuery.isPending ? (
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={!auditPageRows.length || auditQuery.isFetching}
+                            onClick={exportAuditPage}
+                          >
+                            Export current page (CSV)
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setAuditAction("");
+                              setAuditEntity("");
+                              setAuditFrom("");
+                              setAuditTo("");
+                              setAuditOffset(0);
+                            }}
+                          >
+                            Clear filters
+                          </Button>
+                        </div>
+                        {!auditDatesValid ? (
+                          <p role="alert" className="text-sm text-destructive">
+                            The from date must not be after the to date.
+                          </p>
+                        ) : auditQuery.isPending ? (
                           <LoadingState rows={4} />
                         ) : auditQuery.isError ? (
                           <ErrorState
@@ -1547,7 +1629,7 @@ export function SettingsForCompany({
                             description={friendlyAuthError(auditQuery.error)}
                             onRetry={() => auditQuery.refetch()}
                           />
-                        ) : (auditQuery.data ?? []).length === 0 ? (
+                        ) : auditPageRows.length === 0 ? (
                           <p className="text-sm text-muted-foreground">
                             No events match these filters.
                           </p>
@@ -1562,7 +1644,7 @@ export function SettingsForCompany({
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {(auditQuery.data ?? []).map((a) => (
+                              {auditPageRows.map((a) => (
                                 <TableRow key={a.id}>
                                   <TableCell className="whitespace-nowrap text-xs">
                                     {new Date(a.created_at).toLocaleString()}
@@ -1580,6 +1662,40 @@ export function SettingsForCompany({
                             </TableBody>
                           </Table>
                         )}
+                        {auditDatesValid && !auditQuery.isPending && !auditQuery.isError ? (
+                          <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-3">
+                            <p role="status" className="text-xs text-muted-foreground">
+                              {formatSettingsAuditPageLabel(auditOffset, auditPageRows.length)}
+                            </p>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={auditOffset === 0 || auditQuery.isFetching}
+                                onClick={() =>
+                                  setAuditOffset((previous) =>
+                                    Math.max(0, previous - AUDIT_PAGE_SIZE),
+                                  )
+                                }
+                              >
+                                Previous
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={
+                                  auditQuery.isFetching ||
+                                  !hasNextSettingsAuditPage(auditQuery.data?.length ?? 0)
+                                }
+                                onClick={() =>
+                                  setAuditOffset((previous) => previous + AUDIT_PAGE_SIZE)
+                                }
+                              >
+                                Next
+                              </Button>
+                            </div>
+                          </div>
+                        ) : null}
                       </CardContent>
                     </Card>
                   </TabsContent>

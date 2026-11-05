@@ -15,9 +15,7 @@ describe("Contact settings optimistic concurrency", () => {
     expect(parseContactSettingsRevision("2026-11-05T05:31:30.123456+00:00")).toBe(
       "2026-11-05T05:31:30.123456+00:00",
     );
-    expect(parseContactSettingsRevision("2026-11-05T05:31:30Z")).toBe(
-      "2026-11-05T05:31:30Z",
-    );
+    expect(parseContactSettingsRevision("2026-11-05T05:31:30Z")).toBe("2026-11-05T05:31:30Z");
   });
 
   it.each(["", "not-a-date", "2026-13-05", "now()", "2026-11-05T12:01:00Z;drop", 0])(
@@ -34,9 +32,7 @@ describe("Contact settings optimistic concurrency", () => {
   });
 
   it("returns a valid first revision for a new organisation", () => {
-    expect(nextContactSettingsRevision(null, 1_800_000_000_000)).toBe(
-      "2027-01-15T08:00:00.000Z",
-    );
+    expect(nextContactSettingsRevision(null, 1_800_000_000_000)).toBe("2027-01-15T08:00:00.000Z");
   });
 
   it("offers a safe refresh instruction for conflicting writes", () => {

@@ -151,3 +151,23 @@ export async function razorpayChangePlan(
     throw error;
   }
 }
+
+/** Razorpay refunds have no idempotency key; the refund id is recorded before any retry. */
+export async function createRazorpayRefund(
+  client: RazorpayClient,
+  input: { paymentId: string; amountMinor: number; refundId: string },
+): Promise<{ id: string; status: "succeeded" | "pending" | "failed" }> {
+  const refund = await client.request(
+    "POST",
+    `payments/${encodeURIComponent(input.paymentId)}/refund`,
+    {
+      amount: input.amountMinor,
+      notes: { linkbooks_refund_id: input.refundId },
+    },
+  );
+  const status = refund["status"];
+  return {
+    id: String(refund["id"] ?? ""),
+    status: status === "processed" ? "succeeded" : status === "failed" ? "failed" : "pending",
+  };
+}

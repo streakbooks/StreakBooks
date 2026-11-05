@@ -15,7 +15,7 @@ Nothing here is live in production until the hosted migration gate in
 | 3     | Country pricing engine (BASE/FIXED/FX_CONVERTED/CUSTOM), FX, publication                          | **Implemented and tested locally**, not applied to hosted; see [07-country-pricing.md](07-country-pricing.md)                     |
 | 4     | Subscription lifecycle, jobs, legal documents, cancellation                                       | **Implemented and tested locally**, not applied to hosted; see [10-cancellation-policy.md](10-cancellation-policy.md)             |
 | 5     | Razorpay/Stripe adapters, router, durable webhooks, checkout, renewals, upgrades                  | **Implemented and tested locally (test mode)**, not applied to hosted; see [06-payment-integration.md](06-payment-integration.md) |
-| 6     | Invoices, payments, refunds, credit notes, tax                                                    | Planned                                                                                                                           |
+| 6     | Invoices, payments, refunds, credit notes, tax                                                    | **Implemented and tested locally**, not applied to hosted; see [08-tax-and-accounting.md](08-tax-and-accounting.md)               |
 | 7     | Coupons                                                                                           | Planned                                                                                                                           |
 | 8     | CA partners, referrals, commission ledger (payouts disabled)                                      | Planned                                                                                                                           |
 | 9     | REST `/api/v1` + OpenAPI                                                                          | Planned                                                                                                                           |
@@ -99,6 +99,19 @@ organisation stays read-only until then, or until platform staff relax the trial
 | Downgrade at renewal                            | Scheduled plan, held until the renewal event                                                 |
 | Provider cancellation                           | Provider first, then service-role confirmation; Stripe reversible, Razorpay final            |
 | Test mode unless approved                       | Existing live-key flag; mode stored on events, checkouts and mappings                        |
+
+## Phase 6 requirements and how they are met
+
+| Requirement                                         | Implementation                                                                               |
+| --------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Seller entity per jurisdiction with registrations   | `billing.seller_entities`, activated by a second owner                                       |
+| Gapless invoice and credit note numbering           | Locked counter per series in the issuing transaction                                         |
+| Configured tax rules, no seeded rates               | `billing.tax_rules` drafted by staff, approved by a second owner, immutable, non-overlapping |
+| Jurisdictions without approved rules cannot go live | Country opening requires seller, series and an approved rule                                 |
+| Invoices immutable; corrections by credit note      | Triggers on invoices, lines, credit notes and payments                                       |
+| Refunds admin-approved (D16)                        | Request → second-owner approval → provider → credit note                                     |
+| Invoice PDF, private storage, signed URLs           | pdf-lib with the app font; `billing-documents` bucket; 60-second links                       |
+| B2B vs B2C                                          | Customer tax ID on the billing account selects B2B rules                                     |
 
 ## Configurable, intentionally unset (do not invent)
 

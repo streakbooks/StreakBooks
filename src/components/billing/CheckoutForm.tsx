@@ -299,6 +299,14 @@ export function CheckoutForm({
                   : "—"}
               </dd>
             </div>
+            {quote?.taxMinor && quote.taxLabel && quote.currency === currency ? (
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">
+                  {quote.taxIncluded ? `Includes ${quote.taxLabel}` : quote.taxLabel}
+                </dt>
+                <dd>{formatMinor(quote.taxMinor, quote.currency)}</dd>
+              </div>
+            ) : null}
             <div className="flex justify-between gap-3">
               <dt className="text-muted-foreground">Billing</dt>
               <dd>
@@ -324,8 +332,11 @@ export function CheckoutForm({
           ) : null}
           <p className="text-xs text-muted-foreground">
             The billing currency follows your organisation region; markets without a supported local
-            price currently use USD. Tax collection is not configured. Tax obligations must be
-            reviewed before going live. Payment methods will be confirmed by the hosted provider.
+            price currently use USD.{" "}
+            {quote?.taxLabel
+              ? `${quote.taxLabel} is shown as configured for your country and appears on your invoice.`
+              : "No tax is added for your country."}{" "}
+            Payment methods will be confirmed by the hosted provider.
           </p>
           {error || serverError || quoteError ? (
             <p role="alert" className="text-sm text-destructive-ink">

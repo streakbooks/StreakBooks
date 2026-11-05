@@ -3,14 +3,20 @@ import {
   modeFromRazorpayKey,
   obj,
   razorpayEvents,
+  razorpayPayment,
+  razorpayRefund,
   str,
   stripeCheckoutId,
   stripeInvoiceSubscriptionId,
+  stripeInvoicePayment,
+  stripeRefund,
   stripeStateEvent,
   stripeSubscriptionState,
   mayActivateStripeCheckout,
   unixToIso,
   type NormalisedEvent,
+  type NormalisedPayment,
+  type NormalisedRefund,
   type ProviderId,
   type RazorpayEvent,
 } from "@/lib/billing/providers/normalise";
@@ -152,6 +158,7 @@ type Claimed = {
   eventType: string;
   payload: Record<string, unknown>;
   providerCreatedAt: string | null;
+  mode: "test" | "live" | null;
 };
 
 /** Processes one stored event. Returns the outcome, or "busy" when another worker holds it. */
@@ -184,6 +191,29 @@ export async function processStoredEvent(
       }
       if (event.kind === "payment_failed" && result.result === "applied")
         await notifyPaymentFailed();
+    }
+    const payment =
+      claimed.provider === "stripe"
+        ? await stripePaymentFor(claimed)
+        : razorpayPayment(claimed.payload as RazorpayEvent);
+    if (payment) {
+      const recorded = await rpc<{ result: string; reason?: string }>(
+        client,
+        "billing_record_provider_payment",
+        { _provider: claimed.provider, _mode: claimed.mode ?? "test", _payment: payment },
+      );
+      // A payment can arrive before the checkout that created its subscription; retry later.
+      if (recorded.result === "skipped" && recorded.reason === "unknown subscription") {
+        throw new Error("The subscription for this payment is not active yet.");
+      }
+      results.push({ ...recorded, result: recorded.result === "skipped" ? "skipped" : "applied" });
+    }
+    const refund =
+      claimed.provider === "stripe"
+        ? stripeRefund(claimed.eventType, obj(obj(claimed.payload["data"])["object"]))
+        : razorpayRefund(claimed.payload as RazorpayEvent);
+    if (refund && refund.status !== "pending") {
+      results.push(await applyRefund(client, claimed.provider, refund));
     }
     const status = results.some((item) => (item as { result?: string }).result === "applied")
       ? "processed"
@@ -284,6 +314,29 @@ async function stripeToEvents(claimed: Claimed): Promise<NormalisedEvent[]> {
     return event ? [event] : [];
   }
   return [];
+}
+
+async function stripePaymentFor(claimed: Claimed): Promise<NormalisedPayment | null> {
+  if (claimed.eventType !== "invoice.paid") return null;
+  const invoice = obj(obj(claimed.payload["data"])["object"]);
+  const subscriptionId = stripeInvoiceSubscriptionId(invoice);
+  const invoiceId = str(invoice["id"]);
+  if (!subscriptionId || !invoiceId) return null;
+  const { createStripeClient } = await import("@/lib/billing/providers/stripe.server");
+  const full = await createStripeClient().request(
+    "GET",
+    `invoices/${encodeURIComponent(invoiceId)}?expand[]=payments`,
+  );
+  return stripeInvoicePayment(full, subscriptionId);
+}
+
+async function applyRefund(client: Admin, provider: ProviderId, refund: NormalisedRefund) {
+  return rpc<{ result: string }>(client, "billing_refund_result", {
+    _provider: provider,
+    _provider_refund_id: refund.providerRefundId,
+    _status: refund.status,
+    _failure: refund.failure,
+  });
 }
 
 async function notifyPaymentFailed(): Promise<void> {

@@ -92,6 +92,7 @@ export function stripePriceCheckoutBody(input: {
   customerId: string | null;
   email: string | null;
   trialEndUnix: number | null;
+  taxRateId?: string | null;
 }): URLSearchParams {
   const body = new URLSearchParams();
   body.set("mode", "subscription");
@@ -100,6 +101,7 @@ export function stripePriceCheckoutBody(input: {
   body.set("client_reference_id", input.checkoutId);
   body.set("line_items[0][price]", input.priceId);
   body.set("line_items[0][quantity]", "1");
+  if (input.taxRateId) body.set("line_items[0][tax_rates][0]", input.taxRateId);
   for (const target of ["metadata", "subscription_data[metadata]"]) {
     body.set(`${target}[checkout_id]`, input.checkoutId);
     body.set(`${target}[company_id]`, input.companyId);
@@ -169,4 +171,47 @@ export async function stripeChangePrice(
     body,
     idempotencyKey,
   );
+}
+
+export async function createStripeTaxRate(
+  client: StripeClient,
+  input: { ruleId: string; label: string; rateBps: number; country: string },
+): Promise<string> {
+  const body = new URLSearchParams();
+  body.set("display_name", input.label);
+  body.set("percentage", (input.rateBps / 100).toFixed(2));
+  body.set("inclusive", "false");
+  body.set("country", input.country);
+  body.set("metadata[tax_rule_id]", input.ruleId);
+  const rate = await client.request("POST", "tax_rates", body, `linkbooks-tax-${input.ruleId}`);
+  const id = typeof rate["id"] === "string" ? rate["id"] : "";
+  if (!id) throw new Error("Stripe did not return a tax rate.");
+  return id;
+}
+
+export async function createStripeRefund(
+  client: StripeClient,
+  input: { paymentIntentId: string; amountMinor: number; idempotencyKey: string; refundId: string },
+): Promise<{ id: string; status: "succeeded" | "pending" | "failed" }> {
+  const body = new URLSearchParams();
+  body.set("payment_intent", input.paymentIntentId);
+  body.set("amount", String(input.amountMinor));
+  body.set("reason", "requested_by_customer");
+  body.set("metadata[linkbooks_refund_id]", input.refundId);
+  const refund = await client.request(
+    "POST",
+    "refunds",
+    body,
+    `linkbooks-refund-${input.idempotencyKey}`,
+  );
+  const status = refund["status"];
+  return {
+    id: String(refund["id"] ?? ""),
+    status:
+      status === "succeeded"
+        ? "succeeded"
+        : status === "failed" || status === "canceled"
+          ? "failed"
+          : "pending",
+  };
 }

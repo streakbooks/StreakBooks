@@ -161,6 +161,10 @@ export type PriceQuote = {
   freeMonths: number;
   trialDays: number;
   offerCode: string | null;
+  /** Country price-book plans: tax from the approved rule (included in, or added to, the list price). */
+  taxMinor?: number;
+  taxLabel?: string;
+  taxIncluded?: boolean;
 };
 
 export function isBillingCurrency(value: string): value is BillingCurrency {

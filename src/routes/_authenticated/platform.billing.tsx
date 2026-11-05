@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CountryPricingAdmin } from "@/components/platform/billing/CountryPricingAdmin";
+import { FinanceAdmin } from "@/components/platform/billing/FinanceAdmin";
 import { LegalDocumentsAdmin } from "@/components/platform/billing/LegalDocumentsAdmin";
 import { PaymentOperationsAdmin } from "@/components/platform/billing/PaymentOperationsAdmin";
 import { formatMinorAmount } from "@/lib/billing/domain/money";
@@ -74,9 +75,10 @@ function PlatformBillingPage() {
       <p className="text-sm text-muted-foreground">
         Signed in as {query.data?.role}. A published price applies to new subscribers. Existing
         subscribers keep their current version until you migrate them. Publishing asks for an active
-        multi-factor authentication session. Tax collection is not enabled.
+        multi-factor authentication session. Tax applies only through approved tax rules.
       </p>
       <PaymentOperationsAdmin canEdit={editor} isOwner={owner} />
+      <FinanceAdmin canEdit={editor} isOwner={owner} />
       <CountryPricingAdmin canEdit={editor} />
       <LegalDocumentsAdmin canEdit={editor} isOwner={owner} />
       <h2 className="pt-4 text-xl font-semibold">Legacy plan prices and versions</h2>

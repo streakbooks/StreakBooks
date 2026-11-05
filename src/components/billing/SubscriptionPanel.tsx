@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { CheckoutForm } from "@/components/billing/CheckoutForm";
+import { BillingDocuments } from "@/components/billing/BillingDocuments";
 import { SubscriptionLifecycle } from "@/components/billing/SubscriptionLifecycle";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -282,6 +283,7 @@ export function SubscriptionPanel({
         onPortal={() => portal.mutate()}
       />
       {data.ready && !data.isDemo ? <SubscriptionLifecycle companyId={companyId} /> : null}
+      {data.ready && !data.isDemo ? <BillingDocuments companyId={companyId} /> : null}
 
       {checkingOut && target ? (
         <CheckoutForm

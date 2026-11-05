@@ -146,3 +146,97 @@ describe("mode", () => {
     expect(modeFromRazorpayKey("rzp_live_x")).toBe("live");
   });
 });
+
+describe("payments and refunds", () => {
+  it("reads a paid Stripe invoice under the pinned API version", async () => {
+    const { stripeInvoicePayment } = await import("./normalise");
+    const payment = stripeInvoicePayment(
+      {
+        id: "in_1",
+        amount_paid: 2400,
+        currency: "usd",
+        total_taxes: [{ amount: 400 }],
+        status_transitions: { paid_at: 1767225600 },
+        payments: {
+          data: [{ status: "paid", payment: { type: "payment_intent", payment_intent: "pi_1" } }],
+        },
+        lines: { data: [{ period: { start: 1764547200, end: 1767225600 } }] },
+      },
+      "sub_1",
+    );
+    expect(payment).toMatchObject({
+      paymentId: "pi_1",
+      invoiceRef: "in_1",
+      amountMinor: 2400,
+      currency: "USD",
+      taxMinor: 400,
+      paidAt: "2026-01-01T00:00:00.000Z",
+      periodStart: "2025-12-01T00:00:00.000Z",
+    });
+    expect(
+      stripeInvoicePayment({ id: "in_0", amount_paid: 0, currency: "usd" }, "sub_1"),
+    ).toBeNull();
+  });
+
+  it("reads a Razorpay charge without inventing tax", async () => {
+    const { razorpayPayment } = await import("./normalise");
+    expect(
+      razorpayPayment({
+        event: "subscription.charged",
+        created_at: 1767225600,
+        payload: {
+          subscription: {
+            entity: { id: "sub_r", current_start: 1764547200, current_end: 1767225600 },
+          },
+          payment: {
+            entity: {
+              id: "pay_r",
+              amount: 99900,
+              currency: "INR",
+              method: "upi",
+              invoice_id: "inv_r",
+            },
+          },
+        },
+      }),
+    ).toMatchObject({
+      paymentId: "pay_r",
+      amountMinor: 99900,
+      currency: "INR",
+      taxMinor: null,
+      method: "upi",
+    });
+    expect(razorpayPayment({ event: "subscription.activated" })).toBeNull();
+  });
+
+  it("maps refund outcomes", async () => {
+    const { razorpayRefund, stripeRefund } = await import("./normalise");
+    expect(stripeRefund("refund.updated", { id: "re_1", status: "succeeded" })?.status).toBe(
+      "succeeded",
+    );
+    expect(
+      stripeRefund("refund.failed", {
+        id: "re_1",
+        status: "failed",
+        failure_reason: "expired_or_canceled_card",
+      }),
+    ).toEqual({
+      providerRefundId: "re_1",
+      status: "failed",
+      failure: "expired_or_canceled_card",
+    });
+    expect(stripeRefund("charge.succeeded", { id: "ch_1" })).toBeNull();
+    expect(
+      razorpayRefund({
+        event: "refund.processed",
+        payload: { refund: { entity: { id: "rfnd_1" } } },
+      })?.status,
+    ).toBe("succeeded");
+    expect(
+      razorpayRefund({
+        event: "refund.created",
+        payload: { refund: { entity: { id: "rfnd_1" } } },
+      }),
+    ).toBeNull();
+  });
+});

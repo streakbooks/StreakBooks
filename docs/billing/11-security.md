@@ -60,6 +60,18 @@
 | Live charges in testing                          | Live keys refused without the production flag; mode stored everywhere                   | Unit tests                                  |
 | Opening a country without tax/provider readiness | Platform owner only, audited                                                            | SQL suite                                   |
 
+## Phase 6 controls
+
+| Threat                                           | Control                                                                                                    | Verified by             |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- | ----------------------- |
+| One person setting tax, sellers or refunds       | Second platform owner approves rules, seller activation and refunds; author/requester refused              | SQL suite and rehearsal |
+| Altering issued documents                        | Invoices, lines, credit notes and payments immutable; PDF reference set once                               | SQL suite               |
+| Gaps or duplicates in numbering                  | Locked counter, unique numbers, series cannot be rewound                                                   | SQL suite               |
+| Over-refunding                                   | Refund limited to unrefunded amount including open requests                                                | SQL suite               |
+| Leaking invoices across tenants                  | `billing.view` on the invoice's organisation (or platform billing view); PDFs private with 60-second links | SQL suite               |
+| Clients recording payments or completing refunds | Service-role only functions                                                                                | SQL suite (`42501`)     |
+| Guessing tax                                     | No seeded rates; missing configuration leaves payments pending with a reason                               | SQL suite and rehearsal |
+
 ## Rules for later phases
 
 - Payment and tax secrets stay server-side (`*.server.ts`, Edge Function secrets); `VITE_*`

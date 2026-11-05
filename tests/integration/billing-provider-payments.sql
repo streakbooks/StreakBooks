@@ -90,10 +90,10 @@ SELECT pg_temp.expect_error(format($$INSERT INTO public.billing_checkouts (compa
 SET ROLE authenticated;
 SELECT pg_temp.act('00000000-0000-0000-0000-0000000000f1', 'aal2');
 SELECT pg_temp.expect_error($$SELECT public.platform_set_country_billing('IN', true, 'finance')$$, '42501', 'Finance staff cannot open a country');
-SELECT pg_temp.act('00000000-0000-0000-0000-0000000000f2', 'aal2');
-SELECT public.platform_set_country_billing('IN', true, 'Open India for test checkout');
-SELECT public.platform_set_country_billing('GB', true, 'Open UK for test checkout');
 RESET ROLE;
+-- Opening a country also needs a seller and an approved tax rule (covered in billing-tax-invoicing.sql);
+-- here the countries are opened directly as test setup.
+UPDATE billing.countries SET billing_enabled = true WHERE code IN ('IN', 'GB');
 SELECT pg_temp.expect_error(format($$INSERT INTO public.billing_checkouts (company_id, plan_code, billing_interval, provider, currency,
   unit_amount_minor, plan_price_id, country_code, mode) VALUES ('40000000-0000-0000-0000-000000000001', 'pro', 'month', 'razorpay', 'INR', 100, %L, 'IN', 'test')$$,
   :'price_pro_in'), '23514', 'A tampered amount is refused');

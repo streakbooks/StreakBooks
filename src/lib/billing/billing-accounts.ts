@@ -29,6 +29,8 @@ export const billingAccountSchema = z.object({
   }),
   billingCountry: z.string().length(2).nullable(),
   countrySource: z.enum(COUNTRY_SOURCES).nullable(),
+  taxIdScheme: z.string().nullable().optional(),
+  taxId: z.string().nullable().optional(),
   userLimit: z.number().int().positive().nullable(),
   companyLimit: z.number().int().positive(),
   isOwner: z.boolean(),

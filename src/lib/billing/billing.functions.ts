@@ -33,6 +33,7 @@ import {
   type PriceQuote,
 } from "@/lib/billing/pricing";
 import { planPrice, type PriceList } from "@/lib/billing/domain/country-pricing";
+import { providerAddsTax, type CheckoutTax } from "@/lib/billing/domain/tax";
 import { assertDiscountCap, assertPriceFloor } from "@/lib/billing/provider-actions";
 import { assertRazorpayTestKey, assertStripeTestKey } from "@/lib/billing/provider-keys";
 
@@ -733,11 +734,17 @@ async function openPriceBookCheckout(input: {
   price: CheckoutPrice;
   trialEndsAt: string | null;
 }): Promise<{ url: string; provider: "stripe" | "razorpay" }> {
-  const { ensureProviderPrice } = await import("@/lib/billing/providers/price-mapping.server");
+  const { ensureProviderPrice, ensureStripeTaxRate } =
+    await import("@/lib/billing/providers/price-mapping.server");
   const { createStripeClient, stripePriceCheckoutBody } =
     await import("@/lib/billing/providers/stripe.server");
   const { createRazorpayClient, razorpaySubscriptionRequest } =
     await import("@/lib/billing/providers/razorpay.server");
+  if (providerAddsTax(input.price.tax) && input.provider !== "stripe") {
+    throw new Error(
+      "Tax for this country must be included in the price before it can be paid this way.",
+    );
+  }
   const stripe = input.provider === "stripe" ? createStripeClient() : null;
   const razorpay = input.provider === "razorpay" ? createRazorpayClient() : null;
   const providerPriceId = await ensureProviderPrice(input.provider, {
@@ -784,6 +791,15 @@ async function openPriceBookCheckout(input: {
         customerId,
         email: input.billing.email || null,
         trialEndUnix,
+        taxRateId:
+          input.price.tax && providerAddsTax(input.price.tax)
+            ? await ensureStripeTaxRate({
+                ruleId: input.price.tax.ruleId,
+                label: input.price.tax.label,
+                rateBps: input.price.tax.rateBps,
+                country: input.price.country,
+              })
+            : null,
       }),
       `linkbooks-checkout-${checkoutId}`,
     );
@@ -905,6 +921,8 @@ type CheckoutPrice = {
   country: string;
   billingEnabled: boolean;
   providers: Array<"stripe" | "razorpay">;
+  totalMinor?: number;
+  tax?: CheckoutTax | null;
 };
 
 /** Country price-book plans: the published snapshot for the organisation country. */
@@ -928,17 +946,25 @@ async function priceBookSelection(
     throw new Error(`Online payment in ${checkout.currency} is not available yet.`);
   }
   const amount = checkout.amountMinor;
+  const total = checkout.totalMinor ?? amount;
   const quote: PriceQuote = {
     currency: checkout.currency,
     interval,
     listMinor: amount,
     discountMinor: 0,
-    dueMinor: amount,
-    recurringMinor: amount,
+    dueMinor: total,
+    recurringMinor: total,
     promoDurationMonths: null,
     freeMonths: 0,
     trialDays: row.trial_days ?? DEFAULT_TRIAL_DAYS,
     offerCode: null,
+    ...(checkout.tax && checkout.tax.taxMinor > 0
+      ? {
+          taxMinor: checkout.tax.taxMinor,
+          taxLabel: checkout.tax.label,
+          taxIncluded: !providerAddsTax(checkout.tax),
+        }
+      : {}),
   };
   return {
     quote,

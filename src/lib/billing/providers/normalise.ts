@@ -254,3 +254,126 @@ export function modeFromStripeSecret(secret: string): PaymentMode {
 export function modeFromRazorpayKey(keyId: string): PaymentMode {
   return keyId.startsWith("rzp_live_") ? "live" : "test";
 }
+
+// ---------------------------------------------------------------------------- Payments and refunds
+
+export type NormalisedPayment = {
+  paymentId: string;
+  invoiceRef: string | null;
+  subscriptionId: string;
+  amountMinor: number;
+  currency: string;
+  /** Tax the provider reports it charged (exclusive pricing); null when it did not compute tax. */
+  taxMinor: number | null;
+  method: string | null;
+  paidAt: string;
+  periodStart: string | null;
+  periodEnd: string | null;
+};
+
+export type NormalisedRefund = {
+  providerRefundId: string;
+  status: "succeeded" | "failed" | "pending";
+  failure: string | null;
+};
+
+/**
+ * Payment for a paid Stripe invoice retrieved with expand[]=payments (API 2025-03-31.basil: the
+ * payment intent lives on invoice.payments; tax on total_taxes).
+ */
+export function stripeInvoicePayment(
+  invoice: Json,
+  subscriptionId: string,
+): NormalisedPayment | null {
+  const amount = Number(invoice["amount_paid"] ?? 0);
+  const currency = str(invoice["currency"]);
+  if (!Number.isInteger(amount) || amount <= 0 || !currency) return null;
+  const payments = obj(invoice["payments"])["data"];
+  const paid = Array.isArray(payments)
+    ? (payments.map(obj).find((item) => str(item["status"]) === "paid") ?? obj(payments[0]))
+    : {};
+  const intent = obj(paid["payment"])["payment_intent"];
+  const paymentId = typeof intent === "string" ? intent : str(obj(intent)["id"]);
+  const invoiceId = str(invoice["id"]);
+  if (!paymentId && !invoiceId) return null;
+  const totalTaxes = invoice["total_taxes"];
+  const taxMinor = Array.isArray(totalTaxes)
+    ? totalTaxes.reduce((sum: number, entry) => sum + Number(obj(entry)["amount"] ?? 0), 0)
+    : typeof invoice["tax"] === "number"
+      ? (invoice["tax"] as number)
+      : null;
+  const firstLine = obj((obj(invoice["lines"])["data"] as unknown[] | undefined)?.[0]);
+  const period = obj(firstLine["period"]);
+  return {
+    paymentId: paymentId ?? `invoice:${invoiceId}`,
+    invoiceRef: invoiceId,
+    subscriptionId,
+    amountMinor: amount,
+    currency: currency.toUpperCase(),
+    taxMinor: taxMinor != null && taxMinor > 0 ? taxMinor : null,
+    method: null,
+    paidAt:
+      unixToIso(obj(invoice["status_transitions"])["paid_at"]) ??
+      unixToIso(invoice["created"]) ??
+      new Date().toISOString(),
+    periodStart: unixToIso(period["start"]),
+    periodEnd: unixToIso(period["end"]),
+  };
+}
+
+type RazorpayPaymentEvent = RazorpayEvent & {
+  payload?: RazorpayEvent["payload"] & { payment?: { entity?: Json }; refund?: { entity?: Json } };
+};
+
+/** Razorpay charges carry the payment entity; Razorpay never adds tax itself. */
+export function razorpayPayment(event: RazorpayPaymentEvent): NormalisedPayment | null {
+  if (event.event !== "subscription.charged") return null;
+  const payment = obj(event.payload?.payment?.entity);
+  const subscription = obj(event.payload?.subscription?.entity);
+  const paymentId = str(payment["id"]);
+  const subscriptionId = str(subscription["id"]);
+  const amount = Number(payment["amount"] ?? 0);
+  const currency = str(payment["currency"]);
+  if (!paymentId || !subscriptionId || !currency || !Number.isInteger(amount) || amount <= 0)
+    return null;
+  return {
+    paymentId,
+    invoiceRef: str(payment["invoice_id"]),
+    subscriptionId,
+    amountMinor: amount,
+    currency: currency.toUpperCase(),
+    taxMinor: null,
+    method: str(payment["method"]),
+    paidAt:
+      unixToIso(payment["created_at"]) ?? unixToIso(event.created_at) ?? new Date().toISOString(),
+    periodStart: unixToIso(subscription["current_start"]),
+    periodEnd: unixToIso(subscription["current_end"]),
+  };
+}
+
+export function stripeRefund(type: string, refund: Json): NormalisedRefund | null {
+  if (!type.startsWith("refund.")) return null;
+  const id = str(refund["id"]);
+  const status = str(refund["status"]);
+  if (!id) return null;
+  if (status === "succeeded") return { providerRefundId: id, status: "succeeded", failure: null };
+  if (status === "failed" || status === "canceled") {
+    return {
+      providerRefundId: id,
+      status: "failed",
+      failure: str(refund["failure_reason"]) ?? status,
+    };
+  }
+  return { providerRefundId: id, status: "pending", failure: null };
+}
+
+export function razorpayRefund(event: RazorpayPaymentEvent): NormalisedRefund | null {
+  const refund = obj(event.payload?.refund?.entity);
+  const id = str(refund["id"]);
+  if (!id) return null;
+  if (event.event === "refund.processed")
+    return { providerRefundId: id, status: "succeeded", failure: null };
+  if (event.event === "refund.failed")
+    return { providerRefundId: id, status: "failed", failure: "Razorpay refund failed" };
+  return null;
+}

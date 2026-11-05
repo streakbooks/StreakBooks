@@ -52,3 +52,29 @@ export async function ensureProviderPrice(
   if (recorded.error) throw new Error(recorded.error.message);
   return (recorded.data as { providerPriceId: string }).providerPriceId;
 }
+
+/** Stripe tax rate for an approved exclusive rule, created once per mode. */
+export async function ensureStripeTaxRate(input: {
+  ruleId: string;
+  label: string;
+  rateBps: number;
+  country: string;
+}): Promise<string> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const admin = supabaseAdmin as unknown as Admin;
+  const client = createStripeClient();
+  const existing = await admin.rpc(
+    "billing_provider_tax_rate" as never,
+    { _rule_id: input.ruleId, _provider: "stripe", _mode: client.mode } as never,
+  );
+  if (existing.error) throw new Error(existing.error.message);
+  if (typeof existing.data === "string" && existing.data) return existing.data;
+  const { createStripeTaxRate } = await import("@/lib/billing/providers/stripe.server");
+  const created = await createStripeTaxRate(client, input);
+  const recorded = await admin.rpc(
+    "billing_record_provider_tax_rate" as never,
+    { _rule_id: input.ruleId, _provider: "stripe", _mode: client.mode, _rate_id: created } as never,
+  );
+  if (recorded.error) throw new Error(recorded.error.message);
+  return String(recorded.data);
+}

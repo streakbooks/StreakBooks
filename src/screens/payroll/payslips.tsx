@@ -13,6 +13,7 @@ import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/c
 import { TableCard } from "@/components/common/table-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -90,6 +91,11 @@ export function PayrollPayslipsPage({ runIdFilter }: { runIdFilter?: string | nu
         <EmptyState
           title="No payslips yet"
           description="Approve a payroll run to generate payslips for each employee."
+          action={
+            <Button asChild size="sm">
+              <Link to="/payroll/runs">Go to runs</Link>
+            </Button>
+          }
         />
       ) : (
         <TableCard>

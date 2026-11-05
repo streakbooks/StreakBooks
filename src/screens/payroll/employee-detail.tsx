@@ -167,6 +167,14 @@ export function PayrollEmployeeDetailPage({ employeeId }: { employeeId: string }
   const currentLines = currentVersion
     ? data.salary_lines.filter((l) => l.version_id === currentVersion.id)
     : [];
+  const hasPaymentOnFile = Boolean(
+    data.payment &&
+    (data.payment.has_account_number ||
+      data.payment.has_iban ||
+      data.payment.has_sort_code ||
+      data.payment.account_name ||
+      data.payment.bank_name),
+  );
 
   return (
     <>
@@ -180,6 +188,26 @@ export function PayrollEmployeeDetailPage({ employeeId }: { employeeId: string }
         }
       />
       <PayrollSubnav current="employees" />
+
+      {canManage && (!currentVersion || !hasPaymentOnFile) ? (
+        <div className="mb-4 rounded-lg border border-dashed border-amber-200/80 bg-amber-50/40 px-4 py-3 text-sm dark:border-amber-900/50 dark:bg-amber-950/20">
+          <p className="font-medium text-foreground">Next steps for this employee</p>
+          <ul className="mt-1 list-inside list-disc text-muted-foreground">
+            {!currentVersion ? (
+              <li>
+                Assign a current salary below, or create a{" "}
+                <Link to="/payroll/salary-structures" className="text-primary hover:underline">
+                  salary structure
+                </Link>{" "}
+                first.
+              </li>
+            ) : null}
+            {!hasPaymentOnFile ? (
+              <li>Add payment details below so net pay can be settled.</li>
+            ) : null}
+          </ul>
+        </div>
+      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>

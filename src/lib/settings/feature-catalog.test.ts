@@ -22,6 +22,17 @@ describe("feature state engine", () => {
     );
   });
 
+  it("marks Basic Global Payroll as needs config when setup is incomplete", () => {
+    const payroll = FEATURE_CATALOG.find((f) => f.key === "basic_payroll")!;
+    expect(payroll.requiresConfigCategory).toBe("payroll");
+    expect(
+      computeFeatureState(payroll, { enabled: true, canEdit: true, configComplete: false }).state,
+    ).toBe("enabled_needs_config");
+    expect(
+      computeFeatureState(payroll, { enabled: true, canEdit: true, configComplete: true }).state,
+    ).toBe("enabled_operational");
+  });
+
   it("marks unavailable features honestly", () => {
     const timeTracking = FEATURE_CATALOG.find((f) => f.key === "time_tracking")!;
     const s = computeFeatureState(timeTracking, { enabled: true, canEdit: true });

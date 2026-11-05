@@ -518,7 +518,7 @@ export function PayrollSettingsPage() {
             <CardHeader>
               <CardTitle className="text-base">Default payroll accounts</CardTitle>
               <CardDescription>
-                Posted payroll journals will use these Chart of Accounts mappings in later batches.
+                Posted payroll journals use these Chart of Accounts mappings when runs are posted.
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2">
@@ -933,8 +933,10 @@ export function PayrollSettingsPage() {
             </CardHeader>
             <CardContent className="space-y-2 text-sm text-muted-foreground">
               <p>
-                Batch 1 permissions: <code>payroll.view</code>, <code>payroll.settings.edit</code>,
-                plus reserved keys for employees, runs, payments and reports.
+                Payroll permissions include <code>payroll.view</code>,{" "}
+                <code>payroll.settings.edit</code>, <code>payroll.employees.manage</code>, run
+                prepare/approve/post, <code>payroll.pay</code>, and{" "}
+                <code>payroll.reports.view</code>.
               </p>
               <Button asChild variant="outline" size="sm">
                 <Link to="/settings" search={{ section: "users" }}>

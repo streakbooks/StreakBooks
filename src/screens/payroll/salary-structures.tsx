@@ -214,23 +214,36 @@ export function PayrollSalaryStructuresPage() {
         </Alert>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
-          <TableCard>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {list.structures.length === 0 ? (
+          {list.structures.length === 0 ? (
+            <EmptyState
+              title="No salary structures yet"
+              description="Create a reusable template of pay components before assigning salaries to employees."
+              action={
+                canManage ? (
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setSelectedId("new");
+                      setDraft(emptyStructureDraft());
+                    }}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    New structure
+                  </Button>
+                ) : undefined
+              }
+            />
+          ) : (
+            <TableCard>
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={2} className="text-muted-foreground">
-                      No structures yet.
-                    </TableCell>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Status</TableHead>
                   </TableRow>
-                ) : (
-                  list.structures.map((s) => (
+                </TableHeader>
+                <TableBody>
+                  {list.structures.map((s) => (
                     <TableRow
                       key={s.id}
                       className={selectedId === s.id ? "bg-muted/50" : undefined}
@@ -243,11 +256,11 @@ export function PayrollSalaryStructuresPage() {
                         </Badge>
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableCard>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableCard>
+          )}
 
           <Card>
             <CardHeader>

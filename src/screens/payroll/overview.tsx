@@ -12,6 +12,7 @@ import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/c
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 export function PayrollOverviewPage() {
   const { company, isPending } = useActiveCompany();
@@ -78,8 +79,13 @@ export function PayrollOverviewPage() {
       href: "/payroll/settings" as const,
     },
     {
-      label: "Add employees with pay details",
+      label: "Add active employees",
       done: (data.setupCounts?.activeEmployees ?? 0) > 0,
+      href: "/payroll/employees" as const,
+    },
+    {
+      label: "Assign current salary to at least one active employee",
+      done: (data.setupCounts?.employeesWithCurrentSalary ?? 0) > 0,
       href: "/payroll/employees" as const,
     },
     {
@@ -89,6 +95,8 @@ export function PayrollOverviewPage() {
     },
   ];
   const setupComplete = setupSteps.every((step) => step.done);
+  const firstUndoneIndex = setupSteps.findIndex((step) => !step.done);
+  const firstUndoneStep = firstUndoneIndex >= 0 ? setupSteps[firstUndoneIndex] : null;
   const showSetupChecklist = data.available && (!enabled || !setupComplete);
 
   return (
@@ -128,24 +136,52 @@ export function PayrollOverviewPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <ol className="space-y-2 text-sm">
-                  {setupSteps.map((step, index) => (
-                    <li key={step.label} className="flex items-start gap-2">
-                      {step.done ? (
-                        <CheckCircle2
-                          className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600"
-                          aria-hidden
-                        />
-                      ) : (
-                        <Circle
-                          className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground"
-                          aria-hidden
-                        />
-                      )}
-                      <span className={step.done ? "text-muted-foreground" : undefined}>
-                        <span className="font-medium tabular-nums">{index + 1}.</span> {step.label}
-                      </span>
-                    </li>
-                  ))}
+                  {setupSteps.map((step, index) => {
+                    const isFirstUndone = !step.done && index === firstUndoneIndex;
+                    return (
+                      <li
+                        key={step.label}
+                        className={cn(
+                          "flex items-start gap-2 rounded-md px-1 py-0.5",
+                          isFirstUndone && "bg-amber-100/60 dark:bg-amber-950/40",
+                        )}
+                      >
+                        {step.done ? (
+                          <CheckCircle2
+                            className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600"
+                            aria-hidden
+                          />
+                        ) : (
+                          <Circle
+                            className={cn(
+                              "mt-0.5 h-4 w-4 shrink-0",
+                              isFirstUndone
+                                ? "text-amber-700 dark:text-amber-400"
+                                : "text-muted-foreground",
+                            )}
+                            aria-hidden
+                          />
+                        )}
+                        {step.done ? (
+                          <span className="text-muted-foreground">
+                            <span className="font-medium tabular-nums">{index + 1}.</span>{" "}
+                            {step.label}
+                          </span>
+                        ) : (
+                          <Link
+                            to={step.href}
+                            className={cn(
+                              "rounded-sm text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                              isFirstUndone && "font-semibold",
+                            )}
+                          >
+                            <span className="font-medium tabular-nums">{index + 1}.</span>{" "}
+                            {step.label}
+                          </Link>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ol>
                 {!enabled && canEdit ? (
                   <Button asChild>
@@ -153,6 +189,10 @@ export function PayrollOverviewPage() {
                       <Settings2 className="mr-2 h-4 w-4" />
                       Open payroll settings
                     </Link>
+                  </Button>
+                ) : enabled && canEdit && !setupComplete && firstUndoneStep ? (
+                  <Button asChild>
+                    <Link to={firstUndoneStep.href}>Continue</Link>
                   </Button>
                 ) : null}
               </CardContent>
@@ -220,7 +260,7 @@ export function PayrollOverviewPage() {
             <CardHeader>
               <CardTitle className="text-base">Live sections</CardTitle>
               <CardDescription>
-                Each area below is wired in this branch. Statutory tax and filing remain manual.
+                Open any area below to manage payroll. Statutory tax and filing remain manual.
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

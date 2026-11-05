@@ -168,6 +168,11 @@ export const WORKSPACE_SETTINGS: Array<{
     destination: { to: "/settings", section: "accounting" },
   },
   {
+    prefix: "/payroll",
+    label: "Payroll settings",
+    destination: { to: "/settings", section: "payroll" },
+  },
+  {
     prefix: "/accountant",
     label: "Accounting settings",
     destination: { to: "/settings", section: "accounting" },

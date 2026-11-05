@@ -4,7 +4,7 @@
 |-------|-------|
 | **Module route** | `/payroll` (authenticated) |
 | **Branch foundation** | `feature/basic-global-payroll-batch-1-foundation` |
-| **Batch 7 focus** | Security smoke tests, docs honesty, UI polish, unit test coverage |
+| **Batch 7 focus** | Security smoke tests, docs honesty, UX polish (setup checklist, empty states, Feature Manager readiness), unit test coverage |
 | **Production claim** | **Not production-ready** for live payroll until staging smoke passes (migrations alone are insufficient) |
 | **LinkBooks production DB** | Foundation migrations applied **2026-11-05** on the linkbook Supabase project; `/payroll` is reachable — still verify on staging before claiming readiness |
 
@@ -35,7 +35,7 @@ Every settings page and overview surfaces this compliance notice from the server
 | 2 | Employees, payment details, structures | `20261105160709_basic_global_payroll_employees.sql` |
 | 4 | Runs, calculation, payslips | `20261105173000_basic_global_payroll_runs.sql` |
 | 5–6 | Posting, payments, reports (app layer) | `20261105180000_basic_global_payroll_payments.sql` |
-| 7 | Hardening, RLS smoke, docs, UX | (no new migration — tests and polish only) |
+| 7 | Hardening, RLS smoke, docs, UX polish | (no new migration — tests and polish only; overview checklist links, permission-gated empty states, `basic_payroll` configComplete in Feature Manager) |
 
 ## Permissions (summary)
 

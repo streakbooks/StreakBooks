@@ -203,6 +203,14 @@ export function PayrollRunsPage() {
               <EmptyState
                 title="No payroll runs yet"
                 description="Create a run for a pay schedule and period."
+                action={
+                  canPrepare ? (
+                    <Button size="sm" onClick={() => setCreateOpen(true)}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Create run
+                    </Button>
+                  ) : undefined
+                }
               />
             ) : (
               <Table>

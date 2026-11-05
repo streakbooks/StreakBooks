@@ -15,6 +15,7 @@ import {
   suggestPayrollGlAccounts,
   type PayrollGlAccountSuggestions,
 } from "@/lib/payroll/account-suggestions";
+import { isBasicPayrollConfigComplete } from "@/lib/payroll/payroll-feature-config";
 import {
   assertPaymentMethod,
   assertRoundingMode,
@@ -28,6 +29,7 @@ import {
 
 export type PayrollSetupCounts = {
   activeEmployees: number;
+  employeesWithCurrentSalary: number;
   payrollRuns: number;
 };
 
@@ -60,7 +62,7 @@ function todayIsoDate(): string {
 }
 
 async function loadPayrollSetupCounts(sb: Sb, companyId: string): Promise<PayrollSetupCounts> {
-  const [employees, runs] = await Promise.all([
+  const [employees, runs, openSalaries, activeEmployeeRows] = await Promise.all([
     sb
       .from("payroll_employees" as never)
       .select("id" as never, { count: "exact", head: true })
@@ -70,6 +72,16 @@ async function loadPayrollSetupCounts(sb: Sb, companyId: string): Promise<Payrol
       .from("payroll_runs" as never)
       .select("id" as never, { count: "exact", head: true })
       .eq("company_id" as never, companyId as never),
+    sb
+      .from("payroll_employee_salary_versions" as never)
+      .select("employee_id" as never)
+      .eq("company_id" as never, companyId as never)
+      .is("effective_to" as never, null as never),
+    sb
+      .from("payroll_employees" as never)
+      .select("id" as never)
+      .eq("company_id" as never, companyId as never)
+      .eq("status" as never, "active" as never),
   ]);
   if (employees.error && !isMissingRelation(employees.error)) {
     throw new Error(employees.error.message);
@@ -77,10 +89,71 @@ async function loadPayrollSetupCounts(sb: Sb, companyId: string): Promise<Payrol
   if (runs.error && !isMissingRelation(runs.error)) {
     throw new Error(runs.error.message);
   }
+  if (openSalaries.error && !isMissingRelation(openSalaries.error)) {
+    throw new Error(openSalaries.error.message);
+  }
+  if (activeEmployeeRows.error && !isMissingRelation(activeEmployeeRows.error)) {
+    throw new Error(activeEmployeeRows.error.message);
+  }
+  const activeIds = new Set(
+    ((activeEmployeeRows.data ?? []) as Array<{ id: string }>).map((row) => row.id),
+  );
+  const salaryEmployeeIds = new Set(
+    ((openSalaries.data ?? []) as Array<{ employee_id: string }>).map((row) => row.employee_id),
+  );
+  let employeesWithCurrentSalary = 0;
+  for (const id of salaryEmployeeIds) {
+    if (activeIds.has(id)) employeesWithCurrentSalary += 1;
+  }
   return {
     activeEmployees: employees.count ?? 0,
+    employeesWithCurrentSalary,
     payrollRuns: runs.count ?? 0,
   };
+}
+
+export async function loadBasicPayrollFeatureConfigComplete(
+  sb: Sb,
+  companyId: string,
+): Promise<boolean> {
+  const { data: settings, error: settingsError } = await sb
+    .from("payroll_settings" as never)
+    .select(
+      "enabled, disclaimer_acknowledged, salary_expense_account_id, net_pay_liability_account_id, deduction_liability_account_id" as never,
+    )
+    .eq("company_id" as never, companyId as never)
+    .maybeSingle();
+  if (settingsError) {
+    if (isMissingRelation(settingsError)) return false;
+    throw new Error(settingsError.message);
+  }
+  const { count: activeScheduleCount, error: scheduleError } = await sb
+    .from("payroll_pay_schedules" as never)
+    .select("id" as never, { count: "exact", head: true })
+    .eq("company_id" as never, companyId as never)
+    .eq("is_active" as never, true as never);
+  if (scheduleError) {
+    if (isMissingRelation(scheduleError)) return false;
+    throw new Error(scheduleError.message);
+  }
+  const row = asRecord(settings);
+  return isBasicPayrollConfigComplete({
+    enabled: Boolean(pick(row, "enabled")),
+    disclaimerAcknowledged: Boolean(pick(row, "disclaimer_acknowledged")),
+    salaryExpenseAccountId:
+      typeof pick(row, "salary_expense_account_id") === "string"
+        ? (pick(row, "salary_expense_account_id") as string)
+        : null,
+    netPayLiabilityAccountId:
+      typeof pick(row, "net_pay_liability_account_id") === "string"
+        ? (pick(row, "net_pay_liability_account_id") as string)
+        : null,
+    deductionLiabilityAccountId:
+      typeof pick(row, "deduction_liability_account_id") === "string"
+        ? (pick(row, "deduction_liability_account_id") as string)
+        : null,
+    activeScheduleCount: activeScheduleCount ?? 0,
+  });
 }
 
 async function ensureDefaultPayScheduleIfEmpty(
@@ -280,7 +353,11 @@ export const getPayrollSettingsPage = createServerFn({ method: "GET" })
           disclaimer: BASIC_PAYROLL_DISCLAIMER,
           accounts: [] as AccountOption[],
           accountSuggestions: null as PayrollGlAccountSuggestions | null,
-          setupCounts: { activeEmployees: 0, payrollRuns: 0 } satisfies PayrollSetupCounts,
+          setupCounts: {
+            activeEmployees: 0,
+            employeesWithCurrentSalary: 0,
+            payrollRuns: 0,
+          } satisfies PayrollSetupCounts,
           migrationMessage: PAYROLL_MIGRATION,
         };
       }

@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
@@ -235,7 +236,7 @@ export function PayrollPaymentsPage() {
                   disabled={exportMut.isPending}
                   onClick={() => exportMut.mutate()}
                 >
-                  Generic bank CSV (Batch 5)
+                  Generic bank CSV
                 </Button>
                 <Button size="sm" onClick={() => setRecordOpen(true)}>
                   Record payment
@@ -250,8 +251,8 @@ export function PayrollPaymentsPage() {
       {canPay ? (
         <Alert className="mb-4">
           <AlertDescription>
-            Generic bank CSV (Batch 5) is a non bank-specific export for manual review only.
-            Downloading it does not mark payslips as paid or record a payment in LinkBooks.
+            Generic bank CSV is a non bank-specific export for manual review only. Downloading it
+            does not mark payslips as paid or record a payment in LinkBooks.
           </AlertDescription>
         </Alert>
       ) : null}
@@ -261,6 +262,17 @@ export function PayrollPaymentsPage() {
           <EmptyState
             title="No payroll payments yet"
             description="Post a payroll run, then record net-pay payments here."
+            action={
+              canPay ? (
+                <Button size="sm" onClick={() => setRecordOpen(true)}>
+                  Record payment
+                </Button>
+              ) : (
+                <Button asChild size="sm" variant="outline">
+                  <Link to="/payroll/runs">View payroll runs</Link>
+                </Button>
+              )
+            }
           />
         ) : (
           <Table>

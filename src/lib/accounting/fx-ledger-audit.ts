@@ -93,10 +93,7 @@ export function auditRealisedFxJournals(
         if (journal.source_type !== "fx_realised" || journal.source_id !== record.allocation_id) {
           issues.push("Journal source is not this realised FX allocation.");
         }
-        if (
-          journal.idempotency_key !==
-          `fx_realised:${record.kind}:${record.allocation_id}:post`
-        ) {
+        if (journal.idempotency_key !== `fx_realised:${record.kind}:${record.allocation_id}:post`) {
           issues.push("Journal idempotency reference does not match this FX posting.");
         }
         if (record.reversed_at && !journal.reversed_by_journal_id) {

@@ -43,22 +43,24 @@ export function FxRealisedLedgerAudit({ companyId }: { companyId: string }) {
               checked · {audit.data.exceptions} requiring review
               {audit.data.hasMore ? " · More history exists beyond this sample" : ""}
             </p>
-            {audit.data.rows.filter((row) => row.status !== "matched").map((row) => (
-              <div key={row.recordId} className="rounded-md border p-2">
-                <p className="font-medium">
-                  {row.currencyCode} · {row.status} · gain/loss{" "}
-                  {row.gainLossMinor ?? "unavailable"} base minor units
-                </p>
-                <p className="break-all text-xs text-muted-foreground">
-                  {row.journalId ? `Journal ${row.journalId}` : "Linked journal unavailable"}
-                </p>
-                {row.issues.map((issue) => (
-                  <p key={issue} className="text-destructive">
-                    {issue}
+            {audit.data.rows
+              .filter((row) => row.status !== "matched")
+              .map((row) => (
+                <div key={row.recordId} className="rounded-md border p-2">
+                  <p className="font-medium">
+                    {row.currencyCode} · {row.status} · gain/loss{" "}
+                    {row.gainLossMinor ?? "unavailable"} base minor units
                   </p>
-                ))}
-              </div>
-            ))}
+                  <p className="break-all text-xs text-muted-foreground">
+                    {row.journalId ? `Journal ${row.journalId}` : "Linked journal unavailable"}
+                  </p>
+                  {row.issues.map((issue) => (
+                    <p key={issue} className="text-destructive">
+                      {issue}
+                    </p>
+                  ))}
+                </div>
+              ))}
             <p className="text-xs text-muted-foreground">
               Reversed entries require review but are not necessarily errors. This does not verify
               the underlying document-rate calculation or complete account-level FX balances.

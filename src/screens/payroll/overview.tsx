@@ -141,39 +141,32 @@ export function PayrollOverviewPage() {
 
           <Card className="lg:col-span-2">
             <CardHeader>
-              <CardTitle className="text-base">What is available now</CardTitle>
+              <CardTitle className="text-base">Live sections</CardTitle>
               <CardDescription>
-                Settings, employees, salary structures, pay runs, payslips, payments, and payroll
-                reports for approved and posted runs.
+                Each area below is wired in this branch. Statutory tax and filing remain manual.
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-wrap gap-2">
-              <Button asChild variant="outline" size="sm">
-                <Link to="/payroll/employees">Manage employees</Link>
-              </Button>
-              <Button asChild variant="outline" size="sm">
-                <Link to="/payroll/salary-structures">Salary structures</Link>
-              </Button>
-              <Button asChild variant="outline" size="sm">
-                <Link to="/payroll/runs">Payroll runs</Link>
-              </Button>
-              <Button asChild variant="outline" size="sm">
-                <Link to="/payroll/payslips">Payslips</Link>
-              </Button>
-              <Button asChild variant="outline" size="sm">
-                <Link to="/payroll/payments">Payments</Link>
-              </Button>
-              <Button asChild variant="outline" size="sm">
-                <Link to="/payroll/reports">Reports</Link>
-              </Button>
-              <Button asChild variant="outline" size="sm">
-                <Link to="/payroll/settings">Configure payroll settings</Link>
-              </Button>
-              <Button asChild variant="outline" size="sm">
-                <Link to="/settings" search={{ section: "features" }}>
-                  Feature Manager
+            <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {(
+                [
+                  ["Employees", "/payroll/employees", "Profiles, CSV import, payment and salary"],
+                  ["Structures", "/payroll/salary-structures", "Reusable pay component templates"],
+                  ["Runs", "/payroll/runs", "Calculate, review, approve, post"],
+                  ["Payslips", "/payroll/payslips", "Issued snapshots after approval"],
+                  ["Payments", "/payroll/payments", "Net-pay allocation and bank CSV export"],
+                  ["Reports", "/payroll/reports", "Summary and expense views"],
+                  ["Settings", "/payroll/settings", "Enable payroll, schedules, GL links"],
+                ] as const
+              ).map(([label, to, blurb]) => (
+                <Link
+                  key={to}
+                  to={to}
+                  className="rounded-lg border p-3 text-sm transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <span className="font-medium text-foreground">{label}</span>
+                  <p className="mt-1 text-muted-foreground">{blurb}</p>
                 </Link>
-              </Button>
+              ))}
             </CardContent>
           </Card>
         </div>

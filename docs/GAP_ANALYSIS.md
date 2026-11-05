@@ -39,7 +39,7 @@ Odoo and Xero columns describe **publicly documented capabilities**, not an asse
 | Multi-company / access | Multi-company | Multiple organizations | **Done** — company members, firm links and role permissions; isolation audit pending | P0 | L |
 | Consolidation / intercompany | Multi-company/reporting | Entity reporting | **Missing** — no verified consolidation and elimination engine in examined code | P1 | L |
 | Projects and time | Analytic project costing | Project/time analysis | **Partial** — projects routes and profitability links; time entry/payroll integration unclear | P1 | L |
-| Payroll journals/hooks | Payroll integration | Payroll/integrations | **Missing** — no verified jurisdiction-safe payroll journal bridge | P2 | L |
+| Payroll journals/hooks | Payroll integration | Payroll/integrations | **Partial** — Basic Global Payroll accrual posting and net-pay payments (manual statutory); jurisdiction filing engines absent | P2 | L |
 | API / integrations / webhooks | External APIs | App integrations / APIs | **Partial** — some billing/provider webhooks; generic public accounting API absent in audit | P1 | L |
 | Data migration and import | Import mappings | Import/export ecosystem | **Partial** — imports and mapping modules, broad Tally/QBO migration QA absent | P1 | L |
 | Roles, tenant security, 2FA | Roles / access | Advisor roles, 2FA | **Partial** — auth, roles and MFA-related migrations; full matrix/definer audit pending | P0 | L |

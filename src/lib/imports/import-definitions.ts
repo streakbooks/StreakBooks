@@ -252,14 +252,14 @@ const defs: ImportDefinition[] = [
   {
     module: "payroll",
     documentType: "Employee master",
-    writeStatus: "not_implemented",
+    writeStatus: "implemented",
     fields: [
       field(
         "employee_number",
         "Employee number",
         true,
         "EMP-001",
-        "Import via Payroll → Employees (CSV upload). This Imports Centre template documents the column contract only.",
+        "Written via Payroll → Employees CSV upload/export (not the Imports Centre batch runner).",
       ),
       field("first_name", "First name", true, "Alex", "Given name"),
       field("last_name", "Last name", true, "Example", "Family name"),

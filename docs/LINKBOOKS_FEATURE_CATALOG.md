@@ -173,6 +173,23 @@
 
 ---
 
+## Payroll (Basic Global)
+
+| Feature | Nav path | Status | Ledger | Tests / evidence |
+|---------|----------|--------|--------|------------------|
+| Overview | `/payroll` | Implemented but incompletely verified | — | `src/screens/payroll/overview.tsx`; SQL RLS smokes |
+| Settings | `/payroll/settings` | Implemented but incompletely verified | M | `settings-draft.test.ts` |
+| Employees | `/payroll/employees` | Implemented but incompletely verified | M | CSV import on module; `employee-draft.test.ts` |
+| Salary structures | `/payroll/salary-structures` | Implemented but incompletely verified | M | Routes + RPCs |
+| Pay runs | `/payroll/runs` | Implemented but incompletely verified | L (on post) | `calculation-engine.test.ts`, run RPCs |
+| Payslips | `/payroll/payslips` | Implemented but incompletely verified | — | `payslip-snapshot.test.ts` |
+| Payments | `/payroll/payments` | Implemented but incompletely verified | L | `payroll-payment-allocation.test.ts` |
+| Reports | `/payroll/reports` | Implemented but incompletely verified | R | `payroll-reports.test.ts` |
+
+**Disclaimer:** Manual statutory deductions only — not jurisdiction-certified payroll filing. See [PAYROLL_BASIC_GLOBAL.md](./engineering/PAYROLL_BASIC_GLOBAL.md).
+
+---
+
 ## Shells & missing modules
 
 | Module | Nav path | Status | Ledger | Notes |
@@ -182,7 +199,7 @@
 | Global search / notifications / quick create | (disabled in shell) | **Missing** / stub | — | |
 | Attachments / OCR / document storage | — | **Missing** | — | No Storage bucket migrations |
 | Inventory | — | **Missing** | — | |
-| Payroll | — | **Missing** | — | |
+| Payroll | `/payroll` | **Partial** — Basic Global module in app; manual statutory; migrations may be pending on hosted DB | L / M | See Payroll section above |
 | Fixed assets | — | **Missing** | — | |
 | Budgets / projects | — | **Missing** | — | |
 | Customer billing / subscriptions | — | **Missing** | — | |
@@ -202,7 +219,8 @@
 | Permissions / env | `permissions.test.ts`, `env-safety.test.ts` | |
 | Banking CSV | `csv-import.test.ts` | |
 | Tax / FX / AI | `tax-math.test.ts`, `fx.test.ts`, `ai.test.ts` | |
-| **Total** | 18 files | **124 tests, all green** (2026-10-19 local run) |
+| Payroll | `src/lib/payroll/*.test.ts` | Calculation, settings, payslip snapshot, reports, bank CSV |
+| **Total** | 18+ files | Vitest count varies; run `npm run test -- src/lib/payroll` on branch |
 
 ---
 

@@ -392,9 +392,7 @@ export const getPayrollRunPage = createServerFn({ method: "GET" })
               run_employee: normaliseRunEmployee(pick(row, "run_employee")),
               employee: normaliseEmployee(pick(row, "employee")),
               payslip:
-                payslipRaw && typeof payslipRaw === "object"
-                  ? normalisePayslip(payslipRaw)
-                  : null,
+                payslipRaw && typeof payslipRaw === "object" ? normalisePayslip(payslipRaw) : null,
             };
           })
         : [],

@@ -17,8 +17,18 @@ describe("buildPayrollAccrualJournalLines", () => {
   it("balances a simple gross / deduction / net accrual", () => {
     const lines = buildPayrollAccrualJournalLines(
       [
-        { kind: "earning", amountMinor: 100_000n, expenseAccountId: null, liabilityAccountId: null },
-        { kind: "deduction", amountMinor: 20_000n, expenseAccountId: null, liabilityAccountId: null },
+        {
+          kind: "earning",
+          amountMinor: 100_000n,
+          expenseAccountId: null,
+          liabilityAccountId: null,
+        },
+        {
+          kind: "deduction",
+          amountMinor: 20_000n,
+          expenseAccountId: null,
+          liabilityAccountId: null,
+        },
       ],
       settings,
       80_000n,
@@ -57,7 +67,12 @@ describe("buildPayrollAccrualJournalLines", () => {
   it("posts employer contribution expense and liability", () => {
     const lines = buildPayrollAccrualJournalLines(
       [
-        { kind: "earning", amountMinor: 100_000n, expenseAccountId: null, liabilityAccountId: null },
+        {
+          kind: "earning",
+          amountMinor: 100_000n,
+          expenseAccountId: null,
+          liabilityAccountId: null,
+        },
         {
           kind: "employer_contribution",
           amountMinor: 12_000n,

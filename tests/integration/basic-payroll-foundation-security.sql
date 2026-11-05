@@ -65,4 +65,56 @@ BEGIN
   END IF;
 END $$;
 
+-- Payment details must never be directly readable by authenticated clients.
+DO $$
+DECLARE
+  _has_select BOOLEAN;
+BEGIN
+  IF to_regclass('public.payroll_employee_payment_details') IS NULL THEN
+    RAISE EXCEPTION 'payroll_employee_payment_details missing — apply 20261105160709_basic_global_payroll_employees.sql';
+  END IF;
+  SELECT EXISTS (
+    SELECT 1
+    FROM information_schema.role_table_grants
+    WHERE table_schema = 'public'
+      AND table_name = 'payroll_employee_payment_details'
+      AND grantee = 'authenticated'
+      AND privilege_type = 'SELECT'
+  ) INTO _has_select;
+  IF _has_select THEN
+    RAISE EXCEPTION 'authenticated must not have SELECT on payroll_employee_payment_details';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'payroll_employee_payment_details'
+      AND policyname = 'No direct read of employee payment details'
+  ) THEN
+    RAISE EXCEPTION 'payment details deny SELECT policy missing';
+  END IF;
+END $$;
+
+-- Payslip and payment tables are org-scoped via payroll.view (when present).
+DO $$
+BEGIN
+  IF to_regclass('public.payroll_payslips') IS NOT NULL THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_policies
+      WHERE schemaname = 'public'
+        AND tablename = 'payroll_payslips'
+        AND policyname = 'Payroll viewers can read payslips'
+    ) THEN
+      RAISE EXCEPTION 'payroll_payslips RLS policy missing';
+    END IF;
+  END IF;
+  IF to_regclass('public.payroll_payments') IS NOT NULL THEN
+    IF NOT has_function_privilege('authenticated', 'public.record_payroll_payment(jsonb)', 'execute') THEN
+      RAISE EXCEPTION 'record_payroll_payment execute grant missing';
+    END IF;
+    IF has_function_privilege('anon', 'public.export_payroll_bank_csv_rows(uuid, uuid)', 'execute') THEN
+      RAISE EXCEPTION 'anon must not execute export_payroll_bank_csv_rows';
+    END IF;
+  END IF;
+END $$;
+
 ROLLBACK;

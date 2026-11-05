@@ -110,8 +110,9 @@ describe("unrealised FX revaluation to ledger audit", () => {
     );
     expect(result.exceptionCount).toBeGreaterThan(0);
     expect(result.differences).toContain(
-      "Journal unrealised gains differ from the stored run gain total.",
+      "Incomplete journal evidence prevents a reliable gain/loss total.",
     );
+    expect(result.actualGainMinor).toBeNull();
     expect(result.items[0]!.issues).toContain(
       "Journal idempotency key does not match its run and currency.",
     );

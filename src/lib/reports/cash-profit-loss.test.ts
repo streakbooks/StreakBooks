@@ -143,11 +143,11 @@ describe("cash-basis Profit and Loss engine", () => {
     );
     expect(totals(input).revenue).toBe(huge + 5000n);
   });
-  it.each(["missing allocations", "cross company", "bank mismatch", "unbalanced", "invalid date"])(
+  it.each(["overallocated", "cross company", "bank mismatch", "unbalanced", "invalid date"])(
     "fails closed for %s",
     (kind) => {
       const input = cashInputFixture();
-      if (kind === "missing allocations") input.allocations.pop();
+      if (kind === "overallocated") input.allocations[0]!.amount++;
       if (kind === "cross company") input.payments[0]!.companyId = "other";
       if (kind === "bank mismatch") input.payments[0]!.amount = 6001n;
       if (kind === "unbalanced") input.journals[0]!.lines[0]!.debit++;
@@ -224,6 +224,81 @@ describe("FX rounding across multiple documents in one cash payment", () => {
     }));
     expect(totals(input)).toEqual({ revenue: 1n, expense: 0n });
   });
+  it.each(["income", "expense"] as const)(
+    "returns the exact %s base penny when an allocation is moved to another document",
+    (side) => {
+      const input = cashInputFixture();
+      const controlId = side === "income" ? arId : apId;
+      const componentId = side === "income" ? revenueId : expenseId;
+      const documents = ["one", "two", "three"].map((id) =>
+        journal(
+          id,
+          "2026-10-01",
+          side === "income" ? "sales_invoice" : "purchase_bill",
+          side === "income"
+            ? [
+                [controlId, 1n, 0n],
+                [componentId, 0n, 1n],
+              ]
+            : [
+                [componentId, 1n, 0n],
+                [controlId, 0n, 1n],
+              ],
+        ),
+      );
+      const payment = journal(
+        "yen-cash",
+        "2026-11-01",
+        side === "income" ? "customer_payment" : "supplier_payment",
+        side === "income"
+          ? [
+              [bankId, 2n, 0n],
+              [controlId, 0n, 2n],
+            ]
+          : [
+              [controlId, 2n, 0n],
+              [bankId, 0n, 2n],
+            ],
+      );
+      for (const source of [...documents, payment]) {
+        source.currency = "JPY";
+        source.rate = "0.0067";
+      }
+      input.journals = [...documents, payment];
+      input.payments = [
+        {
+          id: "yen-cash",
+          companyId: testCompany,
+          side,
+          journalId: payment.id,
+          voidJournalId: null,
+          currency: "JPY",
+          rate: "0.0067",
+          amount: 2n,
+        },
+      ];
+      input.allocations = [
+        { id: "first", documentId: "one", allocatedOn: "2026-11-01", reversedOn: null },
+        { id: "second", documentId: "two", allocatedOn: "2026-11-01", reversedOn: "2026-12-01" },
+        { id: "replacement", documentId: "three", allocatedOn: "2026-12-01", reversedOn: null },
+      ].map((row) => ({ ...row, companyId: testCompany, paymentId: "yen-cash", amount: 1n }));
+      expect(totals(input)).toEqual({
+        revenue: side === "income" ? 1n : 0n,
+        expense: side === "expense" ? 1n : 0n,
+      });
+      const rows = cashProfitLoss(input, { from: "2026-12-01", to: "2026-12-31" });
+      const normal = side === "income" ? -1n : 1n;
+      expect(
+        rows.find((row) => row.sourceId === "two")!.debit -
+          rows.find((row) => row.sourceId === "two")!.credit,
+      ).toBe(-normal);
+      expect(
+        rows.find((row) => row.sourceId === "three")!.debit -
+          rows.find((row) => row.sourceId === "three")!.credit,
+      ).toBe(normal);
+      expect(rows.reduce((sum, row) => sum + row.debit - row.credit, 0n)).toBe(0n);
+    },
+  );
 });
 
 describe("verified cash reversal cancellation", () => {
@@ -296,4 +371,206 @@ it("retains explicitly expensed payroll payments without treating them as an unm
   const input = cashInputFixture();
   input.accounts.find((row) => row.id === expenseId)!.account_kind = "payroll_expense";
   expect(totals(input)).toEqual({ revenue: 5000n, expense: 4000n });
+});
+
+describe("cash advances, reapplications and dated credits", () => {
+  it("keeps unapplied receipts and supplier advances out of P&L", () => {
+    const input = cashInputFixture();
+    input.allocations = [];
+    expect(totals(input)).toEqual({ revenue: 0n, expense: 0n });
+  });
+
+  it("recognizes only the applied part of a payment with an unapplied remainder", () => {
+    const input = cashInputFixture();
+    input.allocations[0]!.amount = 3000n;
+    input.allocations[1]!.amount = 2400n;
+    expect(totals(input)).toEqual({ revenue: 2500n, expense: 2000n });
+  });
+
+  it("recognizes an advance at its later effective allocation date", () => {
+    const input = cashInputFixture();
+    input.allocations[0]!.allocatedOn = "2026-12-10";
+    expect(totals(input)).toEqual({ revenue: 0n, expense: 4000n });
+    const december = cashProfitLoss(input, { from: "2026-12-01", to: "2026-12-31" });
+    expect(
+      december
+        .filter((row) => row.accountId === revenueId)
+        .reduce((sum, row) => sum + row.credit - row.debit, 0n),
+    ).toBe(5000n);
+    expect(december.find((row) => row.accountId === revenueId)).toMatchObject({
+      date: "2026-12-10",
+      sourceComponentBefore: "0",
+      sourceComponentAfter: "-5000",
+      sourceTransactionAmount: "-5000",
+    });
+  });
+
+  it("returns an unallocated receipt to advances and recognizes its later reapplication once", () => {
+    const input = cashInputFixture();
+    input.allocations[0]!.reversedOn = "2026-11-20";
+    input.allocations.push({
+      ...input.allocations[0]!,
+      id: "reapplied",
+      allocatedOn: "2026-12-10",
+      reversedOn: null,
+    });
+    expect(totals(input)).toEqual({ revenue: 0n, expense: 4000n });
+    expect(totals(input, { from: "2026-12-01", to: "2026-12-31" })).toEqual({
+      revenue: 5000n,
+      expense: 0n,
+    });
+    expect(totals(input, { from: "2026-11-01", to: "2026-12-31" })).toEqual({
+      revenue: 5000n,
+      expense: 4000n,
+    });
+  });
+
+  it("can reverse and reapply the same receipt on one date without an artificial overpayment", () => {
+    const input = cashInputFixture();
+    input.allocations[0]!.reversedOn = "2026-12-10";
+    input.allocations.push({
+      ...input.allocations[0]!,
+      id: "reapplied",
+      allocatedOn: "2026-12-10",
+      reversedOn: null,
+    });
+    expect(totals(input, { from: "2026-12-01", to: "2026-12-31" })).toEqual({
+      revenue: 0n,
+      expense: 0n,
+    });
+  });
+
+  it("adjusts a changed credit tax/account mix on its application date without changing prior cash", () => {
+    const input = cashInputFixture();
+    input.journals.push(
+      journal("credit-later", "2026-12-05", "sales_credit_note", [
+        [revenueId, 2400n, 0n],
+        [arId, 0n, 2400n],
+      ]),
+    );
+    input.creditAllocations = [
+      {
+        id: "credit-application",
+        documentId: "invoice",
+        creditId: "credit-later",
+        amount: 2400n,
+        allocatedOn: "2026-12-05",
+        reversedOn: null,
+      },
+    ];
+    expect(totals(input)).toEqual({ revenue: 5000n, expense: 4000n });
+    expect(totals(input, { from: "2026-12-01", to: "2026-12-31" })).toEqual({
+      revenue: -250n,
+      expense: 0n,
+    });
+    expect(
+      cashProfitLoss(input, { from: "2026-12-01", to: "2026-12-31" }, true).reduce(
+        (sum, row) => sum + row.debit - row.credit,
+        0n,
+      ),
+    ).toBe(0n);
+  });
+
+  it("reverses an old credit before applying its replacement on the same date", () => {
+    const input = cashInputFixture();
+    input.journals.push(
+      journal("credit-reallocated", "2026-10-20", "sales_credit_note", [
+        [revenueId, 6000n, 0n],
+        [arId, 0n, 6000n],
+      ]),
+    );
+    input.creditAllocations = [
+      {
+        id: "z-original",
+        documentId: "invoice",
+        creditId: "credit-reallocated",
+        amount: 6000n,
+        allocatedOn: "2026-10-20",
+        reversedOn: "2026-12-05",
+      },
+      {
+        id: "a-replacement",
+        documentId: "invoice",
+        creditId: "credit-reallocated",
+        amount: 6000n,
+        allocatedOn: "2026-12-05",
+        reversedOn: null,
+      },
+    ];
+    expect(totals(input)).toEqual({ revenue: 4000n, expense: 4000n });
+    expect(totals(input, { from: "2026-12-01", to: "2026-12-31" })).toEqual({
+      revenue: 0n,
+      expense: 0n,
+    });
+  });
+
+  it("ignores compensated credit versions with no reporting day of application", () => {
+    const input = cashInputFixture();
+    input.journals.push(
+      journal("credit-compensated", "2026-10-20", "sales_credit_note", [
+        [revenueId, 6000n, 0n],
+        [arId, 0n, 6000n],
+      ]),
+    );
+    input.creditAllocations = [
+      {
+        id: "active",
+        documentId: "invoice",
+        creditId: "credit-compensated",
+        amount: 6000n,
+        allocatedOn: "2026-10-20",
+        reversedOn: null,
+      },
+      {
+        id: "compensated",
+        documentId: "invoice",
+        creditId: "credit-compensated",
+        amount: 6000n,
+        allocatedOn: "2026-12-05",
+        reversedOn: "2026-12-05",
+      },
+    ];
+    expect(totals(input, { from: "2026-12-01", to: "2026-12-31" })).toEqual({
+      revenue: 0n,
+      expense: 0n,
+    });
+  });
+
+  it("reverses a supplier credit refund as an expense recovery on the refund cash date", () => {
+    const input = cashInputFixture();
+    input.journals.push(
+      journal("supplier-credit", "2026-11-05", "purchase_credit_note", [
+        [apId, 2400n, 0n],
+        [expenseId, 0n, 2000n],
+        [taxId, 0n, 400n],
+      ]),
+      journal("supplier-refund", "2026-12-06", "other", [
+        [bankId, 2400n, 0n],
+        [apId, 0n, 2400n],
+      ]),
+    );
+    input.refunds.push({
+      id: "supplier-refund",
+      companyId: testCompany,
+      side: "expense",
+      journalId: "supplier-refund",
+      voidJournalId: null,
+      currency: "GBP",
+      rate: "1",
+      amount: 2400n,
+      uses: [
+        {
+          id: "supplier-credit-use",
+          kind: "purchase_credit_note",
+          documentId: "supplier-credit",
+          amount: 2400n,
+        },
+      ],
+    });
+    expect(totals(input)).toEqual({ revenue: 5000n, expense: 4000n });
+    expect(totals(input, { from: "2026-12-01", to: "2026-12-31" })).toEqual({
+      revenue: 0n,
+      expense: -2000n,
+    });
+  });
 });

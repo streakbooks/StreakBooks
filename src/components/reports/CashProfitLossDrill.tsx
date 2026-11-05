@@ -1,3 +1,4 @@
+import type { ReportFilters } from "@/lib/reports/report-filters";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getCashProfitLossTransactions } from "@/lib/reports/cash-drill.functions";
@@ -20,6 +21,7 @@ export function CashProfitLossDrill({
   from,
   to,
   onClose,
+  filters,
 }: {
   companyId: string;
   accountId: string;
@@ -27,11 +29,12 @@ export function CashProfitLossDrill({
   from: string;
   to: string;
   onClose: () => void;
+  filters?: ReportFilters | undefined;
 }) {
   const fetch = useServerFn(getCashProfitLossTransactions);
   const query = useQuery({
-    queryKey: ["cash-profit-loss-drill", companyId, accountId, report, from, to],
-    queryFn: () => fetch({ data: { companyId, accountId, report, from, to } }),
+    queryKey: ["cash-profit-loss-drill", companyId, accountId, report, from, to, filters],
+    queryFn: () => fetch({ data: { companyId, accountId, report, from, to, filters } }),
     retry: false,
   });
   const data = query.data;

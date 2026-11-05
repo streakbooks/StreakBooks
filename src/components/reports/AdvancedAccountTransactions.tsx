@@ -71,6 +71,7 @@ export function AdvancedAccountTransactionsView({ ctx }: { ctx: ReportCtx }) {
       "report-acct-txn",
       ctx.companyId,
       accountId,
+      ctx.search.basis,
       ctx.from,
       ctx.to,
       page,
@@ -88,6 +89,7 @@ export function AdvancedAccountTransactionsView({ ctx }: { ctx: ReportCtx }) {
         data: {
           companyId: ctx.companyId,
           accountId,
+          ...(ctx.search.basis ? { basis: ctx.search.basis } : {}),
           from: ctx.from,
           to: ctx.to,
           page,
@@ -151,7 +153,7 @@ export function AdvancedAccountTransactionsView({ ctx }: { ctx: ReportCtx }) {
       ctx={ctx}
       mode="range"
       allowExplorer={false}
-      basis="Posted ledger only · Monetary columns are in the organisation's base currency · Running balances retain full-ledger order"
+      basis={`${ctx.search.basis === "cash" ? "Cash basis · Recognized settlements and direct cash movements" : "Accrual basis · Posted ledger"} · Amounts in base currency · Running balances retain ledger order`}
       extraControls={
         <ReportAccountMultiSelect
           accounts={accounts}
@@ -233,7 +235,7 @@ export function AdvancedAccountTransactionsView({ ctx }: { ctx: ReportCtx }) {
             ),
             ...data.rows.map((row) => columns.map((id) => csvCell(id, row))),
           ],
-          basis: `Loaded page ${data.page + 1}: ${data.rows.length} of ${data.total_count} matching posted lines; opening and closing balances are for the full account, before filters.`,
+          basis: `${ctx.search.basis === "cash" ? "Cash" : "Accrual"} basis · Loaded page ${data.page + 1}: ${data.rows.length} of ${data.total_count} matching posted lines; opening and closing balances are for the full account, before filters.`,
         };
       }}
     >

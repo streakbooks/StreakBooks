@@ -8,6 +8,7 @@ import { friendlyAuthError } from "@/lib/auth-helpers";
 import { getProjectProfitability } from "@/lib/projects/projects.functions";
 import { budgetUsedPercent, marginPercent, totalsOf } from "@/lib/projects/projects";
 import { ProjectPanel } from "@/components/create-new/ProjectPanel";
+import { StatementBasisSelect } from "@/components/reports/StatementBasisSelect";
 import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -36,12 +37,24 @@ function ProjectsPage() {
   const fetchReport = useServerFn(getProjectProfitability);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [basisChoice, setBasisChoice] = useState<{
+    companyId: string;
+    basis: "accrual" | "cash";
+  } | null>(null);
+  const basis = basisChoice && basisChoice.companyId === companyId ? basisChoice.basis : undefined;
 
   const query = useQuery({
-    queryKey: ["project-profitability", companyId, from, to],
+    queryKey: ["project-profitability", companyId, from, to, basis],
     enabled: Boolean(companyId),
     queryFn: () =>
-      fetchReport({ data: { companyId: companyId!, from: from || null, to: to || null } }),
+      fetchReport({
+        data: {
+          companyId: companyId!,
+          from: from || null,
+          to: to || null,
+          ...(basis ? { basis } : {}),
+        },
+      }),
   });
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
@@ -71,6 +84,11 @@ function ProjectsPage() {
           <Label htmlFor="pp-to">To</Label>
           <Input id="pp-to" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
         </div>
+        <StatementBasisSelect
+          basis={query.data?.basis ?? basis ?? "accrual"}
+          report="profit-and-loss"
+          onChange={(value) => setBasisChoice({ companyId, basis: value })}
+        />
       </div>
 
       {query.isPending ? (
@@ -143,9 +161,9 @@ function ProjectsPage() {
       )}
 
       <p className="mt-3 text-xs text-muted-foreground">
-        Revenue and costs use net amounts (before tax) of authorised documents, less credit notes.
-        Bank lines and Create-New documents tagged to a project count their income and expense
-        postings. Drafts and voided documents are excluded.{" "}
+        {query.data?.basis === "cash"
+          ? "Cash revenue and costs follow allocated payment and refund dates, before tax. Partial payments are shared across tagged and untagged source lines. Direct cash transactions retain their project tags."
+          : "Revenue and costs use net amounts (before tax) of authorised documents, less credit notes. Bank lines and Create-New documents tagged to a project count their income and expense postings. Drafts and voided documents are excluded."}{" "}
         <Link to="/reports" className="underline">
           All reports
         </Link>

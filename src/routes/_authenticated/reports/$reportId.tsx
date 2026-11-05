@@ -1,3 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { getReportingBasis } from "@/lib/reports/accounting-basis.functions";
 import { useMemo } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useActiveCompany } from "@/hooks/use-active-company";
@@ -63,6 +66,12 @@ function ReportPage() {
   const navigate = useNavigate({ from: Route.fullPath });
   const { company, isPending } = useActiveCompany();
   const report = getReportById(reportId);
+  const loadBasis = useServerFn(getReportingBasis);
+  const companyBasis = useQuery({
+    queryKey: ["reporting-basis", company?.id],
+    enabled: Boolean(company),
+    queryFn: () => loadBasis({ data: { companyId: company!.id } }),
+  });
 
   const today = useMemo(() => todayIso(), []);
   const defaultFrom = company
@@ -73,7 +82,7 @@ function ReportPage() {
       )
     : today;
 
-  if (isPending) return <LoadingState />;
+  if (isPending || (company && companyBasis.isPending)) return <LoadingState />;
   if (!company) {
     return (
       <EmptyState
@@ -118,6 +127,14 @@ function ReportPage() {
     );
   }
 
+  if (companyBasis.isError)
+    return (
+      <Alert>
+        <AlertTitle>Could not load accounting preferences</AlertTitle>
+        <AlertDescription>{companyBasis.error.message}</AlertDescription>
+      </Alert>
+    );
+
   const ctx: ReportCtx = {
     reportId: report.id,
     companyId: company.id,
@@ -127,7 +144,13 @@ function ReportPage() {
     fyEndDay: company.fiscal_year_end_day ?? 31,
     from: search.from ?? defaultFrom,
     to: search.to ?? today,
-    search,
+    search: {
+      ...search,
+      // Explicit report and saved-view choices take precedence over the company default.
+      ...(search.basis === undefined && search.settings === undefined && report.runner !== "tax"
+        ? { basis: companyBasis.data ?? "accrual" }
+        : {}),
+    },
     setSearch: (patch) => {
       void navigate({
         search: (prev: ReportSearch) => {

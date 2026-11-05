@@ -3,6 +3,7 @@ import { isReportDate } from "./date-validation";
 import { PACK_REPORTS } from "./report-document";
 export const dateSchema = z.string().refine(isReportDate, "Choose a real calendar date");
 export const packConfigSchema = z.object({
+  basis: z.enum(["accrual", "cash"]).default("accrual"),
   reports: z.array(z.enum(PACK_REPORTS)).min(1).max(20),
   commentary: z.string().max(12000).default(""),
   header: z.string().max(300).default(""),
@@ -92,6 +93,7 @@ export const KPI_IDS = [
 export const dashboardSchema = z.object({ widgets: z.array(z.enum(KPI_IDS)).min(1).max(8) });
 export const forecastSchema = z
   .object({
+    basis: z.enum(["accrual", "cash"]).optional(),
     start: dateSchema,
     months: z.number().int().min(1).max(36),
     baselineFrom: dateSchema,

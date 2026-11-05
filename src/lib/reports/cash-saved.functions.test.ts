@@ -36,6 +36,7 @@ import { callRpc } from "@/lib/planning/rpc";
 
 const viewId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 let config: Record<string, unknown>;
+let companyBasis = "accrual";
 const query = {
   select() {
     return this;
@@ -46,12 +47,16 @@ const query = {
   async single() {
     return { data: { name: "Cash P&L saved", report_id: "profit-and-loss", config }, error: null };
   },
+  async maybeSingle() {
+    return { data: { document: { reporting_basis: companyBasis } }, error: null };
+  },
 };
 const supabase = { from: () => query };
 const execute = <T>(fn: unknown, data: unknown) =>
   (fn as (args: unknown) => Promise<T>)({ data, context: { supabase } });
 beforeEach(() => {
   vi.resetAllMocks();
+  companyBasis = "accrual";
   config = {
     from: "2026-11-01",
     to: "2026-11-30",
@@ -72,6 +77,28 @@ beforeEach(() => {
   });
 });
 describe("saved cash report lifecycle", () => {
+  it.each([undefined, "{}"])(
+    "inherits company cash basis for a legacy saved statement: %s",
+    async (settings) => {
+      companyBasis = "cash";
+      config = { from: "2026-11-01", to: "2026-11-30", ...(settings ? { settings } : {}) };
+      const doc = JSON.parse(
+        await execute<string>(captureReportDocument, { companyId: testCompany, viewId }),
+      );
+      expect(doc.basis).toBe("cash");
+      expect(
+        doc.sections[0].rows.find((row: { label: string }) => row.label === "Net profit").values,
+      ).toEqual(["10.00"]);
+      const file = await execute<{ content: string }>(exportReportDocument, {
+        companyId: testCompany,
+        viewId,
+        format: "csv",
+      });
+      expect(Buffer.from(file.content, "base64").toString()).toContain('"Net profit","10.00"');
+      expect(config).not.toHaveProperty("basis");
+    },
+  );
+
   it.each([false, true])(
     "captures and exports saved cash settings, including legacy basis-only views: %s",
     async (legacy) => {

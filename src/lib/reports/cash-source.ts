@@ -1,4 +1,5 @@
 import type { CashPnlInput, CashJournal, CashPayment, CashRefund } from "./cash-profit-loss";
+import { isReportDate } from "./date-validation";
 import type { ReportingFacts } from "./report-document";
 type Row = Record<string, unknown>;
 function text(row: Row, key: string): string {
@@ -16,9 +17,140 @@ function integer(row: Row, key: string): bigint {
   return BigInt(String(value));
 }
 
+/** Normalize append-only OLD snapshots into dated allocation versions.
+ * Current paid counters are never used to reconstruct missing amounts. Future
+ * events have a DB sequence; genuinely ambiguous legacy order remains explicit.
+ */
+export function normalizeCashAllocationHistory(
+  rows: Row[],
+  history: Row[],
+  options: {
+    companyId: string;
+    sourceTable: string;
+    parentKey: string;
+    parents: Row[];
+    parentDateKey?: string;
+    journalDates?: ReadonlyMap<string, string>;
+    requireVoid?: boolean;
+  },
+): Row[] {
+  // Draft posting/compensation may also archive OLD allocation rows. Without a
+  // posted source journal those rows never entered either accounting basis.
+  const parents = new Map(
+    options.parents
+      .filter((parent) => parent["posted_journal_id"])
+      .map((parent) => [text(parent, "id"), parent]),
+  );
+  const applicableRows = rows.filter((row) => parents.has(text(row, options.parentKey)));
+  const grouped = new Map<string, Row[]>();
+  for (const event of history) {
+    if (event["source_table"] !== options.sourceTable) continue;
+    const row = event["source_row"] as Row;
+    if (!row || typeof row !== "object" || Array.isArray(row))
+      throw new Error("Invalid archived cash allocation");
+    if (!parents.has(text(row, options.parentKey))) continue;
+    const id = text(event, "allocation_id");
+    if (
+      text(event, "company_id") !== options.companyId ||
+      text(row, "company_id") !== options.companyId ||
+      text(row, "id") !== id
+    )
+      throw new Error("Invalid or cross-company cash allocation history");
+    if (!["UPDATE", "DELETE"].includes(text(event, "operation")))
+      throw new Error("Invalid cash allocation history operation");
+    grouped.set(id, [...(grouped.get(id) ?? []), event]);
+  }
+  const result = applicableRows
+    .filter((row) => !grouped.has(text(row, "id")))
+    .map((row) => ({ ...row }));
+  for (const [id, events] of grouped) {
+    const current = applicableRows.find((row) => row["id"] === id);
+    if (events.some((event) => !optional(event, "recorded_at"))) {
+      if (events.length !== 1 || events[0]!["operation"] !== "DELETE" || current)
+        throw new Error(
+          "Changed cash allocations need verified dated reallocation recognition history",
+        );
+      const event = events[0]!,
+        row = event["source_row"] as Row;
+      const parent = parents.get(text(row, options.parentKey))!;
+      if (!parent["void_journal_id"])
+        throw new Error("Archived cash allocation has no matching source void");
+      result.push({
+        ...row,
+        reversed_on: options.journalDates?.get(String(parent["void_journal_id"])) ?? null,
+      });
+      continue;
+    }
+    events.sort((a, b) => {
+      const date = text(a, "recorded_at").localeCompare(text(b, "recorded_at"));
+      if (date) return date;
+      const sa = optional(a, "event_seq"),
+        sb = optional(b, "event_seq");
+      if (sa && sb) return BigInt(sa) < BigInt(sb) ? -1 : BigInt(sa) > BigInt(sb) ? 1 : 0;
+      if (JSON.stringify(a["source_row"]) !== JSON.stringify(b["source_row"]))
+        throw new Error("Ambiguous legacy cash allocation version order requires source history");
+      return 0;
+    });
+    let previousDate: string | null = null;
+    for (const [index, event] of events.entries()) {
+      if (index < events.length - 1 && event["operation"] === "DELETE")
+        throw new Error("Cash allocation history reuses a deleted row identity");
+      const row = event["source_row"] as Row;
+      const parent = parents.get(text(row, options.parentKey))!;
+      const recorded = text(event, "recorded_at").slice(0, 10);
+      if (!isReportDate(recorded)) throw new Error("Invalid cash allocation history date");
+      if (
+        options.requireVoid &&
+        (events.length !== 1 ||
+          event["operation"] !== "DELETE" ||
+          !parent["void_journal_id"] ||
+          current)
+      )
+        throw new Error("Cash refund credit uses require the matching posted source void");
+      const start =
+        [
+          optional(row, "allocated_on"),
+          previousDate,
+          options.parentDateKey ? optional(parent, options.parentDateKey) : null,
+          options.journalDates?.get(String(parent["posted_journal_id"])) ?? null,
+        ]
+          .filter((date): date is string => Boolean(date))
+          .sort()
+          .at(-1) ?? null;
+      const end =
+        event["operation"] === "DELETE" && parent["void_journal_id"]
+          ? (options.journalDates?.get(String(parent["void_journal_id"])) ?? recorded)
+          : recorded;
+      result.push({
+        ...row,
+        id: `${id}:history:${text(event, "id")}`,
+        allocated_on: start,
+        reversed_on: end,
+      });
+      previousDate = recorded;
+    }
+    const last = events.at(-1)!;
+    if (last["operation"] === "DELETE") {
+      if (current) throw new Error("Archived cash allocation still has a conflicting active row");
+    } else {
+      if (!current) throw new Error("Cash allocation UPDATE history has no current version");
+      const start =
+        [optional(current, "allocated_on"), previousDate]
+          .filter((date): date is string => Boolean(date))
+          .sort()
+          .at(-1) ?? null;
+      result.push({ ...current, allocated_on: start });
+    }
+  }
+  return result;
+}
+
 export type CashSourceRows = Record<string, Row[]>;
 /** Shared by interactive invoker reads and immutable queued snapshots. */
-export function cashInputFromRows(source: CashSourceRows, facts: ReportingFacts): CashPnlInput {
+export function cashInputFromRows(
+  source: CashSourceRows,
+  facts: Pick<ReportingFacts, "company" | "accounts">,
+): CashPnlInput {
   for (const table of [
     "journal_lines",
     "bank_accounts",
@@ -45,38 +177,6 @@ export function cashInputFromRows(source: CashSourceRows, facts: ReportingFacts)
   const salesCredits = [...(source["sales_credit_allocations"] ?? [])];
   const purchaseCredits = [...(source["purchase_credit_allocations"] ?? [])];
   const history = [...(source["cash_allocation_history"] ?? [])];
-  // A deleted allocation is usable only when the parent has an actual posted
-  // void. Reallocations and repeated versions need a separate event policy.
-  for (const [table, rows, parents, parentKey] of [
-    ["supplier_payment_allocations", paymentAllocations, payments, "payment_id"],
-    ["money_document_credit_uses", uses, money, "document_id"],
-  ] as const) {
-    const archived = history.filter((event) => event["source_table"] === table);
-    const byId = new Map<string, Row[]>();
-    for (const event of archived) {
-      const row = event["source_row"] as Row;
-      if (!row || typeof row !== "object" || Array.isArray(row))
-        throw new Error("Invalid archived cash allocation");
-      if (!parents.some((parent) => parent["id"] === row[parentKey])) continue;
-      const id = text(event, "allocation_id");
-      if (
-        text(event, "company_id") !== companyId ||
-        text(row, "company_id") !== companyId ||
-        text(row, "id") !== id
-      )
-        throw new Error("Invalid or cross-company cash allocation history");
-      byId.set(id, [...(byId.get(id) ?? []), event]);
-    }
-    for (const [id, events] of byId) {
-      if (events.length !== 1 || events[0]!["operation"] !== "DELETE")
-        throw new Error("Changed cash allocations need reviewed reallocation recognition history");
-      const row = events[0]!["source_row"] as Row;
-      const parent = parents.find((parent) => parent["id"] === row[parentKey])!;
-      if (rows.some((live) => live["id"] === id) || !parent["void_journal_id"])
-        throw new Error("Archived cash allocation has no matching source void");
-      rows.push(row);
-    }
-  }
   const journalMap = new Map<string, CashJournal>();
   for (const line of lines) {
     const header = line["journals"] as Row;
@@ -95,14 +195,42 @@ export function cashInputFromRows(source: CashSourceRows, facts: ReportingFacts)
           optional(header, "currency_code")?.trim().toUpperCase() ?? facts.company.baseCurrency,
         rate: optional(header, "fx_rate_to_base"),
         reverses: optional(header, "reverses_journal_id"),
+        memo: optional(header, "memo"),
         lines: [],
       });
     journalMap.get(id)!.lines.push({
       accountId: text(line, "account_id"),
       debit: integer(line, "debit_minor"),
       credit: integer(line, "credit_minor"),
+      description: optional(line, "description"),
+      ...(optional(line, "id") ? { lineId: text(line, "id") } : {}),
     });
   }
+  const journalDates = new Map(
+    [...journalMap.values()].map((journal) => [journal.id, journal.date]),
+  );
+  const normalizedPayments = normalizeCashAllocationHistory(paymentAllocations, history, {
+    companyId,
+    sourceTable: "supplier_payment_allocations",
+    parentKey: "payment_id",
+    parents: payments,
+    journalDates,
+  });
+  const normalizedUses = normalizeCashAllocationHistory(uses, history, {
+    companyId,
+    sourceTable: "money_document_credit_uses",
+    parentKey: "document_id",
+    parents: money,
+    journalDates,
+    requireVoid: true,
+  });
+  const normalizedCredits = normalizeCashAllocationHistory(purchaseCredits, history, {
+    companyId,
+    sourceTable: "purchase_credit_allocations",
+    parentKey: "credit_note_id",
+    parents: source["purchase_credit_notes"] ?? [],
+    journalDates,
+  });
   const payment = (
     row: Row,
     side: "income" | "expense",
@@ -127,14 +255,36 @@ export function cashInputFromRows(source: CashSourceRows, facts: ReportingFacts)
         ...facts.accounts
           .filter(
             (a) =>
-              a.account_kind === "bank" ||
-              a.subtype === "bank" ||
-              ["bank", "cash", "undeposited_funds"].includes(a.system_key ?? ""),
+              ["bank", "credit_card"].includes(a.account_kind ?? "") ||
+              ["bank", "credit_card"].includes(a.subtype ?? "") ||
+              [
+                "bank",
+                "cash",
+                "undeposited_funds",
+                "stripe_clearing",
+                "payment_processor_clearing",
+              ].includes(a.system_key ?? ""),
           )
           .map((a) => a.id),
       ]),
     ],
     journals: [...journalMap.values()],
+    documentJournalLinks: [
+      ["sales_invoices", "sales_invoice", "invoice_date"],
+      ["purchase_bills", "purchase_bill", "bill_date"],
+      ["sales_credit_notes", "sales_credit_note", "credit_date"],
+      ["purchase_credit_notes", "purchase_credit_note", "credit_date"],
+    ].flatMap(([table, sourceType, dateKey]) =>
+      (source[table!] ?? [])
+        .filter((row) => row["posted_journal_id"])
+        .map((row) => ({
+          documentId: text(row, "id"),
+          companyId: text(row, "company_id"),
+          journalId: text(row, "posted_journal_id"),
+          sourceType: sourceType!,
+          date: optional(row, dateKey!),
+        })),
+    ),
     payments: [
       ...receipts.filter((row) => row["posted_journal_id"]).map((row) => payment(row, "income")),
       ...payments.filter((row) => row["posted_journal_id"]).map((row) => payment(row, "expense")),
@@ -147,28 +297,40 @@ export function cashInputFromRows(source: CashSourceRows, facts: ReportingFacts)
         documentId: text(row, "invoice_id"),
         amount: integer(row, "amount_minor"),
         reversedOn: optional(row, "reversed_on"),
+        allocatedOn: optional(row, "allocated_on"),
       })),
-      ...paymentAllocations.map((row) => ({
-        id: text(row, "id"),
-        companyId: text(row, "company_id"),
-        paymentId: text(row, "payment_id"),
-        documentId: text(row, "bill_id"),
-        amount: integer(row, "amount_minor"),
-        reversedOn: null,
-      })),
+      ...normalizedPayments
+        .filter((row) =>
+          payments.some(
+            (parent) => parent["id"] === row["payment_id"] && parent["posted_journal_id"],
+          ),
+        )
+        .map((row) => ({
+          id: text(row, "id"),
+          companyId: text(row, "company_id"),
+          paymentId: text(row, "payment_id"),
+          documentId: text(row, "bill_id"),
+          amount: integer(row, "amount_minor"),
+          reversedOn: optional(row, "reversed_on"),
+          allocatedOn: optional(row, "allocated_on"),
+        })),
     ],
     creditAllocations: [
       ...salesCredits.map((row) => ({
+        id: text(row, "id"),
         documentId: text(row, "invoice_id"),
         creditId: text(row, "credit_note_id"),
         allocatedOn: optional(row, "allocated_on"),
         reversedOn: optional(row, "reversed_on"),
+        ...(row["amount_minor"] == null ? {} : { amount: integer(row, "amount_minor") }),
       })),
-      ...purchaseCredits.map((row) => ({
+      ...normalizedCredits.map((row) => ({
+        id: text(row, "id"),
         documentId: text(row, "bill_id"),
         creditId: text(row, "credit_note_id"),
-        allocatedOn: null,
-        reversedOn: null,
+        allocatedOn: optional(row, "allocated_on"),
+        reversedOn: optional(row, "reversed_on"),
+        ...(row["amount_minor"] == null ? {} : { amount: integer(row, "amount_minor") }),
       })),
     ],
     refunds: money
@@ -179,7 +341,7 @@ export function cashInputFromRows(source: CashSourceRows, facts: ReportingFacts)
       )
       .map((row): CashRefund => ({
         ...payment(row, row["kind"] === "customer_refund" ? "income" : "expense", "total_minor"),
-        uses: uses
+        uses: normalizedUses
           .filter((use) => use["document_id"] === row["id"])
           .map((use) => ({
             id: text(use, "id"),

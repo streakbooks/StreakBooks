@@ -1,3 +1,5 @@
+import { StatementBasisSelect } from "./StatementBasisSelect";
+import type { AccountingBasis } from "@/lib/reports/accounting-basis";
 import { useCanDo } from "@/hooks/use-can";
 import { exportForecast } from "@/lib/reports/forecast-export.functions";
 import { downloadReportFile } from "@/lib/reports/download";
@@ -190,6 +192,9 @@ export function ManagementWorkspace({
         />
       ) : (
         <>
+          <p className="text-sm text-muted-foreground">
+            {q.data.accountingBasis === "cash" ? "Cash" : "Accrual"} basis
+          </p>
           {!q.data.hasActivity && (
             <EmptyState
               title="No posted activity in this period"
@@ -204,7 +209,7 @@ export function ManagementWorkspace({
                   key={id}
                   to="/reports/$reportId"
                   params={{ reportId: metric.reportId }}
-                  search={{ from, to }}
+                  search={{ from, to, basis: q.data.accountingBasis }}
                   className="space-y-2 rounded-lg border p-4 transition-shadow hover:shadow-md"
                 >
                   <h3 className="text-sm font-medium capitalize text-muted-foreground">
@@ -229,6 +234,7 @@ export function ManagementWorkspace({
             from={from}
             to={to}
             currency={q.data.company.baseCurrency}
+            accountingBasis={q.data.accountingBasis}
           />
         </>
       )}
@@ -240,11 +246,13 @@ function ForecastWorkspace({
   from,
   to,
   currency,
+  accountingBasis,
 }: {
   companyId: string;
   from: string;
   to: string;
   currency: string;
+  accountingBasis: AccountingBasis;
 }) {
   const client = useQueryClient(),
     calculate = useServerFn(previewForecast),
@@ -311,6 +319,14 @@ function ForecastWorkspace({
   return (
     <section className="space-y-4 rounded-lg border p-4">
       <h2 className="text-xl font-semibold">Forecasts & scenarios</h2>
+      <StatementBasisSelect
+        basis={config.basis ?? accountingBasis}
+        report="profit-and-loss"
+        onChange={(basis) => {
+          setConfig({ ...config, basis });
+          preview.reset();
+        }}
+      />
       <p className="text-sm text-muted-foreground">
         Projected operating results use the average of complete baseline months and compound the
         stated growth each month. These projections do not predict cash balances.

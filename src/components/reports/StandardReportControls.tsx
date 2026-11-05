@@ -351,12 +351,7 @@ export function StandardReportControls({
             </TabsContent>
             {report === "profit-and-loss" && (
               <TabsContent value="filters" className="space-y-3">
-                {draft.basis === "cash" ? (
-                  <p className="text-sm text-muted-foreground">
-                    Posted-journal filters apply to accrual reports. Cash reports use settlement
-                    dates and support account-level transaction drill-down.
-                  </p>
-                ) : filterError ? (
+                {filterError ? (
                   <p role="alert" className="text-sm text-destructive">
                     {filterError}
                   </p>

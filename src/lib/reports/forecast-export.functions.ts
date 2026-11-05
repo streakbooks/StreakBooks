@@ -42,6 +42,7 @@ export const exportForecast = createServerFn({ method: "POST" })
         _entity_id: null,
         _details: {
           report: "operating-forecast",
+          basis: result.accountingBasis,
           format: data.format,
           from: doc.from,
           to: doc.to,

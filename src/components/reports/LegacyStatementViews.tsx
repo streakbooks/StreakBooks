@@ -1,4 +1,5 @@
 // Core statement rendering remains available when the optional reporting suite is frozen.
+import { StatementBasisSelect } from "./StatementBasisSelect";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useFormat } from "@/hooks/use-format";
@@ -78,7 +79,12 @@ function StatementTable({
             >
               <TableCell className={`${bold ? "font-semibold" : "pl-6"}`}>
                 {r.accountId ? (
-                  <AccountLink accountId={r.accountId} from={drillFrom} to={ctx.to}>
+                  <AccountLink
+                    accountId={r.accountId}
+                    from={drillFrom}
+                    to={ctx.to}
+                    basis={ctx.search.basis}
+                  >
                     {r.code ? <span className="mr-2 text-muted-foreground">{r.code}</span> : null}
                     {r.label}
                   </AccountLink>
@@ -120,10 +126,16 @@ export function LegacyProfitLossView({ ctx }: { ctx: ReportCtx }) {
   const fetchPl = useServerFn(getProfitAndLoss);
   const columnsMode = ctx.search.columns ?? "none";
   const q = useQuery({
-    queryKey: ["report-pl", ctx.companyId, ctx.from, ctx.to, columnsMode],
+    queryKey: ["report-pl", ctx.companyId, ctx.from, ctx.to, columnsMode, ctx.search.basis],
     queryFn: () =>
       fetchPl({
-        data: { companyId: ctx.companyId, from: ctx.from, to: ctx.to, columns: columnsMode },
+        data: {
+          companyId: ctx.companyId,
+          from: ctx.from,
+          to: ctx.to,
+          columns: columnsMode,
+          ...(ctx.search.basis ? { basis: ctx.search.basis } : {}),
+        },
       }),
   });
   const d = q.data;
@@ -136,6 +148,13 @@ export function LegacyProfitLossView({ ctx }: { ctx: ReportCtx }) {
       mode="range"
       showColumns="pl"
       basis={d?.basis}
+      extraControls={
+        <StatementBasisSelect
+          basis={ctx.search.basis ?? "accrual"}
+          report="profit-and-loss"
+          onChange={(basis) => ctx.setSearch({ basis })}
+        />
+      }
       getCsv={() => (d ? { ...statementCsv(rows, cols, ctx.currency), basis: d.basis } : null)}
     >
       <ReportPane
@@ -170,8 +189,16 @@ export function LegacyBalanceSheetView({ ctx }: { ctx: ReportCtx }) {
   const fetchBs = useServerFn(getBalanceSheet);
   const compare = ctx.search.compare ?? "none";
   const q = useQuery({
-    queryKey: ["report-bs", ctx.companyId, ctx.to, compare],
-    queryFn: () => fetchBs({ data: { companyId: ctx.companyId, asOf: ctx.to, compare } }),
+    queryKey: ["report-bs", ctx.companyId, ctx.to, compare, ctx.search.basis],
+    queryFn: () =>
+      fetchBs({
+        data: {
+          companyId: ctx.companyId,
+          asOf: ctx.to,
+          compare,
+          ...(ctx.search.basis ? { basis: ctx.search.basis } : {}),
+        },
+      }),
   });
   const d = q.data;
   const rows = (d?.statement ?? []) as StatementRow[];
@@ -183,6 +210,13 @@ export function LegacyBalanceSheetView({ ctx }: { ctx: ReportCtx }) {
       mode="asof"
       showColumns="bs"
       basis={d?.basis}
+      extraControls={
+        <StatementBasisSelect
+          basis={ctx.search.basis ?? "accrual"}
+          report="profit-and-loss"
+          onChange={(basis) => ctx.setSearch({ basis })}
+        />
+      }
       getCsv={() => (d ? { ...statementCsv(rows, cols, ctx.currency), basis: d.basis } : null)}
     >
       <ReportPane

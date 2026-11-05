@@ -70,7 +70,15 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
     queryFn: () => fetchAccounts({ data: { companyId: ctx.companyId } }),
   });
   const q = useQuery({
-    queryKey: ["report-gl-all", ctx.companyId, ctx.from, ctx.to, accountIds, accountScope],
+    queryKey: [
+      "report-gl-all",
+      ctx.companyId,
+      ctx.from,
+      ctx.to,
+      accountIds,
+      accountScope,
+      ctx.search.basis,
+    ],
     queryFn: () =>
       fetchGl({
         data: {
@@ -79,6 +87,7 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
           to: ctx.to,
           ...(accountIds ? { accountIds } : {}),
           accountScope,
+          ...(ctx.search.basis ? { basis: ctx.search.basis } : {}),
         },
       }),
   });
@@ -110,7 +119,7 @@ export function GeneralLedgerAllView({ ctx }: { ctx: ReportCtx }) {
       title={ctx.reportId === "general-ledger" ? "Account Transactions" : "General Ledger"}
       ctx={ctx}
       mode="range"
-      basis="Posted ledger · Account-level balances preserve all posted movements in date order"
+      basis={`${ctx.search.basis === "cash" ? "Cash basis · Recognized settlements and direct cash movements" : "Accrual basis · Posted ledger"} · Account balances in date order`}
       extraControls={
         <>
           <ReportAccountMultiSelect
@@ -623,26 +632,71 @@ export function TaxSummaryView({ ctx }: { ctx: ReportCtx }) {
       title="Tax Summary"
       ctx={ctx}
       mode="range"
-      basis={`Document tax lines, ${basis} basis; ledger movements below`}
-      getCsv={() =>
-        d
-          ? {
-              headers: ["Date", "Journal", "Source", "Account", "Debit", "Credit"],
-              rows: d.detail.map((l) => [
-                l.journal_date,
-                l.journal_number,
-                sourceLabel(l.source_type),
-                `${l.account_code} ${l.account_name}`,
-                csvMoney(l.debit_minor, ctx.currency),
-                csvMoney(l.credit_minor, ctx.currency),
+      basis={`Document tax lines, ${basis} basis; posted control reconciliation shown separately`}
+      getCsv={() => {
+        if (!d) return null;
+        if (d.detailMode === "cash_recognition")
+          return {
+            basis:
+              "Cash basis: dated tax recognition; posted tax-control reconciliation is shown separately on screen.",
+            headers: [
+              "Recognition date",
+              "Settlement",
+              "Source",
+              "Document",
+              "Side",
+              "Treatment",
+              "Net",
+              "Output tax",
+              "Input tax",
+              "Net payable",
+            ],
+            rows: [
+              ...d.cashRecognitionDetails.map((line) => [
+                line.recognition_date,
+                line.settlement_id ?? "",
+                sourceLabel(line.source_type),
+                line.source_id,
+                line.side === "sales" ? "Sales" : "Purchases",
+                line.treatment?.replaceAll("_", " ") ?? "Uncoded",
+                csvMoney(line.net_minor, ctx.currency),
+                csvMoney(line.output_tax_minor, ctx.currency),
+                csvMoney(line.input_tax_minor, ctx.currency),
+                csvMoney(line.net_tax_minor, ctx.currency),
               ]),
-            }
-          : null
-      }
+              [
+                "",
+                "",
+                "Total",
+                "",
+                "",
+                "",
+                csvMoney(
+                  d.documents.sales_net_minor + d.documents.purchases_net_minor,
+                  ctx.currency,
+                ),
+                csvMoney(d.documents.output_tax_minor, ctx.currency),
+                csvMoney(d.documents.input_tax_minor, ctx.currency),
+                csvMoney(d.documents.net_tax_minor, ctx.currency),
+              ],
+            ],
+          };
+        return {
+          headers: ["Date", "Journal", "Source", "Account", "Debit", "Credit"],
+          rows: d.detail.map((line) => [
+            line.journal_date,
+            line.journal_number,
+            sourceLabel(line.source_type),
+            `${line.account_code} ${line.account_name}`,
+            csvMoney(line.debit_minor, ctx.currency),
+            csvMoney(line.credit_minor, ctx.currency),
+          ]),
+        };
+      }}
     >
       <ReportPane
         query={q}
-        isEmpty={Boolean(d) && d!.taxAccountCount === 0}
+        isEmpty={Boolean(d) && d!.taxAccountCount === 0 && d!.detailMode !== "cash_recognition"}
         emptyTitle="No tax accounts"
         emptyDescription="Map tax accounts under Tax → GL mappings, or tag chart accounts with the tax system key."
       >
@@ -735,7 +789,83 @@ export function TaxSummaryView({ ctx }: { ctx: ReportCtx }) {
                 </TableBody>
               </Table>
             ) : null}
-            <p className="mb-2 text-sm font-medium">Ledger movements on the tax accounts</p>
+            {d.detailMode === "cash_recognition" && (
+              <section aria-label="Cash tax recognition" className="mb-6 space-y-2">
+                <h3 className="text-sm font-medium">Cash tax recognition</h3>
+                <p className="text-xs text-muted-foreground">
+                  These dated source lines reconcile to the document totals above and are included
+                  in the download.
+                </p>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Cash date</TableHead>
+                        <TableHead>Source document</TableHead>
+                        <TableHead>Settlement</TableHead>
+                        <TableHead>Side</TableHead>
+                        <TableHead>Treatment</TableHead>
+                        <TableHead className="text-right">Net</TableHead>
+                        <TableHead className="text-right">Output tax</TableHead>
+                        <TableHead className="text-right">Input tax</TableHead>
+                        <TableHead className="text-right">Net payable</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {d.cashRecognitionDetails.map((line, index) => (
+                        <TableRow
+                          key={`${line.source_line_id}-${line.settlement_id ?? "direct"}-${index}`}
+                        >
+                          <TableCell>{fmt.date(line.recognition_date)}</TableCell>
+                          <TableCell>
+                            <SourceLink type={line.source_type} id={line.source_id} />
+                          </TableCell>
+                          <TableCell
+                            className="max-w-36 truncate"
+                            title={line.settlement_id ?? undefined}
+                          >
+                            {line.settlement_id ?? "Direct payment"}
+                          </TableCell>
+                          <TableCell>{line.side === "sales" ? "Sales" : "Purchases"}</TableCell>
+                          <TableCell>{line.treatment?.replaceAll("_", " ") ?? "Uncoded"}</TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {fmt.amount(line.net_minor, ctx.currency)}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {fmt.amount(line.output_tax_minor, ctx.currency)}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {fmt.amount(line.input_tax_minor, ctx.currency)}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {fmt.amount(line.net_tax_minor, ctx.currency)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      <TableRow className="font-semibold">
+                        <TableCell colSpan={5}>Total</TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {fmt.amount(
+                            d.documents.sales_net_minor + d.documents.purchases_net_minor,
+                            ctx.currency,
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {fmt.amount(d.documents.output_tax_minor, ctx.currency)}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {fmt.amount(d.documents.input_tax_minor, ctx.currency)}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {fmt.amount(d.documents.net_tax_minor, ctx.currency)}
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </div>
+              </section>
+            )}
+            <p className="mb-2 text-sm font-medium">Posted tax-control reconciliation</p>
             <div className="mb-4 grid gap-3 sm:grid-cols-3">
               <Stat
                 label="Output (credits)"

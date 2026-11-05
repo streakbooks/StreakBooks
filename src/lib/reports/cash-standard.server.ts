@@ -14,10 +14,6 @@ export async function captureCashStandard(
   settings: StandardSettings,
   report: "profit-and-loss" | "balance-sheet" = "profit-and-loss",
 ): Promise<ReportingFacts> {
-  if (settings.filters.clauses.length)
-    throw new Error(
-      "Posted-line filters are accrual filters. Clear them before switching to cash basis; cash account drill-down remains available.",
-    );
   const base = factsSchema.parse(
     await callRpc(
       supabase,

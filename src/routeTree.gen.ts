@@ -106,6 +106,7 @@ import { Route as AuthenticatedBankingJournalJournalIdRouteImport } from './rout
 import { Route as AuthenticatedBankingReconciliationReportSessionIdRouteImport } from './routes/_authenticated/banking/reconciliation-report.$sessionId'
 import { Route as AuthenticatedPayrollEmployeesIndexRouteImport } from './routes/_authenticated/payroll/employees.index'
 import { Route as AuthenticatedPayrollEmployeesEmployeeIdRouteImport } from './routes/_authenticated/payroll/employees.$employeeId'
+import { Route as AuthenticatedPayrollPaymentsIndexRouteImport } from './routes/_authenticated/payroll/payments.index'
 import { Route as AuthenticatedPayrollPayslipsIndexRouteImport } from './routes/_authenticated/payroll/payslips.index'
 import { Route as AuthenticatedPayrollPayslipsPayslipIdRouteImport } from './routes/_authenticated/payroll/payslips.$payslipId'
 import { Route as AuthenticatedPayrollRunsIndexRouteImport } from './routes/_authenticated/payroll/runs.index'
@@ -687,6 +688,12 @@ const AuthenticatedPayrollEmployeesEmployeeIdRoute =
     path: '/employees/$employeeId',
     getParentRoute: () => AuthenticatedPayrollRouteRoute,
   } as any)
+const AuthenticatedPayrollPaymentsIndexRoute =
+  AuthenticatedPayrollPaymentsIndexRouteImport.update({
+    id: '/payments/',
+    path: '/payments/',
+    getParentRoute: () => AuthenticatedPayrollRouteRoute,
+  } as any)
 const AuthenticatedPayrollPayslipsIndexRoute =
   AuthenticatedPayrollPayslipsIndexRouteImport.update({
     id: '/payslips/',
@@ -1060,6 +1067,7 @@ export interface FileRoutesByFullPath {
   '/sales/receipts/new': typeof AuthenticatedSalesReceiptsNewRoute
   '/portal/app/invoices/$invoiceId': typeof PortalAppInvoicesInvoiceIdRoute
   '/payroll/employees/': typeof AuthenticatedPayrollEmployeesIndexRoute
+  '/payroll/payments/': typeof AuthenticatedPayrollPaymentsIndexRoute
   '/payroll/payslips/': typeof AuthenticatedPayrollPayslipsIndexRoute
   '/payroll/runs/': typeof AuthenticatedPayrollRunsIndexRoute
   '/purchases/bills/': typeof AuthenticatedPurchasesBillsIndexRoute
@@ -1190,6 +1198,7 @@ export interface FileRoutesByTo {
   '/sales/receipts/new': typeof AuthenticatedSalesReceiptsNewRoute
   '/portal/app/invoices/$invoiceId': typeof PortalAppInvoicesInvoiceIdRoute
   '/payroll/employees': typeof AuthenticatedPayrollEmployeesIndexRoute
+  '/payroll/payments': typeof AuthenticatedPayrollPaymentsIndexRoute
   '/payroll/payslips': typeof AuthenticatedPayrollPayslipsIndexRoute
   '/payroll/runs': typeof AuthenticatedPayrollRunsIndexRoute
   '/purchases/bills': typeof AuthenticatedPurchasesBillsIndexRoute
@@ -1332,6 +1341,7 @@ export interface FileRoutesById {
   '/_authenticated/sales/receipts/new': typeof AuthenticatedSalesReceiptsNewRoute
   '/portal/app/invoices/$invoiceId': typeof PortalAppInvoicesInvoiceIdRoute
   '/_authenticated/payroll/employees/': typeof AuthenticatedPayrollEmployeesIndexRoute
+  '/_authenticated/payroll/payments/': typeof AuthenticatedPayrollPaymentsIndexRoute
   '/_authenticated/payroll/payslips/': typeof AuthenticatedPayrollPayslipsIndexRoute
   '/_authenticated/payroll/runs/': typeof AuthenticatedPayrollRunsIndexRoute
   '/_authenticated/purchases/bills/': typeof AuthenticatedPurchasesBillsIndexRoute
@@ -1474,6 +1484,7 @@ export interface FileRouteTypes {
     | '/sales/receipts/new'
     | '/portal/app/invoices/$invoiceId'
     | '/payroll/employees/'
+    | '/payroll/payments/'
     | '/payroll/payslips/'
     | '/payroll/runs/'
     | '/purchases/bills/'
@@ -1604,6 +1615,7 @@ export interface FileRouteTypes {
     | '/sales/receipts/new'
     | '/portal/app/invoices/$invoiceId'
     | '/payroll/employees'
+    | '/payroll/payments'
     | '/payroll/payslips'
     | '/payroll/runs'
     | '/purchases/bills'
@@ -1745,6 +1757,7 @@ export interface FileRouteTypes {
     | '/_authenticated/sales/receipts/new'
     | '/portal/app/invoices/$invoiceId'
     | '/_authenticated/payroll/employees/'
+    | '/_authenticated/payroll/payments/'
     | '/_authenticated/payroll/payslips/'
     | '/_authenticated/payroll/runs/'
     | '/_authenticated/purchases/bills/'
@@ -2461,6 +2474,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPayrollEmployeesEmployeeIdRouteImport
       parentRoute: typeof AuthenticatedPayrollRouteRoute
     }
+    '/_authenticated/payroll/payments/': {
+      id: '/_authenticated/payroll/payments/'
+      path: '/payments'
+      fullPath: '/payroll/payments/'
+      preLoaderRoute: typeof AuthenticatedPayrollPaymentsIndexRouteImport
+      parentRoute: typeof AuthenticatedPayrollRouteRoute
+    }
     '/_authenticated/payroll/payslips/': {
       id: '/_authenticated/payroll/payslips/'
       path: '/payslips'
@@ -2804,6 +2824,7 @@ interface AuthenticatedPayrollRouteRouteChildren {
   AuthenticatedPayrollPayslipsPayslipIdRoute: typeof AuthenticatedPayrollPayslipsPayslipIdRoute
   AuthenticatedPayrollRunsRunIdRoute: typeof AuthenticatedPayrollRunsRunIdRoute
   AuthenticatedPayrollEmployeesIndexRoute: typeof AuthenticatedPayrollEmployeesIndexRoute
+  AuthenticatedPayrollPaymentsIndexRoute: typeof AuthenticatedPayrollPaymentsIndexRoute
   AuthenticatedPayrollPayslipsIndexRoute: typeof AuthenticatedPayrollPayslipsIndexRoute
   AuthenticatedPayrollRunsIndexRoute: typeof AuthenticatedPayrollRunsIndexRoute
 }
@@ -2821,6 +2842,8 @@ const AuthenticatedPayrollRouteRouteChildren: AuthenticatedPayrollRouteRouteChil
     AuthenticatedPayrollRunsRunIdRoute: AuthenticatedPayrollRunsRunIdRoute,
     AuthenticatedPayrollEmployeesIndexRoute:
       AuthenticatedPayrollEmployeesIndexRoute,
+    AuthenticatedPayrollPaymentsIndexRoute:
+      AuthenticatedPayrollPaymentsIndexRoute,
     AuthenticatedPayrollPayslipsIndexRoute:
       AuthenticatedPayrollPayslipsIndexRoute,
     AuthenticatedPayrollRunsIndexRoute: AuthenticatedPayrollRunsIndexRoute,

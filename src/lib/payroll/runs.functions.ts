@@ -18,6 +18,7 @@ import type {
   PayrollPayslipRow,
   PayrollRunEmployeeRow,
   PayrollRunLineRow,
+  PayrollPaymentSummaryRow,
   PayrollRunPage,
   PayrollRunRow,
   PayrollRunsListPage,
@@ -64,6 +65,9 @@ function normaliseRun(raw: unknown): PayrollRunRow {
     net_minor: num(pick(row, "net_minor")),
     employer_minor: num(pick(row, "employer_minor")),
     employer_cost_minor: num(pick(row, "employer_cost_minor")),
+    net_paid_minor: num(pick(row, "net_paid_minor")),
+    accrual_journal_id: strOrNull(pick(row, "accrual_journal_id")),
+    posted_at: strOrNull(pick(row, "posted_at")),
     requires_approval: bool(pick(row, "requires_approval"), true),
     approved_by: strOrNull(pick(row, "approved_by")),
     approved_at: strOrNull(pick(row, "approved_at")),
@@ -158,6 +162,7 @@ function normalisePayslip(raw: unknown): PayrollPayslipRow {
     payslip_number: str(pick(row, "payslip_number")),
     issued_at: str(pick(row, "issued_at")),
     payment_status: str(pick(row, "payment_status")) as PayrollPayslipRow["payment_status"],
+    amount_paid_minor: num(pick(row, "amount_paid_minor")),
     snapshot: (snap && typeof snap === "object" ? snap : { version: 1 }) as PayslipSnapshot,
     branding_name: strOrNull(pick(row, "branding_name")),
     footer_note: strOrNull(pick(row, "footer_note")),
@@ -374,6 +379,7 @@ export const getPayrollRunPage = createServerFn({ method: "GET" })
     );
     const page = asRecord(raw);
     const employeesRaw = pick(page, "employees");
+    const paymentsRaw = pick(page, "payments");
     return {
       available: true as const,
       run: normaliseRun(pick(page, "run")),
@@ -381,15 +387,33 @@ export const getPayrollRunPage = createServerFn({ method: "GET" })
       employees: Array.isArray(employeesRaw)
         ? employeesRaw.map((item) => {
             const row = asRecord(item);
+            const payslipRaw = pick(row, "payslip");
             return {
               run_employee: normaliseRunEmployee(pick(row, "run_employee")),
               employee: normaliseEmployee(pick(row, "employee")),
+              payslip:
+                payslipRaw && typeof payslipRaw === "object"
+                  ? normalisePayslip(payslipRaw)
+                  : null,
             };
           })
         : [],
       lines: Array.isArray(pick(page, "lines"))
         ? (pick(page, "lines") as unknown[]).map(normaliseRunLine)
         : [],
+      payments: Array.isArray(paymentsRaw)
+        ? paymentsRaw.map((item) => {
+            const row = asRecord(item);
+            return {
+              id: str(pick(row, "id")),
+              payment_date: str(pick(row, "payment_date")),
+              amount_minor: num(pick(row, "amount_minor")),
+              status: str(pick(row, "status")),
+              reference: strOrNull(pick(row, "reference")),
+            } satisfies PayrollPaymentSummaryRow;
+          })
+        : [],
+      net_outstanding_minor: num(pick(page, "net_outstanding_minor")),
     } satisfies PayrollRunPage;
   });
 

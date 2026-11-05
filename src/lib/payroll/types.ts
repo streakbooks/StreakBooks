@@ -5,7 +5,7 @@ import type { PayslipSnapshot } from "@/lib/payroll/payslip-snapshot";
 export const PAY_FREQUENCIES = ["weekly", "biweekly", "semimonthly", "monthly"] as const;
 export type PayFrequency = (typeof PAY_FREQUENCIES)[number];
 
-export const PAYMENT_METHODS = ["bank_transfer", "cash", "cheque", "other"] as const;
+export const PAYMENT_METHODS = ["bank_transfer", "cash", "cheque", "manual", "other"] as const;
 export type PayrollPaymentMethod = (typeof PAYMENT_METHODS)[number];
 
 export const ROUNDING_MODES = ["half_up", "half_even", "floor", "ceiling"] as const;
@@ -255,6 +255,9 @@ export type PayrollRunRow = {
   net_minor: number;
   employer_minor: number;
   employer_cost_minor: number;
+  net_paid_minor: number;
+  accrual_journal_id: string | null;
+  posted_at: string | null;
   requires_approval: boolean;
   approved_by: string | null;
   approved_at: string | null;
@@ -312,6 +315,7 @@ export type PayrollPayslipRow = {
   payslip_number: string;
   issued_at: string;
   payment_status: PayslipPaymentStatus;
+  amount_paid_minor: number;
   snapshot: PayslipSnapshot;
   branding_name: string | null;
   footer_note: string | null;
@@ -331,8 +335,19 @@ export type PayrollRunPage = {
   employees: {
     run_employee: PayrollRunEmployeeRow;
     employee: PayrollEmployeeRow;
+    payslip: PayrollPayslipRow | null;
   }[];
   lines: PayrollRunLineRow[];
+  payments: PayrollPaymentSummaryRow[];
+  net_outstanding_minor: number;
+};
+
+export type PayrollPaymentSummaryRow = {
+  id: string;
+  payment_date: string;
+  amount_minor: number;
+  status: string;
+  reference: string | null;
 };
 
 export type PayrollPayslipsListPage = {

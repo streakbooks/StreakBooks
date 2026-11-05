@@ -22,6 +22,7 @@ CREATE TABLE public.correction_approval_requests (
   request_hash text NOT NULL CHECK (request_hash ~ '^[a-f0-9]{32}$'),
   preview_hash text NOT NULL CHECK (preview_hash ~ '^[a-f0-9]{32}$'),
   input jsonb NOT NULL CHECK (jsonb_typeof(input) = 'object'),
+  plan jsonb NOT NULL CHECK (jsonb_typeof(plan) = 'object'),
   status text NOT NULL DEFAULT 'pending'
     CHECK (status IN ('pending', 'approved', 'rejected', 'posted')),
   submitted_by uuid NOT NULL REFERENCES auth.users(id) ON DELETE RESTRICT,
@@ -213,13 +214,13 @@ BEGIN
       USING ERRCODE = '40001';
   END IF;
   INSERT INTO public.correction_approval_requests(
-    company_id, request_key, request_hash, preview_hash, input, submitted_by
+    company_id, request_key, request_hash, preview_hash, input, plan, submitted_by
   ) VALUES (
     _company_id, _request_key, _hash, _preview_hash,
     jsonb_build_object(
       'companyId', _company_id, 'items', _items, 'targetId', _target_id,
       'mode', _mode, 'date', _date, 'reason', _reason_value
-    ), auth.uid()
+    ), _plan, auth.uid()
   ) RETURNING * INTO _work;
   INSERT INTO public.correction_approval_events(
     company_id, approval_id, actor_id, action, note, from_status, to_status,
@@ -323,7 +324,8 @@ BEGIN
      OR _work.submitted_by IS DISTINCT FROM auth.uid()
      OR _work.decided_by IS NULL OR _work.decided_by = _work.submitted_by
      OR _work.request_hash IS DISTINCT FROM NEW.request_hash
-     OR _work.preview_hash IS DISTINCT FROM NEW.preview_hash THEN
+     OR _work.preview_hash IS DISTINCT FROM NEW.preview_hash
+     OR _work.plan IS DISTINCT FROM NEW.plan THEN
     RAISE EXCEPTION 'Independent approval of this exact correction is required before posting'
       USING ERRCODE = '42501';
   END IF;

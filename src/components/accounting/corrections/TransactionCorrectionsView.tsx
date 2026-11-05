@@ -999,8 +999,9 @@ export function TransactionCorrectionsView({
                 {b.status === "applied" && (
                   <Button
                     variant="outline"
-                    disabled={busy || !setup.can_apply}
+                    disabled={busy || !setup.can_apply || Boolean(correctionEvidenceIssue(b))}
                     onClick={() => {
+                      setUndoAcknowledged(false);
                       setUndoBatch(b.id);
                       setUndoDate(
                         b.plan.rows.reduce(
@@ -1019,16 +1020,17 @@ export function TransactionCorrectionsView({
                     className="space-y-3 rounded border p-3"
                     onSubmit={async (e) => {
                       e.preventDefault();
-                      if (
-                        !window.confirm(
-                          "Undo this batch with reversing journals? Existing exact reversals will be verified and reused at their actual dates.",
-                        )
-                      )
+                      const issue = correctionUndoDateIssue(b, undoDate, undoReason);
+                      if (issue || !undoAcknowledged) {
+                        setError(issue ?? "Review and acknowledge the financial effects before undo.");
                         return;
+                      }
+                      const message = `Undo correction ${b.id} on ${undoDate}? This can post reversals for ${b.journal_ids.length} correction journal(s). Existing exact reversals keep their recorded dates.`;
+                      if (!window.confirm(message)) return;
                       setError("");
                       try {
                         const result = await onUndo({
-                          batchId: b.id,
+                          batch: b,
                           date: undoDate,
                           reason: undoReason,
                         });
@@ -1036,6 +1038,7 @@ export function TransactionCorrectionsView({
                           `Correction ${result.id} undone. Reversal journals are linked in history.`,
                         );
                         setUndoBatch("");
+                        setUndoAcknowledged(false);
                         setSelection({});
                         setResult(null);
                         clearReview();
@@ -1058,7 +1061,10 @@ export function TransactionCorrectionsView({
                         required
                         disabled={busy}
                         value={undoDate}
-                        onChange={(e) => setUndoDate(e.target.value)}
+                        onChange={(e) => {
+                          setUndoDate(e.target.value);
+                          setUndoAcknowledged(false);
+                        }}
                       />
                     </label>
                     <label className="block">
@@ -1070,12 +1076,31 @@ export function TransactionCorrectionsView({
                         required
                         disabled={busy}
                         value={undoReason}
-                        onChange={(e) => setUndoReason(e.target.value)}
+                        onChange={(e) => {
+                          setUndoReason(e.target.value);
+                          setUndoAcknowledged(false);
+                        }}
                       />
+                    </label>
+                    {undoIssue ? (
+                      <p role="alert" className="text-sm text-destructive">
+                        {undoIssue}
+                      </p>
+                    ) : null}
+                    <label className="flex items-start gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        aria-label="Acknowledge correction undo review"
+                        disabled={busy || Boolean(undoIssue)}
+                        checked={undoAcknowledged}
+                        onChange={(event) => setUndoAcknowledged(event.target.checked)}
+                      />
+                      I reviewed the correction journals, reversal date and ledger effect. This is
+                      an operator review acknowledgement, not an approval by a second person.
                     </label>
                     <Button
                       type="submit"
-                      disabled={busy || !setup.can_apply || undoReason.trim().length < 5}
+                      disabled={busy || !setup.can_apply || Boolean(undoIssue) || !undoAcknowledged}
                     >
                       Post undo journals
                     </Button>
@@ -1083,7 +1108,10 @@ export function TransactionCorrectionsView({
                       type="button"
                       variant="outline"
                       disabled={busy}
-                      onClick={() => setUndoBatch("")}
+                      onClick={() => {
+                        setUndoBatch("");
+                        setUndoAcknowledged(false);
+                      }}
                     >
                       Cancel undo
                     </Button>
@@ -1097,7 +1125,11 @@ export function TransactionCorrectionsView({
           <Button
             variant="outline"
             disabled={busy || historyLoading || history.page === 0}
-            onClick={() => onHistoryPage(history.page - 1)}
+            onClick={() => {
+              setUndoBatch("");
+              setUndoAcknowledged(false);
+              onHistoryPage(history.page - 1);
+            }}
           >
             Previous batches
           </Button>
@@ -1105,7 +1137,11 @@ export function TransactionCorrectionsView({
           <Button
             variant="outline"
             disabled={busy || historyLoading || !history.has_more}
-            onClick={() => onHistoryPage(history.page + 1)}
+            onClick={() => {
+              setUndoBatch("");
+              setUndoAcknowledged(false);
+              onHistoryPage(history.page + 1);
+            }}
           >
             Next batches
           </Button>

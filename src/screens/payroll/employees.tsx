@@ -1,0 +1,550 @@
+import { useRef, useState } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { Download, Plus, Upload, Users } from "lucide-react";
+import { toast } from "sonner";
+import { useActiveCompany } from "@/hooks/use-active-company";
+import { useCanDo } from "@/hooks/use-can";
+import { useDebounced } from "@/hooks/use-debounced";
+import { friendlyAuthError } from "@/lib/auth-helpers";
+import {
+  emptyEmployeeDraft,
+  parsePayrollEmployeesCsv,
+  payrollEmployeesToCsv,
+  parsePayrollEmployeeDraft,
+  type PayrollEmployeeDraft,
+} from "@/lib/payroll/employee-draft";
+import { listPayrollEmployees, savePayrollEmployee } from "@/lib/payroll/employees.functions";
+import { getPayrollSettingsPage } from "@/lib/payroll/payroll.functions";
+import { EMPLOYEE_STATUSES, EMPLOYMENT_TYPES, PAYMENT_METHODS } from "@/lib/payroll/types";
+import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
+import { CompanyEmptyState } from "@/components/common/company-empty";
+import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { TableCard } from "@/components/common/table-card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
+
+const STATUS_LABEL: Record<(typeof EMPLOYEE_STATUSES)[number], string> = {
+  active: "Active",
+  archived: "Archived",
+  terminated: "Terminated",
+};
+
+export function PayrollEmployeesPage() {
+  const { company, isPending } = useActiveCompany();
+  const canView = useCanDo("payroll.view");
+  const canManage = useCanDo("payroll.employees.manage");
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const fetchList = useServerFn(listPayrollEmployees);
+  const fetchSettings = useServerFn(getPayrollSettingsPage);
+  const saveEmployee = useServerFn(savePayrollEmployee);
+
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [search, setSearch] = useState("");
+  const q = useDebounced(search);
+  const [addOpen, setAddOpen] = useState(false);
+  const [newDraft, setNewDraft] = useState<PayrollEmployeeDraft | null>(null);
+  const [importing, setImporting] = useState(false);
+  const importInputRef = useRef<HTMLInputElement>(null);
+
+  const settingsQ = useQuery({
+    queryKey: ["payroll-settings-page", company?.id],
+    queryFn: () => fetchSettings({ data: { companyId: company!.id } }),
+    enabled: Boolean(company?.id) && canView,
+  });
+
+  const listQ = useQuery({
+    queryKey: ["payroll-employees", company?.id, statusFilter, q],
+    queryFn: () =>
+      fetchList({
+        data: {
+          companyId: company!.id,
+          status: statusFilter === "all" ? null : statusFilter,
+          q,
+        },
+      }),
+    enabled: Boolean(company?.id) && canView,
+  });
+
+  const createM = useMutation({
+    mutationFn: (draft: PayrollEmployeeDraft) =>
+      saveEmployee({ data: { companyId: company!.id, draft } }),
+    onSuccess: async (row) => {
+      await queryClient.invalidateQueries({ queryKey: ["payroll-employees", company?.id] });
+      setAddOpen(false);
+      toast.success("Employee added");
+      void navigate({ to: "/payroll/employees/$employeeId", params: { employeeId: row.id } });
+    },
+    onError: (e) => toast.error(friendlyAuthError(e)),
+  });
+
+  if (isPending) return <LoadingState />;
+  if (!company) {
+    return <CompanyEmptyState title="No organisation" description="Select a company first." />;
+  }
+  if (!canView) {
+    return (
+      <>
+        <PageHeader title="Payroll employees" description="Employee records for Basic Payroll." />
+        <EmptyState
+          title="No payroll access"
+          description="Ask an organisation administrator for the payroll.view permission."
+        />
+      </>
+    );
+  }
+  if (listQ.isPending || settingsQ.isPending) return <LoadingState />;
+  if (listQ.isError) {
+    return (
+      <ErrorState
+        title="Could not load employees"
+        description={friendlyAuthError(listQ.error)}
+        onRetry={() => listQ.refetch()}
+      />
+    );
+  }
+
+  const settings = settingsQ.data;
+  const list = listQ.data;
+  const country =
+    settings?.settings?.operating_country_code ??
+    settings?.company.country_code ??
+    company.country_code;
+  const currency =
+    settings?.settings?.payroll_currency ??
+    settings?.company.base_currency ??
+    company.base_currency;
+
+  const openAdd = () => {
+    setNewDraft(emptyEmployeeDraft(country, currency));
+    setAddOpen(true);
+  };
+
+  const exportCsv = () => {
+    const csv = payrollEmployeesToCsv(list.employees);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "linkbooks-payroll-employees.csv";
+    anchor.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${list.employees.length} employees`);
+  };
+
+  const importCsv = async (file: File | null) => {
+    if (!file || !company || !canManage) return;
+    setImporting(true);
+    try {
+      const text = await file.text();
+      const parsed = parsePayrollEmployeesCsv(text, { country, currency });
+      if (!parsed.ok) throw new Error(parsed.error);
+      let created = 0;
+      for (const draft of parsed.drafts) {
+        await saveEmployee({ data: { companyId: company.id, draft } });
+        created += 1;
+      }
+      toast.success(`Imported ${created} employees`);
+      await queryClient.invalidateQueries({ queryKey: ["payroll-employees", company.id] });
+    } catch (error) {
+      toast.error(friendlyAuthError(error));
+    } finally {
+      setImporting(false);
+      if (importInputRef.current) importInputRef.current.value = "";
+    }
+  };
+
+  return (
+    <>
+      <PageHeader
+        title="Payroll employees"
+        description="Manage employee profiles, payment details and salary assignments."
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={exportCsv} disabled={!list.available}>
+              <Download className="mr-2 h-4 w-4" />
+              Export CSV
+            </Button>
+            {canManage ? (
+              <>
+                <input
+                  ref={importInputRef}
+                  type="file"
+                  accept=".csv,text/csv"
+                  className="hidden"
+                  onChange={(e) => void importCsv(e.target.files?.[0] ?? null)}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!list.available || importing}
+                  onClick={() => importInputRef.current?.click()}
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  {importing ? "Importing…" : "Import CSV"}
+                </Button>
+                <Button size="sm" onClick={openAdd} disabled={!list.available}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add employee
+                </Button>
+              </>
+            ) : null}
+          </div>
+        }
+      />
+      <PayrollSubnav current="employees" />
+
+      {!list.available ? (
+        <Alert>
+          <AlertTitle>Database update required</AlertTitle>
+          <AlertDescription>{list.migrationMessage}</AlertDescription>
+        </Alert>
+      ) : (
+        <>
+          <div className="mb-4 flex flex-wrap gap-3">
+            <Input
+              className="max-w-xs"
+              placeholder="Search name, ID, email, department…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              aria-label="Search employees"
+            />
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-40" aria-label="Filter by status">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                {EMPLOYEE_STATUSES.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {STATUS_LABEL[s]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {list.employees.length === 0 ? (
+            <EmptyState
+              icon={Users}
+              title="No employees yet"
+              description="Add your first payroll employee to assign pay and payment details."
+              action={
+                canManage ? (
+                  <Button size="sm" onClick={openAdd}>
+                    Add employee
+                  </Button>
+                ) : undefined
+              }
+            />
+          ) : (
+            <TableCard>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Employee ID</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Department</TableHead>
+                    <TableHead>Hire date</TableHead>
+                    <TableHead>Currency</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {list.employees.map((emp) => (
+                    <TableRow key={emp.id}>
+                      <TableCell>
+                        <Link
+                          to="/payroll/employees/$employeeId"
+                          params={{ employeeId: emp.id }}
+                          className="font-medium underline-offset-2 hover:underline"
+                        >
+                          {emp.employee_number}
+                        </Link>
+                      </TableCell>
+                      <TableCell>
+                        {emp.first_name} {emp.last_name}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={emp.status === "active" ? "default" : "secondary"}>
+                          {STATUS_LABEL[emp.status]}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{emp.department ?? "—"}</TableCell>
+                      <TableCell>{emp.hire_date}</TableCell>
+                      <TableCell>{emp.payroll_currency}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableCard>
+          )}
+        </>
+      )}
+
+      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Add payroll employee</DialogTitle>
+          </DialogHeader>
+          {newDraft ? (
+            <EmployeeForm
+              draft={newDraft}
+              onChange={setNewDraft}
+              schedules={settings?.schedules ?? []}
+            />
+          ) : null}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={createM.isPending || !newDraft}
+              onClick={() => {
+                if (!newDraft) return;
+                const parsed = parsePayrollEmployeeDraft(newDraft);
+                if (!parsed.ok) {
+                  toast.error(parsed.error);
+                  return;
+                }
+                createM.mutate(newDraft);
+              }}
+            >
+              Save employee
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+function EmployeeForm({
+  draft,
+  onChange,
+  schedules,
+}: {
+  draft: PayrollEmployeeDraft;
+  onChange: (d: PayrollEmployeeDraft) => void;
+  schedules: { id: string; name: string; is_active: boolean }[];
+}) {
+  const patch = (p: Partial<PayrollEmployeeDraft>) => onChange({ ...draft, ...p });
+  return (
+    <div className="grid gap-3 py-2">
+      <div className="grid gap-2 sm:grid-cols-2">
+        <div className="space-y-1">
+          <Label htmlFor="emp-first">First name</Label>
+          <Input
+            id="emp-first"
+            value={draft.firstName}
+            onChange={(e) => patch({ firstName: e.target.value })}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="emp-last">Last name</Label>
+          <Input
+            id="emp-last"
+            value={draft.lastName}
+            onChange={(e) => patch({ lastName: e.target.value })}
+          />
+        </div>
+      </div>
+      <div className="space-y-1">
+        <Label htmlFor="emp-number">Employee ID (optional)</Label>
+        <Input
+          id="emp-number"
+          value={draft.employeeNumber}
+          placeholder="Auto-assigned when blank"
+          onChange={(e) => patch({ employeeNumber: e.target.value })}
+        />
+      </div>
+      <div className="space-y-1">
+        <Label htmlFor="emp-email">Email</Label>
+        <Input
+          id="emp-email"
+          type="email"
+          value={draft.email}
+          onChange={(e) => patch({ email: e.target.value })}
+        />
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <div className="space-y-1">
+          <Label htmlFor="emp-hire">Hire date</Label>
+          <Input
+            id="emp-hire"
+            type="date"
+            value={draft.hireDate}
+            onChange={(e) => patch({ hireDate: e.target.value })}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="emp-status">Status</Label>
+          <Select
+            value={draft.status}
+            onValueChange={(v) => patch({ status: v as PayrollEmployeeDraft["status"] })}
+          >
+            <SelectTrigger id="emp-status">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {EMPLOYEE_STATUSES.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {STATUS_LABEL[s]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      {draft.status === "terminated" ? (
+        <div className="space-y-1">
+          <Label htmlFor="emp-term">Termination date</Label>
+          <Input
+            id="emp-term"
+            type="date"
+            value={draft.terminationDate}
+            onChange={(e) => patch({ terminationDate: e.target.value })}
+          />
+        </div>
+      ) : null}
+      <div className="grid gap-2 sm:grid-cols-2">
+        <div className="space-y-1">
+          <Label htmlFor="emp-type">Employment type</Label>
+          <Select
+            value={draft.employmentType}
+            onValueChange={(v) =>
+              patch({ employmentType: v as PayrollEmployeeDraft["employmentType"] })
+            }
+          >
+            <SelectTrigger id="emp-type">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {EMPLOYMENT_TYPES.map((t) => (
+                <SelectItem key={t} value={t}>
+                  {t.replace("_", " ")}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="emp-pay-method">Payment method</Label>
+          <Select
+            value={draft.paymentMethod}
+            onValueChange={(v) =>
+              patch({ paymentMethod: v as PayrollEmployeeDraft["paymentMethod"] })
+            }
+          >
+            <SelectTrigger id="emp-pay-method">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PAYMENT_METHODS.map((m) => (
+                <SelectItem key={m} value={m}>
+                  {m.replace("_", " ")}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <div className="space-y-1">
+          <Label htmlFor="emp-country">Payroll country</Label>
+          <Input
+            id="emp-country"
+            value={draft.payrollCountryCode}
+            maxLength={2}
+            onChange={(e) => patch({ payrollCountryCode: e.target.value.toUpperCase() })}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="emp-currency">Payroll currency</Label>
+          <Input
+            id="emp-currency"
+            value={draft.payrollCurrency}
+            maxLength={3}
+            onChange={(e) => patch({ payrollCurrency: e.target.value.toUpperCase() })}
+          />
+        </div>
+      </div>
+      <div className="space-y-1">
+        <Label htmlFor="emp-schedule">Pay schedule</Label>
+        <Select
+          value={draft.payScheduleId || "none"}
+          onValueChange={(v) => patch({ payScheduleId: v === "none" ? "" : v })}
+        >
+          <SelectTrigger id="emp-schedule">
+            <SelectValue placeholder="Optional" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">None</SelectItem>
+            {schedules
+              .filter((s) => s.is_active)
+              .map((s) => (
+                <SelectItem key={s.id} value={s.id}>
+                  {s.name}
+                </SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <div className="space-y-1">
+          <Label htmlFor="emp-dept">Department</Label>
+          <Input
+            id="emp-dept"
+            value={draft.department}
+            onChange={(e) => patch({ department: e.target.value })}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="emp-role">Designation</Label>
+          <Input
+            id="emp-role"
+            value={draft.designation}
+            onChange={(e) => patch({ designation: e.target.value })}
+          />
+        </div>
+      </div>
+      <div className="space-y-1">
+        <Label htmlFor="emp-notes">Notes</Label>
+        <Textarea
+          id="emp-notes"
+          value={draft.notes}
+          onChange={(e) => patch({ notes: e.target.value })}
+          rows={2}
+        />
+      </div>
+    </div>
+  );
+}

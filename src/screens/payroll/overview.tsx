@@ -143,11 +143,17 @@ export function PayrollOverviewPage() {
             <CardHeader>
               <CardTitle className="text-base">What is available now</CardTitle>
               <CardDescription>
-                Batch 1 delivers payroll foundation, security and settings. Employees, runs,
-                payslips, payments and reports follow in later batches.
+                Foundation settings plus employee records, salary structures and masked payment
+                details. Payroll runs, payslips and statutory filing follow in later batches.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-2">
+              <Button asChild variant="outline" size="sm">
+                <Link to="/payroll/employees">Manage employees</Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/payroll/salary-structures">Salary structures</Link>
+              </Button>
               <Button asChild variant="outline" size="sm">
                 <Link to="/payroll/settings">Configure payroll settings</Link>
               </Button>

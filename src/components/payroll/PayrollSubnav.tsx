@@ -2,17 +2,23 @@ import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 
 const ITEMS = [
-  { label: "Overview", to: "/payroll" as const },
-  { label: "Settings", to: "/payroll/settings" as const },
+  { label: "Overview", to: "/payroll" as const, key: "overview" as const },
+  { label: "Employees", to: "/payroll/employees" as const, key: "employees" as const },
+  {
+    label: "Salary structures",
+    to: "/payroll/salary-structures" as const,
+    key: "salary-structures" as const,
+  },
+  { label: "Settings", to: "/payroll/settings" as const, key: "settings" as const },
 ] as const;
 
-export function PayrollSubnav({ current }: { current: "overview" | "settings" }) {
+export type PayrollSubnavSection = (typeof ITEMS)[number]["key"];
+
+export function PayrollSubnav({ current }: { current: PayrollSubnavSection }) {
   return (
     <nav aria-label="Payroll sections" className="mb-6 flex flex-wrap gap-2 border-b pb-3">
       {ITEMS.map((item) => {
-        const active =
-          (current === "overview" && item.to === "/payroll") ||
-          (current === "settings" && item.to === "/payroll/settings");
+        const active = current === item.key;
         return (
           <Link
             key={item.to}

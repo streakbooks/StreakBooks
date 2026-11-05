@@ -97,3 +97,119 @@ export type PayrollSettingsPage = {
 
 export const BASIC_PAYROLL_DISCLAIMER =
   "Basic Global Payroll calculates pay from configured earnings and deductions. It does not automatically compute statutory income tax, social security or government filings. Enter statutory amounts manually when required. It is not advertised as legally compliant in every country.";
+
+export const EMPLOYEE_STATUSES = ["active", "archived", "terminated"] as const;
+export type PayrollEmployeeStatus = (typeof EMPLOYEE_STATUSES)[number];
+
+export const EMPLOYMENT_TYPES = ["salaried", "hourly", "contractor", "other"] as const;
+export type PayrollEmploymentType = (typeof EMPLOYMENT_TYPES)[number];
+
+export type PayrollEmployeeRow = {
+  id: string;
+  company_id: string;
+  contact_id: string;
+  employee_number: string;
+  first_name: string;
+  last_name: string;
+  email: string | null;
+  status: PayrollEmployeeStatus;
+  hire_date: string;
+  termination_date: string | null;
+  department: string | null;
+  designation: string | null;
+  employment_type: PayrollEmploymentType;
+  work_location: string | null;
+  payroll_country_code: string;
+  payroll_currency: string;
+  pay_schedule_id: string | null;
+  salary_structure_id: string | null;
+  payment_method: PayrollPaymentMethod;
+  notes: string | null;
+  archived_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PayrollEmployeePaymentMasked = {
+  account_name: string | null;
+  bank_name: string | null;
+  account_number_masked: string | null;
+  sort_code_masked: string | null;
+  iban_masked: string | null;
+  bic: string | null;
+  has_account_number: boolean;
+  has_sort_code: boolean;
+  has_iban: boolean;
+};
+
+export type PayrollSalaryStructureRow = {
+  id: string;
+  company_id: string;
+  name: string;
+  description: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PayrollSalaryStructureLineRow = {
+  id: string;
+  company_id: string;
+  structure_id: string;
+  component_type_id: string;
+  amount_minor: number;
+  rate_minor: number;
+  percentage_bps: number;
+  is_recurring: boolean;
+  sort_order: number;
+};
+
+export type PayrollEmployeeSalaryVersionRow = {
+  id: string;
+  company_id: string;
+  employee_id: string;
+  structure_id: string | null;
+  effective_from: string;
+  effective_to: string | null;
+  change_reason: string | null;
+  created_at: string;
+};
+
+export type PayrollEmployeeSalaryLineRow = {
+  id: string;
+  company_id: string;
+  employee_id: string;
+  version_id: string;
+  component_type_id: string;
+  amount_minor: number;
+  rate_minor: number;
+  percentage_bps: number;
+  is_recurring: boolean;
+  effective_from: string;
+  effective_to: string | null;
+  notes: string | null;
+};
+
+export type PayrollEmployeePage = {
+  available: true;
+  employee: PayrollEmployeeRow;
+  payment: PayrollEmployeePaymentMasked | null;
+  salary_versions: PayrollEmployeeSalaryVersionRow[];
+  salary_lines: PayrollEmployeeSalaryLineRow[];
+  structures: PayrollSalaryStructureRow[];
+  schedules: PayrollPayScheduleRow[];
+  components: PayrollComponentTypeRow[];
+};
+
+export type PayrollEmployeesListPage = {
+  available: boolean;
+  employees: PayrollEmployeeRow[];
+  migrationMessage: string | null;
+};
+
+export type PayrollSalaryStructuresPage = {
+  available: boolean;
+  structures: PayrollSalaryStructureRow[];
+  lines: PayrollSalaryStructureLineRow[];
+  migrationMessage: string | null;
+};

@@ -21,7 +21,7 @@ export type CorrectionApprovalRequest = {
   request_hash: string;
   preview_hash: string;
   input: CorrectionInput;
-  plan: CorrectionPlan;
+  plan: Omit<CorrectionPlan, "preview_hash">;
   status: z.infer<typeof approvalStatus>;
   submitted_by: string;
   submitted_at: string;

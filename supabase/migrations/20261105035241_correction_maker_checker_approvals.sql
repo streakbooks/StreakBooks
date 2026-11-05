@@ -123,6 +123,7 @@ BEGIN
   WHERE p.company_id = _company_id;
   RETURN jsonb_build_object(
     'required', coalesce(_required, false),
+    'user_id', auth.uid(),
     'can_approve', public.has_company_permission(_company_id, 'journals.approve'),
     'can_configure', public.has_company_permission(_company_id, 'company.settings.edit')
   );

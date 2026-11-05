@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { AutoReversalRow, RevaluationPreview } from "./fx.functions";
-import { filterAutoReversals, fxRevaluationCsv, fxReviewSignature } from "./fx-review";
+import {
+  filterAutoReversals,
+  fxRevaluationCsv,
+  fxReviewSignature,
+  localCalendarDate,
+} from "./fx-review";
 
 const reverse = (status: AutoReversalRow["status"], reverse_on: string): AutoReversalRow => ({
   id: `${status}-${reverse_on}`,
@@ -17,6 +22,13 @@ const reverse = (status: AutoReversalRow["status"], reverse_on: string): AutoRev
 });
 
 describe("FX review safety", () => {
+  it("uses local calendar dates at midnight and year boundaries without UTC conversion", () => {
+    expect(localCalendarDate(new Date(2026, 10, 5, 0, 1))).toBe("2026-11-05");
+    expect(localCalendarDate(new Date(2026, 10, 4, 23, 59))).toBe("2026-11-04");
+    expect(localCalendarDate(new Date(2026, 11, 31, 23, 59))).toBe("2026-12-31");
+    expect(localCalendarDate(new Date(2027, 0, 1, 0, 1))).toBe("2027-01-01");
+  });
+
   it("creates stable date/rate signatures and invalidates edits", () => {
     const one = fxReviewSignature("company", "2026-10-31", { USD: " 1.20 ", EUR: "0.80" });
     expect(one).toBe(fxReviewSignature("company", "2026-10-31", { EUR: "0.80", USD: "1.20" }));

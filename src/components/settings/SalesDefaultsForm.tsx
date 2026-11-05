@@ -125,7 +125,7 @@ export function SalesDefaultsForm({ companyId }: { companyId: string }) {
             inputMode="numeric"
             value={terms}
             disabled={!canEdit || mut.isPending}
-            aria-invalid={Boolean(!parsed.ok && parsed.errors.terms)}
+            aria-invalid={Boolean(!parsed.ok && parsed.errors["terms"])}
             onChange={(e) => {
               setTerms(e.target.value);
               setDirty(true);
@@ -139,7 +139,7 @@ export function SalesDefaultsForm({ companyId }: { companyId: string }) {
             inputMode="numeric"
             value={quoteDays}
             disabled={!canEdit || mut.isPending}
-            aria-invalid={Boolean(!parsed.ok && parsed.errors.quoteDays)}
+            aria-invalid={Boolean(!parsed.ok && parsed.errors["quoteDays"])}
             onChange={(e) => {
               setQuoteDays(e.target.value);
               setDirty(true);

@@ -120,7 +120,7 @@ export function PurchasesDefaultsForm({ companyId }: { companyId: string }) {
             inputMode="numeric"
             value={terms}
             disabled={!canEdit || mut.isPending}
-            aria-invalid={Boolean(!parsed.ok && parsed.errors.terms)}
+            aria-invalid={Boolean(!parsed.ok && parsed.errors["terms"])}
             onChange={(e) => {
               setTerms(e.target.value);
               setDirty(true);

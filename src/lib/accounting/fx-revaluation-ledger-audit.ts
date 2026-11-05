@@ -256,6 +256,9 @@ export function auditFxRevaluationRun(
       } else if (account.account_type === "income" || account.account_type === "expense") {
         issues.push("Unexpected profit-and-loss account in the revaluation journal.");
         rowValid = false;
+      } else if (account.account_type !== "asset" && account.account_type !== "liability") {
+        issues.push("Revaluation adjustment must affect an asset or liability account.");
+        rowValid = false;
       }
     }
     if (rowValid && debitTotal !== creditTotal) {

@@ -77,7 +77,12 @@ describe("deferral recognition linked-ledger audit", () => {
     );
     const absent = auditDeferralRecognitionJournals(schedule, entries, [], []);
     expect(absent.entries[0]!.status).toBe("mismatch");
-    const incomplete = auditDeferralRecognitionJournals(schedule, entries.slice(0, 1), journals, lines);
+    const incomplete = auditDeferralRecognitionJournals(
+      schedule,
+      entries.slice(0, 1),
+      journals,
+      lines,
+    );
     expect(incomplete.scheduleIssues).toHaveLength(2);
   });
 

@@ -13,6 +13,13 @@ CREATE TABLE public.role_permissions(
   role text NOT NULL, permission text NOT NULL,
   PRIMARY KEY(role, permission)
 );
+CREATE TABLE public.company_members(
+  company_id uuid NOT NULL REFERENCES public.companies(id),
+  user_id uuid NOT NULL REFERENCES auth.users(id),
+  role text NOT NULL,
+  status text NOT NULL DEFAULT 'active',
+  PRIMARY KEY(company_id, user_id)
+);
 CREATE TABLE public.test_permissions(
   company_id uuid NOT NULL, user_id uuid NOT NULL, permission text NOT NULL
 );
@@ -98,6 +105,10 @@ INSERT INTO auth.users(id) VALUES
 INSERT INTO public.companies(id) VALUES
 ('10000000-0000-4000-8000-000000000001'),
 ('10000000-0000-4000-8000-000000000002');
+INSERT INTO public.company_members(company_id, user_id, role) VALUES
+('10000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000001', 'owner'),
+('10000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000002', 'accountant'),
+('10000000-0000-4000-8000-000000000002', '00000000-0000-4000-8000-000000000003', 'owner');
 INSERT INTO public.accounts(id, company_id) VALUES
 ('20000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001');
 INSERT INTO public.accounting_periods(id, company_id) VALUES
@@ -114,7 +125,8 @@ INSERT INTO public.test_permissions(company_id,user_id,permission) VALUES
 ('10000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000002','accounting.view'),
 ('10000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000002','journals.approve'),
 ('10000000-0000-4000-8000-000000000002','00000000-0000-4000-8000-000000000003','accounting.view'),
-('10000000-0000-4000-8000-000000000002','00000000-0000-4000-8000-000000000003','journals.approve');
+('10000000-0000-4000-8000-000000000002','00000000-0000-4000-8000-000000000003','journals.approve'),
+('10000000-0000-4000-8000-000000000002','00000000-0000-4000-8000-000000000003','company.settings.edit');
 
 GRANT SELECT ON public.test_audit_events TO authenticated;
 GRANT EXECUTE ON FUNCTION auth.uid() TO authenticated;

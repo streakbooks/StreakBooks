@@ -213,3 +213,12 @@ export type PayrollSalaryStructuresPage = {
   lines: PayrollSalaryStructureLineRow[];
   migrationMessage: string | null;
 };
+
+/** Batch 3 — calculation preview (amounts are integer minor units at the API boundary). */
+export type PayrollCalculationPreviewTotals = {
+  grossEarningsMinor: number;
+  employeeDeductionsMinor: number;
+  netPayMinor: number;
+  employerContributionsMinor: number;
+  totalEmployerCostMinor: number;
+};

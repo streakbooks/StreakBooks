@@ -91,10 +91,7 @@ export const upsertWorkflowSettings = createServerFn({ method: "POST" })
       purchasesDefaultNotes: parseWorkflowText(input.purchasesDefaultNotes),
       purchasesRequirePo: parseWorkflowBoolean(input.purchasesRequirePo, false),
       bankingCsvDateFormat: parseWorkflowCsvDateFormat(input.bankingCsvDateFormat),
-      accountingRequireJournalMemo: parseWorkflowBoolean(
-        input.accountingRequireJournalMemo,
-        false,
-      ),
+      accountingRequireJournalMemo: parseWorkflowBoolean(input.accountingRequireJournalMemo, false),
     }),
   )
   .handler(async ({ data, context }) => {

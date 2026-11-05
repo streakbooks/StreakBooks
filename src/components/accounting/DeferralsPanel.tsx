@@ -8,6 +8,7 @@ import {
   createDeferral,
   postDeferral,
   cancelDeferral,
+  type DeferralSchedule,
 } from "@/lib/accounting/deferrals.functions";
 import { listAccounts } from "@/lib/accounting/accounting.functions";
 import { useCan } from "@/hooks/use-can";
@@ -17,6 +18,7 @@ import { toSafeMinorNumber } from "@/lib/accounting/money";
 import {
   canPostDeferralEntry,
   deferralPageCounts,
+  deferralScheduleReconciliation,
   deferralPageCsv,
   filterDeferralPage,
   previewDeferralSplit,
@@ -364,6 +366,7 @@ export function DeferralsPanel({ companyId, currency }: { companyId: string; cur
               entries posted
             </span>
           </div>
+          <DeferralReconciliationSummary schedule={s} currency={currency} />
           {open === s.id ? (
             <>
               <div className="overflow-x-auto">
@@ -480,6 +483,40 @@ export function DeferralsPanel({ companyId, currency }: { companyId: string; cur
           Next
         </Button>
       </div>
+    </div>
+  );
+}
+
+function DeferralReconciliationSummary({
+  schedule,
+  currency,
+}: {
+  schedule: DeferralSchedule;
+  currency: string;
+}) {
+  const fmt = useFormat();
+  const result = deferralScheduleReconciliation(schedule);
+  if (!result) {
+    return (
+      <p className="mt-2 text-xs text-destructive" role="alert">
+        Unsafe schedule amount detected. Reconciliation unavailable.
+      </p>
+    );
+  }
+  return (
+    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+      <span>Recognized: {fmt.money(result.recognized, currency)}</span>
+      <span>Unposted: {fmt.money(result.unposted, currency)}</span>
+      {result.reversed !== 0n ? (
+        <span className="text-destructive">Reversed: {fmt.money(result.reversed, currency)}</span>
+      ) : null}
+      {result.difference !== 0n || !result.entryCountMatches ? (
+        <span className="text-destructive" role="alert">
+          Schedule mismatch: allocated difference {fmt.money(result.difference, currency)};{" "}
+          {schedule.deferral_entries.length} of {schedule.periods} periods loaded. Review before
+          posting.
+        </span>
+      ) : null}
     </div>
   );
 }

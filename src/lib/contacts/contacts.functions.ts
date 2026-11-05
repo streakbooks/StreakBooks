@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
+import { normalizeContactSettingsValues } from "@/lib/contacts/contact-settings-validation";
 import { isMissingFunctionError } from "@/lib/purchases/db-safety";
 import { aggregateOutstanding } from "@/lib/contacts/balances";
 import { buildIlikeOr, escapeLikeTerm, ilikePattern } from "@/lib/purchases/search-terms";
@@ -1114,11 +1115,12 @@ export const getContactSettings = createServerFn({ method: "GET" })
   .inputValidator((input: { companyId: string }) => ({ companyId: assertUuid(input.companyId) }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
-    const { data: row } = await context.supabase
+    const { data: row, error } = await context.supabase
       .from("company_contact_settings" as never)
       .select("*" as never)
       .eq("company_id" as never, data.companyId as never)
       .maybeSingle();
+    if (error) throw new Error(error.message);
     if (row) return row;
     return {
       company_id: data.companyId,
@@ -1140,15 +1142,7 @@ export const saveContactSettings = createServerFn({ method: "POST" })
       defaultPaymentTermsDays?: number;
     }) => ({
       companyId: assertUuid(input.companyId),
-      defaultKind: ["customer", "supplier", "both"].includes(input.defaultKind ?? "")
-        ? input.defaultKind!
-        : "customer",
-      accountNumberPrefix: (input.accountNumberPrefix ?? "C").trim().slice(0, 10) || "C",
-      nextAccountNumber: Math.max(1, Math.floor(Number(input.nextAccountNumber ?? 1001) || 1001)),
-      defaultPaymentTermsDays: Math.max(
-        0,
-        Math.floor(Number(input.defaultPaymentTermsDays ?? 30) || 0),
-      ),
+      ...normalizeContactSettingsValues(input),
     }),
   )
   .handler(async ({ data, context }) => {

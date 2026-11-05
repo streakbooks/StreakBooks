@@ -64,6 +64,9 @@ export type PriceListPlan = {
 export type PriceList = {
   country: string | null;
   baseCurrency: string;
+  /** Present from the payment pipeline migration onwards. */
+  billingEnabled?: boolean;
+  providers?: Array<"stripe" | "razorpay">;
   plans: PriceListPlan[];
 };
 

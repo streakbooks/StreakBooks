@@ -30,6 +30,7 @@ import {
   type BillingInterval,
   type OfferRule,
   type PlanCode,
+  type PriceQuote,
 } from "@/lib/billing/pricing";
 import { planPrice, type PriceList } from "@/lib/billing/domain/country-pricing";
 import { assertDiscountCap, assertPriceFloor } from "@/lib/billing/provider-actions";
@@ -200,8 +201,15 @@ function withListPrice(plan: BillingPlanView, list: PriceList | null): BillingPl
   const year = planPrice(list, plan.code, "year");
   const currency = month?.currency ?? year?.currency;
   if (!currency) return plan;
+  const flags = providerFlags();
+  const purchasable =
+    month !== null &&
+    list.billingEnabled === true &&
+    isBillingCurrency(currency) &&
+    (list.providers ?? []).some((provider) => flags[provider]);
   return {
     ...plan,
+    pricePublished: purchasable,
     listPrice: {
       currency,
       monthlyMinor: month?.amountMinor ?? null,
@@ -629,6 +637,14 @@ export const createBillingCheckout = createServerFn({ method: "POST" })
     if (!method?.available) {
       throw new Error(method?.reason ?? "That payment method is not available for this currency.");
     }
+    if (priced.checkout && !priced.checkout.billingEnabled) {
+      throw new Error(
+        "Online payment is not open in your country yet. Your trial and records are not affected.",
+      );
+    }
+    if (priced.checkout && !priced.checkout.providers.includes(method.provider)) {
+      throw new Error("That payment method is not offered in your country.");
+    }
     if (priced.quote.recurringMinor < 1)
       throw new Error("The recurring price must be at least one minor unit.");
     // Do not open a second paid subscription for the same organisation.
@@ -641,6 +657,20 @@ export const createBillingCheckout = createServerFn({ method: "POST" })
       throw new Error(
         "This organisation already has a payment subscription. Use Manage billing to change it.",
       );
+    }
+
+    if (priced.checkout) {
+      return openPriceBookCheckout({
+        supabase,
+        userId,
+        companyId: data.companyId,
+        origin: data.origin,
+        billing: data.billing,
+        provider: method.provider,
+        payMethod: method.id,
+        price: priced.checkout,
+        trialEndsAt: existing?.trial_ends_at ?? null,
+      });
     }
 
     const { data: inserted, error: insertError } = await supabase
@@ -692,6 +722,98 @@ export const createBillingCheckout = createServerFn({ method: "POST" })
     return { url: session.url, provider: method.provider };
   });
 
+async function openPriceBookCheckout(input: {
+  supabase: Client;
+  userId: string;
+  companyId: string;
+  origin: string;
+  billing: CheckoutBilling;
+  provider: "stripe" | "razorpay";
+  payMethod: PayMethodId;
+  price: CheckoutPrice;
+  trialEndsAt: string | null;
+}): Promise<{ url: string; provider: "stripe" | "razorpay" }> {
+  const { ensureProviderPrice } = await import("@/lib/billing/providers/price-mapping.server");
+  const { createStripeClient, stripePriceCheckoutBody } =
+    await import("@/lib/billing/providers/stripe.server");
+  const { createRazorpayClient, razorpaySubscriptionRequest } =
+    await import("@/lib/billing/providers/razorpay.server");
+  const stripe = input.provider === "stripe" ? createStripeClient() : null;
+  const razorpay = input.provider === "razorpay" ? createRazorpayClient() : null;
+  const providerPriceId = await ensureProviderPrice(input.provider, {
+    planPriceId: input.price.planPriceId,
+    planName: input.price.planName,
+    currency: input.price.currency,
+    amountMinor: input.price.amountMinor,
+    interval: input.price.interval,
+  });
+  const { data: inserted, error: insertError } = await input.supabase
+    .from("billing_checkouts" as never)
+    .insert({
+      company_id: input.companyId,
+      plan_code: input.price.planCode,
+      billing_interval: input.price.interval,
+      provider: input.provider,
+      currency: input.price.currency,
+      unit_amount_minor: input.price.amountMinor,
+      plan_price_id: input.price.planPriceId,
+      country_code: input.price.country,
+      provider_price_id: providerPriceId,
+      mode: (stripe ?? razorpay)!.mode,
+      created_by: input.userId,
+    } as never)
+    .select("id" as never)
+    .single();
+  if (insertError) throw new Error(insertError.message);
+  const checkoutId = (inserted as { id: string }).id;
+  const trialEndUnix = trialEndUnixOrNull(input.trialEndsAt, new Date());
+  let session: { id: string; url: string };
+  if (stripe) {
+    const secret = process.env["STRIPE_SECRET_KEY"] ?? "";
+    const customerId = await createStripeCustomer(secret, input.billing);
+    const created = await stripe.request(
+      "POST",
+      "checkout/sessions",
+      stripePriceCheckoutBody({
+        priceId: providerPriceId,
+        checkoutId,
+        companyId: input.companyId,
+        planCode: input.price.planCode,
+        successUrl: `${input.origin}/settings?section=subscription&checkout=success`,
+        cancelUrl: `${input.origin}/settings?section=subscription&checkout=cancel`,
+        customerId,
+        email: input.billing.email || null,
+        trialEndUnix,
+      }),
+      `linkbooks-checkout-${checkoutId}`,
+    );
+    session = { id: String(created["id"] ?? ""), url: String(created["url"] ?? "") };
+  } else {
+    const created = await razorpay!.request(
+      "POST",
+      "subscriptions",
+      razorpaySubscriptionRequest({
+        planId: providerPriceId,
+        interval: input.price.interval,
+        checkoutId,
+        companyId: input.companyId,
+        planCode: input.price.planCode,
+        startAtUnix: trialEndUnix,
+      }),
+    );
+    session = { id: String(created["id"] ?? ""), url: String(created["short_url"] ?? "") };
+  }
+  if (!session.id || !session.url)
+    throw new Error("The payment provider did not start the checkout.");
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { error: updateError } = await supabaseAdmin
+    .from("billing_checkouts" as never)
+    .update({ provider_session_id: session.id } as never)
+    .eq("id" as never, checkoutId as never);
+  if (updateError) throw new Error(updateError.message);
+  return { url: session.url, provider: input.provider };
+}
+
 function requirePayMethod(value: string | undefined): PayMethodId {
   if (!isPayMethodId(value)) throw new Error("Choose a payment method.");
   return value;
@@ -737,6 +859,9 @@ async function priceSelection(
   }
   const row = plan as PlanRow | null;
   if (!row || !row.is_active) throw new Error("That plan is not available.");
+  if (!hasLegacyPrice(row)) {
+    return priceBookSelection(supabase, companyId, row, interval, offerCode);
+  }
   const monthly = monthlyMinor(row, currency);
   if (monthly === null) {
     throw new Error(
@@ -761,7 +886,67 @@ async function priceSelection(
     now: new Date(),
     planCode,
   });
-  return { quote, currency, country: region.country, planName: row.name };
+  return {
+    quote,
+    currency,
+    country: region.country,
+    planName: row.name,
+    checkout: null as CheckoutPrice | null,
+  };
+}
+
+type CheckoutPrice = {
+  planPriceId: string;
+  planCode: string;
+  planName: string;
+  interval: BillingInterval;
+  currency: string;
+  amountMinor: number;
+  country: string;
+  billingEnabled: boolean;
+  providers: Array<"stripe" | "razorpay">;
+};
+
+/** Country price-book plans: the published snapshot for the organisation country. */
+async function priceBookSelection(
+  supabase: Client,
+  companyId: string,
+  row: PlanRow,
+  interval: BillingInterval,
+  offerCode: string,
+) {
+  if (offerCode) {
+    throw new Error("Promo codes for Standard, Pro and Business arrive with the coupon update.");
+  }
+  const { data, error } = await supabase.rpc(
+    "billing_checkout_price" as never,
+    { _company_id: companyId, _plan_code: row.code, _interval: interval } as never,
+  );
+  if (error) throw new Error(error.message);
+  const checkout = data as CheckoutPrice;
+  if (!isBillingCurrency(checkout.currency)) {
+    throw new Error(`Online payment in ${checkout.currency} is not available yet.`);
+  }
+  const amount = checkout.amountMinor;
+  const quote: PriceQuote = {
+    currency: checkout.currency,
+    interval,
+    listMinor: amount,
+    discountMinor: 0,
+    dueMinor: amount,
+    recurringMinor: amount,
+    promoDurationMonths: null,
+    freeMonths: 0,
+    trialDays: row.trial_days ?? DEFAULT_TRIAL_DAYS,
+    offerCode: null,
+  };
+  return {
+    quote,
+    currency: checkout.currency,
+    country: checkout.country,
+    planName: row.name,
+    checkout,
+  };
 }
 
 function requirePlanCode(value: string | undefined): PlanCode {

@@ -31,6 +31,15 @@ CREATE TABLE public.billing_checkouts (
     CONSTRAINT billing_checkouts_unit_amount_minor_check CHECK ((unit_amount_minor >= 0))
 );
 
+CREATE TABLE public.billing_events (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    company_id uuid,
+    provider text NOT NULL,
+    event_id text,
+    event_type text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
 CREATE TABLE public.billing_features (
     key text NOT NULL,
     label text NOT NULL,
@@ -263,6 +272,9 @@ ALTER TABLE ONLY private.platform_request_buckets
 ALTER TABLE ONLY public.billing_checkouts
     ADD CONSTRAINT billing_checkouts_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY public.billing_events
+    ADD CONSTRAINT billing_events_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY public.billing_features
     ADD CONSTRAINT billing_features_pkey PRIMARY KEY (key);
 
@@ -314,6 +326,8 @@ ALTER TABLE ONLY public.platform_tenant_controls
 CREATE INDEX platform_request_buckets_minute ON private.platform_request_buckets USING btree (minute);
 
 CREATE INDEX billing_checkouts_company_idx ON public.billing_checkouts USING btree (company_id, created_at DESC);
+
+CREATE UNIQUE INDEX billing_events_provider_event_uidx ON public.billing_events USING btree (provider, event_id) WHERE (event_id IS NOT NULL);
 
 CREATE INDEX email_outbox_company_idx ON public.email_outbox USING btree (company_id, created_at DESC);
 

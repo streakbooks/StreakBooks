@@ -49,6 +49,7 @@ export function CheckoutForm({
   quote,
   quoteLoading,
   quoteError,
+  priceCurrency,
   onBack,
   onPay,
 }: {
@@ -64,6 +65,8 @@ export function CheckoutForm({
   quote: PriceQuote | null;
   quoteLoading: boolean;
   quoteError: string | null;
+  /** Country price-book plans are priced by the server, not by the billing country. */
+  priceCurrency?: BillingCurrency | undefined;
   onBack: () => void;
   onPay: (billing: CheckoutBillingInput, method: PayMethodId, copy: boolean) => void;
 }) {
@@ -74,7 +77,7 @@ export function CheckoutForm({
   }));
   const [method, setMethod] = useState<PayMethodId>("card");
   const [error, setError] = useState("");
-  const currency = checkoutCurrencyForCountry(defaultCountry);
+  const currency = priceCurrency ?? checkoutCurrencyForCountry(defaultCountry);
   const dueMinor = quote && quote.currency === currency ? quote.dueMinor : null;
   const available = paymentMethodsFor(defaultCountry, providers).filter((item) => item.available);
 

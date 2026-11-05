@@ -26,41 +26,10 @@ export function assertDiscountCap(percentBps: number): void {
   }
 }
 
-export function planChangeKind(
-  currentMinor: number,
-  nextMinor: number,
-): "upgrade" | "downgrade" | "same" {
-  if (nextMinor > currentMinor) return "upgrade";
-  if (nextMinor < currentMinor) return "downgrade";
-  return "same";
-}
-
 export function stripePortalBody(customerId: string, returnUrl: string): URLSearchParams {
   const body = new URLSearchParams();
   body.set("customer", customerId);
   body.set("return_url", returnUrl);
-  return body;
-}
-
-export function stripeRecurringPriceBody(input: {
-  name: string;
-  currency: string;
-  interval: "month" | "year";
-  amountMinor: number;
-}): URLSearchParams {
-  const body = new URLSearchParams();
-  body.set("currency", input.currency.toLowerCase());
-  body.set("unit_amount", String(input.amountMinor));
-  body.set("recurring[interval]", input.interval);
-  body.set("product_data[name]", input.name);
-  return body;
-}
-
-export function stripeUpgradeBody(itemId: string, priceId: string): URLSearchParams {
-  const body = new URLSearchParams();
-  body.set("items[0][id]", itemId);
-  body.set("items[0][price]", priceId);
-  body.set("proration_behavior", "create_prorations");
   return body;
 }
 

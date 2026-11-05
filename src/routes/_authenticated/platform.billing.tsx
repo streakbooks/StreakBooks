@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CountryPricingAdmin } from "@/components/platform/billing/CountryPricingAdmin";
 import { LegalDocumentsAdmin } from "@/components/platform/billing/LegalDocumentsAdmin";
+import { PaymentOperationsAdmin } from "@/components/platform/billing/PaymentOperationsAdmin";
 import { formatMinorAmount } from "@/lib/billing/domain/money";
 import { getPlatformBilling } from "@/lib/billing/platform.functions";
 import {
@@ -75,6 +76,7 @@ function PlatformBillingPage() {
         subscribers keep their current version until you migrate them. Publishing asks for an active
         multi-factor authentication session. Tax collection is not enabled.
       </p>
+      <PaymentOperationsAdmin canEdit={editor} isOwner={owner} />
       <CountryPricingAdmin canEdit={editor} />
       <LegalDocumentsAdmin canEdit={editor} isOwner={owner} />
       <h2 className="pt-4 text-xl font-semibold">Legacy plan prices and versions</h2>

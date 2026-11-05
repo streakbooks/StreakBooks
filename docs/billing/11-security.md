@@ -47,6 +47,19 @@
 | Storing client addresses                     | Only an HMAC with a server secret, or nothing                                                        | Code review                            |
 | Pause misuse                                 | Platform staff with an aal2 session only; audited in both audit trails                               | SQL suite                              |
 
+## Phase 5 controls
+
+| Threat                                           | Control                                                                                 | Verified by                                 |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------- | ------------------------------------------- |
+| Forged webhooks                                  | Signature verified on the raw body before anything is stored                            | Existing signature tests                    |
+| Replayed or duplicated deliveries                | Unique provider event id; activation skipped once the checkout is complete              | SQL suite and rehearsal                     |
+| Out-of-order events undoing newer state          | Provider state time; older events skipped                                               | SQL suite                                   |
+| Buying at a tampered or wrong-country price      | Database guard ties checkouts to the published snapshot for an open country             | SQL suite (caught a real USD-for-India gap) |
+| Customers granting themselves access             | Applier, provider confirmations, price mappings and webhook store are service-role only | SQL suite: `42501` for clients              |
+| Charging after cancellation                      | Provider cancelled first; nothing scheduled until the provider confirms                 | SQL suite and unit tests                    |
+| Live charges in testing                          | Live keys refused without the production flag; mode stored everywhere                   | Unit tests                                  |
+| Opening a country without tax/provider readiness | Platform owner only, audited                                                            | SQL suite                                   |
+
 ## Rules for later phases
 
 - Payment and tax secrets stay server-side (`*.server.ts`, Edge Function secrets); `VITE_*`

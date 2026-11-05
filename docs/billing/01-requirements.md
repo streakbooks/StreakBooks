@@ -8,18 +8,18 @@ Nothing here is live in production until the hosted migration gate in
 
 ## Delivery status
 
-| Phase | Scope                                                                                             | Status                                                                                                                |
-| ----- | ------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| 1     | ISO reference data, billing accounts (B2B/B2C), billing permissions, tamper-evident billing audit | **Implemented and tested locally**, not applied to hosted                                                             |
-| 2     | STANDARD/PRO/BUSINESS plans, per-plan trials, entitlement mapping                                 | **Implemented and tested locally**, not applied to hosted                                                             |
-| 3     | Country pricing engine (BASE/FIXED/FX_CONVERTED/CUSTOM), FX, publication                          | **Implemented and tested locally**, not applied to hosted; see [07-country-pricing.md](07-country-pricing.md)         |
-| 4     | Subscription lifecycle, jobs, legal documents, cancellation                                       | **Implemented and tested locally**, not applied to hosted; see [10-cancellation-policy.md](10-cancellation-policy.md) |
-| 5     | Razorpay/Stripe adapters, router, durable webhooks, checkout, renewals, upgrades                  | Planned                                                                                                               |
-| 6     | Invoices, payments, refunds, credit notes, tax                                                    | Planned                                                                                                               |
-| 7     | Coupons                                                                                           | Planned                                                                                                               |
-| 8     | CA partners, referrals, commission ledger (payouts disabled)                                      | Planned                                                                                                               |
-| 9     | REST `/api/v1` + OpenAPI                                                                          | Planned                                                                                                               |
-| 10    | Admin analytics, E2E, runbook                                                                     | Planned                                                                                                               |
+| Phase | Scope                                                                                             | Status                                                                                                                            |
+| ----- | ------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | ISO reference data, billing accounts (B2B/B2C), billing permissions, tamper-evident billing audit | **Implemented and tested locally**, not applied to hosted                                                                         |
+| 2     | STANDARD/PRO/BUSINESS plans, per-plan trials, entitlement mapping                                 | **Implemented and tested locally**, not applied to hosted                                                                         |
+| 3     | Country pricing engine (BASE/FIXED/FX_CONVERTED/CUSTOM), FX, publication                          | **Implemented and tested locally**, not applied to hosted; see [07-country-pricing.md](07-country-pricing.md)                     |
+| 4     | Subscription lifecycle, jobs, legal documents, cancellation                                       | **Implemented and tested locally**, not applied to hosted; see [10-cancellation-policy.md](10-cancellation-policy.md)             |
+| 5     | Razorpay/Stripe adapters, router, durable webhooks, checkout, renewals, upgrades                  | **Implemented and tested locally (test mode)**, not applied to hosted; see [06-payment-integration.md](06-payment-integration.md) |
+| 6     | Invoices, payments, refunds, credit notes, tax                                                    | Planned                                                                                                                           |
+| 7     | Coupons                                                                                           | Planned                                                                                                                           |
+| 8     | CA partners, referrals, commission ledger (payouts disabled)                                      | Planned                                                                                                                           |
+| 9     | REST `/api/v1` + OpenAPI                                                                          | Planned                                                                                                                           |
+| 10    | Admin analytics, E2E, runbook                                                                     | Planned                                                                                                                           |
 
 ## Phase 1 requirements and how they are met
 
@@ -85,6 +85,20 @@ organisation stays read-only until then, or until platform staff relax the trial
 | Pause only by platform admins (D17)                   | `platform_pause_subscription` / `platform_resume_subscription`                                |
 | Legal documents admin-managed, require legal review   | Versioned, second-owner approval, immutable after approval, public only when published        |
 | Lifecycle history                                     | Append-only `billing.subscription_events` written by trigger on every change                  |
+
+## Phase 5 requirements and how they are met
+
+| Requirement                                     | Implementation                                                                               |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| India → Razorpay, others → Stripe, configurable | `billing.payment_provider_routes` with priorities and platform editing                       |
+| Checkout at the published country price         | Snapshot id on the checkout; database guard on amount, currency, interval and country        |
+| Providers' prices created once                  | `billing.provider_price_mappings` per snapshot, provider and mode                            |
+| Durable, idempotent webhooks                    | Verified, stored with payload, deduplicated, retried with backoff, dead-lettered, replayable |
+| Out-of-order events                             | Provider state time per subscription; older events skipped                                   |
+| Upgrade only after verified payment             | Stripe pending updates; plan switches on the confirming webhook                              |
+| Downgrade at renewal                            | Scheduled plan, held until the renewal event                                                 |
+| Provider cancellation                           | Provider first, then service-role confirmation; Stripe reversible, Razorpay final            |
+| Test mode unless approved                       | Existing live-key flag; mode stored on events, checkouts and mappings                        |
 
 ## Configurable, intentionally unset (do not invent)
 

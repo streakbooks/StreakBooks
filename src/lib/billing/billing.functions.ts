@@ -31,6 +31,7 @@ import {
   type OfferRule,
   type PlanCode,
 } from "@/lib/billing/pricing";
+import { planPrice, type PriceList } from "@/lib/billing/domain/country-pricing";
 import { assertDiscountCap, assertPriceFloor } from "@/lib/billing/provider-actions";
 import { assertRazorpayTestKey, assertStripeTestKey } from "@/lib/billing/provider-keys";
 
@@ -57,6 +58,8 @@ export type BillingPlanView = {
   rank: number;
   trialEnabled: boolean;
   trialDays: number;
+  /** Published country price for display; buying it opens with the phase 5 checkout. */
+  listPrice: { currency: string; monthlyMinor: number | null; yearlyMinor: number | null } | null;
 };
 
 export type BillingOfferView = {
@@ -187,6 +190,23 @@ function toPlanView(plan: PlanRow, currency: BillingCurrency): BillingPlanView {
     rank: plan.plan_rank ?? plan.sort_order,
     trialEnabled: plan.trial_enabled ?? true,
     trialDays: plan.trial_days ?? DEFAULT_TRIAL_DAYS,
+    listPrice: null,
+  };
+}
+
+function withListPrice(plan: BillingPlanView, list: PriceList | null): BillingPlanView {
+  if (plan.pricePublished || !list) return plan;
+  const month = planPrice(list, plan.code, "month");
+  const year = planPrice(list, plan.code, "year");
+  const currency = month?.currency ?? year?.currency;
+  if (!currency) return plan;
+  return {
+    ...plan,
+    listPrice: {
+      currency,
+      monthlyMinor: month?.amountMinor ?? null,
+      yearlyMinor: year?.currency === currency ? year.amountMinor : null,
+    },
   };
 }
 
@@ -404,8 +424,13 @@ export const getBillingOverview = createServerFn({ method: "GET" })
       annual_free_months: number;
       past_due_grace_days: number;
     } | null;
+    const priceListRes = await supabase.rpc(
+      "billing_price_list" as never,
+      { _country: company.country_code ?? region.country } as never,
+    );
+    const priceList = priceListRes.error ? null : (priceListRes.data as PriceList | null);
     const plans = ((plansRes.data ?? []) as unknown as PlanRow[]).map((plan) =>
-      toPlanView(plan, currency),
+      withListPrice(toPlanView(plan, currency), priceList),
     );
     const trialPlan = plans.find((plan) => plan.code === settingsRow?.trial_plan_code);
     const settings = settingsRow
@@ -715,7 +740,7 @@ async function priceSelection(
   const monthly = monthlyMinor(row, currency);
   if (monthly === null) {
     throw new Error(
-      `${row.name} prices are not published yet. Your trial and existing records are not affected.`,
+      `${row.name} cannot be bought online yet. Your trial and existing records are not affected.`,
     );
   }
   const { data: settings, error: settingsError } = await supabase

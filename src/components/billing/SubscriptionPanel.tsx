@@ -37,6 +37,7 @@ import {
   type BillingInterval,
   type PriceQuote,
 } from "@/lib/billing/pricing";
+import { formatMinorAmount } from "@/lib/billing/domain/money";
 import { cn } from "@/lib/utils";
 
 const billingKey = (companyId: string) => ["billing-overview", companyId] as const;
@@ -607,7 +608,14 @@ function PlanCard({
         {current ? <Badge>Current</Badge> : null}
         {recommended ? <Badge variant="info">Recommended</Badge> : null}
       </div>
-      {due === null ? (
+      {due === null && plan.listPrice?.monthlyMinor != null ? (
+        <p className="mt-5">
+          <span className="text-3xl font-semibold tracking-tight">
+            {formatMinorAmount(BigInt(plan.listPrice.monthlyMinor), plan.listPrice.currency)}
+          </span>
+          <span className="text-sm text-muted-foreground"> / month</span>
+        </p>
+      ) : due === null ? (
         <p className="mt-5 text-xl font-semibold tracking-tight">Price coming soon</p>
       ) : (
         <p className="mt-5">
@@ -622,9 +630,12 @@ function PlanCard({
       )}
       {due === null ? (
         <p className="mt-1 text-xs text-muted-foreground">
-          {plan.trialEnabled
-            ? `${plan.trialDays}-day free trial, no card needed`
-            : "Not yet on sale"}
+          {[
+            plan.trialEnabled ? `${plan.trialDays}-day free trial, no card needed` : null,
+            plan.listPrice ? "Online payment opens soon" : null,
+          ]
+            .filter(Boolean)
+            .join(". ") || "Not yet on sale"}
         </p>
       ) : quote && quote.discountMinor > 0 ? (
         <p className="mt-1 text-xs text-muted-foreground">

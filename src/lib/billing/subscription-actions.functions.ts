@@ -139,6 +139,7 @@ export const changeOrganisationPlan = createServerFn({ method: "POST" })
       .eq("version_id" as never, version.id as never)
       .eq("currency" as never, current.currency as never)
       .eq("billing_interval" as never, data.interval as never)
+      .is("country_code" as never, null as never)
       .maybeSingle();
     if (priceError) throw new Error(priceError.message);
     const nextPrice = priceRow as { amount_minor: number } | null;

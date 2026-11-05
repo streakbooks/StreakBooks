@@ -362,6 +362,7 @@ async function applyScheduledPlan(provider: string, providerSubscriptionId: stri
       .eq("version_id" as never, versionId as never)
       .eq("currency" as never, row.currency as never)
       .eq("billing_interval" as never, row.billing_interval as never)
+      .is("country_code" as never, null as never)
       .maybeSingle();
     amount = (price as { amount_minor: number } | null)?.amount_minor ?? null;
   }

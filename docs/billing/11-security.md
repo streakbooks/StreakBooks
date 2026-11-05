@@ -24,6 +24,17 @@
 | Changing what existing customers bought           | Limit changes create a draft/review version copied from the published one; finance staff drafts need owner approval                                                          | SQL suite: published limits unchanged                                                 |
 | Locking a founder out of a read-only organisation | Seat check exempts only the creator becoming the first active owner                                                                                                          | SQL suite: further members refused                                                    |
 
+## Phase 3 controls
+
+| Threat                                    | Control                                                                                                             | Verified by                             |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| One person changing live prices           | Price-book versions are published by a platform owner other than the drafter; finance drafts go to review           | SQL suite and production-copy rehearsal |
+| Changing a price customers already bought | Published/archived `plan_prices` rows cannot be updated or deleted (`55000`)                                        | SQL suite                               |
+| Rate tampering                            | Exchange rates are append-only, recorded with actor, source and times; every pricing change writes `platform_audit` | SQL suite                               |
+| Float or rounding drift                   | Exact `numeric`/`bigint` conversion, single rounding, ISO minor units; identical vectors in SQL and unit tests      | SQL suite and unit tests                |
+| Client-chosen country changing a charge   | Country selection on the pricing page is display-only; checkout (phase 5) uses the verified billing address         | Design; enforced in phase 5             |
+| Reading or writing pricing internals      | `billing` tables not exposed; admin functions need an aal2 platform session and are not executable by `anon`        | SQL suite                               |
+
 ## Rules for later phases
 
 - Payment and tax secrets stay server-side (`*.server.ts`, Edge Function secrets); `VITE_*`

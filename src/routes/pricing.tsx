@@ -5,8 +5,13 @@ import { useServerFn } from "@tanstack/react-start";
 import { Check, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { LookupSelect } from "@/components/lookup";
+import { getPublicPriceList } from "@/lib/billing/country-pricing.functions";
+import { planPrice } from "@/lib/billing/domain/country-pricing";
+import { formatMinorAmount } from "@/lib/billing/domain/money";
 import { listPublicBillingPlans } from "@/lib/billing/platform.functions";
 import { formatMinor } from "@/lib/billing/pricing";
+import { ISO_COUNTRIES } from "@/lib/billing/reference/iso-reference-data";
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({
@@ -15,7 +20,7 @@ export const Route = createFileRoute("/pricing")({
       {
         name: "description",
         content:
-          "LinkBooks Standard, Pro and Business plans. Every plan runs on the same double-entry ledger, with a free trial and no card needed.",
+          "LinkBooks Standard, Pro and Business plans, priced for your country. Every plan runs on the same double-entry ledger, with a free trial and no card needed.",
       },
     ],
   }),
@@ -58,20 +63,49 @@ function featureText(feature: PlanFeature): string {
   return `${feature.label}: ${new Intl.NumberFormat("en").format(feature.limit)}`;
 }
 
+const COUNTRY_OPTIONS = ISO_COUNTRIES.map((country) => ({
+  id: country.code,
+  label: country.name,
+  code: country.code,
+  keywords: country.defaultCurrency ?? "",
+}));
+
+function regionName(code: string): string {
+  return ISO_COUNTRIES.find((country) => country.code === code)?.name ?? code;
+}
+
 function PricingPage() {
   const load = useServerFn(listPublicBillingPlans);
+  const loadPrices = useServerFn(getPublicPriceList);
   const query = useQuery({
     queryKey: ["public-billing-plans"],
     queryFn: () => load(),
     retry: false,
   });
+  const [selectedCountry, setSelectedCountry] = useState("");
+  const prices = useQuery({
+    queryKey: ["public-price-list", selectedCountry],
+    queryFn: () => loadPrices({ data: selectedCountry ? { country: selectedCountry } : {} }),
+    retry: false,
+  });
   const [interval, setInterval] = useState<"month" | "year">("month");
   const currency = query.data?.currency ?? "USD";
-  const region = query.data?.country ?? "US";
-  const locationSource = query.data?.source ?? "fallback";
+  const priceList = prices.data?.list ?? null;
+  const country = prices.data?.country ?? null;
   const [signedIn, setSignedIn] = useState(false);
   const plans = (Array.isArray(query.data?.plans) ? query.data.plans : []) as PublicPlan[];
-  const anyPriced = plans.some((plan) => (plan.prices ?? []).length > 0);
+  const bookPrice = (code: string, cadence: "month" | "year") =>
+    planPrice(priceList, code, cadence);
+  const anyPriced = plans.some(
+    (plan) => (plan.prices ?? []).length > 0 || bookPrice(plan.code, "month") !== null,
+  );
+  const anyYearly = plans.some(
+    (plan) =>
+      (plan.prices ?? []).some((row) => row.interval === "year") ||
+      bookPrice(plan.code, "year") !== null,
+  );
+  const shownCurrency =
+    plans.map((plan) => bookPrice(plan.code, "month")?.currency).find(Boolean) ?? currency;
   const trialDays = plans.find((plan) => plan.trial?.enabled)?.trial?.days ?? null;
 
   useEffect(() => {
@@ -85,7 +119,8 @@ function PricingPage() {
       <header className="space-y-2">
         <h1 className="text-3xl font-semibold">Pricing</h1>
         <p className="max-w-2xl text-sm text-muted-foreground">
-          Every plan includes the same double-entry ledger. Prices exclude local tax.
+          Every plan includes the same double-entry ledger. Taxes, where they apply, are shown at
+          checkout.
           {trialDays
             ? ` A new organisation starts a ${trialDays}-day free trial with no card.`
             : ""}{" "}
@@ -93,7 +128,7 @@ function PricingPage() {
         </p>
       </header>
       <div className="flex flex-wrap gap-3">
-        {anyPriced ? (
+        {anyYearly ? (
           <div
             className="inline-flex rounded-md border p-1"
             role="group"
@@ -128,11 +163,27 @@ function PricingPage() {
         <Button type="button" variant="outline" asChild>
           <Link to="/pricing/builder">Build a quote</Link>
         </Button>
+        <div className="w-64">
+          <LookupSelect
+            options={COUNTRY_OPTIONS}
+            value={selectedCountry || country || ""}
+            onChange={(id) => {
+              setSelectedCountry(id);
+              setInterval("month");
+            }}
+            placeholder="Choose your country"
+            searchPlaceholder="Search countries"
+            ariaLabel="Country"
+            loading={prices.isLoading}
+            error={prices.isError ? "Prices could not be loaded." : null}
+            onRetry={() => void prices.refetch()}
+          />
+        </div>
         {anyPriced ? (
           <p className="self-center text-sm text-muted-foreground" role="status">
-            {locationSource === "fallback"
-              ? "Prices shown in USD because your region could not be detected."
-              : `Prices automatically shown in ${currency} for ${new Intl.DisplayNames(["en"], { type: "region" }).of(region) ?? region}.`}
+            {country
+              ? `Prices shown in ${shownCurrency} for ${regionName(country)}.`
+              : "Prices shown in USD because your country could not be detected."}
           </p>
         ) : null}
       </div>
@@ -145,9 +196,15 @@ function PricingPage() {
       ) : null}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {plans.map((plan) => {
-          const price = plan.prices?.find(
-            (row) => row.currency === currency && row.interval === interval,
-          );
+          const published = bookPrice(plan.code, interval);
+          const price = published
+            ? {
+                currency: published.currency,
+                interval: published.interval,
+                amountMinor: published.amountMinor,
+                needsReview: false,
+              }
+            : plan.prices?.find((row) => row.currency === currency && row.interval === interval);
           const included = (plan.features ?? []).filter((feature) => feature.enabled);
           const action = plan.trial?.enabled ? "Start free trial" : "Subscribe";
           const destination = `/settings?section=subscription&plan=${plan.code}&interval=${interval}`;
@@ -158,7 +215,9 @@ function PricingPage() {
               <p className="text-sm text-muted-foreground">{plan.summary}</p>
               {price ? (
                 <p className="text-2xl font-semibold">
-                  {formatMinor(price.amountMinor, currency)}
+                  {published
+                    ? formatMinorAmount(BigInt(published.amountMinor), published.currency)
+                    : formatMinor(price.amountMinor, currency)}
                   <span className="text-sm font-normal text-muted-foreground">
                     {" "}
                     / {interval === "year" ? "year" : "month"}

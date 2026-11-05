@@ -8,18 +8,18 @@ Nothing here is live in production until the hosted migration gate in
 
 ## Delivery status
 
-| Phase | Scope                                                                                             | Status                                                    |
-| ----- | ------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| 1     | ISO reference data, billing accounts (B2B/B2C), billing permissions, tamper-evident billing audit | **Implemented and tested locally**, not applied to hosted |
-| 2     | STANDARD/PRO/BUSINESS plans, per-plan trials, entitlement mapping                                 | **Implemented and tested locally**, not applied to hosted |
-| 3     | Country pricing engine (BASE/FIXED/FX_CONVERTED/CUSTOM), FX, publication                          | Planned                                                   |
-| 4     | Subscription lifecycle, jobs, legal documents, cancellation                                       | Planned                                                   |
-| 5     | Razorpay/Stripe adapters, router, durable webhooks, checkout, renewals, upgrades                  | Planned                                                   |
-| 6     | Invoices, payments, refunds, credit notes, tax                                                    | Planned                                                   |
-| 7     | Coupons                                                                                           | Planned                                                   |
-| 8     | CA partners, referrals, commission ledger (payouts disabled)                                      | Planned                                                   |
-| 9     | REST `/api/v1` + OpenAPI                                                                          | Planned                                                   |
-| 10    | Admin analytics, E2E, runbook                                                                     | Planned                                                   |
+| Phase | Scope                                                                                             | Status                                                                                                        |
+| ----- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| 1     | ISO reference data, billing accounts (B2B/B2C), billing permissions, tamper-evident billing audit | **Implemented and tested locally**, not applied to hosted                                                     |
+| 2     | STANDARD/PRO/BUSINESS plans, per-plan trials, entitlement mapping                                 | **Implemented and tested locally**, not applied to hosted                                                     |
+| 3     | Country pricing engine (BASE/FIXED/FX_CONVERTED/CUSTOM), FX, publication                          | **Implemented and tested locally**, not applied to hosted; see [07-country-pricing.md](07-country-pricing.md) |
+| 4     | Subscription lifecycle, jobs, legal documents, cancellation                                       | Planned                                                                                                       |
+| 5     | Razorpay/Stripe adapters, router, durable webhooks, checkout, renewals, upgrades                  | Planned                                                                                                       |
+| 6     | Invoices, payments, refunds, credit notes, tax                                                    | Planned                                                                                                       |
+| 7     | Coupons                                                                                           | Planned                                                                                                       |
+| 8     | CA partners, referrals, commission ledger (payouts disabled)                                      | Planned                                                                                                       |
+| 9     | REST `/api/v1` + OpenAPI                                                                          | Planned                                                                                                       |
+| 10    | Admin analytics, E2E, runbook                                                                     | Planned                                                                                                       |
 
 ## Phase 1 requirements and how they are met
 
@@ -57,6 +57,19 @@ Behaviour when a person has already used a trial: their next organisation is cre
 they are its owner, and it opens read-only with a prompt to choose a plan. It cannot add more
 people or post until a plan is active. Because the new plans have no prices until phase 3, such an
 organisation stays read-only until then, or until platform staff relax the trial rule.
+
+## Phase 3 requirements and how they are met
+
+| Requirement                                                  | Implementation                                                                |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| USD base prices STANDARD $10, PRO $20, BUSINESS $50          | Seeded working prices; published only through a second owner                  |
+| India fixed INR ₹499 / ₹999 / ₹1,999, never derived from USD | `IN` rule `FIXED` INR with seeded local prices                                |
+| Other countries FX-converted with markup and rounding        | `FX_CONVERTED` rules, append-only rates, exact `numeric`/`bigint` conversion  |
+| Customers see only published snapshots                       | `billing_price_list` reads published versions; published prices are immutable |
+| Refreshing FX creates drafts, publication is explicit        | Draft per plan; publisher must differ from drafter                            |
+| Yearly only when configured                                  | No yearly prices seeded; yearly hidden until a yearly price exists            |
+| Unknown countries fall back to USD                           | Price list returns base rows for unknown or rule-less countries               |
+| Never use JS floats                                          | `numeric` in SQL, `bigint` in TypeScript; shared test vectors                 |
 
 ## Configurable, intentionally unset (do not invent)
 

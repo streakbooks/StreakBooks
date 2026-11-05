@@ -5,6 +5,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CountryPricingAdmin } from "@/components/platform/billing/CountryPricingAdmin";
+import { formatMinorAmount } from "@/lib/billing/domain/money";
 import { getPlatformBilling } from "@/lib/billing/platform.functions";
 import {
   publishPlanVersion,
@@ -27,7 +29,7 @@ function PlatformBillingPage() {
     queryFn: () => load(),
     retry: false,
   });
-  const [planCode, setPlanCode] = useState("pro");
+  const [planCode, setPlanCode] = useState("growth");
   const [currency, setCurrency] = useState("USD");
   const [interval, setInterval] = useState("month");
   const [amount, setAmount] = useState("3000");
@@ -44,7 +46,26 @@ function PlatformBillingPage() {
   }
 
   const versions = Array.isArray(query.data?.versions) ? query.data.versions : [];
+  const prices = (Array.isArray(query.data?.prices) ? query.data.prices : []) as Array<{
+    version_id?: string;
+    country_code?: string | null;
+    currency?: string;
+    billing_interval?: string;
+    amount_minor?: number;
+  }>;
+  const priceSummary = (versionId: string | undefined) =>
+    prices
+      .filter((price) => price.version_id === versionId)
+      .map(
+        (price) =>
+          `${price.country_code ?? "Base"} ${formatMinorAmount(
+            BigInt(price.amount_minor ?? 0),
+            price.currency ?? "USD",
+          )}/${price.billing_interval === "year" ? "yr" : "mo"}`,
+      )
+      .join(" · ");
   const owner = query.data?.role === "platform_owner";
+  const editor = owner || query.data?.role === "platform_finance";
   return (
     <main className="mx-auto max-w-4xl space-y-4 p-6">
       <h1 className="text-2xl font-semibold">Platform billing</h1>
@@ -53,7 +74,9 @@ function PlatformBillingPage() {
         subscribers keep their current version until you migrate them. Publishing asks for an active
         multi-factor authentication session. Tax collection is not enabled.
       </p>
-      {query.data?.role === "platform_owner" || query.data?.role === "platform_finance" ? (
+      <CountryPricingAdmin canEdit={editor} />
+      <h2 className="pt-4 text-xl font-semibold">Legacy plan prices and versions</h2>
+      {editor ? (
         <form
           className="grid gap-3 sm:grid-cols-2"
           onSubmit={(event) => {
@@ -89,14 +112,9 @@ function PlatformBillingPage() {
               value={planCode}
               onChange={(event) => setPlanCode(event.target.value)}
             >
-              <option value="standard">Standard</option>
-              <option value="pro">Pro</option>
-              <option value="business">Business</option>
-              <optgroup label="Legacy plans (hidden from sale)">
-                <option value="starter">Starter</option>
-                <option value="growth">Growth</option>
-                <option value="practice">Practice</option>
-              </optgroup>
+              <option value="starter">Starter</option>
+              <option value="growth">Growth</option>
+              <option value="practice">Practice</option>
             </select>
           </label>
           <label className="text-sm">
@@ -160,6 +178,11 @@ function PlatformBillingPage() {
             >
               <span>
                 {version.plan_code} version {version.version_no} · {version.status}
+                {priceSummary(version.id) ? (
+                  <span className="block text-xs text-muted-foreground">
+                    {priceSummary(version.id)}
+                  </span>
+                ) : null}
               </span>
               {owner &&
               version.id &&

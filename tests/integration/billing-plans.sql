@@ -152,13 +152,13 @@ SELECT pg_temp.ok((SELECT f->>'availability' FROM jsonb_array_elements(public.li
   jsonb_array_elements(x->'features') f WHERE x->>'code' = 'business' AND f->>'key' = 'ocr') = 'coming_soon',
   'Public catalogue marks OCR as coming soon');
 RESET ROLE;
+BEGIN;
 INSERT INTO public.plan_prices (version_id, currency, billing_interval, amount_minor)
   SELECT id, 'USD', 'month', 4200 FROM public.plan_versions WHERE plan_code = 'pro' AND status = 'published';
-SET ROLE anon;
+SET LOCAL ROLE anon;
 SELECT pg_temp.ok((SELECT x->'prices' FROM jsonb_array_elements(public.list_public_billing_plans()) x
-  WHERE x->>'code' = 'pro') = 'null'::jsonb, 'A price that checkout cannot charge is not shown publicly');
-RESET ROLE;
-DELETE FROM public.plan_prices WHERE amount_minor = 4200 AND currency = 'USD';
+  WHERE x->>'code' = 'pro') = 'null'::jsonb, 'Legacy catalogue never shows a price-book plan price');
+ROLLBACK;
 SET ROLE anon;
 SELECT pg_temp.expect_error($$SELECT public.platform_set_plan_trial('pro', true, 30, 'anon')$$, '42501',
   'Anonymous callers cannot change plans');

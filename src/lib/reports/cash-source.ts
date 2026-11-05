@@ -282,7 +282,19 @@ export function cashInputFromRows(
       purchaseJournalId: text(row, "purchase_journal_id"),
       inventoryAccountId: text(row, "inventory_account_id"),
       movementJournalId: text(row, "movement_journal_id"),
-      movementKind: text(row, "movement_kind") as "sale" | "customer_return" | "supplier_return",
+      movementKind: text(row, "movement_kind") as
+        "sale" | "customer_return" | "supplier_return" | "opening_source",
+      sourceKind: (optional(row, "source_kind") ?? "purchase_bill") as
+        "purchase_bill" | "direct_cash" | "opening_inventory",
+      ...(row["opening_paid_minor"] == null
+        ? {}
+        : { openingPaidMinor: integer(row, "opening_paid_minor") }),
+      ...(optional(row, "opening_equity_account_id")
+        ? { openingEquityAccountId: text(row, "opening_equity_account_id") }
+        : {}),
+      paymentEvidenceJournalIds: (row["payment_evidence_journal_ids"] ?? []) as string[],
+      paymentEvidenceSnapshots: (row["payment_evidence_snapshots"] ??
+        []) as CashJournalEvidenceSnapshot[],
       costMinor: integer(row, "cost_minor"),
       reversesEvidenceId: optional(row, "reverses_evidence_id"),
       supersedesId: optional(row, "supersedes_id"),

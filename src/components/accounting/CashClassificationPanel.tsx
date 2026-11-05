@@ -755,12 +755,14 @@ function OpeningForm({
 
 function InventoryForm({
   previous,
+  acquisitionsSupported,
   companyId,
   currency,
   accounts,
   saleOptions,
   onApproved,
 }: {
+  acquisitionsSupported: boolean;
   companyId: string;
   currency: string;
   accounts: AccountRow[];
@@ -770,13 +772,26 @@ function InventoryForm({
 }) {
   const approve = useServerFn(approveCashInventory);
   const [source, setSource] = useState<CashSourceDocument | null>(null);
+  const [sourceKind, setSourceKind] = useState<
+    "purchase_bill" | "direct_cash" | "opening_inventory"
+  >(previous?.source_kind ?? "purchase_bill");
+  const [sourceJournals, setSourceJournals] = useState<string[]>(
+    previous && previous.source_kind !== "purchase_bill" ? [previous.purchase_journal_id] : [],
+  );
+  const [openingPaid, setOpeningPaid] = useState(
+    previous?.opening_paid_minor
+      ? fromMinorUnits(BigInt(previous.opening_paid_minor), currency)
+      : "0",
+  );
+  const [openingEquity, setOpeningEquity] = useState(previous?.opening_equity_account_id ?? "");
+  const [paymentProof, setPaymentProof] = useState(previous?.payment_evidence_journal_ids ?? []);
   const [account, setAccount] = useState(previous?.inventory_account_id ?? "");
   const [movement, setMovement] = useState<string[]>(
     previous ? [previous.movement_journal_id] : [],
   );
-  const [kind, setKind] = useState<"sale" | "customer_return" | "supplier_return">(
-    previous?.movement_kind ?? "sale",
-  );
+  const [kind, setKind] = useState<
+    "sale" | "customer_return" | "supplier_return" | "opening_source"
+  >(previous?.movement_kind ?? "sale");
   const [cost, setCost] = useState(
     previous ? fromMinorUnits(BigInt(previous.cost_minor), currency) : "",
   );
@@ -784,16 +799,31 @@ function InventoryForm({
   const [evidence, setEvidence] = useState(emptyEvidence);
   const mutation = useMutation({
     mutationFn: () => {
-      if (!source) throw new Error("Select the verified purchase bill");
+      const acquisition =
+        sourceKind === "purchase_bill"
+          ? source
+          : sourceJournals[0]
+            ? { id: sourceJournals[0], postedJournalId: sourceJournals[0] }
+            : null;
+      if (!acquisition) throw new Error("Select the verified acquisition source");
       return approve({
         data: {
           companyId,
           payload: {
             supersedes_id: previous?.id ?? null,
-            purchase_document_id: source.id,
-            purchase_journal_id: source.postedJournalId,
+            source_kind: sourceKind,
+            purchase_document_id: acquisition.id,
+            purchase_journal_id: acquisition.postedJournalId,
+            ...(kind === "opening_source"
+              ? {
+                  opening_paid_minor: parseMinorOrThrow(openingPaid, currency).toString(),
+                  opening_equity_account_id: openingEquity,
+                  payment_evidence_journal_ids: paymentProof,
+                }
+              : {}),
             inventory_account_id: account,
-            movement_journal_id: movement[0] ?? "",
+            movement_journal_id:
+              kind === "opening_source" ? acquisition.postedJournalId : (movement[0] ?? ""),
             movement_kind: kind,
             cost_minor: parseMinorOrThrow(cost, currency).toString(),
             reverses_evidence_id: reverses || null,
@@ -824,13 +854,80 @@ function InventoryForm({
           Enter the cost in {currency}. Paid purchases determine cash expense; this link tracks the
           paid cost sold without adding a second expense.
         </p>
-        <DocumentLookup
-          companyId={companyId}
-          sourceKind="purchase_bill"
-          openingOnly={false}
-          value={source}
-          onChange={setSource}
-        />
+        {!acquisitionsSupported ? (
+          <p role="status" className="text-sm text-muted-foreground">
+            Direct and opening acquisition approvals need the accounting database update. Existing
+            bill classifications remain available.
+          </p>
+        ) : null}
+        <Label>Verified acquisition source</Label>
+        <select
+          aria-label="Inventory acquisition source kind"
+          value={sourceKind}
+          className="rounded border bg-background p-2"
+          onChange={(e) => {
+            const value = e.target.value as typeof sourceKind;
+            setSourceKind(value);
+            setSourceJournals([]);
+            setSource(null);
+            setKind(value === "opening_inventory" ? "opening_source" : "sale");
+          }}
+        >
+          {/* lookup-fixed-enum: Verified inventory acquisition source types. */}
+          <option value="purchase_bill">Posted purchase bill</option>
+          <option value="direct_cash" disabled={!acquisitionsSupported}>
+            Direct cash / credit-card purchase
+          </option>
+          <option value="opening_inventory" disabled={!acquisitionsSupported}>
+            Verified opening inventory
+          </option>
+        </select>
+        {sourceKind === "purchase_bill" ? (
+          <DocumentLookup
+            companyId={companyId}
+            sourceKind="purchase_bill"
+            openingOnly={false}
+            value={source}
+            onChange={setSource}
+          />
+        ) : (
+          <JournalEvidenceLookup
+            companyId={companyId}
+            values={sourceJournals}
+            onChange={setSourceJournals}
+          />
+        )}
+        {sourceJournals.length > 1 ? (
+          <p role="alert">Select exactly one acquisition journal.</p>
+        ) : null}
+        {kind === "opening_source" ? (
+          <div className="space-y-3">
+            <Label>Verified historical paid cost carried forward ({currency})</Label>
+            <Label>Verified opening equity account</Label>
+            <AccountLookup
+              companyId={companyId}
+              accounts={accounts.filter((a) => a.account_type === "equity")}
+              value={openingEquity}
+              onChange={setOpeningEquity}
+              ariaLabel="Opening stock equity account"
+            />
+            <Input
+              aria-label="Verified opening paid inventory cost"
+              value={openingPaid}
+              onChange={(e) => setOpeningPaid(e.target.value)}
+            />
+            <p className="text-sm text-muted-foreground">
+              This carries already-paid cost into the stock trace and creates no new cash expense.
+              Select the original posted acquisition/payment evidence; external records without
+              posted support remain explicit exceptions.
+            </p>
+            <JournalEvidenceLookup
+              companyId={companyId}
+              values={paymentProof}
+              onChange={setPaymentProof}
+            />
+          </div>
+        ) : null}
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label>Inventory source account</Label>
@@ -854,6 +951,9 @@ function InventoryForm({
               }}
             >
               {/* lookup-fixed-enum: Supported verified inventory movement types. */}
+              {sourceKind === "opening_inventory" ? (
+                <option value="opening_source">Approve opening paid-cost carry</option>
+              ) : null}
               <option value="sale">Inventory sold</option>
               <option value="customer_return">Customer return</option>
               <option value="supplier_return">Supplier return</option>
@@ -881,17 +981,24 @@ function InventoryForm({
             </div>
           ) : null}
         </div>
-        <JournalEvidenceLookup
-          companyId={companyId}
-          values={movement}
-          onChange={setMovement}
-          multiple={false}
-          label="Posted sale or return journal"
-        />
+        {kind !== "opening_source" ? (
+          <JournalEvidenceLookup
+            companyId={companyId}
+            values={movement}
+            onChange={setMovement}
+            multiple={false}
+            label="Posted sale or return journal"
+          />
+        ) : null}
         <EvidenceFieldsForm value={evidence} onChange={setEvidence} />
         <Button
           type="submit"
-          disabled={!evidence.confirmed || !source || !account || !movement.length}
+          disabled={
+            !evidence.confirmed ||
+            (sourceKind === "purchase_bill" ? !source : sourceJournals.length !== 1) ||
+            !account ||
+            (kind !== "opening_source" && !movement.length)
+          }
         >
           Approve verified inventory cost
         </Button>
@@ -1228,6 +1335,7 @@ export function CashClassificationPanel({
             <InventoryForm
               key={previousInventory?.id ?? "new"}
               previous={previousInventory}
+              acquisitionsSupported={data.acquisitionsSupported}
               companyId={companyId}
               currency={currency}
               accounts={activeAccounts}
@@ -1397,7 +1505,9 @@ export function CashClassificationPanel({
                 <TableRow key={i.id}>
                   <TableCell>
                     {accountName(i.inventory_account_id)}
-                    <p className="break-all text-xs">Bill {i.purchase_document_id}</p>
+                    <p className="break-all text-xs">
+                      {i.source_kind ?? "purchase_bill"} {i.purchase_document_id}
+                    </p>
                     <Link
                       className="text-xs underline"
                       to="/accounting"
@@ -1511,7 +1621,8 @@ function InventoryCostTrace({ companyId, currency }: { companyId: string; curren
           basis: "Cash basis · verified purchase cost trace; no additional expense",
           format: "csv",
           headers: [
-            "Purchase document",
+            "Acquisition source",
+            "Source kind",
             "Inventory account",
             "Paid net of refunds",
             "Cash-paid cost sold",
@@ -1521,6 +1632,7 @@ function InventoryCostTrace({ companyId, currency }: { companyId: string; curren
           ],
           rows: trace.sources.map((row) => [
             row.purchaseDocumentId,
+            row.sourceKind,
             row.inventoryAccountId,
             ...[
               row.paidCostMinor,
@@ -1608,13 +1720,25 @@ function InventoryCostTrace({ companyId, currency }: { companyId: string; curren
                   key={`${row.purchaseJournalId}:${row.purchaseDocumentId}:${row.inventoryAccountId}`}
                 >
                   <TableCell>
-                    <Link
-                      to="/purchases/bills/$billId"
-                      params={{ billId: row.purchaseDocumentId }}
-                      className="underline"
-                    >
-                      Purchase bill
-                    </Link>
+                    {row.sourceKind === "purchase_bill" ? (
+                      <Link
+                        to="/purchases/bills/$billId"
+                        params={{ billId: row.purchaseDocumentId }}
+                        className="underline"
+                      >
+                        Purchase bill
+                      </Link>
+                    ) : (
+                      <Link
+                        to="/accounting"
+                        search={{ tab: "journals", journal: row.purchaseJournalId }}
+                        className="underline"
+                      >
+                        {row.sourceKind === "opening_inventory"
+                          ? "Opening inventory"
+                          : "Direct purchase"}
+                      </Link>
+                    )}
                   </TableCell>
                   <TableCell>{money(row.paidCostMinor, currency)}</TableCell>
                   <TableCell>{money(row.cashPaidCostSoldMinor, currency)}</TableCell>

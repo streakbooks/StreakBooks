@@ -1,3 +1,4 @@
+import { verifiedCashOpeningInventory } from "./cash-inventory";
 import { convertMinorToBase } from "@/lib/accounting/fx";
 import { cashProfitLoss, type CashPnlInput, type CashPnlEntry } from "./cash-profit-loss";
 import { cashClassificationContext } from "./cash-classification";
@@ -15,6 +16,15 @@ export function cashLedger(
   const cash = new Set(input.cashAccountIds);
   const accounts = new Map(input.accounts.map((a) => [a.id, a]));
   const classification = cashClassificationContext(input, period);
+  const openingStock = (input.inventoryEvidence ?? []).some(
+    (e) => e.movementKind === "opening_source",
+  )
+    ? verifiedCashOpeningInventory(
+        input,
+        cashProfitLoss(input, { from: "0001-01-01", to: period.to }, true),
+        period,
+      )
+    : [];
   const controls = new Set([
     ...findControlAccountIds(input.accounts, "ar"),
     ...findControlAccountIds(input.accounts, "ap"),
@@ -45,6 +55,31 @@ export function cashLedger(
       (l) => cash.has(l.accountId) && (l.debit !== 0n || l.credit !== 0n),
     );
     if (opening) {
+      for (const line of journal.lines) {
+        const account = accounts.get(line.accountId)!;
+        const stock =
+          [account.account_kind, account.subtype].some((k) => k === "inventory" || k === "stock") ||
+          (input.classificationPolicies ?? []).some(
+            (p) =>
+              p.sourceAccountId === line.accountId &&
+              p.kind === "inventory" &&
+              p.status === "approved",
+          );
+        if (
+          stock &&
+          line.debit > line.credit &&
+          !openingStock.some(
+            (e) => e.purchaseJournalId === journal.id && e.inventoryAccountId === line.accountId,
+          )
+        )
+          classification.fail(
+            "Opening inventory needs a verified paid-cost carry before cash balance-sheet reporting.",
+            ["Approved opening inventory cost, historical paid portion and opening equity account"],
+            journal,
+            line.accountId,
+            line.debit - line.credit,
+          );
+      }
       for (const line of journal.lines) {
         if (!controls.has(line.accountId) || line.debit === line.credit) continue;
         const details = [...classification.opening.values()].filter(
@@ -175,5 +210,33 @@ export function cashLedger(
     throw new Error(
       "Cash ledger does not balance. Reconcile source allocations, opening positions and exchange rounding before reporting.",
     );
+  for (const evidence of openingStock) {
+    const journal = input.journals.find((j) => j.id === evidence.purchaseJournalId)!;
+    if (journal.date < period.from || journal.date > period.to || !evidence.openingPaidMinor)
+      continue;
+    const template = {
+      date: journal.date,
+      journalId: journal.id,
+      journalNumber: journal.number,
+      sourceJournalId: journal.id,
+      sourceType: journal.sourceType,
+      sourceId: journal.sourceId,
+      reason: "direct_cash" as const,
+    };
+    entries.push(
+      {
+        ...template,
+        accountId: evidence.inventoryAccountId,
+        debit: 0n,
+        credit: evidence.openingPaidMinor,
+      },
+      {
+        ...template,
+        accountId: evidence.openingEquityAccountId!,
+        debit: evidence.openingPaidMinor,
+        credit: 0n,
+      },
+    );
+  }
   return entries;
 }

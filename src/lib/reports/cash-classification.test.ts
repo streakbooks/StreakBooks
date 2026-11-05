@@ -538,3 +538,295 @@ it("separates withheld payroll from directly expensed net cash wages", () => {
   expect(total(i, expenseId)).toBe(100n);
   expect(total(i, expenseId, { from: "2026-12-01", to: "2026-12-31" })).toBe(20n);
 });
+
+it("traces direct cash inventory purchases without requiring an invented supplier bill", () => {
+  const i = empty();
+  account(i, "stock", "asset", "inventory");
+  const buy = journal(i, "direct-stock", "2026-11-02", "bank_transaction", [
+    ["stock", 100n, 0n],
+    [bankId, 0n, 100n],
+  ]);
+  policy(i, "stock", expenseId, "inventory", [buy]);
+  const sale = journal(i, "stock-sale", "2026-11-10", "inventory_adjustment", [
+    [expenseId, 40n, 0n],
+    ["stock", 0n, 40n],
+  ]);
+  i.inventoryEvidence = [
+    {
+      id: "direct-sale",
+      companyId: i.companyId,
+      purchaseDocumentId: buy.id,
+      purchaseJournalId: buy.id,
+      sourceKind: "direct_cash",
+      inventoryAccountId: "stock",
+      movementJournalId: sale.id,
+      movementKind: "sale",
+      costMinor: 40n,
+      reversesEvidenceId: null,
+      evidenceReference: "Original direct purchase and sale costing",
+      policyNote: "Verified source stock cost consumed by this sale",
+      status: "approved",
+      version: 1,
+      approvedBy: "reviewer",
+      approvedAt: "2026-11-11",
+      purchaseJournalSnapshot: cashJournalEvidenceSnapshot(buy),
+      movementJournalSnapshot: cashJournalEvidenceSnapshot(sale),
+    },
+  ];
+  const s = trace(i).sources[0]!;
+  expect(s.sourceKind).toBe("direct_cash");
+  expect(s.cashPaidCostSoldMinor).toBe("40");
+  expect(s.paidCostUnconsumedMinor).toBe("60");
+  expect(total(i, expenseId)).toBe(100n);
+});
+function openingStock(paid = 60n) {
+  const i = empty();
+  account(i, "stock", "asset", "inventory");
+  account(i, "equity", "equity", "equity");
+  const buy = journal(i, "history-stock", "2026-09-01", "bank_transaction", [
+    ["stock", 100n, 0n],
+    [bankId, 0n, 100n],
+  ]);
+  policy(i, "stock", expenseId, "inventory", [buy]);
+  const opening = journal(i, "opening-stock", "2026-10-01", "opening_balance", [
+    ["stock", 60n, 0n],
+    ["equity", 0n, 60n],
+  ]);
+  const sale = journal(i, "opening-sale", "2026-11-10", "inventory_adjustment", [
+    [expenseId, 30n, 0n],
+    ["stock", 0n, 30n],
+  ]);
+  const proof: CashInventoryEvidence = {
+    id: "opening-proof",
+    companyId: i.companyId,
+    purchaseDocumentId: opening.id,
+    purchaseJournalId: opening.id,
+    sourceKind: "opening_inventory",
+    inventoryAccountId: "stock",
+    movementJournalId: opening.id,
+    movementKind: "opening_source",
+    costMinor: 60n,
+    openingPaidMinor: paid,
+    openingEquityAccountId: "equity",
+    paymentEvidenceJournalIds: paid > 0n ? [buy.id] : [],
+    paymentEvidenceSnapshots: paid > 0n ? [cashJournalEvidenceSnapshot(buy)] : [],
+    reversesEvidenceId: null,
+    evidenceReference: "Verified opening stock original paid history",
+    policyNote: "Reviewed stock remaining and exact historical paid portion",
+    status: "approved",
+    version: 1,
+    approvedBy: "reviewer",
+    approvedAt: "2026-11-01",
+    purchaseJournalSnapshot: cashJournalEvidenceSnapshot(opening),
+    movementJournalSnapshot: cashJournalEvidenceSnapshot(opening),
+  };
+  const saleProof: CashInventoryEvidence = {
+    ...proof,
+    id: "opening-sale-proof",
+    movementJournalId: sale.id,
+    movementKind: "sale",
+    costMinor: 30n,
+    movementJournalSnapshot: cashJournalEvidenceSnapshot(sale),
+    paymentEvidenceJournalIds: [],
+    paymentEvidenceSnapshots: [],
+  };
+  delete saleProof.openingPaidMinor;
+  delete saleProof.openingEquityAccountId;
+  i.inventoryEvidence = [proof, saleProof];
+  return { i, buy, opening, proof };
+}
+it.each([0n, 30n, 60n])(
+  "carries verified opening paid stock (%s) without a new current expense",
+  (paid) => {
+    const { i } = openingStock(paid);
+    const s = trace(i).sources.find((s) => s.sourceKind === "opening_inventory")!;
+    expect(s.cashPaidCostSoldMinor).toBe(String(paid / 2n));
+    expect(s.paidCostUnconsumedMinor).toBe(String(paid / 2n));
+    expect(total(i, expenseId)).toBe(0n);
+  },
+);
+it("requires opening stock paid history, detects drift and rejects excessive paid carry", () => {
+  for (const mode of ["missing", "drift", "excess"]) {
+    const { i, proof } = openingStock();
+    if (mode === "missing")
+      i.inventoryEvidence = i.inventoryEvidence!.filter((e) => e.id !== proof.id);
+    if (mode === "drift") proof.paymentEvidenceSnapshots![0]!.lines[0]!.debit_minor = "99";
+    if (mode === "excess") proof.openingPaidMinor = 61n;
+    exception(() => trace(i));
+  }
+});
+it("settles mixed-currency payroll using verified base-currency liability amounts", () => {
+  const i = empty();
+  account(i, "wages", "liability", "wages_payable");
+  const accrual = journal(i, "eur-wages", "2026-10-31", "payroll", [
+    [expenseId, 100n, 0n],
+    ["wages", 0n, 100n],
+  ]);
+  accrual.currency = "EUR";
+  accrual.rate = "1.2";
+  policy(i, "wages", expenseId, "payroll_wages", [accrual]);
+  journal(i, "gbp-payment", "2026-11-02", "bank_transaction", [
+    ["wages", 120n, 0n],
+    [bankId, 0n, 120n],
+  ]);
+  expect(total(i, expenseId)).toBe(120n);
+  journal(i, "overpay", "2026-11-03", "bank_transaction", [
+    ["wages", 1n, 0n],
+    [bankId, 0n, 1n],
+  ]);
+  exception(() => cashProfitLoss(i, period));
+});
+it("requires posted realised-FX proof for payroll carrying-value differences", () => {
+  const i = empty();
+  account(i, "wages", "liability", "wages_payable");
+  const fxId = "fx-expense";
+  i.accounts.push({ ...i.accounts.find((a) => a.id === expenseId)!, id: fxId });
+  const accrual = journal(i, "eur-wages", "2026-10-31", "payroll", [
+    [expenseId, 100n, 0n],
+    ["wages", 0n, 100n],
+  ]);
+  accrual.currency = "EUR";
+  accrual.rate = "1.2";
+  const p = policy(i, "wages", expenseId, "payroll_wages", [accrual]);
+  const fx = journal(i, "payroll-fx", "2026-11-02", "fx_realised", [
+    [fxId, 10n, 0n],
+    ["wages", 0n, 10n],
+  ]);
+  const pay = journal(i, "eur-payment", "2026-11-02", "bank_transaction", [
+    ["wages", 100n, 0n],
+    [bankId, 0n, 100n],
+  ]);
+  pay.currency = "EUR";
+  pay.rate = "1.3";
+  exception(() => cashProfitLoss(i, period));
+  p.evidenceJournalIds.push(fx.id);
+  p.evidenceJournalSnapshots.push(cashJournalEvidenceSnapshot(fx));
+  expect(total(i, expenseId)).toBe(130n);
+  expect(total(i, fxId)).toBe(0n);
+});
+
+function returnedStock() {
+  const { i, bill, evidence } = stock();
+  const returned = journal(
+    i,
+    "supplier-credit",
+    "2026-11-15",
+    "purchase_credit_note",
+    [
+      [apId, 2400n, 0n],
+      ["stock", 0n, 2000n],
+      [taxId, 0n, 400n],
+    ],
+    "supplier-credit",
+  );
+  i.inventoryEvidence!.push({
+    ...evidence,
+    id: "supplier-return-proof",
+    movementJournalId: returned.id,
+    movementKind: "supplier_return",
+    costMinor: 2000n,
+    reversesEvidenceId: null,
+    purchaseJournalSnapshot: cashJournalEvidenceSnapshot(bill),
+    movementJournalSnapshot: cashJournalEvidenceSnapshot(returned),
+  });
+  return i;
+}
+it("keeps future supplier-credit applications out of earlier inventory traces", () => {
+  const i = returnedStock();
+  i.creditAllocations = [
+    {
+      id: "future-credit",
+      documentId: "bill",
+      creditId: "supplier-credit",
+      amount: 2400n,
+      allocatedOn: "2026-12-02",
+      reversedOn: null,
+    },
+  ];
+  expect(trace(i).sources.find((s) => s.purchaseDocumentId === "bill")!.cashPaidCostSoldMinor).toBe(
+    "2000",
+  );
+  const later = traceCashInventory(
+    i,
+    cashLedger(i, { from: "0001-01-01", to: "2026-12-31" }),
+    { from: "2026-12-01", to: "2026-12-31" },
+    ["stock"],
+  );
+  expect(later.sources.find((s) => s.purchaseDocumentId === "bill")!.cashPaidCostSoldMinor).toBe(
+    "2666",
+  );
+});
+it("replays verified payment unapplication after a supplier stock return", () => {
+  const i = returnedStock();
+  i.allocations.find((a) => a.documentId === "bill")!.reversedOn = "2026-11-20";
+  const s = trace(i).sources.find((s) => s.purchaseDocumentId === "bill")!;
+  expect(s.paidCostMinor).toBe("0");
+  expect(s.cashPaidCostSoldMinor).toBe("0");
+  expect(s.returnedPaidCostMinor).toBe("0");
+  expect(total(i, expenseId)).toBe(0n);
+});
+it("reverses supplier-refund cost against the exact original return source", () => {
+  const i = returnedStock();
+  const refund = journal(i, "supplier-refund", "2026-11-20", "other", [
+    [bankId, 1200n, 0n],
+    [apId, 0n, 1200n],
+  ]);
+  const reverse = journal(i, "reverse-refund", "2026-11-25", "reversal", [
+    [apId, 1200n, 0n],
+    [bankId, 0n, 1200n],
+  ]);
+  reverse.reverses = refund.id;
+  i.refunds.push({
+    id: "supplier-refund",
+    companyId: i.companyId,
+    side: "expense",
+    journalId: refund.id,
+    voidJournalId: reverse.id,
+    currency: "GBP",
+    rate: "1",
+    amount: 1200n,
+    uses: [
+      {
+        id: "refund-use",
+        kind: "purchase_credit_note",
+        documentId: "supplier-credit",
+        amount: 1200n,
+      },
+    ],
+  });
+  const s = trace(i).sources.find((s) => s.purchaseDocumentId === "bill")!;
+  expect(s.supplierRefundMinor).toBe("0");
+  expect(s.paidCostMinor).toBe("4000");
+  expect(s.returnedPaidCostMinor).toBe("1000");
+  expect(total(i, expenseId)).toBe(4000n);
+});
+it.each([0n, 30n, 60n])(
+  "cash Balance Sheet retains only the unpaid opening stock portion (%s paid)",
+  (paid) => {
+    const { i } = openingStock(paid);
+    const lines = cashLedger(i, { from: "2026-10-01", to: period.to });
+    expect(
+      lines.filter((l) => l.accountId === "stock").reduce((s, l) => s + l.debit - l.credit, 0n),
+    ).toBe(60n - paid);
+    expect(lines.reduce((s, l) => s + l.debit - l.credit, 0n)).toBe(0n);
+  },
+);
+it("uses the latest account policy instead of a superseded opening conversion", () => {
+  const { i, opening } = openingStock(30n);
+  const p = i.classificationPolicies![0]!;
+  p.version = 2;
+  i.classificationPolicies!.push({
+    ...p,
+    id: "old-conversion",
+    version: 1,
+    kind: "conversion",
+    recognitionAccountId: "equity",
+    evidenceJournalIds: [opening.id],
+    evidenceJournalSnapshots: [cashJournalEvidenceSnapshot(opening)],
+  });
+  const lines = cashLedger(i, { from: "2026-10-01", to: period.to });
+  expect(
+    lines.filter((l) => l.accountId === "stock").reduce((s, l) => s + l.debit - l.credit, 0n),
+  ).toBe(30n);
+  expect(lines.reduce((s, l) => s + l.debit - l.credit, 0n)).toBe(0n);
+});

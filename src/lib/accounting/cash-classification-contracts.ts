@@ -123,12 +123,49 @@ export const cashInventoryInput = z.object({
       purchase_journal_id: uuid,
       inventory_account_id: uuid,
       movement_journal_id: uuid,
-      movement_kind: z.enum(["sale", "customer_return", "supplier_return"]),
+      movement_kind: z.enum(["sale", "customer_return", "supplier_return", "opening_source"]),
+      source_kind: z
+        .enum(["purchase_bill", "direct_cash", "opening_inventory"])
+        .default("purchase_bill"),
+      opening_paid_minor: money.optional(),
+      opening_equity_account_id: uuid.optional(),
+      payment_evidence_journal_ids: z.array(uuid).max(100).default([]),
       cost_minor: positiveMoney,
       reverses_evidence_id: uuid.nullable().default(null),
       supersedes_id: uuid.nullable().default(null),
     })
     .superRefine((v, ctx) => {
+      if (
+        v.movement_kind === "opening_source" &&
+        (v.source_kind !== "opening_inventory" ||
+          !v.opening_equity_account_id ||
+          v.movement_journal_id !== v.purchase_journal_id ||
+          v.purchase_document_id !== v.purchase_journal_id ||
+          v.opening_paid_minor === undefined ||
+          BigInt(v.opening_paid_minor) < 0n ||
+          BigInt(v.opening_paid_minor) > BigInt(v.cost_minor) ||
+          (BigInt(v.opening_paid_minor) > 0n && !v.payment_evidence_journal_ids.length))
+      )
+        ctx.addIssue({
+          code: "custom",
+          message:
+            "Opening stock needs an exact paid-cost carry and verified historical payment journals",
+        });
+      if (
+        v.movement_kind !== "opening_source" &&
+        (v.opening_paid_minor !== undefined ||
+          v.opening_equity_account_id !== undefined ||
+          v.payment_evidence_journal_ids.length)
+      )
+        ctx.addIssue({
+          code: "custom",
+          message: "Historical paid-cost carry belongs only to opening stock evidence",
+        });
+      if (v.source_kind !== "purchase_bill" && v.purchase_document_id !== v.purchase_journal_id)
+        ctx.addIssue({
+          code: "custom",
+          message: "A direct/opening source must identify its original posted journal",
+        });
       if (v.movement_kind === "customer_return" && !v.reverses_evidence_id)
         ctx.addIssue({
           code: "custom",

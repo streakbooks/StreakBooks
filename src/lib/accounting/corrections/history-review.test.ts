@@ -91,7 +91,7 @@ describe("correction history review", () => {
     const csv = correctionHistoryCsv([batch]);
     expect(csv).toContain("'=EVIL() reclassification");
     expect(csv).toContain("correction-journal-1");
-    expect(csv).toContain("INV-5") === false;
+    expect(csv).not.toContain("INV-5");
   });
 
   it("detects a stale status, altered journal identifiers or changed posting amounts", () => {

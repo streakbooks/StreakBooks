@@ -7,7 +7,8 @@ import {
 
 describe("Settings audit history paging", () => {
   it("offers Next only when a full page was returned", () => {
-    expect(hasNextSettingsAuditPage(AUDIT_PAGE_SIZE)).toBe(true);
+    expect(hasNextSettingsAuditPage(AUDIT_PAGE_SIZE + 1)).toBe(true);
+    expect(hasNextSettingsAuditPage(AUDIT_PAGE_SIZE)).toBe(false);
     expect(hasNextSettingsAuditPage(AUDIT_PAGE_SIZE - 1)).toBe(false);
     expect(hasNextSettingsAuditPage(0)).toBe(false);
   });

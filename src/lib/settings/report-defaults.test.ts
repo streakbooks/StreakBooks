@@ -17,6 +17,11 @@ describe("Settings Centre Reports default basis", () => {
     ).toEqual({ basis: "cash" });
   });
 
+  it("preserves explicitly customized report settings", () => {
+    const saved = { settings: '{"basis":"cash"}', from: "2026-01-01" };
+    expect(applyOrganisationReportDefaults(saved, { default_basis: "accrual" })).toEqual(saved);
+  });
+
   it("uses accrual safely for missing or malformed defaults", () => {
     expect(applyOrganisationReportDefaults({}, null)).toEqual({ basis: "accrual" });
     expect(applyOrganisationReportDefaults({}, { default_basis: "unknown" })).toEqual({

@@ -2,6 +2,12 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
+import {
+  parseWorkflowBoolean,
+  parseWorkflowCsvDateFormat,
+  parseWorkflowText,
+  parseWorkflowWholeDays,
+} from "@/lib/settings/workflow-defaults-validation";
 
 export type WorkflowSettings = {
   company_id: string;
@@ -66,26 +72,29 @@ export const upsertWorkflowSettings = createServerFn({ method: "POST" })
       accountingRequireJournalMemo?: boolean;
     }) => ({
       companyId: assertUuid(input.companyId),
-      salesDefaultPaymentTermsDays: Math.max(
+      salesDefaultPaymentTermsDays: parseWorkflowWholeDays(
+        input.salesDefaultPaymentTermsDays,
+        30,
         0,
-        Math.floor(Number(input.salesDefaultPaymentTermsDays ?? 30) || 0),
+        3650,
       ),
-      salesDefaultNotes: (input.salesDefaultNotes ?? "").trim().slice(0, 2000) || null,
-      salesPaymentInstructions:
-        (input.salesPaymentInstructions ?? "").trim().slice(0, 2000) || null,
-      salesQuoteValidityDays: Math.min(
-        365,
-        Math.max(1, Math.floor(Number(input.salesQuoteValidityDays ?? 30) || 30)),
-      ),
-      salesPricesIncludeTax: Boolean(input.salesPricesIncludeTax),
-      purchasesDefaultPaymentTermsDays: Math.max(
+      salesDefaultNotes: parseWorkflowText(input.salesDefaultNotes),
+      salesPaymentInstructions: parseWorkflowText(input.salesPaymentInstructions),
+      salesQuoteValidityDays: parseWorkflowWholeDays(input.salesQuoteValidityDays, 30, 1, 365),
+      salesPricesIncludeTax: parseWorkflowBoolean(input.salesPricesIncludeTax, false),
+      purchasesDefaultPaymentTermsDays: parseWorkflowWholeDays(
+        input.purchasesDefaultPaymentTermsDays,
+        30,
         0,
-        Math.floor(Number(input.purchasesDefaultPaymentTermsDays ?? 30) || 0),
+        3650,
       ),
-      purchasesDefaultNotes: (input.purchasesDefaultNotes ?? "").trim().slice(0, 2000) || null,
-      purchasesRequirePo: Boolean(input.purchasesRequirePo),
-      bankingCsvDateFormat: (input.bankingCsvDateFormat ?? "YYYY-MM-DD").trim().slice(0, 40),
-      accountingRequireJournalMemo: Boolean(input.accountingRequireJournalMemo),
+      purchasesDefaultNotes: parseWorkflowText(input.purchasesDefaultNotes),
+      purchasesRequirePo: parseWorkflowBoolean(input.purchasesRequirePo, false),
+      bankingCsvDateFormat: parseWorkflowCsvDateFormat(input.bankingCsvDateFormat),
+      accountingRequireJournalMemo: parseWorkflowBoolean(
+        input.accountingRequireJournalMemo,
+        false,
+      ),
     }),
   )
   .handler(async ({ data, context }) => {

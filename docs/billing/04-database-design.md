@@ -79,6 +79,13 @@ immutability triggers); gapless numbering; tax arithmetic; invoice issue on reco
 refund workflow; customer document functions; checkout price with tax; country readiness check;
 private `billing-documents` storage bucket.
 
+## Phase 9 migration
+
+`20261105230114_billing_api_v1.sql` (details in [05-api-reference.md](05-api-reference.md)):
+`platform_api_keys` gains `scopes` and `last_used_at`; owner-only scope grants; service-role key
+authentication; `billing.api_idempotency` (per caller, 24 hours); service-role keyset read models
+for invoices, payments and subscriptions; `platform_billing_api_access` for staff tokens.
+
 ## Phase 8 migration
 
 `20261105224027_billing_partners.sql` (details in [09-referral-commission.md](09-referral-commission.md)):
@@ -159,8 +166,12 @@ link requires an active account within its `company_limit` (row-locked check).
   `tests/integration/billing-03-pricing.sql` (60 assertions), `tests/integration/billing-04-provider-payments.sql`
   (54 assertions), `tests/integration/billing-05-subscriptions.sql` (52 assertions) and
   `tests/integration/billing-06-tax-invoicing.sql` (60 assertions) , `tests/integration/billing-07-coupons.sql`
-  (37 assertions) and `tests/integration/billing-08-partners.sql` (57 assertions). Suites run in file-name order on one database. The legacy fixture also carries the platform worker tables and the production
+  (37 assertions) , `tests/integration/billing-08-partners.sql` (57 assertions) and
+  `tests/integration/billing-09-api.sql` (34 assertions). Suites run in file-name order on one database. The legacy fixture also carries the platform worker tables and the production
   worker tick so the lifecycle job runs through the real scheduler.
+- Phase 9 rehearsal on the restored production copy: applied twice with Phase 8; a platform owner
+  granted `billing:read` to a key; the key authenticated with that scope; clients were refused the
+  read models; the three existing subscriptions were listed; idempotency keys started cleanly.
 - Phase 8 rehearsal on the restored production copy: applied twice; a firm applied after accepting
   the partner terms; its owner could not approve it, and approval without recorded evidence was
   refused; codes were refused while pending; referrals were refused until a second owner set the
@@ -213,7 +224,7 @@ link requires an active account within its `company_limit` (row-locked check).
 
 ## Hosted apply procedure
 
-Phases 1 to 8 are **not applied** to project `ipxflpzfcqwtenodbxwc`. When approved:
+Phases 1 to 9 are **not applied** to project `ipxflpzfcqwtenodbxwc`. When approved:
 
 Production has since received other migrations with later timestamps (for example payroll,
 `20261105153211`–`20261105181000`), so the billing series must be applied with

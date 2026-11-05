@@ -18,7 +18,7 @@ Nothing here is live in production until the hosted migration gate in
 | 6     | Invoices, payments, refunds, credit notes, tax                                                    | **Implemented and tested locally**, not applied to hosted; see [08-tax-and-accounting.md](08-tax-and-accounting.md)               |
 | 7     | Coupons                                                                                           | **Implemented and tested locally**, not applied to hosted; see [03-coupons.md](03-coupons.md)                                     |
 | 8     | CA partners, referrals, commission ledger (payouts disabled)                                      | **Implemented and tested locally**, not applied to hosted; see [09-referral-commission.md](09-referral-commission.md)             |
-| 9     | REST `/api/v1` + OpenAPI                                                                          | Planned                                                                                                                           |
+| 9     | REST `/api/v1` + OpenAPI                                                                          | **Implemented and tested locally**, not applied to hosted; see [05-api-reference.md](05-api-reference.md)                         |
 | 10    | Admin analytics, E2E, runbook                                                                     | Planned                                                                                                                           |
 
 ## Phase 1 requirements and how they are met

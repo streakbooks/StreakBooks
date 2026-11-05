@@ -37,7 +37,8 @@
     "audit:ui": "node scripts/check-ui-contracts.mjs --write-audit",
     "check:bundle": "node scripts/check-client-bundle.mjs",
     "test:public-ui": "playwright test --config playwright.public-ui.config.ts",
-    "test:create-panels": "playwright test --config playwright.create-panels.config.ts"
+    "test:create-panels": "playwright test --config playwright.create-panels.config.ts",
+    "openapi:billing": "UPDATE_OPENAPI=1 vitest run src/lib/billing/api/v1/router.test.ts"
   },
   "overrides": {
     "rolldown": "1.2.1"

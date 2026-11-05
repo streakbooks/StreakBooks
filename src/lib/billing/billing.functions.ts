@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
 import { getRequestHeader } from "@tanstack/react-start/server";
 import { assertCheckoutRegion, resolveBillingRegion } from "@/lib/billing/region";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -38,6 +38,15 @@ import { assertDiscountCap, assertPriceFloor } from "@/lib/billing/provider-acti
 import { assertRazorpayTestKey, assertStripeTestKey } from "@/lib/billing/provider-keys";
 
 type Client = SupabaseClient<Database>;
+
+/** Visitor country from the edge, when the call runs inside a server-function request. */
+function visitorCountry(): string | undefined {
+  try {
+    return getRequestHeader("x-vercel-ip-country");
+  } catch {
+    return undefined;
+  }
+}
 
 export type BillingPlanView = {
   code: string;
@@ -580,13 +589,15 @@ export const previewBillingQuote = createServerFn({ method: "POST" })
     return priced.quote;
   });
 
-export const startBillingTrial = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; planCode: string }) => ({
+export function parseTrialRequest(input: { companyId: string; planCode: string }) {
+  return {
     companyId: assertUuid(input?.companyId),
     planCode: requirePlanCode(input?.planCode),
-  }))
-  .handler(async ({ data, context }) => {
+  };
+}
+
+export const startTrialFor = createServerOnlyFn(
+  async (context: { supabase: Client }, data: ReturnType<typeof parseTrialRequest>) => {
     const { supabase } = context;
     await assertCompanyPermission(supabase, data.companyId, "billing.manage");
     const { data: ends, error } = await supabase.rpc(
@@ -598,30 +609,42 @@ export const startBillingTrial = createServerFn({ method: "POST" })
       throw new Error(error.message);
     }
     return { trialEndsAt: String(ends) };
-  });
+  },
+);
 
-export const createBillingCheckout = createServerFn({ method: "POST" })
+export const startBillingTrial = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: {
-      companyId: string;
-      planCode: string;
-      interval: string;
-      method: string;
-      origin: string;
-      offerCode?: string;
-      billing?: CheckoutBillingInput;
-    }) => ({
-      companyId: assertUuid(input?.companyId),
-      planCode: requirePlanCode(input?.planCode),
-      interval: assertInterval(input?.interval),
-      method: requirePayMethod(input?.method),
-      origin: assertOrigin(input?.origin ?? ""),
-      offerCode: (input?.offerCode ?? "").trim().slice(0, 40),
-      billing: parseCheckoutBilling(input?.billing),
-    }),
-  )
-  .handler(async ({ data, context }) => {
+  .inputValidator(parseTrialRequest)
+  .handler(({ data, context }) => startTrialFor(context, data));
+
+export type CheckoutRequest = {
+  companyId: string;
+  planCode: string;
+  interval: string;
+  method: string;
+  origin: string;
+  offerCode?: string;
+  billing?: CheckoutBillingInput;
+};
+
+export function parseCheckoutRequest(input: CheckoutRequest) {
+  return {
+    companyId: assertUuid(input?.companyId),
+    planCode: requirePlanCode(input?.planCode),
+    interval: assertInterval(input?.interval),
+    method: requirePayMethod(input?.method),
+    origin: assertOrigin(input?.origin ?? ""),
+    offerCode: (input?.offerCode ?? "").trim().slice(0, 40),
+    billing: parseCheckoutBilling(input?.billing),
+  };
+}
+
+/** Opens a provider checkout; shared by the server function and REST v1. */
+export const createCheckoutFor = createServerOnlyFn(
+  async (
+    context: { supabase: Client; userId: string },
+    data: ReturnType<typeof parseCheckoutRequest>,
+  ) => {
     const { supabase, userId } = context;
     await assertCompanyPermission(supabase, data.companyId, "billing.manage");
     const priced = await priceSelection(
@@ -722,7 +745,13 @@ export const createBillingCheckout = createServerFn({ method: "POST" })
       .eq("id" as never, checkoutId as never);
     if (updateError) throw new Error(updateError.message);
     return { url: session.url, provider: method.provider };
-  });
+  },
+);
+
+export const createBillingCheckout = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(parseCheckoutRequest)
+  .handler(({ data, context }) => createCheckoutFor(context, data));
 
 async function openPriceBookCheckout(input: {
   supabase: Client;
@@ -884,7 +913,7 @@ async function priceSelection(
   if (!company) throw new Error("Company not found or you do not have access.");
   const region = resolveBillingRegion({
     organisationCountry: company.country_code,
-    visitorCountry: getRequestHeader("x-vercel-ip-country"),
+    visitorCountry: visitorCountry(),
   });
   const currency = region.currency;
   const { data: plan, error: planError } = await supabase

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ApiKeysAdmin } from "@/components/platform/billing/ApiKeysAdmin";
 import { CountryPricingAdmin } from "@/components/platform/billing/CountryPricingAdmin";
 import { CouponsAdmin } from "@/components/platform/billing/CouponsAdmin";
 import { FinanceAdmin } from "@/components/platform/billing/FinanceAdmin";
@@ -83,6 +84,7 @@ function PlatformBillingPage() {
       <FinanceAdmin canEdit={editor} isOwner={owner} />
       <CouponsAdmin canEdit={editor} />
       <PartnerProgramAdmin canEdit={editor} isOwner={owner} />
+      <ApiKeysAdmin isOwner={owner} />
       <CountryPricingAdmin canEdit={editor} />
       <LegalDocumentsAdmin canEdit={editor} isOwner={owner} />
       <h2 className="pt-4 text-xl font-semibold">Legacy plan prices and versions</h2>

@@ -48,6 +48,10 @@ export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
       const pathname = new URL(request.url).pathname;
+      if (pathname.startsWith("/api/v1/")) {
+        const { handleApiV1 } = await import("./lib/billing/api/v1/router.server");
+        return handleApiV1(request);
+      }
       if (
         request.method === "POST" &&
         (pathname === "/api/billing/stripe" || pathname === "/api/billing/razorpay")

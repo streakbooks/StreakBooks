@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { BillingDocument } from "@/lib/billing/invoice-pdf.server";
@@ -61,15 +61,13 @@ export const listBillingDocuments = createServerFn({ method: "GET" })
       })) as BillingDocumentList,
   );
 
-export const downloadBillingDocument = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z
-      .object({ kind: z.enum(["invoice", "credit_note"]), id: z.string().uuid() })
-      .strict()
-      .parse(input),
-  )
-  .handler(async ({ data, context }) => {
+export const documentRequest = z
+  .object({ kind: z.enum(["invoice", "credit_note"]), id: z.string().uuid() })
+  .strict();
+
+/** Short-lived signed PDF link, rendered once; shared by the server function and REST v1. */
+export const documentDownloadFor = createServerOnlyFn(
+  async (context: { supabase: unknown }, data: z.infer<typeof documentRequest>) => {
     const doc = (await callRpc(context.supabase, "billing_document", {
       _kind: data.kind,
       _id: data.id,
@@ -102,7 +100,13 @@ export const downloadBillingDocument = createServerFn({ method: "POST" })
       throw new Error(signed.error?.message ?? "The document link could not be created.");
     }
     return { url: signed.data.signedUrl };
-  });
+  },
+);
+
+export const downloadBillingDocument = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => documentRequest.parse(input))
+  .handler(({ data, context }) => documentDownloadFor(context, data));
 
 export const setBillingTaxId = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

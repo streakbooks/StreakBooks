@@ -107,9 +107,12 @@ export async function handleBillingWebhook(request: Request): Promise<Response> 
   const raw = await request.text();
   let received: Received;
   try {
-    if (url.pathname === "/api/billing/stripe") {
+    if (url.pathname === "/api/billing/stripe" || url.pathname === "/api/v1/webhooks/stripe") {
       received = receiveStripe(raw, request.headers.get("stripe-signature"));
-    } else if (url.pathname === "/api/billing/razorpay") {
+    } else if (
+      url.pathname === "/api/billing/razorpay" ||
+      url.pathname === "/api/v1/webhooks/razorpay"
+    ) {
       received = receiveRazorpay(
         raw,
         request.headers.get("x-razorpay-signature"),

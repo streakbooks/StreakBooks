@@ -165,6 +165,18 @@ CREATE TABLE public.platform_partners (
 ALTER TABLE public.platform_partners ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.platform_partners FROM PUBLIC, anon, authenticated;
 
+-- Hash-only platform API keys (20261102200000_platform_api_keys.sql), as live.
+CREATE TABLE public.platform_api_keys (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  label text NOT NULL,
+  key_hash text NOT NULL,
+  created_by uuid NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  retired_at timestamptz
+);
+ALTER TABLE public.platform_api_keys ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.platform_api_keys FROM PUBLIC, anon, authenticated;
+
 -- Existing data present before the billing migrations run (exercises the backfill).
 INSERT INTO auth.users (id, email) VALUES
   ('00000000-0000-0000-0000-0000000000a1', 'owner-a@example.test'),

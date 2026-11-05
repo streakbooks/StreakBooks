@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { clientAddressHash } from "@/lib/billing/client-address.server";
@@ -53,9 +53,9 @@ export type SubscriptionState = {
   events: SubscriptionEvent[];
 };
 
-const companyInput = z.object({ companyId: z.string().uuid() }).strict();
+export const companyInput = z.object({ companyId: z.string().uuid() }).strict();
 const reasonCodes = CANCELLATION_REASONS.map((reason) => reason.id) as [string, ...string[]];
-const cancelInput = z
+export const cancelInput = z
   .object({
     companyId: z.string().uuid(),
     confirm: z.literal(true),
@@ -78,17 +78,18 @@ export const getSubscriptionState = createServerFn({ method: "GET" })
       })) as SubscriptionState,
   );
 
-export const cancelSubscription = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => cancelInput.parse(input))
-  .handler(async ({ data, context }) => {
+type LifecycleContext = { supabase: unknown; userId: string; claims: Record<string, unknown> };
+
+/** Cancels a subscription; shared by the server function and REST v1. */
+export const cancelSubscriptionFor = createServerOnlyFn(
+  async (context: LifecycleContext, data: z.infer<typeof cancelInput>, headers?: Headers) => {
     const result = (await callRpc(context.supabase, "billing_cancel_subscription", {
       _company_id: data.companyId,
       _confirm: data.confirm,
       _policy_document_id: data.policyDocumentId,
       _reason_code: data.reasonCode,
       _reason_text: data.reasonText,
-      _ip_hash: await clientAddressHash(),
+      _ip_hash: await clientAddressHash(headers),
     })) as {
       requestId: string;
       effectiveAt: string;
@@ -100,7 +101,13 @@ export const cancelSubscription = createServerFn({ method: "POST" })
         : result;
     const notice = await sendCancellationNotice(context, data.companyId, final);
     return { ...final, notice };
-  });
+  },
+);
+
+export const cancelSubscription = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => cancelInput.parse(input))
+  .handler(({ data, context }) => cancelSubscriptionFor(context, data));
 
 type AdminRpc = {
   rpc: (
@@ -254,10 +261,9 @@ async function sendCancellationNotice(
   return sent.ok ? "sent" : "failed";
 }
 
-export const reverseCancellation = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => companyInput.parse(input))
-  .handler(async ({ data, context }) => {
+/** Withdraws a scheduled cancellation; shared by the server function and REST v1. */
+export const reverseCancellationFor = createServerOnlyFn(
+  async (context: { supabase: unknown; userId: string }, data: z.infer<typeof companyInput>) => {
     const result = (await callRpc(context.supabase, "billing_reverse_cancellation", {
       _company_id: data.companyId,
     })) as { requestId: string; status: "reversed" | "needs_provider" };
@@ -281,7 +287,13 @@ export const reverseCancellation = createServerFn({ method: "POST" })
       if (confirmed.error) throw new Error(confirmed.error.message);
     }
     return { ok: true as const };
-  });
+  },
+);
+
+export const reverseCancellation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => companyInput.parse(input))
+  .handler(({ data, context }) => reverseCancellationFor(context, data));
 
 export const pauseSubscription = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

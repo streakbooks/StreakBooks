@@ -94,6 +94,17 @@
 | Undisclosed referrals                            | Each touch requires acceptance of the published partner disclosure                                                          | SQL suite               |
 | Automatic money movement                         | None; payouts are manual records with a bank reference                                                                      | Code review             |
 
+## Phase 9 controls
+
+| Threat                             | Control                                                                                           | Verified by                |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------- | -------------------------- |
+| REST bypassing app rules           | Handlers call the same RPCs with the caller's JWT; strict schemas                                 | Router tests               |
+| Leaked or over-privileged API keys | Hash-only storage, shown once, owner-only scopes, audited, retirement immediate, admin reads only | SQL suite and router tests |
+| Duplicate mutations on retries     | Per-user idempotency keys with replay and conflict detection                                      | SQL suite and router tests |
+| Leaking internals in errors        | 500 responses carry only a request ID                                                             | Router tests               |
+| Server code in the browser bundle  | Shared handlers wrapped with `createServerOnlyFn`; build import protection                        | Build and bundle scan      |
+| Cross-origin browser calls         | No CORS headers                                                                                   | Code review                |
+
 ## Rules for later phases
 
 - Payment and tax secrets stay server-side (`*.server.ts`, Edge Function secrets); `VITE_*`

@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
@@ -69,15 +69,28 @@ export const openBillingPortal = createServerFn({ method: "POST" })
     return { url };
   });
 
-export const changeOrganisationPlan = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; planCode: string; interval?: string }) => ({
+export function parsePlanChange(input: { companyId: string; planCode: string; interval?: string }) {
+  return {
     companyId: assertUuid(input?.companyId),
     planCode: requirePlan(input?.planCode),
-  }))
-  .handler(async ({ data, context }) => {
+  };
+}
+
+/** Changes the plan at the provider and records it; shared by the server function and REST v1. */
+export const changePlanFor = createServerOnlyFn(
+  async (
+    context: { supabase: unknown; userId: string },
+    data: ReturnType<typeof parsePlanChange>,
+  ) => {
     // The database checks billing permission, the subscription and the published target price.
-    const { data: prepared, error } = await context.supabase.rpc(
+    const { data: prepared, error } = await (
+      context.supabase as {
+        rpc: (
+          fn: never,
+          args: never,
+        ) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
+      }
+    ).rpc(
       "billing_prepare_plan_change" as never,
       { _company_id: data.companyId, _plan_code: data.planCode } as never,
     );
@@ -138,4 +151,10 @@ export const changeOrganisationPlan = createServerFn({ method: "POST" })
     );
     if (recordError) throw new Error(recordError.message);
     return { kind: change.kind, applies, effectiveAt: change.periodEnd };
-  });
+  },
+);
+
+export const changeOrganisationPlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(parsePlanChange)
+  .handler(({ data, context }) => changePlanFor(context, data));

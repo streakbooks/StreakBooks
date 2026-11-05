@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { AUDIT_PAGE_SIZE, buildSettingsAuditCsv, formatSettingsAuditPageLabel, hasNextSettingsAuditPage } from "./audit-export";
+import {
+  AUDIT_PAGE_SIZE,
+  buildSettingsAuditCsv,
+  formatSettingsAuditPageLabel,
+  hasNextSettingsAuditPage,
+} from "./audit-export";
 
 describe("Settings audit history paging", () => {
   it("offers Next only when a full page was returned", () => {

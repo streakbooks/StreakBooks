@@ -16,7 +16,7 @@ vi.mock("@tanstack/react-start", () => ({
 vi.mock("@/integrations/supabase/auth-middleware", () => ({ requireSupabaseAuth: {} }));
 vi.mock("@/lib/assert-company-access", () => ({ assertCompanyPermission: vi.fn() }));
 
-import { ONBOARDING_TEMPLATE, engagementInput } from "./firm-workflows.functions";
+import { ONBOARDING_TEMPLATE, engagementInput, planningInput } from "./firm-workflows.functions";
 
 const valid = {
   firmId: "9e39add8-d585-46cb-ac80-f38b67e6397f",
@@ -58,5 +58,35 @@ describe("firm onboarding and engagement validation", () => {
     expect(
       engagementInput.safeParse({ ...valid, id: "e5bc8abc-dd70-4a73-8324-b05200386a69" }).success,
     ).toBe(false);
+  });
+});
+
+describe("onboarding plan validation", () => {
+  const plan = {
+    firmId: valid.firmId,
+    companyId: valid.companyId,
+    task_key: "opening_records",
+    version: 3,
+    assignee_id: null,
+    due_date: "2026-11-10",
+    depends_on_task_key: "access",
+    reminders_enabled: true,
+  };
+  it("accepts a valid assigned plan, cleared assignee and blank due date", () => {
+    expect(planningInput.safeParse(plan).success).toBe(true);
+    expect(planningInput.safeParse({
+      ...plan,
+      due_date: null,
+      depends_on_task_key: null,
+      assignee_id: valid.firmId,
+    }).success).toBe(true);
+  });
+  it("rejects invalid dates, forged versions, self-dependency and unknown inputs", () => {
+    expect(planningInput.safeParse({ ...plan, due_date: "2026-02-30" }).success).toBe(false);
+    expect(planningInput.safeParse({ ...plan, version: 0 }).success).toBe(false);
+    expect(planningInput.safeParse({
+      ...plan, depends_on_task_key: "opening_records",
+    }).success).toBe(false);
+    expect(planningInput.safeParse({ ...plan, unexplained: true }).success).toBe(false);
   });
 });

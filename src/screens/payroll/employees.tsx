@@ -84,6 +84,8 @@ export function PayrollEmployeesPage() {
   } | null>(null);
   const [importDone, setImportDone] = useState(0);
   const importInputRef = useRef<HTMLInputElement>(null);
+  // Synchronous guard: two rapid clicks must never start overlapping writes.
+  const importBusyRef = useRef(false);
 
   const settingsQ = useQuery({
     queryKey: ["payroll-settings-page", company?.id],
@@ -187,7 +189,8 @@ export function PayrollEmployeesPage() {
   };
 
   const importCsv = async (file: File | null) => {
-    if (!file || !company || !canManage) return;
+    if (!file || !company || !canManage || importBusyRef.current) return;
+    importBusyRef.current = true;
     setImporting(true);
     setImportPreview(null);
     try {
@@ -216,30 +219,47 @@ export function PayrollEmployeesPage() {
     } catch (error) {
       toast.error(friendlyAuthError(error));
     } finally {
+      importBusyRef.current = false;
       setImporting(false);
       if (importInputRef.current) importInputRef.current.value = "";
     }
   };
 
   const confirmImport = async () => {
-    if (!importPreview || !company || importPreview.companyId !== company.id || !canManage) return;
+    if (!importPreview || !company || importPreview.companyId !== company.id || !canManage || importBusyRef.current) return;
+    importBusyRef.current = true;
     setImporting(true);
     let created = 0;
+    let newlySkipped = 0;
     try {
+      // Recheck on confirmation: another session may have created an employee
+      // during CSV review. Never overwrite those employee records.
+      const current = await fetchList({ data: { companyId: company.id, status: null, q: null } });
+      if (!current.available) throw new Error(current.migrationMessage ?? "Employee data unavailable.");
+      const existing = new Set(current.employees.map((employee) => employee.employee_number));
       for (const draft of importPreview.drafts) {
+        const number = draft.employeeNumber.trim();
+        if (number && existing.has(number)) {
+          newlySkipped += 1;
+          continue;
+        }
         await saveEmployee({ data: { companyId: company.id, draft } });
         created += 1;
         setImportDone(created);
+        if (number) existing.add(number);
       }
-      toast.success(`Imported ${created} employees; skipped ${importPreview.skipped} existing IDs.`);
+      toast.success(`Imported ${created} employees; skipped ${importPreview.skipped + newlySkipped} existing IDs.`);
     } catch (error) {
-      toast.error(`Import stopped after ${created} of ${importPreview.drafts.length} new rows.`, {
+      toast.error(`Import stopped after ${created} saved and ${newlySkipped} newly skipped rows.`, {
         description: `Earlier rows were saved; later rows were not attempted. ${friendlyAuthError(error)}`,
       });
     } finally {
-      await queryClient.invalidateQueries({ queryKey: ["payroll-employees", company.id] });
+      // Unlock before invalidating/refetching: a failed refresh must not leave
+      // the import action disabled after some rows were committed.
+      importBusyRef.current = false;
       setImportPreview(null);
       setImporting(false);
+      void queryClient.invalidateQueries({ queryKey: ["payroll-employees", company.id] });
     }
   };
 

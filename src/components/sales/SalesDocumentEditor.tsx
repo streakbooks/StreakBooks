@@ -24,6 +24,7 @@ import { getSalesDocumentConfig } from "@/lib/sales/sales-config.functions";
 import { listProducts } from "@/lib/products/products.functions";
 import { getCustomerPriceListDefault } from "@/lib/products/customer-price-list.functions";
 import { resolvedDraftPriceList } from "@/lib/products/customer-price-list-rules";
+import { verifiedLinePricing } from "@/lib/products/price-list-provenance";
 import {
   listProductPriceLists,
   resolveSalesDraftPriceList,
@@ -79,6 +80,8 @@ export type ExistingSalesDoc = {
   fxRateToBase: number;
   /** Credit note: the invoice it credits. */
   sourceInvoiceId: string | null;
+  priceListId?: string | null;
+  priceListName?: string | null;
   lines: SavedLineRow[];
 };
 
@@ -208,7 +211,9 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
     existing?.sourceInvoiceId ?? fromInvoiceId ?? "",
   );
   // null: accept the customer's default; "": explicitly use normal catalogue prices.
-  const [manualPriceListId, setManualPriceListId] = useState<string | null>(null);
+  const [manualPriceListId, setManualPriceListId] = useState<string | null>(
+    existing ? existing.priceListId ?? "" : null,
+  );
   const [applyPriceListOpen, setApplyPriceListOpen] = useState(false);
   const [priceListAmountsTouched, setPriceListAmountsTouched] = useState(false);
   const [lines, setLines] = useState<SalesLineFormState[]>(() =>
@@ -289,11 +294,12 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
           lines, draftPriceOverrides, currency,
           draftPricesQ.data?.rules ?? [], docDate,
           draftPricesQ.data?.discounts ?? [], draftCatalogueBases,
+          selectedPriceListId,
         )
       : null,
     [
       draftPricesReady, lines, draftPriceOverrides,
-      currency, draftPricesQ.data, docDate, draftCatalogueBases,
+      currency, draftPricesQ.data, docDate, draftCatalogueBases, selectedPriceListId,
     ],
   );
 
@@ -316,6 +322,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
     }
     setManualPriceListId("");
     setApplyPriceListOpen(false);
+    setLines((previous) => previous.map((line) => ({ ...line, pricingTrace: null })));
     setCurrency(nextCurrency);
   };
 
@@ -424,6 +431,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
     setContactId(id);
     setManualPriceListId(existing ? "" : null);
     setApplyPriceListOpen(false);
+    setLines((previous) => previous.map((line) => ({ ...line, pricingTrace: null })));
     if (kind === "credit_note") setSourceInvoiceId("");
     if (kind === "invoice") {
       const c = customers.find((x) => x.id === id);
@@ -462,6 +470,19 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
           currencyCode: currency,
           fxRateToBase: fx,
           lines: payloadLines,
+          ...(isSalesDraft ? {
+            pricing: {
+              priceListId: selectedPriceListId || null,
+              lines: lines.map((line) => verifiedLinePricing({
+                trace: line.pricingTrace,
+                selectedPriceListId: selectedPriceListId || null,
+                productId: line.productId,
+                quantity: line.quantity,
+                unitPrice: line.unitPrice,
+                currency,
+              })),
+            },
+          } : {}),
         };
 
         if (kind === "invoice") {
@@ -818,6 +839,12 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
                   onValueChange={(value) => {
                     setManualPriceListId(value === "none" ? "" : value);
                     setApplyPriceListOpen(false);
+                    setLines((previous) => previous.map((line) => ({
+                      ...line,
+                      pricingTrace:
+                        line.pricingTrace?.price_list_id === value
+                          ? line.pricingTrace : null,
+                    })));
                   }}
                 >
                   <SelectTrigger id="sales-price-list" aria-label="Sales price list">
@@ -845,7 +872,9 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Price lists are available in their own currency only. New catalogue selections use
+              The selected price list and genuine line pricing sources are recorded when you save
+              this draft. Price lists are available in their own currency only.
+              New catalogue selections use
               the applicable quantity tier and document date, then a fixed or catalogue price.
               A single eligible percentage rule can reduce that unit price before separate line
               discount amounts and tax. Changing quantity or date never silently reprices existing
@@ -938,6 +967,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
           priceRules={draftPricesReady ? draftPricesQ.data?.rules ?? [] : []}
           discountRules={draftPricesReady ? draftPricesQ.data?.discounts ?? [] : []}
           pricingDate={docDate}
+          selectedPriceListId={selectedPriceListId}
           productSelectionDisabled={
             customerDefaultPending ||
             (Boolean(selectedPriceListId) && !draftPricesReady)

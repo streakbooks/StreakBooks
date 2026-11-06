@@ -37,6 +37,7 @@ export type SavedLineRow = {
   tax_rate_bps: number;
   tax_code_id?: string | null;
   product_id?: string | null;
+  pricing_snapshot?: SalesLineFormState["pricingTrace"];
 };
 
 export function lineRowToForm(l: SavedLineRow, currency: string): SalesLineFormState {
@@ -49,6 +50,7 @@ export function lineRowToForm(l: SavedLineRow, currency: string): SalesLineFormS
     discount: fromMinorUnits(l.discount_minor, currency),
     taxRateBps: String(l.tax_rate_bps),
     taxCodeId: l.tax_code_id ?? "",
+    pricingTrace: l.pricing_snapshot ?? null,
   };
 }
 

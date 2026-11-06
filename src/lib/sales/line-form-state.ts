@@ -1,4 +1,7 @@
+import type { PriceListLineSnapshot } from "@/lib/products/price-list-provenance";
+
 export type SalesLineFormState = {
+  pricingTrace?: PriceListLineSnapshot | null;
   productId: string;
   description: string;
   accountId: string;

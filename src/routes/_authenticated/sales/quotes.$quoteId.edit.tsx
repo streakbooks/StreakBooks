@@ -59,6 +59,8 @@ function EditQuote() {
         currencyCode: quote.currency_code,
         fxRateToBase: Number((quote as { fx_rate_to_base?: number }).fx_rate_to_base ?? 1),
         sourceInvoiceId: null,
+        priceListId: quote.price_list_id,
+        priceListName: quote.price_list_name_snapshot,
         lines: quote.sales_quote_lines,
       }}
     />

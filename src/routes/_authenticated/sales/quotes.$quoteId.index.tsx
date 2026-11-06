@@ -199,6 +199,11 @@ function QuoteDetailPage() {
       {!convertible.ok && !q.converted_invoice_id && q.status !== "void" ? (
         <p className="mb-4 text-sm text-muted-foreground">{convertible.reason}</p>
       ) : null}
+      {q.price_list_name_snapshot ? (
+        <p className="mb-3 text-sm text-muted-foreground print:hidden">
+          Selected sales price list at save: {q.price_list_name_snapshot}
+        </p>
+      ) : null}
       {q.memo ? <p className="mb-4 text-sm text-muted-foreground">{q.memo}</p> : null}
       <Table>
         <TableHeader>
@@ -215,7 +220,18 @@ function QuoteDetailPage() {
         <TableBody>
           {lines.map((l) => (
             <TableRow key={l.id}>
-              <TableCell>{l.description}</TableCell>
+              <TableCell>
+                {l.description}
+                {l.pricing_snapshot?.source === "price_list" ? (
+                  <p className="mt-1 text-xs text-muted-foreground print:hidden">
+                    List pricing: {l.pricing_snapshot.basis.replace("_", " ")}
+                    {l.pricing_snapshot.discount_bps
+                      ? ` · ${(l.pricing_snapshot.discount_bps / 100).toFixed(2)}% rule`
+                      : ""}
+                    {" · "}priced {l.pricing_snapshot.pricing_date}
+                  </p>
+                ) : null}
+              </TableCell>
               <TableCell className="text-right">{l.quantity}</TableCell>
               <TableCell className="text-right">{money(l.unit_price_minor, cur)}</TableCell>
               <TableCell className="text-right">{money(l.discount_minor, cur)}</TableCell>

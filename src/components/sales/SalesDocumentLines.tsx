@@ -10,6 +10,7 @@ import { type DraftTierPriceRule } from "@/lib/products/price-list-tiers";
 import {
   resolveDraftDiscountedUnitPrice, type DraftDiscountRule,
 } from "@/lib/products/price-list-discounts";
+import { appliedPriceListSnapshot, withManualPricing } from "@/lib/products/price-list-provenance";
 import { computeTaxLineRounded } from "@/lib/sales/line-math-rounded";
 import type { TaxTreatment } from "@/lib/sales/line-helpers";
 import type { SalesTaxCode } from "@/lib/sales/tax-codes";
@@ -51,6 +52,7 @@ type Props = {
   priceRules?: readonly DraftTierPriceRule[];
   discountRules?: readonly DraftDiscountRule[];
   pricingDate?: string;
+  selectedPriceListId?: string;
   /** Block catalogue selection while an active price list is being loaded or has failed. */
   productSelectionDisabled?: boolean;
   /** Called when a new line receives a selected price-list amount. */
@@ -76,6 +78,7 @@ export function SalesDocumentLines({
   priceRules = [],
   discountRules = [],
   pricingDate = "",
+  selectedPriceListId = "",
   productSelectionDisabled = false,
   onPriceListProductSelected,
   accounts,
@@ -124,7 +127,7 @@ export function SalesDocumentLines({
 
   const update = (idx: number, patch: Partial<SalesLineFormState>) => {
     const next = [...lines];
-    next[idx] = { ...lines[idx]!, ...patch };
+    next[idx] = withManualPricing(lines[idx]!, patch);
     onChange(next);
   };
 
@@ -150,6 +153,19 @@ export function SalesDocumentLines({
     if (selectedPrice !== undefined) onPriceListProductSelected?.();
     update(idx, {
       productId,
+      pricingTrace: selectedPrice !== undefined && selectedPriceListId
+        ? appliedPriceListSnapshot({
+            priceListId: selectedPriceListId,
+            productId,
+            currency,
+            quantity: lines[idx]?.quantity ?? "1",
+            documentDate: pricingDate,
+            cataloguePriceMinor: p.sales_price_minor,
+            fixedPrices: priceOverrides,
+            tiers: priceRules,
+            discounts: discountRules,
+          })
+        : null,
       description: p.description?.trim() || p.name,
       accountId: p.income_account_id ?? lines[idx]?.accountId ?? "",
       unitPrice: fromMinorUnits(selectedPrice ?? p.sales_price_minor, currency),

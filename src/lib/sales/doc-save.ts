@@ -12,6 +12,12 @@ import { allocateDocumentNumber } from "@/lib/settings/document-numbering";
 import { callSalesRpc, type SalesClient } from "@/lib/sales/rpc";
 import type { SalesLineComputed } from "@/lib/sales/line-helpers";
 import { sumLines } from "@/lib/sales/line-helpers";
+import type { PriceListLineSnapshot } from "@/lib/products/price-list-provenance";
+
+export type SalesDraftPricing = {
+  priceListId: string | null;
+  lines: Array<PriceListLineSnapshot | null>;
+};
 
 export type SalesDocKind = "invoice" | "quote" | "credit_note";
 
@@ -33,6 +39,8 @@ export type SaveSalesDocInput = {
   /** Invoice: create from this quote (claims it atomically). */
   quoteId?: string | null;
   lines: SalesLineComputed[];
+  /** Atomic extra pricing metadata, supported only by the priced save RPC. */
+  pricing?: SalesDraftPricing | undefined;
 };
 
 const TABLES = {
@@ -86,9 +94,12 @@ export async function saveSalesDocument(
   supabase: SalesClient,
   input: SaveSalesDocInput,
 ): Promise<{ id: string; number: string | null; usedFallback: boolean }> {
+  const rpcName = input.pricing
+    ? "save_sales_document_draft_priced"
+    : "save_sales_document_draft";
   const rpc = await callSalesRpc<{ id: string; number: string | null }>(
     supabase,
-    "save_sales_document_draft",
+    rpcName,
     {
       kind: input.kind,
       company_id: input.companyId,
@@ -104,10 +115,22 @@ export async function saveSalesDocument(
       invoice_id: input.sourceInvoiceId ?? null,
       quote_id: input.quoteId ?? null,
       lines: input.lines.map(linePayload),
+      ...(input.pricing ? {
+        pricing: {
+          price_list_id: input.pricing.priceListId,
+          lines: input.pricing.lines,
+        },
+      } : {}),
     },
   );
   if (!rpc.missing) {
     return { id: rpc.data.id, number: rpc.data.number ?? null, usedFallback: false };
+  }
+  if (input.pricing) {
+    throw new Error(
+      "Atomic pricing provenance requires the deployed sales draft pricing migration. " +
+      "No draft was saved; ask an administrator to apply the migration.",
+    );
   }
   const r = await saveFallback(supabase, input);
   return { ...r, usedFallback: true };

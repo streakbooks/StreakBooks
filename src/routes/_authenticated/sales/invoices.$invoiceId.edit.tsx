@@ -59,6 +59,8 @@ function EditInvoice() {
         currencyCode: inv.currency_code,
         fxRateToBase: Number((inv as { fx_rate_to_base?: number }).fx_rate_to_base ?? 1),
         sourceInvoiceId: null,
+        priceListId: inv.price_list_id,
+        priceListName: inv.price_list_name_snapshot,
         lines: inv.sales_invoice_lines,
       }}
     />

@@ -1,4 +1,5 @@
 import { fromMinorUnits } from "@/lib/accounting/money";
+import { appliedPriceListSnapshot } from "@/lib/products/price-list-provenance";
 import type { SalesLineFormState } from "@/lib/sales/line-form-state";
 import { type DraftTierPriceRule } from "@/lib/products/price-list-tiers";
 import {
@@ -46,6 +47,7 @@ export function previewPriceListApplication(
   documentDate = "",
   discountRules: readonly DraftDiscountRule[] = [],
   catalogueBasePrices: Readonly<Record<string, number>> = {},
+  priceListId = "",
 ): { lines: SalesLineFormState[]; changed: number; matched: number } {
   let changed = 0;
   let matched = 0;
@@ -67,7 +69,22 @@ export function previewPriceListApplication(
     matched++;
     const nextPrice = fromMinorUnits(BigInt(priceMinor), currency);
     if (line.unitPrice !== nextPrice) changed++;
-    return { ...line, unitPrice: nextPrice };
+    const pricingTrace = priceListId
+      ? appliedPriceListSnapshot({
+          priceListId,
+          productId: line.productId,
+          currency,
+          quantity: line.quantity,
+          documentDate,
+          cataloguePriceMinor: catalogueBasePrices[line.productId],
+          fixedPrices: overrides,
+          tiers: tierRules,
+          discounts: discountRules,
+        })
+      : null;
+    return priceListId
+      ? { ...line, unitPrice: nextPrice, pricingTrace }
+      : { ...line, unitPrice: nextPrice };
   });
   return { lines: updated, changed, matched };
 }

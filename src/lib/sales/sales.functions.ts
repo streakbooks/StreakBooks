@@ -17,7 +17,8 @@ import { addDaysIso, type SalesLineInput } from "@/lib/sales/line-helpers";
 import { postInvoiceAuthorisation } from "@/lib/sales/posting";
 import { resolveArAccount } from "@/lib/sales/ar-accounts";
 import { callSalesRpc, requireRpc, type SalesClient } from "@/lib/sales/rpc";
-import { deleteDraftDocument, saveSalesDocument } from "@/lib/sales/doc-save";
+import { deleteDraftDocument, saveSalesDocument, type SalesDraftPricing } from "@/lib/sales/doc-save";
+import type { PriceListLineSnapshot } from "@/lib/products/price-list-provenance";
 import {
   type ListQuery,
   assertReason,
@@ -338,6 +339,8 @@ export const exportInvoicesCsv = createServerFn({ method: "GET" })
 
 export type InvoiceDetail = {
   id: string;
+  price_list_id: string | null;
+  price_list_name_snapshot: string | null;
   status: string;
   invoice_number: string | null;
   invoice_date: string;
@@ -369,6 +372,7 @@ export type InvoiceDetail = {
     account_id: string;
     quantity: number;
     unit_price_minor: number;
+    pricing_snapshot?: PriceListLineSnapshot | null;
     discount_minor: number;
     tax_rate_bps: number;
     tax_code_id: string | null;
@@ -529,7 +533,39 @@ type InvoiceDraftInput = {
   currencyCode: string;
   fxRateToBase?: number;
   lines: SalesLineInput[];
+  pricing?: SalesDraftPricing | undefined;
 };
+
+function validatePricingPayload(
+  pricing: SalesDraftPricing | undefined,
+  lineCount: number,
+): SalesDraftPricing | undefined {
+  if (!pricing) return undefined;
+  if (!Array.isArray(pricing.lines) || pricing.lines.length !== lineCount) {
+    throw new Error("Pricing snapshot count must match document lines");
+  }
+  return {
+    priceListId: pricing.priceListId ? assertUuid(pricing.priceListId, "price list") : null,
+    lines: pricing.lines.map((trace) => {
+      if (trace === null) return null;
+      if (!trace || typeof trace !== "object" || trace.source !== "price_list") {
+        throw new Error("Invalid line pricing provenance");
+      }
+      if (!Number.isSafeInteger(trace.unit_price_minor) || trace.unit_price_minor < 0) {
+        throw new Error("Invalid price-list unit amount");
+      }
+      if (!Number.isInteger(trace.discount_bps) || trace.discount_bps < 0 ||
+        trace.discount_bps > 10000) {
+        throw new Error("Invalid pricing discount basis points");
+      }
+      return {
+        ...trace,
+        price_list_id: assertUuid(trace.price_list_id, "line price list"),
+        product_id: assertUuid(trace.product_id, "line product"),
+      };
+    }),
+  };
+}
 
 function parseInvoiceDraftInput(input: InvoiceDraftInput) {
   if (!isIsoDate(input.invoiceDate) || !isIsoDate(input.dueDate)) {
@@ -547,6 +583,7 @@ function parseInvoiceDraftInput(input: InvoiceDraftInput) {
     currencyCode: input.currencyCode ?? "",
     fxRateToBase: input.fxRateToBase,
     lines: input.lines,
+    pricing: validatePricingPayload(input.pricing, input.lines.length),
   };
 }
 
@@ -577,6 +614,7 @@ async function saveInvoiceDraftCore(
     currencyCode,
     fxRateToBase,
     lines,
+    pricing: data.pricing,
   });
   return { id: saved.id, invoiceNumber: saved.number };
 }
@@ -1050,6 +1088,7 @@ export const saveQuoteDraft = createServerFn({ method: "POST" })
       currencyCode: string;
       fxRateToBase?: number;
       lines: SalesLineInput[];
+      pricing?: SalesDraftPricing | undefined;
     }) => {
       if (!isIsoDate(input.quoteDate)) throw new Error("Quote date must be YYYY-MM-DD");
       const expiry = (input.expiryDate ?? "").trim();
@@ -1067,6 +1106,7 @@ export const saveQuoteDraft = createServerFn({ method: "POST" })
         currencyCode: input.currencyCode ?? "",
         fxRateToBase: input.fxRateToBase,
         lines: input.lines,
+        pricing: validatePricingPayload(input.pricing, input.lines.length),
       };
     },
   )
@@ -1093,12 +1133,15 @@ export const saveQuoteDraft = createServerFn({ method: "POST" })
       currencyCode,
       fxRateToBase,
       lines,
+      pricing: data.pricing,
     });
     return { id: saved.id, quoteNumber: saved.number };
   });
 
 export type QuoteDetail = {
   id: string;
+  price_list_id: string | null;
+  price_list_name_snapshot: string | null;
   quote_number: string | null;
   quote_date: string;
   expiry_date: string | null;
@@ -1120,6 +1163,7 @@ export type QuoteDetail = {
     account_id: string;
     quantity: number;
     unit_price_minor: number;
+    pricing_snapshot?: PriceListLineSnapshot | null;
     discount_minor: number;
     tax_rate_bps: number;
     tax_code_id: string | null;

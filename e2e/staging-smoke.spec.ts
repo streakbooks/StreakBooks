@@ -177,14 +177,17 @@ test.describe("authenticated LinkBooks staging smoke", () => {
     // No staging fixture guarantees inbox rows. Check grouping only when it is
     // rendered, otherwise assert the real empty state rather than invent alerts.
     const group = page.getByRole("button", { name: "Group page by module" });
+    const emptyState = page.getByText("No matching notifications across your accessible history.");
+    // Wait until the inbox has settled; checking the toggle immediately after
+    // navigation could incorrectly interpret pending data as an empty inbox.
+    await expect(group.or(emptyState)).toBeVisible({ timeout: 30_000 });
     if (await group.isVisible()) {
       await group.click();
       await expect(group).toHaveAttribute("aria-pressed", "true");
       await group.click();
       await expect(group).toHaveAttribute("aria-pressed", "false");
     } else {
-      await expect(page.getByText("No matching notifications across your accessible history."))
-        .toBeVisible();
+      await expect(emptyState).toBeVisible();
     }
   });
 

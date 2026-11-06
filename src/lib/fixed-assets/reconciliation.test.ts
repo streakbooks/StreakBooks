@@ -267,6 +267,19 @@ describe("Fixed Assets / GL reconciliation", () => {
     )).toThrow(/disposal state/i);
   });
 
+  it("fails closed if an asset has duplicate depreciation rows for one month", () => {
+    expect(() => reconcileFixedAssets(
+      [asset("a")],
+      [
+        { asset_id: "a", period_end: "2026-03-31", amount_minor: "250" },
+        { asset_id: "a", period_end: "2026-03-31", amount_minor: "250" },
+      ],
+      balances("12000", "1500"),
+      accounts,
+      "2026-11-06",
+    )).toThrow(/duplicate depreciation entry/i);
+  });
+
   it("rejects historical depreciation beyond cost for assets disposed before the cutoff", () => {
     expect(() => reconcileFixedAssets(
       [asset("a", {

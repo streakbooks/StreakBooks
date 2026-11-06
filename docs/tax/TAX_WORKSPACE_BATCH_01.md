@@ -94,3 +94,55 @@ Tax Return manual scenarios:
 Local npm/TypeScript/ESLint/build/browser/DB tests are unrun in this environment.
 GitHub CI was deliberately not started. No migration, production deployment or
 merge was performed. Review and test the draft PR before merging.
+
+
+## Continuation — Batch 03: posted tax history guards and filed-return variance
+
+### Implemented in code
+- Migration \`20261106120000_tax_master_posted_history_guard.sql\` adds
+  organisation-scoped database triggers. A posted invoice/bill with \`tax_code_id\`
+  protects the referenced code's rate, treatment, recoverability, account,
+  reporting class, usage, and identifier from retroactive mutation.
+- A rate referenced through posted documents cannot have its amount, original
+  start date or fundamental treatment changed; it may be deactivated and
+  end-dated on or after the last posted document date.
+- Tax-code inserts/updates reject a foreign-organisation tax rate or GL account
+  even if a caller knows another tenant's UUID. Changing company_id is rejected.
+- Guards preserve name corrections and active/inactive changes. Triggers cover
+  direct table updates, not only changes through the Tax UI.
+- Added \`tests/fixtures/tax-master-history/baseline.sql\`,
+  \`tests/integration/tax-master-posted-history.sql\`, and a manually invoked
+  isolated Docker/PostgreSQL runner:
+  \`node scripts/test-tax-master-history-postgres.mjs\`.
+- Filed return details now show a four-column table of recorded filed, current
+  recalculation, and a signed delta for each changed return box (using bigint
+  subtraction to avoid numeric overflow). A link opens the separate
+  journal-derived GL Tax Summary report.
+- New pure unit tests cover positive/negative/large filed-versus-current deltas.
+
+### Verification and rollout gates
+1. Run the PostgreSQL fixture runner locally; it does not use Supabase or CI.
+2. Run \`npm.cmd test -- src/lib/tax\`, typecheck, lint, build, and browser regressions.
+3. Before deployment, audit existing tax_code_id usage, especially legacy
+   documents and any organisation/rate/account mismatches. The migration does
+   not rewrite historical rows; existing violations must be assessed separately.
+4. Apply the migration first in a staging Supabase project, validate migration
+   idempotence and transaction/account behaviour, and check dual-tenant RLS
+   and concurrent posting/edit scenarios.
+5. Only after reviewed staging results should production deployment and
+   feature enablement be considered. This batch has not been deployed.
+
+### Explicit limitations
+- Database master guards cover posted **sales invoice** and **purchase bill**
+  lines with a tax_code_id and posted_journal_id. Uncoded legacy lines, credit
+  notes with no tax_code_id, expenses, external uploads and documents with
+  missing posting evidence are not retroactively protected by these guards.
+- The migration does not yet provide a concurrency stress guarantee against
+  simultaneous posting and master edits. Test and harden transaction locking
+  prior to claiming end-to-end immutable reference guarantees.
+- The new variance table compares stored return boxes with re-calculated boxes;
+  it is **not** a GL-to-return reconciliation or a statutory amendment.
+  Journal posting/basis differences must still be investigated via the GL.
+- No e-filing or tax-authority integration was added.
+- GitHub CI was not run, local PostgreSQL and browser tests were not executed,
+  and no merge or deployment is claimed.

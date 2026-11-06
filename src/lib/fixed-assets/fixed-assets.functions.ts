@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { prepareFixedAssetsCsv } from "@/lib/imports/fixed-assets-import";
+import { pageCapitalisationBillLines } from "@/lib/fixed-assets/capitalisation-review";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
@@ -753,27 +754,22 @@ export const listCapitalisableBillLines = createServerFn({ method: "GET" })
       .map((a) => a.id);
     if (assetIds.length === 0) return { asOf: data.asOf, lines: [] as CapitaliseLine[] };
 
-    const rows: BillLineRaw[] = [];
-    // PostgREST .in filters are kept below URL size limits. Every query pages by
-    // the globally unique bill-line ID instead of silently cutting off at 300.
-    for (let offset = 0; offset < assetIds.length; offset += 50) {
-      const accountChunk = assetIds.slice(offset, offset + 50);
-      const result = await fetchAllPages<BillLineRaw>(
-        (from, to) =>
-          sb
-            .from("purchase_bill_lines" as never)
-            .select(
-              "id, bill_id, description, account_id, net_minor, tax_minor, purchase_bills!inner(bill_number, supplier_invoice_number, bill_date, currency_code, status, contacts(name))" as never,
-            )
-            .eq("company_id" as never, data.companyId as never)
-            .in("account_id" as never, accountChunk as never)
-            .in("purchase_bills.status" as never, ["authorised", "partly_paid", "paid"] as never)
-            .lte("purchase_bills.bill_date" as never, data.asOf as never)
-            .order("id" as never)
-            .range(from, to) as unknown as PromiseLike<PageResult<BillLineRaw>>,
-      );
-      rows.push(...result);
-    }
+    // PostgREST .in filters stay below URL limits; every chunk pages by unique ID.
+    const rows = await pageCapitalisationBillLines<BillLineRaw>(
+      assetIds,
+      (accountChunk, from, to) =>
+        sb
+          .from("purchase_bill_lines" as never)
+          .select(
+            "id, bill_id, description, account_id, net_minor, tax_minor, purchase_bills!inner(bill_number, supplier_invoice_number, bill_date, currency_code, status, contacts(name))" as never,
+          )
+          .eq("company_id" as never, data.companyId as never)
+          .in("account_id" as never, accountChunk as never)
+          .in("purchase_bills.status" as never, ["authorised", "partly_paid", "paid"] as never)
+          .lte("purchase_bills.bill_date" as never, data.asOf as never)
+          .order("id" as never)
+          .range(from, to) as unknown as PromiseLike<PageResult<BillLineRaw>>,
+    );
 
     const eligibleIds = new Set(rows.map((r) => r.id));
     const registered = new Map<string, bigint>();

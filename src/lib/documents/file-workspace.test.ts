@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { filePreviewKind, fileSortOrder, parseFileSort, validateFileRename } from "./file-workspace";
+import {
+  fileFormatMimeTypes,
+  filePreviewKind,
+  fileSortOrder,
+  parseFileFormat,
+  parseFileSort,
+  validateFileRename,
+} from "./file-workspace";
 
 describe("Files workspace", () => {
   it("allows only known sort columns and keeps a stable default", () => {
@@ -22,6 +29,21 @@ describe("Files workspace", () => {
     expect(filePreviewKind("application/pdf", "invoice.html")).toBeNull();
     expect(filePreviewKind(null, "invoice.pdf")).toBeNull();
   });
+  it("restricts filters to named MIME groups", () => {
+    expect(parseFileFormat("pdf")).toBe("pdf");
+    expect(parseFileFormat("images")).toBe("images");
+    expect(parseFileFormat("file_name")).toBe("all");
+    expect(parseFileFormat(undefined)).toBe("all");
+    expect(fileFormatMimeTypes("all")).toEqual([]);
+    expect(fileFormatMimeTypes("pdf")).toEqual(["application/pdf"]);
+    expect(fileFormatMimeTypes("spreadsheets")).toContain("text/csv");
+    expect(fileFormatMimeTypes("word")).toContain(
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    );
+    expect(fileFormatMimeTypes("images")).toContain("image/webp");
+    expect(fileFormatMimeTypes("text")).toEqual(["text/plain"]);
+  });
+
   it("permits metadata-only renaming while preserving the file format", () => {
     expect(validateFileRename("receipt.PDF", "October receipt.pdf")).toBe("October receipt.pdf");
     expect(validateFileRename("backup", "New backup")).toBe("New backup");

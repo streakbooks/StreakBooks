@@ -355,14 +355,17 @@ function FilesPage() {
 
   const deleteM = useMutation({
     mutationFn: (id: string) => remove({ data: { companyId: companyId!, attachmentId: id } }),
-    onSuccess: async (_result, deletedId) => {
+    onSuccess: async (result, deletedId) => {
       setPendingDelete(null);
       if (selectedFile === deletedId) setSelectedFile(null);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["company-files", companyId] }),
         queryClient.invalidateQueries({ queryKey: ["company-file-details", companyId] }),
+        queryClient.invalidateQueries({ queryKey: ["company-file-preview", companyId] }),
       ]);
-      toast.success("File deleted");
+      if (result.storageCleanup === "requires_admin")
+        toast.warning("File record deleted, but Storage cleanup needs administrator review.");
+      else toast.success("File deleted");
     },
     onError: (e) => {
       setPendingDelete(null);
@@ -374,21 +377,23 @@ function FilesPage() {
     mutationFn: async ({ ids, sourceCompanyId }: { ids: string[]; sourceCompanyId: string }) => {
       const deletedIds: string[] = [];
       const failedIds: string[] = [];
+      const cleanupIds: string[] = [];
       let firstError: string | null = null;
       for (const attachmentId of ids) {
         try {
-          await remove({
+          const result = await remove({
             data: { companyId: sourceCompanyId, attachmentId },
           });
           deletedIds.push(attachmentId);
+          if (result.storageCleanup === "requires_admin") cleanupIds.push(attachmentId);
         } catch (error) {
           failedIds.push(attachmentId);
           firstError ??= friendlyAuthError(error);
         }
       }
-      return { deletedIds, failedIds, firstError, sourceCompanyId };
+      return { deletedIds, failedIds, cleanupIds, firstError, sourceCompanyId };
     },
-    onSuccess: async ({ deletedIds, failedIds, firstError, sourceCompanyId }) => {
+    onSuccess: async ({ deletedIds, failedIds, cleanupIds, firstError, sourceCompanyId }) => {
       setPendingBulkDelete(null);
       if (companyId === sourceCompanyId) {
         setSelectedIds(failedIds);
@@ -401,6 +406,10 @@ function FilesPage() {
       ]);
       if (deletedIds.length)
         toast.success(`Deleted ${deletedIds.length} file${deletedIds.length === 1 ? "" : "s"}`);
+      if (cleanupIds.length)
+        toast.warning(
+          `${cleanupIds.length} deleted file${cleanupIds.length === 1 ? " needs" : "s need"} administrator Storage cleanup. Do not retry these deleted records.`,
+        );
       if (failedIds.length)
         toast.error(
           `${failedIds.length} file${failedIds.length === 1 ? "" : "s"} could not be deleted. ${firstError ?? "Please retry."}`,

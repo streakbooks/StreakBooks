@@ -21,6 +21,7 @@ import { decimalPlacesFor } from "@/lib/accounting/money";
 import { csvFilename, csvMoney, downloadCsv, toCsv } from "@/lib/reports/csv";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { isValidTaxDate } from "@/lib/tax/tax-input-validation";
+import { filterSavedTaxReturns, isStaleTaxPreview, type SavedReturnFilter } from "@/lib/tax/tax-return-view";
 import { useFormat } from "@/hooks/use-format";
 import { useCanDo } from "@/hooks/use-can";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
@@ -176,7 +177,7 @@ export function TaxReturnsPanel({
   const [confirmFile, setConfirmFile] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [returnSearch, setReturnSearch] = useState("");
-  const [returnFilter, setReturnFilter] = useState<"all" | "draft" | "filed" | "settled">("all");
+  const [returnFilter, setReturnFilter] = useState<SavedReturnFilter>("all");
   const [settleAccount, setSettleAccount] = useState("");
   const [settleDate, setSettleDate] = useState("");
   const [confirmSettle, setConfirmSettle] = useState(false);
@@ -205,16 +206,11 @@ export function TaxReturnsPanel({
         data: { companyId, periodStart: calc!.start, periodEnd: calc!.end, basis: calc!.basis },
       }),
   });
-  const previewStale = calc !== null &&
-    (calc.start !== start || calc.end !== end || calc.basis !== basis);
-  const matchingReturns = useMemo(() => (list.data?.returns ?? []).filter((item) => {
-    const term = returnSearch.trim().toLocaleLowerCase();
-    const matchesSearch = !term ||
-      `${item.period_start} ${item.period_end} ${item.basis} ${item.status}`.toLocaleLowerCase().includes(term);
-    const matchesStatus = returnFilter === "all" ||
-      (returnFilter === "settled" ? Boolean(item.settlement_journal_id) : item.status === returnFilter);
-    return matchesSearch && matchesStatus;
-  }), [list.data, returnSearch, returnFilter]);
+  const previewStale = isStaleTaxPreview(calc, { start, end, basis });
+  const matchingReturns = useMemo(
+    () => filterSavedTaxReturns(list.data?.returns ?? [], returnSearch, returnFilter),
+    [list.data, returnSearch, returnFilter],
+  );
   const detail = useQuery({
     queryKey: ["tax-return", companyId, openId],
     enabled: openId !== null,
@@ -475,7 +471,7 @@ export function TaxReturnsPanel({
               value={returnSearch}
               onChange={(e) => setReturnSearch(e.target.value)}
             />
-            <Select value={returnFilter} onValueChange={(v) => setReturnFilter(v as "all" | "draft" | "filed" | "settled")}>
+            <Select value={returnFilter} onValueChange={(v) => setReturnFilter(v as SavedReturnFilter)}>
               <SelectTrigger aria-label="Filter tax returns" className="w-full sm:w-48">
                 <SelectValue placeholder="All returns" />
               </SelectTrigger>

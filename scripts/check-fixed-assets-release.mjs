@@ -53,7 +53,7 @@ const origin = (currentRepo.stdout ?? "").trim();
 if (currentRepo.status !== 0 ||
     !/^((https:\/\/|ssh:\/\/git@)github\.com\/|git@github\.com:|https:\/\/[^@]+@github\.com\/)(linkbusinessadvisory\/LinkBooks)(\.git)?\/?$/i.test(origin)) {
   console.error("Refusing to run: Git origin is not the authoritative linkbusinessadvisory/LinkBooks repository.");
-  console.error("Current origin:", origin || "(missing)");
+  console.error("Check that Git origin points to linkbusinessadvisory/LinkBooks (origin URL withheld).");
   process.exit(2);
 }
 
@@ -64,7 +64,7 @@ if (worktree.status !== 0) {
   console.error("Could not inspect the local worktree.");
   process.exit(2);
 }
-console.log("Git origin:", origin);
+console.log("Git origin: linkbusinessadvisory/LinkBooks (verified; URL withheld)");
 console.log("Branch:", branch);
 console.log("Commit:", sha);
 if ((worktree.stdout ?? "").trim()) {

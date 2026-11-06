@@ -21,6 +21,7 @@ import { decimalPlacesFor } from "@/lib/accounting/money";
 import { csvFilename, csvMoney, downloadCsv, toCsv } from "@/lib/reports/csv";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { useFormat } from "@/hooks/use-format";
+import { useCanDo } from "@/hooks/use-can";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -152,6 +153,7 @@ export function TaxReturnsPanel({
 }) {
   const qc = useQueryClient();
   const f = useFormat();
+  const canTax = useCanDo("tax.settings");
   const fetchList = useServerFn(listTaxReturns);
   const fetchDefaults = useServerFn(getReturnDefaults);
   const doPreview = useServerFn(previewTaxReturn);
@@ -408,7 +410,7 @@ export function TaxReturnsPanel({
               />
               <div className="flex flex-wrap gap-2">
                 <Button
-                  disabled={saveDraft.isPending || (list.data ? !list.data.available : false)}
+                  disabled={!canTax || saveDraft.isPending || (list.data ? !list.data.available : false)}
                   onClick={() => saveDraft.mutate()}
                 >
                   {saveDraft.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
@@ -592,6 +594,7 @@ export function TaxReturnsPanel({
                       <Checkbox
                         id="confirm-file"
                         checked={confirmFile}
+                        disabled={!canTax}
                         onCheckedChange={(v) => setConfirmFile(v === true)}
                       />
                       <Label htmlFor="confirm-file" className="text-sm">
@@ -600,7 +603,7 @@ export function TaxReturnsPanel({
                     </div>
                     <div className="flex gap-2">
                       <Button
-                        disabled={!confirmFile || file.isPending}
+                        disabled={!canTax || !confirmFile || file.isPending}
                         onClick={() => file.mutate()}
                       >
                         {file.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
@@ -608,7 +611,7 @@ export function TaxReturnsPanel({
                       </Button>
                       <Button
                         variant="outline"
-                        disabled={remove.isPending}
+                        disabled={!canTax || remove.isPending}
                         onClick={() => remove.mutate()}
                       >
                         Delete draft
@@ -649,6 +652,7 @@ export function TaxReturnsPanel({
                             <AccountLookup
                               className="w-72"
                               ariaLabel="Settlement account"
+                              disabled={!canTax}
                               accounts={settlementAccounts}
                               value={settleAccount}
                               onChange={setSettleAccount}
@@ -663,6 +667,7 @@ export function TaxReturnsPanel({
                               id="settle-date"
                               type="date"
                               value={settleDate}
+                              disabled={!canTax}
                               onChange={(e) => setSettleDate(e.target.value)}
                             />
                           </div>
@@ -671,6 +676,7 @@ export function TaxReturnsPanel({
                           <Checkbox
                             id="confirm-settle"
                             checked={confirmSettle}
+                            disabled={!canTax}
                             onCheckedChange={(v) => setConfirmSettle(v === true)}
                           />
                           <Label htmlFor="confirm-settle" className="text-sm">
@@ -680,7 +686,7 @@ export function TaxReturnsPanel({
                         </div>
                         <Button
                           disabled={
-                            !confirmSettle || !settleAccount || !settleDate || settle.isPending
+                            !canTax || !confirmSettle || !settleAccount || !settleDate || settle.isPending
                           }
                           onClick={() => settle.mutate()}
                         >

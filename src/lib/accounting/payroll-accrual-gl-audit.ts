@@ -149,12 +149,19 @@ export function auditPayrollAccrualTieOut(
       const minor = unsignedMinor(line.amount_minor, label);
       if (minor === 0n) continue; // SQL source builder skips zero amounts.
       if (line.kind === "earning") {
-        add(expected, component?.expense_account_id ?? settings.salary_expense_account_id ?? "", "debit", minor);
+        const account = component?.expense_account_id ?? settings.salary_expense_account_id;
+        if (!account) issues.push(label + " is missing its salary expense account.");
+        add(expected, account ?? "", "debit", minor);
       } else if (line.kind === "deduction") {
-        add(expected, component?.liability_account_id ?? settings.deduction_liability_account_id ?? "", "credit", minor);
+        const account = component?.liability_account_id ?? settings.deduction_liability_account_id;
+        if (!account) issues.push(label + " is missing its deduction liability account.");
+        add(expected, account ?? "", "credit", minor);
       } else if (line.kind === "employer_contribution") {
-        add(expected, component?.expense_account_id ?? settings.employer_expense_account_id ?? "", "debit", minor);
-        add(expected, component?.liability_account_id ?? settings.employer_liability_account_id ?? "", "credit", minor);
+        const expense = component?.expense_account_id ?? settings.employer_expense_account_id;
+        const liability = component?.liability_account_id ?? settings.employer_liability_account_id;
+        if (!expense || !liability) issues.push(label + " is missing employer contribution account mapping.");
+        add(expected, expense ?? "", "debit", minor);
+        add(expected, liability ?? "", "credit", minor);
       } else {
         issues.push(label + " has an unknown payroll component type.");
       }
@@ -164,6 +171,9 @@ export function auditPayrollAccrualTieOut(
   }
   try {
     const net = unsignedMinor(run.net_minor, "Payroll run net pay");
+    if (net > 0n && !settings.net_pay_liability_account_id) {
+      issues.push("Payroll net-pay liability account mapping is missing.");
+    }
     add(expected, settings.net_pay_liability_account_id ?? "", "credit", net);
   } catch (error) {
     issues.push(error instanceof Error ? error.message : "Payroll run net pay is invalid.");

@@ -416,3 +416,48 @@ React's asynchronous disabled-button render alone.
 - A mid-batch SQL failure still leaves earlier saved rows in place and
   prevents later writes. **The CSV import is not an atomic DB transaction**.
   Users continue to receive a partial-success warning if this occurs.
+
+
+### Payroll payment retry idempotency integrity (November 6, 2026)
+
+The database `record_payroll_payment(jsonb)` RPC previously returned the
+payment linked to an existing idempotency key **without checking that the
+new request matched the original payment**. A changed amount, clearing
+account or payslip allocation could therefore appear to have been posted
+even though only the earlier payment existed.
+
+- New versioned migration
+  `supabase/migrations/20261106084934_payroll_payment_idempotency_payload_guard.sql`
+  replaces the existing RPC in place. It was applied to Supabase project
+  `ipxflpzfcqwtenodbxwc`; its filename matches Supabase's recorded version.
+- When a key already exists, the RPC takes a row lock and compares the
+  originally recorded payment date, method, amount, currency, clearing
+  account, reference, memo and **canonicalized payslip allocations**.
+  Canonical allocation sorting permits semantically identical retries even
+  if array order or numeric JSON representation differs. A change to any
+  of these fields causes a clear `23505` error rather than an incorrect
+  successful replay.
+- Replaying a reversed payment is also rejected; a new settlement must use
+  a fresh idempotency key.
+- The replay result now includes the actual previously recorded
+  `unallocated_minor` amount, matching the fresh-payment response shape.
+- The existing function's signed-in/company-membership/`payroll.pay`
+  authorization checks, GL journal entry behavior, and transaction
+  boundaries were retained. The `SECURITY DEFINER` function uses
+  `search_path = public, pg_temp`.
+- The revised function successfully compiled in a `BEGIN ... ROLLBACK`
+  dry run before applying the migration. After deployment, read-only
+  introspection confirmed the row lock, mismatch validation, reversed-
+  status safeguard, returned unallocated balance and fixed search path.
+  Existing payment/allocation counts remained `0/0`.
+- Read-only PostgreSQL test
+  `tests/integration/payroll_payment_idempotency_canonicalization.sql`
+  was **actually executed: 9/9 cases passed**, covering unchanged/
+  reordered allocations, numeric string normalization, changed amounts,
+  changed payslips, added/removed or duplicated allocations and empty
+  allocations. This is a database expression test, **not** an authenticated
+  `record_payroll_payment` end-to-end posting/replay test.
+- The remaining full Vitest/typecheck/lint/build, rollback-only fixture
+  with synthetic organisational rows, authenticated UI + API tests and
+  Vercel deployment verification have **not been run**. GitHub CI was
+  **not run (per user instruction)**.

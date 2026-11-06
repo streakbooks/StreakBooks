@@ -98,7 +98,7 @@ describe("posted GL evidence API authorisation and bounded queries", () => {
   });
   it("rejects truncated ledger evidence rather than reporting a false pass", async () => {
     tables["journal_lines"] = Array.from({ length: 501 }, (_, i) => ({
-      ...baseTables["journal_lines"]![0] as object,
+      ...(baseTables["journal_lines"]![0] as object),
       id: "line-" + i, line_no: i + 1,
     }));
     await expect(run()).rejects.toThrow(/500-line limit/);

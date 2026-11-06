@@ -60,6 +60,9 @@ BEGIN
        WHERE firm_id=fid AND user_id=staff_id)<>1 THEN
     RAISE EXCEPTION 'Capacity version missing';
   END IF;
+  INSERT INTO public.firm_onboarding_staff_capacity(
+    firm_id,user_id,max_open_steps,updated_by
+  ) VALUES (fid,owner_id,80,owner_id);
   UPDATE public.firm_onboarding_staff_capacity
     SET max_open_steps=25,updated_by=owner_id
     WHERE firm_id=fid AND user_id=staff_id AND version=1;
@@ -176,6 +179,12 @@ BEGIN
   IF (SELECT max_open_steps FROM public.firm_onboarding_staff_capacity
        WHERE firm_id=fid AND user_id=staff_id)<>25 THEN
     RAISE EXCEPTION 'Staff cannot view own workload target';
+  END IF;
+  IF EXISTS(
+    SELECT 1 FROM public.firm_onboarding_staff_capacity
+    WHERE firm_id=fid AND user_id=owner_id
+  ) THEN
+    RAISE EXCEPTION 'Member could read another colleague capacity target';
   END IF;
   UPDATE public.firm_onboarding_staff_capacity
     SET max_open_steps=100,updated_by=staff_id

@@ -105,9 +105,8 @@ export function FirmClientPortfolio({
     firmId: string;
     columns: FirmClientColumn[];
   } | null>(null);
-  const visibleColumns = savedColumns?.firmId === firmId
-    ? savedColumns.columns
-    : DEFAULT_FIRM_CLIENT_COLUMNS;
+  const visibleColumns =
+    savedColumns?.firmId === firmId ? savedColumns.columns : DEFAULT_FIRM_CLIENT_COLUMNS;
   useEffect(() => {
     let saved: unknown = null;
     try {
@@ -216,6 +215,7 @@ export function FirmClientPortfolio({
     (client) => profileMap.get(client.company_id)?.status === "onboarding",
   ).length;
   const today = localFirmDate();
+  const profileUnavailable = profilesQ.isPending || profilesQ.isError;
   const needsReview = clients.filter(
     (client) =>
       firmClientReviewState(profileMap.get(client.company_id)?.next_review_date, today) === "due",
@@ -230,18 +230,20 @@ export function FirmClientPortfolio({
         </div>
         <div className="rounded-lg border bg-card p-4">
           <p className="text-sm text-muted-foreground">Active in practice</p>
-          <p className="text-2xl font-semibold tabular-nums">{active}</p>
+          <p className="text-2xl font-semibold tabular-nums">
+            {profileUnavailable ? "—" : active}
+          </p>
         </div>
         <div className="rounded-lg border bg-card p-4">
           <p className="text-sm text-muted-foreground">Onboarding / Reviews due</p>
           <p className="text-2xl font-semibold tabular-nums">
-            {onboarding} / {needsReview}
+            {profileUnavailable ? "—" : `${onboarding} / ${needsReview}`}
           </p>
           <Button
             size="sm"
             variant="link"
             className="h-auto p-0"
-            disabled={!needsReview}
+            disabled={profileUnavailable || !needsReview}
             onClick={() => setReview("due")}
           >
             Show reviews due
@@ -286,6 +288,7 @@ export function FirmClientPortfolio({
           <Label>Practice status</Label>
           <Select
             value={status}
+            disabled={profileUnavailable}
             onValueChange={(value) => setStatus(value as FirmClientStatus | "all")}
           >
             {/* lookup-fixed-enum: Practice status filter uses fixed lifecycle values. */}
@@ -306,6 +309,7 @@ export function FirmClientPortfolio({
           <Label>Review schedule</Label>
           <Select
             value={review}
+            disabled={profileUnavailable}
             onValueChange={(value) => setReview(value as FirmClientReviewFilter)}
           >
             {/* lookup-fixed-enum: Review filter uses fixed operational values. */}
@@ -384,7 +388,9 @@ export function FirmClientPortfolio({
         <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
           No clients match these filters.
           <div className="mt-3">
-            <Button size="sm" variant="outline" onClick={resetFilters}>Clear filters</Button>
+            <Button size="sm" variant="outline" onClick={resetFilters}>
+              Clear filters
+            </Button>
           </div>
         </div>
       ) : (
@@ -412,30 +418,49 @@ export function FirmClientPortfolio({
                     {visibleColumns.map((column) => (
                       <TableCell key={column} className="max-w-56">
                         {column === "status" ? (
-                          <Badge variant="secondary">{STATUS_LABELS[profile?.status ?? "active"]}</Badge>
+                          <Badge variant="secondary">
+                            {STATUS_LABELS[profile?.status ?? "active"]}
+                          </Badge>
                         ) : column === "contact" ? (
-                          <span className="block truncate">{profile?.primary_contact_name || "—"}</span>
+                          <span className="block truncate">
+                            {profile?.primary_contact_name || "—"}
+                          </span>
                         ) : column === "email" ? (
                           profile?.primary_contact_email ? (
-                            <a className="block truncate underline-offset-2 hover:underline"
-                               href={"mailto:" + profile.primary_contact_email}>
+                            <a
+                              className="block truncate underline-offset-2 hover:underline"
+                              href={"mailto:" + profile.primary_contact_email}
+                            >
                               {profile.primary_contact_email}
                             </a>
                           ) : "—"
                         ) : column === "service" ? (
-                          <span className="block truncate">{profile?.service_line || "—"}</span>
+                          <span className="block truncate">
+                            {profile?.service_line || "—"}
+                          </span>
                         ) : column === "industry" ? (
-                          <span className="block truncate">{profile?.industry || "—"}</span>
+                          <span className="block truncate">
+                            {profile?.industry || "—"}
+                          </span>
                         ) : column === "tags" ? (
-                          <span className="block truncate">{profile?.tags.join(", ") || "—"}</span>
+                          <span className="block truncate">
+                            {profile?.tags.join(", ") || "—"}
+                          </span>
                         ) : column === "access" ? (
                           client.access_level
                         ) : column === "review" ? (
-                          <span className={firmClientReviewState(profile?.next_review_date, today) === "due"
-                            ? "font-medium text-destructive" : ""}>
+                          <span
+                            className={
+                              firmClientReviewState(profile?.next_review_date, today) === "due"
+                                ? "font-medium text-destructive"
+                                : ""
+                            }
+                          >
                             {profile?.next_review_date ?? "—"}
-                            {profile?.next_review_date && firmClientReviewState(profile.next_review_date, today) === "due"
-                              ? " (due)" : ""}
+                            {profile?.next_review_date &&
+                            firmClientReviewState(profile.next_review_date, today) === "due"
+                              ? " (due)"
+                              : ""}
                           </span>
                         ) : null}
                       </TableCell>

@@ -81,7 +81,7 @@ export function accountPostingMeaning(
   if (debitMinor === 0n && creditMinor === 0n) return "No movement to explain.";
   if (debitMinor > 0n && creditMinor > 0n)
     return "Both debit and credit columns contain a positive amount; inspect the source line.";
-  const t = type && type in TYPE_LABELS ? (type as JournalAccountType) : null;
+  const t = type && Object.prototype.hasOwnProperty.call(TYPE_LABELS, type) ? (type as JournalAccountType) : null;
   if (!t) return "Account classification is unavailable; inspect the original chart of accounts.";
   const debitIncreases = t === "asset" || t === "expense";
   const increases = debitMinor > 0n ? debitIncreases : !debitIncreases;
@@ -135,7 +135,7 @@ export function buildJournalExplanation(input: PostedJournalInput): JournalExpla
       (debit === 0n && credit === 0n)
     ) atypicalLines++;
     if (line.account_active === false) inactiveAccounts++;
-    if (!line.account_type || !(line.account_type in TYPE_LABELS)) unclassifiedAccounts++;
+    if (!line.account_type || !Object.prototype.hasOwnProperty.call(TYPE_LABELS, line.account_type)) unclassifiedAccounts++;
     return {
       ...line,
       debit_display: currency + " " + fromMinorUnits(debit, currency),

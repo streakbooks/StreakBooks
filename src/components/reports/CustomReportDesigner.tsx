@@ -1,3 +1,4 @@
+import { StatementBasisSelect } from "./StatementBasisSelect";
 import { ReportFilterEditor } from "./ReportFilterEditor";
 import { MultiLookupSelect } from "@/components/lookup/MultiLookupSelect";
 import { useState } from "react";
@@ -33,6 +34,11 @@ export function CustomReportDesigner({
   }
   return (
     <div className="space-y-6">
+      <StatementBasisSelect
+        basis={d.basis}
+        report="profit-and-loss"
+        onChange={(basis) => onChange({ ...d, basis })}
+      />
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1">
           <Label htmlFor="builder-title">Report title</Label>

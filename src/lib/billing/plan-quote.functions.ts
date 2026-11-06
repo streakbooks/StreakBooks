@@ -3,6 +3,7 @@ import { getRequestHeader, setResponseHeader } from "@tanstack/react-start/serve
 import { z } from "zod";
 import { BILLING_CURRENCIES, isBillingCurrency, type BillingCurrency } from "@/lib/billing/pricing";
 import { resolveBillingRegion } from "@/lib/billing/region";
+import { planPrice, type PriceList } from "@/lib/billing/domain/country-pricing";
 import { FEATURE_DEPENDENCIES } from "@/lib/platform/feature-registry";
 import type { FeaturePrice, PriceTier } from "@/lib/platform/price-book";
 import { buildPlanQuote, type PlanBuilderQuote } from "./plan-quote";
@@ -116,6 +117,17 @@ export const quoteCustomerPlan = createServerFn({ method: "POST" })
     });
     const plansResult = await client.rpc("list_public_billing_plans" as never);
     const pricesResult = await client.rpc("list_live_feature_prices" as never);
+    const bookResult = await client.rpc(
+      "billing_price_list" as never,
+      {
+        _country: region.country,
+      } as never,
+    );
+    const book = bookResult.error ? null : (bookResult.data as PriceList | null);
+    const bookAmount = (code: string, cadence: "month" | "year") => {
+      const price = planPrice(book, code, cadence);
+      return price && price.currency === currency ? price.amountMinor : null;
+    };
     if (plansResult.error && !missingRpc(plansResult.error))
       throw new Error(plansResult.error.message);
     if (pricesResult.error && !missingRpc(pricesResult.error))
@@ -136,8 +148,8 @@ export const quoteCustomerPlan = createServerFn({ method: "POST" })
       quote = buildPlanQuote({
         planCode: plan.code,
         currency,
-        planMonthlyMinor: planAmount(plan, currency, "month"),
-        planYearlyMinor: planAmount(plan, currency, "year"),
+        planMonthlyMinor: planAmount(plan, currency, "month") ?? bookAmount(plan.code, "month"),
+        planYearlyMinor: planAmount(plan, currency, "year") ?? bookAmount(plan.code, "year"),
         prices: addonsReady
           ? asPrices(pricesResult.data).filter((price) => price.currency === currency)
           : [],

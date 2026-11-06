@@ -3,6 +3,10 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
 import { callRpc, isMissingRpc, isMissingSchema, type RpcClient } from "@/lib/banking/rpc";
+import { resolveReportingBasis } from "@/lib/reports/accounting-basis.server";
+import type { AccountingBasis } from "@/lib/reports/accounting-basis";
+import { isReportDate } from "@/lib/reports/date-validation";
+import { loadCashProjectProfitability } from "./cash-project.server";
 import {
   KIND_LINE_TABLES,
   TAGGABLE_KINDS,
@@ -119,36 +123,64 @@ export const setDocumentProject = createServerFn({ method: "POST" })
 
 export const getProjectProfitability = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; from?: string | null; to?: string | null }) => {
-    const iso = (s: string | null | undefined) => {
-      if (!s) return null;
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) throw new Error("Dates must be YYYY-MM-DD");
-      return s;
-    };
-    return { companyId: assertUuid(input.companyId), from: iso(input.from), to: iso(input.to) };
-  })
-  .handler(async ({ data, context }): Promise<{ available: boolean; rows: ProjectProfitRow[] }> => {
-    await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
-    const { data: rows, error } = await (context.supabase as unknown as RpcClient).rpc(
-      "project_profitability" as never,
-      { _company_id: data.companyId, _from: data.from, _to: data.to } as never,
-    );
-    if (error) {
-      if (isMissingRpc(error)) return { available: false, rows: [] };
-      throw new Error(error.message);
-    }
-    return {
-      available: true,
-      rows: ((rows ?? []) as Array<Record<string, unknown>>).map((r) => ({
-        projectId: String(r["project_id"]),
-        code: String(r["code"]),
-        name: String(r["name"]),
-        status: String(r["status"]),
-        budgetMinor: r["budget_minor"] == null ? null : Number(r["budget_minor"]),
-        revenueMinor: Number(r["revenue_minor"] ?? 0),
-        costMinor: Number(r["cost_minor"] ?? 0),
-        profitMinor: Number(r["profit_minor"] ?? 0),
-        unconvertedDocuments: Number(r["unconverted_documents"] ?? 0),
-      })),
-    };
-  });
+  .inputValidator(
+    (input: {
+      companyId: string;
+      from?: string | null;
+      to?: string | null;
+      basis?: AccountingBasis;
+    }) => {
+      const iso = (s: string | null | undefined) => {
+        if (!s) return null;
+        if (!isReportDate(s)) throw new Error("Dates must be YYYY-MM-DD");
+        return s;
+      };
+      const from = iso(input.from),
+        to = iso(input.to);
+      if (from && to && from > to) throw new Error("From must be on or before To");
+      if (input.basis !== undefined && input.basis !== "cash" && input.basis !== "accrual")
+        throw new Error("Choose cash or accrual accounting basis");
+      return { companyId: assertUuid(input.companyId), from, to, basis: input.basis };
+    },
+  )
+  .handler(
+    async ({
+      data,
+      context,
+    }): Promise<{ available: boolean; basis: AccountingBasis; rows: ProjectProfitRow[] }> => {
+      await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
+      const basis = await resolveReportingBasis(context.supabase, data.companyId, data.basis);
+      if (basis === "cash")
+        return {
+          available: true,
+          basis,
+          rows: await loadCashProjectProfitability(context.supabase, data.companyId, {
+            from: data.from ?? "0001-01-01",
+            to: data.to ?? "9999-12-31",
+          }),
+        };
+      const { data: rows, error } = await (context.supabase as unknown as RpcClient).rpc(
+        "project_profitability" as never,
+        { _company_id: data.companyId, _from: data.from, _to: data.to } as never,
+      );
+      if (error) {
+        if (isMissingRpc(error)) return { available: false, basis, rows: [] };
+        throw new Error(error.message);
+      }
+      return {
+        available: true,
+        basis,
+        rows: ((rows ?? []) as Array<Record<string, unknown>>).map((r) => ({
+          projectId: String(r["project_id"]),
+          code: String(r["code"]),
+          name: String(r["name"]),
+          status: String(r["status"]),
+          budgetMinor: r["budget_minor"] == null ? null : Number(r["budget_minor"]),
+          revenueMinor: Number(r["revenue_minor"] ?? 0),
+          costMinor: Number(r["cost_minor"] ?? 0),
+          profitMinor: Number(r["profit_minor"] ?? 0),
+          unconvertedDocuments: Number(r["unconverted_documents"] ?? 0),
+        })),
+      };
+    },
+  );

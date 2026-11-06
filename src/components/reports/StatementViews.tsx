@@ -25,8 +25,15 @@ export function TrialBalanceView({ ctx }: { ctx: ReportCtx }) {
   const fmt = useFormat();
   const fetchTb = useServerFn(getTrialBalance);
   const q = useQuery({
-    queryKey: ["report-tb", ctx.companyId, ctx.to],
-    queryFn: () => fetchTb({ data: { companyId: ctx.companyId, to: ctx.to } }),
+    queryKey: ["report-tb", ctx.companyId, ctx.to, ctx.search.basis],
+    queryFn: () =>
+      fetchTb({
+        data: {
+          companyId: ctx.companyId,
+          to: ctx.to,
+          ...(ctx.search.basis ? { basis: ctx.search.basis } : {}),
+        },
+      }),
   });
   const d = q.data;
   const selectedIds = ctx.search.accountIds?.split(",") ?? null;
@@ -121,6 +128,7 @@ export function TrialBalanceView({ ctx }: { ctx: ReportCtx }) {
                     <TableCell>
                       <AccountLink
                         accountId={r.account_id}
+                        basis={ctx.search.basis}
                         from={d.fyStart ?? ctx.from}
                         to={ctx.to}
                       >
@@ -171,7 +179,7 @@ function StatementAccessView({
   const access = useReportingAccess(ctx.companyId);
   if (access.isPending) return <LoadingState />;
   if (access.data?.allowed) return <StandardStatementView ctx={ctx} report={report} />;
-  if (ctx.search.settings || ctx.search.basis === "cash")
+  if (ctx.search.settings)
     return (
       <div className="space-y-3">
         <ErrorState
@@ -330,8 +338,16 @@ export function EquityView({ ctx }: { ctx: ReportCtx }) {
   const fmt = useFormat();
   const fetchEq = useServerFn(getEquityChanges);
   const q = useQuery({
-    queryKey: ["report-equity", ctx.companyId, ctx.from, ctx.to],
-    queryFn: () => fetchEq({ data: { companyId: ctx.companyId, from: ctx.from, to: ctx.to } }),
+    queryKey: ["report-equity", ctx.companyId, ctx.from, ctx.to, ctx.search.basis],
+    queryFn: () =>
+      fetchEq({
+        data: {
+          companyId: ctx.companyId,
+          from: ctx.from,
+          to: ctx.to,
+          ...(ctx.search.basis ? { basis: ctx.search.basis } : {}),
+        },
+      }),
   });
   const d = q.data;
   return (

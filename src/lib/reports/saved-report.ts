@@ -3,6 +3,7 @@ import { customDefinitionSchema, type CustomDefinition } from "./custom-definiti
 import { z } from "zod";
 import { getReportById } from "./catalog";
 import { parseReportSearch, type ReportSearch } from "./search";
+import { savedReportBasis } from "./accounting-basis";
 
 export const savedReportName = z.string().trim().min(1, "Report name is required.").max(80);
 export const reportLibraryMetadata = z.object({
@@ -32,13 +33,15 @@ export function libraryMetadata(config: Record<string, unknown>): LibraryMetadat
 }
 
 /** Only supported URL filters are persisted; executable expressions are never accepted. */
-export function validateSavedConfig(
-  raw: Record<string, unknown>,
-): ReportSearch & { _builder?: CustomDefinition } {
+export function validateSavedConfig(raw: Record<string, unknown>): ReportSearch & {
+  _builder?: Omit<CustomDefinition, "basis"> & { basis?: CustomDefinition["basis"] };
+} {
   if (!raw || typeof raw !== "object" || Array.isArray(raw))
     throw new Error("Invalid report configuration.");
   if (JSON.stringify(raw).length > 100000) throw new Error("Report configuration is too large.");
   const config = parseReportSearch(raw);
+  const explicitBasis = savedReportBasis(raw);
+  if (explicitBasis) config.basis = explicitBasis;
   for (const key of ["from", "to"] as const) {
     if (raw[key] !== undefined && raw[key] !== "") {
       const date = config[key];
@@ -51,9 +54,12 @@ export function validateSavedConfig(
     throw new Error("End date must follow start date.");
   // A saved view must open at the first page, rather than an arbitrary stale offset.
   delete config.page;
-  return raw["_builder"]
-    ? { ...config, _builder: customDefinitionSchema.parse(raw["_builder"]) }
-    : config;
+  if (!raw["_builder"]) return config;
+  const builder = customDefinitionSchema.parse(raw["_builder"]);
+  if (explicitBasis) return { ...config, _builder: { ...builder, basis: explicitBasis } };
+  // Renaming or copying a legacy view must retain its inherited company preference.
+  const { basis: _schemaDefault, ...inherited } = builder;
+  return { ...config, _builder: inherited };
 }
 
 export function assertRunnableReport(id: string): string {

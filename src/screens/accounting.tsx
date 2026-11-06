@@ -1,3 +1,4 @@
+import { CashClassificationPanel } from "@/components/accounting/CashClassificationPanel";
 import { getRouteApi } from "@tanstack/react-router";
 import { type AccountingTab } from "@/lib/navigation/workspace-search";
 import { DeferralsPanel } from "@/components/accounting/DeferralsPanel";
@@ -218,6 +219,17 @@ export function AccountingWorkspace({
           >
             Prepayments & deferred income
           </Link>
+          <Link
+            className={nativeTabLinkClass}
+            role="tab"
+            aria-selected={tab === "cash-classification"}
+            data-state={tab === "cash-classification" ? "active" : "inactive"}
+            to="/accounting"
+            search={{ tab: "cash-classification" }}
+            resetScroll={false}
+          >
+            Cash classification
+          </Link>
         </TabsList>
 
         <TabsContent value="deferrals" className="mt-4">
@@ -273,6 +285,14 @@ export function AccountingWorkspace({
 
         <TabsContent value="fx" className="mt-4">
           <FxPanel key={companyId} companyId={companyId} currency={currency} />
+        </TabsContent>
+        <TabsContent value="cash-classification" className="mt-4">
+          <CashClassificationPanel
+            key={companyId}
+            companyId={companyId}
+            currency={currency}
+            initialReview={search.cashReview}
+          />
         </TabsContent>
       </Tabs>
     </>

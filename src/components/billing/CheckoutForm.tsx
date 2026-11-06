@@ -49,6 +49,7 @@ export function CheckoutForm({
   quote,
   quoteLoading,
   quoteError,
+  priceCurrency,
   onBack,
   onPay,
 }: {
@@ -64,6 +65,8 @@ export function CheckoutForm({
   quote: PriceQuote | null;
   quoteLoading: boolean;
   quoteError: string | null;
+  /** Country price-book plans are priced by the server, not by the billing country. */
+  priceCurrency?: BillingCurrency | undefined;
   onBack: () => void;
   onPay: (billing: CheckoutBillingInput, method: PayMethodId, copy: boolean) => void;
 }) {
@@ -74,7 +77,7 @@ export function CheckoutForm({
   }));
   const [method, setMethod] = useState<PayMethodId>("card");
   const [error, setError] = useState("");
-  const currency = checkoutCurrencyForCountry(defaultCountry);
+  const currency = priceCurrency ?? checkoutCurrencyForCountry(defaultCountry);
   const dueMinor = quote && quote.currency === currency ? quote.dueMinor : null;
   const available = paymentMethodsFor(defaultCountry, providers).filter((item) => item.available);
 
@@ -296,6 +299,14 @@ export function CheckoutForm({
                   : "—"}
               </dd>
             </div>
+            {quote?.taxMinor && quote.taxLabel && quote.currency === currency ? (
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">
+                  {quote.taxIncluded ? `Includes ${quote.taxLabel}` : quote.taxLabel}
+                </dt>
+                <dd>{formatMinor(quote.taxMinor, quote.currency)}</dd>
+              </div>
+            ) : null}
             <div className="flex justify-between gap-3">
               <dt className="text-muted-foreground">Billing</dt>
               <dd>
@@ -321,8 +332,11 @@ export function CheckoutForm({
           ) : null}
           <p className="text-xs text-muted-foreground">
             The billing currency follows your organisation region; markets without a supported local
-            price currently use USD. Tax collection is not configured. Tax obligations must be
-            reviewed before going live. Payment methods will be confirmed by the hosted provider.
+            price currently use USD.{" "}
+            {quote?.taxLabel
+              ? `${quote.taxLabel} is shown as configured for your country and appears on your invoice.`
+              : "No tax is added for your country."}{" "}
+            Payment methods will be confirmed by the hosted provider.
           </p>
           {error || serverError || quoteError ? (
             <p role="alert" className="text-sm text-destructive-ink">

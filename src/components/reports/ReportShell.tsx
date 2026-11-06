@@ -1,3 +1,4 @@
+import { StatementBasisSelect } from "./StatementBasisSelect";
 import { useReportActivity } from "@/hooks/use-report-activity";
 import { useCanDo } from "@/hooks/use-can";
 import type { ReactNode } from "react";
@@ -278,6 +279,26 @@ export function ReportShell({
             </select>
           </div>
         ) : null}
+        {ctx.reportId &&
+          [
+            "trial-balance",
+            "general-ledger-summary",
+            "executive-summary",
+            "sales-by-contact",
+            "sales-by-item",
+            "purchases-by-supplier",
+            "budget-vs-actual",
+            "cash-flow-indirect",
+            "statement-of-changes-in-equity",
+          ].includes(ctx.reportId) && (
+            <StatementBasisSelect
+              basis={ctx.search.basis ?? "accrual"}
+              report="profit-and-loss"
+              onChange={(basis) =>
+                ctx.setSearch({ basis, page: undefined, explorePage: undefined })
+              }
+            />
+          )}
         {extraControls}
         <div className="ml-auto flex flex-wrap gap-2">
           {getCsv && allowExplorer && (
@@ -456,7 +477,9 @@ export function AccountLink({
   from,
   to,
   children,
+  basis,
 }: {
+  basis?: "accrual" | "cash" | undefined;
   accountId: string;
   from: string;
   to: string;
@@ -467,7 +490,7 @@ export function AccountLink({
     <Link
       to="/reports/$reportId"
       params={{ reportId: "general-ledger" }}
-      search={{ account: accountId, from, to }}
+      search={{ account: accountId, from, to, ...(basis ? { basis } : {}) }}
       className="underline-offset-2 hover:underline"
     >
       {children}

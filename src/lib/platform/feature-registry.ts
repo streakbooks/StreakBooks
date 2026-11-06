@@ -14,7 +14,30 @@ export type CatalogueFeature = {
   metering: "none" | "count" | "bytes" | "minutes";
   costTag: string | null;
   status: "live" | "hidden";
+  /** Sold on a plan but not built yet (shown as "coming soon", D19). */
+  comingSoon?: true;
 };
+
+function planModule(
+  key: string,
+  name: string,
+  description: string,
+  module: string,
+  comingSoon?: true,
+): CatalogueFeature {
+  return {
+    key,
+    name,
+    description,
+    category: "module",
+    module,
+    defaultEnabled: false,
+    metering: "none",
+    costTag: null,
+    status: "live",
+    ...(comingSoon ? { comingSoon } : {}),
+  };
+}
 
 export const FEATURE_REGISTRY: readonly CatalogueFeature[] = [
   {
@@ -181,6 +204,7 @@ export const FEATURE_REGISTRY: readonly CatalogueFeature[] = [
     metering: "none",
     costTag: null,
     status: "live",
+    comingSoon: true,
   },
   {
     key: "projects",
@@ -225,6 +249,7 @@ export const FEATURE_REGISTRY: readonly CatalogueFeature[] = [
     metering: "count",
     costTag: null,
     status: "live",
+    comingSoon: true,
   },
   {
     key: "audit_centre",
@@ -337,6 +362,47 @@ export const FEATURE_REGISTRY: readonly CatalogueFeature[] = [
     costTag: null,
     status: "live",
   },
+  planModule("tax_reports", "GST and tax reports", "Tax summaries and returns.", "reporting"),
+  planModule("quotes", "Quotes and estimates", "Quotes that convert into invoices.", "sales"),
+  planModule(
+    "recurring",
+    "Recurring invoices and bills",
+    "Schedules that create documents.",
+    "sales",
+  ),
+  planModule(
+    "payment_reminders",
+    "Automated payment reminders",
+    "Overdue invoice reminders.",
+    "sales",
+  ),
+  planModule("bank_rules", "Bank rules and automation", "Bank categorisation rules.", "banking"),
+  planModule(
+    "tracking",
+    "Tracking categories",
+    "Department, location or class tags.",
+    "accounting",
+  ),
+  planModule(
+    "advanced_reporting",
+    "Advanced financial reports",
+    "Comparisons and custom layouts.",
+    "reporting",
+  ),
+  planModule("ocr", "OCR bill scanning", "Read supplier bills from uploads.", "purchases", true),
+  planModule("purchase_orders", "Purchase orders", "Raise and track purchase orders.", "purchases"),
+  planModule(
+    "advanced_permissions",
+    "Advanced user permissions",
+    "Per-person access adjustments.",
+    "accounting",
+  ),
+  planModule(
+    "priority_support",
+    "Priority customer support",
+    "Faster support response.",
+    "accounting",
+  ),
 ];
 
 export const FEATURE_DEPENDENCIES = [

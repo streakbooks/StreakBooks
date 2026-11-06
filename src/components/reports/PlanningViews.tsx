@@ -56,10 +56,18 @@ export function BudgetVsActualView({ ctx }: { ctx: ReportCtx }) {
       : (list[0]?.id ?? null);
 
   const q = useQuery({
-    queryKey: ["report-budget-vs-actual", ctx.companyId, budgetId, view, ctx.to],
+    queryKey: ["report-budget-vs-actual", ctx.companyId, budgetId, view, ctx.to, ctx.search.basis],
     enabled: Boolean(budgetId),
     queryFn: () =>
-      reportFn({ data: { companyId: ctx.companyId, budgetId: budgetId!, view, to: ctx.to } }),
+      reportFn({
+        data: {
+          companyId: ctx.companyId,
+          budgetId: budgetId!,
+          view,
+          to: ctx.to,
+          ...(ctx.search.basis ? { basis: ctx.search.basis } : {}),
+        },
+      }),
   });
   const d = q.data;
   const selectedIds = ctx.search.accountIds?.split(",") ?? null;
@@ -150,7 +158,7 @@ export function BudgetVsActualView({ ctx }: { ctx: ReportCtx }) {
         ...section("Expenses", report.expense),
         ["", "Net profit", ...cells(report.net)],
       ],
-      basis: `${d.budget.name}; variance: favourable is positive${selectedIds ? "; selected account subtotals only" : ""}`,
+      basis: `${d.accountingBasis === "cash" ? "Cash" : "Accrual"} basis · ${d.budget.name}; variance: favourable is positive${selectedIds ? "; selected account subtotals only" : ""}`,
     };
   };
 
@@ -161,7 +169,7 @@ export function BudgetVsActualView({ ctx }: { ctx: ReportCtx }) {
       mode="asof"
       basis={
         d
-          ? `${d.budget.name}, financial year from ${fmt.date(d.budget.fiscal_year_start)}${selectedIds ? " · selected accounts only" : ""}`
+          ? `${d.accountingBasis === "cash" ? "Cash" : "Accrual"} basis · ${d.budget.name}, financial year from ${fmt.date(d.budget.fiscal_year_start)}${selectedIds ? " · selected accounts only" : ""}`
           : undefined
       }
       extraControls={controls}
@@ -277,7 +285,7 @@ function BvaTable({
       {s.rows.map((r: VarianceRow) => (
         <TableRow key={r.accountId}>
           <TableCell className="pl-6">
-            <AccountLink accountId={r.accountId} from={from} to={to}>
+            <AccountLink accountId={r.accountId} from={from} to={to} basis={ctx.search.basis}>
               <span className="mr-2 text-muted-foreground">{r.code}</span>
               {r.name}
             </AccountLink>

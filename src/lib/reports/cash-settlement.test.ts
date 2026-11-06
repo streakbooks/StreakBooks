@@ -230,3 +230,67 @@ describe("cash settlement source calculation", () => {
     ).toThrow("valid reporting period");
   });
 });
+
+describe("monotone cumulative components and exact reversals", () => {
+  it("never reverses an account while an additional partial receipt is applied", () => {
+    const s = source({
+      totalMinor: 9n,
+      components: [
+        { accountId: "a", kind: "net", amountMinor: 5n },
+        { accountId: "b", kind: "net", amountMinor: 3n },
+        { accountId: "c", kind: "tax", amountMinor: 1n },
+      ],
+      settlements: [
+        payment("first", "2026-10-01", 4n),
+        payment("next", "2026-11-01", 1n),
+        payment("last", "2026-12-01", 4n),
+      ],
+    });
+    const rows = recogniseCashSettlements(s, { from: "2026-10-01", to: "2026-12-31" });
+    expect(
+      rows.every((row) => row.components.every((component) => component.recognisedMinor >= 0n)),
+    ).toBe(true);
+    expect(rows.map((row) => row.components.map((component) => component.recognisedMinor))).toEqual(
+      [
+        [3n, 1n, 0n],
+        [0n, 1n, 0n],
+        [2n, 1n, 1n],
+      ],
+    );
+  });
+
+  it("reverses the named partial receipt's exact tax split after later payments", () => {
+    const s = source({
+      totalMinor: 5n,
+      components: [
+        { accountId: "sales", kind: "net", amountMinor: 3n },
+        { accountId: "tax", kind: "tax", amountMinor: 2n },
+      ],
+      settlements: [
+        payment("first", "2026-09-01", 1n),
+        payment("second", "2026-10-01", 1n),
+        payment("third", "2026-11-01", 1n),
+        { ...payment("void-second", "2026-12-01", -1n), reversesSettlementId: "second" },
+        payment("replacement", "2027-01-01", 1n),
+      ],
+    });
+    expect(amounts(recogniseCashSettlements(s, { from: "2026-12-01", to: "2026-12-31" }))).toEqual([
+      [0n, -1n],
+    ]);
+    expect(amounts(recogniseCashSettlements(s, { from: "2027-01-01", to: "2027-01-31" }))).toEqual([
+      [0n, 1n],
+    ]);
+    expect(() =>
+      recogniseCashSettlements(
+        {
+          ...s,
+          settlements: [
+            ...s.settlements,
+            { ...payment("twice", "2027-02-01", -1n), reversesSettlementId: "second" },
+          ],
+        },
+        { from: "2026-09-01", to: "2027-02-28" },
+      ),
+    ).toThrow("unreversed original");
+  });
+});

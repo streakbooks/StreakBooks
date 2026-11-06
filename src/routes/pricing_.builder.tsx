@@ -29,7 +29,7 @@ function money(amount: number | null, currency: BillingCurrency): string {
 
 function PlanBuilderPage() {
   const quote = useServerFn(quoteCustomerPlan);
-  const [planCode, setPlanCode] = useState("growth");
+  const [planCode, setPlanCode] = useState("pro");
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const mutation = useMutation({
     mutationFn: () =>
@@ -75,13 +75,11 @@ function PlanBuilderPage() {
             value={planCode}
             onValueChange={setPlanCode}
           >
-            {(result?.plans.length ? result.plans : [{ code: "growth", name: "Growth" }]).map(
-              (plan) => (
-                <option key={plan.code} value={plan.code}>
-                  {plan.name}
-                </option>
-              ),
-            )}
+            {(result?.plans.length ? result.plans : [{ code: "pro", name: "Pro" }]).map((plan) => (
+              <option key={plan.code} value={plan.code}>
+                {plan.name}
+              </option>
+            ))}
           </RecordLookupSelect>
         </label>
         <fieldset className="space-y-3">
@@ -93,6 +91,7 @@ function PlanBuilderPage() {
             >
               <span>
                 {feature.name}
+                {feature.comingSoon ? " (coming soon)" : ""}
                 <span className="block text-muted-foreground">{feature.description}</span>
               </span>
               <input

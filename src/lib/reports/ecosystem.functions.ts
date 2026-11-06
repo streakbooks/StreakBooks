@@ -1,9 +1,12 @@
-import {
-  standardSettingsSchema,
-  encodeStandardSettings,
-  resolveStandardSettings,
-} from "./standard-settings";
+import { encodeStandardSettings, resolveStandardSettings } from "./standard-settings";
 import { parseReportSearch } from "./search";
+import {
+  parseAccountingBasis,
+  savedReportBasis,
+  withSavedReportBasis,
+  type AccountingBasis,
+} from "./accounting-basis";
+import { resolveReportingBasis } from "./accounting-basis.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -285,21 +288,34 @@ export const previewCustomReport = createServerFn({ method: "POST" })
       ...scope(input),
       from,
       to,
+      basisOverride: savedReportBasis({ _builder: input.definition }),
       definition: customDefinitionSchema.parse(input.definition),
     };
   })
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
-    const facts = await callRpc(
-      context.supabase,
-      "capture_custom_report_facts",
-      { _company_id: data.companyId, _from: data.from, _to: data.to, _definition: data.definition },
-      missing,
-    );
+    const basis = await resolveReportingBasis(context.supabase, data.companyId, data.basisOverride);
+    const definition = { ...data.definition, basis };
+    const facts =
+      definition.basis === "cash"
+        ? await (
+            await import("./cash-custom.server")
+          ).captureCashCustom(context.supabase, data.companyId, data.from, data.to, definition)
+        : await callRpc(
+            context.supabase,
+            "capture_custom_report_facts",
+            {
+              _company_id: data.companyId,
+              _from: data.from,
+              _to: data.to,
+              _definition: definition,
+            },
+            missing,
+          );
     return JSON.stringify(
       buildReportDocument(facts, {
-        name: data.definition.title,
-        config: { _builder: data.definition },
+        name: definition.title,
+        config: { basis, _builder: definition },
       }),
     );
   });
@@ -526,9 +542,7 @@ async function assertDeliveryBasis(supabase: Sb, companyId: string, viewId?: str
   if (error || !data) throw new Error("Report access denied");
   const config = (data as unknown as { config: Record<string, unknown> }).config;
   const cash =
-    config["basis"] === "cash" ||
-    (typeof config["settings"] === "string" &&
-      standardSettingsSchema.parse(JSON.parse(config["settings"])).basis === "cash");
+    (await resolveReportingBasis(supabase, companyId, savedReportBasis(config))) === "cash";
   if (cash) {
     const version = await callRpc(
       supabase,
@@ -658,6 +672,10 @@ export const captureReportDocument = createServerFn({ method: "POST" })
       report_id: string;
       config: Record<string, unknown>;
     };
+    view.config = withSavedReportBasis(
+      view.config,
+      await resolveReportingBasis(context.supabase, data.companyId, savedReportBasis(view.config)),
+    );
     const from = dateSchema.parse(data.from ?? view.config["from"]),
       to = dateSchema.parse(data.to ?? view.config["to"]);
     const def = view.config["_builder"]
@@ -669,40 +687,46 @@ export const captureReportDocument = createServerFn({ method: "POST" })
       ["profit-and-loss", "balance-sheet"].includes(view.report_id);
     const cashSettings = standard ? resolveStandardSettings(parseReportSearch(view.config)) : null;
     const facts =
-      cashSettings?.basis === "cash"
+      def?.basis === "cash"
         ? await (
-            await import("./cash-standard.server")
-          ).captureCashStandard(
-            context.supabase,
-            data.companyId,
-            from,
-            to,
-            cashSettings,
-            view.report_id as "profit-and-loss" | "balance-sheet",
-          )
-        : await callRpc(
-            context.supabase,
-            def
-              ? "capture_custom_report_facts"
-              : standard
-                ? "capture_standard_report_facts"
-                : "capture_reporting_facts",
-            {
-              _company_id: data.companyId,
-              _from: from,
-              _to: to,
-              ...(def ? { _definition: def } : {}),
-              ...(standard
-                ? {
-                    _report_id: view.report_id,
-                    _settings: standardSettingsSchema.parse(
-                      JSON.parse(view.config["settings"] as string),
-                    ),
-                  }
-                : {}),
-            },
-            missing,
-          );
+            await import("./cash-custom.server")
+          ).captureCashCustom(context.supabase, data.companyId, from, to, def)
+        : cashSettings?.basis === "cash"
+          ? await (
+              await import("./cash-standard.server")
+            ).captureCashStandard(
+              context.supabase,
+              data.companyId,
+              from,
+              to,
+              cashSettings,
+              view.report_id as "profit-and-loss" | "balance-sheet",
+            )
+          : !def && resolveStandardSettings(parseReportSearch(view.config)).basis === "cash"
+            ? await (
+                await import("./cash-report-facts.server")
+              ).captureCashReportFacts(context.supabase, data.companyId, from, to)
+            : await callRpc(
+                context.supabase,
+                def
+                  ? "capture_custom_report_facts"
+                  : standard
+                    ? "capture_standard_report_facts"
+                    : "capture_reporting_facts",
+                {
+                  _company_id: data.companyId,
+                  _from: from,
+                  _to: to,
+                  ...(def ? { _definition: def } : {}),
+                  ...(standard
+                    ? {
+                        _report_id: view.report_id,
+                        _settings: cashSettings,
+                      }
+                    : {}),
+                },
+                missing,
+              );
     return JSON.stringify(
       buildReportDocument(facts, {
         name: view.name,
@@ -773,6 +797,14 @@ export const exportReportDocument = createServerFn({ method: "POST" })
         report_id: string;
         config: Record<string, unknown>;
       };
+      view.config = withSavedReportBasis(
+        view.config,
+        await resolveReportingBasis(
+          context.supabase,
+          data.companyId,
+          savedReportBasis(view.config),
+        ),
+      );
       const def = view.config["_builder"]
         ? customDefinitionSchema.parse(view.config["_builder"])
         : null;
@@ -784,40 +816,57 @@ export const exportReportDocument = createServerFn({ method: "POST" })
         ? resolveStandardSettings(parseReportSearch(view.config))
         : null;
       facts =
-        cashSettings?.basis === "cash"
+        def?.basis === "cash"
           ? await (
-              await import("./cash-standard.server")
-            ).captureCashStandard(
+              await import("./cash-custom.server")
+            ).captureCashCustom(
               context.supabase,
               data.companyId,
               dateSchema.parse(data.from ?? view.config["from"]),
               dateSchema.parse(data.to ?? view.config["to"]),
-              cashSettings,
-              view.report_id as "profit-and-loss" | "balance-sheet",
+              def,
             )
-          : await callRpc(
-              context.supabase,
-              def
-                ? "capture_custom_report_facts"
-                : standard
-                  ? "capture_standard_report_facts"
-                  : "capture_reporting_facts",
-              {
-                _company_id: data.companyId,
-                _from: dateSchema.parse(data.from ?? view.config["from"]),
-                _to: dateSchema.parse(data.to ?? view.config["to"]),
-                ...(def ? { _definition: def } : {}),
-                ...(standard
-                  ? {
-                      _report_id: view.report_id,
-                      _settings: standardSettingsSchema.parse(
-                        JSON.parse(view.config["settings"] as string),
-                      ),
-                    }
-                  : {}),
-              },
-              missing,
-            );
+          : cashSettings?.basis === "cash"
+            ? await (
+                await import("./cash-standard.server")
+              ).captureCashStandard(
+                context.supabase,
+                data.companyId,
+                dateSchema.parse(data.from ?? view.config["from"]),
+                dateSchema.parse(data.to ?? view.config["to"]),
+                cashSettings,
+                view.report_id as "profit-and-loss" | "balance-sheet",
+              )
+            : !def && resolveStandardSettings(parseReportSearch(view.config)).basis === "cash"
+              ? await (
+                  await import("./cash-report-facts.server")
+                ).captureCashReportFacts(
+                  context.supabase,
+                  data.companyId,
+                  dateSchema.parse(data.from ?? view.config["from"]),
+                  dateSchema.parse(data.to ?? view.config["to"]),
+                )
+              : await callRpc(
+                  context.supabase,
+                  def
+                    ? "capture_custom_report_facts"
+                    : standard
+                      ? "capture_standard_report_facts"
+                      : "capture_reporting_facts",
+                  {
+                    _company_id: data.companyId,
+                    _from: dateSchema.parse(data.from ?? view.config["from"]),
+                    _to: dateSchema.parse(data.to ?? view.config["to"]),
+                    ...(def ? { _definition: def } : {}),
+                    ...(standard
+                      ? {
+                          _report_id: view.report_id,
+                          _settings: cashSettings,
+                        }
+                      : {}),
+                  },
+                  missing,
+                );
       definition = {
         name: view.name,
         reportId: view.report_id,
@@ -864,19 +913,38 @@ export const exportReportDocument = createServerFn({ method: "POST" })
 
 export const getManagementMetrics = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; from: string; to: string }) => ({
-    ...scope(input),
-    from: dateSchema.parse(input.from),
-    to: dateSchema.parse(input.to),
-  }))
+  .inputValidator(
+    (input: {
+      companyId: string;
+      from: string;
+      to: string;
+      basis?: AccountingBasis | undefined;
+    }) => ({
+      ...scope(input),
+      from: dateSchema.parse(input.from),
+      to: dateSchema.parse(input.to),
+      basis: parseAccountingBasis(input.basis),
+    }),
+  )
   .handler(async ({ data, context }) => {
+    if (data.from > data.to) throw new Error("End date must follow start date");
     await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
-    const facts = await callRpc(
+    const accountingBasis = await resolveReportingBasis(
       context.supabase,
-      "capture_reporting_facts",
-      { _company_id: data.companyId, _from: data.from, _to: data.to },
-      missing,
+      data.companyId,
+      data.basis,
     );
+    const facts =
+      accountingBasis === "cash"
+        ? await (
+            await import("./cash-report-facts.server")
+          ).captureCashReportFacts(context.supabase, data.companyId, data.from, data.to)
+        : await callRpc(
+            context.supabase,
+            "capture_reporting_facts",
+            { _company_id: data.companyId, _from: data.from, _to: data.to },
+            missing,
+          );
     const { managementMetrics } = await import("./management");
     return managementMetrics(facts);
   });
@@ -944,12 +1012,18 @@ export const getFirmReportingPortfolio = createServerFn({ method: "GET" })
         ...(await Promise.all(
           selected.slice(i, i + 5).map(async (client) => {
             await assertCompanyPermission(sb, client.company_id, "reports.view");
-            const facts = await callRpc(
-              sb,
-              "capture_reporting_facts",
-              { _company_id: client.company_id, _from: data.from, _to: data.to },
-              missing,
-            );
+            const accountingBasis = await resolveReportingBasis(sb, client.company_id);
+            const facts =
+              accountingBasis === "cash"
+                ? await (
+                    await import("./cash-report-facts.server")
+                  ).captureCashReportFacts(sb, client.company_id, data.from, data.to)
+                : await callRpc(
+                    sb,
+                    "capture_reporting_facts",
+                    { _company_id: client.company_id, _from: data.from, _to: data.to },
+                    missing,
+                  );
             const { data: packs, error: packError } = await sb
               .from("report_packs" as never)
               .select("id,name,status,to_date,updated_at" as never)

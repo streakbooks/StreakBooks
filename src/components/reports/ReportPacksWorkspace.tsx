@@ -1,3 +1,5 @@
+import { getReportingBasis } from "@/lib/reports/accounting-basis.functions";
+import { StatementBasisSelect } from "./StatementBasisSelect";
 import { Link } from "@tanstack/react-router";
 import { ReportingModelSelect } from "./ReportingModelSelect";
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
@@ -86,7 +88,12 @@ export function ReportPacksWorkspace({
     commentFn = useServerFn(addReportComment),
     templateFn = useServerFn(saveReportingModel),
     exportFn = useServerFn(exportReportDocument),
-    deleteSchedule = useServerFn(deleteReportSchedule);
+    deleteSchedule = useServerFn(deleteReportSchedule),
+    loadBasis = useServerFn(getReportingBasis);
+  const companyBasis = useQuery({
+    queryKey: ["reporting-basis", companyId],
+    queryFn: () => loadBasis({ data: { companyId } }),
+  });
   const canPrepare = useCanDo("accounting.post"),
     canExport = useCanDo("reports.export");
   const [schedulePage, setSchedulePage] = useState(0);
@@ -163,7 +170,10 @@ export function ReportPacksWorkspace({
     setEnd(pack?.to_date ?? to);
     setConfig(
       pack?.config ??
-        packConfigSchema.parse({ reports: ["profit-and-loss", "balance-sheet", "cash-summary"] }),
+        packConfigSchema.parse({
+          basis: companyBasis.data ?? "accrual",
+          reports: ["profit-and-loss", "balance-sheet", "cash-summary"],
+        }),
     );
     setReviewer(pack?.reviewer_id ?? "");
     setPreparer(pack?.preparer_id ?? "");
@@ -175,13 +185,16 @@ export function ReportPacksWorkspace({
     mutation.mutate(() =>
       transition({ data: { companyId, id: pack.id, version: pack.version, action: act, note } }),
     );
-  if (q.isPending) return <LoadingState />;
-  if (q.isError)
+  if (q.isPending || companyBasis.isPending) return <LoadingState />;
+  if (q.isError || companyBasis.isError)
     return (
       <ErrorState
         title="Could not load reporting workspace"
-        description={friendlyAuthError(q.error)}
-        onRetry={() => void q.refetch()}
+        description={friendlyAuthError(q.error ?? companyBasis.error)}
+        onRetry={() => {
+          void q.refetch();
+          void companyBasis.refetch();
+        }}
       />
     );
   const workspace = q.data;
@@ -606,11 +619,16 @@ export function ReportPacksWorkspace({
               {editor === "new" ? "Create management report pack" : "Edit report pack"}
             </DialogTitle>
             <DialogDescription>
-              Choose reports in their delivery order. Submission captures posted-ledger facts;
-              publication requires a different assigned reviewer.
+              Choose reports in their delivery order and accounting method. Submission captures the
+              selected figures; publication requires a different assigned reviewer.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            <StatementBasisSelect
+              basis={config.basis}
+              report="profit-and-loss"
+              onChange={(basis) => setConfig({ ...config, basis })}
+            />
             <Label htmlFor="pack-name">Pack name</Label>
             <Input
               id="pack-name"

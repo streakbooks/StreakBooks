@@ -48,6 +48,24 @@ describe("saved report validation", () => {
     expect(namedSavedConfig(source, "Renamed")._builder?.title).toBe("Renamed");
     expect(source._builder.title).toBe("Original");
   });
+  it("retains inherited company basis when renaming a legacy custom view", () => {
+    const source: Record<string, unknown> = { ...starterDefinition("Original") };
+    delete source["basis"];
+    const renamed = namedSavedConfig({ _builder: source }, "Renamed");
+    expect(renamed).not.toHaveProperty("basis");
+    expect(renamed._builder).not.toHaveProperty("basis");
+    expect(renamed._builder?.title).toBe("Renamed");
+  });
+  it("preserves explicit accrual settings despite compact URL default encoding", () => {
+    const config = validateSavedConfig({ settings: '{"basis":"accrual","group":"month"}' });
+    expect(config.basis).toBe("accrual");
+    expect(JSON.parse(config.settings!).group).toBe("month");
+  });
+  it("retains an explicit top-level override on legacy custom views", () => {
+    const legacy: Record<string, unknown> = { ...starterDefinition() };
+    delete legacy["basis"];
+    expect(validateSavedConfig({ basis: "cash", _builder: legacy })._builder?.basis).toBe("cash");
+  });
   it("reads legacy configurations without metadata", () => {
     expect(libraryMetadata({ columns: "month" })).toEqual({
       archived: false,

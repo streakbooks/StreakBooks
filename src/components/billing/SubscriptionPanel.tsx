@@ -15,6 +15,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { CheckoutForm } from "@/components/billing/CheckoutForm";
+import { BillingDocuments } from "@/components/billing/BillingDocuments";
+import { ReferralPanel } from "@/components/billing/ReferralPanel";
+import { SubscriptionLifecycle } from "@/components/billing/SubscriptionLifecycle";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -31,15 +34,23 @@ import {
 } from "@/lib/billing/subscription-actions.functions";
 import {
   formatMinor,
+  isBillingCurrency,
   listAmount,
   planByCode,
   type BillingCurrency,
   type BillingInterval,
   type PriceQuote,
 } from "@/lib/billing/pricing";
+import { formatMinorAmount } from "@/lib/billing/domain/money";
 import { cn } from "@/lib/utils";
 
 const billingKey = (companyId: string) => ["billing-overview", companyId] as const;
+
+function visiblePlans(data: BillingOverview): BillingPlanView[] {
+  return data.plans
+    .filter((plan) => plan.active && (plan.isPublic || plan.code === data.subscription?.planCode))
+    .sort((a, b) => a.rank - b.rank);
+}
 
 function paidSubscription(sub: BillingOverview["subscription"]): boolean {
   if (!sub) return false;
@@ -113,9 +124,9 @@ export function SubscriptionPanel({
 
   useEffect(() => {
     if (openedFromLink.current || !data?.ready || !initialPlan) return;
-    const plan = data.plans.find((item) => item.code === initialPlan && item.active);
+    const plan = visiblePlans(data).find((item) => item.code === initialPlan);
     openedFromLink.current = true;
-    if (!plan) return;
+    if (!plan?.pricePublished) return;
     const paid = paidSubscription(data.subscription);
     if (paid && data.subscription?.planCode === plan.code) return;
     setIntent(paid ? "switch" : "subscribe");
@@ -128,7 +139,7 @@ export function SubscriptionPanel({
   }
 
   function openPlan(plan: BillingPlanView) {
-    if (!data) return;
+    if (!data || !plan.pricePublished) return;
     const paid = paidSubscription(data.subscription);
     if (paid && data.subscription?.planCode === plan.code) return;
     setIntent(paid ? "switch" : "subscribe");
@@ -147,9 +158,9 @@ export function SubscriptionPanel({
       toast.error(data.message ?? "Subscriptions are not available yet.");
       return;
     }
-    const targets = data.plans.filter((plan) => plan.active);
+    const targets = visiblePlans(data).filter((plan) => plan.pricePublished);
     if (targets.length === 0) {
-      toast.error("There are no active plans to price.");
+      toast.error("Promo codes can be used once plan prices are published.");
       return;
     }
     try {
@@ -210,9 +221,11 @@ export function SubscriptionPanel({
     onSuccess: (result) => {
       setTarget(null);
       toast.success(
-        result.applies === "immediate"
-          ? "The upgrade is active. A card subscription is prorated for the rest of this period."
-          : "The downgrade starts at the end of the current period. Existing records stay available.",
+        result.applies === "after_payment"
+          ? "The upgrade is being charged now for the rest of this period. The new plan starts as soon as the payment is confirmed."
+          : `The new plan starts at your next renewal${
+              result.effectiveAt ? ` on ${new Date(result.effectiveAt).toLocaleDateString()}` : ""
+            }. Existing records stay available.`,
       );
       void overview.refetch();
     },
@@ -252,9 +265,15 @@ export function SubscriptionPanel({
 
   const busy = checkout.isPending || planChange.isPending;
   const quote = target ? (quotes[target.code] ?? null) : null;
-  const due = target
-    ? (quote?.dueMinor ?? listAmount(target.monthlyMinor, interval, data.settings.annualFreeMonths))
-    : 0;
+  const due =
+    target && target.monthlyMinor !== null
+      ? (quote?.dueMinor ??
+        listAmount(target.monthlyMinor, interval, data.settings.annualFreeMonths))
+      : (target?.listPrice?.monthlyMinor ?? 0);
+  const dueCurrency =
+    target?.listPrice && isBillingCurrency(target.listPrice.currency)
+      ? target.listPrice.currency
+      : data.currency;
   const checkingOut = target != null && intent === "subscribe";
 
   return (
@@ -264,6 +283,9 @@ export function SubscriptionPanel({
         portalPending={portal.isPending}
         onPortal={() => portal.mutate()}
       />
+      {data.ready && !data.isDemo ? <SubscriptionLifecycle companyId={companyId} /> : null}
+      {data.ready && !data.isDemo ? <BillingDocuments companyId={companyId} /> : null}
+      {data.ready && !data.isDemo ? <ReferralPanel companyId={companyId} /> : null}
 
       {checkingOut && target ? (
         <CheckoutForm
@@ -279,6 +301,11 @@ export function SubscriptionPanel({
           quote={checkoutQuote.data ?? null}
           quoteLoading={checkoutQuote.isFetching}
           quoteError={checkoutQuote.error instanceof Error ? checkoutQuote.error.message : null}
+          priceCurrency={
+            target.listPrice && isBillingCurrency(target.listPrice.currency)
+              ? target.listPrice.currency
+              : undefined
+          }
           onBack={() => setTarget(null)}
           onPay={(billing, method, copy) =>
             checkout.mutate({ planCode: target.code, method, billing, copy })
@@ -313,8 +340,9 @@ export function SubscriptionPanel({
               <DialogHeader>
                 <DialogTitle>Switch to {target.name}</DialogTitle>
                 <DialogDescription>
-                  An upgrade applies now. A downgrade starts when the current period ends. Card
-                  subscriptions are prorated. Records already posted stay available.
+                  On Stripe an upgrade is charged now for the rest of the period and starts once
+                  that payment is confirmed. A downgrade, and any change on Razorpay, starts at the
+                  next renewal. Records already posted stay available.
                 </DialogDescription>
               </DialogHeader>
               <dl className="space-y-2 rounded-lg border bg-muted/30 px-4 py-3 text-sm">
@@ -328,7 +356,7 @@ export function SubscriptionPanel({
                 </div>
                 <div className="flex justify-between gap-4">
                   <dt className="text-muted-foreground">Price</dt>
-                  <dd className="font-medium">{formatMinor(due, data.currency)}</dd>
+                  <dd className="font-medium">{formatMinor(due, dueCurrency)}</dd>
                 </div>
               </dl>
               <DialogFooter className="gap-2 sm:gap-0">
@@ -357,6 +385,10 @@ export function SubscriptionPanel({
 }
 
 function monthlyPrices(plan: BillingPlanView): Record<BillingCurrency, number> {
+  if (plan.listPrice?.monthlyMinor != null && isBillingCurrency(plan.listPrice.currency)) {
+    const amount = plan.listPrice.monthlyMinor;
+    return { USD: amount, GBP: amount, INR: amount, AUD: amount, NZD: amount };
+  }
   const catalog = planByCode(plan.code)?.monthly;
   return {
     USD: plan.monthlyUsd,
@@ -394,11 +426,19 @@ function PlanPicker({
   onApply: () => void;
   onChoose: (plan: BillingPlanView) => void;
 }) {
+  const plans = visiblePlans(data);
+  const anyPriced = plans.some((plan) => plan.pricePublished);
+  const anyYearly = plans.some(
+    (plan) =>
+      plan.pricePublished && (plan.monthlyMinor !== null || plan.listPrice?.yearlyMinor != null),
+  );
+  const anyPromo = anyPriced;
+  const trialPlan = plans.find((plan) => plan.code === data.settings.trialPlanCode);
   return (
     <>
       <div className="flex flex-col items-center gap-3">
         <div
-          className="inline-flex rounded-full border bg-muted/40 p-1"
+          className={cn("inline-flex rounded-full border bg-muted/40 p-1", !anyYearly && "hidden")}
           role="group"
           aria-label="Billing period"
         >
@@ -422,7 +462,7 @@ function PlanPicker({
             {data.settings.annualFreeMonths > 0 ? " · 2 months free" : ""}
           </Button>
         </div>
-        {showPromo ? (
+        {!anyPromo ? null : showPromo ? (
           <form
             className="flex flex-wrap items-end justify-center gap-2"
             onSubmit={(event) => {
@@ -458,27 +498,31 @@ function PlanPicker({
         )}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {data.plans
-          .filter((plan) => plan.active)
-          .map((plan) => (
-            <PlanCard
-              key={plan.code}
-              plan={plan}
-              overview={data}
-              interval={interval}
-              quote={quotes[plan.code] ?? null}
-              busy={busy}
-              onChoose={() => onChoose(plan)}
-            />
-          ))}
+      <div
+        className={cn(
+          "grid gap-4 md:grid-cols-2",
+          plans.length > 3 ? "xl:grid-cols-4" : "xl:grid-cols-3",
+        )}
+      >
+        {plans.map((plan) => (
+          <PlanCard
+            key={plan.code}
+            plan={plan}
+            overview={data}
+            interval={interval}
+            quote={quotes[plan.code] ?? null}
+            busy={busy}
+            onChoose={() => onChoose(plan)}
+          />
+        ))}
       </div>
 
       <p className="text-center text-xs text-muted-foreground">
-        Prices are per organisation and exclude local tax. Yearly billing is ten times the monthly
-        price. A new organisation starts a {data.settings.trialDays}-day{" "}
-        {data.settings.trialPlanCode.replace(/^./, (letter) => letter.toUpperCase())} trial with no
-        card. The ledger is the same on every plan.
+        Prices are per organisation and exclude local tax.
+        {trialPlan?.trialEnabled
+          ? ` A new organisation starts a ${trialPlan.trialDays}-day ${trialPlan.name} trial with no card.`
+          : ""}{" "}
+        The ledger is the same on every plan.
       </p>
     </>
   );
@@ -570,8 +614,11 @@ function PlanCard({
 }) {
   const current = overview.subscription?.planCode === plan.code;
   const paidHere = current && paidSubscription(overview.subscription);
-  const recommended = plan.code === "growth" && !current;
-  const list = listAmount(plan.monthlyMinor, interval, overview.settings.annualFreeMonths);
+  const recommended = plan.code === overview.settings.trialPlanCode && !current;
+  const list =
+    plan.monthlyMinor === null
+      ? null
+      : listAmount(plan.monthlyMinor, interval, overview.settings.annualFreeMonths);
   const due = quote?.dueMinor ?? list;
   return (
     <article
@@ -587,18 +634,38 @@ function PlanCard({
           <p className="text-xs text-muted-foreground">{plan.audience}</p>
         </div>
         {current ? <Badge>Current</Badge> : null}
-        {recommended ? <Badge variant="info">Most popular</Badge> : null}
+        {recommended ? <Badge variant="info">Recommended</Badge> : null}
       </div>
-      <p className="mt-5">
-        <span className="text-3xl font-semibold tracking-tight">
-          {formatMinor(due, overview.currency)}
-        </span>
-        <span className="text-sm text-muted-foreground">
-          {" "}
-          / {interval === "year" ? "year" : "month"}
-        </span>
-      </p>
-      {quote && quote.discountMinor > 0 ? (
+      {due === null && plan.listPrice?.monthlyMinor != null ? (
+        <p className="mt-5">
+          <span className="text-3xl font-semibold tracking-tight">
+            {formatMinorAmount(BigInt(plan.listPrice.monthlyMinor), plan.listPrice.currency)}
+          </span>
+          <span className="text-sm text-muted-foreground"> / month</span>
+        </p>
+      ) : due === null ? (
+        <p className="mt-5 text-xl font-semibold tracking-tight">Price coming soon</p>
+      ) : (
+        <p className="mt-5">
+          <span className="text-3xl font-semibold tracking-tight">
+            {formatMinor(due, overview.currency)}
+          </span>
+          <span className="text-sm text-muted-foreground">
+            {" "}
+            / {interval === "year" ? "year" : "month"}
+          </span>
+        </p>
+      )}
+      {due === null ? (
+        <p className="mt-1 text-xs text-muted-foreground">
+          {[
+            plan.trialEnabled ? `${plan.trialDays}-day free trial, no card needed` : null,
+            plan.listPrice && !plan.pricePublished ? "Online payment opens soon" : null,
+          ]
+            .filter(Boolean)
+            .join(". ") || "Not yet on sale"}
+        </p>
+      ) : quote && quote.discountMinor > 0 ? (
         <p className="mt-1 text-xs text-muted-foreground">
           List {formatMinor(quote.listMinor, overview.currency)} with {quote.offerCode}
         </p>
@@ -611,14 +678,16 @@ function PlanCard({
         type="button"
         className="mt-4 w-full"
         variant={recommended ? "default" : "outline"}
-        disabled={busy || paidHere}
+        disabled={busy || paidHere || !plan.pricePublished}
         onClick={onChoose}
       >
-        {paidHere
+        {paidHere || (current && !plan.pricePublished)
           ? "Current plan"
-          : paidSubscription(overview.subscription)
-            ? "Switch plan"
-            : "Subscribe"}
+          : !plan.pricePublished
+            ? "Available soon"
+            : paidSubscription(overview.subscription)
+              ? "Switch plan"
+              : "Subscribe"}
       </Button>
       <p className="mt-4 text-sm">{plan.summary}</p>
       <ul className="mt-3 space-y-2 text-sm text-muted-foreground">

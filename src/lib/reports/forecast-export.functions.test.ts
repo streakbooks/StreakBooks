@@ -21,6 +21,12 @@ vi.mock("@tanstack/react-start", () => ({
 vi.mock("@/integrations/supabase/auth-middleware", () => ({ requireSupabaseAuth: {} }));
 vi.mock("@/lib/assert-company-access", () => ({ assertCompanyPermission: vi.fn() }));
 vi.mock("@/lib/planning/rpc", () => ({ callRpc: vi.fn() }));
+vi.mock("./accounting-basis.server", () => ({ resolveReportingBasis: vi.fn() }));
+vi.mock("./cash-report-facts.server", () => ({ captureCashReportFacts: vi.fn() }));
+import { resolveReportingBasis } from "./accounting-basis.server";
+import { captureCashReportFacts } from "./cash-report-facts.server";
+import { cashReportingFacts } from "./cash-report-facts";
+import { cashInputFixture } from "./__fixtures__/cash-facts";
 import { exportForecast } from "./forecast-export.functions";
 import { assertCompanyPermission } from "@/lib/assert-company-access";
 import { callRpc } from "@/lib/planning/rpc";
@@ -74,6 +80,7 @@ function facts(from: string, to: string) {
 }
 beforeEach(() => {
   vi.resetAllMocks();
+  vi.mocked(resolveReportingBasis).mockResolvedValue("accrual");
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-11-03T00:00:00Z"));
   vi.mocked(callRpc).mockImplementation(async (_sb, name, args) => {
@@ -162,4 +169,35 @@ describe("authoritative forecast downloads", () => {
     ).rejects.toThrow("complete calendar months");
     expect(callRpc).not.toHaveBeenCalled();
   });
+});
+
+it("uses the company cash default for forecast baselines, actuals and exported basis", async () => {
+  vi.mocked(resolveReportingBasis).mockResolvedValue("cash");
+  vi.mocked(captureCashReportFacts).mockImplementation(async (_sb, _companyId, from, to) => {
+    const input = cashInputFixture();
+    input.journals[0]!.date = "2026-08-15";
+    input.journals[1]!.date = "2026-08-15";
+    input.journals[2]!.date = "2026-09-15";
+    input.journals[3]!.date = "2026-10-15";
+    const base = facts(from, to);
+    base.accounts = input.accounts;
+    return cashReportingFacts(base, input);
+  });
+  const file = await execute(request);
+  const csv = Buffer.from(file.content, "base64").toString();
+  expect(csv).toContain("Cash basis");
+  expect(csv).toContain('"50.00"');
+  expect(csv).toContain('"-40.00"');
+  expect(vi.mocked(captureCashReportFacts).mock.calls.map((call) => call.slice(1))).toEqual([
+    [testCompany, "2026-09-01", "2026-09-30"],
+    [testCompany, "2026-10-01", "2026-10-31"],
+  ]);
+  expect(vi.mocked(callRpc).mock.calls.some((call) => call[1] === "capture_reporting_facts")).toBe(
+    false,
+  );
+});
+
+it("preserves an explicit forecast basis override in server capture", async () => {
+  await execute({ ...request, config: { ...config, basis: "accrual" } });
+  expect(resolveReportingBasis).toHaveBeenCalledWith(context.supabase, testCompany, "accrual");
 });

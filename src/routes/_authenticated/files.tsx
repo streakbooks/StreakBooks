@@ -63,6 +63,7 @@ import { folderAncestors, indexFolderPaths, possibleParentFolders } from "@/lib/
 import {
   combinePossibleDuplicateFlags,
   internalFileUrl,
+  lastFilePage,
   repeatedUploadFlags,
   selectUploadIndexes,
   type FileFormat,
@@ -320,6 +321,12 @@ function FilesPage() {
         },
       }),
   });
+
+  useEffect(() => {
+    if (!filesQ.data) return;
+    const last = lastFilePage(filesQ.data.total, filesQ.data.pageSize);
+    if (page > last) setPage(last);
+  }, [filesQ.data?.total, filesQ.data?.pageSize, page]);
 
   const fileDetailsQ = useQuery({
     queryKey: ["company-file-details", companyId, selectedFile],

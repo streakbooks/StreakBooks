@@ -174,7 +174,7 @@ STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT COALESCE(jsonb_agg(row_to_json(s)::jsonb ORDER BY s.sort_order), '[]'::jsonb)
+  SELECT COALESCE(jsonb_agg(row_to_json(s)::jsonb ORDER BY s."sortOrder"), '[]'::jsonb)
   FROM (
     SELECT
       svc.code,
@@ -190,7 +190,7 @@ AS $$
       svc.illustration_key AS "illustrationKey",
       svc.sort_order AS "sortOrder",
       (
-        SELECT COALESCE(jsonb_agg(row_to_json(p)::jsonb ORDER BY p.sort_order), '[]'::jsonb)
+        SELECT COALESCE(jsonb_agg(row_to_json(p)::jsonb ORDER BY p."sortOrder"), '[]'::jsonb)
         FROM (
           SELECT
             pl.code,

@@ -18,7 +18,19 @@ type RpcClient = {
 
 async function callRpc(client: unknown, fn: string, args?: Record<string, unknown>) {
   const { data, error } = await (client as RpcClient).rpc(fn as never, args as never);
-  if (error) throw new Error(error.message);
+  if (error) {
+    const message = error.message ?? "Advisors admin request failed.";
+    if (
+      message.includes("schema cache") ||
+      message.includes("Could not find the function") ||
+      message.includes("PGRST202")
+    ) {
+      throw new Error(
+        "Advisors catalogue admin is not available in this database yet. Apply the Advisors SQL migrations (AD-01/AD-02), then reload the API schema cache and try again.",
+      );
+    }
+    throw new Error(message);
+  }
   return data;
 }
 

@@ -223,7 +223,7 @@ BEGIN
       CASE WHEN svc->>'cadence' = 'session' THEN 'session' ELSE 'month' END,
       coalesce(nullif(btrim(svc->>'startingLabel'), ''), 'See pricing'),
       coalesce(svc->'benefits', '[]'::jsonb),
-      coalesce(nullif(svc->>'illustrationKey'), 'we-do-your-books'),
+      coalesce(nullif(svc->>'illustrationKey', ''), 'we-do-your-books'),
       coalesce((svc->>'sortOrder')::integer, 0),
       coalesce((svc->>'isPublished')::boolean, true),
       coalesce((svc->>'isEnabled')::boolean, true),
@@ -335,7 +335,7 @@ STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT COALESCE(jsonb_agg(row_to_json(s)::jsonb ORDER BY s.sort_order), '[]'::jsonb)
+  SELECT COALESCE(jsonb_agg(row_to_json(s)::jsonb ORDER BY s."sortOrder"), '[]'::jsonb)
   FROM (
     SELECT
       svc.code,
@@ -352,7 +352,7 @@ AS $$
       svc.sort_order AS "sortOrder",
       svc.exclusions,
       (
-        SELECT COALESCE(jsonb_agg(row_to_json(p)::jsonb ORDER BY p.sort_order), '[]'::jsonb)
+        SELECT COALESCE(jsonb_agg(row_to_json(p)::jsonb ORDER BY p."sortOrder"), '[]'::jsonb)
         FROM (
           SELECT
             pl.code,

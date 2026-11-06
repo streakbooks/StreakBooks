@@ -7,6 +7,7 @@ import type { ExceptionFinding } from "@/lib/accounting/reconciliation-exception
 import {
   listReconciliationReviewAssignees,
   listReconciliationReviewCases,
+  getReconciliationReviewCase,
   saveReconciliationReviewCase,
   type SaveCaseInput,
 } from "@/lib/accounting/reconciliation-review.functions";
@@ -32,6 +33,7 @@ export function PersistentReconciliationReviews({
   const canManage = useCanDo("accounting.post");
   const fetchQueue = useServerFn(listReconciliationReviewCases);
   const fetchPeople = useServerFn(listReconciliationReviewAssignees);
+  const fetchOne = useServerFn(getReconciliationReviewCase);
   const submit = useServerFn(saveReconciliationReviewCase);
   const queue = useMutation({
     mutationFn: () => fetchQueue({ data: { companyId } }),
@@ -39,9 +41,19 @@ export function PersistentReconciliationReviews({
   const people = useMutation({
     mutationFn: () => fetchPeople({ data: { companyId } }),
   });
+  const lookup = useMutation({
+    mutationFn: (key: { source: ExceptionFinding["source"]; fingerprint: string }) =>
+      fetchOne({ data: { companyId, source: key.source, fingerprint: key.fingerprint } }),
+  });
   const save = useMutation({
     mutationFn: (input: SaveCaseInput) => submit({ data: input }),
-    onSuccess: async () => { await queue.mutateAsync(); },
+    onSuccess: async () => {
+      await queue.mutateAsync();
+      if (selectedKey) {
+        const row = activeFindings.find(x => x.fingerprint === selectedKey);
+        if (row) await lookup.mutateAsync({ source: row.row.source, fingerprint: row.fingerprint });
+      }
+    },
   });
   const [selectedKey, setSelectedKey] = useState("");
   const [selectedSavedId, setSelectedSavedId] = useState("");
@@ -56,10 +68,12 @@ export function PersistentReconciliationReviews({
   const chosen = activeFindings.find(x => x.fingerprint === selectedKey);
   const matchingSaved = queue.data?.cases.find(row =>
     chosen && row.source_type === chosen.row.source &&
-    row.finding_fingerprint === chosen.fingerprint);
+    row.finding_fingerprint === chosen.fingerprint) ??
+    (chosen && lookup.data && lookup.data.source_type === chosen.row.source &&
+      lookup.data.finding_fingerprint === chosen.fingerprint ? lookup.data : undefined);
   const selectedSaved = matchingSaved ??
     queue.data?.cases.find(x => x.id === selectedSavedId);
-  const busy = queue.isPending || people.isPending || save.isPending;
+  const busy = queue.isPending || people.isPending || save.isPending || lookup.isPending;
   const refresh = () => { setLastError(""); queue.mutate(); };
   const performOpen = async () => {
     if (!chosen || !canManage || busy) return;
@@ -132,7 +146,13 @@ export function PersistentReconciliationReviews({
             <Label htmlFor="exc-track-current">Select an audited exception</Label>
             <select id="exc-track-current" className="w-full rounded-md border bg-background p-2 text-sm"
               value={selectedKey}
-              onChange={e => { setSelectedKey(e.target.value); setSelectedSavedId(""); setNote(""); }}>
+              onChange={e => {
+                const key = e.target.value;
+                setSelectedKey(key); setSelectedSavedId(""); setNote(""); setLastError("");
+                const match = activeFindings.find(x => x.fingerprint === key);
+                if (match) lookup.mutate({ source: match.row.source, fingerprint: key });
+                else lookup.reset();
+              }}>
               <option value="">Choose a current finding to track</option>
               {activeFindings.map(({ row, fingerprint }) => (
                 <option value={fingerprint} key={row.key}>
@@ -144,11 +164,16 @@ export function PersistentReconciliationReviews({
               Current findings are from the audits you chose to run. A changed evidence description
               creates a new case identity; previous cases remain visible in the saved queue.
             </p>
-            {chosen && !matchingSaved ? (
+            {chosen && lookup.isSuccess && !matchingSaved ? (
               <Button type="button" size="sm" disabled={!canManage || busy}
                 onClick={() => void performOpen()}>
                 Start persistent review
               </Button>
+            ) : null}
+            {lookup.isError ? (
+              <p role="alert" className="text-xs text-destructive">
+                Existing review lookup failed: {friendlyAuthError(lookup.error)}
+              </p>
             ) : null}
             {!canManage ? (
               <p className="text-xs text-muted-foreground">

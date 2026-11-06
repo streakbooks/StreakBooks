@@ -1531,9 +1531,9 @@ function FilesPage() {
               <div className="flex items-start justify-between gap-3" key={index}>
                 <span className="min-w-0 break-all">{file.name}</span>
                 <span className="shrink-0 text-xs text-muted-foreground">
-                  {pendingUploadReview.flags[index]
+                  {pendingUploadReview?.flags[index]
                     ? "Possible duplicate"
-                    : pendingUploadReview.scanFailed
+                    : pendingUploadReview?.scanFailed
                       ? "Existing files not checked"
                       : "Not flagged"}
                 </span>

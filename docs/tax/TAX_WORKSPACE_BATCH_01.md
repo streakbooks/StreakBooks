@@ -50,3 +50,47 @@ Manual:
 - Saved returns reconciliation to posted tax account balances and source drill-down.
 - Country-specific pack verification and audited statutory-form templates.
 - Provider-gated e-filing only after formal country-by-country compliance review.
+
+
+## Continuation — Batch 02: tax input integrity and return management
+
+### Implemented
+- Shared calendar-valid date checks for tax rate effective dates, registration dates,
+  tax adjustment journal dates, and tax return preview/draft periods.
+- Exact decimal parsing of tax percentage into basis points: accepts at most two
+  decimal places and rejects values beyond 100% without implicit rounding.
+- Rejects fractional/out-of-range server rate basis points and fractional tax
+  adjustment amounts expressed in minor currency units.
+- Rejects unsupported tax return basis values instead of treating them as accrual.
+- Returns list supports search by period/basis/status and filters for draft,
+  recorded filed and settled returns.
+- A selection change after Calculate shows a stale-preview warning and blocks
+  Save as draft and CSV export until the user recalculates.
+- Delete draft requires explicit checkbox confirmation.
+- New pure-unit tests: tax input validation, return list filtering, stale-preview
+  detection, registration date and rate end-date edge cases.
+
+### Verification to run locally
+    npm.cmd test -- src/lib/tax/tax-input-validation.test.ts src/lib/tax/tax-return-view.test.ts src/lib/tax/rate-status.test.ts src/lib/tax/tax-settings-patch.test.ts src/lib/tax/tax-workspace.test.ts
+    npm.cmd run typecheck
+    npm.cmd run lint
+    npm.cmd run build
+
+Tax Return manual scenarios:
+1. Calculate for one quarter, change the period end without recalculating.
+   Ensure the old result remains visibly identified as stale, and both save and
+   CSV for that preview are blocked. Recalculate to clear the warning.
+2. Change accrual to cash and ensure the old preview cannot be saved or exported.
+3. Filter saved returns by Draft, Recorded filed, Settled and text.
+4. Verify deleting a draft requires explicit confirmation and affects only the
+   opened draft. Verify filed returns cannot be deleted.
+5. Attempt impossible dates (2026-02-29, 2026-04-31), 20.005% tax rates,
+   fractional basis points, and fractional adjustment minor units through the
+   server functions. All must be rejected without a database change.
+6. Check authorised/read-only users, GL mappings, country packs, browser
+   accessibility, existing tax report exports, and multi-tenant isolation.
+
+### Not verified
+Local npm/TypeScript/ESLint/build/browser/DB tests are unrun in this environment.
+GitHub CI was deliberately not started. No migration, production deployment or
+merge was performed. Review and test the draft PR before merging.

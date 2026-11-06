@@ -89,7 +89,10 @@ export function DocumentClassificationPanel({
     mutationFn: ({ tagId, enabled }: { tagId: string; enabled: boolean }) =>
       setTag({ data: { companyId, attachmentId, tagId, enabled } }),
     onSuccess: async () => {
-      await refreshMetadata();
+      await Promise.all([
+        refreshMetadata(),
+        client.invalidateQueries({ queryKey: ["company-files", companyId] }),
+      ]);
       toast.success("Document tags updated");
     },
     onError: (error) => {
@@ -104,7 +107,10 @@ export function DocumentClassificationPanel({
       await refreshTags();
       try {
         await setTag({ data: { companyId, attachmentId, tagId: tag.id, enabled: true } });
-        await refreshMetadata();
+        await Promise.all([
+          refreshMetadata(),
+          client.invalidateQueries({ queryKey: ["company-files", companyId] }),
+        ]);
         toast.success("Tag created and assigned");
       } catch (error) {
         toast.error("Tag created but could not be assigned. " + friendlyAuthError(error));

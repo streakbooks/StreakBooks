@@ -131,7 +131,7 @@ export function validateDepreciationPostingPeriods(
     throw new Error("Run at most 36 consecutive months at a time.");
   }
   if (
-    !/^\\d{4}-(0[1-9]|1[0-2])-\\d{2}$/.test(latestAllowedMonthEnd) ||
+    !/^\d{4}-(0[1-9]|1[0-2])-\d{2}$/.test(latestAllowedMonthEnd) ||
     Number(latestAllowedMonthEnd.slice(0, 4)) === 0 ||
     monthEnd(latestAllowedMonthEnd) !== latestAllowedMonthEnd
   ) {
@@ -141,7 +141,7 @@ export function validateDepreciationPostingPeriods(
     const period = requested[i];
     if (
       typeof period !== "string" ||
-      !/^\\d{4}-(0[1-9]|1[0-2])-\\d{2}$/.test(period) ||
+      !/^\d{4}-(0[1-9]|1[0-2])-\d{2}$/.test(period) ||
       Number(period.slice(0, 4)) === 0 ||
       monthEnd(period) !== period
     ) {

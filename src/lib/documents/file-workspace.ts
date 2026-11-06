@@ -68,3 +68,36 @@ export function validateFileRename(currentName: string, requestedName: string): 
     throw new Error("Keep the original file extension when renaming.");
   return name;
 }
+
+
+/** Fixed, non-user-defined MIME groups; never build a database filter from arbitrary text. */
+export const FILE_FORMATS = ["all", "pdf", "images", "spreadsheets", "word", "text"] as const;
+export type FileFormat = (typeof FILE_FORMATS)[number];
+
+export function parseFileFormat(value: unknown): FileFormat {
+  return FILE_FORMATS.find((format) => format === value) ?? "all";
+}
+
+export function fileFormatMimeTypes(format: FileFormat): readonly string[] {
+  switch (format) {
+    case "pdf":
+      return ["application/pdf"];
+    case "images":
+      return ["image/png", "image/jpeg", "image/gif", "image/webp", "image/heic", "image/heif"];
+    case "spreadsheets":
+      return [
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "text/csv",
+      ];
+    case "word":
+      return [
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ];
+    case "text":
+      return ["text/plain"];
+    default:
+      return [];
+  }
+}

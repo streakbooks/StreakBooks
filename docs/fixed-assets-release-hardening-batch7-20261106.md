@@ -235,3 +235,64 @@ Do not trigger GitHub Actions/CI, merge, modify database environments or deploy 
 **Isolated, non-deploying test evidence:** With outbound network denied, a temporary Vercel sandbox ran the updated pure `asset-detail-summary.ts` and `depreciation.ts` with their existing fiscal-year and budget-math dependencies using Node's built-in TypeScript-strip test runner. The first run passed 21/22 cases; one test-harness wording expectation differed from the correct rejection message. After adjusting that assertion, **22/22 focused tests passed, 0 failed, 0 skipped, exit 0**, with retrieved logs. This does not verify the full project Vitest suite, TypeScript compile, browser UI, authenticated SQL, RLS, or production deployment.
 
 **Release gate remains closed:** PR #111 stays draft and unmerged, and the branch is not integrated with the latest main. The seven-check local verification command and all full-project/browser/accounting security checks remain necessary. No GitHub Actions/CI workflow was triggered, and no database migration, posting transaction, production record or deployment was changed.
+
+
+## Post-merge Batch 7: local release-gate fail-closed hardening
+
+**Date:** 2026-11-06. The original [Fixed Assets PR #111](https://github.com/linkbusinessadvisory/LinkBooks/pull/111) **has merged** into `main` at merge commit `b7d67d321444d5b811ea9d64eb3e8d146de609f4`. The feature branch for that PR was deleted after merge. The original PR's code, including the precision guard, is present on main. The module is **not production-ready** without full QA and deployment verification.
+
+**Separate tooling change:** `feature/fixed-assets-release-gate-main-hardening-20261106` (review and merge tracked separately from the already merged PR #111). Changes are **only** to the local release-check script and its regression suite; no accounting API, journal, SQL, RLS, browser runtime, or deployment source is changed.
+
+### Local release gate changes
+
+`scripts/check-fixed-assets-release.mjs` now requires the following preconditions **before it runs any test or build command**:
+
+1. Exact authorized Git origin `linkbusinessadvisory/LinkBooks` (it never prints a credential-bearing remote URL).
+2. Git's top-level checkout directory exactly matches the script's project root.
+3. The current branch is `main`, not a feature branch or a detached HEAD.
+4. The Git worktree contains no modified or untracked files.
+5. The local commit SHA matches the **locally fetched** `origin/main` tracking ref exactly.
+
+The script performs no `git fetch` or remote network action. A matching tracking SHA does **not** prove the remote branch is current; the operator must run `git fetch origin --prune` immediately beforehand. The script refuses unsafe checkouts with exit status **2** and runs **zero npm tasks**.
+
+The following **nine local checks** run sequentially on the verified checkout, with individual pass/fail results and an overall exit code of 0 for all passing or 1 if any fails:
+- TypeScript (`npm.cmd run typecheck`)
+- ESLint (`npm.cmd run lint`)
+- Fixed Assets Vitest (`npm.cmd test -- src/lib/fixed-assets/`)
+- Full Vitest suite (`npm.cmd test`)
+- UI contracts (`npm.cmd run check:ui`)
+- Lookup contracts (`npm.cmd run check:lookups`)
+- Navigation contracts (`npm.cmd run check:navigation`)
+- Production build (`npm.cmd run build`)
+- Client bundle audit (`npm.cmd run check:bundle`)
+
+The script does not invoke GitHub Actions/CI, migration deployment, `git push`, merge, or Vercel deployment, and does not treat nine local passes as final release approval.
+
+### Repeatable non-CI test evidence
+
+`scripts/check-fixed-assets-release.test.mjs` was added as a separate Node built-in test suite. An isolated Vercel sandbox with egress `deny-all` executed its tests using real temporary Git repositories and a mocked `npm` executable. **12 of 12 tests passed; zero failures, zero skipped; exit code 0.** Cases include a clean, locally synced main, wrong/old origin, withholding URL secrets, wrong/detached branch, changed and untracked files, absent or mismatched origin/main, correctly reported failing npm and argument refusal. Script syntax checking also passed.
+
+These tests prove preflight and orchestration behaviour in a **Linux** sandbox only. The test suite now includes both a Unix `npm` mock and a Windows `npm.cmd` mock with OS-aware PATH configuration; its Windows branch still requires execution in the user's local PowerShell checkout. No actual project typecheck/Vitest/ESLint/build was executed in the isolated fixture.
+
+### Remaining release blockers
+
+- Actual nine-check project gate in a clean, recently fetched `main` checkout.
+- Authenticated two-tenant RLS/permissions, posting idempotency, locked-period, FX and disposal accounting verification, and browser/mobile/accessibility QA.
+- PR review and merge of the new release-gate-only change (separate from merged PR #111).
+- Deployment repository alignment: the connected Vercel `linkbooks` project's last observed deployment is tied to the **old** `rohitmehra86/LinkBooks` repository, not the authoritative `linkbusinessadvisory/LinkBooks` repository. Reconnect/verify the correct project before any deployment claim.
+
+### Recommended local commands
+
+```powershell
+cd D:\MyApp\LinkBooks
+git status
+# Save or commit unfinished Cursor work before changing branches.
+git fetch origin --prune
+git switch main
+git pull --ff-only origin main
+# The latest nine-check script is available after the new tooling PR is merged.
+node --test scripts/check-fixed-assets-release.test.mjs
+node scripts/check-fixed-assets-release.mjs
+```
+
+The final two commands must be executed on the local checkout only after the tooling PR is merged and the working tree is clean. They run no GitHub Actions. Record and share the output and exact main SHA before marking the release gate as verified.

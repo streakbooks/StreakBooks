@@ -63,14 +63,14 @@ BEGIN
 
   INSERT INTO public.accounts (
     company_id, code, name, account_type, normal_balance, account_kind
-  ) VALUES (_c, 'PAY-GUARD-BANK', 'Guard test bank', 'asset', 'debit', 'bank')
+  ) VALUES (_c, 'PAY-BANK', 'Guard test bank', 'asset', 'debit', 'bank')
   RETURNING id INTO _bank;
 
   -- Database guard 2: bank/GL currency must also match payment currency.
   INSERT INTO public.accounts (
     company_id, code, name, account_type, normal_balance, account_kind, currency_code
   ) VALUES (
-    _c, 'PAY-GUARD-USD', 'Guard foreign-currency GL', 'asset', 'debit',
+    _c, 'PAY-USD', 'Guard foreign-currency GL', 'asset', 'debit',
     'bank', 'USD'
   ) RETURNING id INTO _foreign_account;
 

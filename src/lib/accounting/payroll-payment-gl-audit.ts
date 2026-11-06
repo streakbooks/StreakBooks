@@ -107,6 +107,7 @@ export function reviewPayrollPaymentGl(
   if (!["posted", "reversed"].includes(payment.status)) issues.push("Payroll payment status is invalid.");
   if (payment.company_id !== company || original.company_id !== company) issues.push("Payment or original journal is from another organisation.");
   if (!payment.id || payment.journal_id !== original.id) issues.push("Payment does not link to the selected journal.");
+  if (original.reverses_journal_id) issues.push("Original Payroll payment journal unexpectedly reverses another journal.");
   if (original.status !== "posted" || original.source_type !== "payroll" || original.source_id !== payment.id) {
     issues.push("Original GL journal is not a posted journal sourced from this payment.");
   }
@@ -122,7 +123,10 @@ export function reviewPayrollPaymentGl(
     }
     if (!reversal || reversal.id !== payment.reversal_journal_id ||
         reversal.company_id !== company || reversal.status !== "posted" ||
-        reversal.reverses_journal_id !== original.id || reversal.source_type !== "reversal") {
+        reversal.reverses_journal_id !== original.id || reversal.source_type !== "reversal" ||
+        reversal.source_id !== original.id || reversal.currency_code !== original.currency_code ||
+        reversal.idempotency_key !== "payroll-payment:" + payment.id + ":reverse" ||
+        reversal.reversed_by_journal_id) {
       issues.push("Payment reversal journal is missing, not posted or not linked to the original.");
     }
   } else if (payment.reversal_journal_id || original.reversed_by_journal_id || reversal) {

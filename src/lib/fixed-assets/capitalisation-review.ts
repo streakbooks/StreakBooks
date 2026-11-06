@@ -187,3 +187,49 @@ export async function pageCapitalisationBillLines<T extends { id: string }>(
   }
   return all;
 }
+
+/** Explain review flags without pretending that a bill line proves a missing asset. */
+export function capitalisationReviewGuidance(status: CapitalisationReviewStatus): {
+  reason: string;
+  nextStep: string;
+  canPrepareNewAsset: boolean;
+} {
+  switch (status) {
+    case "unlinked":
+      return {
+        reason: "No current fixed-asset record references this posted supplier-bill line.",
+        nextStep: "Confirm the item is depreciable PPE, check recoverable tax and existing manually registered assets, then register only if needed.",
+        canPrepareNewAsset: true,
+      };
+    case "partially_linked":
+      return {
+        reason: "The linked base-currency asset cost is lower than the supplier-bill net amount.",
+        nextStep: "Check split acquisitions, non-capitalisable items, discounts, bill adjustments and tax treatment before adding another asset.",
+        canPrepareNewAsset: true,
+      };
+    case "linked":
+      return {
+        reason: "Linked asset cost covers the bill's net amount. This is not evidence of correct accounting treatment.",
+        nextStep: "Open the bill and existing asset details if the mapping looks wrong. Avoid creating another asset solely from this line.",
+        canPrepareNewAsset: false,
+      };
+    case "fx_review":
+      return {
+        reason: "The bill is in a foreign currency while registered cost is in the organisation base currency.",
+        nextStep: "Verify the actual transaction-date FX conversion and linked register records. Do not compare nominal currency amounts or create a duplicate.",
+        canPrepareNewAsset: false,
+      };
+    case "overlinked":
+      return {
+        reason: "Linked register cost is greater than the supplier-bill gross in the base currency.",
+        nextStep: "Investigate additional acquisition costs, duplicate records, posting corrections and the bill's tax treatment before changing anything.",
+        canPrepareNewAsset: false,
+      };
+    case "non_purchase":
+      return {
+        reason: "The line has a zero or negative gross amount, which is not a positive purchase.",
+        nextStep: "Check the supplier credit or adjustment and related asset disposal/reversal records; do not create a new positive-cost asset here.",
+        canPrepareNewAsset: false,
+      };
+  }
+}

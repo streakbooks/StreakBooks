@@ -143,3 +143,14 @@ export function selectUploadIndexes(
     includePossibleDuplicates || !flag ? [index] : [],
   );
 }
+
+
+/** Merge in-batch and visible-existing metadata flags in the same picker order. */
+export function combinePossibleDuplicateFlags(
+  withinBatch: readonly boolean[],
+  amongExisting: readonly boolean[],
+): boolean[] {
+  if (withinBatch.length !== amongExisting.length)
+    throw new Error("The file comparison was incomplete. Review before uploading.");
+  return withinBatch.map((flag, index) => flag || amongExisting[index] === true);
+}

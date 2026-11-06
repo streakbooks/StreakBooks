@@ -3,6 +3,8 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getTaxGlComparison } from "@/lib/tax/tax-return.functions";
+import { TaxGlReviewPanel } from "@/components/tax/TaxGlReviewPanel";
+import { useCanDo } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { useFormat } from "@/hooks/use-format";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -23,11 +25,13 @@ export function TaxGlComparisonPanel({
   basis: Basis;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [showEvidence, setShowEvidence] = useState(false);
+  const canViewGl = useCanDo("accounting.view");
   const fetchComparison = useServerFn(getTaxGlComparison);
   const f = useFormat();
   const query = useQuery({
     queryKey: ["tax-gl-compare", companyId, periodStart, periodEnd, basis],
-    enabled: expanded,
+    enabled: expanded && canViewGl,
     queryFn: () => fetchComparison({
       data: { companyId, periodStart, periodEnd, basis },
     }),
@@ -44,13 +48,15 @@ export function TaxGlComparisonPanel({
             Read-only review of tax source documents against posted control-account activity.
           </p>
         </div>
-        <Button size="sm" variant="outline" onClick={() => setExpanded((current) => !current)}>
+        <Button size="sm" variant="outline" disabled={!canViewGl} onClick={() => setExpanded((current) => !current)}>
           {expanded ? "Hide comparison" : "Review GL activity"}
         </Button>
       </CardHeader>
       {expanded ? (
         <CardContent className="space-y-4">
-          {query.isPending ? <LoadingState /> : query.isError ? (
+          {!canViewGl ? (
+            <p className="text-xs text-muted-foreground">Accounting view permission is required.</p>
+          ) : query.isPending ? <LoadingState /> : query.isError ? (
             <ErrorState
               title="GL comparison could not be loaded"
               description={friendlyAuthError(query.error)}
@@ -131,6 +137,55 @@ export function TaxGlComparisonPanel({
                   <p key={warning}>{warning}</p>
                 ))}
               </div>
+              <div className="space-y-3">
+                <Button size="sm" variant="outline" onClick={() => setShowEvidence((v) => !v)}>
+                  {showEvidence ? "Hide journal evidence" : `Show journal evidence (${result.evidence.total})`}
+                </Button>
+                {showEvidence ? (
+                  <div className="space-y-2 overflow-x-auto">
+                    {result.evidence.truncated ? (
+                      <p className="text-xs text-muted-foreground">
+                        Showing the latest 100 journal lines only. Open Accounting for the complete ledger.
+                      </p>
+                    ) : null}
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date / Journal</TableHead>
+                          <TableHead>Account</TableHead>
+                          <TableHead>Source</TableHead>
+                          <TableHead className="text-right">Signed GL movement</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {result.evidence.rows.map((entry) => (
+                          <TableRow key={entry.lineId}>
+                            <TableCell>
+                              {entry.journalId ? (
+                                <Link to="/accounting" search={{ tab: "journals", journal: entry.journalId }} className="underline">
+                                  {f.date(entry.journalDate)} · #{entry.journalNumber}
+                                </Link>
+                              ) : f.date(entry.journalDate)}
+                            </TableCell>
+                            <TableCell>{entry.accountCode} · {entry.accountName} ({entry.accountSide})</TableCell>
+                            <TableCell>{entry.sourceType.replaceAll("_", " ")}</TableCell>
+                            <TableCell className="text-right tabular-nums">{f.money(entry.movementMinor, result.currency)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : null}
+              </div>
+              <TaxGlReviewPanel
+                companyId={companyId}
+                periodStart={result.periodStart}
+                periodEnd={result.periodEnd}
+                basis={result.basis}
+                outputAccountId={result.outputAccountId}
+                inputAccountId={result.inputAccountId}
+                snapshot={result.snapshot}
+              />
               <Button size="sm" variant="outline" asChild>
                 <Link to="/reports/$reportId" params={{ reportId: "tax-summary" }}>
                   Open detailed GL Tax Summary

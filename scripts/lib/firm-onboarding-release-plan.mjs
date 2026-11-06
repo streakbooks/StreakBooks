@@ -52,6 +52,16 @@ export function stagingGateReady(env) {
   if (!env.E2E_BASE_URL || !env.E2E_EXPECTED_STAGING_HOST || !env.E2E_PRODUCTION_URL) {
     throw new Error("Dedicated staging URL, expected hostname and production comparison URL required.");
   }
+  // A release acceptance run must exercise both security-sensitive staging
+  // gates, not silently skip the formula-injection and cross-user checks.
+  if (!env.E2E_FIRM_TASK_CSV_CANARY ||
+      !/^[\\s]*[=+\\-@]/u.test(env.E2E_FIRM_TASK_CSV_CANARY)) {
+    throw new Error("Seed a formula-prefixed staging CSV canary and set E2E_FIRM_TASK_CSV_CANARY.");
+  }
+  if (!env.E2E_FIRM_RESTRICTED_EMAIL || !env.E2E_FIRM_RESTRICTED_PASSWORD ||
+      env.E2E_FIRM_RESTRICTED_EMAIL === env.E2E_EMAIL) {
+    throw new Error("A distinct restricted staging user is required for cross-client isolation.");
+  }
   return {
     stagingUrl: env.E2E_BASE_URL,
     expectedHost: env.E2E_EXPECTED_STAGING_HOST,

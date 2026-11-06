@@ -102,7 +102,11 @@ export function reconcileFixedAssets(
   // A disposed asset must still cause its historic accounts to be reviewed even
   // when the expected as-at book balance is zero.
   const activeById = new Map<string, ReconciliationAsset>();
+  const knownAssetIds = new Set<string>();
+  const postedByAssetId = new Map<string, bigint>();
   for (const asset of assets) {
+    if (knownAssetIds.has(asset.id)) throw new Error("Duplicate fixed asset in register");
+    knownAssetIds.add(asset.id);
     if (asset.purchase_date > asOf) continue;
     bucketFor(asset.asset_account_id);
     bucketFor(asset.accumulated_account_id);
@@ -123,10 +127,20 @@ export function reconcileFixedAssets(
 
   for (const entry of depreciationEntries) {
     if (entry.period_end > asOf) continue;
+    if (!knownAssetIds.has(entry.asset_id)) {
+      throw new Error("Depreciation entry references an unknown asset");
+    }
     const asset = activeById.get(entry.asset_id);
     if (!asset) continue;
     const amount = exactMinor(entry.amount_minor, "Posted depreciation");
     if (amount <= 0n) throw new Error("Posted depreciation must be positive");
+    const nextPosted = (postedByAssetId.get(asset.id) ?? 0n) + amount;
+    const opening = exactMinor(asset.opening_accumulated_minor, "Opening depreciation");
+    const cost = exactMinor(asset.cost_minor, "Register cost");
+    if (opening + nextPosted > cost) {
+      throw new Error("Posted depreciation exceeds an asset's acquisition cost");
+    }
+    postedByAssetId.set(asset.id, nextPosted);
     bucketFor(asset.accumulated_account_id).accumulated += amount;
   }
 

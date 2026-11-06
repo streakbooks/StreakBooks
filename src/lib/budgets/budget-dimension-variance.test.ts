@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildDimensionVariance, eligibleDimensionActualLines } from "./budget-dimension-variance";
+import { batchPostedLineIds, buildDimensionVariance, eligibleDimensionActualLines } from "./budget-dimension-variance";
 
 const inputs = {
   months: ["2026-04-01", "2026-05-01"],
@@ -23,6 +23,30 @@ const inputs = {
 };
 
 describe("dimension budget vs posted journal actuals", () => {
+  it("queries journal tracking assignments only in bounded posted-line batches", () => {
+    const lines = Array.from({ length: 205 }, (_, i) => ({ line_id: `posted-${i}` }));
+    const groups = batchPostedLineIds(lines);
+    expect(groups.map(group => group.length)).toEqual([100, 100, 5]);
+    expect(groups.flat()).toHaveLength(205);
+    expect(batchPostedLineIds([])).toEqual([]);
+    expect(batchPostedLineIds([lines[0]!, lines[0]!])).toEqual([["posted-0"]]);
+  });
+
+  it("fails closed for a posted line without an ID or invalid batch configuration", () => {
+    expect(() => batchPostedLineIds([{line_id:""}])).toThrow(/identity/);
+    expect(() => batchPostedLineIds([{}])).toThrow(/identity/);
+    expect(() => batchPostedLineIds([{line_id:"valid"}],101)).toThrow(/batch size/);
+  });
+
+  it("excludes closing entries before choosing tracking IDs", () => {
+    const lines = [
+      {line_id:"operation",source_type:"manual",memo:"Ordinary adjustment"},
+      {line_id:"closure",source_type:"other",memo:"Year-end close FY 2026"},
+    ];
+    expect(batchPostedLineIds(eligibleDimensionActualLines(lines))).toEqual([["operation"]]);
+  });
+
+
   it("excludes recognized year-end closing postings exactly like the main P&L", () => {
     const lines = [
       { line_id: "ordinary", source_type: "other", memo: "Ordinary adjustment" },

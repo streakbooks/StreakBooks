@@ -6,12 +6,12 @@ import {
   getTaxGlReview, saveTaxGlReview, type TaxGlReviewStatus,
 } from "@/lib/tax/tax-return.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { hasConcurrentTaxReviewChange } from "@/lib/tax/tax-gl-review-state";
 import { useCanDo } from "@/hooks/use-can";
 import { useFormat } from "@/hooks/use-format";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -51,14 +51,24 @@ export function TaxGlReviewPanel({
   const [note, setNote] = useState("");
   const [assignment, setAssignment] = useState<Assignment>("keep");
   const [edited, setEdited] = useState(false);
+  const [editingVersion, setEditingVersion] = useState<number | null>(null);
 
   const record = query.data?.review;
+  const currentVersion = record?.version ?? null;
+  const concurrentChange = hasConcurrentTaxReviewChange(edited, editingVersion, currentVersion);
+  const beginEdit = () => {
+    if (!edited) setEditingVersion(currentVersion);
+    setEdited(true);
+  };
+  // Background refreshes may update record while the user is typing.
+  // Keep their draft unchanged and detect any version conflict instead.
   useEffect(() => {
+    if (edited) return;
     setStatus(record?.status ?? "open");
     setNote(record?.review_note ?? "");
     setAssignment("keep");
-    setEdited(false);
-  }, [record?.id, record?.version, record?.status, record?.review_note]);
+    setEditingVersion(null);
+  }, [record?.id, record?.version, record?.status, record?.review_note, edited]);
 
   const savedSnapshotChanged = Boolean(record && record.comparison_snapshot !== snapshot);
   const mutation = useMutation({
@@ -66,11 +76,13 @@ export function TaxGlReviewPanel({
       data: {
         companyId, periodStart, periodEnd, basis, outputAccountId, inputAccountId,
         status, reviewNote: note, reviewerAssignment: assignment,
-        expectedVersion: record?.version ?? null,
+        expectedVersion: editingVersion,
         expectedSnapshot: snapshot,
       },
     }),
     onSuccess: async () => {
+      setEdited(false);
+      setEditingVersion(null);
       await qc.invalidateQueries({ queryKey: key });
       toast.success("Tax GL review saved with audit history");
     },
@@ -95,7 +107,7 @@ export function TaxGlReviewPanel({
     </Alert>
   );
 
-  const canSave = canEdit && edited && !mutation.isPending &&
+  const canSave = canEdit && edited && !concurrentChange && !mutation.isPending &&
     (status !== "resolved" || (basis === "accrual" && note.trim().length >= 10 &&
       !(record?.status === "resolved" && savedSnapshotChanged)));
   return (
@@ -114,6 +126,16 @@ export function TaxGlReviewPanel({
         </Badge>
       </div>
 
+      {concurrentChange ? (
+        <Alert variant="destructive">
+          <AlertTitle>Another reviewer updated this review</AlertTitle>
+          <AlertDescription>
+            Your unsaved notes are preserved. This draft cannot overwrite the newer review.
+            Copy any notes you need, then discard this draft to reload the latest version.
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
       {savedSnapshotChanged ? (
         <Alert variant="destructive">
           <AlertTitle>Review requires refresh</AlertTitle>
@@ -129,7 +151,7 @@ export function TaxGlReviewPanel({
         <div className="space-y-1">
           <Label htmlFor="tax-review-status">Review status</Label>
           <Select value={status} disabled={!canEdit || mutation.isPending}
-            onValueChange={(v) => { setStatus(v as TaxGlReviewStatus); setEdited(true); }}>
+            onValueChange={(v) => { beginEdit(); setStatus(v as TaxGlReviewStatus); }}>
             <SelectTrigger id="tax-review-status"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="open">Open</SelectItem>
@@ -141,7 +163,7 @@ export function TaxGlReviewPanel({
         <div className="space-y-1">
           <Label htmlFor="tax-review-assignee">Reviewer assignment</Label>
           <Select value={assignment} disabled={!canEdit || mutation.isPending}
-            onValueChange={(v) => { setAssignment(v as Assignment); setEdited(true); }}>
+            onValueChange={(v) => { beginEdit(); setAssignment(v as Assignment); }}>
             <SelectTrigger id="tax-review-assignee"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="keep">Keep assigned reviewer</SelectItem>
@@ -162,7 +184,7 @@ export function TaxGlReviewPanel({
           id="tax-review-note" rows={3} maxLength={4000}
           disabled={!canEdit || mutation.isPending}
           value={note}
-          onChange={(e) => { setNote(e.target.value); setEdited(true); }}
+          onChange={(e) => { beginEdit(); setNote(e.target.value); }}
           placeholder="Describe the affected journal, expected tax treatment and steps taken"
         />
         <p className="text-xs text-muted-foreground">
@@ -177,6 +199,15 @@ export function TaxGlReviewPanel({
         <Button size="sm" variant="outline" onClick={() => void query.refetch()}>
           Refresh review
         </Button>
+        {edited ? (
+          <Button size="sm" variant="ghost" disabled={mutation.isPending} onClick={() => {
+            setEdited(false);
+            setEditingVersion(null);
+            void query.refetch();
+          }}>
+            Discard unsaved changes
+          </Button>
+        ) : null}
         {record ? <span className="text-xs text-muted-foreground">
           Version {record.version} · updated {f.dateTime(record.updated_at)}
         </span> : null}

@@ -117,7 +117,8 @@ export const saveFirmClientProfile = createServerFn({ method: "POST" })
         .insert({ ...payload, firm_id: firmId, company_id: companyId } as never)
         .select(projection as never)
         .single();
-      if (error) throw new Error("Client profile changed. Refresh and try again: " + error.message);
+      if (error)
+        throw new Error("Client profile changed. Refresh and try again: " + error.message);
       return saved as FirmClientProfile;
     }
 
@@ -138,10 +139,14 @@ const bulkSchema = z
   .object({
     firmId: z.string().uuid(),
     items: z
-      .array(z.object({
-        companyId: z.string().uuid(),
-        expectedVersion: z.number().int().min(0),
-      }).strict())
+      .array(
+        z
+          .object({
+            companyId: z.string().uuid(),
+            expectedVersion: z.number().int().min(0),
+          })
+          .strict(),
+      )
       .min(1)
       .max(50),
     field: z.enum(["status", "service_line", "next_review_date"]),
@@ -156,8 +161,11 @@ const bulkSchema = z
       ctx.addIssue({ code: "custom", message: "Choose a valid practice status" });
     if (input.field === "service_line" && (input.value === null || input.value.length > 120))
       ctx.addIssue({ code: "custom", message: "Service must be no more than 120 characters" });
-    if (input.field === "next_review_date" &&
-        input.value !== null && !isoDate.safeParse(input.value).success)
+    if (
+      input.field === "next_review_date" &&
+      input.value !== null &&
+      !isoDate.safeParse(input.value).success
+    )
       ctx.addIssue({ code: "custom", message: "Choose a real review date" });
   });
 export type FirmClientBulkInput = z.infer<typeof bulkSchema>;

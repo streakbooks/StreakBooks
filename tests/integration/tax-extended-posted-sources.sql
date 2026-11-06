@@ -140,16 +140,16 @@ SELECT public.assert_tax_raises(
 -- A posted header cannot be deleted by a client or a privileged posting
 -- workflow even if the caller can otherwise DELETE the table.
 SELECT public.assert_tax_raises(
- $DELETE FROM public.sales_credit_notes
-   WHERE id='50000000-0000-4000-8000-000000000008'$,
+ $$DELETE FROM public.sales_credit_notes
+   WHERE id='50000000-0000-4000-8000-000000000008'$$,
  '%Posted tax sources cannot be deleted%');
 SELECT public.assert_tax_raises(
- $DELETE FROM public.purchase_credit_notes
-   WHERE id='50000000-0000-4000-8000-000000000009'$,
+ $$DELETE FROM public.purchase_credit_notes
+   WHERE id='50000000-0000-4000-8000-000000000009'$$,
  '%Posted tax sources cannot be deleted%');
 SELECT public.assert_tax_raises(
- $DELETE FROM public.purchase_expenses
-   WHERE id='50000000-0000-4000-8000-000000000010'$,
+ $$DELETE FROM public.purchase_expenses
+   WHERE id='50000000-0000-4000-8000-000000000010'$$,
  '%Posted tax sources cannot be deleted%');
 
 -- Deleting unposted draft credit notes is still supported, including their

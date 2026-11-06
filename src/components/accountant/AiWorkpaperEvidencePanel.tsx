@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
@@ -26,11 +27,12 @@ export function AiWorkpaperEvidencePanel({
   const canAi = useCanDo("ai.use");
   const canReports = useCanDo("reports.view");
   const load = useServerFn(getAiWorkpaperEvidence);
+  const [page, setPage] = useState(0);
   const permitted = canAi && canReports;
   const evidence = useQuery({
-    queryKey: ["ai-accountant-workpaper-handoff", companyId, accountId, asOf],
+    queryKey: ["ai-accountant-workpaper-handoff", companyId, accountId, asOf, page],
     enabled: permitted && Boolean(accountId),
-    queryFn: () => load({ data: { companyId, accountId, asOf } }),
+    queryFn: () => load({ data: { companyId, accountId, asOf, page } }),
     staleTime: 30_000,
   });
 
@@ -62,20 +64,23 @@ export function AiWorkpaperEvidencePanel({
         ) : d ? (
           <>
             <div className="flex flex-wrap gap-2">
-              <Badge variant="secondary">{d.counts.reviewed} signed-off AI review(s)</Badge>
-              <Badge variant="outline">{d.counts.followUp} pending review</Badge>
-              {d.counts.notPosted > 0 ? (
-                <Badge variant="destructive">{d.counts.notPosted} journal(s) no longer posted</Badge>
+              <Badge variant="secondary">{d.pageCounts.reviewed} AI-reviewed on this page</Badge>
+              <Badge variant="outline">{d.pageCounts.followUp} pending on this page</Badge>
+              {d.pageCounts.notPosted > 0 ? (
+                <Badge variant="destructive">{d.pageCounts.notPosted} no longer posted on this page</Badge>
               ) : null}
             </div>
             <p className="text-xs text-muted-foreground">
-              Checked the {d.scannedReviews} most recently updated company AI review case(s).
-              {d.latestReviewsTruncated ? " Older cases were not scanned; results are incomplete." : ""}
+              {d.total} matching AI review case(s) across all pages for this account through {asOf}.
+              Showing {d.links.length} result(s) on page {d.page + 1} of {Math.max(1, Math.ceil(d.total / d.pageSize))}.
+              The status badges count this page only; they are not ledger-wide totals.
             </p>
             {d.links.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                No linked AI review cases were found in the scanned set for this account and date.
-                This does not establish that all transactions have been examined.
+                {d.total > 0
+                  ? "No results on this page. Go to a previous page to see matching AI reviews."
+                  : "No AI review cases link to this account through the selected date."}
+                This does not establish that all ledger movements have been examined.
               </p>
             ) : (
               <div className="max-h-72 space-y-2 overflow-y-auto">
@@ -129,6 +134,19 @@ export function AiWorkpaperEvidencePanel({
                 ))}
               </div>
             )}
+            <div className="flex items-center justify-between gap-3 text-sm">
+              <span className="text-muted-foreground" aria-live="polite">
+                Page {d.page + 1} / {Math.max(1, Math.ceil(d.total / d.pageSize))}
+              </span>
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" size="sm" disabled={page === 0 || evidence.isFetching} onClick={() => setPage((value) => Math.max(0, value - 1))}>
+                  Previous
+                </Button>
+                <Button type="button" variant="outline" size="sm" disabled={(page + 1) * d.pageSize >= d.total || evidence.isFetching} onClick={() => setPage((value) => value + 1)}>
+                  Next
+                </Button>
+              </div>
+            </div>
             <p className="flex items-start gap-2 text-xs text-muted-foreground">
               <ShieldCheck className="mt-0.5 size-4 shrink-0" />
               {d.disclaimer} Using a reference fills the workpaper draft input only.

@@ -101,7 +101,7 @@ function buildFinding(
   opts: { reference?: string | null; journalId?: string | null; findingCount?: number } = {},
 ): ExceptionFinding {
   const cleanCount = opts.findingCount ?? 1;
-  if (!Number.isSafeInteger(cleanCount) || cleanCount < 1) {
+  if (!Number.isSafeInteger(cleanCount) || cleanCount < 0) {
     throw new Error("Invalid exception finding count.");
   }
   return {
@@ -164,7 +164,7 @@ export function createExceptionSnapshot(inputs: ExceptionInputs): ExceptionSnaps
       check.label || check.key,
       [check.summary, preview && "Samples: " + preview,
         check.count > check.items.length && "Additional findings may exist beyond returned samples."].filter(Boolean).join(" · "),
-      { findingCount: Math.max(1, check.count) },
+      { findingCount: check.count },
     ));
   }
   const realised = inputs.realisedFx.state === "checked" ? inputs.realisedFx.result : undefined;

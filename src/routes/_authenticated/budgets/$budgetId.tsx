@@ -247,7 +247,10 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
       toast.error("Budget CSV files must be 5 MB or smaller.");
       return;
     }
-    if (dirty && !window.confirm("Import into this unsaved budget draft? Matching account amounts will be replaced.")) return;
+    if (
+      dirty &&
+      !window.confirm("Import into this unsaved budget draft? Matching account amounts will be replaced.")
+    ) return;
     let res: ReturnType<typeof parseBudgetCsv>;
     try {
       res = parseBudgetCsv(await file.text(), accounts, currency, data.months);
@@ -355,7 +358,10 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
             inputMode="decimal"
             disabled={!canManage}
             value={annualDrafts[a.id] ?? (total === 0 ? "" : fromMinorUnits(total, currency))}
-            aria-invalid={annualDrafts[a.id] !== undefined && parseCell(annualDrafts[a.id]!, currency) === null}
+            aria-invalid={
+              annualDrafts[a.id] !== undefined &&
+              parseCell(annualDrafts[a.id]!, currency) === null
+            }
             onChange={(event) =>
               setAnnualDrafts((prev) => ({ ...prev, [a.id]: event.target.value }))
             }
@@ -378,7 +384,8 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
               });
             }}
             title="Enter an annual amount, then press Enter or leave the field to distribute it across the year"
-          />        </TableCell>
+          />
+        </TableCell>
         <TableCell className="whitespace-nowrap p-1">
           <Button
             size="sm"
@@ -498,15 +505,21 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
       <div className="mb-4 grid gap-3 sm:grid-cols-3">
         <div className="rounded-md border p-3">
           <p className="text-xs text-muted-foreground">Annual budgeted income</p>
-          <p className="mt-1 text-lg font-semibold tabular-nums">{fmt.amount(sum(incomeTotals), currency)}</p>
+          <p className="mt-1 text-lg font-semibold tabular-nums">
+            {fmt.amount(sum(incomeTotals), currency)}
+          </p>
         </div>
         <div className="rounded-md border p-3">
           <p className="text-xs text-muted-foreground">Annual budgeted expenses</p>
-          <p className="mt-1 text-lg font-semibold tabular-nums">{fmt.amount(sum(expenseTotals), currency)}</p>
+          <p className="mt-1 text-lg font-semibold tabular-nums">
+            {fmt.amount(sum(expenseTotals), currency)}
+          </p>
         </div>
         <div className="rounded-md border p-3">
           <p className="text-xs text-muted-foreground">Annual budgeted net profit</p>
-          <p className={`mt-1 text-lg font-semibold tabular-nums ${sum(incomeTotals) - sum(expenseTotals) < 0 ? "text-destructive" : ""}`}>
+          <p
+            className={`mt-1 text-lg font-semibold tabular-nums ${sum(incomeTotals) - sum(expenseTotals) < 0 ? "text-destructive" : ""}`}
+          >
             {fmt.amount(sum(incomeTotals) - sum(expenseTotals), currency)}
           </p>
         </div>
@@ -650,8 +663,10 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
       {hasInvalidAmounts ? (
         <Alert variant="destructive" className="mb-3">
           <AlertDescription>
-            {invalidCount + invalidAnnualCount} amount{invalidCount + invalidAnnualCount === 1 ? " is" : "s are"} not a valid number. Fix the
-            highlighted monthly or annual amounts before saving, exporting or using bulk actions.
+            {invalidCount + invalidAnnualCount} amount
+            {invalidCount + invalidAnnualCount === 1 ? " is" : "s are"} not a valid number. Fix
+            the highlighted monthly or annual amounts before saving, exporting or using bulk
+            actions.
           </AlertDescription>
         </Alert>
       ) : null}
@@ -683,7 +698,8 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
           />
         </div>
         <p className="text-xs text-muted-foreground">
-          Showing {rows.filter(visible).length} of {rows.length} accounts. Totals always include all accounts.
+          Showing {rows.filter(visible).length} of {rows.length} accounts. Totals always include
+          all accounts.
         </p>
       </div>
 

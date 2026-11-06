@@ -484,3 +484,20 @@ PostgreSQL runner itself remains unexecuted.
   applied to a customer database or production.
 - Internal tax reconciliation remains a diagnostic, not tax-authority filing
   or certification. More integration and release work is still required.
+
+
+## Batch 10 — Release gate and production readiness (code-complete, unverified)
+
+**Migration version correction.** Main already includes `20261106120000_action_center_server_side_triage.sql`. The former Tax history migration used the same version and could not safely coexist. The Tax migrations now use distinct, later versions, in order:
+
+`supabase/migrations/20261107010000_tax_master_posted_history_guard.sql` and `supabase/migrations/20261107011000_tax_gl_review_sessions.sql`. The superseded Tax migration files were deleted from the draft feature branch; both isolated PostgreSQL runner scripts reference the new names. Do not apply the original versions.
+
+**Local release gate.** `node scripts/verify-tax-release.mjs` performs static checks for distinct Tax migration versions and required SQL, then runs TypeScript, ESLint, Tax Vitest, both isolated PostgreSQL test runners, and application build. It fails on the first unsuccessful command. `--static-only` checks migration naming/sources without claiming test completion.
+
+**Authenticated staging browser smoke.** `e2e/tax-release.staging.spec.ts` covers signing in to an explicitly configured staging hostname, Tax overview/disclaimer, and Returns/Overview tab URL behavior without writing financial data. `node scripts/verify-tax-release.mjs --staging` runs the other checks first and then the read-only smoke. It requires `E2E_STAGING_ENABLED=true`, `E2E_BASE_URL`, `E2E_EXPECTED_STAGING_HOST`, `E2E_PRODUCTION_URL`, `E2E_EMAIL`, and `E2E_PASSWORD`. The tests do not run on production by design.
+
+**Existing repository issue.** The latest inspected `main` migration tree already includes an unrelated duplicate version `20261022180000`, used by both recurring-v2 and Settings Centre migrations. The Tax gate warns about pre-existing duplicates rather than pretending to repair unrelated migrations. Resolve this independently before asserting a clean global migration history.
+
+**Required manual release acceptance.** Verify the current branch against latest `main`; resolve compatibility and any TypeScript/build failures; execute real PostgreSQL concurrency, tenant-RLS and invoice/bill/credit/expense posting tests; apply migrations to explicitly nonproduction staging after reviewing pre/postflight results; test authenticated interactions including reviewer notes, file/export and GL drill-down; check performance and retry/deadlock behavior; review backup/restore and rollback strategy. Only then consider merge, production migration and deployment.
+
+**Status.** All ten proposed coding batches have commits. The local release gate and staging smoke are new code and are not executed in this environment. No local full-suite pass, staging migration, PR merge, or production deployment has been verified. Coding completeness is distinct from release readiness. GitHub CI remains disabled by instruction.

@@ -226,12 +226,22 @@ describe("Fixed Assets / GL reconciliation", () => {
     )).toThrow(/depreciable cost/i);
   });
 
-  it("does not silently ignore depreciation posted after disposal", () => {
-    expect(() => reconcileFixedAssets(
+  it("allows already posted depreciation for the disposal month (SQL parity)", () => {
+    const result = reconcileFixedAssets(
       [asset("a", { status: "disposed", disposal_date: "2026-04-15" })],
       [{ asset_id: "a", period_end: "2026-04-30", amount_minor: "100" }],
       [], accounts, "2026-11-06",
-    )).toThrow(/after the asset disposal/i);
+    );
+    expect(result.varianceCount).toBe(0);
+    expect(result.rows).toHaveLength(2);
+  });
+
+  it("does not silently ignore depreciation posted in a later month after disposal", () => {
+    expect(() => reconcileFixedAssets(
+      [asset("a", { status: "disposed", disposal_date: "2026-04-15" })],
+      [{ asset_id: "a", period_end: "2026-05-31", amount_minor: "100" }],
+      [], accounts, "2026-11-06",
+    )).toThrow(/after the asset disposal month/i);
   });
 
   it("rejects depreciation recorded before an asset's purchase date", () => {

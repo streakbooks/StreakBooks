@@ -60,6 +60,7 @@ try {
 
   sql(read("tests/fixtures/workflows/baseline.sql"));
   sql(read("tests/fixtures/tax-gl-review/baseline.sql"));
+  sql(read("tests/integration/tax-gl-review-schema-preflight.sql"));
   // Repeat migration to verify idempotent reapplication before data fixtures.
   const migration = read("supabase/migrations/20261106134000_tax_gl_review_sessions.sql");
   sql(migration);

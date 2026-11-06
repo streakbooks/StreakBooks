@@ -14,6 +14,7 @@ const asset = (
   depreciation_method: "straight_line",
   cost_minor: 12000,
   residual_minor: 1000,
+  opening_accumulated_minor: 0,
   depreciated_through: "2026-09-30",
   status: "active",
   disposal_date: null,

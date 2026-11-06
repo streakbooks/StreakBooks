@@ -110,4 +110,33 @@ describe("payroll settings drafts", () => {
     expect(goodPct.ok).toBe(true);
     if (goodPct.ok) expect(goodPct.value["code"]).toBe("PCT");
   });
+  it("rejects a default manual method excluded by the payroll settings SQL check", () => {
+    const parsed = parsePayrollSettingsDraft({
+      enabled: false,
+      operatingCountryCode: "GB",
+      payrollCurrency: "GBP",
+      defaultPayScheduleId: "",
+      payrollStartDate: "",
+      defaultWorkingDaysPerWeek: "5",
+      defaultWorkingHoursPerDay: "8",
+      paymentDateOffsetDays: "0",
+      salaryExpenseAccountId: "",
+      netPayLiabilityAccountId: "",
+      deductionLiabilityAccountId: "",
+      employerExpenseAccountId: "",
+      employerLiabilityAccountId: "",
+      defaultPaymentMethod: "manual" as never,
+      requiresApproval: true,
+      roundingMode: "half_up",
+      payslipShowEmployerCosts: false,
+      payslipFooterNote: "",
+      payslipBrandingName: "",
+      employeeNumberPrefix: "EMP-",
+      disclaimerAcknowledged: false,
+      version: null,
+    });
+    expect(parsed.ok).toBe(false);
+    if (!parsed.ok) expect(parsed.error).toMatch(/payment method/);
+  });
+
 });

@@ -55,7 +55,7 @@ export function stagingGateReady(env) {
   // A release acceptance run must exercise both security-sensitive staging
   // gates, not silently skip the formula-injection and cross-user checks.
   if (!env.E2E_FIRM_TASK_CSV_CANARY ||
-      !/^[\\s]*[=+\\-@]/u.test(env.E2E_FIRM_TASK_CSV_CANARY)) {
+      !/^[\s]*[=+\-@]/u.test(env.E2E_FIRM_TASK_CSV_CANARY)) {
     throw new Error("Seed a formula-prefixed staging CSV canary and set E2E_FIRM_TASK_CSV_CANARY.");
   }
   if (!env.E2E_FIRM_RESTRICTED_EMAIL || !env.E2E_FIRM_RESTRICTED_PASSWORD ||

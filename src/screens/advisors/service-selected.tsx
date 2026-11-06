@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft, Check } from "lucide-react";
+import { AdvisorChatPanel } from "@/components/advisors/AdvisorChatPanel";
 import { AdvisorServiceIllustration } from "@/components/advisors/AdvisorServiceIllustration";
 import { Button } from "@/components/ui/button";
 import {
@@ -84,9 +85,9 @@ export function AdvisorsServiceSelectedPage({ serviceCode }: { serviceCode: stri
               ))}
             </ul>
             <p className="text-sm text-muted-foreground">
-              You can review plans now without answering chatbot questions. An AI Advisor assistant
-              and booking calendar arrive in the next Advisors batches and will only open after this
-              service choice.
+              You can review plans now without answering chatbot questions. The Advisors AI chat is
+              available on this page only after you chose this service — it does not open on the
+              landing page.
             </p>
           </div>
           <AdvisorServiceIllustration
@@ -145,6 +146,7 @@ export function AdvisorsServiceSelectedPage({ serviceCode }: { serviceCode: stri
           </ul>
         </section>
       </div>
+      <AdvisorChatPanel serviceCode={code} enabled />
     </main>
   );
 }

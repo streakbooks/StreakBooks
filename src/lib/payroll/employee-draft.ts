@@ -3,6 +3,7 @@ import { percentStringToBps } from "@/components/sales/sales-form-utils";
 import { toCsv } from "@/lib/sales/csv";
 import { readPayrollCsvRecords } from "@/lib/payroll/employee-csv-records";
 import { isValidPayrollDateOnly } from "@/lib/payroll/calendar-date";
+import { todayLocalDateOnly } from "@/lib/payroll/local-date";
 export { isValidPayrollDateOnly } from "@/lib/payroll/calendar-date";
 import {
   EMPLOYEE_STATUSES,
@@ -53,7 +54,7 @@ export function emptyEmployeeDraft(
     lastName: "",
     email: "",
     status: "active",
-    hireDate: new Date().toISOString().slice(0, 10),
+    hireDate: todayLocalDateOnly(),
     terminationDate: "",
     department: "",
     designation: "",
@@ -335,8 +336,8 @@ export function parseSalaryAssignDraft(
   draft: SalaryAssignDraft,
   currencyCode: string,
 ): ParsedResult {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(draft.effectiveFrom)) {
-    return { ok: false, error: "Effective from date must be YYYY-MM-DD." };
+  if (!isValidPayrollDateOnly(draft.effectiveFrom)) {
+    return { ok: false, error: "Effective from date must be a valid YYYY-MM-DD calendar date." };
   }
   const structureId = draft.structureId.trim();
   const customLines: Record<string, unknown>[] = [];

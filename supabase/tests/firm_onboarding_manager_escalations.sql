@@ -111,7 +111,16 @@ DECLARE
  first integer;
  second integer;
 BEGIN
- -- Existing policy is explicitly enabled above; 3-day-old task is eligible.
+ -- Confirm policy opt-out before enabling any delivery.
+ UPDATE public.firm_onboarding_escalation_policies
+   SET enabled=false,updated_by=current_setting('test.esc_owner')::uuid
+   WHERE firm_id=fid;
+ IF private.firm_onboarding_manager_escalations()<>0 THEN
+   RAISE EXCEPTION 'Disabled policy generated an escalation';
+ END IF;
+ UPDATE public.firm_onboarding_escalation_policies
+   SET enabled=true,updated_by=current_setting('test.esc_owner')::uuid
+   WHERE firm_id=fid;
  first:=private.firm_onboarding_manager_escalations();
  second:=private.firm_onboarding_manager_escalations();
  IF first<>1 OR second<>0 THEN
@@ -144,6 +153,38 @@ BEGIN
     WHERE jobname='linkbooks-firm-onboarding-manager-escalations') THEN
   RAISE EXCEPTION 'Scheduled manager escalation job missing';
  END IF;
-END $$;
+END $;
+SET LOCAL ROLE authenticated;
+DO $
+DECLARE
+ fid uuid:=current_setting('test.esc_firm')::uuid;
+ owner_id uuid:=current_setting('test.esc_owner')::uuid;
+ staff_id uuid:=current_setting('test.esc_staff')::uuid;
+BEGIN
+ PERFORM set_config('request.jwt.claims',
+   jsonb_build_object('sub',owner_id,'aal','aal2','role','authenticated')::text,true);
+ IF (SELECT count(*) FROM public.firm_onboarding_escalation_events
+    WHERE firm_id=fid)<>1 THEN
+   RAISE EXCEPTION 'Firm admin did not see authorized escalation history';
+ END IF;
+ BEGIN
+   INSERT INTO public.firm_onboarding_escalation_events(
+     firm_id,company_id,task_key,recipient_user_id,escalated_on,overdue_days,policy_version)
+   VALUES(fid,current_setting('test.esc_client')::uuid,'forged',owner_id,current_date,3,2);
+   RAISE EXCEPTION 'TEST: Client forged escalation history';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ PERFORM set_config('request.jwt.claims',
+   jsonb_build_object('sub',staff_id,'aal','aal2','role','authenticated')::text,true);
+ IF EXISTS(SELECT 1 FROM public.firm_onboarding_escalation_events
+    WHERE firm_id=fid) THEN
+   RAISE EXCEPTION 'Nonadmin saw private escalation history';
+ END IF;
+ PERFORM set_config('request.jwt.claims',
+   jsonb_build_object('sub',owner_id,'aal','aal1','role','authenticated')::text,true);
+ IF EXISTS(SELECT 1 FROM public.firm_onboarding_escalation_events
+    WHERE firm_id=fid) THEN
+   RAISE EXCEPTION 'Escalation history bypassed MFA restriction';
+ END IF;
+END $;
 ROLLBACK;
 SELECT 'firm escalation opt-in, permissions, version guards, history, dedup and MFA passed; rolled back' AS result;

@@ -1011,7 +1011,12 @@ function FilesPage() {
                 )}
                 Move selected
               </Button>
-              <Button size="sm" variant="ghost" disabled={bulkMoveM.isPending} onClick={() => setSelectedIds([])}>
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={bulkMoveM.isPending}
+                onClick={() => setSelectedIds([])}
+              >
                 Clear selection
               </Button>
               {movingIds.length === 0 ? (

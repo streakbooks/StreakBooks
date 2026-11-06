@@ -221,4 +221,15 @@ describe("payroll employee drafts", () => {
     expect(manual.ok).toBe(false);
   });
 
+  it("keeps legitimate apostrophes while reversing escaped spreadsheet prefixes", () => {
+    const parsed = parsePayrollEmployeesCsv(
+      "First name,Last name,Hire date\n'Annie,Lee,2026-01-01\n'=FORMULA,Lee,2026-01-02",
+      { country: "GB", currency: "GBP" },
+    );
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.drafts[0]?.firstName).toBe("'Annie");
+    expect(parsed.drafts[1]?.firstName).toBe("=FORMULA");
+  });
+
 });

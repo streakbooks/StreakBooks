@@ -27,6 +27,17 @@ import {
   type FirmClientSort,
   type FirmClientRow,
 } from "@/lib/firm/client-portfolio";
+import {
+  getFirmDirectoryPreferences,
+  saveFirmDirectoryPreference,
+} from "@/lib/firm/firm-directory-preferences.functions";
+import {
+  normalizeFirmSavedViews,
+  replaceFirmSavedView,
+  type FirmSavedView,
+  type FirmDirectoryPreferenceKind,
+  type FirmDirectoryPreferences,
+} from "@/lib/firm/firm-directory-preferences";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -96,17 +107,64 @@ export function FirmClientPortfolio({
 }) {
   const list = useServerFn(listFirmClientProfiles);
   const save = useServerFn(saveFirmClientProfile);
+  const getPreferences = useServerFn(getFirmDirectoryPreferences);
+  const savePreference = useServerFn(saveFirmDirectoryPreference);
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<FirmClientStatus | "all">("all");
   const [review, setReview] = useState<FirmClientReviewFilter>("all");
   const [sort, setSort] = useState<FirmClientSort>("name");
+  const [savedViewName, setSavedViewName] = useState("");
+  const [selectedViewId, setSelectedViewId] = useState("");
+  const [localViews, setLocalViews] = useState<{ firmId: string; views: FirmSavedView[] } | null>(
+    null,
+  );
   const [savedColumns, setSavedColumns] = useState<{
     firmId: string;
     columns: FirmClientColumn[];
   } | null>(null);
   const visibleColumns =
     savedColumns?.firmId === firmId ? savedColumns.columns : DEFAULT_FIRM_CLIENT_COLUMNS;
+  const cloudPreferencesQ = useQuery({
+    queryKey: ["firm-directory-preferences", firmId],
+    queryFn: () => getPreferences({ data: { firmId } }),
+    enabled: Boolean(firmId),
+    retry: false,
+  });
+  const preferenceM = useMutation({
+    mutationFn: (input: { kind: FirmDirectoryPreferenceKind; value: unknown }) =>
+      savePreference({ data: { firmId, ...input } }),
+    onSuccess: (saved) => {
+      qc.setQueryData<FirmDirectoryPreferences>(
+        ["firm-directory-preferences", firmId],
+        (previous) => ({
+          columns: previous?.columns ?? null,
+          views: previous?.views ?? null,
+          [saved.kind]: saved.value,
+        }),
+      );
+    },
+    onError: (error) => toast.error("Cloud preferences could not be saved: " + friendlyAuthError(error)),
+  });
+  const preferenceBusy = cloudPreferencesQ.isPending || preferenceM.isPending;
+  const savedViews =
+    localViews?.firmId === firmId ? localViews.views : cloudPreferencesQ.data?.views ?? [];
+  useEffect(() => {
+    if (!cloudPreferencesQ.data) return;
+    if (cloudPreferencesQ.data.columns !== null) {
+      setSavedColumns({
+        firmId,
+        columns: normalizeFirmClientColumns(cloudPreferencesQ.data.columns),
+      });
+    }
+    if (cloudPreferencesQ.data.views !== null) {
+      setLocalViews({
+        firmId,
+        views: normalizeFirmSavedViews(cloudPreferencesQ.data.views),
+      });
+    }
+  }, [firmId, cloudPreferencesQ.data]);
+
   useEffect(() => {
     let saved: unknown = null;
     try {
@@ -119,6 +177,7 @@ export function FirmClientPortfolio({
   }, [firmId]);
 
   function setColumns(columns: FirmClientColumn[]) {
+    if (preferenceBusy) return;
     const next = normalizeFirmClientColumns(columns);
     setSavedColumns({ firmId, columns: next });
     try {
@@ -126,6 +185,67 @@ export function FirmClientPortfolio({
     } catch {
       toast.message("Columns changed for this session; browser storage is unavailable");
     }
+    if (!cloudPreferencesQ.isError) {
+      preferenceM.mutate({ kind: "columns", value: next });
+    } else {
+      toast.message("Cloud unavailable; layout saved to this browser only");
+    }
+  }
+
+  function saveCurrentView() {
+    if (preferenceBusy || cloudPreferencesQ.isError) return;
+    const name = savedViewName.trim().slice(0, 60);
+    if (!name) return;
+    const existing = savedViews.find((item) => item.name.toLocaleLowerCase() === name.toLocaleLowerCase());
+    if (!existing && savedViews.length >= 20) {
+      toast.error("You can save up to 20 views per firm");
+      return;
+    }
+    const next = replaceFirmSavedView(savedViews, {
+      id: existing?.id ?? crypto.randomUUID(),
+      name,
+      query: search,
+      status,
+      review,
+      sort,
+    });
+    preferenceM.mutate(
+      { kind: "views", value: next },
+      {
+        onSuccess: () => {
+          setLocalViews({ firmId, views: next });
+          setSelectedViewId(next.find((item) => item.name === name)?.id ?? "");
+          toast.success(existing ? "Client view updated in your account" : "Client view saved across devices");
+        },
+      },
+    );
+  }
+
+  function applySavedView(id: string) {
+    const selected = savedViews.find((item) => item.id === id);
+    if (!selected) return;
+    setSearch(selected.query);
+    setStatus(selected.status);
+    setReview(selected.review);
+    setSort(selected.sort);
+    setSelectedViewId(selected.id);
+    setSavedViewName(selected.name);
+  }
+
+  function deleteSavedView() {
+    if (!selectedViewId || preferenceBusy || cloudPreferencesQ.isError) return;
+    const next = savedViews.filter((item) => item.id !== selectedViewId);
+    preferenceM.mutate(
+      { kind: "views", value: next },
+      {
+        onSuccess: () => {
+          setLocalViews({ firmId, views: next });
+          setSelectedViewId("");
+          setSavedViewName("");
+          toast.success("Saved client view removed");
+        },
+      },
+    );
   }
 
   function resetFilters() {
@@ -133,6 +253,7 @@ export function FirmClientPortfolio({
     setStatus("all");
     setReview("all");
     setSort("name");
+    setSelectedViewId("");
   }
 
   const [editing, setEditing] = useState<FirmClientRow | null>(null);
@@ -362,6 +483,7 @@ export function FirmClientPortfolio({
               <DropdownMenuCheckboxItem
                 key={column.id}
                 checked={visibleColumns.includes(column.id)}
+                disabled={preferenceBusy}
                 onCheckedChange={(checked) =>
                   setColumns(toggleFirmClientColumn(visibleColumns, column.id, checked === true))
                 }
@@ -371,7 +493,10 @@ export function FirmClientPortfolio({
               </DropdownMenuCheckboxItem>
             ))}
             <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => setColumns([...DEFAULT_FIRM_CLIENT_COLUMNS])}>
+            <DropdownMenuItem
+              disabled={preferenceBusy}
+              onSelect={() => setColumns([...DEFAULT_FIRM_CLIENT_COLUMNS])}
+            >
               Reset columns
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -386,6 +511,68 @@ export function FirmClientPortfolio({
             Retry client profiles
           </Button>
         )}
+        {cloudPreferencesQ.isError && (
+          <Button size="sm" variant="outline" onClick={() => void cloudPreferencesQ.refetch()}>
+            Retry cloud preferences
+          </Button>
+        )}
+        {cloudPreferencesQ.isError && (
+          <p className="text-xs text-muted-foreground">
+            Cloud preferences unavailable. Columns remain stored only in this browser.
+          </p>
+        )}
+      </div>
+
+      <div className="flex flex-wrap items-end gap-2 rounded-lg border p-3">
+        <div className="min-w-40 flex-1 space-y-1">
+          <Label>Saved client views</Label>
+          <Select
+            value={selectedViewId || "none"}
+            disabled={preferenceBusy || cloudPreferencesQ.isError || savedViews.length === 0}
+            onValueChange={(value) => {
+              if (value !== "none") applySavedView(value);
+            }}
+          >
+            {/* lookup-fixed-enum: View items are validated user-owned preference records. */}
+            <SelectTrigger aria-label="Choose saved client view">
+              <SelectValue placeholder="Choose a saved view" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Choose a saved view</SelectItem>
+              {savedViews.map((item) => (
+                <SelectItem key={item.id} value={item.id}>
+                  {item.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="min-w-40 flex-1 space-y-1">
+          <Label htmlFor="firm-view-name">View name</Label>
+          <Input
+            id="firm-view-name"
+            maxLength={60}
+            placeholder="E.g. Payroll reviews due"
+            value={savedViewName}
+            onChange={(event) => setSavedViewName(event.target.value)}
+          />
+        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={preferenceBusy || cloudPreferencesQ.isError || !savedViewName.trim()}
+          onClick={saveCurrentView}
+        >
+          {preferenceM.isPending ? "Saving…" : "Save view"}
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={preferenceBusy || cloudPreferencesQ.isError || !selectedViewId}
+          onClick={deleteSavedView}
+        >
+          Delete view
+        </Button>
       </div>
 
       {filtered.length === 0 ? (

@@ -100,7 +100,7 @@ export function summariseActiveAssets(
   let accumulated = 0;
   for (const asset of active) {
     const value = accumulatedByAssetId.get(asset.id);
-    if (value === undefined || !Number.isSafeInteger(value) || value < 0) {
+    if (value === undefined || !Number.isSafeInteger(value) || value < 0 || value > asset.cost_minor) {
       return {
         activeCount: active.length,
         costMinor: cost,

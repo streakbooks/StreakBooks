@@ -40,10 +40,20 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'Allocation currency guard trigger missing';
   END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger t
+    WHERE t.tgrelid = 'public.payroll_payments'::regclass
+      AND t.tgname = 'payroll_clearing_account_currency_guard_trg'
+      AND t.tgenabled = 'O' AND NOT t.tgisinternal
+  ) THEN
+    RAISE EXCEPTION 'Clearing account currency guard trigger missing or disabled';
+  END IF;
   IF has_function_privilege('authenticated', 'public.payroll_payment_currency_guard()', 'execute')
      OR has_function_privilege('anon', 'public.payroll_payment_currency_guard()', 'execute')
      OR has_function_privilege('authenticated', 'public.payroll_allocation_currency_guard()', 'execute')
      OR has_function_privilege('anon', 'public.payroll_allocation_currency_guard()', 'execute')
+     OR has_function_privilege('authenticated', 'public.payroll_clearing_account_currency_guard()', 'execute')
+     OR has_function_privilege('anon', 'public.payroll_clearing_account_currency_guard()', 'execute')
   THEN
     RAISE EXCEPTION 'Trigger helpers must not be executable directly by clients';
   END IF;
@@ -126,6 +136,17 @@ BEGIN
     RAISE EXCEPTION 'Foreign-currency payroll payment UPDATE unexpectedly succeeded';
   EXCEPTION WHEN check_violation THEN
     IF SQLERRM NOT LIKE 'Payroll payment currency must match%' THEN RAISE; END IF;
+  END;
+
+  -- Updating an already posted payment to a different-currency GL account
+  -- must be rejected just like inserting a new mismatched payment.
+  BEGIN
+    UPDATE public.payroll_payments
+    SET clearing_account_id = _foreign_account WHERE id = _payment;
+    RAISE EXCEPTION 'Foreign clearing GL account UPDATE unexpectedly succeeded';
+  EXCEPTION WHEN check_violation THEN
+    IF SQLERRM NOT LIKE 'Payroll clearing account currency differs%'
+    THEN RAISE; END IF;
   END;
 
   -- Use a dedicated synthetic contact number to bypass unrelated

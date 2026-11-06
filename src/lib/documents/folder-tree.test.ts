@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { folderAncestors, folderDisplayPath, possibleParentFolders, validateFolderName } from "./folder-tree";
+import {
+  folderAncestors,
+  folderDisplayPath,
+  possibleParentFolders,
+  validateFolderName,
+} from "./folder-tree";
 const folders = [
   { id: "a", name: "Root", parent_id: null },
   { id: "b", name: "Bills", parent_id: "a" },

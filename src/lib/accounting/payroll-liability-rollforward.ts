@@ -147,6 +147,7 @@ export function calculatePayrollLiabilityRollforward(
     let net: bigint;
     try { net = minor(run.net_minor, "Payroll run net pay"); }
     catch (err) { issue("data", err instanceof Error ? err.message : "Invalid Payroll run net pay.", run.id); continue; }
+    expectedAccrual += net;
     if (!run.accrual_journal_id) {
       issue("missing_gl", "Posted Payroll run has no accrual journal reference.", run.id);
       continue;
@@ -155,7 +156,6 @@ export function calculatePayrollLiabilityRollforward(
       issue("source", "Two active Payroll runs reference the same accrual journal.", run.id, run.accrual_journal_id);
     }
     accrualJournals.add(run.accrual_journal_id);
-    expectedAccrual += net;
     const pair = journalTotals.get(run.accrual_journal_id);
     const source = journalSource.get(run.accrual_journal_id);
     if (!pair || !source || source.source_type !== "payroll" || source.source_id !== run.id ||
@@ -198,6 +198,7 @@ export function calculatePayrollLiabilityRollforward(
     if (unallocated > 0n && payment.status === "posted") {
       warnings.push("Payroll payment " + payment.id + " includes unallocated net-pay funds.");
     }
+    expectedPayments += amount;
     if (!payment.journal_id) {
       issue("missing_gl", "Posted Payroll payment has no linked journal.", payment.id);
       continue;
@@ -206,7 +207,6 @@ export function calculatePayrollLiabilityRollforward(
       issue("source", "Two Payroll payments reference the same journal.", payment.id, payment.journal_id);
     }
     paymentJournals.add(payment.journal_id);
-    expectedPayments += amount;
     const pair = journalTotals.get(payment.journal_id);
     const source = journalSource.get(payment.journal_id);
     if (!pair || !source || source.source_type !== "payroll" || source.source_id !== payment.id ||

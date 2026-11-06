@@ -1069,7 +1069,7 @@ function DepreciationPanel({
     remainingMonths: number;
   } | null>(null);
   const validMonth =
-    /^\\d{4}-(0[1-9]|1[0-2])$/.test(month) &&
+    /^\d{4}-(0[1-9]|1[0-2])$/.test(month) &&
     month.slice(0, 4) !== "0000" && month <= thisMonth.slice(0, 7);
   const periodEnd = validMonth ? monthEnd(month + "-01") : "";
   const preview = useQuery({

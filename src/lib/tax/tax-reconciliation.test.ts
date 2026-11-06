@@ -20,7 +20,7 @@ describe("filed tax return comparison", () => {
       filed_minor:Number.MAX_SAFE_INTEGER,
       now_minor:-Number.MAX_SAFE_INTEGER,
     }]);
-    expect(row.deltaMinor).toBe(-2n * BigInt(Number.MAX_SAFE_INTEGER));
+    expect(row?.deltaMinor).toBe(-2n * BigInt(Number.MAX_SAFE_INTEGER));
   });
   it("rejects unsafe input instead of rounding reconciled money", () => {
     expect(() => returnVariances([{

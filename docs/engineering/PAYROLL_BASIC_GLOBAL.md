@@ -205,14 +205,11 @@ are never combined into a meaningless grand total.
   payroll settlements until proper journal FX conversion is implemented.
   The server also rejects payslip allocations whose run currency differs
   from the settlement currency, and rejects money outside safe JS integers.
-- **Important database follow-up:** The pre-existing
-  `public.record_payroll_payment(JSONB)` SECURITY DEFINER RPC is callable
-  directly by authenticated users with `payroll.pay`. Its SQL implementation
-  has **not** yet been updated to enforce these new currency safeguards.
-  Clients calling that RPC directly can bypass the new server-function checks.
-  A separately tested, versioned PostgreSQL migration to enforce currency
-  invariants inside the RPC/database is required before stating this issue is
-  fully mitigated. No SQL migration or production data was changed in this PR.
+- **Database-layer protection (subsequently completed):** The privileged
+  `record_payroll_payment(JSONB)` RPC is callable by eligible users directly.
+  The database now enforces the settlement rules independently of that RPC
+  through triggers on `payroll_payments` and `payroll_payment_allocations`.
+  See the applied migration and its test status below.
 - New Vitest regression cases cover payment-form allocation validation,
   invalid/early calendar dates and signed payment-date offsets. The full
   repository Vitest/typecheck/lint/build and authenticated browser suite
@@ -220,3 +217,41 @@ are never combined into a meaningless grand total.
   passed **11/11** payment-form cases, **8/8** period suggestion cases and
   **7/7** shared date-validation cases. Static source assertions passed
   **11/11**. These checks are not proof of deployment readiness.
+
+### Database settlement guard — applied and verified (November 6, 2026)
+
+The production Supabase project `ipxflpzfcqwtenodbxwc` now has the applied
+migration `20261106073653_payroll_payment_currency_guards`, matching the
+GitHub source file
+`supabase/migrations/20261106073653_payroll_payment_currency_guards.sql`.
+
+- An INSERT or currency/company UPDATE to `payroll_payments` is blocked
+  unless the payment currency equals **both** the organisation base
+  currency and the configured Payroll settings currency. This is required
+  because the existing accounting posting RPC uses FX rate 1.
+- Each INSERT or critical reference UPDATE to
+  `payroll_payment_allocations` must match its payment, payslip, run,
+  employee and currency. This protects the underlying tables even when an
+  eligible user calls `record_payroll_payment` directly rather than through
+  the frontend/server function.
+- Both trigger functions use a fixed `public, pg_temp` search path and
+  `SECURITY DEFINER` so they can verify cross-table references; direct
+  EXECUTE is revoked from `PUBLIC`, `anon`, and `authenticated`.
+- Verification on the connected database: the migration compiled in an
+  explicit rolled-back DDL dry run; both triggers are installed/enabled;
+  `authenticated` and `anon` cannot execute their helper functions.
+  Direct negative inserts for missing settings/payment/payslip relationships
+  raised the intended database CHECK error. **No test payment or allocation
+  record was retained**.
+- Existing database data at verification: 0 Payroll payments and
+  0 Payroll allocations; no reconciliation or modification was required.
+- The repository includes
+  `tests/integration/basic-payroll-payment-currency-guards.sql` with
+  transaction/rollback fixtures for valid base-currency payments, rejected
+  foreign-currency payments and allocations, and rejected run reassignment.
+  **That full SQL integration test has not been run** on an isolated database.
+  No existing Payroll settings rows were present on the live database, so
+  full valid-production-payroll lifecycle smoke could not be performed.
+- Remaining quality gates: full application typecheck/lint/Vitest/build,
+  isolated SQL integration test, and authenticated end-to-end Payroll QA.
+  GitHub CI was **not run per user instruction**.

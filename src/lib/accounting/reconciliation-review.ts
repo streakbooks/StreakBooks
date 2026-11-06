@@ -22,7 +22,7 @@ export function reconciliationFindingFingerprint(finding: Pick<
   return "f" + first.toString(16).padStart(16, "0") +
     second.toString(16).padStart(16, "0");
 }
-export type ReconciliationCaseStatus = "open" | "in_review" | "blocked";
+export type ReconciliationCaseStatus = "open" | "in_review" | "blocked" | "ready_for_review" | "reviewed";
 export type ReconciliationCaseAction = "open" | "assign" | "comment" | "status";
 export type ReconciliationSavedCase = {
   id: string; company_id: string; source_type: ExceptionFinding["source"];
@@ -32,4 +32,15 @@ export type ReconciliationSavedCase = {
   status: ReconciliationCaseStatus; assigned_to: string | null;
   version: number; created_at: string; updated_at: string;
   created_by: string; updated_by: string;
+  evidence_url: string | null; evidence_added_by: string | null;
+  evidence_added_at: string | null; submitted_by: string | null;
+  submitted_at: string | null; reviewed_by: string | null;
+  reviewed_at: string | null;
+};
+export type ReconciliationReviewAction = "attach_evidence" | "submit" | "sign_off" | "reopen";
+export type ReconciliationReviewEvent = {
+  id: string; company_id: string; case_id: string;
+  actor_id: string; action: string; note: string;
+  old_state: Record<string, unknown> | null;
+  new_state: Record<string, unknown>; created_at: string;
 };

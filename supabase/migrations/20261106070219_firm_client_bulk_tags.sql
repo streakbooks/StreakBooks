@@ -35,7 +35,7 @@ begin
     )
   );
   return new;
-end $function$
+end $function$;
 REVOKE ALL ON FUNCTION private.firm_client_profile_audit_capture() FROM public, anon, authenticated;
 CREATE OR REPLACE FUNCTION public.bulk_update_firm_client_tags(_firm_id uuid, _items jsonb, _operation text, _tags text[])
  RETURNS jsonb
@@ -153,6 +153,6 @@ begin
   end loop;
   return pg_catalog.jsonb_build_object('updated',changed,'unchanged',unchanged,
     'total',pg_catalog.jsonb_array_length(_items));
-end $function$
+end $function$;
 REVOKE ALL ON FUNCTION public.bulk_update_firm_client_tags(uuid,jsonb,text,text[]) FROM public,anon;
 GRANT EXECUTE ON FUNCTION public.bulk_update_firm_client_tags(uuid,jsonb,text,text[]) TO authenticated;

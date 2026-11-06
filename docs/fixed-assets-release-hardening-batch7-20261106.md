@@ -172,3 +172,18 @@ Do not trigger GitHub Actions/CI, merge, modify database environments or deploy 
 **Focused verification evidence:** Copied the latest `src/lib/fixed-assets/reconciliation.ts` from the feature branch to a temporary, network-denied Vercel Sandbox and ran Node's built-in test runner with 21 isolated reconciliation cases. **21 passed, 0 failed, 0 skipped, exit code 0**. Tests include same-month disposal posting, next-month rejection, residual limits, invalid statuses, accounting differences, CSV formula protection and duplicate-period rejection. Sandbox logs were retrieved. This validates pure reconciliation functions, **not** SQL calls, the full Vitest suite, React UI, TypeScript typecheck, role/RLS matrix, staging or deployment.
 
 **Outstanding release gates unchanged:** PR #111 remains a draft branch and substantially behind main. Complete the full local release command (`node scripts/check-fixed-assets-release.mjs`) on a safe local checkout, independently exercise depreciation/disposal against authenticated SQL fixtures, validate the permissions in two organisations, run browser/mobile regressions, integrate current main, and verify deployment after approved merge. No GitHub CI workflows were initiated, and no SQL migrations or production changes were made in this increment.
+
+
+## Batch 7 continued — shared as-at register balance controls
+
+**Finding (2026-11-06):** The Fixed Assets dashboard previously rejected impossible as-at accumulated depreciation, but the register list summary and CSV export still considered any nonnegative accumulated value up to gross asset cost valid. That allowed register totals or exported rows to look valid while the dashboard deliberately marked them unavailable.
+
+**Code changes committed:**
+- Added pure `validAssetAccumulatedAt` to `src/lib/fixed-assets/register-view.ts`. It rejects missing, fractional and unsafe minor-unit balances; nonpositive/unsafe acquisition costs; negative or imprecise residual/opening depreciation; an opening-plus-residual amount greater than cost; amounts below opening; and accumulated depreciation beyond `cost - residual`.
+- `summariseActiveAssets` now validates each active asset's accounting terms before aggregating cost, and uses `validAssetAccumulatedAt` rather than accepting invalid balances. Financial totals fail closed if the sums would be unsafe or a required balance contradicts asset terms.
+- `src/routes/_authenticated/fixed-assets.tsx` now calls the same shared helper for individual register balances and the CSV export readiness gate, preventing inconsistent UI/readout and spreadsheet exports.
+- Added `register-view.test.ts` regression coverage for missing balances, below-opening/over-residual balances, invalid cost and financial terms, exact fully depreciated NBV and safe aggregate handling.
+
+**Isolated verification evidence:** A non-persistent Vercel Sandbox with outbound networking disabled ran the latest branch's pure `register-view.ts` under Node's built-in test runner. **24/24 focused checks passed; 0 failed; 0 skipped; exit status 0.** Logs were retrieved. The check was limited to pure source logic; it did not run the repository's full Vitest, TypeScript, ESLint, Vite build, browser/CSV interaction or authenticated database/RLS tests.
+
+**Release status:** PR #111 remains draft and unmerged. Its branch must still integrate current main; the complete local release script, authenticated ledger/FX/period-lock verification and browser accessibility tests remain mandatory before any production readiness claim. No GitHub Actions/CI or production deployment was initiated for this increment.

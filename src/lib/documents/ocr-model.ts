@@ -40,8 +40,8 @@ function pick(field: AzureField | undefined, max: number): string | null {
   return safeText(field?.valueString ?? field?.content, max);
 }
 function isoDate(value: unknown): string | null {
-  const str = safeText(value, 10);
-  if (!str || !/^\d{4}-\d{2}-\d{2}$/.test(str)) return null;
+  const str = typeof value === "string" ? value.trim() : "";
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(str)) return null;
   const parsed = new Date(`${str}T00:00:00Z`);
   return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === str
     ? str : null;
@@ -62,13 +62,14 @@ export function minorUnits(amount: unknown, currency: unknown): number | null {
   return rounded;
 }
 
-export function parseAzureInvoiceSuggestions(input: AzureAnalyzeResult): {
+export function parseAzureInvoiceSuggestions(input: unknown): {
   suggestions: OcrSuggestions;
   confidence: Record<string, number>;
   warnings: string[];
 } {
-  const document = input.analyzeResult?.documents?.[0];
-  if (input.status !== "succeeded" || !document?.fields)
+  const payload = input && typeof input === "object" ? input as AzureAnalyzeResult : {};
+  const document = payload.analyzeResult?.documents?.[0];
+  if (payload.status !== "succeeded" || !document?.fields)
     throw new Error("No structured invoice information was available from OCR.");
 
   const fields = document.fields;
@@ -88,7 +89,8 @@ export function parseAzureInvoiceSuggestions(input: AzureAnalyzeResult): {
   add("documentDate", fields.InvoiceDate, isoDate(fields.InvoiceDate?.valueDate));
 
   const total = fields.InvoiceTotal ?? fields.AmountDue;
-  const currency = safeText(total?.valueCurrency?.currencyCode, 3)?.toUpperCase() ?? null;
+  const currency = typeof total?.valueCurrency?.currencyCode === "string"
+    ? total.valueCurrency.currencyCode.trim().toUpperCase() : null;
   if (currency && /^[A-Z]{3}$/.test(currency)) {
     add("currencyCode", total, currency);
     add("totalMinor", total, minorUnits(total?.valueCurrency?.amount, currency));

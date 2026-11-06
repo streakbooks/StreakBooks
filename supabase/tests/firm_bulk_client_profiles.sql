@@ -124,6 +124,32 @@ BEGIN
        WHERE firm_id=fid and company_id=a)<>'active' THEN
     RAISE EXCEPTION 'Unauthorized mixed batch was not rolled back';
   END IF;
+  BEGIN
+    PERFORM public.bulk_update_firm_client_profiles(
+      fid,
+      jsonb_build_array(
+        jsonb_build_object('companyId',a,'expectedVersion',3),
+        jsonb_build_object('companyId',a,'expectedVersion',3)
+      ),
+      'status','archived'
+    );
+    RAISE EXCEPTION 'TEST: duplicate targets accepted';
+  EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+  IF (SELECT status FROM public.firm_client_profiles
+    WHERE firm_id=fid and company_id=a)<>'active' THEN
+    RAISE EXCEPTION 'Duplicate target batch was not fully rolled back';
+  END IF;
+
+  BEGIN
+    PERFORM public.bulk_update_firm_client_profiles(
+      fid,
+      (SELECT jsonb_agg(jsonb_build_object('companyId',a,'expectedVersion',3))
+         FROM generate_series(1,51)),
+      'status','archived'
+    );
+    RAISE EXCEPTION 'TEST: over-limit batch was accepted';
+  EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+
   SELECT count(*) INTO audit_count FROM public.firm_client_profile_audit WHERE firm_id=fid;
   IF audit_count<>5 THEN RAISE EXCEPTION 'Unexpected profile audit count: %',audit_count; END IF;
 

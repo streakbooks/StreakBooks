@@ -15,22 +15,45 @@ export const workpaperEvidenceInput = z.object({
   companyId: z.string().uuid(),
   accountId: z.string().uuid(),
   asOf: isoDate,
+  page: z.number().int().min(0).max(10000).default(0),
 }).strict();
 
 export type AiWorkpaperEvidenceResponse = {
   accountId: string;
   asOf: string;
+  page: number;
+  pageSize: number;
+  total: number;
   links: AiWorkpaperEvidenceLink[];
-  scannedReviews: number;
-  latestReviewsTruncated: boolean;
-  counts: ReturnType<typeof countAiWorkpaperEvidence>;
+  /** Counts only on this returned page; not a company or ledger-wide result. */
+  pageCounts: ReturnType<typeof countAiWorkpaperEvidence>;
   disclaimer: string;
 };
 
+type DbEvidenceRow = {
+  review_id: string;
+  journal_id: string;
+  review_status: AiWorkpaperReviewSource["status"];
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  updated_at: string;
+  journal_number: number;
+  journal_date: string;
+  journal_status: string;
+  source_type: string;
+};
+
+type DbEvidencePage = {
+  total: number | string;
+  page: number;
+  pageSize: number;
+  rows: DbEvidenceRow[];
+};
+
 /**
- * Read-only handoff to Accountant Tools. Never mutate an accounting workpaper,
- * infer a supporting balance, or treat an AI review as a workpaper sign-off.
- * All financial fact joins stay company-scoped.
+ * Read-only, RLS-preserving, account-filtered pagination of ALL review cases.
+ * The database filters by actual journal lines before paginating and reports
+ * an exact matching count. It never changes a workpaper or review status.
  */
 export const getAiWorkpaperEvidence = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -40,80 +63,61 @@ export const getAiWorkpaperEvidence = createServerFn({ method: "GET" })
     await assertCompanyPermission(context.supabase, data.companyId, "ai.use");
     await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
 
-    const { data: account, error: accountError } = await context.supabase
-      .from("accounts" as never)
-      .select("id,account_type,is_postable" as never)
-      .eq("company_id" as never, data.companyId as never)
-      .eq("id" as never, data.accountId as never)
-      .maybeSingle();
-    if (accountError) throw new Error("Could not verify the workpaper account.");
-    const accountRecord = account as { id: string; account_type: string; is_postable: boolean } | null;
+    const { data: payload, error } = await context.supabase.rpc(
+      "list_ai_workpaper_evidence_page" as never,
+      {
+        _company_id: data.companyId,
+        _account_id: data.accountId,
+        _as_of: data.asOf,
+        _page: data.page,
+      } as never,
+    );
+    if (error)
+      throw new Error(
+        error.message.includes("list_ai_workpaper_evidence_page")
+          ? "AI workpaper evidence pagination requires the latest database migration."
+          : error.message,
+      );
+    if (!payload || typeof payload !== "object" || Array.isArray(payload))
+      throw new Error("Invalid evidence page returned by the database.");
+    const result = payload as DbEvidencePage;
+    const total = Number(result.total);
     if (
-      !accountRecord ||
-      !accountRecord.is_postable ||
-      !["asset", "liability", "equity"].includes(accountRecord.account_type)
-    ) throw new Error("Select an accessible postable balance-sheet account.");
+      !Number.isSafeInteger(total) || total < 0 ||
+      result.page !== data.page || result.pageSize !== 25 ||
+      !Array.isArray(result.rows) || result.rows.length > 25
+    ) throw new Error("The evidence pagination response is invalid.");
 
-    // The latest 100 case records form a bounded investigation window.
-    // A truncated sample must never be displayed as complete journal coverage.
-    const { data: caseRows, error: casesError } = await context.supabase
-      .from("ai_journal_review_cases" as never)
-      .select("id,journal_id,status,assigned_to,reviewed_by,reviewed_at,updated_at" as never)
-      .eq("company_id" as never, data.companyId as never)
-      .order("updated_at" as never, { ascending: false })
-      .order("id" as never, { ascending: false })
-      .limit(101);
-    if (casesError) throw new Error("AI journal review cases could not be read.");
-    const latestReviewsTruncated = (caseRows ?? []).length > 100;
-    const cases = ((caseRows ?? []).slice(0, 100)) as AiWorkpaperReviewSource[];
-    if (!cases.length) {
-      return {
-        accountId: data.accountId,
-        asOf: data.asOf,
-        links: [],
-        scannedReviews: 0,
-        latestReviewsTruncated: false,
-        counts: { reviewed: 0, followUp: 0, notPosted: 0 },
-        disclaimer: "No AI review cases were found. This does not establish that the account is reconciled.",
-      };
-    }
-    const journalIds = [...new Set(cases.map((item) => item.journal_id))];
-
-    // A journal can contain multiple lines for the same account. Refuse a
-    // silently incomplete line match, instead of returning false absence.
-    const [lineLookup, headersLookup] = await Promise.all([
-      context.supabase
-        .from("journal_lines" as never)
-        .select("journal_id" as never)
-        .eq("company_id" as never, data.companyId as never)
-        .eq("account_id" as never, data.accountId as never)
-        .in("journal_id" as never, journalIds as never)
-        .limit(501),
-      context.supabase
-        .from("journals" as never)
-        .select("id,journal_number,journal_date,status,source_type" as never)
-        .eq("company_id" as never, data.companyId as never)
-        .in("id" as never, journalIds as never)
-        .lte("journal_date" as never, data.asOf as never)
-        .limit(101),
-    ]);
-    if (lineLookup.error || headersLookup.error)
-      throw new Error("The posted-ledger linkage for these AI reviews is unavailable.");
-    if ((lineLookup.data ?? []).length > 500)
-      throw new Error("Too many matching journal lines for a complete review sample. Narrow the source workpaper investigation.");
-
-    const lineJournalIds = ((lineLookup.data ?? []) as Array<{ journal_id: string }>).map((line) => line.journal_id);
-    const journalHeaders = (headersLookup.data ?? []) as AiWorkpaperJournalSource[];
-    const links = linkAiReviewsToWorkpaper(cases, journalHeaders, lineJournalIds, data.asOf);
+    const cases: AiWorkpaperReviewSource[] = result.rows.map((r) => ({
+      id: r.review_id,
+      journal_id: r.journal_id,
+      status: r.review_status,
+      assigned_to: null,
+      reviewed_by: r.reviewed_by,
+      reviewed_at: r.reviewed_at,
+      updated_at: r.updated_at,
+    }));
+    const journals: AiWorkpaperJournalSource[] = result.rows.map((r) => ({
+      id: r.journal_id,
+      journal_number: r.journal_number,
+      journal_date: r.journal_date,
+      status: r.journal_status,
+      source_type: r.source_type,
+    }));
+    const links = linkAiReviewsToWorkpaper(
+      cases,
+      journals,
+      result.rows.map((r) => r.journal_id),
+      data.asOf,
+    );
     return {
       accountId: data.accountId,
       asOf: data.asOf,
+      page: data.page,
+      pageSize: result.pageSize,
+      total,
       links,
-      scannedReviews: cases.length,
-      latestReviewsTruncated,
-      counts: countAiWorkpaperEvidence(links),
-      disclaimer: latestReviewsTruncated
-        ? "Only the 100 most recently updated company AI review cases were checked for this account. Older cases may be omitted. These are supplemental evidence only, not a complete workpaper review."
-        : "These are linked AI journal-review records, not supporting balances, formal workpaper sign-offs, or authority to post journals.",
+      pageCounts: countAiWorkpaperEvidence(links),
+      disclaimer: "This page shows recorded AI review cases linked to the selected account. AI sign-off is not a workpaper sign-off, bank reconciliation, journal approval, or proof that all ledger movements were checked.",
     };
   });

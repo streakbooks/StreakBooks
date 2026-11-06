@@ -189,12 +189,12 @@ workpaper, source journal, accountant exception approval or posting engine.
   server, in addition to existing company-membership and row-level policies.
   The selected chart-of-accounts record must be a postable asset, liability
   or equity account in the active company.
-- The lookup examines the 100 most recently updated company AI review cases,
-  then checks only same-company journal lines and journal headers for that
-  account, dated on or before the workpaper date. A larger company case set
-  is explicitly labelled **truncated**, and a 500-line match limit fails
-  rather than claiming a complete sample. No absence of cases is presented
-  as evidence that an account is reconciled.
+- Phase 7 originally sampled the 100 latest company AI cases. This
+  limitation is **superseded by Phase 8**: a tenant-scoped invoker-mode SQL
+  function now filters all cases by the selected account's actual journal
+  lines and the workpaper date **before** returning stable 25-case pages
+  and a full matching count. An empty case list still does not establish
+  that the account's transactions are reconciled.
 - A signed-off AI case is labelled \`reviewed_evidence\` only while the linked
   journal is still posted and a reviewer ID and review time are recorded.
   A no-longer-posted journal is flagged as superseded regardless of its past
@@ -212,3 +212,41 @@ workpaper, source journal, accountant exception approval or posting engine.
 - There is no additional table, RLS policy, migration or AI-provider call
   in Phase 7. Formal workpaper preparation/review and its independent
   approval protections remain unchanged.
+
+
+## 11. Complete evidence pagination and auditable review export (Phase 8)
+
+- The RLS-preserving \`list_ai_workpaper_evidence_page\` function runs with
+  **SECURITY INVOKER**, not elevated definer rights. It requires an
+  authenticated member with \`accounting.view\`, \`ai.use\`, and
+  \`reports.view\`, validates a postable company balance-sheet account,
+  uses \`EXISTS\` to prevent duplicate cases from multi-line journals,
+  and filters journal dates before returning 25-case pages and a full
+  matching count. Multiple pages let authorised users investigate old
+  cases beyond the formerly hard-coded latest-100 window.
+- The new \`journal_lines_company_account_journal_idx\` index supports the
+  account-to-journal evidence lookup. The SQL function only reads RLS-
+  protected tables. Anonymous \`EXECUTE\` is revoked.
+- Evidence status chips indicate **only the current page**, not full-ledger
+  completeness, and a case's past AI review never becomes a formal
+  workpaper or journal approval.
+- \`Export complete audit CSV\` is available only to users with
+  \`ai.use\`, \`reports.view\`, and \`reports.export\`. A dedicated
+  server endpoint validates company/case identity and loads sequential
+  200-event windows, avoiding PostgREST's per-query row cap. If there are
+  over 5,000 events it **fails** instead of exporting an undisclosed partial
+  history. The case version is rechecked after pagination; if a competing
+  review action occurred, the export is rejected as stale.
+- Exports contain an explicit schema with company, case, journal,
+  reviewer and chronological event metadata. User-entered text is
+  CSV-quoted and guarded against spreadsheet formula injection, with a
+  UTF-8 BOM for compatibility. The file is created locally on the
+  requesting browser: no new storage table, external model call or
+  approval is performed by exporting.
+- The new migration is
+  \`20261106082258_ai_workpaper_evidence_pagination.sql\`, applied to
+  Supabase project \`ipxflpzfcqwtenodbxwc\`. No source-journal,
+  accountant-workpaper or AI case row was modified as part of the rollout.
+- Exported review trails are **supporting documentation**, not a
+  signed financial statement, full audit of every transaction or
+  evidence that a bank reconciliation took place.

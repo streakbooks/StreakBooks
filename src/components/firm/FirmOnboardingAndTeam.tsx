@@ -18,6 +18,7 @@ import {
 } from "@/lib/firm/onboarding-insights";
 import { FirmOnboardingDashboard } from "@/components/firm/FirmOnboardingDashboard";
 import { FirmOnboardingWorkloadPanel } from "@/components/firm/FirmOnboardingWorkloadPanel";
+import { FirmOnboardingEscalationsPanel } from "@/components/firm/FirmOnboardingEscalationsPanel";
 import {
   ONBOARDING_TEMPLATE,
   OFFBOARDING_TEMPLATE,
@@ -204,6 +205,11 @@ export function FirmOnboardingPanel({
               setNotes({});
               setPlans({});
             }}
+          />
+          <FirmOnboardingEscalationsPanel
+            firmId={firmId}
+            clients={available}
+            canManage={canManage}
           />
           <FirmCustomOnboardingTemplates
             firmId={firmId}

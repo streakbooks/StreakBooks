@@ -277,14 +277,24 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
         : {},
     [draftPricesReady, draftPricesQ.data],
   );
+  const draftCatalogueBases = useMemo(
+    () => draftPricesReady
+      ? indexDraftPriceOverrides(draftPricesQ.data?.basePrices ?? [])
+      : {},
+    [draftPricesReady, draftPricesQ.data],
+  );
   const pricePreview = useMemo(
     () => draftPricesReady
       ? previewPriceListApplication(
           lines, draftPriceOverrides, currency,
           draftPricesQ.data?.rules ?? [], docDate,
+          draftPricesQ.data?.discounts ?? [], draftCatalogueBases,
         )
       : null,
-    [draftPricesReady, lines, draftPriceOverrides, currency, draftPricesQ.data, docDate],
+    [
+      draftPricesReady, lines, draftPriceOverrides,
+      currency, draftPricesQ.data, docDate, draftCatalogueBases,
+    ],
   );
 
   // Changing organisation clears local manual selection; document line values stay untouched.
@@ -836,10 +846,11 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
             </div>
             <p className="text-xs text-muted-foreground">
               Price lists are available in their own currency only. New catalogue selections use
-              the applicable quantity tier and document date, then fall back to a fixed list price.
-              Changing quantity or date does not silently reprice existing lines: review the preview
-              and confirm any price changes. Saved documents retain their line prices; the list
-              selection itself is not stored on the document.
+              the applicable quantity tier and document date, then a fixed or catalogue price.
+              A single eligible percentage rule can reduce that unit price before separate line
+              discount amounts and tax. Changing quantity or date never silently reprices existing
+              lines: review and confirm any price changes. Saved documents retain line prices;
+              the list selection itself is not stored on the document.
             </p>
             {customerDefaultPending ? (
               <p className="text-xs text-muted-foreground">
@@ -925,6 +936,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
           products={(productsQ.data ?? []) as never}
           priceOverrides={draftPricesReady ? draftPriceOverrides : {}}
           priceRules={draftPricesReady ? draftPricesQ.data?.rules ?? [] : []}
+          discountRules={draftPricesReady ? draftPricesQ.data?.discounts ?? [] : []}
           pricingDate={docDate}
           productSelectionDisabled={
             customerDefaultPending ||

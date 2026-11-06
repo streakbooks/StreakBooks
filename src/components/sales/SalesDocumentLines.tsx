@@ -6,7 +6,10 @@ import { useVoiceSession } from "@/components/ai-voice/voice-context";
 
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { selectedUnitPriceMinor } from "@/lib/sales/price-list-draft";
-import { resolveTierUnitPrice, type DraftTierPriceRule } from "@/lib/products/price-list-tiers";
+import { type DraftTierPriceRule } from "@/lib/products/price-list-tiers";
+import {
+  resolveDraftDiscountedUnitPrice, type DraftDiscountRule,
+} from "@/lib/products/price-list-discounts";
 import { computeTaxLineRounded } from "@/lib/sales/line-math-rounded";
 import type { TaxTreatment } from "@/lib/sales/line-helpers";
 import type { SalesTaxCode } from "@/lib/sales/tax-codes";
@@ -46,6 +49,7 @@ type Props = {
   priceOverrides?: Readonly<Record<string, number>>;
   /** Quantity/date-effective list prices; applied only when choosing a product. */
   priceRules?: readonly DraftTierPriceRule[];
+  discountRules?: readonly DraftDiscountRule[];
   pricingDate?: string;
   /** Block catalogue selection while an active price list is being loaded or has failed. */
   productSelectionDisabled?: boolean;
@@ -70,6 +74,7 @@ export function SalesDocumentLines({
   products,
   priceOverrides = {},
   priceRules = [],
+  discountRules = [],
   pricingDate = "",
   productSelectionDisabled = false,
   onPriceListProductSelected,
@@ -92,10 +97,12 @@ export function SalesDocumentLines({
     label: p.code ? `${p.code} — ${p.name}` : p.name,
     description:
       fromMinorUnits(selectedUnitPriceMinor(p.id, p.sales_price_minor, priceOverrides), currency) +
-      (priceRules.some((rule) => rule.product_id === p.id)
-        ? " (quantity/date rules)"
-        : Object.prototype.hasOwnProperty.call(priceOverrides, p.id)
-          ? " (price list)" : ""),
+      (discountRules.some((rule) => rule.product_id === p.id)
+        ? " (percentage rules: actual line price depends on quantity/date)"
+        : priceRules.some((rule) => rule.product_id === p.id)
+          ? " (quantity/date rules)"
+          : Object.prototype.hasOwnProperty.call(priceOverrides, p.id)
+            ? " (price list)" : ""),
     keywords: `${p.code ?? ""} ${p.description ?? ""}`,
   }));
 
@@ -131,8 +138,14 @@ export function SalesDocumentLines({
       update(idx, { productId });
       return;
     }
-    const selectedPrice = resolveTierUnitPrice(
-      productId, lines[idx]?.quantity ?? "1", pricingDate, priceOverrides, priceRules,
+    const selectedPrice = resolveDraftDiscountedUnitPrice(
+      productId,
+      p.sales_price_minor,
+      lines[idx]?.quantity ?? "1",
+      pricingDate,
+      priceOverrides,
+      priceRules,
+      discountRules,
     );
     if (selectedPrice !== undefined) onPriceListProductSelected?.();
     update(idx, {

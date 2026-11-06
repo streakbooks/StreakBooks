@@ -78,3 +78,49 @@ Bulk employee create/update is implemented on **Payroll → Employees** (CSV upl
 - Migrations must be applied and payroll enabled per organisation before live use (linkbook production has foundation migrations as of 2026-11-05; org-level enablement and staging smoke still required).
 - No Playwright payroll module smoke (auth/setup cost); rely on unit + SQL integration smokes.
 - Statutory compliance, pension APIs, and pay-file bank formats are out of scope for Basic Global Payroll.
+
+## November 6, 2026 — operational UX enhancements (PR #107)
+
+This work **does not replace** the manual statutory compliance disclaimer, payroll calculation
+engine, accounting journal posting, or the required authenticated staging smoke.
+
+- Payroll runs: status/search/sort, distinguish filtered empty results, verify invalid
+  periods, warn when a run overlaps a non-void period on the same schedule. Suggested
+  next run uses the **full** previous run history regardless of status filters; manually
+  edited dates are preserved on query refresh until the schedule is changed or a new
+  create dialog is opened.
+- Payslips: search/sort and employee/payment-status filters; employee choices remain
+  available when a filter is active. Outstanding net pay is presented separately
+  from the original net pay using the payslip's recorded payments.
+- Employees: search/sort with reset and settings load error handling; CSV export
+  explicitly exports the **current filtered view**, not all staff.
+- Employee CSV imports: parse and validate the full file before writing, including
+  quoted multiline fields, duplicate headings/employee IDs, malformed quotes,
+  and limits of 500 data rows / 1,000,000 characters. Display a review dialog
+  identifying new vs existing IDs from the **complete** company employee list.
+  Existing employee IDs are skipped, never overwritten, because the CSV format
+  lacks linked salary structures and confidential bank details.
+  Import remains sequential, not atomic. If it fails partway through, earlier
+  rows are saved; later rows are not attempted. No automatic rollback or resume
+  is claimed. Rows with blank employee IDs allocate new numbers and may duplicate
+  if imported repeatedly. New employees may still need salary/schedule assignments.
+- Payments: posted/reversed/search controls and result counts; payment calculation,
+  reversing and posting remain unchanged.
+
+**Verification:** Additional Vitest cases cover CSV duplicates and RFC-style quoting.
+A focused isolated runtime parser check passed 9/9 cases, but the repository's
+typecheck, lint, full unit suite, build, browser E2E, and production checks
+have **not** been executed for PR #107. GitHub Actions push attempts failed with
+no jobs started; the quality workflow is currently commented out in the repository.
+Do not merge/release this work as validated until checks and staging smoke pass.
+
+**Manual QA sequence:**
+1. Employee: search/status/sort, CSV export of filtered results, import preview,
+   duplicate employee IDs, blank IDs, malformed quotes, and partial-failure warning.
+2. Runs: next-period suggestions while filtering to posted/draft/void, overlap
+   warning, inverted date range, manual date edits surviving a query refresh.
+3. Payslips: switch selected employee without clearing the URL first; search,
+   status and outstanding amounts before/after a partial payroll payment.
+4. Payments: search date/method/reference; posted/reversed filter and reversal.
+5. Responsive/mobile, keyboard navigation, restricted role access, and authenticated
+   staging employee→salary→run→approve→post→pay→report.

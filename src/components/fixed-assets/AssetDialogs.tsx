@@ -60,6 +60,7 @@ function AccountSelect({
   types,
   companyId,
   disabled,
+  error,
 }: {
   id: string;
   label: string;
@@ -69,6 +70,7 @@ function AccountSelect({
   types: string[];
   companyId: string;
   disabled?: boolean;
+  error?: string | undefined;
 }) {
   return (
     <div className="space-y-1">
@@ -93,6 +95,11 @@ function AccountSelect({
         allowClear
         disabled={disabled}
       />
+      {error ? (
+        <p id={id + "-error"} className="text-xs text-destructive" role="status">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -601,6 +608,9 @@ export function AssetDialog({
           </Alert>
         ) : null}
         <div className="grid gap-3 sm:grid-cols-2">
+          <h3 className="border-b pb-2 text-sm font-semibold sm:col-span-2">
+            Asset identity
+          </h3>
           <div className="space-y-1 sm:col-span-2">
             <Label htmlFor="asset-name">Name</Label>
             <Input
@@ -691,6 +701,9 @@ export function AssetDialog({
               }}
             />
           </div>
+          <h3 className="border-b pb-2 text-sm font-semibold sm:col-span-2">
+            Depreciation policy
+          </h3>
           <MethodFields
             method={method}
             setMethod={setMethod}
@@ -793,6 +806,9 @@ export function AssetDialog({
               </p>
             ) : null}
           </div>
+          <h3 className="border-b pb-2 text-sm font-semibold sm:col-span-2">
+            Account mapping
+          </h3>
           <AccountSelect
             id="asset-asset"
             label="Asset account (cost)"
@@ -802,6 +818,7 @@ export function AssetDialog({
             companyId={companyId}
             types={["asset"]}
             disabled={lock}
+            error={feedback.fields.asset}
           />
           <AccountSelect
             id="asset-acc"
@@ -812,6 +829,7 @@ export function AssetDialog({
             companyId={companyId}
             types={["asset"]}
             disabled={lock}
+            error={feedback.fields.acc}
           />
           <AccountSelect
             id="asset-exp"
@@ -822,6 +840,7 @@ export function AssetDialog({
             companyId={companyId}
             types={["expense"]}
             disabled={lock}
+            error={feedback.fields.exp}
           />
         </div>
         {!feedback.valid ? (

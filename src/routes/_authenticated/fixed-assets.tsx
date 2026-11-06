@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Download, Loader2, Search } from "lucide-react";
+import { ArrowDownUp, Download, Loader2, Search } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
@@ -11,6 +11,12 @@ import { useFormat } from "@/hooks/use-format";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { addMonthsIso, monthEnd, monthStart, todayIso } from "@/lib/accounting/fiscal-year";
 import { DEPRECIATION_METHODS } from "@/lib/fixed-assets/depreciation";
+import {
+  selectRegisterAssets,
+  summariseActiveAssets,
+  type AssetRegisterSort,
+} from "@/lib/fixed-assets/register-view";
+import { LookupSelect } from "@/components/lookup";
 import {
   deleteFixedAsset,
   getAssetRegisterPage,
@@ -27,6 +33,7 @@ import {
   AssetTypeDialog,
   DisposeDialog,
 } from "@/components/fixed-assets/AssetDialogs";
+import { AssetDetailsDialog } from "@/components/fixed-assets/AssetDetailsDialog";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -68,6 +75,7 @@ type Dialogs =
   | { kind: "type"; editing: AssetTypeRow | null }
   | { kind: "dispose"; asset: FixedAssetRow }
   | { kind: "bill-lines" }
+  | { kind: "details"; asset: FixedAssetRow }
   | null;
 
 function FixedAssetsPage() {
@@ -85,6 +93,10 @@ function FixedAssetsPage() {
   const [dialog, setDialog] = useState<Dialogs>(null);
   const [assetSearch, setAssetSearch] = useState("");
   const [assetStatus, setAssetStatus] = useState<"all" | "active" | "disposed">("all");
+  const [assetTypeId, setAssetTypeId] = useState("");
+  const [assetAccountId, setAssetAccountId] = useState("");
+  const [assetSort, setAssetSort] = useState<AssetRegisterSort>("number");
+  const [sortDescending, setSortDescending] = useState(false);
   const today = useMemo(() => todayIso(), []);
 
   const page = useQuery({
@@ -127,20 +139,35 @@ function FixedAssetsPage() {
     );
   }
   const currency = d.currency;
-  const visibleAssets = d.assets.filter((a) => {
-    if (assetStatus !== "all" && a.status !== assetStatus) return false;
-    const term = assetSearch.trim().toLocaleLowerCase();
-    return (
-      !term ||
-      [a.asset_number, a.name, a.description ?? "", a.notes ?? ""].some((value) =>
-        value.toLocaleLowerCase().includes(term),
-      )
-    );
-  });
-  const activeAssets = d.assets.filter((a) => a.status === "active");
-  const accumulatedOf = (a: FixedAssetRow) =>
-    register.data?.rows.find((r) => r.asset_id === a.id)?.accumulated_minor ??
-    a.opening_accumulated_minor;
+  const balancesReady =
+    register.isSuccess && !register.isFetching && register.data.asOf === today;
+  const balanceMap = balancesReady
+    ? new Map(register.data.rows.map((r) => [r.asset_id, r.accumulated_minor] as const))
+    : null;
+  const visibleAssets = selectRegisterAssets(
+    d.assets,
+    {
+      search: assetSearch,
+      status: assetStatus,
+      typeId: assetTypeId,
+      accountId: assetAccountId,
+      sort: assetSort,
+      descending: sortDescending,
+    },
+    d.types,
+    d.accounts,
+  );
+  const summary = summariseActiveAssets(visibleAssets, today, balanceMap);
+  const accumulatedOf = (a: FixedAssetRow): number | null => balanceMap?.get(a.id) ?? null;
+  const exportReady =
+    balancesReady &&
+    visibleAssets.length > 0 &&
+    visibleAssets.every((a) => a.purchase_date > today || balanceMap?.has(a.id));
+  const filterActive =
+    Boolean(assetSearch.trim()) ||
+    assetStatus !== "all" ||
+    Boolean(assetTypeId) ||
+    Boolean(assetAccountId);
 
   return (
     <>
@@ -199,31 +226,24 @@ function FixedAssetsPage() {
         <TabsContent value="register" className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {[
-              { label: "Active assets", value: String(activeAssets.length) },
+              { label: "Active assets in view", value: String(summary.activeCount) },
               {
-                label: "Original cost",
-                value: fmt.amount(
-                  activeAssets.reduce((sum, a) => sum + a.cost_minor, 0),
-                  currency,
-                ),
+                label: "Original cost in view",
+                value: summary.costMinor === null
+                  ? "Unavailable"
+                  : fmt.amount(summary.costMinor, currency),
               },
               {
                 label: "Accumulated depreciation",
-                value: register.data
-                  ? fmt.amount(
-                      activeAssets.reduce((sum, a) => sum + accumulatedOf(a), 0),
-                      currency,
-                    )
-                  : "Loading…",
+                value: summary.accumulatedMinor === null
+                  ? balancesReady || register.isError ? "Unavailable" : "Loading…"
+                  : fmt.amount(summary.accumulatedMinor, currency),
               },
               {
                 label: "Net book value",
-                value: register.data
-                  ? fmt.amount(
-                      activeAssets.reduce((sum, a) => sum + a.cost_minor - accumulatedOf(a), 0),
-                      currency,
-                    )
-                  : "Loading…",
+                value: summary.netBookValueMinor === null
+                  ? balancesReady || register.isError ? "Unavailable" : "Loading…"
+                  : fmt.amount(summary.netBookValueMinor, currency),
               },
             ].map((metric) => (
               <div key={metric.label} className="rounded-lg border bg-card p-4">
@@ -232,6 +252,10 @@ function FixedAssetsPage() {
               </div>
             ))}
           </div>
+          <p className="text-xs text-muted-foreground">
+            Balances as at {fmt.date(today)}. Totals reflect active assets matching the current
+            filters; future purchases and completed disposals are excluded.
+          </p>
           <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
@@ -312,6 +336,7 @@ function FixedAssetsPage() {
               canPost={canPost}
               companyId={companyId}
               onEdit={(a) => setDialog({ kind: "asset", editing: a, fromBillLine: null })}
+              onView={(a) => setDialog({ kind: "details", asset: a })}
               onDispose={(a) => setDialog({ kind: "dispose", asset: a })}
             />
           )}
@@ -402,6 +427,17 @@ function FixedAssetsPage() {
           }
         />
       ) : null}
+      {dialog?.kind === "details" ? (
+        <AssetDetailsDialog
+          key={dialog.asset.id}
+          companyId={companyId}
+          assetId={dialog.asset.id}
+          currency={currency}
+          accounts={d.accounts}
+          types={d.types}
+          onClose={() => setDialog(null)}
+        />
+      ) : null}
       {dialog?.kind === "type" ? (
         <AssetTypeDialog
           key={dialog.editing?.id ?? "new"}
@@ -412,7 +448,7 @@ function FixedAssetsPage() {
           editing={dialog.editing}
         />
       ) : null}
-      {dialog?.kind === "dispose" ? (
+      {dialog?.kind === "dispose" && accumulatedOf(dialog.asset) !== null ? (
         <DisposeDialog
           key={dialog.asset.id}
           open
@@ -421,7 +457,7 @@ function FixedAssetsPage() {
           currency={currency}
           accounts={d.accounts}
           asset={dialog.asset}
-          accumulatedMinor={accumulatedOf(dialog.asset)}
+          accumulatedMinor={accumulatedOf(dialog.asset) ?? 0}
         />
       ) : null}
       {dialog?.kind === "bill-lines" ? (

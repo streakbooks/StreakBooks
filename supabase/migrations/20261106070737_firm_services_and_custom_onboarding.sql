@@ -88,7 +88,7 @@ begin
   new.version:=old.version+1;
   new.updated_at:=clock_timestamp();
   return new;
-end $function$
+end $function$;
 create trigger firm_service_category_touch before update on public.firm_service_categories
  for each row execute function private.firm_catalogue_version_guard();
 create trigger firm_onboarding_template_touch before update on public.firm_onboarding_template_steps
@@ -137,6 +137,6 @@ begin
   return pg_catalog.jsonb_build_object(
     'added',created_count,'available',active_count
   );
-end $function$
+end $function$;
 revoke all on function public.apply_firm_onboarding_template(uuid,uuid) from public,anon;
 grant execute on function public.apply_firm_onboarding_template(uuid,uuid) to authenticated;

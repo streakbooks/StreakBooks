@@ -1,0 +1,162 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("@tanstack/react-start", () => ({
+  createServerFn: () => {
+    let validate: (value: unknown) => unknown = (value) => value;
+    return {
+      middleware() { return this; },
+      inputValidator(fn: (value: unknown) => unknown) { validate = fn; return this; },
+      handler(fn: (value: { data: unknown; context: unknown }) => unknown) {
+        return async (args: { data: unknown; context: unknown }) =>
+          fn({ ...args, data: validate(args.data) });
+      },
+    };
+  },
+}));
+vi.mock("@/integrations/supabase/auth-middleware", () => ({ requireSupabaseAuth: {} }));
+vi.mock("@/lib/assert-company-access", () => ({ assertCompanyPermission: vi.fn() }));
+
+import {
+  listAiJournalReviewCases,
+  listAiJournalReviewEvents,
+  saveAiJournalReview,
+  reviewActionSchema,
+} from "./review-queue.functions";
+import { assertCompanyPermission } from "@/lib/assert-company-access";
+
+const companyId = "00000000-0000-4000-8000-000000000001";
+const journalId = "00000000-0000-4000-8000-000000000002";
+const caseId = "00000000-0000-4000-8000-000000000003";
+const userId = "00000000-0000-4000-8000-000000000004";
+const calls: Array<[string, ...unknown[]]> = [];
+const input = {
+  companyId,
+  journalId,
+  caseId,
+  action: "comment" as const,
+  note: "Checked posted journal document",
+  assignedTo: null,
+  expectedVersion: 1,
+};
+
+function db() {
+  const builder = {
+    select() { return this; },
+    eq(key: string, value: unknown) { calls.push(["eq",key,value]); return this; },
+    order() { return this; },
+    range() { return Promise.resolve({ data: [], count: 0, error: null }); },
+    maybeSingle() { return Promise.resolve({ data: { id: caseId }, error: null }); },
+    limit() { return Promise.resolve({ data: [], error: null }); },
+  };
+  return {
+    from(table: string) { calls.push(["from",table]); return builder; },
+    rpc(fn: string, args: unknown) {
+      calls.push(["rpc",fn,args]);
+      return Promise.resolve({ data: { id: caseId, status: "assigned", version: 2 }, error: null });
+    },
+  };
+}
+const list = listAiJournalReviewCases as unknown as (args: unknown) => Promise<unknown>;
+const history = listAiJournalReviewEvents as unknown as (args: unknown) => Promise<unknown>;
+const save = saveAiJournalReview as unknown as (args: unknown) => Promise<unknown>;
+
+beforeEach(() => { calls.length = 0; vi.clearAllMocks(); });
+
+describe("AI review queue server authorization and transitions", () => {
+  it("enforces AI and reporting permission before reading the queue", async () => {
+    const client = db();
+    await list({ data: { companyId, page: 0, status: "all", assignedToMe: false }, context: { supabase: client, userId } });
+    expect(assertCompanyPermission).toHaveBeenCalledWith(client, companyId, "ai.use");
+    expect(assertCompanyPermission).toHaveBeenCalledWith(client, companyId, "reports.view");
+    expect(calls).toEqual(expect.arrayContaining([["from","ai_journal_review_cases"],["eq","company_id",companyId]]));
+  });
+
+  it("rejects a denied caller before reading or writing any review row", async () => {
+    vi.mocked(assertCompanyPermission).mockRejectedValueOnce(new Error("Access denied"));
+    await expect(list({ data: { companyId }, context: { supabase: db(), userId } })).rejects.toThrow("Access denied");
+    expect(calls).toHaveLength(0);
+  });
+
+  it("does not permit creating a forged case with a preset ID or version", () => {
+    expect(() => reviewActionSchema.parse({ ...input, action: "open" })).toThrow();
+    expect(() => reviewActionSchema.parse({ ...input, action: "open", caseId: null, expectedVersion: null })).not.toThrow();
+    expect(() => reviewActionSchema.parse({ ...input, action: "open", caseId: null, expectedVersion: null, assignedTo: userId })).toThrow();
+  });
+
+  it("rejects mutations without current optimistic-lock version", () => {
+    expect(() => reviewActionSchema.parse({ ...input, expectedVersion: null })).toThrow();
+    expect(() => reviewActionSchema.parse({ ...input, expectedVersion: 0 })).toThrow();
+    expect(() => reviewActionSchema.parse({ ...input, caseId: null })).toThrow();
+  });
+
+  it("requires meaningful comments, sign-off and reopening reasons", () => {
+    expect(() => reviewActionSchema.parse({ ...input, note: " " })).toThrow();
+    expect(() => reviewActionSchema.parse({ ...input, action: "sign_off", note: "short" })).toThrow();
+    expect(() => reviewActionSchema.parse({ ...input, action: "reopen", note: "short" })).toThrow();
+    expect(() => reviewActionSchema.parse({ ...input, action: "sign_off", note: "Reviewed the source." })).not.toThrow();
+  });
+
+  it("requires a reviewer when assigning", () => {
+    expect(() => reviewActionSchema.parse({ ...input, action: "assign" })).toThrow();
+    expect(() => reviewActionSchema.parse({ ...input, action: "assign", assignedTo: userId })).not.toThrow();
+  });
+
+  it("uses the one atomic, version-checked DB RPC and never directly edits a journal", async () => {
+    const client = db();
+    await save({ data: input, context: { supabase: client, userId } });
+    expect(calls).toEqual(expect.arrayContaining([
+      ["rpc","save_ai_journal_review",expect.objectContaining({
+        _company_id: companyId,
+        _journal_id: journalId,
+        _case_id: caseId,
+        _action: "comment",
+        _expected_version: 1,
+      })],
+    ]));
+    expect(calls.some((c) => c[0] === "from")).toBe(false);
+  });
+
+  it("requires reviewer permissions for assignments and completed sign-off", async () => {
+    const client = db();
+    await save({ data: { ...input, action: "assign", assignedTo: userId }, context: { supabase: client, userId } });
+    expect(assertCompanyPermission).toHaveBeenCalledWith(client, companyId, "ai.apply_suggestion");
+    expect(assertCompanyPermission).toHaveBeenCalledWith(client, companyId, "members.view");
+    vi.clearAllMocks();
+    await save({ data: { ...input, action: "sign_off" }, context: { supabase: client, userId } });
+    expect(assertCompanyPermission).toHaveBeenCalledWith(client, companyId, "ai.apply_suggestion");
+  });
+
+  it("rejects invalid review actions and unrecognised company IDs before RPC", async () => {
+    await expect(save({
+      data: { ...input, action: "post_journal" },
+      context: { supabase: db(), userId },
+    })).rejects.toThrow();
+    await expect(save({
+      data: { ...input, companyId: "malformed" },
+      context: { supabase: db(), userId },
+    })).rejects.toThrow();
+    expect(calls).toHaveLength(0);
+  });
+
+  it("scopes event history to the company and selected review case", async () => {
+    const client = db();
+    await history({ data: { companyId, caseId }, context: { supabase: client, userId } });
+    expect(calls).toEqual(expect.arrayContaining([
+      ["from","ai_journal_review_cases"],
+      ["eq","company_id",companyId],
+      ["eq","id",caseId],
+      ["from","ai_journal_review_events"],
+      ["eq","case_id",caseId],
+    ]));
+  });
+
+  it("supports a server-filtered assigned-to-me queue without exposing other tenants", async () => {
+    const client = db();
+    await list({ data: { companyId, page: 1, status: "assigned", assignedToMe: true }, context: { supabase: client, userId } });
+    expect(calls).toEqual(expect.arrayContaining([
+      ["eq","company_id",companyId],
+      ["eq","status","assigned"],
+      ["eq","assigned_to",userId],
+    ]));
+  });
+});

@@ -25,6 +25,7 @@ import { useFormat } from "@/hooks/use-format";
 import { DocumentReviewQueue } from "@/components/documents/DocumentReviewQueue";
 import { DocumentEmailInbox } from "@/components/documents/DocumentEmailInbox";
 import { DocumentClassificationPanel } from "@/components/documents/DocumentClassificationPanel";
+import { DocumentVersionHistory } from "@/components/documents/DocumentVersionHistory";
 import { listDocumentTags } from "@/lib/documents/file-classification.functions";
 import { FILE_CATEGORIES, FILE_CATEGORY_LABELS, type FileCategory } from "@/lib/documents/file-classification";
 import {
@@ -40,7 +41,9 @@ import {
 import {
   ATTACHMENT_ENTITIES,
   ATTACHMENT_ENTITY_TYPES,
+  COMPANY_DOCUMENTS_BUCKET,
   FILE_INPUT_ACCEPT,
+  isAttachmentEntityType,
   MAX_FILE_BYTES,
   formatFileSize,
   validateUpload,
@@ -1229,6 +1232,18 @@ function FilesPage() {
             attachmentId={selected.id}
             canManage={canManage(selected.entity_type)}
           />
+          {selected.storage_bucket === COMPANY_DOCUMENTS_BUCKET &&
+          isAttachmentEntityType(selected.entity_type) ? (
+            <DocumentVersionHistory
+              key={`versions:${companyId}:${selected.id}`}
+              companyId={companyId}
+              attachmentId={selected.id}
+              entityType={selected.entity_type}
+              entityId={selected.entity_id}
+              currentName={selected.file_name}
+              canManage={canManage(selected.entity_type)}
+            />
+          ) : null}
           <div className="mt-3 flex flex-wrap gap-2">
             <Button
               size="sm"

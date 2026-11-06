@@ -117,13 +117,13 @@ describe("Payroll payment GL service access and bounded evidence", () => {
   });
   it("rejects over-bound allocation and journal evidence rather than returning a partial pass", async () => {
     tables["payroll_payment_allocations"] = Array.from({ length: 101 }, (_, i) => ({
-      ...initial["payroll_payment_allocations"]![0] as object,
+      ...(initial["payroll_payment_allocations"]![0] as object),
       id: "alloc-" + i,
     }));
     await expect(call()).rejects.toThrow(/100 allocations/);
     tables["payroll_payment_allocations"] = [...initial["payroll_payment_allocations"]!];
     tables["journal_lines"] = Array.from({ length: 11 }, (_, i) => ({
-      ...initial["journal_lines"]![0] as object,
+      ...(initial["journal_lines"]![0] as object),
       id: "line-" + i, line_no: i + 1,
     }));
     await expect(call()).rejects.toThrow(/GL exceeds ten lines/);
@@ -144,9 +144,9 @@ describe("Payroll payment GL service access and bounded evidence", () => {
     tables["journals"] = [{ ...original, reversed_by_journal_id: reversalId }, reversal];
     tables["journal_lines"] = [
       ...initial["journal_lines"]!,
-      { ...initial["journal_lines"]![0] as object, id: "rev1", journal_id: reversalId,
+      { ...(initial["journal_lines"]![0] as object), id: "rev1", journal_id: reversalId,
         debit_minor: "0", credit_minor: "1000" },
-      { ...initial["journal_lines"]![1] as object, id: "rev2", journal_id: reversalId,
+      { ...(initial["journal_lines"]![1] as object), id: "rev2", journal_id: reversalId,
         debit_minor: "1000", credit_minor: "0" },
     ];
     await expect(call()).resolves.toMatchObject({ state: "reversed" });

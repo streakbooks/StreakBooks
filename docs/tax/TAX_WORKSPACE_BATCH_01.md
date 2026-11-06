@@ -419,3 +419,13 @@ remain unverified. No main merge or production deployment.
   unlinked credit-note lines later receive tax-code identifiers.
 - GitHub CI was deliberately not triggered. PR #110 remains a draft; no
   main merge or production deployment is claimed.
+
+
+### Batch 08 test harness refinement
+The posting race harness now keeps each posting transaction open until the
+controller has observed the competing UPDATE sessions waiting on PostgreSQL
+row locks, then issues an explicit COMMIT. This removes timing-dependent
+`pg_sleep` delays. The harness includes sales invoices, purchase bills,
+customer/supplier credit notes and direct expenses. Static JavaScript parsing
+and SQL dollar-quote checks passed in this development environment; the
+PostgreSQL runner itself remains unexecuted.

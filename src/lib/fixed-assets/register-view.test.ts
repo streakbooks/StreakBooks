@@ -150,6 +150,16 @@ describe("Fixed asset as-at totals", () => {
     });
   });
 
+  it("flags accumulated depreciation that exceeds cost", () => {
+    expect(
+      summariseActiveAssets(rows, "2026-11-06", new Map([["current", 10001]])),
+    ).toMatchObject({
+      costMinor: 10000,
+      accumulatedMinor: null,
+      netBookValueMinor: null,
+    });
+  });
+
   it("includes an asset only until its disposal date", () => {
     const futureDisposal = asset("end", "Will be disposed", {
       status: "disposed",

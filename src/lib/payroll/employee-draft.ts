@@ -1,6 +1,7 @@
 import { toMinorUnits } from "@/lib/accounting/money";
 import { percentStringToBps } from "@/components/sales/sales-form-utils";
 import { toCsv } from "@/lib/sales/csv";
+import { readPayrollCsvRecords } from "@/lib/payroll/employee-csv-records";
 import {
   EMPLOYEE_STATUSES,
   EMPLOYMENT_TYPES,
@@ -409,61 +410,34 @@ export function payrollEmployeesToCsv(employees: PayrollEmployeeRow[]): string {
   );
 }
 
-function splitCsvLine(line: string): string[] {
-  const cells: string[] = [];
-  let current = "";
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i += 1) {
-    const ch = line[i]!;
-    if (inQuotes) {
-      if (ch === '"' && line[i + 1] === '"') {
-        current += '"';
-        i += 1;
-      } else if (ch === '"') {
-        inQuotes = false;
-      } else {
-        current += ch;
-      }
-      continue;
-    }
-    if (ch === '"') {
-      inQuotes = true;
-      continue;
-    }
-    if (ch === ",") {
-      cells.push(current);
-      current = "";
-      continue;
-    }
-    current += ch;
-  }
-  cells.push(current);
-  return cells.map((cell) => cell.replace(/^\uFEFF/, "").trim());
-}
-
-/** Parse the Batch 2 employee export format into create drafts. */
+/** Parse the employee export format safely before any server writes occur. */
 export function parsePayrollEmployeesCsv(
   csvText: string,
   defaults: { country: string; currency: string },
 ): { ok: true; drafts: PayrollEmployeeDraft[] } | { ok: false; error: string } {
-  const lines = csvText
-    .replace(/^\uFEFF/, "")
-    .split(/\r?\n/)
-    .map((line) => line.trimEnd())
-    .filter((line) => line.length > 0);
-  if (lines.length < 2)
+  const parsedCsv = readPayrollCsvRecords(csvText);
+  if (!parsedCsv.ok) return parsedCsv;
+  const records = parsedCsv.records;
+  if (records.length < 2) {
     return { ok: false, error: "CSV must include a header row and at least one employee." };
-  const header = splitCsvLine(lines[0]!).map((h) => h.toLowerCase());
+  }
+  const header = records[0]!.cells.map((h) => h.toLowerCase());
+  const distinct = header.filter((h) => h !== "");
+  if (distinct.length !== new Set(distinct).size) {
+    return { ok: false, error: "CSV contains duplicate column headings." };
+  }
   const idx = (name: string) => header.indexOf(name.toLowerCase());
   const required = ["First name", "Last name", "Hire date"] as const;
   for (const label of required) {
     if (idx(label) < 0) return { ok: false, error: `CSV is missing required column: ${label}.` };
   }
   const drafts: PayrollEmployeeDraft[] = [];
-  for (let rowNo = 1; rowNo < lines.length; rowNo += 1) {
-    const cells = splitCsvLine(lines[rowNo]!);
+  const usedIds = new Set<string>();
+  for (const row of records.slice(1)) {
+    const cells = row.cells;
     const get = (label: string) => {
       const i = idx(label);
+      // CSV exports prefix leading formula-like values with a single quote.
       return i >= 0 ? (cells[i] ?? "").replace(/^'/, "") : "";
     };
     const draft: PayrollEmployeeDraft = {
@@ -483,11 +457,17 @@ export function parsePayrollEmployeesCsv(
       employmentType: (get("Employment type") ||
         "salaried") as PayrollEmployeeDraft["employmentType"],
       workLocation: get("Work location"),
-      paymentMethod: assertPaymentMethod(get("Payment method") || "bank_transfer"),
+      paymentMethod: (get("Payment method") ||
+        "bank_transfer") as PayrollEmployeeDraft["paymentMethod"],
     };
-    const parsed = parsePayrollEmployeeDraft(draft);
-    if (!parsed.ok) {
-      return { ok: false, error: `Row ${rowNo + 1}: ${parsed.error}` };
+    const validated = parsePayrollEmployeeDraft(draft);
+    if (!validated.ok) return { ok: false, error: `Line ${row.line}: ${validated.error}` };
+    const number = draft.employeeNumber.trim();
+    if (number) {
+      if (usedIds.has(number)) {
+        return { ok: false, error: `Line ${row.line}: Employee ID ${number} appears more than once.` };
+      }
+      usedIds.add(number);
     }
     drafts.push(draft);
   }

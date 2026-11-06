@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AdvisorsRouteImport } from './routes/advisors'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as PortalRouteRouteImport } from './routes/portal/route'
@@ -37,6 +38,7 @@ import { Route as AuthenticatedRecurringJournalsRouteImport } from './routes/_au
 import { Route as AuthenticatedSalesRouteRouteImport } from './routes/_authenticated/sales/route'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedTaxRouteImport } from './routes/_authenticated/tax'
+import { Route as AdvisorsServiceCodeRouteImport } from './routes/advisors_.$serviceCode'
 import { Route as AuthCallbackRouteImport } from './routes/auth_.callback'
 import { Route as AuthMfaRouteImport } from './routes/auth_.mfa'
 import { Route as AuthSsoRouteImport } from './routes/auth_.sso'
@@ -153,6 +155,11 @@ import { Route as AuthenticatedSalesQuotesQuoteIdEditRouteImport } from './route
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdvisorsRoute = AdvisorsRouteImport.update({
+  id: '/advisors',
+  path: '/advisors',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -297,6 +304,11 @@ const AuthenticatedTaxRoute = AuthenticatedTaxRouteImport.update({
   id: '/tax',
   path: '/tax',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AdvisorsServiceCodeRoute = AdvisorsServiceCodeRouteImport.update({
+  id: '/advisors_/$serviceCode',
+  path: '/advisors/$serviceCode',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/auth_/callback',
@@ -957,6 +969,7 @@ const AuthenticatedSalesQuotesQuoteIdEditRoute =
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/portal': typeof PortalRouteRouteWithChildren
+  '/advisors': typeof AdvisorsRoute
   '/auth': typeof AuthRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/pricing': typeof PricingRoute
@@ -983,6 +996,7 @@ export interface FileRoutesByFullPath {
   '/recurring-journals': typeof AuthenticatedRecurringJournalsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/tax': typeof AuthenticatedTaxRoute
+  '/advisors/$serviceCode': typeof AdvisorsServiceCodeRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/mfa': typeof AuthMfaRoute
   '/auth/sso': typeof AuthSsoRoute
@@ -1097,6 +1111,7 @@ export interface FileRoutesByFullPath {
   '/sales/quotes/$quoteId/': typeof AuthenticatedSalesQuotesQuoteIdIndexRoute
 }
 export interface FileRoutesByTo {
+  '/advisors': typeof AdvisorsRoute
   '/auth': typeof AuthRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/pricing': typeof PricingRoute
@@ -1117,6 +1132,7 @@ export interface FileRoutesByTo {
   '/recurring-journals': typeof AuthenticatedRecurringJournalsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/tax': typeof AuthenticatedTaxRoute
+  '/advisors/$serviceCode': typeof AdvisorsServiceCodeRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/mfa': typeof AuthMfaRoute
   '/auth/sso': typeof AuthSsoRoute
@@ -1232,6 +1248,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/portal': typeof PortalRouteRouteWithChildren
+  '/advisors': typeof AdvisorsRoute
   '/auth': typeof AuthRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/pricing': typeof PricingRoute
@@ -1258,6 +1275,7 @@ export interface FileRoutesById {
   '/_authenticated/recurring-journals': typeof AuthenticatedRecurringJournalsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/tax': typeof AuthenticatedTaxRoute
+  '/advisors_/$serviceCode': typeof AdvisorsServiceCodeRoute
   '/auth_/callback': typeof AuthCallbackRoute
   '/auth_/mfa': typeof AuthMfaRoute
   '/auth_/sso': typeof AuthSsoRoute
@@ -1377,6 +1395,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/portal'
+    | '/advisors'
     | '/auth'
     | '/forgot-password'
     | '/pricing'
@@ -1403,6 +1422,7 @@ export interface FileRouteTypes {
     | '/recurring-journals'
     | '/settings'
     | '/tax'
+    | '/advisors/$serviceCode'
     | '/auth/callback'
     | '/auth/mfa'
     | '/auth/sso'
@@ -1517,6 +1537,7 @@ export interface FileRouteTypes {
     | '/sales/quotes/$quoteId/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/advisors'
     | '/auth'
     | '/forgot-password'
     | '/pricing'
@@ -1537,6 +1558,7 @@ export interface FileRouteTypes {
     | '/recurring-journals'
     | '/settings'
     | '/tax'
+    | '/advisors/$serviceCode'
     | '/auth/callback'
     | '/auth/mfa'
     | '/auth/sso'
@@ -1651,6 +1673,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_authenticated'
     | '/portal'
+    | '/advisors'
     | '/auth'
     | '/forgot-password'
     | '/pricing'
@@ -1677,6 +1700,7 @@ export interface FileRouteTypes {
     | '/_authenticated/recurring-journals'
     | '/_authenticated/settings'
     | '/_authenticated/tax'
+    | '/advisors_/$serviceCode'
     | '/auth_/callback'
     | '/auth_/mfa'
     | '/auth_/sso'
@@ -1795,10 +1819,12 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   PortalRouteRoute: typeof PortalRouteRouteWithChildren
+  AdvisorsRoute: typeof AdvisorsRoute
   AuthRoute: typeof AuthRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   PricingRoute: typeof PricingRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  AdvisorsServiceCodeRoute: typeof AdvisorsServiceCodeRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthMfaRoute: typeof AuthMfaRoute
   AuthSsoRoute: typeof AuthSsoRoute
@@ -1813,6 +1839,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/advisors': {
+      id: '/advisors'
+      path: '/advisors'
+      fullPath: '/advisors'
+      preLoaderRoute: typeof AdvisorsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -2003,6 +2036,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/tax'
       preLoaderRoute: typeof AuthenticatedTaxRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/advisors_/$serviceCode': {
+      id: '/advisors_/$serviceCode'
+      path: '/advisors/$serviceCode'
+      fullPath: '/advisors/$serviceCode'
+      preLoaderRoute: typeof AdvisorsServiceCodeRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/auth_/callback': {
       id: '/auth_/callback'
@@ -3249,10 +3289,12 @@ const PortalRouteRouteWithChildren = PortalRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   PortalRouteRoute: PortalRouteRouteWithChildren,
+  AdvisorsRoute: AdvisorsRoute,
   AuthRoute: AuthRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   PricingRoute: PricingRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  AdvisorsServiceCodeRoute: AdvisorsServiceCodeRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AuthMfaRoute: AuthMfaRoute,
   AuthSsoRoute: AuthSsoRoute,

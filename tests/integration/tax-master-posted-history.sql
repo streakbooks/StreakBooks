@@ -30,6 +30,13 @@ SELECT public.assert_tax_raises(
    WHERE id='30000000-0000-4000-8000-000000000001'$$,
  '%must belong to this organisation%');
 
+-- A draft cannot use a foreign-company code even when the code exists.
+SELECT public.assert_tax_raises(
+ $UPDATE public.sales_invoice_lines
+   SET tax_code_id='30000000-0000-4000-8000-000000000002'
+   WHERE id='60000000-0000-4000-8000-000000000001'$,
+ '%must belong to the source organisation%');
+
 -- Turn the existing draft into a posted source; no actual journals needed for
 -- this fixture because the trigger only checks posted_journal_id presence.
 UPDATE public.sales_invoices
@@ -64,6 +71,27 @@ SELECT public.assert_tax_raises(
    WHERE id='20000000-0000-4000-8000-000000000001'$$,
  '%last posted document date%');
 
+-- Source-line amount/classification changes cannot bypass tax master history.
+SELECT public.assert_tax_raises(
+ $UPDATE public.sales_invoice_lines SET tax_code_id=NULL
+   WHERE id='60000000-0000-4000-8000-000000000001'$,
+ '%Posted tax source lines are immutable%');
+SELECT public.assert_tax_raises(
+ $DELETE FROM public.sales_invoice_lines
+   WHERE id='60000000-0000-4000-8000-000000000001'$,
+ '%Posted tax source lines are immutable%');
+SELECT public.assert_tax_raises(
+ $INSERT INTO public.sales_invoice_lines(id,company_id,invoice_id,tax_code_id)
+   VALUES ('60000000-0000-4000-8000-000000000003',
+           '10000000-0000-4000-8000-000000000001',
+           '50000000-0000-4000-8000-000000000001',
+           '30000000-0000-4000-8000-000000000001')$,
+ '%Posted tax source lines are immutable%');
+SELECT public.assert_tax_raises(
+ $UPDATE public.sales_invoices SET posted_journal_id=NULL
+   WHERE id='50000000-0000-4000-8000-000000000001'$,
+ '%Cannot replace or remove posting evidence%');
+
 -- Name corrections, deactivation and a valid end date remain available.
 UPDATE public.tax_codes SET name='Renamed VAT', is_active=false
  WHERE id='30000000-0000-4000-8000-000000000001';
@@ -82,14 +110,21 @@ SELECT public.assert_tax_raises(
 INSERT INTO public.purchase_bills(id,company_id,bill_date,status,posted_journal_id)
 VALUES('50000000-0000-4000-8000-000000000002',
        '10000000-0000-4000-8000-000000000002',
-       '2026-05-01','paid','70000000-0000-4000-8000-000000000002');
+       '2026-05-01','draft',NULL);
 INSERT INTO public.purchase_bill_lines(id,company_id,bill_id,tax_code_id)
 VALUES('60000000-0000-4000-8000-000000000002',
        '10000000-0000-4000-8000-000000000002',
        '50000000-0000-4000-8000-000000000002',
        '30000000-0000-4000-8000-000000000002');
+UPDATE public.purchase_bills SET status='paid',
+ posted_journal_id='70000000-0000-4000-8000-000000000002'
+ WHERE id='50000000-0000-4000-8000-000000000002';
 SELECT public.assert_tax_raises(
- $$UPDATE public.tax_codes SET is_recoverable=false
+ $UPDATE public.purchase_bill_lines SET tax_code_id=NULL
+   WHERE id='60000000-0000-4000-8000-000000000002'$,
+ '%Posted tax source lines are immutable%');
+SELECT public.assert_tax_raises(
+ $UPDATE public.tax_codes SET is_recoverable=false
    WHERE id='30000000-0000-4000-8000-000000000002'$$,
  '%posted documents%');
 SELECT public.assert_tax_raises(

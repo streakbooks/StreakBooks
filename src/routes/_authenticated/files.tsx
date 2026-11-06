@@ -50,6 +50,7 @@ import {
 } from "@/lib/documents/folders.functions";
 import { folderAncestors, folderDisplayPath, possibleParentFolders } from "@/lib/documents/folder-tree";
 import {
+  combinePossibleDuplicateFlags,
   internalFileUrl,
   repeatedUploadFlags,
   selectUploadIndexes,
@@ -380,7 +381,7 @@ function FilesPage() {
         setPendingUploadReview({ ...input, flags: localFlags, scanFailed: true });
         return;
       }
-      const flags = localFlags.map((flag, index) => flag || result.possibleMatches[index] === true);
+      const flags = combinePossibleDuplicateFlags(localFlags, result.possibleMatches);
       if (flags.some(Boolean)) setPendingUploadReview({ ...input, flags, scanFailed: false });
       else uploadM.mutate(input);
     },

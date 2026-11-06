@@ -4,7 +4,7 @@ import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-compa
 import { assertUuid } from "@/lib/company-validation";
 import { postJournal, reverseJournal } from "@/lib/accounting/posting-engine";
 import { journalPageRange } from "@/lib/accounting/journal-paging";
-import { sumJournalDebits } from "@/lib/accounting/journal-amounts";
+import { exactJournalMinor, sumJournalDebits } from "@/lib/accounting/journal-amounts";
 import { assertManualJournalPosting } from "@/lib/accounting/manual-journal-posting";
 
 function companyIdInput(input: { companyId: string }) {
@@ -212,8 +212,8 @@ export const getJournalDetail = createServerFn({ method: "GET" })
         id: string;
         line_no: number;
         description: string | null;
-        debit_minor: number;
-        credit_minor: number;
+        debit_minor: number | string;
+        credit_minor: number | string;
         accounts: { code: string; name: string } | null;
       }>;
     };
@@ -227,8 +227,8 @@ export const getJournalDetail = createServerFn({ method: "GET" })
           id: l.id,
           line_no: l.line_no,
           description: l.description,
-          debit_minor: Number(l.debit_minor),
-          credit_minor: Number(l.credit_minor),
+          debit_minor: exactJournalMinor(l.debit_minor, "Journal line debit"),
+          credit_minor: exactJournalMinor(l.credit_minor, "Journal line credit"),
           account_code: l.accounts?.code ?? "",
           account_name: l.accounts?.name ?? "",
         })),

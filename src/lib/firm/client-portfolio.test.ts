@@ -77,6 +77,16 @@ describe("firm client directory review and layout", () => {
       next_review_date: null,
     },
   ];
+  function ids(
+    options: NonNullable<Parameters<typeof filterFirmClients>[4]> = {},
+    status: Parameters<typeof filterFirmClients>[3] = "all",
+    search = "",
+  ): string[] {
+    return filterFirmClients(portfolio, scheduled, search, status, {
+      ...options,
+      today: "2026-11-06",
+    }).map((row) => row.id);
+  }
 
   it("uses local calendar dates and classifies due, upcoming and unscheduled reviews", () => {
     expect(localFirmDate(new Date(2026, 10, 6, 0, 15))).toBe("2026-11-06");
@@ -85,39 +95,29 @@ describe("firm client directory review and layout", () => {
     expect(firmClientReviewState(null, "2026-11-06")).toBe("unscheduled");
   });
 
-  it("filters review queues separately from practice status and searches access", () => {
-    const options = { today: "2026-11-06" };
-    expect(filterFirmClients(portfolio, scheduled, "", "all", { ...options, review: "due" })
-      .map((row) => row.id)).toEqual(["b"]);
-    expect(filterFirmClients(portfolio, scheduled, "", "all", { ...options, review: "upcoming" })
-      .map((row) => row.id)).toEqual(["a"]);
-    expect(filterFirmClients(portfolio, scheduled, "", "all", { ...options, review: "unscheduled" })
-      .map((row) => row.id)).toEqual(["c"]);
-    expect(filterFirmClients(portfolio, scheduled, "", "active", { ...options, review: "due" })
-      .map((row) => row.id)).toEqual(["b"]);
-    expect(filterFirmClients(portfolio, scheduled, "view", "all").map((row) => row.id))
-      .toEqual(["b", "c"]);
+  it("filters reviews independently from practice status and searches access", () => {
+    expect(ids({ review: "due" })).toEqual(["b"]);
+    expect(ids({ review: "upcoming" })).toEqual(["a"]);
+    expect(ids({ review: "unscheduled" })).toEqual(["c"]);
+    expect(ids({ review: "due" }, "active")).toEqual(["b"]);
+    expect(ids({}, "all", "view")).toEqual(["b", "c"]);
   });
 
-  it("sorts review dates with unscheduled last, and permits reverse name ordering", () => {
-    expect(filterFirmClients(portfolio, scheduled, "", "all", { sort: "review" })
-      .map((row) => row.id)).toEqual(["b", "a", "c"]);
-    expect(filterFirmClients(portfolio, scheduled, "", "all", { sort: "review_desc" })
-      .map((row) => row.id)).toEqual(["a", "b", "c"]);
-    expect(filterFirmClients(portfolio, scheduled, "", "all", { sort: "name_desc" })
-      .map((row) => row.id)).toEqual(["a", "c", "b"]);
-    expect(filterFirmClients(portfolio, scheduled, "", "all", { sort: "service" })
-      .map((row) => row.id)).toEqual(["a", "b", "c"]);
+  it("sorts review dates with unscheduled last, and supports reverse name sorting", () => {
+    expect(ids({ sort: "review" })).toEqual(["b", "a", "c"]);
+    expect(ids({ sort: "review_desc" })).toEqual(["a", "b", "c"]);
+    expect(ids({ sort: "name_desc" })).toEqual(["a", "c", "b"]);
+    expect(ids({ sort: "service" })).toEqual(["a", "b", "c"]);
   });
 
   it("normalises saved columns and safely restores defaults", () => {
     expect(normalizeFirmClientColumns("malformed")).toEqual(DEFAULT_FIRM_CLIENT_COLUMNS);
-    expect(normalizeFirmClientColumns(["tags", "tags", "__unknown__", "email"]))
-      .toEqual(["tags", "email"]);
+    expect(normalizeFirmClientColumns(["tags", "tags", "__unknown__", "email"])).toEqual([
+      "tags",
+      "email",
+    ]);
     expect(normalizeFirmClientColumns([])).toEqual([]);
-    expect(toggleFirmClientColumn(["status", "review"], "review", false))
-      .toEqual(["status"]);
-    expect(toggleFirmClientColumn(["status"], "tags", true))
-      .toEqual(["status", "tags"]);
+    expect(toggleFirmClientColumn(["status", "review"], "review", false)).toEqual(["status"]);
+    expect(toggleFirmClientColumn(["status"], "tags", true)).toEqual(["status", "tags"]);
   });
 });

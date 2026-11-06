@@ -11,6 +11,7 @@ import { fromMinorUnits } from "@/lib/accounting/money";
 import { todayLocalDateOnly } from "@/lib/payroll/local-date";
 import { buildGenericPayrollBankCsv } from "@/lib/payroll/payroll-bank-export";
 import { parsePayrollPaymentEntry } from "@/lib/payroll/payment-form-draft";
+import { payrollClearingCurrencyMismatch } from "@/lib/payroll/clearing-currency";
 import { getPayrollSettingsPage } from "@/lib/payroll/payroll.functions";
 import {
   exportPayrollBankCsvRows,
@@ -153,6 +154,19 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
     queryFn: () => fetchAccounts({ data: { companyId: company!.id } }),
     enabled: Boolean(company?.id) && canPay && recordOpen,
   });
+
+  const availableClearingAccounts = (
+    (accountsQ.data ?? []) as Array<{
+      id: string;
+      code: string;
+      name: string;
+      currency_code?: string | null;
+    }>
+  ).filter(
+    (account) => !payrollClearingCurrencyMismatch(payCurrency, account.currency_code),
+  );
+  const excludedClearingAccounts =
+    (accountsQ.data?.length ?? 0) - availableClearingAccounts.length;
 
   const openPayslips = useMemo(() => {
     const items =
@@ -581,11 +595,18 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
             </div>
             <div className="grid gap-2">
               <Label>Clearing account</Label>
+              {excludedClearingAccounts > 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  {excludedClearingAccounts} clearing account
+                  {excludedClearingAccounts === 1 ? "" : "s"} with a different currency hidden.
+                  Payroll settlements must use {payCurrency}.
+                </p>
+              ) : null}
               <AccountLookup
                 ariaLabel="Clearing account"
                 companyId={company.id}
                 accounts={
-                  (accountsQ.data ?? []) as unknown as Array<{
+                  availableClearingAccounts as unknown as Array<{
                     id: string;
                     code: string;
                     name: string;

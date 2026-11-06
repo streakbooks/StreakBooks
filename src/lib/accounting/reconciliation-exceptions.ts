@@ -10,6 +10,9 @@ import type { FxRealisedAuditResult } from "./fx-ledger-audit";
 import type { FxRunAuditReport } from "./fx-revaluation-ledger-audit";
 import type { DeferralAuditResult } from "./deferral-ledger-audit";
 import type { LiabilityRollforwardResult } from "./payroll-liability-rollforward";
+import type {
+  AssetDepreciationPostingReview, AssetDisposalPostingReview,
+} from "./fixed-asset-posting-evidence";
 import { toCsv } from "@/lib/sales/csv";
 
 export type ExceptionSource =
@@ -44,12 +47,16 @@ export type AuditCapture<T> = {
   result?: T;
   message?: string;
 };
+export type FixedAssetExceptionAudit =
+  | { kind: "depreciation"; evidence: AssetDepreciationPostingReview }
+  | { kind: "disposal"; evidence: AssetDisposalPostingReview };
 export type ExceptionInputs = {
   ledger: AuditCapture<HealthReport>;
   realisedFx: AuditCapture<FxRealisedAuditResult>;
   revaluation: AuditCapture<FxRunAuditReport>;
   deferrals: AuditCapture<DeferralAuditResult>;
   payroll: AuditCapture<LiabilityRollforwardResult>;
+  fixedAssets?: AuditCapture<FixedAssetExceptionAudit>;
 };
 export type ExceptionSnapshot = {
   findings: ExceptionFinding[];
@@ -82,7 +89,7 @@ const SOURCE: Record<ExceptionSource, { label: string; href: string; note: strin
   },
   fixed_assets: {
     label: "Fixed assets", href: "/fixed-assets",
-    note: "No merged cross-module reconciliation source connected; review within Fixed Assets",
+    note: "One selected depreciation run or disposal asset only; not a whole-register or historical account reconciliation",
   },
 };
 const ORDER: ExceptionSource[] = [
@@ -128,14 +135,15 @@ export function createExceptionSnapshot(inputs: ExceptionInputs): ExceptionSnaps
     fx_revaluation: inputs.revaluation,
     deferrals: inputs.deferrals,
     payroll: inputs.payroll,
-    fixed_assets: { state: "not_run" as const },
+    fixed_assets: inputs.fixedAssets ?? { state: "not_run" as const },
   };
   const coverage = ORDER.map((source): ExceptionCoverage => {
     const capture = captures[source];
     const isPartial =
       source === "fx_realised"
         ? Boolean(inputs.realisedFx.result?.hasMore)
-        : source === "fx_revaluation" || source === "deferrals" || source === "payroll";
+        : source === "fx_revaluation" || source === "deferrals" ||
+          source === "payroll" || source === "fixed_assets";
     const state = coverageState(capture, isPartial);
     const checkedCount =
       source === "ledger" ? inputs.ledger.result?.checks.length
@@ -143,6 +151,10 @@ export function createExceptionSnapshot(inputs: ExceptionInputs): ExceptionSnaps
       : source === "fx_revaluation" ? inputs.revaluation.result?.journalCount
       : source === "deferrals" ? inputs.deferrals.result?.entries.length
       : source === "payroll" ? inputs.payroll.result?.sourceRunCount
+      : source === "fixed_assets" && inputs.fixedAssets?.result
+        ? inputs.fixedAssets.result.kind === "depreciation"
+          ? inputs.fixedAssets.result.evidence.entryCount
+          : inputs.fixedAssets.result.evidence.depreciationEntryCount
       : null;
     const message = capture.message?.trim();
     const note = message && state === "unavailable"
@@ -223,6 +235,30 @@ export function createExceptionSnapshot(inputs: ExceptionInputs): ExceptionSnaps
       "Payroll liability requires review", message,
     )));
   }
+  const fixedAssets = inputs.fixedAssets?.state === "checked"
+    ? inputs.fixedAssets.result : undefined;
+  if (fixedAssets?.kind === "depreciation") {
+    const evidence = fixedAssets.evidence;
+    evidence.issues.forEach((message, i) => findings.push(buildFinding(
+      "fixed_assets", "depreciation:" + evidence.runId + ":issue:" + i, "error",
+      "Fixed Assets depreciation posting exception", message,
+      { reference: evidence.runId, journalId: evidence.journalId },
+    )));
+  } else if (fixedAssets?.kind === "disposal") {
+    const evidence = fixedAssets.evidence;
+    evidence.issues.forEach((message, i) => findings.push(buildFinding(
+      "fixed_assets", "disposal:" + evidence.assetId + ":issue:" + i, "error",
+      "Fixed Asset disposal posting exception", message,
+      { reference: evidence.assetId, journalId: evidence.journalId },
+    )));
+    evidence.warnings.forEach((message, i) => findings.push(buildFinding(
+      "fixed_assets", "disposal:" + evidence.assetId + ":warning:" + i, "warning",
+      "Fixed Asset disposal has limited verification", message,
+      { reference: evidence.assetId, journalId: evidence.journalId },
+    )));
+  }
+  // A clean individual run is partial portfolio coverage; a disposal is never a
+  // whole-journal classification sign-off. Do not invent a global all-clear.
   // Do not collapse separate exception sources into an apparent global pass.
   const seen = new Set<string>();
   for (const finding of findings) {

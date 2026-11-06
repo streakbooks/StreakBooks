@@ -63,7 +63,7 @@ try {
   sql(read("tests/integration/tax-schema-preflight.sql"));
   sql(read("tests/integration/tax-legacy-tenant-preflight.sql"));
   // Repeat migration to verify idempotent reapplication before data fixtures.
-  const migration = read("supabase/migrations/20261106120000_tax_master_posted_history_guard.sql");
+  const migration = read("supabase/migrations/20261107010000_tax_master_posted_history_guard.sql");
   sql(migration);
   sql(migration);
   sql(read("tests/integration/tax-master-schema-postflight.sql"));

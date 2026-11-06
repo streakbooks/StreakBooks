@@ -18,6 +18,7 @@ import {
   fileFormatMimeTypes,
   fileListProjection,
   filePreviewKind,
+  safeFilePage,
   fileSortOrder,
   parseFileFormat,
   parseFileSort,
@@ -570,7 +571,7 @@ export const listCompanyFiles = createServerFn({ method: "GET" })
       entityType: input.entityType && input.entityType !== "all" ? input.entityType : null,
       folderId: input.folderId ? assertUuid(input.folderId) : null,
       unfiledOnly: input.unfiledOnly === true,
-      page: Math.max(0, Math.floor(Number(input.page) || 0)),
+      page: safeFilePage(input.page),
       pageSize: Math.min(100, Math.max(5, Math.floor(Number(input.pageSize) || 25))),
     }),
   )

@@ -172,19 +172,38 @@ export const exportAiJournalReviewAudit = createServerFn({ method: "GET" })
     if (readError || !row) throw new Error("AI review case not found or not accessible.");
     const record = row as Omit<AiJournalReviewCase,"is_assigned_to_me"|"is_my_case">;
 
-    const { data: events, error: eventsError } = await context.supabase
-      .from("ai_journal_review_events" as never)
-      .select(
-        "id,action,actor_id,note,previous_status,new_status,assigned_to,created_at" as never,
-      )
+    // PostgREST APIs can enforce a maximum returned row count. Read
+    // explicit 200-row windows rather than trusting one 5,001-row limit.
+    // No page is silently dropped; histories above 5,000 are refused.
+    const auditEvents: AiJournalReviewEvent[] = [];
+    for (let offset = 0; offset <= 5000; offset += 200) {
+      const { data: batch, error: eventsError } = await context.supabase
+        .from("ai_journal_review_events" as never)
+        .select(
+          "id,action,actor_id,note,previous_status,new_status,assigned_to,created_at" as never,
+        )
+        .eq("company_id" as never, data.companyId as never)
+        .eq("case_id" as never, data.caseId as never)
+        .order("created_at" as never, { ascending: true })
+        .order("id" as never, { ascending: true })
+        .range(offset, offset + 199);
+      if (eventsError) throw new Error("Could not retrieve the complete AI review audit history.");
+      auditEvents.push(...((batch ?? []) as AiJournalReviewEvent[]));
+      if (auditEvents.length > 5000)
+        throw new Error("Audit history exceeds 5,000 events. Export in smaller archival segments is required; no incomplete file was generated.");
+      if ((batch ?? []).length < 200) break;
+    }
+
+    // A competing reviewer may add new events during a multi-page export.
+    // Reject a stale export rather than presenting it as a fixed snapshot.
+    const { data: latest, error: versionError } = await context.supabase
+      .from("ai_journal_review_cases" as never)
+      .select("version" as never)
       .eq("company_id" as never, data.companyId as never)
-      .eq("case_id" as never, data.caseId as never)
-      .order("created_at" as never, { ascending: true })
-      .order("id" as never, { ascending: true })
-      .limit(5001);
-    if (eventsError) throw new Error("Could not retrieve the complete AI review audit history.");
-    if ((events ?? []).length > 5000)
-      throw new Error("Audit history exceeds 5,000 events. Export in smaller archival segments is required; no incomplete file was generated.");
+      .eq("id" as never, data.caseId as never)
+      .maybeSingle();
+    if (versionError || !latest || (latest as { version: number }).version !== record.version)
+      throw new Error("The AI review changed during audit export. Refresh and export again.");
 
     return {
       review: {
@@ -192,7 +211,7 @@ export const exportAiJournalReviewAudit = createServerFn({ method: "GET" })
         is_assigned_to_me: record.assigned_to === context.userId,
         is_my_case: record.created_by === context.userId,
       },
-      events: (events ?? []) as AiJournalReviewEvent[],
+      events: auditEvents,
     };
   });
 

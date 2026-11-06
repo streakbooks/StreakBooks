@@ -87,7 +87,7 @@ export function PayrollAccrualGlAudit({
               <table className="w-full text-left text-xs">
                 <thead>
                   <tr className="border-b">
-                    <th scope="col" className="p-2">GL account ID</th>
+                    <th scope="col" className="p-2">GL account</th>
                     <th scope="col" className="p-2">Side</th>
                     <th scope="col" className="p-2 text-right">Expected</th>
                     <th scope="col" className="p-2 text-right">Posted</th>
@@ -96,7 +96,7 @@ export function PayrollAccrualGlAudit({
                 <tbody>
                   {audit.data.accounts.map((row) => (
                     <tr key={row.accountId + row.side} className="border-b">
-                      <td className="p-2 font-mono">{row.accountId}</td>
+                      <td className="p-2"><span className="font-medium">{row.accountCode ? row.accountCode + " · " + (row.accountName ?? "") : "Unverified account"}</span><span className="block text-muted-foreground font-mono">{row.accountId}</span></td>
                       <td className="p-2">{row.side}</td>
                       <td className="p-2 text-right font-mono">{row.expectedMinor}</td>
                       <td className={"p-2 text-right font-mono " + (row.matched ? "" : "text-destructive font-semibold")}>

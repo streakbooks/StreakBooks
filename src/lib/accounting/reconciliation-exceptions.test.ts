@@ -168,8 +168,11 @@ describe("reconciliation centre evidence boundaries", () => {
     expect(unreviewed).toHaveLength(result.findings.length - 1);
   });
   it("exports all coverage rows and neutralises spreadsheet formula injections", () => {
+    const formula = { ...health, checks: [
+      { ...health.checks[0]!, summary: "=CMD('danger')" },
+    ] };
     const result = createExceptionSnapshot({
-      ...unrun, ledger: { state: "checked", result: health },
+      ...unrun, ledger: { state: "checked", result: formula },
     });
     const csv = exceptionSnapshotCsv(result, new Set());
     expect(csv).toContain("Fixed assets");

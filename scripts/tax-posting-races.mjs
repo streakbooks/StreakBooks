@@ -66,6 +66,48 @@ function beginPosting(host, container, update, marker) {
   return {ready,completed};
 }
 
+/**
+ * Start the master/line UPDATE while the posting transaction still holds its
+ * locks. The pending UPDATE MUST reject the now-posted source after commit,
+ * rather than using the snapshot from when the UPDATE originally began.
+ */
+function beginPendingEdit(host,container,statement,marker) {
+  const child=spawn("docker",[host,"exec","-i",container,...PSQL],
+    {stdio:["pipe","pipe","pipe"]});
+  let stdout="",stderr="",readyMarked=false;
+  let resolveReady,rejectReady;
+  const ready=new Promise((resolve,reject)=>{
+    resolveReady=resolve;rejectReady=reject;
+  });
+  const timeout=setTimeout(()=>child.kill(),15000);
+  const completed=new Promise((resolve,reject)=>{
+    child.on("error",(error)=>{
+      if(!readyMarked)rejectReady(error);
+      reject(error);
+    });
+    child.on("close",(code)=>{
+      clearTimeout(timeout);
+      if(!readyMarked)rejectReady(new Error("Edit did not reach marker: "+stderr));
+      resolve({code,stderr});
+    });
+  });
+  child.stdout.on("data",(chunk)=>{
+    stdout+=String(chunk);
+    if(!readyMarked&&stdout.includes(marker)) {
+      readyMarked=true;
+      resolveReady();
+    }
+  });
+  child.stderr.on("data",(chunk)=>{stderr+=String(chunk);});
+  child.stdin.end("SELECT '"+marker+"';\n"+statement+"\n");
+  return {ready,completed};
+}
+
+function mustRejectAfterCommit(result,label) {
+  check(result.code!==0&&/posted documents|Posted tax source lines are immutable/i.test(result.stderr),
+    label+" used stale posting history or another unexpected error: "+result.stderr);
+}
+
 function mustWait(host,container,statement,label){
   const r=sql(host,container,"SET lock_timeout = '650ms';\n"+statement);
   check(!r.ok&&/canceling statement due to lock timeout/i.test(r.output),
@@ -102,8 +144,21 @@ export async function verifyTaxPostingRaces(host,container) {
   mustWait(host,container,
     "UPDATE public.tax_codes SET is_recoverable=false WHERE id="+code+";",
     "Code edit");
+  // Both UPDATE statements start before A commits, and wait for its locks.
+  // This specifically catches STABLE versus VOLATILE history-lookup mistakes.
+  const pendingRate=beginPendingEdit(host,container,
+    "UPDATE public.tax_rates SET rate_bps=1800 WHERE id="+rate+";",
+    "RATE_EDIT_QUEUED");
+  const pendingCode=beginPendingEdit(host,container,
+    "UPDATE public.tax_codes SET is_recoverable=false WHERE id="+code+";",
+    "CODE_EDIT_QUEUED");
+  await Promise.all([pendingRate.ready,pendingCode.ready]);
   await a.completed;
   verifyPosted(host,container,invoiceA);
+  mustRejectAfterCommit(await pendingRate.completed,
+    "Rate edit queued before posting commit");
+  mustRejectAfterCommit(await pendingCode.completed,
+    "Code edit queued before posting commit");
   mustReject(host,container,
     "UPDATE public.tax_rates SET rate_bps=1800 WHERE id="+rate+";",
     "Rate edit");
@@ -119,8 +174,14 @@ export async function verifyTaxPostingRaces(host,container) {
   mustWait(host,container,
     "UPDATE public.sales_invoice_lines SET tax_code_id=NULL WHERE id="+line+";",
     "Source line edit");
+  const pendingLine=beginPendingEdit(host,container,
+    "UPDATE public.sales_invoice_lines SET tax_code_id=NULL WHERE id="+line+";",
+    "LINE_EDIT_QUEUED");
+  await pendingLine.ready;
   await b.completed;
   verifyPosted(host,container,invoiceB);
+  mustRejectAfterCommit(await pendingLine.completed,
+    "Source edit queued before posting commit");
   mustReject(host,container,
     "UPDATE public.sales_invoice_lines SET tax_code_id=NULL WHERE id="+line+";",
     "Source line edit");

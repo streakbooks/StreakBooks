@@ -23,3 +23,6 @@ supabase/.profiles/
 *.log
 .vscode/
 .idea/
+
+# Local-only verification evidence (may include private repository metadata)
+artifacts/firm-onboarding-local-release-*.json

@@ -67,3 +67,34 @@ calculate ledger values. The server API independently enforces
   next review step. They are not forwarded to the AI provider by this panel.
 - This phase does not introduce a new database table, migration, posting action,
   scheduled automation or source-document attachment.
+
+
+## 7. Accounting evidence explorer (human review)
+
+The AI Assistant also includes a read-only **Accounting evidence explorer**. It
+reuses the Reports Centre's authorised \`getJournalReport\` and
+\`getAccountTransactions\` server functions; the browser does not query a new
+unprotected ledger API or ask the language model to reconstruct journal entries.
+
+- Requires both \`ai.use\` and \`reports.view\` UI permissions. The reporting
+  API enforces \`reports.view\` again on the server; company scoping and database
+  RLS remain authoritative.
+- Posted journal filters include date range, source type and paginated journal
+  rows. Every journal links to its original Accounting record, and supported
+  source documents link back to Sales, Purchases or Expenses.
+- Account investigations expose one chart-of-accounts selection at a time.
+  Opening/closing balances are reported by the existing account transactions
+  API, and line-level movement pages link to the journal and its source.
+- The only journal integrity signals compare posted debit and credit totals,
+  without asserting correctness of tax, classification, documentary support,
+  reconciliation, or period cut-off. This is not an audit opinion.
+- Any browser value outside safe-integer precision is labelled unavailable
+  instead of being formatted with false numeric certainty. Mixed-currency
+  journal pages do not display an aggregate monetary total.
+- Journal page totals cover **only the displayed page**. Account opening and
+  closing balances cover the selected date range under the API's reporting
+  basis. They must not be confused with one another.
+- The explorer has no posting, reversal, journal-editing, auto-reconciliation,
+  provider call, background automation, or newly granted permission. Any
+  investigative accounting action stays in the source module's protected
+  workflow with existing human approvals.

@@ -490,7 +490,7 @@ function FixedAssetsPage() {
                   disabled={!exportReady}
                   title={
                     exportReady
-                      ? undefined
+                      ? "Exports the complete standard asset register, independent of hidden screen columns"
                       : "A complete, current depreciation balance is required to export"
                   }
                   onClick={() =>

@@ -4,6 +4,7 @@ import { loadCashReportLines } from "@/lib/reports/cash-report.server";
 import { createServerFn } from "@tanstack/react-start";
 import { prepareBudgetImportCsv } from "@/lib/imports/budget-import";
 import { buildBudgetScenarioComparison } from "@/lib/budgets/budget-scenarios";
+import { validateBudgetLockCommand } from "@/lib/budgets/budget-governance";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
@@ -236,6 +237,150 @@ export const compareBudgetScenarios = createServerFn({ method: "GET" })
         scenarioLines,
       }),
     };
+  });
+
+export type BudgetRevisionSummary = {
+  id: string;
+  version: number;
+  recorded_at: string;
+  recorded_by: string | null;
+  action: "baseline" | "created" | "updated" | "locked" | "unlocked";
+  line_count: number;
+};
+
+export type BudgetGovernanceResult = {
+  available: boolean;
+  locked: boolean;
+  reason: string | null;
+  changedAt: string | null;
+  changedBy: string | null;
+  revisions: BudgetRevisionSummary[];
+};
+
+/** Governance status is optional until its migration is deployed; existing editor stays functional. */
+export const getBudgetGovernance = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; budgetId: string }) => ({
+    companyId: companyIdOf(input),
+    budgetId: assertUuid(input?.budgetId, "budget"),
+  }))
+  .handler(async ({ data, context }): Promise<BudgetGovernanceResult> => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    const sb = context.supabase as unknown as Sb;
+    await loadBudgetHead(sb, data.companyId, data.budgetId);
+    const { data: lock, error: lockError } = await context.supabase
+      .from("budget_governance" as never)
+      .select("is_locked, reason, changed_by, changed_at" as never)
+      .eq("budget_id" as never, data.budgetId as never)
+      .eq("company_id" as never, data.companyId as never)
+      .maybeSingle();
+    if (lockError) {
+      if (isMissingRelation(lockError))
+        return {
+          available: false, locked: false, reason: null,
+          changedAt: null, changedBy: null, revisions: [],
+        };
+      throw new Error(lockError.message);
+    }
+    const { data: revisions, error: historyError } = await context.supabase
+      .from("budget_revisions" as never)
+      .select("id, version, recorded_at, recorded_by, action, line_count" as never)
+      .eq("budget_id" as never, data.budgetId as never)
+      .eq("company_id" as never, data.companyId as never)
+      .order("version" as never, { ascending: false } as never)
+      .limit(50);
+    if (historyError) {
+      if (isMissingRelation(historyError))
+        return {
+          available: false, locked: false, reason: null,
+          changedAt: null, changedBy: null, revisions: [],
+        };
+      throw new Error(historyError.message);
+    }
+    const status = lock as unknown as
+      | { is_locked: boolean; reason: string; changed_by: string | null; changed_at: string }
+      | null;
+    return {
+      available: true,
+      locked: status?.is_locked ?? false,
+      reason: status?.reason ?? null,
+      changedAt: status?.changed_at ?? null,
+      changedBy: status?.changed_by ?? null,
+      revisions: (revisions ?? []) as unknown as BudgetRevisionSummary[],
+    };
+  });
+
+/** Read a single historical snapshot; never permit reconstruction of another tenant's budgets. */
+export const getBudgetRevision = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { companyId: string; budgetId: string; revisionId: string }) => ({
+      companyId: companyIdOf(input),
+      budgetId: assertUuid(input?.budgetId, "budget"),
+      revisionId: assertUuid(input?.revisionId, "revision"),
+    }),
+  )
+  .handler(async ({ data, context }) => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    await loadBudgetHead(context.supabase as unknown as Sb, data.companyId, data.budgetId);
+    const { data: revision, error } = await context.supabase
+      .from("budget_revisions" as never)
+      .select("id, version, recorded_at, action, snapshot" as never)
+      .eq("id" as never, data.revisionId as never)
+      .eq("budget_id" as never, data.budgetId as never)
+      .eq("company_id" as never, data.companyId as never)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!revision) throw new Error("Budget revision not found.");
+    return revision as unknown as {
+      id: string;
+      version: number;
+      recorded_at: string;
+      action: BudgetRevisionSummary["action"];
+      snapshot: {
+        name: string;
+        fiscal_year_start: string;
+        notes: string | null;
+        locked: boolean;
+        lock_reason: string | null;
+        lines: Array<{
+          account_id: string;
+          account_code: string | null;
+          account_name: string | null;
+          period_month: string;
+          amount_minor: number;
+        }>;
+      };
+    };
+  });
+
+/** Lock or unlock a plan; the database enforces it across all present and future write paths. */
+export const setBudgetLock = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { companyId: string; budgetId: string; locked: boolean; reason: string }) => {
+      const command = validateBudgetLockCommand(input);
+      return {
+        companyId: companyIdOf(input),
+        budgetId: assertUuid(input.budgetId, "budget"),
+        ...command,
+      };
+    },
+  )
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "accounts.manage");
+    const locked = await callRpc<boolean>(
+      context.supabase,
+      "set_budget_lock",
+      {
+        _company_id: data.companyId,
+        _budget_id: data.budgetId,
+        _locked: data.locked,
+        _reason: data.reason,
+      },
+      "Budget governance requires migration 20261106173000_budget_governance_revisions.sql.",
+    );
+    return { locked };
   });
 
 export const saveBudget = createServerFn({ method: "POST" })

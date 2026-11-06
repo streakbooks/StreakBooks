@@ -498,3 +498,44 @@ even though only the earlier payment existed.
   authenticated RPC payment posting/idempotency/reversal and browser E2E
   verification; merge and Vercel application deployment. GitHub CI
   **not run (per user instruction)**.
+
+
+### Verified SQL payment lifecycle (November 6, 2026)
+
+The versioned `tests/integration/basic-payroll-payment-currency-guards.sql`
+fixture now exercises **the actual authenticated-context SQL Payroll payment
+RPC**, rather than only direct table writes. It was executed successfully on
+the connected Supabase PostgreSQL instance **inside an outer transaction
+that ends in ROLLBACK**. The synthetic identity and organisation exist only
+within the fixture; this is not a full browser-auth session or an isolated
+PostgreSQL instance.
+
+In addition to the previous foreign-currency payment/allocation guards,
+the fixture creates a valid balanced accrual journal with `post_journal`,
+configures the net-pay liability and salary expense accounts, then verifies:
+
+1. `record_payroll_payment` posts a new payment of 125 GBP minor units,
+   allocates 50 to a posted-run payslip, leaves 75 unallocated, and updates
+   `payroll_payslips.amount_paid_minor`.
+2. Identical idempotency-key replay returns the **same payment ID and
+   journal ID**, the unchanged unallocated amount, and `replayed=true`.
+3. Mutating any of payment amount, allocation amount, payment date, payment
+   method, clearing GL account, currency, reference or memo under the same
+   key produces the expected conflict instead of an incorrect replay.
+4. Exactly one settlement payment and one settlement journal are created
+   for the reused key.
+5. `reverse_payroll_payment` produces a reversal journal, marks the
+   payment reversed and restores the payslip paid amount to zero.
+6. Reusing the original key after reversal produces the expected conflict.
+7. Earlier base-currency/GL/bank/allocation mismatch checks still pass.
+
+**After executing the fixture:** an independent database query confirmed
+0 fixture companies, contacts, GL accounts or journals; 0 total Payroll
+payments or allocations; and the 3 Payroll currency guard triggers still
+enabled. No test payment or journal persisted.
+
+This validates the database posting/reversal paths with a *synthetic*
+user identity set within a privileged rollback-only test transaction.
+It does **not** verify real browser authentication, MFA, deployed app API,
+end-to-end UI, full project Vitest/typecheck/lint/build or Vercel release
+readiness. GitHub Actions CI was not run, per user instruction.

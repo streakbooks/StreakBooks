@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 const selectCls =
   "flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm disabled:opacity-60";
@@ -455,6 +456,7 @@ export function AssetDialog({
     v === null || v === undefined ? "" : fromMinorUnits(v, currency);
   const [name, setName] = useState(editing?.name ?? fromBillLine?.description ?? "");
   const [description, setDescription] = useState(editing?.description ?? "");
+  const [notes, setNotes] = useState(editing?.notes ?? "");
   const [typeId, setTypeId] = useState(editing?.asset_type_id ?? "");
   const [purchase, setPurchase] = useState(
     editing?.purchase_date ?? fromBillLine?.billDate ?? todayIso(),
@@ -527,7 +529,7 @@ export function AssetDialog({
           assetTypeId: typeId || null,
           name,
           description,
-          notes: editing?.notes ?? null,
+          notes: notes.trim() || null,
           purchaseDate: purchase,
           depreciationStartDate: start,
           costMinor: costMinor ?? 0,
@@ -565,8 +567,8 @@ export function AssetDialog({
         {frozen ? (
           <Alert>
             <AlertDescription>
-              Depreciation has been posted for this asset, so only the name, description and type
-              can change.
+              Depreciation has been posted for this asset, so only the name, description, notes
+              and type can change.
             </AlertDescription>
           </Alert>
         ) : null}
@@ -599,6 +601,17 @@ export function AssetDialog({
               id="asset-desc"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1 sm:col-span-2">
+            <Label htmlFor="asset-notes">Notes</Label>
+            <Textarea
+              id="asset-notes"
+              rows={3}
+              maxLength={4000}
+              placeholder="Serial number, custodian, location or maintenance notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
             />
           </div>
           <div className="space-y-1">

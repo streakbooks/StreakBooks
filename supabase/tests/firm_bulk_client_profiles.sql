@@ -101,6 +101,36 @@ BEGIN
     raise exception 'TEST: Unauthorized client template applied';
   exception when insufficient_privilege then null; end;
 
+  perform set_config('request.jwt.claims',
+    jsonb_build_object('sub',staff_id,'aal','aal2','role','authenticated')::text,true);
+  if not exists(select 1 from public.firm_service_categories
+    where firm_id=fid and id=category_id) then
+    raise exception 'Firm member cannot view service categories';
+  end if;
+  update public.firm_service_categories set is_active=false,updated_by=staff_id
+    where id=category_id;
+  if exists(select 1 from public.firm_service_categories
+    where id=category_id and is_active=false) then
+    raise exception 'Member changed service category';
+  end if;
+  update public.firm_onboarding_template_steps set is_active=true,updated_by=staff_id
+    where firm_id=fid and task_key=custom_key;
+  if exists(select 1 from public.firm_onboarding_template_steps
+    where firm_id=fid and task_key=custom_key and is_active=true) then
+    raise exception 'Member changed custom template';
+  end if;
+  begin
+    perform public.apply_firm_onboarding_template(fid,a);
+    raise exception 'TEST: Member applied custom steps';
+  exception when insufficient_privilege then null; end;
+
+  perform set_config('request.jwt.claims',
+    jsonb_build_object('sub',owner_id,'aal','aal1','role','authenticated')::text,true);
+  if exists(select 1 from public.firm_onboarding_template_steps where firm_id=fid) then
+    raise exception 'AAL1 bypassed template MFA';
+  end if;
+  perform set_config('request.jwt.claims',
+    jsonb_build_object('sub',owner_id,'aal','aal2','role','authenticated')::text,true);
   pair:=jsonb_build_array(
     jsonb_build_object('companyId',a,'expectedVersion',0),
     jsonb_build_object('companyId',b,'expectedVersion',0)

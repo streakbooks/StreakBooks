@@ -30,6 +30,7 @@ import {
   type AiIntent,
 } from "@/lib/ai/ai.functions";
 import { getAiSuggestionKind, getJournalPreview } from "@/lib/ai/suggestion-review";
+import { AiFinancialInsights } from "@/components/ai/FinancialInsights";
 import { deleteAiConversationHistory, listAiConversationHistory, type AiConversationRow } from "@/lib/ai/history.functions";
 import { PageHeader, LoadingState, ErrorState } from "@/components/common/states";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -128,6 +129,7 @@ export function AiAssistantPage() {
       currency={company.base_currency}
       canUse={roleHasPermission(company.role ?? "read_only", "ai.use")}
       canApply={roleHasPermission(company.role ?? "read_only", "ai.apply_suggestion")}
+      canViewReports={roleHasPermission(company.role ?? "read_only", "reports.view")}
     />
   );
 }
@@ -138,12 +140,14 @@ function AiAssistantWorkspace({
   currency,
   canUse,
   canApply,
+  canViewReports,
 }: {
   companyId: string;
   companyName: string;
   currency: string;
   canUse: boolean;
   canApply: boolean;
+  canViewReports: boolean;
 }) {
   const fetchStatus = useServerFn(getAiAssistantStatus);
   const runAssist = useServerFn(runAiAssistant);
@@ -549,6 +553,13 @@ function AiAssistantWorkspace({
           </Card>
         </div>
       </div>
+
+      <AiFinancialInsights
+        companyId={companyId}
+        currency={currency}
+        canUse={canUse}
+        canViewReports={canViewReports}
+      />
 
       <Card className="mt-5">
         <CardHeader>

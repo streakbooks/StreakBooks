@@ -9,6 +9,7 @@ import { useCanDo } from "@/hooks/use-can";
 import { useDebounced } from "@/hooks/use-debounced";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { downloadCsv } from "@/lib/reports/csv";
+import { planPayrollEmployeeImport } from "@/lib/payroll/employee-import-plan";
 import {
   emptyEmployeeDraft,
   parsePayrollEmployeesCsv,
@@ -205,15 +206,13 @@ export function PayrollEmployeesPage() {
       const current = await fetchList({ data: { companyId: company.id, status: null, q: null } });
       if (!current.available) throw new Error(current.migrationMessage ?? "Employee data unavailable.");
       const existing = new Set(current.employees.map((employee) => employee.employee_number));
-      const drafts = parsed.drafts.filter(
-        (draft) => !draft.employeeNumber.trim() || !existing.has(draft.employeeNumber.trim()),
-      );
+      const { toCreate: drafts, skipped } = planPayrollEmployeeImport(parsed.drafts, existing);
       setImportDone(0);
       setImportPreview({
         companyId: company.id,
         fileName: file.name,
         total: parsed.drafts.length,
-        skipped: parsed.drafts.length - drafts.length,
+        skipped,
         drafts,
       });
     } catch (error) {
@@ -237,16 +236,13 @@ export function PayrollEmployeesPage() {
       const current = await fetchList({ data: { companyId: company.id, status: null, q: null } });
       if (!current.available) throw new Error(current.migrationMessage ?? "Employee data unavailable.");
       const existing = new Set(current.employees.map((employee) => employee.employee_number));
-      for (const draft of importPreview.drafts) {
-        const number = draft.employeeNumber.trim();
-        if (number && existing.has(number)) {
-          newlySkipped += 1;
-          continue;
-        }
+      const plan = planPayrollEmployeeImport(importPreview.drafts, existing);
+      newlySkipped = plan.skipped;
+      setImportDone(newlySkipped);
+      for (const draft of plan.toCreate) {
         await saveEmployee({ data: { companyId: company.id, draft } });
         created += 1;
-        setImportDone(created);
-        if (number) existing.add(number);
+        setImportDone(created + newlySkipped);
       }
       toast.success(`Imported ${created} employees; skipped ${importPreview.skipped + newlySkipped} existing IDs.`);
     } catch (error) {
@@ -456,7 +452,7 @@ export function PayrollEmployeesPage() {
               </Alert>
               {importing ? (
                 <p role="status" aria-live="polite">
-                  Imported {importDone} of {importPreview.drafts.length} new employees…
+                  Processed {importDone} of {importPreview.drafts.length} new rows…
                 </p>
               ) : null}
             </div>

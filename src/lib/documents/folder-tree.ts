@@ -43,3 +43,11 @@ export function possibleParentFolders(
   }
   return folders.filter((folder) => !forbidden.has(folder.id));
 }
+
+/** Label destinations by their full path so similarly named nested folders are distinguishable. */
+export function folderDisplayPath(
+  folders: readonly DocumentFolder[],
+  folderId: string,
+): string {
+  return folderAncestors(folders, folderId).map((folder) => folder.name).join(" / ");
+}

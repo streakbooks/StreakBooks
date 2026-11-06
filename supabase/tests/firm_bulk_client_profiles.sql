@@ -85,6 +85,12 @@ BEGIN
   update public.firm_client_onboarding_steps
     set note='Evidence retained',completed_at=now(),completed_by=owner_id,updated_by=owner_id
     where firm_id=fid and company_id=a and task_key=custom_key;
+  -- At the 100-step limit, reapplying an existing template is a no-op.
+  insert into public.firm_client_onboarding_steps(
+    firm_id,company_id,task_key,title,updated_by
+  )
+  select fid,a,'limit_'||g,'Preexisting checklist '||g,owner_id
+  from generate_series(1,99) g;
   result:=public.apply_firm_onboarding_template(fid,a);
   if result->>'added'<>'0' then raise exception 'Custom step was duplicated'; end if;
   if not exists(select 1 from public.firm_client_onboarding_steps where firm_id=fid

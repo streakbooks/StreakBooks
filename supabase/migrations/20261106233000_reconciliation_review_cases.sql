@@ -141,6 +141,11 @@ begin
         using errcode='40001';
     end if;
     _before := pg_catalog.to_jsonb(_case);
+    if (_action = 'assign' and _status is not null)
+       or (_action = 'status' and _assigned_to is not null)
+       or (_action = 'comment' and (_assigned_to is not null or _status is not null)) then
+      raise exception 'Unrelated review action fields are not permitted';
+    end if;
     if _action = 'assign' then
       if _assigned_to is null or not exists (
         select 1 from public.company_members m
@@ -159,6 +164,21 @@ begin
               and not exists (select 1 from public.member_permission_adjustments d
                 where d.company_id=_company_id and d.user_id=m.user_id
                   and d.permission='accounting.view' and d.effect='deny')
+            )
+          )
+          and (
+            m.role::text='owner'
+            or (
+              (
+                exists (select 1 from public.role_permissions rp
+                  where rp.role=m.role and rp.permission='accounting.post')
+                or exists (select 1 from public.member_permission_adjustments a
+                  where a.company_id=_company_id and a.user_id=m.user_id
+                    and a.permission='accounting.post' and a.effect='grant')
+              )
+              and not exists (select 1 from public.member_permission_adjustments d
+                where d.company_id=_company_id and d.user_id=m.user_id
+                  and d.permission='accounting.post' and d.effect='deny')
             )
           )
       ) then raise exception 'Choose an active reviewer in this organisation'; end if;

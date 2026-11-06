@@ -1,4 +1,5 @@
 import type { FixedAssetRow } from "./fixed-assets.functions";
+import { isReportDate } from "@/lib/reports/date-validation";
 import { assetStatusAsOf, validAssetAccumulatedAt } from "./register-view";
 
 /**
@@ -15,7 +16,7 @@ export function buildFixedAssetRegisterCsv(
   typeNames: ReadonlyMap<string, string>,
   accountNames: ReadonlyMap<string, string>,
 ): string {
-  if (!/^\d{4}-(0[1-9]|1[0-2])-\d{2}$/.test(asOf)) {
+  if (!isReportDate(asOf)) {
     throw new Error("Choose a valid register reporting date.");
   }
   if (accumulatedByAssetId === null) {

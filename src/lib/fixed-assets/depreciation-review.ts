@@ -166,10 +166,10 @@ export function validateDepreciationPostingPeriods(
  * Exact preview/posting sum at API number boundaries. Never round an unsafe
  * accumulated total using IEEE doubles even when every line is individually safe.
  */
-export function safeDepreciationTotalMinor(
+export function exactDepreciationTotalMinor(
   rows: readonly Pick<DepreciationRunRow, "status" | "amount_minor">[],
   includedStatus: "due" | "posted",
-): number {
+): string {
   let total = 0n;
   for (const row of rows) {
     if (row.status !== includedStatus) continue;
@@ -178,8 +178,16 @@ export function safeDepreciationTotalMinor(
     }
     total += BigInt(row.amount_minor);
   }
-  if (total > BigInt(Number.MAX_SAFE_INTEGER)) {
+  return total.toString();
+}
+
+export function safeDepreciationTotalMinor(
+  rows: readonly Pick<DepreciationRunRow, "status" | "amount_minor">[],
+  includedStatus: "due" | "posted",
+): number {
+  const exact = BigInt(exactDepreciationTotalMinor(rows, includedStatus));
+  if (exact > BigInt(Number.MAX_SAFE_INTEGER)) {
     throw new Error("Depreciation total exceeds exact API number precision.");
   }
-  return Number(total);
+  return Number(exact);
 }

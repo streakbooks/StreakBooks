@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -12,6 +12,7 @@ import {
 } from "@/lib/tax/rate-status";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { useFormat } from "@/hooks/use-format";
+import { useCanDo } from "@/hooks/use-can";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -70,6 +72,9 @@ function percentToBps(percent: string): number {
 export function TaxRatesPanel({ companyId }: { companyId: string }) {
   const qc = useQueryClient();
   const f = useFormat();
+  const canTax = useCanDo("tax.settings");
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | RateStatus>("all");
   const today = new Date().toISOString().slice(0, 10);
   const fetchRates = useServerFn(listTaxRates);
   const doSave = useServerFn(saveTaxRate);
@@ -81,6 +86,12 @@ export function TaxRatesPanel({ companyId }: { companyId: string }) {
     queryFn: () => fetchRates({ data: { companyId } }),
   });
   const rows = (q.data ?? []) as TaxRateRow[];
+  const visibleRows = useMemo(() => rows.filter((rate) => {
+    const term = search.trim().toLocaleLowerCase();
+    const matches = !term || rate.name.toLocaleLowerCase().includes(term) ||
+      String(rate.rate_bps / 100).includes(term);
+    return matches && (statusFilter === "all" || rateStatus(rate, today) === statusFilter);
+  }), [rows, search, statusFilter, today]);
 
   const save = useMutation({
     mutationFn: (v: {
@@ -111,6 +122,17 @@ export function TaxRatesPanel({ companyId }: { companyId: string }) {
     if (!Number.isInteger(bps) || bps < 0 || bps > 10000) {
       toast.error("Enter a rate between 0 and 100 percent.");
       return;
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(draft.from)) {
+      toast.error("Enter an effective start date.");
+      return;
+    }
+    if (draft.to) {
+      const dateError = validateRateEndDate(draft.from, draft.to);
+      if (dateError) {
+        toast.error(dateError);
+        return;
+      }
     }
     save.mutate({
       ...(draft.id ? { id: draft.id } : {}),
@@ -158,10 +180,35 @@ export function TaxRatesPanel({ companyId }: { companyId: string }) {
         </p>
         <Button
           size="sm"
+          disabled={!canTax}
           onClick={() => setDraft({ name: "", percent: "20", from: today, to: "", active: true })}
         >
           Add rate
         </Button>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Input
+          aria-label="Search tax rates"
+          className="w-full sm:max-w-xs"
+          placeholder="Search names or percentages"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as "all" | RateStatus)}>
+          <SelectTrigger aria-label="Filter tax rate status" className="w-full sm:w-44">
+            <SelectValue placeholder="All statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            <SelectItem value="current">Current</SelectItem>
+            <SelectItem value="scheduled">Scheduled</SelectItem>
+            <SelectItem value="ended">Ended</SelectItem>
+            <SelectItem value="inactive">Inactive</SelectItem>
+          </SelectContent>
+        </Select>
+        {!canTax ? <Badge variant="outline">View only</Badge> : null}
+        {!q.isPending && !q.isError ? <span className="text-xs text-muted-foreground">{visibleRows.length} of {rows.length} rates</span> : null}
       </div>
 
       {q.isPending ? (
@@ -174,6 +221,8 @@ export function TaxRatesPanel({ companyId }: { companyId: string }) {
         />
       ) : rows.length === 0 ? (
         <EmptyState title="No tax rates" description="Add a rate, or apply a country pack." />
+      ) : visibleRows.length === 0 ? (
+        <EmptyState title="No matching tax rates" description="Change the search or status filter." />
       ) : (
         <Table>
           <TableHeader>
@@ -186,7 +235,7 @@ export function TaxRatesPanel({ companyId }: { companyId: string }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.map((r) => {
+            {visibleRows.map((r) => {
               const st = rateStatus(r, today);
               return (
                 <TableRow key={r.id}>
@@ -205,6 +254,7 @@ export function TaxRatesPanel({ companyId }: { companyId: string }) {
                     <Button
                       size="sm"
                       variant="ghost"
+                      disabled={!canTax || save.isPending}
                       onClick={() =>
                         setDraft({
                           id: r.id,
@@ -222,6 +272,7 @@ export function TaxRatesPanel({ companyId }: { companyId: string }) {
                       <Button
                         size="sm"
                         variant="ghost"
+                        disabled={!canTax || save.isPending}
                         onClick={() => setEnding({ rate: r, date: today })}
                       >
                         End date
@@ -230,7 +281,7 @@ export function TaxRatesPanel({ companyId }: { companyId: string }) {
                     <Button
                       size="sm"
                       variant="ghost"
-                      disabled={save.isPending}
+                      disabled={!canTax || save.isPending}
                       onClick={() => toggleActive(r)}
                     >
                       {r.is_active ? "Deactivate" : "Reactivate"}
@@ -305,7 +356,7 @@ export function TaxRatesPanel({ companyId }: { companyId: string }) {
             <Button variant="outline" onClick={() => setDraft(null)}>
               Cancel
             </Button>
-            <Button disabled={save.isPending} onClick={submitDraft}>
+            <Button disabled={!canTax || save.isPending} onClick={submitDraft}>
               Save rate
             </Button>
           </DialogFooter>
@@ -336,7 +387,7 @@ export function TaxRatesPanel({ companyId }: { companyId: string }) {
             <Button variant="outline" onClick={() => setEnding(null)}>
               Cancel
             </Button>
-            <Button disabled={save.isPending} onClick={submitEnd}>
+            <Button disabled={!canTax || save.isPending} onClick={submitEnd}>
               End rate
             </Button>
           </DialogFooter>

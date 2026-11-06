@@ -48,7 +48,7 @@ import {
   moveDocumentToFolder,
 } from "@/lib/documents/folders.functions";
 import { folderAncestors, folderDisplayPath, possibleParentFolders } from "@/lib/documents/folder-tree";
-import { type FileFormat } from "@/lib/documents/file-workspace";
+import { internalFileUrl, type FileFormat } from "@/lib/documents/file-workspace";
 import { MAX_FILES_PER_BATCH, runFileBatch } from "@/lib/documents/file-batch";
 import { downloadBase64, uploadCompanyDocument } from "@/lib/documents/upload-client";
 import { openSignedDownload } from "@/lib/documents/ui";
@@ -437,9 +437,7 @@ function FilesPage() {
 
   const copyInternalFileLink = async (attachmentId: string) => {
     try {
-      const url = new URL("/files", window.location.origin);
-      url.searchParams.set("file", attachmentId);
-      await navigator.clipboard.writeText(url.toString());
+      await navigator.clipboard.writeText(internalFileUrl(window.location.origin, attachmentId));
       toast.success("Private LinkBooks file link copied");
     } catch {
       toast.error("Could not copy the link. Your browser may block clipboard access.");

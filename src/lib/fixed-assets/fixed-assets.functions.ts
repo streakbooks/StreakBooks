@@ -581,7 +581,11 @@ export const previewDepreciation = createServerFn({ method: "GET" })
     periodEnd: periodEndOf(input?.periodEnd),
   }))
   .handler(async ({ data, context }) => {
-    await assertCompanyMember(context.supabase, data.companyId);
+    // The SQL preview RPC intentionally requires a posting-related permission,
+    // even with _preview=true. Enforce the same policy before invoking it.
+    await assertCompanyPermission(context.supabase, data.companyId, "accounting.post").catch(
+      async () => assertCompanyPermission(context.supabase, data.companyId, "journals.manual"),
+    );
     const rows = await callRpc<unknown>(
       context.supabase,
       "run_depreciation",

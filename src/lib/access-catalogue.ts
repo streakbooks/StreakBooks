@@ -52,6 +52,16 @@ export const ACCESS_AREAS: readonly AccessArea[] = [
         detail: "Plan, trial and billing.",
       },
       {
+        permission: "billing.view",
+        label: "View subscription and invoices",
+        detail: "Plan, usage, invoices and payment status. Grant to an accountant when needed.",
+      },
+      {
+        permission: "billing.payment_methods",
+        label: "Manage recurring payment authorisation",
+        detail: "Payment method and mandate for automatic renewals.",
+      },
+      {
         permission: "demo.reset",
         label: "Reset the demo organisation",
         detail: "Demo companies only.",

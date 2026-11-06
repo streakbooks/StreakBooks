@@ -5,6 +5,7 @@ import { FirmEngagementPanel } from "@/components/firm/FirmEngagementPanel";
 import { FirmStaffAssignments } from "@/components/firm/FirmStaffAssignments";
 import { FirmInvitationsPanel } from "@/components/firm/FirmInvitationsPanel";
 import { FirmRequestsPanel } from "@/components/firm/FirmRequestsPanel";
+import { FirmPartnerPanel } from "@/components/firm/FirmPartnerPanel";
 import { FirmAnalyticsPanel, FirmBillingPanel } from "@/components/firm/FirmBillingAnalytics";
 import { setActiveCompany } from "@/lib/company.functions";
 import { useCanDo } from "@/hooks/use-can";
@@ -237,6 +238,7 @@ function FirmPage() {
               <TabsTrigger value="invitations">Staff invitations</TabsTrigger>
               <TabsTrigger value="activity">Client activity</TabsTrigger>
               <TabsTrigger value="setup">Firm settings</TabsTrigger>
+              <TabsTrigger value="partner">Partner programme</TabsTrigger>
             </TabsList>
 
             <TabsContent value="clients" className="space-y-4">
@@ -276,6 +278,10 @@ function FirmPage() {
                   }}
                 />
               )}
+            </TabsContent>
+
+            <TabsContent value="partner" className="space-y-4">
+              <FirmPartnerPanel key={firmId} firmId={firmId} canManage={firmAdmin} />
             </TabsContent>
 
             <TabsContent value="work" className="space-y-4">

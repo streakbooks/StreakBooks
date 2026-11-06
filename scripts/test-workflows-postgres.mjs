@@ -132,6 +132,49 @@ try {
   );
   sql(read("supabase/migrations/20261105041953_settings_lock_policy_cas.sql"));
   sql(read("tests/integration/settings-lock-policy-cas.sql"));
+  sql(read("tests/fixtures/workflows/contact-numbering-baseline.sql"));
+  sql(read("supabase/migrations/20261105065500_contacts_atomic_number_allocation.sql"));
+  sql(read("tests/integration/contact-numbering-atomic.sql"));
+
+  // Four real concurrent INSERT transactions must receive four unique, gap-free
+  // numbers. The RLS-safe trigger locks only the organisation's counter row.
+  const contactRace = async (index) =>
+    promisify(execFile)(
+      "docker",
+      [
+        ...prefix,
+        "exec",
+        "-i",
+        name,
+        "psql",
+        "-h",
+        "127.0.0.1",
+        "-X",
+        "-q",
+        "-A",
+        "-t",
+        "-U",
+        "postgres",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-c",
+        `BEGIN; SET LOCAL ROLE authenticated; SELECT set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-000000000001"}',true); INSERT INTO public.contacts(company_id,name,kind) VALUES ('10000000-0000-4000-8000-000000000001','Numbering Concurrent ${index}','customer'); SELECT pg_sleep(0.05); COMMIT;`,
+      ],
+      { env, maxBuffer: 1024 * 1024 },
+    );
+  await Promise.all([1, 2, 3, 4].map(contactRace));
+  sql(
+    `DO $ DECLARE nums text[]; BEGIN
+      SELECT array_agg(account_number ORDER BY account_number) INTO nums
+      FROM public.contacts WHERE name LIKE 'Numbering Concurrent %';
+      IF nums IS DISTINCT FROM ARRAY['C1005','C1006','C1007','C1008']::text[]
+        OR (SELECT next_account_number FROM public.company_contact_settings
+            WHERE company_id='10000000-0000-4000-8000-000000000001') <> 1009 THEN
+        RAISE EXCEPTION 'Parallel contact creation duplicated or skipped numbers';
+      END IF;
+    END $;`,
+  );
+  console.log("Four concurrent contact creates received C1005–C1008, no duplicates or gaps.");
   console.log(
     "Workflow migration compiled. Atomic rollback, permissions, two-tenant RLS, PO edit/conversion, sales lifecycle, deferrals and real shared posting-engine balance/lock scenarios passed.",
   );

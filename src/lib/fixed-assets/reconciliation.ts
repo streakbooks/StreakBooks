@@ -103,11 +103,11 @@ export function reconcileFixedAssets(
   // A disposed asset must still cause its historic accounts to be reviewed even
   // when the expected as-at book balance is zero.
   const activeById = new Map<string, ReconciliationAsset>();
-  const knownAssetIds = new Set<string>();
+  const assetById = new Map<string, ReconciliationAsset>();
   const postedByAssetId = new Map<string, bigint>();
   for (const asset of assets) {
-    if (knownAssetIds.has(asset.id)) throw new Error("Duplicate fixed asset in register");
-    knownAssetIds.add(asset.id);
+    if (assetById.has(asset.id)) throw new Error("Duplicate fixed asset in register");
+    assetById.set(asset.id, asset);
     if ((asset.status === "disposed" && !asset.disposal_date) ||
         (asset.status === "active" && asset.disposal_date !== null) ||
         (asset.disposal_date !== null && asset.disposal_date < asset.purchase_date)) {
@@ -134,10 +134,10 @@ export function reconcileFixedAssets(
 
   for (const entry of depreciationEntries) {
     if (entry.period_end > asOf) continue;
-    if (!knownAssetIds.has(entry.asset_id)) {
+    const asset = assetById.get(entry.asset_id);
+    if (!asset) {
       throw new Error("Depreciation entry references an unknown asset");
     }
-    const asset = assets.find((item) => item.id === entry.asset_id)!;
     if (entry.period_end < asset.purchase_date) {
       throw new Error("Depreciation entry precedes the asset purchase date");
     }

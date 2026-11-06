@@ -47,7 +47,7 @@ describe("Files OCR secure provider", () => {
         },
       });
     });
-    expect(await submitAzureInvoiceOcr(cfg, new Uint8Array([1, 2, 3]), mock as typeof fetch))
+    expect(await submitAzureInvoiceOcr(cfg, new Uint8Array([1, 2, 3]), mock as unknown as typeof fetch))
       .toBe(resultId);
   });
 
@@ -100,7 +100,7 @@ describe("Files OCR secure provider", () => {
         },
       });
     });
-    const result = await checkAzureInvoiceOcr(cfg, resultId, mock as typeof fetch);
+    const result = await checkAzureInvoiceOcr(cfg, resultId, mock as unknown as typeof fetch);
     expect(result).toMatchObject({
       status: "completed", suggestions: { supplierName: "Vendor", totalMinor: 1000 },
     });

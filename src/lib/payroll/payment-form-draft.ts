@@ -1,7 +1,8 @@
 /** Validate payroll settlement form values without silently discarding allocations.
  * Ledger minor-unit amounts must remain safe integers until the API supports strings.
  */
-import { tryParseMinor } from "@/lib/purchases/money-input";
+import { normaliseMoneyInput, tryParseMinor } from "@/lib/purchases/money-input";
+import { decimalPlacesFor } from "@/lib/accounting/money";
 import { validatePayrollPaymentAllocations } from "@/lib/payroll/payroll-payment-allocation";
 
 export type PayrollPaymentFormPayslip = {
@@ -16,6 +17,22 @@ export type ParsedPayrollPaymentEntry = {
   allocations: Array<{ payslipId: string; amountMinor: number }>;
   unallocatedMinor: number;
 };
+
+/** Payment settlement input is exact, not a rounded sales-price calculation.
+ * Refuse excess fractional digits so the posted amount is the amount entered.
+ */
+function parseExactMinor(value: string, currency: string, field: string): bigint {
+  const normalised = normaliseMoneyInput(value);
+  if (normalised === null) throw new Error(`${field} is invalid.`);
+  const fractional = normalised.split(".")[1] ?? "";
+  const allowed = decimalPlacesFor(currency);
+  if (fractional.length > allowed) {
+    throw new Error(`${field} allows at most ${allowed} decimal places for ${currency}.`);
+  }
+  const parsed = tryParseMinor(normalised, currency);
+  if (parsed === null) throw new Error(`${field} is invalid.`);
+  return parsed;
+}
 
 function safeMinorNumber(minor: bigint, field: string): number {
   if (minor <= 0n) throw new Error(`${field} must be greater than zero.`);
@@ -33,8 +50,7 @@ export function parsePayrollPaymentEntry(input: {
   payslips: PayrollPaymentFormPayslip[];
 }): ParsedPayrollPaymentEntry {
   const currency = input.currency.toUpperCase();
-  const rawAmount = tryParseMinor(input.amount, currency);
-  if (rawAmount === null) throw new Error("Payment amount is invalid.");
+  const rawAmount = parseExactMinor(input.amount, currency, "Payment amount");
   const amountMinor = safeMinorNumber(rawAmount, "Payment amount");
   const byId = new Map(input.payslips.map((row) => [row.payslipId, row]));
   const allocations: Array<{ payslipId: string; amountMinor: number }> = [];
@@ -46,10 +62,11 @@ export function parsePayrollPaymentEntry(input: {
     if (slip.currency.toUpperCase() !== currency) {
       throw new Error("An allocation currency differs from the payment currency.");
     }
-    const parsed = tryParseMinor(entered, currency);
-    if (parsed === null) {
-      throw new Error(`Allocation for payslip ${payslipId} is invalid.`);
-    }
+    const parsed = parseExactMinor(
+      entered,
+      currency,
+      `Allocation for payslip ${payslipId}`,
+    );
     allocations.push({
       payslipId,
       amountMinor: safeMinorNumber(parsed, `Allocation for payslip ${payslipId}`),

@@ -123,7 +123,7 @@ async function requirePendingLocks(host,container,markers) {
 }
 
 function mustRejectAfterCommit(result,label) {
-  check(result.code!==0&&/posted documents|Posted tax source lines are immutable/i.test(result.stderr),
+  check(result.code!==0&&/posted documents|Posted tax source lines are immutable|Posted credit-note tax lines are immutable|Posted credit-note tax amounts and dates are immutable|Posted tax source amounts and accounts are immutable/i.test(result.stderr),
     label+" used stale posting history or another unexpected error: "+result.stderr);
 }
 
@@ -135,12 +135,12 @@ function mustWait(host,container,statement,label){
 
 function mustReject(host,container,statement,label){
   const r=sql(host,container,statement);
-  check(!r.ok&&/posted documents|Posted tax source lines are immutable/i.test(r.output),
+  check(!r.ok&&/posted documents|Posted tax source lines are immutable|Posted credit-note tax lines are immutable|Posted credit-note tax amounts and dates are immutable|Posted tax source amounts and accounts are immutable/i.test(r.output),
     label+" did not reject modification after posting: "+r.output);
 }
 
 function verifyPosted(host,container,id,source="sales_invoices") {
-  check(source==="sales_invoices"||source==="purchase_bills",
+  check(["sales_invoices","purchase_bills","sales_credit_notes","purchase_credit_notes","purchase_expenses"].includes(source),
     "Unknown posting source");
   const r=sql(host,container,
     "SELECT posted_journal_id IS NOT NULL FROM public."+source+
@@ -245,6 +245,66 @@ export async function verifyTaxPostingRaces(host,container) {
     "Purchase code change queued before posting commit");
   mustRejectAfterCommit(await purchaseLineEdit.completed,
     "Purchase line change queued before posting commit");
+
+  // Sales credit note: both the header amount and child tax line must wait
+  // behind first posting, then reject a queued change after commit.
+  const saleCreditId="50000000-0000-4000-8000-000000000011";
+  const saleCredit=beginPosting(host,container,
+    "UPDATE public.sales_credit_notes SET status='authorised',"+
+    " posted_journal_id='70000000-0000-4000-8000-000000000011'"+
+    " WHERE id='"+saleCreditId+"';","SALES_CREDIT_POST_READY");
+  await saleCredit.ready;
+  const saleCreditHeader=beginPendingEdit(host,container,
+    "UPDATE public.sales_credit_notes SET tax_minor=81,total_minor=481"+
+    " WHERE id='"+saleCreditId+"';","SALES_CREDIT_HEADER_QUEUED");
+  const saleCreditLine=beginPendingEdit(host,container,
+    "UPDATE public.sales_credit_note_lines SET tax_minor=81"+
+    " WHERE id='60000000-0000-4000-8000-000000000011';",
+    "SALES_CREDIT_LINE_QUEUED");
+  await Promise.all([saleCreditHeader.ready,saleCreditLine.ready]);
+  await requirePendingLocks(host,container,["SALES_CREDIT_HEADER_QUEUED","SALES_CREDIT_LINE_QUEUED"]);
+  await saleCredit.completed;
+  verifyPosted(host,container,saleCreditId,"sales_credit_notes");
+  mustRejectAfterCommit(await saleCreditHeader.completed,"Sales credit note amount");
+  mustRejectAfterCommit(await saleCreditLine.completed,"Sales credit note line");
+
+  // Supplier credit note: separate parent/line lock path.
+  const supplierCreditId="50000000-0000-4000-8000-000000000012";
+  const supplierCredit=beginPosting(host,container,
+    "UPDATE public.purchase_credit_notes SET status='authorised',"+
+    " posted_journal_id='70000000-0000-4000-8000-000000000012'"+
+    " WHERE id='"+supplierCreditId+"';","PURCHASE_CREDIT_POST_READY");
+  await supplierCredit.ready;
+  const supplierCreditHeader=beginPendingEdit(host,container,
+    "UPDATE public.purchase_credit_notes SET tax_minor=61,total_minor=361"+
+    " WHERE id='"+supplierCreditId+"';","PURCHASE_CREDIT_HEADER_QUEUED");
+  const supplierCreditLine=beginPendingEdit(host,container,
+    "UPDATE public.purchase_credit_note_lines SET tax_minor=61"+
+    " WHERE id='60000000-0000-4000-8000-000000000012';",
+    "PURCHASE_CREDIT_LINE_QUEUED");
+  await Promise.all([supplierCreditHeader.ready,supplierCreditLine.ready]);
+  await requirePendingLocks(host,container,["PURCHASE_CREDIT_HEADER_QUEUED","PURCHASE_CREDIT_LINE_QUEUED"]);
+  await supplierCredit.completed;
+  verifyPosted(host,container,supplierCreditId,"purchase_credit_notes");
+  mustRejectAfterCommit(await supplierCreditHeader.completed,"Purchase credit note amount");
+  mustRejectAfterCommit(await supplierCreditLine.completed,"Purchase credit note line");
+
+  // Header-only paid expense: an update of the same row necessarily waits
+  // for its posting transaction and then must reject changed tax totals.
+  const expenseId="50000000-0000-4000-8000-000000000013";
+  const expense=beginPosting(host,container,
+    "UPDATE public.purchase_expenses SET status='paid',"+
+    " posted_journal_id='70000000-0000-4000-8000-000000000013'"+
+    " WHERE id='"+expenseId+"';","EXPENSE_POST_READY");
+  await expense.ready;
+  const expenseEdit=beginPendingEdit(host,container,
+    "UPDATE public.purchase_expenses SET tax_minor=41,total_minor=241"+
+    " WHERE id='"+expenseId+"';","EXPENSE_EDIT_QUEUED");
+  await expenseEdit.ready;
+  await requirePendingLocks(host,container,["EXPENSE_EDIT_QUEUED"]);
+  await expense.completed;
+  verifyPosted(host,container,expenseId,"purchase_expenses");
+  mustRejectAfterCommit(await expenseEdit.completed,"Posted direct expense amount");
 
   console.log("PASS: two-session posting versus tax rate, code and source line edits");
 }

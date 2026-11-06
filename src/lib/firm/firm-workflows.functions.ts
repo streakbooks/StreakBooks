@@ -268,20 +268,28 @@ export const listFirmOnboardingOverview = createServerFn({ method: "GET" })
       .maybeSingle();
     if (memberError) throw new Error(memberError.message);
     if (!membership) throw new Error("Firm membership required");
-    // Database RLS filters independently inaccessible client organisations.
-    const { data: rows, error } = await context.supabase
-      .from("firm_client_onboarding_steps" as never)
-      .select(
-        "company_id,task_key,title,completed_at,assignee_id,due_date,depends_on_task_key" as never,
-      )
-      .eq("firm_id" as never, data.firmId as never)
-      .order("company_id" as never)
-      .order("task_key" as never)
-      .limit(5001);
-    if (error) throw new Error(error.message);
-    if ((rows ?? []).length > 5000)
-      throw new Error("Onboarding portfolio exceeds 5,000 steps; use a client checklist");
-    return (rows ?? []) as FirmOnboardingOverviewRow[];
+    // Database RLS filters independently inaccessible clients. Read in stable
+    // pages: PostgREST may cap a single response at 1,000 rows without warning.
+    const overview: FirmOnboardingOverviewRow[] = [];
+    const pageSize = 200;
+    for (let page = 0; page <= 25; page++) {
+      const { data: rows, error } = await context.supabase
+        .from("firm_client_onboarding_steps" as never)
+        .select(
+          "company_id,task_key,title,completed_at,assignee_id,due_date,depends_on_task_key" as never,
+        )
+        .eq("firm_id" as never, data.firmId as never)
+        .order("company_id" as never)
+        .order("task_key" as never)
+        .range(page * pageSize, page * pageSize + pageSize - 1);
+      if (error) throw new Error(error.message);
+      const batch = (rows ?? []) as FirmOnboardingOverviewRow[];
+      overview.push(...batch);
+      if (overview.length > 5000)
+        throw new Error("Onboarding portfolio exceeds 5,000 steps; use a client checklist");
+      if (batch.length < pageSize) break;
+    }
+    return overview;
   });
 
 export const listFirmEngagements = createServerFn({ method: "GET" })

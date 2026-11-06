@@ -3,6 +3,7 @@ import { CalendarClock, Calculator, ClipboardCheck, LayoutList } from "lucide-re
 import { useFormat } from "@/hooks/use-format";
 import { buildAssetPortfolioSnapshot } from "@/lib/fixed-assets/portfolio-dashboard";
 import type { AssetTypeRow, FixedAssetRow } from "@/lib/fixed-assets/fixed-assets.functions";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -24,7 +25,35 @@ export function AssetPortfolioPanel({
   onView: (asset: FixedAssetRow) => void;
 }) {
   const fmt = useFormat();
-  const portfolio = buildAssetPortfolioSnapshot(assets, types, asOf, balances);
+  let portfolio: ReturnType<typeof buildAssetPortfolioSnapshot>;
+  try {
+    portfolio = buildAssetPortfolioSnapshot(assets, types, asOf, balances);
+  } catch (error) {
+    return (
+      <div className="space-y-3">
+        <Alert variant="destructive">
+          <AlertDescription role="alert">
+            The asset overview could not calculate trustworthy totals:
+            {" "}{error instanceof Error ? error.message : "Inconsistent asset register data."}
+            {" "}Review the saved asset amounts and depreciation history before relying on
+            this dashboard. No accounting records have been changed.
+          </AlertDescription>
+        </Alert>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" asChild>
+            <Link to="/fixed-assets" search={{ tab: "register" }}>
+              Inspect register
+            </Link>
+          </Button>
+          <Button size="sm" variant="outline" asChild>
+            <Link to="/fixed-assets" search={{ tab: "reconciliation" }}>
+              Reconcile to GL
+            </Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
   const costMetrics = [
     {
       label: "Active registered assets",

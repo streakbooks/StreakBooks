@@ -52,7 +52,7 @@ const opts = (o: {
   o.netAccount === undefined ? "net" : o.netAccount,
 );
 const reversal: PaymentAuditJournal = {
-  ...original, id: "jr", source_type: "reversal", source_id: "pay1",
+  ...original, id: "jr", source_type: "reversal", source_id: original.id,
   idempotency_key: "payroll-payment:pay1:reverse",
   reverses_journal_id: original.id, reversed_by_journal_id: null,
 };

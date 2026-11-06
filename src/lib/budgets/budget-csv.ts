@@ -4,7 +4,7 @@
  */
 
 import { fromMinorUnits, toMinorUnits } from "@/lib/accounting/money";
-import { monthLabel } from "@/lib/budgets/budget-math";
+import { monthLabel, sumMinorNumbers } from "@/lib/budgets/budget-math";
 
 export type BudgetGridAccount = { id: string; code: string; name: string };
 
@@ -19,7 +19,7 @@ export function budgetToCsvRows(
 ): string[][] {
   return accounts.map((a) => {
     const row = values.get(a.id) ?? [];
-    const total = row.reduce((x, y) => x + y, 0);
+    const total = sumMinorNumbers(row);
     return [
       a.code,
       a.name,

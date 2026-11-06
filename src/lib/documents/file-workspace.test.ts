@@ -33,5 +33,4 @@ describe("Files workspace", () => {
     expect(() => validateFileRename("report.csv", "  ")).toThrow("valid file name");
     expect(() => validateFileRename("report.csv", "x".repeat(256) + ".csv")).toThrow("valid file name");
   });
-
 });

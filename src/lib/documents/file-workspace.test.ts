@@ -5,6 +5,8 @@ import {
   fileListProjection,
   filePreviewKind,
   internalFileUrl,
+  lastFilePage,
+  safeFilePage,
   fileSortOrder,
   parseFileFormat,
   parseFileSort,
@@ -43,6 +45,23 @@ describe("Files workspace", () => {
       "Invalid file identifier",
     );
     expect(() => internalFileUrl("file:///tmp/app", id)).toThrow("Invalid application origin");
+  });
+
+  it("bounds input page offsets and clamps empty pages after file deletions", () => {
+    expect(safeFilePage(undefined)).toBe(0);
+    expect(safeFilePage(-1)).toBe(0);
+    expect(safeFilePage(NaN)).toBe(0);
+    expect(safeFilePage(Infinity)).toBe(0);
+    expect(safeFilePage("1000000000")).toBe(1000);
+    expect(safeFilePage("2")).toBe(2);
+    expect(safeFilePage(2.5)).toBe(0);
+    expect(lastFilePage(0, 25)).toBe(0);
+    expect(lastFilePage(1, 25)).toBe(0);
+    expect(lastFilePage(25, 25)).toBe(0);
+    expect(lastFilePage(26, 25)).toBe(1);
+    expect(lastFilePage(51, 25)).toBe(2);
+    expect(lastFilePage(-1, 25)).toBe(0);
+    expect(lastFilePage(25, 0)).toBe(0);
   });
 
   it("uses RLS-aware tag relationship joins without huge in-list URLs", () => {

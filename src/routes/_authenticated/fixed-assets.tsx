@@ -35,6 +35,7 @@ import {
   DisposeDialog,
 } from "@/components/fixed-assets/AssetDialogs";
 import { AssetDetailsDialog } from "@/components/fixed-assets/AssetDetailsDialog";
+import { AssetReconciliationPanel } from "@/components/fixed-assets/AssetReconciliationPanel";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -61,7 +62,7 @@ import {
 
 export const Route = createFileRoute("/_authenticated/fixed-assets")({
   validateSearch: (raw: Record<string, unknown>): { tab?: string | undefined } => ({
-    tab: ["register", "depreciation", "types"].includes(String(raw["tab"]))
+    tab: ["register", "depreciation", "types", "reconciliation"].includes(String(raw["tab"]))
       ? String(raw["tab"])
       : undefined,
   }),
@@ -230,6 +231,16 @@ function FixedAssetsPage() {
             search={{ tab: "types" }}
           >
             Asset types
+          </Link>
+          <Link
+            className={nativeTabLinkClass}
+            role="tab"
+            aria-selected={tab === "reconciliation"}
+            data-state={tab === "reconciliation" ? "active" : "inactive"}
+            to="/fixed-assets"
+            search={{ tab: "reconciliation" }}
+          >
+            Reconcile to GL
           </Link>
         </TabsList>
 
@@ -468,6 +479,10 @@ function FixedAssetsPage() {
             lastRunThrough={d.lastRunThrough}
             canPost={canPost}
           />
+        </TabsContent>
+
+        <TabsContent value="reconciliation" className="space-y-4">
+          <AssetReconciliationPanel companyId={companyId} />
         </TabsContent>
 
         <TabsContent value="types" className="space-y-4">

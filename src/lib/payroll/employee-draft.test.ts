@@ -293,4 +293,43 @@ describe("payroll employee drafts", () => {
     }
   });
 
+  it("does not silently discard salary entries lacking a pay component", () => {
+    const blankLine = {
+      componentTypeId: "",
+      amount: "0",
+      rate: "0",
+      percentage: "0",
+      isRecurring: true,
+      sortOrder: "100",
+    };
+    const baseStructure = { name: "Safeguarded salary", description: "", isActive: true };
+    expect(parseSalaryStructureDraft({
+      ...baseStructure,
+      lines: [blankLine],
+    }, "GBP").ok).toBe(true);
+
+    const invalid = parseSalaryStructureDraft({
+      ...baseStructure,
+      lines: [{ ...blankLine, amount: "1500" }],
+    }, "GBP");
+    expect(invalid.ok).toBe(false);
+    if (!invalid.ok) expect(invalid.error).toMatch(/choose a pay component/i);
+
+    const custom = parseSalaryAssignDraft({
+      structureId: "22222222-2222-2222-2222-222222222222",
+      effectiveFrom: "2026-04-01",
+      changeReason: "Annual review",
+      customLines: [{
+        componentTypeId: "",
+        amount: "0",
+        rate: "12.5",
+        percentage: "0",
+        isRecurring: true,
+        notes: "",
+      }],
+    }, "GBP");
+    expect(custom.ok).toBe(false);
+    if (!custom.ok) expect(custom.error).toMatch(/choose a pay component/i);
+  });
+
 });

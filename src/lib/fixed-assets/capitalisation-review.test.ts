@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   capitalisationReviewCsv,
+  pageCapitalisationBillLines,
   reviewCapitalisableLines,
   selectCapitalisationReviewRows,
 } from "./capitalisation-review";
@@ -101,6 +102,39 @@ describe("posted bill capitalisation review", () => {
       ),
     ).toThrow(/exact/i);
     expect(() => reviewCapitalisableLines([base("a"), base("a")], "USD")).toThrow(/duplicate/i);
+  });
+
+  it("retrieves more than 300 candidates without truncation and chunks long account filters", async () => {
+    const accountIds = Array.from({ length: 51 }, (_, i) => "account-" + i);
+    const calls: Array<{ ids: string[]; from: number; to: number }> = [];
+    const firstChunk = Array.from({ length: 1101 }, (_, i) => ({ id: "a-" + i }));
+    const secondChunk = Array.from({ length: 80 }, (_, i) => ({ id: "b-" + i }));
+    const lines = await pageCapitalisationBillLines(accountIds, async (ids, from, to) => {
+      calls.push({ ids, from, to });
+      const source = ids.length === 50 ? firstChunk : secondChunk;
+      return { data: source.slice(from, to + 1), error: null };
+    });
+    expect(lines).toHaveLength(1181);
+    expect(calls.map((call) => [call.ids.length, call.from])).toEqual([
+      [50, 0],
+      [50, 1000],
+      [50, 1101],
+      [1, 0],
+      [1, 80],
+    ]);
+  });
+
+  it("propagates read errors and detects duplicated source lines", async () => {
+    await expect(
+      pageCapitalisationBillLines(["a"], async () => ({
+        data: null,
+        error: { message: "DB unavailable" },
+      })),
+    ).rejects.toThrow("DB unavailable");
+    await expect(
+      pageCapitalisationBillLines(["a", ...Array.from({ length: 50 }, () => "b")],
+        async () => ({ data: [{ id: "repeat" }], error: null })),
+    ).rejects.toThrow(/duplicate/i);
   });
 
   it("filters by status, search, account and sorts by bill date", () => {

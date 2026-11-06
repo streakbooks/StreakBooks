@@ -575,3 +575,38 @@ These are additional Stage 7 hardening commits; **do not interpret the
 focused checks as completion of application-wide testing**. Pending gates
 remain TypeScript/ESLint/Vitest/build, real authenticated UI workflows,
 PR merge and Vercel deployment. GitHub Actions CI was not run as instructed.
+
+
+### Prevalidated Payroll clearing account choices (Stage 7)
+
+The Payroll Payments screen previously used `listPaymentAccounts` from the
+Purchases module, which returns eligible bank/cash **GL accounts** and their
+own currency codes but **not the currencies of linked active bank accounts**.
+The payment server function and Supabase triggers rejected incompatible
+linked banks during posting, yet the UI still displayed them as choices.
+
+- New `src/lib/payroll/clearing-account-options.ts` provides a pure,
+  typed account-eligibility filter. It uses the existing
+  `isBankOrCashAccount` rules, checking active/postable GL status,
+  bank/cash classification, GL currency override and **every active linked
+  bank account currency**. A missing or different active bank currency
+  fails closed; inactive linked banks do not incorrectly block the GL.
+- New protected `listPayrollSettlementAccounts` server GET handler in
+  `src/lib/payroll/payments.functions.ts` requires company membership
+  and `payroll.pay` permission, loads Payroll settings currency, asset
+  GL account eligibility details and linked banks, then returns only
+  matching-currency options and the number excluded.
+- Payroll Payments now calls this dedicated endpoint for the clearing
+  dropdown; the existing UI note explains hidden incompatible choices.
+  The original `recordPayrollPayment` preflight checks and both
+  database-level payment currency/clearing bank guards are unchanged
+  and remain the final controls.
+- Added `src/lib/payroll/clearing-account-options.test.ts` with nine
+  authored Vitest cases. The **actual Vitest suite was not executed**.
+  Isolated tests exercising the fetched current helper source plus
+  actual purchase eligibility and Payroll currency helpers, together
+  with server/UI wiring assertions, passed **20/20**.
+- No new Supabase migrations in this batch. Code changes are committed
+  on the Payroll PR branch, not merged into `main`. Full repo
+  typecheck/lint/Vitest/build and authenticated UI QA remain pending;
+  GitHub Actions CI remains not run (per user instruction).

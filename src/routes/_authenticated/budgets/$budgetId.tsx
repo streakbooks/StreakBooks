@@ -240,6 +240,10 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
   };
 
   const onExport = () => {
+    if (hiddenLineCount > 0) {
+      toast.error("Export blocked: archived account amounts would be omitted.");
+      return;
+    }
     if (hasInvalidAmounts) {
       toast.error("Fix invalid amounts before exporting the budget.");
       return;
@@ -665,7 +669,12 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
           Copy last year's actuals
         </Button>
         <div className="ml-auto flex flex-wrap gap-2">
-          <Button size="sm" variant="outline" disabled={hasInvalidAmounts} onClick={onExport}>
+          <Button
+              size="sm"
+              variant="outline"
+              disabled={hasInvalidAmounts || hiddenLineCount > 0}
+              onClick={onExport}
+            >
             <Download className="mr-1 size-4" /> Export CSV
           </Button>
           <Button
@@ -720,7 +729,7 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
             This budget contains {hiddenLineCount} saved monthly amount
             {hiddenLineCount === 1 ? "" : "s"} on inactive or unavailable accounts. Those
             amounts are preserved; saving replacements is blocked until the historical accounts
-            can be reviewed. Export or consult the revision history before changing accounts.
+            can be reviewed. Use the revision history to review the original amounts.
           </AlertDescription>
         </Alert>
       ) : null}
@@ -760,7 +769,8 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
       {hasInvalidAmounts ? (
         <Alert variant="destructive" className="mb-3">
           <AlertDescription>
-            {invalidAmountCount} amount{invalidAmountCount === 1 ? " is" : "s are"} not a valid number. Fix
+            {invalidAmountCount} amount
+            {invalidAmountCount === 1 ? " is" : "s are"} not a valid number. Fix
             the highlighted monthly or annual amounts before saving, exporting or using bulk
             actions.
           </AlertDescription>

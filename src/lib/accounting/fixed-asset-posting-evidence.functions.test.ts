@@ -180,9 +180,9 @@ describe("Fixed Assets posting evidence endpoints: read-only and company-scoped"
     ]) expect(seen).toHaveBeenCalledWith(table, "company_id", company);
   });
   it("rejects invalid company, run and asset IDs before any database call", async () => {
-    await expect(callRun("wrong")).rejects.toThrow("Invalid company id");
-    await expect(callRun(company, "wrong")).rejects.toThrow(/Invalid depreciation run id/);
-    await expect(callDisposal(company, "wrong")).rejects.toThrow(/Invalid fixed asset id/);
+    expect(() => callRun("wrong")).toThrow("Invalid company id");
+    expect(() => callRun(company, "wrong")).toThrow(/Invalid depreciation run id/);
+    expect(() => callDisposal(company, "wrong")).toThrow(/Invalid fixed asset id/);
     expect(from).not.toHaveBeenCalled();
   });
   it("denies permission before any data query for both audit modes", async () => {

@@ -323,3 +323,24 @@ GitHub source file
   Focused **isolated direct-source** salary parser tests passed **20/20**;
   the actual Vitest, typecheck, lint and build were not executed in this
   environment. These checks do not establish production readiness.
+
+
+### Salary line completeness guard
+
+Payroll salary structures and salary-version custom lines can contain blank
+placeholder rows. Blank rows still remain optional, but any line with a
+nonzero, malformed or nonempty salary field (or notes on a custom line)
+without a selected pay component now **fails validation** rather than being
+silently skipped. This prevents unintentionally omitting salary or deductions
+from the employee's remuneration configuration.
+
+- New `src/lib/payroll/salary-input.ts` validates exact minor amounts,
+  database maximum and basis-point percentages. Its dedicated Vitest test
+  file covers GBP, JPY, KWD, malformed inputs and limits.
+- Updated `src/lib/payroll/employee-draft.test.ts` covers invalid salary
+  effective dates and omitted pay components with populated salary values.
+- Direct isolated source checks from this continuation: **20/20** pure salary
+  input cases; **16/16** mixed source/date/line-integrity assertions.
+- Full app Vitest/typecheck/lint/build, isolated SQL fixture, browser E2E,
+  PR merge and deployment remain unverified; GitHub CI is
+  **Not run (per user instruction)**.

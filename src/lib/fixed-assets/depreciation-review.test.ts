@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { planDepreciationMonths, summarizeDepreciationPreview } from "./depreciation-review";
+import {
+  exactDepreciationTotalMinor,
+  planDepreciationMonths,
+  safeDepreciationTotalMinor,
+  summarizeDepreciationPreview,
+  validateDepreciationPostingPeriods,
+} from "./depreciation-review";
 import type { DepreciationRunRow } from "./fixed-assets.functions";
 
 const entry = (
@@ -74,5 +80,69 @@ describe("Fixed Assets depreciation review", () => {
   it("rejects malformed month values and posting limits above the API cap", () => {
     expect(() => planDepreciationMonths("2020-01-01", "2026-99")).toThrow();
     expect(() => planDepreciationMonths(null, "2026-11", 37)).toThrow(/36/);
+  });
+});
+
+
+describe("server-side depreciation posting request integrity", () => {
+  const latest = "2026-11-30";
+
+  it("accepts one valid month or consecutive month ends including leap February", () => {
+    expect(validateDepreciationPostingPeriods(["2026-11-30"], latest)).toEqual(["2026-11-30"]);
+    expect(
+      validateDepreciationPostingPeriods(
+        ["2024-01-31", "2024-02-29", "2024-03-31"],
+        latest,
+      ),
+    ).toEqual(["2024-01-31", "2024-02-29", "2024-03-31"]);
+  });
+
+  it("never reorders, deduplicates or skips requested months", () => {
+    expect(() => validateDepreciationPostingPeriods(
+      ["2026-09-30", "2026-09-30"], latest,
+    )).toThrow(/consecutive/i);
+    expect(() => validateDepreciationPostingPeriods(
+      ["2026-11-30", "2026-10-31"], latest,
+    )).toThrow(/consecutive/i);
+    expect(() => validateDepreciationPostingPeriods(
+      ["2026-09-30", "2026-11-30"], latest,
+    )).toThrow(/consecutive/i);
+  });
+
+  it("blocks more than 36 months and future or malformed month ends", () => {
+    expect(() => validateDepreciationPostingPeriods([], latest)).toThrow(/at least one/i);
+    expect(() => validateDepreciationPostingPeriods(
+      planDepreciationMonths("2023-01-01", "2026-01", 36).periodEnds.concat("2026-01-31"),
+      latest,
+    )).toThrow(/36/i);
+    expect(() => validateDepreciationPostingPeriods(["2026-12-31"], latest))
+      .toThrow(/not started/i);
+    expect(() => validateDepreciationPostingPeriods(["2026-02-30"], latest))
+      .toThrow(/real month end/i);
+    expect(() => validateDepreciationPostingPeriods(["2026-11-29"], latest))
+      .toThrow(/real month end/i);
+    expect(() => validateDepreciationPostingPeriods(["2026-11-30"], "2026-11-29"))
+      .toThrow(/permitted posting month/i);
+  });
+
+  it("sums posted monetary totals with exact bigints and guards preview API precision", () => {
+    const posted: DepreciationRunRow[] = [
+      entry("a", "posted", Number.MAX_SAFE_INTEGER),
+      entry("b", "posted", 10),
+    ];
+    expect(exactDepreciationTotalMinor(posted, "posted"))
+      .toBe("9007199254741001");
+    expect(() => safeDepreciationTotalMinor(posted, "posted"))
+      .toThrow(/precision/i);
+    expect(safeDepreciationTotalMinor([entry("a", "due", 500)], "due"))
+      .toBe(500);
+    expect(exactDepreciationTotalMinor([], "posted")).toBe("0");
+  });
+
+  it("refuses a fractional or negative posted amount", () => {
+    expect(() => exactDepreciationTotalMinor([entry("bad", "posted", -3)], "posted"))
+      .toThrow(/invalid positive/i);
+    expect(() => exactDepreciationTotalMinor([entry("bad", "posted", 3.5)], "posted"))
+      .toThrow(/invalid positive/i);
   });
 });

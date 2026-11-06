@@ -223,6 +223,143 @@ export const getTaxGlComparison = createServerFn({ method: "GET" })
     return calculateGlReview(context.supabase as unknown as Sb, data);
   });
 
+export type TaxGlReviewStatus = "open" | "in_review" | "resolved";
+
+type TaxGlReviewScope = ReviewPeriod & {
+  outputAccountId: string;
+  inputAccountId: string;
+};
+function taxGlReviewScope(input: TaxGlReviewScope): TaxGlReviewScope {
+  const period = periodInput(input);
+  return {
+    ...period,
+    outputAccountId: assertUuid(input.outputAccountId, "output tax GL account"),
+    inputAccountId: assertUuid(input.inputAccountId, "input tax GL account"),
+  };
+}
+
+/** Review state and immutable change history; never creates GL postings. */
+export const getTaxGlReview = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(taxGlReviewScope)
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "accounting.view");
+    const { data: row, error } = await context.supabase
+      .from("tax_gl_review_sessions" as never)
+      .select("id, status, review_note, reviewer_id, comparison_snapshot, version, created_at, updated_at, updated_by" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("period_start" as never, data.periodStart as never)
+      .eq("period_end" as never, data.periodEnd as never)
+      .eq("basis" as never, data.basis as never)
+      .eq("output_account_id" as never, data.outputAccountId as never)
+      .eq("input_account_id" as never, data.inputAccountId as never)
+      .maybeSingle();
+    if (error) {
+      if (error.code === "42P01" || error.code === "PGRST205") {
+        return { available: false as const, reason: "Tax review migration has not been applied.", review: null, events: [] };
+      }
+      throw new Error(error.message);
+    }
+    const review = row as ({
+      id: string; status: TaxGlReviewStatus; review_note: string;
+      reviewer_id: string | null; comparison_snapshot: string; version: number;
+      created_at: string; updated_at: string; updated_by: string | null;
+    } | null);
+    if (!review) return { available: true as const, review: null, events: [] };
+    const { data: events, error: eventsError } = await context.supabase
+      .from("tax_gl_review_events" as never)
+      .select("id, actor_user_id, event_type, previous_status, new_status, previous_reviewer_id, new_reviewer_id, review_note, comparison_snapshot, version, created_at" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("review_id" as never, review.id as never)
+      .order("created_at" as never, { ascending: false })
+      .limit(50);
+    if (eventsError) throw new Error(eventsError.message);
+    return {
+      available: true as const,
+      review,
+      events: (events ?? []) as Array<{
+        id: string; actor_user_id: string | null; event_type: string;
+        previous_status: string | null; new_status: string;
+        previous_reviewer_id: string | null; new_reviewer_id: string | null;
+        review_note: string; comparison_snapshot: string; version: number; created_at: string;
+      }>,
+    };
+  });
+
+/** Optimistic version + server-recalculated snapshot protect reviewer decisions. */
+export const saveTaxGlReview = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: TaxGlReviewScope & {
+    status: TaxGlReviewStatus;
+    reviewNote: string;
+    assignToMe: boolean;
+    expectedVersion: number | null;
+    expectedSnapshot: string;
+  }) => {
+    const scope = taxGlReviewScope(input);
+    if (!["open", "in_review", "resolved"].includes(input.status)) {
+      throw new Error("Invalid review status");
+    }
+    const reviewNote = (input.reviewNote ?? "").trim();
+    if (reviewNote.length > 4000) throw new Error("Review note cannot exceed 4000 characters");
+    if (input.status === "resolved" && (scope.basis !== "accrual" || reviewNote.length < 10)) {
+      throw new Error("Only accrual reviews with a meaningful resolution note may be resolved");
+    }
+    if (input.expectedVersion !== null &&
+      (!Number.isSafeInteger(input.expectedVersion) || input.expectedVersion < 1)) {
+      throw new Error("Invalid expected review version");
+    }
+    if (typeof input.expectedSnapshot !== "string" || !input.expectedSnapshot ||
+      input.expectedSnapshot.length > 500) throw new Error("Refresh the GL comparison before saving");
+    return { ...scope, status: input.status, reviewNote,
+      assignToMe: input.assignToMe === true, expectedVersion: input.expectedVersion,
+      expectedSnapshot: input.expectedSnapshot };
+  })
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "accounting.view");
+    await assertCompanyPermission(context.supabase, data.companyId, "tax.settings");
+    const current = await calculateGlReview(
+      context.supabase as unknown as Sb, data,
+    );
+    if (!current.available) throw new Error(current.reason);
+    if (current.outputAccountId !== data.outputAccountId ||
+      current.inputAccountId !== data.inputAccountId) {
+      throw new Error("Tax GL mapping has changed; refresh the review.");
+    }
+    if (current.snapshot !== data.expectedSnapshot) {
+      throw new Error("GL or return activity changed. Refresh the comparison before saving.");
+    }
+    let assignedTo: string | null = null;
+    if (data.assignToMe) {
+      const { data: auth, error: authError } = await context.supabase.auth.getUser();
+      if (authError || !auth.user?.id) throw new Error("Cannot verify reviewer identity.");
+      assignedTo = auth.user.id;
+    }
+    const { data: rows, error } = await context.supabase.rpc(
+      "save_tax_gl_review" as never,
+      {
+        _company_id: data.companyId,
+        _period_start: data.periodStart,
+        _period_end: data.periodEnd,
+        _basis: data.basis,
+        _output_account_id: data.outputAccountId,
+        _input_account_id: data.inputAccountId,
+        _status: data.status,
+        _review_note: data.reviewNote,
+        _reviewer_id: assignedTo,
+        _comparison_snapshot: current.snapshot,
+        _expected_version: data.expectedVersion,
+      } as never,
+    );
+    if (error) {
+      if (isMissingRpc(error)) throw new Error("Tax review database migration has not been applied.");
+      throw new Error(error.message);
+    }
+    const updated = ((rows ?? []) as Array<{ review_id: string; new_version: number }>)[0];
+    if (!updated) throw new Error("Tax review save did not return a version.");
+    return { reviewId: updated.review_id, version: updated.new_version };
+  });
+
 /** Where the "new return" form should start, from the filing frequency and the last filed return. */
 export const getReturnDefaults = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

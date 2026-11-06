@@ -79,9 +79,8 @@ BEGIN
   RAISE EXCEPTION 'TEST: Policy version was forged';
  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN
-  INSERT INTO public.firm_onboarding_escalation_policies(
-    firm_id,enabled,first_overdue_days,updated_by)
-  VALUES(gen_random_uuid(),true,0,owner_id);
+  UPDATE public.firm_onboarding_escalation_policies
+    SET first_overdue_days=0,updated_by=owner_id WHERE firm_id=fid;
   RAISE EXCEPTION 'TEST: Invalid threshold accepted';
  EXCEPTION WHEN check_violation THEN NULL; END;
  PERFORM set_config('request.jwt.claims',

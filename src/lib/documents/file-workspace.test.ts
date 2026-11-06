@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  combinePossibleDuplicateFlags,
   fileFormatMimeTypes,
   filePreviewKind,
   internalFileUrl,
@@ -56,6 +57,15 @@ describe("Files workspace", () => {
     );
     expect(fileFormatMimeTypes("images")).toContain("image/webp");
     expect(fileFormatMimeTypes("text")).toEqual(["text/plain"]);
+  });
+
+  it("combines existing-visible and within-batch possible duplicates by file order", () => {
+    expect(combinePossibleDuplicateFlags([false, true, false], [true, false, false])).toEqual([
+      true,
+      true,
+      false,
+    ]);
+    expect(() => combinePossibleDuplicateFlags([false, true], [true])).toThrow("incomplete");
   });
 
   it("flags repeated names and sizes within a single upload batch", () => {

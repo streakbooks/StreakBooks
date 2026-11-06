@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  fixedAssetReconciliationCsv,
   reconcileFixedAssets,
   type ReconciliationAccount,
   type ReconciliationAsset,
@@ -201,6 +202,25 @@ describe("Fixed Assets / GL reconciliation", () => {
         "2026-11-06",
       ),
     ).toThrow(/unknown asset/i);
+  });
+
+  it("exports exact signed amounts and escapes spreadsheet formulas in account names", () => {
+    const result = reconcileFixedAssets(
+      [asset("a")],
+      depreciation,
+      balances("10000", "2000"),
+      [
+        { id: "cost", code: "1500", name: "=HYPERLINK(1)" },
+        { id: "acc", code: "1590", name: "Accumulated depreciation" },
+      ],
+      "2026-11-06",
+    );
+    const csv = fixedAssetReconciliationCsv(result);
+    expect(csv).toContain("GL account name");
+    expect(csv).toContain("'=HYPERLINK(1)");
+    expect(csv).toContain("-2000");
+    expect(csv).not.toContain('"=HYPERLINK(1)"');
+    expect(csv.split("\\r\\n")).toHaveLength(3);
   });
 
   it("keeps all source inputs unchanged", () => {

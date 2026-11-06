@@ -51,3 +51,34 @@ export function folderDisplayPath(
 ): string {
   return folderAncestors(folders, folderId).map((folder) => folder.name).join(" / ");
 }
+
+
+/**
+ * Resolve a folder and every nested descendant for organisation-scoped searches.
+ * The server must first load the bounded, company-filtered folder list.
+ * Cycles are ignored (they cannot be introduced through the normal DB trigger).
+ */
+export function folderDescendantIds(
+  folders: readonly Pick<DocumentFolder, "id" | "parent_id">[],
+  rootId: string,
+): string[] {
+  if (!folders.some((folder) => folder.id === rootId)) return [];
+  const byParent = new Map<string, string[]>();
+  for (const folder of folders) {
+    if (!folder.parent_id) continue;
+    const children = byParent.get(folder.parent_id) ?? [];
+    children.push(folder.id);
+    byParent.set(folder.parent_id, children);
+  }
+  const ids: string[] = [];
+  const seen = new Set<string>();
+  const pending = [rootId];
+  for (let index = 0; index < pending.length; index += 1) {
+    const id = pending[index]!;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    ids.push(id);
+    pending.push(...(byParent.get(id) ?? []));
+  }
+  return ids;
+}

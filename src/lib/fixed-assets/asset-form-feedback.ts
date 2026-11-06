@@ -59,12 +59,12 @@ export function validateAssetFormForDisplay(values: AssetFormValues): AssetFormF
     flag("opening", "Enter brought-forward depreciation of zero or more.");
   }
   if (values.method === "straight_line" &&
-      (!Number.isInteger(values.lifeMonths) || !values.lifeMonths ||
+      (typeof values.lifeMonths !== "number" || !Number.isInteger(values.lifeMonths) ||
         values.lifeMonths < 1 || values.lifeMonths > 1200)) {
     flag("life", "Useful life must be 1 to 1,200 months.");
   }
   if (values.method === "reducing_balance" &&
-      (!Number.isInteger(values.rateBps) || !values.rateBps ||
+      (typeof values.rateBps !== "number" || !Number.isInteger(values.rateBps) ||
         values.rateBps < 1 || values.rateBps > 10000)) {
     flag("rate", "Annual rate must be between 0.01% and 100%.");
   }

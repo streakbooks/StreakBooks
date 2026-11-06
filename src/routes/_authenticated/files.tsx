@@ -24,6 +24,7 @@ import { useCan } from "@/hooks/use-can";
 import { useFormat } from "@/hooks/use-format";
 import { DocumentReviewQueue } from "@/components/documents/DocumentReviewQueue";
 import {
+  checkPossibleFileDuplicates,
   deleteAttachment,
   getAttachmentDownload,
   getAttachmentPreview,
@@ -48,7 +49,12 @@ import {
   moveDocumentToFolder,
 } from "@/lib/documents/folders.functions";
 import { folderAncestors, folderDisplayPath, possibleParentFolders } from "@/lib/documents/folder-tree";
-import { internalFileUrl, type FileFormat } from "@/lib/documents/file-workspace";
+import {
+  internalFileUrl,
+  repeatedUploadFlags,
+  selectUploadIndexes,
+  type FileFormat,
+} from "@/lib/documents/file-workspace";
 import { MAX_FILES_PER_BATCH, runFileBatch } from "@/lib/documents/file-batch";
 import { downloadBase64, uploadCompanyDocument } from "@/lib/documents/upload-client";
 import { openSignedDownload } from "@/lib/documents/ui";
@@ -96,6 +102,16 @@ export const Route = createFileRoute("/_authenticated/files")({
 });
 
 const PAGE_SIZE = 25;
+type UploadInput = {
+  files: File[];
+  sourceCompanyId: string;
+  targetFolderId: string | null;
+};
+
+type UploadReview = UploadInput & {
+  flags: boolean[];
+  scanFailed: boolean;
+};
 
 function FilesPage() {
   const { company } = useActiveCompany();
@@ -104,6 +120,7 @@ function FilesPage() {
   const fmt = useFormat();
   const queryClient = useQueryClient();
   const fetchFiles = useServerFn(listCompanyFiles);
+  const checkDuplicates = useServerFn(checkPossibleFileDuplicates);
   const fetchFileDetails = useServerFn(getCompanyFile);
   const renameFile = useServerFn(renameAttachment);
   const register = useServerFn(registerAttachment);
@@ -155,6 +172,7 @@ function FilesPage() {
     name: string;
   } | null>(null);
   const [pendingBulkDelete, setPendingBulkDelete] = useState<string[] | null>(null);
+  const [pendingUploadReview, setPendingUploadReview] = useState<UploadReview | null>(null);
   const [failedDeleteBatch, setFailedDeleteBatch] = useState<{
     companyId: string;
     ids: string[];
@@ -306,21 +324,22 @@ function FilesPage() {
   useEffect(() => setShowRenameFile(false), [companyId, selectedFile]);
   useEffect(() => {
     setPendingBulkDelete(null);
+    setPendingUploadReview(null);
     setFailedDeleteBatch(null);
     setFailedMoveBatch(null);
   }, [companyId]);
 
   const uploadM = useMutation({
-    mutationFn: async (files: File[]) => {
+    mutationFn: async ({ files, sourceCompanyId, targetFolderId }: UploadInput) => {
       let uploaded = 0;
       for (const file of files) {
         try {
           await uploadCompanyDocument({
             file,
-            companyId: companyId!,
+            companyId: sourceCompanyId,
             entityType: "company",
-            entityId: companyId!,
-            folderId,
+            entityId: sourceCompanyId,
+            folderId: targetFolderId,
             register: register as never,
           });
           uploaded += 1;
@@ -332,15 +351,47 @@ function FilesPage() {
       }
       return uploaded;
     },
-    onSuccess: async (n) => {
-      setError(null);
-      setPage(0);
-      await queryClient.invalidateQueries({ queryKey: ["company-files", companyId] });
+    onSuccess: async (n, input) => {
+      if (companyId === input.sourceCompanyId) {
+        setError(null);
+        setPage(0);
+      }
+      await queryClient.invalidateQueries({ queryKey: ["company-files", input.sourceCompanyId] });
       toast.success(n === 1 ? "File uploaded" : `${n} files uploaded`);
     },
-    onError: async (e) => {
-      setError(friendlyAuthError(e));
-      await queryClient.invalidateQueries({ queryKey: ["company-files", companyId] });
+    onError: async (e, input) => {
+      if (companyId === input.sourceCompanyId) setError(friendlyAuthError(e));
+      await queryClient.invalidateQueries({ queryKey: ["company-files", input.sourceCompanyId] });
+    },
+  });
+
+  const duplicateCheckM = useMutation({
+    mutationFn: (input: UploadInput) =>
+      checkDuplicates({
+        data: {
+          companyId: input.sourceCompanyId,
+          candidates: input.files.map((file) => ({ fileName: file.name, sizeBytes: file.size })),
+        },
+      }),
+    onSuccess: (result, input) => {
+      if (companyId !== input.sourceCompanyId) return;
+      const localFlags = repeatedUploadFlags(input.files);
+      if (result.possibleMatches.length !== input.files.length) {
+        setPendingUploadReview({ ...input, flags: localFlags, scanFailed: true });
+        return;
+      }
+      const flags = localFlags.map((flag, index) => flag || result.possibleMatches[index] === true);
+      if (flags.some(Boolean)) setPendingUploadReview({ ...input, flags, scanFailed: false });
+      else uploadM.mutate(input);
+    },
+    onError: (_error, input) => {
+      if (companyId !== input.sourceCompanyId) return;
+      // Never silently upload when the existing-file check could not be completed.
+      setPendingUploadReview({
+        ...input,
+        flags: repeatedUploadFlags(input.files),
+        scanFailed: true,
+      });
     },
   });
 
@@ -465,7 +516,15 @@ function FilesPage() {
   };
 
   const onPick = (list: FileList | null) => {
-    if (!list || list.length === 0 || !canUpload || uploadM.isPending) return;
+    if (
+      !list ||
+      list.length === 0 ||
+      !companyId ||
+      !canUpload ||
+      uploadM.isPending ||
+      duplicateCheckM.isPending ||
+      pendingUploadReview
+    ) return;
     const files = Array.from(list);
     if (files.length > MAX_FILES_PER_BATCH) {
       setError(`Upload up to ${MAX_FILES_PER_BATCH} files at a time.`);
@@ -481,8 +540,28 @@ function FilesPage() {
       }
     }
     setError(null);
-    uploadM.mutate(files);
+    duplicateCheckM.mutate({
+      files,
+      sourceCompanyId: companyId,
+      targetFolderId: folderId,
+    });
     if (inputRef.current) inputRef.current.value = "";
+  };
+
+  const confirmReviewedUpload = (includePossibleDuplicates: boolean) => {
+    const review = pendingUploadReview;
+    if (!review || review.sourceCompanyId !== companyId || uploadM.isPending) return;
+    const indexes = selectUploadIndexes(review.flags, includePossibleDuplicates);
+    setPendingUploadReview(null);
+    if (!indexes.length) {
+      toast.info("No files selected for upload after skipping possible duplicates.");
+      return;
+    }
+    uploadM.mutate({
+      files: indexes.map((index) => review.files[index]!),
+      sourceCompanyId: review.sourceCompanyId,
+      targetFolderId: review.targetFolderId,
+    });
   };
 
   const data = filesQ.data;

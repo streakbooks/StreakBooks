@@ -1,6 +1,7 @@
-import { CLIENT_STATUSES, type FirmClientStatus } from "./client-profiles.functions";
+import type { FirmClientStatus } from "./client-profiles.functions";
 import {
   DEFAULT_FIRM_CLIENT_COLUMNS,
+  STATUS_LABELS,
   normalizeFirmClientColumns,
   type FirmClientColumn,
   type FirmClientReviewFilter,
@@ -49,7 +50,9 @@ export function normalizeFirmSavedViews(value: unknown): FirmSavedView[] {
       name,
       query: typeof item.query === "string" ? item.query.trim().slice(0, 100) : "",
       status:
-        item.status === "all" || CLIENT_STATUSES.some((status) => status === item.status)
+        item.status === "all" ||
+        (typeof item.status === "string" &&
+          Object.prototype.hasOwnProperty.call(STATUS_LABELS, item.status))
           ? (item.status as FirmSavedView["status"])
           : "all",
       review: REVIEW_FILTERS.some((review) => review === item.review)
@@ -73,9 +76,7 @@ export function normalizeFirmDirectoryPreference(
 export function readFirmDirectoryPreferences(
   rows: { preference_key: string; preference_value: unknown }[],
 ): FirmDirectoryPreferences {
-  const columns = rows.find(
-    (row) => row.preference_key === FIRM_DIRECTORY_PREFERENCE_KEYS.columns,
-  );
+  const columns = rows.find((row) => row.preference_key === FIRM_DIRECTORY_PREFERENCE_KEYS.columns);
   const views = rows.find((row) => row.preference_key === FIRM_DIRECTORY_PREFERENCE_KEYS.views);
   return {
     columns: columns ? normalizeFirmClientColumns(columns.preference_value) : null,
@@ -93,9 +94,13 @@ export function replaceFirmSavedView(
   const sameName = current.find(
     (item) => item.name.toLocaleLowerCase() === normalized.name.toLocaleLowerCase(),
   );
-  if (sameName) return normalizeFirmSavedViews(current.map((item) =>
-    item.id === sameName.id ? { ...normalized, id: sameName.id } : item,
-  ));
+  if (sameName) {
+    return normalizeFirmSavedViews(
+      current.map((item) =>
+        item.id === sameName.id ? { ...normalized, id: sameName.id } : item,
+      ),
+    );
+  }
   if (current.length >= 20) return current;
   return normalizeFirmSavedViews([...current, normalized]);
 }

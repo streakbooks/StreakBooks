@@ -23,6 +23,7 @@ import { FxPanel } from "@/components/accounting/FxPanel";
 import { FinancialYearsPanel } from "@/components/accounting/FinancialYearsPanel";
 import { IndustryCoaPanel } from "@/components/accounting/IndustryCoaPanel";
 import { LedgerHealthPanel } from "@/components/accounting/LedgerHealthPanel";
+import { ReconciliationExceptionCentre } from "@/components/accounting/ReconciliationExceptionCentre";
 import { JournalsPanel } from "@/components/accounting/JournalsPanel";
 import { PeriodClosePanel } from "@/components/accounting/PeriodClosePanel";
 
@@ -189,6 +190,17 @@ export function AccountingWorkspace({
           <Link
             className={nativeTabLinkClass}
             role="tab"
+            aria-selected={tab === "exceptions"}
+            data-state={tab === "exceptions" ? "active" : "inactive"}
+            to="/accounting"
+            search={{ tab: "exceptions" }}
+            resetScroll={false}
+          >
+            Reconciliation exceptions
+          </Link>
+          <Link
+            className={nativeTabLinkClass}
+            role="tab"
             aria-selected={tab === "conversion"}
             data-state={tab === "conversion" ? "active" : "inactive"}
             to="/accounting"
@@ -273,6 +285,10 @@ export function AccountingWorkspace({
 
         <TabsContent value="close" className="mt-4">
           <PeriodClosePanel key={companyId} companyId={companyId} initialPeriodId={search.period} />
+        </TabsContent>
+
+        <TabsContent value="exceptions" className="mt-4">
+          <ReconciliationExceptionCentre key={companyId} companyId={companyId} />
         </TabsContent>
 
         <TabsContent value="health" className="mt-4">

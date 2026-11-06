@@ -5,6 +5,7 @@ import { assertUuid } from "@/lib/company-validation";
 import { isMissingRpc } from "@/lib/accounting/fetch-all";
 import { loadCompanyMeta, loadPostedLines, type Sb } from "@/lib/accounting/ledger-data";
 import { compareTaxReturnWithGl } from "@/lib/tax/tax-gl-comparison";
+import { taxGlReviewSnapshot, taxJournalEvidence } from "@/lib/tax/tax-gl-evidence";
 import { postJournal } from "@/lib/accounting/posting-engine";
 import { requireAccountInCompany } from "@/lib/purchases/accounts";
 import { todayIso } from "@/lib/accounting/fiscal-year";
@@ -142,58 +143,84 @@ export const previewTaxReturn = createServerFn({ method: "GET" })
     };
   });
 
+type ReviewPeriod = {
+  companyId: string;
+  periodStart: string;
+  periodEnd: string;
+  basis: "cash" | "accrual";
+};
+
 /**
- * Read-only comparison of return document tax with the organisation's configured
- * output/input tax control account movements over the same period.
- * Does not treat the cash-basis document return as a GL reconciliation.
+ * Central read-only calculation shared by preview, snapshot verification and
+ * reviewer saves. Never rely on client-supplied reconciliation amounts.
  */
+async function calculateGlReview(sb: Sb, params: ReviewPeriod) {
+  const settings = await taxSettings(sb, params.companyId);
+  if (!settings.outputAccountId || !settings.inputAccountId) {
+    return {
+      available: false as const,
+      reason: "Configure both tax control accounts under Tax → GL mappings.",
+    };
+  }
+  if (settings.outputAccountId === settings.inputAccountId) {
+    return {
+      available: false as const,
+      reason: "Distinct output and input tax GL accounts are required.",
+    };
+  }
+  await requireAccountInCompany(sb, params.companyId, settings.outputAccountId);
+  await requireAccountInCompany(sb, params.companyId, settings.inputAccountId);
+  const calculated = await computeReturn(sb, params);
+  const lines = await loadPostedLines(sb, params.companyId, calculated.meta.baseCurrency, {
+    from: params.periodStart, to: params.periodEnd,
+    accountIds: [settings.outputAccountId, settings.inputAccountId],
+  });
+  const comparison = compareTaxReturnWithGl({
+    basis: params.basis,
+    outputAccountId: settings.outputAccountId,
+    inputAccountId: settings.inputAccountId,
+    outputReturnMinor: Number(calculated.totals.outputTax),
+    inputReturnMinor: Number(calculated.totals.inputTax),
+    lines,
+  });
+  const evidence = taxJournalEvidence(
+    lines, settings.outputAccountId, settings.inputAccountId, 100,
+  );
+  const snapshot = taxGlReviewSnapshot({
+    periodStart: params.periodStart, periodEnd: params.periodEnd,
+    basis: params.basis,
+    outputAccountId: settings.outputAccountId,
+    inputAccountId: settings.inputAccountId,
+    returnOutputMinor: comparison.output.returnMinor,
+    returnInputMinor: comparison.input.returnMinor,
+    glOutputMinor: comparison.output.totalMinor,
+    glInputMinor: comparison.input.totalMinor,
+    journalLines: comparison.journalLines,
+    documentOutputMinor: comparison.output.documentMinor,
+    documentInputMinor: comparison.input.documentMinor,
+    reversalOutputMinor: comparison.output.reversalMinor,
+    reversalInputMinor: comparison.input.reversalMinor,
+  });
+  return {
+    available: true as const,
+    currency: calculated.meta.baseCurrency,
+    periodStart: params.periodStart,
+    periodEnd: params.periodEnd,
+    outputAccountId: settings.outputAccountId,
+    inputAccountId: settings.inputAccountId,
+    snapshot,
+    evidence,
+    ...comparison,
+  };
+}
+
+/** Read-only, permissioned comparison with bounded journal evidence. */
 export const getTaxGlComparison = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(periodInput)
   .handler(async ({ data, context }) => {
-    await assertCompanyMember(context.supabase, data.companyId);
-    const sb = context.supabase as unknown as Sb;
-    const settings = await taxSettings(sb, data.companyId);
-    if (!settings.outputAccountId || !settings.inputAccountId) {
-      return {
-        available: false as const,
-        reason: "Configure both tax control accounts in Tax → GL mappings before comparing the General Ledger.",
-      };
-    }
-    if (settings.outputAccountId === settings.inputAccountId) {
-      return {
-        available: false as const,
-        reason: "Output tax and input tax currently use the same GL account; distinct mapped accounts are required for this diagnostic.",
-      };
-    }
-    // Historical or manually imported mappings must also belong to the current tenant.
-    await requireAccountInCompany(context.supabase, data.companyId, settings.outputAccountId);
-    await requireAccountInCompany(context.supabase, data.companyId, settings.inputAccountId);
-    const calculated = await computeReturn(sb, data);
-    const lines = await loadPostedLines(sb, data.companyId, calculated.meta.baseCurrency, {
-      from: data.periodStart,
-      to: data.periodEnd,
-      accountIds: [settings.outputAccountId, settings.inputAccountId],
-    });
-    const outputTax = Number(calculated.totals.outputTax);
-    const inputTax = Number(calculated.totals.inputTax);
-    const comparison = compareTaxReturnWithGl({
-      basis: data.basis,
-      outputAccountId: settings.outputAccountId,
-      inputAccountId: settings.inputAccountId,
-      outputReturnMinor: outputTax,
-      inputReturnMinor: inputTax,
-      lines,
-    });
-    return {
-      available: true as const,
-      currency: calculated.meta.baseCurrency,
-      periodStart: data.periodStart,
-      periodEnd: data.periodEnd,
-      outputAccountId: settings.outputAccountId,
-      inputAccountId: settings.inputAccountId,
-      ...comparison,
-    };
+    await assertCompanyPermission(context.supabase, data.companyId, "accounting.view");
+    return calculateGlReview(context.supabase as unknown as Sb, data);
   });
 
 /** Where the "new return" form should start, from the filing frequency and the last filed return. */

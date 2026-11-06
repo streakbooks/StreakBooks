@@ -52,7 +52,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -203,7 +203,11 @@ function FixedAssetsPage() {
         }
       />
       <Tabs value={tab}>
-        <TabsList className="h-auto flex-wrap gap-1" onKeyDown={handleNativeTabKeyDown}>
+        <TabsList
+          className="flex min-h-11 w-full max-w-full flex-nowrap justify-start overflow-x-auto gap-1"
+          onKeyDown={handleNativeTabKeyDown}
+          aria-label="Fixed Assets sections"
+        >
           <Link
             className={nativeTabLinkClass}
             role="tab"
@@ -255,6 +259,9 @@ function FixedAssetsPage() {
             Reconcile to GL
           </Link>
         </TabsList>
+        <p className="mt-1 text-xs text-muted-foreground sm:hidden">
+          Swipe the section tabs horizontally to view all Fixed Assets screens.
+        </p>
 
         <TabsContent value="register" className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">

@@ -252,8 +252,14 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
         },
       });
     },
-    onSuccess: () => {
-      toast.success("Payroll payment recorded");
+    onSuccess: (result) => {
+      if (result.replayed) {
+        toast.message("Existing payroll payment confirmed", {
+          description: "This was a safe retry. No second payment or journal was created.",
+        });
+      } else {
+        toast.success("Payroll payment recorded");
+      }
       setRecordOpen(false);
       setAlloc({});
       setAmountMajor("");

@@ -15,7 +15,53 @@ test("search, clear and CSV export use exactly the visible records", async ({ pa
   expect(csv).toContain("Northfield Media");
   expect(csv).not.toContain("River & Co");
   await page.getByRole("button", { name: "Clear search", exact: true }).click();
+  await expect(page.getByRole("searchbox", { name: "Search invoices" })).toBeFocused();
   await expect(page.getByRole("cell", { name: "River & Co", exact: true })).toBeVisible();
+  await page.keyboard.type("River");
+  await expect(page.getByRole("cell", { name: "Northfield Media", exact: true })).toHaveCount(0);
+});
+
+for (const width of [375, 768, 1440]) {
+  test(`search keyboard recovery at ${width}px keeps focus and filtered records in sync`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto("/sales/invoices");
+    const search = page.getByRole("searchbox", { name: "Search invoices" });
+    await search.fill("Northfield");
+    await search.press("Escape");
+    await expect(search).toHaveValue("");
+    await expect(search).toBeFocused();
+    await expect(page.getByRole("cell", { name: "River & Co", exact: true })).toBeVisible();
+    await page.keyboard.type("River");
+    await search.press("Tab");
+    await expect(page.getByRole("button", { name: "Clear search", exact: true })).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(search).toHaveValue("");
+    await expect(search).toBeFocused();
+    await search.press("Escape");
+    await expect(search).toBeFocused();
+    await page.keyboard.type("Northfield");
+    await expect(page.getByRole("cell", { name: "River & Co", exact: true })).toHaveCount(0);
+  });
+}
+
+test("Escape does not clear a search while composing text", async ({ page }) => {
+  await page.goto("/sales/invoices");
+  const search = page.getByRole("searchbox", { name: "Search invoices" });
+  await search.fill("Northfield");
+  // The synthetic event exercises the input's IME guard; actual composition still needs
+  // browser/OS acceptance testing with an input method enabled.
+  await search.evaluate((input) => {
+    input.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Escape",
+        bubbles: true,
+        isComposing: true,
+      }),
+    );
+  });
+  await expect(search).toHaveValue("Northfield");
 });
 
 test("shared appearance and selection controls update the active list", async ({ page }) => {

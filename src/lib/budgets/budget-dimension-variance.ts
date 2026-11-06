@@ -20,6 +20,31 @@ export function eligibleDimensionActualLines<T extends {
   return postedLines.filter((line) => !isYearEndCloseLine(line));
 }
 
+/**
+ * Query only category assignments for journal lines actually included in this
+ * posted-ledger report. Bounded 100-UUID batches avoid oversized PostgREST URLs.
+ * Identity problems fail closed; never silently drop an actual journal line.
+ */
+export function batchPostedLineIds(
+  lines: readonly { line_id?: string }[],
+  batchSize = 100,
+): string[][] {
+  if (!Number.isInteger(batchSize) || batchSize < 1 || batchSize > 100) {
+    throw new Error("Tracking lookup batch size must be between 1 and 100.");
+  }
+  const unique = new Set<string>();
+  for (const line of lines) {
+    if (!line.line_id) throw new Error("Posted journal line identity is missing.");
+    unique.add(line.line_id);
+  }
+  const ids = [...unique];
+  const batches: string[][] = [];
+  for (let i = 0; i < ids.length; i += batchSize) {
+    batches.push(ids.slice(i, i + batchSize));
+  }
+  return batches;
+}
+
 export type DimensionActualAccount = {
   id: string;
   code: string;

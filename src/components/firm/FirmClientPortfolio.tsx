@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Columns3 } from "lucide-react";
+import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -144,7 +145,8 @@ export function FirmClientPortfolio({
         }),
       );
     },
-    onError: (error) => toast.error("Cloud preferences could not be saved: " + friendlyAuthError(error)),
+    onError: (error) =>
+      toast.error("Cloud preferences could not be saved: " + friendlyAuthError(error)),
   });
   const preferenceBusy = cloudPreferencesQ.isPending || preferenceM.isPending;
   const savedViews =
@@ -196,7 +198,9 @@ export function FirmClientPortfolio({
     if (preferenceBusy || cloudPreferencesQ.isError) return;
     const name = savedViewName.trim().slice(0, 60);
     if (!name) return;
-    const existing = savedViews.find((item) => item.name.toLocaleLowerCase() === name.toLocaleLowerCase());
+    const existing = savedViews.find(
+      (item) => item.name.toLocaleLowerCase() === name.toLocaleLowerCase(),
+    );
     if (!existing && savedViews.length >= 20) {
       toast.error("You can save up to 20 views per firm");
       return;
@@ -215,7 +219,9 @@ export function FirmClientPortfolio({
         onSuccess: () => {
           setLocalViews({ firmId, views: next });
           setSelectedViewId(next.find((item) => item.name === name)?.id ?? "");
-          toast.success(existing ? "Client view updated in your account" : "Client view saved across devices");
+          toast.success(
+            existing ? "Client view updated in your account" : "Client view saved across devices",
+          );
         },
       },
     );
@@ -526,14 +532,15 @@ export function FirmClientPortfolio({
       <div className="flex flex-wrap items-end gap-2 rounded-lg border p-3">
         <div className="min-w-40 flex-1 space-y-1">
           <Label>Saved client views</Label>
-          <Select
+          <RecordLookupSelect
+            required
             value={selectedViewId || "none"}
             disabled={preferenceBusy || cloudPreferencesQ.isError || savedViews.length === 0}
             onValueChange={(value) => {
               if (value !== "none") applySavedView(value);
             }}
           >
-            {/* lookup-fixed-enum: View items are validated user-owned preference records. */}
+            {/* record-lookup: View items come from authenticated user-owned preferences. */}
             <SelectTrigger aria-label="Choose saved client view">
               <SelectValue placeholder="Choose a saved view" />
             </SelectTrigger>
@@ -545,7 +552,7 @@ export function FirmClientPortfolio({
                 </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+          </RecordLookupSelect>
         </div>
         <div className="min-w-40 flex-1 space-y-1">
           <Label htmlFor="firm-view-name">View name</Label>

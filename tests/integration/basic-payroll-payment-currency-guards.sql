@@ -3,8 +3,11 @@
 -- Every fixture is created within a transaction and rolled back.
 \set ON_ERROR_STOP on
 BEGIN;
+-- Used exclusively by this rollback-only fixture, never in application code.
+-- The owner-role trigger otherwise rejects a synthetic test organisation.
+SET LOCAL linkbooks.trusted = 'on';
 
-DO $$
+DO $
 DECLARE
   _u UUID := gen_random_uuid();
   _c UUID := gen_random_uuid();
@@ -60,7 +63,7 @@ BEGIN
 
   INSERT INTO public.accounts (
     company_id, code, name, account_type, normal_balance, account_kind
-  ) VALUES (_c, 'PAY-GUARD-BANK', 'Guard test bank', 'asset', 'debit', 'current_asset')
+  ) VALUES (_c, 'PAY-GUARD-BANK', 'Guard test bank', 'asset', 'debit', 'bank')
   RETURNING id INTO _bank;
 
   -- Database guard 2: bank/GL currency must also match payment currency.
@@ -68,7 +71,7 @@ BEGIN
     company_id, code, name, account_type, normal_balance, account_kind, currency_code
   ) VALUES (
     _c, 'PAY-GUARD-USD', 'Guard foreign-currency GL', 'asset', 'debit',
-    'current_asset', 'USD'
+    'bank', 'USD'
   ) RETURNING id INTO _foreign_account;
 
   BEGIN
@@ -140,8 +143,8 @@ BEGIN
     id, company_id, run_number, pay_schedule_id, period_start, period_end,
     payment_date, status, currency
   ) VALUES
-    (_run_gbp, _c, 'GUARD-RUN1', _schedule, '2026-01-01', '2026-01-31', '2026-02-05', 'approved', 'GBP'),
-    (_run_usd, _c, 'GUARD-RUN2', _schedule, '2026-02-01', '2026-02-28', '2026-03-05', 'approved', 'USD');
+    (_run_gbp, _c, 'GUARD-RUN1', _schedule, '2026-01-01', '2026-01-31', '2026-02-05', 'posted', 'GBP'),
+    (_run_usd, _c, 'GUARD-RUN2', _schedule, '2026-02-01', '2026-02-28', '2026-03-05', 'posted', 'USD');
 
   INSERT INTO public.payroll_run_employees (
     id, company_id, run_id, employee_id, gross_minor, deductions_minor, net_minor

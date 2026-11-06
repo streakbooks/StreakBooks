@@ -7,7 +7,7 @@ BEGIN;
 -- The owner-role trigger otherwise rejects a synthetic test organisation.
 SET LOCAL linkbooks.trusted = 'on';
 
-DO $
+DO $$
 DECLARE
   _u UUID := gen_random_uuid();
   _c UUID := gen_random_uuid();

@@ -282,3 +282,21 @@ GitHub source file
 - Full repository Vitest, typecheck, lint, production build, browser QA,
   and GitHub CI are **not run** in this session. GitHub CI was not run per
   user instruction.
+
+
+### Local calendar date defaults (November 6, 2026)
+
+- The new-payment and reverse-payment forms previously used
+  `new Date().toISOString().slice(0, 10)` (UTC day). That could populate
+  yesterday or tomorrow for staff in non-UTC time zones near midnight.
+- These defaults now use `todayLocalDateOnly()`, based on the user's
+  local calendar, both on initial form load and when opening a new payment
+  or reversing a previous payment.
+- `src/lib/payroll/local-date.test.ts` adds midnight and leap-day
+  regression cases. Isolated execution of the exact current helper passed
+  **5/5 cases**, including the local midnight and year boundary.
+- This does not select a date based on the organisation's IANA timezone;
+  user/local browser calendar is the UI default. Users can change the
+  date before recording.
+- Full Vitest, TypeScript, lint, build, authenticated browser tests and
+  GitHub CI were not run. GitHub CI remains **not run per user instruction**.

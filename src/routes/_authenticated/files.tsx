@@ -47,6 +47,7 @@ import {
   moveDocumentToFolder,
 } from "@/lib/documents/folders.functions";
 import { folderAncestors, folderDisplayPath, possibleParentFolders } from "@/lib/documents/folder-tree";
+import { type FileFormat } from "@/lib/documents/file-workspace";
 import { downloadBase64, uploadCompanyDocument } from "@/lib/documents/upload-client";
 import { openSignedDownload } from "@/lib/documents/ui";
 import { friendlyAuthError } from "@/lib/auth-helpers";
@@ -134,6 +135,9 @@ function FilesPage() {
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
   const [type, setType] = useState("all");
+  const [fileFormat, setFileFormat] = useState<FileFormat>("all");
+  const [includeSubfolders, setIncludeSubfolders] = useState(false);
+  const [folderSearch, setFolderSearch] = useState("");
   const [page, setPage] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [sort, setSort] = useState<"newest" | "oldest" | "name" | "largest">("newest");
@@ -164,6 +168,15 @@ function FilesPage() {
   const folders = (foldersQ.data ?? []) as FolderRow[];
   const activeFolder = folders.find((f) => f.id === folderId);
   const breadcrumbs = folderAncestors(folders, folderId);
+  const folderMatches = folderSearch.trim()
+    ? folders
+        .filter((f) =>
+          folderDisplayPath(folders, f.id)
+            .toLowerCase()
+            .includes(folderSearch.trim().toLowerCase()),
+        )
+        .slice(0, 20)
+    : [];
   const folderM = useMutation({
     mutationFn: async (name: string) =>
       createFolder({ data: { companyId: companyId!, name, parentId: folderId } }),
@@ -211,17 +224,27 @@ function FilesPage() {
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
   const filesQ = useQuery({
-    queryKey: ["company-files", companyId, debounced, type, folderId, page, sort, view],
+    queryKey: [
+      "company-files",
+      companyId,
+      debounced,
+      type,
+      folderId,
+      page,
+      sort,
+      view,
+      fileFormat,
+      includeSubfolders,
+    ],
     enabled: Boolean(companyId) && activeView !== "review",
-    // Never reuse a previous organisation's file list while switching companies.
-    placeholderData: (previousData, previousQuery) =>
-      previousQuery?.queryKey[1] === companyId ? previousData : undefined,
     queryFn: () =>
       fetchFiles({
         data: {
           companyId: companyId!,
           search: debounced,
           entityType: activeView === "to-file" ? "company" : type,
+          format: fileFormat,
+          includeSubfolders: folderId !== null && includeSubfolders,
           folderId: activeView === "to-file" ? null : folderId,
           unfiledOnly: activeView === "to-file",
           sort,
@@ -259,7 +282,10 @@ function FilesPage() {
     return () => URL.revokeObjectURL(url);
   }, [previewQ.data]);
   // Selection is deliberately limited to the current result page and its permissions.
-  useEffect(() => setSelectedIds([]), [companyId, debounced, type, folderId, page, sort, view]);
+  useEffect(
+    () => setSelectedIds([]),
+    [companyId, debounced, type, folderId, page, sort, view, fileFormat, includeSubfolders],
+  );
   useEffect(() => setShowRenameFile(false), [companyId, selectedFile]);
 
   const uploadM = useMutation({

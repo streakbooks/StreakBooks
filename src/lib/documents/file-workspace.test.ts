@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   combinePossibleDuplicateFlags,
   fileFormatMimeTypes,
+  fileListProjection,
   filePreviewKind,
   internalFileUrl,
   fileSortOrder,
@@ -42,6 +43,14 @@ describe("Files workspace", () => {
       "Invalid file identifier",
     );
     expect(() => internalFileUrl("file:///tmp/app", id)).toThrow("Invalid application origin");
+  });
+
+  it("uses RLS-aware tag relationship joins without huge in-list URLs", () => {
+    const base = "id, company_id, file_name";
+    expect(fileListProjection(base, null)).toBe(base);
+    expect(fileListProjection(base, "123e4567-e89b-12d3-a456-426614174000")).toBe(
+      "id, company_id, file_name, tag_match:document_attachment_tags!inner(tag_id)",
+    );
   });
 
   it("restricts filters to named MIME groups", () => {

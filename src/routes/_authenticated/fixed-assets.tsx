@@ -707,113 +707,185 @@ function RegisterTable({
   const fmt = useFormat();
   const queryClient = useQueryClient();
   const deleteFn = useServerFn(deleteFixedAsset);
+  const asOf = todayIso();
   const remove = useMutation({
     mutationFn: (assetId: string) => deleteFn({ data: { companyId, assetId } }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["fixed-assets", companyId] });
       toast.success("Asset deleted");
     },
-    onError: (e) => toast.error(friendlyAuthError(e)),
+    onError: (error) => toast.error(friendlyAuthError(error)),
   });
+  const removeAsset = (asset: FixedAssetRow) => {
+    if (window.confirm(`Delete ${asset.asset_number} ${asset.name}? This cannot be undone.`)) {
+      remove.mutate(asset.id);
+    }
+  };
+  const actions = (asset: FixedAssetRow, accumulated: number | null, compact = false) => {
+    const status = assetStatusAsOf(asset, asOf);
+    const isDisposed = asset.status === "disposed";
+    const hasPosted = asset.depreciated_through !== null;
+    return (
+      <div className={compact
+        ? "flex flex-wrap items-center gap-1 border-t pt-3"
+        : "flex items-center justify-end gap-1"}>
+        {compact ? (
+          <Button size="sm" variant="outline" onClick={() => onView(asset)}>
+            View
+          </Button>
+        ) : null}
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={!canManage || isDisposed}
+          onClick={() => onEdit(asset)}
+        >
+          Edit
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={!canPost || status !== "active" || accumulated === null}
+          title={status === "not_acquired" ? "The asset has not yet been purchased" : undefined}
+          onClick={() => onDispose(asset)}
+        >
+          Dispose
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={!canManage || isDisposed || hasPosted || remove.isPending}
+          title={
+            isDisposed || hasPosted
+              ? "An asset with posted depreciation or disposal cannot be deleted"
+              : "Delete this unposted asset"
+          }
+          onClick={() => removeAsset(asset)}
+        >
+          Delete
+        </Button>
+      </div>
+    );
+  };
+
+  const statusBadge = (asset: FixedAssetRow) => {
+    const status = assetStatusAsOf(asset, asOf);
+    if (status === "not_acquired")
+      return <Badge variant="outline">Future purchase</Badge>;
+    if (status === "disposed")
+      return <Badge variant="secondary">Disposed</Badge>;
+    return <Badge variant="outline">Active</Badge>;
+  };
+
   return (
-    <div className="overflow-x-auto rounded-lg border">
-      <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Asset</TableHead>
-          <TableHead>Purchased</TableHead>
-          <TableHead>Method</TableHead>
-          <TableHead className="text-right">Cost</TableHead>
-          <TableHead className="text-right">Accumulated</TableHead>
-          <TableHead className="text-right">Net book value</TableHead>
-          <TableHead>Depreciated to</TableHead>
-          <TableHead />
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {assets.map((a) => {
-          const acc = accumulatedOf(a);
-          const disposed = a.status === "disposed";
-          const asAtStatus = assetStatusAsOf(a, todayIso());
-          const hasPosted = a.depreciated_through !== null;
+    <>
+      <div className="grid gap-3 md:hidden" aria-label="Fixed asset register cards">
+        {assets.map((asset) => {
+          const accumulated = accumulatedOf(asset);
+          const status = assetStatusAsOf(asset, asOf);
+          const remaining =
+            status === "active" && accumulated !== null
+              ? fmt.amount(asset.cost_minor - accumulated, currency)
+              : "—";
           return (
-            <TableRow key={a.id}>
-              <TableCell>
-                <span className="mr-2 font-mono text-xs text-muted-foreground">
-                  {a.asset_number}
-                </span>
-                <button
-                  type="button"
-                  className="text-left font-medium text-primary underline-offset-4 hover:underline focus-visible:rounded focus-visible:outline focus-visible:outline-2"
-                  onClick={() => onView(a)}
-                  aria-label={"View details for " + a.asset_number + " " + a.name}
-                >
-                  {a.name}
-                </button>
-                {a.purchase_date > todayIso() ? (
-                  <Badge variant="outline" className="ml-2">
-                    Future purchase
-                  </Badge>
-                ) : null}
-                {disposed ? (
-                  <Badge variant="secondary" className="ml-2">
-                    Disposed {a.disposal_date ? fmt.date(a.disposal_date) : ""}
-                  </Badge>
-                ) : null}
-              </TableCell>
-              <TableCell>{fmt.date(a.purchase_date)}</TableCell>
-              <TableCell>{METHOD_LABEL.get(a.depreciation_method)}</TableCell>
-              <TableCell className="text-right tabular-nums">
-                {fmt.amount(a.cost_minor, currency)}
-              </TableCell>
-              <TableCell className="text-right tabular-nums">
-                {acc === null ? "–" : fmt.amount(acc, currency)}
-              </TableCell>
-              <TableCell className="text-right tabular-nums">
-                {asAtStatus !== "active" || acc === null ? "–" : fmt.amount(a.cost_minor - acc, currency)}
-              </TableCell>
-              <TableCell>
-                {a.depreciated_through ? fmt.date(a.depreciated_through) : "Not yet"}
-              </TableCell>
-              <TableCell className="whitespace-nowrap text-right">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  disabled={!canManage || disposed}
-                  onClick={() => onEdit(a)}
-                >
-                  Edit
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  disabled={!canPost || disposed || acc === null}
-                  onClick={() => onDispose(a)}
-                >
-                  Dispose
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  disabled={!canManage || disposed || hasPosted || remove.isPending}
-                  title={
-                    hasPosted || disposed
-                      ? "An asset with posted depreciation or a disposal cannot be deleted"
-                      : undefined
-                  }
-                  onClick={() => {
-                    if (window.confirm(`Delete ${a.asset_number} ${a.name}?`)) remove.mutate(a.id);
-                  }}
-                >
-                  Delete
-                </Button>
-              </TableCell>
-            </TableRow>
+            <article
+              key={asset.id}
+              className="min-w-0 space-y-3 rounded-xl border bg-card p-4 shadow-sm"
+              aria-label={asset.asset_number + " " + asset.name}
+            >
+              <header className="flex flex-wrap items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="font-mono text-xs text-muted-foreground">{asset.asset_number}</p>
+                  <button
+                    type="button"
+                    className="mt-1 break-words text-left font-semibold text-primary underline-offset-4 hover:underline focus-visible:rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
+                    onClick={() => onView(asset)}
+                    aria-label={"View details for " + asset.asset_number + " " + asset.name}
+                  >
+                    {asset.name}
+                  </button>
+                </div>
+                {statusBadge(asset)}
+              </header>
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                {[
+                  ["Purchased", fmt.date(asset.purchase_date)],
+                  ["Method", METHOD_LABEL.get(asset.depreciation_method) ?? "—"],
+                  ["Original cost", fmt.money(asset.cost_minor, currency)],
+                  ["Accumulated", accumulated === null ? "Unavailable" : fmt.money(accumulated, currency)],
+                  ["Net book value", remaining],
+                  ["Posted through", asset.depreciated_through
+                    ? fmt.date(asset.depreciated_through) : "Not posted"],
+                ].map(([label, value]) => (
+                  <div key={label} className="min-w-0">
+                    <dt className="text-xs text-muted-foreground">{label}</dt>
+                    <dd className="break-words font-medium tabular-nums">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+              {actions(asset, accumulated, true)}
+            </article>
           );
         })}
-      </TableBody>
-      </Table>
-    </div>
+      </div>
+      <div className="hidden overflow-x-auto rounded-lg border md:block">
+        <Table className="min-w-[960px]" aria-label="Fixed asset register">
+          <TableHeader>
+            <TableRow>
+              <TableHead>Asset</TableHead>
+              <TableHead>Purchased</TableHead>
+              <TableHead>Method</TableHead>
+              <TableHead className="text-right">Cost</TableHead>
+              <TableHead className="text-right">Accumulated</TableHead>
+              <TableHead className="text-right">Net book value</TableHead>
+              <TableHead>Depreciated to</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {assets.map((asset) => {
+              const accumulated = accumulatedOf(asset);
+              const asAtStatus = assetStatusAsOf(asset, asOf);
+              return (
+                <TableRow key={asset.id}>
+                  <TableCell className="min-w-44">
+                    <span className="mr-2 font-mono text-xs text-muted-foreground">
+                      {asset.asset_number}
+                    </span>
+                    <button
+                      type="button"
+                      className="text-left font-medium text-primary underline-offset-4 hover:underline focus-visible:rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
+                      onClick={() => onView(asset)}
+                      aria-label={"View details for " + asset.asset_number + " " + asset.name}
+                    >
+                      {asset.name}
+                    </button>
+                    <span className="mt-1 block">{statusBadge(asset)}</span>
+                  </TableCell>
+                  <TableCell>{fmt.date(asset.purchase_date)}</TableCell>
+                  <TableCell>{METHOD_LABEL.get(asset.depreciation_method)}</TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {fmt.amount(asset.cost_minor, currency)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {accumulated === null ? "—" : fmt.amount(accumulated, currency)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {asAtStatus !== "active" || accumulated === null
+                      ? "—"
+                      : fmt.amount(asset.cost_minor - accumulated, currency)}
+                  </TableCell>
+                  <TableCell>
+                    {asset.depreciated_through ? fmt.date(asset.depreciated_through) : "Not posted"}
+                  </TableCell>
+                  <TableCell>{actions(asset, accumulated)}</TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
+    </>
   );
 }
 

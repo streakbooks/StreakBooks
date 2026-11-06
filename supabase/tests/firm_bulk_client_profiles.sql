@@ -52,11 +52,55 @@ DECLARE
   pair jsonb;
   mixed jsonb;
   audit_count integer;
+  category_id uuid;
+  custom_key text;
 BEGIN
   fid:=public.create_practice_firm('Bulk profile test practice');
   INSERT INTO public.firm_members(firm_id,user_id,role) VALUES(fid,staff_id,'member');
   PERFORM public.manage_practice_client(fid,a,'view',false);
   PERFORM public.manage_practice_client(fid,b,'view',false);
+
+  insert into public.firm_service_categories(firm_id,name,created_by,updated_by)
+  values(fid,'Bookkeeping',owner_id,owner_id) returning id into category_id;
+  update public.firm_service_categories set name='Monthly Bookkeeping',updated_by=owner_id
+    where id=category_id and version=1;
+  if not exists(select 1 from public.firm_service_categories
+    where id=category_id and version=2 and name='Monthly Bookkeeping') then
+    raise exception 'Service category version failed';
+  end if;
+  begin
+    insert into public.firm_service_categories(firm_id,name,created_by,updated_by)
+    values(fid,'monthly bookkeeping',owner_id,owner_id);
+    raise exception 'TEST: Duplicate name inserted';
+  exception when unique_violation then null; end;
+
+  insert into public.firm_onboarding_template_steps(firm_id,title,created_by,updated_by)
+    values(fid,'Check payroll registration',owner_id,owner_id)
+    returning task_key into custom_key;
+  if custom_key !~ '^custom_[0-9a-f]{32}$' then
+    raise exception 'Custom checklist key invalid';
+  end if;
+  result:=public.apply_firm_onboarding_template(fid,a);
+  if result->>'added'<>'1' then raise exception 'Custom step was not applied'; end if;
+  update public.firm_client_onboarding_steps
+    set note='Evidence retained',completed_at=now(),completed_by=owner_id,updated_by=owner_id
+    where firm_id=fid and company_id=a and task_key=custom_key;
+  result:=public.apply_firm_onboarding_template(fid,a);
+  if result->>'added'<>'0' then raise exception 'Custom step was duplicated'; end if;
+  if not exists(select 1 from public.firm_client_onboarding_steps where firm_id=fid
+    and company_id=a and task_key=custom_key and note='Evidence retained'
+    and completed_at is not null) then
+    raise exception 'Custom step reapply overwrote evidence';
+  end if;
+  update public.firm_onboarding_template_steps set is_active=false,updated_by=owner_id
+    where firm_id=fid and task_key=custom_key and version=1;
+  result:=public.apply_firm_onboarding_template(fid,b);
+  if result->>'added'<>'0' then raise exception 'Archived step applied'; end if;
+  begin
+    perform public.apply_firm_onboarding_template(fid,foreign_company);
+    raise exception 'TEST: Unauthorized client template applied';
+  exception when insufficient_privilege then null; end;
+
   pair:=jsonb_build_array(
     jsonb_build_object('companyId',a,'expectedVersion',0),
     jsonb_build_object('companyId',b,'expectedVersion',0)

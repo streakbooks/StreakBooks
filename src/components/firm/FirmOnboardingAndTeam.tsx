@@ -18,6 +18,7 @@ import {
 } from "@/lib/firm/onboarding-insights";
 import { FirmOnboardingDashboard } from "@/components/firm/FirmOnboardingDashboard";
 import { FirmOnboardingWorkloadPanel } from "@/components/firm/FirmOnboardingWorkloadPanel";
+import { FirmOnboardingReportingPanel } from "@/components/firm/FirmOnboardingReportingPanel";
 import { FirmOnboardingEscalationsPanel } from "@/components/firm/FirmOnboardingEscalationsPanel";
 import {
   ONBOARDING_TEMPLATE,
@@ -198,6 +199,15 @@ export function FirmOnboardingPanel({
             }}
           />
           <FirmOnboardingWorkloadPanel
+            firmId={firmId}
+            clients={available}
+            onChooseClient={(companyId) => {
+              setSelected(companyId);
+              setNotes({});
+              setPlans({});
+            }}
+          />
+          <FirmOnboardingReportingPanel
             firmId={firmId}
             clients={available}
             onChooseClient={(companyId) => {

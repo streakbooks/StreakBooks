@@ -256,28 +256,35 @@ export const purgeRecycleBinFile = createServerFn({ method: "POST" })
 
 export const listStorageCleanupJobs = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({
+  .inputValidator((input: { companyId: string; page?: number }) => ({
     companyId: assertUuid(input.companyId),
+    page: Math.min(100000, Math.max(0, Math.floor(Number(input.page) || 0))),
   }))
   .handler(async ({ data, context }) => {
     await assertEntityAccess(context.supabase, data.companyId, "company", "manage");
+    const pageSize = 25;
     const { data: rows, error, count } = await context.supabase
       .from("document_storage_cleanup_jobs" as never)
       .select("id, storage_paths, created_at" as never, { count: "exact" })
       .eq("company_id" as never, data.companyId as never)
       .is("completed_at" as never, null)
       .order("created_at" as never, { ascending: true })
-      .limit(100);
+      .order("id" as never, { ascending: true })
+      .range(data.page * pageSize, (data.page + 1) * pageSize - 1);
     if (error) databaseError(error);
-    if (count == null || count > 100 || count !== (rows ?? []).length)
-      throw new Error("Cleanup backlog is too large. Contact a platform administrator.");
-    return ((rows ?? []) as unknown as Array<{
-      id: string; storage_paths: string[]; created_at: string;
-    }>).map((job) => ({
-      id: job.id,
-      createdAt: job.created_at,
-      objects: job.storage_paths.length,
-    }));
+    if (count == null) throw new Error("Storage cleanup count is unavailable. Retry.");
+    return {
+      jobs: ((rows ?? []) as unknown as Array<{
+        id: string; storage_paths: string[]; created_at: string;
+      }>).map((job) => ({
+        id: job.id,
+        createdAt: job.created_at,
+        objects: job.storage_paths.length,
+      })),
+      total: count,
+      page: data.page,
+      pageSize,
+    };
   });
 
 export const retryDocumentStorageCleanup = createServerFn({ method: "POST" })

@@ -12,6 +12,7 @@ import {
 import {
   buildDimensionVariance,
   eligibleDimensionActualLines,
+  batchPostedLineIds,
   type DimensionActualAccount,
   type DimensionActualOption,
   type DimensionBudgetAmount,
@@ -102,7 +103,7 @@ export const getBudgetDimensionVariance = createServerFn({ method: "GET" })
     type RawOption = { id: string; name: string; code: string | null };
     type Tag = { line_id: string; option_id: string };
 
-    const [budgetRows, options, tags, posted] = await Promise.all([
+    const [budgetRows, options, posted] = await Promise.all([
       fetchAllPages<RawBudget>((from, to) =>
         sb.from("budget_dimension_lines" as never)
           .select("option_id,account_id,period_month,amount_minor" as never)
@@ -120,15 +121,6 @@ export const getBudgetDimensionVariance = createServerFn({ method: "GET" })
           .order("id" as never)
           .range(from, to) as unknown as PromiseLike<PageResult<RawOption>>,
       ),
-      fetchAllPages<Tag>((from, to) =>
-        sb.from("line_tracking_assignments" as never)
-          .select("line_id,option_id" as never)
-          .eq("company_id" as never, data.companyId as never)
-          .eq("category_id" as never, data.categoryId as never)
-          .eq("entity_type" as never, "journal_line" as never)
-          .order("id" as never)
-          .range(from, to) as unknown as PromiseLike<PageResult<Tag>>,
-      ),
       months.length === 0 || incomeExpenseIds.length === 0
         ? Promise.resolve([])
         : loadPostedLines(sb, data.companyId, meta.baseCurrency, {
@@ -138,6 +130,23 @@ export const getBudgetDimensionVariance = createServerFn({ method: "GET" })
           }),
     ]);
 
+    // A category query must never scan every historic journal assignment in
+    // the organisation. Exclude closing entries before choosing relevant IDs.
+    const includedPosted = eligibleDimensionActualLines(posted);
+    const tags: Tag[] = [];
+    for (const ids of batchPostedLineIds(includedPosted)) {
+      const batch = await fetchAllPages<Tag>((from, to) =>
+        sb.from("line_tracking_assignments" as never)
+          .select("line_id,option_id" as never)
+          .eq("company_id" as never, data.companyId as never)
+          .eq("category_id" as never, data.categoryId as never)
+          .eq("entity_type" as never, "journal_line" as never)
+          .in("line_id" as never, ids as never)
+          .order("id" as never)
+          .range(from, to) as unknown as PromiseLike<PageResult<Tag>>,
+      );
+      tags.push(...batch);
+    }
     const taggedOption = new Map<string, string>();
     for (const tag of tags) {
       if (taggedOption.has(tag.line_id)) {
@@ -165,7 +174,7 @@ export const getBudgetDimensionVariance = createServerFn({ method: "GET" })
       month: row.period_month,
       amountMinor: exactMinor(row.amount_minor, "Budget allocation"),
     }));
-    const mappedActual: DimensionPostedActivity[] = eligibleDimensionActualLines(posted).map((line) => {
+    const mappedActual: DimensionPostedActivity[] = includedPosted.map((line) => {
       if (!line.line_id) throw new Error("Posted journal line identity is missing.");
       return {
         lineId: line.line_id,

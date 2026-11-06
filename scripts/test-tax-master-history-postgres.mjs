@@ -65,6 +65,7 @@ try {
   sql(migration);
   sql(migration);
   sql(read("tests/integration/tax-master-posted-history.sql"));
+  sql(read("tests/integration/tax-extended-posted-sources.sql"));
   console.log("PASS: isolated tax posted-history guards and tenant reference tests");
   sql(read("tests/fixtures/tax-master-history/posting-race.sql"));
   const localHost = process.platform === "win32"

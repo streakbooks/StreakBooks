@@ -330,7 +330,7 @@ export const deleteAttachment = createServerFn({ method: "POST" })
       }
       if (count == null || count > 50 || count !== (historical ?? []).length)
         throw new Error("Historical version list is incomplete. File deletion was cancelled.");
-      versionPaths = (historical ?? [] as unknown as Array<{ storage_path: string }>)
+      versionPaths = ((historical ?? []) as unknown as Array<{ storage_path: string }>)
         .map((item) => item.storage_path);
     }
 

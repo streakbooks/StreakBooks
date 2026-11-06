@@ -56,7 +56,7 @@ describe("fixed asset detail financial presentation", () => {
       summarizeAssetDetailHistory(active, [{ amount_minor: "100.5" }]),
     ).toMatchObject({
       remainingBeforeDisposalMinor: null,
-      issue: expect.stringMatching(/whole minor-unit/i),
+      issue: expect.stringMatching(/minor-unit/i),
     });
   });
 

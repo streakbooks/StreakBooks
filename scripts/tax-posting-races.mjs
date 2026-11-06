@@ -99,8 +99,27 @@ function beginPendingEdit(host,container,statement,marker) {
     }
   });
   child.stderr.on("data",(chunk)=>{stderr+=String(chunk);});
-  child.stdin.end("SELECT '"+marker+"';\n"+statement+"\n");
+  child.stdin.end("SET application_name='"+marker+"';\n"+
+    "SELECT '"+marker+"';\n"+statement+"\n");
   return {ready,completed};
+}
+
+/** Prove the second database connection is actually blocked before commit. */
+async function requirePendingLocks(host,container,markers) {
+  for (const marker of markers) {
+    check(/^[A-Z_]+$/.test(marker),"Unexpected test session marker");
+  }
+  const filter=markers.map((marker)=>"'"+marker+"'").join(",");
+  const query="SELECT count(*) FROM pg_stat_activity "+
+    "WHERE application_name IN ("+filter+") AND wait_event_type='Lock';";
+  const deadline=Date.now()+1500;
+  while(Date.now()<deadline) {
+    const r=sql(host,container,query);
+    if(r.ok&&Number(r.output.trim())===markers.length) return;
+    await new Promise((resolve)=>setTimeout(resolve,40));
+  }
+  throw new Error("Concurrent edits did not visibly wait on PostgreSQL row locks: "+
+    markers.join(","));
 }
 
 function mustRejectAfterCommit(result,label) {
@@ -156,6 +175,7 @@ export async function verifyTaxPostingRaces(host,container) {
     "UPDATE public.tax_codes SET is_recoverable=false WHERE id="+code+";",
     "CODE_EDIT_QUEUED");
   await Promise.all([pendingRate.ready,pendingCode.ready]);
+  await requirePendingLocks(host,container,["RATE_EDIT_QUEUED","CODE_EDIT_QUEUED"]);
   await a.completed;
   verifyPosted(host,container,invoiceA);
   mustRejectAfterCommit(await pendingRate.completed,
@@ -181,6 +201,7 @@ export async function verifyTaxPostingRaces(host,container) {
     "UPDATE public.sales_invoice_lines SET tax_code_id=NULL WHERE id="+line+";",
     "LINE_EDIT_QUEUED");
   await pendingLine.ready;
+  await requirePendingLocks(host,container,["LINE_EDIT_QUEUED"]);
   await b.completed;
   verifyPosted(host,container,invoiceB);
   mustRejectAfterCommit(await pendingLine.completed,
@@ -213,6 +234,9 @@ export async function verifyTaxPostingRaces(host,container) {
     "UPDATE public.purchase_bill_lines SET tax_code_id=NULL WHERE id="+purchaseLine+";",
     "PURCHASE_LINE_QUEUED");
   await Promise.all([purchaseRateEdit.ready,purchaseCodeEdit.ready,purchaseLineEdit.ready]);
+  await requirePendingLocks(host,container,[
+    "PURCHASE_RATE_QUEUED","PURCHASE_CODE_QUEUED","PURCHASE_LINE_QUEUED",
+  ]);
   await purchase.completed;
   verifyPosted(host,container,billId,"purchase_bills");
   mustRejectAfterCommit(await purchaseRateEdit.completed,

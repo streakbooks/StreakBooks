@@ -60,7 +60,10 @@ try {
 
   sql(read("tests/fixtures/workflows/baseline.sql"));
   sql(read("tests/fixtures/tax-gl-review/baseline.sql"));
-  sql(read("supabase/migrations/20261106134000_tax_gl_review_sessions.sql"));
+  // Repeat migration to verify idempotent reapplication before data fixtures.
+  const migration = read("supabase/migrations/20261106134000_tax_gl_review_sessions.sql");
+  sql(migration);
+  sql(migration);
   sql(read("tests/integration/tax-gl-review-sessions.sql"));
   console.log("PASS: isolated tax GL reviewer permissions, concurrency versions and audit trail");
 } finally {

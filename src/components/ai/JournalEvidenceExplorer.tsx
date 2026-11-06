@@ -10,6 +10,7 @@ import { isReportDate } from "@/lib/reports/date-validation";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { SOURCE_LABELS, sourceLabel } from "@/lib/reports/links";
 import { JournalLink, SourceLink } from "@/components/reports/ReportShell";
+import { AiJournalExplanationDialog } from "@/components/ai/JournalExplanationDialog";
 import {
   assessAccountEvidenceLine,
   assessJournalEvidence,
@@ -32,6 +33,7 @@ import {
 } from "@/components/ui/table";
 
 const pageSize = 25;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 type InvestigationMode = "journals" | "account";
 type FilterRange = { from: string; to: string };
 const initialDay = todayIso();
@@ -72,6 +74,7 @@ export function AiJournalEvidenceExplorer({
   const [accountId, setAccountId] = useState("");
   const [journalPage, setJournalPage] = useState(0);
   const [accountPage, setAccountPage] = useState(0);
+  const [explainJournalId, setExplainJournalId] = useState<string | null>(null);
   const [error, setError] = useState("");
 
   const validDates = isReportDate(range.from) && isReportDate(range.to) && range.from <= range.to;
@@ -205,7 +208,11 @@ export function AiJournalEvidenceExplorer({
                 type="button"
                 variant="ghost"
                 disabled={journalsQ.isFetching || accountQ.isFetching}
-                onClick={() => void qc.invalidateQueries({ queryKey: ["ai-evidence", companyId] })}
+                onClick={() => {
+                  void qc.invalidateQueries({ queryKey: ["ai-evidence-journals", companyId] });
+                  void qc.invalidateQueries({ queryKey: ["ai-evidence-account", companyId] });
+                  void qc.invalidateQueries({ queryKey: ["ai-evidence-accounts", companyId] });
+                }}
               >
                 <RefreshCw className="size-4" /> Refresh
               </Button>
@@ -286,6 +293,7 @@ export function AiJournalEvidenceExplorer({
                               <TableHead>Memo and evidence check</TableHead>
                               <TableHead className="text-right">Debit</TableHead>
                               <TableHead className="text-right">Credit</TableHead>
+                              <TableHead>Explanation</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -313,6 +321,11 @@ export function AiJournalEvidenceExplorer({
                                   </TableCell>
                                   <TableCell className="whitespace-nowrap text-right text-xs tabular-nums">
                                     {evidenceMoney(check.credit, item.currency_code || currency)}
+                                  </TableCell>
+                                  <TableCell>
+                                    <Button type="button" size="sm" variant="outline" onClick={() => setExplainJournalId(item.journal_id)}>
+                                      Explain journal
+                                    </Button>
                                   </TableCell>
                                 </TableRow>
                               );
@@ -444,6 +457,11 @@ export function AiJournalEvidenceExplorer({
                                   <TableCell className="whitespace-nowrap text-xs">{row.journal_date}</TableCell>
                                   <TableCell className="whitespace-nowrap">
                                     <JournalLink journalId={row.journal_id} number={row.journal_number} />
+                                    {UUID.test(row.journal_id) ? (
+                                      <Button type="button" variant="ghost" size="sm" onClick={() => setExplainJournalId(row.journal_id)}>
+                                        Explain
+                                      </Button>
+                                    ) : null}
                                   </TableCell>
                                   <TableCell className="min-w-48 max-w-96 text-xs">
                                     <p className="break-words">{row.description || row.memo || "No description recorded"}</p>
@@ -493,6 +511,15 @@ export function AiJournalEvidenceExplorer({
             </p>
           </>
         )}
+        <AiJournalExplanationDialog
+          key={explainJournalId ?? "closed"}
+          companyId={companyId}
+          journalId={explainJournalId}
+          open={Boolean(explainJournalId) && canUse && canViewReports}
+          onOpenChange={(open) => {
+            if (!open) setExplainJournalId(null);
+          }}
+        />
       </CardContent>
     </Card>
   );

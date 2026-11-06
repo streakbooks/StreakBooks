@@ -140,7 +140,7 @@ export function capitalisationReviewCsv(
   ];
   const numericCell = (value: string | null) => {
     if (value === null) return '""';
-    if (!/^-?\\d+$/.test(value)) throw new Error("Invalid exported bill review minor-unit amount");
+    if (!/^-?\d+$/.test(value)) throw new Error("Invalid exported bill review minor-unit amount");
     // Numeric cells are generated from validated integers, not untrusted text.
     // Keep negative entries numeric rather than prefixing spreadsheet text guards.
     return value;

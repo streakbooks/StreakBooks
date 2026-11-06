@@ -66,8 +66,8 @@ export function AssetReconciliationPanel({ companyId }: { companyId: string }) {
         </div>
         <div className="space-y-1">
           <Label htmlFor="fixed-assets-reconcile-status">Show</Label>
+          {/* lookup-fixed-enum: Three static reconciliation status options. */}
           <select
-            /* lookup-fixed-enum: Three static reconciliation status options. */
             id="fixed-assets-reconcile-status"
             value={filter}
             onChange={(event) => setFilter(event.target.value as ViewStatus)}

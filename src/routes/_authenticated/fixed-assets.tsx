@@ -159,11 +159,19 @@ function FixedAssetsPage() {
   );
   const summary = summariseActiveAssets(visibleAssets, today, balanceMap);
   const usedAssetAccounts = new Set(d.assets.map((asset) => asset.asset_account_id));
-  const accumulatedOf = (a: FixedAssetRow): number | null => balanceMap?.get(a.id) ?? null;
+  const accumulatedOf = (a: FixedAssetRow): number | null => {
+    const amount = balanceMap?.get(a.id);
+    return amount !== undefined &&
+      Number.isSafeInteger(amount) &&
+      amount >= 0 &&
+      amount <= a.cost_minor
+      ? amount
+      : null;
+  };
   const exportReady =
     balancesReady &&
     visibleAssets.length > 0 &&
-    visibleAssets.every((a) => a.purchase_date > today || balanceMap?.has(a.id));
+    visibleAssets.every((a) => a.purchase_date > today || accumulatedOf(a) !== null);
   const filterActive =
     Boolean(assetSearch.trim()) ||
     assetStatus !== "all" ||

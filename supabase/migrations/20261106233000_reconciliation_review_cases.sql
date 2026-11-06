@@ -83,7 +83,7 @@ declare
   _actor uuid := (select auth.uid());
   _case public.reconciliation_review_cases%rowtype;
   _before jsonb;
-  _note_trim text := pg_catalog.btrim(pg_catalog.coalesce(_note,''));
+  _note_trim text := pg_catalog.btrim(coalesce(_note,''));
 begin
   if _actor is null or not private.mfa_requirement_met()
     or not public.is_company_member(_company_id)
@@ -146,6 +146,21 @@ begin
         select 1 from public.company_members m
         where m.company_id=_company_id and m.user_id=_assigned_to
           and m.status::text='active'
+          and (
+            m.role::text='owner'
+            or (
+              (
+                exists (select 1 from public.role_permissions rp
+                  where rp.role=m.role and rp.permission='accounting.view')
+                or exists (select 1 from public.member_permission_adjustments a
+                  where a.company_id=_company_id and a.user_id=m.user_id
+                    and a.permission='accounting.view' and a.effect='grant')
+              )
+              and not exists (select 1 from public.member_permission_adjustments d
+                where d.company_id=_company_id and d.user_id=m.user_id
+                  and d.permission='accounting.view' and d.effect='deny')
+            )
+          )
       ) then raise exception 'Choose an active reviewer in this organisation'; end if;
       update public.reconciliation_review_cases
         set assigned_to=_assigned_to, version=version+1,

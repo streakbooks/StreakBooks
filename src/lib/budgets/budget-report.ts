@@ -1,11 +1,10 @@
 /**
- * Budget vs Actual report builder (pure). Inputs are integer minor units in the company base
- * currency; nothing is invented: an account appears only if it has a budget or an actual.
+ * Budget vs Actual report builder (pure). Monetary inputs and aggregates are
+ * integer minor units. Accumulate with bigint so large reports never silently
+ * round cents; convert only after checking the supported safe-integer range.
  */
-
 import {
   computeVariance,
-  naturalActual,
   type BudgetAccountKind,
   type BudgetColumn,
   type Variance,
@@ -27,20 +26,17 @@ export type MonthActivity = {
 };
 
 export type VarianceCell = { budgetMinor: number; actualMinor: number } & Variance;
-
 export type VarianceRow = {
   accountId: string;
   code: string;
   name: string;
   cells: VarianceCell[];
 };
-
 export type VarianceSection = {
   kind: BudgetAccountKind;
   rows: VarianceRow[];
   totals: VarianceCell[];
 };
-
 export type BudgetVsActual = {
   columns: Array<{ key: string; label: string }>;
   income: VarianceSection;
@@ -49,8 +45,33 @@ export type BudgetVsActual = {
   net: VarianceCell[];
 };
 
-function cell(kind: BudgetAccountKind, budget: number, actual: number): VarianceCell {
-  return { budgetMinor: budget, actualMinor: actual, ...computeVariance(kind, budget, actual) };
+function asMinor(value: number, label: string): bigint {
+  if (!Number.isSafeInteger(value)) {
+    throw new Error(label + " must be a safe integer in minor units.");
+  }
+  return BigInt(value);
+}
+function asSafe(value: bigint, label: string): number {
+  if (value > BigInt(Number.MAX_SAFE_INTEGER) ||
+      value < BigInt(Number.MIN_SAFE_INTEGER)) {
+    throw new Error(label + " exceeds the supported minor-unit range.");
+  }
+  return Number(value);
+}
+function cell(kind: BudgetAccountKind, budget: bigint, actual: bigint): VarianceCell {
+  const b = asSafe(budget, "Budget total");
+  const a = asSafe(actual, "Posted actual total");
+  // computeVariance uses bigint rounding for the percentage, but its final
+  // public values are numbers; reject unsafe percent/variance conversion too.
+  const metrics = computeVariance(kind, b, a);
+  if (!Number.isSafeInteger(metrics.varianceMinor) ||
+      (metrics.variancePctBps !== null && !Number.isSafeInteger(metrics.variancePctBps))) {
+    throw new Error("Budget variance exceeds the supported precision.");
+  }
+  return { budgetMinor: b, actualMinor: a, ...metrics };
+}
+function key(accountId: string, month: string): string {
+  return accountId + "|" + month;
 }
 
 export function buildBudgetVsActual(input: {
@@ -59,72 +80,91 @@ export function buildBudgetVsActual(input: {
   actuals: readonly MonthActivity[];
   columns: readonly BudgetColumn[];
 }): BudgetVsActual {
-  const budgetBy = new Map<string, number>();
-  for (const b of input.budget) {
-    const k = `${b.accountId}|${b.month}`;
-    budgetBy.set(k, (budgetBy.get(k) ?? 0) + b.amountMinor);
+  const accountById = new Map(input.accounts.map((account) => [account.id, account]));
+  if (accountById.size !== input.accounts.length) {
+    throw new Error("Duplicate account in Budget vs Actual input.");
   }
-  const activityBy = new Map<string, { d: number; c: number }>();
+
+  const budgetBy = new Map<string, bigint>();
+  for (const b of input.budget) {
+    if (!accountById.has(b.accountId)) {
+      throw new Error("Budget references an unavailable account.");
+    }
+    const k = key(b.accountId, b.month);
+    budgetBy.set(k, (budgetBy.get(k) ?? 0n) + asMinor(b.amountMinor, "Budget amount"));
+  }
+  const activityBy = new Map<string, { d: bigint; c: bigint }>();
   for (const a of input.actuals) {
-    const k = `${a.accountId}|${a.month}`;
-    const prev = activityBy.get(k) ?? { d: 0, c: 0 };
-    activityBy.set(k, { d: prev.d + a.debitMinor, c: prev.c + a.creditMinor });
+    if (!accountById.has(a.accountId)) {
+      throw new Error("Posted actual references an unavailable account.");
+    }
+    const k = key(a.accountId, a.month);
+    const prev = activityBy.get(k) ?? { d: 0n, c: 0n };
+    activityBy.set(k, {
+      d: prev.d + asMinor(a.debitMinor, "Posted debit"),
+      c: prev.c + asMinor(a.creditMinor, "Posted credit"),
+    });
   }
 
   const sections: Record<BudgetAccountKind, VarianceSection> = {
     income: { kind: "income", rows: [], totals: [] },
     expense: { kind: "expense", rows: [], totals: [] },
   };
-  const budgetTotals: Record<BudgetAccountKind, number[]> = {
-    income: input.columns.map(() => 0),
-    expense: input.columns.map(() => 0),
+  const budgetTotals: Record<BudgetAccountKind, bigint[]> = {
+    income: input.columns.map(() => 0n),
+    expense: input.columns.map(() => 0n),
   };
-  const actualTotals: Record<BudgetAccountKind, number[]> = {
-    income: input.columns.map(() => 0),
-    expense: input.columns.map(() => 0),
+  const actualTotals: Record<BudgetAccountKind, bigint[]> = {
+    income: input.columns.map(() => 0n),
+    expense: input.columns.map(() => 0n),
   };
 
   const ordered = [...input.accounts].sort((a, b) =>
     a.code.localeCompare(b.code, undefined, { numeric: true }),
   );
-  for (const acct of ordered) {
+  for (const account of ordered) {
     let touched = false;
     const cells = input.columns.map((col, ci) => {
-      let budget = 0;
-      let actual = 0;
-      for (const m of col.months) {
-        const k = `${acct.id}|${m}`;
-        budget += budgetBy.get(k) ?? 0;
-        const act = activityBy.get(k);
-        if (act) actual += naturalActual(acct.kind, act.d, act.c);
+      let budget = 0n;
+      let actual = 0n;
+      for (const month of col.months) {
+        const k = key(account.id, month);
+        budget += budgetBy.get(k) ?? 0n;
+        const posted = activityBy.get(k);
+        if (posted) {
+          actual += account.kind === "income" ?
+            posted.c - posted.d : posted.d - posted.c;
+        }
       }
-      if (budget !== 0 || actual !== 0) touched = true;
-      budgetTotals[acct.kind][ci] = (budgetTotals[acct.kind][ci] ?? 0) + budget;
-      actualTotals[acct.kind][ci] = (actualTotals[acct.kind][ci] ?? 0) + actual;
-      return cell(acct.kind, budget, actual);
+      if (budget !== 0n || actual !== 0n) touched = true;
+      budgetTotals[account.kind][ci] =
+        (budgetTotals[account.kind][ci] ?? 0n) + budget;
+      actualTotals[account.kind][ci] =
+        (actualTotals[account.kind][ci] ?? 0n) + actual;
+      return cell(account.kind, budget, actual);
     });
     if (touched) {
-      sections[acct.kind].rows.push({
-        accountId: acct.id,
-        code: acct.code,
-        name: acct.name,
+      sections[account.kind].rows.push({
+        accountId: account.id,
+        code: account.code,
+        name: account.name,
         cells,
       });
     }
   }
+
   for (const kind of ["income", "expense"] as const) {
     sections[kind].totals = input.columns.map((_, ci) =>
-      cell(kind, budgetTotals[kind][ci] ?? 0, actualTotals[kind][ci] ?? 0),
+      cell(kind, budgetTotals[kind][ci] ?? 0n, actualTotals[kind][ci] ?? 0n),
     );
   }
   const net = input.columns.map((_, ci) => {
-    const budget = (budgetTotals.income[ci] ?? 0) - (budgetTotals.expense[ci] ?? 0);
-    const actual = (actualTotals.income[ci] ?? 0) - (actualTotals.expense[ci] ?? 0);
-    // Profit behaves like income: more than budget is favourable.
+    const budget = (budgetTotals.income[ci] ?? 0n) - (budgetTotals.expense[ci] ?? 0n);
+    const actual = (actualTotals.income[ci] ?? 0n) - (actualTotals.expense[ci] ?? 0n);
     return cell("income", budget, actual);
   });
   return {
-    columns: input.columns.map((c) => ({ key: c.key, label: c.label })),
+    columns: input.columns.map((column) => ({ key: column.key, label: column.label })),
     income: sections.income,
     expense: sections.expense,
     net,

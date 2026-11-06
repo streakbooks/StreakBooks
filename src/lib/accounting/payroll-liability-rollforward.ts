@@ -4,13 +4,14 @@
  * This is not a bank reconciliation or full lifetime Payroll subledger proof.
  */
 export type LiabilityLedgerLine = {
+  line_id: string;
   journal_id: string;
   journal_date: string;
   source_type: string;
   source_id: string | null;
   account_id: string;
-  debit_minor: number;
-  credit_minor: number;
+  debit_minor: bigint | number | string;
+  credit_minor: bigint | number | string;
 };
 export type LiabilitySourceRun = {
   id: string; company_id: string; status: string; payment_date: string;
@@ -45,7 +46,8 @@ export type LiabilityRollforwardResult = {
   issues: LiabilityRollforwardIssue[];
   warnings: string[];
 };
-function minor(value: number | string, label: string): bigint {
+function minor(value: bigint | number | string, label: string): bigint {
+  if (typeof value === "bigint" && value >= 0n) return value;
   if (typeof value === "number" && Number.isSafeInteger(value) && value >= 0) return BigInt(value);
   if (typeof value === "string" && /^\d+$/.test(value)) return BigInt(value);
   throw new Error(label + " must be an exact non-negative minor-unit integer.");
@@ -82,11 +84,14 @@ export function calculatePayrollLiabilityRollforward(
   let periodCredit = 0n;
   let periodDebit = 0n;
   let reversalNet = 0n;
-  let otherNet = 0n;
   const journalTotals = new Map<string, Sum>();
   const journalSource = new Map<string, { source_type: string; source_id: string | null; date: string }>();
   const seenLedgerIds = new Set<string>();
   for (const [i, row] of lines.entries()) {
+    if (!row.line_id || seenLedgerIds.has(row.line_id)) {
+      issue("data", "Ledger evidence contains a missing or duplicated line identity.", null, row.journal_id);
+    }
+    seenLedgerIds.add(row.line_id);
     if (row.account_id !== accountId) {
       issue("data", "An unexpected account was included in Payroll GL evidence.", null, row.journal_id);
       continue;
@@ -107,10 +112,7 @@ export function calculatePayrollLiabilityRollforward(
     if ((d === 0n && c === 0n) || (d > 0n && c > 0n)) {
       issue("posting", label + " must have exactly one debit or credit side.", null, row.journal_id);
     }
-    const signature = row.journal_id + "|" + i;
-    if (seenLedgerIds.has(signature)) issue("data", "Duplicate ledger evidence.", null, row.journal_id);
-    seenLedgerIds.add(signature);
-    if (row.journal_date < start) opening += c - d;
+     if (row.journal_date < start) opening += c - d;
     else {
       periodCredit += c; periodDebit += d;
       add(journalTotals, row.journal_id, d, c);
@@ -122,7 +124,6 @@ export function calculatePayrollLiabilityRollforward(
         source_type: row.source_type, source_id: row.source_id, date: row.journal_date,
       });
       if (row.source_type === "reversal") reversalNet += c - d;
-      else if (row.source_type !== "payroll") otherNet += c - d;
     }
   }
 
@@ -230,7 +231,16 @@ export function calculatePayrollLiabilityRollforward(
   }
   const sourceNet = actualAccrual - actualPayments;
   const totalPeriodNet = periodCredit - periodDebit;
-  otherNet += totalPeriodNet - sourceNet - reversalNet - otherNet;
+  // All leftover GL movements are disclosed as a residual, not certified as
+  // reconciled Payroll source activity. This can include manual entries,
+  // reversal timing and unlinked accruals.
+  const otherNet = totalPeriodNet - sourceNet - reversalNet;
+  if (otherNet !== 0n) {
+    warnings.push("Payroll control account has movements not explained by matched in-period Payroll sources or reversal journals.");
+  }
+  if (reversalNet !== 0n) {
+    warnings.push("Reversal GL movements affect this period; review the original journal period and Payroll source status.");
+  }
   const closing = opening + totalPeriodNet;
   const reconstructed = opening + sourceNet + reversalNet + otherNet;
   if (closing !== reconstructed) issue("data", "Period GL arithmetic and source classification do not agree.");

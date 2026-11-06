@@ -78,14 +78,19 @@ export function PersistentReconciliationReviews({
   const performOpen = async () => {
     if (!chosen || !canManage || busy) return;
     setLastError("");
+    if (chosen.row.title.length > 220 || chosen.row.detail.length > 2000 ||
+        (chosen.row.reference?.length ?? 0) > 180) {
+      setLastError("This finding exceeds the review evidence field limits. Review its source before tracking; no evidence was silently truncated.");
+      return;
+    }
     try {
       await save.mutateAsync({
         companyId, source: chosen.row.source, fingerprint: chosen.fingerprint,
         action: "open", finding: {
           title: chosen.row.title,
-          detail: chosen.row.detail.slice(0, 2000),
+          detail: chosen.row.detail,
           severity: chosen.row.severity,
-          reference: chosen.row.reference?.slice(0, 180) ?? null,
+          reference: chosen.row.reference ?? null,
           journalId: chosen.row.journalId,
         }, note: note.trim(),
       });

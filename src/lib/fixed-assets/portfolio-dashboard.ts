@@ -51,7 +51,9 @@ export function buildAssetPortfolioSnapshot(
         asset.residual_minor > asset.cost_minor ||
         !Number.isSafeInteger(asset.opening_accumulated_minor) ||
         asset.opening_accumulated_minor < 0 ||
-        asset.opening_accumulated_minor > asset.cost_minor) {
+        asset.opening_accumulated_minor > asset.cost_minor ||
+        BigInt(asset.residual_minor) + BigInt(asset.opening_accumulated_minor) >
+          BigInt(asset.cost_minor)) {
       throw new Error("Asset portfolio contains inconsistent residual or opening depreciation amounts.");
     }
     const amount = BigInt(asset.cost_minor);
@@ -71,7 +73,7 @@ export function buildAssetPortfolioSnapshot(
       const charge = accumulatedByAsset?.get(asset.id);
       if (
         charge === undefined || !Number.isSafeInteger(charge) ||
-        charge < 0 || charge > asset.cost_minor
+        charge < asset.opening_accumulated_minor || charge > asset.cost_minor - asset.residual_minor
       ) {
         completeBalances = false;
       } else {

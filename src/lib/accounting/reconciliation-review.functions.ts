@@ -52,6 +52,38 @@ export const listReconciliationReviewCases = createServerFn({ method: "GET" })
     return { cases: cases.slice(0, 100), hasMore: cases.length > 100 };
   });
 
+/** Exact, permissioned lookup keeps older cases reachable beyond the queue cap. */
+export const getReconciliationReviewCase = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: {
+    companyId: string; source: ExceptionFinding["source"]; fingerprint: string;
+  }) => {
+    const source = allowed(input?.source, SOURCES, "reconciliation source");
+    if (!/^f[0-9a-f]{32}$/.test(input?.fingerprint ?? "")) {
+      throw new Error("Invalid reconciliation finding fingerprint.");
+    }
+    return { companyId: assertUuid(input?.companyId), source, fingerprint: input.fingerprint };
+  })
+  .handler(async ({ data, context }): Promise<ReconciliationSavedCase | null> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "accounting.view");
+    const { data: row, error } = await context.supabase
+      .from("reconciliation_review_cases" as never)
+      .select("id,company_id,source_type,finding_fingerprint,severity,title,detail,source_reference,journal_id,status,assigned_to,version,created_at,updated_at,created_by,updated_by" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("source_type" as never, data.source as never)
+      .eq("finding_fingerprint" as never, data.fingerprint as never)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) return null;
+    const found = row as unknown as ReconciliationSavedCase;
+    if (found.company_id !== data.companyId ||
+        found.source_type !== data.source ||
+        found.finding_fingerprint !== data.fingerprint) {
+      throw new Error("Reconciliation review source or organisation mismatch.");
+    }
+    return found;
+  });
+
 export type SaveCaseInput = {
   companyId: string;
   source: ExceptionFinding["source"];

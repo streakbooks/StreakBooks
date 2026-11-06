@@ -31,6 +31,7 @@ import {
 } from "@/lib/ai/ai.functions";
 import { getAiSuggestionKind, getJournalPreview } from "@/lib/ai/suggestion-review";
 import { AiFinancialInsights } from "@/components/ai/FinancialInsights";
+import { AiJournalEvidenceExplorer } from "@/components/ai/JournalEvidenceExplorer";
 import { deleteAiConversationHistory, listAiConversationHistory, type AiConversationRow } from "@/lib/ai/history.functions";
 import { PageHeader, LoadingState, ErrorState } from "@/components/common/states";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -564,6 +565,13 @@ function AiAssistantWorkspace({
       </div>
 
       <AiFinancialInsights
+        companyId={companyId}
+        currency={currency}
+        canUse={canUse}
+        canViewReports={canViewReports}
+      />
+
+      <AiJournalEvidenceExplorer
         companyId={companyId}
         currency={currency}
         canUse={canUse}

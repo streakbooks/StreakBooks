@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { notify } from "@/lib/notify";
 import { NotificationPreferences } from "@/components/notifications/NotificationPreferences";
 import { ActionCenterSearchForm } from "@/components/notifications/ActionCenterSearchForm";
+import { runNotificationBulk } from "@/lib/notifications/bulk-actions";
 import {
   mergeNotificationPages,
   groupNotificationPage,
@@ -96,6 +97,8 @@ function ActionCenterPage() {
   const busyRef = useRef(false);
   const scopeKey = [companyId, user.id, view, category, priority, search, sort].join("|");
   const activeScopeRef = useRef(scopeKey);
+  const scopeVersionRef = useRef(0);
+  const [retryAction, setRetryAction] = useState<"read" | "archive" | null>(null);
   const [bulkError, setBulkError] = useState<string | null>(null);
   const rows = useMemo(
     () => mergeNotificationPages(inbox.data?.pages.map((item) => item.rows) ?? []),
@@ -106,20 +109,34 @@ function ActionCenterPage() {
     [rows, companyId],
   );
   const validSelected = selected.filter((id) => visibleIds.has(id));
+  const invalidateBulk = () => {
+    // Increment even if a filter later returns to the same value: a stale
+    // in-flight operation must never restart in the newly selected view.
+    scopeVersionRef.current += 1;
+    busyRef.current = false;
+    setBulkBusy(false);
+    setBulkProgress(0);
+    setBulkTotal(0);
+    setRetryAction(null);
+  };
   useEffect(() => {
+    scopeVersionRef.current += 1;
     activeScopeRef.current = scopeKey;
     busyRef.current = false;
     setSelected([]);
     setPage(0);
     setBulkError(null);
+    setRetryAction(null);
     setBulkBusy(false);
     setBulkProgress(0);
     setBulkTotal(0);
     return () => {
+      scopeVersionRef.current += 1;
       activeScopeRef.current = "";
     };
   }, [scopeKey]);
   const changeFilters = (patch: Record<string, unknown>) => {
+    invalidateBulk();
     void navigate({
       search: (previous) => parseActionCenterSearch({ ...previous, ...patch }),
       replace: true,
@@ -141,6 +158,7 @@ function ActionCenterPage() {
     : [{ category: "all", rows: pageRows }];
   const onViewNavigate = (event: React.MouseEvent<HTMLAnchorElement>) => {
     if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    invalidateBulk();
     setPage(0);
     setSelected([]);
   };
@@ -151,6 +169,8 @@ function ActionCenterPage() {
   const allPageSelected = pageIds.length > 0 && selectedPageCount === pageIds.length;
   const toggleIds = (ids: readonly string[], checked: boolean) => {
     if (bulkBusy || changeState.isPending) return;
+    setRetryAction(null);
+    setBulkError(null);
     const allowed = ids.filter((id) => visibleIds.has(id));
     setSelected((previous) =>
       checked
@@ -161,72 +181,78 @@ function ActionCenterPage() {
   const togglePageSelection = (checked: boolean) => toggleIds(pageIds, checked);
 
   async function bulkState(action: "read" | "archive") {
-    // Ref lock prevents double submission before React has committed a new render.
+    // The version token prevents an old operation from resuming if the user
+    // quickly navigates away and back to an identical filter scope.
     if (!validSelected.length || busyRef.current || changeState.isPending) return;
     const runScope = activeScopeRef.current;
+    const runVersion = scopeVersionRef.current;
+    const isCurrent = () =>
+      activeScopeRef.current === runScope && scopeVersionRef.current === runVersion;
     const ids = [...validSelected];
     busyRef.current = true;
     setBulkBusy(true);
     setBulkProgress(0);
     setBulkTotal(ids.length);
     setBulkError(null);
-    const failed: string[] = [];
-    let updated = 0;
-    let firstError: string | null = null;
-    for (const [index, id] of ids.entries()) {
-      // Switching organisation or view stops remaining RPCs. An in-flight request
-      // still completes under server-side recipient/organisation permission checks.
-      if (activeScopeRef.current !== runScope) return;
-      try {
-        const { data, error } = await supabase.rpc(
-          "set_action_notification_state" as never,
-          {
-            _notification_id: id,
-            _mark_read: action === "read" ? true : null,
-            _archive: action === "archive" ? true : null,
-          } as never,
-        );
-        if (activeScopeRef.current !== runScope) return;
-        if (error) throw error;
-        if (!data) throw new Error("An alert is no longer available or permission was revoked");
-        updated++;
-      } catch (error) {
-        if (activeScopeRef.current !== runScope) return;
-        failed.push(id);
-        firstError ??= error instanceof Error ? error.message : "Update was rejected";
-      }
-      setBulkProgress(index + 1);
-    }
-    if (activeScopeRef.current !== runScope) return;
-    setSelected(failed);
+    setRetryAction(null);
+
     try {
-      await refresh();
-    } catch (error) {
-      if (activeScopeRef.current === runScope) {
-        setBulkError(error instanceof Error ? error.message : "Could not refresh alerts");
+      const result = await runNotificationBulk(
+        ids,
+        async (id) => {
+          const { data, error } = await supabase.rpc(
+            "set_action_notification_state" as never,
+            {
+              _notification_id: id,
+              _mark_read: action === "read" ? true : null,
+              _archive: action === "archive" ? true : null,
+            } as never,
+          );
+          if (error) throw error;
+          if (!data) throw new Error("Alert unavailable or permission was revoked");
+        },
+        isCurrent,
+        (completed) => setBulkProgress(completed),
+      );
+
+      if (!isCurrent() || result.cancelled) return;
+      setSelected(result.failedIds);
+
+      if (result.updated) {
+        notify.success(
+          action === "read"
+            ? `${result.updated} notification(s) marked as read`
+            : `${result.updated} notification(s) archived`,
+        );
+      }
+      if (result.failedIds.length) {
+        setBulkError(
+          `${result.failedIds.length} notification(s) could not be updated. ${result.firstError ?? ""}`,
+        );
+        setRetryAction(action);
       }
     } finally {
-      if (activeScopeRef.current === runScope) {
+      // Always invalidate the original company's caches, including when the
+      // visible scope has changed while a network request was in progress.
+      try {
+        await refresh();
+      } catch (error) {
+        if (isCurrent()) {
+          setBulkError(error instanceof Error ? error.message : "Could not refresh alerts");
+        }
+      }
+      if (isCurrent()) {
         busyRef.current = false;
         setBulkBusy(false);
         setBulkProgress(0);
         setBulkTotal(0);
       }
     }
-    if (activeScopeRef.current !== runScope) return;
-    if (updated) {
-      notify.success(
-        action === "read"
-          ? `${updated} notification(s) marked as read`
-          : `${updated} notification(s) archived`,
-      );
-    }
-    if (failed.length) {
-      setBulkError(`${failed.length} notification(s) could not be updated. ${firstError ?? ""}`);
-    }
   }
   const toggleSelection = (id: string) => {
     if (!visibleIds.has(id) || busyRef.current || changeState.isPending) return;
+    setRetryAction(null);
+    setBulkError(null);
     setSelected((prev) => (prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]));
   };
 
@@ -301,6 +327,7 @@ function ActionCenterPage() {
             <Link
               to="/notifications"
               search={{ ...query, view: item.key }}
+              aria-current={view === item.key ? "page" : undefined}
               onClick={onViewNavigate}
             >
               {item.label}
@@ -420,15 +447,41 @@ function ActionCenterPage() {
           >
             Archive selected
           </Button>
-          <Button size="sm" variant="ghost" disabled={bulkBusy} onClick={() => setSelected([])}>
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={bulkBusy}
+            onClick={() => {
+              setSelected([]);
+              setRetryAction(null);
+              setBulkError(null);
+            }}
+          >
             Clear
           </Button>
         </div>
       )}
       {bulkError && (
-        <p role="alert" className="text-sm text-destructive">
-          {bulkError}
-        </p>
+        <div role="alert" className="flex flex-wrap items-center gap-2 text-sm text-destructive">
+          <span>{bulkError}</span>
+          {retryAction && validSelected.length > 0 && !bulkBusy && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => void bulkState(retryAction)}
+            >
+              Retry failed alerts ({validSelected.length})
+            </Button>
+          )}
+        </div>
+      )}
+      {inbox.isError && inbox.data && (
+        <div role="alert" className="flex flex-wrap items-center gap-2 rounded-lg border p-3 text-sm">
+          Could not refresh the latest notifications. Displayed alerts may be outdated.
+          <Button size="sm" variant="outline" onClick={() => void inbox.refetch()}>
+            Retry refresh
+          </Button>
+        </div>
       )}
       {inbox.isPending ? (
         <p className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -492,6 +545,7 @@ function ActionCenterPage() {
                         variant="outline"
                         disabled={bulkBusy || changeState.isPending}
                         onClick={() => toggleIds(groupIds, !allGroupSelected)}
+                        aria-label={`${allGroupSelected ? "Unselect" : "Select"} ${CATEGORIES[group.category] ?? group.category} alerts on this page`}
                       >
                         {allGroupSelected ? "Unselect group" : "Select group"}
                       </Button>
@@ -499,6 +553,7 @@ function ActionCenterPage() {
                         size="sm"
                         variant="ghost"
                         disabled={bulkBusy}
+                        aria-label={`Show only ${CATEGORIES[group.category] ?? group.category} alerts`}
                         onClick={() => changeFilters({ category: group.category })}
                       >
                         Filter module

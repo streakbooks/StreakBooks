@@ -53,6 +53,10 @@ export function parsePayrollSettingsDraft(draft: PayrollSettingsDraft): ParsedPa
   if (!/^[A-Z]{3}$/.test(currency))
     return { ok: false, error: "Payroll currency must be a 3-letter code." };
 
+  if (!isOneOf(draft.defaultPaymentMethod, PAYMENT_METHODS)) {
+    return { ok: false, error: "Choose a supported default payroll payment method." };
+  }
+
   const days = Number(draft.defaultWorkingDaysPerWeek);
   const hours = Number(draft.defaultWorkingHoursPerDay);
   const offset = Number(draft.paymentDateOffsetDays);

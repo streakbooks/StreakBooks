@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Columns3 } from "lucide-react";
 import { FirmBulkClientActions } from "@/components/firm/FirmBulkClientActions";
+import { FirmServiceCatalogPanel } from "@/components/firm/FirmServiceCatalogPanel";
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -612,6 +613,7 @@ export function FirmClientPortfolio({
 
       {canManage && (
         <div className="space-y-2">
+          <FirmServiceCatalogPanel firmId={firmId} canManage={canManage} />
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3">
             <p className="text-sm" aria-live="polite">
               <span className="font-medium">{visibleSelection.length} clients selected</span>

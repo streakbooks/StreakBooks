@@ -23,6 +23,7 @@ import {
 } from "@/lib/budgets/budgets.functions";
 import { applyUpliftBps, fillRight, monthLabel, spreadEvenly, sumMinorNumbers } from "@/lib/budgets/budget-math";
 import { summarizeBudgetGrid } from "@/lib/budgets/budget-grid-summary";
+import { preparePriorYearActualsDraft } from "@/lib/budgets/budget-prior-year";
 import {
   budgetCsvHeaders,
   budgetToCsvRows,
@@ -244,6 +245,12 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
   };
 
   const onCopyActuals = async () => {
+    if (hiddenLineCount > 0) {
+      toast.error(
+        "Existing budget has archived account amounts. Resolve those accounts before copying.",
+      );
+      return;
+    }
     if (
       rows.length > 0 &&
       !window.confirm(
@@ -258,8 +265,16 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
         toast.info("There are no posted actuals for the previous year.");
         return;
       }
+      // Validate the complete prior-year set before changing the editor.
+      // An archived P&L account must never be silently omitted from a copy.
+      const validated = preparePriorYearActualsDraft(
+        accounts.map((account) => account.id),
+        res.rows,
+      );
       const next: Cells = {};
-      for (const r of res.rows) next[r.accountId] = r.months.map((v) => toText(v, currency));
+      for (const [accountId, amounts] of Object.entries(validated)) {
+        next[accountId] = amounts.map((value) => toText(value, currency));
+      }
       setAnnualDrafts({});
       update(next);
       toast.success("Copied last year's actuals (not saved yet). Apply an uplift if you want one.");

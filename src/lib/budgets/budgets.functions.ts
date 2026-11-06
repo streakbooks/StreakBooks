@@ -57,14 +57,17 @@ export type BudgetSummary = {
 
 export type BudgetAccount = { id: string; code: string; name: string; kind: BudgetAccountKind };
 
-async function budgetAccounts(sb: Sb, companyId: string): Promise<BudgetAccount[]> {
+async function budgetAccounts(
+  sb: Sb,
+  companyId: string,
+  includeHistorical = false,
+): Promise<BudgetAccount[]> {
   const metas = await loadAccountMetas(sb, companyId);
   return metas
     .filter(
       (a) =>
         (a.account_type === "income" || a.account_type === "expense") &&
-        a.is_active &&
-        a.is_postable,
+        (includeHistorical || (a.is_active && a.is_postable)),
     )
     .map((a) => ({
       id: a.id,
@@ -885,7 +888,7 @@ export const getBudgetVsActual = createServerFn({ method: "GET" })
       loadCompanyMeta(sb, data.companyId),
       loadBudgetHead(sb, data.companyId, data.budgetId),
       loadBudgetLines(sb, data.budgetId),
-      budgetAccounts(sb, data.companyId),
+      budgetAccounts(sb, data.companyId, true),
     ]);
     const accountingBasis = await resolveReportingBasis(sb, data.companyId, data.basis);
     const months = fiscalMonthStarts(head.fiscal_year_start);
@@ -914,19 +917,22 @@ export const getBudgetVsActual = createServerFn({ method: "GET" })
       accountingBasis,
     );
     const report = buildBudgetVsActual({ accounts, budget: lines, actuals: activity, columns });
-    // Actuals on accounts that are archived or no longer postable are not hidden: surface the total.
-    const known = new Set(accounts.map((a) => a.id));
-    const metas = await loadAccountMetas(sb, data.companyId);
-    const plIds = new Map(
-      metas
-        .filter((a) => a.account_type === "income" || a.account_type === "expense")
-        .map((a) => [a.id, a.account_type as BudgetAccountKind]),
-    );
-    let unbudgeted = 0;
+    // Historical accounts remain in the report even after archiving; this
+    // metric separately discloses posted activity on accounts with no budget.
+    const budgeted = new Set(lines.map((line) => line.accountId));
+    const kindById = new Map(accounts.map((a) => [a.id, a.kind] as const));
+    let unbudgetedMinor = 0n;
     for (const a of activity) {
-      const kind = plIds.get(a.accountId);
-      if (kind && !known.has(a.accountId))
-        unbudgeted += naturalActual(kind, a.debitMinor, a.creditMinor);
+      if (budgeted.has(a.accountId)) continue;
+      const kind = kindById.get(a.accountId);
+      if (!kind) throw new Error("Posted income/expense account is missing from the chart.");
+      const debit = BigInt(a.debitMinor);
+      const credit = BigInt(a.creditMinor);
+      unbudgetedMinor += kind === "income" ? credit - debit : debit - credit;
+    }
+    const unbudgeted = Number(unbudgetedMinor);
+    if (!Number.isSafeInteger(unbudgeted)) {
+      throw new Error("Unbudgeted actuals exceed the supported minor-unit range.");
     }
     return {
       currency: meta.baseCurrency,

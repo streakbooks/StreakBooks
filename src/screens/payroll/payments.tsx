@@ -8,6 +8,7 @@ import { useCanDo } from "@/hooks/use-can";
 import { useFormat } from "@/hooks/use-format";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { fromMinorUnits } from "@/lib/accounting/money";
+import { todayLocalDateOnly } from "@/lib/payroll/local-date";
 import { buildGenericPayrollBankCsv } from "@/lib/payroll/payroll-bank-export";
 import { parsePayrollPaymentEntry } from "@/lib/payroll/payment-form-draft";
 import { getPayrollSettingsPage } from "@/lib/payroll/payroll.functions";
@@ -90,7 +91,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
   const [recordOpen, setRecordOpen] = useState(false);
   const [paymentSearch, setPaymentSearch] = useState("");
   const [paymentStatus, setPaymentStatus] = useState<"all" | "posted" | "reversed">("all");
-  const [paymentDate, setPaymentDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [paymentDate, setPaymentDate] = useState(() => todayLocalDateOnly());
   const [paymentMethod, setPaymentMethod] = useState("bank_transfer");
   const [clearingAccountId, setClearingAccountId] = useState("");
   const [amountMajor, setAmountMajor] = useState("");
@@ -100,7 +101,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
   const [idempotencyKey, setIdempotencyKey] = useState(() => `pr-pay-${crypto.randomUUID()}`);
   const [reverseTarget, setReverseTarget] = useState<{ id: string; currency: string } | null>(null);
   const [detailPaymentId, setDetailPaymentId] = useState<string | null>(null);
-  const [reversalDate, setReversalDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [reversalDate, setReversalDate] = useState(() => todayLocalDateOnly());
   const reversePayment = useServerFn(reversePayrollPayment);
   const fetchPaymentDetail = useServerFn(getPayrollPayment);
 
@@ -288,6 +289,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
     setReference("");
     setMemo("");
     setPaymentMethod("bank_transfer");
+    setPaymentDate(todayLocalDateOnly());
     setIdempotencyKey(`pr-pay-${crypto.randomUUID()}`);
     setRecordOpen(true);
   };
@@ -484,7 +486,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
                           size="sm"
                           variant="outline"
                           onClick={() => {
-                            setReversalDate(new Date().toISOString().slice(0, 10));
+                            setReversalDate(todayLocalDateOnly());
                             setReverseTarget({ id: p.id, currency: p.currency });
                           }}
                         >
@@ -768,7 +770,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
                       variant="outline"
                       onClick={() => {
                         setDetailPaymentId(null);
-                        setReversalDate(new Date().toISOString().slice(0, 10));
+                        setReversalDate(todayLocalDateOnly());
                         setReverseTarget({ id: payment.id, currency: payment.currency });
                       }}
                     >

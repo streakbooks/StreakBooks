@@ -5,10 +5,10 @@ import type { PayrollBankExportRow } from "@/lib/payroll/payments.functions";
  * The amount_minor column is ledger-derived and remains an unchanged decimal.
  */
 function csvEscape(value: string): string {
-  const formulaLike = /^[\\s\\u200B-\\u200F\\uFEFF]*[=+\\-@]/u.test(value);
-  const startsWithControl = /^[\\t\\r\\n]/u.test(value);
+  const formulaLike = /^[\s\u200B-\u200F\uFEFF]*[=+\-@]/u.test(value);
+  const startsWithControl = /^[\t\r\n]/u.test(value);
   const safe = formulaLike || startsWithControl ? `'${value}` : value;
-  if (/[",\\n\\r]/.test(safe)) return `"${safe.replace(/"/g, '""')}"`;
+  if (/[",\n\r]/.test(safe)) return `"${safe.replace(/"/g, '""')}"`;
   return safe;
 }
 

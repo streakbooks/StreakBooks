@@ -60,10 +60,17 @@ function beginPosting(host, container, update, marker) {
     }
   });
   child.stderr.on("data",(chunk)=>{errors+=String(chunk);});
-  child.stdin.end([
-    "BEGIN;",update,"SELECT '"+marker+"';","SELECT pg_sleep(4);","COMMIT;"
-  ].join("\n"));
-  return {ready,completed};
+  // Keep the transaction open until the caller has verified that the
+  // competing UPDATEs are actually waiting. Fixed sleeps are flaky under
+  // variable Docker/Windows startup and process scheduling delays.
+  child.stdin.write(["BEGIN;", update, "SELECT '"+marker+"';"].join("\n")+"\n");
+  let released=false;
+  const release=()=>{
+    if(released)throw new Error("Posting transaction already released: "+marker);
+    released=true;
+    child.stdin.end("COMMIT;\n");
+  };
+  return {ready,completed,release};
 }
 
 /**
@@ -176,6 +183,7 @@ export async function verifyTaxPostingRaces(host,container) {
     "CODE_EDIT_QUEUED");
   await Promise.all([pendingRate.ready,pendingCode.ready]);
   await requirePendingLocks(host,container,["RATE_EDIT_QUEUED","CODE_EDIT_QUEUED"]);
+  a.release();
   await a.completed;
   verifyPosted(host,container,invoiceA);
   mustRejectAfterCommit(await pendingRate.completed,
@@ -202,6 +210,7 @@ export async function verifyTaxPostingRaces(host,container) {
     "LINE_EDIT_QUEUED");
   await pendingLine.ready;
   await requirePendingLocks(host,container,["LINE_EDIT_QUEUED"]);
+  b.release();
   await b.completed;
   verifyPosted(host,container,invoiceB);
   mustRejectAfterCommit(await pendingLine.completed,
@@ -237,6 +246,7 @@ export async function verifyTaxPostingRaces(host,container) {
   await requirePendingLocks(host,container,[
     "PURCHASE_RATE_QUEUED","PURCHASE_CODE_QUEUED","PURCHASE_LINE_QUEUED",
   ]);
+  purchase.release();
   await purchase.completed;
   verifyPosted(host,container,billId,"purchase_bills");
   mustRejectAfterCommit(await purchaseRateEdit.completed,
@@ -263,6 +273,7 @@ export async function verifyTaxPostingRaces(host,container) {
     "SALES_CREDIT_LINE_QUEUED");
   await Promise.all([saleCreditHeader.ready,saleCreditLine.ready]);
   await requirePendingLocks(host,container,["SALES_CREDIT_HEADER_QUEUED","SALES_CREDIT_LINE_QUEUED"]);
+  saleCredit.release();
   await saleCredit.completed;
   verifyPosted(host,container,saleCreditId,"sales_credit_notes");
   mustRejectAfterCommit(await saleCreditHeader.completed,"Sales credit note amount");
@@ -284,6 +295,7 @@ export async function verifyTaxPostingRaces(host,container) {
     "PURCHASE_CREDIT_LINE_QUEUED");
   await Promise.all([supplierCreditHeader.ready,supplierCreditLine.ready]);
   await requirePendingLocks(host,container,["PURCHASE_CREDIT_HEADER_QUEUED","PURCHASE_CREDIT_LINE_QUEUED"]);
+  supplierCredit.release();
   await supplierCredit.completed;
   verifyPosted(host,container,supplierCreditId,"purchase_credit_notes");
   mustRejectAfterCommit(await supplierCreditHeader.completed,"Purchase credit note amount");
@@ -302,6 +314,7 @@ export async function verifyTaxPostingRaces(host,container) {
     " WHERE id='"+expenseId+"';","EXPENSE_EDIT_QUEUED");
   await expenseEdit.ready;
   await requirePendingLocks(host,container,["EXPENSE_EDIT_QUEUED"]);
+  expense.release();
   await expense.completed;
   verifyPosted(host,container,expenseId,"purchase_expenses");
   mustRejectAfterCommit(await expenseEdit.completed,"Posted direct expense amount");

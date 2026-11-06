@@ -49,12 +49,14 @@ const AUDIT_LABELS = {
 
 export function FirmBulkClientActions({
   firmId,
+  clients,
   selectedClients,
   profiles,
   disabled,
   onComplete,
 }: {
   firmId: string;
+  clients: FirmClientRow[];
   selectedClients: FirmClientRow[];
   profiles: FirmClientProfile[];
   disabled: boolean;
@@ -71,6 +73,9 @@ export function FirmBulkClientActions({
   const [auditOpen, setAuditOpen] = useState(false);
 
   const profileByCompany = new Map(profiles.map((p) => [p.company_id, p]));
+  const clientNames = new Map(
+    clients.map((client) => [client.company_id, getFirmClientName(client)]),
+  );
   const auditQ = useQuery({
     queryKey: ["firm-client-profile-audit", firmId],
     queryFn: () => listAudit({ data: { firmId } }),
@@ -256,7 +261,9 @@ export function FirmBulkClientActions({
               <p className="p-4 text-sm text-muted-foreground">Loading recent changes…</p>
             ) : auditQ.isError ? (
               <div className="flex flex-wrap items-center gap-3 p-4">
-                <p className="text-sm">Profile history is unavailable: {friendlyAuthError(auditQ.error)}</p>
+                <p className="text-sm">
+                  Profile history is unavailable: {friendlyAuthError(auditQ.error)}
+                </p>
                 <Button size="sm" variant="outline" onClick={() => void auditQ.refetch()}>
                   Retry
                 </Button>
@@ -279,13 +286,7 @@ export function FirmBulkClientActions({
                       <TableCell className="whitespace-nowrap text-xs">
                         {new Date(entry.created_at).toLocaleString()}
                       </TableCell>
-                      <TableCell>
-                        {getFirmClientName(
-                          selectedClients.find((client) => client.company_id === entry.company_id) ??
-                            { id: entry.company_id, company_id: entry.company_id,
-                              access_level: "", companies: null },
-                        )}
-                      </TableCell>
+                      <TableCell>{clientNames.get(entry.company_id) ?? "Restricted client"}</TableCell>
                       <TableCell>{entry.action}</TableCell>
                       <TableCell className="max-w-xs text-xs">
                         {entry.changed_fields.map((key) => {

@@ -78,7 +78,7 @@ CREATE TABLE public.sales_credit_notes (
 );
 CREATE TABLE public.sales_credit_note_lines (
   id uuid PRIMARY KEY, company_id uuid NOT NULL REFERENCES public.companies(id),
-  credit_note_id uuid NOT NULL REFERENCES public.sales_credit_notes(id),
+  credit_note_id uuid NOT NULL REFERENCES public.sales_credit_notes(id) ON DELETE CASCADE,
   net_minor bigint NOT NULL DEFAULT 0, tax_minor bigint NOT NULL DEFAULT 0
 );
 CREATE TABLE public.purchase_credit_notes (
@@ -90,7 +90,7 @@ CREATE TABLE public.purchase_credit_notes (
 );
 CREATE TABLE public.purchase_credit_note_lines (
   id uuid PRIMARY KEY, company_id uuid NOT NULL REFERENCES public.companies(id),
-  credit_note_id uuid NOT NULL REFERENCES public.purchase_credit_notes(id),
+  credit_note_id uuid NOT NULL REFERENCES public.purchase_credit_notes(id) ON DELETE CASCADE,
   net_minor bigint NOT NULL DEFAULT 0, tax_minor bigint NOT NULL DEFAULT 0
 );
 CREATE TABLE public.purchase_expenses (
@@ -125,3 +125,4 @@ GRANT SELECT, INSERT, UPDATE ON ALL TABLES IN SCHEMA public TO authenticated;
 -- Tests use DELETE to verify the trigger itself rejects posted-line removal.
 GRANT DELETE ON public.sales_invoice_lines, public.purchase_bill_lines TO authenticated;
 GRANT DELETE ON public.sales_credit_note_lines, public.purchase_credit_note_lines TO authenticated;
+GRANT DELETE ON public.sales_credit_notes, public.purchase_credit_notes, public.purchase_expenses TO authenticated;

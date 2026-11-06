@@ -24,6 +24,7 @@ import { journalPageInfo } from "@/lib/accounting/journal-paging";
 import { reviewJournalLines } from "@/lib/accounting/journal-line-review";
 import { JournalPostedGlEvidence } from "@/components/accounting/JournalPostedGlEvidence";
 import { PayrollAccrualGlAudit } from "@/components/accounting/PayrollAccrualGlAudit";
+import { PayrollPaymentGlAudit } from "@/components/accounting/PayrollPaymentGlAudit";
 import { JOURNAL_SOURCE_LABELS, journalSourceLabel, journalLineCurrency } from "@/lib/accounting/journal-display";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
@@ -439,6 +440,17 @@ export function JournalsPanel({
                                 <PayrollAccrualGlAudit
                                   companyId={companyId}
                                   runId={j.source_id}
+                                  journalId={j.id}
+                                />
+                              ) : null}
+                              {canViewPayroll &&
+                              j.status === "posted" &&
+                              j.source_type === "payroll" &&
+                              j.source_id &&
+                              j.idempotency_key?.endsWith(":post") ? (
+                                <PayrollPaymentGlAudit
+                                  companyId={companyId}
+                                  paymentId={j.source_id}
                                   journalId={j.id}
                                 />
                               ) : null}

@@ -10,6 +10,8 @@ import { fileURLToPath } from "node:url";
 import {
   firmOnboardingReleaseSteps,
   localReleasePreflight,
+  extractVitestCounts,
+  FIRM_ONBOARDING_UNIT_TESTS,
   stagingGateReady,
 } from "./lib/firm-onboarding-release-plan.mjs";
 import { validateStagingTarget } from "./lib/staging-target.mjs";
@@ -76,17 +78,6 @@ function npmLaunch(npmArgs) {
   return { cmd: "npm", args: npmArgs };
 }
 
-function extractVitestCounts(output) {
-  const tests = output.match(/\bTests\s+(\d+)\s+passed(?:\s*\|\s*(\d+)\s+failed)?/);
-  const files = output.match(/\bTest Files\s+(\d+)\s+passed(?:\s*\|\s*(\d+)\s+failed)?/);
-  return {
-    passedTests: tests ? Number(tests[1]) : null,
-    failedTests: tests ? Number(tests[2] ?? 0) : null,
-    passedFiles: files ? Number(files[1]) : null,
-    failedFiles: files ? Number(files[2] ?? 0) : null,
-  };
-}
-
 async function runNpmStep(step) {
   const started = Date.now();
   const spec = npmLaunch(step.args);
@@ -125,8 +116,16 @@ async function runNpmStep(step) {
       finish({ status: "failed", exitCode: null });
     });
     child.on("close", (code, signal) => {
+      // A green process exit alone is insufficient if Vitest did not actually
+      // execute every required suite or silently skipped tests.
+      const counts = step.id === "unit" ? extractVitestCounts(output) : null;
+      const unitsVerified = !counts ||
+        (counts.passedFiles === FIRM_ONBOARDING_UNIT_TESTS.length &&
+          counts.passedTests !== null && counts.passedTests > 0 &&
+          counts.failedFiles === 0 && counts.failedTests === 0 &&
+          counts.skippedFiles === 0 && counts.skippedTests === 0);
       finish({
-        status: code === 0 ? "passed" : "failed",
+        status: code === 0 && unitsVerified ? "passed" : "failed",
         exitCode: code ?? (signal ? -1 : null),
       });
     });

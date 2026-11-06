@@ -12,6 +12,7 @@ import {
   listJournals,
   reversePostedJournal,
   type JournalListItem,
+  type JournalDetail,
 } from "@/lib/accounting/accounting.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { toCsv } from "@/lib/sales/csv";
@@ -20,6 +21,7 @@ import { useFormat } from "@/hooks/use-format";
 import { SortableHead } from "@/components/common/sortable-head";
 import { nextSort, sortRows, type SortState } from "@/lib/sort";
 import { journalPageInfo } from "@/lib/accounting/journal-paging";
+import { reviewJournalLines } from "@/lib/accounting/journal-line-review";
 import { JOURNAL_SOURCE_LABELS, journalSourceLabel, journalLineCurrency } from "@/lib/accounting/journal-display";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
@@ -34,6 +36,54 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+
+/**
+ * Journal row/line consistency only. Does not claim a complete GL reconciliation
+ * or independent source-document verification.
+ */
+function JournalLineReviewNotice({
+  journal,
+  detail,
+}: {
+  journal: JournalListItem;
+  detail: JournalDetail;
+}) {
+  const fmt = useFormat();
+  const review = reviewJournalLines(journal, detail);
+  const currency = detail.currency_code;
+  return (
+    <div className={`rounded-md border p-3 space-y-1 ${
+      review.state === "exception"
+        ? "border-destructive/40 bg-destructive/5"
+        : "border-border bg-muted/40"
+    }`}>
+      <p
+        role={review.state === "exception" ? "alert" : "status"}
+        className="text-sm font-semibold"
+      >
+        {review.state === "balanced"
+          ? "Journal line check passed"
+          : review.state === "not_posted"
+            ? "Not reviewed — journal is not posted"
+            : "Journal line check found exceptions"}
+      </p>
+      {review.debitMinor !== null && review.creditMinor !== null ? (
+        <p className="text-xs tabular-nums text-muted-foreground">
+          Debit: {fmt.amount(review.debitMinor, currency)} · Credit: {fmt.amount(review.creditMinor, currency)}
+        </p>
+      ) : null}
+      {review.issues.length > 0 ? (
+        <ul className="list-disc space-y-1 pl-5 text-sm text-destructive">
+          {review.issues.map((issue, index) => <li key={index}>{issue}</li>)}
+        </ul>
+      ) : null}
+      <p className="text-xs text-muted-foreground">
+        Checks the loaded journal lines against the journal list. Not an independent general ledger,
+        source-document, or foreign-exchange valuation audit.
+      </p>
+    </div>
+  );
+}
 
 /** Only hand-made journals are reversed here. Documents are voided from their own page so the subledger stays in step. */
 function canReverseHere(journal: JournalListItem): boolean {
@@ -371,18 +421,20 @@ export function JournalsPanel({
                             <p className="py-2 text-sm text-destructive">
                               {friendlyAuthError(detail.error)}
                             </p>
-                          ) : (
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead>Account</TableHead>
+                          ) : detail.data ? (
+                            <div className="space-y-3">
+                              <JournalLineReviewNotice journal={j} detail={detail.data} />
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead>Account</TableHead>
                                   <TableHead>Description</TableHead>
                                   <TableHead className="text-right">Debit ({lineCurrency})</TableHead>
                                   <TableHead className="text-right">Credit ({lineCurrency})</TableHead>
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
-                                {detail.data?.lines.map((line) => (
+                                {detail.data.lines.map((line) => (
                                   <TableRow key={line.id}>
                                     <TableCell>
                                       {line.account_code} {line.account_name}
@@ -400,8 +452,13 @@ export function JournalsPanel({
                                     </TableCell>
                                   </TableRow>
                                 ))}
-                              </TableBody>
-                            </Table>
+                                </TableBody>
+                              </Table>
+                            </div>
+                          ) : (
+                            <p role="alert" className="text-sm text-destructive">
+                              Journal detail is unavailable. Refresh the journal list and try again.
+                            </p>
                           )}
                         </TableCell>
                       </TableRow>

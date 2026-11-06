@@ -7,7 +7,11 @@ import { spawn, spawnSync } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { firmOnboardingReleaseSteps, stagingGateReady } from "./lib/firm-onboarding-release-plan.mjs";
+import {
+  firmOnboardingReleaseSteps,
+  localReleasePreflight,
+  stagingGateReady,
+} from "./lib/firm-onboarding-release-plan.mjs";
 import { validateStagingTarget } from "./lib/staging-target.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -44,8 +48,14 @@ function gitInfo() {
     return result.status === 0 ? (result.stdout || "").trim() : null;
   }
   const status = git("status", "--porcelain");
+  const remoteUrl = git("remote", "get-url", "origin");
+  // Never put a remote URL into the JSON report: it could contain credentials.
+  const originMatchesRepo = typeof remoteUrl === "string" &&
+    /^(?:https:\/\/github\.com\/|git@github\.com:|ssh:\/\/git@github\.com\/)linkbusinessadvisory\/LinkBooks(?:\.git)?\/?$/i.test(remoteUrl);
   return {
     commit: git("rev-parse", "HEAD"),
+    originMainCommit: git("rev-parse", "--verify", "refs/remotes/origin/main"),
+    originMatchesRepo,
     branch: git("branch", "--show-current"),
     workingTreeClean: status === "",
     workingTreeStatusKnown: status !== null,
@@ -126,6 +136,7 @@ async function runNpmStep(step) {
 async function runRelease({ useStaging, dryRun, install }) {
   const plan = firmOnboardingReleaseSteps({ install, staging: useStaging });
   const git = gitInfo();
+  const preflight = localReleasePreflight(git);
   const results = [];
   const now = new Date();
   const reportPath = path.join(
@@ -133,32 +144,43 @@ async function runRelease({ useStaging, dryRun, install }) {
   );
   console.log("Firm onboarding local verification — no GitHub CI");
   console.log("Repository:", root, "commit:", git.commit || "unknown");
-  if (!git.workingTreeClean || git.branch !== "main") {
-    console.warn("WARNING: working tree is not verified clean on main; release evidence cannot be accepted.");
+  if (!preflight.passed) {
+    console.error("RELEASE PREFLIGHT BLOCKED: " + preflight.blockers.join(" "));
   }
-  for (const step of plan) {
-    if (dryRun) {
-      console.log("PLANNED: npm " + step.args.join(" "));
-      results.push({ id: step.id, label: step.label, status: "planned", exitCode: null });
-      continue;
+  if (!dryRun && !preflight.passed) {
+    for (const step of plan) {
+      results.push({ id: step.id, label: step.label, status: "blocked", exitCode: null });
     }
-    const result = await runNpmStep(step);
-    results.push(result);
-    if (step.id === "install" && result.status !== "passed") {
-      console.error("Dependency installation failed; later commands cannot be trusted.");
-      for (const later of plan.slice(results.length)) {
-        results.push({ id: later.id, label: later.label, status: "blocked", exitCode: null });
+  } else {
+    for (const step of plan) {
+      if (dryRun) {
+        console.log("PLANNED: npm " + step.args.join(" "));
+        results.push({ id: step.id, label: step.label, status: "planned", exitCode: null });
+        continue;
       }
-      break;
+      const result = await runNpmStep(step);
+      results.push(result);
+      if (step.id === "install" && result.status !== "passed") {
+        console.error("Dependency installation failed; later commands cannot be trusted.");
+        for (const later of plan.slice(results.length)) {
+          results.push({ id: later.id, label: later.label, status: "blocked", exitCode: null });
+        }
+        break;
+      }
     }
   }
-  const checksPassed = !dryRun && results.length === plan.length &&
+  const finalGit = gitInfo();
+  const postflight = localReleasePreflight(finalGit);
+  const checksPassed = !dryRun && preflight.passed && postflight.passed &&
+    results.length === plan.length &&
     results.every((result) => result.status === "passed");
   const report = {
     module: "Firm & Clients — onboarding release",
     generatedAt: new Date().toISOString(),
     repo: "linkbusinessadvisory/LinkBooks",
-    git,
+    git: finalGit,
+    preflight,
+    postflight,
     sourceChecksPassed: checksPassed,
     stagingE2EIncluded: useStaging,
     stagingE2EPassed: useStaging && results.some((r) => r.id === "staging" && r.status === "passed"),
@@ -176,5 +198,5 @@ async function runRelease({ useStaging, dryRun, install }) {
   console.log("\nVerification JSON: " + reportPath);
   console.log("Local checks: " + (checksPassed ? "passed" : "NOT ALL PASSED"));
   console.log("Release verdict: BLOCKED until cron + deployment + manual staging evidence verified");
-  if (!dryRun && !checksPassed) process.exitCode = 1;
+  if (!dryRun && !checksPassed) process.exitCode = preflight.passed ? 1 : 2;
 }

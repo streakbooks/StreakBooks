@@ -20,6 +20,7 @@ import { useFormat } from "@/hooks/use-format";
 import { SortableHead } from "@/components/common/sortable-head";
 import { nextSort, sortRows, type SortState } from "@/lib/sort";
 import { journalPageInfo } from "@/lib/accounting/journal-paging";
+import { JOURNAL_SOURCE_LABELS, journalSourceLabel, journalLineCurrency } from "@/lib/accounting/journal-display";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { Badge } from "@/components/ui/badge";
@@ -33,25 +34,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-const SOURCE_LABEL: Record<string, string> = {
-  manual: "Manual journal",
-  opening_balance: "Opening balance",
-  sales_invoice: "Sales invoice",
-  sales_credit_note: "Sales credit note",
-  customer_payment: "Customer payment",
-  purchase_bill: "Bill",
-  purchase_credit_note: "Supplier credit",
-  supplier_payment: "Supplier payment",
-  expense: "Expense",
-  bank_transaction: "Bank transaction",
-  bank_transfer: "Bank transfer",
-  tax_adjustment: "Tax adjustment",
-  reversal: "Reversal",
-  other: "Bank document",
-  fx_revaluation: "FX revaluation",
-  fx_realised: "Realised FX",
-};
 
 /** Only hand-made journals are reversed here. Documents are voided from their own page so the subledger stays in step. */
 function canReverseHere(journal: JournalListItem): boolean {
@@ -142,7 +124,7 @@ export function JournalsPanel({
             : sort.key === "date"
               ? j.journal_date
               : sort.key === "source"
-                ? (SOURCE_LABEL[j.source_type] ?? j.source_type)
+                ? (journalSourceLabel(j.source_type))
                 : j.total_debit_minor,
         sort.dir,
       );
@@ -153,7 +135,7 @@ export function JournalsPanel({
         "Date",
         "Source",
         "Narration",
-        "Total debit (ledger minor units)",
+        "Total debit (journal minor units)",
         "Currency code",
         "Status",
         "Reversed",
@@ -209,7 +191,7 @@ export function JournalsPanel({
           {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
 
           <option value="">All sources</option>
-          {Object.entries(SOURCE_LABEL).map(([value, label]) => (
+          {Object.entries(JOURNAL_SOURCE_LABELS).map(([value, label]) => (
             <option key={value} value={value}>
               {label}
             </option>
@@ -304,7 +286,7 @@ export function JournalsPanel({
                 <SortableHead label="Date" {...headProps("date")} />
                 <SortableHead label="Source" {...headProps("source")} />
                 <TableHead>Narration</TableHead>
-                <SortableHead label="Amount" align="right" {...headProps("amount")} />
+                <SortableHead label="Amount (journal currency)" align="right" {...headProps("amount")} />
                 <TableHead>Status</TableHead>
                 <TableHead />
               </TableRow>
@@ -312,6 +294,7 @@ export function JournalsPanel({
             <TableBody>
               {rows.map((j) => {
                 const expanded = open === j.id;
+                const lineCurrency = journalLineCurrency(detail.data?.currency_code, j.currency_code, currency);
                 return (
                   <Fragment key={j.id}>
                     <TableRow
@@ -338,7 +321,7 @@ export function JournalsPanel({
                       </TableCell>
                       <TableCell>{j.journal_number}</TableCell>
                       <TableCell>{fmt.date(j.journal_date)}</TableCell>
-                      <TableCell>{SOURCE_LABEL[j.source_type] ?? j.source_type}</TableCell>
+                      <TableCell>{journalSourceLabel(j.source_type)}</TableCell>
                       <TableCell className="max-w-[260px] truncate">{j.memo ?? "—"}</TableCell>
                       <TableCell className="text-right tabular-nums">
                         {fmt.amount(j.total_debit_minor, j.currency_code || currency)}
@@ -394,8 +377,8 @@ export function JournalsPanel({
                                 <TableRow>
                                   <TableHead>Account</TableHead>
                                   <TableHead>Description</TableHead>
-                                  <TableHead className="text-right">Debit</TableHead>
-                                  <TableHead className="text-right">Credit</TableHead>
+                                  <TableHead className="text-right">Debit ({lineCurrency})</TableHead>
+                                  <TableHead className="text-right">Credit ({lineCurrency})</TableHead>
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
@@ -407,12 +390,12 @@ export function JournalsPanel({
                                     <TableCell>{line.description ?? "—"}</TableCell>
                                     <TableCell className="text-right tabular-nums">
                                       {line.debit_minor
-                                        ? fmt.amount(line.debit_minor, currency)
+                                        ? fmt.amount(line.debit_minor, lineCurrency)
                                         : ""}
                                     </TableCell>
                                     <TableCell className="text-right tabular-nums">
                                       {line.credit_minor
-                                        ? fmt.amount(line.credit_minor, currency)
+                                        ? fmt.amount(line.credit_minor, lineCurrency)
                                         : ""}
                                     </TableCell>
                                   </TableRow>

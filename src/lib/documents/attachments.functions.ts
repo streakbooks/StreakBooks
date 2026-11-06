@@ -503,14 +503,18 @@ export const listCompanyFiles = createServerFn({ method: "GET" })
     if (mimeTypes.length) q = q.in("content_type" as never, [...mimeTypes] as never);
     if (data.folderId && data.includeSubfolders) {
       // Never trust a client-provided list of descendants or traverse outside this company.
-      const { data: folderRows, error: folderError } = await supabase
+      const { data: folderRows, error: folderError, count: folderCount } = await supabase
         .from("document_folders" as never)
-        .select("id, parent_id" as never)
+        .select("id, parent_id" as never, { count: "exact" })
         .eq("company_id" as never, data.companyId as never)
-        .limit(1001);
+        .limit(1000);
       if (folderError) throw new Error(folderError.message);
-      if ((folderRows ?? []).length > 1000)
-        throw new Error("This organisation has too many folders for a recursive search.");
+      if (
+        folderCount == null ||
+        folderCount > 1000 ||
+        folderCount !== (folderRows ?? []).length
+      )
+        throw new Error("Folder list is too large or incomplete for a recursive search.");
       const ids = folderDescendantIds(
         (folderRows ?? []) as unknown as Array<{ id: string; parent_id: string | null }>,
         data.folderId,

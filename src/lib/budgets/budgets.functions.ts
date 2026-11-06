@@ -3,6 +3,7 @@ import { parseAccountingBasis, type AccountingBasis } from "@/lib/reports/accoun
 import { loadCashReportLines } from "@/lib/reports/cash-report.server";
 import { createServerFn } from "@tanstack/react-start";
 import { prepareBudgetImportCsv } from "@/lib/imports/budget-import";
+import { buildBudgetScenarioComparison } from "@/lib/budgets/budget-scenarios";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
@@ -185,6 +186,55 @@ export const getBudget = createServerFn({ method: "GET" })
       months: fiscalMonthStarts(head.fiscal_year_start),
       accounts,
       lines,
+    };
+  });
+
+/**
+ * Read-only scenario comparison; independent company-scoped headers are checked before
+ * loading lines, and full P&L metadata includes inactive historical accounts.
+ */
+export const compareBudgetScenarios = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; baselineId: string; scenarioId: string }) => {
+    const baselineId = assertUuid(input?.baselineId, "baseline budget");
+    const scenarioId = assertUuid(input?.scenarioId, "comparison budget");
+    if (baselineId === scenarioId) throw new Error("Choose two different budgets.");
+    return { companyId: companyIdOf(input), baselineId, scenarioId };
+  })
+  .handler(async ({ data, context }) => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    const sb = context.supabase as unknown as Sb;
+    const [baselineBudget, scenarioBudget] = await Promise.all([
+      loadBudgetHead(sb, data.companyId, data.baselineId),
+      loadBudgetHead(sb, data.companyId, data.scenarioId),
+    ]);
+    const [baselineLines, scenarioLines, metas, company] = await Promise.all([
+      loadBudgetLines(sb, data.baselineId),
+      loadBudgetLines(sb, data.scenarioId),
+      loadAccountMetas(sb, data.companyId),
+      loadCompanyMeta(sb, data.companyId),
+    ]);
+    const accounts = metas
+      .filter((account) => account.account_type === "income" || account.account_type === "expense")
+      .map((account) => ({
+        id: account.id,
+        code: account.code,
+        name: account.name,
+        kind: account.account_type as BudgetAccountKind,
+      }));
+    return {
+      baselineBudget,
+      scenarioBudget,
+      baselineMonths: fiscalMonthStarts(baselineBudget.fiscal_year_start),
+      scenarioMonths: fiscalMonthStarts(scenarioBudget.fiscal_year_start),
+      currency: company.baseCurrency,
+      comparison: buildBudgetScenarioComparison({
+        accounts,
+        baselineStart: baselineBudget.fiscal_year_start,
+        scenarioStart: scenarioBudget.fiscal_year_start,
+        baselineLines,
+        scenarioLines,
+      }),
     };
   });
 

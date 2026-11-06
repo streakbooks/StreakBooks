@@ -15,6 +15,7 @@ import {
 import { postJournal } from "@/lib/accounting/posting-engine";
 import { assertLinesBalance } from "@/lib/accounting/money";
 import { getJournalPreview } from "@/lib/ai/suggestion-review";
+import { saveAiExchange } from "@/lib/ai/history-store";
 
 export type AiIntent =
   "ask" | "explain" | "categorise" | "draft" | "duplicates" | "reconcile" | "unusual" | "navigate";
@@ -183,8 +184,20 @@ export const runAiAssistant = createServerFn({ method: "POST" })
         estimatedTokens: 0,
         latencyMs: 0,
       });
+      const history = await saveAiExchange(context.supabase, {
+        companyId: data.companyId,
+        userId: context.userId,
+        intent: data.intent,
+        question: data.message,
+        answer: body,
+        mode: "calculated",
+        facts: ctx.calculatedBlocks,
+        suggestionId: null,
+        injectionFlagged: data.injectionFlagged,
+      });
       return {
         mode: "calculated" as const,
+        ...history,
         configured: cfg.configured,
         injectionFlagged: data.injectionFlagged,
         companyId: data.companyId,
@@ -204,6 +217,8 @@ export const runAiAssistant = createServerFn({ method: "POST" })
       });
       return {
         mode: "not_configured" as const,
+        historyId: null as string | null,
+        saved: false,
         configured: false,
         injectionFlagged: data.injectionFlagged,
         companyId: data.companyId,
@@ -300,9 +315,21 @@ export const runAiAssistant = createServerFn({ method: "POST" })
       latencyMs: result.latencyMs,
     });
     await recordAiAllowance(context.supabase as never, data.companyId);
+    const history = await saveAiExchange(context.supabase, {
+      companyId: data.companyId,
+      userId: context.userId,
+      intent: data.intent,
+      question: data.message,
+      answer: result.content,
+      mode: "model",
+      facts: ctx.calculatedBlocks,
+      suggestionId,
+      injectionFlagged: data.injectionFlagged,
+    });
 
     return {
       mode: "model" as const,
+      ...history,
       configured: true,
       injectionFlagged: data.injectionFlagged,
       companyId: data.companyId,

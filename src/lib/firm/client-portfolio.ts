@@ -15,9 +15,23 @@ export const STATUS_LABELS: Record<FirmClientStatus, string> = {
   archived: "Archived in practice",
 };
 
-export type FirmClientSort = "name" | "name_desc" | "review" | "review_desc" | "status" | "service";
+export type FirmClientSort =
+  | "name"
+  | "name_desc"
+  | "review"
+  | "review_desc"
+  | "status"
+  | "service";
 export type FirmClientReviewFilter = "all" | "due" | "upcoming" | "unscheduled";
-export type FirmClientColumn = "status" | "contact" | "email" | "service" | "industry" | "tags" | "access" | "review";
+export type FirmClientColumn =
+  | "status"
+  | "contact"
+  | "email"
+  | "service"
+  | "industry"
+  | "tags"
+  | "access"
+  | "review";
 
 export const FIRM_CLIENT_COLUMNS: { id: FirmClientColumn; label: string }[] = [
   { id: "status", label: "Status" },
@@ -30,14 +44,22 @@ export const FIRM_CLIENT_COLUMNS: { id: FirmClientColumn; label: string }[] = [
   { id: "review", label: "Next review" },
 ];
 export const DEFAULT_FIRM_CLIENT_COLUMNS: FirmClientColumn[] = [
-  "status", "contact", "service", "access", "review",
+  "status",
+  "contact",
+  "service",
+  "access",
+  "review",
 ];
 
 /** Client name and actions are fixed. Only column identifiers, never client data, are saved. */
 export function normalizeFirmClientColumns(value: unknown): FirmClientColumn[] {
   if (!Array.isArray(value)) return [...DEFAULT_FIRM_CLIENT_COLUMNS];
   const allowed = new Set<string>(FIRM_CLIENT_COLUMNS.map((column) => column.id));
-  return [...new Set(value.filter((item): item is FirmClientColumn => typeof item === "string" && allowed.has(item)))];
+  return [
+    ...new Set(
+      value.filter((item): item is FirmClientColumn => typeof item === "string" && allowed.has(item)),
+    ),
+  ];
 }
 
 export function toggleFirmClientColumn(
@@ -52,7 +74,9 @@ export function toggleFirmClientColumn(
 
 /** Use the user's local calendar day, not UTC (which can differ near midnight). */
 export function localFirmDate(date: Date = new Date()): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+    date.getDate(),
+  ).padStart(2, "0")}`;
 }
 
 export function firmClientReviewState(
@@ -88,7 +112,10 @@ export function filterFirmClients(
       const profile = profilesByCompany.get(client.company_id);
       const currentStatus = profile?.status ?? "active";
       if (status !== "all" && status !== currentStatus) return false;
-      if (review !== "all" && firmClientReviewState(profile?.next_review_date, today) !== review)
+      if (
+        review !== "all" &&
+        firmClientReviewState(profile?.next_review_date, today) !== review
+      )
         return false;
       if (!term) return true;
       return [

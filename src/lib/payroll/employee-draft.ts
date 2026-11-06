@@ -2,6 +2,8 @@ import { toMinorUnits } from "@/lib/accounting/money";
 import { percentStringToBps } from "@/components/sales/sales-form-utils";
 import { toCsv } from "@/lib/sales/csv";
 import { readPayrollCsvRecords } from "@/lib/payroll/employee-csv-records";
+import { isValidPayrollDateOnly } from "@/lib/payroll/calendar-date";
+export { isValidPayrollDateOnly } from "@/lib/payroll/calendar-date";
 import {
   EMPLOYEE_STATUSES,
   EMPLOYMENT_TYPES,
@@ -87,15 +89,6 @@ export function employeeDraftFromRow(row: PayrollEmployeeRow): PayrollEmployeeDr
     paymentMethod: assertPaymentMethod(row.payment_method),
     notes: row.notes ?? "",
   };
-}
-
-/** Reject impossible calendar dates before an employee batch starts writing.
- * PostgreSQL has no year zero; keep the date-only input aligned with SQL DATE.
- */
-export function isValidPayrollDateOnly(value: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || value.startsWith("0000")) return false;
-  const date = new Date(`${value}T00:00:00.000Z`);
-  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
 }
 
 export function parsePayrollEmployeeDraft(draft: PayrollEmployeeDraft): ParsedResult {

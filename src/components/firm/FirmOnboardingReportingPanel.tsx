@@ -85,6 +85,7 @@ export function FirmOnboardingReportingPanel({
     () => new Map(knownClients.map((c) => [c.company_id, getFirmClientName(c)])),
     [knownClients],
   );
+  const staff = useMemo(() => staffQ.data?.staff ?? [], [staffQ.data?.staff]);
   const visibleIds = useMemo(() => new Set(clientNames.keys()), [clientNames]);
   const effectiveCompany = visibleIds.has(selectedCompany) ? selectedCompany : "all";
   const effectiveAssignee =
@@ -97,7 +98,6 @@ export function FirmOnboardingReportingPanel({
     () => (overviewQ.data ?? []).filter((row) => visibleIds.has(row.company_id)),
     [overviewQ.data, visibleIds],
   );
-  const staff = staffQ.data?.staff ?? [];
   const staffNames = useMemo(
     () => new Map(staff.map((person) => [person.user_id, person.display_name])),
     [staff],

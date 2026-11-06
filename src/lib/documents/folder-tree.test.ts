@@ -3,6 +3,7 @@ import {
   folderAncestors,
   folderDescendantIds,
   folderDisplayPath,
+  indexFolderPaths,
   possibleParentFolders,
   validateFolderName,
 } from "./folder-tree";
@@ -27,6 +28,24 @@ describe("folder-tree", () => {
     expect(folderDisplayPath(folders, "c")).toBe("Root / Bills / 2026");
     expect(folderDisplayPath(folders, "d")).toBe("Other");
     expect(folderDisplayPath(folders, "unknown")).toBe("");
+  });
+  it("indexes distinct, complete nested paths for efficient search without rerunning ancestors", () => {
+    const paths = indexFolderPaths(folders);
+    expect(paths.get("a")).toBe("Root");
+    expect(paths.get("b")).toBe("Root / Bills");
+    expect(paths.get("c")).toBe("Root / Bills / 2026");
+    expect(paths.get("d")).toBe("Other");
+    expect(paths.has("not-found")).toBe(false);
+  });
+  it("bounds corrupt cycles and missing parents without hanging", () => {
+    const paths = indexFolderPaths([
+      { id: "a", name: "A", parent_id: "b" },
+      { id: "b", name: "B", parent_id: "a" },
+      { id: "orphan", name: "Orphan", parent_id: "unknown" },
+    ]);
+    expect(paths.get("a")).toContain("A");
+    expect(paths.get("b")).toContain("B");
+    expect(paths.get("orphan")).toBe("Orphan");
   });
   it("includes the selected folder and nested descendants but not siblings", () => {
     expect(folderDescendantIds(folders, "a")).toEqual(["a", "b", "c"]);

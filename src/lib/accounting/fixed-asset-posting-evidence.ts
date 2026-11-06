@@ -327,7 +327,8 @@ export function reviewAssetDisposalPosting(
         entry.company_id !== companyId || !entry.run_id ||
         !validDay(entry.period_end) || !monthEnd(entry.period_end) ||
         periods.has(entry.period_end) ||
-        (asset.disposal_date && entry.period_end > asset.disposal_date.slice(0, 7) + "-31")) {
+        (asset.disposal_date && entry.period_end.slice(0, 7) > asset.disposal_date.slice(0, 7)) ||
+        !entry.journal_id) {
       issues.push(label + " has duplicated, inconsistent or post-disposal source evidence.");
     }
     entryIds.add(entry.id);
@@ -360,6 +361,9 @@ export function reviewAssetDisposalPosting(
   }
 
   const posted = journalLines(companyId, journal.id, lines, issues);
+  if (!asset.asset_account_id || !asset.accumulated_account_id) {
+    issues.push("Disposed asset is missing cost or accumulated depreciation account mappings.");
+  }
   if (cost !== null) {
     const assetCredit = posted.sides.get(asset.asset_account_id + "|credit") ?? 0n;
     if (assetCredit !== cost) issues.push("Disposal journal does not credit exact original asset cost.");

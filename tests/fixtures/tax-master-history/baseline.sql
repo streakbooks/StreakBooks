@@ -68,6 +68,41 @@ CREATE TABLE public.purchase_bill_lines (
   tax_code_id uuid REFERENCES public.tax_codes(id)
 );
 
+-- Additional posting sources do not carry tax_code_id on their lines.
+CREATE TABLE public.sales_credit_notes (
+  id uuid PRIMARY KEY, company_id uuid NOT NULL REFERENCES public.companies(id),
+  credit_date date NOT NULL, currency_code char(3) NOT NULL DEFAULT 'GBP',
+  subtotal_minor bigint NOT NULL DEFAULT 0, tax_minor bigint NOT NULL DEFAULT 0,
+  total_minor bigint NOT NULL DEFAULT 0, status text NOT NULL DEFAULT 'draft',
+  amount_allocated_minor bigint NOT NULL DEFAULT 0, posted_journal_id uuid
+);
+CREATE TABLE public.sales_credit_note_lines (
+  id uuid PRIMARY KEY, company_id uuid NOT NULL REFERENCES public.companies(id),
+  credit_note_id uuid NOT NULL REFERENCES public.sales_credit_notes(id),
+  net_minor bigint NOT NULL DEFAULT 0, tax_minor bigint NOT NULL DEFAULT 0
+);
+CREATE TABLE public.purchase_credit_notes (
+  id uuid PRIMARY KEY, company_id uuid NOT NULL REFERENCES public.companies(id),
+  credit_date date NOT NULL, currency_code char(3) NOT NULL DEFAULT 'GBP',
+  subtotal_minor bigint NOT NULL DEFAULT 0, tax_minor bigint NOT NULL DEFAULT 0,
+  total_minor bigint NOT NULL DEFAULT 0, status text NOT NULL DEFAULT 'draft',
+  amount_allocated_minor bigint NOT NULL DEFAULT 0, posted_journal_id uuid
+);
+CREATE TABLE public.purchase_credit_note_lines (
+  id uuid PRIMARY KEY, company_id uuid NOT NULL REFERENCES public.companies(id),
+  credit_note_id uuid NOT NULL REFERENCES public.purchase_credit_notes(id),
+  net_minor bigint NOT NULL DEFAULT 0, tax_minor bigint NOT NULL DEFAULT 0
+);
+CREATE TABLE public.purchase_expenses (
+  id uuid PRIMARY KEY, company_id uuid NOT NULL REFERENCES public.companies(id),
+  expense_date date NOT NULL, currency_code char(3) NOT NULL DEFAULT 'GBP',
+  expense_account_id uuid NOT NULL REFERENCES public.accounts(id),
+  payment_account_id uuid NOT NULL REFERENCES public.accounts(id),
+  net_minor bigint NOT NULL DEFAULT 0, tax_minor bigint NOT NULL DEFAULT 0,
+  total_minor bigint NOT NULL DEFAULT 0, status text NOT NULL DEFAULT 'draft',
+  posted_journal_id uuid
+);
+
 INSERT INTO public.companies(id) VALUES
  ('10000000-0000-4000-8000-000000000001'),
  ('10000000-0000-4000-8000-000000000002');
@@ -89,3 +124,4 @@ GRANT USAGE ON SCHEMA public TO authenticated;
 GRANT SELECT, INSERT, UPDATE ON ALL TABLES IN SCHEMA public TO authenticated;
 -- Tests use DELETE to verify the trigger itself rejects posted-line removal.
 GRANT DELETE ON public.sales_invoice_lines, public.purchase_bill_lines TO authenticated;
+GRANT DELETE ON public.sales_credit_note_lines, public.purchase_credit_note_lines TO authenticated;

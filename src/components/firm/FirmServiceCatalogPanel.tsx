@@ -45,7 +45,9 @@ export function FirmServiceCatalogPanel({
 
   return (
     <details className="rounded-lg border bg-card p-4">
-      <summary className="cursor-pointer font-semibold">Firm service categories ({categories.length})</summary>
+      <summary className="cursor-pointer font-semibold">
+        Firm service categories ({categories.length})
+      </summary>
       <p className="mt-2 text-sm text-muted-foreground">
         Maintain reusable service names for your practice. Existing client assignments are not
         changed when a category is renamed or archived.
@@ -91,7 +93,14 @@ export function FirmServiceCatalogPanel({
                 {editing ? "Save name" : "Add category"}
               </Button>
               {editing && (
-                <Button size="sm" variant="outline" onClick={() => { setEditing(null); setName(""); }}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setEditing(null);
+                    setName("");
+                  }}
+                >
                   Cancel
                 </Button>
               )}
@@ -102,7 +111,10 @@ export function FirmServiceCatalogPanel({
               <p className="text-sm text-muted-foreground">No custom categories yet.</p>
             )}
             {categories.map((category) => (
-              <div key={category.id} className="flex flex-wrap items-center gap-2 rounded-md border p-2">
+              <div
+                key={category.id}
+                className="flex flex-wrap items-center gap-2 rounded-md border p-2"
+              >
                 <span className="flex-1 text-sm font-medium">{category.name}</span>
                 <Badge variant={category.is_active ? "secondary" : "outline"}>
                   {category.is_active ? "Active" : "Archived"}

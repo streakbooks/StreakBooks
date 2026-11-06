@@ -241,7 +241,7 @@ Do not trigger GitHub Actions/CI, merge, modify database environments or deploy 
 
 **Date:** 2026-11-06. The original [Fixed Assets PR #111](https://github.com/linkbusinessadvisory/LinkBooks/pull/111) **has merged** into `main` at merge commit `b7d67d321444d5b811ea9d64eb3e8d146de609f4`. The feature branch for that PR was deleted after merge. The original PR's code, including the precision guard, is present on main. The module is **not production-ready** without full QA and deployment verification.
 
-**New isolated tooling branch:** `feature/fixed-assets-release-gate-main-hardening-20261106` (new PR to be reviewed separately). Changes are **only** to the local release-check script and its regression suite; no accounting API, journal, SQL, RLS, browser runtime, or deployment source is changed.
+**Separate tooling change:** `feature/fixed-assets-release-gate-main-hardening-20261106` (review and merge tracked separately from the already merged PR #111). Changes are **only** to the local release-check script and its regression suite; no accounting API, journal, SQL, RLS, browser runtime, or deployment source is changed.
 
 ### Local release gate changes
 
@@ -272,7 +272,7 @@ The script does not invoke GitHub Actions/CI, migration deployment, `git push`, 
 
 `scripts/check-fixed-assets-release.test.mjs` was added as a separate Node built-in test suite. An isolated Vercel sandbox with egress `deny-all` executed its tests using real temporary Git repositories and a mocked `npm` executable. **12 of 12 tests passed; zero failures, zero skipped; exit code 0.** Cases include a clean, locally synced main, wrong/old origin, withholding URL secrets, wrong/detached branch, changed and untracked files, absent or mismatched origin/main, correctly reported failing npm and argument refusal. Script syntax checking also passed.
 
-These tests prove preflight and orchestration behaviour **on Linux** only; no actual project typecheck/Vitest/ESLint/build was executed in that isolated fixture. The Windows `cmd.exe` invocation still needs execution in the user's local PowerShell checkout.
+These tests prove preflight and orchestration behaviour in a **Linux** sandbox only. The test suite now includes both a Unix `npm` mock and a Windows `npm.cmd` mock with OS-aware PATH configuration; its Windows branch still requires execution in the user's local PowerShell checkout. No actual project typecheck/Vitest/ESLint/build was executed in the isolated fixture.
 
 ### Remaining release blockers
 

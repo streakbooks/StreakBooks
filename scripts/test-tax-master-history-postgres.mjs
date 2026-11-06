@@ -61,10 +61,12 @@ try {
 
   sql(read("tests/fixtures/tax-master-history/baseline.sql"));
   sql(read("tests/integration/tax-schema-preflight.sql"));
+  sql(read("tests/integration/tax-legacy-tenant-preflight.sql"));
   // Repeat migration to verify idempotent reapplication before data fixtures.
   const migration = read("supabase/migrations/20261106120000_tax_master_posted_history_guard.sql");
   sql(migration);
   sql(migration);
+  sql(read("tests/integration/tax-master-schema-postflight.sql"));
   sql(read("tests/integration/tax-master-posted-history.sql"));
   sql(read("tests/integration/tax-extended-posted-sources.sql"));
   console.log("PASS: isolated tax posted-history guards and tenant reference tests");

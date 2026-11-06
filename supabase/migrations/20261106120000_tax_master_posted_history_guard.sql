@@ -328,3 +328,131 @@ REVOKE ALL ON FUNCTION public.lock_tax_masters_when_document_posted()
   FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.guard_tax_source_line_after_posting()
   FROM PUBLIC, anon, authenticated;
+
+
+-- Batch 08: other posted tax sources (credit notes and direct expenses).
+-- Credit-note lines carry tax_minor/rate snapshots, but have NO tax_code_id
+-- in the currently shipped schema. This guard protects posted source values,
+-- not any unrecorded historical tax-code classification.
+
+CREATE OR REPLACE FUNCTION public.guard_posted_tax_source_header()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, pg_temp AS $$
+BEGIN
+  IF NEW.company_id IS DISTINCT FROM OLD.company_id THEN
+    RAISE EXCEPTION 'Cannot move a tax source to another organisation';
+  END IF;
+
+  IF OLD.posted_journal_id IS NULL THEN RETURN NEW; END IF;
+
+  IF NEW.posted_journal_id IS DISTINCT FROM OLD.posted_journal_id THEN
+    RAISE EXCEPTION 'Cannot replace or remove posted tax source journal evidence';
+  END IF;
+
+  IF TG_TABLE_NAME = 'purchase_expenses' THEN
+    IF NEW.expense_date IS DISTINCT FROM OLD.expense_date
+      OR NEW.expense_account_id IS DISTINCT FROM OLD.expense_account_id
+      OR NEW.payment_account_id IS DISTINCT FROM OLD.payment_account_id
+      OR NEW.currency_code IS DISTINCT FROM OLD.currency_code
+      OR NEW.net_minor IS DISTINCT FROM OLD.net_minor
+      OR NEW.tax_minor IS DISTINCT FROM OLD.tax_minor
+      OR NEW.total_minor IS DISTINCT FROM OLD.total_minor
+    THEN
+      RAISE EXCEPTION 'Posted tax source amounts and accounts are immutable; use a correction';
+    END IF;
+  ELSIF TG_TABLE_NAME IN ('sales_credit_notes', 'purchase_credit_notes') THEN
+    IF NEW.credit_date IS DISTINCT FROM OLD.credit_date
+      OR NEW.currency_code IS DISTINCT FROM OLD.currency_code
+      OR NEW.subtotal_minor IS DISTINCT FROM OLD.subtotal_minor
+      OR NEW.tax_minor IS DISTINCT FROM OLD.tax_minor
+      OR NEW.total_minor IS DISTINCT FROM OLD.total_minor
+    THEN
+      RAISE EXCEPTION 'Posted credit-note tax amounts and dates are immutable; reverse instead';
+    END IF;
+  ELSE
+    RAISE EXCEPTION 'Unsupported tax source header table';
+  END IF;
+
+  -- Status and allocation bookkeeping may legitimately change after posting.
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS sales_credit_tax_posted_header_guard ON public.sales_credit_notes;
+CREATE TRIGGER sales_credit_tax_posted_header_guard
+BEFORE UPDATE ON public.sales_credit_notes
+FOR EACH ROW EXECUTE FUNCTION public.guard_posted_tax_source_header();
+
+DROP TRIGGER IF EXISTS purchase_credit_tax_posted_header_guard ON public.purchase_credit_notes;
+CREATE TRIGGER purchase_credit_tax_posted_header_guard
+BEFORE UPDATE ON public.purchase_credit_notes
+FOR EACH ROW EXECUTE FUNCTION public.guard_posted_tax_source_header();
+
+DROP TRIGGER IF EXISTS purchase_expense_tax_posted_header_guard ON public.purchase_expenses;
+CREATE TRIGGER purchase_expense_tax_posted_header_guard
+BEFORE UPDATE ON public.purchase_expenses
+FOR EACH ROW EXECUTE FUNCTION public.guard_posted_tax_source_header();
+
+-- Lock the parent credit header on any line mutation so that edits cannot
+-- race the header update that records a posting journal.
+CREATE OR REPLACE FUNCTION public.guard_posted_credit_note_tax_lines()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, pg_temp AS $$
+DECLARE
+  parent_id uuid;
+  requested_company uuid;
+  parent_company uuid;
+  posted_id uuid;
+BEGIN
+  IF TG_OP = 'DELETE' THEN
+    parent_id := OLD.credit_note_id;
+    requested_company := OLD.company_id;
+  ELSE
+    parent_id := NEW.credit_note_id;
+    requested_company := NEW.company_id;
+  END IF;
+
+  IF TG_OP = 'UPDATE' AND (
+    NEW.credit_note_id IS DISTINCT FROM OLD.credit_note_id OR
+    NEW.company_id IS DISTINCT FROM OLD.company_id
+  ) THEN
+    RAISE EXCEPTION 'Cannot move credit-note tax lines between sources';
+  END IF;
+
+  IF TG_TABLE_NAME = 'sales_credit_note_lines' THEN
+    SELECT h.company_id, h.posted_journal_id INTO parent_company, posted_id
+      FROM public.sales_credit_notes h WHERE h.id = parent_id FOR SHARE;
+  ELSIF TG_TABLE_NAME = 'purchase_credit_note_lines' THEN
+    SELECT h.company_id, h.posted_journal_id INTO parent_company, posted_id
+      FROM public.purchase_credit_notes h WHERE h.id = parent_id FOR SHARE;
+  ELSE
+    RAISE EXCEPTION 'Unsupported credit-note line table';
+  END IF;
+
+  IF parent_company IS NULL OR parent_company IS DISTINCT FROM requested_company THEN
+    RAISE EXCEPTION 'Credit-note tax line must belong to its source organisation';
+  END IF;
+
+  IF posted_id IS NOT NULL THEN
+    RAISE EXCEPTION 'Posted credit-note tax lines are immutable; reverse instead';
+  END IF;
+
+  IF TG_OP = 'DELETE' THEN RETURN OLD; END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS sales_credit_tax_posted_lines_guard ON public.sales_credit_note_lines;
+CREATE TRIGGER sales_credit_tax_posted_lines_guard
+BEFORE INSERT OR UPDATE OR DELETE ON public.sales_credit_note_lines
+FOR EACH ROW EXECUTE FUNCTION public.guard_posted_credit_note_tax_lines();
+
+DROP TRIGGER IF EXISTS purchase_credit_tax_posted_lines_guard ON public.purchase_credit_note_lines;
+CREATE TRIGGER purchase_credit_tax_posted_lines_guard
+BEFORE INSERT OR UPDATE OR DELETE ON public.purchase_credit_note_lines
+FOR EACH ROW EXECUTE FUNCTION public.guard_posted_credit_note_tax_lines();
+
+REVOKE ALL ON FUNCTION public.guard_posted_tax_source_header()
+  FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.guard_posted_credit_note_tax_lines()
+  FROM PUBLIC, anon, authenticated;

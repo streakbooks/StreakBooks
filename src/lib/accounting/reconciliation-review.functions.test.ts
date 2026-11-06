@@ -212,7 +212,7 @@ describe("persistent reconciliation review server permissions and boundaries", (
   });
   it("bounds team member results at 100 and marks additional rows", async () => {
     db["company_members"] = Array.from({ length: 101 }, (_, i) =>
-      ({ ...db["company_members"]![0] as object, user_id: "member-" + i }),
+      ({ ...(db["company_members"]![0] as object), user_id: "member-" + i }),
     );
     await expect(assignees()).resolves.toMatchObject({ hasMore: true });
     const r = await assignees() as { members: unknown[] };

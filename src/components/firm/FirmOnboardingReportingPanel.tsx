@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
@@ -55,6 +55,14 @@ export function FirmOnboardingReportingPanel({
   const getOverview = useServerFn(listFirmOnboardingOverview);
   const getStaff = useServerFn(listFirmOnboardingWorkloadContext);
   const getTrends = useServerFn(listFirmOnboardingTrends);
+  const activeFirmRef = useRef<string | null>(firmId);
+  useEffect(() => {
+    activeFirmRef.current = firmId;
+    return () => {
+      // A pending export must not download after leaving the firm page.
+      activeFirmRef.current = null;
+    };
+  }, [firmId]);
   const [selectedCompany, setSelectedCompany] = useState("all");
   const [selectedAssignee, setSelectedAssignee] = useState("all");
   const [age, setAge] = useState<OnboardingAgeFilter>("all");
@@ -161,6 +169,9 @@ export function FirmOnboardingReportingPanel({
         toast.message("No authorized tasks match the selected filters");
         return;
       }
+      if (activeFirmRef.current !== firmId) {
+        throw new Error("Active firm changed during export. Restart from the selected firm.");
+      }
       const names = new Map(
         currentStaff.staff.map((person) => [person.user_id, person.display_name]),
       );
@@ -186,6 +197,9 @@ export function FirmOnboardingReportingPanel({
       if (!authorizedTrends.length) {
         toast.message("No authorized historical observations are available");
         return;
+      }
+      if (activeFirmRef.current !== firmId) {
+        throw new Error("Active firm changed during export. Restart from the selected firm.");
       }
       saveCsv(
         `firm-onboarding-observed-trend-${today}.csv`,

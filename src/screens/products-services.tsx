@@ -11,6 +11,9 @@ import { listAccounts } from "@/lib/accounting/accounting.functions";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { parseMinorOrThrow } from "@/lib/purchases/money-input";
 import { listTaxCodes } from "@/lib/tax/tax.functions";
+import { listProductCategories } from "@/lib/products/catalogue-masterdata.functions";
+import { CategoriesWorkspace, PriceListsWorkspace } from "@/components/products/ProductsMasterData";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useCanDo } from "@/hooks/use-can";
 import {
   archiveProduct,
@@ -80,7 +83,24 @@ export function ProductsPage() {
       />
     );
   }
-  return <ProductsWorkspace companyId={company.id} currency={company.base_currency} />;
+  return (
+    <Tabs defaultValue="catalogue" className="space-y-4">
+      <TabsList aria-label="Products and services sections">
+        <TabsTrigger value="catalogue">Catalogue</TabsTrigger>
+        <TabsTrigger value="categories">Categories</TabsTrigger>
+        <TabsTrigger value="price-lists">Price Lists</TabsTrigger>
+      </TabsList>
+      <TabsContent value="catalogue">
+        <ProductsWorkspace companyId={company.id} currency={company.base_currency} />
+      </TabsContent>
+      <TabsContent value="categories">
+        <CategoriesWorkspace companyId={company.id} currency={company.base_currency} />
+      </TabsContent>
+      <TabsContent value="price-lists">
+        <PriceListsWorkspace companyId={company.id} currency={company.base_currency} />
+      </TabsContent>
+    </Tabs>
+  );
 }
 
 function ProductsWorkspace({ companyId, currency }: { companyId: string; currency: string }) {
@@ -94,6 +114,7 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
   const updateMany = useServerFn(setProductsActive);
   const updatePrices = useServerFn(setProductPrices);
   const fetchTaxCodes = useServerFn(listTaxCodes);
+  const fetchCategories = useServerFn(listProductCategories);
   const canManage = useCanDo("products.manage");
   const canTax = useCanDo("tax.settings");
   const [page, setPage] = useState(1);
@@ -105,6 +126,7 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
   const [q, setQ] = useState("");
   const [debouncedQ, setDebouncedQ] = useState("");
   const [kind, setKind] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [status, setStatus] = useState("active");
   const [sort, setSort] = useState("name");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -120,6 +142,7 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
 
   const [form, setForm] = useState({
     kind: "service",
+    categoryId: "",
     code: "",
     name: "",
     description: "",
@@ -139,31 +162,50 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
   }, [q]);
 
   const productsQ = useQuery({
-    queryKey: ["products-page", companyId, debouncedQ, kind, status, sort, page, pageSize],
+    queryKey: [
+      "products-page", companyId, debouncedQ, kind,
+      categoryFilter, status, sort, page, pageSize,
+    ],
     queryFn: () =>
       fetchProducts({
-        data: { companyId, q: debouncedQ, kind, status, sort, page, pageSize },
+        data: {
+          companyId, q: debouncedQ, kind, status, sort, page, pageSize,
+          ...(categoryFilter !== "all" ? { categoryId: categoryFilter } : {}),
+        },
       }),
   });
   const rows = (productsQ.data?.rows ?? []) as ProductRow[];
   const total = productsQ.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const showColumn = (column: string) => visibleColumns.includes(column);
-  useEffect(() => setPage(1), [companyId, q, kind, status, sort, pageSize]);
+  useEffect(() => setPage(1), [companyId, q, kind, categoryFilter, status, sort, pageSize]);
   useEffect(() => {
     if (!productsQ.isPending && page > totalPages) setPage(totalPages);
   }, [page, totalPages, productsQ.isPending]);
   const selectedRows = rows.filter((row) => selectedIds.includes(row.id));
   const allVisibleSelected =
     rows.length > 0 && rows.slice(0, 100).every((row) => selectedIds.includes(row.id));
-  const hasFilters = Boolean(q || kind !== "all" || status !== "active");
+  const hasFilters = Boolean(
+    q || kind !== "all" || categoryFilter !== "all" || status !== "active",
+  );
 
   // A selection is only ever valid for the current company and visible result set.
-  useEffect(() => setSelectedIds([]), [companyId, q, kind, status, sort, page, pageSize]);
+  useEffect(
+    () => setSelectedIds([]),
+    [companyId, q, kind, categoryFilter, status, sort, page, pageSize],
+  );
   const accountsQ = useQuery({
     queryKey: ["accounts", companyId],
     queryFn: () => fetchAccounts({ data: { companyId } }),
   });
+
+  const categoriesQ = useQuery({
+    queryKey: ["product-categories", companyId],
+    queryFn: () => fetchCategories({ data: { companyId } }),
+  });
+  const categoryNameById = new Map(
+    (categoriesQ.data ?? []).map((item) => [item.id, item.name]),
+  );
 
   const taxCodesQ = useQuery({
     queryKey: ["tax-codes", companyId],
@@ -246,6 +288,7 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
       const data: Parameters<typeof saveProduct>[0]["data"] = {
         companyId,
         kind: form.kind,
+        categoryId: form.categoryId || null,
         name: form.name,
         salesPriceMinor,
         purchaseCostMinor,
@@ -281,7 +324,12 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
   });
 
   const exportMut = useMutation({
-    mutationFn: () => exportProducts({ data: { companyId, q, kind, status, sort } }),
+    mutationFn: () => exportProducts({
+      data: {
+        companyId, q, kind, status, sort,
+        ...(categoryFilter !== "all" ? { categoryId: categoryFilter } : {}),
+      },
+    }),
     onSuccess: (file) => {
       downloadCsv(file.filename, file.csv);
       toast.success(`Exported ${file.count} catalogue item(s) in ${file.currency}`);
@@ -343,6 +391,7 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
   function resetFilters() {
     setQ("");
     setKind("all");
+    setCategoryFilter("all");
     setStatus("active");
     setSort("name");
     setPage(1);
@@ -353,6 +402,7 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
     setEditing(null);
     setForm({
       kind: "service",
+      categoryId: "",
       code: "",
       name: "",
       description: "",
@@ -372,6 +422,7 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
     setEditing(p);
     setForm({
       kind: p.kind,
+      categoryId: p.category_id ?? "",
       code: p.code ?? "",
       name: p.name,
       description: p.description ?? "",
@@ -398,7 +449,7 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
     }));
   }
 
-  const requiredQueries = [accountsQ, taxCodesQ];
+  const requiredQueries = [accountsQ, taxCodesQ, categoriesQ];
   if (requiredQueries.some((query) => query.isError && query.data === undefined))
     return (
       <QueryErrorState queries={requiredQueries} title="Could not load item accounting options" />
@@ -490,6 +541,19 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
             <SelectItem value="non_inventory">Non-inventory</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger className="w-44" aria-label="Category filter">
+            <SelectValue placeholder="All categories" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All categories</SelectItem>
+            {(categoriesQ.data ?? []).map((category) => (
+              <SelectItem value={category.id} key={category.id}>
+                {category.name}{category.is_active ? "" : " (archived)"}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Select value={status} onValueChange={setStatus}>
           <SelectTrigger className="w-40" aria-label="Item status">
             <SelectValue />
@@ -524,6 +588,7 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
             {[
               { id: "code", label: "Code / SKU" },
               { id: "kind", label: "Kind" },
+              { id: "category", label: "Category" },
               { id: "salesPrice", label: "Sales price" },
               { id: "purchaseCost", label: "Purchase cost" },
               { id: "unit", label: "Unit" },
@@ -657,6 +722,7 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
                     {showColumn("code") ? <TableHead>Code</TableHead> : null}
                     <TableHead>Name</TableHead>
                     {showColumn("kind") ? <TableHead>Kind</TableHead> : null}
+                    {showColumn("category") ? <TableHead>Category</TableHead> : null}
                     {showColumn("salesPrice") ? (
                       <TableHead className="text-right">Sales price</TableHead>
                     ) : null}
@@ -709,6 +775,13 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
                       </TableCell>
                       {showColumn("kind") ? (
                         <TableCell className="capitalize">{p.kind.replace("_", " ")}</TableCell>
+                      ) : null}
+                      {showColumn("category") ? (
+                        <TableCell>
+                          {p.category_id
+                            ? categoryNameById.get(p.category_id) ?? "Unknown"
+                            : "—"}
+                        </TableCell>
                       ) : null}
                       {showColumn("salesPrice") ? (
                         <TableCell className="money">
@@ -984,6 +1057,32 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
                   <SelectItem value="service">Service</SelectItem>
                   <SelectItem value="product">Product (non-stock)</SelectItem>
                   <SelectItem value="non_inventory">Non-inventory</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1">
+              <Label>Category</Label>
+              <Select
+                value={form.categoryId || "none"}
+                onValueChange={(categoryId) =>
+                  setForm((current) => ({
+                    ...current,
+                    categoryId: categoryId === "none" ? "" : categoryId,
+                  }))
+                }
+              >
+                <SelectTrigger aria-label="Product category">
+                  <SelectValue placeholder="No category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No category</SelectItem>
+                  {(categoriesQ.data ?? [])
+                    .filter((category) => category.is_active || category.id === form.categoryId)
+                    .map((category) => (
+                      <SelectItem value={category.id} key={category.id}>
+                        {category.name}{category.is_active ? "" : " (archived)"}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>

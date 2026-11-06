@@ -14,6 +14,7 @@ export type ProductRow = {
   code: string | null;
   name: string;
   description: string | null;
+  category_id: string | null;
   sales_price_minor: number;
   purchase_cost_minor: number;
   income_account_id: string | null;
@@ -66,7 +67,7 @@ export const listProducts = createServerFn({ method: "GET" })
     let q = context.supabase
       .from("products" as never)
       .select(
-        "id, kind, code, name, description, sales_price_minor, purchase_cost_minor, income_account_id, expense_account_id, sales_tax_rate_bps, purchase_tax_rate_bps, unit, is_active, created_at" as never,
+        "id, kind, code, name, description, category_id, sales_price_minor, purchase_cost_minor, income_account_id, expense_account_id, sales_tax_rate_bps, purchase_tax_rate_bps, unit, is_active, created_at" as never,
       )
       .eq("company_id" as never, data.companyId as never)
       .limit(data.limit);
@@ -97,6 +98,7 @@ export type CatalogueFilters = {
   kind?: string;
   status?: string;
   sort?: string;
+  categoryId?: string;
 };
 
 function parseCatalogueFilters(input: CatalogueFilters) {
@@ -112,6 +114,7 @@ function parseCatalogueFilters(input: CatalogueFilters) {
   }
   return {
     companyId: assertUuid(input.companyId),
+    categoryId: input.categoryId ? assertUuid(input.categoryId, "category") : null,
     q: (input.q ?? "").trim().slice(0, 100),
     kind,
     status,
@@ -129,7 +132,7 @@ const CATALOGUE_SORT: Record<CatalogueSort, { column: string; ascending: boolean
 };
 
 const PRODUCT_COLUMNS =
-  "id, kind, code, name, description, sales_price_minor, purchase_cost_minor, income_account_id, expense_account_id, sales_tax_rate_bps, purchase_tax_rate_bps, unit, is_active, created_at";
+  "id, kind, code, name, description, category_id, sales_price_minor, purchase_cost_minor, income_account_id, expense_account_id, sales_tax_rate_bps, purchase_tax_rate_bps, unit, is_active, created_at";
 
 /** Count and page are calculated on the server with identical filters and a stable sort. */
 export const listProductsPage = createServerFn({ method: "GET" })
@@ -151,6 +154,7 @@ export const listProductsPage = createServerFn({ method: "GET" })
       query = query.eq("is_active" as never, (data.status === "active") as never);
     }
     if (data.kind !== "all") query = query.eq("kind" as never, data.kind as never);
+    if (data.categoryId) query = query.eq("category_id" as never, data.categoryId as never);
     const search = buildIlikeOr(["name", "code", "description"], data.q);
     if (search) query = query.or(search as never);
     const order = CATALOGUE_SORT[data.sort];
@@ -190,6 +194,7 @@ export const exportProductsCsv = createServerFn({ method: "GET" })
       counter = counter.eq("is_active" as never, (data.status === "active") as never);
     }
     if (data.kind !== "all") counter = counter.eq("kind" as never, data.kind as never);
+    if (data.categoryId) counter = counter.eq("category_id" as never, data.categoryId as never);
     const search = buildIlikeOr(["name", "code", "description"], data.q);
     if (search) counter = counter.or(search as never);
     const { count, error: countError } = await counter;
@@ -210,6 +215,7 @@ export const exportProductsCsv = createServerFn({ method: "GET" })
         query = query.eq("is_active" as never, (data.status === "active") as never);
       }
       if (data.kind !== "all") query = query.eq("kind" as never, data.kind as never);
+      if (data.categoryId) query = query.eq("category_id" as never, data.categoryId as never);
       if (search) query = query.or(search as never);
       query = query
         .order(order.column as never, { ascending: order.ascending, nullsFirst: false })
@@ -267,6 +273,7 @@ export const upsertProduct = createServerFn({ method: "POST" })
       code?: string;
       name: string;
       description?: string;
+      categoryId?: string | null;
       salesPriceMinor?: number;
       purchaseCostMinor?: number;
       incomeAccountId?: string;
@@ -308,6 +315,7 @@ export const upsertProduct = createServerFn({ method: "POST" })
         code: code || null,
         name: name.slice(0, 200),
         description: (input.description ?? "").trim().slice(0, 2000) || null,
+        categoryId: input.categoryId ? assertUuid(input.categoryId, "category") : null,
         salesPriceMinor: input.salesPriceMinor ?? 0,
         purchaseCostMinor: input.purchaseCostMinor ?? 0,
         incomeAccountId: input.incomeAccountId
@@ -348,9 +356,33 @@ export const upsertProduct = createServerFn({ method: "POST" })
       if (a && (!a.is_active || a.archived_at)) throw new Error(`The ${role} account is inactive`);
       if (a && !a.is_postable) throw new Error(`The ${role} account is not postable`);
     }
+    if (data.categoryId) {
+      const { data: category, error: categoryError } = await context.supabase
+        .from("product_categories" as never)
+        .select("id, is_active" as never)
+        .eq("company_id" as never, data.companyId as never)
+        .eq("id" as never, data.categoryId as never)
+        .maybeSingle();
+      if (categoryError) throw new Error(categoryError.message);
+      if (!category) throw new Error("Category does not belong to this organisation");
+      if (!(category as { is_active: boolean }).is_active) {
+        // Older records can retain archived categories; new assignments must be active.
+        if (!data.id) throw new Error("Select an active category");
+        const { data: existing, error: existingError } = await context.supabase
+          .from("products" as never)
+          .select("category_id" as never)
+          .eq("company_id" as never, data.companyId as never)
+          .eq("id" as never, data.id as never).maybeSingle();
+        if (existingError) throw new Error(existingError.message);
+        if ((existing as { category_id: string | null } | null)?.category_id !== data.categoryId) {
+          throw new Error("Archived categories cannot be assigned to other items");
+        }
+      }
+    }
     const payload = {
       company_id: data.companyId,
       kind: data.kind,
+      category_id: data.categoryId,
       code: data.code,
       name: data.name,
       description: data.description,

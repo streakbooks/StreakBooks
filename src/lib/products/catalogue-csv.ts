@@ -13,6 +13,7 @@ export type CatalogueCsvItem = {
   is_active: boolean;
   income_account_id: string | null;
   expense_account_id: string | null;
+  category_id?: string | null;
 };
 
 /** Escape RFC 4180 CSV and neutralise leading spreadsheet formulas, including after whitespace. */
@@ -40,6 +41,7 @@ export function productsToCsv(rows: readonly CatalogueCsvItem[], currency: strin
       "Status",
       "Income Account ID",
       "Expense Account ID",
+      "Category ID",
     ],
     ...rows.map((row) => [
       row.code,
@@ -54,6 +56,7 @@ export function productsToCsv(rows: readonly CatalogueCsvItem[], currency: strin
       row.is_active ? "Active" : "Archived",
       row.income_account_id,
       row.expense_account_id,
+      row.category_id ?? null,
     ]),
   ];
   return records.map((record) => record.map(catalogueCsvCell).join(",")).join("\r\n") + "\r\n";

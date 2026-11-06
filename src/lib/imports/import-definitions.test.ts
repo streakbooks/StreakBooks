@@ -39,7 +39,7 @@ describe("shared import definitions", () => {
     for (const header of headers) {
       expect(definition.fields.some((field) => field.label === header)).toBe(true);
     }
-    expect(headers.length).toBe(12);
+    expect(headers.length).toBe(13);
   });
 
   it("does not misrepresent unavailable domain writers", () => {

@@ -167,6 +167,13 @@ const defs: ImportDefinition[] = [
         "",
         "Existing active purchase account UUID in this organisation",
       ),
+      field(
+        "category_id",
+        "Category ID",
+        false,
+        "",
+        "Optional existing active category UUID belonging to this organisation",
+      ),
     ],
   },
   {

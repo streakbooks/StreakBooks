@@ -24,6 +24,7 @@ describe("products catalogue CSV import validation", () => {
         purchaseTaxRateBps: 0,
         incomeAccountId: null,
         expenseAccountId: null,
+        categoryId: null,
       },
       {
         sourceRow: 3,
@@ -38,6 +39,7 @@ describe("products catalogue CSV import validation", () => {
         purchaseTaxRateBps: 0,
         incomeAccountId: null,
         expenseAccountId: null,
+        categoryId: null,
       },
     ]);
   });
@@ -77,6 +79,7 @@ describe("products catalogue CSV import validation", () => {
         purchaseTaxRateBps: 550,
         incomeAccountId: incomeId,
         expenseAccountId: expenseId,
+        categoryId: null,
       },
     ]);
   });

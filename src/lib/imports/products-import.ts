@@ -15,6 +15,7 @@ export type ProductImportRow = {
   purchaseTaxRateBps: number;
   incomeAccountId: string | null;
   expenseAccountId: string | null;
+  categoryId: string | null;
 };
 
 const DEFINITION = getImportDefinition("products", "Products and services");
@@ -126,6 +127,7 @@ export function prepareProductsCsv(csvText: string, currency: string): ProductIm
         sourceRow,
         "Expense Account ID",
       ),
+      categoryId: optionalAccountId(values["category_id"] || "", sourceRow, "Category ID"),
     };
   });
 }

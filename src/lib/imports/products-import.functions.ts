@@ -68,7 +68,27 @@ export const importProductsCsv = createServerFn({ method: "POST" })
         accountById.set(account.id.toLowerCase(), account);
       }
     }
+    const categoryIds = [
+      ...new Set(records.map((row) => row.categoryId).filter((id): id is string => Boolean(id))),
+    ];
+    const categoryMap = new Map<string, boolean>();
+    if (categoryIds.length) {
+      const { data: categories, error: categoryError } = await context.supabase
+        .from("product_categories" as never)
+        .select("id, is_active" as never)
+        .eq("company_id" as never, data.companyId as never)
+        .in("id" as never, categoryIds as never);
+      if (categoryError) throw new Error(categoryError.message);
+      for (const category of (categories ?? []) as Array<{ id: string; is_active: boolean }>) {
+        categoryMap.set(category.id.toLowerCase(), category.is_active);
+      }
+    }
     for (const row of records) {
+      if (row.categoryId && categoryMap.get(row.categoryId.toLowerCase()) !== true) {
+        throw new Error(
+          `Row ${row.sourceRow}: Category must be active and belong to this organisation`,
+        );
+      }
       for (const [role, accountId] of [
         ["income", row.incomeAccountId],
         ["expense", row.expenseAccountId],
@@ -104,6 +124,7 @@ export const importProductsCsv = createServerFn({ method: "POST" })
         purchase_tax_rate_bps: row.purchaseTaxRateBps,
         income_account_id: row.incomeAccountId,
         expense_account_id: row.expenseAccountId,
+        category_id: row.categoryId,
         is_active: true,
       } as never);
       if (!error) {

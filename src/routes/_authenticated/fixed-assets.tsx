@@ -47,7 +47,7 @@ import {
   FixedAssetSavedFilterViews,
   FixedAssetTableColumns,
 } from "@/components/fixed-assets/AssetRegisterPersonalization";
-import { reviewCapitalisableLines, selectCapitalisationReviewRows } from "@/lib/fixed-assets/capitalisation-review";
+import { capitalisationReviewGuidance, reviewCapitalisableLines, selectCapitalisationReviewRows } from "@/lib/fixed-assets/capitalisation-review";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -1596,7 +1596,12 @@ function BillLinesDialog({
                           <TableCell className="text-right">
                             <Button
                               size="sm"
-                              disabled={line.status === "non_purchase"}
+                              disabled={!capitalisationReviewGuidance(line.status).canPrepareNewAsset}
+                              title={
+                                capitalisationReviewGuidance(line.status).canPrepareNewAsset
+                                  ? "Verify eligible acquisition costs before registration"
+                                  : "Review this bill and any existing linked assets before creating another record"
+                              }
                               onClick={() => onPick(line)}
                             >
                               Review / use

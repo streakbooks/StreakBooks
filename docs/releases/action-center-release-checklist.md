@@ -71,6 +71,28 @@ The cross-user and large-history tests skip explicitly if the required staging
 fixtures are absent. **Skipped tests are not passed tests.** Accessibility scans
 check serious and critical violations scoped to the module, not every application screen.
 
+
+## Automated release metadata guard (read-only)
+
+A production deployment marked `READY` is not sufficient: its actual Git
+repository, branch and full source commit SHA must match the approved build.
+
+On a reviewed **fresh, authentic Vercel deployment record** exported as a single
+JSON object, run:
+
+```powershell
+node --test scripts/lib/action-center-release-gate.test.mjs
+node scripts/check-action-center-release.mjs .\vercel-deployment.json <approved-main-40-char-sha>
+```
+
+The metadata guard fails closed when the record lacks Git metadata, targets
+the old `rohitmehra86/LinkBooks` repository, is not from `main`, identifies
+a different commit, targets preview, or is not `READY`. It performs **no**
+deployment and requires no API credentials. A saved JSON file is not live
+evidence by itself: confirm its deployment ID, environment and commit directly
+with the connected Vercel project before release approval. Do not commit
+deployment records containing other confidential metadata.
+
 ## Required production deployment verification
 
 1. Confirm Vercel project Git source is `linkbusinessadvisory/LinkBooks` before any deployment.

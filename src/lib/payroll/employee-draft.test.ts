@@ -209,13 +209,13 @@ describe("payroll employee drafts", () => {
 
   it("rejects wrong-width CSV rows and manual employee payment methods", () => {
     const extraColumn = parsePayrollEmployeesCsv(
-      "First name,Last name,Hire date\\nAda,Lee,2026-01-01,unexpected",
+      "First name,Last name,Hire date\nAda,Lee,2026-01-01,unexpected",
       { country: "GB", currency: "GBP" },
     );
     expect(extraColumn.ok).toBe(false);
     if (!extraColumn.ok) expect(extraColumn.error).toMatch(/Line 2.*expected 3 CSV columns/);
     const manual = parsePayrollEmployeesCsv(
-      "First name,Last name,Hire date,Payment method\\nAda,Lee,2026-01-01,manual",
+      "First name,Last name,Hire date,Payment method\nAda,Lee,2026-01-01,manual",
       { country: "GB", currency: "GBP" },
     );
     expect(manual.ok).toBe(false);

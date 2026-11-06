@@ -1,6 +1,10 @@
 import { fromMinorUnits } from "@/lib/accounting/money";
 import type { SalesLineFormState } from "@/lib/sales/line-form-state";
-import { resolveTierUnitPrice, type DraftTierPriceRule } from "@/lib/products/price-list-tiers";
+import { type DraftTierPriceRule } from "@/lib/products/price-list-tiers";
+import {
+  resolveDraftDiscountedUnitPrice,
+  type DraftDiscountRule,
+} from "@/lib/products/price-list-discounts";
 
 export type DraftPriceOverride = { product_id: string; unit_price_minor: number };
 
@@ -30,7 +34,7 @@ export function indexDraftPriceOverrides(
 }
 
 /**
- * Explicitly reprice *only* existing lines with product IDs and price-list overrides.
+ * Explicitly reprice *only* existing lines with eligible fixed, tier or percent rules.
  * All other fields, including tax, account, discount and quantity, stay unchanged.
  * Never called automatically when a price list is selected or when loading saved documents.
  */
@@ -40,16 +44,24 @@ export function previewPriceListApplication(
   currency: string,
   tierRules: readonly DraftTierPriceRule[] = [],
   documentDate = "",
+  discountRules: readonly DraftDiscountRule[] = [],
+  catalogueBasePrices: Readonly<Record<string, number>> = {},
 ): { lines: SalesLineFormState[]; changed: number; matched: number } {
   let changed = 0;
   let matched = 0;
   const updated = lines.map((line) => {
     if (!line.productId) return { ...line };
-    const priceMinor = resolveTierUnitPrice(
-      line.productId, line.quantity, documentDate, overrides, tierRules,
+    const priceMinor = resolveDraftDiscountedUnitPrice(
+      line.productId,
+      catalogueBasePrices[line.productId],
+      line.quantity,
+      documentDate,
+      overrides,
+      tierRules,
+      discountRules,
     );
     if (priceMinor === undefined) return { ...line };
-    if (priceMinor === undefined || !Number.isSafeInteger(priceMinor) || priceMinor < 0) {
+    if (!Number.isSafeInteger(priceMinor) || priceMinor < 0) {
       throw new Error("Invalid price-list amount");
     }
     matched++;

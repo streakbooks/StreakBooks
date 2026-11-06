@@ -3,6 +3,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
 import { validateRuleInput, type DraftTierPriceRule } from "@/lib/products/price-list-tiers";
+import { validateDiscountRuleInput, type DraftDiscountRule } from "@/lib/products/price-list-discounts";
 import {
   assertMatchingCatalogueCurrency,
   validateCatalogueName,
@@ -309,6 +310,8 @@ export const resolveSalesDraftPriceList = createServerFn({ method: "GET" })
         currency: data.documentCurrency,
         items: [] as Array<{ product_id: string; unit_price_minor: number }>,
         rules: [] as DraftTierPriceRule[],
+        discounts: [] as DraftDiscountRule[],
+        basePrices: [] as Array<{ product_id: string; unit_price_minor: number }>,
       };
     }
     const { data: rows, error } = await context.supabase
@@ -356,5 +359,53 @@ export const resolveSalesDraftPriceList = createServerFn({ method: "GET" })
         unit_price_minor: checked.unitPriceMinor,
       };
     });
-    return { currency: data.documentCurrency, items, rules };
+    const { data: discountsRaw, error: discountError, count: discountCount } =
+      await context.supabase.from("product_price_list_discount_rules" as never)
+        .select(
+          "id, product_id, min_quantity, effective_from, effective_to, discount_bps" as never,
+          { count: "exact" },
+        )
+        .eq("company_id" as never, data.companyId as never)
+        .eq("price_list_id" as never, data.priceListId as never)
+        .in("product_id" as never, data.productIds as never)
+        .limit(1001);
+    if (discountError) throw new Error(discountError.message);
+    if ((discountCount ?? 0) > 1000 || (discountsRaw ?? []).length > 1000) {
+      throw new Error("The selected list has too many matching discount rules (maximum 1,000)");
+    }
+    const discounts: DraftDiscountRule[] = ((discountsRaw ?? []) as Array<{
+      id: string; product_id: string; min_quantity: string | number;
+      effective_from: string; effective_to: string | null; discount_bps: number;
+    }>).map((r) => {
+      const checked = validateDiscountRuleInput({
+        minQuantity: String(r.min_quantity),
+        effectiveFrom: r.effective_from,
+        effectiveTo: r.effective_to,
+        discountBps: r.discount_bps,
+      });
+      return {
+        id: r.id, product_id: r.product_id,
+        min_quantity: checked.minQuantity,
+        effective_from: checked.effectiveFrom,
+        effective_to: checked.effectiveTo,
+        discount_bps: checked.discountBps,
+      };
+    });
+
+    // Needed to preview percentage-only discounts on existing invoice/quote lines,
+    // including products beyond the editor's first-page catalogue list.
+    const { data: catalogue, error: catalogueError } = await context.supabase
+      .from("products" as never)
+      .select("id, sales_price_minor" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .in("id" as never, data.productIds as never)
+      .limit(250);
+    if (catalogueError) throw new Error(catalogueError.message);
+    const basePrices = ((catalogue ?? []) as Array<{
+      id: string; sales_price_minor: number;
+    }>).map((p) => {
+      validateCataloguePriceMinor(p.sales_price_minor);
+      return { product_id: p.id, unit_price_minor: p.sales_price_minor };
+    });
+    return { currency: data.documentCurrency, items, rules, discounts, basePrices };
   });

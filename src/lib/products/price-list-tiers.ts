@@ -61,28 +61,35 @@ export function validateRuleInput(input: {
   };
 }
 
+export type DateEffectiveQuantityRule = {
+  id: string;
+  product_id: string;
+  min_quantity: string;
+  effective_from: string;
+  effective_to: string | null;
+};
+
 /**
- * Precedence among currently effective rules: greatest minimum quantity,
- * then latest start date, then lexically smallest ID. Rules never compound.
+ * A single rule wins: largest eligible minimum quantity, then latest effective
+ * start date, then stable smallest ID. The result never stacks multiple rules.
  */
-export function findEffectiveTier(
-  rules: readonly DraftTierPriceRule[],
+export function findEffectiveQuantityRule<T extends DateEffectiveQuantityRule>(
+  rules: readonly T[],
   productId: string,
   quantity: string,
   date: string,
-): DraftTierPriceRule | null {
+): T | null {
   if (!validRuleDate(date)) return null;
   const amount = quantityScaled(quantity, true);
   if (amount === null || amount <= 0n) return null;
-  let best: DraftTierPriceRule | null = null;
+  let best: T | null = null;
   let bestQty = 0n;
   for (const rule of rules) {
     if (rule.product_id !== productId || rule.effective_from > date ||
       (rule.effective_to !== null && rule.effective_to < date)) continue;
     const minimum = quantityScaled(String(rule.min_quantity));
-    if (minimum === null || minimum <= 0n ||
-      !Number.isSafeInteger(rule.unit_price_minor) || rule.unit_price_minor < 0) {
-      throw new Error("Invalid price-list tier returned from the server");
+    if (minimum === null || minimum <= 0n) {
+      throw new Error("Invalid price-list quantity threshold returned from the server");
     }
     if (amount < minimum) continue;
     if (!best || minimum > bestQty ||
@@ -93,6 +100,21 @@ export function findEffectiveTier(
     }
   }
   return best;
+}
+
+/** Returns the effective fixed-price tier and refuses malformed stored money. */
+export function findEffectiveTier(
+  rules: readonly DraftTierPriceRule[],
+  productId: string,
+  quantity: string,
+  date: string,
+): DraftTierPriceRule | null {
+  const selected = findEffectiveQuantityRule(rules, productId, quantity, date);
+  if (selected && (!Number.isSafeInteger(selected.unit_price_minor) ||
+    selected.unit_price_minor < 0)) {
+    throw new Error("Invalid price-list tier amount returned from the server");
+  }
+  return selected;
 }
 
 export function resolveTierUnitPrice(

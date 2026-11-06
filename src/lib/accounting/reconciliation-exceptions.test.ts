@@ -141,7 +141,7 @@ describe("reconciliation centre evidence boundaries", () => {
   });
   it("keeps Fixed Assets explicitly unchecked when the other audits returned clean results", () => {
     const clean: HealthReport = { ...health, checks: health.checks.map(c => ({
-      ...c, status: "pass", count: 0, items: [],
+      ...c, status: "pass" as const, count: 0, items: [],
     })) };
     const result = createExceptionSnapshot({
       ...unrun, ledger: { state: "checked", result: clean },

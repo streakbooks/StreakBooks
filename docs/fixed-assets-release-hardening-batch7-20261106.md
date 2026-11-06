@@ -120,3 +120,22 @@ Do not trigger GitHub Actions/CI, merge, modify database environments or deploy 
 **Coordination with main:** PR #140, `feat(accounting): audit Fixed Asset depreciation/disposal posting evidence — batch 1`, has merged into `main`. It changes three additional files outside PR #111, deliberately avoiding overlap with PR #111. Its new pure evidence contracts are **not** yet connected to PR #111's user-facing GL reconciliation, and semantic integration/permission/accessibility tests are still required after bringing the feature branch up to date.
 
 **Release status unchanged:** Batch 7 remains incomplete pending real checkout/full tests, two-tenant RLS role matrix verification, posting and FX fixture tests, browser/mobile QA, main integration, review, and separately verified deployment. The code branch may be mergeable in GitHub but does not qualify as production-ready.
+
+
+## Batch 7 continued — depreciation API posting safety and exact totals
+
+**Problem identified in the original server endpoint:** `runDepreciation` previously sorted and silently deduplicated incoming period ends. A direct API request with a duplicate, reversed order, or skipped month could therefore be transformed and executed without the caller's original intent being enforced. Its preview and posted-result totals also used JavaScript `number` addition, which can lose exact minor-unit precision across multiple individually valid charges.
+
+**Source changes committed to PR #111:**
+- New pure `validateDepreciationPostingPeriods` enforces 1–36 **real month-end dates**, chronological order, consecutive months without gaps or duplicates, and no period beyond the latest permitted month. The server calls this function in the mutation input validator; it does not reorder or silently deduplicate requests.
+- New `exactDepreciationTotalMinor` totals posted amounts via `BigInt` and returns an exact decimal string. The result is compatible with the existing UI's string-aware money formatting.
+- New `safeDepreciationTotalMinor` refuses a preview total that cannot be represented precisely as an API number. It also refuses invalid/fractional/zero or negative included charges.
+- `previewDepreciation` now uses the safe exact-number boundary instead of floating accumulation; `runDepreciation` uses exact string totals for posted-result reporting.
+- Extended `src/lib/fixed-assets/depreciation-review.test.ts` to cover contiguous periods, duplicates, reverse ordering, skipped dates, leap February, future/invalid dates, 36/37-month limits, exact posted totals and unsafe preview amounts.
+- The accounting RPC's existing authorisation, period locking, idempotency and posting semantics are unchanged. The SQL implementation remains authoritative.
+
+**Isolated test evidence:** A network-restricted temporary sandbox executed the branch's `depreciation-review.ts` and `fiscal-year.ts` pure utilities using Node's built-in test runner. **25 focused tests passed, 0 failed, 0 skipped; process exit 0.** Logs were retrieved while the sandbox was live. This was run after the new helpers and API wiring, but the harness exercises the **pure helpers only**, not the TanStack server wrapper, Vitest, Supabase RPC, permissions or journal posting.
+
+**Latest outstanding release gates:** The full project remains unavailable as an authenticated checkout here, so `npm.cmd run typecheck`, `npm.cmd run lint`, full fixed-assets Vitest, UI contracts, browser/RLS, latest-main reconciliation and deployment have **not** passed. No GitHub Actions/CI, merge, Supabase migration or production deployment was performed.
+
+**Local commands:** `node scripts/check-fixed-assets-release.mjs` in the authoritative repository's feature checkout, after saving existing local work. Afterwards perform logged-in cross-company accounting tests, a 36-month catch-up with locked periods and repeated post requests, and run against current main before release approval.

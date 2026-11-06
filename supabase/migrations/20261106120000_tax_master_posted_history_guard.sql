@@ -337,7 +337,7 @@ REVOKE ALL ON FUNCTION public.guard_tax_source_line_after_posting()
 
 CREATE OR REPLACE FUNCTION public.guard_posted_tax_source_header()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
-SET search_path = public, pg_temp AS $
+SET search_path = public, pg_temp AS $$
 BEGIN
   IF TG_OP = 'DELETE' THEN
     IF OLD.posted_journal_id IS NOT NULL THEN

@@ -21,7 +21,8 @@ import {
   getYearActuals,
   saveBudgetDocument,
 } from "@/lib/budgets/budgets.functions";
-import { applyUpliftBps, fillRight, monthLabel, spreadEvenly } from "@/lib/budgets/budget-math";
+import { applyUpliftBps, fillRight, monthLabel, spreadEvenly, sumMinorNumbers } from "@/lib/budgets/budget-math";
+import { summarizeBudgetGrid } from "@/lib/budgets/budget-grid-summary";
 import {
   budgetCsvHeaders,
   budgetToCsvRows,
@@ -168,7 +169,6 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
   ).length;
   const invalidAmountCount = invalidCount + invalidAnnualCount;
   const unappliedAnnualCount = Object.keys(annualDrafts).length;
-  const hasInvalidAmounts = invalidAmountCount > 0;
   const visible = (a: (typeof rows)[number]) =>
     `${a.code} ${a.name}`.toLocaleLowerCase().includes(accountSearch.trim().toLocaleLowerCase());
 
@@ -189,16 +189,28 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
   const setRow = (id: string, row: string[]) => update({ ...cells, [id]: row });
   const rowOf = (id: string) => cells[id] ?? Array.from({ length: 12 }, () => "");
 
-  const totals = (kind: "income" | "expense") =>
-    data.months.map((_, i) =>
-      rows
-        .filter((a) => a.kind === kind)
-        .reduce((n, a) => n + (parseCell(rowOf(a.id)[i] ?? "", currency) ?? 0), 0),
-    );
-  const incomeTotals = totals("income");
-  const expenseTotals = totals("expense");
-  const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
-  const budgetNetMinor = sum(incomeTotals) - sum(expenseTotals);
+  // A grid preview is not permitted to silently round whole minor units.
+  // Catch overflow for a visible warning rather than crashing the editor.
+  const gridSummary = (() => {
+    try {
+      return {
+        totals: summarizeBudgetGrid(
+          rows.map((a) => ({ id: a.id, kind: a.kind, months: minor(a.id) })),
+          data.months.length,
+        ),
+        error: null as string | null,
+      };
+    } catch (error) {
+      return { totals: null, error: friendlyAuthError(error) };
+    }
+  })();
+  const totalsError = gridSummary.error;
+  const hasInvalidAmounts = invalidAmountCount > 0 || totalsError !== null;
+  const incomeTotals = gridSummary.totals?.incomeMonths ?? data.months.map(() => 0);
+  const expenseTotals = gridSummary.totals?.expenseMonths ?? data.months.map(() => 0);
+  const netTotals = gridSummary.totals?.netMonths ?? data.months.map(() => 0);
+  const sum = (xs: number[]) => sumMinorNumbers(xs);
+  const budgetNetMinor = gridSummary.totals?.netYear ?? 0;
 
   const applyMinor = (fn: (id: string, v: number[]) => number[]) => {
     if (hasInvalidAmounts) {
@@ -371,7 +383,12 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
   const renderRow = (a: (typeof rows)[number]) => {
     const row = rowOf(a.id);
     const vals = minor(a.id);
-    const total = vals.reduce<number>((n, v) => n + (v ?? 0), 0);
+    let total: number | null;
+    try {
+      total = sumMinorNumbers(vals.map((v) => v ?? 0));
+    } catch {
+      total = null;
+    }
     return (
       <TableRow key={a.id}>
         <TableCell className="sticky left-0 z-10 min-w-48 bg-background">
@@ -404,10 +421,11 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
             className="h-8 w-28 text-right font-medium tabular-nums"
             inputMode="decimal"
             disabled={!canEdit}
-            value={annualDrafts[a.id] ?? (total === 0 ? "" : fromMinorUnits(total, currency))}
+            value={annualDrafts[a.id] ?? (total === null || total === 0 ? "" : fromMinorUnits(total, currency))}
             aria-invalid={
-              annualDrafts[a.id] !== undefined &&
-              parseCell(annualDrafts[a.id]!, currency) === null
+              total === null ||
+              (annualDrafts[a.id] !== undefined &&
+              parseCell(annualDrafts[a.id]!, currency) === null)
             }
             onChange={(event) => {
               setAnnualDrafts((prev) => ({ ...prev, [a.id]: event.target.value }));
@@ -488,10 +506,10 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
           key={i}
           className={`text-right tabular-nums ${tone && v < 0 ? "text-destructive" : ""}`}
         >
-          {fmt.amount(v, currency)}
+          {totalsError ? "—" : fmt.amount(v, currency)}
         </TableCell>
       ))}
-      <TableCell className="text-right tabular-nums">{fmt.amount(sum(values), currency)}</TableCell>
+      <TableCell className="text-right tabular-nums">{totalsError ? "—" : fmt.amount(sum(values), currency)}</TableCell>
       <TableCell />
     </TableRow>
   );
@@ -597,13 +615,13 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
         <div className="rounded-md border p-3">
           <p className="text-xs text-muted-foreground">Annual budgeted income</p>
           <p className="mt-1 text-lg font-semibold tabular-nums">
-            {fmt.amount(sum(incomeTotals), currency)}
+            {totalsError ? "—" : fmt.amount(sum(incomeTotals), currency)}
           </p>
         </div>
         <div className="rounded-md border p-3">
           <p className="text-xs text-muted-foreground">Annual budgeted expenses</p>
           <p className="mt-1 text-lg font-semibold tabular-nums">
-            {fmt.amount(sum(expenseTotals), currency)}
+            {totalsError ? "—" : fmt.amount(sum(expenseTotals), currency)}
           </p>
         </div>
         <div className="rounded-md border p-3">
@@ -611,7 +629,7 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
           <p
             className={`mt-1 text-lg font-semibold tabular-nums ${budgetNetMinor < 0 ? "text-destructive" : ""}`}
           >
-            {fmt.amount(budgetNetMinor, currency)}
+            {totalsError ? "—" : fmt.amount(budgetNetMinor, currency)}
           </p>
         </div>
       </div>
@@ -806,7 +824,15 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
           </AlertDescription>
         </Alert>
       ) : null}
-      {hasInvalidAmounts ? (
+      {totalsError ? (
+        <Alert variant="destructive" className="mb-3">
+          <AlertDescription>
+            Budget totals cannot be calculated exactly: {totalsError}
+            {" "}Reduce the amounts before saving, exporting or applying bulk changes.
+          </AlertDescription>
+        </Alert>
+      ) : null}
+      {invalidAmountCount > 0 ? (
         <Alert variant="destructive" className="mb-3">
           <AlertDescription>
             {invalidAmountCount} amount
@@ -870,7 +896,7 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
             {totalRow("Total expenses", expenseTotals)}
             {totalRow(
               "Budgeted net profit",
-              incomeTotals.map((v, i) => v - (expenseTotals[i] ?? 0)),
+              netTotals,
               true,
             )}
           </TableBody>
@@ -878,7 +904,7 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
       </div>
       <p className="mt-3 text-xs text-muted-foreground">
         Tip: type in a month, then press “Fill right” to repeat it in later months. Editing the Year
-        total spreads it evenly (any rounding remainder goes into the last month). Importing a CSV
+        total spreads it evenly (any rounding remainder is distributed to the final months). Importing a CSV
         replaces the rows it contains; accounts not in the file keep their amounts.
       </p>
       <BudgetDimensionsPanel

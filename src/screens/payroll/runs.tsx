@@ -76,6 +76,8 @@ export function PayrollRunsPage() {
   const createRun = useServerFn(createPayrollRun);
 
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [runSearch, setRunSearch] = useState("");
+  const [runSort, setRunSort] = useState<"payment-newest" | "payment-oldest" | "period-newest">("payment-newest");
   const [createOpen, setCreateOpen] = useState(false);
   const [scheduleId, setScheduleId] = useState("");
   const [periodStart, setPeriodStart] = useState("");
@@ -89,12 +91,12 @@ export function PayrollRunsPage() {
   });
 
   const listQ = useQuery({
-    queryKey: ["payroll-runs", company?.id, statusFilter],
+    queryKey: ["payroll-runs", company?.id],
     queryFn: () =>
       fetchList({
         data: {
           companyId: company!.id,
-          status: statusFilter === "all" ? null : statusFilter,
+          status: null,
         },
       }),
     enabled: Boolean(company?.id) && canView,
@@ -173,7 +175,40 @@ export function PayrollRunsPage() {
   const settings = settingsQ.data;
   const list = listQ.data;
   const schedules = settings.schedules.filter((s) => s.is_active);
-  const scheduleName = (id: string) => schedules.find((s) => s.id === id)?.name ?? "Schedule";
+  const scheduleName = (id: string) =>
+    settings.schedules.find((s) => s.id === id)?.name ?? "Unknown schedule";
+  // Status/search filters must never hide periods from the next-run suggestion.
+  const searchTerm = runSearch.trim().toLocaleLowerCase();
+  const matchingRuns = list.runs
+    .filter((run) => statusFilter === "all" || run.status === statusFilter)
+    .filter((run) =>
+      !searchTerm ||
+      [run.run_number, scheduleName(run.pay_schedule_id), run.period_start, run.period_end]
+        .some((value) => value.toLocaleLowerCase().includes(searchTerm)),
+    )
+    .sort((a, b) =>
+      runSort === "period-newest"
+        ? b.period_start.localeCompare(a.period_start)
+        : runSort === "payment-oldest"
+          ? a.payment_date.localeCompare(b.payment_date)
+          : b.payment_date.localeCompare(a.payment_date),
+    );
+  const hasListFilters = statusFilter !== "all" || runSearch.trim() !== "";
+  const clearListFilters = () => {
+    setStatusFilter("all");
+    setRunSearch("");
+  };
+  const invalidPeriod = Boolean(periodStart && periodEnd && periodEnd < periodStart);
+  const overlappingRun =
+    scheduleId && periodStart && periodEnd
+      ? list.runs.find(
+          (run) =>
+            run.pay_schedule_id === scheduleId &&
+            run.status !== "void" &&
+            run.period_start <= periodEnd &&
+            run.period_end >= periodStart,
+        )
+      : null;
 
   return (
     <>
@@ -215,15 +250,51 @@ export function PayrollRunsPage() {
                 ))}
               </SelectContent>
             </Select>
+            <Input
+              value={runSearch}
+              onChange={(event) => setRunSearch(event.target.value)}
+              placeholder="Search run, schedule or period…"
+              aria-label="Search payroll runs"
+              className="w-full sm:w-64"
+            />
+            <Select
+              value={runSort}
+              onValueChange={(value) => setRunSort(value as typeof runSort)}
+            >
+              <SelectTrigger className="w-[190px]" aria-label="Sort payroll runs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="payment-newest">Payment date: newest</SelectItem>
+                <SelectItem value="payment-oldest">Payment date: oldest</SelectItem>
+                <SelectItem value="period-newest">Period: newest</SelectItem>
+              </SelectContent>
+            </Select>
+            {hasListFilters ? (
+              <Button variant="ghost" size="sm" onClick={clearListFilters}>
+                Clear filters
+              </Button>
+            ) : null}
+            <p className="w-full text-xs text-muted-foreground" aria-live="polite">
+              Showing {matchingRuns.length} of {list.runs.length} payroll runs
+            </p>
           </div>
 
           <TableCard>
-            {list.runs.length === 0 ? (
+            {matchingRuns.length === 0 ? (
               <EmptyState
-                title="No payroll runs yet"
-                description="Create a run for a pay schedule and period."
+                title={list.runs.length === 0 ? "No payroll runs yet" : "No matching payroll runs"}
+                description={
+                  list.runs.length === 0
+                    ? "Create a run for a pay schedule and period."
+                    : "Try another status, search term or clear your filters."
+                }
                 action={
-                  canPrepare ? (
+                  hasListFilters ? (
+                    <Button size="sm" variant="outline" onClick={clearListFilters}>
+                      Clear filters
+                    </Button>
+                  ) : canPrepare ? (
                     <Button size="sm" onClick={() => setCreateOpen(true)}>
                       <Plus className="mr-2 h-4 w-4" />
                       Create run
@@ -244,7 +315,7 @@ export function PayrollRunsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {list.runs.map((run) => (
+                  {matchingRuns.map((run) => (
                     <TableRow key={run.id}>
                       <TableCell>
                         <Link
@@ -327,6 +398,20 @@ export function PayrollRunsPage() {
                 onChange={(e) => setPaymentDate(e.target.value)}
               />
             </div>
+            {invalidPeriod ? (
+              <p className="text-sm text-destructive" role="alert">
+                Period end must be on or after period start.
+              </p>
+            ) : null}
+            {overlappingRun ? (
+              <Alert>
+                <AlertTitle>Overlapping pay period</AlertTitle>
+                <AlertDescription>
+                  This period overlaps {overlappingRun.run_number}. Verify the dates to avoid
+                  duplicate payroll; supplementary runs may intentionally overlap.
+                </AlertDescription>
+              </Alert>
+            ) : null}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)}>
@@ -334,7 +419,7 @@ export function PayrollRunsPage() {
             </Button>
             <Button
               disabled={
-                !scheduleId || !periodStart || !periodEnd || !paymentDate || createMut.isPending
+                !scheduleId || !periodStart || !periodEnd || !paymentDate || invalidPeriod || createMut.isPending
               }
               onClick={() => createMut.mutate()}
             >

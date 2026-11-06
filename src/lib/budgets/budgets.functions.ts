@@ -32,6 +32,7 @@ import {
 } from "@/lib/budgets/budget-math";
 import {
   buildBudgetVsActual,
+  filterProfitLossActivity,
   type MonthActivity,
   type MonthAmount,
 } from "@/lib/budgets/budget-report";
@@ -909,12 +910,12 @@ export const getBudgetVsActual = createServerFn({ method: "GET" })
         unbudgetedActualsMinor: 0,
       };
     }
-    const activity = await monthlyActivity(
-      sb,
-      data.companyId,
-      months[0]!,
-      through,
-      accountingBasis,
+    // The ledger aggregate includes Balance Sheet accounts as well as P&L.
+    // Budget vs Actual is income/expense only: intentionally exclude asset,
+    // liability and equity activity, but preserve all historical P&L accounts.
+    const activity = filterProfitLossActivity(
+      accounts,
+      await monthlyActivity(sb, data.companyId, months[0]!, through, accountingBasis),
     );
     const report = buildBudgetVsActual({ accounts, budget: lines, actuals: activity, columns });
     // Historical accounts remain in the report even after archiving; this

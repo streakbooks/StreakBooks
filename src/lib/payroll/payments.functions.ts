@@ -266,13 +266,46 @@ export const recordPayrollPayment = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "payroll.pay");
-    if (!Number.isInteger(data.amountMinor) || data.amountMinor <= 0) {
+    if (!Number.isSafeInteger(data.amountMinor) || data.amountMinor <= 0) {
       throw new Error("Payment amount must be a positive whole number of minor units.");
     }
     for (const a of data.allocations) {
-      if (!Number.isInteger(a.amountMinor) || a.amountMinor <= 0) {
+      if (!Number.isSafeInteger(a.amountMinor) || a.amountMinor <= 0) {
         throw new Error("Allocation amounts must be positive whole minor units.");
       }
+    }
+
+    // The existing payroll payment RPC posts journals at FX rate 1.
+    // Until currency conversion is implemented, reject any settlement whose
+    // currency does not match the organisation's base currency.
+    const companyRes = await context.supabase
+      .from("companies" as never)
+      .select("base_currency" as never)
+      .eq("id" as never, data.companyId as never)
+      .single();
+    if (companyRes.error) throw new Error(companyRes.error.message);
+    const baseCurrency = String(
+      (companyRes.data as { base_currency?: string } | null)?.base_currency ?? "",
+    ).toUpperCase();
+
+    const settingsRes = await context.supabase
+      .from("payroll_settings" as never)
+      .select("payroll_currency" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .maybeSingle();
+    if (settingsRes.error) throw new Error(settingsRes.error.message);
+    const settingsCurrency = String(
+      (settingsRes.data as { payroll_currency?: string } | null)?.payroll_currency ?? "",
+    ).toUpperCase();
+    if (!settingsCurrency) throw new Error("Configure payroll settings before recording payment.");
+    const postingCurrency = (data.currencyCode ?? settingsCurrency).toUpperCase();
+    if (postingCurrency !== settingsCurrency) {
+      throw new Error("Payment currency must match the payroll settings currency.");
+    }
+    if (!baseCurrency || postingCurrency !== baseCurrency) {
+      throw new Error(
+        "Non-base-currency payroll payments are not yet supported by the FX journal workflow.",
+      );
     }
 
     const paymentAmountMinor = BigInt(data.amountMinor);
@@ -285,10 +318,32 @@ export const recordPayrollPayment = createServerFn({ method: "POST" })
       const ids = data.allocations.map((a) => a.payslipId);
       const slipRes = await context.supabase
         .from("payroll_payslips" as never)
-        .select("id, amount_paid_minor, run_employee_id" as never)
+        .select("id, amount_paid_minor, run_employee_id, run_id" as never)
         .eq("company_id" as never, data.companyId as never)
         .in("id" as never, ids as never);
       if (slipRes.error) throw new Error(slipRes.error.message);
+
+      const runIds = [...new Set(
+        (slipRes.data ?? []).map((row) => (row as { run_id: string }).run_id),
+      )];
+      const runRes = await context.supabase
+        .from("payroll_runs" as never)
+        .select("id, currency" as never)
+        .eq("company_id" as never, data.companyId as never)
+        .in("id" as never, runIds as never);
+      if (runRes.error) throw new Error(runRes.error.message);
+      const runCurrencies = new Map(
+        (runRes.data ?? []).map((row) => {
+          const item = row as { id: string; currency: string };
+          return [item.id, item.currency.toUpperCase()] as const;
+        }),
+      );
+      for (const item of slipRes.data ?? []) {
+        const slip = item as { run_id: string };
+        if (runCurrencies.get(slip.run_id) !== postingCurrency) {
+          throw new Error("Payslip payroll currency differs from settlement currency.");
+        }
+      }
 
       const runEmpIds = (slipRes.data ?? []).map(
         (row) => (row as { run_employee_id: string }).run_employee_id,

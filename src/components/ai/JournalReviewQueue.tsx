@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ClipboardList, RefreshCw, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import { useCanDo } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import {
   listAiJournalReviewCases,
@@ -53,6 +54,7 @@ export function AiJournalReviewQueue({
   canViewMembers: boolean;
 }) {
   const { reviewCase } = useSearch({ from: "/_authenticated/ai-assistant" });
+  const canAccountant = useCanDo("accounting.view");
   const listCases = useServerFn(listAiJournalReviewCases);
   const fetchCase = useServerFn(getAiJournalReviewCase);
   const listEvents = useServerFn(listAiJournalReviewEvents);
@@ -309,7 +311,16 @@ export function AiJournalReviewQueue({
                       </p>
                     ) : null}
                   </div>
-                  <Badge variant="outline">AI evidence review only</Badge>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="outline">AI evidence review only</Badge>
+                    {canAccountant ? (
+                      <Button variant="outline" size="sm" asChild>
+                        <Link to="/accountant" search={{ tab: "workpapers" }}>
+                          Open Accountant Workpapers
+                        </Link>
+                      </Button>
+                    ) : null}
+                  </div>
                 </div>
                 {canAssign && selected.status !== "reviewed" ? (
                   <div className="space-y-2">

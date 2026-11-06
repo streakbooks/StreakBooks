@@ -11,6 +11,19 @@ EXCEPTION WHEN OTHERS THEN
 END $$;
 GRANT EXECUTE ON FUNCTION public.assert_tax_review_error(text,text) TO authenticated;
 
+-- Fault injection proves session edits and event history roll back atomically.
+CREATE FUNCTION public.test_tax_review_audit_failure() RETURNS trigger
+LANGUAGE plpgsql AS $
+BEGIN
+  IF current_setting('test.fail_tax_review_audit',true)='on' THEN
+    RAISE EXCEPTION 'Injected tax review audit failure';
+  END IF;
+  RETURN NEW;
+END $;
+CREATE TRIGGER test_tax_review_audit_failure
+  BEFORE INSERT ON public.tax_gl_review_events
+  FOR EACH ROW EXECUTE FUNCTION public.test_tax_review_audit_failure();
+
 SET ROLE authenticated;
 SELECT set_config('request.jwt.claims',
  '{"sub":"00000000-0000-4000-8000-000000000001"}', false);
@@ -58,6 +71,22 @@ BEGIN
   '20000000-0000-4000-8000-000000000003','open',
   'Cross tenant input account','snapshot-2'
  ),'%must belong%');
+
+ -- An audit insert failure must not leave a partial updated review.
+ PERFORM set_config('test.fail_tax_review_audit','on',true);
+ PERFORM public.assert_tax_review_error(format(
+  'SELECT public.save_tax_gl_review(%L,%L,%L,%L,%L,%L,%L,%L,NULL,%L,2)',
+  a,'2026-01-01','2026-03-31','accrual',o,i,'in_review',
+  'This update must be rolled back','snapshot-1'
+ ),'%Injected tax review audit failure%');
+ PERFORM set_config('test.fail_tax_review_audit','off',true);
+ IF (SELECT version FROM public.tax_gl_review_sessions WHERE id=public.tax_gl_review_sessions.id) <> 2 THEN
+   RAISE EXCEPTION 'Review version advanced after audit failure';
+ END IF;
+ IF (SELECT count(*) FROM public.tax_gl_review_events
+     WHERE company_id=a)<>2 THEN
+   RAISE EXCEPTION 'Audit failure left an orphan event';
+ END IF;
 
  SELECT review_id,new_version INTO id,newv FROM public.save_tax_gl_review(
    a,'2026-01-01','2026-03-31','accrual',o,i,'resolved',

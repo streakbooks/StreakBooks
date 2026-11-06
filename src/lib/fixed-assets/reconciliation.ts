@@ -141,8 +141,12 @@ export function reconcileFixedAssets(
     if (entry.period_end < asset.purchase_date) {
       throw new Error("Depreciation entry precedes the asset purchase date");
     }
-    if (asset.disposal_date !== null && entry.period_end > asset.disposal_date) {
-      throw new Error("Depreciation entry occurs after the asset disposal date");
+    // The disposal RPC allows depreciation already posted for the disposal
+    // MONTH, even if the disposal occurred before calendar month-end. Only
+    // entries in later months are invalid (see fixed_assets.sql).
+    if (asset.disposal_date !== null &&
+        entry.period_end.slice(0, 7) > asset.disposal_date.slice(0, 7)) {
+      throw new Error("Depreciation entry occurs after the asset disposal month");
     }
     const amount = exactMinor(entry.amount_minor, "Posted depreciation");
     if (amount <= 0n) throw new Error("Posted depreciation must be positive");

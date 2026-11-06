@@ -482,6 +482,55 @@ export const getCompanyFile = createServerFn({ method: "GET" })
     };
   });
 
+/**
+ * Advisory duplicate preflight. Equal filename and byte count is only a possible
+ * duplicate signal; bytes are never read and no upload is rejected by this API.
+ *
+ * Queries use the signed-in user's RLS permissions for document_attachments:
+ * restricted records are neither inspected nor disclosed to the caller.
+ */
+export const checkPossibleFileDuplicates = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: {
+    companyId: string;
+    candidates: Array<{ fileName: string; sizeBytes: number }>;
+  }) => {
+    const companyId = assertUuid(input.companyId);
+    if (!Array.isArray(input.candidates) || input.candidates.length < 1 || input.candidates.length > 25)
+      throw new Error("Check between 1 and 25 files at once.");
+    const candidates = input.candidates.map((candidate) => {
+      const fileName = String(candidate.fileName ?? "").trim();
+      const sizeBytes = Number(candidate.sizeBytes);
+      if (
+        fileName.length < 1 ||
+        fileName.length > 255 ||
+        !Number.isSafeInteger(sizeBytes) ||
+        sizeBytes < 1 ||
+        sizeBytes > MAX_FILE_BYTES
+      )
+        throw new Error("Invalid file name or size for duplicate review.");
+      return { fileName, sizeBytes };
+    });
+    return { companyId, candidates };
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    await assertCompanyMember(supabase, data.companyId);
+    const possibleMatches: boolean[] = [];
+    for (const candidate of data.candidates) {
+      const { data: rows, error } = await supabase
+        .from("document_attachments" as never)
+        .select("id" as never)
+        .eq("company_id" as never, data.companyId as never)
+        .eq("size_bytes" as never, candidate.sizeBytes as never)
+        .ilike("file_name" as never, escapeLikeLiteral(candidate.fileName) as never)
+        .limit(1);
+      if (error) throw new Error(error.message);
+      possibleMatches.push((rows ?? []).length > 0);
+    }
+    return { possibleMatches };
+  });
+
 /** Organisation-wide Files list (RLS limits it to what the user may view). */
 export const listCompanyFiles = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

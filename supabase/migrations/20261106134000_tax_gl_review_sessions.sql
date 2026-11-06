@@ -142,6 +142,11 @@ BEGIN
     IF _expected_version IS NULL OR _expected_version <> existing.version THEN
       RAISE EXCEPTION 'Review changed in another session. Refresh before saving.';
     END IF;
+    -- An old resolution cannot remain resolved when its evidence has changed.
+    IF existing.status = 'resolved' AND _status = 'resolved'
+      AND existing.comparison_snapshot IS DISTINCT FROM _comparison_snapshot THEN
+      RAISE EXCEPTION 'Reopen the changed review and document the new evidence before resolving it again';
+    END IF;
     old_status := existing.status;
     old_reviewer := existing.reviewer_id;
     saved_id := existing.id;

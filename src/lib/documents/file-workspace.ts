@@ -101,3 +101,17 @@ export function fileFormatMimeTypes(format: FileFormat): readonly string[] {
       return [];
   }
 }
+
+
+/**
+ * An internal deep link, never a signed Storage URL or a public share token.
+ * The server still checks the recipient's membership and record permissions.
+ */
+export function internalFileUrl(origin: string, attachmentId: string): string {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(attachmentId))
+    throw new Error("Invalid file identifier.");
+  const url = new URL("/files", origin);
+  if (!["http:", "https:"].includes(url.protocol)) throw new Error("Invalid application origin.");
+  url.searchParams.set("file", attachmentId);
+  return url.toString();
+}

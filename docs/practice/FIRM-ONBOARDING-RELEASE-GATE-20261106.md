@@ -30,6 +30,31 @@ test specifications or hardening fixes is not proof of production readiness.
   download. An additional frontend safeguard now cancels an in-flight
   export if the selected firm changes or the page unmounts.
 
+## Single-command local release evidence runner
+
+After pulling a clean `main`, run:
+
+```powershell
+cd D:\MyApp\LinkBooks
+node --test scripts/lib/firm-onboarding-release-plan.test.mjs
+node scripts/verify-firm-onboarding-release.mjs
+
+# After provisioning a *dedicated* staging host and setting the environment
+# variables documented below, add the staging-only Playwright suite:
+# node scripts/verify-firm-onboarding-release.mjs --skip-install --staging
+```
+
+The runner executes `npm ci`, typecheck, lint, lookup/navigation checks,
+repository hygiene, eight onboarding Vitest files, build and bundle checks.
+It produces local JSON evidence at
+`artifacts/firm-onboarding-local-release-YYYY-MM-DD.json`.
+The report is deliberately **never** labeled production-ready: Vercel
+deployment, real cron executions and human staging acceptance require separate
+evidence. Generated evidence is ignored by Git.
+
+All commands are local. **No GitHub Actions CI workflows are triggered.**
+Passing this runner does not by itself complete Batch 4.
+
 ## Local PowerShell release commands (manual execution)
 
 ```powershell

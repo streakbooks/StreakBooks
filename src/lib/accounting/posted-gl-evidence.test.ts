@@ -43,6 +43,7 @@ describe("posted GL evidence reconciliation", () => {
     expect(result.creditMinor).toBe("150");
     expect(result.accountCount).toBe(2);
     expect(result.periodId).toBe("p1");
+    expect(result.periodStatus).toBe("locked");
     expect(result.accounts[0]?.code).toBe("2100");
   });
   it("does not mark a draft as reconciled", () => {
@@ -111,6 +112,25 @@ describe("posted GL evidence reconciliation", () => {
     };
     expect(audit(reversal, reversedLines, accounts, periods, [original]).status).toBe("passed");
     expect(audit(reversal, reversedLines, accounts, periods, []).status).toBe("exceptions");
+  });
+  it("rejects nonexistent calendar dates and missing journal source provenance", () => {
+    expect(audit({ ...journal, journal_date: "2026-02-30" }).status).toBe("exceptions");
+    expect(audit({ ...journal, source_type: "" }).status).toBe("exceptions");
+    expect(audit({ ...journal, journal_number: 0 }).status).toBe("exceptions");
+  });
+  it("requires genuine financial periods and does not certify malformed evidence", () => {
+    expect(audit(journal, lines, accounts, [
+      { ...periods[0]!, end_date: "2026-02-30" },
+    ]).status).toBe("exceptions");
+    expect(audit(journal, lines, accounts, [
+      { ...periods[0]!, status: "" },
+    ]).status).toBe("exceptions");
+  });
+  it("detects unexpected account evidence in a bounded ledger review", () => {
+    const extra: GlAuditAccount = {
+      id: "a3", company_id: company, code: "9999", name: "Unexpected",
+    };
+    expect(audit(journal, lines, [...accounts, extra]).issues.join(" ")).toMatch(/unreferenced/);
   });
   it("never credits any unscoped reversal evidence as passing", () => {
     const linked = { ...journal, reversed_by_journal_id: "reversal-1" };

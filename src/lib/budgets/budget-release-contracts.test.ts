@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { fetchAllPages } from "@/lib/accounting/fetch-all";
 
 /**
  * These contract checks run without a database, but do NOT replace a migration
@@ -104,6 +105,38 @@ describe("Budgets release: six pending migrations", () => {
       expect(text).toContain("ALTER FUNCTION public." + functionName + "(");
     }
     expect((text.match(/SET search_path = '';/g) ?? []).length).toBe(3);
+  });
+
+  it("does not truncate saved forecasts at the old 250-record limit", () => {
+    const source = readFileSync(
+      resolve(process.cwd(), "src", "lib", "budgets", "budgets.functions.ts"),
+      "utf8",
+    );
+    const from = source.indexOf("export const getBudgetForecastData");
+    const to = source.indexOf("function validateForecastScenarioDraft", from);
+    expect(from).toBeGreaterThan(-1);
+    expect(to).toBeGreaterThan(from);
+    const loader = source.slice(from, to);
+    expect(loader).toContain("fetchAllPages<StoredForecastScenario>");
+    expect(loader).toContain('.order("id" as never)');
+    expect(loader).not.toContain(".limit(250)");
+  });
+
+  it("pages more than 250 saved scenarios even with a smaller server row cap", async () => {
+    const saved = Array.from({length: 263}, (_, index) => ({
+      id: String(index).padStart(4, "0"),
+      name: "Scenario " + index,
+    }));
+    const pages = await fetchAllPages(
+      (from, to) => Promise.resolve({
+        data: saved.slice(from, Math.min(to + 1, from + 60)),
+        error: null,
+      }),
+      {pageSize: 100},
+    );
+    expect(pages).toHaveLength(263);
+    expect(pages[0]).toEqual(saved[0]);
+    expect(pages.at(-1)).toEqual(saved.at(-1));
   });
 
   it("stores forecast assumptions separately from journal and base-budget amounts", () => {

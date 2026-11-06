@@ -119,6 +119,7 @@ export const moveDocumentToFolder = createServerFn({ method: "POST" })
       .update({ folder_id: data.folderId } as never)
       .eq("company_id" as never, data.companyId as never)
       .eq("id" as never, data.attachmentId as never)
+      .is("deleted_at" as never, null)
       .select("id" as never);
     if (error) throw new Error(error.message);
     if (!rows || (rows as unknown[]).length !== 1)

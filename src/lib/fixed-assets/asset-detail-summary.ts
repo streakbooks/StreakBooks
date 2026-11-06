@@ -1,6 +1,7 @@
 /** Presentation-only fixed-asset summary, never a substitute for the posted GL. */
 export type AssetDetailHistory = {
   cost_minor: number | string | bigint;
+  residual_minor: number | string | bigint;
   opening_accumulated_minor: number | string | bigint;
   status: "active" | "disposed";
 };
@@ -30,9 +31,10 @@ export function summarizeAssetDetailHistory(
 ): AssetDetailSummary {
   try {
     const cost = exact(asset.cost_minor, "Asset cost");
+    const residual = exact(asset.residual_minor, "Asset residual value");
     const opening = exact(asset.opening_accumulated_minor, "Opening depreciation");
-    if (cost <= 0n || opening < 0n || opening > cost) {
-      throw new Error("Asset cost or opening depreciation is inconsistent.");
+    if (cost <= 0n || residual < 0n || opening < 0n || residual + opening > cost) {
+      throw new Error("Asset cost, residual value or opening depreciation is inconsistent.");
     }
     let posted = 0n;
     for (const entry of entries) {
@@ -41,7 +43,9 @@ export function summarizeAssetDetailHistory(
       posted += amount;
     }
     const accumulated = opening + posted;
-    if (accumulated > cost) throw new Error("Recorded depreciation exceeds asset cost.");
+    if (accumulated > cost - residual) {
+      throw new Error("Recorded depreciation exceeds the asset's depreciable cost after residual value.");
+    }
     return {
       costMinor: cost.toString(),
       postedChargesMinor: posted.toString(),

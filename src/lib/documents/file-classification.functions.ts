@@ -20,6 +20,31 @@ function dbError(error: { code?: string; message: string }): never {
 
 type TagRow = { id: string; company_id: string; name: string };
 
+/** Existing audit transport; business mutation remains authoritative if audit delivery fails. */
+async function auditMetadata(
+  supabase: Parameters<typeof assertCompanyMember>[0],
+  companyId: string,
+  action: string,
+  attachmentId: string | null,
+  details: Record<string, unknown>,
+): Promise<void> {
+  try {
+    await (
+      supabase as unknown as {
+        rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown>;
+      }
+    ).rpc("record_audit_event", {
+      _company_id: companyId,
+      _action: action,
+      _entity_type: "company",
+      _entity_id: companyId,
+      _details: { ...(attachmentId ? { attachment_id: attachmentId } : {}), ...details },
+    });
+  } catch {
+    // A failed best-effort audit must not misreport a committed mutation as a failure.
+  }
+}
+
 export const listDocumentTags = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { companyId: string }) => ({
@@ -53,6 +78,10 @@ export const createDocumentTag = createServerFn({ method: "POST" })
       .select("id, name" as never)
       .single();
     if (error) dbError(error);
+    await auditMetadata(context.supabase, data.companyId, "document.tag.create", null, {
+      tag_id: (row as { id: string }).id,
+      tag_name: data.name,
+    });
     return row as unknown as { id: string; name: string };
   });
 
@@ -72,6 +101,9 @@ export const deleteDocumentTag = createServerFn({ method: "POST" })
       .select("id" as never);
     if (error) dbError(error);
     if ((rows ?? []).length !== 1) throw new Error("Tag not found or access denied.");
+    await auditMetadata(context.supabase, data.companyId, "document.tag.delete", null, {
+      tag_id: data.tagId,
+    });
     return { ok: true as const };
   });
 
@@ -152,6 +184,10 @@ export const updateFileCategory = createServerFn({ method: "POST" })
     if (error) dbError(error);
     if ((rows ?? []).length !== 1)
       throw new Error("Category changed, or you do not have permission. Refresh and retry.");
+    await auditMetadata(context.supabase, data.companyId, "document.category.update", data.attachmentId, {
+      previous_category: data.expectedCategory,
+      category: data.category,
+    });
     return { category: data.category };
   });
 
@@ -197,5 +233,9 @@ export const setDocumentFileTag = createServerFn({ method: "POST" })
         .eq("tag_id" as never, data.tagId as never);
       if (error) dbError(error);
     }
+    await auditMetadata(context.supabase, data.companyId, "document.tag.assign", data.attachmentId, {
+      tag_id: data.tagId,
+      enabled: data.enabled,
+    });
     return { ok: true as const, enabled: data.enabled };
   });

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Columns3 } from "lucide-react";
+import { FirmBulkClientActions } from "@/components/firm/FirmBulkClientActions";
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -42,6 +43,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -77,7 +79,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-type Draft = Omit<FirmClientProfileInput, "firmId" | "companyId" | "tags"> & {
+type Draft = Omit<
+  FirmClientProfileInput,
+  "firmId" | "companyId" | "tags" | "expectedVersion"
+> & {
   tags: string;
 };
 const emptyDraft: Draft = {
@@ -263,6 +268,8 @@ export function FirmClientPortfolio({
   }
 
   const [editing, setEditing] = useState<FirmClientRow | null>(null);
+  const [editingVersion, setEditingVersion] = useState(0);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const profilesQ = useQuery({
     queryKey: ["firm-client-profiles", firmId],
@@ -278,6 +285,23 @@ export function FirmClientPortfolio({
     () => filterFirmClients(clients, profiles, search, status, { review, sort }),
     [clients, profiles, search, status, review, sort],
   );
+  const eligibleClients = filtered.filter((client) => Boolean(client.companies));
+  const visibleSelection = eligibleClients.filter((client) => selectedIds.includes(client.company_id));
+  const firstFifty = eligibleClients.slice(0, 50);
+  const allFirstFiftySelected =
+    firstFifty.length > 0 && firstFifty.every((client) => selectedIds.includes(client.company_id));
+
+  function toggleSelectedClient(companyId: string, checked: boolean) {
+    const eligible = new Set(eligibleClients.map((client) => client.company_id));
+    const current = selectedIds.filter((id) => eligible.has(id));
+    if (checked && !current.includes(companyId) && current.length >= 50) {
+      toast.error("Bulk edits are limited to 50 clients at a time");
+      return;
+    }
+    setSelectedIds(
+      checked ? [...new Set([...current, companyId])] : current.filter((id) => id !== companyId),
+    );
+  }
   const saveM = useMutation({
     mutationFn: async () => {
       if (!editing) throw new Error("Select a client");
@@ -294,6 +318,7 @@ export function FirmClientPortfolio({
         tags,
         firmId,
         companyId: editing.company_id,
+        expectedVersion: editingVersion,
       };
       return save({ data: input });
     },
@@ -308,6 +333,7 @@ export function FirmClientPortfolio({
   function editClient(client: FirmClientRow) {
     const profile = profileMap.get(client.company_id);
     setEditing(client);
+    setEditingVersion(profile?.version ?? 0);
     setDraft(
       profile
         ? {
@@ -582,6 +608,32 @@ export function FirmClientPortfolio({
         </Button>
       </div>
 
+      {canManage && (
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3">
+            <p className="text-sm" aria-live="polite">
+              <span className="font-medium">{visibleSelection.length} clients selected</span>
+              <span className="ml-2 text-xs text-muted-foreground">
+                Selection is limited to the current filtered view (maximum 50).
+              </span>
+            </p>
+            {visibleSelection.length > 0 && (
+              <Button size="sm" variant="ghost" onClick={() => setSelectedIds([])}>
+                Clear selection
+              </Button>
+            )}
+          </div>
+          <FirmBulkClientActions
+            firmId={firmId}
+            clients={clients}
+            selectedClients={visibleSelection}
+            profiles={profiles}
+            disabled={profileUnavailable || busy}
+            onComplete={() => setSelectedIds([])}
+          />
+        </div>
+      )}
+
       {filtered.length === 0 ? (
         <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
           No clients match these filters.
@@ -596,6 +648,20 @@ export function FirmClientPortfolio({
           <Table>
             <TableHeader>
               <TableRow>
+                {canManage && (
+                  <TableHead className="w-10">
+                    <Checkbox
+                      aria-label="Select up to 50 filtered clients"
+                      checked={allFirstFiftySelected}
+                      disabled={profileUnavailable || busy || !firstFifty.length}
+                      onCheckedChange={(checked) =>
+                        setSelectedIds(
+                          checked === true ? firstFifty.map((client) => client.company_id) : [],
+                        )
+                      }
+                    />
+                  </TableHead>
+                )}
                 <TableHead>Client</TableHead>
                 {visibleColumns.map((column) => (
                   <TableHead key={column}>
@@ -610,6 +676,18 @@ export function FirmClientPortfolio({
                 const profile = profileMap.get(client.company_id);
                 return (
                   <TableRow key={client.id}>
+                    {canManage && (
+                      <TableCell>
+                        <Checkbox
+                          aria-label={`Select ${getFirmClientName(client)}`}
+                          checked={visibleSelection.some((item) => item.company_id === client.company_id)}
+                          disabled={profileUnavailable || busy || !client.companies}
+                          onCheckedChange={(checked) =>
+                            toggleSelectedClient(client.company_id, checked === true)
+                          }
+                        />
+                      </TableCell>
+                    )}
                     <TableCell>
                       <div className="font-medium">{getFirmClientName(client)}</div>
                     </TableCell>

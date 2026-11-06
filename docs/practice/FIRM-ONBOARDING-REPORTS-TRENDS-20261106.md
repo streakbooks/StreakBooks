@@ -24,7 +24,10 @@ the UI further intersects with accessible linked client entries.
 
 CSV contains operational titles, assignee names, due dates and
 completion statuses, but not client notes or financial balances.
-Exports require fully loaded authorized server results.
+Exports require fully loaded authorized server results and **reissue
+the server queries at the moment of download** to recheck the current
+session and client access, preventing export from a stale client-side
+query cache after access is revoked.
 Do not forward exports to recipients who lack client access.
 
 ## Snapshot semantics

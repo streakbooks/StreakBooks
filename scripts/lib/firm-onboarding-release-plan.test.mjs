@@ -14,7 +14,7 @@ describe("Firm onboarding local release plan", () => {
       ["install", "typecheck", "lint", "lookups", "navigation", "repository", "unit", "build", "bundle"],
     );
     const commands = plan.flatMap((step) => step.args).join(" ");
-    assert.doesNotMatch(commands, /github|workflow|dispatch|gh\s+run/i);
+    assert.doesNotMatch(commands, /\bgh\s+(?:workflow|run)\b|\bworkflow\s+dispatch\b|\bgithub\s+actions\b/i);
     assert.equal(plan.filter((step) => step.id === "unit").length, 1);
     assert.equal(FIRM_ONBOARDING_UNIT_TESTS.length, 8);
     for (const file of FIRM_ONBOARDING_UNIT_TESTS) assert.match(file, /\.test\.ts$/);

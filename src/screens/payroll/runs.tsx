@@ -83,6 +83,7 @@ export function PayrollRunsPage() {
   const [periodStart, setPeriodStart] = useState("");
   const [periodEnd, setPeriodEnd] = useState("");
   const [paymentDate, setPaymentDate] = useState("");
+  const [userEditedDates, setUserEditedDates] = useState(false);
 
   const settingsQ = useQuery({
     queryKey: ["payroll-settings-page", company?.id],
@@ -123,7 +124,7 @@ export function PayrollRunsPage() {
   });
 
   useEffect(() => {
-    if (!createOpen || !scheduleId) return;
+    if (!createOpen || !scheduleId || userEditedDates) return;
     const settings = settingsQ.data;
     const list = listQ.data;
     if (!settings || !list?.available) return;
@@ -138,7 +139,7 @@ export function PayrollRunsPage() {
     setPeriodStart(suggested.periodStart);
     setPeriodEnd(suggested.periodEnd);
     setPaymentDate(suggested.paymentDate);
-  }, [createOpen, scheduleId, settingsQ.data, listQ.data]);
+  }, [createOpen, scheduleId, settingsQ.data, listQ.data, userEditedDates]);
 
   if (isPending) return <LoadingState />;
   if (!company) {
@@ -217,7 +218,10 @@ export function PayrollRunsPage() {
         description="Create pay runs, calculate amounts, review and approve."
         actions={
           canPrepare && list.available ? (
-            <Button size="sm" onClick={() => setCreateOpen(true)}>
+            <Button size="sm" onClick={() => {
+                setUserEditedDates(false);
+                setCreateOpen(true);
+              }}>
               <Plus className="mr-2 h-4 w-4" />
               New run
             </Button>
@@ -295,7 +299,10 @@ export function PayrollRunsPage() {
                       Clear filters
                     </Button>
                   ) : canPrepare ? (
-                    <Button size="sm" onClick={() => setCreateOpen(true)}>
+                    <Button size="sm" onClick={() => {
+                setUserEditedDates(false);
+                setCreateOpen(true);
+              }}>
                       <Plus className="mr-2 h-4 w-4" />
                       Create run
                     </Button>
@@ -356,7 +363,13 @@ export function PayrollRunsPage() {
           <div className="grid gap-4 py-2">
             <div className="grid gap-2">
               <Label htmlFor="run-schedule">Pay schedule</Label>
-              <Select value={scheduleId} onValueChange={setScheduleId}>
+              <Select
+                value={scheduleId}
+                onValueChange={(value) => {
+                  setScheduleId(value);
+                  setUserEditedDates(false);
+                }}
+              >
                 <SelectTrigger id="run-schedule">
                   <SelectValue placeholder="Select schedule" />
                 </SelectTrigger>
@@ -376,7 +389,10 @@ export function PayrollRunsPage() {
                   id="period-start"
                   type="date"
                   value={periodStart}
-                  onChange={(e) => setPeriodStart(e.target.value)}
+                  onChange={(e) => {
+                    setUserEditedDates(true);
+                    setPeriodStart(e.target.value);
+                  }}
                 />
               </div>
               <div className="grid gap-2">
@@ -385,7 +401,10 @@ export function PayrollRunsPage() {
                   id="period-end"
                   type="date"
                   value={periodEnd}
-                  onChange={(e) => setPeriodEnd(e.target.value)}
+                  onChange={(e) => {
+                    setUserEditedDates(true);
+                    setPeriodEnd(e.target.value);
+                  }}
                 />
               </div>
             </div>
@@ -395,7 +414,10 @@ export function PayrollRunsPage() {
                 id="payment-date"
                 type="date"
                 value={paymentDate}
-                onChange={(e) => setPaymentDate(e.target.value)}
+                onChange={(e) => {
+                  setUserEditedDates(true);
+                  setPaymentDate(e.target.value);
+                }}
               />
             </div>
             {invalidPeriod ? (

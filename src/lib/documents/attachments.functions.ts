@@ -23,6 +23,7 @@ import {
   validateFileRename,
 } from "@/lib/documents/file-workspace";
 import { folderDescendantIds } from "@/lib/documents/folder-tree";
+import { parseFileCategory } from "@/lib/documents/file-classification";
 
 const MIGRATION_HINT =
   "File storage needs a database update that has not been applied yet (migration 20261025200100). Ask an administrator to apply the latest migrations.";
@@ -542,6 +543,8 @@ export const listCompanyFiles = createServerFn({ method: "GET" })
       sort?: string;
       format?: string;
       includeSubfolders?: boolean;
+      category?: string;
+      tagId?: string;
       page?: number;
       pageSize?: number;
       folderId?: string | null;
@@ -552,6 +555,11 @@ export const listCompanyFiles = createServerFn({ method: "GET" })
       sort: parseFileSort(input.sort),
       format: parseFileFormat(input.format),
       includeSubfolders: input.includeSubfolders === true,
+      category:
+        input.category && input.category !== "all"
+          ? parseFileCategory(input.category)
+          : null,
+      tagId: input.tagId ? assertUuid(input.tagId, "tag") : null,
       entityType: input.entityType && input.entityType !== "all" ? input.entityType : null,
       folderId: input.folderId ? assertUuid(input.folderId) : null,
       unfiledOnly: input.unfiledOnly === true,
@@ -567,6 +575,28 @@ export const listCompanyFiles = createServerFn({ method: "GET" })
       .select(COLUMNS as never, { count: "exact" })
       .eq("company_id" as never, data.companyId as never);
     if (data.entityType) q = q.eq("entity_type" as never, data.entityType as never);
+    if (data.category)
+      q = q.eq("document_category" as never, data.category as never);
+    if (data.tagId) {
+      // RLS on the tag relationship includes each attachment's view permission.
+      // Refuse a truncated set rather than silently omitting older matching files.
+      const { data: taggedRows, error: tagError, count: taggedCount } = await supabase
+        .from("document_attachment_tags" as never)
+        .select("attachment_id" as never, { count: "exact" })
+        .eq("company_id" as never, data.companyId as never)
+        .eq("tag_id" as never, data.tagId as never)
+        .limit(1000);
+      if (tagError) throw new Error(tagError.message);
+      if (
+        taggedCount == null ||
+        taggedCount > 1000 ||
+        taggedCount !== (taggedRows ?? []).length
+      ) throw new Error("Tag filter exceeds the safe search limit. Narrow the selection.");
+      const taggedIds = (taggedRows ?? []) as unknown as Array<{ attachment_id: string }>;
+      q = taggedIds.length
+        ? q.in("id" as never, taggedIds.map((item) => item.attachment_id) as never)
+        : q.eq("id" as never, "00000000-0000-0000-0000-000000000000" as never);
+    }
     const mimeTypes = fileFormatMimeTypes(data.format);
     if (mimeTypes.length) q = q.in("content_type" as never, [...mimeTypes] as never);
     if (data.folderId && data.includeSubfolders) {

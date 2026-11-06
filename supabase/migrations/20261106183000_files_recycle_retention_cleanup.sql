@@ -312,3 +312,48 @@ CREATE POLICY document_attachment_tags_delete
       AND a.deleted_at IS NULL
       AND public.can_access_attachment(a.company_id,a.entity_type,'manage')
   ));
+
+
+-- Hide recycled evidence from ordinary review queues and history queries at
+-- the database-policy level (not merely in UI filters). The records survive
+-- unchanged and reappear after restore.
+DROP POLICY IF EXISTS document_reviews_read ON public.document_reviews;
+CREATE POLICY document_reviews_read ON public.document_reviews FOR SELECT TO authenticated
+  USING (EXISTS (
+    SELECT 1 FROM public.document_attachments a
+    WHERE a.company_id=document_reviews.company_id
+      AND a.id=document_reviews.attachment_id
+      AND a.entity_type='company'
+      AND a.deleted_at IS NULL
+      AND public.can_access_attachment(a.company_id,a.entity_type,'view')
+  ));
+DROP POLICY IF EXISTS document_reviews_manage ON public.document_reviews;
+CREATE POLICY document_reviews_manage ON public.document_reviews FOR UPDATE TO authenticated
+  USING (EXISTS (
+    SELECT 1 FROM public.document_attachments a
+    WHERE a.company_id=document_reviews.company_id
+      AND a.id=document_reviews.attachment_id
+      AND a.entity_type='company'
+      AND a.deleted_at IS NULL
+      AND public.can_access_attachment(a.company_id,a.entity_type,'manage')
+  ))
+  WITH CHECK (EXISTS (
+    SELECT 1 FROM public.document_attachments a
+    WHERE a.company_id=document_reviews.company_id
+      AND a.id=document_reviews.attachment_id
+      AND a.entity_type='company'
+      AND a.deleted_at IS NULL
+      AND public.can_access_attachment(a.company_id,a.entity_type,'manage')
+  ));
+
+DROP POLICY IF EXISTS document_attachment_versions_read
+  ON public.document_attachment_versions;
+CREATE POLICY document_attachment_versions_read
+  ON public.document_attachment_versions FOR SELECT TO authenticated
+  USING (EXISTS (
+    SELECT 1 FROM public.document_attachments a
+    WHERE a.company_id=document_attachment_versions.company_id
+      AND a.id=document_attachment_versions.attachment_id
+      AND a.deleted_at IS NULL
+      AND public.can_access_attachment(a.company_id,a.entity_type,'view')
+  ));

@@ -167,3 +167,161 @@ REVOKE ALL ON FUNCTION public.guard_tax_code_posted_history()
   FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.guard_tax_rate_posted_history()
   FROM PUBLIC, anon, authenticated;
+
+-- Transaction-level coordination between posting and tax-master edits.
+-- Posting locks the referenced tax code and rate rows until commit. Concurrent
+-- master updates must serialize against these locks and re-evaluate posted history.
+-- These locks do NOT apply to uncoded historical document lines.
+CREATE OR REPLACE FUNCTION public.lock_tax_masters_when_document_posted()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+  IF TG_OP <> 'UPDATE' THEN RETURN NEW; END IF;
+  IF NEW.company_id IS DISTINCT FROM OLD.company_id THEN
+    RAISE EXCEPTION 'Cannot change organisation during tax-source posting';
+  END IF;
+  IF OLD.posted_journal_id IS NOT NULL THEN
+    IF NEW.posted_journal_id IS DISTINCT FROM OLD.posted_journal_id THEN
+      RAISE EXCEPTION 'Cannot replace or remove posting evidence';
+    END IF;
+    RETURN NEW;
+  END IF;
+  IF NEW.posted_journal_id IS NULL THEN RETURN NEW; END IF;
+
+  IF TG_TABLE_NAME = 'sales_invoices' THEN
+    IF EXISTS (
+      SELECT 1 FROM public.sales_invoice_lines l
+      LEFT JOIN public.tax_codes c
+        ON c.id=l.tax_code_id AND c.company_id=l.company_id
+      LEFT JOIN public.tax_rates r
+        ON r.id=c.tax_rate_id AND r.company_id=c.company_id
+      WHERE l.company_id=NEW.company_id AND l.invoice_id=NEW.id
+        AND l.tax_code_id IS NOT NULL
+        AND (c.id IS NULL OR r.id IS NULL)
+    ) THEN
+      RAISE EXCEPTION 'Invoice has tax references outside this organisation';
+    END IF;
+    PERFORM c.id
+      FROM public.sales_invoice_lines l
+      JOIN public.tax_codes c
+        ON c.id=l.tax_code_id AND c.company_id=l.company_id
+      JOIN public.tax_rates r
+        ON r.id=c.tax_rate_id AND r.company_id=c.company_id
+      WHERE l.company_id=NEW.company_id AND l.invoice_id=NEW.id
+      ORDER BY c.id, r.id FOR SHARE OF c, r;
+  ELSIF TG_TABLE_NAME = 'purchase_bills' THEN
+    IF EXISTS (
+      SELECT 1 FROM public.purchase_bill_lines l
+      LEFT JOIN public.tax_codes c
+        ON c.id=l.tax_code_id AND c.company_id=l.company_id
+      LEFT JOIN public.tax_rates r
+        ON r.id=c.tax_rate_id AND r.company_id=c.company_id
+      WHERE l.company_id=NEW.company_id AND l.bill_id=NEW.id
+        AND l.tax_code_id IS NOT NULL
+        AND (c.id IS NULL OR r.id IS NULL)
+    ) THEN
+      RAISE EXCEPTION 'Bill has tax references outside this organisation';
+    END IF;
+    PERFORM c.id
+      FROM public.purchase_bill_lines l
+      JOIN public.tax_codes c
+        ON c.id=l.tax_code_id AND c.company_id=l.company_id
+      JOIN public.tax_rates r
+        ON r.id=c.tax_rate_id AND r.company_id=c.company_id
+      WHERE l.company_id=NEW.company_id AND l.bill_id=NEW.id
+      ORDER BY c.id, r.id FOR SHARE OF c, r;
+  ELSE
+    RAISE EXCEPTION 'Unsupported tax source table';
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS sales_invoice_tax_master_post_lock ON public.sales_invoices;
+CREATE TRIGGER sales_invoice_tax_master_post_lock
+BEFORE UPDATE OF posted_journal_id ON public.sales_invoices
+FOR EACH ROW EXECUTE FUNCTION public.lock_tax_masters_when_document_posted();
+
+DROP TRIGGER IF EXISTS purchase_bill_tax_master_post_lock ON public.purchase_bills;
+CREATE TRIGGER purchase_bill_tax_master_post_lock
+BEFORE UPDATE OF posted_journal_id ON public.purchase_bills
+FOR EACH ROW EXECUTE FUNCTION public.lock_tax_masters_when_document_posted();
+
+-- Lock the parent document for line inserts/updates/deletes. It serializes
+-- adding lines versus linking the posted journal and prevents retroactive
+-- changes to the document tax code, amounts or effective tax rate snapshot.
+CREATE OR REPLACE FUNCTION public.guard_tax_source_line_after_posting()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  document_id uuid;
+  company_id_arg uuid;
+  source_company uuid;
+  posted_id uuid;
+  tax_code_id_arg uuid;
+BEGIN
+  IF TG_OP='DELETE' THEN
+    company_id_arg := OLD.company_id;
+    tax_code_id_arg := OLD.tax_code_id;
+  ELSE
+    company_id_arg := NEW.company_id;
+    tax_code_id_arg := NEW.tax_code_id;
+  END IF;
+
+  IF TG_TABLE_NAME='sales_invoice_lines' THEN
+    document_id := CASE WHEN TG_OP='DELETE' THEN OLD.invoice_id ELSE NEW.invoice_id END;
+    IF TG_OP='UPDATE' AND
+      (NEW.invoice_id IS DISTINCT FROM OLD.invoice_id OR
+       NEW.company_id IS DISTINCT FROM OLD.company_id) THEN
+      RAISE EXCEPTION 'Cannot move tax source lines between documents';
+    END IF;
+    SELECT h.company_id,h.posted_journal_id INTO source_company,posted_id
+      FROM public.sales_invoices h WHERE h.id=document_id FOR SHARE;
+  ELSIF TG_TABLE_NAME='purchase_bill_lines' THEN
+    document_id := CASE WHEN TG_OP='DELETE' THEN OLD.bill_id ELSE NEW.bill_id END;
+    IF TG_OP='UPDATE' AND
+      (NEW.bill_id IS DISTINCT FROM OLD.bill_id OR
+       NEW.company_id IS DISTINCT FROM OLD.company_id) THEN
+      RAISE EXCEPTION 'Cannot move tax source lines between documents';
+    END IF;
+    SELECT h.company_id,h.posted_journal_id INTO source_company,posted_id
+      FROM public.purchase_bills h WHERE h.id=document_id FOR SHARE;
+  ELSE
+    RAISE EXCEPTION 'Unsupported tax source line table';
+  END IF;
+
+  IF source_company IS NULL OR source_company IS DISTINCT FROM company_id_arg THEN
+    RAISE EXCEPTION 'Tax source line belongs to another organisation';
+  END IF;
+  IF posted_id IS NOT NULL THEN
+    RAISE EXCEPTION 'Posted tax source lines are immutable; reverse the document instead';
+  END IF;
+  IF tax_code_id_arg IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM public.tax_codes c
+    JOIN public.tax_rates r ON r.id=c.tax_rate_id AND r.company_id=c.company_id
+    WHERE c.id=tax_code_id_arg AND c.company_id=company_id_arg
+  ) THEN
+    RAISE EXCEPTION 'Tax code and rate must belong to the source organisation';
+  END IF;
+  IF TG_OP='DELETE' THEN RETURN OLD; END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS sales_invoice_lines_tax_post_guard ON public.sales_invoice_lines;
+CREATE TRIGGER sales_invoice_lines_tax_post_guard
+BEFORE INSERT OR UPDATE OR DELETE ON public.sales_invoice_lines
+FOR EACH ROW EXECUTE FUNCTION public.guard_tax_source_line_after_posting();
+
+DROP TRIGGER IF EXISTS purchase_bill_lines_tax_post_guard ON public.purchase_bill_lines;
+CREATE TRIGGER purchase_bill_lines_tax_post_guard
+BEFORE INSERT OR UPDATE OR DELETE ON public.purchase_bill_lines
+FOR EACH ROW EXECUTE FUNCTION public.guard_tax_source_line_after_posting();
+
+REVOKE ALL ON FUNCTION public.lock_tax_masters_when_document_posted()
+  FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.guard_tax_source_line_after_posting()
+  FROM PUBLIC, anon, authenticated;

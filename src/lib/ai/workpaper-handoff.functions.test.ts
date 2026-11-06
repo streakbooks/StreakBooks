@@ -17,121 +17,118 @@ vi.mock("@/integrations/supabase/auth-middleware", () => ({ requireSupabaseAuth:
 vi.mock("@/lib/assert-company-access", () => ({ assertCompanyPermission: vi.fn() }));
 
 import { assertCompanyPermission } from "@/lib/assert-company-access";
-import { getAiWorkpaperEvidence } from "./workpaper-handoff.functions";
+import { getAiWorkpaperEvidence, workpaperEvidenceInput } from "./workpaper-handoff.functions";
 
 const companyId = "11111111-1111-4111-8111-111111111111";
 const accountId = "22222222-2222-4222-8222-222222222222";
 const journalId = "33333333-3333-4333-8333-333333333333";
-const caseId = "44444444-4444-4444-8444-444444444444";
-const params = { companyId, accountId, asOf: "2026-11-06" };
+const reviewId = "44444444-4444-4444-8444-444444444444";
+const params = { companyId, accountId, asOf: "2026-11-06", page: 0 };
 const calls: Array<[string, ...unknown[]]> = [];
-const caseRecord = {
-  id: caseId, journal_id: journalId, status: "reviewed",
-  assigned_to: null, reviewed_by: accountId,
-  reviewed_at: "2026-11-05T10:00:00Z", updated_at: "2026-11-05T10:00:00Z",
+const row = {
+  review_id: reviewId,
+  journal_id: journalId,
+  journal_number: 13,
+  journal_date: "2026-11-04",
+  journal_status: "posted",
+  source_type: "manual",
+  review_status: "reviewed",
+  reviewed_by: accountId,
+  reviewed_at: "2026-11-05T10:00:00Z",
+  updated_at: "2026-11-05T10:00:00Z",
 };
 
-function db(options: {
-  type?: string;
-  isPostable?: boolean;
-  cases?: typeof caseRecord[];
-  lines?: Array<{ journal_id: string }>;
-  journals?: Array<{ id: string; journal_number: number; journal_date: string; status: string; source_type: string }>;
-} = {}) {
-  const builder = (table: string) => ({
-    select() { return this; },
-    eq(key: string, value: unknown) { calls.push(["eq", table, key, value]); return this; },
-    in(key: string, value: unknown) { calls.push(["in", table, key, value]); return this; },
-    lte(key: string, value: unknown) { calls.push(["lte", table, key, value]); return this; },
-    order() { return this; },
-    maybeSingle() {
+function db(options: { rows?: typeof row[]; total?: number; page?: number; pageSize?: number; error?: string } = {}) {
+  return {
+    rpc(name: string, args: unknown) {
+      calls.push(["rpc", name, args]);
+      if (options.error) return Promise.resolve({ data: null, error: { message: options.error } });
       return Promise.resolve({
-        data: { id: accountId, account_type: options.type ?? "asset", is_postable: options.isPostable ?? true },
+        data: {
+          total: options.total ?? 1,
+          page: options.page ?? 0,
+          pageSize: options.pageSize ?? 25,
+          rows: options.rows ?? [row],
+        },
         error: null,
       });
     },
-    limit() {
-      if (table === "ai_journal_review_cases")
-        return Promise.resolve({ data: options.cases ?? [caseRecord], error: null });
-      if (table === "journal_lines")
-        return Promise.resolve({ data: options.lines ?? [{ journal_id: journalId }], error: null });
-      if (table === "journals")
-        return Promise.resolve({ data: options.journals ?? [{
-          id: journalId, journal_number: 99, journal_date: "2026-11-05",
-          status: "posted", source_type: "manual",
-        }], error: null });
-      throw new Error("Unexpected table: " + table);
-    },
-  });
-  return {
-    from(table: string) { calls.push(["from", table]); return builder(table); },
   };
 }
-const get = getAiWorkpaperEvidence as unknown as (input: unknown) => Promise<unknown>;
-
+const load = getAiWorkpaperEvidence as unknown as (args: unknown) => Promise<unknown>;
 beforeEach(() => { calls.length = 0; vi.clearAllMocks(); });
 
-describe("accountant workpaper handoff server boundaries", () => {
-  it("requires accounting, AI and reports access before any case or journal read", async () => {
+describe("AI workpaper evidence complete pagination boundary", () => {
+  it("requires accounting, AI, and report permission before accessing pagination RPC", async () => {
     const client = db();
-    const out = await get({ data: params, context: { supabase: client } });
+    const out = await load({ data: params, context: { supabase: client } });
     for (const permission of ["accounting.view", "ai.use", "reports.view"])
       expect(assertCompanyPermission).toHaveBeenCalledWith(client, companyId, permission);
-    expect(out).toMatchObject({ scannedReviews: 1, counts: { reviewed: 1, followUp: 0, notPosted: 0 } });
-  });
-
-  it("refuses access before touching the database when any required permission is denied", async () => {
-    vi.mocked(assertCompanyPermission).mockRejectedValueOnce(new Error("Permission denied"));
-    await expect(get({ data: params, context: { supabase: db() } })).rejects.toThrow("Permission denied");
-    expect(calls).toHaveLength(0);
-  });
-
-  it("scopes all three ledger queries and review rows to the selected tenant and account", async () => {
-    await get({ data: params, context: { supabase: db() } });
-    expect(calls).toEqual(expect.arrayContaining([
-      ["eq", "accounts", "company_id", companyId],
-      ["eq", "accounts", "id", accountId],
-      ["eq", "ai_journal_review_cases", "company_id", companyId],
-      ["eq", "journal_lines", "company_id", companyId],
-      ["eq", "journal_lines", "account_id", accountId],
-      ["eq", "journals", "company_id", companyId],
-      ["lte", "journals", "journal_date", params.asOf],
-    ]));
-  });
-
-  it("rejects non-balance-sheet or non-postable account selections", async () => {
-    await expect(get({ data: params, context: { supabase: db({ type: "income" }) } })).rejects.toThrow(/balance-sheet/);
-    await expect(get({ data: params, context: { supabase: db({ isPostable: false }) } })).rejects.toThrow(/balance-sheet/);
-    expect(calls.some((call) => call[0] === "from" && call[1] === "journal_lines")).toBe(false);
-  });
-
-  it("rejects forged company IDs and invalid calendar dates before DB access", async () => {
-    await expect(get({ data: { ...params, companyId: journalId.slice(0, 4) }, context: { supabase: db() } })).rejects.toThrow();
-    await expect(get({ data: { ...params, asOf: "2026-02-30" }, context: { supabase: db() } })).rejects.toThrow();
-    expect(calls).toHaveLength(0);
-  });
-
-  it("returns an explicit no-review state without querying unrelated ledger lines", async () => {
-    const out = await get({ data: params, context: { supabase: db({ cases: [] }) } });
     expect(out).toMatchObject({
-      scannedReviews: 0, latestReviewsTruncated: false, links: [],
-      counts: { reviewed: 0, followUp: 0, notPosted: 0 },
+      total: 1, pageSize: 25, page: 0, pageCounts: { reviewed: 1, followUp: 0, notPosted: 0 },
     });
-    expect(calls.some((call) => call[0] === "from" && call[1] === "journal_lines")).toBe(false);
   });
 
-  it("does not silently accept a line query truncated above 500 rows", async () => {
-    const lines = Array.from({ length: 501 }, () => ({ journal_id: journalId }));
-    await expect(get({ data: params, context: { supabase: db({ lines }) } })).rejects.toThrow(/Too many matching/);
+  it("rejects denied permission before any RPC and never directly accesses ledger tables", async () => {
+    vi.mocked(assertCompanyPermission).mockRejectedValueOnce(new Error("Access denied"));
+    await expect(load({ data: params, context: { supabase: db() } })).rejects.toThrow("Access denied");
+    expect(calls).toHaveLength(0);
   });
 
-  it("reports a bounded latest-review sample as incomplete when company has more than 100 reviews", async () => {
-    const cases = Array.from({ length: 101 }, (_, index) => ({
-      ...caseRecord,
-      id: "00000000-0000-4000-8000-" + String(index).padStart(12, "0"),
-    }));
-    const out = await get({ data: params, context: { supabase: db({ cases }) } });
-    expect(out).toMatchObject({ scannedReviews: 100, latestReviewsTruncated: true });
-    expect((out as { disclaimer: string }).disclaimer).toMatch(/older cases may be omitted/i);
+  it("passes only validated company, account, cutoff, and page to the scoped RPC", async () => {
+    await load({ data: params, context: { supabase: db() } });
+    expect(calls).toEqual([["rpc", "list_ai_workpaper_evidence_page", {
+      _company_id: companyId, _account_id: accountId, _as_of: params.asOf, _page: 0,
+    }]]);
+  });
+
+  it("validates real calendar dates, UUIDs and page bounds", () => {
+    expect(() => workpaperEvidenceInput.parse({ ...params, asOf: "2026-02-30" })).toThrow();
+    expect(() => workpaperEvidenceInput.parse({ ...params, accountId: "x" })).toThrow();
+    expect(() => workpaperEvidenceInput.parse({ ...params, page: -1 })).toThrow();
+    expect(() => workpaperEvidenceInput.parse({ ...params, page: 10001 })).toThrow();
+    expect(() => workpaperEvidenceInput.parse({ ...params, page: 1.5 })).toThrow();
+  });
+
+  it("does not truncate valid later pages even when there are more than 100 matching cases", async () => {
+    const client = db({ total: 151, page: 5 });
+    const out = await load({
+      data: { ...params, page: 5 },
+      context: { supabase: client },
+    });
+    expect(out).toMatchObject({ total: 151, page: 5 });
+    expect((out as { links: unknown[] }).links).toHaveLength(1);
+    expect(calls[0]?.[2]).toMatchObject({ _page: 5 });
+  });
+
+  it("flags no-longer-posted journals despite a previously signed-off AI review", async () => {
+    const out = await load({
+      data: params,
+      context: { supabase: db({ rows: [{ ...row, journal_status: "reversed" }] }) },
+    });
+    expect(out).toMatchObject({ pageCounts: { reviewed: 0, followUp: 0, notPosted: 1 } });
+  });
+
+  it("does not misrepresent empty pages as proof of account reconciliation", async () => {
+    const out = await load({
+      data: params,
+      context: { supabase: db({ rows: [], total: 0 }) },
+    });
+    expect(out).toMatchObject({ total: 0, links: [], pageCounts: { reviewed: 0, followUp: 0, notPosted: 0 } });
+    expect((out as { disclaimer: string }).disclaimer).toMatch(/not a workpaper sign-off/);
+  });
+
+  it("refuses invalid payload shape and page metadata", async () => {
+    await expect(load({ data: params, context: { supabase: db({ total: -1 }) } })).rejects.toThrow(/invalid/);
+    await expect(load({ data: params, context: { supabase: db({ page: 2 }) } })).rejects.toThrow(/invalid/);
+    await expect(load({ data: params, context: { supabase: db({ pageSize: 100 }) } })).rejects.toThrow(/invalid/);
+    await expect(load({ data: params, context: { supabase: db({ rows: Array.from({ length: 26 }, () => row) }) } })).rejects.toThrow(/invalid/);
+  });
+
+  it("gives an actionable migration error when the new paging function is missing", async () => {
+    await expect(load({
+      data: params,
+      context: { supabase: db({ error: "function list_ai_workpaper_evidence_page does not exist" }) },
+    })).rejects.toThrow(/migration/);
   });
 });

@@ -110,4 +110,42 @@ describe("parsePayrollPaymentEntry", () => {
       payslips: slips,
     })).toEqual({ amountMinor: 4550, allocations: [], unallocatedMinor: 4550 });
   });
+  it("rejects decimal precision that would silently round when posting", () => {
+    for (const input of [
+      { amount: "12.345", currency: "GBP" },
+      { amount: "123.4", currency: "JPY" },
+      { amount: "0.0009", currency: "KWD" },
+    ]) {
+      expect(() => parsePayrollPaymentEntry({
+        amount: input.amount,
+        currency: input.currency,
+        allocations: {},
+        payslips: [],
+      })).toThrow(/decimal places/i);
+    }
+
+    expect(() => parsePayrollPaymentEntry({
+      amount: "25.00",
+      currency: "GBP",
+      allocations: { a: "0.001" },
+      payslips: slips,
+    })).toThrow(/decimal places/i);
+  });
+
+  it("accepts exact zero- and three-decimal currency amounts", () => {
+    expect(parsePayrollPaymentEntry({
+      amount: "1,234",
+      currency: "JPY",
+      allocations: {},
+      payslips: [],
+    }).amountMinor).toBe(1234);
+
+    expect(parsePayrollPaymentEntry({
+      amount: "12.345",
+      currency: "KWD",
+      allocations: {},
+      payslips: [],
+    }).amountMinor).toBe(12345);
+  });
+
 });

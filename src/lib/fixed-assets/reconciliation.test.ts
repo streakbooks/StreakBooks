@@ -220,7 +220,7 @@ describe("Fixed Assets / GL reconciliation", () => {
     expect(csv).toContain("'=HYPERLINK(1)");
     expect(csv).toContain("-2000");
     expect(csv).not.toContain('"=HYPERLINK(1)"');
-    expect(csv.split("\\r\\n")).toHaveLength(3);
+    expect(csv.split("\r\n")).toHaveLength(3);
   });
 
   it("keeps all source inputs unchanged", () => {

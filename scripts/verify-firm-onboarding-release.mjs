@@ -157,7 +157,10 @@ async function runNpmStep(step) {
 
 async function runRelease({ useStaging, dryRun, install }) {
   const plan = firmOnboardingReleaseSteps({ install, staging: useStaging });
-  const initialRemoteFresh = !dryRun && refreshRemoteMain();
+  // Validate the configured origin before making any network request.
+  const beforeFetch = gitInfo();
+  const initialRemoteFresh = !dryRun && beforeFetch.originMatchesRepo &&
+    refreshRemoteMain();
   const git = { ...gitInfo(), remoteRefFresh: initialRemoteFresh };
   const preflight = localReleasePreflight(git);
   const results = [];
@@ -196,7 +199,9 @@ async function runRelease({ useStaging, dryRun, install }) {
       }
     }
   }
-  const finalRemoteFresh = !dryRun && refreshRemoteMain();
+  const beforeFinalFetch = gitInfo();
+  const finalRemoteFresh = !dryRun && beforeFinalFetch.originMatchesRepo &&
+    refreshRemoteMain();
   const finalGit = { ...gitInfo(), remoteRefFresh: finalRemoteFresh };
   const postflight = localReleasePreflight(finalGit);
   const checksPassed = !dryRun && preflight.passed && postflight.passed &&

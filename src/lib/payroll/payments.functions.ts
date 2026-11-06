@@ -4,6 +4,7 @@ import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-compa
 import { callRpc, companyIdOf, isMissingRelation, num } from "@/lib/planning/rpc";
 import { validatePayrollPaymentAllocations } from "@/lib/payroll/payroll-payment-allocation";
 import { payrollClearingCurrencyMismatch } from "@/lib/payroll/clearing-currency";
+import { assertPayrollSettlementDateOnly } from "@/lib/payroll/payment-date";
 import type { PayrollPaymentMethod } from "@/lib/payroll/types";
 import { PAYROLL_RUNS_MIGRATION } from "@/lib/payroll/runs.functions";
 
@@ -267,6 +268,7 @@ export const recordPayrollPayment = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "payroll.pay");
+    assertPayrollSettlementDateOnly(data.paymentDate, "Payment");
     if (!Number.isSafeInteger(data.amountMinor) || data.amountMinor <= 0) {
       throw new Error("Payment amount must be a positive whole number of minor units.");
     }
@@ -564,9 +566,7 @@ export const reversePayrollRunAccrual = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "payroll.run.post");
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(data.reversalDate)) {
-      throw new Error("Reversal date must be YYYY-MM-DD.");
-    }
+    assertPayrollSettlementDateOnly(data.reversalDate, "Reversal");
     const saved = await callRpc<unknown>(
       context.supabase,
       "reverse_payroll_run_accrual",
@@ -595,9 +595,7 @@ export const reversePayrollPayment = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "payroll.pay");
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(data.reversalDate)) {
-      throw new Error("Reversal date must be YYYY-MM-DD.");
-    }
+    assertPayrollSettlementDateOnly(data.reversalDate, "Reversal");
     const saved = await callRpc<unknown>(
       context.supabase,
       "reverse_payroll_payment",

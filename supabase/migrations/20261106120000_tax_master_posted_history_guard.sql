@@ -14,7 +14,7 @@ CREATE INDEX IF NOT EXISTS purchase_bill_lines_tax_code_history_idx
 CREATE OR REPLACE FUNCTION public.tax_code_has_posted_history(
   _company_id uuid, _code_id uuid
 ) RETURNS boolean
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
+LANGUAGE sql VOLATILE SECURITY DEFINER SET search_path = public, pg_temp
 AS $$
   SELECT EXISTS (
     SELECT 1
@@ -35,12 +35,15 @@ AS $$
   );
 $$;
 
+-- VOLATILE is intentional: after blocking on concurrent posting row locks, a
+-- fresh snapshot must include the committed posted source. STABLE would retain
+-- the calling UPDATE's earlier snapshot and could permit retroactive edits.
 -- Used for rate effective-date checks. Void documents still have historical
 -- posting evidence and are counted; a void does not permit rewriting history.
 CREATE OR REPLACE FUNCTION public.tax_rate_last_posted_date(
   _company_id uuid, _rate_id uuid
 ) RETURNS date
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
+LANGUAGE sql VOLATILE SECURITY DEFINER SET search_path = public, pg_temp
 AS $$
   SELECT max(doc_date)
   FROM (

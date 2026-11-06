@@ -234,6 +234,7 @@ export const purgeRecycleBinFile = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data, context }) => {
     await assertFileManager(context.supabase, data.companyId, data.attachmentId);
+    await assertEntityAccess(context.supabase, data.companyId, "company", "manage");
     const { data: jobId, error } = await context.supabase.rpc(
       "purge_document_from_recycle_bin" as never,
       { _company_id: data.companyId, _attachment_id: data.attachmentId } as never,

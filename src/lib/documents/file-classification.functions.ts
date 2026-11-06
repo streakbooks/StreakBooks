@@ -119,6 +119,7 @@ async function visibleFile(
     .select("id, entity_type, file_name, document_category" as never)
     .eq("company_id" as never, companyId as never)
     .eq("id" as never, attachmentId as never)
+    .is("deleted_at" as never, null)
     .maybeSingle();
   if (error) dbError(error);
   if (!row) throw new Error("File not found or access denied.");

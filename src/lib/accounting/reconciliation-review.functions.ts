@@ -52,7 +52,7 @@ export const listReconciliationReviewCases = createServerFn({ method: "GET" })
     return { cases: cases.slice(0, 100), hasMore: cases.length > 100 };
   });
 
-type SaveCaseInput = {
+export type SaveCaseInput = {
   companyId: string;
   source: ExceptionFinding["source"];
   fingerprint: string;

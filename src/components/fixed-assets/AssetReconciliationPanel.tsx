@@ -2,11 +2,12 @@ import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { RefreshCw } from "lucide-react";
+import { Download, RefreshCw } from "lucide-react";
 import { useFormat } from "@/hooks/use-format";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { todayIso } from "@/lib/accounting/fiscal-year";
 import { getFixedAssetReconciliation } from "@/lib/fixed-assets/reconciliation.functions";
+import { fixedAssetReconciliationCsv } from "@/lib/fixed-assets/reconciliation";
 import { ErrorState, LoadingState } from "@/components/common/states";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +39,16 @@ export function AssetReconciliationPanel({ companyId }: { companyId: string }) {
   const rows = (report.data?.rows ?? []).filter(
     (row) => filter === "all" || row.status === filter,
   );
+  const exportCsv = () => {
+    if (!report.data || report.isFetching || report.data.asOf !== asOf) return;
+    const csv = fixedAssetReconciliationCsv(report.data, rows);
+    const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "linkbooks-fixed-asset-reconciliation-" + asOf + ".csv";
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="space-y-4">
@@ -56,6 +67,7 @@ export function AssetReconciliationPanel({ companyId }: { companyId: string }) {
         <div className="space-y-1">
           <Label htmlFor="fixed-assets-reconcile-status">Show</Label>
           <select
+            /* lookup-fixed-enum: Three static reconciliation status options. */
             id="fixed-assets-reconcile-status"
             value={filter}
             onChange={(event) => setFilter(event.target.value as ViewStatus)}
@@ -74,6 +86,15 @@ export function AssetReconciliationPanel({ companyId }: { companyId: string }) {
         >
           <RefreshCw className="mr-2 size-4" />
           Refresh
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={!report.data || report.isFetching || report.data.asOf !== asOf}
+          onClick={exportCsv}
+        >
+          <Download className="mr-2 size-4" />
+          Export visible CSV
         </Button>
         <p className="max-w-xl text-xs text-muted-foreground">
           Read-only comparison of register cost and accumulated depreciation against posted GL

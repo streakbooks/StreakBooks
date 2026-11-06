@@ -287,8 +287,9 @@ export function DocumentClassificationPanel({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete tag from this entire company?</AlertDialogTitle>
             <AlertDialogDescription>
-              Deleting “{pendingRemove?.name}” removes it from all company documents.
-              It does not delete any files or affect accounting records.
+              “{pendingRemove?.name}” can only be deleted when it is no longer
+              assigned to any company document. Remove the tag from every document
+              first. Files and accounting entries are never deleted by this action.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

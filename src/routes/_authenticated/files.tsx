@@ -49,6 +49,7 @@ import {
 } from "@/lib/documents/folders.functions";
 import { folderAncestors, folderDisplayPath, possibleParentFolders } from "@/lib/documents/folder-tree";
 import { type FileFormat } from "@/lib/documents/file-workspace";
+import { MAX_FILES_PER_BATCH, runFileBatch } from "@/lib/documents/file-batch";
 import { downloadBase64, uploadCompanyDocument } from "@/lib/documents/upload-client";
 import { openSignedDownload } from "@/lib/documents/ui";
 import { friendlyAuthError } from "@/lib/auth-helpers";
@@ -374,45 +375,34 @@ function FilesPage() {
   });
 
   const bulkDeleteM = useMutation({
-    mutationFn: async ({ ids, sourceCompanyId }: { ids: string[]; sourceCompanyId: string }) => {
-      const deletedIds: string[] = [];
-      const failedIds: string[] = [];
-      const cleanupIds: string[] = [];
-      let firstError: string | null = null;
-      for (const attachmentId of ids) {
-        try {
-          const result = await remove({
-            data: { companyId: sourceCompanyId, attachmentId },
-          });
-          deletedIds.push(attachmentId);
-          if (result.storageCleanup === "requires_admin") cleanupIds.push(attachmentId);
-        } catch (error) {
-          failedIds.push(attachmentId);
-          firstError ??= friendlyAuthError(error);
-        }
-      }
-      return { deletedIds, failedIds, cleanupIds, firstError, sourceCompanyId };
-    },
-    onSuccess: async ({ deletedIds, failedIds, cleanupIds, firstError, sourceCompanyId }) => {
+    mutationFn: async ({ ids, sourceCompanyId }: { ids: string[]; sourceCompanyId: string }) => ({
+      ...(await runFileBatch(
+        ids,
+        (attachmentId) => remove({ data: { companyId: sourceCompanyId, attachmentId } }),
+        (result) => result.storageCleanup === "requires_admin",
+      )),
+      sourceCompanyId,
+    }),
+    onSuccess: async ({ completedIds, failedIds, warningIds, firstError, sourceCompanyId }) => {
       setPendingBulkDelete(null);
       if (companyId === sourceCompanyId) {
         setSelectedIds(failedIds);
-        if (selectedFile && deletedIds.includes(selectedFile)) setSelectedFile(null);
+        if (selectedFile && completedIds.includes(selectedFile)) setSelectedFile(null);
       }
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["company-files", sourceCompanyId] }),
         queryClient.invalidateQueries({ queryKey: ["company-file-details", sourceCompanyId] }),
         queryClient.invalidateQueries({ queryKey: ["company-file-preview", sourceCompanyId] }),
       ]);
-      if (deletedIds.length)
-        toast.success(`Deleted ${deletedIds.length} file${deletedIds.length === 1 ? "" : "s"}`);
-      if (cleanupIds.length)
+      if (completedIds.length)
+        toast.success(`Deleted ${completedIds.length} file${completedIds.length === 1 ? "" : "s"}`);
+      if (warningIds.length)
         toast.warning(
-          `${cleanupIds.length} deleted file${cleanupIds.length === 1 ? " needs" : "s need"} administrator Storage cleanup. Do not retry these deleted records.`,
+          `${warningIds.length} deleted file${warningIds.length === 1 ? " needs" : "s need"} administrator Storage cleanup. Do not retry these deleted records.`,
         );
       if (failedIds.length)
         toast.error(
-          `${failedIds.length} file${failedIds.length === 1 ? "" : "s"} could not be deleted. ${firstError ?? "Please retry."}`,
+          `${failedIds.length} file${failedIds.length === 1 ? "" : "s"} could not be deleted. ${friendlyAuthError(firstError)}`,
         );
     },
     onError: (error) => {
@@ -422,29 +412,22 @@ function FilesPage() {
   });
 
   const bulkMoveM = useMutation({
-    mutationFn: async ({ ids, targetId }: { ids: string[]; targetId: string | null }) => {
-      const movedIds: string[] = [];
-      const failedIds: string[] = [];
-      let firstError: string | null = null;
-      for (const attachmentId of ids) {
-        try {
-          await moveFile({ data: { companyId: companyId!, attachmentId, folderId: targetId } });
-          movedIds.push(attachmentId);
-        } catch (error) {
-          failedIds.push(attachmentId);
-          firstError ??= friendlyAuthError(error);
-        }
-      }
-      return { movedIds, failedIds, firstError };
-    },
-    onSuccess: async ({ movedIds, failedIds, firstError }) => {
-      setSelectedIds(failedIds);
-      await queryClient.invalidateQueries({ queryKey: ["company-files", companyId] });
-      if (movedIds.length)
-        toast.success(`Moved ${movedIds.length} file${movedIds.length === 1 ? "" : "s"}`);
+    mutationFn: ({ ids, targetId, sourceCompanyId }: {
+      ids: string[];
+      targetId: string | null;
+      sourceCompanyId: string;
+    }) =>
+      runFileBatch(ids, (attachmentId) =>
+        moveFile({ data: { companyId: sourceCompanyId, attachmentId, folderId: targetId } }),
+      ).then((result) => ({ ...result, sourceCompanyId })),
+    onSuccess: async ({ completedIds, failedIds, firstError, sourceCompanyId }) => {
+      if (companyId === sourceCompanyId) setSelectedIds(failedIds);
+      await queryClient.invalidateQueries({ queryKey: ["company-files", sourceCompanyId] });
+      if (completedIds.length)
+        toast.success(`Moved ${completedIds.length} file${completedIds.length === 1 ? "" : "s"}`);
       if (failedIds.length)
         toast.error(
-          `${failedIds.length} file${failedIds.length === 1 ? "" : "s"} could not be moved. ${firstError ?? "Please retry."}`,
+          `${failedIds.length} file${failedIds.length === 1 ? "" : "s"} could not be moved. ${friendlyAuthError(firstError)}`,
         );
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
@@ -466,8 +449,8 @@ function FilesPage() {
   const onPick = (list: FileList | null) => {
     if (!list || list.length === 0 || !canUpload || uploadM.isPending) return;
     const files = Array.from(list);
-    if (files.length > 25) {
-      setError("Upload up to 25 files at a time.");
+    if (files.length > MAX_FILES_PER_BATCH) {
+      setError(`Upload up to ${MAX_FILES_PER_BATCH} files at a time.`);
       if (inputRef.current) inputRef.current.value = "";
       return;
     }
@@ -1195,6 +1178,7 @@ function FilesPage() {
                   bulkMoveM.mutate({
                     ids: movingIds,
                     targetId: bulkDestination,
+                    sourceCompanyId: companyId!,
                   })
                 }
               >

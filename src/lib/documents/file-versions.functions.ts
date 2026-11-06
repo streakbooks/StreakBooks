@@ -8,7 +8,6 @@ import {
   parseStoragePath,
 } from "@/lib/documents/attachments";
 import { assertEntityAccess } from "@/lib/documents/attachments.functions";
-import { filePreviewKind } from "@/lib/documents/file-workspace";
 import {
   assertVersionHistory,
   validateVersionReplacement,

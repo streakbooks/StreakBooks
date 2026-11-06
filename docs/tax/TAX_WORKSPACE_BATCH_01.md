@@ -429,3 +429,58 @@ row locks, then issues an explicit COMMIT. This removes timing-dependent
 customer/supplier credit notes and direct expenses. Static JavaScript parsing
 and SQL dollar-quote checks passed in this development environment; the
 PostgreSQL runner itself remains unexecuted.
+
+
+## Continuation — Batch 09: accounting integration and migration compatibility
+
+### Actual code fixes
+- Protected the pre-existing ability to delete unposted draft sales invoices and
+  purchase bills. A parent BEFORE DELETE trigger rejects direct deletion of a
+  source already linked to a journal; unposted drafts may delete, and their
+  source-line ON DELETE CASCADE triggers accept the missing parent during
+  cascading cleanup. Posted tax lines remain immutable.
+- Updated the isolated PostgreSQL fixture foreign keys to match the real
+  ON DELETE CASCADE semantics of invoice/bill lines.
+- Added regression assertions for posted invoice/bill deletion rejection,
+  allowed draft deletion with child-line cleanup, and preserved posted lines.
+
+### Staging migration preflight/postflight gates
+- `tests/integration/tax-schema-preflight.sql` checks every required Tax
+  master/document table and column before the source-history migration.
+- `tests/integration/tax-legacy-tenant-preflight.sql` reports historical
+  foreign-organisation tax-rate/account/code references and source lines. It
+  rejects mismatches for manual correction, never rewrites posted documents.
+- `tests/integration/tax-master-schema-postflight.sql` verifies all eleven
+  required source-history triggers and restricted internal function grants.
+- `tests/integration/tax-gl-review-schema-preflight.sql` checks the review
+  migration's company-membership, accounts and permission RPC contracts.
+- `tests/integration/tax-gl-review-schema-postflight.sql` verifies review
+  table RLS, read policies, denied direct writes, denied anonymous access and
+  authenticated RPC execute privileges.
+- Both manually invoked isolated PostgreSQL runners invoke these checks in
+  order, including applying each migration twice for idempotence validation.
+
+### Required checks (NOT executed here)
+1. Run local Vitest, TypeScript, ESLint, build and browser checks against
+   current `main` dependencies and the Tax feature branch.
+2. Run both Docker-backed PostgreSQL runners, investigate any failure and
+   confirm the initial/post-migration schema preflights are accurate.
+3. On staging, check draft-delete, authorised/voided invoice and bill posting,
+   credit-note refunds, direct expenses and reversal workflows using the real
+   posting RPCs, including two-tenant security and concurrent updates.
+4. Inspect preflight results against actual organisation data; do not change
+   posted records to force migrations through. Get explicit reviewed remediation.
+5. Only after all validation should merging PR #110 and deploying migrations
+   be considered. GitHub Actions have deliberately not been run.
+
+### Known limitations and blockers
+- The feature branch is behind ongoing main development, so merge compatibility
+  and full regression test outcomes cannot be inferred solely from changed
+  file paths or GitHub's mergeable flag.
+- PostgreSQL/Docker is not available in this execution runtime. No real
+  local/staging integration, TypeScript/build, browser or performance checks
+  are claimed. Static SQL review is not evidence of executable migrations.
+- The SQL migrations remain code committed to an open draft PR; they are not
+  applied to a customer database or production.
+- Internal tax reconciliation remains a diagnostic, not tax-authority filing
+  or certification. More integration and release work is still required.

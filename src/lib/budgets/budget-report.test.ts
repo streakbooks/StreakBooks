@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildBudgetVsActual, type BudgetReportAccount } from "./budget-report";
+import { buildBudgetVsActual, filterProfitLossActivity, type BudgetReportAccount } from "./budget-report";
 import type { BudgetColumn } from "./budget-math";
 
 const accounts: BudgetReportAccount[] = [
@@ -29,6 +29,28 @@ const sample = {
 };
 
 describe("Budget vs Actual accounting integrity", () => {
+  it("excludes balance-sheet journal activity while retaining historical P&L accounts", () => {
+    const historical: BudgetReportAccount[] = [
+      ...accounts,
+      { id: "archived", code: "401", name: "Archived expense", kind: "expense" },
+    ];
+    const ledger = [
+      { accountId: "bank", month: "2026-04-01", debitMinor: 5000, creditMinor: 0 },
+      { accountId: "sales", month: "2026-04-01", debitMinor: 0, creditMinor: 1000 },
+      { accountId: "archived", month: "2026-04-01", debitMinor: 300, creditMinor: 0 },
+    ];
+    const filtered = filterProfitLossActivity(historical, ledger);
+    expect(filtered.map((row) => row.accountId)).toEqual(["sales", "archived"]);
+    const report = buildBudgetVsActual({
+      accounts: historical, budget: [], actuals: filtered, columns,
+    });
+    expect(report.income.totals[0]?.actualMinor).toBe(1000);
+    expect(report.expense.totals[0]?.actualMinor).toBe(300);
+    expect(report.expense.rows.find((row) => row.accountId === "archived")).toBeDefined();
+    expect(ledger).toHaveLength(3);
+  });
+
+
   it("reconciles monthly and YTD income, expense and profit using natural account signs", () => {
     const report = buildBudgetVsActual(sample);
     expect(report.income.totals[0]).toMatchObject({

@@ -5,6 +5,7 @@ import { callRpc, companyIdOf, isMissingRelation, num } from "@/lib/planning/rpc
 import { validatePayrollPaymentAllocations } from "@/lib/payroll/payroll-payment-allocation";
 import { payrollClearingCurrencyMismatch } from "@/lib/payroll/clearing-currency";
 import { assertPayrollSettlementDateOnly } from "@/lib/payroll/payment-date";
+import { filterPayrollClearingAccounts, type PayrollClearingCandidate, type PayrollLinkedBank } from "@/lib/payroll/clearing-account-options";
 import type { PayrollPaymentMethod } from "@/lib/payroll/types";
 import { PAYROLL_RUNS_MIGRATION } from "@/lib/payroll/runs.functions";
 
@@ -132,6 +133,58 @@ async function probePaymentsTable(
   if (probe.error) throw new Error(probe.error.message);
   return true;
 }
+
+/** Unlike general purchase account choices, the Payroll settlement list
+ * checks every active linked bank currency as well as the GL account.
+ * The actual payment RPC and SQL triggers enforce these rules again.
+ */
+export const listPayrollSettlementAccounts = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string }) => ({
+    companyId: companyIdOf(input),
+  }))
+  .handler(async ({ data, context }) => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    await assertCompanyPermission(context.supabase, data.companyId, "payroll.pay");
+
+    const [settingsRes, accountsRes, banksRes] = await Promise.all([
+      context.supabase
+        .from("payroll_settings" as never)
+        .select("payroll_currency" as never)
+        .eq("company_id" as never, data.companyId as never)
+        .maybeSingle(),
+      context.supabase
+        .from("accounts" as never)
+        .select(
+          "id, code, name, account_type, is_active, is_postable, archived_at, account_kind, subtype, is_payment_enabled, currency_code" as never,
+        )
+        .eq("company_id" as never, data.companyId as never)
+        .eq("account_type" as never, "asset" as never)
+        .eq("is_active" as never, true as never)
+        .eq("is_postable" as never, true as never)
+        .order("code" as never),
+      context.supabase
+        .from("bank_accounts" as never)
+        .select("gl_account_id, currency_code, is_active" as never)
+        .eq("company_id" as never, data.companyId as never),
+    ]);
+    if (settingsRes.error) throw new Error(settingsRes.error.message);
+    if (accountsRes.error) throw new Error(accountsRes.error.message);
+    if (banksRes.error) throw new Error(banksRes.error.message);
+
+    const payrollCurrency = (
+      (settingsRes.data as { payroll_currency: string } | null)?.payroll_currency ?? ""
+    ).trim().toUpperCase();
+    if (!/^[A-Z]{3}$/.test(payrollCurrency)) {
+      throw new Error("Configure the payroll currency before selecting a clearing account.");
+    }
+
+    return filterPayrollClearingAccounts(
+      (accountsRes.data ?? []) as PayrollClearingCandidate[],
+      (banksRes.data ?? []) as PayrollLinkedBank[],
+      payrollCurrency,
+    );
+  });
 
 export const getPayrollPayment = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

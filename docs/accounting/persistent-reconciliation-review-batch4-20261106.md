@@ -17,7 +17,7 @@
 
 - RLS enabled on both exposed public tables. Explicit SELECT-only grants to authenticated users, no grants to anon. Policies require auth.uid(), private.mfa_requirement_met(), membership and accounting.view.
 - RPC uses SECURITY DEFINER with empty search_path and fully qualified user table references; it explicitly rechecks auth.uid(), MFA, company membership and accounting.view/accounting.post on every write, guarding against direct RPC bypass.
-- Cross-tenant journal references are checked against public.journals; cross-company or inactive assignee is rejected, and effective accounting.view permission is checked through role grants/member adjustments.
+- Cross-tenant journal references are checked against public.journals; cross-company or inactive assignee is rejected, and effective accounting.view plus accounting.post permissions are checked through role grants/member adjustments.
 - Existing cases require a non-null expected version; SELECT ... FOR UPDATE and version equality prevent racing updates; an open action cannot overwrite an existing source/fingerprint.
 - Observations from audit endpoints are not independently certified by the queue; authorised reviewers are responsible for checking source evidence. Saved records preserve the original issue text, and must not be used as proof that the ledger is corrected.
 - Case read endpoints are capped at 100 with a hasMore flag; exact lookup handles older cases. Result sets do not claim full organisation coverage.

@@ -1,7 +1,7 @@
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Download,
@@ -213,7 +213,9 @@ function FilesPage() {
   const filesQ = useQuery({
     queryKey: ["company-files", companyId, debounced, type, folderId, page, sort, view],
     enabled: Boolean(companyId) && activeView !== "review",
-    placeholderData: keepPreviousData,
+    // Never reuse a previous organisation's file list while switching companies.
+    placeholderData: (previousData, previousQuery) =>
+      previousQuery?.queryKey[1] === companyId ? previousData : undefined,
     queryFn: () =>
       fetchFiles({
         data: {
@@ -385,6 +387,10 @@ function FilesPage() {
     .map((file) => file.id);
   const currentSelection = selectedIds.filter((id) => selectableIds.includes(id));
   const allSelected = selectableIds.length > 0 && currentSelection.length === selectableIds.length;
+  const bulkDestination = bulkTarget === "unfiled" ? null : bulkTarget;
+  const movingIds = currentSelection.filter(
+    (id) => data?.files.find((row) => row.id === id)?.folder_id !== bulkDestination,
+  );
   const preview = previewQ.data;
   const previewUrl =
     preview?.kind === "url" ? preview.url : preview?.kind === "inline" ? inlinePreviewUrl : null;
@@ -590,13 +596,8 @@ function FilesPage() {
               size="sm"
               variant="ghost"
               onClick={() => {
-                const name = window.prompt("Rename folder", activeFolder.name);
-                if (name && name.trim() !== activeFolder.name)
-                  renameFolderM.mutate({
-                    id: activeFolder.id,
-                    name,
-                    parentId: activeFolder.parent_id,
-                  });
+                setRenamingFolderId(activeFolder.id);
+                setRenameFolderName(activeFolder.name);
               }}
             >
               <Pencil className="mr-1 size-4" />
@@ -638,6 +639,49 @@ function FilesPage() {
               Delete empty folder
             </Button>
           </div>
+        ) : null}
+        {activeFolder && renamingFolderId === activeFolder.id && canUpload ? (
+          <form
+            aria-label="Rename current folder"
+            className="mt-3 flex flex-wrap items-center gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (renameFolderName.trim() && renameFolderName.trim() !== activeFolder.name)
+                renameFolderM.mutate({
+                  id: activeFolder.id,
+                  name: renameFolderName,
+                  parentId: activeFolder.parent_id,
+                });
+            }}
+          >
+            <Input
+              aria-label="Folder name"
+              className="w-64"
+              maxLength={120}
+              autoFocus
+              value={renameFolderName}
+              onChange={(e) => setRenameFolderName(e.target.value)}
+            />
+            <Button
+              type="submit"
+              size="sm"
+              disabled={
+                renameFolderM.isPending ||
+                !renameFolderName.trim() ||
+                renameFolderName.trim() === activeFolder.name
+              }
+            >
+              Save folder name
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => setRenamingFolderId(null)}
+            >
+              Cancel
+            </Button>
+          </form>
         ) : null}
       </section>
       <div className="mb-4 flex flex-wrap items-center gap-2" aria-label="Files workspace views">
@@ -715,7 +759,41 @@ function FilesPage() {
             <SelectItem value="largest">Largest first</SelectItem>
           </SelectContent>
         </Select>
+        {(search || type !== "all" || sort !== "newest") && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              setSearch("");
+              setDebounced("");
+              setType("all");
+              setSort("newest");
+              setPage(0);
+            }}
+          >
+            Clear filters
+          </Button>
+        )}
       </div>
+      {filesQ.data && !filesQ.isError ? (
+        <p role="status" className="mb-3 text-xs text-muted-foreground">
+          Showing {filesQ.data.files.length} of {filesQ.data.total} matching files
+        </p>
+      ) : null}
+
+      {selectedFile && fileDetailsQ.isError && !selected ? (
+        <div role="alert" className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border p-3 text-sm">
+          File details unavailable: {friendlyAuthError(fileDetailsQ.error)}
+          <Button size="sm" variant="outline" onClick={() => setSelectedFile(null)}>
+            Close
+          </Button>
+        </div>
+      ) : null}
+      {selectedFile && fileDetailsQ.isPending && !selected ? (
+        <p role="status" className="mb-4 text-sm text-muted-foreground">
+          Loading file details…
+        </p>
+      ) : null}
 
       {selected ? (
         <section aria-label="Selected file details" className="mb-4 rounded-lg border bg-card p-4">
@@ -761,7 +839,73 @@ function FilesPage() {
               <Download className="mr-1 size-4" />
               Download
             </Button>
+            {canManage(selected.entity_type) ? (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setRenameFileName(selected.file_name);
+                    setShowRenameFile(true);
+                  }}
+                >
+                  <Pencil className="mr-1 size-4" />
+                  Rename
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={deleteM.isPending}
+                  onClick={() => setPendingDelete({ id: selected.id, name: selected.file_name })}
+                >
+                  <Trash2 className="mr-1 size-4" />
+                  Delete
+                </Button>
+              </>
+            ) : null}
           </div>
+          {showRenameFile && canManage(selected.entity_type) ? (
+            <form
+              aria-label="Rename selected file"
+              className="mt-3 flex flex-wrap items-center gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (renameFileName.trim() && renameFileName.trim() !== selected.file_name)
+                  renameFileM.mutate(renameFileName);
+              }}
+            >
+              <Input
+                aria-label="New file name"
+                className="min-w-48 flex-1"
+                value={renameFileName}
+                maxLength={255}
+                autoFocus
+                onChange={(e) => setRenameFileName(e.target.value)}
+              />
+              <Button
+                size="sm"
+                type="submit"
+                disabled={
+                  renameFileM.isPending ||
+                  !renameFileName.trim() ||
+                  renameFileName.trim() === selected.file_name
+                }
+              >
+                Save name
+              </Button>
+              <Button
+                size="sm"
+                type="button"
+                variant="ghost"
+                onClick={() => setShowRenameFile(false)}
+              >
+                Cancel
+              </Button>
+              <p className="basis-full text-xs text-muted-foreground">
+                Keep the original file extension. The stored file and linked records will not move.
+              </p>
+            </form>
+          ) : null}
           {previewQ.isPending ? (
             <p className="mt-3 text-sm text-muted-foreground">Loading secure preview…</p>
           ) : previewQ.isError ? (
@@ -836,11 +980,11 @@ function FilesPage() {
               </RecordLookupSelect>
               <Button
                 size="sm"
-                disabled={bulkMoveM.isPending}
+                disabled={bulkMoveM.isPending || movingIds.length === 0}
                 onClick={() =>
                   bulkMoveM.mutate({
-                    ids: currentSelection,
-                    targetId: bulkTarget === "unfiled" ? null : bulkTarget,
+                    ids: movingIds,
+                    targetId: bulkDestination,
                   })
                 }
               >
@@ -851,9 +995,14 @@ function FilesPage() {
                 )}
                 Move selected
               </Button>
-              <Button size="sm" variant="ghost" onClick={() => setSelectedIds([])}>
+              <Button size="sm" variant="ghost" disabled={bulkMoveM.isPending} onClick={() => setSelectedIds([])}>
                 Clear selection
               </Button>
+              {movingIds.length === 0 ? (
+                <span className="text-xs text-muted-foreground">
+                  Selected files are already in this destination.
+                </span>
+              ) : null}
             </div>
           ) : null}
           <Table>

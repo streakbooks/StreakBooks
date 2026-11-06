@@ -1,0 +1,115 @@
+-- Execute after baseline and 20261106134000_tax_gl_review_sessions.sql.
+CREATE FUNCTION public.assert_tax_review_error(_statement text, _expected text)
+RETURNS void LANGUAGE plpgsql AS $$
+BEGIN
+  EXECUTE _statement;
+  RAISE EXCEPTION 'ASSERT: expected error but operation succeeded';
+EXCEPTION WHEN OTHERS THEN
+  IF SQLERRM ILIKE 'ASSERT:%' OR SQLERRM NOT ILIKE _expected THEN
+    RAISE;
+  END IF;
+END $$;
+GRANT EXECUTE ON FUNCTION public.assert_tax_review_error(text,text) TO authenticated;
+
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claims',
+ '{"sub":"00000000-0000-4000-8000-000000000001"}', false);
+
+DO $$
+DECLARE
+ a uuid := '10000000-0000-4000-8000-000000000001';
+ o uuid := '20000000-0000-4000-8000-000000000001';
+ i uuid := '20000000-0000-4000-8000-000000000002';
+ id uuid;
+ newv int;
+BEGIN
+ SELECT review_id,new_version INTO id,newv FROM public.save_tax_gl_review(
+   a,'2026-01-01','2026-03-31','accrual',o,i,'open',
+   'Need to investigate tax difference',NULL,'snapshot-1',NULL
+ );
+ IF newv <> 1 OR (SELECT count(*) FROM public.tax_gl_review_events WHERE review_id=id)<>1 THEN
+   RAISE EXCEPTION 'Initial review or event missing';
+ END IF;
+
+ SELECT review_id,new_version INTO id,newv FROM public.save_tax_gl_review(
+   a,'2026-01-01','2026-03-31','accrual',o,i,'in_review',
+   'Reconciled invoice and bill accounts',
+   '00000000-0000-4000-8000-000000000003','snapshot-1',1
+ );
+ IF newv<>2 OR (SELECT count(*) FROM public.tax_gl_review_events WHERE review_id=id)<>2 THEN
+   RAISE EXCEPTION 'Version or audit event mismatch';
+ END IF;
+
+ PERFORM public.assert_tax_review_error(format(
+  'SELECT public.save_tax_gl_review(%L,%L,%L,%L,%L,%L,%L,%L,NULL,%L,1)',
+  a,'2026-01-01','2026-03-31','accrual',o,i,'resolved',
+  'Investigated and documented','snapshot-1'
+ ),'%changed in another session%');
+
+ PERFORM public.assert_tax_review_error(format(
+  'SELECT public.save_tax_gl_review(%L,%L,%L,%L,%L,%L,%L,%L,NULL,%L,2)',
+  a,'2026-01-01','2026-03-31','cash',o,i,'resolved',
+  'Reviewed with documented difference','snapshot-2'
+ ),'%Resolving requires accrual%');
+
+ PERFORM public.assert_tax_review_error(format(
+  'SELECT public.save_tax_gl_review(%L,%L,%L,%L,%L,%L,%L,%L,NULL,%L,NULL)',
+  a,'2026-01-01','2026-03-31','accrual',o,
+  '20000000-0000-4000-8000-000000000003','open',
+  'Cross tenant input account','snapshot-2'
+ ),'%must belong%');
+
+ SELECT review_id,new_version INTO id,newv FROM public.save_tax_gl_review(
+   a,'2026-01-01','2026-03-31','accrual',o,i,'resolved',
+   'Difference has been investigated and documented',
+   '00000000-0000-4000-8000-000000000003','snapshot-1',2
+ );
+ IF newv <> 3 THEN RAISE EXCEPTION 'Resolving valid review failed'; END IF;
+
+ PERFORM public.assert_tax_review_error(format(
+  'SELECT public.save_tax_gl_review(%L,%L,%L,%L,%L,%L,%L,%L,NULL,%L,3)',
+  a,'2026-01-01','2026-03-31','accrual',o,i,'resolved',
+  'Keep old resolution without reopening','snapshot-new'
+ ),'%Reopen the changed review%');
+
+ PERFORM public.assert_tax_review_error(
+   'UPDATE public.tax_gl_review_events SET new_status=''resolved''',
+   '%permission denied%');
+ PERFORM public.assert_tax_review_error(
+   'UPDATE public.tax_gl_review_sessions SET status=''open''',
+   '%permission denied%');
+
+ IF (SELECT count(*) FROM public.tax_gl_review_events WHERE review_id=id)<>3 THEN
+   RAISE EXCEPTION 'Rejected review attempts changed audit history';
+ END IF;
+END $$;
+
+-- A valid other-company user cannot alter A's review.
+SELECT set_config('request.jwt.claims',
+ '{"sub":"00000000-0000-4000-8000-000000000002"}', false);
+SELECT public.assert_tax_review_error(
+ $$SELECT public.save_tax_gl_review(
+ '10000000-0000-4000-8000-000000000001','2026-01-01','2026-03-31',
+ 'accrual','20000000-0000-4000-8000-000000000001',
+ '20000000-0000-4000-8000-000000000002',
+ 'open','Cross company change attempt',NULL,'snapshot-1',3)$$,
+ '%Not authorised%');
+
+-- A view-only reviewer cannot mutate or learn protected review details.
+SELECT set_config('request.jwt.claims',
+ '{"sub":"00000000-0000-4000-8000-000000000003"}', false);
+SELECT public.assert_tax_review_error(
+ $$SELECT public.save_tax_gl_review(
+ '10000000-0000-4000-8000-000000000001','2026-01-01','2026-03-31',
+ 'accrual','20000000-0000-4000-8000-000000000001',
+ '20000000-0000-4000-8000-000000000002',
+ 'open','View only write attempt',NULL,'snapshot-1',3)$$,
+ '%Not authorised%');
+
+RESET ROLE;
+DO $$
+BEGIN
+ IF has_function_privilege('anon',
+  'public.save_tax_gl_review(uuid,date,date,text,uuid,uuid,text,text,uuid,text,integer)',
+  'EXECUTE') THEN RAISE EXCEPTION 'Anonymous review RPC access enabled'; END IF;
+END $$;

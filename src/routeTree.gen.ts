@@ -40,6 +40,7 @@ import { Route as AuthenticatedSalesRouteRouteImport } from './routes/_authentic
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedTaxRouteImport } from './routes/_authenticated/tax'
 import { Route as AdvisorsServiceCodeRouteImport } from './routes/advisors_.$serviceCode'
+import { Route as AdvisorsBookRouteImport } from './routes/advisors_.book'
 import { Route as AuthCallbackRouteImport } from './routes/auth_.callback'
 import { Route as AuthMfaRouteImport } from './routes/auth_.mfa'
 import { Route as AuthSsoRouteImport } from './routes/auth_.sso'
@@ -48,6 +49,7 @@ import { Route as PortalAppRouteRouteImport } from './routes/portal/app/route'
 import { Route as PortalLoginRouteImport } from './routes/portal/login'
 import { Route as PricingBuilderRouteImport } from './routes/pricing_.builder'
 import { Route as AuthenticatedAdvisorsAdminIndexRouteImport } from './routes/_authenticated/advisors-admin.index'
+import { Route as AuthenticatedAdvisorsAdminAppointmentsRouteImport } from './routes/_authenticated/advisors-admin.appointments'
 import { Route as AuthenticatedBankingIndexRouteImport } from './routes/_authenticated/banking/index'
 import { Route as AuthenticatedBankingCashCodingRouteImport } from './routes/_authenticated/banking/cash-coding'
 import { Route as AuthenticatedBankingFeedsRouteImport } from './routes/_authenticated/banking/feeds'
@@ -92,6 +94,7 @@ import { Route as AuthenticatedSalesRecurringRouteImport } from './routes/_authe
 import { Route as AuthenticatedSalesRemindersRouteImport } from './routes/_authenticated/sales/reminders'
 import { Route as AuthenticatedSalesSettingsRouteImport } from './routes/_authenticated/sales/settings'
 import { Route as AuthenticatedSalesStatementsRouteImport } from './routes/_authenticated/sales/statements'
+import { Route as AdvisorsManageManageTokenRouteImport } from './routes/advisors_.manage.$manageToken'
 import { Route as PortalAppIndexRouteImport } from './routes/portal/app/index'
 import { Route as PortalAppBankRouteImport } from './routes/portal/app/bank'
 import { Route as PortalAppBillsRouteImport } from './routes/portal/app/bills'
@@ -319,6 +322,11 @@ const AdvisorsServiceCodeRoute = AdvisorsServiceCodeRouteImport.update({
   path: '/advisors/$serviceCode',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdvisorsBookRoute = AdvisorsBookRouteImport.update({
+  id: '/advisors_/book',
+  path: '/advisors/book',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/auth_/callback',
   path: '/auth/callback',
@@ -358,6 +366,12 @@ const AuthenticatedAdvisorsAdminIndexRoute =
   AuthenticatedAdvisorsAdminIndexRouteImport.update({
     id: '/',
     path: '/',
+    getParentRoute: () => AuthenticatedAdvisorsAdminRoute,
+  } as any)
+const AuthenticatedAdvisorsAdminAppointmentsRoute =
+  AuthenticatedAdvisorsAdminAppointmentsRouteImport.update({
+    id: '/appointments',
+    path: '/appointments',
     getParentRoute: () => AuthenticatedAdvisorsAdminRoute,
   } as any)
 const AuthenticatedBankingIndexRoute =
@@ -622,6 +636,12 @@ const AuthenticatedSalesStatementsRoute =
     id: '/statements',
     path: '/statements',
     getParentRoute: () => AuthenticatedSalesRouteRoute,
+  } as any)
+const AdvisorsManageManageTokenRoute =
+  AdvisorsManageManageTokenRouteImport.update({
+    id: '/advisors_/manage/$manageToken',
+    path: '/advisors/manage/$manageToken',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const PortalAppIndexRoute = PortalAppIndexRouteImport.update({
   id: '/',
@@ -1019,12 +1039,14 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/tax': typeof AuthenticatedTaxRoute
   '/advisors/$serviceCode': typeof AdvisorsServiceCodeRoute
+  '/advisors/book': typeof AdvisorsBookRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/mfa': typeof AuthMfaRoute
   '/auth/sso': typeof AuthSsoRoute
   '/portal/login': typeof PortalLoginRoute
   '/pricing/builder': typeof PricingBuilderRoute
   '/portal/': typeof PortalIndexRoute
+  '/advisors-admin/appointments': typeof AuthenticatedAdvisorsAdminAppointmentsRoute
   '/banking/cash-coding': typeof AuthenticatedBankingCashCodingRoute
   '/banking/feeds': typeof AuthenticatedBankingFeedsRoute
   '/banking/import': typeof AuthenticatedBankingImportRoute
@@ -1061,6 +1083,7 @@ export interface FileRoutesByFullPath {
   '/sales/reminders': typeof AuthenticatedSalesRemindersRoute
   '/sales/settings': typeof AuthenticatedSalesSettingsRoute
   '/sales/statements': typeof AuthenticatedSalesStatementsRoute
+  '/advisors/manage/$manageToken': typeof AdvisorsManageManageTokenRoute
   '/portal/app/bank': typeof PortalAppBankRoute
   '/portal/app/bills': typeof PortalAppBillsRoute
   '/portal/app/credits': typeof PortalAppCreditsRoute
@@ -1157,6 +1180,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/tax': typeof AuthenticatedTaxRoute
   '/advisors/$serviceCode': typeof AdvisorsServiceCodeRoute
+  '/advisors/book': typeof AdvisorsBookRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/mfa': typeof AuthMfaRoute
   '/auth/sso': typeof AuthSsoRoute
@@ -1164,6 +1188,7 @@ export interface FileRoutesByTo {
   '/pricing/builder': typeof PricingBuilderRoute
   '/': typeof AuthenticatedIndexRoute
   '/portal': typeof PortalIndexRoute
+  '/advisors-admin/appointments': typeof AuthenticatedAdvisorsAdminAppointmentsRoute
   '/banking/cash-coding': typeof AuthenticatedBankingCashCodingRoute
   '/banking/feeds': typeof AuthenticatedBankingFeedsRoute
   '/banking/import': typeof AuthenticatedBankingImportRoute
@@ -1200,6 +1225,7 @@ export interface FileRoutesByTo {
   '/sales/reminders': typeof AuthenticatedSalesRemindersRoute
   '/sales/settings': typeof AuthenticatedSalesSettingsRoute
   '/sales/statements': typeof AuthenticatedSalesStatementsRoute
+  '/advisors/manage/$manageToken': typeof AdvisorsManageManageTokenRoute
   '/portal/app/bank': typeof PortalAppBankRoute
   '/portal/app/bills': typeof PortalAppBillsRoute
   '/portal/app/credits': typeof PortalAppCreditsRoute
@@ -1303,6 +1329,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/tax': typeof AuthenticatedTaxRoute
   '/advisors_/$serviceCode': typeof AdvisorsServiceCodeRoute
+  '/advisors_/book': typeof AdvisorsBookRoute
   '/auth_/callback': typeof AuthCallbackRoute
   '/auth_/mfa': typeof AuthMfaRoute
   '/auth_/sso': typeof AuthSsoRoute
@@ -1310,6 +1337,7 @@ export interface FileRoutesById {
   '/pricing_/builder': typeof PricingBuilderRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/portal/': typeof PortalIndexRoute
+  '/_authenticated/advisors-admin/appointments': typeof AuthenticatedAdvisorsAdminAppointmentsRoute
   '/_authenticated/banking/cash-coding': typeof AuthenticatedBankingCashCodingRoute
   '/_authenticated/banking/feeds': typeof AuthenticatedBankingFeedsRoute
   '/_authenticated/banking/import': typeof AuthenticatedBankingImportRoute
@@ -1346,6 +1374,7 @@ export interface FileRoutesById {
   '/_authenticated/sales/reminders': typeof AuthenticatedSalesRemindersRoute
   '/_authenticated/sales/settings': typeof AuthenticatedSalesSettingsRoute
   '/_authenticated/sales/statements': typeof AuthenticatedSalesStatementsRoute
+  '/advisors_/manage/$manageToken': typeof AdvisorsManageManageTokenRoute
   '/portal/app/bank': typeof PortalAppBankRoute
   '/portal/app/bills': typeof PortalAppBillsRoute
   '/portal/app/credits': typeof PortalAppCreditsRoute
@@ -1453,12 +1482,14 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tax'
     | '/advisors/$serviceCode'
+    | '/advisors/book'
     | '/auth/callback'
     | '/auth/mfa'
     | '/auth/sso'
     | '/portal/login'
     | '/pricing/builder'
     | '/portal/'
+    | '/advisors-admin/appointments'
     | '/banking/cash-coding'
     | '/banking/feeds'
     | '/banking/import'
@@ -1495,6 +1526,7 @@ export interface FileRouteTypes {
     | '/sales/reminders'
     | '/sales/settings'
     | '/sales/statements'
+    | '/advisors/manage/$manageToken'
     | '/portal/app/bank'
     | '/portal/app/bills'
     | '/portal/app/credits'
@@ -1591,6 +1623,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tax'
     | '/advisors/$serviceCode'
+    | '/advisors/book'
     | '/auth/callback'
     | '/auth/mfa'
     | '/auth/sso'
@@ -1598,6 +1631,7 @@ export interface FileRouteTypes {
     | '/pricing/builder'
     | '/'
     | '/portal'
+    | '/advisors-admin/appointments'
     | '/banking/cash-coding'
     | '/banking/feeds'
     | '/banking/import'
@@ -1634,6 +1668,7 @@ export interface FileRouteTypes {
     | '/sales/reminders'
     | '/sales/settings'
     | '/sales/statements'
+    | '/advisors/manage/$manageToken'
     | '/portal/app/bank'
     | '/portal/app/bills'
     | '/portal/app/credits'
@@ -1736,6 +1771,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/tax'
     | '/advisors_/$serviceCode'
+    | '/advisors_/book'
     | '/auth_/callback'
     | '/auth_/mfa'
     | '/auth_/sso'
@@ -1743,6 +1779,7 @@ export interface FileRouteTypes {
     | '/pricing_/builder'
     | '/_authenticated/'
     | '/portal/'
+    | '/_authenticated/advisors-admin/appointments'
     | '/_authenticated/banking/cash-coding'
     | '/_authenticated/banking/feeds'
     | '/_authenticated/banking/import'
@@ -1779,6 +1816,7 @@ export interface FileRouteTypes {
     | '/_authenticated/sales/reminders'
     | '/_authenticated/sales/settings'
     | '/_authenticated/sales/statements'
+    | '/advisors_/manage/$manageToken'
     | '/portal/app/bank'
     | '/portal/app/bills'
     | '/portal/app/credits'
@@ -1862,10 +1900,12 @@ export interface RootRouteChildren {
   PricingRoute: typeof PricingRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   AdvisorsServiceCodeRoute: typeof AdvisorsServiceCodeRoute
+  AdvisorsBookRoute: typeof AdvisorsBookRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthMfaRoute: typeof AuthMfaRoute
   AuthSsoRoute: typeof AuthSsoRoute
   PricingBuilderRoute: typeof PricingBuilderRoute
+  AdvisorsManageManageTokenRoute: typeof AdvisorsManageManageTokenRoute
   ShareInvoiceTokenRoute: typeof ShareInvoiceTokenRoute
 }
 
@@ -2088,6 +2128,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdvisorsServiceCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/advisors_/book': {
+      id: '/advisors_/book'
+      path: '/advisors/book'
+      fullPath: '/advisors/book'
+      preLoaderRoute: typeof AdvisorsBookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth_/callback': {
       id: '/auth_/callback'
       path: '/auth/callback'
@@ -2142,6 +2189,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/advisors-admin/'
       preLoaderRoute: typeof AuthenticatedAdvisorsAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedAdvisorsAdminRoute
+    }
+    '/_authenticated/advisors-admin/appointments': {
+      id: '/_authenticated/advisors-admin/appointments'
+      path: '/appointments'
+      fullPath: '/advisors-admin/appointments'
+      preLoaderRoute: typeof AuthenticatedAdvisorsAdminAppointmentsRouteImport
       parentRoute: typeof AuthenticatedAdvisorsAdminRoute
     }
     '/_authenticated/banking/': {
@@ -2451,6 +2505,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/sales/statements'
       preLoaderRoute: typeof AuthenticatedSalesStatementsRouteImport
       parentRoute: typeof AuthenticatedSalesRouteRoute
+    }
+    '/advisors_/manage/$manageToken': {
+      id: '/advisors_/manage/$manageToken'
+      path: '/advisors/manage/$manageToken'
+      fullPath: '/advisors/manage/$manageToken'
+      preLoaderRoute: typeof AdvisorsManageManageTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/portal/app/': {
       id: '/portal/app/'
@@ -3175,12 +3236,15 @@ const AuthenticatedSalesRouteRouteWithChildren =
   )
 
 interface AuthenticatedAdvisorsAdminRouteChildren {
+  AuthenticatedAdvisorsAdminAppointmentsRoute: typeof AuthenticatedAdvisorsAdminAppointmentsRoute
   AuthenticatedAdvisorsAdminIndexRoute: typeof AuthenticatedAdvisorsAdminIndexRoute
   AuthenticatedAdvisorsAdminSettingsServicesPricingRoute: typeof AuthenticatedAdvisorsAdminSettingsServicesPricingRoute
 }
 
 const AuthenticatedAdvisorsAdminRouteChildren: AuthenticatedAdvisorsAdminRouteChildren =
   {
+    AuthenticatedAdvisorsAdminAppointmentsRoute:
+      AuthenticatedAdvisorsAdminAppointmentsRoute,
     AuthenticatedAdvisorsAdminIndexRoute: AuthenticatedAdvisorsAdminIndexRoute,
     AuthenticatedAdvisorsAdminSettingsServicesPricingRoute:
       AuthenticatedAdvisorsAdminSettingsServicesPricingRoute,
@@ -3372,10 +3436,12 @@ const rootRouteChildren: RootRouteChildren = {
   PricingRoute: PricingRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   AdvisorsServiceCodeRoute: AdvisorsServiceCodeRoute,
+  AdvisorsBookRoute: AdvisorsBookRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AuthMfaRoute: AuthMfaRoute,
   AuthSsoRoute: AuthSsoRoute,
   PricingBuilderRoute: PricingBuilderRoute,
+  AdvisorsManageManageTokenRoute: AdvisorsManageManageTokenRoute,
   ShareInvoiceTokenRoute: ShareInvoiceTokenRoute,
 }
 export const routeTree = rootRouteImport

@@ -233,6 +233,9 @@ export function AdvisorChatPanel({ serviceCode, enabled }: Props) {
         >
           Human advisor
         </Button>
+        <Button type="button" size="sm" variant="outline" asChild>
+          <a href={`/advisors/book?service=${serviceCode}`}>Book consultation</a>
+        </Button>
       </div>
     </section>
   );

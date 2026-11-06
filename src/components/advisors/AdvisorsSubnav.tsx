@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 
 const LINKS = [
   { to: "/advisors-admin/settings/services-pricing", label: "Services & Pricing" },
+  { to: "/advisors-admin/appointments", label: "Appointments" },
 ] as const;
 
 export function AdvisorsSubnav() {

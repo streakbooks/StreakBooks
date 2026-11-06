@@ -152,7 +152,7 @@ export function applyVisitorReply(
   ) {
     next = { ...next, step: "handoff" };
     replies.push(
-      "I can note that you want a human advisor. Secure appointment booking ships in AD-04. For now, keep your selected service and preferred plan ready, and use the plans on this page.",
+      "I can note that you want a human advisor. You can book a free consultation now using the booking calendar — only real available times are shown.",
     );
     return { state: next, replies };
   }

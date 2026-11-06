@@ -89,6 +89,11 @@ export function AdvisorsServiceSelectedPage({ serviceCode }: { serviceCode: stri
               available on this page only after you chose this service — it does not open on the
               landing page.
             </p>
+            <Button asChild size="lg">
+              <Link to="/advisors/book" search={{ service: code }}>
+                Book free consultation
+              </Link>
+            </Button>
           </div>
           <AdvisorServiceIllustration
             illustrationKey={service.illustrationKey}

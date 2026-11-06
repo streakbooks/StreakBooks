@@ -17,6 +17,7 @@ import {
   assetStatusAsOf,
   selectRegisterAssets,
   summariseActiveAssets,
+  validAssetAccumulatedAt,
   type AssetRegisterSort,
   type AssetRegisterFilters,
 } from "@/lib/fixed-assets/register-view";
@@ -191,15 +192,8 @@ function FixedAssetsPage() {
   );
   const summary = summariseActiveAssets(visibleAssets, today, balanceMap);
   const usedAssetAccounts = new Set(d.assets.map((asset) => asset.asset_account_id));
-  const accumulatedOf = (a: FixedAssetRow): number | null => {
-    const amount = balanceMap?.get(a.id);
-    return amount !== undefined &&
-      Number.isSafeInteger(amount) &&
-      amount >= 0 &&
-      amount <= a.cost_minor
-      ? amount
-      : null;
-  };
+  const accumulatedOf = (a: FixedAssetRow): number | null =>
+    validAssetAccumulatedAt(a, balanceMap?.get(a.id));
   const exportReady =
     balancesReady &&
     visibleAssets.length > 0 &&

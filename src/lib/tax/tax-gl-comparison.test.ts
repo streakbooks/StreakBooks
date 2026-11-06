@@ -27,6 +27,10 @@ describe("Tax GL comparison (read-only)", () => {
       documentMinor:"800", otherMinor:"-200", totalMinor:"600",
       documentAndReversalDifferenceMinor:"0",
     });
+    expect(r.netReturnMinor).toBe("1500");
+    expect(r.netDocumentAndReversalMinor).toBe("1500");
+    expect(r.netAllGlMinor).toBe("800");
+    expect(r.netDiagnosticDifferenceMinor).toBe("0");
     expect(r.comparisonAvailable).toBe(true);
     expect(r.journalLines).toBe(5);
   });

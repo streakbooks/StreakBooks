@@ -279,9 +279,12 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
   );
   const pricePreview = useMemo(
     () => draftPricesReady
-      ? previewPriceListApplication(lines, draftPriceOverrides, currency)
+      ? previewPriceListApplication(
+          lines, draftPriceOverrides, currency,
+          draftPricesQ.data?.rules ?? [], docDate,
+        )
       : null,
-    [draftPricesReady, lines, draftPriceOverrides, currency],
+    [draftPricesReady, lines, draftPriceOverrides, currency, draftPricesQ.data, docDate],
   );
 
   // Changing organisation clears local manual selection; document line values stay untouched.
@@ -833,9 +836,10 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
             </div>
             <p className="text-xs text-muted-foreground">
               Price lists are available in their own currency only. New catalogue selections use
-              the chosen list where an item price exists. Existing lines keep their prices unless
-              you explicitly preview and apply replacements. Saved documents retain their line
-              prices; the list selection itself is not stored on the document.
+              the applicable quantity tier and document date, then fall back to a fixed list price.
+              Changing quantity or date does not silently reprice existing lines: review the preview
+              and confirm any price changes. Saved documents retain their line prices; the list
+              selection itself is not stored on the document.
             </p>
             {customerDefaultPending ? (
               <p className="text-xs text-muted-foreground">
@@ -896,7 +900,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
             ) : null}
             {pricePreview ? (
               <p className="text-xs text-muted-foreground" aria-live="polite">
-                {pricePreview.matched} current line(s) have list overrides;
+                {pricePreview.matched} current line(s) have eligible list prices;
                 {pricePreview.changed} price(s) differ. No existing line is automatically changed.
               </p>
             ) : null}
@@ -920,6 +924,8 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
           onChange={setLines}
           products={(productsQ.data ?? []) as never}
           priceOverrides={draftPricesReady ? draftPriceOverrides : {}}
+          priceRules={draftPricesReady ? draftPricesQ.data?.rules ?? [] : []}
+          pricingDate={docDate}
           productSelectionDisabled={
             customerDefaultPending ||
             (Boolean(selectedPriceListId) && !draftPricesReady)

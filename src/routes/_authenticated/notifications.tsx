@@ -257,7 +257,7 @@ function ActionCenterPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div data-action-center-root className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-semibold">
@@ -662,7 +662,10 @@ function NotificationRow({
 }) {
   const path = safeNotificationPath(n.target_path);
   return (
-    <article className="rounded-xl border bg-card p-3 shadow-sm transition-colors hover:border-primary/40 sm:p-4">
+    <article
+      data-action-notification-id={n.id}
+      className="rounded-xl border bg-card p-3 shadow-sm transition-colors hover:border-primary/40 sm:p-4"
+    >
       <div className="flex items-start gap-3">
         <input
           type="checkbox"

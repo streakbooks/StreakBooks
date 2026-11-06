@@ -146,6 +146,51 @@ test.describe("authenticated LinkBooks staging smoke", () => {
       .toHaveAttribute("aria-current", "page");
   });
 
+  test("Action Center view and category filters support keyboard navigation", async ({ page }) => {
+    await signIn(page, "/notifications");
+    const critical = page.getByRole("link", { name: "Critical", exact: true });
+    await expect(critical).toBeVisible();
+    await critical.focus();
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(/view=critical/);
+    await expect(critical).toHaveAttribute("aria-current", "page");
+
+    // These filters change read-only URL state and do not acknowledge or post documents.
+    await page.getByRole("combobox", { name: "Filter by module" }).click();
+    await page.getByRole("option", { name: "Bill approvals" }).click();
+    await expect(page).toHaveURL(/category=bill_approval/);
+
+    await page.getByRole("combobox", { name: "Filter by priority" }).click();
+    await page.getByRole("option", { name: "High", exact: true }).click();
+    await expect(page).toHaveURL(/priority=high/);
+  });
+
+  test("Action Center mobile search and grouping controls remain usable", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await signIn(page, "/notifications");
+    await expect(page.getByRole("heading", { name: "Smart Action Center" })).toBeVisible();
+    const search = page.getByRole("textbox", { name: "Search notifications" });
+    await expect(search).toBeVisible();
+    await expect(page.getByRole("button", { name: "Search", exact: true })).toBeVisible();
+    await expect(page.getByRole("combobox", { name: "Filter by module" })).toBeVisible();
+
+    // No staging fixture guarantees inbox rows. Check grouping only when it is
+    // rendered, otherwise assert the real empty state rather than invent alerts.
+    const group = page.getByRole("button", { name: "Group page by module" });
+    const emptyState = page.getByText("No matching notifications across your accessible history.");
+    // Wait until the inbox has settled; checking the toggle immediately after
+    // navigation could incorrectly interpret pending data as an empty inbox.
+    await expect(group.or(emptyState)).toBeVisible({ timeout: 30_000 });
+    if (await group.isVisible()) {
+      await group.click();
+      await expect(group).toHaveAttribute("aria-pressed", "true");
+      await group.click();
+      await expect(group).toHaveAttribute("aria-pressed", "false");
+    } else {
+      await expect(emptyState).toBeVisible();
+    }
+  });
+
   test("Sales and Purchases show existing permission-controlled filter views", async ({ page }) => {
     await signIn(page, "/sales/invoices");
     await expect(page.getByRole("button", { name: "Saved views" })).toBeVisible();

@@ -1,5 +1,6 @@
 import { fromMinorUnits } from "@/lib/accounting/money";
 import type { SalesLineFormState } from "@/lib/sales/line-form-state";
+import { resolveTierUnitPrice, type DraftTierPriceRule } from "@/lib/products/price-list-tiers";
 
 export type DraftPriceOverride = { product_id: string; unit_price_minor: number };
 
@@ -37,14 +38,17 @@ export function previewPriceListApplication(
   lines: readonly SalesLineFormState[],
   overrides: Readonly<Record<string, number>>,
   currency: string,
+  tierRules: readonly DraftTierPriceRule[] = [],
+  documentDate = "",
 ): { lines: SalesLineFormState[]; changed: number; matched: number } {
   let changed = 0;
   let matched = 0;
   const updated = lines.map((line) => {
-    if (!line.productId || !Object.prototype.hasOwnProperty.call(overrides, line.productId)) {
-      return { ...line };
-    }
-    const priceMinor = overrides[line.productId];
+    if (!line.productId) return { ...line };
+    const priceMinor = resolveTierUnitPrice(
+      line.productId, line.quantity, documentDate, overrides, tierRules,
+    );
+    if (priceMinor === undefined) return { ...line };
     if (priceMinor === undefined || !Number.isSafeInteger(priceMinor) || priceMinor < 0) {
       throw new Error("Invalid price-list amount");
     }

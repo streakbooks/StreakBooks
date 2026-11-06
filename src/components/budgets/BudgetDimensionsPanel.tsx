@@ -9,6 +9,7 @@ import { fromMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { parseAmountCell } from "@/lib/budgets/budget-csv";
 import { monthLabel } from "@/lib/budgets/budget-math";
+import { BudgetDimensionVariancePanel } from "@/components/budgets/BudgetDimensionVariancePanel";
 import {
   getBudgetDimensionAllocations,
   saveBudgetDimensionAllocations,
@@ -471,6 +472,12 @@ function CategoryBudgetEditor({
       {dirty?<p className="text-xs text-muted-foreground">
         You have unsaved dimension allocations.
       </p>:null}
+      <BudgetDimensionVariancePanel
+        companyId={companyId}
+        budgetId={budgetId}
+        categoryId={category.id}
+        fiscalMonths={data.months}
+      />
       {savedCategory.length?(
         <details className="rounded-md border p-3">
           <summary className="cursor-pointer text-sm font-medium">

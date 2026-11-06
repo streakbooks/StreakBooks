@@ -1,12 +1,14 @@
 import { useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useSearch } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ClipboardList, RefreshCw, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import { useCanDo } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import {
   listAiJournalReviewCases,
+  getAiJournalReviewCase,
   listAiJournalReviewEvents,
   listAiJournalReviewerCandidates,
   saveAiJournalReview,
@@ -51,7 +53,10 @@ export function AiJournalReviewQueue({
   canManage: boolean;
   canViewMembers: boolean;
 }) {
+  const { reviewCase } = useSearch({ from: "/_authenticated/ai-assistant" });
+  const canAccountant = useCanDo("accounting.view");
   const listCases = useServerFn(listAiJournalReviewCases);
+  const fetchCase = useServerFn(getAiJournalReviewCase);
   const listEvents = useServerFn(listAiJournalReviewEvents);
   const listReviewers = useServerFn(listAiJournalReviewerCandidates);
   const save = useServerFn(saveAiJournalReview);
@@ -60,7 +65,7 @@ export function AiJournalReviewQueue({
   const [status, setStatus] = useState<ReviewStatus>("all");
   const [mine, setMine] = useState(false);
   const [page, setPage] = useState(0);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(reviewCase ?? null);
   const [note, setNote] = useState("");
   const [assignee, setAssignee] = useState("");
 
@@ -72,7 +77,16 @@ export function AiJournalReviewQueue({
     enabled: canRead,
     queryFn: () => listCases({ data: { companyId, page, status, assignedToMe: mine } }),
   });
-  const selected = casesQ.data?.rows.find((item) => item.id === selectedId) ?? null;
+  const selectedFromPage = casesQ.data?.rows.find((item) => item.id === selectedId) ?? null;
+  const caseQ = useQuery({
+    queryKey: ["ai-journal-review-by-id", companyId, selectedId],
+    enabled: canRead && Boolean(selectedId) && !selectedFromPage,
+    queryFn: () => {
+      if (!selectedId) throw new Error("Choose a review case.");
+      return fetchCase({ data: { companyId, caseId: selectedId } });
+    },
+  });
+  const selected = selectedFromPage ?? caseQ.data ?? null;
   const eventsQ = useQuery({
     queryKey: ["ai-journal-review-events", companyId, selectedId],
     enabled: canRead && Boolean(selectedId),
@@ -118,6 +132,7 @@ export function AiJournalReviewQueue({
       await Promise.all([
         client.invalidateQueries({ queryKey: ["ai-journal-review-cases", companyId] }),
         client.invalidateQueries({ queryKey: ["ai-journal-review-events", companyId] }),
+        client.invalidateQueries({ queryKey: ["ai-journal-review-by-id", companyId] }),
       ]);
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
@@ -273,6 +288,15 @@ export function AiJournalReviewQueue({
                 </div>
               </>
             ) : null}
+            {caseQ.isError ? (
+              <Alert variant="destructive">
+                <AlertTitle>Requested AI review case unavailable</AlertTitle>
+                <AlertDescription>
+                  {friendlyAuthError(caseQ.error)}{" "}
+                  <Button size="sm" variant="outline" onClick={() => void caseQ.refetch()}>Retry</Button>
+                </AlertDescription>
+              </Alert>
+            ) : null}
             {selected ? (
               <div className="space-y-4 rounded-lg border p-4">
                 <div className="flex flex-wrap justify-between gap-2">
@@ -287,7 +311,16 @@ export function AiJournalReviewQueue({
                       </p>
                     ) : null}
                   </div>
-                  <Badge variant="outline">AI evidence review only</Badge>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="outline">AI evidence review only</Badge>
+                    {canAccountant ? (
+                      <Button variant="outline" size="sm" asChild>
+                        <Link to="/accountant" search={{ tab: "workpapers" }}>
+                          Open Accountant Workpapers
+                        </Link>
+                      </Button>
+                    ) : null}
+                  </div>
                 </div>
                 {canAssign && selected.status !== "reviewed" ? (
                   <div className="space-y-2">

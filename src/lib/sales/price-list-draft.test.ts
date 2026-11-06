@@ -40,6 +40,31 @@ describe("price-list draft application", () => {
     expect(original[0]?.unitPrice).toBe("17.00");
   });
 
+  it("previews quantity/date tier prices without mutating line quantity, account or tax", () => {
+    const first = {
+      ...emptySalesLine(), productId: "item", quantity: "12",
+      unitPrice: "20.00", accountId: "revenue", taxRateBps: "750",
+    };
+    const original = [first];
+    const tiers = [
+      {
+        id: "tier", product_id: "item", min_quantity: "10",
+        effective_from: "2026-11-01", effective_to: "2026-11-30",
+        unit_price_minor: 1500,
+      },
+    ];
+    const active = previewPriceListApplication(
+      original, { item: 1800 }, "USD", tiers, "2026-11-06",
+    );
+    expect(active).toMatchObject({ changed: 1, matched: 1 });
+    expect(active.lines[0]).toEqual({ ...first, unitPrice: "15.00" });
+    expect(original[0]?.unitPrice).toBe("20.00");
+    const expired = previewPriceListApplication(
+      original, { item: 1800 }, "USD", tiers, "2026-12-01",
+    );
+    expect(expired.lines[0]?.unitPrice).toBe("18.00");
+  });
+
   it("supports currencies with zero and three minor digits", () => {
     const line = [{ ...emptySalesLine(), productId: "item", unitPrice: "0" }];
     expect(previewPriceListApplication(line, { item: 1234 }, "JPY").lines[0]?.unitPrice)

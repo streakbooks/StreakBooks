@@ -178,9 +178,17 @@ REVOKE ALL ON FUNCTION public.guard_tax_rate_posted_history()
 CREATE OR REPLACE FUNCTION public.lock_tax_masters_when_document_posted()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public, pg_temp
-AS $$
+AS $
 BEGIN
-  IF TG_OP <> 'UPDATE' THEN RETURN NEW; END IF;
+  -- Allow deletion of never-posted draft source documents. Once an invoice
+  -- or bill has a linked journal, deletion must fail before FK cascades
+  -- remove its source lines or tax-code references.
+  IF TG_OP = 'DELETE' THEN
+    IF OLD.posted_journal_id IS NOT NULL THEN
+      RAISE EXCEPTION 'Posted invoices and bills cannot be deleted; reverse instead';
+    END IF;
+    RETURN OLD;
+  END IF;
   IF NEW.company_id IS DISTINCT FROM OLD.company_id THEN
     RAISE EXCEPTION 'Cannot change organisation during tax-source posting';
   END IF;
@@ -244,12 +252,12 @@ $$;
 
 DROP TRIGGER IF EXISTS sales_invoice_tax_master_post_lock ON public.sales_invoices;
 CREATE TRIGGER sales_invoice_tax_master_post_lock
-BEFORE UPDATE OF posted_journal_id ON public.sales_invoices
+BEFORE UPDATE OF posted_journal_id OR DELETE ON public.sales_invoices
 FOR EACH ROW EXECUTE FUNCTION public.lock_tax_masters_when_document_posted();
 
 DROP TRIGGER IF EXISTS purchase_bill_tax_master_post_lock ON public.purchase_bills;
 CREATE TRIGGER purchase_bill_tax_master_post_lock
-BEFORE UPDATE OF posted_journal_id ON public.purchase_bills
+BEFORE UPDATE OF posted_journal_id OR DELETE ON public.purchase_bills
 FOR EACH ROW EXECUTE FUNCTION public.lock_tax_masters_when_document_posted();
 
 -- Lock the parent document for line inserts/updates/deletes. It serializes
@@ -296,6 +304,10 @@ BEGIN
     RAISE EXCEPTION 'Unsupported tax source line table';
   END IF;
 
+  -- PostgreSQL may delete the parent before it runs ON DELETE CASCADE
+  -- for lines. The parent DELETE trigger above already rejected deletion
+  -- of posted sources, so this missing-parent path is safe for drafts only.
+  IF source_company IS NULL AND TG_OP = 'DELETE' THEN RETURN OLD; END IF;
   IF source_company IS NULL OR source_company IS DISTINCT FROM company_id_arg THEN
     RAISE EXCEPTION 'Tax source line belongs to another organisation';
   END IF;

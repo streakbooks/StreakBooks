@@ -12,6 +12,7 @@ import { todayIso } from "@/lib/accounting/fiscal-year";
 import { loadTaxFacts } from "@/lib/tax/tax-return-data";
 import { suggestReturnPeriod } from "@/lib/tax/return-periods";
 import { validateTaxReturnPeriod, isValidTaxDate } from "@/lib/tax/tax-input-validation";
+import { exactTaxMinorUnits, safeTaxMinorNumber } from "@/lib/tax/tax-minor-units";
 import { isAccountTypeAllowedForTaxRole } from "@/lib/tax/account-pickers";
 import {
   buildReturnLines,
@@ -90,9 +91,9 @@ function summaryOf(r: Awaited<ReturnType<typeof computeReturn>>) {
     reverseChargeLines: r.totals.counts.reverseCharge,
     selfAssessedLines: r.totals.counts.selfAssessed,
     skippedNoRate: r.skippedNoRate,
-    nonRecoverableTaxMinor: Number(r.totals.nonRecoverableTax),
-    outputTaxMinor: Number(r.totals.outputTax),
-    inputTaxMinor: Number(r.totals.inputTax),
+    nonRecoverableTaxMinor: safeTaxMinorNumber(r.totals.nonRecoverableTax, "Non-recoverable tax"),
+    outputTaxMinor: safeTaxMinorNumber(r.totals.outputTax, "Output tax"),
+    inputTaxMinor: safeTaxMinorNumber(r.totals.inputTax, "Input tax"),
   };
 }
 
@@ -138,7 +139,7 @@ export const previewTaxReturn = createServerFn({ method: "GET" })
       currency: r.meta.baseCurrency,
       regime: r.settings.regime,
       lines: r.lines,
-      netTaxMinor: Number(r.totals.netTax),
+      netTaxMinor: safeTaxMinorNumber(r.totals.netTax, "Net tax"),
       summary: summaryOf(r),
     };
   });
@@ -179,8 +180,8 @@ async function calculateGlReview(sb: Sb, params: ReviewPeriod) {
     basis: params.basis,
     outputAccountId: settings.outputAccountId,
     inputAccountId: settings.inputAccountId,
-    outputReturnMinor: Number(calculated.totals.outputTax),
-    inputReturnMinor: Number(calculated.totals.inputTax),
+    outputReturnMinor: safeTaxMinorNumber(calculated.totals.outputTax, "GL comparison output tax"),
+    inputReturnMinor: safeTaxMinorNumber(calculated.totals.inputTax, "GL comparison input tax"),
     lines,
   });
   const evidence = taxJournalEvidence(
@@ -448,7 +449,10 @@ export const listTaxReturns = createServerFn({ method: "GET" })
         }
         throw new Error(error.message);
       }
-      return { available: true, returns: (rows ?? []) as unknown as TaxReturnListItem[] };
+      return { available: true, returns: ((rows ?? []) as unknown as TaxReturnListItem[]).map((row) => ({
+        ...row,
+        net_tax_minor: safeTaxMinorNumber(row.net_tax_minor, "Saved net tax"),
+      })) };
     },
   );
 
@@ -468,7 +472,7 @@ export const saveTaxReturnDraft = createServerFn({ method: "POST" })
         _basis: data.basis,
         _jurisdiction: r.jurisdiction,
         _currency: r.meta.baseCurrency,
-        _net_tax_minor: Number(r.totals.netTax),
+        _net_tax_minor: safeTaxMinorNumber(r.totals.netTax, "Draft net tax"),
         _summary: summaryOf(r),
         _lines: r.lines,
       } as never,
@@ -527,7 +531,7 @@ export const getTaxReturn = createServerFn({ method: "GET" })
     const lines = ((lineRows ?? []) as Row[]).map((l) => ({
       box_key: String(l["box_key"]) as BoxLine["box_key"],
       label: String(l["label"]),
-      amount_minor: Number(l["amount_minor"]),
+      amount_minor: safeTaxMinorNumber(l["amount_minor"], "Saved return box amount"),
       sort_order: Number(l["sort_order"]),
     }));
 
@@ -564,7 +568,7 @@ export const getTaxReturn = createServerFn({ method: "GET" })
       jurisdiction,
       isUk: isUkReturn(jurisdiction),
       currency: typeof h["currency_code"] === "string" ? h["currency_code"] : "",
-      net_tax_minor: Number(h["net_tax_minor"]),
+      net_tax_minor: safeTaxMinorNumber(h["net_tax_minor"], "Filed return net tax"),
       filed_at: typeof h["filed_at"] === "string" ? h["filed_at"] : null,
       settlement_journal_id:
         typeof h["settlement_journal_id"] === "string" ? h["settlement_journal_id"] : null,
@@ -683,7 +687,8 @@ export const postTaxReturnSettlement = createServerFn({ method: "POST" })
     if (lineError) throw new Error(lineError.message);
     const amount = (key: string): bigint => {
       const row = ((lineRows ?? []) as Row[]).find((l) => l["box_key"] === key);
-      return BigInt(Math.round(Number(row?.["amount_minor"] ?? 0)));
+      if (!row) throw new Error(`The filed tax return is missing ${key}; cannot settle.`);
+      return exactTaxMinorUnits(row["amount_minor"], `Filed return ${key}`);
     };
 
     const journal = buildTaxReturnSettlementJournal({

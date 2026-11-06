@@ -260,3 +260,63 @@ export const deleteProductPriceOverride = createServerFn({ method: "POST" })
     if (!deleted) throw new Error("Price override no longer exists");
     return { ok: true };
   });
+
+/**
+ * Resolve exact sales-price overrides only for products used by an invoice/quote editor.
+ * This is read-only; the sales document still saves each unit price as a line snapshot.
+ */
+export const resolveSalesDraftPriceList = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: {
+    companyId: string;
+    priceListId: string;
+    documentCurrency: string;
+    productIds: string[];
+  }) => {
+    if (!Array.isArray(input.productIds) || input.productIds.length > 250) {
+      throw new Error("Too many products for one price-list lookup");
+    }
+    if (typeof input.documentCurrency !== "string" ||
+      !/^[A-Z]{3}$/.test(input.documentCurrency)) {
+      throw new Error("Invalid document currency");
+    }
+    return {
+      companyId: assertUuid(input.companyId),
+      priceListId: assertUuid(input.priceListId),
+      documentCurrency: input.documentCurrency,
+      productIds: [...new Set(input.productIds.map((id) => assertUuid(id, "product")))],
+    };
+  })
+  .handler(async ({ data, context }) => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    const { data: list, error: listError } = await context.supabase
+      .from("product_price_lists" as never)
+      .select("id, currency_code, is_active" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("id" as never, data.priceListId as never)
+      .maybeSingle();
+    if (listError) throw new Error(listError.message);
+    if (!list || !(list as { is_active: boolean }).is_active) {
+      throw new Error("The selected price list is archived or unavailable");
+    }
+    assertMatchingCatalogueCurrency(
+      (list as { currency_code: string }).currency_code,
+      data.documentCurrency,
+    );
+    if (!data.productIds.length) {
+      return { currency: data.documentCurrency, items: [] as Array<{
+        product_id: string; unit_price_minor: number;
+      }> };
+    }
+    const { data: rows, error } = await context.supabase
+      .from("product_price_list_items" as never)
+      .select("product_id, unit_price_minor" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("price_list_id" as never, data.priceListId as never)
+      .in("product_id" as never, data.productIds as never)
+      .limit(250);
+    if (error) throw new Error(error.message);
+    const items = (rows ?? []) as Array<{ product_id: string; unit_price_minor: number }>;
+    for (const item of items) validateCataloguePriceMinor(item.unit_price_minor);
+    return { currency: data.documentCurrency, items };
+  });

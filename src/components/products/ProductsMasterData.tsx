@@ -223,6 +223,9 @@ export function PriceListsWorkspace({ companyId, currency }: WorkspaceProps) {
       await qc.invalidateQueries({
         queryKey: ["product-price-overrides", companyId, selectedListId],
       });
+      await qc.invalidateQueries({
+        queryKey: ["sales-draft-price-list", companyId, selectedListId],
+      });
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
@@ -233,6 +236,9 @@ export function PriceListsWorkspace({ companyId, currency }: WorkspaceProps) {
       toast.success("Price override removed");
       await qc.invalidateQueries({
         queryKey: ["product-price-overrides", companyId, selectedListId],
+      });
+      await qc.invalidateQueries({
+        queryKey: ["sales-draft-price-list", companyId, selectedListId],
       });
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
@@ -250,8 +256,10 @@ export function PriceListsWorkspace({ companyId, currency }: WorkspaceProps) {
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Price lists store per-item sales price alternatives in {currency}. They do not automatically
-        change invoices or quotes; explicit document pricing integration is pending.
+        Price lists store per-item sales price alternatives in {currency}. In new or editable
+        invoice and quote drafts, select a price list to use its defaults on newly chosen products.
+        Existing lines change only through the explicit preview-and-apply action. Historical
+        documents are never repriced automatically.
       </p>
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)]">
         <Card>

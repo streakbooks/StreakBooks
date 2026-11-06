@@ -1084,7 +1084,7 @@ function DepreciationPanel({
   const periodEnd = validMonth ? monthEnd(month + "-01") : "";
   const preview = useQuery({
     queryKey: ["fixed-assets", companyId, "preview", periodEnd],
-    enabled: validMonth,
+    enabled: validMonth && canPost,
     queryFn: () => previewFn({ data: { companyId, periodEnd } }),
   });
   const reviewed = useMemo(() => {
@@ -1210,6 +1210,14 @@ function DepreciationPanel({
       {!validMonth ? (
         <Alert variant="destructive">
           <AlertDescription>Select a valid depreciation month to view its preview.</AlertDescription>
+        </Alert>
+      ) : !canPost ? (
+        <Alert>
+          <AlertDescription>
+            Depreciation previews require accounting posting or manual journal permission
+            under the current database policy, even though a preview does not create entries.
+            Ask an organisation administrator to review your access.
+          </AlertDescription>
         </Alert>
       ) : preview.isPending ? (
         <LoadingState />
@@ -1359,12 +1367,7 @@ function DepreciationPanel({
                 Review {plan?.periodEnds.length ?? 0}-month catch-up
               </Button>
             ) : null}
-            {!canPost ? (
-              <p className="text-xs text-muted-foreground">
-                Viewing previews is permitted; posting requires accounting journal permissions.
-              </p>
-            ) : null}
-          </div>
+           </div>
           <p className="text-xs text-muted-foreground">
             These values are a read-only preview for the selected month, not a promise of
             journals that will post. A multi-month catch-up is recalculated by the server

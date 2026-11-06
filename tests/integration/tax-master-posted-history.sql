@@ -44,9 +44,12 @@ SELECT public.assert_tax_raises(
  $$UPDATE public.tax_codes SET treatment='reverse_charge'
    WHERE id='30000000-0000-4000-8000-000000000001'$$,
  '%posted documents%');
+INSERT INTO public.tax_rates(id,company_id,name,rate_bps,effective_from)
+VALUES ('20000000-0000-4000-8000-000000000003',
+        '10000000-0000-4000-8000-000000000001','Replacement VAT',2200,'2026-03-01');
 SELECT public.assert_tax_raises(
- $$UPDATE public.tax_codes SET tax_rate_id='20000000-0000-4000-8000-000000000002'
-   WHERE id='30000000-0000-4000-8000-000000000001'$$,
+ $UPDATE public.tax_codes SET tax_rate_id='20000000-0000-4000-8000-000000000003'
+   WHERE id='30000000-0000-4000-8000-000000000001'$,
  '%posted documents%');
 SELECT public.assert_tax_raises(
  $$UPDATE public.tax_rates SET rate_bps=2200

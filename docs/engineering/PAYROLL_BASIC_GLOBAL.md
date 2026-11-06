@@ -124,3 +124,31 @@ Do not merge/release this work as validated until checks and staging smoke pass.
 4. Payments: search date/method/reference; posted/reversed filter and reversal.
 5. Responsive/mobile, keyboard navigation, restricted role access, and authenticated
    staging employee→salary→run→approve→post→pay→report.
+
+
+### Follow-up validation and constraint alignment (November 6, 2026)
+
+- Payroll organisation default and employee payment-method choices are now
+  `bank_transfer`, `cash`, `cheque`, `other`, matching the existing
+  PostgreSQL CHECK constraints and the RPC validation. Manual payment
+  confirmation remains available when **recording a payment**, which has
+  separate settlement-method handling. No schema migration was required.
+- Employee and CSV import dates now reject impossible dates, including
+  invalid leap days and SQL's unsupported year zero. CSV rows with a different
+  number of cells from their header fail validation before writing.
+- The CSV preview rejects files exceeding 1 MB **before** reading them into
+  browser memory; the parser also enforces its own character/row limits.
+- CSV re-import now preserves legitimate leading apostrophes in names and
+  reverses the exported spreadsheet-formula prefix only for formula-like
+  leading characters.
+- Isolated direct execution of the exact current source function bodies
+  (with TypeScript type annotations removed for JavaScript evaluation):
+  **12/12 employee-import scenarios and 8/8 calendar-date cases passed**.
+  These are focused, non-CI behavior checks. They do **not** validate
+  TypeScript compilation, rendering, database transactions, authentication,
+  accessibility, production builds or E2E workflows.
+- Explicit user instruction: **do not run GitHub CI steps**. All further
+  commits use `[skip ci]`; no workflow reruns or dispatches are requested.
+  The full local app build/test suite and authenticated staging smoke remain
+  outstanding. Do not label this payroll module production-ready on the
+  basis of source-level checks alone.

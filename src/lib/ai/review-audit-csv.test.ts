@@ -47,7 +47,7 @@ describe("AI review case audit CSV security and completeness", () => {
 
   it("prefixes dangerous spreadsheet formulas, including leading whitespace", () => {
     for (const value of ["=HYPERLINK(\"test\")", "+3", "-2", "@cmd", "  =SUM(A1:A2)", "\t+SUM(A1:A2)"]) {
-      expect(auditCsvField(value)).toBe('"\\' + value.replaceAll('"', '""') + '"');
+      expect(auditCsvField(value)).toBe('"\x27' + value.replaceAll('"', '""') + '"');
     }
   });
 

@@ -70,6 +70,15 @@ function cell(kind: BudgetAccountKind, budget: bigint, actual: bigint): Variance
   }
   return { budgetMinor: b, actualMinor: a, ...metrics };
 }
+/** The ledger monthly aggregate includes Balance Sheet as well as P&L accounts. */
+export function filterProfitLossActivity<T extends { accountId: string }>(
+  accounts: readonly BudgetReportAccount[],
+  activity: readonly T[],
+): T[] {
+  const ids = new Set(accounts.map((account) => account.id));
+  return activity.filter((line) => ids.has(line.accountId));
+}
+
 function key(accountId: string, month: string): string {
   return accountId + "|" + month;
 }

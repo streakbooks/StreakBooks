@@ -70,6 +70,15 @@ describe("Payroll liability GL roll-forward", () => {
     expect(result.expectedRunAccrualCreditMinor).toBe("1000");
     expect(result.accrualVarianceMinor).toBe("-1000");
   });
+  it("counts source amounts even when their journal reference is missing", () => {
+    const result = calculate([opening], [{ ...runs[0]!, accrual_journal_id: null }],
+      [{ ...payments[0]!, journal_id: null }]);
+    expect(result.status).toBe("exceptions");
+    expect(result.expectedRunAccrualCreditMinor).toBe("1000");
+    expect(result.expectedPaymentDebitMinor).toBe("800");
+    expect(result.accrualVarianceMinor).toBe("-1000");
+    expect(result.paymentVarianceMinor).toBe("-800");
+  });
   it("rejects orphan Payroll posted journals without active run or payment source", () => {
     const result = calculate([opening, accrual, settlement], [], payments);
     expect(result.status).toBe("exceptions");

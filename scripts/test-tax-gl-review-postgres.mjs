@@ -62,7 +62,7 @@ try {
   sql(read("tests/fixtures/tax-gl-review/baseline.sql"));
   sql(read("supabase/migrations/20261106134000_tax_gl_review_sessions.sql"));
   sql(read("tests/integration/tax-gl-review-sessions.sql"));
-  console.log("PASS: isolated tax posted-history guards and tenant reference tests");
+  console.log("PASS: isolated tax GL reviewer permissions, concurrency versions and audit trail");
 } finally {
   if (started) {
     try {

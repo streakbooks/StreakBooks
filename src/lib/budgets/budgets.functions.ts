@@ -843,9 +843,13 @@ export const getYearActuals = createServerFn({ method: "GET" })
     const end = addDaysIso(addMonthsIso(start, 12), -1);
     const accountingBasis = await resolveReportingBasis(sb, data.companyId, data.basis);
     const [accounts, activity] = await Promise.all([
-      budgetAccounts(sb, data.companyId),
+      // Prior years may include P&L accounts since archived or made inactive.
+      // Preserve their booked amounts so the editor can reject an incomplete
+      // copy instead of silently losing historical financial data.
+      budgetAccounts(sb, data.companyId, true),
       monthlyActivity(sb, data.companyId, start, end, accountingBasis),
     ]);
+    const accountById = new Map(accounts.map((account) => [account.id, account]));
     const kindOf = new Map(accounts.map((a) => [a.id, a.kind]));
     const out = new Map<string, number[]>();
     for (const a of activity) {
@@ -863,7 +867,12 @@ export const getYearActuals = createServerFn({ method: "GET" })
     return {
       accountingBasis,
       rows: [...out.entries()]
-        .map(([accountId, m]) => ({ accountId, months: m }))
+        .map(([accountId, m]) => ({
+          accountId,
+          accountCode: accountById.get(accountId)?.code ?? "",
+          accountName: accountById.get(accountId)?.name ?? "",
+          months: m,
+        }))
         .filter((r) => r.months.some((v) => v !== 0)),
     };
   });

@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
 import { useFormat } from "@/hooks/use-format";
@@ -16,6 +16,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -46,15 +47,17 @@ export function PayrollPayslipsPage({
   const fmt = useFormat();
   const fetchList = useServerFn(listPayrollPayslips);
   const navigate = useNavigate({ from: "/payroll/payslips/" });
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<"issued-newest" | "issued-oldest" | "employee">("issued-newest");
 
   const listQ = useQuery({
-    queryKey: ["payroll-payslips", company?.id, runIdFilter ?? null, employeeIdFilter ?? null],
+    queryKey: ["payroll-payslips", company?.id, runIdFilter ?? null],
     queryFn: () =>
       fetchList({
         data: {
           companyId: company!.id,
           runId: runIdFilter ?? null,
-          employeeId: employeeIdFilter ?? null,
+          employeeId: null,
         },
       }),
     enabled: Boolean(company?.id) && canView,
@@ -62,9 +65,32 @@ export function PayrollPayslipsPage({
 
   const filteredPayslips = useMemo(() => {
     const rows = (listQ.data as PayrollPayslipsListPage | undefined)?.payslips ?? [];
-    if (!paymentStatusFilter) return rows;
-    return rows.filter(({ payslip }) => payslip.payment_status === paymentStatusFilter);
-  }, [listQ.data, paymentStatusFilter]);
+    const term = search.trim().toLocaleLowerCase();
+    return rows
+      .filter(({ payslip, employee, run }) => {
+        if (paymentStatusFilter && payslip.payment_status !== paymentStatusFilter) return false;
+        if (employeeIdFilter && employee.id !== employeeIdFilter) return false;
+        if (!term) return true;
+        const values = [
+          payslip.payslip_number,
+          employee.employee_number,
+          employee.first_name,
+          employee.last_name,
+          run.run_number,
+        ];
+        return values.some((value) => value.toLocaleLowerCase().includes(term));
+      })
+      .sort((a, b) => {
+        if (sort === "employee") {
+          const first = `${a.employee.first_name} ${a.employee.last_name}`;
+          const second = `${b.employee.first_name} ${b.employee.last_name}`;
+          return first.localeCompare(second);
+        }
+        return sort === "issued-oldest"
+          ? a.payslip.issued_at.localeCompare(b.payslip.issued_at)
+          : b.payslip.issued_at.localeCompare(a.payslip.issued_at);
+      });
+  }, [listQ.data, paymentStatusFilter, employeeIdFilter, search, sort]);
 
   const employeeOptions = useMemo(() => {
     const rows = (listQ.data as PayrollPayslipsListPage | undefined)?.payslips ?? [];
@@ -95,6 +121,13 @@ export function PayrollPayslipsPage({
             : (patch.employeeId ?? undefined),
       }),
     });
+  };
+
+  const hasFilters = Boolean(paymentStatusFilter || employeeIdFilter || search.trim());
+  const clearFilters = () => {
+    setSearch("");
+    setSort("issued-newest");
+    setSearchFilters({ paymentStatus: null, employeeId: null });
   };
 
   if (isPending) return <LoadingState />;
@@ -164,7 +197,7 @@ export function PayrollPayslipsPage({
               </SelectContent>
             </Select>
           </div>
-          {employeeOptions.length > 1 ? (
+          {employeeOptions.length > 1 || employeeIdFilter ? (
             <div className="grid gap-1.5">
               <Label htmlFor="payslip-employee-filter">Employee</Label>
               <Select
@@ -187,6 +220,37 @@ export function PayrollPayslipsPage({
               </Select>
             </div>
           ) : null}
+          <div className="grid gap-1.5">
+            <Label htmlFor="payslip-search">Search payslips</Label>
+            <Input
+              id="payslip-search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Number, employee or run…"
+              className="w-full sm:w-60"
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="payslip-sort">Sort by</Label>
+            <Select value={sort} onValueChange={(value) => setSort(value as typeof sort)}>
+              <SelectTrigger id="payslip-sort" className="w-[190px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="issued-newest">Issued: newest first</SelectItem>
+                <SelectItem value="issued-oldest">Issued: oldest first</SelectItem>
+                <SelectItem value="employee">Employee name</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {hasFilters ? (
+            <Button size="sm" variant="ghost" onClick={clearFilters}>
+              Clear filters
+            </Button>
+          ) : null}
+          <p className="w-full text-xs text-muted-foreground" aria-live="polite">
+            Showing {filteredPayslips.length} of {list.payslips.length} payslips
+          </p>
         </div>
       ) : null}
 
@@ -208,7 +272,12 @@ export function PayrollPayslipsPage({
       ) : filteredPayslips.length === 0 ? (
         <EmptyState
           title="No matching payslips"
-          description="Try clearing filters or approve a payroll run first."
+          description="Try clearing filters or changing your search."
+          action={
+            <Button size="sm" variant="outline" onClick={clearFilters}>
+              Clear filters
+            </Button>
+          }
         />
       ) : (
         <TableCard>
@@ -222,6 +291,7 @@ export function PayrollPayslipsPage({
                 <TableHead>Issued</TableHead>
                 <TableHead>Payment</TableHead>
                 <TableHead className="text-right">Net pay</TableHead>
+                <TableHead className="text-right">Outstanding</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -258,6 +328,12 @@ export function PayrollPayslipsPage({
                   </TableCell>
                   <TableCell className="text-right font-mono text-sm">
                     {fmt.money(payslip.snapshot.totals?.netPayMinor ?? 0, run.currency)}
+                  </TableCell>
+                  <TableCell className="text-right font-mono text-sm">
+                    {fmt.money(
+                      Math.max(0, (payslip.snapshot.totals?.netPayMinor ?? 0) - payslip.amount_paid_minor),
+                      run.currency,
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

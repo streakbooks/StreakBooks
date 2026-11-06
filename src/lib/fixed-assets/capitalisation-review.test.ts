@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   capitalisationReviewCsv,
+  capitalisationReviewGuidance,
   pageCapitalisationBillLines,
   reviewCapitalisableLines,
   selectCapitalisationReviewRows,
@@ -92,6 +93,18 @@ describe("posted bill capitalisation review", () => {
     expect(csv).toContain("'@unsafe");
     expect(csv).toContain("USD");
     expect(csv.split("\r\n")).toHaveLength(2);
+  });
+
+  it("permits new asset preparation only for unlinked or partly linked purchases", () => {
+    expect(capitalisationReviewGuidance("unlinked").canPrepareNewAsset).toBe(true);
+    expect(capitalisationReviewGuidance("partially_linked").canPrepareNewAsset).toBe(true);
+    for (const status of ["linked", "fx_review", "overlinked", "non_purchase"] as const) {
+      const guidance = capitalisationReviewGuidance(status);
+      expect(guidance.canPrepareNewAsset).toBe(false);
+      expect(guidance.reason.length).toBeGreaterThan(12);
+      expect(guidance.nextStep.length).toBeGreaterThan(12);
+    }
+    expect(capitalisationReviewGuidance("fx_review").nextStep).toMatch(/FX/i);
   });
 
   it("rejects unsafe and duplicate source values", () => {

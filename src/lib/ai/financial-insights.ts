@@ -110,7 +110,12 @@ export function buildFinancialInsights(
       label: def.label,
       value: formatFinancialMetric(actual === null ? null : actual.toString(), def.format, currency),
       priorValue: prior === null ? null : formatFinancialMetric(prior.toString(), def.format, currency),
-      change: change === null ? null : formatFinancialMetric(change.toString(), def.format, currency),
+      change:
+        change === null
+          ? null
+          : def.format === "percent"
+            ? decimal2(change, 100n) + " percentage points"
+            : formatFinancialMetric(change.toString(), def.format, currency),
       sourceReportId: def.source,
       description: def.description,
     };

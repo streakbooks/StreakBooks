@@ -61,6 +61,27 @@ describe("posted bill capitalisation review", () => {
     });
   });
 
+  it("requires FX review even when a foreign-currency bill line is currently unlinked", () => {
+    const { rows, totals } = reviewCapitalisableLines([
+      base("foreign-unlinked", { currency: "EUR", registeredMinor: 0 }),
+    ], "USD");
+    expect(rows[0]).toMatchObject({
+      status: "fx_review",
+      indicativeUnlinkedMinor: null,
+    });
+    expect(totals.fxReview).toBe(1);
+    expect(capitalisationReviewGuidance(rows[0]!.status).canPrepareNewAsset).toBe(false);
+  });
+
+  it("treats zero/negative-net, tax-only bill lines as non-purchases", () => {
+    const { rows } = reviewCapitalisableLines([
+      base("zero-net", { netMinor: 0, taxMinor: 100 }),
+      base("negative-net", { netMinor: -20, taxMinor: 100 }),
+    ], "USD");
+    expect(rows.map((row) => row.status)).toEqual(["non_purchase", "non_purchase"]);
+    expect(rows.every((row) => !capitalisationReviewGuidance(row.status).canPrepareNewAsset)).toBe(true);
+  });
+
   it("exposes overlinked and non-purchase cases instead of claiming a match", () => {
     const { rows, totals } = reviewCapitalisableLines(
       [

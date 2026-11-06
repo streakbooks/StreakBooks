@@ -16,6 +16,7 @@ import {
   Pencil,
   FolderInput,
   ClipboardCheck,
+  Link2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
@@ -152,6 +153,7 @@ function FilesPage() {
     id: string;
     name: string;
   } | null>(null);
+  const [pendingBulkDelete, setPendingBulkDelete] = useState<string[] | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -368,6 +370,48 @@ function FilesPage() {
     },
   });
 
+  const bulkDeleteM = useMutation({
+    mutationFn: async ({ ids, sourceCompanyId }: { ids: string[]; sourceCompanyId: string }) => {
+      const deletedIds: string[] = [];
+      const failedIds: string[] = [];
+      let firstError: string | null = null;
+      for (const attachmentId of ids) {
+        try {
+          await remove({
+            data: { companyId: sourceCompanyId, attachmentId },
+          });
+          deletedIds.push(attachmentId);
+        } catch (error) {
+          failedIds.push(attachmentId);
+          firstError ??= friendlyAuthError(error);
+        }
+      }
+      return { deletedIds, failedIds, firstError, sourceCompanyId };
+    },
+    onSuccess: async ({ deletedIds, failedIds, firstError, sourceCompanyId }) => {
+      setPendingBulkDelete(null);
+      if (companyId === sourceCompanyId) {
+        setSelectedIds(failedIds);
+        if (selectedFile && deletedIds.includes(selectedFile)) setSelectedFile(null);
+      }
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["company-files", sourceCompanyId] }),
+        queryClient.invalidateQueries({ queryKey: ["company-file-details", sourceCompanyId] }),
+        queryClient.invalidateQueries({ queryKey: ["company-file-preview", sourceCompanyId] }),
+      ]);
+      if (deletedIds.length)
+        toast.success(`Deleted ${deletedIds.length} file${deletedIds.length === 1 ? "" : "s"}`);
+      if (failedIds.length)
+        toast.error(
+          `${failedIds.length} file${failedIds.length === 1 ? "" : "s"} could not be deleted. ${firstError ?? "Please retry."}`,
+        );
+    },
+    onError: (error) => {
+      setPendingBulkDelete(null);
+      toast.error(friendlyAuthError(error));
+    },
+  });
+
   const bulkMoveM = useMutation({
     mutationFn: async ({ ids, targetId }: { ids: string[]; targetId: string | null }) => {
       const movedIds: string[] = [];
@@ -433,6 +477,7 @@ function FilesPage() {
     .filter((file) => canManage(file.entity_type))
     .map((file) => file.id);
   const currentSelection = selectedIds.filter((id) => selectableIds.includes(id));
+  const currentSelectionSet = new Set(currentSelection);
   const allSelected = selectableIds.length > 0 && currentSelection.length === selectableIds.length;
   const bulkDestination = bulkTarget === "unfiled" ? null : bulkTarget;
   const movingIds = currentSelection.filter(
@@ -1107,7 +1152,7 @@ function FilesPage() {
               </RecordLookupSelect>
               <Button
                 size="sm"
-                disabled={bulkMoveM.isPending || movingIds.length === 0}
+                disabled={bulkMoveM.isPending || bulkDeleteM.isPending || movingIds.length === 0}
                 onClick={() =>
                   bulkMoveM.mutate({
                     ids: movingIds,
@@ -1124,8 +1169,17 @@ function FilesPage() {
               </Button>
               <Button
                 size="sm"
+                variant="outline"
+                disabled={bulkMoveM.isPending || bulkDeleteM.isPending}
+                onClick={() => setPendingBulkDelete(currentSelection)}
+              >
+                <Trash2 className="mr-1 size-4" />
+                Delete selected
+              </Button>
+              <Button
+                size="sm"
                 variant="ghost"
-                disabled={bulkMoveM.isPending}
+                disabled={bulkMoveM.isPending || bulkDeleteM.isPending}
                 onClick={() => setSelectedIds([])}
               >
                 Clear selection
@@ -1145,7 +1199,7 @@ function FilesPage() {
                     type="checkbox"
                     aria-label="Select all manageable files on this page"
                     checked={allSelected}
-                    disabled={selectableIds.length === 0 || bulkMoveM.isPending}
+                    disabled={selectableIds.length === 0 || bulkMoveM.isPending || bulkDeleteM.isPending}
                     onChange={(e) => setSelectedIds(e.target.checked ? selectableIds : [])}
                   />
                 </TableHead>
@@ -1166,8 +1220,8 @@ function FilesPage() {
                       <input
                         type="checkbox"
                         aria-label={`Select ${f.file_name}`}
-                        checked={currentSelection.includes(f.id)}
-                        disabled={!manageable || bulkMoveM.isPending}
+                        checked={currentSelectionSet.has(f.id)}
+                        disabled={!manageable || bulkMoveM.isPending || bulkDeleteM.isPending}
                         onChange={(e) =>
                           setSelectedIds((previous) =>
                             e.target.checked
@@ -1286,6 +1340,42 @@ function FilesPage() {
           </div>
         </>
       )}
+
+      <AlertDialog
+        open={Boolean(pendingBulkDelete)}
+        onOpenChange={(open) => {
+          if (!open && !bulkDeleteM.isPending) setPendingBulkDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Permanently delete {pendingBulkDelete?.length ?? 0} selected files?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This removes their attachment records and requests deletion of their private
+              stored copies. Files attached to accounting records will no longer appear there.
+              This is not reversible, and individual deletions may succeed while others fail.
+              Only the selected, manageable files from this page are included.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkDeleteM.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={bulkDeleteM.isPending || !pendingBulkDelete?.length}
+              onClick={() => {
+                if (!companyId || !pendingBulkDelete?.length) return;
+                bulkDeleteM.mutate({
+                  ids: pendingBulkDelete,
+                  sourceCompanyId: companyId,
+                });
+              }}
+            >
+              {bulkDeleteM.isPending ? "Deleting…" : "Delete selected files"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog
         open={Boolean(pendingFolderDelete)}

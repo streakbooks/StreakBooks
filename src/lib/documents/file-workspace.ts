@@ -168,3 +168,19 @@ export function fileListProjection(
     ? `${baseColumns}, tag_match:document_attachment_tags!inner(tag_id)`
     : baseColumns;
 }
+
+
+/** Bound offset pagination to prevent an untrusted page index from creating huge queries. */
+export function safeFilePage(value: unknown, maxPage = 1000): number {
+  const number = Number(value);
+  return Number.isSafeInteger(number) && number >= 0
+    ? Math.min(number, maxPage)
+    : 0;
+}
+
+/** A deleted or filtered page cannot remain selected after result counts shrink. */
+export function lastFilePage(total: number, pageSize: number): number {
+  if (!Number.isSafeInteger(total) || total < 0 ||
+      !Number.isSafeInteger(pageSize) || pageSize < 1) return 0;
+  return Math.max(0, Math.ceil(total / pageSize) - 1);
+}

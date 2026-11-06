@@ -244,6 +244,21 @@ export function reviewAssetDepreciationPosting(
         if (!asset.expense_account_id || !asset.accumulated_account_id) {
           issues.push(label + " has missing asset posting-account mappings.");
         }
+        try {
+          const cost = exactMinor(asset.cost_minor, label + " asset cost");
+          const opening = exactMinor(asset.opening_accumulated_minor, label + " opening depreciation");
+          if (cost === 0n || cost > 900000000000000n || opening > cost ||
+              amount > cost - opening) {
+            issues.push(label + " exceeds the asset's valid cost and opening depreciation capacity.");
+          }
+          if (asset.purchase_date > run.period_end ||
+              !validDay(asset.purchase_date) ||
+              (asset.disposal_date && asset.disposal_date.slice(0, 7) < run.period_end.slice(0, 7))) {
+            issues.push(label + " belongs to an asset outside its valid purchase/disposal period.");
+          }
+        } catch (error) {
+          issues.push(error instanceof Error ? error.message : label + " asset cost invalid.");
+        }
         put(expected, asset.expense_account_id, "debit", amount);
         put(expected, asset.accumulated_account_id, "credit", amount);
       }

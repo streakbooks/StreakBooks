@@ -187,3 +187,21 @@ Do not trigger GitHub Actions/CI, merge, modify database environments or deploy 
 **Isolated verification evidence:** A non-persistent Vercel Sandbox with outbound networking disabled ran the latest branch's pure `register-view.ts` under Node's built-in test runner. **24/24 focused checks passed; 0 failed; 0 skipped; exit status 0.** Logs were retrieved. The check was limited to pure source logic; it did not run the repository's full Vitest, TypeScript, ESLint, Vite build, browser/CSV interaction or authenticated database/RLS tests.
 
 **Release status:** PR #111 remains draft and unmerged. Its branch must still integrate current main; the complete local release script, authenticated ledger/FX/period-lock verification and browser accessibility tests remain mandatory before any production readiness claim. No GitHub Actions/CI or production deployment was initiated for this increment.
+
+
+## Batch 7 continued — asset-type pagination and export testability
+
+**Further source issues corrected (2026-11-06):**
+
+1. The `getAssetRegisterPage` endpoint previously fetched asset types with `.limit(500)`, silently truncating the list in organisations with over 500 configured types. This was changed to `fetchAllPages<AssetTypeRow>` with a unique `id` order and stable client sorting by `name` / `id`. The existing shared pager handles PostgREST server limits and fails loudly at its safety cap.
+2. The register's 12-column CSV generator was embedded inside a large React route, preventing direct pure-function regression testing. The CSV generation is now in `src/lib/fixed-assets/register-export.ts`, with `buildFixedAssetRegisterCsv` taking already authorised asset rows and exact as-at accumulated depreciation balances.
+3. The helper rejects absent/inconsistent as-at balances, invalid calendar report dates (using the shared `isReportDate` helper), duplicate assets, values below opening depreciation or beyond cost less residual value; it leaves original records unchanged.
+4. The CSV retains the standard full column set independently of hidden UI columns, preserves a disposed asset's accumulated depreciation while reporting zero NBV after disposal, shows future acquisitions without invented balances, and neutralises spreadsheet formulas in user-controlled asset numbers, names, categories and GL account labels.
+5. The browser download wrapper now catches CSV validation failures and displays an actionable toast rather than throwing an uncaught export error.
+6. Added `src/lib/fixed-assets/register-export.test.ts` with Vitest regression cases for CSV formatting, as-of amounts, residual values, future purchases, duplicate rows, unsafe/missing balances, formula protection and non-mutating output. The tests are committed but have not yet been executed by the full Vitest project runner.
+
+**Independent pure-source verification:** In a temporary, network-disabled Vercel sandbox, Node's built-in test runner executed 17 focused tests using the branch's `register-view.ts`, `register-export.ts`, shared `fetch-all.ts`, and `date-validation.ts`. **17 passed; zero failed; zero skipped; exit 0.** This includes a mock 1,203-record asset-type pagination case with a server response cap of 250, and hard-cap failure, and valid/invalid CSV cases. Logs were retrieved after correcting two test-harness wording mismatches. The tests did not access private tenant data or execute SQL.
+
+**Remaining limitations:** None of these isolated tests prove the full TanStack route compiles, React UI works, or Supabase tenant roles/RLS are correct. The feature branch remains significantly behind main. The full local release script `node scripts/check-fixed-assets-release.mjs`, authenticated SQL posting and FX tests, browser/mobile/accessibility QA, latest-main integration, PR review and deployment verification remain mandatory.
+
+**State:** Committed to draft PR #111 only. No GitHub Actions/CI, database migration, production deployment or merge was performed in this increment.

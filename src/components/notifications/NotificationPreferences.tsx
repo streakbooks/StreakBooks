@@ -76,6 +76,7 @@ export function NotificationPreferences({
       void client.invalidateQueries({ queryKey: ["action-notifications", companyId] });
       void client.invalidateQueries({ queryKey: ["action-notifications-unread", companyId] });
       void client.invalidateQueries({ queryKey: ["action-center-feed", companyId] });
+      void client.invalidateQueries({ queryKey: ["action-center-summary", companyId] });
       notify.success("Notification preference saved");
     },
     onError: (error) => notify.error(error, "Could not save notification preference"),

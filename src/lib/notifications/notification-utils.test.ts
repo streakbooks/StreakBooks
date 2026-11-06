@@ -6,6 +6,7 @@ import {
   summarizeActionNotifications,
   mergeNotificationPages,
   parseActionCenterSearch,
+  actionNotificationSearchPattern,
 } from "./notification-utils";
 
 const base = {
@@ -230,5 +231,14 @@ describe("Smart Action Center history and bookmarkable filters", () => {
 
   it("limits saved search terms to 120 characters", () => {
     expect(parseActionCenterSearch({ q: "a".repeat(250) }).q).toHaveLength(120);
+  });
+});
+
+describe("Action Center server filtering", () => {
+  it("escapes SQL LIKE wildcard characters rather than broadening a user's search", () => {
+    expect(actionNotificationSearchPattern("  50%_\\  ")).toBe("%50\\%\\_\\\\%");
+  });
+  it("normalizes case and trims surrounding spaces", () => {
+    expect(actionNotificationSearchPattern("  Overdue Invoice  ")).toBe("%overdue invoice%");
   });
 });

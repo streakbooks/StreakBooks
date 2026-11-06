@@ -108,3 +108,52 @@ export function selectCapitalisationReviewRows(
     })
     .sort((a, b) => b.billDate.localeCompare(a.billDate) || b.lineId.localeCompare(a.lineId));
 }
+
+/** Spreadsheet-safe audit worksheet. All currency and precision metadata are explicit. */
+export function capitalisationReviewCsv(
+  rows: readonly CapitalisationReviewRow[],
+  asOf: string,
+  baseCurrency: string,
+): string {
+  const escapeCell = (value: string) => {
+    const safe = /^\s*[=+@-]/.test(value) ? "'" + value : value;
+    return '"' + safe.replace(/"/g, '""') + '"';
+  };
+  const headers = [
+    "Bills through",
+    "Bill number",
+    "Bill ID",
+    "Bill line ID",
+    "Bill date",
+    "Supplier",
+    "Description",
+    "GL account",
+    "GL account name",
+    "Bill currency",
+    "Bill net minor units",
+    "Bill tax minor units",
+    "Registered base currency",
+    "Registered base minor units",
+    "Indicative unlinked gross minor units (same currency only)",
+    "Review status",
+  ];
+  const lines = rows.map((r) => [
+    asOf,
+    r.billNumber ?? "",
+    r.billId,
+    r.lineId,
+    r.billDate,
+    r.supplier ?? "",
+    r.description,
+    r.accountCode,
+    r.accountName,
+    r.currency,
+    String(r.netMinor),
+    String(r.taxMinor),
+    baseCurrency,
+    String(r.registeredMinor),
+    r.indicativeUnlinkedMinor ?? "",
+    r.status,
+  ].map(escapeCell).join(","));
+  return [headers.map(escapeCell).join(","), ...lines].join("\r\n");
+}

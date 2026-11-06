@@ -213,7 +213,7 @@ export const updateFirmOnboardingStep = createServerFn({ method: "POST" })
     return updated as FirmOnboardingStep;
   });
 
-const planningInput = firmClientScope
+export const planningInput = firmClientScope
   .extend({
     task_key: z.string().min(2).max(48),
     version: z.number().int().positive(),

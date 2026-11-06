@@ -194,6 +194,9 @@ export function PayrollEmployeesPage() {
     setImporting(true);
     setImportPreview(null);
     try {
+      if (file.size > 1_000_000) {
+        throw new Error("Employee CSV exceeds the 1 MB file size limit.");
+      }
       const text = await file.text();
       const parsed = parsePayrollEmployeesCsv(text, { country, currency });
       if (!parsed.ok) throw new Error(parsed.error);

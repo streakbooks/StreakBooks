@@ -141,19 +141,20 @@ describe("Fixed Assets / GL reconciliation", () => {
 
   it("uses bigint for summed balances beyond JavaScript safe integer precision", () => {
     const result = reconcileFixedAssets(
-      [
-        asset("a", { cost_minor: "900000000000000", opening_accumulated_minor: "0" }),
-        asset("b", { cost_minor: "900000000000000", opening_accumulated_minor: "0" }),
-        asset("c", { cost_minor: "900000000000000", opening_accumulated_minor: "0" }),
-      ],
+      Array.from({ length: 11 }, (_, index) =>
+        asset("asset-" + index, {
+          cost_minor: "900000000000000",
+          opening_accumulated_minor: "0",
+        }),
+      ),
       [],
-      balances("2700000000000000", "0"),
+      balances("9900000000000000", "0"),
       accounts,
       "2026-11-06",
     );
     expect(result.varianceCount).toBe(0);
     expect(result.rows.find((row) => row.accountId === "cost")?.registerCostMinor).toBe(
-      "2700000000000000",
+      "9900000000000000",
     );
   });
 
@@ -179,6 +180,27 @@ describe("Fixed Assets / GL reconciliation", () => {
         "2026-11-06",
       ),
     ).toThrow(/positive/i);
+  });
+
+  it("flags over-depreciation and depreciation for an unknown asset", () => {
+    expect(() =>
+      reconcileFixedAssets(
+        [asset("a", { cost_minor: "1000", opening_accumulated_minor: "800" })],
+        [{ asset_id: "a", period_end: "2026-01-31", amount_minor: "201" }],
+        balances("1000", "1001"),
+        accounts,
+        "2026-11-06",
+      ),
+    ).toThrow(/exceeds/i);
+    expect(() =>
+      reconcileFixedAssets(
+        [asset("a")],
+        [{ asset_id: "wrong", period_end: "2026-01-31", amount_minor: "10" }],
+        balances("12000", "1000"),
+        accounts,
+        "2026-11-06",
+      ),
+    ).toThrow(/unknown asset/i);
   });
 
   it("keeps all source inputs unchanged", () => {

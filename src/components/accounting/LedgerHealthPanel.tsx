@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useCanDo } from "@/hooks/use-can";
+import { PayrollLiabilityRollforwardPanel } from "@/components/accounting/PayrollLiabilityRollforwardPanel";
 import { Link } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -71,6 +73,7 @@ function itemText(
 
 /** Accounting settings: runs the read-only ledger checks and shows an honest pass/fail for each. */
 export function LedgerHealthPanel({ companyId }: { companyId: string }) {
+  const canViewPayroll = useCanDo("payroll.view");
   const fmt = useFormat();
   const run = useServerFn(runLedgerHealthCheck);
   const mutation = useMutation({ mutationFn: () => run({ data: { companyId } }) });
@@ -96,6 +99,7 @@ export function LedgerHealthPanel({ companyId }: { companyId: string }) {
   };
 
   return (
+    <div className="space-y-4">
     <Card>
       <CardHeader>
         <h2 className="text-base font-semibold leading-none tracking-tight">Ledger health check</h2>
@@ -252,5 +256,7 @@ export function LedgerHealthPanel({ companyId }: { companyId: string }) {
         ) : null}
       </CardContent>
     </Card>
+    {canViewPayroll ? <PayrollLiabilityRollforwardPanel companyId={companyId} /> : null}
+    </div>
   );
 }

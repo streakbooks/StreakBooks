@@ -645,3 +645,47 @@ formula-looking text may be interpreted rather than displayed literally.
   authorisation or posting.
 - GitHub Actions CI remains **not run (per user instruction)**. No new
   Supabase migration or Vercel deployment resulted from this batch.
+
+
+### Correct idempotent payment retries after payslip balances have changed (Stage 7)
+
+The server's `recordPayrollPayment` endpoint previously validated every
+allocation against **current** outstanding payslip pay before calling the
+database RPC. An initial successful payment already increases
+`payroll_payslips.amount_paid_minor`, so resending an identical request
+after a network timeout could fail the fresh-payment preflight. A
+fully-settled payslip would show `0` outstanding even though the original
+database payment and journal were already posted correctly.
+
+- When a nonempty idempotency key is provided, the server now performs an
+  organisation-scoped lookup of `payroll_payments.id` for that exact key
+  (no payment details are exposed). Keys exceeding the SQL 100-character
+  limit are rejected, rather than silently truncated.
+- Only **new** payment keys pass through the fresh payslip-outstanding
+  preflight, preserving existing friendly validation for new settlements.
+  A key already belonging to an organisation payment instead proceeds
+  directly to the previously hardened `record_payroll_payment(jsonb)`
+  SQL RPC. SQL compares the exact original date, method, currency,
+  clearing account, reference, memo and canonical allocations; altered
+  or reversed payment retries still fail. Supabase SELECT RLS and the
+  endpoint's `payroll.pay` permission continue to apply.
+- New pure `mustValidateFreshPayrollAllocations` helper and three
+  authored Vitest tests reproduce a fully paid payslip: the original
+  allocation validates, while repeating that validation after it posts
+  would fail. These tests also cover missing/new versus existing keys.
+  **Vitest itself has not been run**; source-derived runtime/wiring
+  checks against fetched branch files passed **15/15**.
+- The Payment UI success callback now uses the SQL `replayed` flag:
+  it reports **"Existing payroll payment confirmed"** on exact retries
+  instead of suggesting another payment was created.
+- Re-executed the existing rollback-only synthetic-identity SQL
+  payment lifecycle fixture on connected Supabase: posting, exact
+  replay, changed-payload rejection, reversal and old-key rejection
+  all passed. Independent post-rollback inspection confirmed 0
+  payment/allocation/synthetic company/journal rows and 3 enabled
+  Payroll currency guards. This is not a complete signed-in browser
+  or application-server E2E verification.
+- No new database migration was necessary. Full project
+  TypeScript/lint/Vitest/build, real browser authentication, PR merge
+  and Vercel deployment remain pending. GitHub Actions CI **not
+  run (per user instruction)**.

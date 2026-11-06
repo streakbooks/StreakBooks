@@ -12,6 +12,7 @@ import { todayLocalDateOnly } from "@/lib/payroll/local-date";
 import { PAYROLL_SETTLEMENT_REFRESH_KEYS } from "@/lib/payroll/settlement-query-keys";
 import { acquirePayrollMutationLock, releasePayrollMutationLock } from "@/lib/payroll/action-lock";
 import { buildGenericPayrollBankCsv } from "@/lib/payroll/payroll-bank-export";
+import { downloadCsv } from "@/lib/reports/csv";
 import { parsePayrollPaymentEntry } from "@/lib/payroll/payment-form-draft";
 import { getPayrollSettingsPage } from "@/lib/payroll/payroll.functions";
 import {
@@ -203,13 +204,9 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
         return;
       }
       const csv = buildGenericPayrollBankCsv(data.rows);
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "payroll-bank-export-generic.csv";
-      a.click();
-      URL.revokeObjectURL(url);
+      // Shared downloader writes a UTF-8 BOM for international names and
+      // safely cleans up the temporary anchor after starting the download.
+      downloadCsv("payroll-bank-export-generic.csv", csv);
       toast.success("Generic CSV downloaded", {
         description: data.disclaimer,
       });

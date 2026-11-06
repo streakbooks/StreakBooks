@@ -313,6 +313,27 @@ export const deleteAttachment = createServerFn({ method: "POST" })
       storage_path: string;
       storage_bucket: string | null;
     };
+    // Before deleting the parent, collect every immutable Storage object.
+    // The database cascades version metadata, so paths cannot be recovered later.
+    let versionPaths: string[] = [];
+    if (r.storage_bucket === COMPANY_DOCUMENTS_BUCKET) {
+      const { data: historical, error: historyError, count } = await supabase
+        .from("document_attachment_versions" as never)
+        .select("storage_path" as never, { count: "exact" })
+        .eq("company_id" as never, data.companyId as never)
+        .eq("attachment_id" as never, data.attachmentId as never)
+        .limit(50);
+      if (historyError) {
+        if (historyError.code === "42P01")
+          throw new Error("Apply the document version-history migration before deleting files.");
+        throw new Error(historyError.message);
+      }
+      if (count == null || count > 50 || count !== (historical ?? []).length)
+        throw new Error("Historical version list is incomplete. File deletion was cancelled.");
+      versionPaths = (historical ?? [] as unknown as Array<{ storage_path: string }>)
+        .map((item) => item.storage_path);
+    }
+
     // RLS only lets a user with the right "manage" permission delete: confirm a row went away.
     const { data: deleted, error } = await supabase
       .from("document_attachments" as never)
@@ -328,13 +349,18 @@ export const deleteAttachment = createServerFn({ method: "POST" })
     // the metadata is already gone, so callers must not retry deletion of the same row.
     let storageCleanup: "complete" | "requires_admin" = "complete";
     if (r.storage_bucket === COMPANY_DOCUMENTS_BUCKET) {
-      try {
-        const { error: storageError } = await supabase.storage
-          .from(COMPANY_DOCUMENTS_BUCKET)
-          .remove([r.storage_path]);
-        if (storageError) storageCleanup = "requires_admin";
-      } catch {
+      const paths = [...new Set([r.storage_path, ...versionPaths])];
+      if (paths.some((path) => !path.startsWith(`${data.companyId}/${r.entity_type}/${r.entity_id}/`))) {
         storageCleanup = "requires_admin";
+      } else {
+        try {
+          const { error: storageError } = await supabase.storage
+            .from(COMPANY_DOCUMENTS_BUCKET)
+            .remove(paths);
+          if (storageError) storageCleanup = "requires_admin";
+        } catch {
+          storageCleanup = "requires_admin";
+        }
       }
     }
     try {
@@ -351,7 +377,10 @@ export const deleteAttachment = createServerFn({ method: "POST" })
           attachment_id: data.attachmentId,
           file_name: r.file_name,
           storage_cleanup: storageCleanup,
-          ...(storageCleanup === "requires_admin" ? { storage_path: r.storage_path } : {}),
+          version_object_count: 1 + versionPaths.length,
+          ...(storageCleanup === "requires_admin"
+            ? { storage_paths_needing_review: [...new Set([r.storage_path, ...versionPaths])] }
+            : {}),
         },
       });
     } catch {

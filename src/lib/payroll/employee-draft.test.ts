@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   emptyEmployeeDraft,
+  isValidPayrollDateOnly,
   parsePayrollEmployeeDraft,
   parsePayrollEmployeesCsv,
   parsePaymentDetailsDraft,
@@ -183,6 +184,41 @@ describe("payroll employee drafts", () => {
     );
     expect(parsed.ok).toBe(true);
     if (parsed.ok) expect(parsed.drafts[0]?.department).toBe("Research,\nTeam");
+  });
+
+  it("rejects invalid calendar dates but accepts leap days", () => {
+    expect(isValidPayrollDateOnly("2024-02-29")).toBe(true);
+    expect(isValidPayrollDateOnly("2026-02-29")).toBe(false);
+    expect(isValidPayrollDateOnly("2026-02-30")).toBe(false);
+    expect(isValidPayrollDateOnly("0000-01-01")).toBe(false);
+    expect(isValidPayrollDateOnly("2026-13-01")).toBe(false);
+    expect(parsePayrollEmployeeDraft({
+      ...base,
+      firstName: "Dana",
+      lastName: "Lee",
+      hireDate: "2026-02-30",
+    }).ok).toBe(false);
+    expect(parsePayrollEmployeeDraft({
+      ...base,
+      firstName: "Dana",
+      lastName: "Lee",
+      hireDate: "2024-02-29",
+      terminationDate: "2025-02-29",
+    }).ok).toBe(false);
+  });
+
+  it("rejects wrong-width CSV rows and manual employee payment methods", () => {
+    const extraColumn = parsePayrollEmployeesCsv(
+      "First name,Last name,Hire date\\nAda,Lee,2026-01-01,unexpected",
+      { country: "GB", currency: "GBP" },
+    );
+    expect(extraColumn.ok).toBe(false);
+    if (!extraColumn.ok) expect(extraColumn.error).toMatch(/Line 2.*expected 3 CSV columns/);
+    const manual = parsePayrollEmployeesCsv(
+      "First name,Last name,Hire date,Payment method\\nAda,Lee,2026-01-01,manual",
+      { country: "GB", currency: "GBP" },
+    );
+    expect(manual.ok).toBe(false);
   });
 
 });

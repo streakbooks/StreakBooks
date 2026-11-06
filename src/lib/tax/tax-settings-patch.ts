@@ -6,6 +6,8 @@
  * non-recoverable tax account that the form never sent.
  */
 
+import { isValidTaxDate } from "@/lib/tax/tax-input-validation";
+
 export type TaxSettingsInput = {
   taxRegime?: string | undefined;
   registrationNumber?: string | null | undefined;
@@ -32,7 +34,6 @@ export const FILING_FREQUENCIES = [
 ] as const;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const ISO = /^\d{4}-\d{2}-\d{2}$/;
 
 function optionalUuid(v: string | null | undefined, name: string): string | null | undefined {
   if (v === undefined) return undefined;
@@ -45,7 +46,7 @@ function optionalDate(v: string | null | undefined, name: string): string | null
   if (v === undefined) return undefined;
   const t = (v ?? "").trim();
   if (!t) return null;
-  if (!ISO.test(t)) throw new Error(`${name} must be YYYY-MM-DD`);
+  if (!isValidTaxDate(t)) throw new Error(`${name} must be a real YYYY-MM-DD calendar date`);
   return t;
 }
 

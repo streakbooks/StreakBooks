@@ -80,6 +80,8 @@ export function TaxCodesPanel({
   const fetchRates = useServerFn(listTaxRates);
   const doSave = useServerFn(saveTaxCode);
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
 
   const codesQ = useQuery({
     queryKey: ["tax-codes", companyId],
@@ -92,6 +94,14 @@ export function TaxCodesPanel({
   const rows = (codesQ.data ?? []) as unknown as CodeRow[];
   const rates = (ratesQ.data ?? []) as Array<{ id: string; name: string; is_active: boolean }>;
   const pickable = useMemo(() => filterTaxAccountPicker(accounts, "code_account"), [accounts]);
+  const visibleRows = useMemo(() => rows.filter((code) => {
+    const term = search.trim().toLocaleLowerCase();
+    const matches = !term || [code.code, code.name, code.tax_rates?.name ?? ""]
+      .some((value) => value.toLocaleLowerCase().includes(term));
+    const matchesStatus = statusFilter === "all" ||
+      (statusFilter === "active" ? code.is_active : !code.is_active);
+    return matches && matchesStatus;
+  }), [rows, search, statusFilter]);
 
   const save = useMutation({
     mutationFn: (d: Draft) =>
@@ -136,7 +146,7 @@ export function TaxCodesPanel({
         </p>
         <Button
           size="sm"
-          disabled={rates.length === 0}
+          disabled={!canTax || !rates.some((r) => r.is_active)}
           onClick={() =>
             setDraft({
               code: "",
@@ -153,6 +163,28 @@ export function TaxCodesPanel({
         </Button>
       </div>
 
+      <div className="flex flex-wrap items-center gap-2">
+        <Input
+          aria-label="Search tax codes"
+          className="w-full sm:max-w-xs"
+          placeholder="Search codes, names or rates"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as "all" | "active" | "inactive")}>
+          <SelectTrigger aria-label="Filter tax code status" className="w-full sm:w-40">
+            <SelectValue placeholder="All statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="inactive">Inactive</SelectItem>
+          </SelectContent>
+        </Select>
+        {!canTax ? <Badge variant="outline">View only</Badge> : null}
+        {!codesQ.isPending && !codesQ.isError ? <span className="text-xs text-muted-foreground">{visibleRows.length} of {rows.length} codes</span> : null}
+      </div>
+
       {codesQ.isPending ? (
         <LoadingState />
       ) : codesQ.isError ? (
@@ -163,6 +195,8 @@ export function TaxCodesPanel({
         />
       ) : rows.length === 0 ? (
         <EmptyState title="No tax codes" description="Add a rate, then a code, or apply a pack." />
+      ) : visibleRows.length === 0 ? (
+        <EmptyState title="No matching tax codes" description="Change the search or status filter." />
       ) : (
         <Table>
           <TableHeader>
@@ -176,7 +210,7 @@ export function TaxCodesPanel({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.map((c) => (
+            {visibleRows.map((c) => (
               <TableRow key={c.id}>
                 <TableCell className="font-mono">{c.code}</TableCell>
                 <TableCell>{c.name}</TableCell>
@@ -192,13 +226,13 @@ export function TaxCodesPanel({
                   </Badge>
                 </TableCell>
                 <TableCell className="space-x-1 text-right">
-                  <Button size="sm" variant="ghost" onClick={() => setDraft(fromRow(c))}>
+                  <Button size="sm" variant="ghost" disabled={!canTax || save.isPending} onClick={() => setDraft(fromRow(c))}>
                     Edit
                   </Button>
                   <Button
                     size="sm"
                     variant="ghost"
-                    disabled={save.isPending}
+                    disabled={!canTax || save.isPending}
                     onClick={() => save.mutate({ ...fromRow(c), active: !c.is_active })}
                   >
                     {c.is_active ? "Deactivate" : "Reactivate"}
@@ -318,7 +352,7 @@ export function TaxCodesPanel({
               Cancel
             </Button>
             <Button
-              disabled={save.isPending || !draft?.code || !draft?.name || !draft?.rateId}
+              disabled={!canTax || save.isPending || !draft?.code.trim() || !draft?.name.trim() || !draft?.rateId}
               onClick={() => draft && save.mutate(draft)}
             >
               Save code

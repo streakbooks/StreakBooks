@@ -635,10 +635,10 @@ function FilesPage() {
                 />
                 <Button
                   size="sm"
-                  disabled={uploadM.isPending}
+                  disabled={uploadM.isPending || duplicateCheckM.isPending || Boolean(pendingUploadReview)}
                   onClick={() => inputRef.current?.click()}
                 >
-                  {uploadM.isPending ? (
+                  {uploadM.isPending || duplicateCheckM.isPending ? (
                     <Loader2 className="mr-1 size-4 animate-spin" />
                   ) : (
                     <Upload className="mr-1 size-4" />
@@ -658,6 +658,11 @@ function FilesPage() {
       {uploadM.isPending ? (
         <p role="status" className="mb-3 text-sm text-muted-foreground">
           Uploading files to secure company storage…
+        </p>
+      ) : null}
+      {duplicateCheckM.isPending ? (
+        <p role="status" className="mb-3 text-sm text-muted-foreground">
+          Checking the selected files for possible duplicates…
         </p>
       ) : null}
       {failedDeleteBatch?.companyId === companyId && failedDeleteBatch.ids.length ? (
@@ -702,18 +707,20 @@ function FilesPage() {
       <div
         className={`mb-4 rounded-lg border border-dashed p-4 text-sm transition-colors ${dragActive ? "border-primary bg-primary/5" : "border-border"}`}
         onDragOver={(e) => {
-          if (!canUpload || uploadM.isPending) return;
+          if (!canUpload) return;
           e.preventDefault();
-          setDragActive(true);
+          if (!uploadM.isPending && !duplicateCheckM.isPending && !pendingUploadReview)
+            setDragActive(true);
         }}
         onDragLeave={(e) => {
           if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragActive(false);
         }}
         onDrop={(e) => {
-          if (!canUpload || uploadM.isPending) return;
+          if (!canUpload) return;
           e.preventDefault();
           setDragActive(false);
-          onPick(e.dataTransfer.files);
+          if (!uploadM.isPending && !duplicateCheckM.isPending && !pendingUploadReview)
+            onPick(e.dataTransfer.files);
         }}
       >
         <div className="flex items-center gap-2">
@@ -1498,6 +1505,65 @@ function FilesPage() {
           </div>
         </>
       )}
+
+      <AlertDialog
+        open={Boolean(pendingUploadReview)}
+        onOpenChange={(open) => {
+          if (!open && !uploadM.isPending) setPendingUploadReview(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {pendingUploadReview?.scanFailed
+                ? "Duplicate check unavailable"
+                : "Review possible duplicate files"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingUploadReview?.scanFailed
+                ? "The comparison with existing files could not be completed. You may cancel or explicitly continue. Repeated files in this selection are still flagged."
+                : "Matching filename and byte size can indicate a duplicate, but does not prove that the contents are identical. No files have been uploaded yet."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="max-h-56 space-y-2 overflow-y-auto rounded-md border p-3 text-sm">
+            {pendingUploadReview?.files.map((file, index) => (
+              <div className="flex items-start justify-between gap-3" key={index}>
+                <span className="min-w-0 break-all">{file.name}</span>
+                <span className="shrink-0 text-xs text-muted-foreground">
+                  {pendingUploadReview.flags[index]
+                    ? "Possible duplicate"
+                    : pendingUploadReview.scanFailed
+                      ? "Existing files not checked"
+                      : "Not flagged"}
+                </span>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {pendingUploadReview?.flags.filter(Boolean).length ?? 0} flagged out of{" "}
+            {pendingUploadReview?.files.length ?? 0} selected. Skip flagged files or explicitly
+            upload all. Existing records will not be deleted or replaced.
+          </p>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={uploadM.isPending}>Cancel</AlertDialogCancel>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={uploadM.isPending || !pendingUploadReview?.flags.some(Boolean)}
+              onClick={() => confirmReviewedUpload(false)}
+            >
+              Upload unflagged only
+            </Button>
+            <Button
+              type="button"
+              disabled={uploadM.isPending}
+              onClick={() => confirmReviewedUpload(true)}
+            >
+              Upload all anyway
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog
         open={Boolean(pendingBulkDelete)}

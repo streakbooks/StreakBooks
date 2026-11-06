@@ -109,6 +109,18 @@ export function TaxGlComparisonPanel({
                   </TableBody>
                 </Table>
               </div>
+              <div className="space-y-1 rounded-md border p-3 text-sm">
+                <p className="font-medium">Net tax payable comparison</p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <p>Calculated return: <strong>{f.money(result.netReturnMinor, result.currency)}</strong></p>
+                  <p>Document and reversal journals: <strong>{f.money(result.netDocumentAndReversalMinor, result.currency)}</strong></p>
+                  <p>All GL movements: <strong>{f.money(result.netAllGlMinor, result.currency)}</strong></p>
+                  <p>Diagnostic difference: <strong>{f.money(result.netDiagnosticDifferenceMinor, result.currency)}</strong></p>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  A zero difference is not proof of statutory compliance or a completed reconciliation.
+                </p>
+              </div>
               <p className="text-xs text-muted-foreground">
                 Output tax shows credits less debits; input tax shows debits less credits.
                 The comparison is based only on the two configured accounts.

@@ -32,6 +32,7 @@ import {
 import { getAiSuggestionKind, getJournalPreview } from "@/lib/ai/suggestion-review";
 import { AiFinancialInsights } from "@/components/ai/FinancialInsights";
 import { AiJournalEvidenceExplorer } from "@/components/ai/JournalEvidenceExplorer";
+import { AiJournalReviewQueue } from "@/components/ai/JournalReviewQueue";
 import { deleteAiConversationHistory, listAiConversationHistory, type AiConversationRow } from "@/lib/ai/history.functions";
 import { PageHeader, LoadingState, ErrorState } from "@/components/common/states";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -140,6 +141,10 @@ export function AiAssistantPage() {
         company.permissions?.includes("reports.view") ??
         roleHasPermission(company.role ?? "read_only", "reports.view")
       }
+      canViewMembers={
+        company.permissions?.includes("members.view") ??
+        roleHasPermission(company.role ?? "read_only", "members.view")
+      }
     />
   );
 }
@@ -151,6 +156,7 @@ function AiAssistantWorkspace({
   canUse,
   canApply,
   canViewReports,
+  canViewMembers,
 }: {
   companyId: string;
   companyName: string;
@@ -158,6 +164,7 @@ function AiAssistantWorkspace({
   canUse: boolean;
   canApply: boolean;
   canViewReports: boolean;
+  canViewMembers: boolean;
 }) {
   const fetchStatus = useServerFn(getAiAssistantStatus);
   const runAssist = useServerFn(runAiAssistant);
@@ -576,6 +583,14 @@ function AiAssistantWorkspace({
         currency={currency}
         canUse={canUse}
         canViewReports={canViewReports}
+      />
+
+      <AiJournalReviewQueue
+        companyId={companyId}
+        canUse={canUse}
+        canViewReports={canViewReports}
+        canManage={canApply}
+        canViewMembers={canViewMembers}
       />
 
       <Card className="mt-5">

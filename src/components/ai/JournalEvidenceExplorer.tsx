@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { BookOpenText, RefreshCw, ShieldCheck } from "lucide-react";
+import { toast } from "sonner";
 import { getJournalReport, getAccountTransactions } from "@/lib/reports/report.functions";
 import { listAccounts } from "@/lib/accounting/accounting.functions";
 import { todayIso, monthStart } from "@/lib/accounting/fiscal-year";
@@ -11,6 +12,7 @@ import { fromMinorUnits } from "@/lib/accounting/money";
 import { SOURCE_LABELS, sourceLabel } from "@/lib/reports/links";
 import { JournalLink, SourceLink } from "@/components/reports/ReportShell";
 import { AiJournalExplanationDialog } from "@/components/ai/JournalExplanationDialog";
+import { saveAiJournalReview } from "@/lib/ai/review-queue.functions";
 import {
   assessAccountEvidenceLine,
   assessJournalEvidence,
@@ -65,7 +67,28 @@ export function AiJournalEvidenceExplorer({
   const fetchJournals = useServerFn(getJournalReport);
   const fetchTransactions = useServerFn(getAccountTransactions);
   const fetchAccounts = useServerFn(listAccounts);
+  const saveReview = useServerFn(saveAiJournalReview);
   const qc = useQueryClient();
+  const createReviewM = useMutation({
+    mutationFn: (journalId: string) => saveReview({
+      data: {
+        companyId,
+        journalId,
+        caseId: null,
+        expectedVersion: null,
+        action: "open",
+        note: "",
+        assignedTo: null,
+      },
+    }),
+    onSuccess: async () => {
+      toast.success("Journal added to the persistent AI review queue.");
+      await qc.invalidateQueries({ queryKey: ["ai-journal-review-cases", companyId] });
+    },
+    onError: (error) => toast.error(
+      error instanceof Error ? error.message : "Could not create the AI journal review.",
+    ),
+  });
 
   const [mode, setMode] = useState<InvestigationMode>("journals");
   const [draft, setDraft] = useState<FilterRange>(initialRange);
@@ -323,9 +346,14 @@ export function AiJournalEvidenceExplorer({
                                     {evidenceMoney(check.credit, item.currency_code || currency)}
                                   </TableCell>
                                   <TableCell>
-                                    <Button type="button" size="sm" variant="outline" onClick={() => setExplainJournalId(item.journal_id)}>
-                                      Explain journal
-                                    </Button>
+                                    <div className="flex flex-wrap gap-1">
+                                      <Button type="button" size="sm" variant="outline" onClick={() => setExplainJournalId(item.journal_id)}>
+                                        Explain journal
+                                      </Button>
+                                      <Button type="button" size="sm" variant="ghost" disabled={createReviewM.isPending} onClick={() => createReviewM.mutate(item.journal_id)}>
+                                        Add to review queue
+                                      </Button>
+                                    </div>
                                   </TableCell>
                                 </TableRow>
                               );
@@ -458,9 +486,14 @@ export function AiJournalEvidenceExplorer({
                                   <TableCell className="whitespace-nowrap">
                                     <JournalLink journalId={row.journal_id} number={row.journal_number} />
                                     {UUID.test(row.journal_id) ? (
-                                      <Button type="button" variant="ghost" size="sm" onClick={() => setExplainJournalId(row.journal_id)}>
-                                        Explain
-                                      </Button>
+                                      <>
+                                        <Button type="button" variant="ghost" size="sm" onClick={() => setExplainJournalId(row.journal_id)}>
+                                          Explain
+                                        </Button>
+                                        <Button type="button" variant="ghost" size="sm" disabled={createReviewM.isPending} onClick={() => createReviewM.mutate(row.journal_id)}>
+                                          Add to review queue
+                                        </Button>
+                                      </>
                                     ) : null}
                                   </TableCell>
                                   <TableCell className="min-w-48 max-w-96 text-xs">

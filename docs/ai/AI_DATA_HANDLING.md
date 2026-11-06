@@ -131,3 +131,47 @@ read-only account-direction interpretation of an *existing posted journal*.
 - This feature never calls an AI provider or sends individual journal details
   externally. It makes no journal posting, reversal, payment, reconciliation,
   role change, background action or database migration.
+
+
+## 9. Persistent AI journal review queue (Phase 6)
+
+Cases, comments and review event history are retained per company in
+\`ai_journal_review_cases\` and \`ai_journal_review_events\`. This queue is
+**not** an accounting journal, an accountant-exception approval, or an
+authorization to post, reverse, reconcile or release a payment.
+
+- A user with \`ai.use\` and \`reports.view\` can open a case against an
+  existing **posted journal** or comment on a case that their company can access.
+  Cases are unique per company and journal. Duplicate creation is rejected;
+  re-open an existing case instead.
+- Assigning a reviewer requires \`ai.apply_suggestion\` and \`members.view\`.
+  The chosen colleague must already be an active company member with effective
+  reviewer permission. Assignment does **not** grant company membership or
+  account permissions. The case creator cannot be assigned to review it.
+- A signed-off **AI evidence review** requires a minimum-ten-character
+  rationale and the authenticated, assigned reviewer with
+  \`ai.apply_suggestion\`. It can never be self-signed by the creator. A
+  manager can reopen a review with a recorded reason, which invalidates the
+  previous active sign-off while preserving its audit event.
+- Every transition uses one transaction-level SQL RPC with a row lock and
+  positive optimistic \`version\`; stale clients must refresh instead of
+  overwriting another person's notes, assignment or status. Events are
+  append-only: open, assign, comment, sign_off and reopen, including actor,
+  before/after status, note, assignee and timestamp.
+- Both tables use organisation-member + \`ai.use\` + \`reports.view\` SELECT
+  RLS and the existing MFA policy. There are **no authenticated direct
+  INSERT, UPDATE or DELETE grants**. The deliberately exposed, restricted
+  SECURITY DEFINER RPC checks \`auth.uid()\`, MFA, membership, company
+  permissions, posted-journal identity and transition rules in the database;
+  \`EXECUTE\` is revoked from public and anonymous callers.
+- The client displays a server-paginated 25-case list with status and
+  assigned-to-me filters and up to 100 recent immutable events for a case.
+  The current UI does not constitute a full formal audit-workpaper export.
+- The review queue never sends journal evidence or notes to an external
+  model. Stored comments may contain sensitive accounting details; only
+  authorised organisation members can read them. Retention/deletion policy
+  for completed review history requires separate governance approval.
+- Supabase migration version: \`20261106075054_ai_journal_review_queue.sql\`,
+  applied to project \`ipxflpzfcqwtenodbxwc\`. Existing journal posting,
+  journal approval, accountant exception and period-lock workflows are
+  unchanged. A completed AI review has **no direct effect** on them.

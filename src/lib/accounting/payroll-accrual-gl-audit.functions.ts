@@ -127,7 +127,40 @@ export const auditPayrollAccrualGl = createServerFn({ method: "GET" })
     if (glLines.length >= 501) {
       throw new Error("Payroll GL journal exceeds the 500-line audit limit; no incomplete match returned.");
     }
-    return auditPayrollAccrualTieOut(
+    const report = auditPayrollAccrualTieOut(
       data.companyId, run, settings, employees, sources, components, journal, glLines,
     );
+    const accountIds = [...new Set(report.accounts.map((row) => row.accountId))];
+    if (accountIds.length > 500) {
+      throw new Error("Payroll GL account lookup exceeds the 500-account audit limit.");
+    }
+    if (accountIds.length) {
+      const { data: rawAccounts, error: accountError } = await sb
+        .from("accounts" as never)
+        .select("id, company_id, code, name" as never)
+        .eq("company_id" as never, data.companyId as never)
+        .in("id" as never, accountIds as never)
+        .limit(501);
+      if (accountError) throw new Error(accountError.message);
+      const accountRows = (rawAccounts ?? []) as unknown as Array<{
+        id: string; company_id: string; code: string; name: string;
+      }>;
+      const byId = new Map(accountRows.map((row) => [row.id, row]));
+      for (const id of accountIds) {
+        const account = byId.get(id);
+        if (!account || account.company_id !== data.companyId || !account.code?.trim()) {
+          report.issues.push("Payroll posting account is missing or not accessible: " + id);
+        }
+      }
+      report.accounts = report.accounts.map((row) => {
+        const account = byId.get(row.accountId);
+        return {
+          ...row,
+          accountCode: account?.code,
+          accountName: account?.name,
+        };
+      });
+    }
+    if (report.issues.length) report.status = "exceptions";
+    return report;
   });

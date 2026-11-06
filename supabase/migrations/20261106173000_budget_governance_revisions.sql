@@ -201,7 +201,7 @@ RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = ''
-AS $
+AS $$
 DECLARE
   _old_budget_id UUID;
   _new_budget_id UUID;
@@ -223,7 +223,7 @@ BEGIN
   IF TG_OP = 'DELETE' THEN RETURN OLD; END IF;
   RETURN NEW;
 END;
-$;
+$$;
 
 REVOKE ALL ON FUNCTION public.reject_locked_budget_line_mutation()
   FROM PUBLIC, anon, authenticated;

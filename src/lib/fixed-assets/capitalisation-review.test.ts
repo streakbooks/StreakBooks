@@ -133,7 +133,7 @@ describe("posted bill capitalisation review", () => {
     ).rejects.toThrow("DB unavailable");
     await expect(
       pageCapitalisationBillLines(["a", ...Array.from({ length: 50 }, () => "b")],
-        async () => ({ data: [{ id: "repeat" }], error: null })),
+        async (_ids, from) => ({ data: from === 0 ? [{ id: "repeat" }] : [], error: null })),
     ).rejects.toThrow(/duplicate/i);
   });
 

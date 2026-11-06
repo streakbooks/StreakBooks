@@ -99,8 +99,8 @@ merge was performed. Review and test the draft PR before merging.
 ## Continuation — Batch 03: posted tax history guards and filed-return variance
 
 ### Implemented in code
-- Migration \`20261106120000_tax_master_posted_history_guard.sql\` adds
-  organisation-scoped database triggers. A posted invoice/bill with \`tax_code_id\`
+- Migration `20261106120000_tax_master_posted_history_guard.sql` adds
+  organisation-scoped database triggers. A posted invoice/bill with `tax_code_id`
   protects the referenced code's rate, treatment, recoverability, account,
   reporting class, usage, and identifier from retroactive mutation.
 - A rate referenced through posted documents cannot have its amount, original
@@ -110,10 +110,10 @@ merge was performed. Review and test the draft PR before merging.
   even if a caller knows another tenant's UUID. Changing company_id is rejected.
 - Guards preserve name corrections and active/inactive changes. Triggers cover
   direct table updates, not only changes through the Tax UI.
-- Added \`tests/fixtures/tax-master-history/baseline.sql\`,
-  \`tests/integration/tax-master-posted-history.sql\`, and a manually invoked
+- Added `tests/fixtures/tax-master-history/baseline.sql`,
+  `tests/integration/tax-master-posted-history.sql`, and a manually invoked
   isolated Docker/PostgreSQL runner:
-  \`node scripts/test-tax-master-history-postgres.mjs\`.
+  `node scripts/test-tax-master-history-postgres.mjs`.
 - Filed return details now show a four-column table of recorded filed, current
   recalculation, and a signed delta for each changed return box (using bigint
   subtraction to avoid numeric overflow). A link opens the separate
@@ -122,7 +122,7 @@ merge was performed. Review and test the draft PR before merging.
 
 ### Verification and rollout gates
 1. Run the PostgreSQL fixture runner locally; it does not use Supabase or CI.
-2. Run \`npm.cmd test -- src/lib/tax\`, typecheck, lint, build, and browser regressions.
+2. Run `npm.cmd test -- src/lib/tax`, typecheck, lint, build, and browser regressions.
 3. Before deployment, audit existing tax_code_id usage, especially legacy
    documents and any organisation/rate/account mismatches. The migration does
    not rewrite historical rows; existing violations must be assessed separately.

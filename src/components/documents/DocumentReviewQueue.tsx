@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { useCan } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { DocumentOcrPanel } from "@/components/documents/DocumentOcrPanel";
-import type { OcrSuggestions } from "@/lib/documents/ocr-model";
+import { fillBlankReviewFields, type OcrSuggestions } from "@/lib/documents/ocr-model";
 import { getAttachmentDownload, getAttachmentPreview } from "@/lib/documents/attachments.functions";
 import { ATTACHMENT_ENTITIES, formatFileSize } from "@/lib/documents/attachments";
 import { downloadBase64 } from "@/lib/documents/upload-client";
@@ -153,16 +153,7 @@ export function DocumentReviewQueue({
     setEdit((previous) => (previous ? { ...previous, ...changes } : null));
   const applyOcrSuggestions = (suggestions: OcrSuggestions) => {
     if (!canManage) return;
-    setEdit((previous) => previous ? {
-      ...previous,
-      documentType: previous.documentType === "unclassified"
-        ? suggestions.documentType ?? previous.documentType : previous.documentType,
-      supplierName: previous.supplierName || suggestions.supplierName || null,
-      reference: previous.reference || suggestions.reference || null,
-      documentDate: previous.documentDate || suggestions.documentDate || null,
-      currencyCode: previous.currencyCode || suggestions.currencyCode || null,
-      totalMinor: previous.totalMinor ?? suggestions.totalMinor ?? null,
-    } : null);
+    setEdit((previous) => previous ? fillBlankReviewFields(previous, suggestions) : null);
     toast.info("Suggestions filled only into blank fields. Verify and save the review manually.");
   };
 

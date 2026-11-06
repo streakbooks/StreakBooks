@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { productsToCsv } from "@/lib/products/catalogue-csv";
+import { parseImportCsv } from "./import-preflight";
 import {
   getImportDefinition,
   IMPORT_DEFINITIONS,
@@ -28,6 +30,16 @@ describe("shared import definitions", () => {
     const csv = importFieldDictionaryCsv(getImportDefinition("fixed_assets", "Asset register"));
     expect(csv).toContain("Field,Required,Description,Example");
     expect(csv).toContain("Acquisition Date,Yes");
+  });
+
+  it("keeps product export headers recognized by the import template", () => {
+    const exported = productsToCsv([], "USD");
+    const [headers = []] = parseImportCsv(exported);
+    const definition = getImportDefinition("products", "Products and services");
+    for (const header of headers) {
+      expect(definition.fields.some((field) => field.label === header)).toBe(true);
+    }
+    expect(headers.length).toBe(12);
   });
 
   it("does not misrepresent unavailable domain writers", () => {

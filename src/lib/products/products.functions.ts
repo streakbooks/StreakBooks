@@ -4,6 +4,7 @@ import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-compa
 import { assertUuid } from "@/lib/company-validation";
 import { productAccountProblem } from "@/lib/products/product-rules";
 import { productSkuProblem } from "@/lib/products/catalogue-input";
+import { normaliseBulkPriceChange, type BulkPriceField } from "@/lib/products/bulk-price-rules";
 import { productsToCsv, type CatalogueCsvItem } from "@/lib/products/catalogue-csv";
 import { buildIlikeOr } from "@/lib/purchases/search-terms";
 
@@ -452,4 +453,69 @@ export const setProductsActive = createServerFn({ method: "POST" })
       .select("id" as never);
     if (error) throw new Error(productWriteError(error));
     return { changed: (updated ?? []).length };
+  });
+
+/**
+ * An exact uniform price change to selected catalogue items. One SQL UPDATE
+ * statement changes all matching items; historical posted documents are untouched.
+ */
+export const setProductPrices = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      productIds: string[];
+      field: BulkPriceField;
+      valueMinor: number;
+    }) => {
+      const validated = normaliseBulkPriceChange(input);
+      return {
+        ...validated,
+        companyId: assertUuid(input.companyId),
+        productIds: validated.productIds.map((id) => assertUuid(id, "product")),
+      };
+    },
+  )
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "products.manage");
+    const { data: existing, error: readError } = await context.supabase
+      .from("products" as never)
+      .select("id" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .in("id" as never, data.productIds as never);
+    if (readError) throw new Error(readError.message);
+    if ((existing ?? []).length !== data.productIds.length) {
+      throw new Error("One or more selected items do not belong to this organisation");
+    }
+    const { data: updated, error } = await context.supabase
+      .from("products" as never)
+      .update({
+        [data.field]: data.valueMinor,
+        updated_at: new Date().toISOString(),
+      } as never)
+      .eq("company_id" as never, data.companyId as never)
+      .in("id" as never, data.productIds as never)
+      .select("id" as never);
+    if (error) throw new Error(error.message);
+    const changed = (updated ?? []).length;
+    if (changed !== data.productIds.length) {
+      throw new Error("Not all items could be updated; refresh the catalogue and review prices");
+    }
+    const { error: auditError } = await context.supabase.rpc(
+      "record_audit_event" as never,
+      {
+        _company_id: data.companyId,
+        _action: "products.bulk_price_set",
+        _entity_type: "products",
+        _entity_id: null,
+        _details: {
+          field: data.field,
+          value_minor: data.valueMinor,
+          item_ids: data.productIds,
+          changed,
+          source: "catalogue_bulk_edit",
+        },
+      } as never,
+    );
+    return { changed, auditError: auditError?.message ?? null };
   });

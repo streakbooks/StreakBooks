@@ -163,7 +163,10 @@ function ImportCentre() {
     mutationFn: () => importProducts({ data: { companyId: company!.id, csvText: csv } }),
     onSuccess: async (result) => {
       setImportResult(result);
-      await queryClient.invalidateQueries({ queryKey: ["products", company!.id] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["products", company!.id] }),
+        queryClient.invalidateQueries({ queryKey: ["products-page", company!.id] }),
+      ]);
       if (result.failed || result.auditError)
         toast.warning("Import completed with issues; review the result below.");
       else
@@ -515,10 +518,13 @@ function ImportCentre() {
         {definition.module === "products" && (
           <div className="space-y-3 rounded-lg border p-3">
             <p className="text-sm">
-              Catalogue import only: creates non-inventory product and service records. It does not
-              create stock balances, COGS, invoices or journal entries. Existing active SKUs are
-              skipped, including case-insensitive matches. A database error can produce a partial
-              import.
+              Catalogue import creates non-inventory products and services only; it never posts
+              stock, COGS, invoices or journals. Optional description, unit, sales/purchase tax
+              rates and account IDs are supported. Account IDs must belong to this organisation
+              and reference eligible active accounts. Only Active records can be imported:
+              filter out Archived rows before exporting or importing. Existing active SKUs are
+              skipped case-insensitively. Maximum 250 rows per file; database failures can
+              produce a partial import.
             </p>
             <Button
               type="button"
@@ -533,7 +539,7 @@ function ImportCentre() {
               onClick={() => {
                 if (
                   window.confirm(
-                    "Import validated catalogue rows into this organisation? Existing active SKUs will be skipped.",
+                    "Create validated Active items in this organisation? Existing SKUs are skipped. Prices, tax rates and eligible account defaults will be saved; no journals are posted.",
                   )
                 )
                   productImport.mutate();

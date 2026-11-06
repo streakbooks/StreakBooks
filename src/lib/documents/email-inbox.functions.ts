@@ -3,6 +3,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
 import { assertEntityAccess } from "@/lib/documents/attachments.functions";
+import { validateFileRename } from "@/lib/documents/file-workspace";
 import {
   COMPANY_DOCUMENTS_BUCKET,
   MAX_FILE_BYTES,
@@ -228,16 +229,18 @@ export const importDocumentInboxAttachment = createServerFn({ method: "POST" })
     const attachment = list.data.find((item) => item.id === data.attachmentId);
     if (!attachment) throw new Error("Attachment not found in the verified email.");
 
+    // Reject path separators, control characters and deceptive display names from email.
+    const safeName = validateFileRename(attachment.filename, attachment.filename);
     const claimedMime = (attachment.content_type || "").toLowerCase().split(";")[0]!.trim();
     const check = validateUpload({
-      fileName: attachment.filename,
+      fileName: safeName,
       sizeBytes: attachment.size,
       contentType: claimedMime,
     });
     if (!check.ok) throw new Error(check.error);
     const bytes = await downloadReceivedFile(attachment.download_url, MAX_FILE_BYTES);
     const verified = validateUpload({
-      fileName: attachment.filename,
+      fileName: safeName,
       sizeBytes: bytes.byteLength,
       contentType: claimedMime,
     });
@@ -248,7 +251,7 @@ export const importDocumentInboxAttachment = createServerFn({ method: "POST" })
       entityType: "company",
       entityId: data.companyId,
       uniqueId: crypto.randomUUID(),
-      fileName: attachment.filename,
+      fileName: safeName,
     });
     const bucket = supabase.storage.from(COMPANY_DOCUMENTS_BUCKET);
     const { error: uploadError } = await bucket.upload(storagePath, Buffer.from(bytes), {
@@ -265,7 +268,7 @@ export const importDocumentInboxAttachment = createServerFn({ method: "POST" })
           company_id: data.companyId,
           entity_type: "company",
           entity_id: data.companyId,
-          file_name: attachment.filename,
+          file_name: safeName,
           content_type: claimedMime,
           size_bytes: bytes.byteLength,
           storage_path: storagePath,
@@ -288,7 +291,29 @@ export const importDocumentInboxAttachment = createServerFn({ method: "POST" })
         }
         handleDbError(error);
       }
-      return { id: (created as { id: string }).id, alreadyImported: false };
+      const attachmentId = (created as { id: string }).id;
+      // An audit outage cannot undo a committed attachment; review enqueue is DB-triggered.
+      try {
+        await (
+          supabase as unknown as {
+            rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown>;
+          }
+        ).rpc("record_audit_event", {
+          _company_id: data.companyId,
+          _action: "document.email_attachment.import",
+          _entity_type: "company",
+          _entity_id: data.companyId,
+          _details: {
+            attachment_id: attachmentId,
+            provider: "resend",
+            inbound_email_id: data.emailId,
+            inbound_attachment_id: data.attachmentId,
+          },
+        });
+      } catch {
+        // Review state and attachment identity remain the source of truth.
+      }
+      return { id: attachmentId, alreadyImported: false };
     } finally {
       // An existing idempotency key or any failed insert must not leave a duplicate object.
       const { data: row } = await supabase

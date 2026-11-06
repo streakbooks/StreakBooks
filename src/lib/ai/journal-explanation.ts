@@ -76,11 +76,11 @@ export function accountPostingMeaning(
   debitMinor: bigint,
   creditMinor: bigint,
 ): string {
-  if (debitMinor <= 0n && creditMinor <= 0n) return "No positive movement to explain.";
-  if (debitMinor > 0n && creditMinor > 0n)
-    return "Both debit and credit columns contain a positive amount; inspect the source line.";
   if (debitMinor < 0n || creditMinor < 0n)
     return "A negative debit or credit is present; inspect the original entry.";
+  if (debitMinor === 0n && creditMinor === 0n) return "No movement to explain.";
+  if (debitMinor > 0n && creditMinor > 0n)
+    return "Both debit and credit columns contain a positive amount; inspect the source line.";
   const t = type && type in TYPE_LABELS ? (type as JournalAccountType) : null;
   if (!t) return "Account classification is unavailable; inspect the original chart of accounts.";
   const debitIncreases = t === "asset" || t === "expense";

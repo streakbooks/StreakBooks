@@ -1021,17 +1021,18 @@ export const getBudgetForecastData = createServerFn({method:"GET"})
       throw new Error("The selected month has not finished yet.");
     }
     const completedIndex=data.completedIndex??maxCompletedIndex;
-    const [activity,scenariosResult,eventsResult] = await Promise.all([
+    // The scenario table has no 250-row business limit. Probe for the optional
+    // migration, then paginate by a UNIQUE stable column so saved scenarios
+    // cannot disappear from the picker as an organisation grows.
+    const [activity,scenariosProbe,eventsResult] = await Promise.all([
       completedIndex<0 ? Promise.resolve([] as MonthActivity[]) :
         monthlyActivity(sb,data.companyId,months[0]!,
           addDaysIso(addMonthsIso(months[completedIndex]!,1),-1),"accrual"),
-      context.supabase
-        .from("budget_forecast_scenarios" as never)
-        .select("id,name,method,income_adjustment_bps,expense_adjustment_bps,notes,updated_at,created_at" as never)
+      sb.from("budget_forecast_scenarios" as never)
+        .select("id" as never)
         .eq("company_id" as never,data.companyId as never)
         .eq("budget_id" as never,data.budgetId as never)
-        .order("name" as never)
-        .limit(250),
+        .limit(1),
       context.supabase
         .from("budget_forecast_scenario_events" as never)
         .select("id,scenario_id,action,recorded_at,recorded_by,snapshot" as never)
@@ -1040,13 +1041,28 @@ export const getBudgetForecastData = createServerFn({method:"GET"})
         .order("recorded_at" as never,{ascending:false} as never)
         .limit(50),
     ]);
-    if(scenariosResult.error&&!isMissingRelation(scenariosResult.error)){
-      throw new Error(scenariosResult.error.message);
+    if(scenariosProbe.error&&!isMissingRelation(scenariosProbe.error)){
+      throw new Error(scenariosProbe.error.message);
     }
     if(eventsResult.error&&!isMissingRelation(eventsResult.error)){
       throw new Error(eventsResult.error.message);
     }
-    const scenariosAvailable=!scenariosResult.error&&!eventsResult.error;
+    const scenariosAvailable=!scenariosProbe.error&&!eventsResult.error;
+    type StoredForecastScenario = {
+      id:string;name:string;method:ForecastMethod;
+      income_adjustment_bps:number;expense_adjustment_bps:number;
+      notes:string|null;updated_at:string;created_at:string;
+    };
+    const raw:StoredForecastScenario[] = scenariosAvailable
+      ? await fetchAllPages<StoredForecastScenario>((from,to)=>
+          sb.from("budget_forecast_scenarios" as never)
+            .select("id,name,method,income_adjustment_bps,expense_adjustment_bps,notes,updated_at,created_at" as never)
+            .eq("company_id" as never,data.companyId as never)
+            .eq("budget_id" as never,data.budgetId as never)
+            .order("id" as never)
+            .range(from,to) as unknown as PromiseLike<PageResult<StoredForecastScenario>>,
+        )
+      : [];
     const accountList:ForecastAccount[]=metas
       .filter(a=>a.account_type==="income"||a.account_type==="expense")
       .map(a=>({
@@ -1060,11 +1076,6 @@ export const getBudgetForecastData = createServerFn({method:"GET"})
       }
       return Number(amount);
     };
-    const raw=(scenariosResult.data??[]) as Array<{
-      id:string;name:string;method:ForecastMethod;
-      income_adjustment_bps:number;expense_adjustment_bps:number;
-      notes:string|null;updated_at:string;created_at:string;
-    }>;
     return {
       budget:head,
       currency:meta.baseCurrency,
@@ -1082,7 +1093,7 @@ export const getBudgetForecastData = createServerFn({method:"GET"})
       })),
       maxCompletedIndex,completedIndex,accountingBasis:"accrual",
       scenariosAvailable,
-      scenarios:raw.map(row=>({
+      scenarios:raw.sort((a,b)=>a.name.localeCompare(b.name)).map(row=>({
         id:row.id,name:row.name,method:row.method,
         incomeBps:row.income_adjustment_bps,expenseBps:row.expense_adjustment_bps,
         notes:row.notes,updatedAt:row.updated_at,createdAt:row.created_at,

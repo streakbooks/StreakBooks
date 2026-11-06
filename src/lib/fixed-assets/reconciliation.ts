@@ -17,6 +17,7 @@ export type ReconciliationAsset = {
   disposal_date: string | null;
   status: "active" | "disposed";
   cost_minor: number | string;
+  residual_minor: number | string;
   opening_accumulated_minor: number | string;
 };
 
@@ -107,16 +108,22 @@ export function reconcileFixedAssets(
   for (const asset of assets) {
     if (knownAssetIds.has(asset.id)) throw new Error("Duplicate fixed asset in register");
     knownAssetIds.add(asset.id);
+    if ((asset.status === "disposed" && !asset.disposal_date) ||
+        (asset.status === "active" && asset.disposal_date !== null) ||
+        (asset.disposal_date !== null && asset.disposal_date < asset.purchase_date)) {
+      throw new Error("Fixed asset disposal state and dates are inconsistent");
+    }
     if (asset.purchase_date > asOf) continue;
     bucketFor(asset.asset_account_id);
     bucketFor(asset.accumulated_account_id);
+    const cost = exactMinor(asset.cost_minor, "Register cost");
+    const residual = exactMinor(asset.residual_minor, "Register residual value");
+    const opening = exactMinor(asset.opening_accumulated_minor, "Opening accumulated depreciation");
+    if (cost <= 0n || residual < 0n || opening < 0n || residual + opening > cost) {
+      throw new Error("Invalid fixed asset cost, residual or opening depreciation");
+    }
     if (!isHeldAt(asset, asOf)) continue;
     activeById.set(asset.id, asset);
-    const cost = exactMinor(asset.cost_minor, "Register cost");
-    const opening = exactMinor(asset.opening_accumulated_minor, "Opening accumulated depreciation");
-    if (cost <= 0n || opening < 0n || opening > cost) {
-      throw new Error("Invalid fixed asset cost or opening depreciation");
-    }
     const costBucket = bucketFor(asset.asset_account_id);
     costBucket.cost += cost;
     costBucket.assets.add(asset.id);
@@ -130,18 +137,26 @@ export function reconcileFixedAssets(
     if (!knownAssetIds.has(entry.asset_id)) {
       throw new Error("Depreciation entry references an unknown asset");
     }
-    const asset = activeById.get(entry.asset_id);
-    if (!asset) continue;
+    const asset = assets.find((item) => item.id === entry.asset_id)!;
+    if (entry.period_end < asset.purchase_date) {
+      throw new Error("Depreciation entry precedes the asset purchase date");
+    }
+    if (asset.disposal_date !== null && entry.period_end > asset.disposal_date) {
+      throw new Error("Depreciation entry occurs after the asset disposal date");
+    }
     const amount = exactMinor(entry.amount_minor, "Posted depreciation");
     if (amount <= 0n) throw new Error("Posted depreciation must be positive");
     const nextPosted = (postedByAssetId.get(asset.id) ?? 0n) + amount;
     const opening = exactMinor(asset.opening_accumulated_minor, "Opening depreciation");
     const cost = exactMinor(asset.cost_minor, "Register cost");
-    if (opening + nextPosted > cost) {
-      throw new Error("Posted depreciation exceeds an asset's acquisition cost");
+    const residual = exactMinor(asset.residual_minor, "Register residual value");
+    if (opening + nextPosted + residual > cost) {
+      throw new Error("Posted depreciation exceeds the asset's depreciable cost");
     }
     postedByAssetId.set(asset.id, nextPosted);
-    bucketFor(asset.accumulated_account_id).accumulated += amount;
+    if (activeById.has(asset.id)) {
+      bucketFor(asset.accumulated_account_id).accumulated += amount;
+    }
   }
 
   const actualById = new Map<string, bigint>();

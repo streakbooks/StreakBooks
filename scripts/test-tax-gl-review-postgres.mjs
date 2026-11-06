@@ -65,6 +65,7 @@ try {
   const migration = read("supabase/migrations/20261106134000_tax_gl_review_sessions.sql");
   sql(migration);
   sql(migration);
+  sql(read("tests/integration/tax-gl-review-schema-postflight.sql"));
   sql(read("tests/integration/tax-gl-review-sessions.sql"));
   console.log("PASS: isolated tax GL reviewer permissions, concurrency versions and audit trail");
 } finally {

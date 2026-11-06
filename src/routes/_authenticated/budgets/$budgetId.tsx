@@ -9,6 +9,7 @@ import { useCanDo } from "@/hooks/use-can";
 import { BudgetGovernancePanel } from "@/components/budgets/BudgetGovernancePanel";
 import { BudgetApprovalPanel } from "@/components/budgets/BudgetApprovalPanel";
 import { BudgetDimensionsPanel } from "@/components/budgets/BudgetDimensionsPanel";
+import { BudgetForecastPanel } from "@/components/budgets/BudgetForecastPanel";
 import { useFormat } from "@/hooks/use-format";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { addMonthsIso, monthStart } from "@/lib/accounting/fiscal-year";
@@ -884,6 +885,12 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
         companyId={companyId}
         budgetId={data.budget.id}
         canEdit={canEdit}
+        parentDirty={dirty}
+      />
+      <BudgetForecastPanel
+        companyId={companyId}
+        budgetId={data.budget.id}
+        canManage={canManage}
         parentDirty={dirty}
       />
     </>

@@ -18,6 +18,7 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { roleHasPermission } from "@/lib/permissions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { fromMinorUnits } from "@/lib/accounting/money";
+import { listAccounts } from "@/lib/accounting/accounting.functions";
 import {
   applyAiSuggestion,
   getAiAssistantStatus,
@@ -144,6 +145,7 @@ function AiAssistantWorkspace({
   const fetchStatus = useServerFn(getAiAssistantStatus);
   const runAssist = useServerFn(runAiAssistant);
   const fetchSuggestions = useServerFn(listAiSuggestions);
+  const fetchAccounts = useServerFn(listAccounts);
   const applySuggestion = useServerFn(applyAiSuggestion);
   const rejectSuggestion = useServerFn(rejectAiSuggestion);
   const qc = useQueryClient();
@@ -167,6 +169,12 @@ function AiAssistantWorkspace({
     queryKey: ["ai-suggestions", companyId],
     enabled: canUse,
     queryFn: () => fetchSuggestions({ data: { companyId } }),
+  });
+  const accountsQ = useQuery({
+    queryKey: ["ai-journal-account-preview", companyId],
+    enabled: Boolean(reviewId) && canApply,
+    queryFn: () => fetchAccounts({ data: { companyId } }),
+    staleTime: 60_000,
   });
 
   const askM = useMutation({
@@ -246,6 +254,8 @@ function AiAssistantWorkspace({
   );
   const selected = rows.find((item) => item.id === reviewId) ?? null;
   const journalLines = selected ? getJournalPreview(selected) : null;
+  const accountById = new Map((accountsQ.data ?? []).map((account) => [account.id, account]));
+  const accountsResolved = Boolean(journalLines?.every((line) => accountById.has(line.account_id)));
   const latestId = history[history.length - 1]?.id;
   const formatAmount = (minor: number) => currency + " " + fromMinorUnits(BigInt(minor), currency);
 
@@ -602,7 +612,8 @@ function AiAssistantWorkspace({
                   {journalLines.map((line, index) => (
                     <TableRow key={String(index) + line.account_id}>
                       <TableCell className="text-xs">
-                        <span className="font-mono">{line.account_id.slice(0, 8)}…</span>
+                        <span className="font-medium">{accountById.has(line.account_id) ? accountById.get(line.account_id)?.code + " — " + accountById.get(line.account_id)?.name : line.account_id}</span>
+                        {accountById.get(line.account_id)?.is_active === false ? <p className="text-destructive">Inactive account — verify before posting</p> : null}
                         {line.description ? <p className="mt-1 text-muted-foreground">{line.description}</p> : null}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">{line.debit_minor ? formatAmount(line.debit_minor) : "—"}</TableCell>
@@ -628,6 +639,19 @@ function AiAssistantWorkspace({
               Posting uses the selected journal date, the organisation's ledger rules and an idempotency key. No posting occurs until you confirm.
             </AlertDescription>
           </Alert>
+          {accountsQ.isError ? (
+            <Alert variant="destructive">
+              <AlertTitle>Could not verify journal account names</AlertTitle>
+              <AlertDescription>{friendlyAuthError(accountsQ.error)}</AlertDescription>
+            </Alert>
+          ) : accountsQ.isFetching ? (
+            <p className="text-xs text-muted-foreground">Loading chart of accounts for review…</p>
+          ) : journalLines && !accountsResolved ? (
+            <Alert variant="destructive">
+              <AlertTitle>Unknown account on this journal</AlertTitle>
+              <AlertDescription>Posting is disabled until the account can be verified in the selected organisation.</AlertDescription>
+            </Alert>
+          ) : null}
           <div className="space-y-2">
             <label className="text-sm font-medium" htmlFor="ai-journal-date">Journal posting date</label>
             <input
@@ -643,7 +667,7 @@ function AiAssistantWorkspace({
           </div>
           <DialogFooter>
             <Button variant="outline" disabled={applyM.isPending} onClick={() => setReviewId(null)}>Cancel</Button>
-            <Button disabled={!selected || !journalLines || !journalDate || applyM.isPending} onClick={() => selected && applyM.mutate(selected.id)}>
+            <Button disabled={!selected || !journalLines || !accountsResolved || !journalDate || applyM.isPending} onClick={() => selected && applyM.mutate(selected.id)}>
               {applyM.isPending ? <Loader2 className="size-4 animate-spin" /> : <ShieldCheck className="size-4" />}
               Confirm & post journal
             </Button>

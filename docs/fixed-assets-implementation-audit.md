@@ -16,7 +16,7 @@ This is an evidence-based engineering record, not a claim of production readines
 | Financial summary | Implemented in source; unverified in browser | Uses active asset cost and register-derived accumulated depreciation. |
 | Filtered CSV export | Implemented in source; unverified in browser | CSV escape and spreadsheet formula safeguards, commit b2d42e9. |
 | Depreciation and disposal regression tests | Added; not executed | `src/lib/fixed-assets/depreciation.test.ts`, commit c4023ba. |
-| General ledger reconciliation | Not implemented / not evidenced | Requires account-specific GL balance vs register cost and accumulated depreciation, as-of date, exception drill-down. |
+| General ledger reconciliation | Added in source on draft PR #111; not verified | Batch 2 adds a tenant-scoped, as-at account comparison with GL drill-down, signed account variances, CSV, and pure regression tests. Authenticated database, tenant, date/FX, build and browser validation still required. |
 | Separate tax depreciation books | Not implemented / not evidenced | Requires country-specific accounting policy and independent schedules. |
 | Depreciation pools | Not implemented / not evidenced | Requires pool lifecycle, jurisdictional rules, audit trail. |
 | Impairment and revaluation | Not implemented / not evidenced | Requires appropriate policy, journals, approval and reporting. |

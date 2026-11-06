@@ -76,6 +76,31 @@ describe("straight line", () => {
     const s = buildSchedule(sl({ usefulLifeMonths: 3, costMinor: 3_000 }), "2028-01-31");
     expect(s.map((r) => r.periodEnd)).toEqual(["2028-01-31", "2028-02-29", "2028-03-31"]);
   });
+  it("displays all 1,200 allowed straight-line months without truncating at 600", () => {
+    const a = sl({
+      costMinor: 132_000,
+      residualMinor: 12_000,
+      openingAccumulatedMinor: 0,
+      usefulLifeMonths: 1_200,
+    });
+    const schedule = buildSchedule(a, "2026-01-15");
+    expect(schedule).toHaveLength(1_200);
+    expect(schedule[0]!.periodEnd).toBe("2026-01-31");
+    expect(schedule[599]!.periodEnd).toBe("2075-12-31");
+    expect(schedule[1199]!.periodEnd).toBe("2125-12-31");
+    expect(schedule.reduce((sum, row) => sum + row.amountMinor, 0)).toBe(120_000);
+    expect(schedule.at(-1)!.netBookValueMinor).toBe(12_000);
+    expect(schedule.every((row) => row.netBookValueMinor >= a.residualMinor)).toBe(true);
+  });
+
+  it("respects an explicit shorter schedule preview cap without changing asset terms", () => {
+    const a = sl({ costMinor: 132_000, residualMinor: 12_000, usefulLifeMonths: 1_200 });
+    const schedule = buildSchedule(a, "2026-01-15", 600);
+    expect(schedule).toHaveLength(600);
+    expect(schedule.at(-1)!.netBookValueMinor).toBeGreaterThan(12_000);
+    expect(a.usefulLifeMonths).toBe(1_200);
+  });
+
   it("uses a single period for a one-month life", () => {
     const s = buildSchedule(sl({ usefulLifeMonths: 1, costMinor: 999 }), "2026-05-10");
     expect(s).toHaveLength(1);

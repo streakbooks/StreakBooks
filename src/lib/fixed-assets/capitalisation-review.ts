@@ -10,7 +10,8 @@ export type CapitalisationReviewStatus =
   | "partially_linked"
   | "linked"
   | "fx_review"
-  | "overlinked";
+  | "overlinked"
+  | "non_purchase";
 
 export type CapitalisationReviewRow = CapitaliseLine & {
   status: CapitalisationReviewStatus;
@@ -25,6 +26,7 @@ export type CapitalisationReviewTotals = {
   linked: number;
   fxReview: number;
   overlinked: number;
+  nonPurchase: number;
 };
 
 const exact = (value: number, label: string): bigint => {
@@ -48,7 +50,7 @@ export function reviewCapitalisableLines(
     if (gross <= 0n) {
       // Credit/negative bill lines may require review; this isn't a purchase
       // eligible for capitalisation and must never be labelled "unlinked".
-      return { ...line, status: "linked" as const, indicativeUnlinkedMinor: null };
+      return { ...line, status: "non_purchase" as const, indicativeUnlinkedMinor: null };
     }
     const sameCurrency = line.currency.toUpperCase() === baseCurrency.toUpperCase();
     let status: CapitalisationReviewStatus;
@@ -70,6 +72,7 @@ export function reviewCapitalisableLines(
     linked: rows.filter((r) => r.status === "linked").length,
     fxReview: rows.filter((r) => r.status === "fx_review").length,
     overlinked: rows.filter((r) => r.status === "overlinked").length,
+    nonPurchase: rows.filter((r) => r.status === "non_purchase").length,
   };
   return { rows, totals };
 }

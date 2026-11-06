@@ -45,6 +45,32 @@ export type BudgetVsActual = {
   net: VarianceCell[];
 };
 
+/**
+ * PostgreSQL BIGINT values may arrive as decimal strings. Never convert them
+ * with Number() before checking precision: it could silently round the cents.
+ * SQL NULL, empty strings and non-integer values are invalid source amounts.
+ */
+export function parseSafeBudgetMinor(value: unknown, label: string): number {
+  if (typeof value === "number") {
+    if (!Number.isSafeInteger(value)) {
+      throw new Error(label + " must be a safe integer in minor units.");
+    }
+    return value;
+  }
+  if (typeof value !== "string" && typeof value !== "bigint") {
+    throw new Error(label + " must be an integer in minor units.");
+  }
+  if (typeof value === "string" && !/^-?\d+$/.test(value)) {
+    throw new Error(label + " must be a decimal integer in minor units.");
+  }
+  const parsed = BigInt(value);
+  if (parsed > BigInt(Number.MAX_SAFE_INTEGER) ||
+      parsed < BigInt(Number.MIN_SAFE_INTEGER)) {
+    throw new Error(label + " exceeds the supported safe minor-unit range.");
+  }
+  return Number(parsed);
+}
+
 function asMinor(value: number, label: string): bigint {
   if (!Number.isSafeInteger(value)) {
     throw new Error(label + " must be a safe integer in minor units.");

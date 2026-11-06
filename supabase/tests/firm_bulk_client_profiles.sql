@@ -21,13 +21,13 @@ BEGIN
     fiscal_year_end_day,timezone,created_by
   ) VALUES
     (a,'Bulk test company A','GB','GBP',12,31,'UTC',owner_id),
-    (b,'Bulk test company B','GB','GBP',12,31,'UTC',owner_id),
+    (b,'Bulk test company B','GB','GBP',12,31,'UTC',staff_id),
     (foreign_company,'Foreign bulk company','GB','GBP',12,31,'UTC',outsider_id);
   PERFORM set_config('linkbooks.trusted','on',true);
   INSERT INTO public.company_members(company_id,user_id,role)
   VALUES
-    (a,owner_id,'owner'),(b,owner_id,'owner'),
-    (a,staff_id,'accountant'),(b,staff_id,'accountant'),
+    (a,owner_id,'owner'),(b,staff_id,'owner'),
+    (a,staff_id,'accountant'),(b,owner_id,'admin'),
     (foreign_company,outsider_id,'owner')
   ON CONFLICT (company_id,user_id) DO NOTHING;
   PERFORM set_config('linkbooks.trusted','off',true);

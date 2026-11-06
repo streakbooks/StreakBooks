@@ -38,6 +38,7 @@ export type PayrollAuditGlLine = {
 export type PayrollAuditAccountRow = {
   accountId: string; side: "debit" | "credit";
   expectedMinor: string; postedMinor: string; matched: boolean;
+  accountCode?: string; accountName?: string;
 };
 export type PayrollAccrualTieOutResult = {
   status: "matched" | "exceptions";
@@ -102,6 +103,15 @@ export function auditPayrollAccrualTieOut(
   const key = "payroll-run:" + run.id + ":accrual";
   if (journal.idempotency_key !== key || run.posting_idempotency_key !== key) {
     issues.push("Payroll posting idempotency keys differ from the expected run key.");
+  }
+  for (const [name, id] of Object.entries({
+    salaryExpense: settings.salary_expense_account_id,
+    deductionLiability: settings.deduction_liability_account_id,
+    employerExpense: settings.employer_expense_account_id,
+    employerLiability: settings.employer_liability_account_id,
+    netPayLiability: settings.net_pay_liability_account_id,
+  })) {
+    if (!id) issues.push("Payroll " + name + " default GL account is not configured.");
   }
   if (!run.currency || journal.currency_code !== run.currency) {
     issues.push("Payroll run and journal currencies do not match.");

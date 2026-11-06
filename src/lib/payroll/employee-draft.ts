@@ -289,6 +289,20 @@ export function parseSalaryStructureLineDraft(
   };
 }
 
+/** Empty placeholder rows can be skipped; meaningful rows missing a component cannot. */
+function hasSalaryLineData(line: {
+  amount: string;
+  rate: string;
+  percentage: string;
+  notes?: string;
+}): boolean {
+  const hasNonzeroOrInvalidAmount = [line.amount, line.rate, line.percentage].some((input) => {
+    const text = input.trim();
+    return text !== "" && !/^0+(?:\.0+)?$/.test(text);
+  });
+  return hasNonzeroOrInvalidAmount || Boolean(line.notes?.trim());
+}
+
 export function parseSalaryStructureDraft(
   draft: SalaryStructureDraft,
   currencyCode: string,
@@ -299,7 +313,12 @@ export function parseSalaryStructureDraft(
   }
   const lines: Record<string, unknown>[] = [];
   for (const line of draft.lines) {
-    if (!line.componentTypeId) continue;
+    if (!line.componentTypeId) {
+      if (hasSalaryLineData(line)) {
+        return { ok: false, error: "Choose a pay component for every entered salary line." };
+      }
+      continue;
+    }
     const parsed = parseSalaryStructureLineDraft(line, currencyCode);
     if (!parsed.ok) return parsed;
     lines.push(parsed.value);
@@ -342,7 +361,12 @@ export function parseSalaryAssignDraft(
   const structureId = draft.structureId.trim();
   const customLines: Record<string, unknown>[] = [];
   for (const line of draft.customLines) {
-    if (!line.componentTypeId) continue;
+    if (!line.componentTypeId) {
+      if (hasSalaryLineData(line)) {
+        return { ok: false, error: "Choose a pay component for every entered custom salary line." };
+      }
+      continue;
+    }
     const parsed = parseSalaryStructureLineDraft(
       {
         componentTypeId: line.componentTypeId,

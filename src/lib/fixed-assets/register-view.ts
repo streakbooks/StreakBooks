@@ -76,6 +76,29 @@ export type ActiveAssetSummary = {
 };
 
 /**
+ * Only exact as-at accumulated depreciation within the saved asset's
+ * depreciation terms can be displayed or exported as an accounting balance.
+ * A missing or contradictory balance must not be substituted with a guess.
+ */
+export function validAssetAccumulatedAt(
+  asset: Pick<FixedAssetRow,
+    "cost_minor" | "residual_minor" | "opening_accumulated_minor">,
+  amount: number | undefined,
+): number | null {
+  if (
+    !Number.isSafeInteger(asset.cost_minor) || asset.cost_minor <= 0 ||
+    !Number.isSafeInteger(asset.residual_minor) || asset.residual_minor < 0 ||
+    !Number.isSafeInteger(asset.opening_accumulated_minor) ||
+    asset.opening_accumulated_minor < 0 ||
+    asset.residual_minor + asset.opening_accumulated_minor > asset.cost_minor ||
+    amount === undefined || !Number.isSafeInteger(amount) ||
+    amount < asset.opening_accumulated_minor ||
+    amount > asset.cost_minor - asset.residual_minor
+  ) return null;
+  return amount;
+}
+
+/**
  * Use only real as-at register balances. Missing/stale balances must never be
  * replaced by opening depreciation: doing so understates posted depreciation.
  */
@@ -87,6 +110,20 @@ export function summariseActiveAssets(
   const active = assets.filter((asset) => assetStatusAsOf(asset, asOf) === "active");
   let cost = 0;
   for (const asset of active) {
+    if (
+      !Number.isSafeInteger(asset.cost_minor) || asset.cost_minor <= 0 ||
+      !Number.isSafeInteger(asset.residual_minor) || asset.residual_minor < 0 ||
+      !Number.isSafeInteger(asset.opening_accumulated_minor) ||
+      asset.opening_accumulated_minor < 0 ||
+      asset.residual_minor + asset.opening_accumulated_minor > asset.cost_minor
+    ) {
+      return {
+        activeCount: active.length,
+        costMinor: null,
+        accumulatedMinor: null,
+        netBookValueMinor: null,
+      };
+    }
     cost += asset.cost_minor;
     if (!Number.isSafeInteger(cost)) {
       return {
@@ -107,8 +144,8 @@ export function summariseActiveAssets(
   }
   let accumulated = 0;
   for (const asset of active) {
-    const value = accumulatedByAssetId.get(asset.id);
-    if (value === undefined || !Number.isSafeInteger(value) || value < 0 || value > asset.cost_minor) {
+    const value = validAssetAccumulatedAt(asset, accumulatedByAssetId.get(asset.id));
+    if (value === null) {
       return {
         activeCount: active.length,
         costMinor: cost,

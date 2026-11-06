@@ -31,6 +31,7 @@ const profiles: FirmClientProfile[] = [
     notes: "Internal",
     next_review_date: "2026-12-01",
     updated_at: "2026-11-04",
+    version: 1,
   },
 ];
 

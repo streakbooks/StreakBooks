@@ -178,7 +178,9 @@ BEGIN
   IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Sign in to purge a document'; END IF;
   SELECT * INTO a FROM public.document_attachments
     WHERE company_id=_company_id AND id=_attachment_id FOR UPDATE;
-  IF NOT FOUND OR NOT public.can_access_attachment(_company_id,a.entity_type,'manage') THEN
+  IF NOT FOUND
+     OR NOT public.can_access_attachment(_company_id,a.entity_type,'manage')
+     OR NOT public.can_access_attachment(_company_id,'company','manage') THEN
     RAISE EXCEPTION 'File not found or access denied';
   END IF;
   IF a.deleted_at IS NULL OR a.purge_after > now() OR a.retention_hold THEN

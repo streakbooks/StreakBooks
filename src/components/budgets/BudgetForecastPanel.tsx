@@ -564,7 +564,12 @@ export function BudgetForecastPanel({
                 {savedId?(
                   <>
                     <Button size="sm" type="button" variant="outline"
-                      disabled={!validSave||save.isPending}
+                      disabled={
+                        !validSave||save.isPending||
+                        name.trim().toLocaleLowerCase()===
+                          selectedScenario?.name.toLocaleLowerCase()
+                      }
+                      title="Enter a different scenario name to save a separate copy"
                       onClick={()=>save.mutate(true)}>
                       Save as new
                     </Button>

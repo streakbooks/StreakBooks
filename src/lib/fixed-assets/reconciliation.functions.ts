@@ -41,7 +41,7 @@ export const getFixedAssetReconciliation = createServerFn({ method: "GET" })
           sb
             .from("fixed_assets" as never)
             .select(
-              "id, asset_account_id, accumulated_account_id, purchase_date, disposal_date, status, cost_minor, opening_accumulated_minor" as never,
+              "id, asset_account_id, accumulated_account_id, purchase_date, disposal_date, status, cost_minor, residual_minor, opening_accumulated_minor" as never,
             )
             .eq("company_id" as never, data.companyId as never)
             .order("id" as never)

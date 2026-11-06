@@ -101,6 +101,29 @@ export const listAiJournalReviewCases = createServerFn({ method: "GET" })
     };
   });
 
+/** One tenant-scoped review case for workpaper-to-AI deep links, independent of queue page. */
+export const getAiJournalReviewCase = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => scope.extend({ caseId: uuid }).parse(input))
+  .handler(async ({ data, context }): Promise<AiJournalReviewCase> => {
+    await canView(context.supabase, data.companyId);
+    const { data: row, error } = await context.supabase
+      .from("ai_journal_review_cases" as never)
+      .select(
+        "id,company_id,journal_id,created_by,assigned_to,status,version,reviewed_by,reviewed_at,created_at,updated_at" as never,
+      )
+      .eq("company_id" as never, data.companyId as never)
+      .eq("id" as never, data.caseId as never)
+      .maybeSingle();
+    if (error || !row) throw new Error("AI review case not found or not accessible.");
+    const record = row as Omit<AiJournalReviewCase, "is_assigned_to_me" | "is_my_case">;
+    return {
+      ...record,
+      is_assigned_to_me: record.assigned_to === context.userId,
+      is_my_case: record.created_by === context.userId,
+    };
+  });
+
 export const listAiJournalReviewEvents = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => scope.extend({ caseId: uuid }).parse(input))

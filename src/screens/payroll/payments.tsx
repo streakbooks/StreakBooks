@@ -9,6 +9,7 @@ import { useFormat } from "@/hooks/use-format";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { todayLocalDateOnly } from "@/lib/payroll/local-date";
+import { PAYROLL_SETTLEMENT_REFRESH_KEYS } from "@/lib/payroll/settlement-query-keys";
 import { buildGenericPayrollBankCsv } from "@/lib/payroll/payroll-bank-export";
 import { parsePayrollPaymentEntry } from "@/lib/payroll/payment-form-draft";
 import { payrollClearingCurrencyMismatch } from "@/lib/payroll/clearing-currency";
@@ -268,9 +269,12 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
       setAlloc({});
       setAmountMajor("");
       setIdempotencyKey(`pr-pay-${crypto.randomUUID()}`);
-      queryClient.invalidateQueries({ queryKey: ["payroll-payments"] });
-      queryClient.invalidateQueries({ queryKey: ["payroll-payslips"] });
-      queryClient.invalidateQueries({ queryKey: ["payroll-run"] });
+      // Both posting and reversal affect outstanding payslips, details and
+      // run summaries; otherwise reopening the settlement form may show
+      // stale paid amounts and invite a duplicate allocation.
+      for (const queryKey of PAYROLL_SETTLEMENT_REFRESH_KEYS) {
+        void queryClient.invalidateQueries({ queryKey });
+      }
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
@@ -287,9 +291,12 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
     onSuccess: () => {
       toast.success("Payment reversed");
       setReverseTarget(null);
-      queryClient.invalidateQueries({ queryKey: ["payroll-payments"] });
-      queryClient.invalidateQueries({ queryKey: ["payroll-payslips"] });
-      queryClient.invalidateQueries({ queryKey: ["payroll-run"] });
+      // Both posting and reversal affect outstanding payslips, details and
+      // run summaries; otherwise reopening the settlement form may show
+      // stale paid amounts and invite a duplicate allocation.
+      for (const queryKey of PAYROLL_SETTLEMENT_REFRESH_KEYS) {
+        void queryClient.invalidateQueries({ queryKey });
+      }
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });

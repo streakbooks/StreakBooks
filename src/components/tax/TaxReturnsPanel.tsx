@@ -21,6 +21,7 @@ import { decimalPlacesFor } from "@/lib/accounting/money";
 import { csvFilename, csvMoney, downloadCsv, toCsv } from "@/lib/reports/csv";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { isValidTaxDate } from "@/lib/tax/tax-input-validation";
+import { returnVariances } from "@/lib/tax/tax-reconciliation";
 import { filterSavedTaxReturns, isStaleTaxPreview, type SavedReturnFilter } from "@/lib/tax/tax-return-view";
 import { useFormat } from "@/hooks/use-format";
 import { useCanDo } from "@/hooks/use-can";
@@ -588,23 +589,64 @@ export function TaxReturnsPanel({
                   </Alert>
                 ))}
 
-                {d.changedSinceFiling.length > 0 ? (
-                  <Alert variant="destructive">
-                    <AlertTitle>Figures have changed since this return was filed</AlertTitle>
-                    <AlertDescription>
-                      Documents dated in this period were added, changed or voided after filing.
-                      Boxes affected:{" "}
-                      {d.changedSinceFiling
-                        .map(
-                          (c) =>
-                            `${c.box_key.replace("box", "")} (filed ${f.money(c.filed_minor, d.currency)}, now ${f.money(c.now_minor, d.currency)})`,
-                        )
-                        .join("; ")}
-                      . The filed figures above are unchanged. Correct the difference in your next
-                      return.
-                    </AlertDescription>
-                  </Alert>
+                {d.status === "filed" && d.changedSinceFiling.length > 0 ? (
+                  <div className="space-y-3">
+                    <Alert variant="destructive">
+                      <AlertTitle>Filed versus current calculation differs</AlertTitle>
+                      <AlertDescription>
+                        The recorded filed figures remain locked. Source postings, reversals or
+                        classifications may have changed since filing. Review the variances below
+                        and record any correction according to the applicable tax rules; this
+                        comparison does not amend or re-submit the return.
+                      </AlertDescription>
+                    </Alert>
+                    <div className="overflow-x-auto rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>{d.isUk ? "Box" : "Line"}</TableHead>
+                            <TableHead className="text-right">Recorded filed</TableHead>
+                            <TableHead className="text-right">Recalculated now</TableHead>
+                            <TableHead className="text-right">Change (now − filed)</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {returnVariances(d.changedSinceFiling).map((change) => (
+                            <TableRow key={change.box_key}>
+                              <TableCell>{change.box_key.replace("box", "")}</TableCell>
+                              <TableCell className="text-right tabular-nums">
+                                {f.money(change.filed_minor, d.currency)}
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums">
+                                {f.money(change.now_minor, d.currency)}
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums">
+                                {f.money(change.deltaMinor, d.currency)}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                ) : d.status === "filed" ? (
+                  <p className="text-xs text-muted-foreground">
+                    No differences in stored tax return boxes on recalculation. This does not
+                    establish reconciliation to the General Ledger or statutory compliance.
+                  </p>
                 ) : null}
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button size="sm" variant="outline" asChild>
+                    <Link to="/reports/$reportId" params={{ reportId: "tax-summary" }}>
+                      Compare to tax GL summary
+                    </Link>
+                  </Button>
+                  <span className="text-xs text-muted-foreground">
+                    The GL summary uses posted journal movements; differences may arise from
+                    timing, settlement and adjustments.
+                  </span>
+                </div>
 
                 <BoxTable
                   lines={d.lines}

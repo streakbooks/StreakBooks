@@ -169,3 +169,19 @@ export type ActionCenterFilters = {
   search: string;
   sort: NotificationSort;
 };
+
+/**
+ * Groups only the already loaded page. Preserves first-category order and
+ * original order within each category without mutating cached data.
+ */
+export function groupNotificationPage<T extends { category: string }>(
+  rows: readonly T[],
+): { category: string; rows: T[] }[] {
+  const groups = new Map<string, T[]>();
+  for (const row of rows) {
+    const group = groups.get(row.category);
+    if (group) group.push(row);
+    else groups.set(row.category, [row]);
+  }
+  return Array.from(groups, ([category, groupRows]) => ({ category, rows: groupRows }));
+}

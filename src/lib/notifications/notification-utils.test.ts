@@ -7,6 +7,7 @@ import {
   mergeNotificationPages,
   parseActionCenterSearch,
   actionNotificationSearchPattern,
+  groupNotificationPage,
 } from "./notification-utils";
 
 const base = {
@@ -240,5 +241,25 @@ describe("Action Center server filtering", () => {
   });
   it("normalizes case and trims surrounding spaces", () => {
     expect(actionNotificationSearchPattern("  Overdue Invoice  ")).toBe("%overdue invoice%");
+  });
+});
+
+describe("Action Center grouped page", () => {
+  it("groups the current page without reordering alerts within each module", () => {
+    const page = [
+      { id: "a", category: "bill_approval" },
+      { id: "b", category: "bank_reconciliation" },
+      { id: "c", category: "bill_approval" },
+      { id: "d", category: "document_request" },
+    ];
+    expect(groupNotificationPage(page)).toEqual([
+      { category: "bill_approval", rows: [page[0], page[2]] },
+      { category: "bank_reconciliation", rows: [page[1]] },
+      { category: "document_request", rows: [page[3]] },
+    ]);
+    expect(page.map((item) => item.id)).toEqual(["a", "b", "c", "d"]);
+  });
+  it("handles an empty page", () => {
+    expect(groupNotificationPage([])).toEqual([]);
   });
 });

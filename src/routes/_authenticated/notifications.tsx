@@ -1,5 +1,5 @@
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link, useRouteContext } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -22,6 +22,7 @@ import { NotificationPreferences } from "@/components/notifications/Notification
 import { ActionCenterSearchForm } from "@/components/notifications/ActionCenterSearchForm";
 import {
   mergeNotificationPages,
+  groupNotificationPage,
   parseActionCenterSearch,
   type NotificationSort,
   type NotificationView,
@@ -62,6 +63,13 @@ const CATEGORIES: Record<string, string> = {
   system: "System",
 };
 const PAGE_SIZE = 20;
+const MODULE_DESTINATIONS: Record<string, string> = {
+  bill_approval: "/purchases/bills",
+  overdue_invoice: "/sales/invoices",
+  bank_reconciliation: "/banking/reconcile",
+  document_request: "/files",
+  contact_followup: "/contacts",
+};
 
 function ActionCenterPage() {
   const { user } = useRouteContext({ from: "/_authenticated" });
@@ -81,8 +89,13 @@ function ActionCenterPage() {
   );
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<string[]>([]);
+  const [groupByModule, setGroupByModule] = useState(false);
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkProgress, setBulkProgress] = useState(0);
+  const [bulkTotal, setBulkTotal] = useState(0);
+  const busyRef = useRef(false);
+  const scopeKey = [companyId, user.id, view, category, priority, search, sort].join("|");
+  const activeScopeRef = useRef(scopeKey);
   const [bulkError, setBulkError] = useState<string | null>(null);
   const rows = useMemo(
     () => mergeNotificationPages(inbox.data?.pages.map((item) => item.rows) ?? []),
@@ -94,10 +107,18 @@ function ActionCenterPage() {
   );
   const validSelected = selected.filter((id) => visibleIds.has(id));
   useEffect(() => {
+    activeScopeRef.current = scopeKey;
+    busyRef.current = false;
     setSelected([]);
     setPage(0);
     setBulkError(null);
-  }, [companyId, user.id]);
+    setBulkBusy(false);
+    setBulkProgress(0);
+    setBulkTotal(0);
+    return () => {
+      activeScopeRef.current = "";
+    };
+  }, [scopeKey]);
   const changeFilters = (patch: Record<string, unknown>) => {
     void navigate({
       search: (previous) => parseActionCenterSearch({ ...previous, ...patch }),
@@ -115,6 +136,9 @@ function ActionCenterPage() {
     Math.min(page, pageCount - 1) * PAGE_SIZE,
     (Math.min(page, pageCount - 1) + 1) * PAGE_SIZE,
   );
+  const pageGroups = groupByModule
+    ? groupNotificationPage(pageRows)
+    : [{ category: "all", rows: pageRows }];
   const onViewNavigate = (event: React.MouseEvent<HTMLAnchorElement>) => {
     if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
     setPage(0);
@@ -125,22 +149,34 @@ function ActionCenterPage() {
   const pageIds = pageRows.map((row) => row.id);
   const selectedPageCount = pageIds.filter((id) => validSelected.includes(id)).length;
   const allPageSelected = pageIds.length > 0 && selectedPageCount === pageIds.length;
-  const togglePageSelection = (checked: boolean) =>
+  const toggleIds = (ids: readonly string[], checked: boolean) => {
+    if (bulkBusy || changeState.isPending) return;
+    const allowed = ids.filter((id) => visibleIds.has(id));
     setSelected((previous) =>
       checked
-        ? [...new Set([...previous.filter((id) => visibleIds.has(id)), ...pageIds])]
-        : previous.filter((id) => visibleIds.has(id) && !pageIds.includes(id)),
+        ? [...new Set([...previous.filter((id) => visibleIds.has(id)), ...allowed])]
+        : previous.filter((id) => visibleIds.has(id) && !allowed.includes(id)),
     );
+  };
+  const togglePageSelection = (checked: boolean) => toggleIds(pageIds, checked);
 
   async function bulkState(action: "read" | "archive") {
-    if (!validSelected.length || bulkBusy || changeState.isPending) return;
+    // Ref lock prevents double submission before React has committed a new render.
+    if (!validSelected.length || busyRef.current || changeState.isPending) return;
+    const runScope = activeScopeRef.current;
+    const ids = [...validSelected];
+    busyRef.current = true;
     setBulkBusy(true);
     setBulkProgress(0);
+    setBulkTotal(ids.length);
     setBulkError(null);
     const failed: string[] = [];
     let updated = 0;
     let firstError: string | null = null;
-    for (const [index, id] of validSelected.entries()) {
+    for (const [index, id] of ids.entries()) {
+      // Switching organisation or view stops remaining RPCs. An in-flight request
+      // still completes under server-side recipient/organisation permission checks.
+      if (activeScopeRef.current !== runScope) return;
       try {
         const { data, error } = await supabase.rpc(
           "set_action_notification_state" as never,
@@ -150,24 +186,34 @@ function ActionCenterPage() {
             _archive: action === "archive" ? true : null,
           } as never,
         );
+        if (activeScopeRef.current !== runScope) return;
         if (error) throw error;
         if (!data) throw new Error("An alert is no longer available or permission was revoked");
         updated++;
       } catch (error) {
+        if (activeScopeRef.current !== runScope) return;
         failed.push(id);
         firstError ??= error instanceof Error ? error.message : "Update was rejected";
       }
       setBulkProgress(index + 1);
     }
+    if (activeScopeRef.current !== runScope) return;
     setSelected(failed);
     try {
       await refresh();
     } catch (error) {
-      setBulkError(error instanceof Error ? error.message : "Could not refresh alerts");
+      if (activeScopeRef.current === runScope) {
+        setBulkError(error instanceof Error ? error.message : "Could not refresh alerts");
+      }
     } finally {
-      setBulkBusy(false);
-      setBulkProgress(0);
+      if (activeScopeRef.current === runScope) {
+        busyRef.current = false;
+        setBulkBusy(false);
+        setBulkProgress(0);
+        setBulkTotal(0);
+      }
     }
+    if (activeScopeRef.current !== runScope) return;
     if (updated) {
       notify.success(
         action === "read"
@@ -180,7 +226,7 @@ function ActionCenterPage() {
     }
   }
   const toggleSelection = (id: string) => {
-    if (!visibleIds.has(id)) return;
+    if (!visibleIds.has(id) || busyRef.current || changeState.isPending) return;
     setSelected((prev) => (prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]));
   };
 
@@ -338,11 +384,29 @@ function ActionCenterPage() {
           </Button>
         </div>
       )}
+      {rows.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm">
+          <div>
+            <Button
+              size="sm"
+              variant={groupByModule ? "secondary" : "outline"}
+              aria-pressed={groupByModule}
+              disabled={bulkBusy}
+              onClick={() => setGroupByModule((current) => !current)}
+            >
+              Group page by module
+            </Button>
+          </div>
+          <span className="text-xs text-muted-foreground">
+            Grouping reorganises only this page ({pageRows.length} alerts)
+          </span>
+        </div>
+      )}
       {validSelected.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 rounded-lg border p-3 text-sm" aria-live="polite">
+        <div role="status" className="flex flex-wrap items-center gap-2 rounded-lg border p-3 text-sm" aria-live="polite">
           <span>
             {bulkBusy
-              ? `Updating ${bulkProgress} of ${validSelected.length} selected alerts…`
+              ? `Updating ${bulkProgress} of ${bulkTotal} selected alerts…`
               : `${validSelected.length} selected`}
           </span>
           <Button size="sm" disabled={bulkBusy || changeState.isPending} onClick={() => void bulkState("read")}>
@@ -404,22 +468,71 @@ function ActionCenterPage() {
             </label>
             <span className="text-xs text-muted-foreground">Selection applies only to notifications you choose</span>
           </div>
-          {pageRows.map((n) => (
-            <NotificationRow
-              key={n.id}
-              item={n}
-              selected={validSelected.includes(n.id)}
-              onSelect={() => toggleSelection(n.id)}
-              busy={changeState.isPending || bulkBusy}
-              change={(read, archive) =>
-                changeState.mutate({
-                  id: n.id,
-                  ...(read !== undefined ? { read } : {}),
-                  ...(archive !== undefined ? { archive } : {}),
-                })
-              }
-            />
-          ))}
+          {pageGroups.map((group) => {
+            const groupIds = group.rows.map((item) => item.id);
+            const allGroupSelected = groupIds.every((id) => validSelected.includes(id));
+            const modulePath = MODULE_DESTINATIONS[group.category];
+            return (
+              <section
+                key={group.category}
+                aria-label={groupByModule ? `${CATEGORIES[group.category] ?? group.category} alerts on this page` : "Notifications"}
+                className="space-y-2"
+              >
+                {groupByModule && (
+                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-muted/40 px-3 py-2">
+                    <h2 className="text-sm font-semibold">
+                      {CATEGORIES[group.category] ?? group.category}
+                      <span className="ml-2 font-normal text-muted-foreground">
+                        ({group.rows.length} on this page)
+                      </span>
+                    </h2>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={bulkBusy || changeState.isPending}
+                        onClick={() => toggleIds(groupIds, !allGroupSelected)}
+                      >
+                        {allGroupSelected ? "Unselect group" : "Select group"}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        disabled={bulkBusy}
+                        onClick={() => changeFilters({ category: group.category })}
+                      >
+                        Filter module
+                      </Button>
+                      {modulePath && (
+                        <a
+                          href={modulePath}
+                          className="inline-flex min-h-8 items-center gap-1 rounded px-2 text-sm font-medium text-primary hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+                        >
+                          Open module <ArrowUpRight className="size-3" aria-hidden="true" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {group.rows.map((n) => (
+                  <NotificationRow
+                    key={n.id}
+                    item={n}
+                    selected={validSelected.includes(n.id)}
+                    onSelect={() => toggleSelection(n.id)}
+                    busy={changeState.isPending || bulkBusy}
+                    change={(read, archive) =>
+                      changeState.mutate({
+                        id: n.id,
+                        ...(read !== undefined ? { read } : {}),
+                        ...(archive !== undefined ? { archive } : {}),
+                      })
+                    }
+                  />
+                ))}
+              </section>
+            );
+          })}
           <div className="flex flex-wrap items-center justify-between gap-2 pt-3 text-sm text-muted-foreground" aria-live="polite">
             <span>
               {rows.length.toLocaleString()} of {totalMatches.toLocaleString()} matching loaded ·

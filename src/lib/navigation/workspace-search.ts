@@ -6,6 +6,7 @@ export const ACCOUNTING_TABS = [
   "periods",
   "close",
   "health",
+  "exceptions",
   "conversion",
   "fx",
   "corrections",

@@ -149,6 +149,54 @@ export const listAiJournalReviewEvents = createServerFn({ method: "GET" })
   });
 
 /**
+ * Complete case-specific audit history for authorised exports.
+ * Never export a silently truncated history; no write or approval actions.
+ */
+export const exportAiJournalReviewAudit = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => scope.extend({ caseId: uuid }).parse(input))
+  .handler(async ({ data, context }): Promise<{
+    review: AiJournalReviewCase;
+    events: AiJournalReviewEvent[];
+  }> => {
+    await canView(context.supabase, data.companyId);
+    await assertCompanyPermission(context.supabase, data.companyId, "reports.export");
+    const { data: row, error: readError } = await context.supabase
+      .from("ai_journal_review_cases" as never)
+      .select(
+        "id,company_id,journal_id,created_by,assigned_to,status,version,reviewed_by,reviewed_at,created_at,updated_at" as never,
+      )
+      .eq("company_id" as never, data.companyId as never)
+      .eq("id" as never, data.caseId as never)
+      .maybeSingle();
+    if (readError || !row) throw new Error("AI review case not found or not accessible.");
+    const record = row as Omit<AiJournalReviewCase,"is_assigned_to_me"|"is_my_case">;
+
+    const { data: events, error: eventsError } = await context.supabase
+      .from("ai_journal_review_events" as never)
+      .select(
+        "id,action,actor_id,note,previous_status,new_status,assigned_to,created_at" as never,
+      )
+      .eq("company_id" as never, data.companyId as never)
+      .eq("case_id" as never, data.caseId as never)
+      .order("created_at" as never, { ascending: true })
+      .order("id" as never, { ascending: true })
+      .limit(5001);
+    if (eventsError) throw new Error("Could not retrieve the complete AI review audit history.");
+    if ((events ?? []).length > 5000)
+      throw new Error("Audit history exceeds 5,000 events. Export in smaller archival segments is required; no incomplete file was generated.");
+
+    return {
+      review: {
+        ...record,
+        is_assigned_to_me: record.assigned_to === context.userId,
+        is_my_case: record.created_by === context.userId,
+      },
+      events: (events ?? []) as AiJournalReviewEvent[],
+    };
+  });
+
+/**
  * Directory is only exposed to users already permitted to manage and see members.
  * The database RPC checks effective reviewer permissions again when assigning.
  */

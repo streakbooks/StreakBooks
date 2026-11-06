@@ -117,6 +117,42 @@ describe("fixed assets portfolio dashboard", () => {
     )).toThrow(/residual or opening/i);
   });
 
+  it("fails closed when opening depreciation plus residual exceeds cost", () => {
+    expect(() => buildAssetPortfolioSnapshot(
+      [asset("impossible", {
+        cost_minor: 12000,
+        residual_minor: 8000,
+        opening_accumulated_minor: 5000,
+      })],
+      types,
+      "2026-11-06",
+      new Map([["impossible", 5000]]),
+    )).toThrow(/residual or opening/i);
+  });
+
+  it("suppresses book values when an as-at balance contradicts opening depreciation", () => {
+    const result = buildAssetPortfolioSnapshot(
+      [asset("too-low", { opening_accumulated_minor: 2500 })],
+      types,
+      "2026-11-06",
+      new Map([["too-low", 2000]]),
+    );
+    expect(result.accumulatedMinor).toBeNull();
+    expect(result.netBookValueMinor).toBeNull();
+    expect(result.possibleDepreciationOverdue).toBeNull();
+  });
+
+  it("suppresses book values when accumulated depreciation exceeds the depreciable cost", () => {
+    const result = buildAssetPortfolioSnapshot(
+      [asset("too-high", { residual_minor: 4000 })],
+      types,
+      "2026-11-06",
+      new Map([["too-high", 10000]]),
+    );
+    expect(result.accumulatedMinor).toBeNull();
+    expect(result.netBookValueMinor).toBeNull();
+  });
+
   it("uses bigint across safe numeric asset costs to avoid portfolio precision loss", () => {
     const result = buildAssetPortfolioSnapshot(
       [asset("a", { cost_minor: 900_000_000_000_000 }),

@@ -110,4 +110,79 @@ describe("payroll settings drafts", () => {
     expect(goodPct.ok).toBe(true);
     if (goodPct.ok) expect(goodPct.value["code"]).toBe("PCT");
   });
+  it("rejects a default manual method excluded by the payroll settings SQL check", () => {
+    const parsed = parsePayrollSettingsDraft({
+      enabled: false,
+      operatingCountryCode: "GB",
+      payrollCurrency: "GBP",
+      defaultPayScheduleId: "",
+      payrollStartDate: "",
+      defaultWorkingDaysPerWeek: "5",
+      defaultWorkingHoursPerDay: "8",
+      paymentDateOffsetDays: "0",
+      salaryExpenseAccountId: "",
+      netPayLiabilityAccountId: "",
+      deductionLiabilityAccountId: "",
+      employerExpenseAccountId: "",
+      employerLiabilityAccountId: "",
+      defaultPaymentMethod: "manual" as never,
+      requiresApproval: true,
+      roundingMode: "half_up",
+      payslipShowEmployerCosts: false,
+      payslipFooterNote: "",
+      payslipBrandingName: "",
+      employeeNumberPrefix: "EMP-",
+      disclaimerAcknowledged: false,
+      version: null,
+    });
+    expect(parsed.ok).toBe(false);
+    if (!parsed.ok) expect(parsed.error).toMatch(/payment method/);
+  });
+
+  it("rejects invalid payroll start and pay schedule anchor dates", () => {
+    const basic = {
+      enabled: false,
+      operatingCountryCode: "GB",
+      payrollCurrency: "GBP",
+      defaultPayScheduleId: "",
+      payrollStartDate: "2026-02-30",
+      defaultWorkingDaysPerWeek: "5",
+      defaultWorkingHoursPerDay: "8",
+      paymentDateOffsetDays: "0",
+      salaryExpenseAccountId: "",
+      netPayLiabilityAccountId: "",
+      deductionLiabilityAccountId: "",
+      employerExpenseAccountId: "",
+      employerLiabilityAccountId: "",
+      defaultPaymentMethod: "bank_transfer" as const,
+      requiresApproval: true,
+      roundingMode: "half_up" as const,
+      payslipShowEmployerCosts: false,
+      payslipFooterNote: "",
+      payslipBrandingName: "",
+      employeeNumberPrefix: "EMP-",
+      disclaimerAcknowledged: false,
+      version: null,
+    };
+    expect(parsePayrollSettingsDraft(basic).ok).toBe(false);
+    expect(parsePayrollSettingsDraft({ ...basic, payrollStartDate: "2024-02-29" }).ok)
+      .toBe(true);
+    expect(parsePayScheduleDraft({
+      name: "Monthly",
+      frequency: "monthly",
+      anchorDate: "2026-02-30",
+      paymentOffsetDays: "-5",
+      isDefault: false,
+      isActive: true,
+    }).ok).toBe(false);
+    expect(parsePayScheduleDraft({
+      name: "Monthly",
+      frequency: "monthly",
+      anchorDate: "2024-02-29",
+      paymentOffsetDays: "-5",
+      isDefault: false,
+      isActive: true,
+    }).ok).toBe(true);
+  });
+
 });

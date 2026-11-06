@@ -1,6 +1,9 @@
-import { toMinorUnits } from "@/lib/accounting/money";
-import { percentStringToBps } from "@/components/sales/sales-form-utils";
+import { parsePayrollPercentageBps, parsePayrollSalaryMinor } from "@/lib/payroll/salary-input";
 import { toCsv } from "@/lib/sales/csv";
+import { readPayrollCsvRecords } from "@/lib/payroll/employee-csv-records";
+import { isValidPayrollDateOnly } from "@/lib/payroll/calendar-date";
+import { todayLocalDateOnly } from "@/lib/payroll/local-date";
+export { isValidPayrollDateOnly } from "@/lib/payroll/calendar-date";
 import {
   EMPLOYEE_STATUSES,
   EMPLOYMENT_TYPES,
@@ -50,7 +53,7 @@ export function emptyEmployeeDraft(
     lastName: "",
     email: "",
     status: "active",
-    hireDate: new Date().toISOString().slice(0, 10),
+    hireDate: todayLocalDateOnly(),
     terminationDate: "",
     department: "",
     designation: "",
@@ -99,13 +102,13 @@ export function parsePayrollEmployeeDraft(draft: PayrollEmployeeDraft): ParsedRe
     return { ok: false, error: "Enter a valid email address or leave it blank." };
   }
 
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(draft.hireDate)) {
-    return { ok: false, error: "Hire date must be YYYY-MM-DD." };
+  if (!isValidPayrollDateOnly(draft.hireDate)) {
+    return { ok: false, error: "Hire date must be a valid YYYY-MM-DD calendar date." };
   }
 
   const term = draft.terminationDate.trim();
-  if (term && !/^\d{4}-\d{2}-\d{2}$/.test(term)) {
-    return { ok: false, error: "Termination date must be YYYY-MM-DD." };
+  if (term && !isValidPayrollDateOnly(term)) {
+    return { ok: false, error: "Termination date must be a valid YYYY-MM-DD calendar date." };
   }
   if (term && term < draft.hireDate) {
     return { ok: false, error: "Termination date cannot be before hire date." };
@@ -262,15 +265,16 @@ export function parseSalaryStructureLineDraft(
   }
   let amountMinor = 0n;
   let rateMinor = 0n;
+  let percentageBps = 0;
   try {
-    amountMinor = toMinorUnits(line.amount || "0", currencyCode);
-    rateMinor = toMinorUnits(line.rate || "0", currencyCode);
-  } catch {
-    return { ok: false, error: "Enter valid fixed or rate amounts." };
-  }
-  const percentageBps = percentStringToBps(line.percentage || "0");
-  if (percentageBps > 1_000_000) {
-    return { ok: false, error: "Percentage is too large." };
+    amountMinor = parsePayrollSalaryMinor(line.amount, currencyCode, "Fixed salary amount");
+    rateMinor = parsePayrollSalaryMinor(line.rate, currencyCode, "Salary rate");
+    percentageBps = parsePayrollPercentageBps(line.percentage);
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Enter valid salary line amounts.",
+    };
   }
   return {
     ok: true,
@@ -285,6 +289,20 @@ export function parseSalaryStructureLineDraft(
   };
 }
 
+/** Empty placeholder rows can be skipped; meaningful rows missing a component cannot. */
+function hasSalaryLineData(line: {
+  amount: string;
+  rate: string;
+  percentage: string;
+  notes?: string;
+}): boolean {
+  const hasNonzeroOrInvalidAmount = [line.amount, line.rate, line.percentage].some((input) => {
+    const text = input.trim();
+    return text !== "" && !/^0+(?:\.0+)?$/.test(text);
+  });
+  return hasNonzeroOrInvalidAmount || Boolean(line.notes?.trim());
+}
+
 export function parseSalaryStructureDraft(
   draft: SalaryStructureDraft,
   currencyCode: string,
@@ -295,7 +313,12 @@ export function parseSalaryStructureDraft(
   }
   const lines: Record<string, unknown>[] = [];
   for (const line of draft.lines) {
-    if (!line.componentTypeId) continue;
+    if (!line.componentTypeId) {
+      if (hasSalaryLineData(line)) {
+        return { ok: false, error: "Choose a pay component for every entered salary line." };
+      }
+      continue;
+    }
     const parsed = parseSalaryStructureLineDraft(line, currencyCode);
     if (!parsed.ok) return parsed;
     lines.push(parsed.value);
@@ -332,13 +355,18 @@ export function parseSalaryAssignDraft(
   draft: SalaryAssignDraft,
   currencyCode: string,
 ): ParsedResult {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(draft.effectiveFrom)) {
-    return { ok: false, error: "Effective from date must be YYYY-MM-DD." };
+  if (!isValidPayrollDateOnly(draft.effectiveFrom)) {
+    return { ok: false, error: "Effective from date must be a valid YYYY-MM-DD calendar date." };
   }
   const structureId = draft.structureId.trim();
   const customLines: Record<string, unknown>[] = [];
   for (const line of draft.customLines) {
-    if (!line.componentTypeId) continue;
+    if (!line.componentTypeId) {
+      if (hasSalaryLineData(line)) {
+        return { ok: false, error: "Choose a pay component for every entered custom salary line." };
+      }
+      continue;
+    }
     const parsed = parseSalaryStructureLineDraft(
       {
         componentTypeId: line.componentTypeId,
@@ -409,62 +437,47 @@ export function payrollEmployeesToCsv(employees: PayrollEmployeeRow[]): string {
   );
 }
 
-function splitCsvLine(line: string): string[] {
-  const cells: string[] = [];
-  let current = "";
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i += 1) {
-    const ch = line[i]!;
-    if (inQuotes) {
-      if (ch === '"' && line[i + 1] === '"') {
-        current += '"';
-        i += 1;
-      } else if (ch === '"') {
-        inQuotes = false;
-      } else {
-        current += ch;
-      }
-      continue;
-    }
-    if (ch === '"') {
-      inQuotes = true;
-      continue;
-    }
-    if (ch === ",") {
-      cells.push(current);
-      current = "";
-      continue;
-    }
-    current += ch;
-  }
-  cells.push(current);
-  return cells.map((cell) => cell.replace(/^\uFEFF/, "").trim());
-}
-
-/** Parse the Batch 2 employee export format into create drafts. */
+/** Parse the employee export format safely before any server writes occur. */
 export function parsePayrollEmployeesCsv(
   csvText: string,
   defaults: { country: string; currency: string },
 ): { ok: true; drafts: PayrollEmployeeDraft[] } | { ok: false; error: string } {
-  const lines = csvText
-    .replace(/^\uFEFF/, "")
-    .split(/\r?\n/)
-    .map((line) => line.trimEnd())
-    .filter((line) => line.length > 0);
-  if (lines.length < 2)
+  const parsedCsv = readPayrollCsvRecords(csvText);
+  if (!parsedCsv.ok) return parsedCsv;
+  const records = parsedCsv.records;
+  if (records.length < 2) {
     return { ok: false, error: "CSV must include a header row and at least one employee." };
-  const header = splitCsvLine(lines[0]!).map((h) => h.toLowerCase());
+  }
+  const header = records[0]!.cells.map((h) => h.toLowerCase());
+  const distinct = header.filter((h) => h !== "");
+  if (distinct.length !== new Set(distinct).size) {
+    return { ok: false, error: "CSV contains duplicate column headings." };
+  }
   const idx = (name: string) => header.indexOf(name.toLowerCase());
   const required = ["First name", "Last name", "Hire date"] as const;
   for (const label of required) {
     if (idx(label) < 0) return { ok: false, error: `CSV is missing required column: ${label}.` };
   }
   const drafts: PayrollEmployeeDraft[] = [];
-  for (let rowNo = 1; rowNo < lines.length; rowNo += 1) {
-    const cells = splitCsvLine(lines[rowNo]!);
+  const usedIds = new Set<string>();
+  for (const row of records.slice(1)) {
+    const cells = row.cells;
+    if (cells.length !== header.length) {
+      return {
+        ok: false,
+        error: `Line ${row.line}: expected ${header.length} CSV columns but found ${cells.length}.`,
+      };
+    }
     const get = (label: string) => {
       const i = idx(label);
-      return i >= 0 ? (cells[i] ?? "").replace(/^'/, "") : "";
+      // Reverse the CSV writer's spreadsheet-formula prefix only for
+      // formula-like cells. Preserve legitimate names beginning with an apostrophe.
+      const value = i >= 0 ? (cells[i] ?? "") : "";
+      const marker = value.charAt(1);
+      const escaped = value.startsWith("'") &&
+        (["=", "+", "-", "@"].includes(marker) || marker.charCodeAt(0) === 9 ||
+          marker.charCodeAt(0) === 13);
+      return escaped ? value.slice(1) : value;
     };
     const draft: PayrollEmployeeDraft = {
       ...emptyEmployeeDraft(
@@ -483,11 +496,17 @@ export function parsePayrollEmployeesCsv(
       employmentType: (get("Employment type") ||
         "salaried") as PayrollEmployeeDraft["employmentType"],
       workLocation: get("Work location"),
-      paymentMethod: assertPaymentMethod(get("Payment method") || "bank_transfer"),
+      paymentMethod: (get("Payment method") ||
+        "bank_transfer") as PayrollEmployeeDraft["paymentMethod"],
     };
-    const parsed = parsePayrollEmployeeDraft(draft);
-    if (!parsed.ok) {
-      return { ok: false, error: `Row ${rowNo + 1}: ${parsed.error}` };
+    const validated = parsePayrollEmployeeDraft(draft);
+    if (!validated.ok) return { ok: false, error: `Line ${row.line}: ${validated.error}` };
+    const number = draft.employeeNumber.trim();
+    if (number) {
+      if (usedIds.has(number)) {
+        return { ok: false, error: `Line ${row.line}: Employee ID ${number} appears more than once.` };
+      }
+      usedIds.add(number);
     }
     drafts.push(draft);
   }

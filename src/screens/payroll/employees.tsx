@@ -8,6 +8,8 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
 import { useDebounced } from "@/hooks/use-debounced";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { downloadCsv } from "@/lib/reports/csv";
+import { planPayrollEmployeeImport } from "@/lib/payroll/employee-import-plan";
 import {
   emptyEmployeeDraft,
   parsePayrollEmployeesCsv,
@@ -68,12 +70,23 @@ export function PayrollEmployeesPage() {
   const saveEmployee = useServerFn(savePayrollEmployee);
 
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [sort, setSort] = useState<"name" | "number" | "hire-newest">("name");
   const [search, setSearch] = useState("");
   const q = useDebounced(search);
   const [addOpen, setAddOpen] = useState(false);
   const [newDraft, setNewDraft] = useState<PayrollEmployeeDraft | null>(null);
   const [importing, setImporting] = useState(false);
+  const [importPreview, setImportPreview] = useState<{
+    companyId: string;
+    fileName: string;
+    total: number;
+    skipped: number;
+    drafts: PayrollEmployeeDraft[];
+  } | null>(null);
+  const [importDone, setImportDone] = useState(0);
   const importInputRef = useRef<HTMLInputElement>(null);
+  // Synchronous guard: two rapid clicks must never start overlapping writes.
+  const importBusyRef = useRef(false);
 
   const settingsQ = useQuery({
     queryKey: ["payroll-settings-page", company?.id],
@@ -122,6 +135,15 @@ export function PayrollEmployeesPage() {
     );
   }
   if (listQ.isPending || settingsQ.isPending) return <LoadingState />;
+  if (settingsQ.isError) {
+    return (
+      <ErrorState
+        title="Could not load payroll settings"
+        description={friendlyAuthError(settingsQ.error)}
+        onRetry={() => settingsQ.refetch()}
+      />
+    );
+  }
   if (listQ.isError) {
     return (
       <ErrorState
@@ -143,42 +165,97 @@ export function PayrollEmployeesPage() {
     settings?.company.base_currency ??
     company.base_currency;
 
+  const filtersActive = statusFilter !== "all" || search.trim() !== "";
+  const clearFilters = () => {
+    setStatusFilter("all");
+    setSearch("");
+  };
+  const displayedEmployees = [...list.employees].sort((a, b) => {
+    if (sort === "number") return a.employee_number.localeCompare(b.employee_number);
+    if (sort === "hire-newest") return b.hire_date.localeCompare(a.hire_date);
+    return `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`);
+  });
+
   const openAdd = () => {
     setNewDraft(emptyEmployeeDraft(country, currency));
     setAddOpen(true);
   };
 
   const exportCsv = () => {
-    const csv = payrollEmployeesToCsv(list.employees);
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "linkbooks-payroll-employees.csv";
-    anchor.click();
-    URL.revokeObjectURL(url);
-    toast.success(`Exported ${list.employees.length} employees`);
+    downloadCsv(
+      "linkbooks-payroll-employees.csv",
+      payrollEmployeesToCsv(displayedEmployees),
+    );
+    toast.success(`Exported ${displayedEmployees.length} employees in displayed order`);
   };
 
   const importCsv = async (file: File | null) => {
-    if (!file || !company || !canManage) return;
+    if (!file || !company || !canManage || importBusyRef.current) return;
+    importBusyRef.current = true;
     setImporting(true);
+    setImportPreview(null);
     try {
+      if (file.size > 1_000_000) {
+        throw new Error("Employee CSV exceeds the 1 MB file size limit.");
+      }
       const text = await file.text();
       const parsed = parsePayrollEmployeesCsv(text, { country, currency });
       if (!parsed.ok) throw new Error(parsed.error);
-      let created = 0;
-      for (const draft of parsed.drafts) {
-        await saveEmployee({ data: { companyId: company.id, draft } });
-        created += 1;
-      }
-      toast.success(`Imported ${created} employees`);
-      await queryClient.invalidateQueries({ queryKey: ["payroll-employees", company.id] });
+      // Compare against the full organisation list, not the current search subset.
+      // CSV lacks salary/bank fields, so existing employee IDs are never overwritten.
+      const current = await fetchList({ data: { companyId: company.id, status: null, q: null } });
+      if (!current.available) throw new Error(current.migrationMessage ?? "Employee data unavailable.");
+      const existing = new Set(current.employees.map((employee) => employee.employee_number));
+      const { toCreate: drafts, skipped } = planPayrollEmployeeImport(parsed.drafts, existing);
+      setImportDone(0);
+      setImportPreview({
+        companyId: company.id,
+        fileName: file.name,
+        total: parsed.drafts.length,
+        skipped,
+        drafts,
+      });
     } catch (error) {
       toast.error(friendlyAuthError(error));
     } finally {
+      importBusyRef.current = false;
       setImporting(false);
       if (importInputRef.current) importInputRef.current.value = "";
+    }
+  };
+
+  const confirmImport = async () => {
+    if (!importPreview || !company || importPreview.companyId !== company.id || !canManage || importBusyRef.current) return;
+    importBusyRef.current = true;
+    setImporting(true);
+    let created = 0;
+    let newlySkipped = 0;
+    try {
+      // Recheck on confirmation: another session may have created an employee
+      // during CSV review. Never overwrite those employee records.
+      const current = await fetchList({ data: { companyId: company.id, status: null, q: null } });
+      if (!current.available) throw new Error(current.migrationMessage ?? "Employee data unavailable.");
+      const existing = new Set(current.employees.map((employee) => employee.employee_number));
+      const plan = planPayrollEmployeeImport(importPreview.drafts, existing);
+      newlySkipped = plan.skipped;
+      setImportDone(newlySkipped);
+      for (const draft of plan.toCreate) {
+        await saveEmployee({ data: { companyId: company.id, draft } });
+        created += 1;
+        setImportDone(created + newlySkipped);
+      }
+      toast.success(`Imported ${created} employees; skipped ${importPreview.skipped + newlySkipped} existing IDs.`);
+    } catch (error) {
+      toast.error(`Import stopped after ${created} saved and ${newlySkipped} newly skipped rows.`, {
+        description: `Earlier rows were saved; later rows were not attempted. ${friendlyAuthError(error)}`,
+      });
+    } finally {
+      // Unlock before invalidating/refetching: a failed refresh must not leave
+      // the import action disabled after some rows were committed.
+      importBusyRef.current = false;
+      setImportPreview(null);
+      setImporting(false);
+      void queryClient.invalidateQueries({ queryKey: ["payroll-employees", company.id] });
     }
   };
 
@@ -191,7 +268,7 @@ export function PayrollEmployeesPage() {
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" onClick={exportCsv} disabled={!list.available}>
               <Download className="mr-2 h-4 w-4" />
-              Export CSV
+              Export current view
             </Button>
             {canManage ? (
               <>
@@ -209,7 +286,7 @@ export function PayrollEmployeesPage() {
                   onClick={() => importInputRef.current?.click()}
                 >
                   <Upload className="mr-2 h-4 w-4" />
-                  {importing ? "Importing…" : "Import CSV"}
+                  {importing ? "Preparing…" : "Import CSV"}
                 </Button>
                 <Button size="sm" onClick={openAdd} disabled={!list.available}>
                   <Plus className="mr-2 h-4 w-4" />
@@ -250,15 +327,42 @@ export function PayrollEmployeesPage() {
                 ))}
               </SelectContent>
             </Select>
+            <Select value={sort} onValueChange={(value) => setSort(value as typeof sort)}>
+              <SelectTrigger className="w-[170px]" aria-label="Sort employees">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name">Name: A to Z</SelectItem>
+                <SelectItem value="number">Employee ID</SelectItem>
+                <SelectItem value="hire-newest">Hire date: newest</SelectItem>
+              </SelectContent>
+            </Select>
+            {filtersActive ? (
+              <Button variant="ghost" size="sm" onClick={clearFilters}>
+                Clear filters
+              </Button>
+            ) : null}
+            <p className="w-full text-xs text-muted-foreground" aria-live="polite">
+              Showing {displayedEmployees.length} employees
+              {filtersActive ? " matching filters" : ""}
+            </p>
           </div>
 
           {list.employees.length === 0 ? (
             <EmptyState
               icon={Users}
-              title="No employees yet"
-              description="Add your first payroll employee to assign pay and payment details."
+              title={filtersActive ? "No matching employees" : "No employees yet"}
+              description={
+                filtersActive
+                  ? "No employees match the current search or status filter."
+                  : "Add your first payroll employee to assign pay and payment details."
+              }
               action={
-                canManage ? (
+                filtersActive ? (
+                  <Button size="sm" variant="outline" onClick={clearFilters}>
+                    Clear filters
+                  </Button>
+                ) : canManage ? (
                   <Button size="sm" onClick={openAdd}>
                     Add employee
                   </Button>
@@ -279,7 +383,7 @@ export function PayrollEmployeesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {list.employees.map((emp) => (
+                  {displayedEmployees.map((emp) => (
                     <TableRow key={emp.id}>
                       <TableCell>
                         <Link
@@ -309,6 +413,63 @@ export function PayrollEmployeesPage() {
           )}
         </>
       )}
+
+      <Dialog
+        open={importPreview !== null}
+        onOpenChange={(open) => {
+          if (!open && !importing) setImportPreview(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Review employee CSV import</DialogTitle>
+          </DialogHeader>
+          {importPreview ? (
+            <div className="space-y-3 text-sm">
+              <p className="break-all text-muted-foreground">{importPreview.fileName}</p>
+              <dl className="grid grid-cols-3 gap-2 rounded-lg border p-3 text-center">
+                <div>
+                  <dt className="text-muted-foreground">In file</dt>
+                  <dd className="text-lg font-semibold tabular-nums">{importPreview.total}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">New</dt>
+                  <dd className="text-lg font-semibold tabular-nums">{importPreview.drafts.length}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Skipped</dt>
+                  <dd className="text-lg font-semibold tabular-nums">{importPreview.skipped}</dd>
+                </div>
+              </dl>
+              <Alert>
+                <AlertTitle>Create new employees only</AlertTitle>
+                <AlertDescription>
+                  Existing employee IDs will be skipped, never overwritten. Files without employee
+                  IDs generate new records; importing them twice may create duplicates. This is a
+                  sequential import, not a database transaction. If a row fails, earlier saved rows
+                  remain in place.
+                </AlertDescription>
+              </Alert>
+              {importing ? (
+                <p role="status" aria-live="polite">
+                  Processed {importDone} of {importPreview.drafts.length} new rows…
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button variant="outline" disabled={importing} onClick={() => setImportPreview(null)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={importing || !importPreview?.drafts.length || importPreview.companyId !== company.id}
+              onClick={() => void confirmImport()}
+            >
+              {importing ? "Importing…" : `Import ${importPreview?.drafts.length ?? 0} new employees`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">

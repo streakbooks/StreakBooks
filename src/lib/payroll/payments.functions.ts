@@ -3,6 +3,10 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { callRpc, companyIdOf, isMissingRelation, num } from "@/lib/planning/rpc";
 import { validatePayrollPaymentAllocations } from "@/lib/payroll/payroll-payment-allocation";
+import { payrollClearingCurrencyMismatch } from "@/lib/payroll/clearing-currency";
+import { assertPayrollSettlementDateOnly } from "@/lib/payroll/payment-date";
+import { mustValidateFreshPayrollAllocations } from "@/lib/payroll/payment-replay-preflight";
+import { filterPayrollClearingAccounts, type PayrollClearingCandidate, type PayrollLinkedBank } from "@/lib/payroll/clearing-account-options";
 import type { PayrollPaymentMethod } from "@/lib/payroll/types";
 import { PAYROLL_RUNS_MIGRATION } from "@/lib/payroll/runs.functions";
 
@@ -130,6 +134,58 @@ async function probePaymentsTable(
   if (probe.error) throw new Error(probe.error.message);
   return true;
 }
+
+/** Unlike general purchase account choices, the Payroll settlement list
+ * checks every active linked bank currency as well as the GL account.
+ * The actual payment RPC and SQL triggers enforce these rules again.
+ */
+export const listPayrollSettlementAccounts = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string }) => ({
+    companyId: companyIdOf(input),
+  }))
+  .handler(async ({ data, context }) => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    await assertCompanyPermission(context.supabase, data.companyId, "payroll.pay");
+
+    const [settingsRes, accountsRes, banksRes] = await Promise.all([
+      context.supabase
+        .from("payroll_settings" as never)
+        .select("payroll_currency" as never)
+        .eq("company_id" as never, data.companyId as never)
+        .maybeSingle(),
+      context.supabase
+        .from("accounts" as never)
+        .select(
+          "id, code, name, account_type, is_active, is_postable, archived_at, account_kind, subtype, is_payment_enabled, currency_code" as never,
+        )
+        .eq("company_id" as never, data.companyId as never)
+        .eq("account_type" as never, "asset" as never)
+        .eq("is_active" as never, true as never)
+        .eq("is_postable" as never, true as never)
+        .order("code" as never),
+      context.supabase
+        .from("bank_accounts" as never)
+        .select("gl_account_id, currency_code, is_active" as never)
+        .eq("company_id" as never, data.companyId as never),
+    ]);
+    if (settingsRes.error) throw new Error(settingsRes.error.message);
+    if (accountsRes.error) throw new Error(accountsRes.error.message);
+    if (banksRes.error) throw new Error(banksRes.error.message);
+
+    const payrollCurrency = (
+      (settingsRes.data as { payroll_currency: string } | null)?.payroll_currency ?? ""
+    ).trim().toUpperCase();
+    if (!/^[A-Z]{3}$/.test(payrollCurrency)) {
+      throw new Error("Configure the payroll currency before selecting a clearing account.");
+    }
+
+    return filterPayrollClearingAccounts(
+      (accountsRes.data ?? []) as PayrollClearingCandidate[],
+      (banksRes.data ?? []) as PayrollLinkedBank[],
+      payrollCurrency,
+    );
+  });
 
 export const getPayrollPayment = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -266,13 +322,96 @@ export const recordPayrollPayment = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "payroll.pay");
-    if (!Number.isInteger(data.amountMinor) || data.amountMinor <= 0) {
+    assertPayrollSettlementDateOnly(data.paymentDate, "Payment");
+    if (!Number.isSafeInteger(data.amountMinor) || data.amountMinor <= 0) {
       throw new Error("Payment amount must be a positive whole number of minor units.");
     }
     for (const a of data.allocations) {
-      if (!Number.isInteger(a.amountMinor) || a.amountMinor <= 0) {
+      if (!Number.isSafeInteger(a.amountMinor) || a.amountMinor <= 0) {
         throw new Error("Allocation amounts must be positive whole minor units.");
       }
+    }
+
+    // The existing payroll payment RPC posts journals at FX rate 1.
+    // Until currency conversion is implemented, reject any settlement whose
+    // currency does not match the organisation's base currency.
+    const companyRes = await context.supabase
+      .from("companies" as never)
+      .select("base_currency" as never)
+      .eq("id" as never, data.companyId as never)
+      .single();
+    if (companyRes.error) throw new Error(companyRes.error.message);
+    const baseCurrency = String(
+      (companyRes.data as { base_currency?: string } | null)?.base_currency ?? "",
+    ).toUpperCase();
+
+    const settingsRes = await context.supabase
+      .from("payroll_settings" as never)
+      .select("payroll_currency" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .maybeSingle();
+    if (settingsRes.error) throw new Error(settingsRes.error.message);
+    const settingsCurrency = String(
+      (settingsRes.data as { payroll_currency?: string } | null)?.payroll_currency ?? "",
+    ).toUpperCase();
+    if (!settingsCurrency) throw new Error("Configure payroll settings before recording payment.");
+    const postingCurrency = (data.currencyCode ?? settingsCurrency).toUpperCase();
+    if (postingCurrency !== settingsCurrency) {
+      throw new Error("Payment currency must match the payroll settings currency.");
+    }
+    if (!baseCurrency || postingCurrency !== baseCurrency) {
+      throw new Error(
+        "Non-base-currency payroll payments are not yet supported by the FX journal workflow.",
+      );
+    }
+
+    // Prevent crediting a foreign-currency bank at FX=1. The SQL trigger
+    // enforces the same invariant inside record_payroll_payment for direct RPCs.
+    const clearingRes = await context.supabase
+      .from("accounts" as never)
+      .select("id, currency_code" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("id" as never, data.clearingAccountId as never)
+      .maybeSingle();
+    if (clearingRes.error) throw new Error(clearingRes.error.message);
+    if (!clearingRes.data) throw new Error("Clearing account not found for this organisation.");
+
+    const linkedRes = await context.supabase
+      .from("bank_accounts" as never)
+      .select("currency_code" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("gl_account_id" as never, data.clearingAccountId as never)
+      .eq("is_active" as never, true as never);
+    if (linkedRes.error) throw new Error(linkedRes.error.message);
+    const mismatch = payrollClearingCurrencyMismatch(
+      postingCurrency,
+      (clearingRes.data as { currency_code: string | null }).currency_code,
+      (linkedRes.data ?? []).map(
+        (bank) => (bank as { currency_code: string | null }).currency_code,
+      ),
+    );
+    if (mismatch) throw new Error(mismatch);
+
+    // A posted settlement has already reduced outstanding net pay. A
+    // network retry with the SAME key must reach the hardened SQL replay
+    // check rather than fail here with "allocation exceeds outstanding".
+    // The RPC compares the entire original payment/allocations, rejecting
+    // any changed payload or reversed key.
+    let existingPaymentId: string | null = null;
+    if (data.idempotencyKey) {
+      if (data.idempotencyKey.length > 100) {
+        throw new Error("Payment idempotency key cannot exceed 100 characters.");
+      }
+      const replayRes = await context.supabase
+        .from("payroll_payments" as never)
+        .select("id" as never)
+        .eq("company_id" as never, data.companyId as never)
+        .eq("idempotency_key" as never, data.idempotencyKey as never)
+        .maybeSingle();
+      if (replayRes.error) throw new Error(replayRes.error.message);
+      existingPaymentId = (
+        replayRes.data as { id: string } | null
+      )?.id ?? null;
     }
 
     const paymentAmountMinor = BigInt(data.amountMinor);
@@ -281,14 +420,36 @@ export const recordPayrollPayment = createServerFn({ method: "POST" })
       amountMinor: BigInt(a.amountMinor),
     }));
 
-    if (allocationInputs.length > 0) {
+    if (mustValidateFreshPayrollAllocations(existingPaymentId) && allocationInputs.length > 0) {
       const ids = data.allocations.map((a) => a.payslipId);
       const slipRes = await context.supabase
         .from("payroll_payslips" as never)
-        .select("id, amount_paid_minor, run_employee_id" as never)
+        .select("id, amount_paid_minor, run_employee_id, run_id" as never)
         .eq("company_id" as never, data.companyId as never)
         .in("id" as never, ids as never);
       if (slipRes.error) throw new Error(slipRes.error.message);
+
+      const runIds = [...new Set(
+        (slipRes.data ?? []).map((row) => (row as { run_id: string }).run_id),
+      )];
+      const runRes = await context.supabase
+        .from("payroll_runs" as never)
+        .select("id, currency" as never)
+        .eq("company_id" as never, data.companyId as never)
+        .in("id" as never, runIds as never);
+      if (runRes.error) throw new Error(runRes.error.message);
+      const runCurrencies = new Map(
+        (runRes.data ?? []).map((row) => {
+          const item = row as { id: string; currency: string };
+          return [item.id, item.currency.toUpperCase()] as const;
+        }),
+      );
+      for (const item of slipRes.data ?? []) {
+        const slip = item as { run_id: string };
+        if (runCurrencies.get(slip.run_id) !== postingCurrency) {
+          throw new Error("Payslip payroll currency differs from settlement currency.");
+        }
+      }
 
       const runEmpIds = (slipRes.data ?? []).map(
         (row) => (row as { run_employee_id: string }).run_employee_id,
@@ -321,7 +482,7 @@ export const recordPayrollPayment = createServerFn({ method: "POST" })
         payslipsForValidation,
       );
       if (!validated.ok) throw new Error(validated.error);
-    } else {
+    } else if (mustValidateFreshPayrollAllocations(existingPaymentId)) {
       const validated = validatePayrollPaymentAllocations(paymentAmountMinor, [], []);
       if (!validated.ok) throw new Error(validated.error);
     }
@@ -481,9 +642,7 @@ export const reversePayrollRunAccrual = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "payroll.run.post");
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(data.reversalDate)) {
-      throw new Error("Reversal date must be YYYY-MM-DD.");
-    }
+    assertPayrollSettlementDateOnly(data.reversalDate, "Reversal");
     const saved = await callRpc<unknown>(
       context.supabase,
       "reverse_payroll_run_accrual",
@@ -512,9 +671,7 @@ export const reversePayrollPayment = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "payroll.pay");
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(data.reversalDate)) {
-      throw new Error("Reversal date must be YYYY-MM-DD.");
-    }
+    assertPayrollSettlementDateOnly(data.reversalDate, "Reversal");
     const saved = await callRpc<unknown>(
       context.supabase,
       "reverse_payroll_payment",

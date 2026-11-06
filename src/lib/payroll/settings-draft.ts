@@ -1,3 +1,4 @@
+import { isValidPayrollDateOnly } from "@/lib/payroll/calendar-date";
 import {
   CALCULATION_METHODS,
   COMPONENT_KINDS,
@@ -52,6 +53,13 @@ export function parsePayrollSettingsDraft(draft: PayrollSettingsDraft): ParsedPa
     return { ok: false, error: "Operating country must be a 2-letter code." };
   if (!/^[A-Z]{3}$/.test(currency))
     return { ok: false, error: "Payroll currency must be a 3-letter code." };
+
+  if (draft.payrollStartDate && !isValidPayrollDateOnly(draft.payrollStartDate)) {
+    return { ok: false, error: "Payroll start date must be a valid YYYY-MM-DD calendar date." };
+  }
+  if (!isOneOf(draft.defaultPaymentMethod, PAYMENT_METHODS)) {
+    return { ok: false, error: "Choose a supported default payroll payment method." };
+  }
 
   const days = Number(draft.defaultWorkingDaysPerWeek);
   const hours = Number(draft.defaultWorkingHoursPerDay);
@@ -135,8 +143,8 @@ export function parsePayScheduleDraft(
   if (!isOneOf(draft.frequency, PAY_FREQUENCIES)) {
     return { ok: false, error: "Choose a valid pay frequency." };
   }
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(draft.anchorDate)) {
-    return { ok: false, error: "Anchor date must be YYYY-MM-DD." };
+  if (!isValidPayrollDateOnly(draft.anchorDate)) {
+    return { ok: false, error: "Anchor date must be a valid YYYY-MM-DD calendar date." };
   }
   const offset = Number(draft.paymentOffsetDays);
   if (!Number.isInteger(offset) || offset < -31 || offset > 62) {

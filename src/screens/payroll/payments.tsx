@@ -1,26 +1,30 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
 import { useFormat } from "@/hooks/use-format";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { fromMinorUnits } from "@/lib/accounting/money";
+import { todayLocalDateOnly } from "@/lib/payroll/local-date";
+import { PAYROLL_SETTLEMENT_REFRESH_KEYS } from "@/lib/payroll/settlement-query-keys";
+import { acquirePayrollMutationLock, releasePayrollMutationLock } from "@/lib/payroll/action-lock";
 import { buildGenericPayrollBankCsv } from "@/lib/payroll/payroll-bank-export";
-import { validatePayrollPaymentAllocations } from "@/lib/payroll/payroll-payment-allocation";
+import { downloadCsv } from "@/lib/reports/csv";
+import { parsePayrollPaymentEntry } from "@/lib/payroll/payment-form-draft";
+import { getPayrollSettingsPage } from "@/lib/payroll/payroll.functions";
 import {
   exportPayrollBankCsvRows,
   getPayrollPayment,
   listPayrollPayments,
+  listPayrollSettlementAccounts,
   recordPayrollPayment,
   reversePayrollPayment,
   type PayrollPaymentDetailPage,
 } from "@/lib/payroll/payments.functions";
-import { parseMinorOrThrow, tryParseMinor } from "@/lib/purchases/money-input";
 import { listPayrollPayslips } from "@/lib/payroll/runs.functions";
-import { listPaymentAccounts } from "@/lib/purchases/purchases.functions";
 import type { PayslipSnapshot } from "@/lib/payroll/payslip-snapshot";
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
@@ -83,11 +87,16 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
   const fetchPayments = useServerFn(listPayrollPayments);
   const fetchExport = useServerFn(exportPayrollBankCsvRows);
   const fetchPayslips = useServerFn(listPayrollPayslips);
-  const fetchAccounts = useServerFn(listPaymentAccounts);
+  const fetchPayrollSettings = useServerFn(getPayrollSettingsPage);
+  const fetchAccounts = useServerFn(listPayrollSettlementAccounts);
   const savePayment = useServerFn(recordPayrollPayment);
 
   const [recordOpen, setRecordOpen] = useState(false);
-  const [paymentDate, setPaymentDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const paymentSubmitLock = useRef(false);
+  const reversalSubmitLock = useRef(false);
+  const [paymentSearch, setPaymentSearch] = useState("");
+  const [paymentStatus, setPaymentStatus] = useState<"all" | "posted" | "reversed">("all");
+  const [paymentDate, setPaymentDate] = useState(() => todayLocalDateOnly());
   const [paymentMethod, setPaymentMethod] = useState("bank_transfer");
   const [clearingAccountId, setClearingAccountId] = useState("");
   const [amountMajor, setAmountMajor] = useState("");
@@ -97,11 +106,28 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
   const [idempotencyKey, setIdempotencyKey] = useState(() => `pr-pay-${crypto.randomUUID()}`);
   const [reverseTarget, setReverseTarget] = useState<{ id: string; currency: string } | null>(null);
   const [detailPaymentId, setDetailPaymentId] = useState<string | null>(null);
-  const [reversalDate, setReversalDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [reversalDate, setReversalDate] = useState(() => todayLocalDateOnly());
   const reversePayment = useServerFn(reversePayrollPayment);
   const fetchPaymentDetail = useServerFn(getPayrollPayment);
 
-  const payCurrency = (company?.base_currency ?? "GBP").toUpperCase();
+  const settingsQ = useQuery({
+    queryKey: ["payroll-settings-page", company?.id],
+    queryFn: () => fetchPayrollSettings({ data: { companyId: company!.id } }),
+    enabled: Boolean(company?.id) && canPay && recordOpen,
+  });
+  const payCurrency = (
+    settingsQ.data?.settings?.payroll_currency ??
+    company?.base_currency ??
+    "GBP"
+  ).toUpperCase();
+  // The current SQL settlement journal uses FX rate 1. Recording cross-currency
+  // payments before supported conversion would misstate the GL.
+  const fxUnsupported = Boolean(
+    settingsQ.data && company && payCurrency !== company.base_currency.toUpperCase(),
+  );
+  const settingsReady = Boolean(
+    settingsQ.isSuccess && settingsQ.data?.available && settingsQ.data?.settings,
+  );
 
   const paymentsQ = useQuery({
     queryKey: ["payroll-payments", company?.id, runIdFilter ?? null],
@@ -122,8 +148,8 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
   });
 
   const payslipsQ = useQuery({
-    queryKey: ["payroll-open-payslips", company?.id],
-    queryFn: () => fetchPayslips({ data: { companyId: company!.id } }),
+    queryKey: ["payroll-open-payslips", company?.id, runIdFilter ?? null],
+    queryFn: () => fetchPayslips({ data: { companyId: company!.id, runId: runIdFilter ?? null } }),
     enabled: Boolean(company?.id) && canPay && recordOpen,
   });
 
@@ -132,6 +158,9 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
     queryFn: () => fetchAccounts({ data: { companyId: company!.id } }),
     enabled: Boolean(company?.id) && canPay && recordOpen,
   });
+
+  const availableClearingAccounts = accountsQ.data?.accounts ?? [];
+  const excludedClearingAccounts = accountsQ.data?.excluded ?? 0;
 
   const openPayslips = useMemo(() => {
     const items =
@@ -152,17 +181,21 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
           | undefined
       )?.payslips ?? [];
     return items
-      .filter((row) => ["posted", "paid", "complete"].includes(row.run.status))
+.filter(
+        (row) =>
+          ["posted", "paid", "complete"].includes(row.run.status) &&
+          row.run.currency.toUpperCase() === payCurrency,
+      )
       .map((row) => {
         const net = row.payslip.snapshot.totals?.netPayMinor ?? 0;
         const outstanding = Math.max(0, net - row.payslip.amount_paid_minor);
         return { ...row, outstanding, net };
       })
       .filter((row) => row.outstanding > 0);
-  }, [payslipsQ.data]);
+  }, [payslipsQ.data, payCurrency]);
 
   const exportMut = useMutation({
-    mutationFn: () => fetchExport({ data: { companyId: company!.id } }),
+    mutationFn: () => fetchExport({ data: { companyId: company!.id, runId: runIdFilter ?? null } }),
     onSuccess: (data) => {
       if (!data.rows.length) {
         toast.message("Nothing to export", {
@@ -171,13 +204,9 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
         return;
       }
       const csv = buildGenericPayrollBankCsv(data.rows);
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "payroll-bank-export-generic.csv";
-      a.click();
-      URL.revokeObjectURL(url);
+      // Shared downloader writes a UTF-8 BOM for international names and
+      // safely cleans up the temporary anchor after starting the download.
+      downloadCsv("payroll-bank-export-generic.csv", csv);
       toast.success("Generic CSV downloaded", {
         description: data.disclaimer,
       });
@@ -187,28 +216,26 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
 
   const recordMut = useMutation({
     mutationFn: () => {
-      const amountMinor = Number(parseMinorOrThrow(amountMajor, payCurrency, "Payment amount"));
-      const allocations = Object.entries(alloc)
-        .map(([payslipId, v]) => {
-          const parsed = tryParseMinor(v, payCurrency);
-          if (parsed === null || parsed <= 0n) return null;
-          return { payslipId, amountMinor: Number(parsed) };
-        })
-        .filter((a): a is { payslipId: string; amountMinor: number } => a !== null);
-
-      const validated = validatePayrollPaymentAllocations(
-        BigInt(amountMinor),
-        allocations.map((a) => ({
-          payslipId: a.payslipId,
-          amountMinor: BigInt(a.amountMinor),
-        })),
-        openPayslips.map((row) => ({
+      if (!settingsReady) {
+        throw new Error("Payroll settings must finish loading before recording a payment.");
+      }
+      if (payslipsQ.isPending || payslipsQ.isError) {
+        throw new Error("Outstanding payslips must finish loading before recording a payment.");
+      }
+      if (fxUnsupported) {
+        throw new Error("Foreign-currency payroll settlement requires configured FX accounting.");
+      }
+      const { amountMinor, allocations } = parsePayrollPaymentEntry({
+        amount: amountMajor,
+        currency: payCurrency,
+        allocations: alloc,
+        payslips: openPayslips.map((row) => ({
           payslipId: row.payslip.id,
-          netMinor: BigInt(row.net),
-          paidMinor: BigInt(row.payslip.amount_paid_minor),
+          currency: row.run.currency,
+          netMinor: row.net,
+          paidMinor: row.payslip.amount_paid_minor,
         })),
-      );
-      if (!validated.ok) throw new Error(validated.error);
+      });
 
       return savePayment({
         data: {
@@ -216,6 +243,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
           paymentDate,
           paymentMethod,
           amountMinor,
+          currencyCode: payCurrency,
           clearingAccountId,
           reference,
           memo,
@@ -224,17 +252,27 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
         },
       });
     },
-    onSuccess: () => {
-      toast.success("Payroll payment recorded");
+    onSuccess: (result) => {
+      if (result.replayed) {
+        toast.message("Existing payroll payment confirmed", {
+          description: "This was a safe retry. No second payment or journal was created.",
+        });
+      } else {
+        toast.success("Payroll payment recorded");
+      }
       setRecordOpen(false);
       setAlloc({});
       setAmountMajor("");
       setIdempotencyKey(`pr-pay-${crypto.randomUUID()}`);
-      queryClient.invalidateQueries({ queryKey: ["payroll-payments"] });
-      queryClient.invalidateQueries({ queryKey: ["payroll-payslips"] });
-      queryClient.invalidateQueries({ queryKey: ["payroll-run"] });
+      // Both posting and reversal affect outstanding payslips, details and
+      // run summaries; otherwise reopening the settlement form may show
+      // stale paid amounts and invite a duplicate allocation.
+      for (const queryKey of PAYROLL_SETTLEMENT_REFRESH_KEYS) {
+        void queryClient.invalidateQueries({ queryKey });
+      }
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
+    onSettled: () => releasePayrollMutationLock(paymentSubmitLock),
   });
 
   const reverseMut = useMutation({
@@ -249,14 +287,39 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
     onSuccess: () => {
       toast.success("Payment reversed");
       setReverseTarget(null);
-      queryClient.invalidateQueries({ queryKey: ["payroll-payments"] });
-      queryClient.invalidateQueries({ queryKey: ["payroll-payslips"] });
-      queryClient.invalidateQueries({ queryKey: ["payroll-run"] });
+      // Both posting and reversal affect outstanding payslips, details and
+      // run summaries; otherwise reopening the settlement form may show
+      // stale paid amounts and invite a duplicate allocation.
+      for (const queryKey of PAYROLL_SETTLEMENT_REFRESH_KEYS) {
+        void queryClient.invalidateQueries({ queryKey });
+      }
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
+    onSettled: () => releasePayrollMutationLock(reversalSubmitLock),
   });
 
+  const submitRecordPayment = () => {
+    if (recordMut.isPending || !acquirePayrollMutationLock(paymentSubmitLock)) return;
+    recordMut.mutate();
+  };
+
+  const submitReversePayment = () => {
+    if (!reverseTarget || reverseMut.isPending || !acquirePayrollMutationLock(reversalSubmitLock)) {
+      return;
+    }
+    reverseMut.mutate();
+  };
+
   const openRecordDialog = () => {
+    if (recordMut.isPending || paymentSubmitLock.current) return;
+    // Do not inherit bank, allocation or memo fields from a previous settlement.
+    setClearingAccountId("");
+    setAlloc({});
+    setAmountMajor("");
+    setReference("");
+    setMemo("");
+    setPaymentMethod("bank_transfer");
+    setPaymentDate(todayLocalDateOnly());
     setIdempotencyKey(`pr-pay-${crypto.randomUUID()}`);
     setRecordOpen(true);
   };
@@ -296,6 +359,23 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
   }
 
   const payments = page?.payments ?? [];
+  const filtersActive = paymentStatus !== "all" || paymentSearch.trim() !== "";
+  const filteredPayments = payments.filter((payment) => {
+    if (paymentStatus !== "all" && payment.status !== paymentStatus) return false;
+    const needle = paymentSearch.trim().toLocaleLowerCase();
+    return (
+      !needle ||
+      [
+        payment.payment_date,
+        payment.reference ?? "",
+        METHOD_LABELS[payment.payment_method] ?? payment.payment_method,
+      ].some((value) => value.toLocaleLowerCase().includes(needle))
+    );
+  });
+  const clearPaymentFilters = () => {
+    setPaymentSearch("");
+    setPaymentStatus("all");
+  };
 
   return (
     <>
@@ -314,7 +394,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
                 >
                   Generic bank CSV
                 </Button>
-                <Button size="sm" onClick={openRecordDialog}>
+                <Button size="sm" disabled={recordMut.isPending} onClick={openRecordDialog}>
                   Record payment
                 </Button>
               </>
@@ -348,14 +428,53 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
         </Alert>
       ) : null}
 
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <Input
+          value={paymentSearch}
+          onChange={(event) => setPaymentSearch(event.target.value)}
+          placeholder="Search date, method or reference…"
+          aria-label="Search payroll payments"
+          className="w-full sm:w-72"
+        />
+        <Select
+          value={paymentStatus}
+          onValueChange={(value) => setPaymentStatus(value as typeof paymentStatus)}
+        >
+          <SelectTrigger className="w-[180px]" aria-label="Filter payment status">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All payments</SelectItem>
+            <SelectItem value="posted">Posted</SelectItem>
+            <SelectItem value="reversed">Reversed</SelectItem>
+          </SelectContent>
+        </Select>
+        {filtersActive ? (
+          <Button variant="ghost" size="sm" onClick={clearPaymentFilters}>
+            Clear filters
+          </Button>
+        ) : null}
+        <p className="w-full text-xs text-muted-foreground" aria-live="polite">
+          Showing {filteredPayments.length} of {payments.length} payments
+        </p>
+      </div>
+
       <TableCard>
-        {payments.length === 0 ? (
+        {filteredPayments.length === 0 ? (
           <EmptyState
-            title="No payroll payments yet"
-            description="Post a payroll run, then record net-pay payments here."
+            title={payments.length === 0 ? "No payroll payments yet" : "No matching payments"}
+            description={
+              payments.length === 0
+                ? "Post a payroll run, then record net-pay payments here."
+                : "Try another status or search term."
+            }
             action={
-              canPay ? (
-                <Button size="sm" onClick={openRecordDialog}>
+              filtersActive ? (
+                <Button size="sm" variant="outline" onClick={clearPaymentFilters}>
+                  Clear filters
+                </Button>
+              ) : canPay ? (
+                <Button size="sm" disabled={recordMut.isPending} onClick={openRecordDialog}>
                   Record payment
                 </Button>
               ) : (
@@ -378,7 +497,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
               </TableRow>
             </TableHeader>
             <TableBody>
-              {payments.map((p) => (
+              {filteredPayments.map((p) => (
                 <TableRow key={p.id}>
                   <TableCell>{fmt.date(p.payment_date)}</TableCell>
                   <TableCell>{METHOD_LABELS[p.payment_method] ?? p.payment_method}</TableCell>
@@ -397,7 +516,8 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
                           size="sm"
                           variant="outline"
                           onClick={() => {
-                            setReversalDate(new Date().toISOString().slice(0, 10));
+                            if (reverseMut.isPending || reversalSubmitLock.current) return;
+                            setReversalDate(todayLocalDateOnly());
                             setReverseTarget({ id: p.id, currency: p.currency });
                           }}
                         >
@@ -413,7 +533,12 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
         )}
       </TableCard>
 
-      <Dialog open={recordOpen} onOpenChange={setRecordOpen}>
+      <Dialog
+        open={recordOpen}
+        onOpenChange={(open) => {
+          if (!recordMut.isPending && !paymentSubmitLock.current) setRecordOpen(open);
+        }}
+      >
         <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Record payroll payment</DialogTitle>
@@ -423,6 +548,44 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            {settingsQ.isSuccess && !settingsReady ? (
+              <Alert variant="destructive">
+                <AlertDescription>
+                  Payroll settings are not configured or their database migration is pending.
+                  Complete Payroll settings before recording settlements.
+                </AlertDescription>
+              </Alert>
+            ) : null}
+            {settingsQ.isError ? (
+              <Alert variant="destructive">
+                <AlertDescription>
+                  Could not load payroll settings. {friendlyAuthError(settingsQ.error)}
+                </AlertDescription>
+              </Alert>
+            ) : null}
+            {fxUnsupported ? (
+              <Alert variant="destructive">
+                <AlertDescription>
+                  Payroll currency {payCurrency} differs from organisation base currency{" "}
+                  {company.base_currency.toUpperCase()}. Payment posting is unavailable until
+                  an approved FX accounting workflow is configured, to avoid an incorrect GL entry.
+                </AlertDescription>
+              </Alert>
+            ) : null}
+            {payslipsQ.isError ? (
+              <Alert variant="destructive">
+                <AlertDescription>
+                  Could not load open payslips. {friendlyAuthError(payslipsQ.error)}
+                </AlertDescription>
+              </Alert>
+            ) : null}
+            {accountsQ.isError ? (
+              <Alert variant="destructive">
+                <AlertDescription>
+                  Could not load clearing accounts. {friendlyAuthError(accountsQ.error)}
+                </AlertDescription>
+              </Alert>
+            ) : null}
             <div className="grid gap-2">
               <Label htmlFor="pr-pay-date">Payment date</Label>
               <Input
@@ -449,11 +612,18 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
             </div>
             <div className="grid gap-2">
               <Label>Clearing account</Label>
+              {excludedClearingAccounts > 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  {excludedClearingAccounts} clearing account
+                  {excludedClearingAccounts === 1 ? "" : "s"} with a different currency hidden.
+                  Payroll settlements must use {payCurrency}.
+                </p>
+              ) : null}
               <AccountLookup
                 ariaLabel="Clearing account"
                 companyId={company.id}
                 accounts={
-                  (accountsQ.data ?? []) as unknown as Array<{
+                  availableClearingAccounts as unknown as Array<{
                     id: string;
                     code: string;
                     name: string;
@@ -498,7 +668,8 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
                 <p className="text-sm text-muted-foreground">Loading open payslips…</p>
               ) : openPayslips.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  No outstanding payslips on posted runs. You can still record an unallocated
+                  No outstanding {payCurrency} payslips on posted runs
+                  {runIdFilter ? " in this pay run" : ""}. You can still record an unallocated
                   payment.
                 </p>
               ) : (
@@ -529,12 +700,23 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRecordOpen(false)}>
+            <Button
+              variant="outline"
+              disabled={recordMut.isPending}
+              onClick={() => setRecordOpen(false)}
+            >
               Cancel
             </Button>
             <Button
-              disabled={recordMut.isPending || !clearingAccountId}
-              onClick={() => recordMut.mutate()}
+              disabled={
+                recordMut.isPending ||
+                !clearingAccountId ||
+                !settingsReady ||
+                !payslipsQ.isSuccess ||
+                !accountsQ.isSuccess ||
+                fxUnsupported
+              }
+              onClick={submitRecordPayment}
             >
               Record payment
             </Button>
@@ -625,8 +807,9 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
                       size="sm"
                       variant="outline"
                       onClick={() => {
+                        if (reverseMut.isPending || reversalSubmitLock.current) return;
                         setDetailPaymentId(null);
-                        setReversalDate(new Date().toISOString().slice(0, 10));
+                        setReversalDate(todayLocalDateOnly());
                         setReverseTarget({ id: payment.id, currency: payment.currency });
                       }}
                     >
@@ -642,7 +825,11 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
 
       <AlertDialog
         open={reverseTarget !== null}
-        onOpenChange={(open) => !open && setReverseTarget(null)}
+        onOpenChange={(open) => {
+          if (!open && !reverseMut.isPending && !reversalSubmitLock.current) {
+            setReverseTarget(null);
+          }
+        }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -659,14 +846,15 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
               type="date"
               value={reversalDate}
               onChange={(e) => setReversalDate(e.target.value)}
+              disabled={reverseMut.isPending || reversalSubmitLock.current}
             />
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={reverseMut.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={reverseMut.isPending || reversalSubmitLock.current}>Cancel</AlertDialogCancel>
             <Button
               variant="destructive"
-              disabled={reverseMut.isPending || !reversalDate}
-              onClick={() => reverseMut.mutate()}
+              disabled={reverseMut.isPending || reversalSubmitLock.current || !reversalDate}
+              onClick={submitReversePayment}
             >
               Reverse payment
             </Button>

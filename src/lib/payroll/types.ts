@@ -5,7 +5,11 @@ import type { PayslipSnapshot } from "@/lib/payroll/payslip-snapshot";
 export const PAY_FREQUENCIES = ["weekly", "biweekly", "semimonthly", "monthly"] as const;
 export type PayFrequency = (typeof PAY_FREQUENCIES)[number];
 
-export const PAYMENT_METHODS = ["bank_transfer", "cash", "cheque", "manual", "other"] as const;
+/** Allowed on employee records and organisation payroll settings.
+ * The SQL CHECK constraints intentionally exclude 'manual' here; manual
+ * confirmation remains a supported payment *settlement* method.
+ */
+export const PAYMENT_METHODS = ["bank_transfer", "cash", "cheque", "other"] as const;
 export type PayrollPaymentMethod = (typeof PAYMENT_METHODS)[number];
 
 export const ROUNDING_MODES = ["half_up", "half_even", "floor", "ceiling"] as const;

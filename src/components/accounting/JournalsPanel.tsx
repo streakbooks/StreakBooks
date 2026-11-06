@@ -22,6 +22,7 @@ import { SortableHead } from "@/components/common/sortable-head";
 import { nextSort, sortRows, type SortState } from "@/lib/sort";
 import { journalPageInfo } from "@/lib/accounting/journal-paging";
 import { reviewJournalLines } from "@/lib/accounting/journal-line-review";
+import { JournalPostedGlEvidence } from "@/components/accounting/JournalPostedGlEvidence";
 import { JOURNAL_SOURCE_LABELS, journalSourceLabel, journalLineCurrency } from "@/lib/accounting/journal-display";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
@@ -424,6 +425,7 @@ export function JournalsPanel({
                           ) : detail.data ? (
                             <div className="space-y-3">
                               <JournalLineReviewNotice journal={j} detail={detail.data} />
+                              <JournalPostedGlEvidence companyId={companyId} journalId={j.id} status={j.status} />
                               <Table>
                                 <TableHeader>
                                   <TableRow>

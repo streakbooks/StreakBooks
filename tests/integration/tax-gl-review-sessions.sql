@@ -124,9 +124,39 @@ SELECT public.assert_tax_review_error(
  'open','Cross company change attempt',NULL,'snapshot-1',3)$$,
  '%Not authorised%');
 
--- A view-only reviewer cannot mutate or learn protected review details.
+-- Tenant B can create and read only its own review, never tenant A's.
+DO $
+DECLARE
+  b uuid := '10000000-0000-4000-8000-000000000002';
+  id uuid;
+BEGIN
+  SELECT review_id INTO id FROM public.save_tax_gl_review(
+    b, '2026-01-01', '2026-03-31', 'accrual',
+    '20000000-0000-4000-8000-000000000003',
+    '20000000-0000-4000-8000-000000000004',
+    'in_review', 'Tenant B tax review', NULL, 'snapshot-B', NULL
+  );
+  IF id IS NULL THEN RAISE EXCEPTION 'Tenant B review not created'; END IF;
+  IF (SELECT count(*) FROM public.tax_gl_review_sessions)<>1 THEN
+    RAISE EXCEPTION 'Tenant B can read a cross-company review';
+  END IF;
+  IF (SELECT count(*) FROM public.tax_gl_review_events)<>1 THEN
+    RAISE EXCEPTION 'Tenant B can read another company audit history';
+  END IF;
+END $;
+
+-- A view-only accountant can see the own company review but not mutate it.
 SELECT set_config('request.jwt.claims',
  '{"sub":"00000000-0000-4000-8000-000000000003"}', false);
+DO $
+BEGIN
+  IF (SELECT count(*) FROM public.tax_gl_review_sessions)<>1 THEN
+    RAISE EXCEPTION 'Accountant with accounting.view cannot read own-company review';
+  END IF;
+  IF (SELECT count(*) FROM public.tax_gl_review_events)<>3 THEN
+    RAISE EXCEPTION 'Accountant cannot read own-company review audit events';
+  END IF;
+END $;
 SELECT public.assert_tax_review_error(
  $$SELECT public.save_tax_gl_review(
  '10000000-0000-4000-8000-000000000001','2026-01-01','2026-03-31',

@@ -19,6 +19,7 @@ vi.mock("@/lib/assert-company-access", () => ({ assertCompanyPermission: vi.fn()
 import {
   listAiJournalReviewCases,
   getAiJournalReviewCase,
+  exportAiJournalReviewAudit,
   listAiJournalReviewEvents,
   saveAiJournalReview,
   reviewActionSchema,
@@ -40,14 +41,23 @@ const input = {
   expectedVersion: 1,
 };
 
-function db() {
+function db(eventCount = 0) {
   const builder = {
     select() { return this; },
     eq(key: string, value: unknown) { calls.push(["eq",key,value]); return this; },
     order() { return this; },
     range() { return Promise.resolve({ data: [], count: 0, error: null }); },
     maybeSingle() { return Promise.resolve({ data: { id: caseId }, error: null }); },
-    limit() { return Promise.resolve({ data: [], error: null }); },
+    limit() {
+      return Promise.resolve({
+        data: Array.from({ length: eventCount }, (_, index) => ({
+          id: caseId, action: "comment", actor_id: userId, note: "A review note " + index,
+          previous_status: "open", new_status: "open", assigned_to: null,
+          created_at: "2026-11-06T09:00:00Z",
+        })),
+        error: null,
+      });
+    },
   };
   return {
     from(table: string) { calls.push(["from",table]); return builder; },
@@ -60,6 +70,7 @@ function db() {
 const list = listAiJournalReviewCases as unknown as (args: unknown) => Promise<unknown>;
 const history = listAiJournalReviewEvents as unknown as (args: unknown) => Promise<unknown>;
 const fetchOne = getAiJournalReviewCase as unknown as (args: unknown) => Promise<unknown>;
+const exportAudit = exportAiJournalReviewAudit as unknown as (args: unknown) => Promise<unknown>;
 const save = saveAiJournalReview as unknown as (args: unknown) => Promise<unknown>;
 
 beforeEach(() => { calls.length = 0; vi.clearAllMocks(); });
@@ -174,6 +185,38 @@ describe("AI review queue server authorization and transitions", () => {
       context: { supabase: db(), userId },
     })).rejects.toThrow("Access denied");
     expect(calls).toHaveLength(0);
+  });
+
+  it("requires reports.export on top of AI and reporting visibility for audit exports", async () => {
+    const client = db();
+    await exportAudit({ data: { companyId, caseId }, context: { supabase: client, userId } });
+    for (const permission of ["ai.use", "reports.view", "reports.export"])
+      expect(assertCompanyPermission).toHaveBeenCalledWith(client, companyId, permission);
+    expect(calls).toContainEqual(["from", "ai_journal_review_cases"]);
+    expect(calls).toContainEqual(["from", "ai_journal_review_events"]);
+  });
+
+  it("refuses unprivileged exports before reading audit records", async () => {
+    vi.mocked(assertCompanyPermission).mockRejectedValueOnce(new Error("Export denied"));
+    await expect(exportAudit({ data: { companyId, caseId }, context: { supabase: db(), userId } })).rejects.toThrow("Export denied");
+    expect(calls).toHaveLength(0);
+  });
+
+  it("exports complete bounded case history, not just the last 100 events", async () => {
+    const result = await exportAudit({
+      data: { companyId, caseId },
+      context: { supabase: db(135), userId },
+    }) as { events: unknown[] };
+    expect(result.events).toHaveLength(135);
+    expect(calls).toContainEqual(["eq", "company_id", companyId]);
+    expect(calls).toContainEqual(["eq", "case_id", caseId]);
+  });
+
+  it("fails closed rather than generating a truncated export over 5,000 events", async () => {
+    await expect(exportAudit({
+      data: { companyId, caseId },
+      context: { supabase: db(5001), userId },
+    })).rejects.toThrow(/no incomplete file/);
   });
 
   it("supports a server-filtered assigned-to-me queue without exposing other tenants", async () => {

@@ -24,6 +24,10 @@ export type TaxGlComparison = {
   output: GlBucket;
   input: GlBucket;
   journalLines: number;
+  netReturnMinor: string;
+  netDocumentAndReversalMinor: string;
+  netAllGlMinor: string;
+  netDiagnosticDifferenceMinor: string;
   comparisonAvailable: boolean;
   warnings: string[];
 };
@@ -88,10 +92,20 @@ export function compareTaxReturnWithGl(args: {
   if (args.basis === "cash") {
     warnings.unshift("Cash-basis return amounts cannot be directly reconciled to accrual-dated GL postings. Any variance shown is informational only.");
   }
+  const output = build(out, args.outputReturnMinor);
+  const input = build(inc, args.inputReturnMinor);
+  const netReturn = BigInt(args.outputReturnMinor) - BigInt(args.inputReturnMinor);
+  const netDocuments = out.document + out.reversal - inc.document - inc.reversal;
+  const netAllGl = out.document + out.reversal + out.other -
+    inc.document - inc.reversal - inc.other;
   return {
     basis: args.basis,
-    output: build(out, args.outputReturnMinor),
-    input: build(inc, args.inputReturnMinor),
+    output,
+    input,
+    netReturnMinor: netReturn.toString(),
+    netDocumentAndReversalMinor: netDocuments.toString(),
+    netAllGlMinor: netAllGl.toString(),
+    netDiagnosticDifferenceMinor: (netDocuments - netReturn).toString(),
     journalLines: out.count + inc.count,
     comparisonAvailable: args.basis === "accrual",
     warnings,

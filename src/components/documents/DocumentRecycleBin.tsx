@@ -39,6 +39,7 @@ export function DocumentRecycleBin({
   const retryCleanup = useServerFn(retryDocumentStorageCleanup);
 
   const [page, setPage] = useState(0);
+  const [cleanupPage, setCleanupPage] = useState(0);
   const [daysInput, setDaysInput] = useState("30");
   const [pendingPurge, setPendingPurge] = useState<{ id: string; fileName: string } | null>(null);
 
@@ -53,14 +54,23 @@ export function DocumentRecycleBin({
     retry: false,
   });
   const cleanup = useQuery({
-    queryKey: ["document-storage-cleanup", companyId],
+    queryKey: ["document-storage-cleanup", companyId, cleanupPage],
     enabled: canManageCompany,
-    queryFn: () => listCleanup({ data: { companyId } }),
+    queryFn: () => listCleanup({ data: { companyId, page: cleanupPage } }),
     retry: false,
   });
   useEffect(() => {
     if (policy.data) setDaysInput(String(policy.data.retentionDays));
   }, [policy.data]);
+  useEffect(() => {
+    setPage(0);
+    setCleanupPage(0);
+  }, [companyId]);
+  useEffect(() => {
+    if (!cleanup.data) return;
+    const lastPage = Math.max(0, Math.ceil(cleanup.data.total / cleanup.data.pageSize) - 1);
+    if (cleanupPage > lastPage) setCleanupPage(lastPage);
+  }, [cleanup.data, cleanupPage]);
   const refresh = async () => Promise.all([
     client.invalidateQueries({ queryKey: ["recycle-bin-files", companyId] }),
     client.invalidateQueries({ queryKey: ["company-files", companyId] }),
@@ -261,20 +271,39 @@ export function DocumentRecycleBin({
             <p role="status" className="text-xs text-muted-foreground">Loading cleanup backlog…</p>
           ) : cleanup.isError ? (
             <p role="alert" className="text-xs text-destructive">{friendlyAuthError(cleanup.error)}</p>
-          ) : cleanup.data.length === 0 ? (
+          ) : cleanup.data.total === 0 ? (
             <p className="text-xs text-muted-foreground">No pending cleanup jobs.</p>
-          ) : cleanup.data.map((job) => (
-            <div key={job.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-2">
-              <p className="text-xs text-muted-foreground">
-                {job.objects} Storage object(s) · Requested {new Date(job.createdAt).toLocaleString()}
-              </p>
-              <Button
-                size="sm" variant="outline"
-                disabled={cleanupM.isPending}
-                onClick={() => cleanupM.mutate(job.id)}
-              >Retry cleanup</Button>
-            </div>
-          ))}
+          ) : (
+            <>
+              {cleanup.data.jobs.map((job) => (
+                <div key={job.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-2">
+                  <p className="text-xs text-muted-foreground">
+                    {job.objects} Storage object(s) · Requested {new Date(job.createdAt).toLocaleString()}
+                  </p>
+                  <Button
+                    size="sm" variant="outline"
+                    disabled={cleanupM.isPending}
+                    onClick={() => cleanupM.mutate(job.id)}
+                  >Retry cleanup</Button>
+                </div>
+              ))}
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                <span>{cleanup.data.total} pending jobs · Page {cleanupPage + 1} of{" "}
+                  {Math.max(1, Math.ceil(cleanup.data.total / cleanup.data.pageSize))}
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" variant="outline"
+                    disabled={cleanupPage === 0}
+                    onClick={() => setCleanupPage((p) => Math.max(0, p - 1))}
+                  >Previous</Button>
+                  <Button size="sm" variant="outline"
+                    disabled={(cleanupPage + 1) * cleanup.data.pageSize >= cleanup.data.total}
+                    onClick={() => setCleanupPage((p) => p + 1)}
+                  >Next</Button>
+                </div>
+              </div>
+            </>
+          )}
         </section>
       ) : null}
 

@@ -13,18 +13,17 @@ import { PAYROLL_SETTLEMENT_REFRESH_KEYS } from "@/lib/payroll/settlement-query-
 import { acquirePayrollMutationLock, releasePayrollMutationLock } from "@/lib/payroll/action-lock";
 import { buildGenericPayrollBankCsv } from "@/lib/payroll/payroll-bank-export";
 import { parsePayrollPaymentEntry } from "@/lib/payroll/payment-form-draft";
-import { payrollClearingCurrencyMismatch } from "@/lib/payroll/clearing-currency";
 import { getPayrollSettingsPage } from "@/lib/payroll/payroll.functions";
 import {
   exportPayrollBankCsvRows,
   getPayrollPayment,
   listPayrollPayments,
+  listPayrollSettlementAccounts,
   recordPayrollPayment,
   reversePayrollPayment,
   type PayrollPaymentDetailPage,
 } from "@/lib/payroll/payments.functions";
 import { listPayrollPayslips } from "@/lib/payroll/runs.functions";
-import { listPaymentAccounts } from "@/lib/purchases/purchases.functions";
 import type { PayslipSnapshot } from "@/lib/payroll/payslip-snapshot";
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
@@ -88,7 +87,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
   const fetchExport = useServerFn(exportPayrollBankCsvRows);
   const fetchPayslips = useServerFn(listPayrollPayslips);
   const fetchPayrollSettings = useServerFn(getPayrollSettingsPage);
-  const fetchAccounts = useServerFn(listPaymentAccounts);
+  const fetchAccounts = useServerFn(listPayrollSettlementAccounts);
   const savePayment = useServerFn(recordPayrollPayment);
 
   const [recordOpen, setRecordOpen] = useState(false);
@@ -159,18 +158,8 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
     enabled: Boolean(company?.id) && canPay && recordOpen,
   });
 
-  const availableClearingAccounts = (
-    (accountsQ.data ?? []) as Array<{
-      id: string;
-      code: string;
-      name: string;
-      currency_code?: string | null;
-    }>
-  ).filter(
-    (account) => !payrollClearingCurrencyMismatch(payCurrency, account.currency_code),
-  );
-  const excludedClearingAccounts =
-    (accountsQ.data?.length ?? 0) - availableClearingAccounts.length;
+  const availableClearingAccounts = accountsQ.data?.accounts ?? [];
+  const excludedClearingAccounts = accountsQ.data?.excluded ?? 0;
 
   const openPayslips = useMemo(() => {
     const items =

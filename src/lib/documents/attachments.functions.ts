@@ -39,10 +39,11 @@ export type AttachmentRow = {
   uploaded_by: string | null;
   storage_bucket: string | null;
   folder_id: string | null;
+  retention_hold: boolean;
 };
 
 const COLUMNS =
-  "id, entity_type, entity_id, file_name, content_type, size_bytes, created_at, uploaded_by, storage_bucket, folder_id";
+  "id, entity_type, entity_id, file_name, content_type, size_bytes, created_at, uploaded_by, storage_bucket, folder_id, retention_hold";
 
 /** View or manage, matching ATTACHMENT_ENTITIES. Any listed permission is enough. */
 export async function assertEntityAccess(

@@ -4,6 +4,7 @@ import { loadCashReportLines } from "@/lib/reports/cash-report.server";
 import { createServerFn } from "@tanstack/react-start";
 import { prepareBudgetImportCsv } from "@/lib/imports/budget-import";
 import { buildBudgetScenarioComparison } from "@/lib/budgets/budget-scenarios";
+import { validateBudgetDocumentInput } from "@/lib/budgets/budget-document";
 import { validateBudgetLockCommand } from "@/lib/budgets/budget-governance";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
@@ -464,6 +465,69 @@ export const duplicateBudget = createServerFn({ method: "POST" })
       "Budget duplication requires the database migration 20261106115500_duplicate_budget.sql.",
     );
     return { id };
+  });
+
+/**
+ * Editor save: one RPC, one transaction. The document token prevents overwriting a more
+ * recently saved budget. The database holds the budget row lock and performs all validation.
+ */
+export const saveBudgetDocument = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      budgetId: string;
+      name: string;
+      notes?: string | null;
+      expectedUpdatedAt: string;
+      rows: Array<{ accountId: string; months: number[] }>;
+    }) => {
+      const validated = validateBudgetDocumentInput(input);
+      return {
+        companyId: companyIdOf(input),
+        budgetId: assertUuid(input?.budgetId, "budget"),
+        ...validated,
+        rows: validated.rows.map((row) => ({
+          accountId: assertUuid(row.accountId, "account"),
+          months: row.months,
+        })),
+      };
+    },
+  )
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "accounts.manage");
+    const sb = context.supabase as unknown as Sb;
+    const header = await loadBudgetHead(sb, data.companyId, data.budgetId);
+    const months = fiscalMonthStarts(header.fiscal_year_start);
+    const lines: Array<{
+      account_id: string;
+      period_month: string;
+      amount_minor: number;
+    }> = [];
+    for (const row of data.rows) {
+      row.months.forEach((amount, index) => {
+        if (amount === 0) return;
+        lines.push({
+          account_id: row.accountId,
+          period_month: months[index]!,
+          amount_minor: amount,
+        });
+      });
+    }
+    const saved = await callRpc<{ stored: number; updated_at: string }>(
+      context.supabase,
+      "save_budget_document",
+      {
+        _company_id: data.companyId,
+        _budget_id: data.budgetId,
+        _name: data.name,
+        _notes: data.notes,
+        _expected_updated_at: data.expectedUpdatedAt,
+        _lines: lines,
+      },
+      "Atomic budget saving requires migration 20261106182000_budget_atomic_document_save.sql.",
+    );
+    return { stored: num(saved.stored), updatedAt: saved.updated_at };
   });
 
 export const saveBudgetLines = createServerFn({ method: "POST" })

@@ -15,8 +15,7 @@ import {
   getBudget,
   getBudgetGovernance,
   getYearActuals,
-  saveBudget,
-  saveBudgetLines,
+  saveBudgetDocument,
 } from "@/lib/budgets/budgets.functions";
 import { applyUpliftBps, fillRight, monthLabel, spreadEvenly } from "@/lib/budgets/budget-math";
 import {
@@ -101,8 +100,7 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
   const queryClient = useQueryClient();
   const canManage = useCanDo("accounts.manage");
   const currency = data.currency;
-  const saveLinesFn = useServerFn(saveBudgetLines);
-  const saveHeadFn = useServerFn(saveBudget);
+  const saveDocumentFn = useServerFn(saveBudgetDocument);
   const actualsFn = useServerFn(getYearActuals);
   const governanceFn = useServerFn(getBudgetGovernance);
   const governanceQuery = useQuery({
@@ -128,6 +126,7 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
 
   const [cells, setCells] = useState<Cells>(initial);
   const [dirty, setDirty] = useState(false);
+  const [saveConflict, setSaveConflict] = useState(false);
   const [name, setName] = useState(data.budget.name);
   const [notes, setNotes] = useState(data.budget.notes ?? "");
   const [accountSearch, setAccountSearch] = useState("");
@@ -142,6 +141,7 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
   const rowIds = new Set(Object.keys(cells).filter((id) => byId.has(id)));
   const rows = accounts.filter((a) => rowIds.has(a.id));
   const available = accounts.filter((a) => !rowIds.has(a.id));
+  const hiddenLineCount = data.lines.filter((line) => !byId.has(line.accountId)).length;
 
   const minor = (id: string): Array<number | null> =>
     (cells[id] ?? []).map((t) => parseCell(t, currency));
@@ -150,6 +150,7 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
     (a) => annualDrafts[a.id] !== undefined && parseCell(annualDrafts[a.id]!, currency) === null,
   ).length;
   const invalidAmountCount = invalidCount + invalidAnnualCount;
+  const unappliedAnnualCount = Object.keys(annualDrafts).length;
   const hasInvalidAmounts = invalidAmountCount > 0;
   const visible = (a: (typeof rows)[number]) =>
     `${a.code} ${a.name}`.toLocaleLowerCase().includes(accountSearch.trim().toLocaleLowerCase());
@@ -293,42 +294,44 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
     mutationFn: async () => {
       if (!canEdit) throw new Error("You cannot edit a locked or unavailable budget.");
       if (hasInvalidAmounts) throw new Error("Fix the highlighted amounts first.");
-      await saveLinesWithHead();
-    },
-    onSuccess: async () => {
-      setDirty(false);
-      await queryClient.invalidateQueries({ queryKey: ["budget", companyId, data.budget.id] });
-      await queryClient.invalidateQueries({ queryKey: ["budgets", companyId] });
-      await queryClient.invalidateQueries({
-        queryKey: ["budget-governance", companyId, data.budget.id],
-      });
-      toast.success("Budget saved");
-    },
-    onError: (e) => toast.error(friendlyAuthError(e)),
-  });
-
-  async function saveLinesWithHead() {
-    if (name.trim() !== data.budget.name || (notes.trim() || null) !== data.budget.notes) {
-      if (!name.trim()) throw new Error("Enter a budget name.");
-      await saveHeadFn({
+      if (unappliedAnnualCount > 0) {
+        throw new Error("Apply annual totals using Enter or blur before saving.");
+      }
+      if (hiddenLineCount > 0) {
+        throw new Error("This budget has archived account amounts. Resolve them before saving.");
+      }
+      return saveDocumentFn({
         data: {
           companyId,
           budgetId: data.budget.id,
           name: name.trim(),
-          fiscalYearStart: data.budget.fiscal_year_start,
           notes: notes.trim() || null,
+          expectedUpdatedAt: data.budget.updated_at,
+          rows: rows.map((a) => ({
+            accountId: a.id,
+            months: minor(a.id).map((value) => value ?? 0),
+          })),
         },
       });
-    }
-    await saveLinesFn({
-      data: {
-        companyId,
-        budgetId: data.budget.id,
-        mode: "replace",
-        rows: rows.map((a) => ({ accountId: a.id, months: minor(a.id).map((v) => v ?? 0) })),
-      },
-    });
-  }
+    },
+    onSuccess: async () => {
+      setDirty(false);
+      setSaveConflict(false);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["budget", companyId, data.budget.id] }),
+        queryClient.invalidateQueries({ queryKey: ["budgets", companyId] }),
+        queryClient.invalidateQueries({
+          queryKey: ["budget-governance", companyId, data.budget.id],
+        }),
+      ]);
+      toast.success("Budget saved atomically");
+    },
+    onError: (error) => {
+      const message = friendlyAuthError(error);
+      if (message.includes("changed since it was opened")) setSaveConflict(true);
+      toast.error(message);
+    },
+  });
 
   const income = rows.filter((a) => a.kind === "income");
   const expense = rows.filter((a) => a.kind === "expense");
@@ -340,6 +343,7 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
     setIssues([]);
     setAnnualDrafts({});
     setDirty(false);
+    setSaveConflict(false);
     toast.info("Budget restored to the last saved version.");
   };
 
@@ -387,7 +391,7 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
             onChange={(event) => {
               setAnnualDrafts((prev) => ({ ...prev, [a.id]: event.target.value }));
               setDirty(true);
-            }
+            }}
             onKeyDown={(event) => {
               if (event.key === "Enter") event.currentTarget.blur();
             }}
@@ -685,7 +689,14 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
           />
           <Button
             size="sm"
-            disabled={!canEdit || !dirty || save.isPending || hasInvalidAmounts}
+            disabled={
+              !canEdit ||
+              !dirty ||
+              save.isPending ||
+              hasInvalidAmounts ||
+              unappliedAnnualCount > 0 ||
+              hiddenLineCount > 0
+            }
             onClick={() => save.mutate()}
           >
             {save.isPending ? (
@@ -703,6 +714,49 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
         </div>
       </div>
 
+      {hiddenLineCount > 0 ? (
+        <Alert variant="destructive" className="mb-3">
+          <AlertDescription>
+            This budget contains {hiddenLineCount} saved monthly amount
+            {hiddenLineCount === 1 ? "" : "s"} on inactive or unavailable accounts. Those
+            amounts are preserved; saving replacements is blocked until the historical accounts
+            can be reviewed. Export or consult the revision history before changing accounts.
+          </AlertDescription>
+        </Alert>
+      ) : null}
+      {unappliedAnnualCount > 0 ? (
+        <Alert className="mb-3">
+          <AlertDescription>
+            {unappliedAnnualCount} annual amount
+            {unappliedAnnualCount === 1 ? " is" : "s are"} awaiting application. Press Enter or
+            leave each annual-total field before saving; the amount will then distribute across
+            all twelve months.
+          </AlertDescription>
+        </Alert>
+      ) : null}
+      {saveConflict ? (
+        <Alert variant="destructive" className="mb-3">
+          <AlertDescription>
+            Another save changed this budget. Your unsaved draft remains on screen.
+            <Button
+              className="ml-2"
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                if (
+                  window.confirm(
+                    "Reload the current budget? Your unsaved draft will be discarded.",
+                  )
+                ) {
+                  window.location.reload();
+                }
+              }}
+            >
+              Reload latest version
+            </Button>
+          </AlertDescription>
+        </Alert>
+      ) : null}
       {hasInvalidAmounts ? (
         <Alert variant="destructive" className="mb-3">
           <AlertDescription>

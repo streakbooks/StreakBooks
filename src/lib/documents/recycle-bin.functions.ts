@@ -5,6 +5,7 @@ import { assertUuid } from "@/lib/company-validation";
 import { assertEntityAccess } from "@/lib/documents/attachments.functions";
 import { COMPANY_DOCUMENTS_BUCKET, isAttachmentEntityType } from "@/lib/documents/attachments";
 import { DEFAULT_DOCUMENT_RETENTION_DAYS, validateRetentionDays } from "@/lib/documents/recycle-bin-rules";
+import { safeFilePage } from "@/lib/documents/file-workspace";
 
 const MIGRATION_HINT =
   "Recycle Bin requires migration 20261106183000_files_recycle_retention_cleanup.";
@@ -113,7 +114,7 @@ export const listRecycleBinFiles = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { companyId: string; page?: number }) => ({
     companyId: assertUuid(input.companyId),
-    page: Math.max(0, Math.min(100000, Math.floor(Number(input.page) || 0))),
+    page: safeFilePage(input.page),
   }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
@@ -258,7 +259,7 @@ export const listStorageCleanupJobs = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { companyId: string; page?: number }) => ({
     companyId: assertUuid(input.companyId),
-    page: Math.min(100000, Math.max(0, Math.floor(Number(input.page) || 0))),
+    page: safeFilePage(input.page),
   }))
   .handler(async ({ data, context }) => {
     await assertEntityAccess(context.supabase, data.companyId, "company", "manage");

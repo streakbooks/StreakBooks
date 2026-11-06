@@ -98,3 +98,36 @@ unprotected ledger API or ask the language model to reconstruct journal entries.
   provider call, background automation, or newly granted permission. Any
   investigative accounting action stays in the source module's protected
   workflow with existing human approvals.
+
+
+## 8. Specific-journal explanations (Phase 5)
+
+The **Explain journal** action on the evidence explorer opens a strictly
+read-only account-direction interpretation of an *existing posted journal*.
+
+- A new authenticated GET server handler first enforces **both** \`ai.use\`
+  and \`reports.view\`. The journal header and all journal lines are fetched
+  for one validated journal UUID and the active \`company_id\`; only
+  \`status = posted\` is eligible. The 200-line cap prevents claiming a
+  partial journal is a complete explanation.
+- Line-level account codes, names, types, and current active flags come from
+  the actual company ledger relationship, not an LLM. Debit/credit effects
+  describe the standard increase/decrease convention of asset, liability,
+  equity, income and expense accounts. They **do not prove** the purpose
+  of the underlying transaction.
+- Database minor units are handled using exact integer strings and BigInt,
+  including amounts larger than JavaScript's safe integer range. Unsafe
+  numeric conversions fail instead of inventing amounts.
+- The source journal and supported originating document are linked for human
+  inspection. Single-line account links open the existing Account
+  Transactions report using the journal date and accrual basis.
+- Deterministic review suggestions highlight imbalance, unusual debit/credit
+  columns, inactive accounts, unavailable account type, absent memo, and
+  missing source references. Every review also asks a human to verify source
+  support, cut-off, tax and existing approvals.
+- Checklist ticks are **ephemeral browser state** and do not assert a formal
+  sign-off, update the ledger, create an approval, or write a review record.
+  Copying notes uses the browser clipboard only and is initiated by the user.
+- This feature never calls an AI provider or sends individual journal details
+  externally. It makes no journal posting, reversal, payment, reconciliation,
+  role change, background action or database migration.

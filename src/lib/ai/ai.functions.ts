@@ -490,7 +490,7 @@ export const rejectAiSuggestion = createServerFn({ method: "POST" })
     suggestionId: assertUuid(input.suggestionId, "suggestion"),
   }))
   .handler(async ({ data, context }) => {
-    await assertCompanyPermission(context.supabase, data.companyId, "ai.use");
+    await assertCompanyPermission(context.supabase, data.companyId, "ai.apply_suggestion");
     const { data: rejected, error } = await context.supabase
       .from("ai_suggestions" as never)
       .update({ status: "rejected", updated_at: new Date().toISOString() } as never)

@@ -126,18 +126,16 @@ export const getAssetRegisterPage = createServerFn({ method: "GET" })
     const [meta, metas, types, assets, lastRun] = await Promise.all([
       loadCompanyMeta(sb, data.companyId),
       loadAccountMetas(sb, data.companyId),
-      relationError(
-        sb
-          .from("asset_types" as never)
-          .select(
-            "id, name, depreciation_method, useful_life_months, annual_rate_bps, asset_account_id, accumulated_account_id, expense_account_id, is_active" as never,
-          )
-          .eq("company_id" as never, data.companyId as never)
-          .order("name" as never)
-          .limit(500) as unknown as PromiseLike<{
-          data: AssetTypeRow[] | null;
-          error: { message: string } | null;
-        }>,
+      fetchAllPages<AssetTypeRow>(
+        (from, to) =>
+          sb
+            .from("asset_types" as never)
+            .select(
+              "id, name, depreciation_method, useful_life_months, annual_rate_bps, asset_account_id, accumulated_account_id, expense_account_id, is_active" as never,
+            )
+            .eq("company_id" as never, data.companyId as never)
+            .order("id" as never)
+            .range(from, to) as unknown as PromiseLike<PageResult<AssetTypeRow>>,
       ),
       fetchAllPages<Record<string, unknown>>(
         (from, to) =>
@@ -164,7 +162,9 @@ export const getAssetRegisterPage = createServerFn({ method: "GET" })
       available: true as const,
       currency: meta.baseCurrency,
       assets: assets.map(normaliseAsset),
-      types: types ?? [],
+      types: [...types].sort(
+        (a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id),
+      ),
       accounts: metas
         .filter((a) => a.is_active && a.is_postable)
         .map((a) => ({ id: a.id, code: a.code, name: a.name, accountType: a.account_type }))

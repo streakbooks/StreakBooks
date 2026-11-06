@@ -226,7 +226,7 @@ export function DocumentRecycleBin({
                       </Button>
                       <Button
                         size="sm" variant="outline"
-                        disabled={!eligible || purgeM.isPending || restoreM.isPending}
+                        disabled={!canManageCompany || !eligible || purgeM.isPending || restoreM.isPending}
                         onClick={() => setPendingPurge({ id: file.id, fileName: file.file_name })}
                       ><Trash2 className="mr-1 size-4" /> Purge permanently</Button>
                     </div>

@@ -11,8 +11,12 @@ import { listDeferrals } from "@/lib/accounting/deferrals.functions";
 import { getFxOverview } from "@/lib/accounting/fx.functions";
 import { getPayrollLiabilityRollforward } from "@/lib/accounting/payroll-liability-rollforward.functions";
 import {
+  auditAssetDepreciationPosting, auditAssetDisposalPosting,
+} from "@/lib/accounting/fixed-asset-posting-evidence.functions";
+import { listFixedAssetPostingAuditTargets } from "@/lib/accounting/fixed-asset-audit-targets.functions";
+import {
   createExceptionSnapshot, exceptionSnapshotCsv, filterExceptionFindings,
-  type AuditCapture, type ExceptionFilter, type ExceptionSource,
+  type AuditCapture, type ExceptionFilter, type ExceptionSource, type FixedAssetExceptionAudit,
 } from "@/lib/accounting/reconciliation-exceptions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import type { HealthReport } from "@/lib/accounting/ledger-health";
@@ -58,6 +62,9 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
   const fetchPayroll = useServerFn(getPayrollLiabilityRollforward);
   const fetchSchedules = useServerFn(listDeferrals);
   const fetchRevaluations = useServerFn(getFxOverview);
+  const fetchDepreciation = useServerFn(auditAssetDepreciationPosting);
+  const fetchDisposal = useServerFn(auditAssetDisposalPosting);
+  const fetchFixedTargets = useServerFn(listFixedAssetPostingAuditTargets);
   const ledger = useMutation({ mutationFn: () => fetchHealth({ data: { companyId } }) });
   const realised = useMutation({ mutationFn: () => fetchRealised({ data: { companyId } }) });
   const revaluation = useMutation({
@@ -76,6 +83,18 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
   const recentRevaluations = useMutation({
     mutationFn: () => fetchRevaluations({ data: { companyId } }),
   });
+  const depreciation = useMutation({
+    mutationFn: (runId: string) => fetchDepreciation({ data: { companyId, runId } }),
+  });
+  const disposal = useMutation({
+    mutationFn: (assetId: string) => fetchDisposal({ data: { companyId, assetId } }),
+  });
+  const fixedTargets = useMutation({
+    mutationFn: () => fetchFixedTargets({ data: { companyId } }),
+  });
+  const [selectedDepreciationId, setSelectedDepreciationId] = useState("");
+  const [selectedDisposalId, setSelectedDisposalId] = useState("");
+  const [fixedAuditKind, setFixedAuditKind] = useState<"depreciation" | "disposal" | null>(null);
   const [rangeFrom, setRangeFrom] = useState("");
   const [rangeTo, setRangeTo] = useState("");
   const [revalId, setRevalId] = useState("");
@@ -102,12 +121,21 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
   const payrollCapture: AuditCapture<LiabilityRollforwardResult> = canPayroll
     ? capture(payroll.data, payroll.isError, payroll.error)
     : { state: "unavailable", message: "Requires both Payroll and Accounting viewing permissions." };
+  const fixedAssetsCapture: AuditCapture<FixedAssetExceptionAudit> =
+    fixedAuditKind === "depreciation"
+      ? capture<FixedAssetExceptionAudit>(depreciation.data ? { kind: "depreciation", evidence: depreciation.data } : undefined,
+          depreciation.isError, depreciation.error)
+      : fixedAuditKind === "disposal"
+        ? capture<FixedAssetExceptionAudit>(disposal.data ? { kind: "disposal", evidence: disposal.data } : undefined,
+            disposal.isError, disposal.error)
+        : { state: "not_run" };
   const snapshot = createExceptionSnapshot({
     ledger: ledgerCapture,
     realisedFx: realisedCapture,
     revaluation: revalCapture,
     deferrals: deferralCapture,
     payroll: payrollCapture,
+    fixedAssets: fixedAssetsCapture,
   });
   const filtered = filterExceptionFindings(snapshot.findings, {
     source, severity, search, review: reviewFilter,
@@ -115,7 +143,8 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
   const reviewedCount = snapshot.findings.filter(row => reviewed.has(row.key)).length;
   const hasPending = ledger.isPending || realised.isPending || revaluation.isPending ||
     deferrals.isPending || payroll.isPending ||
-    recentSchedules.isPending || recentRevaluations.isPending;
+    recentSchedules.isPending || recentRevaluations.isPending ||
+    depreciation.isPending || disposal.isPending || fixedTargets.isPending;
   const clearReviews = () => setReviewed(new Set());
   const exportCsv = () => {
     const csv = exceptionSnapshotCsv(snapshot, reviewed);
@@ -243,6 +272,106 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
                 Find runs in <Link to="/accounting" search={{ tab: "fx" }} className="underline">FX & reversals</Link>.
               </p>
             </div>
+            <div className="space-y-2 rounded-md border p-3 sm:col-span-2 lg:col-span-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-semibold">Fixed Assets — individual posting evidence</p>
+                <Button type="button" variant="ghost" size="sm"
+                  disabled={hasPending} onClick={() => fixedTargets.mutate()}>
+                  {fixedTargets.isPending ? "Loading recent assets…" : "Load recent run and disposal options"}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Each check verifies only one source posting. It does not reconcile every registered
+                asset or certify disposal proceeds and gain/loss account classification.
+              </p>
+              {fixedTargets.isError ? (
+                <p className="text-xs text-destructive" role="alert">
+                  Fixed Asset options unavailable: {friendlyAuthError(fixedTargets.error)}
+                </p>
+              ) : null}
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="exc-asset-run">Depreciation run UUID</Label>
+                  <Input id="exc-asset-run" value={selectedDepreciationId}
+                    placeholder="Select a run or paste its UUID"
+                    onChange={e => {
+                      setSelectedDepreciationId(e.target.value.trim());
+                      setFixedAuditKind(null); depreciation.reset(); clearReviews();
+                    }}/>
+                  {fixedTargets.data ? (
+                    <select aria-label="Recent depreciation runs" value=""
+                      className="w-full rounded-md border bg-background p-2 text-xs"
+                      onChange={e => {
+                        setSelectedDepreciationId(e.target.value);
+                        setFixedAuditKind(null); depreciation.reset(); clearReviews();
+                      }}>
+                      <option value="">Select a recent depreciation run</option>
+                      {fixedTargets.data.runs.map(run => (
+                        <option key={run.id} value={run.id}>
+                          {run.period_end} · {run.asset_count} assets
+                          {run.journal_id ? "" : " · no linked journal"}
+                        </option>
+                      ))}
+                    </select>
+                  ) : null}
+                  <Button type="button" variant="outline" size="sm"
+                    disabled={!UUID.test(selectedDepreciationId) || hasPending}
+                    onClick={() => {
+                      clearReviews(); disposal.reset(); setFixedAuditKind("depreciation");
+                      depreciation.mutate(selectedDepreciationId);
+                    }}>
+                    {depreciation.isPending ? "Auditing depreciation…" : "Audit selected depreciation run"}
+                  </Button>
+                  {fixedTargets.data?.runsHasMore ? (
+                    <p className="text-xs text-muted-foreground">
+                      Only the latest 100 runs are listed. Enter an older run UUID to audit it.
+                    </p>
+                  ) : null}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="exc-asset-disposal">Disposed asset UUID</Label>
+                  <Input id="exc-asset-disposal" value={selectedDisposalId}
+                    placeholder="Select an asset or paste its UUID"
+                    onChange={e => {
+                      setSelectedDisposalId(e.target.value.trim());
+                      setFixedAuditKind(null); disposal.reset(); clearReviews();
+                    }}/>
+                  {fixedTargets.data ? (
+                    <select aria-label="Recent disposed fixed assets" value=""
+                      className="w-full rounded-md border bg-background p-2 text-xs"
+                      onChange={e => {
+                        setSelectedDisposalId(e.target.value);
+                        setFixedAuditKind(null); disposal.reset(); clearReviews();
+                      }}>
+                      <option value="">Select a recently disposed asset</option>
+                      {fixedTargets.data.disposals.map(asset => (
+                        <option key={asset.id} value={asset.id}>
+                          {asset.asset_number} · {asset.name}
+                          {asset.disposal_journal_id ? "" : " · no journal"}
+                        </option>
+                      ))}
+                    </select>
+                  ) : null}
+                  <Button type="button" variant="outline" size="sm"
+                    disabled={!UUID.test(selectedDisposalId) || hasPending}
+                    onClick={() => {
+                      clearReviews(); depreciation.reset(); setFixedAuditKind("disposal");
+                      disposal.mutate(selectedDisposalId);
+                    }}>
+                    {disposal.isPending ? "Auditing disposal…" : "Audit selected asset disposal"}
+                  </Button>
+                  {fixedTargets.data?.disposalsHasMore ? (
+                    <p className="text-xs text-muted-foreground">
+                      Only the latest 100 disposals are listed. Enter an older asset UUID to audit it.
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                <Link to="/fixed-assets" className="underline">Open Fixed Assets</Link> for the register.
+                Each posted GL audit requires Accounting viewing permission and never modifies a journal.
+              </p>
+            </div>
           </div>
           <div className="space-y-2">
             <h3 className="text-sm font-semibold">Audit coverage</h3>
@@ -365,8 +494,9 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
             </ul>
           )}
           <div className="text-xs text-muted-foreground">
-            Fixed Assets audit coverage is not connected to this centre in this batch.
-            <Link to="/fixed-assets" className="ml-1 underline">Open Fixed Assets for independent review.</Link>
+            Fixed Assets checks cover a single selected depreciation run or asset disposal;
+            account-level register-to-GL reconciliation is separate.
+            <Link to="/fixed-assets" className="ml-1 underline">Open Fixed Assets.</Link>
           </div>
         </CardContent>
       </Card>

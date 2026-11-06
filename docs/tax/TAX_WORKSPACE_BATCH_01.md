@@ -240,3 +240,60 @@ are not verified. No GitHub CI, production merge or deployment was performed.
 - Simultaneous source posting and master-rate changes still require stronger database locking and race tests.
 - Migration files were committed directly to GitHub because a local Supabase CLI/repository checkout is unavailable; no migrations have been applied.
 - No local npm, Docker, browser, staging, CI, merge or deployment verification was performed.
+
+## Continuation — Batch 06: posting locks, review conflicts and exact minor units
+
+### Implemented on draft PR
+- Repaired invalid dollar-quoted SQL in the historical tax-master integration test.
+- Strengthened the Batch 03 database migration with posting-time locks on
+  referenced tax codes and rates. Invoice/bill journal linking and tax master
+  updates must coordinate through database row locks.
+- A document-line guard locks its parent invoice/bill and prevents insert,
+  update or deletion of posted source lines. Draft tax codes must belong to the
+  same company as their source document.
+- Posted journal references cannot be removed or replaced once linked.
+  This intentionally protects historical source evidence.
+- Extended isolated PostgreSQL fixtures for cross-company code references,
+  posted source immutability and failed attempts to unpost.
+- Reviewer drafts now preserve unsaved notes and assignment choices during
+  a background refresh. Review versions are captured when editing starts, so
+  other reviewers' changes cannot silently overwrite a local draft.
+- Concurrent creation of a review now returns a descriptive retry/refresh
+  error rather than an unhandled unique-constraint failure.
+- Expanded isolated review tests to cover injected audit-event failure
+  (whole review update must roll back), two-tenant read RLS and permissions.
+- Added `tax-minor-units.ts` with exact integer parsing; replaced silent
+  `Math.round(Number(...))` when settling stored tax return box amounts.
+  Tax report boundaries now reject unsafe IEEE-754 minor-unit conversions.
+- Both isolated PostgreSQL runners reapply their migration once to check
+  repeated application, then run the regression fixtures.
+- Added unit tests for minor-unit precision and concurrent review editing.
+
+### Validation still required
+1. On a local checkout of the feature branch:
+   `npm.cmd run typecheck`, `npm.cmd run lint`,
+   `npm.cmd test -- src/lib/tax`, `npm.cmd run build`.
+2. Run Docker-backed isolated PostgreSQL tests:
+   `node scripts/test-tax-master-history-postgres.mjs`
+   `node scripts/test-tax-gl-review-postgres.mjs`
+3. Stage-test both migrations in dependency order. Validate postings and
+   reversals, edits on draft vs posted documents, rate changes, tenant RLS,
+   reviewer concurrency, audit rollback and large monetary values.
+4. Perform a **true two-session concurrency stress test** with simultaneous
+   source posting and tax-code/rate changes, then recheck the linked journal
+   and source line amounts. This is still unverified.
+5. Run authenticated browser and performance checks on large ledgers, and
+   integrate current main branch changes before considering a merge.
+
+### Boundary / caution
+- Locks apply to posting invoice/bill sources and line changes; other tax
+  transaction types need their own historical guard coverage.
+- Historic uncoded rows and journals are not retroactively corrected.
+- An edited tax master immediately before a document posts may still need
+  explicit document-time semantic snapshots to establish the original
+  intended treatment; the guard does not provide full historic reconstruction.
+- Tax review "Resolved" is an internal human status, not a certification or
+  an authority submission.
+- This runtime has Node, but no Docker or psql and no full LinkBooks
+  checkout. The tests have not been executed, and migration rollout has not
+  occurred. GitHub CI remains disabled by instruction.

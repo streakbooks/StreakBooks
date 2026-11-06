@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
 import { useFormat } from "@/hooks/use-format";
+import { useTablePrefs } from "@/hooks/use-table-prefs";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { addMonthsIso, monthEnd, monthStart, todayIso } from "@/lib/accounting/fiscal-year";
 import { DEPRECIATION_METHODS } from "@/lib/fixed-assets/depreciation";
@@ -16,6 +17,7 @@ import {
   selectRegisterAssets,
   summariseActiveAssets,
   type AssetRegisterSort,
+  type AssetRegisterFilters,
 } from "@/lib/fixed-assets/register-view";
 import { LookupSelect } from "@/components/lookup";
 import {
@@ -37,6 +39,13 @@ import {
 import { AssetDetailsDialog } from "@/components/fixed-assets/AssetDetailsDialog";
 import { AssetReconciliationPanel } from "@/components/fixed-assets/AssetReconciliationPanel";
 import { AssetCapitalisationReviewPanel } from "@/components/fixed-assets/AssetCapitalisationReviewPanel";
+import { AssetPortfolioPanel } from "@/components/fixed-assets/AssetPortfolioPanel";
+import {
+  FIXED_ASSET_COLUMN_IDS,
+  FIXED_ASSET_TABLE_COLUMNS,
+  FixedAssetSavedFilterViews,
+  FixedAssetTableColumns,
+} from "@/components/fixed-assets/AssetRegisterPersonalization";
 import { reviewCapitalisableLines, selectCapitalisationReviewRows } from "@/lib/fixed-assets/capitalisation-review";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -64,7 +73,7 @@ import {
 
 export const Route = createFileRoute("/_authenticated/fixed-assets")({
   validateSearch: (raw: Record<string, unknown>): { tab?: string | undefined } => ({
-    tab: ["register", "depreciation", "types", "reconciliation", "bill-review"].includes(String(raw["tab"]))
+    tab: ["dashboard", "register", "depreciation", "types", "reconciliation", "bill-review"].includes(String(raw["tab"]))
       ? String(raw["tab"])
       : undefined,
   }),
@@ -101,6 +110,30 @@ function FixedAssetsPage() {
   const [assetAccountId, setAssetAccountId] = useState("");
   const [assetSort, setAssetSort] = useState<AssetRegisterSort>("number");
   const [sortDescending, setSortDescending] = useState(false);
+  const tablePrefs = useTablePrefs(
+    "fixed-assets:" + (companyId ?? "no-company"),
+    FIXED_ASSET_COLUMN_IDS,
+  );
+  const columnVisible = (id: string) =>
+    id === "asset" || id === "actions" || tablePrefs.isVisible(id);
+  const hiddenColumnCount = FIXED_ASSET_TABLE_COLUMNS
+    .filter((col) => !("required" in col && col.required) && !columnVisible(col.id)).length;
+  const appliedFilters: AssetRegisterFilters = {
+    search: assetSearch,
+    status: assetStatus,
+    typeId: assetTypeId,
+    accountId: assetAccountId,
+    sort: assetSort,
+    descending: sortDescending,
+  };
+  const applySavedFilters = (filters: AssetRegisterFilters) => {
+    setAssetSearch(filters.search);
+    setAssetStatus(filters.status);
+    setAssetTypeId(filters.typeId);
+    setAssetAccountId(filters.accountId);
+    setAssetSort(filters.sort);
+    setSortDescending(filters.descending);
+  };
   const today = useMemo(() => todayIso(), []);
 
   const page = useQuery({
@@ -150,14 +183,7 @@ function FixedAssetsPage() {
     : null;
   const visibleAssets = selectRegisterAssets(
     d.assets,
-    {
-      search: assetSearch,
-      status: assetStatus,
-      typeId: assetTypeId,
-      accountId: assetAccountId,
-      sort: assetSort,
-      descending: sortDescending,
-    },
+    appliedFilters,
     d.types,
     d.accounts,
   );
@@ -208,6 +234,16 @@ function FixedAssetsPage() {
           onKeyDown={handleNativeTabKeyDown}
           aria-label="Fixed Assets sections"
         >
+          <Link
+            className={nativeTabLinkClass}
+            role="tab"
+            aria-selected={tab === "dashboard"}
+            data-state={tab === "dashboard" ? "active" : "inactive"}
+            to="/fixed-assets"
+            search={{ tab: "dashboard" }}
+          >
+            Dashboard
+          </Link>
           <Link
             className={nativeTabLinkClass}
             role="tab"
@@ -262,6 +298,28 @@ function FixedAssetsPage() {
         <p className="mt-1 text-xs text-muted-foreground sm:hidden">
           Swipe the section tabs horizontally to view all Fixed Assets screens.
         </p>
+
+        <TabsContent value="dashboard" className="space-y-4">
+          <AssetPortfolioPanel
+            assets={d.assets}
+            types={d.types}
+            currency={currency}
+            asOf={today}
+            balances={balanceMap}
+            balancesLoading={!balancesReady && !register.isError}
+            onView={(asset) => setDialog({ kind: "details", asset })}
+          />
+          {register.isError ? (
+            <Alert variant="destructive">
+              <AlertDescription className="flex flex-wrap items-center gap-2">
+                Financial summary unavailable: {friendlyAuthError(register.error)}
+                <Button size="sm" variant="outline" onClick={() => void register.refetch()}>
+                  Retry balances
+                </Button>
+              </AlertDescription>
+            </Alert>
+          ) : null}
+        </TabsContent>
 
         <TabsContent value="register" className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -418,6 +476,14 @@ function FixedAssetsPage() {
                     Clear filters
                   </Button>
                 ) : null}
+                <FixedAssetTableColumns
+                  visible={columnVisible}
+                  hiddenCount={hiddenColumnCount}
+                  density={tablePrefs.density}
+                  toggle={tablePrefs.toggle}
+                  setDensity={tablePrefs.setDensity}
+                  reset={tablePrefs.reset}
+                />
                 <Button
                   size="sm"
                   variant="outline"
@@ -448,6 +514,13 @@ function FixedAssetsPage() {
                   {visibleAssets.length} of {d.assets.length} assets
                 </span>
               </div>
+              <div className="flex min-w-0 flex-wrap items-start gap-3 border-t pt-3">
+                <FixedAssetSavedFilterViews
+                  companyId={companyId}
+                  filters={appliedFilters}
+                  onApply={applySavedFilters}
+                />
+              </div>
             </div>
           ) : null}
           {register.isError ? (
@@ -474,6 +547,10 @@ function FixedAssetsPage() {
           ) : (
             <RegisterTable
               assets={visibleAssets}
+              types={d.types}
+              accounts={d.accounts}
+              columnVisible={columnVisible}
+              density={tablePrefs.density}
               currency={currency}
               accumulatedOf={accumulatedOf}
               canManage={canManage}

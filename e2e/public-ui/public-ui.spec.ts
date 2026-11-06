@@ -8,6 +8,7 @@ for (const mode of ["light", "dark"]) {
     ["/forgot-password", "Reset your password"],
     ["/reset-password", "Choose a new password"],
     ["/portal/login", "Customer and supplier portal"],
+    ["/advisors", "Your business deserves better financial clarity."],
   ]) {
     test(`${route} renders accessibly in ${mode} without external requests`, async ({ page }) => {
       const errors: string[] = [];

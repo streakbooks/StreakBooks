@@ -92,6 +92,13 @@ SELECT public.assert_tax_raises(
    WHERE id='50000000-0000-4000-8000-000000000001'$$,
  '%Cannot replace or remove posting evidence%');
 
+-- Posted invoice and bill headers cannot be directly deleted; their tax
+-- lines must never disappear through ON DELETE CASCADE.
+SELECT public.assert_tax_raises(
+ $DELETE FROM public.sales_invoices
+   WHERE id='50000000-0000-4000-8000-000000000001'$,
+ '%Posted invoices and bills cannot be deleted%');
+
 -- Name corrections, deactivation and a valid end date remain available.
 UPDATE public.tax_codes SET name='Renamed VAT', is_active=false
  WHERE id='30000000-0000-4000-8000-000000000001';
@@ -131,9 +138,61 @@ SELECT public.assert_tax_raises(
  $$UPDATE public.tax_rates SET rate_bps=1900
    WHERE id='20000000-0000-4000-8000-000000000002'$$,
  '%posted documents%');
+-- A never-posted draft remains deletable, including its tax-code lines.
+-- This protects the existing Sales/Purchases draft delete workflows.
+INSERT INTO public.sales_invoices(id,company_id,invoice_date,status)
+VALUES ('50000000-0000-4000-8000-000000000021',
+        '10000000-0000-4000-8000-000000000001',
+        '2026-02-21','draft');
+INSERT INTO public.sales_invoice_lines(id,company_id,invoice_id,tax_code_id)
+VALUES ('60000000-0000-4000-8000-000000000021',
+        '10000000-0000-4000-8000-000000000001',
+        '50000000-0000-4000-8000-000000000021',
+        '30000000-0000-4000-8000-000000000001');
+DELETE FROM public.sales_invoices
+WHERE id='50000000-0000-4000-8000-000000000021';
+
+INSERT INTO public.purchase_bills(id,company_id,bill_date,status)
+VALUES ('50000000-0000-4000-8000-000000000022',
+        '10000000-0000-4000-8000-000000000002',
+        '2026-02-22','draft');
+INSERT INTO public.purchase_bill_lines(id,company_id,bill_id,tax_code_id)
+VALUES ('60000000-0000-4000-8000-000000000022',
+        '10000000-0000-4000-8000-000000000002',
+        '50000000-0000-4000-8000-000000000022',
+        '30000000-0000-4000-8000-000000000002');
+DELETE FROM public.purchase_bills
+WHERE id='50000000-0000-4000-8000-000000000022';
+
+SELECT public.assert_tax_raises(
+ $DELETE FROM public.purchase_bills
+   WHERE id='50000000-0000-4000-8000-000000000002'$,
+ '%Posted invoices and bills cannot be deleted%');
 RESET ROLE;
 
-DO $$
+DO $
+BEGIN
+  IF EXISTS (
+      SELECT 1 FROM public.sales_invoice_lines
+      WHERE invoice_id='50000000-0000-4000-8000-000000000021'
+    ) OR EXISTS (
+      SELECT 1 FROM public.purchase_bill_lines
+      WHERE bill_id='50000000-0000-4000-8000-000000000022'
+    ) THEN
+    RAISE EXCEPTION 'Draft invoice/bill delete failed to cascade to tax lines';
+  END IF;
+  IF NOT EXISTS (
+      SELECT 1 FROM public.sales_invoice_lines
+      WHERE invoice_id='50000000-0000-4000-8000-000000000001'
+    ) OR NOT EXISTS (
+      SELECT 1 FROM public.purchase_bill_lines
+      WHERE bill_id='50000000-0000-4000-8000-000000000002'
+    ) THEN
+    RAISE EXCEPTION 'Posted invoice/bill tax line unexpectedly disappeared';
+  END IF;
+END $;
+
+DO $
 BEGIN
   IF has_function_privilege(
     'authenticated', 'public.tax_code_has_posted_history(uuid,uuid)', 'EXECUTE'

@@ -89,6 +89,15 @@ export function employeeDraftFromRow(row: PayrollEmployeeRow): PayrollEmployeeDr
   };
 }
 
+/** Reject impossible calendar dates before an employee batch starts writing.
+ * PostgreSQL has no year zero; keep the date-only input aligned with SQL DATE.
+ */
+export function isValidPayrollDateOnly(value: string): boolean {
+  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(value) || value.startsWith("0000")) return false;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
 export function parsePayrollEmployeeDraft(draft: PayrollEmployeeDraft): ParsedResult {
   const first = draft.firstName.trim();
   const last = draft.lastName.trim();
@@ -100,13 +109,13 @@ export function parsePayrollEmployeeDraft(draft: PayrollEmployeeDraft): ParsedRe
     return { ok: false, error: "Enter a valid email address or leave it blank." };
   }
 
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(draft.hireDate)) {
-    return { ok: false, error: "Hire date must be YYYY-MM-DD." };
+  if (!isValidPayrollDateOnly(draft.hireDate)) {
+    return { ok: false, error: "Hire date must be a valid YYYY-MM-DD calendar date." };
   }
 
   const term = draft.terminationDate.trim();
-  if (term && !/^\d{4}-\d{2}-\d{2}$/.test(term)) {
-    return { ok: false, error: "Termination date must be YYYY-MM-DD." };
+  if (term && !isValidPayrollDateOnly(term)) {
+    return { ok: false, error: "Termination date must be a valid YYYY-MM-DD calendar date." };
   }
   if (term && term < draft.hireDate) {
     return { ok: false, error: "Termination date cannot be before hire date." };
@@ -435,6 +444,12 @@ export function parsePayrollEmployeesCsv(
   const usedIds = new Set<string>();
   for (const row of records.slice(1)) {
     const cells = row.cells;
+    if (cells.length !== header.length) {
+      return {
+        ok: false,
+        error: `Line ${row.line}: expected ${header.length} CSV columns but found ${cells.length}.`,
+      };
+    }
     const get = (label: string) => {
       const i = idx(label);
       // CSV exports prefix leading formula-like values with a single quote.

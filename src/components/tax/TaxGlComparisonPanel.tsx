@@ -33,6 +33,8 @@ export function TaxGlComparisonPanel({
     }),
   });
 
+  const result = query.data;
+
   return (
     <Card>
       <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
@@ -54,20 +56,20 @@ export function TaxGlComparisonPanel({
               description={friendlyAuthError(query.error)}
               onRetry={() => void query.refetch()}
             />
-          ) : query.data?.available === false ? (
+          ) : result?.available === false ? (
             <Alert>
               <AlertTitle>GL account mappings required</AlertTitle>
               <AlertDescription>
-                {query.data.reason} Set them under the Tax / GL mappings tab.
+                {result.reason} Set them under the Tax / GL mappings tab.
               </AlertDescription>
             </Alert>
-          ) : query.data?.available === true ? (
+          ) : result?.available === true ? (
             <>
               <p className="text-sm text-muted-foreground">
-                Period: {f.date(query.data.periodStart)} to {f.date(query.data.periodEnd)} ·
-                {query.data.journalLines} control-account journal lines
+                Period: {f.date(result.periodStart)} to {f.date(result.periodEnd)} ·
+                {result.journalLines} control-account journal lines
               </p>
-              {query.data.basis === "cash" ? (
+              {result.basis === "cash" ? (
                 <Alert>
                   <AlertTitle>Cash basis — informational comparison only</AlertTitle>
                   <AlertDescription>
@@ -97,10 +99,10 @@ export function TaxGlComparisonPanel({
                       <TableRow key={field}>
                         <TableCell>{label}</TableCell>
                         <TableCell className="text-right tabular-nums">
-                          {f.money(query.data.output[field], query.data.currency)}
+                          {f.money(result.output[field], result.currency)}
                         </TableCell>
                         <TableCell className="text-right tabular-nums">
-                          {f.money(query.data.input[field], query.data.currency)}
+                          {f.money(result.input[field], result.currency)}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -113,7 +115,7 @@ export function TaxGlComparisonPanel({
                 No reconciliation adjustment is posted.
               </p>
               <div className="space-y-1 text-xs text-muted-foreground">
-                {query.data.warnings.map((warning) => (
+                {result.warnings.map((warning) => (
                   <p key={warning}>{warning}</p>
                 ))}
               </div>

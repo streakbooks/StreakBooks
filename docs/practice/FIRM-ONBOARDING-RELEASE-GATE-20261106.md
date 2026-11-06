@@ -53,7 +53,15 @@ all test commands. Pull the latest main first (the script does not fetch).
 The runner executes `npm ci`, typecheck, lint, lookup/navigation checks,
 repository hygiene, eight onboarding Vitest files, build and bundle checks.
 It produces local JSON evidence at
-`artifacts/firm-onboarding-local-release-YYYY-MM-DD.json`.
+`artifacts/firm-onboarding-local-release-YYYY-MM-DDTHH-MM-SS-sssZ-<commit>.json`.
+Each invocation uses a unique timestamp and commit hash in the filename,
+so dry runs and subsequent executions do not overwrite prior release evidence.
+The script refuses to accept a dirty, detached, non-`main`, stale
+`origin/main`, or unauthorized Git remote; it rechecks the working tree
+after executing tests. All eight prescribed onboarding Vitest suites must
+report passed files, with no skipped or failed tests, for local release
+acceptance.
+
 The report is deliberately **never** labeled production-ready: Vercel
 deployment, real cron executions and human staging acceptance require separate
 evidence. Generated evidence is ignored by Git.

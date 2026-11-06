@@ -79,3 +79,25 @@ Do not trigger GitHub Actions/CI, merge, modify database environments or deploy 
 - Production deployment: **0 of 7 verified**.
 
 **Next work:** complete the checks above in a real checkout, repair any failures, integrate the latest main, conduct authenticated browser and database testing, then review merge and deployment separately.
+
+
+## Additional verification increment — 2026-11-06
+
+**Code changes after the original hardening report:**
+- Active portfolio input validation now enforces `residual_minor + opening_accumulated_minor <= cost_minor`; the dashboard fails closed rather than showing a nonphysical depreciable base.
+- Register accumulated depreciation is treated as unavailable if it is below the saved opening accumulated amount, above the depreciable ceiling `cost - residual`, unsafe, or missing. No estimated net book value is shown.
+- Regression tests were added in `portfolio-dashboard.test.ts` for combined residual/opening excess, impossible low accumulated amounts, and accumulated amounts exceeding depreciable cost.
+- Posted capitalisation review now classifies **all foreign-currency lines** as `fx_review` before it evaluates linked/unlinked status. An unlinked FX line cannot shortcut directly into asset creation until a separate, verified base-currency registration is prepared.
+- Supplier-bill lines with zero or negative **net** amounts are classified as `non_purchase` even when their tax amount makes gross positive; this blocks accidental positive-asset creation from a tax-only or credit line.
+- Regression cases were added to `capitalisation-review.test.ts` for unlinked FX and zero/negative-net examples.
+
+**Independent smoke test evidence (source from this branch, after both fixes):**
+- Test environment: Vercel isolated one-vCPU temporary Sandbox with network egress **disabled**, Node v24, no linked deployment, no database credentials and no GitHub Actions.
+- Copied a small subset of pure TypeScript accounting utilities from the feature branch; adjusted only module import paths for isolated Node execution.
+- Ran `node --experimental-strip-types --test fixed-assets-focused.test.mjs` using the Node built-in test runner, not the project Vitest suite.
+- **42 tests passed, 0 failed, 0 skipped; exit code 0.** Output was retrieved while the sandbox was running and recorded as proof of this limited isolated run.
+- Coverage included dashboard active/disposed/future state, opening/residual restrictions and missing/unsafe balances; depreciation preview/36-month plans/leap years; GL variance precision and exceptions; browser-local saved view logic; form validation; read-only asset detail arithmetic; and supplier-bill classification/FX/credit/paging/CSV safeguards.
+- This smoke run **does not establish** a passing full Vitest suite or `tsc`, `eslint`, Vite build, route UI, Playwright, RLS, posted-ledger accuracy or production readiness.
+- The updated code and focused tests are committed to **draft PR #111**; no merge, deployment or GitHub Actions were performed.
+
+**Progress accounting:** Code batches *6/7 fully completed as committed development batches*; the seventh release-hardening batch has source changes and a successful limited isolated smoke test, but full-project verification remains incomplete. Count **0/7** batches as fully QA-approved and **0/7** as merged or deployed.

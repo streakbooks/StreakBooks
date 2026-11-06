@@ -20,6 +20,8 @@ import {
   filterFirmClients,
   firmClientCsv,
   firmClientReviewState,
+  firstFiftyFirmClientIds,
+  selectedVisibleFirmClients,
   getFirmClientName,
   localFirmDate,
   normalizeFirmClientColumns,
@@ -286,10 +288,10 @@ export function FirmClientPortfolio({
     [clients, profiles, search, status, review, sort],
   );
   const eligibleClients = filtered.filter((client) => Boolean(client.companies));
-  const visibleSelection = eligibleClients.filter((client) => selectedIds.includes(client.company_id));
-  const firstFifty = eligibleClients.slice(0, 50);
+  const visibleSelection = selectedVisibleFirmClients(filtered, selectedIds);
+  const firstFiftyIds = firstFiftyFirmClientIds(filtered);
   const allFirstFiftySelected =
-    firstFifty.length > 0 && firstFifty.every((client) => selectedIds.includes(client.company_id));
+    firstFiftyIds.length > 0 && firstFiftyIds.every((id) => selectedIds.includes(id));
 
   function toggleSelectedClient(companyId: string, checked: boolean) {
     const eligible = new Set(eligibleClients.map((client) => client.company_id));
@@ -653,10 +655,10 @@ export function FirmClientPortfolio({
                     <Checkbox
                       aria-label="Select up to 50 filtered clients"
                       checked={allFirstFiftySelected}
-                      disabled={profileUnavailable || busy || !firstFifty.length}
+                      disabled={profileUnavailable || busy || !firstFiftyIds.length}
                       onCheckedChange={(checked) =>
                         setSelectedIds(
-                          checked === true ? firstFifty.map((client) => client.company_id) : [],
+                          checked === true ? firstFiftyIds : [],
                         )
                       }
                     />
@@ -680,7 +682,9 @@ export function FirmClientPortfolio({
                       <TableCell>
                         <Checkbox
                           aria-label={`Select ${getFirmClientName(client)}`}
-                          checked={visibleSelection.some((item) => item.company_id === client.company_id)}
+                          checked={visibleSelection.some(
+                            (item) => item.company_id === client.company_id,
+                          )}
                           disabled={profileUnavailable || busy || !client.companies}
                           onCheckedChange={(checked) =>
                             toggleSelectedClient(client.company_id, checked === true)

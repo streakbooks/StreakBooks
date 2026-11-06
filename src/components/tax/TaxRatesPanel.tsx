@@ -294,8 +294,9 @@ export function TaxRatesPanel({ companyId }: { companyId: string }) {
           <DialogHeader>
             <DialogTitle>{draft?.id ? "Edit tax rate" : "Add tax rate"}</DialogTitle>
             <DialogDescription>
-              Changing the percentage of a rate already in use affects new documents that use it. To
-              keep history, end this rate and add a new one instead.
+              A rate referenced by posted invoices or bills cannot have its percentage or
+              historical start date changed after the database guard migration is applied. End
+              the old rate on or after its latest posted document, then create a replacement.
             </DialogDescription>
           </DialogHeader>
           {draft ? (

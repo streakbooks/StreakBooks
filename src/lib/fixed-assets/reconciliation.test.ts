@@ -22,6 +22,7 @@ const asset = (id: string, changes: Partial<ReconciliationAsset> = {}): Reconcil
   disposal_date: null,
   status: "active",
   cost_minor: "12000",
+  residual_minor: "1000",
   opening_accumulated_minor: "1000",
   ...changes,
 });
@@ -202,6 +203,68 @@ describe("Fixed Assets / GL reconciliation", () => {
         "2026-11-06",
       ),
     ).toThrow(/unknown asset/i);
+  });
+
+  it("fails closed when residual and opening accumulated exceed the asset cost", () => {
+    expect(() => reconcileFixedAssets(
+      [asset("a", { cost_minor: "12000", residual_minor: "9000", opening_accumulated_minor: "4000" })],
+      [], [],
+      accounts, "2026-11-06",
+    )).toThrow(/residual or opening/i);
+  });
+
+  it("rejects depreciation above depreciable cost, even when below gross cost", () => {
+    expect(() => reconcileFixedAssets(
+      [asset("a", { cost_minor: "12000", residual_minor: "5000", opening_accumulated_minor: "1000" })],
+      [{ asset_id: "a", period_end: "2026-03-31", amount_minor: "6001" }],
+      balances("12000", "7001"),
+      accounts, "2026-11-06",
+    )).toThrow(/depreciable cost/i);
+  });
+
+  it("does not silently ignore depreciation posted after disposal", () => {
+    expect(() => reconcileFixedAssets(
+      [asset("a", { status: "disposed", disposal_date: "2026-04-15" })],
+      [{ asset_id: "a", period_end: "2026-04-30", amount_minor: "100" }],
+      [], accounts, "2026-11-06",
+    )).toThrow(/after the asset disposal/i);
+  });
+
+  it("rejects depreciation recorded before an asset's purchase date", () => {
+    expect(() => reconcileFixedAssets(
+      [asset("a", { purchase_date: "2026-05-01" })],
+      [{ asset_id: "a", period_end: "2026-04-30", amount_minor: "100" }],
+      [], accounts, "2026-11-06",
+    )).toThrow(/precedes the asset purchase/i);
+  });
+
+  it("rejects disposed assets without a disposal date or a date before purchase", () => {
+    expect(() => reconcileFixedAssets(
+      [asset("a", { status: "disposed", disposal_date: null })],
+      [], [], accounts, "2026-11-06",
+    )).toThrow(/disposal state/i);
+    expect(() => reconcileFixedAssets(
+      [asset("a", { status: "disposed", disposal_date: "2025-12-31" })],
+      [], [], accounts, "2026-11-06",
+    )).toThrow(/disposal state/i);
+    expect(() => reconcileFixedAssets(
+      [asset("a", { status: "active", disposal_date: "2026-10-01" })],
+      [], [], accounts, "2026-11-06",
+    )).toThrow(/disposal state/i);
+  });
+
+  it("rejects historical depreciation beyond cost for assets disposed before the cutoff", () => {
+    expect(() => reconcileFixedAssets(
+      [asset("a", {
+        status: "disposed",
+        disposal_date: "2026-04-30",
+        cost_minor: "12000",
+        residual_minor: "2000",
+        opening_accumulated_minor: "1000",
+      })],
+      [{ asset_id: "a", period_end: "2026-03-31", amount_minor: "9001" }],
+      [], accounts, "2026-11-06",
+    )).toThrow(/depreciable cost/i);
   });
 
   it("exports exact signed amounts and escapes spreadsheet formulas in account names", () => {

@@ -93,6 +93,7 @@ export const listAttachments = createServerFn({ method: "GET" })
       .eq("company_id" as never, data.companyId as never)
       .eq("entity_type" as never, data.entityType as never)
       .eq("entity_id" as never, data.entityId as never)
+      .is("deleted_at" as never, null)
       .order("created_at" as never, { ascending: false } as never);
     if (error) {
       if (error.code === "42703") throw new Error(MIGRATION_HINT);
@@ -217,6 +218,7 @@ export const getAttachmentDownload = createServerFn({ method: "GET" })
       .select("id, file_name, content_type, storage_path, storage_bucket, content_base64" as never)
       .eq("id" as never, data.attachmentId as never)
       .eq("company_id" as never, data.companyId as never)
+      .is("deleted_at" as never, null)
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!row) throw new Error("File not found");
@@ -260,6 +262,7 @@ export const getAttachmentPreview = createServerFn({ method: "GET" })
       .select("file_name, content_type, storage_path, storage_bucket, content_base64" as never)
       .eq("company_id" as never, data.companyId as never)
       .eq("id" as never, data.attachmentId as never)
+      .is("deleted_at" as never, null)
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!row) throw new Error("File not found");
@@ -378,6 +381,7 @@ export const renameAttachment = createServerFn({ method: "POST" })
       .select("id, entity_type, entity_id, file_name" as never)
       .eq("company_id" as never, data.companyId as never)
       .eq("id" as never, data.attachmentId as never)
+      .is("deleted_at" as never, null)
       .maybeSingle();
     if (readError) throw new Error(readError.message);
     if (!row) throw new Error("File not found or access denied");
@@ -398,6 +402,7 @@ export const renameAttachment = createServerFn({ method: "POST" })
       .eq("company_id" as never, data.companyId as never)
       .eq("id" as never, data.attachmentId as never)
       .eq("file_name" as never, current.file_name as never)
+      .is("deleted_at" as never, null)
       .select("id" as never);
     if (error) throw new Error(error.message);
     if (!updated || (updated as unknown[]).length !== 1)
@@ -456,6 +461,7 @@ export const getCompanyFile = createServerFn({ method: "GET" })
       .select(COLUMNS as never)
       .eq("company_id" as never, data.companyId as never)
       .eq("id" as never, data.attachmentId as never)
+      .is("deleted_at" as never, null)
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!row) throw new Error("File not found or access denied");
@@ -522,6 +528,7 @@ export const checkPossibleFileDuplicates = createServerFn({ method: "POST" })
         .select("id" as never)
         .eq("company_id" as never, data.companyId as never)
         .eq("size_bytes" as never, candidate.sizeBytes as never)
+        .is("deleted_at" as never, null)
         .ilike("file_name" as never, escapeLikeLiteral(candidate.fileName) as never)
         .limit(1);
       if (error) throw new Error(error.message);
@@ -571,7 +578,8 @@ export const listCompanyFiles = createServerFn({ method: "GET" })
     let q = supabase
       .from("document_attachments" as never)
       .select(COLUMNS as never, { count: "exact" })
-      .eq("company_id" as never, data.companyId as never);
+      .eq("company_id" as never, data.companyId as never)
+      .is("deleted_at" as never, null);
     if (data.entityType) q = q.eq("entity_type" as never, data.entityType as never);
     if (data.category)
       q = q.eq("document_category" as never, data.category as never);

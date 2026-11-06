@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -92,17 +92,13 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
   const payrollCapture: AuditCapture<LiabilityRollforwardResult> = canPayroll
     ? capture(payroll.data, payroll.isError, payroll.error)
     : { state: "unavailable", message: "Requires both Payroll and Accounting viewing permissions." };
-  const snapshot = useMemo(() => createExceptionSnapshot({
+  const snapshot = createExceptionSnapshot({
     ledger: ledgerCapture,
     realisedFx: realisedCapture,
     revaluation: revalCapture,
     deferrals: deferralCapture,
     payroll: payrollCapture,
-  }), [ledgerCapture.state, ledgerCapture.result, ledgerCapture.message,
-    realised.data, realised.isError, realised.error,
-    revaluation.data, revaluation.isError, revaluation.error,
-    deferrals.data, deferrals.isError, deferrals.error,
-    payroll.data, payroll.isError, payroll.error, canPayroll]);
+  });
   const filtered = filterExceptionFindings(snapshot.findings, {
     source, severity, search, review: reviewFilter,
   }, reviewed);

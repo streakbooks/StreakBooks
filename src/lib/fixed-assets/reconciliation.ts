@@ -105,6 +105,7 @@ export function reconcileFixedAssets(
   const activeById = new Map<string, ReconciliationAsset>();
   const assetById = new Map<string, ReconciliationAsset>();
   const postedByAssetId = new Map<string, bigint>();
+  const seenEntryPeriods = new Set<string>();
   for (const asset of assets) {
     if (assetById.has(asset.id)) throw new Error("Duplicate fixed asset in register");
     assetById.set(asset.id, asset);
@@ -138,6 +139,11 @@ export function reconcileFixedAssets(
     if (!asset) {
       throw new Error("Depreciation entry references an unknown asset");
     }
+    const entryKey = entry.asset_id + ":" + entry.period_end;
+    if (seenEntryPeriods.has(entryKey)) {
+      throw new Error("Duplicate depreciation entry for an asset and period");
+    }
+    seenEntryPeriods.add(entryKey);
     if (entry.period_end < asset.purchase_date) {
       throw new Error("Depreciation entry precedes the asset purchase date");
     }

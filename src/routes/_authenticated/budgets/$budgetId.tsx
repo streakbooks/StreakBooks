@@ -7,12 +7,14 @@ import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
 import { BudgetGovernancePanel } from "@/components/budgets/BudgetGovernancePanel";
+import { BudgetApprovalPanel } from "@/components/budgets/BudgetApprovalPanel";
 import { useFormat } from "@/hooks/use-format";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { addMonthsIso, monthStart } from "@/lib/accounting/fiscal-year";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import {
   getBudget,
+  getBudgetApproval,
   getBudgetGovernance,
   getYearActuals,
   saveBudgetDocument,
@@ -103,13 +105,26 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
   const saveDocumentFn = useServerFn(saveBudgetDocument);
   const actualsFn = useServerFn(getYearActuals);
   const governanceFn = useServerFn(getBudgetGovernance);
+  const approvalFn = useServerFn(getBudgetApproval);
+  const approvalQuery = useQuery({
+    queryKey: ["budget-approval", companyId, data.budget.id],
+    queryFn: () => approvalFn({ data: { companyId, budgetId: data.budget.id } }),
+  });
   const governanceQuery = useQuery({
     queryKey: ["budget-governance", companyId, data.budget.id],
     queryFn: () => governanceFn({ data: { companyId, budgetId: data.budget.id } }),
   });
   const locked = governanceQuery.data?.locked === true;
+  const approvalFrozen =
+    approvalQuery.data?.status === "pending" || approvalQuery.data?.status === "approved";
   const canEdit =
-    canManage && !governanceQuery.isPending && !governanceQuery.isError && !locked;
+    canManage &&
+    !governanceQuery.isPending &&
+    !governanceQuery.isError &&
+    !approvalQuery.isPending &&
+    !approvalQuery.isError &&
+    !locked &&
+    !approvalFrozen;
   const fileRef = useRef<HTMLInputElement>(null);
 
   const initial = useMemo(() => {
@@ -524,12 +539,26 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
         }
       />
 
+      <BudgetApprovalPanel
+        companyId={companyId}
+        budgetId={data.budget.id}
+        canManage={canManage}
+        dirty={dirty}
+        hasAmounts={data.lines.length > 0}
+        manuallyLocked={locked}
+        approval={approvalQuery.data}
+        loading={approvalQuery.isPending}
+        error={approvalQuery.error}
+        onRefresh={() => void approvalQuery.refetch()}
+      />
+
       <BudgetGovernancePanel
         companyId={companyId}
         budgetId={data.budget.id}
         currency={currency}
         canManage={canManage}
         dirty={dirty}
+        approvalFrozen={approvalFrozen}
         governance={governanceQuery.data}
         loading={governanceQuery.isPending}
         error={governanceQuery.error}
@@ -541,6 +570,15 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
           <AlertDescription>
             You can view this budget but not change it. Budgets are managed by owners,
             administrators and accountants.
+          </AlertDescription>
+        </Alert>
+      ) : null}
+      {approvalFrozen ? (
+        <Alert className="mb-4">
+          <AlertDescription>
+            This budget is {approvalQuery.data?.status === "pending" ? "awaiting approval" : "approved"}
+            {" "}and is read-only. Withdraw, reject or reopen the review before changing
+            budget details or monthly amounts.
           </AlertDescription>
         </Alert>
       ) : null}

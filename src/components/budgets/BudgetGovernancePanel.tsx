@@ -29,6 +29,7 @@ type Props = {
   currency: string;
   canManage: boolean;
   dirty: boolean;
+  approvalFrozen: boolean;
   governance: BudgetGovernanceResult | undefined;
   loading: boolean;
   error: unknown;
@@ -41,6 +42,7 @@ export function BudgetGovernancePanel({
   currency,
   canManage,
   dirty,
+  approvalFrozen,
   governance,
   loading,
   error,
@@ -93,7 +95,9 @@ export function BudgetGovernancePanel({
           <p className="text-sm text-muted-foreground">
             {locked
               ? "Locked: changes, imports and deletion are blocked by the database."
-              : "Draft: budget amounts and details may be edited by authorised users."}
+              : approvalFrozen
+                ? "This budget is under approval control; manual locking is unavailable."
+                : "Manual lock is off; authorised users may edit this budget."}
           </p>
         </div>
         {available ? (
@@ -140,7 +144,7 @@ export function BudgetGovernancePanel({
                   value={reason}
                   rows={2}
                   maxLength={500}
-                  disabled={changeLock.isPending}
+                  disabled={changeLock.isPending || approvalFrozen}
                   placeholder={
                     locked
                       ? "Why does this budget need further changes?"
@@ -154,6 +158,7 @@ export function BudgetGovernancePanel({
                 variant={locked ? "outline" : "default"}
                 disabled={
                   dirty ||
+                  approvalFrozen ||
                   changeLock.isPending ||
                   loading ||
                   reason.trim().length < 3 ||
@@ -176,6 +181,11 @@ export function BudgetGovernancePanel({
                 )}
                 {locked ? "Unlock budget" : "Lock budget"}
               </Button>
+              {approvalFrozen ? (
+                <p className="w-full text-xs text-muted-foreground">
+                  Reopen or complete the approval decision before changing the manual lock.
+                </p>
+              ) : null}
               {dirty ? (
                 <p className="w-full text-xs text-muted-foreground">
                   Save or discard unsaved changes before changing the lock.

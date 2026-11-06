@@ -5,6 +5,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { prepareBudgetImportCsv } from "@/lib/imports/budget-import";
 import { buildBudgetScenarioComparison } from "@/lib/budgets/budget-scenarios";
 import { validateBudgetDocumentInput } from "@/lib/budgets/budget-document";
+import {
+  validateBudgetApprovalAction,
+  type BudgetApprovalStatus,
+} from "@/lib/budgets/budget-approval";
 import { validateBudgetLockCommand } from "@/lib/budgets/budget-governance";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
@@ -382,6 +386,127 @@ export const setBudgetLock = createServerFn({ method: "POST" })
       "Budget governance requires migration 20261106173000_budget_governance_revisions.sql.",
     );
     return { locked };
+  });
+
+export type BudgetApprovalEvent = {
+  id: string;
+  cycle: number;
+  action: "submit" | "withdraw" | "approve" | "reject" | "reopen";
+  status_after: BudgetApprovalStatus;
+  acted_by: string | null;
+  acted_at: string;
+  note: string;
+};
+
+export type BudgetApprovalDetails = {
+  available: boolean;
+  status: BudgetApprovalStatus;
+  cycle: number;
+  viewerIsRequester: boolean;
+  submittedAt: string | null;
+  reviewedAt: string | null;
+  requestNote: string | null;
+  decisionNote: string | null;
+  events: BudgetApprovalEvent[];
+};
+
+/** Read an organisation-scoped approval state and immutable approval timeline. */
+export const getBudgetApproval = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; budgetId: string }) => ({
+    companyId: companyIdOf(input),
+    budgetId: assertUuid(input?.budgetId, "budget"),
+  }))
+  .handler(async ({ data, context }): Promise<BudgetApprovalDetails> => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    await loadBudgetHead(context.supabase as unknown as Sb, data.companyId, data.budgetId);
+    const unavailable: BudgetApprovalDetails = {
+      available: false,
+      status: "draft",
+      cycle: 0,
+      viewerIsRequester: false,
+      submittedAt: null,
+      reviewedAt: null,
+      requestNote: null,
+      decisionNote: null,
+      events: [],
+    };
+    const { data: state, error: stateError } = await context.supabase
+      .from("budget_approval_state" as never)
+      .select(
+        "status, cycle, submitted_by, submitted_at, reviewed_at, request_note, decision_note" as never,
+      )
+      .eq("budget_id" as never, data.budgetId as never)
+      .eq("company_id" as never, data.companyId as never)
+      .maybeSingle();
+    if (stateError) {
+      if (isMissingRelation(stateError)) return unavailable;
+      throw new Error(stateError.message);
+    }
+    const { data: events, error: eventsError } = await context.supabase
+      .from("budget_approval_events" as never)
+      .select("id, cycle, action, status_after, acted_by, acted_at, note" as never)
+      .eq("budget_id" as never, data.budgetId as never)
+      .eq("company_id" as never, data.companyId as never)
+      .order("acted_at" as never, { ascending: false } as never)
+      .limit(50);
+    if (eventsError) {
+      if (isMissingRelation(eventsError)) return unavailable;
+      throw new Error(eventsError.message);
+    }
+    const item = state as unknown as
+      | {
+          status: BudgetApprovalStatus;
+          cycle: number;
+          submitted_by: string;
+          submitted_at: string;
+          reviewed_at: string | null;
+          request_note: string;
+          decision_note: string | null;
+        }
+      | null;
+    return {
+      available: true,
+      status: item?.status ?? "draft",
+      cycle: item?.cycle ?? 0,
+      viewerIsRequester: item?.submitted_by === context.userId,
+      submittedAt: item?.submitted_at ?? null,
+      reviewedAt: item?.reviewed_at ?? null,
+      requestNote: item?.request_note ?? null,
+      decisionNote: item?.decision_note ?? null,
+      events: (events ?? []) as unknown as BudgetApprovalEvent[],
+    };
+  });
+
+/** All state changes and authorisation are revalidated inside the database RPC. */
+export const transitionBudgetApproval = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      budgetId: string;
+      action: string;
+      note: string;
+    }) => ({
+      companyId: companyIdOf(input),
+      budgetId: assertUuid(input?.budgetId, "budget"),
+      ...validateBudgetApprovalAction(input),
+    }),
+  )
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "accounts.manage");
+    const status = await callRpc<BudgetApprovalStatus>(
+      context.supabase,
+      "transition_budget_approval",
+      {
+        _company_id: data.companyId,
+        _budget_id: data.budgetId,
+        _action: data.action,
+        _note: data.note,
+      },
+      "Budget approvals require migration 20261106193000_budget_approval_workflows.sql.",
+    );
+    return { status };
   });
 
 export const saveBudget = createServerFn({ method: "POST" })

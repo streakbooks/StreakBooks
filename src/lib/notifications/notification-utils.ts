@@ -87,3 +87,71 @@ export function summarizeActionNotifications(rows: readonly FilterableAlert[]) {
   }
   return totals;
 }
+
+/** Do not display the same alert twice if live inserts shift offset-based history pages. */
+export function mergeNotificationPages<T extends { id: string }>(
+  pages: readonly (readonly T[])[],
+): T[] {
+  const seen = new Set<string>();
+  return pages.flatMap((page) =>
+    page.filter((row) => {
+      if (seen.has(row.id)) return false;
+      seen.add(row.id);
+      return true;
+    }),
+  );
+}
+
+export type ActionCenterSearch = {
+  view?: NotificationView;
+  category?: string;
+  priority?: string;
+  sort?: NotificationSort;
+  q?: string;
+};
+
+const ACTION_CATEGORIES = new Set([
+  "bill_approval",
+  "overdue_invoice",
+  "bank_reconciliation",
+  "document_request",
+  "contact_followup",
+  "system",
+]);
+const ACTION_PRIORITIES = new Set(["low", "medium", "high", "critical"]);
+const ACTION_VIEWS = new Set<NotificationView>([
+  "all",
+  "unread",
+  "action",
+  "critical",
+  "completed",
+  "archived",
+]);
+const ACTION_SORTS = new Set<NotificationSort>(["priority", "newest", "oldest"]);
+
+/** Shareable, strictly bounded URL state; no external storage of company or user data. */
+export function parseActionCenterSearch(raw: Record<string, unknown>): ActionCenterSearch {
+  const result: ActionCenterSearch = {};
+  const view = raw["view"];
+  if (typeof view === "string" && ACTION_VIEWS.has(view as NotificationView)) {
+    result.view = view as NotificationView;
+  }
+  const category = raw["category"];
+  if (typeof category === "string" && ACTION_CATEGORIES.has(category)) {
+    result.category = category;
+  }
+  const priority = raw["priority"];
+  if (typeof priority === "string" && ACTION_PRIORITIES.has(priority)) {
+    result.priority = priority;
+  }
+  const sort = raw["sort"];
+  if (typeof sort === "string" && ACTION_SORTS.has(sort as NotificationSort)) {
+    result.sort = sort as NotificationSort;
+  }
+  const text = raw["q"];
+  if (typeof text === "string") {
+    const clean = text.trim().slice(0, 120);
+    if (clean) result.q = clean;
+  }
+  return result;
+}

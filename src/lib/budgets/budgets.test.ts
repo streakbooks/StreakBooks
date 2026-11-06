@@ -6,6 +6,7 @@ import {
   fillRight,
   fiscalMonthStarts,
   naturalActual,
+  nextBudgetYearStart,
   roundDiv,
   spreadEvenly,
 } from "@/lib/budgets/budget-math";
@@ -28,6 +29,16 @@ describe("fiscalMonthStarts", () => {
   });
   it("normalises a mid-month date to the month start", () => {
     expect(fiscalMonthStarts("2026-01-15")[0]).toBe("2026-01-01");
+  });
+});
+
+describe("nextBudgetYearStart", () => {
+  it("keeps April financial years aligned", () => {
+    expect(nextBudgetYearStart("2026-04-01")).toBe("2027-04-01");
+  });
+  it("does not drift across leap years or a mid-month source date", () => {
+    expect(nextBudgetYearStart("2024-02-29")).toBe("2025-02-01");
+    expect(nextBudgetYearStart("2026-12-01")).toBe("2027-12-01");
   });
 });
 

@@ -223,6 +223,54 @@ export const saveBudget = createServerFn({ method: "POST" })
     return { id };
   });
 
+/**
+ * Duplicate a budget and (optionally) all twelve-month amounts in one database transaction.
+ * The RPC verifies tenant membership and permissions again; a failed copy leaves no new budget.
+ */
+export const duplicateBudget = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      sourceBudgetId: string;
+      name: string;
+      fiscalYearStart: string;
+      includeAmounts: boolean;
+    }) => {
+      const name = (input.name ?? "").trim();
+      if (!name || name.length > 120) {
+        throw new Error("Budget name must be between 1 and 120 characters.");
+      }
+      const fiscalYearStart = isoDate(input.fiscalYearStart, "Financial year start");
+      if (monthStart(fiscalYearStart) !== fiscalYearStart) {
+        throw new Error("The financial year must start on the first day of a month.");
+      }
+      return {
+        companyId: companyIdOf(input),
+        sourceBudgetId: assertUuid(input.sourceBudgetId, "source budget"),
+        name,
+        fiscalYearStart,
+        includeAmounts: input.includeAmounts === true,
+      };
+    },
+  )
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "accounts.manage");
+    const id = await callRpc<string>(
+      context.supabase,
+      "duplicate_budget",
+      {
+        _company_id: data.companyId,
+        _source_budget_id: data.sourceBudgetId,
+        _name: data.name,
+        _fiscal_year_start: data.fiscalYearStart,
+        _include_amounts: data.includeAmounts,
+      },
+      "Budget duplication requires the database migration 20261106115500_duplicate_budget.sql.",
+    );
+    return { id };
+  });
+
 export const saveBudgetLines = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(

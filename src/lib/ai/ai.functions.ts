@@ -351,11 +351,23 @@ export const listAiSuggestions = createServerFn({ method: "GET" })
  */
 export const applyAiSuggestion = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; suggestionId: string; confirm: boolean }) => ({
-    companyId: assertUuid(input.companyId),
-    suggestionId: assertUuid(input.suggestionId, "suggestion"),
-    confirm: input.confirm === true,
-  }))
+  .inputValidator((input: { companyId: string; suggestionId: string; confirm: boolean; journalDate?: string }) => {
+    const journalDate = input.journalDate ?? new Date().toISOString().slice(0, 10);
+    const parsedDate = new Date(journalDate + "T00:00:00.000Z");
+    if (
+      !/^\d{4}-\d{2}-\d{2}$/.test(journalDate) ||
+      !Number.isFinite(parsedDate.getTime()) ||
+      parsedDate.toISOString().slice(0, 10) !== journalDate
+    ) {
+      throw new Error("Choose a valid journal date (YYYY-MM-DD)");
+    }
+    return {
+      companyId: assertUuid(input.companyId),
+      suggestionId: assertUuid(input.suggestionId, "suggestion"),
+      confirm: input.confirm === true,
+      journalDate,
+    };
+  })
   .handler(async ({ data, context }) => {
     assertSafeApplyConfirm(data.confirm);
     await assertCompanyPermission(context.supabase, data.companyId, "ai.apply_suggestion");
@@ -410,10 +422,9 @@ export const applyAiSuggestion = createServerFn({ method: "POST" })
     // Re-check balance immediately before post
     assertLinesBalance(validation.normalized.lines);
 
-    const today = new Date().toISOString().slice(0, 10);
     const posted = await postJournal(context.supabase, {
       company_id: data.companyId,
-      journal_date: today,
+      journal_date: data.journalDate,
       memo: `AI suggestion: ${suggestion.title}`.slice(0, 200),
       source_type: "other",
       source_id: data.suggestionId,
@@ -438,7 +449,7 @@ export const applyAiSuggestion = createServerFn({ method: "POST" })
         _action: "ai.suggestion_applied",
         _entity_type: "ai_suggestion",
         _entity_id: data.suggestionId,
-        _details: { journal_id: posted.journalId },
+        _details: { journal_id: posted.journalId, journal_date: data.journalDate },
       } as never,
     );
 

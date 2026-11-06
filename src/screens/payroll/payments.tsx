@@ -702,14 +702,21 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
           <DialogFooter>
             <Button
               variant="outline"
-              disabled={recordMut.isPending}
-              onClick={() => setRecordOpen(false)}
+              disabled={recordMut.isPending || paymentSubmitLock.current}
+              onClick={() => {
+                // A synchronous submit lock can activate before React updates
+                // isPending. Never hide a payment whose result is unresolved.
+                if (!recordMut.isPending && !paymentSubmitLock.current) {
+                  setRecordOpen(false);
+                }
+              }}
             >
               Cancel
             </Button>
             <Button
               disabled={
                 recordMut.isPending ||
+                paymentSubmitLock.current ||
                 !clearingAccountId ||
                 !settingsReady ||
                 !payslipsQ.isSuccess ||

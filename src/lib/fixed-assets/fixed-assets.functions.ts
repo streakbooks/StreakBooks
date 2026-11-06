@@ -688,8 +688,8 @@ type BillLineRaw = {
   bill_id: string;
   description: string | null;
   account_id: string;
-  net_minor: number;
-  tax_minor: number;
+  net_minor: number | string;
+  tax_minor: number | string;
   purchase_bills: {
     bill_number: string | null;
     supplier_invoice_number: string | null;
@@ -712,57 +712,101 @@ export type CapitaliseLine = {
   taxMinor: number;
   /** Cost already registered against this line (base-currency bills). */
   registeredMinor: number;
+  accountCode: string;
+  accountName: string;
 };
 
-/** Posted bill lines coded to an asset account: candidates to capitalise into the register. */
+/** Keep BIGINT minor units safe across joins and multiple registered assets. */
+function safeAssetBillMinor(value: number | string | bigint, field: string): bigint {
+  if (typeof value === "number" && !Number.isSafeInteger(value)) {
+    throw new Error(field + " exceeds JavaScript safe integer precision.");
+  }
+  if (typeof value === "string" && !/^-?\\d+$/.test(value)) {
+    throw new Error(field + " is not a whole minor-unit amount.");
+  }
+  return BigInt(value);
+}
+function capitalisationDisplayMinor(value: bigint, field: string): number {
+  if (value > BigInt(Number.MAX_SAFE_INTEGER) || value < BigInt(Number.MIN_SAFE_INTEGER)) {
+    throw new Error(field + " is too large for asset entry. Review the bill and linked assets.");
+  }
+  return Number(value);
+}
+
+/** Posted bill lines coded to asset accounts: review candidates, not confirmed PPE. */
 export const listCapitalisableBillLines = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .inputValidator((input: { companyId: string; asOf?: string }) => {
+    const asOf = input?.asOf ? isoDate(input.asOf, "As at") : todayIso();
+    if (asOf > todayIso()) throw new Error("Bill review date cannot be in the future.");
+    return { companyId: companyIdOf(input), asOf };
+  })
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const sb = context.supabase as unknown as Sb;
     const metas = await loadAccountMetas(sb, data.companyId);
+    // Eligible for REVIEW only. An asset-coded line can be inventory, prepayment,
+    // a deposit or another non-PPE current asset: never capitalise automatically.
+    const accountsById = new Map(metas.map((a) => [a.id, a]));
     const assetIds = metas
       .filter((a) => a.account_type === "asset" && !a.is_control)
       .map((a) => a.id);
-    if (assetIds.length === 0) return { lines: [] as CapitaliseLine[] };
-    const rows = await relationError(
-      sb
-        .from("purchase_bill_lines" as never)
-        .select(
-          "id, bill_id, description, account_id, net_minor, tax_minor, purchase_bills!inner(bill_number, supplier_invoice_number, bill_date, currency_code, status, contacts(name))" as never,
-        )
-        .eq("company_id" as never, data.companyId as never)
-        .in("account_id" as never, assetIds as never)
-        .in("purchase_bills.status" as never, ["authorised", "partly_paid", "paid"] as never)
-        .order("bill_id" as never, { ascending: false } as never)
-        .limit(300) as unknown as PromiseLike<{
-        data: BillLineRaw[] | null;
-        error: { message: string } | null;
-      }>,
-    );
-    const lineIds = (rows ?? []).map((r) => r.id);
-    const registered = new Map<string, number>();
-    if (lineIds.length > 0) {
-      const linked = await relationError(
-        sb
-          .from("fixed_assets" as never)
-          .select("source_bill_line_id, cost_minor" as never)
-          .in("source_bill_line_id" as never, lineIds as never)
-          .limit(1000) as unknown as PromiseLike<{
-          data: Array<{ source_bill_line_id: string; cost_minor: number }> | null;
-          error: { message: string } | null;
-        }>,
+    if (assetIds.length === 0) return { asOf: data.asOf, lines: [] as CapitaliseLine[] };
+
+    const rows: BillLineRaw[] = [];
+    // PostgREST .in filters are kept below URL size limits. Every query pages by
+    // the globally unique bill-line ID instead of silently cutting off at 300.
+    for (let offset = 0; offset < assetIds.length; offset += 50) {
+      const accountChunk = assetIds.slice(offset, offset + 50);
+      const result = await fetchAllPages<BillLineRaw>(
+        (from, to) =>
+          sb
+            .from("purchase_bill_lines" as never)
+            .select(
+              "id, bill_id, description, account_id, net_minor, tax_minor, purchase_bills!inner(bill_number, supplier_invoice_number, bill_date, currency_code, status, contacts(name))" as never,
+            )
+            .eq("company_id" as never, data.companyId as never)
+            .in("account_id" as never, accountChunk as never)
+            .in("purchase_bills.status" as never, ["authorised", "partly_paid", "paid"] as never)
+            .lte("purchase_bills.bill_date" as never, data.asOf as never)
+            .order("id" as never)
+            .range(from, to) as unknown as PromiseLike<PageResult<BillLineRaw>>,
       );
-      for (const l of linked ?? []) {
+      rows.push(...result);
+    }
+
+    const eligibleIds = new Set(rows.map((r) => r.id));
+    const registered = new Map<string, bigint>();
+    if (rows.length > 0) {
+      const linked = await fetchAllPages<{
+        id: string;
+        source_bill_line_id: string | null;
+        cost_minor: number | string;
+      }>(
+        (from, to) =>
+          sb
+            .from("fixed_assets" as never)
+            .select("id, source_bill_line_id, cost_minor" as never)
+            .eq("company_id" as never, data.companyId as never)
+            .not("source_bill_line_id" as never, "is" as never, null as never)
+            .order("id" as never)
+            .range(from, to) as unknown as PromiseLike<
+              PageResult<{ id: string; source_bill_line_id: string | null; cost_minor: number | string }>
+            >,
+      );
+      for (const asset of linked) {
+        const id = asset.source_bill_line_id;
+        if (!id || !eligibleIds.has(id)) continue;
         registered.set(
-          l.source_bill_line_id,
-          (registered.get(l.source_bill_line_id) ?? 0) + num(l.cost_minor),
+          id,
+          (registered.get(id) ?? 0n) + safeAssetBillMinor(asset.cost_minor, "Linked asset cost"),
         );
       }
     }
-    const lines: CapitaliseLine[] = (rows ?? []).map((r) => {
+
+    const lines: CapitaliseLine[] = rows.map((r) => {
       const bill = r.purchase_bills;
+      const account = accountsById.get(r.account_id);
       return {
         lineId: r.id,
         billId: r.bill_id,
@@ -772,12 +816,23 @@ export const listCapitalisableBillLines = createServerFn({ method: "GET" })
         currency: bill.currency_code,
         description: r.description ?? "",
         accountId: r.account_id,
-        netMinor: num(r.net_minor),
-        taxMinor: num(r.tax_minor),
-        registeredMinor: registered.get(r.id) ?? 0,
+        accountCode: account?.code ?? "",
+        accountName: account?.name ?? "Account unavailable",
+        netMinor: capitalisationDisplayMinor(
+          safeAssetBillMinor(r.net_minor, "Bill line net"),
+          "Bill line net",
+        ),
+        taxMinor: capitalisationDisplayMinor(
+          safeAssetBillMinor(r.tax_minor, "Bill line tax"),
+          "Bill line tax",
+        ),
+        registeredMinor: capitalisationDisplayMinor(
+          registered.get(r.id) ?? 0n,
+          "Already linked asset cost",
+        ),
       };
     });
-    return { lines };
+    return { asOf: data.asOf, lines };
   });
 
 export type FixedAssetRegisterRow = {

@@ -27,6 +27,7 @@ import {
   buildBudgetColumns,
   fiscalMonthStarts,
   naturalActual,
+  sumMinorNumbers,
   type BudgetAccountKind,
   type ReportView,
 } from "@/lib/budgets/budget-math";
@@ -853,7 +854,10 @@ export const getYearActuals = createServerFn({ method: "GET" })
       const idx = months.indexOf(a.month);
       if (idx < 0) continue;
       const row = out.get(a.accountId) ?? Array.from({ length: 12 }, () => 0);
-      row[idx] = (row[idx] ?? 0) + naturalActual(kind, a.debitMinor, a.creditMinor);
+      row[idx] = sumMinorNumbers([
+        row[idx] ?? 0,
+        naturalActual(kind, a.debitMinor, a.creditMinor),
+      ]);
       out.set(a.accountId, row);
     }
     return {

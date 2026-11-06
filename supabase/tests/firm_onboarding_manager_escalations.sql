@@ -153,9 +153,9 @@ BEGIN
     WHERE jobname='linkbooks-firm-onboarding-manager-escalations') THEN
   RAISE EXCEPTION 'Scheduled manager escalation job missing';
  END IF;
-END $;
+END $$;
 SET LOCAL ROLE authenticated;
-DO $
+DO $$
 DECLARE
  fid uuid:=current_setting('test.esc_firm')::uuid;
  owner_id uuid:=current_setting('test.esc_owner')::uuid;
@@ -185,6 +185,6 @@ BEGIN
     WHERE firm_id=fid) THEN
    RAISE EXCEPTION 'Escalation history bypassed MFA restriction';
  END IF;
-END $;
+END $$;
 ROLLBACK;
 SELECT 'firm escalation opt-in, permissions, version guards, history, dedup and MFA passed; rolled back' AS result;

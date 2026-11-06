@@ -95,8 +95,8 @@ SELECT public.assert_tax_raises(
 -- Posted invoice and bill headers cannot be directly deleted; their tax
 -- lines must never disappear through ON DELETE CASCADE.
 SELECT public.assert_tax_raises(
- $DELETE FROM public.sales_invoices
-   WHERE id='50000000-0000-4000-8000-000000000001'$,
+ $$DELETE FROM public.sales_invoices
+   WHERE id='50000000-0000-4000-8000-000000000001'$$,
  '%Posted invoices and bills cannot be deleted%');
 
 -- Name corrections, deactivation and a valid end date remain available.
@@ -165,12 +165,12 @@ DELETE FROM public.purchase_bills
 WHERE id='50000000-0000-4000-8000-000000000022';
 
 SELECT public.assert_tax_raises(
- $DELETE FROM public.purchase_bills
-   WHERE id='50000000-0000-4000-8000-000000000002'$,
+ $$DELETE FROM public.purchase_bills
+   WHERE id='50000000-0000-4000-8000-000000000002'$$,
  '%Posted invoices and bills cannot be deleted%');
 RESET ROLE;
 
-DO $
+DO $$
 BEGIN
   IF EXISTS (
       SELECT 1 FROM public.sales_invoice_lines
@@ -190,9 +190,9 @@ BEGIN
     ) THEN
     RAISE EXCEPTION 'Posted invoice/bill tax line unexpectedly disappeared';
   END IF;
-END $;
+END $$;
 
-DO $
+DO $$
 BEGIN
   IF has_function_privilege(
     'authenticated', 'public.tax_code_has_posted_history(uuid,uuid)', 'EXECUTE'

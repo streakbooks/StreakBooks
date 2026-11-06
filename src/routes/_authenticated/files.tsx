@@ -155,6 +155,15 @@ function FilesPage() {
     name: string;
   } | null>(null);
   const [pendingBulkDelete, setPendingBulkDelete] = useState<string[] | null>(null);
+  const [failedDeleteBatch, setFailedDeleteBatch] = useState<{
+    companyId: string;
+    ids: string[];
+  } | null>(null);
+  const [failedMoveBatch, setFailedMoveBatch] = useState<{
+    companyId: string;
+    ids: string[];
+    targetId: string | null;
+  } | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -295,6 +304,11 @@ function FilesPage() {
     [companyId, debounced, type, folderId, page, sort, view, fileFormat, includeSubfolders],
   );
   useEffect(() => setShowRenameFile(false), [companyId, selectedFile]);
+  useEffect(() => {
+    setPendingBulkDelete(null);
+    setFailedDeleteBatch(null);
+    setFailedMoveBatch(null);
+  }, [companyId]);
 
   const uploadM = useMutation({
     mutationFn: async (files: File[]) => {
@@ -387,6 +401,7 @@ function FilesPage() {
       setPendingBulkDelete(null);
       if (companyId === sourceCompanyId) {
         setSelectedIds(failedIds);
+        setFailedDeleteBatch(failedIds.length ? { companyId: sourceCompanyId, ids: failedIds } : null);
         if (selectedFile && completedIds.includes(selectedFile)) setSelectedFile(null);
       }
       await Promise.all([
@@ -419,9 +434,14 @@ function FilesPage() {
     }) =>
       runFileBatch(ids, (attachmentId) =>
         moveFile({ data: { companyId: sourceCompanyId, attachmentId, folderId: targetId } }),
-      ).then((result) => ({ ...result, sourceCompanyId })),
-    onSuccess: async ({ completedIds, failedIds, firstError, sourceCompanyId }) => {
-      if (companyId === sourceCompanyId) setSelectedIds(failedIds);
+      ).then((result) => ({ ...result, sourceCompanyId, targetId })),
+    onSuccess: async ({ completedIds, failedIds, firstError, sourceCompanyId, targetId }) => {
+      if (companyId === sourceCompanyId) {
+        setSelectedIds(failedIds);
+        setFailedMoveBatch(
+          failedIds.length ? { companyId: sourceCompanyId, ids: failedIds, targetId } : null,
+        );
+      }
       await queryClient.invalidateQueries({ queryKey: ["company-files", sourceCompanyId] });
       if (completedIds.length)
         toast.success(`Moved ${completedIds.length} file${completedIds.length === 1 ? "" : "s"}`);
@@ -560,6 +580,45 @@ function FilesPage() {
         <p role="status" className="mb-3 text-sm text-muted-foreground">
           Uploading files to secure company storage…
         </p>
+      ) : null}
+      {failedDeleteBatch?.companyId === companyId && failedDeleteBatch.ids.length ? (
+        <div role="alert" className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border p-3 text-sm">
+          {failedDeleteBatch.ids.length} failed file deletion(s) are available for retry, even
+          if the file list has shifted to another page.
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={bulkDeleteM.isPending || bulkMoveM.isPending}
+            onClick={() => setPendingBulkDelete(failedDeleteBatch.ids)}
+          >
+            Review and retry deletion
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setFailedDeleteBatch(null)}>
+            Dismiss
+          </Button>
+        </div>
+      ) : null}
+      {failedMoveBatch?.companyId === companyId && failedMoveBatch.ids.length ? (
+        <div role="status" className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border p-3 text-sm">
+          {failedMoveBatch.ids.length} failed file move(s) can be retried.
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={bulkDeleteM.isPending || bulkMoveM.isPending}
+            onClick={() =>
+              bulkMoveM.mutate({
+                ids: failedMoveBatch.ids,
+                targetId: failedMoveBatch.targetId,
+                sourceCompanyId: failedMoveBatch.companyId,
+              })
+            }
+          >
+            Retry failed moves
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setFailedMoveBatch(null)}>
+            Dismiss
+          </Button>
+        </div>
       ) : null}
       <div
         className={`mb-4 rounded-lg border border-dashed p-4 text-sm transition-colors ${dragActive ? "border-primary bg-primary/5" : "border-border"}`}

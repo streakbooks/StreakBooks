@@ -169,6 +169,8 @@ function ActionCenterPage() {
   const allPageSelected = pageIds.length > 0 && selectedPageCount === pageIds.length;
   const toggleIds = (ids: readonly string[], checked: boolean) => {
     if (bulkBusy || changeState.isPending) return;
+    setRetryAction(null);
+    setBulkError(null);
     const allowed = ids.filter((id) => visibleIds.has(id));
     setSelected((previous) =>
       checked
@@ -249,6 +251,8 @@ function ActionCenterPage() {
   }
   const toggleSelection = (id: string) => {
     if (!visibleIds.has(id) || busyRef.current || changeState.isPending) return;
+    setRetryAction(null);
+    setBulkError(null);
     setSelected((prev) => (prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]));
   };
 
@@ -443,7 +447,16 @@ function ActionCenterPage() {
           >
             Archive selected
           </Button>
-          <Button size="sm" variant="ghost" disabled={bulkBusy} onClick={() => setSelected([])}>
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={bulkBusy}
+            onClick={() => {
+              setSelected([]);
+              setRetryAction(null);
+              setBulkError(null);
+            }}
+          >
             Clear
           </Button>
         </div>

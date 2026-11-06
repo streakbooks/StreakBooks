@@ -7,6 +7,7 @@ import { useCan } from "@/hooks/use-can";
 import { ATTACHMENT_ENTITIES, type AttachmentEntityType, formatFileSize } from "@/lib/documents/attachments";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { canOfferPermanentPurge, validateRetentionDays } from "@/lib/documents/recycle-bin-rules";
+import { lastFilePage } from "@/lib/documents/file-workspace";
 import {
   getDocumentRetentionSettings, listRecycleBinFiles, listStorageCleanupJobs,
   purgeRecycleBinFile, restoreRecycleBinFile, retryDocumentStorageCleanup,
@@ -67,10 +68,15 @@ export function DocumentRecycleBin({
     setCleanupPage(0);
   }, [companyId]);
   useEffect(() => {
+    if (!trash.data) return;
+    const last = lastFilePage(trash.data.total, trash.data.pageSize);
+    if (page > last) setPage(last);
+  }, [trash.data?.total, trash.data?.pageSize, page]);
+  useEffect(() => {
     if (!cleanup.data) return;
-    const lastPage = Math.max(0, Math.ceil(cleanup.data.total / cleanup.data.pageSize) - 1);
-    if (cleanupPage > lastPage) setCleanupPage(lastPage);
-  }, [cleanup.data, cleanupPage]);
+    const last = lastFilePage(cleanup.data.total, cleanup.data.pageSize);
+    if (cleanupPage > last) setCleanupPage(last);
+  }, [cleanup.data?.total, cleanup.data?.pageSize, cleanupPage]);
   const refresh = async () => Promise.all([
     client.invalidateQueries({ queryKey: ["recycle-bin-files", companyId] }),
     client.invalidateQueries({ queryKey: ["company-files", companyId] }),
@@ -245,7 +251,7 @@ export function DocumentRecycleBin({
               </div>
             );
           })}
-          <div className="flex items-center justify-between text-sm">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
             <Button
               size="sm" variant="outline" disabled={page === 0}
               onClick={() => setPage(Math.max(0,page-1))}

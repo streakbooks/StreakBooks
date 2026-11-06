@@ -87,3 +87,5 @@ INSERT INTO public.sales_invoice_lines(id,company_id,invoice_id,tax_code_id) VAL
 
 GRANT USAGE ON SCHEMA public TO authenticated;
 GRANT SELECT, INSERT, UPDATE ON ALL TABLES IN SCHEMA public TO authenticated;
+-- Tests use DELETE to verify the trigger itself rejects posted-line removal.
+GRANT DELETE ON public.sales_invoice_lines, public.purchase_bill_lines TO authenticated;

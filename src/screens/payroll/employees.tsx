@@ -8,6 +8,7 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
 import { useDebounced } from "@/hooks/use-debounced";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { downloadCsv } from "@/lib/reports/csv";
 import {
   emptyEmployeeDraft,
   parsePayrollEmployeesCsv,
@@ -178,14 +179,10 @@ export function PayrollEmployeesPage() {
   };
 
   const exportCsv = () => {
-    const csv = payrollEmployeesToCsv(displayedEmployees);
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "linkbooks-payroll-employees.csv";
-    anchor.click();
-    URL.revokeObjectURL(url);
+    downloadCsv(
+      "linkbooks-payroll-employees.csv",
+      payrollEmployeesToCsv(displayedEmployees),
+    );
     toast.success(`Exported ${displayedEmployees.length} employees in displayed order`);
   };
 

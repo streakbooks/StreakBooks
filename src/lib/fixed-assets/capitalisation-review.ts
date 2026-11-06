@@ -1,4 +1,5 @@
 import type { CapitaliseLine } from "./fixed-assets.functions";
+import { fetchAllPages, type PageResult } from "@/lib/accounting/fetch-all";
 
 /**
  * Posted asset-coded bill lines are REVIEW CANDIDATES, not proof of fixed asset purchases.
@@ -156,4 +157,26 @@ export function capitalisationReviewCsv(
     r.status,
   ].map(escapeCell).join(","));
   return [headers.map(escapeCell).join(","), ...lines].join("\r\n");
+}
+
+/** Whole-account coverage without the old 300-row cap or oversized .in URLs. */
+export async function pageCapitalisationBillLines<T extends { id: string }>(
+  accountIds: readonly string[],
+  fetchPage: (accountChunk: string[], from: number, to: number) => PromiseLike<PageResult<T>>,
+): Promise<T[]> {
+  const all: T[] = [];
+  const seen = new Set<string>();
+  for (let offset = 0; offset < accountIds.length; offset += 50) {
+    const ids = accountIds.slice(offset, offset + 50);
+    const rows = await fetchAllPages<T>((from, to) => fetchPage(ids, from, to));
+    for (const row of rows) {
+      if (seen.has(row.id)) throw new Error("Duplicate asset-coded bill line in paginated results");
+      seen.add(row.id);
+      all.push(row);
+    }
+    if (all.length > 2_000_000) {
+      throw new Error("Too many bill candidates to review safely. Narrow the search.");
+    }
+  }
+  return all;
 }

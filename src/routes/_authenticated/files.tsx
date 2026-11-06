@@ -23,6 +23,7 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
 import { useFormat } from "@/hooks/use-format";
 import { DocumentReviewQueue } from "@/components/documents/DocumentReviewQueue";
+import { DocumentEmailInbox } from "@/components/documents/DocumentEmailInbox";
 import {
   checkPossibleFileDuplicates,
   deleteAttachment,
@@ -161,7 +162,7 @@ function FilesPage() {
   const [page, setPage] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [sort, setSort] = useState<"newest" | "oldest" | "name" | "largest">("newest");
-  const [view, setView] = useState<"all" | "to-file" | "review">("all");
+  const [view, setView] = useState<"all" | "to-file" | "review" | "inbox">("all");
   const activeView = folderId ? "all" : view;
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkTarget, setBulkTarget] = useState("unfiled");
@@ -588,6 +589,10 @@ function FilesPage() {
   const previewUrl =
     preview?.kind === "url" ? preview.url : preview?.kind === "inline" ? inlinePreviewUrl : null;
 
+  if (activeView === "inbox") {
+    return <DocumentEmailInbox companyId={companyId} onClose={() => setView("all")} />;
+  }
+
   if (activeView === "review") {
     return (
       <>
@@ -1001,9 +1006,19 @@ function FilesPage() {
         >
           To file
         </Button>
+        <Button
+          size="sm"
+          variant={activeView === "inbox" ? "default" : "outline"}
+          onClick={() => {
+            setFolderId(null);
+            setView("inbox");
+            setPage(0);
+          }}
+        >
+          Email inbox
+        </Button>
         <span className="text-xs text-muted-foreground">
-          To file shows unlinked uploads that have not been assigned a folder. Email intake is not
-          configured here.
+          To file shows unlinked, unfiled uploads. Email inbox imports attachments into Document review.
         </span>
       </div>
       <div className="mb-4 flex flex-wrap gap-3">

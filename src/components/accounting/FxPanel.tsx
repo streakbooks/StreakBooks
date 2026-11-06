@@ -23,6 +23,7 @@ import { friendlyAuthError } from "@/lib/auth-helpers";
 import { useFormat } from "@/hooks/use-format";
 import { ErrorState, LoadingState } from "@/components/common/states";
 import { FxRealisedLedgerAudit } from "@/components/accounting/FxRealisedLedgerAudit";
+import { FxRevaluationLedgerAudit } from "@/components/accounting/FxRevaluationLedgerAudit";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -526,6 +527,7 @@ export function FxPanel({ companyId, currency }: { companyId: string; currency: 
                     .map(([c, v]) => `${c} ${v}`)
                     .join(", ")}
                   {r.note ? ` · ${r.note}` : ""}
+                  <FxRevaluationLedgerAudit companyId={companyId} runId={r.id} />
                 </li>
               ))}
             </ul>

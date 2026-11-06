@@ -267,5 +267,51 @@ BEGIN
   ) THEN RAISE EXCEPTION 'MFA protection bypassed on daily snapshots'; END IF;
 END $$;
 RESET ROLE;
+DO $$
+DECLARE
+  owner_id uuid:=current_setting('test.onboarding_owner')::uuid;
+  staff_id uuid:=current_setting('test.onboarding_staff')::uuid;
+  client_id uuid:=current_setting('test.onboarding_company')::uuid;
+BEGIN
+  -- A previously authorized colleague loses historical access immediately
+  -- after an explicit company accounting.view denial.
+  INSERT INTO public.member_permission_adjustments(
+    company_id,user_id,permission,effect,created_by
+  ) VALUES(client_id,staff_id,'accounting.view','deny',owner_id);
+END $$;
+SET LOCAL ROLE authenticated;
+DO $$
+DECLARE
+  fid uuid:=current_setting('test.onboarding_firm')::uuid;
+  staff_id uuid:=current_setting('test.onboarding_staff')::uuid;
+BEGIN
+  PERFORM set_config('request.jwt.claims',
+    jsonb_build_object('sub',staff_id,'aal','aal2','role','authenticated')::text,true);
+  IF EXISTS(SELECT 1 FROM public.firm_onboarding_daily_snapshots WHERE firm_id=fid) THEN
+    RAISE EXCEPTION 'Accounting-view revocation failed to hide daily history';
+  END IF;
+END $$;
+RESET ROLE;
+DO $$
+DECLARE
+  fid uuid:=current_setting('test.onboarding_firm')::uuid;
+  client_id uuid:=current_setting('test.onboarding_company')::uuid;
+BEGIN
+  UPDATE public.firm_client_links SET revoked_at=clock_timestamp()
+  WHERE firm_id=fid AND company_id=client_id;
+END $$;
+SET LOCAL ROLE authenticated;
+DO $$
+DECLARE
+  fid uuid:=current_setting('test.onboarding_firm')::uuid;
+  owner_id uuid:=current_setting('test.onboarding_owner')::uuid;
+BEGIN
+  PERFORM set_config('request.jwt.claims',
+    jsonb_build_object('sub',owner_id,'aal','aal2','role','authenticated')::text,true);
+  IF EXISTS(SELECT 1 FROM public.firm_onboarding_daily_snapshots WHERE firm_id=fid) THEN
+    RAISE EXCEPTION 'Revoked firm-client link failed to hide daily history';
+  END IF;
+END $$;
+RESET ROLE;
 ROLLBACK;
-SELECT 'firm onboarding daily history, scoped RLS, capture idempotency and MFA passed; rolled back' AS result;
+SELECT 'firm onboarding daily history, scoped RLS, revocation, idempotency and MFA passed; rolled back' AS result;

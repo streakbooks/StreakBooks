@@ -152,3 +152,35 @@ Do not merge/release this work as validated until checks and staging smoke pass.
   The full local app build/test suite and authenticated staging smoke remain
   outstanding. Do not label this payroll module production-ready on the
   basis of source-level checks alone.
+
+
+### Filtered payroll CSV exports (November 6, 2026)
+
+- **Payslips** now offer an **Export filtered CSV** action only when the user has
+  both `payroll.view` (page access) and `payroll.reports.view` (export access).
+  The export includes exactly the currently displayed filtered/sorted records,
+  without hidden employees or runs being added back to the output.
+- The payslip export includes employee ID/name, run, dates, payment status,
+  **currency per row**, gross earnings, employee deductions, net, paid and
+  outstanding. Amounts use plain decimal precision for that row's currency;
+  there is deliberately **no cross-currency grand total**.
+- Outstanding net pay is now calculated by the shared `payslipNetBalances`
+  helper for both the table and the export; zero is the lower bound.
+- Spreadsheet formula prefixes in employee names are escaped by the shared
+  CSV writer. Both payslip and employee downloads include a UTF-8 BOM for
+  non-English characters and Excel compatibility.
+- The employee export uses the currently displayed **sorted, filtered**
+  employees, rather than the server's default order.
+- Added `src/lib/payroll/payslip-list-export.test.ts` with amount,
+  permission-independent output, mixed-currency, row selection, and formula
+  injection regression cases. The test file is committed but Vitest remains
+  **not executed** in this repository session.
+- **Non-CI verification:** Direct evaluation of the actual export helper
+  together with the existing money and CSV writer source passed **8/8**
+  focused behavior checks. This is not a React/TypeScript compile, browser,
+  role-authenticated, or end-to-end confirmation.
+
+Manual QA should verify that a payroll viewer without
+`payroll.reports.view` cannot see the payslip export action, that changing
+employee/payment-status filters changes downloaded rows, and that currencies
+are never combined into a meaningless grand total.

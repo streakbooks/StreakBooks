@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { PersistentReconciliationReviews } from "@/components/accounting/PersistentReconciliationReviews";
 import { Link } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -500,6 +501,7 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
           </div>
         </CardContent>
       </Card>
+      <PersistentReconciliationReviews companyId={companyId} findings={snapshot.findings} />
     </div>
   );
 }

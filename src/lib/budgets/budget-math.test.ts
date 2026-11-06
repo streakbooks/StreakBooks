@@ -74,6 +74,36 @@ describe("Budgets precision-safe minor-unit arithmetic", () => {
     expect(spreadEvenly(-101, 12).reduce((a, b) => a + b, 0)).toBe(-101);
   });
 
+  it("never creates a negative month from a small positive annual budget", () => {
+    expect(spreadEvenly(7, 12)).toEqual([0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1]);
+    expect(spreadEvenly(1, 12)).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
+    expect(spreadEvenly(0, 12)).toEqual(Array(12).fill(0));
+  });
+
+  it("never creates a positive month from a small negative annual total", () => {
+    expect(spreadEvenly(-7, 12)).toEqual([0, 0, 0, 0, 0, -1, -1, -1, -1, -1, -1, -1]);
+    expect(spreadEvenly(-1, 12)).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1]);
+  });
+
+  it("preserves totals and keeps monthly differences within one minor unit", () => {
+    for (const annual of [
+      -101, -13, -12, -11, -7, -1, 0, 1, 7, 11, 12, 13, 101,
+      Number.MAX_SAFE_INTEGER, -Number.MAX_SAFE_INTEGER,
+    ]) {
+      const monthly = spreadEvenly(annual, 12);
+      expect(sumMinorNumbers(monthly)).toBe(annual);
+      expect(Math.max(...monthly) - Math.min(...monthly)).toBeLessThanOrEqual(1);
+      expect(monthly.every((m) => annual >= 0 ? m >= 0 : m <= 0)).toBe(true);
+    }
+  });
+
+  it("handles single-month budgets and nonstandard valid period counts", () => {
+    expect(spreadEvenly(7, 1)).toEqual([7]);
+    expect(spreadEvenly(7, 2)).toEqual([3, 4]);
+    expect(spreadEvenly(-7, 2)).toEqual([-3, -4]);
+    expect(sumMinorNumbers(spreadEvenly(17, 17))).toBe(17);
+  });
+
   it("does not round extremely large supported annual totals", () => {
     const months = spreadEvenly(Number.MAX_SAFE_INTEGER, 12);
     expect(sumMinorNumbers(months)).toBe(Number.MAX_SAFE_INTEGER);

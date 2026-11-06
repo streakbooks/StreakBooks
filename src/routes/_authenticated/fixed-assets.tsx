@@ -12,6 +12,7 @@ import { useTablePrefs } from "@/hooks/use-table-prefs";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { addMonthsIso, monthEnd, monthStart, todayIso } from "@/lib/accounting/fiscal-year";
 import { DEPRECIATION_METHODS } from "@/lib/fixed-assets/depreciation";
+import { planDepreciationMonths, summarizeDepreciationPreview } from "@/lib/fixed-assets/depreciation-review";
 import {
   assetStatusAsOf,
   selectRegisterAssets,
@@ -1054,77 +1055,153 @@ function DepreciationPanel({
   const runFn = useServerFn(runDepreciation);
   const thisMonth = monthStart(todayIso());
   const outstanding = earliestOutstanding(assets);
-  // Default to the oldest month that still needs running, never later than this month.
   const [month, setMonth] = useState(
     (outstanding && outstanding <= thisMonth ? outstanding : thisMonth).slice(0, 7),
   );
-  const periodEnd = monthEnd(`${month}-01`);
-
+  const [rowFilter, setRowFilter] = useState<"all" | "due" | "behind" | "other">("all");
+  const [previewPage, setPreviewPage] = useState(0);
+  const [confirmation, setConfirmation] = useState<{
+    mode: "one" | "catch_up";
+    periodEnd: string;
+    periodEnds: string[];
+    firstPeriodEnd: string;
+    lastPeriodEnd: string;
+    remainingMonths: number;
+  } | null>(null);
+  const validMonth =
+    /^\\d{4}-(0[1-9]|1[0-2])$/.test(month) &&
+    month.slice(0, 4) !== "0000" && month <= thisMonth.slice(0, 7);
+  const periodEnd = validMonth ? monthEnd(month + "-01") : "";
   const preview = useQuery({
     queryKey: ["fixed-assets", companyId, "preview", periodEnd],
+    enabled: validMonth,
     queryFn: () => previewFn({ data: { companyId, periodEnd } }),
   });
-
-  const monthsThrough = (): string[] => {
-    if (!outstanding) return [periodEnd];
-    const out: string[] = [];
-    for (let m = outstanding; m <= periodEnd; m = addMonthsIso(m, 1)) out.push(monthEnd(m));
-    return out;
-  };
+  const reviewed = useMemo(() => {
+    if (!preview.data || preview.data.periodEnd !== periodEnd) return { summary: null, issue: null };
+    try {
+      return {
+        summary: summarizeDepreciationPreview(preview.data.rows, preview.data.totalMinor),
+        issue: null,
+      };
+    } catch (error) {
+      return { summary: null, issue: error instanceof Error ? error.message : "Invalid preview data." };
+    }
+  }, [preview.data, periodEnd]);
+  const plan = useMemo(() => {
+    if (!validMonth) return null;
+    try {
+      return planDepreciationMonths(outstanding, month);
+    } catch {
+      return null;
+    }
+  }, [outstanding, month, validMonth]);
+  const previewReady = preview.isSuccess && !preview.isFetching &&
+    preview.data?.periodEnd === periodEnd && reviewed.summary !== null;
+  const summary = reviewed.summary;
+  const rows = preview.data?.periodEnd === periodEnd ? preview.data.rows : [];
+  const visibleRows = rows.filter((row) =>
+    rowFilter === "all" ||
+    row.status === rowFilter ||
+    (rowFilter === "other" && row.status !== "due" && row.status !== "behind"),
+  );
+  const pageSize = 25;
+  const pages = Math.max(1, Math.ceil(visibleRows.length / pageSize));
+  const currentPage = Math.min(previewPage, pages - 1);
+  const shown = visibleRows.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
+  const catchUpAvailable = Boolean(
+    plan && plan.periodEnds.length > 1 && summary &&
+    (summary.behind > 0 || summary.due > 0),
+  );
 
   const post = useMutation({
     mutationFn: (periodEnds: string[]) => runFn({ data: { companyId, periodEnds } }),
-    onSuccess: async (res) => {
+    onSuccess: async (result) => {
       await queryClient.invalidateQueries({ queryKey: ["fixed-assets", companyId] });
-      if (res.posted.length > 0) {
-        const total = res.posted.reduce((n, p) => n + p.totalMinor, 0);
+      if (result.posted.length > 0) {
+        const value = result.posted.reduce((total, period) => total + BigInt(period.totalMinor), 0n);
         toast.success(
-          `Posted ${res.posted.length} month${res.posted.length === 1 ? "" : "s"} (${fmt.money(total, currency)})`,
+          `Processed ${result.posted.length} month${result.posted.length === 1 ? "" : "s"} (${fmt.money(value, currency)} posted).`,
         );
       }
-      if (res.failure) {
-        toast.error(`${res.failure.periodEnd}: ${res.failure.message}`);
-      }
+      if (result.failure) toast.error(
+        `Stopped at ${fmt.date(result.failure.periodEnd)}: ${result.failure.message}`,
+      );
     },
-    onError: (e) => toast.error(friendlyAuthError(e)),
+    onError: (error) => toast.error(friendlyAuthError(error)),
   });
 
-  const rows = preview.data?.rows ?? [];
-  const due = rows.filter((r) => r.status === "due");
-  const behind = rows.filter((r) => r.status === "behind");
-  const catchUp = monthsThrough();
+  const requestPosting = (mode: "one" | "catch_up") => {
+    if (!canPost || post.isPending || !previewReady || !summary || !plan) return;
+    if (mode === "one" && summary.due === 0) return;
+    const periodEnds = mode === "one" ? [periodEnd] : [...plan.periodEnds];
+    if (mode === "catch_up" && !catchUpAvailable) return;
+    setConfirmation({
+      mode,
+      periodEnd,
+      periodEnds,
+      firstPeriodEnd: periodEnds[0]!,
+      lastPeriodEnd: periodEnds[periodEnds.length - 1]!,
+      remainingMonths: mode === "catch_up" ? plan.remainingMonths : 0,
+    });
+  };
+
+  const confirmPosting = () => {
+    if (!confirmation || !previewReady || post.isPending || !canPost ||
+        confirmation.periodEnd !== periodEnd || !plan) return;
+    const expected = confirmation.mode === "one" ? [periodEnd] : plan.periodEnds;
+    if (expected.join("|") !== confirmation.periodEnds.join("|")) return;
+    setConfirmation(null);
+    post.mutate(expected);
+  };
 
   const STATUS: Record<string, string> = {
-    due: "Will be posted",
+    due: "Ready to post",
     posted: "Posted",
     not_started: "Not started yet",
-    behind: "Earlier months not run",
+    behind: "Earlier months outstanding",
     done: "Already depreciated",
     nothing_left: "Fully depreciated",
   };
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end gap-3">
+      <div className="flex flex-wrap items-end gap-3 rounded-lg border p-4">
         <div className="space-y-1">
-          <Label htmlFor="dep-month">Month</Label>
+          <Label htmlFor="dep-month">Depreciation month</Label>
           <Input
             id="dep-month"
             type="month"
             value={month}
             max={thisMonth.slice(0, 7)}
-            onChange={(e) => e.target.value && setMonth(e.target.value)}
+            aria-invalid={!validMonth}
+            aria-describedby={!validMonth ? "dep-month-error" : undefined}
+            onChange={(event) => {
+              setMonth(event.target.value);
+              setPreviewPage(0);
+              setConfirmation(null);
+            }}
           />
+          {!validMonth ? (
+            <p id="dep-month-error" className="text-xs text-destructive">
+              Choose a valid month up to the current month.
+            </p>
+          ) : null}
         </div>
-        <p className="pb-2 text-sm text-muted-foreground">
+        <p className="max-w-2xl pb-2 text-sm text-muted-foreground">
           {lastRunThrough
-            ? `Last posted run: ${fmt.date(lastRunThrough)}.`
-            : "No depreciation has been posted yet."}{" "}
-          Preview first: nothing is posted until you confirm.
+            ? `Last recorded run: ${fmt.date(lastRunThrough)}.`
+            : "No depreciation run recorded yet."}{" "}
+          Previewing never posts journals. Posting requires confirmation and is
+          revalidated by the accounting engine, including closed periods.
         </p>
       </div>
 
-      {preview.isPending ? (
+      {!validMonth ? (
+        <Alert variant="destructive">
+          <AlertDescription>Select a valid depreciation month to view its preview.</AlertDescription>
+        </Alert>
+      ) : preview.isPending ? (
         <LoadingState />
       ) : preview.isError ? (
         <ErrorState
@@ -1132,95 +1209,255 @@ function DepreciationPanel({
           description={friendlyAuthError(preview.error)}
           onRetry={() => void preview.refetch()}
         />
-      ) : rows.length === 0 ? (
-        <EmptyState
-          title="No assets to depreciate"
-          description="Add an asset that depreciates to see a preview."
-        />
-      ) : (
+      ) : reviewed.issue ? (
+        <Alert variant="destructive">
+          <AlertDescription>
+            Preview values require review before any posting: {reviewed.issue}
+          </AlertDescription>
+        </Alert>
+      ) : previewReady && summary ? (
         <>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Asset</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Depreciation</TableHead>
-                <TableHead className="text-right">Accumulated after</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((r) => (
-                <TableRow key={r.asset_id}>
-                  <TableCell>
-                    <span className="mr-2 font-mono text-xs text-muted-foreground">
-                      {r.asset_number}
-                    </span>
-                    {r.asset_name}
-                  </TableCell>
-                  <TableCell>{STATUS[r.status] ?? r.status}</TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {r.status === "due" ? fmt.amount(r.amount_minor, currency) : "–"}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {r.status === "due" ? fmt.amount(r.accumulated_after_minor, currency) : "–"}
-                  </TableCell>
-                </TableRow>
-              ))}
-              <TableRow className="border-t-2 font-semibold">
-                <TableCell colSpan={2}>Total for {fmt.date(periodEnd)}</TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {fmt.amount(preview.data?.totalMinor ?? 0, currency)}
-                </TableCell>
-                <TableCell />
-              </TableRow>
-            </TableBody>
-          </Table>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              disabled={!canPost || post.isPending || due.length === 0}
-              title={canPost ? undefined : "You do not have permission to post journals"}
-              onClick={() => {
-                if (
-                  window.confirm(
-                    `Post depreciation of ${fmt.money(preview.data?.totalMinor ?? 0, currency)} for ${fmt.date(periodEnd)}?`,
-                  )
-                ) {
-                  post.mutate([periodEnd]);
-                }
-              }}
-            >
-              {post.isPending ? <Loader2 className="mr-1 size-4 animate-spin" /> : null}
-              Post {fmt.date(periodEnd)}
-            </Button>
-            {behind.length > 0 && catchUp.length > 1 ? (
-              <Button
-                variant="outline"
-                disabled={!canPost || post.isPending}
-                onClick={() => {
-                  if (
-                    window.confirm(
-                      `Post ${catchUp.length} months of depreciation, one journal per month, up to ${fmt.date(periodEnd)}? It stops at the first month that cannot be posted (for example a locked period).`,
-                    )
-                  ) {
-                    post.mutate(catchUp);
-                  }
-                }}
-              >
-                Post all {catchUp.length} outstanding months
-              </Button>
-            ) : null}
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {[
+              { label: "Ready for selected month", value: String(summary.due) },
+              { label: "Earlier periods outstanding", value: String(summary.behind) },
+              { label: "Already posted / completed", value: String(summary.alreadyDone + summary.fullyDepreciated) },
+              { label: "Preview charge", value: fmt.money(summary.totalDueMinor, currency) },
+            ].map((metric) => (
+              <div key={metric.label} className="min-w-0 rounded-lg border bg-card p-4">
+                <p className="text-xs text-muted-foreground">{metric.label}</p>
+                <p className="mt-2 break-words text-lg font-semibold tabular-nums">{metric.value}</p>
+              </div>
+            ))}
           </div>
-          {behind.length > 0 ? (
+          {summary.behind > 0 ? (
             <Alert>
               <AlertDescription>
-                {behind.length} asset{behind.length === 1 ? " has" : "s have"} earlier months that
-                are not depreciated yet. Months are posted in order, so run the earlier months first
-                or use “Post all outstanding months”.
+                {summary.behind} asset{summary.behind === 1 ? " has" : "s have"} earlier
+                months outstanding. Work from the earliest period and check for locked periods.
               </AlertDescription>
             </Alert>
           ) : null}
+          {plan && plan.remainingMonths > 0 ? (
+            <Alert>
+              <AlertDescription>
+                A catch-up contains more than 36 months. This request can process only
+                {plan.periodEnds.length} months, {fmt.date(plan.firstPeriodEnd)} through
+                {fmt.date(plan.lastPeriodEnd)}, with {plan.remainingMonths} later months remaining.
+                Reopen the preview after each run.
+              </AlertDescription>
+            </Alert>
+          ) : null}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Label htmlFor="dep-preview-filter">Preview rows</Label>
+              <select
+                id="dep-preview-filter"
+                className="h-9 rounded-md border bg-background px-3 text-sm"
+                value={rowFilter}
+                onChange={(event) => {
+                  setRowFilter(event.target.value as typeof rowFilter);
+                  setPreviewPage(0);
+                }}
+              >
+                <option value="all">All ({rows.length})</option>
+                <option value="due">Ready ({summary.due})</option>
+                <option value="behind">Earlier periods ({summary.behind})</option>
+                <option value="other">Other statuses</option>
+              </select>
+              <Button size="sm" variant="outline" disabled={preview.isFetching}
+                onClick={() => void preview.refetch()}>
+                Refresh preview
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {visibleRows.length} rows · {pageSize} per page
+            </p>
+          </div>
+          {visibleRows.length === 0 ? (
+            <p className="rounded-md border p-4 text-sm text-muted-foreground">
+              No assets match the selected preview status.
+            </p>
+          ) : (
+            <div className="overflow-x-auto rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Asset</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Charge this month</TableHead>
+                    <TableHead className="text-right">Accumulated after</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {shown.map((row) => (
+                    <TableRow key={row.asset_id}>
+                      <TableCell className="min-w-44">
+                        <span className="mr-2 font-mono text-xs text-muted-foreground">
+                          {row.asset_number}
+                        </span>
+                        {row.asset_name}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={row.status === "due" ? "outline" : "secondary"}>
+                          {STATUS[row.status] ?? row.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {row.status === "due" ? fmt.amount(row.amount_minor, currency) : "—"}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {row.status === "due" ? fmt.amount(row.accumulated_after_minor, currency) : "—"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+          {pages > 1 ? (
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs text-muted-foreground">
+                Page {currentPage + 1} of {pages}
+              </span>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" disabled={currentPage === 0}
+                  onClick={() => setPreviewPage(currentPage - 1)}>Previous</Button>
+                <Button size="sm" variant="outline" disabled={currentPage >= pages - 1}
+                  onClick={() => setPreviewPage(currentPage + 1)}>Next</Button>
+              </div>
+            </div>
+          ) : null}
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              disabled={!canPost || post.isPending || !previewReady ||
+                summary.due === 0 || summary.behind > 0}
+              title={!canPost ? "You lack permission to post journals"
+                : summary.behind > 0
+                  ? "Post the earlier outstanding months first"
+                  : undefined}
+              onClick={() => requestPosting("one")}
+            >
+              {post.isPending ? <Loader2 className="mr-1 size-4 animate-spin" /> : null}
+              Review posting for {fmt.date(periodEnd)}
+            </Button>
+            {catchUpAvailable ? (
+              <Button variant="outline"
+                disabled={!canPost || post.isPending || !previewReady}
+                onClick={() => requestPosting("catch_up")}
+              >
+                Review {plan?.periodEnds.length ?? 0}-month catch-up
+              </Button>
+            ) : null}
+            {!canPost ? (
+              <p className="text-xs text-muted-foreground">
+                Viewing previews is permitted; posting requires accounting journal permissions.
+              </p>
+            ) : null}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            These values are a read-only preview for the selected month, not a promise of
+            journals that will post. A multi-month catch-up is recalculated by the server
+            for each month; this month's charge is <strong>not</strong> its total.
+          </p>
         </>
-      )}
+      ) : null}
+
+      {post.data || post.isError ? (
+        <section className="space-y-2 rounded-lg border p-4" aria-live="polite">
+          <h3 className="font-semibold">Last depreciation run result</h3>
+          {post.data ? (
+            <>
+              <p className="text-sm">
+                {post.data.posted.length} month(s) processed. Journal amounts below are
+                actual returned posting results, not prior preview estimates.
+              </p>
+              <ul className="space-y-1 text-sm">
+                {post.data.posted.map((item) => (
+                  <li key={item.periodEnd} className="flex flex-wrap justify-between gap-2">
+                    <span>{fmt.date(item.periodEnd)} · {item.assets} asset(s)</span>
+                    <span className="tabular-nums">{fmt.money(item.totalMinor, currency)}</span>
+                  </li>
+                ))}
+              </ul>
+              {post.data.failure ? (
+                <Alert variant="destructive">
+                  <AlertDescription>
+                    Stopped at {fmt.date(post.data.failure.periodEnd)}: {post.data.failure.message}.
+                    Earlier months may have posted; review them before retrying.
+                  </AlertDescription>
+                </Alert>
+              ) : null}
+            </>
+          ) : null}
+          {post.isError ? (
+            <Alert variant="destructive">
+              <AlertDescription>Could not run depreciation: {friendlyAuthError(post.error)}</AlertDescription>
+            </Alert>
+          ) : null}
+        </section>
+      ) : null}
+
+      <Dialog open={confirmation !== null}
+        onOpenChange={(open) => !open && !post.isPending && setConfirmation(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Confirm depreciation posting</DialogTitle>
+            <DialogDescription>
+              Posting creates or reuses authorised monthly journal records, subject to
+              period locks and server-side permissions.
+            </DialogDescription>
+          </DialogHeader>
+          {confirmation ? (
+            <div className="space-y-3 text-sm">
+              <dl className="grid grid-cols-2 gap-2 rounded-lg border p-3">
+                <dt className="text-muted-foreground">First month</dt>
+                <dd>{fmt.date(confirmation.firstPeriodEnd)}</dd>
+                <dt className="text-muted-foreground">Last month</dt>
+                <dd>{fmt.date(confirmation.lastPeriodEnd)}</dd>
+                <dt className="text-muted-foreground">Periods requested</dt>
+                <dd>{confirmation.periodEnds.length}</dd>
+                {confirmation.mode === "one" && summary ? (
+                  <>
+                    <dt className="text-muted-foreground">Ready assets</dt>
+                    <dd>{summary.due}</dd>
+                    <dt className="text-muted-foreground">Preview charge</dt>
+                    <dd>{fmt.money(summary.totalDueMinor, currency)}</dd>
+                  </>
+                ) : null}
+              </dl>
+              {confirmation.mode === "catch_up" ? (
+                <Alert>
+                  <AlertDescription>
+                    Each period is recalculated on the server. The one-month preview charge
+                    does not represent the total catch-up. The run stops at the first failed
+                    period; successful earlier months remain posted.
+                  </AlertDescription>
+                </Alert>
+              ) : null}
+              {confirmation.remainingMonths > 0 ? (
+                <p className="text-muted-foreground">
+                  {confirmation.remainingMonths} later months will still need review.
+                </p>
+              ) : null}
+              <p className="text-xs text-muted-foreground">
+                Do not continue unless you have checked depreciation policy, postings, and
+                period-lock requirements. Posting cannot be cancelled after submission.
+              </p>
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button size="sm" variant="outline" onClick={() => setConfirmation(null)}
+              disabled={post.isPending}>Cancel</Button>
+            <Button size="sm" onClick={confirmPosting}
+              disabled={!confirmation || !previewReady || post.isPending || !canPost ||
+                confirmation.periodEnd !== periodEnd}>
+              {post.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+              Confirm and post
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

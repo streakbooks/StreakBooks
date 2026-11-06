@@ -12,6 +12,8 @@ import {
   Send,
   ShieldCheck,
   Sparkles,
+  Trash2,
+  History,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
@@ -28,6 +30,7 @@ import {
   type AiIntent,
 } from "@/lib/ai/ai.functions";
 import { getAiSuggestionKind, getJournalPreview } from "@/lib/ai/suggestion-review";
+import { deleteAiConversationHistory, listAiConversationHistory, type AiConversationRow } from "@/lib/ai/history.functions";
 import { PageHeader, LoadingState, ErrorState } from "@/components/common/states";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -71,7 +74,7 @@ type Suggestion = {
 };
 
 type Exchange = {
-  id: number;
+  id: string;
   question: string;
   intent: AiIntent;
   answer: string;
@@ -145,6 +148,8 @@ function AiAssistantWorkspace({
   const fetchStatus = useServerFn(getAiAssistantStatus);
   const runAssist = useServerFn(runAiAssistant);
   const fetchSuggestions = useServerFn(listAiSuggestions);
+  const fetchHistory = useServerFn(listAiConversationHistory);
+  const deleteHistory = useServerFn(deleteAiConversationHistory);
   const fetchAccounts = useServerFn(listAccounts);
   const applySuggestion = useServerFn(applyAiSuggestion);
   const rejectSuggestion = useServerFn(rejectAiSuggestion);
@@ -170,6 +175,11 @@ function AiAssistantWorkspace({
     enabled: canUse,
     queryFn: () => fetchSuggestions({ data: { companyId } }),
   });
+  const historyQ = useQuery({
+    queryKey: ["ai-conversation-history", companyId],
+    enabled: canUse,
+    queryFn: () => fetchHistory({ data: { companyId } }),
+  });
   const accountsQ = useQuery({
     queryKey: ["ai-journal-account-preview", companyId],
     enabled: Boolean(reviewId) && canApply,
@@ -182,9 +192,9 @@ function AiAssistantWorkspace({
       runAssist({ data: { companyId, ...request } }),
     onSuccess: async (result, request) => {
       setHistory((current) => [
-        ...current.slice(-9),
+        ...current.slice(-49),
         {
-          id: (current[current.length - 1]?.id ?? 0) + 1,
+          id: result.historyId ?? "unsaved-" + Date.now().toString(36),
           question: request.message,
           intent: request.intent,
           answer: result.replyMarkdown,
@@ -197,7 +207,23 @@ function AiAssistantWorkspace({
       ]);
       setMessage("");
       if (result.mode === "not_configured") toast.message("Model provider is not configured");
-      await qc.invalidateQueries({ queryKey: ["ai-suggestions", companyId] });
+      else if (!result.saved) toast.warning("Answer shown, but it could not be saved to history.");
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["ai-suggestions", companyId] }),
+        qc.invalidateQueries({ queryKey: ["ai-conversation-history", companyId] }),
+      ]);
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+
+  const deleteHistoryM = useMutation({
+    mutationFn: (target: { entryId?: string; all?: boolean }) =>
+      deleteHistory({ data: { companyId, ...target } }),
+    onSuccess: async (result, target) => {
+      if (target.all) setHistory([]);
+      else setHistory((previous) => previous.filter((item) => item.id !== target.entryId));
+      toast.success(result.deletedCount + " saved conversation(s) deleted");
+      await qc.invalidateQueries({ queryKey: ["ai-conversation-history", companyId] });
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
@@ -245,6 +271,21 @@ function AiAssistantWorkspace({
     }
   }
 
+  const savedExchanges: Exchange[] = ((historyQ.data ?? []) as AiConversationRow[])
+    .slice()
+    .reverse()
+    .map((entry) => ({
+      id: entry.id,
+      question: entry.question,
+      intent: entry.intent,
+      answer: entry.reply_markdown,
+      mode: entry.mode,
+      injectionFlagged: entry.injection_flagged,
+      facts: entry.facts ?? [],
+      suggestionId: entry.suggestion_id,
+    }));
+  const savedIds = new Set(savedExchanges.map((entry) => entry.id));
+  const exchanges = [...savedExchanges, ...history.filter((entry) => !savedIds.has(entry.id))];
   const rows = (suggestionsQ.data ?? []) as Suggestion[];
   const filtered = rows.filter(
     (item) =>
@@ -256,7 +297,7 @@ function AiAssistantWorkspace({
   const journalLines = selected ? getJournalPreview(selected) : null;
   const accountById = new Map((accountsQ.data ?? []).map((account) => [account.id, account]));
   const accountsResolved = Boolean(journalLines?.every((line) => accountById.has(line.account_id)));
-  const latestId = history[history.length - 1]?.id;
+  const latestId = exchanges[exchanges.length - 1]?.id;
   const formatAmount = (minor: number) => currency + " " + fromMinorUnits(BigInt(minor), currency);
 
   return (
@@ -305,7 +346,7 @@ function AiAssistantWorkspace({
             </CardTitle>
             <CardDescription>
               Use a suggested workflow or write your own request. Ctrl/⌘ + Enter sends.
-              Conversations are held in this page only and are cleared when you switch organisations or reload.
+              Conversations are saved privately to your user account within the selected organisation. Only the latest 50 saved responses are shown; deletion is available below.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -366,13 +407,19 @@ function AiAssistantWorkspace({
                         type="button"
                         variant="outline"
                         size="sm"
-                        disabled={askM.isPending || (!message && history.length === 0)}
+                        disabled={askM.isPending || (!message && exchanges.length === 0) || deleteHistoryM.isPending}
                         onClick={() => {
-                          setMessage("");
-                          setHistory([]);
+                          if (exchanges.length === 0) {
+                            setMessage("");
+                            return;
+                          }
+                          if (window.confirm("Permanently delete ALL saved AI conversations for this organisation and your user account? This cannot be undone.")) {
+                            deleteHistoryM.mutate({ all: true });
+                            setMessage("");
+                          }
                         }}
                       >
-                        <RotateCcw className="size-4" /> Clear
+                        <Trash2 className="size-4" /> Delete history
                       </Button>
                       <Button type="button" size="sm" disabled={!message.trim() || askM.isPending} onClick={send}>
                         {askM.isPending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
@@ -384,14 +431,23 @@ function AiAssistantWorkspace({
               </>
             )}
 
+            {historyQ.isError && canUse ? (
+              <Alert variant="destructive">
+                <AlertTitle>Saved conversation history unavailable</AlertTitle>
+                <AlertDescription>Check the database migration and access permissions. New answers still work, but may not be retained. <Button size="sm" variant="outline" onClick={() => void historyQ.refetch()}>Retry</Button></AlertDescription>
+              </Alert>
+            ) : null}
             <div className="space-y-4" role="log" aria-live="polite" aria-label="Assistant responses">
-              {history.length === 0 ? (
+              {historyQ.isPending && canUse ? (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="size-3 animate-spin" /> Loading saved conversations…</div>
+              ) : null}
+              {exchanges.length === 0 ? (
                 <div className="rounded-lg border border-dashed bg-muted/30 px-4 py-8 text-center text-sm text-muted-foreground">
                   <Sparkles className="mx-auto mb-2 size-6" />
                   Responses will appear here. Nothing is posted automatically.
                 </div>
               ) : (
-                history.map((entry) => (
+                exchanges.map((entry) => (
                   <article key={entry.id} className="space-y-3 rounded-lg border p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <Badge variant="outline">{INTENT_LABELS[entry.intent]}</Badge>
@@ -422,9 +478,23 @@ function AiAssistantWorkspace({
                       </details>
                     ) : null}
                     <div className="flex flex-wrap justify-between gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => void copyAnswer(entry.answer)}>
-                        <ClipboardCopy className="size-4" /> Copy response
-                      </Button>
+                      <div className="flex flex-wrap gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => void copyAnswer(entry.answer)}>
+                          <ClipboardCopy className="size-4" /> Copy response
+                        </Button>
+                        {canUse ? (
+                          <Button variant="ghost" size="sm" disabled={deleteHistoryM.isPending} onClick={() => {
+                            if (!window.confirm("Delete this AI conversation from your history?")) return;
+                            if (entry.id.startsWith("unsaved-")) {
+                              setHistory((previous) => previous.filter((item) => item.id !== entry.id));
+                              return;
+                            }
+                            deleteHistoryM.mutate({ entryId: entry.id });
+                          }}>
+                            <Trash2 className="size-4" /> Delete
+                          </Button>
+                        ) : null}
+                      </div>
                       {entry.id === latestId && entry.facts.length > 0 ? (
                         <Button variant="ghost" size="sm" onClick={() => setOnlyLatestFacts((value) => !value)}>
                           {onlyLatestFacts ? "Show earlier fact blocks" : "Hide earlier fact blocks"}
@@ -457,8 +527,8 @@ function AiAssistantWorkspace({
             <CardHeader><CardTitle className="text-base">Workspace snapshot</CardTitle></CardHeader>
             <CardContent className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <p className="text-xs text-muted-foreground">Responses this visit</p>
-                <p className="mt-1 text-2xl font-semibold tabular-nums">{history.length}</p>
+                <p className="text-xs text-muted-foreground"><History className="mr-1 inline size-3" /> Recent responses</p>
+                <p className="mt-1 text-2xl font-semibold tabular-nums">{exchanges.length}</p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Recent proposals</p>

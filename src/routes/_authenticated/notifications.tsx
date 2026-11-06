@@ -19,6 +19,7 @@ import { useActionCenterFeed } from "@/hooks/use-action-center-feed";
 import { supabase } from "@/integrations/supabase/client";
 import { notify } from "@/lib/notify";
 import { NotificationPreferences } from "@/components/notifications/NotificationPreferences";
+import { ActionCenterSearchForm } from "@/components/notifications/ActionCenterSearchForm";
 import {
   mergeNotificationPages,
   parseActionCenterSearch,
@@ -81,6 +82,7 @@ function ActionCenterPage() {
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<string[]>([]);
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState(0);
   const [bulkError, setBulkError] = useState<string | null>(null);
   const rows = useMemo(
     () => mergeNotificationPages(inbox.data?.pages.map((item) => item.rows) ?? []),
@@ -121,7 +123,8 @@ function ActionCenterPage() {
   const onCategory = (next: string) =>
     changeFilters({ category: next === "all" ? undefined : next });
   const pageIds = pageRows.map((row) => row.id);
-  const allPageSelected = pageIds.length > 0 && pageIds.every((id) => validSelected.includes(id));
+  const selectedPageCount = pageIds.filter((id) => validSelected.includes(id)).length;
+  const allPageSelected = pageIds.length > 0 && selectedPageCount === pageIds.length;
   const togglePageSelection = (checked: boolean) =>
     setSelected((previous) =>
       checked
@@ -132,11 +135,12 @@ function ActionCenterPage() {
   async function bulkState(action: "read" | "archive") {
     if (!validSelected.length || bulkBusy || changeState.isPending) return;
     setBulkBusy(true);
+    setBulkProgress(0);
     setBulkError(null);
     const failed: string[] = [];
     let updated = 0;
     let firstError: string | null = null;
-    for (const id of validSelected) {
+    for (const [index, id] of validSelected.entries()) {
       try {
         const { data, error } = await supabase.rpc(
           "set_action_notification_state" as never,
@@ -153,6 +157,7 @@ function ActionCenterPage() {
         failed.push(id);
         firstError ??= error instanceof Error ? error.message : "Update was rejected";
       }
+      setBulkProgress(index + 1);
     }
     setSelected(failed);
     try {
@@ -161,6 +166,7 @@ function ActionCenterPage() {
       setBulkError(error instanceof Error ? error.message : "Could not refresh alerts");
     } finally {
       setBulkBusy(false);
+      setBulkProgress(0);
     }
     if (updated) {
       notify.success(
@@ -257,12 +263,10 @@ function ActionCenterPage() {
         ))}
       </div>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_220px_160px_170px]">
-        <Input
-          aria-label="Search notifications"
-          placeholder="Search actions, invoices, bills…"
-          value={search}
-          maxLength={120}
-          onChange={(e) => changeFilters({ q: e.target.value || undefined })}
+        <ActionCenterSearchForm
+          key={search}
+          appliedSearch={search}
+          onSearch={(value) => changeFilters({ q: value || undefined })}
         />
         <Select value={category} onValueChange={onCategory}>
           {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
@@ -336,7 +340,11 @@ function ActionCenterPage() {
       )}
       {validSelected.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 rounded-lg border p-3 text-sm" aria-live="polite">
-          <span>{validSelected.length} selected</span>
+          <span>
+            {bulkBusy
+              ? `Updating ${bulkProgress} of ${validSelected.length} selected alerts…`
+              : `${validSelected.length} selected`}
+          </span>
           <Button size="sm" disabled={bulkBusy || changeState.isPending} onClick={() => void bulkState("read")}>
             Mark selected read
           </Button>
@@ -384,6 +392,9 @@ function ActionCenterPage() {
               <input
                 type="checkbox"
                 checked={allPageSelected}
+                ref={(node) => {
+                  if (node) node.indeterminate = selectedPageCount > 0 && !allPageSelected;
+                }}
                 disabled={bulkBusy || changeState.isPending}
                 onChange={(event) => togglePageSelection(event.target.checked)}
                 aria-label="Select all notifications on this page"
@@ -409,12 +420,12 @@ function ActionCenterPage() {
               }
             />
           ))}
-          <div className="flex flex-wrap items-center justify-between gap-2 pt-3 text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-3 text-sm text-muted-foreground" aria-live="polite">
             <span>
               {rows.length.toLocaleString()} of {totalMatches.toLocaleString()} matching loaded ·
               Page {Math.min(page, pageCount - 1) + 1} of {Math.max(1, Math.ceil(totalMatches / PAGE_SIZE))}
             </span>
-            <div className="flex gap-2">
+            <nav aria-label="Notification pages" className="flex gap-2">
               <Button
                 size="sm"
                 variant="outline"
@@ -439,7 +450,7 @@ function ActionCenterPage() {
               >
                 Next
               </Button>
-            </div>
+            </nav>
           </div>
           {inbox.hasNextPage && (
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3">
@@ -483,7 +494,7 @@ function NotificationRow({
 }) {
   const path = safeNotificationPath(n.target_path);
   return (
-    <div className="rounded-xl border bg-card p-4 shadow-sm transition-colors hover:border-primary/40">
+    <article className="rounded-xl border bg-card p-3 shadow-sm transition-colors hover:border-primary/40 sm:p-4">
       <div className="flex items-start gap-3">
         <input
           type="checkbox"
@@ -496,7 +507,7 @@ function NotificationRow({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             {!n.read_at && <span className="size-2 rounded-full bg-primary" aria-label="Unread" />}
-            <h2 className="font-semibold">
+            <h2 className="min-w-0 break-words text-sm font-semibold sm:text-base">
               {path ? (
                 <a
                   href={path}
@@ -527,14 +538,14 @@ function NotificationRow({
               {CATEGORIES[n.category] ?? n.category}
             </span>
           </div>
-          {n.body && <p className="mt-1 text-sm text-muted-foreground">{n.body}</p>}
+          {n.body && <p className="mt-1 break-words text-sm text-muted-foreground">{n.body}</p>}
           <p className="mt-1 text-xs text-muted-foreground">
             {new Date(n.created_at).toLocaleString()}
             {n.resolved_at && " · Underlying task completed"}
           </p>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
             {path && (
-              <Button size="sm" variant="outline" asChild>
+              <Button size="sm" variant="outline" asChild className="col-span-2 sm:col-span-1">
                 <a href={path}>
                   {n.category === "document_request"
                     ? "Upload document"
@@ -552,7 +563,7 @@ function NotificationRow({
               </Button>
             )}
             {n.category === "overdue_invoice" && !n.resolved_at && (
-              <Button size="sm" variant="outline" asChild>
+              <Button size="sm" variant="outline" asChild className="col-span-2 sm:col-span-1">
                 <a href="/sales/reminders">
                   Open reminder center <ArrowUpRight className="ml-1 size-3" />
                 </a>
@@ -583,7 +594,7 @@ function NotificationRow({
           </div>
         </div>
       </div>
-    </div>
+    </article>
   );
 }
 

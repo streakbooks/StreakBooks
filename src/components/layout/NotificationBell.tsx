@@ -7,6 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useActionNotifications, safeNotificationPath } from "@/hooks/use-action-notifications";
+import { sortActionNotifications } from "@/lib/notifications/notification-utils";
 
 type Filter = "active" | "unread" | "archived";
 
@@ -23,12 +24,15 @@ export function NotificationBell({
   const { inbox, unreadQuery, changeState } = useActionNotifications(companyId, userId, 100);
   const unread = unreadQuery.data ?? 0;
   const rows = inbox.data ?? [];
-  const visible = rows.filter((n) =>
-    filter === "archived"
-      ? Boolean(n.archived_at)
-      : filter === "unread"
-        ? !n.archived_at && !n.read_at && !n.resolved_at
-        : !n.archived_at && !n.resolved_at,
+  const visible = sortActionNotifications(
+    rows.filter((n) =>
+      filter === "archived"
+        ? Boolean(n.archived_at)
+        : filter === "unread"
+          ? !n.archived_at && !n.read_at && !n.resolved_at
+          : !n.archived_at && !n.resolved_at,
+    ),
+    filter === "archived" ? "newest" : "priority",
   );
 
   return (
@@ -100,7 +104,7 @@ export function NotificationBell({
                 {!n.read_at && <span className="mt-1.5 size-2 shrink-0 rounded-full bg-primary" />}
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-medium">{n.title}</span>
+                    <span className="break-words text-sm font-medium">{n.title}</span>
                     <span className="text-[10px] uppercase text-muted-foreground">
                       {n.priority}
                     </span>

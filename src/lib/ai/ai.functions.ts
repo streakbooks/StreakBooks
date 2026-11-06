@@ -15,7 +15,7 @@ import {
 import { postJournal } from "@/lib/accounting/posting-engine";
 import { assertLinesBalance } from "@/lib/accounting/money";
 import { getJournalPreview } from "@/lib/ai/suggestion-review";
-import { saveAiExchange } from "@/lib/ai/history.functions";
+import { saveAiExchange } from "@/lib/ai/history-store";
 
 export type AiIntent =
   "ask" | "explain" | "categorise" | "draft" | "duplicates" | "reconcile" | "unusual" | "navigate";

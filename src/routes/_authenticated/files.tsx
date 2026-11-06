@@ -443,6 +443,17 @@ function FilesPage() {
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
 
+  const copyInternalFileLink = async (attachmentId: string) => {
+    try {
+      const url = new URL("/files", window.location.origin);
+      url.searchParams.set("file", attachmentId);
+      await navigator.clipboard.writeText(url.toString());
+      toast.success("Private LinkBooks file link copied");
+    } catch {
+      toast.error("Could not copy the link. Your browser may block clipboard access.");
+    }
+  };
+
   const onPick = (list: FileList | null) => {
     if (!list || list.length === 0 || !canUpload || uploadM.isPending) return;
     const files = Array.from(list);
@@ -999,7 +1010,7 @@ function FilesPage() {
               <X className="size-4" />
             </Button>
           </div>
-          <div className="mt-3 flex gap-2">
+          <div className="mt-3 flex flex-wrap gap-2">
             <Button
               size="sm"
               variant="outline"
@@ -1008,6 +1019,14 @@ function FilesPage() {
             >
               <Download className="mr-1 size-4" />
               Download
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => void copyInternalFileLink(selected.id)}
+            >
+              <Link2 className="mr-1 size-4" />
+              Copy file link
             </Button>
             {canManage(selected.entity_type) ? (
               <>
@@ -1034,6 +1053,10 @@ function FilesPage() {
               </>
             ) : null}
           </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Copied links open inside LinkBooks. The recipient must sign in and already have
+            permission to access this file; this does not create a public share.
+          </p>
           {showRenameFile && canManage(selected.entity_type) ? (
             <form
               aria-label="Rename selected file"
@@ -1133,6 +1156,12 @@ function FilesPage() {
         />
       ) : (
         <>
+          {bulkDeleteM.isPending ? (
+            <p role="status" className="mb-3 text-sm text-muted-foreground">
+              Deleting selected files individually. Some files may be deleted before the operation
+              finishes.
+            </p>
+          ) : null}
           {currentSelection.length > 0 ? (
             <div className="mb-3 flex flex-wrap items-center gap-2 rounded-md border bg-muted/30 p-3">
               <span className="text-sm font-medium">{currentSelection.length} selected</span>

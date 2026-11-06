@@ -14,7 +14,7 @@ import {
 } from "@/lib/documents/attachments";
 import { entityManagePermissions, entityViewPermissions } from "@/lib/documents/record-activity";
 import { escapeLikeLiteral } from "@/lib/sales/list-filters";
-import { filePreviewKind, fileSortOrder, parseFileSort } from "@/lib/documents/file-workspace";
+import { filePreviewKind, fileSortOrder, parseFileSort, validateFileRename } from "@/lib/documents/file-workspace";
 
 const MIGRATION_HINT =
   "File storage needs a database update that has not been applied yet (migration 20261025200100). Ask an administrator to apply the latest migrations.";
@@ -332,6 +332,69 @@ export const deleteAttachment = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+
+/**
+ * Rename the displayed/downloaded filename only. The private Storage object stays at
+ * its original immutable key; moving objects is not required and existing links survive.
+ */
+export const renameAttachment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; attachmentId: string; fileName: string }) => ({
+    companyId: assertUuid(input.companyId),
+    attachmentId: assertUuid(input.attachmentId, "file"),
+    fileName: input.fileName ?? "",
+  }))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    await assertCompanyMember(supabase, data.companyId);
+    const { data: row, error: readError } = await supabase
+      .from("document_attachments" as never)
+      .select("id, entity_type, entity_id, file_name" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("id" as never, data.attachmentId as never)
+      .maybeSingle();
+    if (readError) throw new Error(readError.message);
+    if (!row) throw new Error("File not found or access denied");
+    const current = row as unknown as {
+      entity_type: string;
+      entity_id: string;
+      file_name: string;
+    };
+    if (!isAttachmentEntityType(current.entity_type))
+      throw new Error("This file type cannot be renamed here.");
+    await assertEntityAccess(supabase, data.companyId, current.entity_type, "manage");
+    const fileName = validateFileRename(current.file_name, data.fileName);
+    if (fileName === current.file_name) return { fileName };
+
+    const { data: updated, error } = await supabase
+      .from("document_attachments" as never)
+      .update({ file_name: fileName } as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("id" as never, data.attachmentId as never)
+      .eq("file_name" as never, current.file_name as never)
+      .select("id" as never);
+    if (error) throw new Error(error.message);
+    if (!updated || (updated as unknown[]).length !== 1)
+      throw new Error("The file was changed or you do not have permission. Refresh and retry.");
+
+    await (
+      supabase as unknown as {
+        rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown>;
+      }
+    ).rpc("record_audit_event", {
+      _company_id: data.companyId,
+      _action: "document.attachment.rename",
+      _entity_type: current.entity_type,
+      _entity_id: current.entity_id,
+      _details: {
+        attachment_id: data.attachmentId,
+        old_file_name: current.file_name,
+        new_file_name: fileName,
+      },
+    });
+    return { fileName };
+  });
+
 const REF_TABLES: Record<string, { table: string; column: string }> = {
   sales_invoice: { table: "sales_invoices", column: "invoice_number" },
   sales_quote: { table: "sales_quotes", column: "quote_number" },
@@ -350,6 +413,47 @@ export type CompanyFileRow = AttachmentRow & {
   entityRef: string | null;
   entityPath: string | null;
 };
+
+
+/** Resolve one file independently of pagination; RLS still gates record-level visibility. */
+export const getCompanyFile = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; attachmentId: string }) => ({
+    companyId: assertUuid(input.companyId),
+    attachmentId: assertUuid(input.attachmentId, "file"),
+  }))
+  .handler(async ({ data, context }): Promise<CompanyFileRow> => {
+    const { supabase } = context;
+    await assertCompanyMember(supabase, data.companyId);
+    const { data: row, error } = await supabase
+      .from("document_attachments" as never)
+      .select(COLUMNS as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("id" as never, data.attachmentId as never)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("File not found or access denied");
+    const attachment = row as unknown as AttachmentRow;
+    let entityRef: string | null = null;
+    const ref = REF_TABLES[attachment.entity_type];
+    if (ref) {
+      const { data: record, error: refError } = await supabase
+        .from(ref.table as never)
+        .select(`id, ${ref.column}` as never)
+        .eq("company_id" as never, data.companyId as never)
+        .eq("id" as never, attachment.entity_id as never)
+        .maybeSingle();
+      if (refError) throw new Error(refError.message);
+      const name = (record as unknown as Record<string, string | null> | null)?.[ref.column];
+      entityRef = name || null;
+    }
+    return {
+      ...attachment,
+      entityLabel: entityLabel(attachment.entity_type),
+      entityRef,
+      entityPath: entityPath(attachment.entity_type, attachment.entity_id),
+    };
+  });
 
 /** Organisation-wide Files list (RLS limits it to what the user may view). */
 export const listCompanyFiles = createServerFn({ method: "GET" })

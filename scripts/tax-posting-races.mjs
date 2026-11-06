@@ -120,9 +120,12 @@ function mustReject(host,container,statement,label){
     label+" did not reject modification after posting: "+r.output);
 }
 
-function verifyPosted(host,container,id) {
+function verifyPosted(host,container,id,source="sales_invoices") {
+  check(source==="sales_invoices"||source==="purchase_bills",
+    "Unknown posting source");
   const r=sql(host,container,
-    "SELECT posted_journal_id IS NOT NULL FROM public.sales_invoices WHERE id='"+id+"';");
+    "SELECT posted_journal_id IS NOT NULL FROM public."+source+
+    " WHERE id='"+id+"';");
   check(r.ok&&r.output.trim()==="t","Posting transaction must commit: "+r.output);
 }
 
@@ -185,6 +188,39 @@ export async function verifyTaxPostingRaces(host,container) {
   mustReject(host,container,
     "UPDATE public.sales_invoice_lines SET tax_code_id=NULL WHERE id="+line+";",
     "Source line edit");
+
+  // Purchase side must not be implicitly covered only by the invoice test:
+  // this source uses a distinct, previously unused code and rate.
+  const purchaseRate="'20000000-0000-4000-8000-000000000007'";
+  const purchaseCode="'30000000-0000-4000-8000-000000000007'";
+  const purchaseLine="'60000000-0000-4000-8000-000000000007'";
+  const billId="50000000-0000-4000-8000-000000000007";
+  const purchase=beginPosting(host,container,
+    "UPDATE public.purchase_bills SET status='paid', "+
+    "posted_journal_id='70000000-0000-4000-8000-000000000007' "+
+    "WHERE id='"+billId+"';","PURCHASE_POST_READY");
+  await purchase.ready;
+  mustWait(host,container,
+    "UPDATE public.tax_rates SET rate_bps=1300 WHERE id="+purchaseRate+";",
+    "Purchase tax rate edit");
+  const purchaseRateEdit=beginPendingEdit(host,container,
+    "UPDATE public.tax_rates SET rate_bps=1300 WHERE id="+purchaseRate+";",
+    "PURCHASE_RATE_QUEUED");
+  const purchaseCodeEdit=beginPendingEdit(host,container,
+    "UPDATE public.tax_codes SET is_recoverable=false WHERE id="+purchaseCode+";",
+    "PURCHASE_CODE_QUEUED");
+  const purchaseLineEdit=beginPendingEdit(host,container,
+    "UPDATE public.purchase_bill_lines SET tax_code_id=NULL WHERE id="+purchaseLine+";",
+    "PURCHASE_LINE_QUEUED");
+  await Promise.all([purchaseRateEdit.ready,purchaseCodeEdit.ready,purchaseLineEdit.ready]);
+  await purchase.completed;
+  verifyPosted(host,container,billId,"purchase_bills");
+  mustRejectAfterCommit(await purchaseRateEdit.completed,
+    "Purchase rate change queued before posting commit");
+  mustRejectAfterCommit(await purchaseCodeEdit.completed,
+    "Purchase code change queued before posting commit");
+  mustRejectAfterCommit(await purchaseLineEdit.completed,
+    "Purchase line change queued before posting commit");
 
   console.log("PASS: two-session posting versus tax rate, code and source line edits");
 }

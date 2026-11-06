@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { filterActionNotifications, safeNotificationPath } from "./notification-utils";
+import {
+  filterActionNotifications,
+  safeNotificationPath,
+  sortActionNotifications,
+  summarizeActionNotifications,
+} from "./notification-utils";
 
 const base = {
   title: "Bill awaiting approval",
@@ -114,5 +119,64 @@ describe("notification navigation", () => {
     ]) {
       expect(safeNotificationPath(value)).toBeNull();
     }
+  });
+});
+
+describe("Action Center triage and overview", () => {
+  it("filters actionable alerts by priority without altering existing view rules", () => {
+    expect(
+      filterActionNotifications(rows, {
+        view: "action",
+        category: "all",
+        search: "",
+        priority: "high",
+      }).map((row) => row.title),
+    ).toEqual(["Bill awaiting approval", "Overdue invoice"]);
+    expect(
+      filterActionNotifications(rows, {
+        view: "critical",
+        category: "all",
+        search: "",
+        priority: "critical",
+      }),
+    ).toHaveLength(0);
+  });
+
+  it("sorts critical and high urgency first, newest first within a priority", () => {
+    const sortable = [
+      { ...base, id: "low", priority: "low", created_at: "2026-11-06T10:00:00Z" },
+      { ...base, id: "high-old", priority: "high", created_at: "2026-11-03T10:00:00Z" },
+      { ...base, id: "critical", priority: "critical", created_at: "2026-11-01T10:00:00Z" },
+      { ...base, id: "high-new", priority: "high", created_at: "2026-11-05T10:00:00Z" },
+    ];
+    expect(sortActionNotifications(sortable, "priority").map((x) => x.id)).toEqual([
+      "critical",
+      "high-new",
+      "high-old",
+      "low",
+    ]);
+    expect(sortActionNotifications(sortable, "newest").map((x) => x.id)).toEqual([
+      "low",
+      "high-new",
+      "high-old",
+      "critical",
+    ]);
+    expect(sortActionNotifications(sortable, "oldest").map((x) => x.id)).toEqual([
+      "critical",
+      "high-old",
+      "high-new",
+      "low",
+    ]);
+    expect(sortable[0].id).toBe("low");
+  });
+
+  it("counts only active, unread, critical and completed alerts in the loaded window", () => {
+    expect(summarizeActionNotifications(rows)).toEqual({
+      action: 2,
+      unread: 1,
+      critical: 0,
+      completed: 1,
+      archived: 1,
+    });
   });
 });

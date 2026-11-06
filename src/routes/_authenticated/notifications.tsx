@@ -22,7 +22,12 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { notify } from "@/lib/notify";
 import { NotificationPreferences } from "@/components/notifications/NotificationPreferences";
-import { filterActionNotifications } from "@/lib/notifications/notification-utils";
+import {
+  filterActionNotifications,
+  sortActionNotifications,
+  summarizeActionNotifications,
+  type NotificationSort,
+} from "@/lib/notifications/notification-utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -77,6 +82,8 @@ function ActionCenterPage() {
   );
   const view = Route.useSearch().view ?? "action";
   const [category, setCategory] = useState("all");
+  const [priority, setPriority] = useState("all");
+  const [sort, setSort] = useState<NotificationSort>("priority");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<string[]>([]);
@@ -84,9 +91,14 @@ function ActionCenterPage() {
   const [bulkError, setBulkError] = useState<string | null>(null);
   const rows = useMemo(() => inbox.data ?? [], [inbox.data]);
 
+  const summary = useMemo(() => summarizeActionNotifications(rows), [rows]);
   const filtered = useMemo(
-    () => filterActionNotifications(rows, { view, category, search }),
-    [rows, view, category, search],
+    () =>
+      sortActionNotifications(
+        filterActionNotifications(rows, { view, category, priority, search }),
+        sort,
+      ),
+    [rows, view, category, priority, search, sort],
   );
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageRows = filtered.slice(
@@ -103,13 +115,24 @@ function ActionCenterPage() {
     setPage(0);
     setSelected([]);
   };
+  const pageIds = pageRows.map((row) => row.id);
+  const allPageSelected = pageIds.length > 0 && pageIds.every((id) => selected.includes(id));
+  const togglePageSelection = (checked: boolean) =>
+    setSelected((previous) =>
+      checked
+        ? [...new Set([...previous, ...pageIds])]
+        : previous.filter((id) => !pageIds.includes(id)),
+    );
 
   async function bulkState(action: "read" | "archive") {
-    if (!selected.length || bulkBusy) return;
+    if (!selected.length || bulkBusy || changeState.isPending) return;
     setBulkBusy(true);
     setBulkError(null);
-    try {
-      for (const id of selected) {
+    const failed: string[] = [];
+    let updated = 0;
+    let firstError: string | null = null;
+    for (const id of selected) {
+      try {
         const { data, error } = await supabase.rpc(
           "set_action_notification_state" as never,
           {
@@ -119,16 +142,30 @@ function ActionCenterPage() {
           } as never,
         );
         if (error) throw error;
-        if (!data) throw new Error("An alert is no longer available");
+        if (!data) throw new Error("An alert is no longer available or permission was revoked");
+        updated++;
+      } catch (error) {
+        failed.push(id);
+        firstError ??= error instanceof Error ? error.message : "Update was rejected";
       }
-      setSelected([]);
+    }
+    setSelected(failed);
+    try {
       await refresh();
-      notify.success(action === "read" ? "Notifications marked as read" : "Notifications archived");
-    } catch (e) {
-      setBulkError(e instanceof Error ? e.message : "Some notifications could not be updated");
-      await refresh();
+    } catch (error) {
+      setBulkError(error instanceof Error ? error.message : "Could not refresh alerts");
     } finally {
       setBulkBusy(false);
+    }
+    if (updated) {
+      notify.success(
+        action === "read"
+          ? `${updated} notification(s) marked as read`
+          : `${updated} notification(s) archived`,
+      );
+    }
+    if (failed.length) {
+      setBulkError(`${failed.length} notification(s) could not be updated. ${firstError ?? ""}`);
     }
   }
   const toggleSelection = (id: string) =>
@@ -145,6 +182,9 @@ function ActionCenterPage() {
           <p className="mt-1 text-sm text-muted-foreground">
             {company?.name ?? "Current organisation"} · {unreadQuery.data ?? 0} unread alerts
           </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Review source records before taking action. Archiving an alert never approves or posts a transaction.
+          </p>
         </div>
         <Button
           variant="outline"
@@ -155,6 +195,35 @@ function ActionCenterPage() {
           Refresh alerts
         </Button>
       </div>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Action Center overview">
+        {(
+          [
+            { label: "Needs action", value: summary.action, view: "action" as View, detail: "Open alerts" },
+            { label: "Unread", value: unreadQuery.data ?? summary.unread, view: "unread" as View, detail: "All accessible unread" },
+            { label: "Critical", value: summary.critical, view: "critical" as View, detail: "Urgent open alerts" },
+            { label: "Completed", value: summary.completed, view: "completed" as View, detail: "Resolved alerts" },
+          ]
+        ).map((metric) => (
+          <Link
+            key={metric.view}
+            to="/notifications"
+            search={{ view: metric.view }}
+            onClick={onViewNavigate}
+            className="rounded-xl border bg-card p-4 transition-colors hover:border-primary/40 hover:bg-muted/30 focus-visible:outline-2 focus-visible:outline-ring"
+          >
+            <span className="text-xs font-medium text-muted-foreground">{metric.label}</span>
+            <span className="mt-2 block text-2xl font-semibold tabular-nums">
+              {inbox.isPending ? "—" : metric.value.toLocaleString()}
+            </span>
+            <span className="mt-1 block text-xs text-muted-foreground">{metric.detail}</span>
+          </Link>
+        ))}
+      </div>
+      {rows.length > 0 && (
+        <p className="text-xs text-muted-foreground">
+          Workload counts reflect the latest {rows.length} loaded alerts; unread is counted across your accessible inbox.
+        </p>
+      )}
       <div className="flex flex-wrap gap-2" role="group" aria-label="Notification views">
         {VIEWS.map((item) => (
           <Button
@@ -169,7 +238,7 @@ function ActionCenterPage() {
           </Button>
         ))}
       </div>
-      <div className="grid gap-3 sm:grid-cols-[1fr_230px]">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_220px_160px_170px]">
         <Input
           aria-label="Search notifications"
           placeholder="Search actions, invoices, bills…"
@@ -177,11 +246,11 @@ function ActionCenterPage() {
           onChange={(e) => {
             setSearch(e.target.value);
             setPage(0);
+            setSelected([]);
           }}
         />
         <Select value={category} onValueChange={onCategory}>
           {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
-
           <SelectTrigger aria-label="Filter by module">
             <SelectValue placeholder="All modules" />
           </SelectTrigger>
@@ -194,22 +263,79 @@ function ActionCenterPage() {
             ))}
           </SelectContent>
         </Select>
+        <Select
+          value={priority}
+          onValueChange={(next) => {
+            setPriority(next);
+            setPage(0);
+            setSelected([]);
+          }}
+        >
+          {/* lookup-fixed-enum: Notification priority enumeration. */}
+          <SelectTrigger aria-label="Filter by priority">
+            <SelectValue placeholder="All priorities" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All priorities</SelectItem>
+            <SelectItem value="critical">Critical</SelectItem>
+            <SelectItem value="high">High</SelectItem>
+            <SelectItem value="medium">Medium</SelectItem>
+            <SelectItem value="low">Low</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select
+          value={sort}
+          onValueChange={(next) => {
+            setSort(next as NotificationSort);
+            setPage(0);
+            setSelected([]);
+          }}
+        >
+          {/* lookup-fixed-enum: Notification display order enumeration. */}
+          <SelectTrigger aria-label="Sort notifications">
+            <SelectValue placeholder="Sort notifications" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="priority">Priority first</SelectItem>
+            <SelectItem value="newest">Newest first</SelectItem>
+            <SelectItem value="oldest">Oldest first</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
+      {(search || category !== "all" || priority !== "all" || sort !== "priority") && (
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-xs text-muted-foreground">{filtered.length} matching alerts</span>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              setSearch("");
+              setCategory("all");
+              setPriority("all");
+              setSort("priority");
+              setPage(0);
+              setSelected([]);
+            }}
+          >
+            Clear filters
+          </Button>
+        </div>
+      )}
       {selected.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 rounded-lg border p-3 text-sm">
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border p-3 text-sm" aria-live="polite">
           <span>{selected.length} selected</span>
-          <Button size="sm" disabled={bulkBusy} onClick={() => void bulkState("read")}>
+          <Button size="sm" disabled={bulkBusy || changeState.isPending} onClick={() => void bulkState("read")}>
             Mark selected read
           </Button>
           <Button
             size="sm"
             variant="outline"
-            disabled={bulkBusy}
+            disabled={bulkBusy || changeState.isPending}
             onClick={() => void bulkState("archive")}
           >
             Archive selected
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => setSelected([])}>
+          <Button size="sm" variant="ghost" disabled={bulkBusy} onClick={() => setSelected([])}>
             Clear
           </Button>
         </div>
@@ -240,13 +366,27 @@ function ActionCenterPage() {
         </div>
       ) : (
         <div className="space-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-muted/20 px-3 py-2 text-sm">
+            <label className="flex cursor-pointer items-center gap-2">
+              <input
+                type="checkbox"
+                checked={allPageSelected}
+                disabled={bulkBusy || changeState.isPending}
+                onChange={(event) => togglePageSelection(event.target.checked)}
+                aria-label="Select all notifications on this page"
+                className="size-4 accent-primary"
+              />
+              Select page ({pageRows.length})
+            </label>
+            <span className="text-xs text-muted-foreground">Selection applies only to notifications you choose</span>
+          </div>
           {pageRows.map((n) => (
             <NotificationRow
               key={n.id}
               item={n}
               selected={selected.includes(n.id)}
               onSelect={() => toggleSelection(n.id)}
-              busy={changeState.isPending}
+              busy={changeState.isPending || bulkBusy}
               change={(read, archive) =>
                 changeState.mutate({
                   id: n.id,
@@ -308,13 +448,14 @@ function NotificationRow({
 }) {
   const path = safeNotificationPath(n.target_path);
   return (
-    <div className="rounded-lg border bg-card p-4">
+    <div className="rounded-xl border bg-card p-4 shadow-sm transition-colors hover:border-primary/40">
       <div className="flex items-start gap-3">
         <input
           type="checkbox"
           checked={selected}
+          disabled={busy}
           onChange={onSelect}
-          className="mt-1"
+          className="mt-1 size-4 accent-primary"
           aria-label={`Select ${n.title}`}
         />
         <div className="min-w-0 flex-1">
@@ -332,9 +473,21 @@ function NotificationRow({
                 n.title
               )}
             </h2>
-            <span className="rounded bg-muted px-2 py-0.5 text-[11px] font-medium uppercase">
+            <span
+              className={
+                n.priority === "critical"
+                  ? "rounded bg-destructive/10 px-2 py-0.5 text-[11px] font-semibold uppercase text-destructive"
+                  : n.priority === "high"
+                    ? "rounded bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold uppercase text-amber-700 dark:text-amber-300"
+                    : "rounded bg-muted px-2 py-0.5 text-[11px] font-medium uppercase"
+              }
+            >
               {n.priority}
             </span>
+            {n.archived_at && <span className="text-xs text-muted-foreground">Archived</span>}
+            {n.resolved_at && !n.archived_at && (
+              <span className="text-xs text-muted-foreground">Completed</span>
+            )}
             <span className="text-xs text-muted-foreground">
               {CATEGORIES[n.category] ?? n.category}
             </span>

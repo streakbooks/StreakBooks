@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  capitalisationReviewCsv,
   reviewCapitalisableLines,
   selectCapitalisationReviewRows,
 } from "./capitalisation-review";
@@ -68,6 +69,28 @@ describe("posted bill capitalisation review", () => {
     );
     expect(rows.map((row) => row.status)).toEqual(["overlinked", "non_purchase"]);
     expect(totals).toMatchObject({ overlinked: 1, nonPurchase: 1 });
+  });
+
+  it("produces a signed, currency-labelled and formula-safe CSV", () => {
+    const rows = reviewCapitalisableLines(
+      [
+        base("a", {
+          billNumber: "=IMPORTXML(1)",
+          supplier: "+bad",
+          description: "Laptop, with \\"dock\\"",
+          accountCode: "@unsafe",
+          registeredMinor: 500,
+        }),
+      ],
+      "USD",
+    ).rows;
+    const csv = capitalisationReviewCsv(rows, "2026-11-06", "USD");
+    expect(csv).toContain("Bills through");
+    expect(csv).toContain("'=IMPORTXML(1)");
+    expect(csv).toContain("'+bad");
+    expect(csv).toContain("'@unsafe");
+    expect(csv).toContain("USD");
+    expect(csv.split("\\r\\n")).toHaveLength(2);
   });
 
   it("rejects unsafe and duplicate source values", () => {

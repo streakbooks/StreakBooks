@@ -184,3 +184,39 @@ Manual QA should verify that a payroll viewer without
 `payroll.reports.view` cannot see the payslip export action, that changing
 employee/payment-status filters changes downloaded rows, and that currencies
 are never combined into a meaningless grand total.
+
+
+### Pay-run dates and payment integrity hardening (November 6, 2026)
+
+- Suggested pay dates now support the configured **negative** schedule offsets,
+  rather than clamping them to zero. Invalid schedule/start dates are rejected,
+  including rolled-over days, invalid leap days, and year zero. The validator
+  is shared by employee entry and Payroll settings.
+- The payment form rejects malformed, non-positive, stale, unsafe-integer, or
+  foreign-currency payslip allocations **instead of silently dropping them**.
+  It validates the entire entered allocation map before sending a payment.
+- When entering payments from a specific run, both outstanding candidate
+  payslips and the generic bank CSV export are scoped to that run.
+- Payment forms require successful Payroll settings and outstanding-payslip
+  loads before posting. The payroll settings currency is used for input
+  precision, rather than assuming the organisation's base currency.
+- The existing SQL `record_payroll_payment` function posts with FX rate 1.
+  Therefore the frontend **and server function** now prohibit non-base-currency
+  payroll settlements until proper journal FX conversion is implemented.
+  The server also rejects payslip allocations whose run currency differs
+  from the settlement currency, and rejects money outside safe JS integers.
+- **Important database follow-up:** The pre-existing
+  `public.record_payroll_payment(JSONB)` SECURITY DEFINER RPC is callable
+  directly by authenticated users with `payroll.pay`. Its SQL implementation
+  has **not** yet been updated to enforce these new currency safeguards.
+  Clients calling that RPC directly can bypass the new server-function checks.
+  A separately tested, versioned PostgreSQL migration to enforce currency
+  invariants inside the RPC/database is required before stating this issue is
+  fully mitigated. No SQL migration or production data was changed in this PR.
+- New Vitest regression cases cover payment-form allocation validation,
+  invalid/early calendar dates and signed payment-date offsets. The full
+  repository Vitest/typecheck/lint/build and authenticated browser suite
+  have **not** been run. Isolated non-CI behavior checks for this round
+  passed **11/11** payment-form cases, **8/8** period suggestion cases and
+  **7/7** shared date-validation cases. Static source assertions passed
+  **11/11**. These checks are not proof of deployment readiness.

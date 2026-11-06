@@ -53,7 +53,10 @@ export function FirmCustomOnboardingTemplates({
   const applyM = useMutation({
     mutationFn: () => apply({ data: { firmId, companyId } }),
     onSuccess: async (result) => {
-      await qc.invalidateQueries({ queryKey: ["firm-onboarding-steps", firmId, companyId] });
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["firm-onboarding-steps", firmId, companyId] }),
+        qc.invalidateQueries({ queryKey: ["firm-onboarding-overview", firmId] }),
+      ]);
       toast.success(`Added ${result.added} missing custom checklist steps`);
     },
     onError: (error) => toast.error(friendlyAuthError(error)),

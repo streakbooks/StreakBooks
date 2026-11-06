@@ -77,7 +77,7 @@ describe("posted bill capitalisation review", () => {
         base("a", {
           billNumber: "=IMPORTXML(1)",
           supplier: "+bad",
-          description: "Laptop, with \\"dock\\"",
+          description: 'Laptop, with "dock"',
           accountCode: "@unsafe",
           registeredMinor: 500,
         }),
@@ -90,7 +90,7 @@ describe("posted bill capitalisation review", () => {
     expect(csv).toContain("'+bad");
     expect(csv).toContain("'@unsafe");
     expect(csv).toContain("USD");
-    expect(csv.split("\\r\\n")).toHaveLength(2);
+    expect(csv.split("\r\n")).toHaveLength(2);
   });
 
   it("rejects unsafe and duplicate source values", () => {

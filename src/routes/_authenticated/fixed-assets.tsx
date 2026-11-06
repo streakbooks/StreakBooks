@@ -36,6 +36,7 @@ import {
 } from "@/components/fixed-assets/AssetDialogs";
 import { AssetDetailsDialog } from "@/components/fixed-assets/AssetDetailsDialog";
 import { AssetReconciliationPanel } from "@/components/fixed-assets/AssetReconciliationPanel";
+import { AssetCapitalisationReviewPanel } from "@/components/fixed-assets/AssetCapitalisationReviewPanel";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -62,7 +63,7 @@ import {
 
 export const Route = createFileRoute("/_authenticated/fixed-assets")({
   validateSearch: (raw: Record<string, unknown>): { tab?: string | undefined } => ({
-    tab: ["register", "depreciation", "types", "reconciliation"].includes(String(raw["tab"]))
+    tab: ["register", "depreciation", "types", "reconciliation", "bill-review"].includes(String(raw["tab"]))
       ? String(raw["tab"])
       : undefined,
   }),
@@ -201,7 +202,7 @@ function FixedAssetsPage() {
         }
       />
       <Tabs value={tab}>
-        <TabsList onKeyDown={handleNativeTabKeyDown}>
+        <TabsList className="h-auto flex-wrap gap-1" onKeyDown={handleNativeTabKeyDown}>
           <Link
             className={nativeTabLinkClass}
             role="tab"
@@ -231,6 +232,16 @@ function FixedAssetsPage() {
             search={{ tab: "types" }}
           >
             Asset types
+          </Link>
+          <Link
+            className={nativeTabLinkClass}
+            role="tab"
+            aria-selected={tab === "bill-review"}
+            data-state={tab === "bill-review" ? "active" : "inactive"}
+            to="/fixed-assets"
+            search={{ tab: "bill-review" }}
+          >
+            Review bill purchases
           </Link>
           <Link
             className={nativeTabLinkClass}
@@ -478,6 +489,17 @@ function FixedAssetsPage() {
             assets={d.assets}
             lastRunThrough={d.lastRunThrough}
             canPost={canPost}
+          />
+        </TabsContent>
+
+        <TabsContent value="bill-review" className="space-y-4">
+          <AssetCapitalisationReviewPanel
+            companyId={companyId}
+            currency={currency}
+            canManage={canManage}
+            onCreate={(line) =>
+              setDialog({ kind: "asset", editing: null, fromBillLine: line })
+            }
           />
         </TabsContent>
 

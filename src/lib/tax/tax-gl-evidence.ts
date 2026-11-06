@@ -51,6 +51,31 @@ export function taxJournalEvidence(
   };
 }
 
+/**
+ * Non-cryptographic change detector over all journal lines, including lines
+ * beyond the first 100 displayed. It is a review staleness hint, not a
+ * tamper-proof audit seal or compliance attestation.
+ */
+export function taxGlJournalDigest(lines: readonly PostedLine[]): string {
+  let hash = 14695981039346656037n;
+  const mask = (1n << 64n) - 1n;
+  const ordered = [...lines].sort((a, b) =>
+    (a.line_id ?? "").localeCompare(b.line_id ?? "") ||
+    (a.journal_id ?? "").localeCompare(b.journal_id ?? ""));
+  for (const line of ordered) {
+    const value = [
+      line.line_id ?? "", line.journal_id ?? "", line.journal_date,
+      line.account_id, line.source_type ?? "",
+      String(line.debit_minor), String(line.credit_minor),
+    ].join("|") + "\n";
+    for (let i = 0; i < value.length; i++) {
+      hash ^= BigInt(value.charCodeAt(i));
+      hash = (hash * 1099511628211n) & mask;
+    }
+  }
+  return hash.toString(16).padStart(16, "0");
+}
+
 /** Stable evidence fingerprint for detecting a review stale against new postings. */
 export function taxGlReviewSnapshot(value: {
   periodStart: string;
@@ -68,6 +93,7 @@ export function taxGlReviewSnapshot(value: {
   documentInputMinor: string;
   reversalOutputMinor: string;
   reversalInputMinor: string;
+  journalDigest: string;
 }): string {
   return [
     value.periodStart, value.periodEnd, value.basis,
@@ -76,6 +102,6 @@ export function taxGlReviewSnapshot(value: {
     value.glOutputMinor, value.glInputMinor,
     String(value.journalLines),
     value.documentOutputMinor, value.documentInputMinor,
-    value.reversalOutputMinor, value.reversalInputMinor,
+    value.reversalOutputMinor, value.reversalInputMinor, value.journalDigest,
   ].join("|");
 }

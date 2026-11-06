@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyPermission } from "@/lib/assert-company-access";
-import { addDaysIso, addMonthsIso, monthStart } from "@/lib/accounting/fiscal-year";
+import { monthStart } from "@/lib/accounting/fiscal-year";
 import { fetchAllPages, type PageResult } from "@/lib/accounting/fetch-all";
 import {
   loadAccountMetas,
@@ -13,6 +13,7 @@ import {
   buildDimensionVariance,
   eligibleDimensionActualLines,
   batchPostedLineIds,
+  resolveDimensionActualCutoff,
   type DimensionActualAccount,
   type DimensionActualOption,
   type DimensionBudgetAmount,
@@ -43,7 +44,7 @@ export const getBudgetDimensionVariance = createServerFn({ method: "GET" })
     companyId: companyIdOf(input),
     budgetId: assertUuid(input?.budgetId, "budget"),
     categoryId: assertUuid(input?.categoryId, "category"),
-    through: input.through ? isoDate(input.through, "As of") : new Date().toISOString().slice(0, 10),
+    through: input.through ? isoDate(input.through, "As of") : undefined,
   }))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
@@ -80,9 +81,8 @@ export const getBudgetDimensionVariance = createServerFn({ method: "GET" })
       fiscal_year_start: string;
     };
     const start = monthStart(budget.fiscal_year_start);
-    const yearEnd = addDaysIso(addMonthsIso(start, 12), -1);
     const today = new Date().toISOString().slice(0, 10);
-    const through = [data.through, today, yearEnd].sort()[0]!;
+    const { through, partialMonth } = resolveDimensionActualCutoff(start, today, data.through);
     const months = fiscalMonthStarts(start).filter((month) => month <= through);
     const accounts: DimensionActualAccount[] = metas
       .filter((m) => m.account_type === "income" || m.account_type === "expense")
@@ -200,6 +200,7 @@ export const getBudgetDimensionVariance = createServerFn({ method: "GET" })
       budgetName: budget.name,
       fiscalStart: start,
       through,
+      partialMonth,
       currency: meta.baseCurrency,
       basis: "accrual" as const,
       attribution: "journal_line" as const,

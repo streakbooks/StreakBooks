@@ -5,7 +5,7 @@ import { assertUuid } from "@/lib/company-validation";
 import { isMissingRpc } from "@/lib/accounting/fetch-all";
 import { loadCompanyMeta, loadPostedLines, type Sb } from "@/lib/accounting/ledger-data";
 import { compareTaxReturnWithGl } from "@/lib/tax/tax-gl-comparison";
-import { taxGlReviewSnapshot, taxJournalEvidence } from "@/lib/tax/tax-gl-evidence";
+import { taxGlReviewSnapshot, taxJournalEvidence, taxGlJournalDigest } from "@/lib/tax/tax-gl-evidence";
 import { postJournal } from "@/lib/accounting/posting-engine";
 import { requireAccountInCompany } from "@/lib/purchases/accounts";
 import { todayIso } from "@/lib/accounting/fiscal-year";
@@ -200,6 +200,7 @@ async function calculateGlReview(sb: Sb, params: ReviewPeriod) {
     documentInputMinor: comparison.input.documentMinor,
     reversalOutputMinor: comparison.output.reversalMinor,
     reversalInputMinor: comparison.input.reversalMinor,
+    journalDigest: taxGlJournalDigest(lines),
   });
   return {
     available: true as const,

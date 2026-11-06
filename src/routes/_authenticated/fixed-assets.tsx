@@ -140,8 +140,8 @@ function FixedAssetsPage() {
   }
   const currency = d.currency;
   const balancesReady =
-    register.isSuccess && !register.isFetching && register.data.asOf === today;
-  const balanceMap = balancesReady
+    register.isSuccess && !register.isFetching && register.data?.asOf === today;
+  const balanceMap = balancesReady && register.data
     ? new Map(register.data.rows.map((r) => [r.asset_id, r.accumulated_minor] as const))
     : null;
   const visibleAssets = selectRegisterAssets(
@@ -158,6 +158,7 @@ function FixedAssetsPage() {
     d.accounts,
   );
   const summary = summariseActiveAssets(visibleAssets, today, balanceMap);
+  const usedAssetAccounts = new Set(d.assets.map((asset) => asset.asset_account_id));
   const accumulatedOf = (a: FixedAssetRow): number | null => balanceMap?.get(a.id) ?? null;
   const exportReady =
     balancesReady &&
@@ -333,7 +334,7 @@ function FixedAssetsPage() {
                     allowClear
                     companyId={companyId}
                     options={d.accounts
-                      .filter((account) => d.assets.some((a) => a.asset_account_id === account.id))
+                      .filter((account) => usedAssetAccounts.has(account.id))
                       .map((account) => ({
                         id: account.id,
                         name: account.name,
@@ -667,7 +668,8 @@ function RegisterTable({
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
   return (
-    <Table>
+    <div className="overflow-x-auto rounded-lg border">
+      <Table>
       <TableHeader>
         <TableRow>
           <TableHead>Asset</TableHead>
@@ -761,7 +763,8 @@ function RegisterTable({
           );
         })}
       </TableBody>
-    </Table>
+      </Table>
+    </div>
   );
 }
 

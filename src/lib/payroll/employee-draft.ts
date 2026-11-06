@@ -455,7 +455,11 @@ export function parsePayrollEmployeesCsv(
       // Reverse the CSV writer's spreadsheet-formula prefix only for
       // formula-like cells. Preserve legitimate names beginning with an apostrophe.
       const value = i >= 0 ? (cells[i] ?? "") : "";
-      return /^'[=+\\-@\\t\\r]/.test(value) ? value.slice(1) : value;
+      const marker = value.charAt(1);
+      const escaped = value.startsWith("'") &&
+        (["=", "+", "-", "@"].includes(marker) || marker.charCodeAt(0) === 9 ||
+          marker.charCodeAt(0) === 13);
+      return escaped ? value.slice(1) : value;
     };
     const draft: PayrollEmployeeDraft = {
       ...emptyEmployeeDraft(

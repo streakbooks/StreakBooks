@@ -185,3 +185,43 @@ export function reconcileFixedAssets(
     netDifferenceMinor: netDifference.toString(),
   };
 }
+
+/** Safe, dated CSV from the complete reconciliation result. No source records are mutated. */
+export function fixedAssetReconciliationCsv(
+  result: ReconciliationResult,
+  rows: readonly ReconciliationAccountRow[] = result.rows,
+): string {
+  const textCell = (value: string) => {
+    const safe = /^[\s]*[=+@-]/.test(value) ? "'" + value : value;
+    return '"' + safe.replace(/"/g, '""') + '"';
+  };
+  const numericCell = (value: string) => {
+    if (!/^-?\d+$/.test(value)) throw new Error("Invalid reconciliation CSV amount");
+    return value;
+  };
+  const headers = [
+    "As at",
+    "GL account code",
+    "GL account name",
+    "Assets linked",
+    "Register cost (minor units)",
+    "Register accumulated (minor units)",
+    "Register net debit (minor units)",
+    "Posted GL net debit (minor units)",
+    "Difference GL minus register (minor units)",
+    "Status",
+  ];
+  const lines = rows.map((row) => [
+    textCell(result.asOf),
+    textCell(row.accountCode),
+    textCell(row.accountName),
+    numericCell(String(row.linkedAssets)),
+    numericCell(row.registerCostMinor),
+    numericCell(row.registerAccumulatedMinor),
+    numericCell(row.registerNetMinor),
+    numericCell(row.ledgerNetMinor),
+    numericCell(row.differenceMinor),
+    textCell(row.status),
+  ]);
+  return [headers.map(textCell).join(","), ...lines.map((line) => line.join(","))].join("\r\n");
+}

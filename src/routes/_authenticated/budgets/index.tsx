@@ -207,7 +207,8 @@ function BudgetsPage() {
           <div>
             <h2 className="text-base font-semibold">Existing budgets</h2>
             <p className="text-xs text-muted-foreground">
-              {query.data.budgets.length} budget{query.data.budgets.length === 1 ? "" : "s"} in this organisation
+              {query.data.budgets.length} budget{query.data.budgets.length === 1 ? "" : "s"} in
+              this organisation
             </p>
           </div>
           {query.data.budgets.length > 0 ? (
@@ -245,7 +246,10 @@ function BudgetsPage() {
           description="Create your first budget above, then fill in the monthly amounts."
         />
       ) : filteredBudgets.length === 0 ? (
-        <EmptyState title="No matching budgets" description="Try another name, financial year or note." />
+        <EmptyState
+          title="No matching budgets"
+          description="Try another name, financial year or note."
+        />
       ) : (
         <Table>
           <TableHeader>
@@ -335,7 +339,8 @@ function BudgetsPage() {
                 onChange={(event) => setCopyStart(event.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                Each monthly amount stays in its fiscal-month position, even when the target year differs.
+                Each monthly amount stays in its fiscal-month position, even when the target year
+              differs.
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -361,7 +366,7 @@ function BudgetsPage() {
                 copy.isPending ||
                 !canManage ||
                 !copyName.trim() ||
-                !/^\\d{4}-\\d{2}-01$/.test(copyStart)
+                !/^\d{4}-\d{2}-01$/.test(copyStart)
               }
               onClick={() => copy.mutate()}
             >

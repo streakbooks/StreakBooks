@@ -13,9 +13,17 @@ export type SuggestedRunPeriod = {
 };
 
 function parseDateOnly(iso: string): Date {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso.trim());
-  if (!m) throw new Error(`Invalid date: ${iso}`);
-  return new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+  // Date.UTC(year, ...) maps years 0-99 into 1900-1999; the ISO string
+  // constructor also lets us reject rolled-over dates like 2026-02-30.
+  const input = iso.trim();
+  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(input) || input.startsWith("0000")) {
+    throw new Error(`Invalid date: ${iso}`);
+  }
+  const date = new Date(`${input}T00:00:00.000Z`);
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== input) {
+    throw new Error(`Invalid date: ${iso}`);
+  }
+  return date;
 }
 
 function formatDateOnly(d: Date): string {
@@ -89,12 +97,17 @@ export function suggestNextRunPeriod(input: SuggestRunPeriodInput): SuggestedRun
     periodStart = nextPeriodStartAfterEnd(last.period_end, schedule.frequency);
   } else {
     periodStart = payrollStartDate?.trim() || schedule.anchor_date;
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(periodStart)) return null;
+    try {
+      parseDateOnly(periodStart);
+    } catch {
+      return null;
+    }
   }
 
   const periodEnd = periodEndForFrequency(schedule.frequency, periodStart);
   const offset = Number.isFinite(schedule.payment_offset_days) ? schedule.payment_offset_days : 0;
-  const paymentDate = addDaysUtc(periodEnd, Math.max(0, offset));
+  // Negative offsets are supported by pay schedule settings (down to -31).
+  const paymentDate = addDaysUtc(periodEnd, Math.trunc(offset));
 
   return { periodStart, periodEnd, paymentDate };
 }

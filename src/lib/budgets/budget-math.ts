@@ -58,17 +58,27 @@ export function fillRight(row: readonly number[], fromIndex: number): number[] {
   return row.map((x, i) => (i > fromIndex ? v : x));
 }
 
-/** Split an annual total across months; the last month takes the rounding remainder. */
+/**
+ * Distribute an annual total across months without introducing opposite-sign
+ * months for small amounts. Start with a quotient rounded toward zero and
+ * distribute the remaining minor units one by one to the final months.
+ * Every month differs by at most one minor unit; the annual total is exact.
+ */
 export function spreadEvenly(total: number, months = 12): number[] {
   if (!Number.isSafeInteger(total)) throw new Error("Amount must be a safe integer in minor units");
   if (!Number.isSafeInteger(months) || months < 0 || months > 1200) {
     throw new Error("Month count must be a nonnegative safe integer at most 1200.");
   }
   if (months === 0) return [];
-  const each = roundDiv(BigInt(total), BigInt(months));
-  const remainder = BigInt(total) - each * BigInt(months - 1);
+  const count = BigInt(months);
+  const each = BigInt(total) / count;
+  const remainder = BigInt(total) % count;
   const out = Array.from({ length: months }, () => checkedBudgetMinor(each, "Monthly spread"));
-  out[months - 1] = checkedBudgetMinor(remainder, "Monthly spread remainder");
+  const extra = Number(remainder < 0n ? -remainder : remainder);
+  const step = remainder < 0n ? -1n : 1n;
+  for (let i = months - extra; i < months; i++) {
+    out[i] = checkedBudgetMinor(each + step, "Monthly spread remainder");
+  }
   return out;
 }
 

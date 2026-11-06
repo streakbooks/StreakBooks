@@ -37,6 +37,7 @@ import {
 import { AssetDetailsDialog } from "@/components/fixed-assets/AssetDetailsDialog";
 import { AssetReconciliationPanel } from "@/components/fixed-assets/AssetReconciliationPanel";
 import { AssetCapitalisationReviewPanel } from "@/components/fixed-assets/AssetCapitalisationReviewPanel";
+import { reviewCapitalisableLines, selectCapitalisationReviewRows } from "@/lib/fixed-assets/capitalisation-review";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -1032,18 +1033,39 @@ function BillLinesDialog({
 }) {
   const fmt = useFormat();
   const listFn = useServerFn(listCapitalisableBillLines);
+  const [search, setSearch] = useState("");
+  const [showLinked, setShowLinked] = useState(false);
+  const [page, setPage] = useState(0);
+  const pageSize = 25;
   const q = useQuery({
     queryKey: ["fixed-assets", companyId, "bill-lines"],
     queryFn: () => listFn({ data: { companyId } }),
   });
+  const review = useMemo(
+    () => reviewCapitalisableLines(q.data?.lines ?? [], currency),
+    [q.data?.lines, currency],
+  );
+  const matches = useMemo(
+    () =>
+      selectCapitalisationReviewRows(review.rows, {
+        status: showLinked ? "all" : "attention",
+        query: search,
+        accountId: "",
+      }),
+    [review.rows, search, showLinked],
+  );
+  const pages = Math.max(1, Math.ceil(matches.length / pageSize));
+  const currentPage = Math.min(page, pages - 1);
+  const visible = matches.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Capitalise from a bill</DialogTitle>
           <DialogDescription>
-            Posted bill lines coded to an asset account. Pick one to pre-fill a new asset; the bill
-            is not changed.
+            Posted bill lines coded to asset accounts are candidates for review, not proof
+            of capital purchases. Select a bill line to prepare an asset registration; the
+            original purchase is not posted again.
           </DialogDescription>
         </DialogHeader>
         {q.isPending ? (
@@ -1056,53 +1078,122 @@ function BillLinesDialog({
           />
         ) : q.data.lines.length === 0 ? (
           <EmptyState
-            title="No bill lines to capitalise"
-            description="Code a bill line to a fixed asset account (for example 1500) and it appears here."
+            title="No asset-coded posted bill lines"
+            description="An authorised bill line coded to an asset account can appear here."
           />
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Bill</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead className="text-right">Net</TableHead>
-                <TableHead className="text-right">Already registered</TableHead>
-                <TableHead />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {q.data.lines.map((l) => (
-                <TableRow key={l.lineId}>
-                  <TableCell>
-                    {l.billNumber ?? "Bill"}
-                    <span className="block text-xs text-muted-foreground">
-                      {l.supplier ?? ""} · {fmt.date(l.billDate)}
-                    </span>
-                  </TableCell>
-                  <TableCell>{l.description}</TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {fmt.amount(l.netMinor, l.currency)}
-                    {l.currency !== currency ? (
-                      <span className="block text-xs text-muted-foreground">{l.currency}</span>
-                    ) : null}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {fmt.amount(l.registeredMinor, currency)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button size="sm" onClick={() => onPick(l)}>
-                      Use
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <Input
+                aria-label="Search bill lines"
+                className="min-w-[170px] flex-1"
+                value={search}
+                placeholder="Find bill, supplier or account"
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setPage(0);
+                }}
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setShowLinked((current) => !current);
+                  setPage(0);
+                }}
+              >
+                {showLinked ? "Hide linked lines" : "Show all linked lines"}
+              </Button>
+              <span className="text-xs text-muted-foreground">
+                {matches.length} matching of {q.data.lines.length} lines
+              </span>
+            </div>
+            {matches.length === 0 ? (
+              <p className="rounded-lg border p-4 text-sm text-muted-foreground">
+                No matching lines. Try showing linked lines or changing the search.
+              </p>
+            ) : (
+              <>
+                <div className="overflow-x-auto rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Bill</TableHead>
+                        <TableHead>Description / status</TableHead>
+                        <TableHead className="text-right">Net</TableHead>
+                        <TableHead className="text-right">Linked base cost</TableHead>
+                        <TableHead />
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {visible.map((line) => (
+                        <TableRow key={line.lineId}>
+                          <TableCell>
+                            {line.billNumber ?? "Bill"}
+                            <span className="block text-xs text-muted-foreground">
+                              {line.supplier ?? ""} · {fmt.date(line.billDate)}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            {line.description}
+                            <span className="block text-xs text-muted-foreground">
+                              {line.status.replace(/_/g, " ")}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {fmt.amount(line.netMinor, line.currency)}
+                            {line.currency !== currency ? (
+                              <span className="block text-xs text-muted-foreground">
+                                {line.currency} · verify FX
+                              </span>
+                            ) : null}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {fmt.amount(line.registeredMinor, currency)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              size="sm"
+                              disabled={line.status === "non_purchase"}
+                              onClick={() => onPick(line)}
+                            >
+                              Review / use
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs text-muted-foreground">
+                    Page {currentPage + 1} of {pages}
+                  </span>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={currentPage === 0}
+                      onClick={() => setPage(currentPage - 1)}
+                    >
+                      Previous
                     </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={currentPage >= pages - 1}
+                      onClick={() => setPage(currentPage + 1)}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         )}
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Close
-          </Button>
+          <Button variant="outline" onClick={onClose}>Close</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

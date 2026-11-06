@@ -45,7 +45,11 @@ export function BudgetDimensionVariancePanel({
   const [search, setSearch] = useState("");
   const [showUnassigned, setShowUnassigned] = useState(true);
   const today = new Date().toISOString().slice(0, 10);
-  const allowedMonths = fiscalMonths.filter((m) => m <= today);
+  const currentMonth = today.slice(0, 7) + "-01";
+  const allowedMonths = fiscalMonths.filter(
+    (m) => addDaysIso(addMonthsIso(m, 1), -1) < today,
+  );
+  const canShowPartial = fiscalMonths.includes(currentMonth);
   const query = useQuery({
     queryKey: ["budget-dimension-variance", companyId, budgetId, categoryId, throughChoice],
     enabled: open,
@@ -116,7 +120,9 @@ export function BudgetDimensionVariancePanel({
       report: `Budget vs posted actuals: ${data.categoryName}`,
       period: `${data.fiscalStart} through ${data.through}`,
       currency: data.currency,
-      basis: "Accrual; explicit journal-line tracking assignments. Unassigned activity separate.",
+      basis: "Accrual; direct journal-line tracking assignments; unassigned lines separate. " +
+        (data.partialMonth ? "Current month has partial actuals versus its full-month budget." :
+          "Only completed financial months included."),
     }, headers, filteredRows.map((row) => {
       const name = report.summaries.find(
         (item) => item.optionId === row.optionId,
@@ -158,7 +164,10 @@ export function BudgetDimensionVariancePanel({
                 className="flex h-10 rounded-md border border-input bg-background px-3 text-sm"
                 value={throughChoice}
                 onChange={(e) => setThroughChoice(e.target.value)}>
-                <option value="">Today (or financial year end)</option>
+                <option value="">Latest completed month (default)</option>
+                {canShowPartial ? (
+                  <option value={today}>Today — partial current month</option>
+                ) : null}
                 {allowedMonths.map((m) => (
                   <option
                     key={m}
@@ -214,6 +223,16 @@ export function BudgetDimensionVariancePanel({
                     {report.unassignedLines} unassigned posted P&amp;L line(s).
                     Totals do not include future months.
                   </p>
+                  {data.partialMonth ? (
+                    <Alert>
+                      <AlertDescription>
+                        Current-month actuals are partial through {fmt.date(data.through)},
+                        but the current-month budget is the full month. Variances
+                        may change until month end. Select a completed month for
+                        a consistent comparison.
+                      </AlertDescription>
+                    </Alert>
+                  ) : null}
                   {report.unassignedLines > 0 ? (
                     <Alert>
                       <AlertDescription>

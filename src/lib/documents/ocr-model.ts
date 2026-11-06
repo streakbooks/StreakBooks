@@ -103,3 +103,21 @@ export function parseAzureInvoiceSuggestions(input: unknown): {
   if (!suggestions.supplierName) warnings.push("Supplier name was not found.");
   return { suggestions, confidence, warnings };
 }
+
+
+/**
+ * OCR suggestions never replace manually entered details or change lifecycle status.
+ * Save review remains an explicit, version-checked human action.
+ */
+export function fillBlankReviewFields(previous: ReviewFields, suggestions: OcrSuggestions): ReviewFields {
+  return {
+    ...previous,
+    documentType: previous.documentType === "unclassified"
+      ? suggestions.documentType ?? previous.documentType : previous.documentType,
+    supplierName: previous.supplierName || suggestions.supplierName || null,
+    reference: previous.reference || suggestions.reference || null,
+    documentDate: previous.documentDate || suggestions.documentDate || null,
+    currencyCode: previous.currencyCode || suggestions.currencyCode || null,
+    totalMinor: previous.totalMinor ?? suggestions.totalMinor ?? null,
+  };
+}

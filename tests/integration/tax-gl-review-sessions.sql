@@ -13,13 +13,13 @@ GRANT EXECUTE ON FUNCTION public.assert_tax_review_error(text,text) TO authentic
 
 -- Fault injection proves session edits and event history roll back atomically.
 CREATE FUNCTION public.test_tax_review_audit_failure() RETURNS trigger
-LANGUAGE plpgsql AS $
+LANGUAGE plpgsql AS $$
 BEGIN
   IF current_setting('test.fail_tax_review_audit',true)='on' THEN
     RAISE EXCEPTION 'Injected tax review audit failure';
   END IF;
   RETURN NEW;
-END $;
+END $$;
 CREATE TRIGGER test_tax_review_audit_failure
   BEFORE INSERT ON public.tax_gl_review_events
   FOR EACH ROW EXECUTE FUNCTION public.test_tax_review_audit_failure();
@@ -125,7 +125,7 @@ SELECT public.assert_tax_review_error(
  '%Not authorised%');
 
 -- Tenant B can create and read only its own review, never tenant A's.
-DO $
+DO $$
 DECLARE
   b uuid := '10000000-0000-4000-8000-000000000002';
   id uuid;
@@ -143,12 +143,12 @@ BEGIN
   IF (SELECT count(*) FROM public.tax_gl_review_events)<>1 THEN
     RAISE EXCEPTION 'Tenant B can read another company audit history';
   END IF;
-END $;
+END $$;
 
 -- A view-only accountant can see the own company review but not mutate it.
 SELECT set_config('request.jwt.claims',
  '{"sub":"00000000-0000-4000-8000-000000000003"}', false);
-DO $
+DO $$
 BEGIN
   IF (SELECT count(*) FROM public.tax_gl_review_sessions)<>1 THEN
     RAISE EXCEPTION 'Accountant with accounting.view cannot read own-company review';
@@ -156,7 +156,7 @@ BEGIN
   IF (SELECT count(*) FROM public.tax_gl_review_events)<>3 THEN
     RAISE EXCEPTION 'Accountant cannot read own-company review audit events';
   END IF;
-END $;
+END $$;
 SELECT public.assert_tax_review_error(
  $$SELECT public.save_tax_gl_review(
  '10000000-0000-4000-8000-000000000001','2026-01-01','2026-03-31',

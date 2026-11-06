@@ -429,7 +429,7 @@ function FixedAssetsPage() {
           ) : visibleAssets.length === 0 ? (
             <EmptyState
               title="No matching assets"
-              description="Try a different search or status filter."
+              description="Try different filters or clear the search."
             />
           ) : (
             <RegisterTable
@@ -576,41 +576,52 @@ function FixedAssetsPage() {
   );
 }
 
-/** Export the current register view without exposing records outside the selected organisation. */
+/** Export the visible tenant-scoped register with real as-at balances, not fallback estimates. */
 function exportAssetRegisterCsv(
   assets: FixedAssetRow[],
-  accumulatedOf: (asset: FixedAssetRow) => number,
+  accumulatedOf: (asset: FixedAssetRow) => number | null,
+  asOf: string,
+  typeNames: ReadonlyMap<string, string>,
+  accountNames: ReadonlyMap<string, string>,
 ) {
   const escapeCell = (value: string | number | null) => {
     const raw = String(value ?? "");
-    // Prevent spreadsheet formula injection when CSV is opened in Excel or similar applications.
-    const safe = /^[\\s]*[=+@-]/.test(raw) && typeof value === "string" ? "'" + raw : raw;
+    // Prevent spreadsheet formula injection when opened in a spreadsheet program.
+    const safe = /^[\s]*[=+@-]/.test(raw) && typeof value === "string" ? "'" + raw : raw;
     return '"' + safe.replace(/"/g, '""') + '"';
   };
   const headers = [
     "Asset number",
     "Name",
     "Status",
+    "Asset type",
+    "Asset account",
     "Purchase date",
     "Depreciation start",
     "Method",
     "Cost (minor units)",
-    "Accumulated (minor units)",
-    "Net book value (minor units)",
+    "Accumulated as at " + asOf + " (minor units)",
+    "Net book value as at " + asOf + " (minor units)",
     "Depreciated through",
   ];
   const rows = assets.map((asset) => {
+    const future = asset.purchase_date > asOf;
     const accumulated = accumulatedOf(asset);
+    if (!future && accumulated === null) {
+      throw new Error("Cannot export without a complete as-at depreciation register.");
+    }
     return [
       asset.asset_number,
       asset.name,
-      asset.status,
+      future ? "Not yet purchased" : asset.status,
+      asset.asset_type_id ? (typeNames.get(asset.asset_type_id) ?? "Unlisted type") : "",
+      accountNames.get(asset.asset_account_id) ?? "Unlisted account",
       asset.purchase_date,
       asset.depreciation_start_date,
       asset.depreciation_method,
       asset.cost_minor,
-      accumulated,
-      asset.status === "disposed" ? 0 : asset.cost_minor - accumulated,
+      future ? null : accumulated,
+      future ? null : asset.status === "disposed" ? 0 : asset.cost_minor - (accumulated ?? 0),
       asset.depreciated_through,
     ];
   });
@@ -618,7 +629,7 @@ function exportAssetRegisterCsv(
   const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = "linkbooks-fixed-assets.csv";
+  anchor.download = "linkbooks-fixed-assets-" + asOf + ".csv";
   anchor.click();
   URL.revokeObjectURL(url);
 }
@@ -631,15 +642,17 @@ function RegisterTable({
   canPost,
   companyId,
   onEdit,
+  onView,
   onDispose,
 }: {
   assets: FixedAssetRow[];
   currency: string;
-  accumulatedOf: (a: FixedAssetRow) => number;
+  accumulatedOf: (a: FixedAssetRow) => number | null;
   canManage: boolean;
   canPost: boolean;
   companyId: string;
   onEdit: (a: FixedAssetRow) => void;
+  onView: (a: FixedAssetRow) => void;
   onDispose: (a: FixedAssetRow) => void;
 }) {
   const fmt = useFormat();
@@ -678,7 +691,19 @@ function RegisterTable({
                 <span className="mr-2 font-mono text-xs text-muted-foreground">
                   {a.asset_number}
                 </span>
-                {a.name}
+                <button
+                  type="button"
+                  className="text-left font-medium text-primary underline-offset-4 hover:underline focus-visible:rounded focus-visible:outline focus-visible:outline-2"
+                  onClick={() => onView(a)}
+                  aria-label={"View details for " + a.asset_number + " " + a.name}
+                >
+                  {a.name}
+                </button>
+                {a.purchase_date > todayIso() ? (
+                  <Badge variant="outline" className="ml-2">
+                    Future purchase
+                  </Badge>
+                ) : null}
                 {disposed ? (
                   <Badge variant="secondary" className="ml-2">
                     Disposed {a.disposal_date ? fmt.date(a.disposal_date) : ""}
@@ -690,9 +715,11 @@ function RegisterTable({
               <TableCell className="text-right tabular-nums">
                 {fmt.amount(a.cost_minor, currency)}
               </TableCell>
-              <TableCell className="text-right tabular-nums">{fmt.amount(acc, currency)}</TableCell>
               <TableCell className="text-right tabular-nums">
-                {disposed ? "–" : fmt.amount(a.cost_minor - acc, currency)}
+                {acc === null ? "–" : fmt.amount(acc, currency)}
+              </TableCell>
+              <TableCell className="text-right tabular-nums">
+                {disposed || acc === null ? "–" : fmt.amount(a.cost_minor - acc, currency)}
               </TableCell>
               <TableCell>
                 {a.depreciated_through ? fmt.date(a.depreciated_through) : "Not yet"}
@@ -709,7 +736,7 @@ function RegisterTable({
                 <Button
                   size="sm"
                   variant="ghost"
-                  disabled={!canPost || disposed}
+                  disabled={!canPost || disposed || acc === null}
                   onClick={() => onDispose(a)}
                 >
                   Dispose

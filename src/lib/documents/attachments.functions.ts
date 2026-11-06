@@ -14,7 +14,15 @@ import {
 } from "@/lib/documents/attachments";
 import { entityManagePermissions, entityViewPermissions } from "@/lib/documents/record-activity";
 import { escapeLikeLiteral } from "@/lib/sales/list-filters";
-import { filePreviewKind, fileSortOrder, parseFileSort, validateFileRename } from "@/lib/documents/file-workspace";
+import {
+  fileFormatMimeTypes,
+  filePreviewKind,
+  fileSortOrder,
+  parseFileFormat,
+  parseFileSort,
+  validateFileRename,
+} from "@/lib/documents/file-workspace";
+import { folderDescendantIds } from "@/lib/documents/folder-tree";
 
 const MIGRATION_HINT =
   "File storage needs a database update that has not been applied yet (migration 20261025200100). Ask an administrator to apply the latest migrations.";
@@ -464,6 +472,8 @@ export const listCompanyFiles = createServerFn({ method: "GET" })
       search?: string;
       entityType?: string;
       sort?: string;
+      format?: string;
+      includeSubfolders?: boolean;
       page?: number;
       pageSize?: number;
       folderId?: string | null;
@@ -472,6 +482,8 @@ export const listCompanyFiles = createServerFn({ method: "GET" })
       companyId: assertUuid(input.companyId),
       search: (input.search ?? "").trim().slice(0, 80),
       sort: parseFileSort(input.sort),
+      format: parseFileFormat(input.format),
+      includeSubfolders: input.includeSubfolders === true,
       entityType: input.entityType && input.entityType !== "all" ? input.entityType : null,
       folderId: input.folderId ? assertUuid(input.folderId) : null,
       unfiledOnly: input.unfiledOnly === true,
@@ -487,8 +499,29 @@ export const listCompanyFiles = createServerFn({ method: "GET" })
       .select(COLUMNS as never, { count: "exact" })
       .eq("company_id" as never, data.companyId as never);
     if (data.entityType) q = q.eq("entity_type" as never, data.entityType as never);
-    if (data.folderId) q = q.eq("folder_id" as never, data.folderId as never);
-    else if (data.unfiledOnly) q = q.is("folder_id" as never, null);
+    const mimeTypes = fileFormatMimeTypes(data.format);
+    if (mimeTypes.length) q = q.in("content_type" as never, [...mimeTypes] as never);
+    if (data.folderId && data.includeSubfolders) {
+      // Never trust a client-provided list of descendants or traverse outside this company.
+      const { data: folderRows, error: folderError } = await supabase
+        .from("document_folders" as never)
+        .select("id, parent_id" as never)
+        .eq("company_id" as never, data.companyId as never)
+        .limit(1001);
+      if (folderError) throw new Error(folderError.message);
+      if ((folderRows ?? []).length > 1000)
+        throw new Error("This organisation has too many folders for a recursive search.");
+      const ids = folderDescendantIds(
+        (folderRows ?? []) as unknown as Array<{ id: string; parent_id: string | null }>,
+        data.folderId,
+      );
+      if (!ids.length) throw new Error("Folder not found in this organisation.");
+      q = q.in("folder_id" as never, ids as never);
+    } else if (data.folderId) {
+      q = q.eq("folder_id" as never, data.folderId as never);
+    } else if (data.unfiledOnly) {
+      q = q.is("folder_id" as never, null);
+    }
     if (data.search)
       q = q.ilike("file_name" as never, `%${escapeLikeLiteral(data.search)}%` as never);
     const from = data.page * data.pageSize;

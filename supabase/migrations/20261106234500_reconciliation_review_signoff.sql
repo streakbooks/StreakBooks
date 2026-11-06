@@ -160,6 +160,11 @@ begin
     if _url is not null or _case.status <> 'in_review'
        or _case.evidence_url is null or _case.assigned_to is null
        or _case.assigned_to=_actor or
+       not exists (
+         select 1 from public.company_members m
+          where m.company_id=_company_id and m.user_id=_case.assigned_to
+            and m.status::text='active'
+       ) or
        pg_catalog.char_length(_note_trim) < 10 then
       raise exception 'Assign an independent reviewer and attach evidence before submission';
     end if;

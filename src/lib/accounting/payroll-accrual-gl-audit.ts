@@ -38,7 +38,7 @@ export type PayrollAuditGlLine = {
 export type PayrollAuditAccountRow = {
   accountId: string; side: "debit" | "credit";
   expectedMinor: string; postedMinor: string; matched: boolean;
-  accountCode?: string; accountName?: string;
+  accountCode?: string | undefined; accountName?: string | undefined;
 };
 export type PayrollAccrualTieOutResult = {
   status: "matched" | "exceptions";

@@ -576,34 +576,22 @@ export const listCompanyFiles = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     await assertCompanyMember(supabase, data.companyId);
+    // Use PostgREST's RLS-aware inner relationship filter instead of materializing
+    // thousands of UUIDs into a URL-sized .in() clause. Filtering happens before
+    // ordering and pagination, even for large company tag collections.
+    const columns = data.tagId
+      ? `${COLUMNS}, tag_match:document_attachment_tags!inner(tag_id)`
+      : COLUMNS;
     let q = supabase
       .from("document_attachments" as never)
-      .select(COLUMNS as never, { count: "exact" })
+      .select(columns as never, { count: "exact" })
       .eq("company_id" as never, data.companyId as never)
       .is("deleted_at" as never, null);
     if (data.entityType) q = q.eq("entity_type" as never, data.entityType as never);
     if (data.category)
       q = q.eq("document_category" as never, data.category as never);
-    if (data.tagId) {
-      // RLS on the tag relationship includes each attachment's view permission.
-      // Refuse a truncated set rather than silently omitting older matching files.
-      const { data: taggedRows, error: tagError, count: taggedCount } = await supabase
-        .from("document_attachment_tags" as never)
-        .select("attachment_id" as never, { count: "exact" })
-        .eq("company_id" as never, data.companyId as never)
-        .eq("tag_id" as never, data.tagId as never)
-        .limit(1000);
-      if (tagError) throw new Error(tagError.message);
-      if (
-        taggedCount == null ||
-        taggedCount > 1000 ||
-        taggedCount !== (taggedRows ?? []).length
-      ) throw new Error("Tag filter exceeds the safe search limit. Narrow the selection.");
-      const taggedIds = (taggedRows ?? []) as unknown as Array<{ attachment_id: string }>;
-      q = taggedIds.length
-        ? q.in("id" as never, taggedIds.map((item) => item.attachment_id) as never)
-        : q.eq("id" as never, "00000000-0000-0000-0000-000000000000" as never);
-    }
+    if (data.tagId)
+      q = q.eq("tag_match.tag_id" as never, data.tagId as never);
     const mimeTypes = fileFormatMimeTypes(data.format);
     if (mimeTypes.length) q = q.in("content_type" as never, [...mimeTypes] as never);
     if (data.folderId && data.includeSubfolders) {

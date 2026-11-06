@@ -24,6 +24,9 @@ import { useCan } from "@/hooks/use-can";
 import { useFormat } from "@/hooks/use-format";
 import { DocumentReviewQueue } from "@/components/documents/DocumentReviewQueue";
 import { DocumentEmailInbox } from "@/components/documents/DocumentEmailInbox";
+import { DocumentClassificationPanel } from "@/components/documents/DocumentClassificationPanel";
+import { listDocumentTags } from "@/lib/documents/file-classification.functions";
+import { FILE_CATEGORIES, FILE_CATEGORY_LABELS, type FileCategory } from "@/lib/documents/file-classification";
 import {
   checkPossibleFileDuplicates,
   deleteAttachment,
@@ -123,6 +126,7 @@ function FilesPage() {
   const queryClient = useQueryClient();
   const fetchFiles = useServerFn(listCompanyFiles);
   const checkDuplicates = useServerFn(checkPossibleFileDuplicates);
+  const fetchTags = useServerFn(listDocumentTags);
   const fetchFileDetails = useServerFn(getCompanyFile);
   const renameFile = useServerFn(renameAttachment);
   const register = useServerFn(registerAttachment);
@@ -157,6 +161,8 @@ function FilesPage() {
   const [debounced, setDebounced] = useState("");
   const [type, setType] = useState("all");
   const [fileFormat, setFileFormat] = useState<FileFormat>("all");
+  const [categoryFilter, setCategoryFilter] = useState<FileCategory | "all">("all");
+  const [tagFilter, setTagFilter] = useState("all");
   const [includeSubfolders, setIncludeSubfolders] = useState(false);
   const [folderSearch, setFolderSearch] = useState("");
   const [page, setPage] = useState(0);
@@ -194,6 +200,17 @@ function FilesPage() {
   }, [search]);
   // Folder navigation temporarily shows all files without discarding the chosen workspace view.
   const canUpload = ATTACHMENT_ENTITIES.company.manage.some((p) => can(p));
+
+  const tagsQ = useQuery({
+    queryKey: ["document-tags", companyId],
+    enabled: Boolean(companyId),
+    queryFn: () => fetchTags({ data: { companyId: companyId! } }),
+    retry: false,
+  });
+  useEffect(() => {
+    setTagFilter("all");
+    setCategoryFilter("all");
+  }, [companyId]);
 
   const foldersQ = useQuery({
     queryKey: ["document-folders", companyId],
@@ -272,6 +289,8 @@ function FilesPage() {
       view,
       fileFormat,
       includeSubfolders,
+      categoryFilter,
+      tagFilter,
     ],
     enabled: Boolean(companyId) && activeView !== "review",
     queryFn: () =>
@@ -281,6 +300,8 @@ function FilesPage() {
           search: debounced,
           entityType: activeView === "to-file" ? "company" : type,
           format: fileFormat,
+          category: categoryFilter,
+          tagId: tagFilter === "all" ? undefined : tagFilter,
           includeSubfolders: folderId !== null && includeSubfolders,
           folderId: activeView === "to-file" ? null : folderId,
           unfiledOnly: activeView === "to-file",
@@ -321,7 +342,7 @@ function FilesPage() {
   // Selection is deliberately limited to the current result page and its permissions.
   useEffect(
     () => setSelectedIds([]),
-    [companyId, debounced, type, folderId, page, sort, view, fileFormat, includeSubfolders],
+    [companyId, debounced, type, folderId, page, sort, view, fileFormat, includeSubfolders, categoryFilter, tagFilter],
   );
   useEffect(() => setShowRenameFile(false), [companyId, selectedFile]);
   useEffect(() => {
@@ -1072,6 +1093,44 @@ function FilesPage() {
           </SelectContent>
         </Select>
         <Select
+          value={categoryFilter}
+          onValueChange={(v) => {
+            setCategoryFilter(v as FileCategory | "all");
+            setPage(0);
+          }}
+        >
+          {/* lookup-fixed-enum: These labels never change accounting classification. */}
+          <SelectTrigger className="w-48" aria-label="Filter by document category">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All categories</SelectItem>
+            {FILE_CATEGORIES.map((category) => (
+              <SelectItem key={category} value={category}>
+                {FILE_CATEGORY_LABELS[category]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
+          value={tagFilter}
+          onValueChange={(value) => {
+            setTagFilter(value);
+            setPage(0);
+          }}
+          disabled={tagsQ.isError || !tagsQ.data?.length}
+        >
+          <SelectTrigger className="w-48" aria-label="Filter by company document tag">
+            <SelectValue placeholder="All tags" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All tags</SelectItem>
+            {(tagsQ.data ?? []).map((tag) => (
+              <SelectItem key={tag.id} value={tag.id}>{tag.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
           value={sort}
           onValueChange={(v) => {
             setSort(v as typeof sort);
@@ -1089,7 +1148,8 @@ function FilesPage() {
             <SelectItem value="largest">Largest first</SelectItem>
           </SelectContent>
         </Select>
-        {(search || type !== "all" || fileFormat !== "all" || sort !== "newest") && (
+        {(search || type !== "all" || fileFormat !== "all" ||
+          categoryFilter !== "all" || tagFilter !== "all" || sort !== "newest") && (
           <Button
             size="sm"
             variant="ghost"
@@ -1098,6 +1158,8 @@ function FilesPage() {
               setDebounced("");
               setType("all");
               setFileFormat("all");
+              setCategoryFilter("all");
+              setTagFilter("all");
               setSort("newest");
               setPage(0);
             }}
@@ -1161,6 +1223,12 @@ function FilesPage() {
               <X className="size-4" />
             </Button>
           </div>
+          <DocumentClassificationPanel
+            key={`${companyId}:${selected.id}`}
+            companyId={companyId}
+            attachmentId={selected.id}
+            canManage={canManage(selected.entity_type)}
+          />
           <div className="mt-3 flex flex-wrap gap-2">
             <Button
               size="sm"

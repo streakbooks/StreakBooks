@@ -6,6 +6,8 @@ import {
   fileSortOrder,
   parseFileFormat,
   parseFileSort,
+  repeatedUploadFlags,
+  selectUploadIndexes,
   validateFileRename,
 } from "./file-workspace";
 
@@ -54,6 +56,20 @@ describe("Files workspace", () => {
     );
     expect(fileFormatMimeTypes("images")).toContain("image/webp");
     expect(fileFormatMimeTypes("text")).toEqual(["text/plain"]);
+  });
+
+  it("flags repeated names and sizes within a single upload batch", () => {
+    const flags = repeatedUploadFlags([
+      { name: "Bill.PDF", size: 120 },
+      { name: "bill.pdf", size: 120 },
+      { name: "bill.pdf", size: 121 },
+      { name: "Other.pdf", size: 120 },
+      { name: " BILL.pdf ", size: 120 },
+    ]);
+    expect(flags).toEqual([false, true, false, false, true]);
+    expect(selectUploadIndexes(flags, false)).toEqual([0, 2, 3]);
+    expect(selectUploadIndexes(flags, true)).toEqual([0, 1, 2, 3, 4]);
+    expect(selectUploadIndexes([true, true], false)).toEqual([]);
   });
 
   it("permits metadata-only renaming while preserving the file format", () => {

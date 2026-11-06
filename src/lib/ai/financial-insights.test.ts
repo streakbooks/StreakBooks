@@ -64,13 +64,14 @@ describe("financial insights reuse exact financial report values", () => {
       {
         revenue: { value: "120000", format: "money", reportId: "profit-and-loss" },
         net_profit: { value: "10000", format: "money", reportId: "profit-and-loss" },
+        net_margin: { value: "833", format: "percent", reportId: "profit-and-loss" },
       },
     );
     const out = buildFinancialInsights(snapshot(), previous, "USD");
     expect(out.comparable).toBe(true);
     expect(out.cards.find((v) => v.id === "revenue")?.change).toBe("USD -200.00");
     expect(out.cards.find((v) => v.id === "net_profit")?.change).toBe("USD 150.00");
-    expect(out.cards.find((v) => v.id === "net_margin")?.change).toBe("0.00 percentage points");
+    expect(out.cards.find((v) => v.id === "net_margin")?.change).toBe("16.67 percentage points");
     expect(out.observations.map((v) => v.id)).toContain("revenue_decline");
   });
 

@@ -49,6 +49,7 @@ import {
   FixedAssetTableColumns,
 } from "@/components/fixed-assets/AssetRegisterPersonalization";
 import { capitalisationReviewGuidance, reviewCapitalisableLines, selectCapitalisationReviewRows } from "@/lib/fixed-assets/capitalisation-review";
+import { buildFixedAssetRegisterCsv } from "@/lib/fixed-assets/register-export";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -492,7 +493,7 @@ function FixedAssetsPage() {
                   onClick={() =>
                     exportAssetRegisterCsv(
                       visibleAssets,
-                      accumulatedOf,
+                      balanceMap,
                       today,
                       new Map(d.types.map((type) => [type.id, type.name])),
                       new Map(
@@ -716,60 +717,26 @@ function FixedAssetsPage() {
 /** Export the visible tenant-scoped register with real as-at balances, not fallback estimates. */
 function exportAssetRegisterCsv(
   assets: FixedAssetRow[],
-  accumulatedOf: (asset: FixedAssetRow) => number | null,
+  accumulatedByAssetId: ReadonlyMap<string, number> | null,
   asOf: string,
   typeNames: ReadonlyMap<string, string>,
   accountNames: ReadonlyMap<string, string>,
 ) {
-  const escapeCell = (value: string | number | null) => {
-    const raw = String(value ?? "");
-    // Prevent spreadsheet formula injection when opened in a spreadsheet program.
-    const safe = /^[\s]*[=+@-]/.test(raw) && typeof value === "string" ? "'" + raw : raw;
-    return '"' + safe.replace(/"/g, '""') + '"';
-  };
-  const headers = [
-    "Asset number",
-    "Name",
-    "Status as at " + asOf,
-    "Asset type",
-    "Asset account",
-    "Purchase date",
-    "Depreciation start",
-    "Method",
-    "Cost (minor units)",
-    "Accumulated as at " + asOf + " (minor units)",
-    "Net book value as at " + asOf + " (minor units)",
-    "Depreciated through",
-  ];
-  const rows = assets.map((asset) => {
-    const status = assetStatusAsOf(asset, asOf);
-    const future = status === "not_acquired";
-    const accumulated = accumulatedOf(asset);
-    if (!future && accumulated === null) {
-      throw new Error("Cannot export without a complete as-at depreciation register.");
-    }
-    return [
-      asset.asset_number,
-      asset.name,
-      future ? "Not yet purchased" : status,
-      asset.asset_type_id ? (typeNames.get(asset.asset_type_id) ?? "Unlisted type") : "",
-      accountNames.get(asset.asset_account_id) ?? "Unlisted account",
-      asset.purchase_date,
-      asset.depreciation_start_date,
-      asset.depreciation_method,
-      asset.cost_minor,
-      future ? null : accumulated,
-      future ? null : status === "disposed" ? 0 : asset.cost_minor - (accumulated ?? 0),
-      asset.depreciated_through,
-    ];
-  });
-  const csv = [headers, ...rows].map((row) => row.map(escapeCell).join(",")).join("\r\n");
-  const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = "linkbooks-fixed-assets-" + asOf + ".csv";
-  anchor.click();
-  URL.revokeObjectURL(url);
+  try {
+    const csv = buildFixedAssetRegisterCsv(
+      assets, accumulatedByAssetId, asOf, typeNames, accountNames,
+    );
+    const url = URL.createObjectURL(new Blob(["\uFEFF", csv], {
+      type: "text/csv;charset=utf-8",
+    }));
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "linkbooks-fixed-assets-" + asOf + ".csv";
+    anchor.click();
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : "Cannot export asset register.");
+  }
 }
 
 function RegisterTable({

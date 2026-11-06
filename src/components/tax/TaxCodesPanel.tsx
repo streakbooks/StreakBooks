@@ -250,7 +250,9 @@ export function TaxCodesPanel({
             <DialogTitle>{draft?.id ? "Edit tax code" : "Add tax code"}</DialogTitle>
             <DialogDescription>
               The tax account is optional. When empty, the organisation&apos;s output or input tax
-              account from GL mappings is used.
+              account from GL mappings is used. After a code is used on posted invoices or bills,
+              its treatment, recoverability, rate and posting classifications are protected by
+              the new database migration. Create a replacement code for future treatment changes.
             </DialogDescription>
           </DialogHeader>
           {draft ? (

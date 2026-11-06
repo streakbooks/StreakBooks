@@ -138,24 +138,31 @@ export function capitalisationReviewCsv(
     "Indicative unlinked gross minor units (same currency only)",
     "Review status",
   ];
+  const numericCell = (value: string | null) => {
+    if (value === null) return '""';
+    if (!/^-?\\d+$/.test(value)) throw new Error("Invalid exported bill review minor-unit amount");
+    // Numeric cells are generated from validated integers, not untrusted text.
+    // Keep negative entries numeric rather than prefixing spreadsheet text guards.
+    return value;
+  };
   const lines = rows.map((r) => [
-    asOf,
-    r.billNumber ?? "",
-    r.billId,
-    r.lineId,
-    r.billDate,
-    r.supplier ?? "",
-    r.description,
-    r.accountCode,
-    r.accountName,
-    r.currency,
-    String(r.netMinor),
-    String(r.taxMinor),
-    baseCurrency,
-    String(r.registeredMinor),
-    r.indicativeUnlinkedMinor ?? "",
-    r.status,
-  ].map(escapeCell).join(","));
+    escapeCell(asOf),
+    escapeCell(r.billNumber ?? ""),
+    escapeCell(r.billId),
+    escapeCell(r.lineId),
+    escapeCell(r.billDate),
+    escapeCell(r.supplier ?? ""),
+    escapeCell(r.description),
+    escapeCell(r.accountCode),
+    escapeCell(r.accountName),
+    escapeCell(r.currency),
+    numericCell(String(r.netMinor)),
+    numericCell(String(r.taxMinor)),
+    escapeCell(baseCurrency),
+    numericCell(String(r.registeredMinor)),
+    numericCell(r.indicativeUnlinkedMinor),
+    escapeCell(r.status),
+  ].join(","));
   return [headers.map(escapeCell).join(","), ...lines].join("\r\n");
 }
 

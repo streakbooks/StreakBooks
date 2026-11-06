@@ -58,3 +58,25 @@ export function stagingGateReady(env) {
     productionUrl: env.E2E_PRODUCTION_URL,
   };
 }
+
+/**
+ * A release check must run against an unmodified, up-to-date main checkout
+ * of the authoritative LinkBooks repository. A dirty/detached checkout or
+ * missing origin/main reference must never produce passing release evidence.
+ */
+export function localReleasePreflight(git) {
+  const blockers = [];
+  if (!git.workingTreeStatusKnown || !git.workingTreeClean) {
+    blockers.push("Working tree must be confirmed clean.");
+  }
+  if (git.branch !== "main") {
+    blockers.push("Local branch must be main.");
+  }
+  if (!git.originMatchesRepo) {
+    blockers.push("Origin must be the authorized LinkBooks GitHub repository.");
+  }
+  if (!git.commit || !git.originMainCommit || git.commit !== git.originMainCommit) {
+    blockers.push("Local HEAD must match fetched origin/main. Pull the latest main first.");
+  }
+  return { passed: blockers.length === 0, blockers };
+}

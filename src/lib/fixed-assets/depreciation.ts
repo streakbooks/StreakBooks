@@ -119,13 +119,15 @@ export type ScheduleRow = {
 };
 
 /**
- * Projected schedule from the start month. `maxMonths` caps reducing-balance tails; the schedule also
- * stops once nothing is left to depreciate. Accumulated includes opening depreciation.
+ * Projected schedule from the start month. The default covers the permitted
+ * 1,200-month straight-line useful life instead of silently stopping at month 600.
+ * Explicit `maxMonths` caps both methods; reducing-balance tails also stop on
+ * zero charge. Accumulated includes opening depreciation.
  */
 export function buildSchedule(
   a: DepreciableAsset,
   startDate: string,
-  maxMonths = 600,
+  maxMonths = 1200,
 ): ScheduleRow[] {
   const rows: ScheduleRow[] = [];
   if (a.method === "none") return rows;

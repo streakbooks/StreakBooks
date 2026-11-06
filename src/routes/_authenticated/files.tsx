@@ -264,20 +264,29 @@ function FilesPage() {
 
   const uploadM = useMutation({
     mutationFn: async (files: File[]) => {
+      let uploaded = 0;
       for (const file of files) {
-        await uploadCompanyDocument({
-          file,
-          companyId: companyId!,
-          entityType: "company",
-          entityId: companyId!,
-          folderId,
-          register: register as never,
-        });
+        try {
+          await uploadCompanyDocument({
+            file,
+            companyId: companyId!,
+            entityType: "company",
+            entityId: companyId!,
+            folderId,
+            register: register as never,
+          });
+          uploaded += 1;
+        } catch (error) {
+          throw new Error(
+            `Uploaded ${uploaded} of ${files.length} files before stopping. ${friendlyAuthError(error)}`,
+          );
+        }
       }
-      return files.length;
+      return uploaded;
     },
     onSuccess: async (n) => {
       setError(null);
+      setPage(0);
       await queryClient.invalidateQueries({ queryKey: ["company-files", companyId] });
       toast.success(n === 1 ? "File uploaded" : `${n} files uploaded`);
     },
@@ -360,6 +369,11 @@ function FilesPage() {
   const onPick = (list: FileList | null) => {
     if (!list || list.length === 0 || !canUpload || uploadM.isPending) return;
     const files = Array.from(list);
+    if (files.length > 25) {
+      setError("Upload up to 25 files at a time.");
+      if (inputRef.current) inputRef.current.value = "";
+      return;
+    }
     for (const f of files) {
       const check = validateUpload({ fileName: f.name, sizeBytes: f.size, contentType: f.type });
       if (!check.ok) {
@@ -488,7 +502,7 @@ function FilesPage() {
         <div className="flex items-center gap-2">
           <Upload className="size-4" />
           {canUpload
-            ? "Drop files here or use Upload files. Maximum 20 MB per file."
+            ? "Drop files here or use Upload files. Maximum 20 MB per file, 25 files per batch."
             : "Files available to your organisation."}
         </div>
       </div>

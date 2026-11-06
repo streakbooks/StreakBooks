@@ -80,7 +80,7 @@ BEGIN
   'This update must be rolled back','snapshot-1'
  ),'%Injected tax review audit failure%');
  PERFORM set_config('test.fail_tax_review_audit','off',true);
- IF (SELECT version FROM public.tax_gl_review_sessions WHERE id=public.tax_gl_review_sessions.id) <> 2 THEN
+ IF (SELECT version FROM public.tax_gl_review_sessions WHERE company_id=a AND basis='accrual') <> 2 THEN
    RAISE EXCEPTION 'Review version advanced after audit failure';
  END IF;
  IF (SELECT count(*) FROM public.tax_gl_review_events

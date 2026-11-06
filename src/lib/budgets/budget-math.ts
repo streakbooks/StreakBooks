@@ -7,6 +7,22 @@ import { addMonthsIso, monthStart } from "@/lib/accounting/fiscal-year";
 
 export type BudgetAccountKind = "income" | "expense";
 
+/** Convert only exact minor-unit integers; reject overflow before Number conversion. */
+export function checkedBudgetMinor(value: bigint, label: string): number {
+  if (value < BigInt(Number.MIN_SAFE_INTEGER) ||
+      value > BigInt(Number.MAX_SAFE_INTEGER)) {
+    throw new Error(label + " exceeds the supported safe minor-unit range.");
+  }
+  return Number(value);
+}
+
+function asBudgetMinor(value: number, label: string): bigint {
+  if (!Number.isSafeInteger(value)) {
+    throw new Error(label + " must be a safe integer in minor units.");
+  }
+  return BigInt(value);
+}
+
 /** First month of the following fiscal year; month based so leap years cannot shift the start. */
 export function nextBudgetYearStart(fiscalYearStart: string): string {
   return addMonthsIso(monthStart(fiscalYearStart), 12);
@@ -30,12 +46,9 @@ export function roundDiv(numerator: bigint, denominator: bigint): bigint {
 /** Apply an uplift in basis points (1000 = +10%, -500 = -5%) to an amount; rounds half away from zero. */
 export function applyUpliftBps(minor: number, bps: number): number {
   if (!Number.isSafeInteger(minor)) throw new Error("Amount must be a safe integer in minor units");
-  if (!Number.isInteger(bps)) throw new Error("Uplift must be whole basis points");
-  const result = Number(roundDiv(BigInt(minor) * BigInt(10_000 + bps), 10_000n));
-  if (!Number.isSafeInteger(result)) {
-    throw new Error("Adjusted budget amount exceeds the supported range");
-  }
-  return result;
+  if (!Number.isSafeInteger(bps)) throw new Error("Uplift must be safe whole basis points");
+  const result = roundDiv(BigInt(minor) * (10_000n + BigInt(bps)), 10_000n);
+  return checkedBudgetMinor(result, "Adjusted budget amount");
 }
 
 /** Copy the value at `fromIndex` into every later month ("fill right"). */
@@ -48,20 +61,29 @@ export function fillRight(row: readonly number[], fromIndex: number): number[] {
 /** Split an annual total across months; the last month takes the rounding remainder. */
 export function spreadEvenly(total: number, months = 12): number[] {
   if (!Number.isSafeInteger(total)) throw new Error("Amount must be a safe integer in minor units");
-  if (months < 1) return [];
-  const each = Number(roundDiv(BigInt(total), BigInt(months)));
-  const out = Array.from({ length: months }, () => each);
-  out[months - 1] = total - each * (months - 1);
+  if (!Number.isSafeInteger(months) || months < 0 || months > 1200) {
+    throw new Error("Month count must be a nonnegative safe integer at most 1200.");
+  }
+  if (months === 0) return [];
+  const each = roundDiv(BigInt(total), BigInt(months));
+  const remainder = BigInt(total) - each * BigInt(months - 1);
+  const out = Array.from({ length: months }, () => checkedBudgetMinor(each, "Monthly spread"));
+  out[months - 1] = checkedBudgetMinor(remainder, "Monthly spread remainder");
   return out;
 }
 
 export function sumMinorNumbers(values: readonly number[]): number {
-  return values.reduce((a, b) => a + b, 0);
+  return checkedBudgetMinor(
+    values.reduce<bigint>((total, value) => total + asBudgetMinor(value, "Budget amount"), 0n),
+    "Budget sum",
+  );
 }
 
 /** Natural actual for an account kind from base-currency debit/credit totals. */
 export function naturalActual(kind: BudgetAccountKind, debit: number, credit: number): number {
-  return kind === "income" ? credit - debit : debit - credit;
+  const d = asBudgetMinor(debit, "Posted debit");
+  const c = asBudgetMinor(credit, "Posted credit");
+  return checkedBudgetMinor(kind === "income" ? c - d : d - c, "Natural actual");
 }
 
 export type VarianceStatus = "favourable" | "unfavourable" | "on_budget";
@@ -75,12 +97,15 @@ export type Variance = {
 };
 
 export function computeVariance(kind: BudgetAccountKind, budget: number, actual: number): Variance {
-  const varianceMinor = kind === "income" ? actual - budget : budget - actual;
-  const base = Math.abs(budget);
-  const variancePctBps =
-    base === 0 ? null : Number(roundDiv(BigInt(varianceMinor) * 10_000n, BigInt(base)));
+  const b = asBudgetMinor(budget, "Budget");
+  const a = asBudgetMinor(actual, "Actual");
+  const difference = kind === "income" ? a - b : b - a;
+  const varianceMinor = checkedBudgetMinor(difference, "Budget variance");
+  const base = b < 0n ? -b : b;
+  const variancePctBps = base === 0n ? null :
+    checkedBudgetMinor(roundDiv(difference * 10_000n, base), "Budget variance percentage");
   const status: VarianceStatus =
-    varianceMinor > 0 ? "favourable" : varianceMinor < 0 ? "unfavourable" : "on_budget";
+    difference > 0n ? "favourable" : difference < 0n ? "unfavourable" : "on_budget";
   return { varianceMinor, variancePctBps, status };
 }
 

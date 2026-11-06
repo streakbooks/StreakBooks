@@ -4,6 +4,7 @@ import {
   assetStatusAsOf,
   selectRegisterAssets,
   summariseActiveAssets,
+  validAssetAccumulatedAt,
   type AssetRegisterFilters,
 } from "./register-view";
 
@@ -159,6 +160,69 @@ describe("Fixed asset as-at totals", () => {
       accumulatedMinor: null,
       netBookValueMinor: null,
     });
+  });
+
+  it("refuses as-at accumulated depreciation below the saved opening", () => {
+    const current = asset("current", "Current", { opening_accumulated_minor: 2500 });
+    expect(validAssetAccumulatedAt(current, 2000)).toBeNull();
+    expect(summariseActiveAssets([current], "2026-11-06", new Map([["current", 2000]])))
+      .toMatchObject({
+        activeCount: 1,
+        costMinor: 10000,
+        accumulatedMinor: null,
+        netBookValueMinor: null,
+      });
+  });
+
+  it("refuses balances beyond acquisition cost less residual value", () => {
+    const current = asset("residual", "Residual", { residual_minor: 5000 });
+    expect(validAssetAccumulatedAt(current, 5000)).toBe(5000);
+    expect(validAssetAccumulatedAt(current, 5001)).toBeNull();
+    expect(summariseActiveAssets([current], "2026-11-06", new Map([["residual", 5001]])))
+      .toMatchObject({
+        accumulatedMinor: null,
+        netBookValueMinor: null,
+      });
+  });
+
+  it("fails closed when residual plus opening depreciation exceeds acquisition cost", () => {
+    const inconsistent = asset("bad", "Inconsistent", {
+      cost_minor: 10000,
+      residual_minor: 8000,
+      opening_accumulated_minor: 3000,
+    });
+    expect(validAssetAccumulatedAt(inconsistent, 3000)).toBeNull();
+    expect(summariseActiveAssets([inconsistent], "2026-11-06", null)).toMatchObject({
+      activeCount: 1,
+      costMinor: null,
+      accumulatedMinor: null,
+      netBookValueMinor: null,
+    });
+  });
+
+  it("refuses individually unsafe or nonpositive costs even where sums could look valid", () => {
+    for (const unsafe of [0, -500, 1.5, Number.MAX_SAFE_INTEGER + 1]) {
+      expect(summariseActiveAssets(
+        [asset("bad", "Bad cost", { cost_minor: unsafe })],
+        "2026-11-06",
+        null,
+      ).costMinor).toBeNull();
+    }
+  });
+
+  it("returns exact as-at balance for fully depreciated assets at residual floor", () => {
+    const fully = asset("fully", "Fully depreciated", {
+      cost_minor: 10000,
+      residual_minor: 2000,
+      opening_accumulated_minor: 1000,
+    });
+    expect(validAssetAccumulatedAt(fully, 8000)).toBe(8000);
+    expect(summariseActiveAssets([fully], "2026-11-06", new Map([["fully", 8000]])))
+      .toMatchObject({
+        costMinor: 10000,
+        accumulatedMinor: 8000,
+        netBookValueMinor: 2000,
+      });
   });
 
   it("treats future purchases and disposals by their effective as-at dates", () => {

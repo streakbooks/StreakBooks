@@ -213,3 +213,30 @@ merge was performed. Review and test the draft PR before merging.
 
 **Status:** Code committed to draft PR #110; checks and authenticated staging
 are not verified. No GitHub CI, production merge or deployment was performed.
+
+## Continuation — Batch 05: journal evidence, exceptions and auditable reviews
+
+### Implemented in the draft PR
+- GL comparisons now require `accounting.view`; review writes additionally require `tax.settings`.
+- Posted journal evidence (number, date, signed control-account amount, source, account, and Accounting navigation) is displayed on demand. The most recent 100 rows are shown; totals use the full selected period.
+- Review snapshots track comparison amounts, scope and a non-cryptographic digest of all posted journal evidence. Changed data marks prior review decisions stale, even where offsetting journals leave aggregate totals unchanged.
+- Migration `20261106134000_tax_gl_review_sessions.sql` creates review sessions, append-only events, scope RLS, an atomic save/audit RPC, authorisation checks, version-based concurrent edit rejection, active-member reviewer validation, and mandatory notes for internal resolution.
+- Review statuses: Open, In review, Resolved (internal). Old resolutions with changed evidence must be reopened before being resolved again. Cash-basis reviews cannot be marked resolved.
+- Reviewer assignment UI supports keep current, assign to me, or unassign. The form includes notes, version, change history and stale-evidence warning.
+- New tests `src/lib/tax/tax-gl-evidence.test.ts` and `tests/integration/tax-gl-review-sessions.sql`. Isolated local PostgreSQL runner: `node scripts/test-tax-gl-review-postgres.mjs`.
+
+### Local/staging acceptance checklist
+1. Run `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd test -- src/lib/tax`, and `npm.cmd run build`.
+2. Run both `node scripts/test-tax-master-history-postgres.mjs` and `node scripts/test-tax-gl-review-postgres.mjs` with Docker Desktop; neither runs GitHub CI.
+3. On isolated staging, apply the review migration, test RLS membership, unauthorized writes, audit append-only behavior and concurrent expected-version conflicts.
+4. Test GL journal deep links, reversal signs, 0 and 1000+ journal lines, cash-basis warning, status transitions, reviewer self-assignment and stale review reopening.
+5. Apply the migration before allowing reviewer actions in production. Do not claim compliance or deploy until reviewed.
+
+### Explicit limits
+- Internal status is a human assertion, **not statutory filing or a certified reconciliation**.
+- Snapshot digest is a change detector, not a cryptographic audit seal. The callable RPC checks permissions/version/notes but does not independently recompute document-based tax amounts; an authorized direct RPC caller can supply a snapshot. The normal app server recomputes before saving.
+- The comparison uses current GL mappings; historical remappings, per-code accounts and other sources can yield differences. Cash-basis GL comparison is informational.
+- The full posted ledger is still fetched to calculate comparison and digest; benchmark large datasets before production.
+- Simultaneous source posting and master-rate changes still require stronger database locking and race tests.
+- Migration files were committed directly to GitHub because a local Supabase CLI/repository checkout is unavailable; no migrations have been applied.
+- No local npm, Docker, browser, staging, CI, merge or deployment verification was performed.

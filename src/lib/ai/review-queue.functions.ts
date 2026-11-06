@@ -69,17 +69,24 @@ async function canView(
 export const listAiJournalReviewCases = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    scope.extend({ page: z.number().int().min(0).max(10000).default(0) }).parse(input),
+    scope.extend({
+      page: z.number().int().min(0).max(10000).default(0),
+      status: z.enum(["all","open","assigned","reviewed","reopened"]).default("all"),
+      assignedToMe: z.boolean().default(false),
+    }).parse(input),
   )
   .handler(async ({ data, context }): Promise<{ rows: AiJournalReviewCase[]; total: number }> => {
     await canView(context.supabase, data.companyId);
-    const { data: rows, count, error } = await context.supabase
+    let query = context.supabase
       .from("ai_journal_review_cases" as never)
       .select(
         "id,company_id,journal_id,created_by,assigned_to,status,version,reviewed_by,reviewed_at,created_at,updated_at" as never,
         { count: "exact" },
       )
-      .eq("company_id" as never, data.companyId as never)
+      .eq("company_id" as never, data.companyId as never);
+    if (data.status !== "all") query = query.eq("status" as never, data.status as never);
+    if (data.assignedToMe) query = query.eq("assigned_to" as never, context.userId as never);
+    const { data: rows, count, error } = await query
       .order("updated_at" as never, { ascending: false })
       .order("id" as never, { ascending: false })
       .range(data.page * 25, data.page * 25 + 24);

@@ -4,6 +4,7 @@ import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-compa
 import { assertUuid } from "@/lib/company-validation";
 import { postJournal, reverseJournal } from "@/lib/accounting/posting-engine";
 import { journalPageRange } from "@/lib/accounting/journal-paging";
+import { sumJournalDebits } from "@/lib/accounting/journal-amounts";
 import { assertManualJournalPosting } from "@/lib/accounting/manual-journal-posting";
 
 function companyIdInput(input: { companyId: string }) {
@@ -159,15 +160,12 @@ export const listJournals = createServerFn({ method: "GET" })
     return (
       (rows ?? []) as unknown as Array<
         Omit<JournalListItem, "total_debit_minor"> & {
-          journal_lines: Array<{ debit_minor: number }>;
+          journal_lines: Array<{ debit_minor: number | string }>;
         }
       >
     ).map(({ journal_lines, ...rest }) => ({
       ...rest,
-      total_debit_minor: (journal_lines ?? []).reduce(
-        (sum, line) => sum + Number(line.debit_minor),
-        0,
-      ),
+      total_debit_minor: sumJournalDebits(journal_lines ?? []),
     }));
   });
 

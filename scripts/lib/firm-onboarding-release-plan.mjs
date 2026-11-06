@@ -2,6 +2,10 @@
  * Local-only LinkBooks Firm onboarding release gates.
  * GitHub Actions CI is intentionally never invoked.
  */
+// Six tests in e2e/firm-onboarding-release.staging.spec.ts; an unexpectedly
+// skipped or omitted security test cannot count as passing staging acceptance.
+export const FIRM_ONBOARDING_STAGING_TEST_COUNT = 6;
+
 export const FIRM_ONBOARDING_UNIT_TESTS = Object.freeze([
   "src/lib/firm/client-portfolio.test.ts",
   "src/lib/firm/firm-workflows.functions.test.ts",
@@ -85,6 +89,9 @@ export function localReleasePreflight(git) {
   if (!git.originMatchesRepo) {
     blockers.push("Origin must be the authorized LinkBooks GitHub repository.");
   }
+  if (!git.remoteRefFresh) {
+    blockers.push("Live origin/main verification failed. Fetch the remote successfully before testing.");
+  }
   if (!git.commit || !git.originMainCommit || git.commit !== git.originMainCommit) {
     blockers.push("Local HEAD must match fetched origin/main. Pull the latest main first.");
   }
@@ -120,5 +127,37 @@ export function extractVitestCounts(output) {
     passedFiles: files.passed,
     failedFiles: files.failed,
     skippedFiles: files.skipped,
+  };
+}
+
+
+/**
+ * Parse Playwright's list reporter summary (including ANSI-colored output).
+ * Require an explicit 6/6 pass; a process exit of zero is insufficient
+ * because a skipped, filtered, or test.only-limited suite can also exit 0.
+ */
+export function extractPlaywrightCounts(output) {
+  const plain = String(output).replace(/\u001b\[[0-9;]*m/g, "");
+  const results = { passed: 0, failed: 0, skipped: 0, flaky: 0, interrupted: 0, didNotRun: 0 };
+  let found = false;
+  for (const line of plain.split(/\r?\n/)) {
+    const match = line.match(/^\s*(\d+)\s+(passed|failed|skipped|flaky|interrupted|did not run)\b/);
+    if (!match) continue;
+    found = true;
+    const key = match[2] === "did not run" ? "didNotRun" : match[2];
+    results[key] += Number(match[1]);
+  }
+  return found ? results : null;
+}
+
+export function playwrightReleaseGate(output) {
+  const counts = extractPlaywrightCounts(output);
+  return {
+    passed: Boolean(counts &&
+      counts.passed === FIRM_ONBOARDING_STAGING_TEST_COUNT &&
+      counts.failed === 0 && counts.skipped === 0 &&
+      counts.flaky === 0 && counts.interrupted === 0 &&
+      counts.didNotRun === 0),
+    counts,
   };
 }

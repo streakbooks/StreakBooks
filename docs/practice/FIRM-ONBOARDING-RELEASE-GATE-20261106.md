@@ -32,7 +32,10 @@ test specifications or hardening fixes is not proof of production readiness.
 
 ## Single-command local release evidence runner
 
-After pulling a clean `main`, run:
+After pulling a clean `main`, run. The verifier itself refreshes
+`origin/main` from the authoritative GitHub remote both **before and
+after** the checks. If that fetch fails, or `main` changes during the run,
+release source acceptance is blocked. Git fetch does **not** run GitHub CI.
 
 ```powershell
 cd D:\MyApp\LinkBooks
@@ -60,7 +63,10 @@ The script refuses to accept a dirty, detached, non-`main`, stale
 `origin/main`, or unauthorized Git remote; it rechecks the working tree
 after executing tests. All eight prescribed onboarding Vitest suites must
 report passed files, with no skipped or failed tests, for local release
-acceptance.
+acceptance. Dedicated staging must also report **exactly six passed
+Playwright tests with zero failures, skips, flaky cases, interrupted
+cases, or tests not run**. A Playwright exit code of zero alone
+is not accepted if any expected security test was filtered out.
 
 The report is deliberately **never** labeled production-ready: Vercel
 deployment, real cron executions and human staging acceptance require separate

@@ -10,7 +10,7 @@ export function sumJournalDebits(
     const value = line.debit_minor;
     if (
       (typeof value === "number" && (!Number.isSafeInteger(value) || value < 0)) ||
-      (typeof value === "string" && !/^\\d+$/.test(value)) ||
+      (typeof value === "string" && !/^\d+$/.test(value)) ||
       (typeof value !== "number" && typeof value !== "string")
     ) {
       throw new Error("Journal debit contains an invalid or unsafe minor-unit amount.");

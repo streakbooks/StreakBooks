@@ -83,6 +83,12 @@ export function FirmOnboardingReportingPanel({
     [knownClients],
   );
   const visibleIds = useMemo(() => new Set(clientNames.keys()), [clientNames]);
+  const effectiveCompany = visibleIds.has(selectedCompany) ? selectedCompany : "all";
+  const effectiveAssignee =
+    selectedAssignee === "all" || selectedAssignee === "unassigned" ||
+      staff.some((member) => member.user_id === selectedAssignee)
+      ? selectedAssignee
+      : "all";
   const today = new Date().toISOString().slice(0, 10);
   const liveRows = useMemo(
     () => (overviewQ.data ?? []).filter((row) => visibleIds.has(row.company_id)),
@@ -95,21 +101,21 @@ export function FirmOnboardingReportingPanel({
   );
   const filtered = useMemo(
     () => onboardingOperationalRows(liveRows, today, {
-      companyId: selectedCompany,
-      assigneeId: selectedAssignee,
+      companyId: effectiveCompany,
+      assigneeId: effectiveAssignee,
       age,
       includeCompleted,
     }),
-    [liveRows, today, selectedCompany, selectedAssignee, age, includeCompleted],
+    [liveRows, today, effectiveCompany, effectiveAssignee, age, includeCompleted],
   );
   const counts = useMemo(() => onboardingAgeCounts(filtered), [filtered]);
   const historicalIds = useMemo(
     () => new Set(
       [...visibleIds].filter((companyId) =>
-        selectedCompany === "all" || companyId === selectedCompany,
+        effectiveCompany === "all" || companyId === effectiveCompany,
       ),
     ),
-    [visibleIds, selectedCompany],
+    [visibleIds, effectiveCompany],
   );
   const dailyTrends = useMemo(
     () => onboardingDailyTrends(historyQ.data ?? [], historicalIds),
@@ -154,14 +160,14 @@ export function FirmOnboardingReportingPanel({
       </div>
       {reportError && (
         <p role="alert" className="text-sm text-destructive">
-          A report query failed. Exports of incomplete results are disabled:
+          A report query failed. Only successfully loaded reports can be exported:
           {friendlyAuthError(reportError)}
         </p>
       )}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-1">
           <Label>Client</Label>
-          <Select value={visibleIds.has(selectedCompany) ? selectedCompany : "all"}
+          <Select value={effectiveCompany}
             onValueChange={setSelectedCompany}>
             <SelectTrigger aria-label="Filter onboarding report by client">
               <SelectValue placeholder="All accessible clients" />
@@ -178,7 +184,7 @@ export function FirmOnboardingReportingPanel({
         </div>
         <div className="space-y-1">
           <Label>Assigned staff</Label>
-          <Select value={selectedAssignee}
+          <Select value={effectiveAssignee}
             onValueChange={setSelectedAssignee}>
             <SelectTrigger aria-label="Filter onboarding report by staff">
               <SelectValue />

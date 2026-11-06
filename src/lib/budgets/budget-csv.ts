@@ -87,6 +87,7 @@ export function parseBudgetCsv(
   text: string,
   accounts: readonly BudgetGridAccount[],
   currency: string,
+  expectedMonths?: readonly string[],
 ): BudgetCsvResult {
   const issues: BudgetCsvIssue[] = [];
   const values = new Map<string, number[]>();
@@ -102,6 +103,21 @@ export function parseBudgetCsv(
       values,
       issues: [{ row: 1, message: "Header row “Account code, Account name, …” not found." }],
     };
+  }
+  const headers = splitCsvLine(lines[headerAt]!.line).map((part) => part.trim());
+  if (headers.length < 14) {
+    return { values, issues: [{ row: lines[headerAt]!.n, message: "CSV must include twelve monthly columns." }] };
+  }
+  if (expectedMonths) {
+    if (expectedMonths.length !== 12) throw new Error("Expected twelve budget months.");
+    for (let i = 0; i < 12; i++) {
+      if (headers[i + 2]?.toLocaleLowerCase() !== monthLabel(expectedMonths[i]!).toLocaleLowerCase()) {
+        return {
+          values,
+          issues: [{ row: lines[headerAt]!.n, message: `Column ${i + 3} must be ${monthLabel(expectedMonths[i]!)}. Check the budget financial year and CSV month order.` }],
+        };
+      }
+    }
   }
   for (const { line, n } of lines.slice(headerAt + 1)) {
     const cells = splitCsvLine(line);

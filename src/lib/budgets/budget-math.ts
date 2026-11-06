@@ -26,7 +26,9 @@ export function roundDiv(numerator: bigint, denominator: bigint): bigint {
 export function applyUpliftBps(minor: number, bps: number): number {
   if (!Number.isInteger(minor)) throw new Error("Amount must be an integer in minor units");
   if (!Number.isInteger(bps)) throw new Error("Uplift must be whole basis points");
-  return Number(roundDiv(BigInt(minor) * BigInt(10_000 + bps), 10_000n));
+  const result = Number(roundDiv(BigInt(minor) * BigInt(10_000 + bps), 10_000n));
+  if (!Number.isSafeInteger(result)) throw new Error("Adjusted budget amount exceeds the supported range");
+  return result;
 }
 
 /** Copy the value at `fromIndex` into every later month ("fill right"). */

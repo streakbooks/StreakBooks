@@ -52,6 +52,7 @@ function BudgetsPage() {
     [company],
   );
   const [name, setName] = useState("");
+  const [search, setSearch] = useState("");
   const [start, setStart] = useState<string | null>(null);
   const fyStart = start ?? defaultStart;
 
@@ -82,6 +83,12 @@ function BudgetsPage() {
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
 
+  const filteredBudgets = (query.data?.budgets ?? []).filter((budget) =>
+    `${budget.name} ${budget.fiscal_year_start} ${budget.notes ?? ""}`
+      .toLocaleLowerCase()
+      .includes(search.trim().toLocaleLowerCase()),
+  );
+
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
 
   return (
@@ -106,6 +113,7 @@ function BudgetsPage() {
       />
 
       <div className="mb-6 grid max-w-xl gap-3 rounded-md border border-border p-4">
+        <h2 className="text-sm font-semibold">New budget</h2>
         <div className="space-y-2">
           <Label htmlFor="budget-name">Name</Label>
           <Input
@@ -131,7 +139,7 @@ function BudgetsPage() {
         </div>
         <Button
           size="sm"
-          disabled={create.isPending || name.trim().length < 1 || !canManage}
+          disabled={create.isPending || name.trim().length < 1 || !canManage || query.isPending || query.data?.available === false}
           title={canManage ? undefined : "You do not have permission to manage budgets"}
           onClick={() => create.mutate()}
         >
@@ -139,6 +147,29 @@ function BudgetsPage() {
           Create budget
         </Button>
       </div>
+
+      {query.data?.available ? (
+        <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-base font-semibold">Existing budgets</h2>
+            <p className="text-xs text-muted-foreground">
+              {query.data.budgets.length} budget{query.data.budgets.length === 1 ? "" : "s"} in this organisation
+            </p>
+          </div>
+          {query.data.budgets.length > 0 ? (
+            <div className="space-y-1">
+              <Label htmlFor="budgets-search">Search budgets</Label>
+              <Input
+                id="budgets-search"
+                className="w-64 max-w-full"
+                placeholder="Name, year or notes"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       {query.isPending ? (
         <LoadingState />
@@ -159,6 +190,8 @@ function BudgetsPage() {
           title="No budgets yet"
           description="Create your first budget above, then fill in the monthly amounts."
         />
+      ) : filteredBudgets.length === 0 ? (
+        <EmptyState title="No matching budgets" description="Try another name, financial year or note." />
       ) : (
         <Table>
           <TableHeader>
@@ -170,7 +203,7 @@ function BudgetsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {query.data.budgets.map((b) => (
+            {filteredBudgets.map((b) => (
               <TableRow key={b.id}>
                 <TableCell>
                   <Link

@@ -1,8 +1,8 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowRight, Download, Loader2, Plus, Save, Upload } from "lucide-react";
+import { ArrowRight, Download, Loader2, Plus, RotateCcw, Save, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
@@ -30,6 +30,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AccountLookup } from "@/components/lookup";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -118,6 +119,9 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
   const [cells, setCells] = useState<Cells>(initial);
   const [dirty, setDirty] = useState(false);
   const [name, setName] = useState(data.budget.name);
+  const [notes, setNotes] = useState(data.budget.notes ?? "");
+  const [accountSearch, setAccountSearch] = useState("");
+  const [annualDrafts, setAnnualDrafts] = useState<Record<string, string>>({});
   const [uplift, setUplift] = useState("");
   const [issues, setIssues] = useState<string[]>([]);
   const [addId, setAddId] = useState("");
@@ -132,6 +136,22 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
   const minor = (id: string): Array<number | null> =>
     (cells[id] ?? []).map((t) => parseCell(t, currency));
   const invalidCount = rows.reduce((n, a) => n + minor(a.id).filter((v) => v === null).length, 0);
+  const invalidAnnualCount = rows.filter(
+    (a) => annualDrafts[a.id] !== undefined && parseCell(annualDrafts[a.id]!, currency) === null,
+  ).length;
+  const hasInvalidAmounts = invalidCount > 0 || invalidAnnualCount > 0;
+  const visible = (a: (typeof rows)[number]) =>
+    `${a.code} ${a.name}`.toLocaleLowerCase().includes(accountSearch.trim().toLocaleLowerCase());
+
+  useEffect(() => {
+    if (!dirty) return;
+    const guard = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", guard);
+    return () => window.removeEventListener("beforeunload", guard);
+  }, [dirty]);
 
   const update = (next: Cells) => {
     setCells(next);
@@ -151,12 +171,18 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
   const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
 
   const applyMinor = (fn: (id: string, v: number[]) => number[]) => {
+    if (hasInvalidAmounts) {
+      toast.error("Fix invalid amounts before applying a bulk adjustment.");
+      return false;
+    }
     const next: Cells = {};
     for (const a of rows) {
       const parsed = minor(a.id).map((v) => v ?? 0);
       next[a.id] = fn(a.id, parsed).map((v) => toText(v, currency));
     }
+    setAnnualDrafts({});
     update(next);
+    return true;
   };
 
   const onUplift = () => {
@@ -166,12 +192,20 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
       return;
     }
     const bps = Math.round(pct * 100);
-    applyMinor((_, v) => v.map((x) => applyUpliftBps(x, bps)));
-    toast.success(`Applied ${pct}% to every row (not saved yet)`);
+    try {
+      if (applyMinor((_, v) => v.map((x) => applyUpliftBps(x, bps)))) {
+        toast.success(`Applied ${pct}% to every row (not saved yet)`);
+      }
+    } catch (error) {
+      toast.error(friendlyAuthError(error));
+    }
   };
 
   const onCopyActuals = async () => {
-    if (dirty && !window.confirm("Replace the amounts on screen with last year's actuals?")) return;
+    if (
+      rows.length > 0 &&
+      !window.confirm("Replace ALL account rows with last year\'s actuals? Unsaved amounts will be lost.")
+    ) return;
     try {
       const prior = addMonthsIso(monthStart(data.budget.fiscal_year_start), -12);
       const res = await actualsFn({ data: { companyId, fiscalYearStart: prior } });
@@ -181,6 +215,7 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
       }
       const next: Cells = {};
       for (const r of res.rows) next[r.accountId] = r.months.map((v) => toText(v, currency));
+      setAnnualDrafts({});
       update(next);
       toast.success("Copied last year's actuals (not saved yet). Apply an uplift if you want one.");
     } catch (e) {
@@ -189,6 +224,10 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
   };
 
   const onExport = () => {
+    if (hasInvalidAmounts) {
+      toast.error("Fix invalid amounts before exporting the budget.");
+      return;
+    }
     const values = new Map(rows.map((a) => [a.id, minor(a.id).map((v) => v ?? 0)]));
     const text = toCsv(
       {
@@ -198,14 +237,24 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
         currency,
       },
       budgetCsvHeaders(data.months),
-      budgetToCsvRows(accounts, values, currency),
+      budgetToCsvRows(rows, values, currency),
     );
     downloadCsv(csvFilename(`budget-${data.budget.name}`, data.budget.fiscal_year_start), text);
   };
 
   const onImport = async (file: File) => {
-    const text = await file.text();
-    const res = parseBudgetCsv(text, accounts, currency);
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Budget CSV files must be 5 MB or smaller.");
+      return;
+    }
+    if (dirty && !window.confirm("Import into this unsaved budget draft? Matching account amounts will be replaced.")) return;
+    let res: ReturnType<typeof parseBudgetCsv>;
+    try {
+      res = parseBudgetCsv(await file.text(), accounts, currency, data.months);
+    } catch (error) {
+      toast.error(friendlyAuthError(error));
+      return;
+    }
     if (res.issues.length > 0) {
       setIssues(res.issues.slice(0, 20).map((i) => `Row ${i.row}: ${i.message}`));
       toast.error("The file has problems, nothing was imported.");
@@ -214,13 +263,14 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
     setIssues([]);
     const next: Cells = { ...cells };
     for (const [id, vals] of res.values) next[id] = vals.map((v) => toText(v, currency));
+    setAnnualDrafts({});
     update(next);
     toast.success(`Imported ${res.values.size} account rows (not saved yet)`);
   };
 
   const save = useMutation({
     mutationFn: async () => {
-      if (invalidCount > 0) throw new Error("Fix the highlighted amounts first.");
+      if (hasInvalidAmounts) throw new Error("Fix the highlighted amounts first.");
       await saveLinesWithHead();
     },
     onSuccess: async () => {
@@ -233,7 +283,7 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
   });
 
   async function saveLinesWithHead() {
-    if (name.trim() !== data.budget.name) {
+    if (name.trim() !== data.budget.name || (notes.trim() || null) !== data.budget.notes) {
       if (!name.trim()) throw new Error("Enter a budget name.");
       await saveHeadFn({
         data: {
@@ -241,7 +291,7 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
           budgetId: data.budget.id,
           name: name.trim(),
           fiscalYearStart: data.budget.fiscal_year_start,
-          notes: data.budget.notes,
+          notes: notes.trim() || null,
         },
       });
     }
@@ -257,6 +307,16 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
 
   const income = rows.filter((a) => a.kind === "income");
   const expense = rows.filter((a) => a.kind === "expense");
+  const resetDraft = () => {
+    if (dirty && !window.confirm("Discard the unsaved changes to this budget?")) return;
+    setCells(initial);
+    setName(data.budget.name);
+    setNotes(data.budget.notes ?? "");
+    setIssues([]);
+    setAnnualDrafts({});
+    setDirty(false);
+    toast.info("Budget restored to the last saved version.");
+  };
 
   const renderRow = (a: (typeof rows)[number]) => {
     const row = rowOf(a.id);
@@ -294,18 +354,31 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
             className="h-8 w-28 text-right font-medium tabular-nums"
             inputMode="decimal"
             disabled={!canManage}
-            value={total === 0 ? "" : fromMinorUnits(total, currency)}
-            onChange={(e) => {
-              const v = parseCell(e.target.value, currency);
-              if (v === null) return;
-              setRow(
-                a.id,
-                spreadEvenly(v, 12).map((x) => toText(x, currency)),
-              );
+            value={annualDrafts[a.id] ?? (total === 0 ? "" : fromMinorUnits(total, currency))}
+            aria-invalid={annualDrafts[a.id] !== undefined && parseCell(annualDrafts[a.id]!, currency) === null}
+            onChange={(event) =>
+              setAnnualDrafts((prev) => ({ ...prev, [a.id]: event.target.value }))
+            }
+            onKeyDown={(event) => {
+              if (event.key === "Enter") event.currentTarget.blur();
             }}
-            title="Type an annual total to spread it evenly over twelve months"
-          />
-        </TableCell>
+            onBlur={() => {
+              const text = annualDrafts[a.id];
+              if (text === undefined) return;
+              const value = parseCell(text, currency);
+              if (value === null) {
+                toast.error(`Enter a valid annual amount for ${a.name}.`);
+                return;
+              }
+              setRow(a.id, spreadEvenly(value, 12).map((x) => toText(x, currency)));
+              setAnnualDrafts((prev) => {
+                const next = { ...prev };
+                delete next[a.id];
+                return next;
+              });
+            }}
+            title="Enter an annual amount, then press Enter or leave the field to distribute it across the year"
+          />        </TableCell>
         <TableCell className="whitespace-nowrap p-1">
           <Button
             size="sm"
@@ -314,6 +387,10 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
             title="Copy the amount in the cell you last edited into every later month"
             onClick={() => {
               const from = focus.current[a.id] ?? 0;
+              if (hasInvalidAmounts) {
+                toast.error("Fix invalid amounts before filling right.");
+                return;
+              }
               const filled = fillRight(
                 vals.map((v) => v ?? 0),
                 from,
@@ -333,6 +410,11 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
             onClick={() => {
               const next = { ...cells };
               delete next[a.id];
+              setAnnualDrafts((prev) => {
+                const remaining = { ...prev };
+                delete remaining[a.id];
+                return remaining;
+              });
               update(next);
             }}
           >
@@ -413,6 +495,23 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
         </Alert>
       ) : null}
 
+      <div className="mb-4 grid gap-3 sm:grid-cols-3">
+        <div className="rounded-md border p-3">
+          <p className="text-xs text-muted-foreground">Annual budgeted income</p>
+          <p className="mt-1 text-lg font-semibold tabular-nums">{fmt.amount(sum(incomeTotals), currency)}</p>
+        </div>
+        <div className="rounded-md border p-3">
+          <p className="text-xs text-muted-foreground">Annual budgeted expenses</p>
+          <p className="mt-1 text-lg font-semibold tabular-nums">{fmt.amount(sum(expenseTotals), currency)}</p>
+        </div>
+        <div className="rounded-md border p-3">
+          <p className="text-xs text-muted-foreground">Annual budgeted net profit</p>
+          <p className={`mt-1 text-lg font-semibold tabular-nums ${sum(incomeTotals) - sum(expenseTotals) < 0 ? "text-destructive" : ""}`}>
+            {fmt.amount(sum(incomeTotals) - sum(expenseTotals), currency)}
+          </p>
+        </div>
+      </div>
+
       <div className="mb-4 flex flex-wrap items-end gap-3">
         <div className="space-y-1">
           <Label htmlFor="budget-title">Name</Label>
@@ -424,6 +523,22 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
             disabled={!canManage}
             onChange={(e) => {
               setName(e.target.value);
+              setDirty(true);
+            }}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="budget-notes">Notes</Label>
+          <Textarea
+            id="budget-notes"
+            className="min-h-10 w-64"
+            rows={1}
+            maxLength={2000}
+            placeholder="Optional planning assumptions"
+            value={notes}
+            disabled={!canManage}
+            onChange={(event) => {
+              setNotes(event.target.value);
               setDirty(true);
             }}
           />
@@ -489,8 +604,8 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
         >
           Copy last year's actuals
         </Button>
-        <div className="ml-auto flex gap-2">
-          <Button size="sm" variant="outline" onClick={onExport}>
+        <div className="ml-auto flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" disabled={hasInvalidAmounts} onClick={onExport}>
             <Download className="mr-1 size-4" /> Export CSV
           </Button>
           <Button
@@ -514,7 +629,7 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
           />
           <Button
             size="sm"
-            disabled={!canManage || !dirty || save.isPending || invalidCount > 0}
+            disabled={!canManage || !dirty || save.isPending || hasInvalidAmounts}
             onClick={() => save.mutate()}
           >
             {save.isPending ? (
@@ -524,14 +639,19 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
             )}
             Save budget
           </Button>
+          {dirty ? (
+            <Button size="sm" variant="ghost" disabled={save.isPending} onClick={resetDraft}>
+              <RotateCcw className="mr-1 size-4" /> Discard changes
+            </Button>
+          ) : null}
         </div>
       </div>
 
-      {invalidCount > 0 ? (
+      {hasInvalidAmounts ? (
         <Alert variant="destructive" className="mb-3">
           <AlertDescription>
-            {invalidCount} amount{invalidCount === 1 ? " is" : "s are"} not a valid number. Fix the
-            highlighted cells before saving.
+            {invalidCount + invalidAnnualCount} amount{invalidCount + invalidAnnualCount === 1 ? " is" : "s are"} not a valid number. Fix the
+            highlighted monthly or annual amounts before saving, exporting or using bulk actions.
           </AlertDescription>
         </Alert>
       ) : null}
@@ -551,6 +671,22 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
         <p className="mb-2 text-xs text-muted-foreground">You have unsaved changes.</p>
       ) : null}
 
+      <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+        <div className="space-y-1">
+          <Label htmlFor="budget-account-search">Find budget account</Label>
+          <Input
+            id="budget-account-search"
+            className="w-64 max-w-full"
+            value={accountSearch}
+            onChange={(event) => setAccountSearch(event.target.value)}
+            placeholder="Account code or name"
+          />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Showing {rows.filter(visible).length} of {rows.length} accounts. Totals always include all accounts.
+        </p>
+      </div>
+
       <div className="overflow-x-auto rounded-md border">
         <Table>
           <TableHeader>
@@ -566,9 +702,9 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
             </TableRow>
           </TableHeader>
           <TableBody>
-            {section("Income", income)}
+            {section("Income", income.filter(visible))}
             {totalRow("Total income", incomeTotals)}
-            {section("Expenses", expense)}
+            {section("Expenses", expense.filter(visible))}
             {totalRow("Total expenses", expenseTotals)}
             {totalRow(
               "Budgeted net profit",

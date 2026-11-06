@@ -122,6 +122,30 @@ test.describe("authenticated LinkBooks staging smoke", () => {
     await expect(page.getByRole("option", { name: "Contact follow-ups" })).toBeVisible();
   });
 
+  test("Action Center search submits explicitly and preserves shareable filters", async ({ page }) => {
+    await signIn(page, "/notifications");
+    const search = page.getByRole("textbox", { name: "Search notifications" });
+    await expect(search).toBeVisible();
+
+    // This read-only probe must not match staging financial records. Typing
+    // cannot change search params or trigger a new server-side search.
+    const probe = "__ACTION_CENTER_SEARCH_E2E_NEVER_MATCH_20261106__";
+    await search.fill(probe);
+    await expect(page).not.toHaveURL(/q=__ACTION_CENTER_SEARCH_E2E_NEVER_MATCH/);
+    await search.press("Enter");
+    await expect(page).toHaveURL(/q=__ACTION_CENTER_SEARCH_E2E_NEVER_MATCH/);
+    await expect(page.getByText("No matching notifications across your accessible history.")).toBeVisible();
+
+    await page.getByRole("button", { name: "Clear filters" }).click();
+    await expect(search).toHaveValue("");
+    await expect(page).not.toHaveURL(/q=__ACTION_CENTER_SEARCH_E2E_NEVER_MATCH/);
+
+    await page.getByRole("link", { name: "Critical", exact: true }).click();
+    await expect(page).toHaveURL(/view=critical/);
+    await expect(page.getByRole("link", { name: "Critical", exact: true }))
+      .toHaveAttribute("aria-current", "page");
+  });
+
   test("Sales and Purchases show existing permission-controlled filter views", async ({ page }) => {
     await signIn(page, "/sales/invoices");
     await expect(page.getByRole("button", { name: "Saved views" })).toBeVisible();

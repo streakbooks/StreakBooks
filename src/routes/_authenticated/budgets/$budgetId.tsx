@@ -8,6 +8,7 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
 import { BudgetGovernancePanel } from "@/components/budgets/BudgetGovernancePanel";
 import { BudgetApprovalPanel } from "@/components/budgets/BudgetApprovalPanel";
+import { BudgetDimensionsPanel } from "@/components/budgets/BudgetDimensionsPanel";
 import { useFormat } from "@/hooks/use-format";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { addMonthsIso, monthStart } from "@/lib/accounting/fiscal-year";
@@ -879,6 +880,12 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
         total spreads it evenly (any rounding remainder goes into the last month). Importing a CSV
         replaces the rows it contains; accounts not in the file keep their amounts.
       </p>
+      <BudgetDimensionsPanel
+        companyId={companyId}
+        budgetId={data.budget.id}
+        canEdit={canEdit}
+        parentDirty={dirty}
+      />
     </>
   );
 }

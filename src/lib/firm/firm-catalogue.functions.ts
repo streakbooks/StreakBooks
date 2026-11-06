@@ -35,6 +35,8 @@ export type FirmCustomOnboardingStep = {
   title: string;
   is_active: boolean;
   sort_order: number;
+  due_in_days: number | null;
+  reminders_enabled: boolean;
   version: number;
 };
 
@@ -104,7 +106,7 @@ export const listFirmCustomOnboarding = createServerFn({ method: "GET" })
     await assertFirmMembership(context, data.firmId, false);
     const { data: rows, error } = await context.supabase
       .from("firm_onboarding_template_steps" as never)
-      .select("firm_id,task_key,title,is_active,sort_order,version" as never)
+      .select("firm_id,task_key,title,is_active,sort_order,due_in_days,reminders_enabled,version" as never)
       .eq("firm_id" as never, data.firmId as never)
       .order("sort_order" as never)
       .order("task_key" as never)
@@ -122,6 +124,8 @@ const onboardingInput = firmScope
     title: z.string().trim().min(2).max(180),
     is_active: z.boolean(),
     sort_order: z.number().int().min(0).max(10000),
+    due_in_days: z.number().int().min(0).max(365).nullable(),
+    reminders_enabled: z.boolean(),
   })
   .strict()
   .superRefine((item, ctx) => {
@@ -137,7 +141,8 @@ export const saveFirmCustomOnboarding = createServerFn({ method: "POST" })
     await assertFirmMembership(context, data.firmId, true);
     const { firmId, task_key, version, ...fields } = data;
     const table = context.supabase.from("firm_onboarding_template_steps" as never);
-    const projection = "firm_id,task_key,title,is_active,sort_order,version";
+    const projection =
+      "firm_id,task_key,title,is_active,sort_order,due_in_days,reminders_enabled,version";
     if (!task_key) {
       const { data: created, error } = await table
         .insert({

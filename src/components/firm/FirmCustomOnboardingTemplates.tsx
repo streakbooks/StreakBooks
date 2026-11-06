@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export function FirmCustomOnboardingTemplates({
   firmId,
@@ -29,6 +30,8 @@ export function FirmCustomOnboardingTemplates({
   const apply = useServerFn(applyFirmCustomOnboarding);
   const qc = useQueryClient();
   const [title, setTitle] = useState("");
+  const [dueInDays, setDueInDays] = useState("");
+  const [remindersEnabled, setRemindersEnabled] = useState(true);
   const [editing, setEditing] = useState<FirmCustomOnboardingStep | null>(null);
   const query = useQuery({
     queryKey: ["firm-custom-onboarding-templates", firmId],
@@ -39,6 +42,8 @@ export function FirmCustomOnboardingTemplates({
     mutationFn: (data: FirmCustomOnboardingInput) => save({ data }),
     onSuccess: async () => {
       setTitle("");
+      setDueInDays("");
+      setRemindersEnabled(true);
       setEditing(null);
       await qc.invalidateQueries({ queryKey: ["firm-custom-onboarding-templates", firmId] });
       toast.success("Custom onboarding template saved");
@@ -48,7 +53,10 @@ export function FirmCustomOnboardingTemplates({
   const applyM = useMutation({
     mutationFn: () => apply({ data: { firmId, companyId } }),
     onSuccess: async (result) => {
-      await qc.invalidateQueries({ queryKey: ["firm-onboarding-steps", firmId, companyId] });
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["firm-onboarding-steps", firmId, companyId] }),
+        qc.invalidateQueries({ queryKey: ["firm-onboarding-overview", firmId] }),
+      ]);
       toast.success(`Added ${result.added} missing custom checklist steps`);
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
@@ -91,15 +99,44 @@ export function FirmCustomOnboardingTemplates({
                   placeholder="Verify payroll registration and authority"
                 />
               </div>
+              <div className="w-40 space-y-1">
+                <Label htmlFor="firm-onboarding-days">Due after (days)</Label>
+                <Input
+                  id="firm-onboarding-days"
+                  type="number"
+                  min={0}
+                  max={365}
+                  value={dueInDays}
+                  disabled={saveM.isPending}
+                  placeholder="No due date"
+                  onChange={(event) => setDueInDays(event.target.value)}
+                />
+              </div>
+              <div className="flex items-center gap-2 pb-2">
+                <Checkbox
+                  id="firm-template-reminder"
+                  checked={remindersEnabled}
+                  disabled={saveM.isPending}
+                  onCheckedChange={(checked) => setRemindersEnabled(checked === true)}
+                />
+                <Label htmlFor="firm-template-reminder">In-app reminders</Label>
+              </div>
               <Button
                 size="sm"
-                disabled={saveM.isPending || title.trim().length < 2}
+                disabled={
+                  saveM.isPending || title.trim().length < 2 ||
+                  (dueInDays !== "" &&
+                    (!Number.isInteger(Number(dueInDays)) ||
+                      Number(dueInDays) < 0 || Number(dueInDays) > 365))
+                }
                 onClick={() => saveM.mutate({
                   firmId,
                   ...(editing ? { task_key: editing.task_key, version: editing.version } : {}),
                   title: title.trim(),
                   is_active: editing?.is_active ?? true,
                   sort_order: editing?.sort_order ?? 100,
+                  due_in_days: dueInDays === "" ? null : Number(dueInDays),
+                  reminders_enabled: remindersEnabled,
                 })}
               >
                 {editing ? "Save step" : "Add step"}
@@ -108,7 +145,12 @@ export function FirmCustomOnboardingTemplates({
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => { setEditing(null); setTitle(""); }}
+                  onClick={() => {
+                    setEditing(null);
+                    setTitle("");
+                    setDueInDays("");
+                    setRemindersEnabled(true);
+                  }}
                 >
                   Cancel
                 </Button>
@@ -126,7 +168,15 @@ export function FirmCustomOnboardingTemplates({
                 key={step.task_key}
                 className="flex flex-wrap items-center gap-2 rounded-md border p-2"
               >
-                <span className="flex-1 text-sm">{step.title}</span>
+                <div className="flex-1">
+                  <span className="text-sm">{step.title}</span>
+                  <p className="text-xs text-muted-foreground">
+                    {step.due_in_days === null
+                      ? "No default due date"
+                      : `Due ${step.due_in_days} days after application`}
+                    {" · "}{step.reminders_enabled ? "Reminders on" : "Reminders off"}
+                  </p>
+                </div>
                 <Badge variant={step.is_active ? "secondary" : "outline"}>
                   {step.is_active ? "Active" : "Archived"}
                 </Badge>
@@ -136,7 +186,12 @@ export function FirmCustomOnboardingTemplates({
                       size="sm"
                       variant="ghost"
                       disabled={saveM.isPending}
-                      onClick={() => { setEditing(step); setTitle(step.title); }}
+                      onClick={() => {
+                        setEditing(step);
+                        setTitle(step.title);
+                        setDueInDays(step.due_in_days === null ? "" : String(step.due_in_days));
+                        setRemindersEnabled(step.reminders_enabled);
+                      }}
                     >
                       Edit
                     </Button>
@@ -151,6 +206,8 @@ export function FirmCustomOnboardingTemplates({
                         title: step.title,
                         is_active: !step.is_active,
                         sort_order: step.sort_order,
+                        due_in_days: step.due_in_days,
+                        reminders_enabled: step.reminders_enabled,
                       })}
                     >
                       {step.is_active ? "Archive" : "Restore"}

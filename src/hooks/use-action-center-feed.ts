@@ -7,12 +7,23 @@ import {
   actionNotificationSearchPattern,
   type ActionCenterFilters,
 } from "@/lib/notifications/notification-utils";
+import {
+  nextNotificationCursor,
+  notificationCursorFilter,
+  notificationPageCountMode,
+  type NotificationCursor,
+} from "@/lib/notifications/notification-cursor";
 
 const SELECT_FIELDS =
-  "id,company_id,title,body,category,priority,target_path,entity_type,entity_id,created_at,read_at,archived_at,resolved_at";
+  "id,company_id,title,body,category,priority,priority_rank,target_path,entity_type,entity_id,created_at,read_at,archived_at,resolved_at";
 const SERVER_PAGE_SIZE = 100;
 
-type NotificationPage = { rows: ActionNotification[]; total: number };
+type RankedActionNotification = ActionNotification & { priority_rank: number };
+type NotificationPage = {
+  rows: RankedActionNotification[];
+  total: number;
+  nextCursor: NotificationCursor | null;
+};
 type WorkloadRow = {
   action_count: number | string;
   unread_count: number | string;
@@ -45,10 +56,13 @@ export function useActionCenterFeed(
   const inbox = useInfiniteQuery({
     queryKey: feedKey,
     enabled: Boolean(companyId && userId),
-    initialPageParam: 0,
-    refetchInterval: 60_000,
+    initialPageParam: null as NotificationCursor | null,
+    // Avoid polling every historical page once the user has loaded several.
+    // Realtime invalidation and the explicit Refresh button remain available.
+    refetchInterval: (query) =>
+      (query.state.data?.pages.length ?? 0) > 1 ? false : 60_000,
     queryFn: async ({ pageParam }): Promise<NotificationPage> => {
-      if (pageParam === 0) {
+      if (pageParam === null) {
         const { error: refreshError } = await supabase.rpc(
           "refresh_action_notifications" as never,
           { _company_id: companyId } as never,
@@ -63,7 +77,7 @@ export function useActionCenterFeed(
 
       let query = supabase
         .from("action_notification_inbox" as never)
-        .select(SELECT_FIELDS as never, { count: "exact" })
+        .select(SELECT_FIELDS as never, { count: notificationPageCountMode(pageParam) })
         .eq("company_id" as never, companyId as never);
 
       if (category !== "all") query = query.eq("category" as never, category as never);
@@ -101,6 +115,10 @@ export function useActionCenterFeed(
           break;
       }
 
+      if (pageParam) {
+        query = query.or(notificationCursorFilter(pageParam, sort));
+      }
+
       if (sort === "priority") {
         query = query
           .order("priority_rank" as never, { ascending: true })
@@ -113,15 +131,18 @@ export function useActionCenterFeed(
           .order("id" as never, { ascending });
       }
 
-      const from = pageParam * SERVER_PAGE_SIZE;
-      const { data, count, error } = await query.range(from, from + SERVER_PAGE_SIZE - 1);
+      // One extra row provides an accurate next-page signal without offsets.
+      const { data, count, error } = await query.limit(SERVER_PAGE_SIZE + 1);
       if (error) throw error;
-      return { rows: (data ?? []) as unknown as ActionNotification[], total: count ?? 0 };
+      const received = (data ?? []) as unknown as RankedActionNotification[];
+      return {
+        rows: received.slice(0, SERVER_PAGE_SIZE),
+        // Exact totals are requested only on the first page.
+        total: count ?? 0,
+        nextCursor: nextNotificationCursor(received, SERVER_PAGE_SIZE),
+      };
     },
-    getNextPageParam: (lastPage, allPages) => {
-      const seen = allPages.reduce((total, page) => total + page.rows.length, 0);
-      return seen < lastPage.total && lastPage.rows.length > 0 ? allPages.length : undefined;
-    },
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
   });
 
   const workload = useQuery({

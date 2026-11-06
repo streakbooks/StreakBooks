@@ -196,7 +196,7 @@ export function auditFxRevaluationRun(
       }
     }
 
-    if (!tag || tag.kind !== "revaluation" || !/^[A-Z]{3}$/.test(currency ?? "")) {
+    if (!tag || tag.kind !== "revaluation" || currency === null || !/^[A-Z]{3}$/.test(currency)) {
       issues.push("Revaluation currency tag is missing or invalid.");
       rowValid = false;
     } else {

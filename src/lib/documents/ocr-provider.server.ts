@@ -113,8 +113,11 @@ export function verifyOcrJob(
   const expected = createHmac("sha256", config.signingKey)
     .update(encoded!).digest();
   const given = Buffer.from(signature!, "base64url");
-  if (given.length !== expected.length || !timingSafeEqual(expected, given))
-    throw new Error("Invalid or expired extraction request.");
+  if (
+    given.length !== expected.length ||
+    given.toString("base64url") !== signature ||
+    !timingSafeEqual(expected, given)
+  ) throw new Error("Invalid or expired extraction request.");
   let parsed: Partial<OcrJobClaims>;
   try { parsed = JSON.parse(Buffer.from(encoded!, "base64url").toString("utf8")) as Partial<OcrJobClaims>; }
   catch { throw new Error("Invalid or expired extraction request."); }

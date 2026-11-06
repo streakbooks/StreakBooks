@@ -8,6 +8,7 @@ import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { verifyTaxPostingRaces } from "./tax-posting-races.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const name = "linkbooks-tax-history-" + process.pid;
@@ -65,6 +66,11 @@ try {
   sql(migration);
   sql(read("tests/integration/tax-master-posted-history.sql"));
   console.log("PASS: isolated tax posted-history guards and tenant reference tests");
+  sql(read("tests/fixtures/tax-master-history/posting-race.sql"));
+  const localHost = process.platform === "win32"
+    ? "--host=npipe:////./pipe/docker_engine"
+    : "--host=unix:///var/run/docker.sock";
+  await verifyTaxPostingRaces(localHost, name);
 } finally {
   if (started) {
     try {

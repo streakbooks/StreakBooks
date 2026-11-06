@@ -2,16 +2,29 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
-  { to: "/advisors-admin/settings/services-pricing", label: "Services & Pricing" },
+  { to: "/advisors-admin", label: "Overview", exact: true },
+  { to: "/advisors-admin/inquiries", label: "Inquiries" },
+  { to: "/advisors-admin/conversations", label: "Conversations" },
+  { to: "/advisors-admin/clients", label: "Clients" },
+  { to: "/advisors-admin/engagements", label: "Engagements" },
+  { to: "/advisors-admin/onboarding", label: "Onboarding" },
+  { to: "/advisors-admin/billing", label: "Billing" },
+  { to: "/advisors-admin/workspaces", label: "Workspaces" },
+  { to: "/advisors-admin/documents", label: "Documents" },
   { to: "/advisors-admin/appointments", label: "Appointments" },
+  { to: "/advisors-admin/staff", label: "Advisors" },
+  { to: "/advisors-admin/settings/services-pricing", label: "Services & Pricing" },
 ] as const;
 
 export function AdvisorsSubnav() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   return (
-    <nav aria-label="Advisors settings" className="flex flex-wrap gap-2">
+    <nav aria-label="Advisors administration" className="flex flex-wrap gap-2">
       {LINKS.map((link) => {
-        const active = pathname.startsWith(link.to);
+        const exact = "exact" in link && link.exact;
+        const active = exact
+          ? pathname === link.to || pathname === `${link.to}/`
+          : pathname.startsWith(link.to);
         return (
           <Link
             key={link.to}

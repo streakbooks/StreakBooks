@@ -29,6 +29,12 @@ export const PLAN_CODES = [
   "standard",
   "premium",
   "business",
+  "advisors_essential_books",
+  "advisors_growth_books",
+  "advisors_complete_books",
+  "advisors_quick_guidance",
+  "advisors_monthly_coaching",
+  "advisors_business_coaching",
 ] as const;
 export type PlanCode = (typeof PLAN_CODES)[number];
 

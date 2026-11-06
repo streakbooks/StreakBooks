@@ -153,10 +153,17 @@ export const navItems: NavItem[] = [
   },
   {
     label: "Advisors",
-    to: "/advisors-admin/settings/services-pricing",
+    to: "/advisors-admin",
     icon: Handshake,
     group: "practice",
-    description: "Advisors services, pricing and delivery",
+    description: "Advisors inquiries, clients and delivery",
+  },
+  {
+    label: "Advisors portal",
+    to: "/advisors-portal",
+    icon: Handshake,
+    group: "practice",
+    description: "Customer Advisors plan, appointments and documents",
   },
   {
     label: "AI Assistant",

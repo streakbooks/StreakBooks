@@ -744,7 +744,7 @@ export const createCheckoutFor = createServerOnlyFn(
       .update({ provider_session_id: session.id } as never)
       .eq("id" as never, checkoutId as never);
     if (updateError) throw new Error(updateError.message);
-    return { url: session.url, provider: method.provider };
+    return { url: session.url, provider: method.provider, checkoutId };
   },
 );
 
@@ -764,7 +764,7 @@ async function openPriceBookCheckout(input: {
   price: CheckoutPrice;
   trialEndsAt: string | null;
   offerCode: string | null;
-}): Promise<{ url: string; provider: "stripe" | "razorpay" }> {
+}): Promise<{ url: string; provider: "stripe" | "razorpay"; checkoutId: string }> {
   const { ensureProviderPrice, ensureStripeTaxRate } =
     await import("@/lib/billing/providers/price-mapping.server");
   const { createStripeClient, stripePriceCheckoutBody } =
@@ -879,7 +879,7 @@ async function openPriceBookCheckout(input: {
     .update({ provider_session_id: session.id } as never)
     .eq("id" as never, checkoutId as never);
   if (updateError) throw new Error(updateError.message);
-  return { url: session.url, provider: input.provider };
+  return { url: session.url, provider: input.provider, checkoutId };
 }
 
 function requirePayMethod(value: string | undefined): PayMethodId {

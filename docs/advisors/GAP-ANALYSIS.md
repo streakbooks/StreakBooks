@@ -1,42 +1,49 @@
 # LinkBooks Advisors — gap analysis
 
-**Date:** 6 November 2026 · **Baseline:** `main` @ `5089800` · **Repo:** https://github.com/linkbusinessadvisory/LinkBooks
+**Date:** 6 November 2026 · **Baseline:** `main` @ `5089800` · **Working branch:** `feature/advisors-ad-04-appointment-booking` · **Repo:** https://github.com/linkbusinessadvisory/LinkBooks
 
 ## Audit summary
 
-No Advisors customer product exists in this repository. Searches for Advisors routes, screens, migrations, assets and product docs returned no dedicated implementation. Related platforms that must be **reused, not replaced**:
+Advisors AD-01…AD-10 are implemented on the working branch (local + linked remote SQL for later batches). Related platforms were **reused, not replaced**:
 
 | Area | Status | Reuse notes |
 | --- | --- | --- |
 | Public pricing (`/pricing`) | Done | Pattern for public catalogue + server fn + graceful DB-off fallback |
-| Billing catalogue / subscriptions / invoices | Done | Integrate in AD-07; do not invent a second payment engine |
+| Billing catalogue / subscriptions / invoices | Done | AD-07 bridges Advisors SKUs into existing checkout — no second payment engine |
 | Firm / practice workspace (`/firm`) | Partial | Accountant firm portfolio — distinct from Advisors service delivery |
-| Documents / files | Done | Reuse for onboarding uploads (AD-06 / AD-08) |
-| Auth + portal login | Done | Customer portal (AD-09) must use existing session / RLS model |
-| Authenticated AI assistant | Partial | Advisors chatbot (AD-03) must use verified AI infra; never auto-open on landing |
-| Appointment / calendar product | Missing | Native booking required in AD-04 |
-| Advisors landing / services / plans | Missing | AD-01 / AD-02 |
-| Advisors admin dashboard | Missing | AD-05 onward |
+| Documents / files | Done | Onboarding/delivery document requests; binary uploads via linked company Files |
+| Auth + portal login | Done | AD-09 customer portal uses existing session + `linked_user_id` |
+| Authenticated AI assistant | Partial | AD-03 Advisors chat uses verified AI infra; does not auto-open on landing |
+| Appointment / calendar product | Done | Native AD-04 booking; Google/Microsoft OAuth still optional/deferred |
+| Advisors landing / services / plans | Done | AD-01 / AD-02 |
+| Advisors admin dashboard | Done | AD-05 onward under `/advisors-admin` |
 
-## Roadmap gaps (AD-01 … AD-10)
+## Roadmap (AD-01 … AD-10)
 
 | Batch | Required outcome | Current status |
 | --- | --- | --- |
-| AD-01 | Public landing, two services, original art, selection without chatbot | **Missing — implementing now** |
-| AD-02 | Bookkeeping + coaching plans, editable admin pricing | Missing |
-| AD-03 | Post-selection AI Advisor chat, qualification, lead capture | Missing |
-| AD-04 | Native appointment booking with conflict protection | Missing |
-| AD-05 | Inquiry / customer / advisor management console | Missing (firm ≠ Advisors) |
-| AD-06 | Proposals, agreements, onboarding | Missing |
-| AD-07 | Billing / subscriptions via existing billing | Missing Advisors SKUs |
-| AD-08 | Advisor workspaces, tasks, documents, delivery | Missing |
-| AD-09 | Customer portal, notifications, optional calendar OAuth | Missing |
-| AD-10 | Security, reliability, performance, release verification | Pending after batches |
+| AD-01 | Public landing, two services, original art, selection without chatbot | Implemented |
+| AD-02 | Bookkeeping + coaching plans, editable admin pricing | Implemented |
+| AD-03 | Post-selection AI Advisor chat, qualification, lead capture | Implemented |
+| AD-04 | Native appointment booking with conflict protection | Implemented (committed through `a1af61b`) |
+| AD-05 | Inquiry / customer / advisor management console | Implemented locally — remote SQL applied |
+| AD-06 | Proposals, agreements, onboarding | Implemented locally — remote SQL applied |
+| AD-07 | Billing / subscriptions via existing billing | Implemented locally — remote SQL applied |
+| AD-08 | Advisor workspaces, tasks, documents, delivery | Implemented — remote SQL `20261106190000` |
+| AD-09 | Customer portal, notifications, optional calendar OAuth | Implemented — remote SQL `20261106200000`; OAuth deferred |
+| AD-10 | Security, reliability, performance, release verification | Implemented — remote SQL `20261106210000` + `20261106211000` (anon revoke) + `verify:advisors` + production build |
+
+## Publishing status
+
+AD-05…AD-10 (and related docs/scripts) remain **uncommitted / unpublished** on `feature/advisors-ad-04-appointment-booking`. Pulling `main` will not retrieve them. Commit, push, PR, and GitHub CI require explicit authorization.
 
 ## CI trigger status
 
-`.github/workflows/quality.yml` is fully commented out (`on:` / jobs inactive). Automatic GitHub Actions are not currently triggered by push or pull request. Local scripts remain the verification path per product instruction.
+`.github/workflows/quality.yml` is fully commented out (`on:` / jobs inactive). Automatic GitHub Actions are not currently triggered by push or pull request. Local scripts remain the verification path: `npm run verify:advisors`.
 
-## Non-goals for AD-01
+## Remaining product follow-ups (not blocking AD-10 code)
 
-Chatbot, booking, admin console, paid subscription start, competitor UI/artwork copy, regulated tax/audit claims.
+- Live browser smoke across admin, booking, portal invite, and Resend reminders
+- Optional Google/Microsoft calendar OAuth
+- Commit / PR / merge when authorized
+- Independent accountant / jurisdiction sign-off outside this engineering batch

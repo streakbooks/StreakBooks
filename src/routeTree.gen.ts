@@ -50,6 +50,21 @@ import { Route as PortalLoginRouteImport } from './routes/portal/login'
 import { Route as PricingBuilderRouteImport } from './routes/pricing_.builder'
 import { Route as AuthenticatedAdvisorsAdminIndexRouteImport } from './routes/_authenticated/advisors-admin.index'
 import { Route as AuthenticatedAdvisorsAdminAppointmentsRouteImport } from './routes/_authenticated/advisors-admin.appointments'
+import { Route as AuthenticatedAdvisorsAdminBillingRouteImport } from './routes/_authenticated/advisors-admin.billing'
+import { Route as AuthenticatedAdvisorsAdminClientsRouteImport } from './routes/_authenticated/advisors-admin.clients'
+import { Route as AuthenticatedAdvisorsAdminConversationsRouteImport } from './routes/_authenticated/advisors-admin.conversations'
+import { Route as AuthenticatedAdvisorsAdminDocumentsRouteImport } from './routes/_authenticated/advisors-admin.documents'
+import { Route as AuthenticatedAdvisorsAdminEngagementsRouteImport } from './routes/_authenticated/advisors-admin.engagements'
+import { Route as AuthenticatedAdvisorsAdminInquiriesRouteImport } from './routes/_authenticated/advisors-admin.inquiries'
+import { Route as AuthenticatedAdvisorsAdminOnboardingRouteImport } from './routes/_authenticated/advisors-admin.onboarding'
+import { Route as AuthenticatedAdvisorsAdminStaffRouteImport } from './routes/_authenticated/advisors-admin.staff'
+import { Route as AuthenticatedAdvisorsAdminWorkspacesRouteImport } from './routes/_authenticated/advisors-admin.workspaces'
+import { Route as AuthenticatedAdvisorsPortalIndexRouteImport } from './routes/_authenticated/advisors-portal.index'
+import { Route as AuthenticatedAdvisorsPortalAccountRouteImport } from './routes/_authenticated/advisors-portal.account'
+import { Route as AuthenticatedAdvisorsPortalAppointmentsRouteImport } from './routes/_authenticated/advisors-portal.appointments'
+import { Route as AuthenticatedAdvisorsPortalDocumentsRouteImport } from './routes/_authenticated/advisors-portal.documents'
+import { Route as AuthenticatedAdvisorsPortalMessagesRouteImport } from './routes/_authenticated/advisors-portal.messages'
+import { Route as AuthenticatedAdvisorsPortalTasksRouteImport } from './routes/_authenticated/advisors-portal.tasks'
 import { Route as AuthenticatedBankingIndexRouteImport } from './routes/_authenticated/banking/index'
 import { Route as AuthenticatedBankingCashCodingRouteImport } from './routes/_authenticated/banking/cash-coding'
 import { Route as AuthenticatedBankingFeedsRouteImport } from './routes/_authenticated/banking/feeds'
@@ -94,7 +109,9 @@ import { Route as AuthenticatedSalesRecurringRouteImport } from './routes/_authe
 import { Route as AuthenticatedSalesRemindersRouteImport } from './routes/_authenticated/sales/reminders'
 import { Route as AuthenticatedSalesSettingsRouteImport } from './routes/_authenticated/sales/settings'
 import { Route as AuthenticatedSalesStatementsRouteImport } from './routes/_authenticated/sales/statements'
+import { Route as AdvisorsAgreementTokenRouteImport } from './routes/advisors_.agreement.$token'
 import { Route as AdvisorsManageManageTokenRouteImport } from './routes/advisors_.manage.$manageToken'
+import { Route as AdvisorsProposalTokenRouteImport } from './routes/advisors_.proposal.$token'
 import { Route as PortalAppIndexRouteImport } from './routes/portal/app/index'
 import { Route as PortalAppBankRouteImport } from './routes/portal/app/bank'
 import { Route as PortalAppBillsRouteImport } from './routes/portal/app/bills'
@@ -149,6 +166,7 @@ import { Route as AuthenticatedSalesQuotesNewRouteImport } from './routes/_authe
 import { Route as AuthenticatedSalesReceiptsIndexRouteImport } from './routes/_authenticated/sales/receipts.index'
 import { Route as AuthenticatedSalesReceiptsReceiptIdRouteImport } from './routes/_authenticated/sales/receipts.$receiptId'
 import { Route as AuthenticatedSalesReceiptsNewRouteImport } from './routes/_authenticated/sales/receipts.new'
+import { Route as AdvisorsPortalInviteTokenRouteImport } from './routes/advisors_.portal.invite.$token'
 import { Route as PortalAppInvoicesInvoiceIdRouteImport } from './routes/portal/app/invoices.$invoiceId'
 import { Route as AuthenticatedDocumentsPrintKindIdRouteImport } from './routes/_authenticated/documents.print.$kind.$id'
 import { Route as AuthenticatedPurchasesBillsBillIdEditRouteImport } from './routes/_authenticated/purchases/bills.$billId.edit'
@@ -373,6 +391,96 @@ const AuthenticatedAdvisorsAdminAppointmentsRoute =
     id: '/appointments',
     path: '/appointments',
     getParentRoute: () => AuthenticatedAdvisorsAdminRoute,
+  } as any)
+const AuthenticatedAdvisorsAdminBillingRoute =
+  AuthenticatedAdvisorsAdminBillingRouteImport.update({
+    id: '/billing',
+    path: '/billing',
+    getParentRoute: () => AuthenticatedAdvisorsAdminRoute,
+  } as any)
+const AuthenticatedAdvisorsAdminClientsRoute =
+  AuthenticatedAdvisorsAdminClientsRouteImport.update({
+    id: '/clients',
+    path: '/clients',
+    getParentRoute: () => AuthenticatedAdvisorsAdminRoute,
+  } as any)
+const AuthenticatedAdvisorsAdminConversationsRoute =
+  AuthenticatedAdvisorsAdminConversationsRouteImport.update({
+    id: '/conversations',
+    path: '/conversations',
+    getParentRoute: () => AuthenticatedAdvisorsAdminRoute,
+  } as any)
+const AuthenticatedAdvisorsAdminDocumentsRoute =
+  AuthenticatedAdvisorsAdminDocumentsRouteImport.update({
+    id: '/documents',
+    path: '/documents',
+    getParentRoute: () => AuthenticatedAdvisorsAdminRoute,
+  } as any)
+const AuthenticatedAdvisorsAdminEngagementsRoute =
+  AuthenticatedAdvisorsAdminEngagementsRouteImport.update({
+    id: '/engagements',
+    path: '/engagements',
+    getParentRoute: () => AuthenticatedAdvisorsAdminRoute,
+  } as any)
+const AuthenticatedAdvisorsAdminInquiriesRoute =
+  AuthenticatedAdvisorsAdminInquiriesRouteImport.update({
+    id: '/inquiries',
+    path: '/inquiries',
+    getParentRoute: () => AuthenticatedAdvisorsAdminRoute,
+  } as any)
+const AuthenticatedAdvisorsAdminOnboardingRoute =
+  AuthenticatedAdvisorsAdminOnboardingRouteImport.update({
+    id: '/onboarding',
+    path: '/onboarding',
+    getParentRoute: () => AuthenticatedAdvisorsAdminRoute,
+  } as any)
+const AuthenticatedAdvisorsAdminStaffRoute =
+  AuthenticatedAdvisorsAdminStaffRouteImport.update({
+    id: '/staff',
+    path: '/staff',
+    getParentRoute: () => AuthenticatedAdvisorsAdminRoute,
+  } as any)
+const AuthenticatedAdvisorsAdminWorkspacesRoute =
+  AuthenticatedAdvisorsAdminWorkspacesRouteImport.update({
+    id: '/workspaces',
+    path: '/workspaces',
+    getParentRoute: () => AuthenticatedAdvisorsAdminRoute,
+  } as any)
+const AuthenticatedAdvisorsPortalIndexRoute =
+  AuthenticatedAdvisorsPortalIndexRouteImport.update({
+    id: '/advisors-portal/',
+    path: '/advisors-portal/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdvisorsPortalAccountRoute =
+  AuthenticatedAdvisorsPortalAccountRouteImport.update({
+    id: '/advisors-portal/account',
+    path: '/advisors-portal/account',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdvisorsPortalAppointmentsRoute =
+  AuthenticatedAdvisorsPortalAppointmentsRouteImport.update({
+    id: '/advisors-portal/appointments',
+    path: '/advisors-portal/appointments',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdvisorsPortalDocumentsRoute =
+  AuthenticatedAdvisorsPortalDocumentsRouteImport.update({
+    id: '/advisors-portal/documents',
+    path: '/advisors-portal/documents',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdvisorsPortalMessagesRoute =
+  AuthenticatedAdvisorsPortalMessagesRouteImport.update({
+    id: '/advisors-portal/messages',
+    path: '/advisors-portal/messages',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdvisorsPortalTasksRoute =
+  AuthenticatedAdvisorsPortalTasksRouteImport.update({
+    id: '/advisors-portal/tasks',
+    path: '/advisors-portal/tasks',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedBankingIndexRoute =
   AuthenticatedBankingIndexRouteImport.update({
@@ -637,12 +745,22 @@ const AuthenticatedSalesStatementsRoute =
     path: '/statements',
     getParentRoute: () => AuthenticatedSalesRouteRoute,
   } as any)
+const AdvisorsAgreementTokenRoute = AdvisorsAgreementTokenRouteImport.update({
+  id: '/advisors_/agreement/$token',
+  path: '/advisors/agreement/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdvisorsManageManageTokenRoute =
   AdvisorsManageManageTokenRouteImport.update({
     id: '/advisors_/manage/$manageToken',
     path: '/advisors/manage/$manageToken',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AdvisorsProposalTokenRoute = AdvisorsProposalTokenRouteImport.update({
+  id: '/advisors_/proposal/$token',
+  path: '/advisors/proposal/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PortalAppIndexRoute = PortalAppIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -952,6 +1070,12 @@ const AuthenticatedSalesReceiptsNewRoute =
     path: '/receipts/new',
     getParentRoute: () => AuthenticatedSalesRouteRoute,
   } as any)
+const AdvisorsPortalInviteTokenRoute =
+  AdvisorsPortalInviteTokenRouteImport.update({
+    id: '/advisors_/portal/invite/$token',
+    path: '/advisors/portal/invite/$token',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const PortalAppInvoicesInvoiceIdRoute =
   PortalAppInvoicesInvoiceIdRouteImport.update({
     id: '/$invoiceId',
@@ -1047,6 +1171,20 @@ export interface FileRoutesByFullPath {
   '/pricing/builder': typeof PricingBuilderRoute
   '/portal/': typeof PortalIndexRoute
   '/advisors-admin/appointments': typeof AuthenticatedAdvisorsAdminAppointmentsRoute
+  '/advisors-admin/billing': typeof AuthenticatedAdvisorsAdminBillingRoute
+  '/advisors-admin/clients': typeof AuthenticatedAdvisorsAdminClientsRoute
+  '/advisors-admin/conversations': typeof AuthenticatedAdvisorsAdminConversationsRoute
+  '/advisors-admin/documents': typeof AuthenticatedAdvisorsAdminDocumentsRoute
+  '/advisors-admin/engagements': typeof AuthenticatedAdvisorsAdminEngagementsRoute
+  '/advisors-admin/inquiries': typeof AuthenticatedAdvisorsAdminInquiriesRoute
+  '/advisors-admin/onboarding': typeof AuthenticatedAdvisorsAdminOnboardingRoute
+  '/advisors-admin/staff': typeof AuthenticatedAdvisorsAdminStaffRoute
+  '/advisors-admin/workspaces': typeof AuthenticatedAdvisorsAdminWorkspacesRoute
+  '/advisors-portal/account': typeof AuthenticatedAdvisorsPortalAccountRoute
+  '/advisors-portal/appointments': typeof AuthenticatedAdvisorsPortalAppointmentsRoute
+  '/advisors-portal/documents': typeof AuthenticatedAdvisorsPortalDocumentsRoute
+  '/advisors-portal/messages': typeof AuthenticatedAdvisorsPortalMessagesRoute
+  '/advisors-portal/tasks': typeof AuthenticatedAdvisorsPortalTasksRoute
   '/banking/cash-coding': typeof AuthenticatedBankingCashCodingRoute
   '/banking/feeds': typeof AuthenticatedBankingFeedsRoute
   '/banking/import': typeof AuthenticatedBankingImportRoute
@@ -1083,7 +1221,9 @@ export interface FileRoutesByFullPath {
   '/sales/reminders': typeof AuthenticatedSalesRemindersRoute
   '/sales/settings': typeof AuthenticatedSalesSettingsRoute
   '/sales/statements': typeof AuthenticatedSalesStatementsRoute
+  '/advisors/agreement/$token': typeof AdvisorsAgreementTokenRoute
   '/advisors/manage/$manageToken': typeof AdvisorsManageManageTokenRoute
+  '/advisors/proposal/$token': typeof AdvisorsProposalTokenRoute
   '/portal/app/bank': typeof PortalAppBankRoute
   '/portal/app/bills': typeof PortalAppBillsRoute
   '/portal/app/credits': typeof PortalAppCreditsRoute
@@ -1099,6 +1239,7 @@ export interface FileRoutesByFullPath {
   '/portal/pay/$intentId': typeof PortalPayIntentIdRoute
   '/share/invoice/$token': typeof ShareInvoiceTokenRoute
   '/advisors-admin/': typeof AuthenticatedAdvisorsAdminIndexRoute
+  '/advisors-portal/': typeof AuthenticatedAdvisorsPortalIndexRoute
   '/banking/': typeof AuthenticatedBankingIndexRoute
   '/budgets/': typeof AuthenticatedBudgetsIndexRoute
   '/contacts/': typeof AuthenticatedContactsIndexRoute
@@ -1134,6 +1275,7 @@ export interface FileRoutesByFullPath {
   '/sales/quotes/new': typeof AuthenticatedSalesQuotesNewRoute
   '/sales/receipts/$receiptId': typeof AuthenticatedSalesReceiptsReceiptIdRoute
   '/sales/receipts/new': typeof AuthenticatedSalesReceiptsNewRoute
+  '/advisors/portal/invite/$token': typeof AdvisorsPortalInviteTokenRoute
   '/portal/app/invoices/$invoiceId': typeof PortalAppInvoicesInvoiceIdRoute
   '/payroll/employees/': typeof AuthenticatedPayrollEmployeesIndexRoute
   '/payroll/payments/': typeof AuthenticatedPayrollPaymentsIndexRoute
@@ -1189,6 +1331,20 @@ export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/portal': typeof PortalIndexRoute
   '/advisors-admin/appointments': typeof AuthenticatedAdvisorsAdminAppointmentsRoute
+  '/advisors-admin/billing': typeof AuthenticatedAdvisorsAdminBillingRoute
+  '/advisors-admin/clients': typeof AuthenticatedAdvisorsAdminClientsRoute
+  '/advisors-admin/conversations': typeof AuthenticatedAdvisorsAdminConversationsRoute
+  '/advisors-admin/documents': typeof AuthenticatedAdvisorsAdminDocumentsRoute
+  '/advisors-admin/engagements': typeof AuthenticatedAdvisorsAdminEngagementsRoute
+  '/advisors-admin/inquiries': typeof AuthenticatedAdvisorsAdminInquiriesRoute
+  '/advisors-admin/onboarding': typeof AuthenticatedAdvisorsAdminOnboardingRoute
+  '/advisors-admin/staff': typeof AuthenticatedAdvisorsAdminStaffRoute
+  '/advisors-admin/workspaces': typeof AuthenticatedAdvisorsAdminWorkspacesRoute
+  '/advisors-portal/account': typeof AuthenticatedAdvisorsPortalAccountRoute
+  '/advisors-portal/appointments': typeof AuthenticatedAdvisorsPortalAppointmentsRoute
+  '/advisors-portal/documents': typeof AuthenticatedAdvisorsPortalDocumentsRoute
+  '/advisors-portal/messages': typeof AuthenticatedAdvisorsPortalMessagesRoute
+  '/advisors-portal/tasks': typeof AuthenticatedAdvisorsPortalTasksRoute
   '/banking/cash-coding': typeof AuthenticatedBankingCashCodingRoute
   '/banking/feeds': typeof AuthenticatedBankingFeedsRoute
   '/banking/import': typeof AuthenticatedBankingImportRoute
@@ -1225,7 +1381,9 @@ export interface FileRoutesByTo {
   '/sales/reminders': typeof AuthenticatedSalesRemindersRoute
   '/sales/settings': typeof AuthenticatedSalesSettingsRoute
   '/sales/statements': typeof AuthenticatedSalesStatementsRoute
+  '/advisors/agreement/$token': typeof AdvisorsAgreementTokenRoute
   '/advisors/manage/$manageToken': typeof AdvisorsManageManageTokenRoute
+  '/advisors/proposal/$token': typeof AdvisorsProposalTokenRoute
   '/portal/app/bank': typeof PortalAppBankRoute
   '/portal/app/bills': typeof PortalAppBillsRoute
   '/portal/app/credits': typeof PortalAppCreditsRoute
@@ -1241,6 +1399,7 @@ export interface FileRoutesByTo {
   '/portal/pay/$intentId': typeof PortalPayIntentIdRoute
   '/share/invoice/$token': typeof ShareInvoiceTokenRoute
   '/advisors-admin': typeof AuthenticatedAdvisorsAdminIndexRoute
+  '/advisors-portal': typeof AuthenticatedAdvisorsPortalIndexRoute
   '/banking': typeof AuthenticatedBankingIndexRoute
   '/budgets': typeof AuthenticatedBudgetsIndexRoute
   '/contacts': typeof AuthenticatedContactsIndexRoute
@@ -1273,6 +1432,7 @@ export interface FileRoutesByTo {
   '/sales/quotes/new': typeof AuthenticatedSalesQuotesNewRoute
   '/sales/receipts/$receiptId': typeof AuthenticatedSalesReceiptsReceiptIdRoute
   '/sales/receipts/new': typeof AuthenticatedSalesReceiptsNewRoute
+  '/advisors/portal/invite/$token': typeof AdvisorsPortalInviteTokenRoute
   '/portal/app/invoices/$invoiceId': typeof PortalAppInvoicesInvoiceIdRoute
   '/payroll/employees': typeof AuthenticatedPayrollEmployeesIndexRoute
   '/payroll/payments': typeof AuthenticatedPayrollPaymentsIndexRoute
@@ -1338,6 +1498,20 @@ export interface FileRoutesById {
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/portal/': typeof PortalIndexRoute
   '/_authenticated/advisors-admin/appointments': typeof AuthenticatedAdvisorsAdminAppointmentsRoute
+  '/_authenticated/advisors-admin/billing': typeof AuthenticatedAdvisorsAdminBillingRoute
+  '/_authenticated/advisors-admin/clients': typeof AuthenticatedAdvisorsAdminClientsRoute
+  '/_authenticated/advisors-admin/conversations': typeof AuthenticatedAdvisorsAdminConversationsRoute
+  '/_authenticated/advisors-admin/documents': typeof AuthenticatedAdvisorsAdminDocumentsRoute
+  '/_authenticated/advisors-admin/engagements': typeof AuthenticatedAdvisorsAdminEngagementsRoute
+  '/_authenticated/advisors-admin/inquiries': typeof AuthenticatedAdvisorsAdminInquiriesRoute
+  '/_authenticated/advisors-admin/onboarding': typeof AuthenticatedAdvisorsAdminOnboardingRoute
+  '/_authenticated/advisors-admin/staff': typeof AuthenticatedAdvisorsAdminStaffRoute
+  '/_authenticated/advisors-admin/workspaces': typeof AuthenticatedAdvisorsAdminWorkspacesRoute
+  '/_authenticated/advisors-portal/account': typeof AuthenticatedAdvisorsPortalAccountRoute
+  '/_authenticated/advisors-portal/appointments': typeof AuthenticatedAdvisorsPortalAppointmentsRoute
+  '/_authenticated/advisors-portal/documents': typeof AuthenticatedAdvisorsPortalDocumentsRoute
+  '/_authenticated/advisors-portal/messages': typeof AuthenticatedAdvisorsPortalMessagesRoute
+  '/_authenticated/advisors-portal/tasks': typeof AuthenticatedAdvisorsPortalTasksRoute
   '/_authenticated/banking/cash-coding': typeof AuthenticatedBankingCashCodingRoute
   '/_authenticated/banking/feeds': typeof AuthenticatedBankingFeedsRoute
   '/_authenticated/banking/import': typeof AuthenticatedBankingImportRoute
@@ -1374,7 +1548,9 @@ export interface FileRoutesById {
   '/_authenticated/sales/reminders': typeof AuthenticatedSalesRemindersRoute
   '/_authenticated/sales/settings': typeof AuthenticatedSalesSettingsRoute
   '/_authenticated/sales/statements': typeof AuthenticatedSalesStatementsRoute
+  '/advisors_/agreement/$token': typeof AdvisorsAgreementTokenRoute
   '/advisors_/manage/$manageToken': typeof AdvisorsManageManageTokenRoute
+  '/advisors_/proposal/$token': typeof AdvisorsProposalTokenRoute
   '/portal/app/bank': typeof PortalAppBankRoute
   '/portal/app/bills': typeof PortalAppBillsRoute
   '/portal/app/credits': typeof PortalAppCreditsRoute
@@ -1390,6 +1566,7 @@ export interface FileRoutesById {
   '/portal/pay/$intentId': typeof PortalPayIntentIdRoute
   '/share/invoice/$token': typeof ShareInvoiceTokenRoute
   '/_authenticated/advisors-admin/': typeof AuthenticatedAdvisorsAdminIndexRoute
+  '/_authenticated/advisors-portal/': typeof AuthenticatedAdvisorsPortalIndexRoute
   '/_authenticated/banking/': typeof AuthenticatedBankingIndexRoute
   '/_authenticated/budgets/': typeof AuthenticatedBudgetsIndexRoute
   '/_authenticated/contacts/': typeof AuthenticatedContactsIndexRoute
@@ -1425,6 +1602,7 @@ export interface FileRoutesById {
   '/_authenticated/sales/quotes/new': typeof AuthenticatedSalesQuotesNewRoute
   '/_authenticated/sales/receipts/$receiptId': typeof AuthenticatedSalesReceiptsReceiptIdRoute
   '/_authenticated/sales/receipts/new': typeof AuthenticatedSalesReceiptsNewRoute
+  '/advisors_/portal/invite/$token': typeof AdvisorsPortalInviteTokenRoute
   '/portal/app/invoices/$invoiceId': typeof PortalAppInvoicesInvoiceIdRoute
   '/_authenticated/payroll/employees/': typeof AuthenticatedPayrollEmployeesIndexRoute
   '/_authenticated/payroll/payments/': typeof AuthenticatedPayrollPaymentsIndexRoute
@@ -1490,6 +1668,20 @@ export interface FileRouteTypes {
     | '/pricing/builder'
     | '/portal/'
     | '/advisors-admin/appointments'
+    | '/advisors-admin/billing'
+    | '/advisors-admin/clients'
+    | '/advisors-admin/conversations'
+    | '/advisors-admin/documents'
+    | '/advisors-admin/engagements'
+    | '/advisors-admin/inquiries'
+    | '/advisors-admin/onboarding'
+    | '/advisors-admin/staff'
+    | '/advisors-admin/workspaces'
+    | '/advisors-portal/account'
+    | '/advisors-portal/appointments'
+    | '/advisors-portal/documents'
+    | '/advisors-portal/messages'
+    | '/advisors-portal/tasks'
     | '/banking/cash-coding'
     | '/banking/feeds'
     | '/banking/import'
@@ -1526,7 +1718,9 @@ export interface FileRouteTypes {
     | '/sales/reminders'
     | '/sales/settings'
     | '/sales/statements'
+    | '/advisors/agreement/$token'
     | '/advisors/manage/$manageToken'
+    | '/advisors/proposal/$token'
     | '/portal/app/bank'
     | '/portal/app/bills'
     | '/portal/app/credits'
@@ -1542,6 +1736,7 @@ export interface FileRouteTypes {
     | '/portal/pay/$intentId'
     | '/share/invoice/$token'
     | '/advisors-admin/'
+    | '/advisors-portal/'
     | '/banking/'
     | '/budgets/'
     | '/contacts/'
@@ -1577,6 +1772,7 @@ export interface FileRouteTypes {
     | '/sales/quotes/new'
     | '/sales/receipts/$receiptId'
     | '/sales/receipts/new'
+    | '/advisors/portal/invite/$token'
     | '/portal/app/invoices/$invoiceId'
     | '/payroll/employees/'
     | '/payroll/payments/'
@@ -1632,6 +1828,20 @@ export interface FileRouteTypes {
     | '/'
     | '/portal'
     | '/advisors-admin/appointments'
+    | '/advisors-admin/billing'
+    | '/advisors-admin/clients'
+    | '/advisors-admin/conversations'
+    | '/advisors-admin/documents'
+    | '/advisors-admin/engagements'
+    | '/advisors-admin/inquiries'
+    | '/advisors-admin/onboarding'
+    | '/advisors-admin/staff'
+    | '/advisors-admin/workspaces'
+    | '/advisors-portal/account'
+    | '/advisors-portal/appointments'
+    | '/advisors-portal/documents'
+    | '/advisors-portal/messages'
+    | '/advisors-portal/tasks'
     | '/banking/cash-coding'
     | '/banking/feeds'
     | '/banking/import'
@@ -1668,7 +1878,9 @@ export interface FileRouteTypes {
     | '/sales/reminders'
     | '/sales/settings'
     | '/sales/statements'
+    | '/advisors/agreement/$token'
     | '/advisors/manage/$manageToken'
+    | '/advisors/proposal/$token'
     | '/portal/app/bank'
     | '/portal/app/bills'
     | '/portal/app/credits'
@@ -1684,6 +1896,7 @@ export interface FileRouteTypes {
     | '/portal/pay/$intentId'
     | '/share/invoice/$token'
     | '/advisors-admin'
+    | '/advisors-portal'
     | '/banking'
     | '/budgets'
     | '/contacts'
@@ -1716,6 +1929,7 @@ export interface FileRouteTypes {
     | '/sales/quotes/new'
     | '/sales/receipts/$receiptId'
     | '/sales/receipts/new'
+    | '/advisors/portal/invite/$token'
     | '/portal/app/invoices/$invoiceId'
     | '/payroll/employees'
     | '/payroll/payments'
@@ -1780,6 +1994,20 @@ export interface FileRouteTypes {
     | '/_authenticated/'
     | '/portal/'
     | '/_authenticated/advisors-admin/appointments'
+    | '/_authenticated/advisors-admin/billing'
+    | '/_authenticated/advisors-admin/clients'
+    | '/_authenticated/advisors-admin/conversations'
+    | '/_authenticated/advisors-admin/documents'
+    | '/_authenticated/advisors-admin/engagements'
+    | '/_authenticated/advisors-admin/inquiries'
+    | '/_authenticated/advisors-admin/onboarding'
+    | '/_authenticated/advisors-admin/staff'
+    | '/_authenticated/advisors-admin/workspaces'
+    | '/_authenticated/advisors-portal/account'
+    | '/_authenticated/advisors-portal/appointments'
+    | '/_authenticated/advisors-portal/documents'
+    | '/_authenticated/advisors-portal/messages'
+    | '/_authenticated/advisors-portal/tasks'
     | '/_authenticated/banking/cash-coding'
     | '/_authenticated/banking/feeds'
     | '/_authenticated/banking/import'
@@ -1816,7 +2044,9 @@ export interface FileRouteTypes {
     | '/_authenticated/sales/reminders'
     | '/_authenticated/sales/settings'
     | '/_authenticated/sales/statements'
+    | '/advisors_/agreement/$token'
     | '/advisors_/manage/$manageToken'
+    | '/advisors_/proposal/$token'
     | '/portal/app/bank'
     | '/portal/app/bills'
     | '/portal/app/credits'
@@ -1832,6 +2062,7 @@ export interface FileRouteTypes {
     | '/portal/pay/$intentId'
     | '/share/invoice/$token'
     | '/_authenticated/advisors-admin/'
+    | '/_authenticated/advisors-portal/'
     | '/_authenticated/banking/'
     | '/_authenticated/budgets/'
     | '/_authenticated/contacts/'
@@ -1867,6 +2098,7 @@ export interface FileRouteTypes {
     | '/_authenticated/sales/quotes/new'
     | '/_authenticated/sales/receipts/$receiptId'
     | '/_authenticated/sales/receipts/new'
+    | '/advisors_/portal/invite/$token'
     | '/portal/app/invoices/$invoiceId'
     | '/_authenticated/payroll/employees/'
     | '/_authenticated/payroll/payments/'
@@ -1905,8 +2137,11 @@ export interface RootRouteChildren {
   AuthMfaRoute: typeof AuthMfaRoute
   AuthSsoRoute: typeof AuthSsoRoute
   PricingBuilderRoute: typeof PricingBuilderRoute
+  AdvisorsAgreementTokenRoute: typeof AdvisorsAgreementTokenRoute
   AdvisorsManageManageTokenRoute: typeof AdvisorsManageManageTokenRoute
+  AdvisorsProposalTokenRoute: typeof AdvisorsProposalTokenRoute
   ShareInvoiceTokenRoute: typeof ShareInvoiceTokenRoute
+  AdvisorsPortalInviteTokenRoute: typeof AdvisorsPortalInviteTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -2197,6 +2432,111 @@ declare module '@tanstack/react-router' {
       fullPath: '/advisors-admin/appointments'
       preLoaderRoute: typeof AuthenticatedAdvisorsAdminAppointmentsRouteImport
       parentRoute: typeof AuthenticatedAdvisorsAdminRoute
+    }
+    '/_authenticated/advisors-admin/billing': {
+      id: '/_authenticated/advisors-admin/billing'
+      path: '/billing'
+      fullPath: '/advisors-admin/billing'
+      preLoaderRoute: typeof AuthenticatedAdvisorsAdminBillingRouteImport
+      parentRoute: typeof AuthenticatedAdvisorsAdminRoute
+    }
+    '/_authenticated/advisors-admin/clients': {
+      id: '/_authenticated/advisors-admin/clients'
+      path: '/clients'
+      fullPath: '/advisors-admin/clients'
+      preLoaderRoute: typeof AuthenticatedAdvisorsAdminClientsRouteImport
+      parentRoute: typeof AuthenticatedAdvisorsAdminRoute
+    }
+    '/_authenticated/advisors-admin/conversations': {
+      id: '/_authenticated/advisors-admin/conversations'
+      path: '/conversations'
+      fullPath: '/advisors-admin/conversations'
+      preLoaderRoute: typeof AuthenticatedAdvisorsAdminConversationsRouteImport
+      parentRoute: typeof AuthenticatedAdvisorsAdminRoute
+    }
+    '/_authenticated/advisors-admin/documents': {
+      id: '/_authenticated/advisors-admin/documents'
+      path: '/documents'
+      fullPath: '/advisors-admin/documents'
+      preLoaderRoute: typeof AuthenticatedAdvisorsAdminDocumentsRouteImport
+      parentRoute: typeof AuthenticatedAdvisorsAdminRoute
+    }
+    '/_authenticated/advisors-admin/engagements': {
+      id: '/_authenticated/advisors-admin/engagements'
+      path: '/engagements'
+      fullPath: '/advisors-admin/engagements'
+      preLoaderRoute: typeof AuthenticatedAdvisorsAdminEngagementsRouteImport
+      parentRoute: typeof AuthenticatedAdvisorsAdminRoute
+    }
+    '/_authenticated/advisors-admin/inquiries': {
+      id: '/_authenticated/advisors-admin/inquiries'
+      path: '/inquiries'
+      fullPath: '/advisors-admin/inquiries'
+      preLoaderRoute: typeof AuthenticatedAdvisorsAdminInquiriesRouteImport
+      parentRoute: typeof AuthenticatedAdvisorsAdminRoute
+    }
+    '/_authenticated/advisors-admin/onboarding': {
+      id: '/_authenticated/advisors-admin/onboarding'
+      path: '/onboarding'
+      fullPath: '/advisors-admin/onboarding'
+      preLoaderRoute: typeof AuthenticatedAdvisorsAdminOnboardingRouteImport
+      parentRoute: typeof AuthenticatedAdvisorsAdminRoute
+    }
+    '/_authenticated/advisors-admin/staff': {
+      id: '/_authenticated/advisors-admin/staff'
+      path: '/staff'
+      fullPath: '/advisors-admin/staff'
+      preLoaderRoute: typeof AuthenticatedAdvisorsAdminStaffRouteImport
+      parentRoute: typeof AuthenticatedAdvisorsAdminRoute
+    }
+    '/_authenticated/advisors-admin/workspaces': {
+      id: '/_authenticated/advisors-admin/workspaces'
+      path: '/workspaces'
+      fullPath: '/advisors-admin/workspaces'
+      preLoaderRoute: typeof AuthenticatedAdvisorsAdminWorkspacesRouteImport
+      parentRoute: typeof AuthenticatedAdvisorsAdminRoute
+    }
+    '/_authenticated/advisors-portal/': {
+      id: '/_authenticated/advisors-portal/'
+      path: '/advisors-portal'
+      fullPath: '/advisors-portal/'
+      preLoaderRoute: typeof AuthenticatedAdvisorsPortalIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/advisors-portal/account': {
+      id: '/_authenticated/advisors-portal/account'
+      path: '/advisors-portal/account'
+      fullPath: '/advisors-portal/account'
+      preLoaderRoute: typeof AuthenticatedAdvisorsPortalAccountRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/advisors-portal/appointments': {
+      id: '/_authenticated/advisors-portal/appointments'
+      path: '/advisors-portal/appointments'
+      fullPath: '/advisors-portal/appointments'
+      preLoaderRoute: typeof AuthenticatedAdvisorsPortalAppointmentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/advisors-portal/documents': {
+      id: '/_authenticated/advisors-portal/documents'
+      path: '/advisors-portal/documents'
+      fullPath: '/advisors-portal/documents'
+      preLoaderRoute: typeof AuthenticatedAdvisorsPortalDocumentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/advisors-portal/messages': {
+      id: '/_authenticated/advisors-portal/messages'
+      path: '/advisors-portal/messages'
+      fullPath: '/advisors-portal/messages'
+      preLoaderRoute: typeof AuthenticatedAdvisorsPortalMessagesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/advisors-portal/tasks': {
+      id: '/_authenticated/advisors-portal/tasks'
+      path: '/advisors-portal/tasks'
+      fullPath: '/advisors-portal/tasks'
+      preLoaderRoute: typeof AuthenticatedAdvisorsPortalTasksRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/banking/': {
       id: '/_authenticated/banking/'
@@ -2506,11 +2846,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSalesStatementsRouteImport
       parentRoute: typeof AuthenticatedSalesRouteRoute
     }
+    '/advisors_/agreement/$token': {
+      id: '/advisors_/agreement/$token'
+      path: '/advisors/agreement/$token'
+      fullPath: '/advisors/agreement/$token'
+      preLoaderRoute: typeof AdvisorsAgreementTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/advisors_/manage/$manageToken': {
       id: '/advisors_/manage/$manageToken'
       path: '/advisors/manage/$manageToken'
       fullPath: '/advisors/manage/$manageToken'
       preLoaderRoute: typeof AdvisorsManageManageTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/advisors_/proposal/$token': {
+      id: '/advisors_/proposal/$token'
+      path: '/advisors/proposal/$token'
+      fullPath: '/advisors/proposal/$token'
+      preLoaderRoute: typeof AdvisorsProposalTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/portal/app/': {
@@ -2891,6 +3245,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSalesReceiptsNewRouteImport
       parentRoute: typeof AuthenticatedSalesRouteRoute
     }
+    '/advisors_/portal/invite/$token': {
+      id: '/advisors_/portal/invite/$token'
+      path: '/advisors/portal/invite/$token'
+      fullPath: '/advisors/portal/invite/$token'
+      preLoaderRoute: typeof AdvisorsPortalInviteTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/portal/app/invoices/$invoiceId': {
       id: '/portal/app/invoices/$invoiceId'
       path: '/$invoiceId'
@@ -3237,6 +3598,15 @@ const AuthenticatedSalesRouteRouteWithChildren =
 
 interface AuthenticatedAdvisorsAdminRouteChildren {
   AuthenticatedAdvisorsAdminAppointmentsRoute: typeof AuthenticatedAdvisorsAdminAppointmentsRoute
+  AuthenticatedAdvisorsAdminBillingRoute: typeof AuthenticatedAdvisorsAdminBillingRoute
+  AuthenticatedAdvisorsAdminClientsRoute: typeof AuthenticatedAdvisorsAdminClientsRoute
+  AuthenticatedAdvisorsAdminConversationsRoute: typeof AuthenticatedAdvisorsAdminConversationsRoute
+  AuthenticatedAdvisorsAdminDocumentsRoute: typeof AuthenticatedAdvisorsAdminDocumentsRoute
+  AuthenticatedAdvisorsAdminEngagementsRoute: typeof AuthenticatedAdvisorsAdminEngagementsRoute
+  AuthenticatedAdvisorsAdminInquiriesRoute: typeof AuthenticatedAdvisorsAdminInquiriesRoute
+  AuthenticatedAdvisorsAdminOnboardingRoute: typeof AuthenticatedAdvisorsAdminOnboardingRoute
+  AuthenticatedAdvisorsAdminStaffRoute: typeof AuthenticatedAdvisorsAdminStaffRoute
+  AuthenticatedAdvisorsAdminWorkspacesRoute: typeof AuthenticatedAdvisorsAdminWorkspacesRoute
   AuthenticatedAdvisorsAdminIndexRoute: typeof AuthenticatedAdvisorsAdminIndexRoute
   AuthenticatedAdvisorsAdminSettingsServicesPricingRoute: typeof AuthenticatedAdvisorsAdminSettingsServicesPricingRoute
 }
@@ -3245,6 +3615,23 @@ const AuthenticatedAdvisorsAdminRouteChildren: AuthenticatedAdvisorsAdminRouteCh
   {
     AuthenticatedAdvisorsAdminAppointmentsRoute:
       AuthenticatedAdvisorsAdminAppointmentsRoute,
+    AuthenticatedAdvisorsAdminBillingRoute:
+      AuthenticatedAdvisorsAdminBillingRoute,
+    AuthenticatedAdvisorsAdminClientsRoute:
+      AuthenticatedAdvisorsAdminClientsRoute,
+    AuthenticatedAdvisorsAdminConversationsRoute:
+      AuthenticatedAdvisorsAdminConversationsRoute,
+    AuthenticatedAdvisorsAdminDocumentsRoute:
+      AuthenticatedAdvisorsAdminDocumentsRoute,
+    AuthenticatedAdvisorsAdminEngagementsRoute:
+      AuthenticatedAdvisorsAdminEngagementsRoute,
+    AuthenticatedAdvisorsAdminInquiriesRoute:
+      AuthenticatedAdvisorsAdminInquiriesRoute,
+    AuthenticatedAdvisorsAdminOnboardingRoute:
+      AuthenticatedAdvisorsAdminOnboardingRoute,
+    AuthenticatedAdvisorsAdminStaffRoute: AuthenticatedAdvisorsAdminStaffRoute,
+    AuthenticatedAdvisorsAdminWorkspacesRoute:
+      AuthenticatedAdvisorsAdminWorkspacesRoute,
     AuthenticatedAdvisorsAdminIndexRoute: AuthenticatedAdvisorsAdminIndexRoute,
     AuthenticatedAdvisorsAdminSettingsServicesPricingRoute:
       AuthenticatedAdvisorsAdminSettingsServicesPricingRoute,
@@ -3298,6 +3685,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedTaxRoute: typeof AuthenticatedTaxRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedAdvisorsPortalAccountRoute: typeof AuthenticatedAdvisorsPortalAccountRoute
+  AuthenticatedAdvisorsPortalAppointmentsRoute: typeof AuthenticatedAdvisorsPortalAppointmentsRoute
+  AuthenticatedAdvisorsPortalDocumentsRoute: typeof AuthenticatedAdvisorsPortalDocumentsRoute
+  AuthenticatedAdvisorsPortalMessagesRoute: typeof AuthenticatedAdvisorsPortalMessagesRoute
+  AuthenticatedAdvisorsPortalTasksRoute: typeof AuthenticatedAdvisorsPortalTasksRoute
   AuthenticatedBudgetsBudgetIdRoute: typeof AuthenticatedBudgetsBudgetIdRoute
   AuthenticatedContactsContactIdRoute: typeof AuthenticatedContactsContactIdRoute
   AuthenticatedContactsDuplicatesRoute: typeof AuthenticatedContactsDuplicatesRoute
@@ -3308,6 +3700,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFirmInviteTokenRoute: typeof AuthenticatedFirmInviteTokenRoute
   AuthenticatedInviteTokenRoute: typeof AuthenticatedInviteTokenRoute
   AuthenticatedReportsReportIdRoute: typeof AuthenticatedReportsReportIdRoute
+  AuthenticatedAdvisorsPortalIndexRoute: typeof AuthenticatedAdvisorsPortalIndexRoute
   AuthenticatedBudgetsIndexRoute: typeof AuthenticatedBudgetsIndexRoute
   AuthenticatedContactsIndexRoute: typeof AuthenticatedContactsIndexRoute
   AuthenticatedReportsIndexRoute: typeof AuthenticatedReportsIndexRoute
@@ -3340,6 +3733,15 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedTaxRoute: AuthenticatedTaxRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedAdvisorsPortalAccountRoute:
+    AuthenticatedAdvisorsPortalAccountRoute,
+  AuthenticatedAdvisorsPortalAppointmentsRoute:
+    AuthenticatedAdvisorsPortalAppointmentsRoute,
+  AuthenticatedAdvisorsPortalDocumentsRoute:
+    AuthenticatedAdvisorsPortalDocumentsRoute,
+  AuthenticatedAdvisorsPortalMessagesRoute:
+    AuthenticatedAdvisorsPortalMessagesRoute,
+  AuthenticatedAdvisorsPortalTasksRoute: AuthenticatedAdvisorsPortalTasksRoute,
   AuthenticatedBudgetsBudgetIdRoute: AuthenticatedBudgetsBudgetIdRoute,
   AuthenticatedContactsContactIdRoute: AuthenticatedContactsContactIdRoute,
   AuthenticatedContactsDuplicatesRoute: AuthenticatedContactsDuplicatesRoute,
@@ -3350,6 +3752,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedFirmInviteTokenRoute: AuthenticatedFirmInviteTokenRoute,
   AuthenticatedInviteTokenRoute: AuthenticatedInviteTokenRoute,
   AuthenticatedReportsReportIdRoute: AuthenticatedReportsReportIdRoute,
+  AuthenticatedAdvisorsPortalIndexRoute: AuthenticatedAdvisorsPortalIndexRoute,
   AuthenticatedBudgetsIndexRoute: AuthenticatedBudgetsIndexRoute,
   AuthenticatedContactsIndexRoute: AuthenticatedContactsIndexRoute,
   AuthenticatedReportsIndexRoute: AuthenticatedReportsIndexRoute,
@@ -3441,8 +3844,11 @@ const rootRouteChildren: RootRouteChildren = {
   AuthMfaRoute: AuthMfaRoute,
   AuthSsoRoute: AuthSsoRoute,
   PricingBuilderRoute: PricingBuilderRoute,
+  AdvisorsAgreementTokenRoute: AdvisorsAgreementTokenRoute,
   AdvisorsManageManageTokenRoute: AdvisorsManageManageTokenRoute,
+  AdvisorsProposalTokenRoute: AdvisorsProposalTokenRoute,
   ShareInvoiceTokenRoute: ShareInvoiceTokenRoute,
+  AdvisorsPortalInviteTokenRoute: AdvisorsPortalInviteTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

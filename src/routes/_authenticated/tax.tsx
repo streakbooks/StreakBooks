@@ -14,6 +14,7 @@ import {
 } from "@/lib/tax/tax.functions";
 import { filterTaxAccountPicker, type PickerAccount } from "@/lib/tax/account-pickers";
 import { TaxCodesPanel } from "@/components/tax/TaxCodesPanel";
+import { TaxOverviewPanel, type TaxOverviewSettings } from "@/components/tax/TaxOverviewPanel";
 import { TaxRatesPanel } from "@/components/tax/TaxRatesPanel";
 import { TaxReturnsPanel } from "@/components/tax/TaxReturnsPanel";
 import {
@@ -41,7 +42,7 @@ import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/_authenticated/tax")({
   validateSearch: (raw: Record<string, unknown>): { tab?: string | undefined } => ({
-    tab: ["registration", "returns", "rates", "codes", "mappings", "packs"].includes(
+    tab: ["overview", "registration", "returns", "rates", "codes", "mappings", "packs"].includes(
       String(raw["tab"]),
     )
       ? String(raw["tab"])
@@ -62,7 +63,7 @@ export const Route = createFileRoute("/_authenticated/tax")({
 function TaxConfigPage() {
   const { company, isPending } = useActiveCompany();
   const companyId = company?.id;
-  const activeTab = Route.useSearch().tab ?? "registration";
+  const activeTab = Route.useSearch().tab ?? "overview";
   const qc = useQueryClient();
 
   const fetchSettings = useServerFn(getTaxSettings);
@@ -211,7 +212,7 @@ function TaxConfigPage() {
     <>
       <PageHeader
         title="Tax"
-        description={`Country-aware configuration and return figures for ${orgCountry}. Rates, codes, GL mappings and VAT/GST returns.`}
+        description={`Tax workspace for ${orgCountry}: registrations, returns, tax rates, codes, country packs and posting accounts.`}
         actions={
           <Button variant="outline" size="sm" asChild>
             <Link to="/reports/$reportId" params={{ reportId: "tax-summary" }}>
@@ -232,6 +233,17 @@ function TaxConfigPage() {
 
       <Tabs value={activeTab}>
         <TabsList onKeyDown={handleNativeTabKeyDown} className="mb-4 flex h-auto flex-wrap">
+          <Link
+            className={nativeTabLinkClass}
+            role="tab"
+            aria-selected={activeTab === "overview"}
+            data-state={activeTab === "overview" ? "active" : "inactive"}
+            to="/tax"
+            search={{ tab: "overview" }}
+            resetScroll={false}
+          >
+            Overview
+          </Link>
           <Link
             className={nativeTabLinkClass}
             role="tab"
@@ -299,6 +311,13 @@ function TaxConfigPage() {
             Country packs
           </Link>
         </TabsList>
+
+        <TabsContent value="overview" className="space-y-4">
+          <TaxOverviewPanel
+            companyId={companyId}
+            settings={settingsQ.data as TaxOverviewSettings | null}
+          />
+        </TabsContent>
 
         <TabsContent value="registration" className="space-y-4">
           <div className="grid max-w-2xl gap-4 rounded-md border p-4">

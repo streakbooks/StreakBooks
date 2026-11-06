@@ -610,3 +610,38 @@ linked banks during posting, yet the UI still displayed them as choices.
   on the Payroll PR branch, not merged into `main`. Full repo
   typecheck/lint/Vitest/build and authenticated UI QA remain pending;
   GitHub Actions CI remains not run (per user instruction).
+
+
+### Generic bank CSV spreadsheet formula protection (Stage 7)
+
+A source audit found that `buildGenericPayrollBankCsv` correctly quoted
+commas, newlines and double quotes but **did not neutralise spreadsheet
+formula prefixes** in untrusted employee names, references or bank metadata.
+CSV files are frequently opened in Excel or similar software, where
+formula-looking text may be interpreted rather than displayed literally.
+
+- The Payroll-only CSV escape helper now prefixes dangerous free-text cells
+  with a leading apostrophe when they begin with `=`, `+`, `-` or `@`,
+  including when hidden after Unicode whitespace/zero-width marks or a
+  UTF-8 BOM character. Leading tab/newline/carriage-return text is likewise
+  protected. Proper RFC CSV double-quote escaping is preserved.
+- The numeric `amount_minor` column continues to contain its unchanged
+  integer value, while ordinary bank numbers (including leading zeros)
+  and safe descriptive strings remain unchanged.
+- Payroll Payments now uses the existing `downloadCsv` helper rather
+  than a hand-built temporary anchor. This adds the UTF-8 BOM expected
+  by Excel when displaying international employee and bank names.
+- Expanded `src/lib/payroll/payroll-bank-export.test.ts` with new Vitest
+  regressions for formula payloads, embedded control/whitespace prefixes,
+  untouched numeric amounts and safe account details. **4 tests authored
+  in the full file; full Vitest not executed in this environment.**
+- Compiled and executed the committed pure CSV exporter source in an
+  isolated JavaScript runtime: **20/20 focused output and UI-wiring checks
+  passed**. The private GitHub repository cannot be cloned directly by
+  the available container network, so no complete local repository
+  typecheck, lint, build or real browser tests were executed.
+- This is a generic CSV for manual review, not a bank-specific payment
+  instruction format; do not treat downloading this CSV as payment
+  authorisation or posting.
+- GitHub Actions CI remains **not run (per user instruction)**. No new
+  Supabase migration or Vercel deployment resulted from this batch.

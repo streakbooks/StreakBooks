@@ -47,6 +47,13 @@ export function buildAssetPortfolioSnapshot(
     if (!Number.isSafeInteger(asset.cost_minor) || asset.cost_minor <= 0) {
       throw new Error("Asset dashboard requires exact positive register costs.");
     }
+    if (!Number.isSafeInteger(asset.residual_minor) || asset.residual_minor < 0 ||
+        asset.residual_minor > asset.cost_minor ||
+        !Number.isSafeInteger(asset.opening_accumulated_minor) ||
+        asset.opening_accumulated_minor < 0 ||
+        asset.opening_accumulated_minor > asset.cost_minor) {
+      throw new Error("Asset portfolio contains inconsistent residual or opening depreciation amounts.");
+    }
     const amount = BigInt(asset.cost_minor);
     cost += amount;
     const key = asset.asset_type_id ?? "unclassified";

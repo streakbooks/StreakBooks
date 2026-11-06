@@ -4,6 +4,7 @@ import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-compa
 import { assertUuid } from "@/lib/company-validation";
 import { productAccountProblem } from "@/lib/products/product-rules";
 import { productSkuProblem } from "@/lib/products/catalogue-input";
+import { productsToCsv, type CatalogueCsvItem } from "@/lib/products/catalogue-csv";
 import { buildIlikeOr } from "@/lib/purchases/search-terms";
 
 export type ProductRow = {
@@ -86,6 +87,154 @@ export const listProducts = createServerFn({ method: "GET" })
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
     return (rows ?? []) as ProductRow[];
+  });
+
+export type CatalogueSort = "name" | "name_desc" | "code" | "price_asc" | "price_desc" | "recent";
+export type CatalogueFilters = {
+  companyId: string;
+  q?: string;
+  kind?: string;
+  status?: string;
+  sort?: string;
+};
+
+function parseCatalogueFilters(input: CatalogueFilters) {
+  const status = input.status ?? "active";
+  const kind = input.kind ?? "all";
+  const sort = input.sort ?? "name";
+  if (!["active", "archived", "all"].includes(status)) throw new Error("Invalid catalogue status");
+  if (!["all", "service", "product", "non_inventory"].includes(kind)) {
+    throw new Error("Invalid catalogue kind");
+  }
+  if (!["name", "name_desc", "code", "price_asc", "price_desc", "recent"].includes(sort)) {
+    throw new Error("Invalid catalogue sort");
+  }
+  return {
+    companyId: assertUuid(input.companyId),
+    q: (input.q ?? "").trim().slice(0, 100),
+    kind,
+    status,
+    sort: sort as CatalogueSort,
+  };
+}
+
+const CATALOGUE_SORT: Record<CatalogueSort, { column: string; ascending: boolean }> = {
+  name: { column: "name", ascending: true },
+  name_desc: { column: "name", ascending: false },
+  code: { column: "code", ascending: true },
+  price_asc: { column: "sales_price_minor", ascending: true },
+  price_desc: { column: "sales_price_minor", ascending: false },
+  recent: { column: "created_at", ascending: false },
+};
+
+const PRODUCT_COLUMNS =
+  "id, kind, code, name, description, sales_price_minor, purchase_cost_minor, income_account_id, expense_account_id, sales_tax_rate_bps, purchase_tax_rate_bps, unit, is_active, created_at";
+
+/** Count and page are calculated on the server with identical filters and a stable sort. */
+export const listProductsPage = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: CatalogueFilters & { page?: number; pageSize?: number }) => {
+    const page = input.page ?? 1;
+    const pageSize = input.pageSize ?? 50;
+    if (!Number.isInteger(page) || page < 1 || page > 10000) throw new Error("Invalid page");
+    if (![25, 50, 100].includes(pageSize)) throw new Error("Invalid page size");
+    return { ...parseCatalogueFilters(input), page, pageSize };
+  })
+  .handler(async ({ data, context }): Promise<{ rows: ProductRow[]; total: number }> => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    let query = context.supabase
+      .from("products" as never)
+      .select(PRODUCT_COLUMNS as never, { count: "exact" })
+      .eq("company_id" as never, data.companyId as never);
+    if (data.status !== "all") {
+      query = query.eq("is_active" as never, (data.status === "active") as never);
+    }
+    if (data.kind !== "all") query = query.eq("kind" as never, data.kind as never);
+    const search = buildIlikeOr(["name", "code", "description"], data.q);
+    if (search) query = query.or(search as never);
+    const order = CATALOGUE_SORT[data.sort];
+    const offset = (data.page - 1) * data.pageSize;
+    query = query
+      .order(order.column as never, { ascending: order.ascending, nullsFirst: false })
+      .order("id" as never)
+      .range(offset, offset + data.pageSize - 1);
+    const { data: rows, count, error } = await query;
+    if (error) throw new Error(error.message);
+    return { rows: (rows ?? []) as ProductRow[], total: count ?? 0 };
+  });
+
+/**
+ * Download the filtered catalogue, including archived rows when requested.
+ * Hard cap guards browser memory and response size; no silent partial exports.
+ */
+export const exportProductsCsv = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: CatalogueFilters) => parseCatalogueFilters(input))
+  .handler(async ({ data, context }) => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    const { data: company, error: companyError } = await context.supabase
+      .from("companies" as never)
+      .select("base_currency" as never)
+      .eq("id" as never, data.companyId as never)
+      .single();
+    if (companyError) throw new Error(companyError.message);
+    const currency = (company as { base_currency: string } | null)?.base_currency;
+    if (!currency) throw new Error("Organisation currency is missing");
+
+    let counter = context.supabase
+      .from("products" as never)
+      .select("id" as never, { head: true, count: "exact" })
+      .eq("company_id" as never, data.companyId as never);
+    if (data.status !== "all") {
+      counter = counter.eq("is_active" as never, (data.status === "active") as never);
+    }
+    if (data.kind !== "all") counter = counter.eq("kind" as never, data.kind as never);
+    const search = buildIlikeOr(["name", "code", "description"], data.q);
+    if (search) counter = counter.or(search as never);
+    const { count, error: countError } = await counter;
+    if (countError) throw new Error(countError.message);
+    if ((count ?? 0) > 5000) {
+      throw new Error("Export supports up to 5,000 matching items; narrow your filters");
+    }
+
+    const collected: CatalogueCsvItem[] = [];
+    const seenIds = new Set<string>();
+    const order = CATALOGUE_SORT[data.sort];
+    for (let offset = 0; offset < (count ?? 0); offset += 500) {
+      let query = context.supabase
+        .from("products" as never)
+        .select(PRODUCT_COLUMNS as never)
+        .eq("company_id" as never, data.companyId as never);
+      if (data.status !== "all") {
+        query = query.eq("is_active" as never, (data.status === "active") as never);
+      }
+      if (data.kind !== "all") query = query.eq("kind" as never, data.kind as never);
+      if (search) query = query.or(search as never);
+      query = query
+        .order(order.column as never, { ascending: order.ascending, nullsFirst: false })
+        .order("id" as never)
+        .range(offset, offset + 499);
+      const { data: rows, error } = await query;
+      if (error) throw new Error(error.message);
+      for (const row of (rows ?? []) as ProductRow[]) {
+        if (seenIds.has(row.id)) throw new Error("Catalogue changed during export; try again");
+        seenIds.add(row.id);
+        collected.push(row);
+      }
+    }
+    if (collected.length !== (count ?? 0)) {
+      throw new Error("Catalogue changed during export; try again");
+    }
+    const csv = productsToCsv(collected, currency);
+    if (new TextEncoder().encode(csv).byteLength > 5 * 1024 * 1024) {
+      throw new Error("The CSV export exceeds 5 MB; narrow your filters");
+    }
+    return {
+      csv,
+      count: collected.length,
+      currency,
+      filename: `products-services-${new Date().toISOString().slice(0, 10)}.csv`,
+    };
   });
 
 export const getProduct = createServerFn({ method: "GET" })

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Package, Plus, Archive, Copy } from "lucide-react";
+import { Package, Plus, Archive, Copy, Download, Columns3 } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useFormat } from "@/hooks/use-format";
@@ -14,13 +14,15 @@ import { listTaxCodes } from "@/lib/tax/tax.functions";
 import { useCanDo } from "@/hooks/use-can";
 import {
   archiveProduct,
-  listProducts,
+  listProductsPage,
+  exportProductsCsv,
   setProductsActive,
   upsertProduct,
   type ProductRow,
 } from "@/lib/products/products.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { productSkuProblem, validCataloguePrice } from "@/lib/products/catalogue-input";
+import { downloadCsv } from "@/lib/reports/csv";
 import {
   DocumentRecordPanel,
   type DocumentRecordHandle,
@@ -33,6 +35,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
 import { AccountLookup, LookupSelect } from "@/components/lookup";
 import { TaxCodeCreateForm } from "@/components/lookup/create-forms";
@@ -77,7 +85,8 @@ export function ProductsPage() {
 function ProductsWorkspace({ companyId, currency }: { companyId: string; currency: string }) {
   const queryClient = useQueryClient();
   const fmt = useFormat();
-  const fetchProducts = useServerFn(listProducts);
+  const fetchProducts = useServerFn(listProductsPage);
+  const exportProducts = useServerFn(exportProductsCsv);
   const fetchAccounts = useServerFn(listAccounts);
   const saveProduct = useServerFn(upsertProduct);
   const doArchive = useServerFn(archiveProduct);
@@ -85,7 +94,11 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
   const fetchTaxCodes = useServerFn(listTaxCodes);
   const canManage = useCanDo("products.manage");
   const canTax = useCanDo("tax.settings");
-  const [limit, setLimit] = useState(100);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  const [visibleColumns, setVisibleColumns] = useState<string[]>([
+    "code", "kind", "salesPrice", "purchaseCost", "status",
+  ]);
 
   const [q, setQ] = useState("");
   const [debouncedQ, setDebouncedQ] = useState("");
@@ -119,17 +132,27 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
   }, [q]);
 
   const productsQ = useQuery({
-    queryKey: ["products", companyId, debouncedQ, kind, status, sort, limit],
-    queryFn: () => fetchProducts({ data: { companyId, q: debouncedQ, kind, status, sort, limit } }),
+    queryKey: ["products-page", companyId, debouncedQ, kind, status, sort, page, pageSize],
+    queryFn: () =>
+      fetchProducts({
+        data: { companyId, q: debouncedQ, kind, status, sort, page, pageSize },
+      }),
   });
-  const rows = (productsQ.data ?? []) as ProductRow[];
+  const rows = (productsQ.data?.rows ?? []) as ProductRow[];
+  const total = productsQ.data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const showColumn = (column: string) => visibleColumns.includes(column);
+  useEffect(() => setPage(1), [companyId, q, kind, status, sort, pageSize]);
+  useEffect(() => {
+    if (!productsQ.isPending && page > totalPages) setPage(totalPages);
+  }, [page, totalPages, productsQ.isPending]);
   const selectedRows = rows.filter((row) => selectedIds.includes(row.id));
   const allVisibleSelected =
     rows.length > 0 && rows.slice(0, 100).every((row) => selectedIds.includes(row.id));
   const hasFilters = Boolean(q || kind !== "all" || status !== "active");
 
   // A selection is only ever valid for the current company and visible result set.
-  useEffect(() => setSelectedIds([]), [companyId, q, kind, status, sort, limit]);
+  useEffect(() => setSelectedIds([]), [companyId, q, kind, status, sort, page, pageSize]);
   const accountsQ = useQuery({
     queryKey: ["accounts", companyId],
     queryFn: () => fetchAccounts({ data: { companyId } }),
@@ -242,9 +265,21 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
       toast.success(editing ? "Product updated" : "Product created");
       setOpen(false);
       setEditing(null);
-      await queryClient.invalidateQueries({ queryKey: ["products", companyId] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["products", companyId] }),
+        queryClient.invalidateQueries({ queryKey: ["products-page", companyId] }),
+      ]);
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
+  });
+
+  const exportMut = useMutation({
+    mutationFn: () => exportProducts({ data: { companyId, q, kind, status, sort } }),
+    onSuccess: (file) => {
+      downloadCsv(file.filename, file.csv);
+      toast.success(`Exported ${file.count} catalogue item(s) in ${file.currency}`);
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
   });
 
   const bulkMut = useMutation({
@@ -259,7 +294,10 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
       toast.success(`${result.changed} item(s) ${action === "archive" ? "archived" : "restored"}`);
       setSelectedIds([]);
       setBulkAction(null);
-      await queryClient.invalidateQueries({ queryKey: ["products", companyId] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["products", companyId] }),
+        queryClient.invalidateQueries({ queryKey: ["products-page", companyId] }),
+      ]);
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
@@ -269,7 +307,7 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
     setKind("all");
     setStatus("active");
     setSort("name");
-    setLimit(100);
+    setPage(1);
     setSelectedIds([]);
   }
 
@@ -340,6 +378,16 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
                 Import catalogue CSV
               </Link>
             </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={exportMut.isPending || productsQ.isPending || q !== debouncedQ}
+              title="Reporting export (up to 5,000 items / 5 MB). Existing CSV import is not lossless."
+              onClick={() => exportMut.mutate()}
+            >
+              <Download className="size-4" />
+              {exportMut.isPending ? "Exporting…" : "Export CSV"}
+            </Button>
             <Button size="sm" onClick={openCreate} disabled={!canManage}>
               <Plus className="size-4" />
               New item
@@ -357,29 +405,26 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
 
       <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground">Items in current results</p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums">
-            {rows.length}
-            {rows.length >= limit ? "+" : ""}
-          </p>
-          <p className="text-xs text-muted-foreground">Respects filters and current result limit</p>
+          <p className="text-xs text-muted-foreground">Matching catalogue items</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums">{total}</p>
+          <p className="text-xs text-muted-foreground">Exact count for the active filters</p>
         </div>
         <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground">Services in results</p>
+          <p className="text-xs text-muted-foreground">Services on this page</p>
           <p className="mt-1 text-2xl font-semibold tabular-nums">
             {rows.filter((p) => p.kind === "service").length}
           </p>
           <p className="text-xs text-muted-foreground">Non-stock services</p>
         </div>
         <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground">Products (non-stock) in results</p>
+          <p className="text-xs text-muted-foreground">Products (non-stock) on this page</p>
           <p className="mt-1 text-2xl font-semibold tabular-nums">
             {rows.filter((p) => p.kind === "product").length}
           </p>
           <p className="text-xs text-muted-foreground">Catalogue only — no stock-on-hand</p>
         </div>
         <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground">Non-inventory items in results</p>
+          <p className="text-xs text-muted-foreground">Non-inventory items on this page</p>
           <p className="mt-1 text-2xl font-semibold tabular-nums">
             {rows.filter((p) => p.kind === "non_inventory").length}
           </p>
@@ -430,6 +475,41 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
             <SelectItem value="recent">Newest first</SelectItem>
           </SelectContent>
         </Select>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              <Columns3 className="size-4" />
+              Columns
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {[
+              { id: "code", label: "Code / SKU" },
+              { id: "kind", label: "Kind" },
+              { id: "salesPrice", label: "Sales price" },
+              { id: "purchaseCost", label: "Purchase cost" },
+              { id: "unit", label: "Unit" },
+              { id: "salesTax", label: "Sales tax" },
+              { id: "purchaseTax", label: "Purchase tax" },
+              { id: "created", label: "Created" },
+              { id: "status", label: "Status" },
+            ].map((column) => (
+              <DropdownMenuCheckboxItem
+                key={column.id}
+                checked={showColumn(column.id)}
+                onCheckedChange={(checked) =>
+                  setVisibleColumns((columns) =>
+                    checked
+                      ? [...new Set([...columns, column.id])]
+                      : columns.filter((item) => item !== column.id),
+                  )
+                }
+              >
+                {column.label}
+              </DropdownMenuCheckboxItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
         <Button variant="ghost" size="sm" onClick={resetFilters}>
           Reset filters
         </Button>
@@ -503,7 +583,11 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
                         aria-label="Select up to 100 visible items"
                         disabled={!canManage || bulkMut.isPending}
                         checked={
-                          allVisibleSelected ? true : selectedRows.length > 0 ? "indeterminate" : false
+                          allVisibleSelected
+                            ? true
+                            : selectedRows.length > 0
+                              ? "indeterminate"
+                              : false
                         }
                         onCheckedChange={(checked) =>
                           setSelectedIds(
@@ -512,13 +596,25 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
                         }
                       />
                     </TableHead>
-                    <TableHead>Code</TableHead>
+                    {showColumn("code") ? <TableHead>Code</TableHead> : null}
                     <TableHead>Name</TableHead>
-                    <TableHead>Kind</TableHead>
-                    <TableHead className="text-right">Sales price</TableHead>
-                    <TableHead className="text-right">Purchase cost</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead />
+                    {showColumn("kind") ? <TableHead>Kind</TableHead> : null}
+                    {showColumn("salesPrice") ? (
+                      <TableHead className="text-right">Sales price</TableHead>
+                    ) : null}
+                    {showColumn("purchaseCost") ? (
+                      <TableHead className="text-right">Purchase cost</TableHead>
+                    ) : null}
+                    {showColumn("unit") ? <TableHead>Unit</TableHead> : null}
+                    {showColumn("salesTax") ? (
+                      <TableHead className="text-right">Sales tax</TableHead>
+                    ) : null}
+                    {showColumn("purchaseTax") ? (
+                      <TableHead className="text-right">Purchase tax</TableHead>
+                    ) : null}
+                    {showColumn("created") ? <TableHead>Created</TableHead> : null}
+                    {showColumn("status") ? <TableHead>Status</TableHead> : null}
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -542,7 +638,9 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
                           }
                         />
                       </TableCell>
-                      <TableCell className="font-mono text-xs">{p.code ?? "—"}</TableCell>
+                      {showColumn("code") ? (
+                        <TableCell className="font-mono text-xs">{p.code ?? "—"}</TableCell>
+                      ) : null}
                       <TableCell>
                         <div className="font-medium">{p.name}</div>
                         {p.description ? (
@@ -551,20 +649,42 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
                           </div>
                         ) : null}
                       </TableCell>
-                      <TableCell className="capitalize">{p.kind.replace("_", " ")}</TableCell>
-                      <TableCell className="money">
-                        {fmt.money(p.sales_price_minor, currency)}
-                      </TableCell>
-                      <TableCell className="money">
-                        {fmt.money(p.purchase_cost_minor, currency)}
-                      </TableCell>
-                      <TableCell>
-                        {p.is_active ? (
-                          <Badge variant="success">Active</Badge>
-                        ) : (
-                          <Badge variant="neutral">Archived</Badge>
-                        )}
-                      </TableCell>
+                      {showColumn("kind") ? (
+                        <TableCell className="capitalize">{p.kind.replace("_", " ")}</TableCell>
+                      ) : null}
+                      {showColumn("salesPrice") ? (
+                        <TableCell className="money">
+                          {fmt.money(p.sales_price_minor, currency)}
+                        </TableCell>
+                      ) : null}
+                      {showColumn("purchaseCost") ? (
+                        <TableCell className="money">
+                          {fmt.money(p.purchase_cost_minor, currency)}
+                        </TableCell>
+                      ) : null}
+                      {showColumn("unit") ? <TableCell>{p.unit || "—"}</TableCell> : null}
+                      {showColumn("salesTax") ? (
+                        <TableCell className="text-right tabular-nums">
+                          {(p.sales_tax_rate_bps / 100).toFixed(2)}%
+                        </TableCell>
+                      ) : null}
+                      {showColumn("purchaseTax") ? (
+                        <TableCell className="text-right tabular-nums">
+                          {(p.purchase_tax_rate_bps / 100).toFixed(2)}%
+                        </TableCell>
+                      ) : null}
+                      {showColumn("created") ? (
+                        <TableCell>{p.created_at.slice(0, 10)}</TableCell>
+                      ) : null}
+                      {showColumn("status") ? (
+                        <TableCell>
+                          {p.is_active ? (
+                            <Badge variant="success">Active</Badge>
+                          ) : (
+                            <Badge variant="neutral">Archived</Badge>
+                          )}
+                        </TableCell>
+                      ) : null}
                       <TableCell className="space-x-1 text-right">
                         <Button
                           size="sm"
@@ -610,21 +730,43 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
           </CardContent>
         </Card>
       )}
-      {rows.length >= limit && limit < 500 ? (
-        <div className="mt-3 flex justify-center">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setLimit((n) => Math.min(500, n + 100))}
-          >
-            Show more
-          </Button>
+      {total > 0 ? (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-muted-foreground" aria-live="polite">
+            Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)} of {total} items
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={String(pageSize)} onValueChange={(value) => setPageSize(Number(value))}>
+              <SelectTrigger className="w-32" aria-label="Items per page">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="25">25 per page</SelectItem>
+                <SelectItem value="50">50 per page</SelectItem>
+                <SelectItem value="100">100 per page</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={page <= 1 || productsQ.isPending}
+              onClick={() => setPage((value) => value - 1)}
+            >
+              Previous
+            </Button>
+            <span className="text-sm tabular-nums" aria-live="polite">
+              Page {page} of {totalPages}
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={page >= totalPages || productsQ.isPending}
+              onClick={() => setPage((value) => value + 1)}
+            >
+              Next
+            </Button>
+          </div>
         </div>
-      ) : null}
-      {rows.length >= 500 ? (
-        <p className="mt-3 text-center text-xs text-muted-foreground">
-          Showing the first 500 matches - search to narrow the list.
-        </p>
       ) : null}
 
       <Dialog

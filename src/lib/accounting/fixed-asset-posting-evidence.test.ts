@@ -134,6 +134,12 @@ describe("Fixed Assets monthly depreciation source-to-GL evidence", () => {
     expect(audit({ gl: [gl[0]!, { ...gl[1]!, line_no: 1 }] }).status).toBe("exceptions");
     expect(audit({ gl: [{ ...gl[0]!, credit_minor: "80" }, gl[1]!] }).status).toBe("exceptions");
   });
+  it("rejects an entry that exceeds remaining asset cost", () => {
+    const result = audit({
+      entries: [{ ...entries[0]!, amount_minor: "801" }, entries[1]!],
+    });
+    expect(result.issues.join(" ")).toMatch(/asset's valid cost/);
+  });
   it("rejects fractional, negative or unsafe numbers without floating-point rounding", () => {
     expect(audit({ entries: [{ ...entries[0]!, amount_minor: "1.3" }, entries[1]!] }).status)
       .toBe("exceptions");
@@ -141,16 +147,21 @@ describe("Fixed Assets monthly depreciation source-to-GL evidence", () => {
       .toBe("exceptions");
     expect(audit({ run: { ...run, total_minor: "-80" } }).status).toBe("exceptions");
   });
-  it("preserves exact string amounts beyond JS MAX_SAFE_INTEGER", () => {
-    const huge = "9007199254740993";
+  it("preserves a total above JS MAX_SAFE_INTEGER from valid individual asset amounts", () => {
+    const each = "800000000000000"; // Below SQL per-asset 900000000000000 maximum.
+    const huge = (BigInt(each) * 12n).toString();
+    const manyAssets = Array.from({ length: 12 }, (_, i) => ({
+      ...assets[0]!, id: "large-asset-" + i, opening_accumulated_minor: "0",
+      cost_minor: each,
+    }));
+    const manyEntries = manyAssets.map((asset, i) => ({
+      ...entries[0]!, id: "large-entry-" + i, asset_id: asset.id, amount_minor: each,
+    }));
     const result = audit({
-      run: { ...run, asset_count: 1, total_minor: huge },
-      entries: [{ ...entries[0]!, amount_minor: huge }],
-      assets: [assets[0]!],
-      gl: [
-        { ...gl[0]!, debit_minor: huge },
-        { ...gl[1]!, credit_minor: huge },
-      ],
+      run: { ...run, asset_count: manyAssets.length, total_minor: huge },
+      entries: manyEntries,
+      assets: manyAssets,
+      gl: [{ ...gl[0]!, debit_minor: huge }, { ...gl[1]!, credit_minor: huge }],
     });
     expect(result.status).toBe("matched");
     expect(result.expectedTotalMinor).toBe(huge);

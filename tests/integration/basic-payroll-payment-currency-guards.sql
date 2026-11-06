@@ -128,8 +128,10 @@ BEGIN
     IF SQLERRM NOT LIKE 'Payroll payment currency must match%' THEN RAISE; END IF;
   END;
 
-  INSERT INTO public.contacts (id, company_id, kind, name)
-  VALUES (_contact, _c, 'supplier', 'Guard test employee contact');
+  -- Use a dedicated synthetic contact number to bypass unrelated
+  -- authenticated contact-number allocation during this rollback-only test.
+  INSERT INTO public.contacts (id, company_id, kind, name, account_number)
+  VALUES (_contact, _c, 'employee', 'Guard test employee contact', 'PG-TEST');
   INSERT INTO public.payroll_pay_schedules (
     id, company_id, name, frequency, anchor_date, is_default, is_active
   ) VALUES (_schedule, _c, 'Guard monthly', 'monthly', '2026-01-01', true, true);

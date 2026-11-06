@@ -27,7 +27,7 @@ describe("fixed assets portfolio dashboard", () => {
     const result = buildAssetPortfolioSnapshot(
       [
         asset("active"),
-        asset("disposed", { status: "disposed", disposal_date: "2026-11-01", cost_minor: 3000 }),
+        asset("disposed", { status: "disposed", purchase_date: "2026-11-01", disposal_date: "2026-11-01", cost_minor: 3000 }),
         asset("future", { purchase_date: "2026-11-25" }),
       ],
       types,

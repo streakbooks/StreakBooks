@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -59,6 +60,8 @@ export function FirmOnboardingReportingPanel({
   const [age, setAge] = useState<OnboardingAgeFilter>("all");
   const [includeCompleted, setIncludeCompleted] = useState(false);
   const [days, setDays] = useState<30 | 60 | 90>(30);
+  const [exportingOperational, setExportingOperational] = useState(false);
+  const [exportingHistory, setExportingHistory] = useState(false);
   const overviewQ = useQuery({
     queryKey: ["firm-onboarding-overview", firmId],
     queryFn: () => getOverview({ data: { firmId } }),
@@ -137,6 +140,64 @@ export function FirmOnboardingReportingPanel({
   const historicalReady = historyQ.isSuccess && knownClients.length > 0;
   const reportError = overviewQ.error ?? staffQ.error ?? historyQ.error;
   const isLoading = overviewQ.isPending || staffQ.isPending || historyQ.isPending;
+
+  async function exportCurrentOperations() {
+    if (!operationalReady || exportingOperational) return;
+    setExportingOperational(true);
+    try {
+      // Reauthorize at download time, not only when the screen first loads.
+      const [currentRows, currentStaff] = await Promise.all([
+        getOverview({ data: { firmId } }),
+        getStaff({ data: { firmId } }),
+      ]);
+      const authorized = currentRows.filter((row) => visibleIds.has(row.company_id));
+      const exportRows = onboardingOperationalRows(authorized, today, {
+        companyId: effectiveCompany,
+        assigneeId: effectiveAssignee,
+        age,
+        includeCompleted,
+      });
+      if (!exportRows.length) {
+        toast.message("No authorized tasks match the selected filters");
+        return;
+      }
+      const names = new Map(
+        currentStaff.staff.map((person) => [person.user_id, person.display_name]),
+      );
+      saveCsv(
+        `firm-onboarding-operations-${today}.csv`,
+        onboardingOperationsCsv(exportRows, clientNames, names),
+      );
+      toast.success(`Exported ${exportRows.length} authorized task rows`);
+    } catch (error) {
+      toast.error("Export failed: " + friendlyAuthError(error));
+    } finally {
+      setExportingOperational(false);
+    }
+  }
+
+  async function exportObservedHistory() {
+    if (!historicalReady || exportingHistory) return;
+    setExportingHistory(true);
+    try {
+      // Refetch under the current session; RLS may have revoked client access.
+      const currentSnapshots = await getTrends({ data: { firmId, days } });
+      const authorizedTrends = onboardingDailyTrends(currentSnapshots, historicalIds);
+      if (!authorizedTrends.length) {
+        toast.message("No authorized historical observations are available");
+        return;
+      }
+      saveCsv(
+        `firm-onboarding-observed-trend-${today}.csv`,
+        onboardingTrendCsv(authorizedTrends),
+      );
+      toast.success(`Exported ${authorizedTrends.length} observed reporting dates`);
+    } catch (error) {
+      toast.error("History export failed: " + friendlyAuthError(error));
+    } finally {
+      setExportingHistory(false);
+    }
+  }
 
   return (
     <section className="space-y-4 rounded-lg border bg-card p-4"
@@ -247,12 +308,9 @@ export function FirmOnboardingReportingPanel({
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <Button size="sm" variant="outline"
-          disabled={!operationalReady || !filtered.length}
-          onClick={() => saveCsv(
-            `firm-onboarding-operations-${today}.csv`,
-            onboardingOperationsCsv(filtered, clientNames, staffNames),
-          )}>
-          Export filtered tasks (CSV)
+          disabled={!operationalReady || !filtered.length || exportingOperational}
+          onClick={() => void exportCurrentOperations()}>
+          {exportingOperational ? "Verifying export…" : "Export filtered tasks (CSV)"}
         </Button>
         <p className="text-xs text-muted-foreground">
           Only accessible client tasks and displayed filters are exported.
@@ -351,12 +409,9 @@ export function FirmOnboardingReportingPanel({
             </Select>
           </div>
           <Button size="sm" variant="outline"
-            disabled={!historicalReady || !dailyTrends.length}
-            onClick={() => saveCsv(
-              `firm-onboarding-observed-trend-${today}.csv`,
-              onboardingTrendCsv(dailyTrends),
-            )}>
-            Export observed trends (CSV)
+            disabled={!historicalReady || !dailyTrends.length || exportingHistory}
+            onClick={() => void exportObservedHistory()}>
+            {exportingHistory ? "Verifying export…" : "Export observed trends (CSV)"}
           </Button>
         </div>
         <h4 className="text-sm font-semibold">Completion trend (recorded observations only)</h4>

@@ -67,7 +67,8 @@ export function parseAzureInvoiceSuggestions(input: unknown): {
   confidence: Record<string, number>;
   warnings: string[];
 } {
-  const payload = input && typeof input === "object" ? input as AzureAnalyzeResult : {};
+  const payload: AzureAnalyzeResult =
+    input && typeof input === "object" ? input as AzureAnalyzeResult : {};
   const document = payload.analyzeResult?.documents?.[0];
   if (payload.status !== "succeeded" || !document?.fields)
     throw new Error("No structured invoice information was available from OCR.");

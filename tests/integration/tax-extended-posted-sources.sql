@@ -137,6 +137,43 @@ SELECT public.assert_tax_raises(
    WHERE id='50000000-0000-4000-8000-000000000010'$$,
  '%Cannot replace or remove posted tax source journal evidence%');
 
+-- A posted header cannot be deleted by a client or a privileged posting
+-- workflow even if the caller can otherwise DELETE the table.
+SELECT public.assert_tax_raises(
+ $DELETE FROM public.sales_credit_notes
+   WHERE id='50000000-0000-4000-8000-000000000008'$,
+ '%Posted tax sources cannot be deleted%');
+SELECT public.assert_tax_raises(
+ $DELETE FROM public.purchase_credit_notes
+   WHERE id='50000000-0000-4000-8000-000000000009'$,
+ '%Posted tax sources cannot be deleted%');
+SELECT public.assert_tax_raises(
+ $DELETE FROM public.purchase_expenses
+   WHERE id='50000000-0000-4000-8000-000000000010'$,
+ '%Posted tax sources cannot be deleted%');
+
+-- Deleting unposted draft credit notes is still supported, including their
+-- ON DELETE CASCADE children. The posted-header guard must not block drafts.
+INSERT INTO public.sales_credit_notes(id,company_id,credit_date)
+VALUES ('50000000-0000-4000-8000-000000000018',
+        '10000000-0000-4000-8000-000000000001','2026-02-08');
+INSERT INTO public.sales_credit_note_lines(id,company_id,credit_note_id)
+VALUES ('60000000-0000-4000-8000-000000000018',
+        '10000000-0000-4000-8000-000000000001',
+        '50000000-0000-4000-8000-000000000018');
+DELETE FROM public.sales_credit_notes
+WHERE id='50000000-0000-4000-8000-000000000018';
+
+INSERT INTO public.purchase_credit_notes(id,company_id,credit_date)
+VALUES ('50000000-0000-4000-8000-000000000019',
+        '10000000-0000-4000-8000-000000000001','2026-02-09');
+INSERT INTO public.purchase_credit_note_lines(id,company_id,credit_note_id)
+VALUES ('60000000-0000-4000-8000-000000000019',
+        '10000000-0000-4000-8000-000000000001',
+        '50000000-0000-4000-8000-000000000019');
+DELETE FROM public.purchase_credit_notes
+WHERE id='50000000-0000-4000-8000-000000000019';
+
 -- Legitimate lifecycle transitions and allocations remain possible, even
 -- after historical journal posting (do not block refunds or void workflows).
 UPDATE public.sales_credit_notes SET status='void', amount_allocated_minor=50
@@ -153,6 +190,12 @@ BEGIN
   IF (SELECT net_minor FROM public.purchase_expenses
       WHERE id='50000000-0000-4000-8000-000000000010')<>260 THEN
     RAISE EXCEPTION 'Failed expense update changed posted tax amount';
+  END IF;
+  IF EXISTS (SELECT 1 FROM public.sales_credit_note_lines
+      WHERE id='60000000-0000-4000-8000-000000000018')
+    OR EXISTS (SELECT 1 FROM public.purchase_credit_note_lines
+      WHERE id='60000000-0000-4000-8000-000000000019') THEN
+    RAISE EXCEPTION 'Draft credit-note cascade removal failed';
   END IF;
   IF (SELECT tax_minor FROM public.sales_credit_note_lines
       WHERE id='60000000-0000-4000-8000-000000000008')<>210 THEN

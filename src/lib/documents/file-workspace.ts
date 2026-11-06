@@ -154,3 +154,17 @@ export function combinePossibleDuplicateFlags(
     throw new Error("The file comparison was incomplete. Review before uploading.");
   return withinBatch.map((flag, index) => flag || amongExisting[index] === true);
 }
+
+
+/**
+ * RLS-aware tag filtering uses a related table inner-join (PostgREST).
+ * It avoids expensive, URL-length-limited client-generated .in() UUID lists.
+ */
+export function fileListProjection(
+  baseColumns: string,
+  tagId: string | null,
+): string {
+  return tagId
+    ? `${baseColumns}, tag_match:document_attachment_tags!inner(tag_id)`
+    : baseColumns;
+}

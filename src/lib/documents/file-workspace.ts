@@ -115,3 +115,31 @@ export function internalFileUrl(origin: string, attachmentId: string): string {
   url.searchParams.set("file", attachmentId);
   return url.toString();
 }
+
+
+/**
+ * Preflight upload review is deliberately conservative: equal name + byte size
+ * signals only a POSSIBLE duplicate, not identical file contents.
+ * Earlier items in the same picker batch are kept; later matches are flagged.
+ */
+export function repeatedUploadFlags(
+  files: readonly { name: string; size: number }[],
+): boolean[] {
+  const seen = new Set<string>();
+  return files.map((file) => {
+    const key = `${file.name.trim().normalize("NFKC").toLocaleLowerCase("en-US")}\u0000${file.size}`;
+    const repeated = seen.has(key);
+    seen.add(key);
+    return repeated;
+  });
+}
+
+/** Keep all candidate indexes when explicitly permitted, or only unflagged ones. */
+export function selectUploadIndexes(
+  flags: readonly boolean[],
+  includePossibleDuplicates: boolean,
+): number[] {
+  return flags.flatMap((flag, index) =>
+    includePossibleDuplicates || !flag ? [index] : [],
+  );
+}

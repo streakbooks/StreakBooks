@@ -83,8 +83,8 @@ export function PayrollLiabilityRollforwardPanel({ companyId }: { companyId: str
                 </thead>
                 <tbody className="[&_tr]:border-b [&_td]:px-2 [&_td]:py-2">
                   <tr><td>Opening credit balance</td><td className="text-right font-mono">{report.openingCreditMinor}</td></tr>
-                  <tr><td>Matched in-period Payroll accruals (+)</td><td className="text-right font-mono">{report.accrualCreditMinor}</td></tr>
-                  <tr><td>Matched in-period Payroll payments (−)</td><td className="text-right font-mono">{report.paymentDebitMinor}</td></tr>
+                  <tr><td>Linked in-period Payroll accrual GL credits (+)</td><td className="text-right font-mono">{report.accrualCreditMinor}</td></tr>
+                  <tr><td>Linked in-period Payroll payment GL debits (−)</td><td className="text-right font-mono">{report.paymentDebitMinor}</td></tr>
                   <tr><td>Reversal net movement (+/−)</td><td className="text-right font-mono">{report.reversalNetCreditMinor}</td></tr>
                   <tr><td>Other/unclassified GL movement (+/−)</td><td className="text-right font-mono">{report.otherNetCreditMinor}</td></tr>
                   <tr className="font-semibold"><td>Closing GL credit balance</td><td className="text-right font-mono">{report.closingCreditMinor}</td></tr>

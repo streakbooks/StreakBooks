@@ -61,3 +61,29 @@ INSERT INTO public.purchase_bill_lines (
  '50000000-0000-4000-8000-000000000007',
  '30000000-0000-4000-8000-000000000007'
 );
+
+
+-- Credit notes and expenses: unposted test sources with distinct identities.
+INSERT INTO public.sales_credit_notes(id,company_id,credit_date,subtotal_minor,tax_minor,total_minor)
+VALUES ('50000000-0000-4000-8000-000000000011',
+        '10000000-0000-4000-8000-000000000001',
+        '2026-04-11',400,80,480);
+INSERT INTO public.sales_credit_note_lines(id,company_id,credit_note_id,net_minor,tax_minor)
+VALUES ('60000000-0000-4000-8000-000000000011',
+        '10000000-0000-4000-8000-000000000001',
+        '50000000-0000-4000-8000-000000000011',400,80);
+INSERT INTO public.purchase_credit_notes(id,company_id,credit_date,subtotal_minor,tax_minor,total_minor)
+VALUES ('50000000-0000-4000-8000-000000000012',
+        '10000000-0000-4000-8000-000000000001',
+        '2026-04-12',300,60,360);
+INSERT INTO public.purchase_credit_note_lines(id,company_id,credit_note_id,net_minor,tax_minor)
+VALUES ('60000000-0000-4000-8000-000000000012',
+        '10000000-0000-4000-8000-000000000001',
+        '50000000-0000-4000-8000-000000000012',300,60);
+INSERT INTO public.purchase_expenses(
+ id,company_id,expense_date,expense_account_id,payment_account_id,
+ net_minor,tax_minor,total_minor
+) VALUES ('50000000-0000-4000-8000-000000000013',
+ '10000000-0000-4000-8000-000000000001','2026-04-13',
+ '40000000-0000-4000-8000-000000000001',
+ '40000000-0000-4000-8000-000000000001',200,40,240);

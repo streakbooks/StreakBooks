@@ -292,7 +292,7 @@ export const saveTaxGlReview = createServerFn({ method: "POST" })
   .inputValidator((input: TaxGlReviewScope & {
     status: TaxGlReviewStatus;
     reviewNote: string;
-    assignToMe: boolean;
+    reviewerAssignment: "keep" | "mine" | "clear";
     expectedVersion: number | null;
     expectedSnapshot: string;
   }) => {
@@ -311,8 +311,12 @@ export const saveTaxGlReview = createServerFn({ method: "POST" })
     }
     if (typeof input.expectedSnapshot !== "string" || !input.expectedSnapshot ||
       input.expectedSnapshot.length > 500) throw new Error("Refresh the GL comparison before saving");
+    if (!["keep", "mine", "clear"].includes(input.reviewerAssignment)) {
+      throw new Error("Invalid reviewer assignment");
+    }
     return { ...scope, status: input.status, reviewNote,
-      assignToMe: input.assignToMe === true, expectedVersion: input.expectedVersion,
+      reviewerAssignment: input.reviewerAssignment,
+      expectedVersion: input.expectedVersion,
       expectedSnapshot: input.expectedSnapshot };
   })
   .handler(async ({ data, context }) => {
@@ -330,10 +334,23 @@ export const saveTaxGlReview = createServerFn({ method: "POST" })
       throw new Error("GL or return activity changed. Refresh the comparison before saving.");
     }
     let assignedTo: string | null = null;
-    if (data.assignToMe) {
+    if (data.reviewerAssignment === "mine") {
       const { data: auth, error: authError } = await context.supabase.auth.getUser();
       if (authError || !auth.user?.id) throw new Error("Cannot verify reviewer identity.");
       assignedTo = auth.user.id;
+    } else if (data.reviewerAssignment === "keep") {
+      const { data: currentReview, error: readError } = await context.supabase
+        .from("tax_gl_review_sessions" as never)
+        .select("reviewer_id" as never)
+        .eq("company_id" as never, data.companyId as never)
+        .eq("period_start" as never, data.periodStart as never)
+        .eq("period_end" as never, data.periodEnd as never)
+        .eq("basis" as never, data.basis as never)
+        .eq("output_account_id" as never, data.outputAccountId as never)
+        .eq("input_account_id" as never, data.inputAccountId as never)
+        .maybeSingle();
+      if (readError) throw new Error(readError.message);
+      assignedTo = ((currentReview ?? null) as { reviewer_id?: string | null } | null)?.reviewer_id ?? null;
     }
     const { data: rows, error } = await context.supabase.rpc(
       "save_tax_gl_review" as never,

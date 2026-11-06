@@ -45,7 +45,7 @@ CREATE POLICY "Members can view budget revisions"
   ON public.budget_revisions FOR SELECT TO authenticated
   USING (public.is_company_member(company_id));
 
-REVOKE ALL ON public.budget_governance, public.budget_revisions FROM PUBLIC, anon;
+REVOKE ALL ON public.budget_governance, public.budget_revisions FROM PUBLIC, anon, authenticated;
 GRANT SELECT ON public.budget_governance, public.budget_revisions TO authenticated;
 
 -- The same immutable structure is used for baseline, edits and lock/unlock history.

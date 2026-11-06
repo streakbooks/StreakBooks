@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   csvField,
+  firstFiftyFirmClientIds,
+  selectedVisibleFirmClients,
   DEFAULT_FIRM_CLIENT_COLUMNS,
   filterFirmClients,
   firmClientCsv,
@@ -29,6 +31,7 @@ const profiles: FirmClientProfile[] = [
     notes: "Internal",
     next_review_date: "2026-12-01",
     updated_at: "2026-11-04",
+    version: 1,
   },
 ];
 
@@ -119,5 +122,30 @@ describe("firm client directory review and layout", () => {
     expect(normalizeFirmClientColumns([])).toEqual([]);
     expect(toggleFirmClientColumn(["status", "review"], "review", false)).toEqual(["status"]);
     expect(toggleFirmClientColumn(["status"], "tags", true)).toEqual(["status", "tags"]);
+  });
+});
+
+describe("firm client bulk selection guards", () => {
+  it("excludes clients without visible company access and deduplicates IDs", () => {
+    const rows: FirmClientRow[] = [
+      ...clients,
+      { id: "restricted", company_id: "3", access_level: "view", companies: null },
+      { ...clients[0]!, id: "duplicate" },
+    ];
+    expect(firstFiftyFirmClientIds(rows)).toEqual(["1", "2"]);
+    expect(selectedVisibleFirmClients(rows, ["1", "1", "3", "2"]).map((row) => row.company_id))
+      .toEqual(["1", "2"]);
+  });
+
+  it("limits multi-client selection to fifty matching accessible rows", () => {
+    const rows: FirmClientRow[] = Array.from({ length: 75 }, (_, index) => ({
+      id: String(index),
+      company_id: String(index),
+      access_level: "view",
+      companies: { name: `Client ${index}` },
+    }));
+    expect(firstFiftyFirmClientIds(rows)).toHaveLength(50);
+    expect(selectedVisibleFirmClients(rows, rows.map((row) => row.company_id))).toHaveLength(50);
+    expect(selectedVisibleFirmClients(rows.slice(0, 10), ["70", "71"])).toEqual([]);
   });
 });

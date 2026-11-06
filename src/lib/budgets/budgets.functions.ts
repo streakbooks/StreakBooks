@@ -33,6 +33,7 @@ import {
 import {
   buildBudgetVsActual,
   filterProfitLossActivity,
+  parseSafeBudgetMinor,
   type MonthActivity,
   type MonthAmount,
 } from "@/lib/budgets/budget-report";
@@ -111,7 +112,7 @@ async function loadBudgetLines(sb: Sb, budgetId: string): Promise<MonthAmount[]>
   return rows.map((r) => ({
     accountId: r.account_id,
     month: r.period_month,
-    amountMinor: num(r.amount_minor),
+    amountMinor: parseSafeBudgetMinor(r.amount_minor, "Stored budget amount"),
   }));
 }
 
@@ -157,8 +158,8 @@ async function monthlyActivity(
   return (rows ?? []).map((r) => ({
     accountId: r.account_id,
     month: r.month,
-    debitMinor: num(r.debit_minor),
-    creditMinor: num(r.credit_minor),
+    debitMinor: parseSafeBudgetMinor(r.debit_minor, "Posted debit"),
+    creditMinor: parseSafeBudgetMinor(r.credit_minor, "Posted credit"),
   }));
 }
 
@@ -1068,7 +1069,9 @@ export const getBudgetForecastData = createServerFn({method:"GET"})
       budgetAmounts:lines.map(line=>({
         ...line,amountMinor:exact(line.amountMinor,"Budget"),
       })),
-      actuals:activity.map(a=>({
+      // ledger_monthly_activity includes balance-sheet accounts. Forecasts
+      // use only P&L, including archived historical income/expense accounts.
+      actuals:filterProfitLossActivity(accountList, activity).map(a=>({
         accountId:a.accountId,month:a.month,
         debitMinor:exact(a.debitMinor,"Posted debit"),
         creditMinor:exact(a.creditMinor,"Posted credit"),

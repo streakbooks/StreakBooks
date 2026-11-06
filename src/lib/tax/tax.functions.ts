@@ -12,10 +12,7 @@ import {
   type TaxAccountRole,
 } from "@/lib/tax/account-pickers";
 import { buildTaxAdjustmentJournal } from "@/lib/tax/tax-adjustment";
-
-function isIsoDate(s: string): boolean {
-  return /^\d{4}-\d{2}-\d{2}$/.test(s);
-}
+import { isValidTaxDate, isValidTaxBasisPoints } from "@/lib/tax/tax-input-validation";
 
 export const getTaxSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -76,7 +73,9 @@ export const listTaxRates = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { companyId: string; onDate?: string }) => ({
     companyId: assertUuid(input.companyId),
-    onDate: input.onDate && isIsoDate(input.onDate) ? input.onDate : null,
+    onDate: input.onDate === undefined ? null : (
+      isValidTaxDate(input.onDate) ? input.onDate : (() => { throw new Error("onDate must be a real YYYY-MM-DD calendar date"); })()
+    ),
   }))
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
@@ -114,13 +113,13 @@ export const saveTaxRate = createServerFn({ method: "POST" })
     }) => {
       const name = (input.name ?? "").trim();
       if (!name) throw new Error("Rate name is required");
-      if (!isIsoDate(input.effectiveFrom)) throw new Error("effectiveFrom must be YYYY-MM-DD");
+      if (!isValidTaxDate(input.effectiveFrom)) throw new Error("effectiveFrom must be a real YYYY-MM-DD calendar date");
       const to = input.effectiveTo ? String(input.effectiveTo).trim() : "";
-      if (to && !isIsoDate(to)) throw new Error("effectiveTo must be YYYY-MM-DD");
+      if (to && !isValidTaxDate(to)) throw new Error("effectiveTo must be a real YYYY-MM-DD calendar date");
       if (to && to < input.effectiveFrom)
         throw new Error("effectiveTo cannot be before effectiveFrom");
-      const rateBps = Math.round(Number(input.rateBps));
-      if (!Number.isInteger(rateBps) || rateBps < 0 || rateBps > 10000) {
+      const rateBps = input.rateBps;
+      if (!isValidTaxBasisPoints(rateBps)) {
         throw new Error("Rate must be 0–10000 basis points");
       }
       return {
@@ -329,11 +328,13 @@ export const postTaxAdjustment = createServerFn({ method: "POST" })
       adjustmentKey: string;
       currencyCode: string;
     }) => {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(input.journalDate ?? "")) {
+      if (!isValidTaxDate(input.journalDate)) {
         throw new Error("Journal date must be YYYY-MM-DD");
       }
-      const amount = Math.round(Number(input.amountMinor));
-      if (!(amount > 0)) throw new Error("Adjustment amount must be positive");
+      const amount = input.amountMinor;
+      if (!Number.isSafeInteger(amount) || amount <= 0) {
+        throw new Error("Adjustment amount must be a positive whole number of minor currency units");
+      }
       if (!["increase_payable", "decrease_payable"].includes(input.direction)) {
         throw new Error("Invalid adjustment direction");
       }

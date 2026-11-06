@@ -187,7 +187,11 @@ describe("Fixed Assets / GL reconciliation", () => {
   it("flags over-depreciation and depreciation for an unknown asset", () => {
     expect(() =>
       reconcileFixedAssets(
-        [asset("a", { cost_minor: "1000", opening_accumulated_minor: "800" })],
+        [asset("a", {
+          cost_minor: "1000",
+          residual_minor: "0",
+          opening_accumulated_minor: "800",
+        })],
         [{ asset_id: "a", period_end: "2026-01-31", amount_minor: "201" }],
         balances("1000", "1001"),
         accounts,

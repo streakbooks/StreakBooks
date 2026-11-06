@@ -323,21 +323,40 @@ export const deleteAttachment = createServerFn({ method: "POST" })
     if (!deleted || (deleted as unknown[]).length === 0) {
       throw new Error("You do not have permission to delete this file.");
     }
+    // Storage and Postgres cannot be deleted atomically. Report cleanup failures honestly:
+    // the metadata is already gone, so callers must not retry deletion of the same row.
+    let storageCleanup: "complete" | "requires_admin" = "complete";
     if (r.storage_bucket === COMPANY_DOCUMENTS_BUCKET) {
-      await supabase.storage.from(COMPANY_DOCUMENTS_BUCKET).remove([r.storage_path]);
-    }
-    await (
-      supabase as unknown as {
-        rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown>;
+      try {
+        const { error: storageError } = await supabase.storage
+          .from(COMPANY_DOCUMENTS_BUCKET)
+          .remove([r.storage_path]);
+        if (storageError) storageCleanup = "requires_admin";
+      } catch {
+        storageCleanup = "requires_admin";
       }
-    ).rpc("record_audit_event", {
-      _company_id: data.companyId,
-      _action: "document.attachment.delete",
-      _entity_type: r.entity_type,
-      _entity_id: r.entity_id,
-      _details: { attachment_id: data.attachmentId, file_name: r.file_name },
-    });
-    return { ok: true as const };
+    }
+    try {
+      await (
+        supabase as unknown as {
+          rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown>;
+        }
+      ).rpc("record_audit_event", {
+        _company_id: data.companyId,
+        _action: "document.attachment.delete",
+        _entity_type: r.entity_type,
+        _entity_id: r.entity_id,
+        _details: {
+          attachment_id: data.attachmentId,
+          file_name: r.file_name,
+          storage_cleanup: storageCleanup,
+          ...(storageCleanup === "requires_admin" ? { storage_path: r.storage_path } : {}),
+        },
+      });
+    } catch {
+      // Audit delivery cannot roll back the metadata delete; surface the cleanup outcome.
+    }
+    return { ok: true as const, storageCleanup };
   });
 
 

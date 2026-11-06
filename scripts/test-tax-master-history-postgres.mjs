@@ -59,7 +59,10 @@ try {
   if (!ready) throw new Error("Isolated PostgreSQL did not start");
 
   sql(read("tests/fixtures/tax-master-history/baseline.sql"));
-  sql(read("supabase/migrations/20261106120000_tax_master_posted_history_guard.sql"));
+  // Repeat migration to verify idempotent reapplication before data fixtures.
+  const migration = read("supabase/migrations/20261106120000_tax_master_posted_history_guard.sql");
+  sql(migration);
+  sql(migration);
   sql(read("tests/integration/tax-master-posted-history.sql"));
   console.log("PASS: isolated tax posted-history guards and tenant reference tests");
 } finally {

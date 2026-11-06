@@ -232,9 +232,11 @@ workpaper, source journal, accountant exception approval or posting engine.
   workpaper or journal approval.
 - \`Export complete audit CSV\` is available only to users with
   \`ai.use\`, \`reports.view\`, and \`reports.export\`. A dedicated
-  server endpoint validates company/case identity and reads up to 5,001
-  chronological immutable review events. If there are over 5,000, it
-  **fails** instead of exporting an undisclosed partial history.
+  server endpoint validates company/case identity and loads sequential
+  200-event windows, avoiding PostgREST's per-query row cap. If there are
+  over 5,000 events it **fails** instead of exporting an undisclosed partial
+  history. The case version is rechecked after pagination; if a competing
+  review action occurred, the export is rejected as stale.
 - Exports contain an explicit schema with company, case, journal,
   reviewer and chronological event metadata. User-entered text is
   CSV-quoted and guarded against spreadsheet formula injection, with a

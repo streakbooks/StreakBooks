@@ -27,6 +27,8 @@ import {
   getAttachmentDownload,
   getAttachmentPreview,
   listCompanyFiles,
+  getCompanyFile,
+  renameAttachment,
   registerAttachment,
 } from "@/lib/documents/attachments.functions";
 import {
@@ -99,6 +101,8 @@ function FilesPage() {
   const fmt = useFormat();
   const queryClient = useQueryClient();
   const fetchFiles = useServerFn(listCompanyFiles);
+  const fetchFileDetails = useServerFn(getCompanyFile);
+  const renameFile = useServerFn(renameAttachment);
   const register = useServerFn(registerAttachment);
   const fetchDownload = useServerFn(getAttachmentDownload);
   const fetchPreview = useServerFn(getAttachmentPreview);
@@ -122,6 +126,10 @@ function FilesPage() {
     void navigate({ to: "/files", search: (previous) => ({ ...previous, file: id ?? undefined }) });
   const [newFolderName, setNewFolderName] = useState("");
   const [showNewFolder, setShowNewFolder] = useState(false);
+  const [renamingFolderId, setRenamingFolderId] = useState<string | null>(null);
+  const [renameFolderName, setRenameFolderName] = useState("");
+  const [showRenameFile, setShowRenameFile] = useState(false);
+  const [renameFileName, setRenameFileName] = useState("");
 
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
@@ -178,6 +186,7 @@ function FilesPage() {
       parentId: string | null;
     }) => updateFolder({ data: { companyId: companyId!, folderId: id, name, parentId } }),
     onSuccess: async () => {
+      setRenamingFolderId(null);
       await queryClient.invalidateQueries({ queryKey: ["document-folders", companyId] });
       toast.success("Folder updated");
     },
@@ -220,6 +229,14 @@ function FilesPage() {
       }),
   });
 
+  const fileDetailsQ = useQuery({
+    queryKey: ["company-file-details", companyId, selectedFile],
+    enabled: Boolean(companyId && selectedFile),
+    queryFn: () =>
+      fetchFileDetails({ data: { companyId: companyId!, attachmentId: selectedFile! } }),
+    retry: false,
+  });
+
   const previewQ = useQuery({
     queryKey: ["company-file-preview", companyId, selectedFile],
     enabled: Boolean(companyId && selectedFile),
@@ -241,6 +258,7 @@ function FilesPage() {
   }, [previewQ.data]);
   // Selection is deliberately limited to the current result page and its permissions.
   useEffect(() => setSelectedIds([]), [companyId, debounced, type, folderId, page, sort, view]);
+  useEffect(() => setShowRenameFile(false), [companyId, selectedFile]);
 
   const uploadM = useMutation({
     mutationFn: async (files: File[]) => {
@@ -267,6 +285,20 @@ function FilesPage() {
     },
   });
 
+  const renameFileM = useMutation({
+    mutationFn: (fileName: string) =>
+      renameFile({ data: { companyId: companyId!, attachmentId: selectedFile!, fileName } }),
+    onSuccess: async () => {
+      setShowRenameFile(false);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["company-files", companyId] }),
+        queryClient.invalidateQueries({ queryKey: ["company-file-details", companyId] }),
+      ]);
+      toast.success("File renamed");
+    },
+    onError: (e) => toast.error(friendlyAuthError(e)),
+  });
+
   const downloadM = useMutation({
     mutationFn: (id: string) =>
       fetchDownload({ data: { companyId: companyId!, attachmentId: id } }),
@@ -279,9 +311,13 @@ function FilesPage() {
 
   const deleteM = useMutation({
     mutationFn: (id: string) => remove({ data: { companyId: companyId!, attachmentId: id } }),
-    onSuccess: async () => {
+    onSuccess: async (_result, deletedId) => {
       setPendingDelete(null);
-      await queryClient.invalidateQueries({ queryKey: ["company-files", companyId] });
+      if (selectedFile === deletedId) setSelectedFile(null);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["company-files", companyId] }),
+        queryClient.invalidateQueries({ queryKey: ["company-file-details", companyId] }),
+      ]);
       toast.success("File deleted");
     },
     onError: (e) => {
@@ -292,32 +328,35 @@ function FilesPage() {
 
   const bulkMoveM = useMutation({
     mutationFn: async ({ ids, targetId }: { ids: string[]; targetId: string | null }) => {
-      let moved = 0;
+      const movedIds: string[] = [];
+      const failedIds: string[] = [];
+      let firstError: string | null = null;
       for (const attachmentId of ids) {
         try {
           await moveFile({ data: { companyId: companyId!, attachmentId, folderId: targetId } });
-          moved += 1;
+          movedIds.push(attachmentId);
         } catch (error) {
-          throw new Error(`Moved ${moved} of ${ids.length} files. ${friendlyAuthError(error)}`);
+          failedIds.push(attachmentId);
+          firstError ??= friendlyAuthError(error);
         }
       }
-      return moved;
+      return { movedIds, failedIds, firstError };
     },
-    onSuccess: async (count) => {
-      setSelectedIds([]);
+    onSuccess: async ({ movedIds, failedIds, firstError }) => {
+      setSelectedIds(failedIds);
       await queryClient.invalidateQueries({ queryKey: ["company-files", companyId] });
-      toast.success(`Moved ${count} file${count === 1 ? "" : "s"}`);
+      if (movedIds.length)
+        toast.success(`Moved ${movedIds.length} file${movedIds.length === 1 ? "" : "s"}`);
+      if (failedIds.length)
+        toast.error(`${failedIds.length} file${failedIds.length === 1 ? "" : "s"} could not be moved. ${firstError ?? "Please retry."}`);
     },
-    onError: async (error) => {
-      await queryClient.invalidateQueries({ queryKey: ["company-files", companyId] });
-      toast.error(friendlyAuthError(error));
-    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
   });
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
 
   const onPick = (list: FileList | null) => {
-    if (!list || list.length === 0) return;
+    if (!list || list.length === 0 || !canUpload || uploadM.isPending) return;
     const files = Array.from(list);
     for (const f of files) {
       const check = validateUpload({ fileName: f.name, sizeBytes: f.size, contentType: f.type });
@@ -334,7 +373,8 @@ function FilesPage() {
 
   const data = filesQ.data;
   const pages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
-  const selected = data?.files.find((file) => file.id === selectedFile) ?? null;
+  const selected =
+    fileDetailsQ.data ?? data?.files.find((file) => file.id === selectedFile) ?? null;
   const canManage = (entityType: string) =>
     (entityType in ATTACHMENT_ENTITIES
       ? ATTACHMENT_ENTITIES[entityType as keyof typeof ATTACHMENT_ENTITIES].manage
@@ -417,10 +457,15 @@ function FilesPage() {
           {error}
         </p>
       ) : null}
+      {uploadM.isPending ? (
+        <p role="status" className="mb-3 text-sm text-muted-foreground">
+          Uploading files to secure company storage…
+        </p>
+      ) : null}
       <div
         className={`mb-4 rounded-lg border border-dashed p-4 text-sm transition-colors ${dragActive ? "border-primary bg-primary/5" : "border-border"}`}
         onDragOver={(e) => {
-          if (!canUpload) return;
+          if (!canUpload || uploadM.isPending) return;
           e.preventDefault();
           setDragActive(true);
         }}
@@ -428,7 +473,7 @@ function FilesPage() {
           if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragActive(false);
         }}
         onDrop={(e) => {
-          if (!canUpload) return;
+          if (!canUpload || uploadM.isPending) return;
           e.preventDefault();
           setDragActive(false);
           onPick(e.dataTransfer.files);

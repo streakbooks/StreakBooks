@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { basename, dirname, join } from "node:path";
+import { basename, delimiter, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const runner = fileURLToPath(new URL("./check-fixed-assets-release.mjs", import.meta.url));
@@ -25,13 +25,23 @@ function fixture() {
   mkdirSync(bin, { recursive: true });
   copyFileSync(runner, join(repo, "scripts", basename(runner)));
   writeFileSync(join(repo, "README.md"), "Local-only fixture; no network access.\n");
-  writeFileSync(join(bin, "npm"), [
-    "#!/bin/sh",
-    'printf "%s\\n" "$*" >> "$FA_TEST_NPM_LOG"',
-    'if [ "$FA_TEST_FAIL" = "lint" ] && [ "$1" = "run" ] && [ "$2" = "lint" ]; then exit 4; fi',
-    "exit 0",
-    "",
-  ].join("\n"), { mode: 0o755 });
+  if (process.platform === "win32") {
+    writeFileSync(join(bin, "npm.cmd"), [
+      "@echo off",
+      'echo %*>>"%FA_TEST_NPM_LOG%"',
+      'if /I "%FA_TEST_FAIL%"=="lint" if /I "%1"=="run" if /I "%2"=="lint" exit /b 4',
+      "exit /b 0",
+      "",
+    ].join("\r\n"));
+  } else {
+    writeFileSync(join(bin, "npm"), [
+      "#!/bin/sh",
+      'printf "%s\\n" "$*" >> "$FA_TEST_NPM_LOG"',
+      'if [ "$FA_TEST_FAIL" = "lint" ] && [ "$1" = "run" ] && [ "$2" = "lint" ]; then exit 4; fi',
+      "exit 0",
+      "",
+    ].join("\n"), { mode: 0o755 });
+  }
 
   git(repo, "init", "-q", "-b", "main");
   git(repo, "config", "user.email", "local-test@example.invalid");
@@ -44,15 +54,17 @@ function fixture() {
 }
 
 function execute(f, { fail = "", args = [] } = {}) {
+  const env = { ...process.env };
+  const inheritedPath = process.env.PATH ?? process.env.Path ?? "";
+  delete env.Path;
+  delete env.path;
+  env.PATH = f.bin + delimiter + inheritedPath;
+  env.FA_TEST_NPM_LOG = f.logs;
+  env.FA_TEST_FAIL = fail;
   const output = spawnSync(process.execPath, [join(f.repo, "scripts", basename(runner)), ...args], {
     cwd: f.repo,
     encoding: "utf8",
-    env: {
-      ...process.env,
-      PATH: f.bin + ":" + process.env.PATH,
-      FA_TEST_NPM_LOG: f.logs,
-      FA_TEST_FAIL: fail,
-    },
+    env,
   });
   return { ...output, output: (output.stdout ?? "") + (output.stderr ?? "") };
 }

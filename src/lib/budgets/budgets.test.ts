@@ -220,14 +220,20 @@ describe("budget CSV", () => {
     expect(r.values.has("a")).toBe(false);
   });
   it("rejects a CSV from a different financial year before changing draft amounts", () => {
-    const incorrect = ["Account code,Account name,Jan 26,Feb 26,Mar 26,Apr 26,May 26,Jun 26,Jul 26,Aug 26,Sep 26,Oct 26,Nov 26,Dec 26", "200,Sales,1,1,1,1,1,1,1,1,1,1,1,1"].join("\n");
+    const incorrect = [
+      "Account code,Account name,Jan 26,Feb 26,Mar 26,Apr 26,May 26,Jun 26,Jul 26,Aug 26,Sep 26,Oct 26,Nov 26,Dec 26",
+      "200,Sales,1,1,1,1,1,1,1,1,1,1,1,1",
+    ].join("\n");
     const actualMonths = fiscalMonthStarts("2027-01-01");
     const parsed = parseBudgetCsv(incorrect, accounts, "GBP", actualMonths);
     expect(parsed.values.size).toBe(0);
     expect(parsed.issues[0]?.message).toMatch(/financial year/);
   });
   it("rejects rows with missing month columns rather than silently treating them as zero", () => {
-    const text = "Account code,Account name,Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec\n200,Sales,1,2";
+    const text = [
+      "Account code,Account name,Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec",
+      "200,Sales,1,2",
+    ].join("\n");
     const parsed = parseBudgetCsv(text, accounts, "GBP");
     expect(parsed.values.size).toBe(0);
     expect(parsed.issues[0]?.message).toMatch(/twelve monthly columns/);

@@ -32,7 +32,9 @@ export function applyUpliftBps(minor: number, bps: number): number {
   if (!Number.isSafeInteger(minor)) throw new Error("Amount must be a safe integer in minor units");
   if (!Number.isInteger(bps)) throw new Error("Uplift must be whole basis points");
   const result = Number(roundDiv(BigInt(minor) * BigInt(10_000 + bps), 10_000n));
-  if (!Number.isSafeInteger(result)) throw new Error("Adjusted budget amount exceeds the supported range");
+  if (!Number.isSafeInteger(result)) {
+    throw new Error("Adjusted budget amount exceeds the supported range");
+  }
   return result;
 }
 

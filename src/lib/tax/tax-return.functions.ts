@@ -166,6 +166,9 @@ export const getTaxGlComparison = createServerFn({ method: "GET" })
         reason: "Output tax and input tax currently use the same GL account; distinct mapped accounts are required for this diagnostic.",
       };
     }
+    // Historical or manually imported mappings must also belong to the current tenant.
+    await requireAccountInCompany(context.supabase, data.companyId, settings.outputAccountId);
+    await requireAccountInCompany(context.supabase, data.companyId, settings.inputAccountId);
     const calculated = await computeReturn(sb, data);
     const lines = await loadPostedLines(sb, data.companyId, calculated.meta.baseCurrency, {
       from: data.periodStart,

@@ -145,4 +145,44 @@ describe("payroll employee drafts", () => {
     expect(parsed.drafts[0]?.firstName).toBe("Ada");
     expect(parsed.drafts[0]?.employeeNumber).toBe("EMP-0001");
   });
+  it("rejects duplicate employee IDs in an import before writes", () => {
+    const result = parsePayrollEmployeesCsv(
+      "Employee number,First name,Last name,Hire date\nEMP-1,Ada,Lee,2026-01-01\nEMP-1,Ann,Li,2026-02-01",
+      { country: "GB", currency: "GBP" },
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toMatch(/Line 3.*appears more than once/);
+  });
+
+  it("rejects duplicate headings and unsupported payment methods", () => {
+    const duplicate = parsePayrollEmployeesCsv(
+      "First name,First name,Last name,Hire date\nAda,Ada,Lee,2026-01-01",
+      { country: "GB", currency: "GBP" },
+    );
+    expect(duplicate.ok).toBe(false);
+    const unsupported = parsePayrollEmployeesCsv(
+      "First name,Last name,Hire date,Payment method\nAda,Lee,2026-01-01,unsupported",
+      { country: "GB", currency: "GBP" },
+    );
+    expect(unsupported.ok).toBe(false);
+  });
+
+  it("preserves quoted newlines and reports the true next row line on invalid data", () => {
+    const imported = parsePayrollEmployeesCsv(
+      'First name,Last name,Hire date,Department\r\nAda,Lee,2026-01-01,"Research\r\nTeam"\r\nAnn,Li,invalid,Accounts',
+      { country: "GB", currency: "GBP" },
+    );
+    expect(imported.ok).toBe(false);
+    if (!imported.ok) expect(imported.error).toContain("Line 4:");
+  });
+
+  it("round-trips an imported department containing commas and embedded newlines", () => {
+    const parsed = parsePayrollEmployeesCsv(
+      'First name,Last name,Hire date,Department\r\nAda,Lee,2026-01-01,"Research,\r\nTeam"',
+      { country: "GB", currency: "GBP" },
+    );
+    expect(parsed.ok).toBe(true);
+    if (parsed.ok) expect(parsed.drafts[0]?.department).toBe("Research,\nTeam");
+  });
+
 });

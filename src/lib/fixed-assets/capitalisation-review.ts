@@ -48,15 +48,17 @@ export function reviewCapitalisableLines(
     const linked = exact(line.registeredMinor, "Registered asset cost");
     if (linked < 0n || tax < 0n) throw new Error("Invalid capitalisation amounts");
     const gross = net + tax;
-    if (gross <= 0n) {
-      // Credit/negative bill lines may require review; this isn't a purchase
-      // eligible for capitalisation and must never be labelled "unlinked".
+    if (net <= 0n || gross <= 0n) {
+      // A tax-only, zero-net or credit/negative-net bill line is not a
+      // positive capital purchase even when the tax makes gross positive.
       return { ...line, status: "non_purchase" as const, indicativeUnlinkedMinor: null };
     }
     const sameCurrency = line.currency.toUpperCase() === baseCurrency.toUpperCase();
     let status: CapitalisationReviewStatus;
-    if (linked === 0n) status = "unlinked";
-    else if (!sameCurrency) status = "fx_review";
+    // FX must take precedence over linking: even an unlinked foreign-currency
+    // bill needs verified base-currency cost before an asset can be registered.
+    if (!sameCurrency) status = "fx_review";
+    else if (linked === 0n) status = "unlinked";
     else if (linked > gross) status = "overlinked";
     else if (linked < net) status = "partially_linked";
     else status = "linked";

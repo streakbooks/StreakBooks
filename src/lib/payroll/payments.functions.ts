@@ -5,6 +5,7 @@ import { callRpc, companyIdOf, isMissingRelation, num } from "@/lib/planning/rpc
 import { validatePayrollPaymentAllocations } from "@/lib/payroll/payroll-payment-allocation";
 import { payrollClearingCurrencyMismatch } from "@/lib/payroll/clearing-currency";
 import { assertPayrollSettlementDateOnly } from "@/lib/payroll/payment-date";
+import { mustValidateFreshPayrollAllocations } from "@/lib/payroll/payment-replay-preflight";
 import { filterPayrollClearingAccounts, type PayrollClearingCandidate, type PayrollLinkedBank } from "@/lib/payroll/clearing-account-options";
 import type { PayrollPaymentMethod } from "@/lib/payroll/types";
 import { PAYROLL_RUNS_MIGRATION } from "@/lib/payroll/runs.functions";
@@ -391,13 +392,35 @@ export const recordPayrollPayment = createServerFn({ method: "POST" })
     );
     if (mismatch) throw new Error(mismatch);
 
+    // A posted settlement has already reduced outstanding net pay. A
+    // network retry with the SAME key must reach the hardened SQL replay
+    // check rather than fail here with "allocation exceeds outstanding".
+    // The RPC compares the entire original payment/allocations, rejecting
+    // any changed payload or reversed key.
+    let existingPaymentId: string | null = null;
+    if (data.idempotencyKey) {
+      if (data.idempotencyKey.length > 100) {
+        throw new Error("Payment idempotency key cannot exceed 100 characters.");
+      }
+      const replayRes = await context.supabase
+        .from("payroll_payments" as never)
+        .select("id" as never)
+        .eq("company_id" as never, data.companyId as never)
+        .eq("idempotency_key" as never, data.idempotencyKey as never)
+        .maybeSingle();
+      if (replayRes.error) throw new Error(replayRes.error.message);
+      existingPaymentId = (
+        replayRes.data as { id: string } | null
+      )?.id ?? null;
+    }
+
     const paymentAmountMinor = BigInt(data.amountMinor);
     const allocationInputs = data.allocations.map((a) => ({
       payslipId: a.payslipId,
       amountMinor: BigInt(a.amountMinor),
     }));
 
-    if (allocationInputs.length > 0) {
+    if (mustValidateFreshPayrollAllocations(existingPaymentId) && allocationInputs.length > 0) {
       const ids = data.allocations.map((a) => a.payslipId);
       const slipRes = await context.supabase
         .from("payroll_payslips" as never)
@@ -459,7 +482,7 @@ export const recordPayrollPayment = createServerFn({ method: "POST" })
         payslipsForValidation,
       );
       if (!validated.ok) throw new Error(validated.error);
-    } else {
+    } else if (mustValidateFreshPayrollAllocations(existingPaymentId)) {
       const validated = validatePayrollPaymentAllocations(paymentAmountMinor, [], []);
       if (!validated.ok) throw new Error(validated.error);
     }

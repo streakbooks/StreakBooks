@@ -178,7 +178,7 @@ REVOKE ALL ON FUNCTION public.guard_tax_rate_posted_history()
 CREATE OR REPLACE FUNCTION public.lock_tax_masters_when_document_posted()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public, pg_temp
-AS $
+AS $$
 BEGIN
   -- Allow deletion of never-posted draft source documents. Once an invoice
   -- or bill has a linked journal, deletion must fail before FK cascades

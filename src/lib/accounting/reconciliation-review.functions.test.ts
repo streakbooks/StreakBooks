@@ -18,7 +18,7 @@ vi.mock("@/lib/assert-company-access", () => ({ assertCompanyPermission: vi.fn()
 import { assertCompanyPermission } from "@/lib/assert-company-access";
 import {
   listReconciliationReviewCases, listReconciliationReviewAssignees,
-  saveReconciliationReviewCase,
+  getReconciliationReviewCase, saveReconciliationReviewCase,
 } from "./reconciliation-review.functions";
 
 const company = "11111111-1111-4111-8111-111111111111";
@@ -44,6 +44,11 @@ const from = vi.fn((table: string) => {
       return q;
     },
     order() { return q; },
+    async maybeSingle() {
+      const data = (db[table] ?? [])
+        .filter(x => filters.every(f => f(x as Record<string, unknown>)));
+      return { data: data[0] ?? null, error: null };
+    },
     async limit(n: number) {
       const data = (db[table] ?? [])
         .filter(x => filters.every(f => f(x as Record<string, unknown>)))
@@ -63,6 +68,8 @@ const invoke = (fn: unknown, data: unknown) =>
   (fn as (args: unknown) => Promise<unknown>)({ data, context });
 const read = (id = company) => invoke(listReconciliationReviewCases, { companyId: id });
 const assignees = (id = company) => invoke(listReconciliationReviewAssignees, { companyId: id });
+const exact = (id = company, source = "fixed_assets", fingerprint = fp) =>
+  invoke(getReconciliationReviewCase, { companyId: id, source, fingerprint });
 const saveInput = {
   companyId: company, source: "fixed_assets", fingerprint: fp,
   action: "open",
@@ -106,7 +113,29 @@ describe("persistent reconciliation review server permissions and boundaries", (
     db["reconciliation_review_cases"] = [{ ...row, company_id: "foreign" }];
     await expect(read()).resolves.toMatchObject({ cases: [] });
   });
-  it("limits the queue to 100 and discloses additional rows", async () => {
+  it("finds an exact current case using company, source and stable fingerprint", async () => {
+    await expect(exact()).resolves.toMatchObject({ id: uuid, version: 1 });
+    expect(seen).toHaveBeenCalledWith("reconciliation_review_cases", "company_id", company);
+    expect(seen).toHaveBeenCalledWith("reconciliation_review_cases", "source_type", "fixed_assets");
+    expect(seen).toHaveBeenCalledWith("reconciliation_review_cases", "finding_fingerprint", fp);
+    expect(assertCompanyPermission).toHaveBeenCalledWith(expect.anything(), company, "accounting.view");
+  });
+  it("finds no case for an unrelated source and refuses foreign-company evidence", async () => {
+    await expect(exact(company, "payroll")).resolves.toBeNull();
+    db["reconciliation_review_cases"] = [{ ...row, company_id: "other" }];
+    await expect(exact()).resolves.toBeNull();
+  });
+  it("fails an exact lookup before queries when accounting.view is denied", async () => {
+    vi.mocked(assertCompanyPermission).mockRejectedValueOnce(new Error("No view permission"));
+    await expect(exact()).rejects.toThrow("No view permission");
+    expect(from).not.toHaveBeenCalled();
+  });
+  it("validates exact case lookup keys before database access", () => {
+    expect(() => exact(company, "other")).toThrow(/Invalid reconciliation source/);
+    expect(() => exact(company, "fixed_assets", "bad")).toThrow(/Invalid reconciliation finding fingerprint/);
+    expect(from).not.toHaveBeenCalled();
+  });
+    it("limits the queue to 100 and discloses additional rows", async () => {
     db["reconciliation_review_cases"] = Array.from({ length: 101 }, (_, i) =>
       ({ ...row, id: "case-" + i }),
     );

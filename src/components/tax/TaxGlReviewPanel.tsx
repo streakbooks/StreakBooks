@@ -96,7 +96,8 @@ export function TaxGlReviewPanel({
   );
 
   const canSave = canEdit && edited && !mutation.isPending &&
-    (status !== "resolved" || (basis === "accrual" && note.trim().length >= 10));
+    (status !== "resolved" || (basis === "accrual" && note.trim().length >= 10 &&
+      !(record?.status === "resolved" && savedSnapshotChanged)));
   return (
     <div className="space-y-4 rounded-md border p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -117,7 +118,8 @@ export function TaxGlReviewPanel({
           <AlertTitle>Review requires refresh</AlertTitle>
           <AlertDescription>
             The current GL comparison differs from the snapshot previously reviewed.
-            Reopen and document this change before relying on the earlier review status.
+            Change the review status to In review, document the new evidence, save,
+            then resolve in a separate review action.
           </AlertDescription>
         </Alert>
       ) : null}
@@ -131,7 +133,7 @@ export function TaxGlReviewPanel({
             <SelectContent>
               <SelectItem value="open">Open</SelectItem>
               <SelectItem value="in_review">In review</SelectItem>
-              <SelectItem value="resolved" disabled={basis === "cash"}>Resolved (internal)</SelectItem>
+              <SelectItem value="resolved" disabled={basis === "cash" || (record?.status === "resolved" && savedSnapshotChanged)}>Resolved (internal)</SelectItem>
             </SelectContent>
           </Select>
         </div>

@@ -152,6 +152,7 @@ function AiAssistantWorkspace({
   const [message, setMessage] = useState("");
   const [history, setHistory] = useState<Exchange[]>([]);
   const [reviewId, setReviewId] = useState<string | null>(null);
+  const [journalDate, setJournalDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [onlyLatestFacts, setOnlyLatestFacts] = useState(true);
@@ -195,7 +196,7 @@ function AiAssistantWorkspace({
 
   const applyM = useMutation({
     mutationFn: (suggestionId: string) =>
-      applySuggestion({ data: { companyId, suggestionId, confirm: true } }),
+      applySuggestion({ data: { companyId, suggestionId, confirm: true, journalDate } }),
     onSuccess: async (result) => {
       setReviewId(null);
       toast.success("Journal posted: " + result.journalId.slice(0, 8));
@@ -624,12 +625,25 @@ function AiAssistantWorkspace({
           )}
           <Alert>
             <AlertDescription>
-              Posting uses today's server date, the organisation's ledger rules and an idempotency key. Review your accounting period first. No posting occurs until you confirm.
+              Posting uses the selected journal date, the organisation's ledger rules and an idempotency key. No posting occurs until you confirm.
             </AlertDescription>
           </Alert>
+          <div className="space-y-2">
+            <label className="text-sm font-medium" htmlFor="ai-journal-date">Journal posting date</label>
+            <input
+              id="ai-journal-date"
+              type="date"
+              required
+              className="flex h-9 w-full max-w-56 rounded-md border border-input bg-background px-3 text-sm"
+              value={journalDate}
+              onChange={(event) => setJournalDate(event.target.value)}
+              disabled={applyM.isPending}
+            />
+            <p className="text-xs text-muted-foreground">Choose the appropriate accounting date; closed periods will be rejected by the posting engine.</p>
+          </div>
           <DialogFooter>
             <Button variant="outline" disabled={applyM.isPending} onClick={() => setReviewId(null)}>Cancel</Button>
-            <Button disabled={!selected || !journalLines || applyM.isPending} onClick={() => selected && applyM.mutate(selected.id)}>
+            <Button disabled={!selected || !journalLines || !journalDate || applyM.isPending} onClick={() => selected && applyM.mutate(selected.id)}>
               {applyM.isPending ? <Loader2 className="size-4 animate-spin" /> : <ShieldCheck className="size-4" />}
               Confirm & post journal
             </Button>

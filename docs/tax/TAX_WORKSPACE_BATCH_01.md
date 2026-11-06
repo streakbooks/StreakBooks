@@ -146,3 +146,70 @@ merge was performed. Review and test the draft PR before merging.
 - No e-filing or tax-authority integration was added.
 - GitHub CI was not run, local PostgreSQL and browser tests were not executed,
   and no merge or deployment is claimed.
+
+## Continuation — Batch 04: on-demand Tax Return / General Ledger diagnostic
+
+### Implemented
+- `getTaxGlComparison`: authenticated, organisation-scoped, read-only endpoint
+  for a selected tax return period and accounting basis. It uses existing
+  tax-document return calculations and **posted, base-currency converted**
+  journal lines from the existing ledger reader.
+- Requires two distinct mapped output/input tax control accounts; validates
+  that both accounts belong to the requesting organisation. No comparison is
+  shown when the mappings are missing or overlap.
+- Separately totals output-control **credits less debits** and input-control
+  **debits less credits**, grouped into:
+  - posted sales/purchase document journal activity,
+  - reversal journals,
+  - other GL postings (settlement, tax adjustments, opening balances, manual
+    entries, payments, etc.).
+- Calculates the signed output-minus-input net difference between
+  document-plus-reversal journal activity and the document tax return.
+- All BigInt journal amounts and variances are carried as decimal strings to
+  the client to avoid unsafe browser number conversion.
+- `TaxGlComparisonPanel`: **optional** (no GL request until opened) on both
+  newly previewed and saved Tax Returns. Offers refresh and a link to the
+  existing detailed GL Tax Summary.
+- Focused pure tests for signs, reversals, manual activity, currency minor
+  precision, net tax payable and cash-basis handling.
+
+### Calculation boundary
+- **Diagnostic comparison, not final certification or statutory submission.**
+  A zero difference is not proof of reconciliation or compliance.
+- Cash-basis comparisons are marked informational: journal posting dates and
+  cash allocation tax dates differ, so the shown difference is not a cash-basis
+  GL reconciliation.
+- Per-tax-code account overrides, unmapped fallback accounts, tax paid through
+  separate accounts, different posting dates, manual tax journals and legacy
+  lines can cause apparent differences. Current organisation mappings are not
+  a historical account mapping snapshot.
+- No journal changes, new tax authority filings, database migrations, new RLS
+  privileges, or automatic discrepancy postings are part of Batch 04.
+- Compare may be costly on very large ledgers because a user-triggered request
+  loads all posted lines for two accounts in the specified period; benchmark
+  performance before production.
+
+### Local acceptance checklist
+1. With two valid mappings, compare a VAT quarter whose source invoices and
+   bills post to those accounts; check output, input and net figures.
+2. Post a tax adjustment and a settlement in a fixture; ensure they appear in
+   Other GL activity instead of the source-document component.
+3. Reverse a posted source document and check the Reversal component.
+4. Test zero transactions, negative net/refund, large exact minor-unit amounts,
+   and mixed source types; verify signs and no truncation.
+5. Compare accrual and cash basis on the same transactions; cash must clearly
+   say "informational only" without a reconciled certification.
+6. Test missing/same-account mappings, cross-company account references and
+   unauthorised users; no mutating action is available.
+7. Check both previewed and saved return panels, mobile table overflow,
+   keyboard navigation, request refresh and error recovery.
+8. Run:
+   `npm.cmd test -- src/lib/tax/tax-gl-comparison.test.ts`
+   `npm.cmd run typecheck`
+   `npm.cmd run lint`
+   `npm.cmd run build`
+9. Verify end-to-end behaviour in authenticated staging with the production-
+   compatible database schema before merging.
+
+**Status:** Code committed to draft PR #110; checks and authenticated staging
+are not verified. No GitHub CI, production merge or deployment was performed.

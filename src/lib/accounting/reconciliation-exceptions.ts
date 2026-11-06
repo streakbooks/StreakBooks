@@ -122,7 +122,7 @@ function coverageState<T>(input: AuditCapture<T>, partial = false): ExceptionCov
 /** Normalise only confirmed server audit output; no source is silently assumed complete. */
 export function createExceptionSnapshot(inputs: ExceptionInputs): ExceptionSnapshot {
   const findings: ExceptionFinding[] = [];
-  const captures = {
+  const captures: Record<ExceptionSource, AuditCapture<unknown>> = {
     ledger: inputs.ledger,
     fx_realised: inputs.realisedFx,
     fx_revaluation: inputs.revaluation,

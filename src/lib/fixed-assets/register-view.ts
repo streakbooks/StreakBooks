@@ -55,6 +55,19 @@ export function selectRegisterAssets(
   return result;
 }
 
+/** Effective register state as at a date; future purchases/disposals are not misclassified. */
+export function assetStatusAsOf(
+  asset: Pick<FixedAssetRow, "purchase_date" | "status" | "disposal_date">,
+  asOf: string,
+): "not_acquired" | "active" | "disposed" {
+  if (asset.purchase_date > asOf) return "not_acquired";
+  return asset.status === "disposed" &&
+    asset.disposal_date !== null &&
+    asset.disposal_date <= asOf
+    ? "disposed"
+    : "active";
+}
+
 export type ActiveAssetSummary = {
   activeCount: number;
   costMinor: number | null;
@@ -71,12 +84,7 @@ export function summariseActiveAssets(
   asOf: string,
   accumulatedByAssetId: ReadonlyMap<string, number> | null,
 ): ActiveAssetSummary {
-  const active = assets.filter(
-    (asset) =>
-      asset.purchase_date <= asOf &&
-      (asset.status === "active" ||
-        (asset.disposal_date !== null && asset.disposal_date > asOf)),
-  );
+  const active = assets.filter((asset) => assetStatusAsOf(asset, asOf) === "active");
   let cost = 0;
   for (const asset of active) {
     cost += asset.cost_minor;

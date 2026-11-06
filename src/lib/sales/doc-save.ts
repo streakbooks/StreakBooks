@@ -13,6 +13,7 @@ import { callSalesRpc, type SalesClient } from "@/lib/sales/rpc";
 import type { SalesLineComputed } from "@/lib/sales/line-helpers";
 import { sumLines } from "@/lib/sales/line-helpers";
 import type { PriceListLineSnapshot } from "@/lib/products/price-list-provenance";
+import { salesDraftSaveRpc, requiresAtomicPricingRpc } from "@/lib/sales/priced-rpc-routing";
 
 export type SalesDraftPricing = {
   priceListId: string | null;
@@ -94,9 +95,12 @@ export async function saveSalesDocument(
   supabase: SalesClient,
   input: SaveSalesDocInput,
 ): Promise<{ id: string; number: string | null; usedFallback: boolean }> {
-  const rpcName = input.pricing
-    ? "save_sales_document_draft_priced"
-    : "save_sales_document_draft";
+  const rpcName = salesDraftSaveRpc({
+    kind: input.kind,
+    id: input.id,
+    quoteId: input.quoteId,
+    hasPricing: Boolean(input.pricing),
+  });
   const rpc = await callSalesRpc<{ id: string; number: string | null }>(
     supabase,
     rpcName,
@@ -126,10 +130,10 @@ export async function saveSalesDocument(
   if (!rpc.missing) {
     return { id: rpc.data.id, number: rpc.data.number ?? null, usedFallback: false };
   }
-  if (input.pricing) {
+  if (requiresAtomicPricingRpc(rpcName)) {
     throw new Error(
-      "Atomic pricing provenance requires the deployed sales draft pricing migration. " +
-      "No draft was saved; ask an administrator to apply the migration.",
+      "This sale uses atomic pricing provenance. The corresponding database migration " +
+      "is not deployed; no document was saved. Ask an administrator to apply the migration.",
     );
   }
   const r = await saveFallback(supabase, input);

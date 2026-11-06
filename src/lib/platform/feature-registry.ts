@@ -340,6 +340,17 @@ export const FEATURE_REGISTRY: readonly CatalogueFeature[] = [
     status: "live",
   },
   {
+    key: "payroll",
+    name: "Payroll module",
+    description: "Payroll writes.",
+    category: "module",
+    module: "payroll",
+    defaultEnabled: true,
+    metering: "none",
+    costTag: null,
+    status: "live",
+  },
+  {
     key: "documents",
     name: "Documents module",
     description: "Document writes.",

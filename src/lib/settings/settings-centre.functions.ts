@@ -22,6 +22,8 @@ import {
   type ComputedFeatureState,
 } from "@/lib/settings/feature-catalog";
 import { evaluateSettingsChange } from "@/lib/settings/dependency-engine";
+import { loadBasicPayrollFeatureConfigComplete } from "@/lib/payroll/payroll.functions";
+import type { Sb } from "@/lib/accounting/ledger-data";
 
 /** JSON-serializable settings document for TanStack server functions. */
 export type SettingsDocument = Record<
@@ -182,6 +184,15 @@ export const listOrganisationFeatures = createServerFn({ method: "GET" })
 
     const editOk = Boolean(canEdit.data);
 
+    const basicPayrollRow = byKey.get("basic_payroll");
+    const basicPayrollConfigComplete =
+      basicPayrollRow?.enabled === true
+        ? await loadBasicPayrollFeatureConfigComplete(
+            context.supabase as unknown as Sb,
+            data.companyId,
+          )
+        : true;
+
     return FEATURE_CATALOG.map((def) => {
       const row = byKey.get(def.key);
       const enabled = row?.enabled ?? false;
@@ -201,6 +212,9 @@ export const listOrganisationFeatures = createServerFn({ method: "GET" })
       if (def.requiresConfigCategory === "products" && enabled) {
         const doc = configByCat.get("products") ?? {};
         configComplete = Boolean(doc["track_inventory"]);
+      }
+      if (def.key === "basic_payroll" && enabled) {
+        configComplete = basicPayrollConfigComplete;
       }
       return computeFeatureState(def, {
         enabled,

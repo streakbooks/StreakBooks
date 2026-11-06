@@ -38,6 +38,7 @@ const GROUPS: Array<{ label: string; ids: SettingsCategory[] }> = [
       "import_migration",
       "portals",
       "fixed_assets",
+      "payroll",
     ],
   },
   { label: "Firm & plan", ids: ["accountant", "subscription", "demo"] },

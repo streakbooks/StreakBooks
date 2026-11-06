@@ -13412,7 +13412,8 @@ export type Database = {
         | "fx_revaluation"
         | "depreciation"
         | "asset_disposal"
-        | "fx_realised";
+        | "fx_realised"
+        | "payroll";
       journal_status: "draft" | "approved" | "posted" | "voided";
       membership_status: "active" | "invited" | "suspended";
       normal_balance: "debit" | "credit";
@@ -13584,6 +13585,7 @@ export const Constants = {
         "depreciation",
         "asset_disposal",
         "fx_realised",
+        "payroll",
       ],
       journal_status: ["draft", "approved", "posted", "voided"],
       membership_status: ["active", "invited", "suspended"],

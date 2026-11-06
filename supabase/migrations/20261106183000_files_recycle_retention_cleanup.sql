@@ -254,3 +254,59 @@ REVOKE ALL ON FUNCTION public.finish_document_storage_cleanup(uuid,uuid)
   FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.finish_document_storage_cleanup(uuid,uuid)
   TO authenticated;
+
+
+-- Recycled documents cannot be changed through the review Data API. Restore
+-- the attachment first; existing review events remain intact in the interim.
+CREATE OR REPLACE FUNCTION public.block_recycled_document_review_update()
+RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM public.document_attachments a
+    WHERE a.company_id=OLD.company_id AND a.id=OLD.attachment_id
+      AND a.deleted_at IS NOT NULL
+  ) THEN
+    RAISE EXCEPTION 'Restore this document before changing its review';
+  END IF;
+  RETURN NEW;
+END $$;
+REVOKE ALL ON FUNCTION public.block_recycled_document_review_update()
+  FROM PUBLIC, anon, authenticated;
+DROP TRIGGER IF EXISTS block_recycled_document_review_update_trg
+  ON public.document_reviews;
+CREATE TRIGGER block_recycled_document_review_update_trg
+  BEFORE UPDATE ON public.document_reviews
+  FOR EACH ROW EXECUTE FUNCTION public.block_recycled_document_review_update();
+
+-- Tag associations survive the Recycle Bin so restoration is lossless, but
+-- direct Data API modification of a recycled file's tags is denied.
+DROP POLICY IF EXISTS document_attachment_tags_read ON public.document_attachment_tags;
+CREATE POLICY document_attachment_tags_read
+  ON public.document_attachment_tags FOR SELECT TO authenticated
+  USING (EXISTS (
+    SELECT 1 FROM public.document_attachments a
+    WHERE a.company_id=document_attachment_tags.company_id
+      AND a.id=document_attachment_tags.attachment_id
+      AND a.deleted_at IS NULL
+      AND public.can_access_attachment(a.company_id,a.entity_type,'view')
+  ));
+DROP POLICY IF EXISTS document_attachment_tags_insert ON public.document_attachment_tags;
+CREATE POLICY document_attachment_tags_insert
+  ON public.document_attachment_tags FOR INSERT TO authenticated
+  WITH CHECK (EXISTS (
+    SELECT 1 FROM public.document_attachments a
+    WHERE a.company_id=document_attachment_tags.company_id
+      AND a.id=document_attachment_tags.attachment_id
+      AND a.deleted_at IS NULL
+      AND public.can_access_attachment(a.company_id,a.entity_type,'manage')
+  ));
+DROP POLICY IF EXISTS document_attachment_tags_delete ON public.document_attachment_tags;
+CREATE POLICY document_attachment_tags_delete
+  ON public.document_attachment_tags FOR DELETE TO authenticated
+  USING (EXISTS (
+    SELECT 1 FROM public.document_attachments a
+    WHERE a.company_id=document_attachment_tags.company_id
+      AND a.id=document_attachment_tags.attachment_id
+      AND a.deleted_at IS NULL
+      AND public.can_access_attachment(a.company_id,a.entity_type,'manage')
+  ));

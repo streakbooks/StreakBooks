@@ -290,6 +290,10 @@ export const getAttachmentPreview = createServerFn({ method: "GET" })
     };
   });
 
+/**
+ * Recycle instead of physically deleting. All prior versions and review evidence
+ * remain intact for an authorized restore. Permanent purging is a separate RPC.
+ */
 export const deleteAttachment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { companyId: string; attachmentId: string }) => ({
@@ -299,70 +303,39 @@ export const deleteAttachment = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     await assertCompanyMember(supabase, data.companyId);
-    const { data: row } = await supabase
+    const { data: row, error: readError } = await supabase
       .from("document_attachments" as never)
-      .select("id, entity_type, entity_id, file_name, storage_path, storage_bucket" as never)
-      .eq("id" as never, data.attachmentId as never)
+      .select("id, entity_type, entity_id, file_name" as never)
       .eq("company_id" as never, data.companyId as never)
+      .eq("id" as never, data.attachmentId as never)
+      .is("deleted_at" as never, null)
       .maybeSingle();
-    if (!row) throw new Error("File not found");
-    const r = row as unknown as {
+    if (readError) {
+      if (readError.code === "42703") throw new Error(
+        "Recycle Bin migration 20261106183000_files_recycle_retention_cleanup is required.",
+      );
+      throw new Error(readError.message);
+    }
+    if (!row) throw new Error("File not found, already recycled or access denied.");
+    const file = row as unknown as {
       entity_type: string;
       entity_id: string;
       file_name: string;
-      storage_path: string;
-      storage_bucket: string | null;
     };
-    // Before deleting the parent, collect every immutable Storage object.
-    // The database cascades version metadata, so paths cannot be recovered later.
-    let versionPaths: string[] = [];
-    if (r.storage_bucket === COMPANY_DOCUMENTS_BUCKET) {
-      const { data: historical, error: historyError, count } = await supabase
-        .from("document_attachment_versions" as never)
-        .select("storage_path" as never, { count: "exact" })
-        .eq("company_id" as never, data.companyId as never)
-        .eq("attachment_id" as never, data.attachmentId as never)
-        .limit(50);
-      if (historyError) {
-        if (historyError.code === "42P01")
-          throw new Error("Apply the document version-history migration before deleting files.");
-        throw new Error(historyError.message);
-      }
-      if (count == null || count > 50 || count !== (historical ?? []).length)
-        throw new Error("Historical version list is incomplete. File deletion was cancelled.");
-      versionPaths = ((historical ?? []) as unknown as Array<{ storage_path: string }>)
-        .map((item) => item.storage_path);
-    }
-
-    // RLS only lets a user with the right "manage" permission delete: confirm a row went away.
-    const { data: deleted, error } = await supabase
+    if (!isAttachmentEntityType(file.entity_type))
+      throw new Error("Unsupported file entity type.");
+    await assertEntityAccess(supabase, data.companyId, file.entity_type, "manage");
+    const { data: recycled, error } = await supabase
       .from("document_attachments" as never)
-      .delete()
-      .eq("id" as never, data.attachmentId as never)
+      .update({ deleted_at: new Date().toISOString() } as never)
       .eq("company_id" as never, data.companyId as never)
-      .select("id" as never);
+      .eq("id" as never, data.attachmentId as never)
+      .is("deleted_at" as never, null)
+      .select("id, purge_after" as never);
     if (error) throw new Error(error.message);
-    if (!deleted || (deleted as unknown[]).length === 0) {
-      throw new Error("You do not have permission to delete this file.");
-    }
-    // Storage and Postgres cannot be deleted atomically. Report cleanup failures honestly:
-    // the metadata is already gone, so callers must not retry deletion of the same row.
-    let storageCleanup: "complete" | "requires_admin" = "complete";
-    if (r.storage_bucket === COMPANY_DOCUMENTS_BUCKET) {
-      const paths = [...new Set([r.storage_path, ...versionPaths])];
-      if (paths.some((path) => !path.startsWith(`${data.companyId}/${r.entity_type}/${r.entity_id}/`))) {
-        storageCleanup = "requires_admin";
-      } else {
-        try {
-          const { error: storageError } = await supabase.storage
-            .from(COMPANY_DOCUMENTS_BUCKET)
-            .remove(paths);
-          if (storageError) storageCleanup = "requires_admin";
-        } catch {
-          storageCleanup = "requires_admin";
-        }
-      }
-    }
+    if ((recycled ?? []).length !== 1)
+      throw new Error("This file changed or you no longer have permission. Refresh and retry.");
+    const purgeAfter = (recycled![0] as { purge_after: string }).purge_after;
     try {
       await (
         supabase as unknown as {
@@ -370,23 +343,19 @@ export const deleteAttachment = createServerFn({ method: "POST" })
         }
       ).rpc("record_audit_event", {
         _company_id: data.companyId,
-        _action: "document.attachment.delete",
-        _entity_type: r.entity_type,
-        _entity_id: r.entity_id,
+        _action: "document.attachment.recycle",
+        _entity_type: file.entity_type,
+        _entity_id: file.entity_id,
         _details: {
           attachment_id: data.attachmentId,
-          file_name: r.file_name,
-          storage_cleanup: storageCleanup,
-          version_object_count: 1 + versionPaths.length,
-          ...(storageCleanup === "requires_admin"
-            ? { storage_paths_needing_review: [...new Set([r.storage_path, ...versionPaths])] }
-            : {}),
+          file_name: file.file_name,
+          purge_after: purgeAfter,
         },
       });
     } catch {
-      // Audit delivery cannot roll back the metadata delete; surface the cleanup outcome.
+      // Moving to Recycle Bin is already committed; report the actual result.
     }
-    return { ok: true as const, storageCleanup };
+    return { ok: true as const, recycled: true as const, purgeAfter };
   });
 
 

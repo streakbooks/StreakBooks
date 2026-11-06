@@ -61,6 +61,7 @@ CREATE TABLE public.journal_lines(id uuid PRIMARY KEY,company_id uuid,journal_id
 CREATE TABLE public.sales_invoices(id uuid PRIMARY KEY,company_id uuid,total_minor bigint,currency_code text,posted_journal_id uuid,status text);
 CREATE TABLE public.purchase_bills(LIKE public.sales_invoices INCLUDING ALL);
 CREATE TABLE public.tax_codes(id uuid PRIMARY KEY,company_id uuid);
+CREATE TABLE public.bank_accounts(id uuid PRIMARY KEY,company_id uuid,gl_account_id uuid);
 CREATE FUNCTION public.ops_minor_to_base(uuid,bigint,text,numeric) RETURNS bigint LANGUAGE sql AS $$ SELECT round($2*$4)::bigint $$;
 CREATE FUNCTION public.capture_cash_report_source(uuid,date) RETURNS jsonb LANGUAGE plpgsql SECURITY INVOKER AS $$ BEGIN IF NOT public.has_company_permission($1,'reports.view') THEN RAISE EXCEPTION 'Reporting access denied'; END IF; RETURN '{{"journal_lines":[]}}'::jsonb; END $$;
 GRANT USAGE ON SCHEMA auth,private TO authenticated;
@@ -75,6 +76,7 @@ INSERT INTO public.tax_codes VALUES('{uid(50)}','{C}'),('{uid(51)}','{OTHER}');
     migration = list((ROOT / "supabase/migrations").glob("*_verified_cash_classification.sql"))
     assert len(migration) == 1
     sql(migration[0].read_text())
+    sql(next((ROOT / "supabase/migrations").glob("*_cash_inventory_acquisition_evidence.sql")).read_text())
     evidence = dict(evidence_reference="Verified source document 1", policy_note="Reviewed original invoice and verified cash recognition policy", user_confirmed=True)
     policy = dict(evidence, kind="inventory", source_account_id=uid(1), recognition_account_id=uid(2), effective_from="2026-10-01", evidence_journal_ids=[uid(20)])
     policy_id = call("approve_cash_classification_policy", policy)
@@ -119,6 +121,27 @@ INSERT INTO public.tax_codes VALUES('{uid(50)}','{C}'),('{uid(51)}','{OTHER}');
         raise AssertionError("duplicate inventory cost exceeded actual movement")
     except subprocess.CalledProcessError:
         pass
+    sql(f"""
+INSERT INTO public.accounts VALUES('{uid(9)}','{C}','asset',true,false);
+INSERT INTO public.bank_accounts VALUES('{uid(60)}','{C}','{uid(9)}');
+INSERT INTO public.journals VALUES('{uid(24)}','{C}','2026-09-01','direct','bank_transaction',NULL,'GBP',1,'posted'),('{uid(25)}','{C}','2026-11-02','direct-sale','inventory_adjustment',NULL,'GBP',1,'posted'),('{uid(26)}','{C}','2026-10-01','stock-opening','opening_balance',NULL,'GBP',1,'posted'),('{uid(27)}','{C}','2026-11-03','opening-sale','inventory_adjustment',NULL,'GBP',1,'posted');
+INSERT INTO public.journal_lines VALUES('{uid(110)}','{C}','{uid(24)}','{uid(1)}',100,0),('{uid(111)}','{C}','{uid(24)}','{uid(9)}',0,100),('{uid(112)}','{C}','{uid(25)}','{uid(2)}',30,0),('{uid(113)}','{C}','{uid(25)}','{uid(1)}',0,30),('{uid(114)}','{C}','{uid(26)}','{uid(1)}',60,0),('{uid(115)}','{C}','{uid(26)}','{uid(6)}',0,60),('{uid(116)}','{C}','{uid(27)}','{uid(2)}',20,0),('{uid(117)}','{C}','{uid(27)}','{uid(1)}',0,20);
+""")
+    direct = dict(inventory,purchase_document_id=uid(24),purchase_journal_id=uid(24),source_kind="direct_cash",movement_journal_id=uid(25),cost_minor="30")
+    direct_id=call("approve_cash_inventory_evidence",direct)
+    opening_stock=dict(evidence,purchase_document_id=uid(26),purchase_journal_id=uid(26),source_kind="opening_inventory",inventory_account_id=uid(1),movement_journal_id=uid(26),movement_kind="opening_source",cost_minor="60",opening_paid_minor="60",opening_equity_account_id=uid(6),payment_evidence_journal_ids=[uid(24)])
+    for invalid in [dict(opening_stock,opening_paid_minor="61"),dict(opening_stock,payment_evidence_journal_ids=[]),dict(opening_stock,payment_evidence_journal_ids=[uid(23)]),dict(direct,source_kind="purchase_bill")]:
+        try:
+            call("approve_cash_inventory_evidence",invalid)
+            raise AssertionError("unverified direct/opening stock evidence allowed")
+        except subprocess.CalledProcessError:
+            pass
+    opening_stock_id=call("approve_cash_inventory_evidence",opening_stock)
+    call("approve_cash_inventory_evidence",dict(evidence,purchase_document_id=uid(26),purchase_journal_id=uid(26),source_kind="opening_inventory",inventory_account_id=uid(1),movement_journal_id=uid(27),movement_kind="sale",cost_minor="20"))
+    assert json.loads(sql(f"SELECT payment_evidence_snapshots FROM cash_inventory_evidence WHERE id='{opening_stock_id}'"))[0]["id"]==uid(24)
+    direct_exception=dict(exception_key="direct:inventory:period",code="cash_inventory_evidence_required",source_account_id=uid(1),journal_id=uid(24),document_id=uid(24),amount_minor="30",currency_code="GBP",period_from="2026-11-01",period_to="2026-11-30",missing_information="Verified original direct acquisition costing")
+    direct_exception_id=call("record_cash_classification_exception",direct_exception,approve=False)
+    sql(f"SET ROLE authenticated; SET test.company='{C}'; SET test.actor='{USER}'; SET test.approve=true; SELECT public.resolve_cash_classification_exception('{C}','{direct_exception_id}','inventory','{direct_id}','Verified original direct acquisition cost evidence');")
     exception = dict(exception_key="prepaid:source:period",code="cash_classification_required",source_account_id=uid(1),journal_id=uid(20),document_id=uid(40),amount_minor="50",currency_code="GBP",period_from="2026-11-01",period_to="2026-11-30",missing_information="Missing verified purchase classification")
     exception_id = call("record_cash_classification_exception",exception,approve=False)
     assert call("record_cash_classification_exception",exception,approve=False)==exception_id
@@ -127,7 +150,8 @@ INSERT INTO public.tax_codes VALUES('{uid(50)}','{C}'),('{uid(51)}','{OTHER}');
     original_capture=json.loads(sql(f"SET ROLE authenticated; SET test.company='{C}'; SET test.actor='{USER}'; SELECT public.capture_cash_report_source('{C}','2026-11-30');"))
     assert len(original_capture["cash_classification_policies"])==2
     assert original_capture["cash_opening_evidence"][0]["gross_minor"]=="120"
-    assert original_capture["cash_inventory_evidence"][0]["id"]==inventory_id
+    assert any(row["id"]==inventory_id for row in original_capture["cash_inventory_evidence"])
+    assert next(row for row in original_capture["cash_inventory_evidence"] if row["id"]==opening_stock_id)["opening_paid_minor"]=="60"
     sql("CREATE TABLE frozen_cash_source(source jsonb)")
     sql("INSERT INTO frozen_cash_source VALUES ('"+json.dumps(original_capture).replace("'", "''")+"'::jsonb)")
     call("approve_cash_classification_policy", dict(policy,effective_from="2026-11-01",supersedes_id=revision_id,policy_note="Revised policy after verifying additional historical evidence"))

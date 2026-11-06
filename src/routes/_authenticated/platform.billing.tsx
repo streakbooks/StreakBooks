@@ -5,6 +5,15 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ApiKeysAdmin } from "@/components/platform/billing/ApiKeysAdmin";
+import { BillingAnalyticsAdmin } from "@/components/platform/billing/BillingAnalyticsAdmin";
+import { CountryPricingAdmin } from "@/components/platform/billing/CountryPricingAdmin";
+import { CouponsAdmin } from "@/components/platform/billing/CouponsAdmin";
+import { FinanceAdmin } from "@/components/platform/billing/FinanceAdmin";
+import { LegalDocumentsAdmin } from "@/components/platform/billing/LegalDocumentsAdmin";
+import { PartnerProgramAdmin } from "@/components/platform/billing/PartnerProgramAdmin";
+import { PaymentOperationsAdmin } from "@/components/platform/billing/PaymentOperationsAdmin";
+import { formatMinorAmount } from "@/lib/billing/domain/money";
 import { getPlatformBilling } from "@/lib/billing/platform.functions";
 import {
   publishPlanVersion,
@@ -44,16 +53,44 @@ function PlatformBillingPage() {
   }
 
   const versions = Array.isArray(query.data?.versions) ? query.data.versions : [];
+  const prices = (Array.isArray(query.data?.prices) ? query.data.prices : []) as Array<{
+    version_id?: string;
+    country_code?: string | null;
+    currency?: string;
+    billing_interval?: string;
+    amount_minor?: number;
+  }>;
+  const priceSummary = (versionId: string | undefined) =>
+    prices
+      .filter((price) => price.version_id === versionId)
+      .map(
+        (price) =>
+          `${price.country_code ?? "Base"} ${formatMinorAmount(
+            BigInt(price.amount_minor ?? 0),
+            price.currency ?? "USD",
+          )}/${price.billing_interval === "year" ? "yr" : "mo"}`,
+      )
+      .join(" · ");
   const owner = query.data?.role === "platform_owner";
+  const editor = owner || query.data?.role === "platform_finance";
   return (
     <main className="mx-auto max-w-4xl space-y-4 p-6">
       <h1 className="text-2xl font-semibold">Platform billing</h1>
       <p className="text-sm text-muted-foreground">
         Signed in as {query.data?.role}. A published price applies to new subscribers. Existing
         subscribers keep their current version until you migrate them. Publishing asks for an active
-        multi-factor authentication session. Tax collection is not enabled.
+        multi-factor authentication session. Tax applies only through approved tax rules.
       </p>
-      {query.data?.role === "platform_owner" || query.data?.role === "platform_finance" ? (
+      <BillingAnalyticsAdmin />
+      <PaymentOperationsAdmin canEdit={editor} isOwner={owner} />
+      <FinanceAdmin canEdit={editor} isOwner={owner} />
+      <CouponsAdmin canEdit={editor} />
+      <PartnerProgramAdmin canEdit={editor} isOwner={owner} />
+      <ApiKeysAdmin isOwner={owner} />
+      <CountryPricingAdmin canEdit={editor} />
+      <LegalDocumentsAdmin canEdit={editor} isOwner={owner} />
+      <h2 className="pt-4 text-xl font-semibold">Legacy plan prices and versions</h2>
+      {editor ? (
         <form
           className="grid gap-3 sm:grid-cols-2"
           onSubmit={(event) => {
@@ -91,7 +128,6 @@ function PlatformBillingPage() {
             >
               <option value="starter">Starter</option>
               <option value="growth">Growth</option>
-              <option value="pro">Pro</option>
               <option value="practice">Practice</option>
             </select>
           </label>
@@ -156,6 +192,11 @@ function PlatformBillingPage() {
             >
               <span>
                 {version.plan_code} version {version.version_no} · {version.status}
+                {priceSummary(version.id) ? (
+                  <span className="block text-xs text-muted-foreground">
+                    {priceSummary(version.id)}
+                  </span>
+                ) : null}
               </span>
               {owner &&
               version.id &&

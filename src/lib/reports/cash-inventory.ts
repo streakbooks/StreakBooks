@@ -3,6 +3,7 @@ import type { CashJournal, CashPnlEntry, CashPnlInput } from "./cash-profit-loss
 import {
   CashClassificationError,
   cashEvidenceMatches,
+  cashClassificationContext,
   type CashJournalEvidenceSnapshot,
   type CashClassificationException,
 } from "./cash-classification";
@@ -16,7 +17,12 @@ export type CashInventoryEvidence = {
   purchaseJournalId: string;
   inventoryAccountId: string;
   movementJournalId: string;
-  movementKind: "sale" | "customer_return" | "supplier_return";
+  movementKind: "sale" | "customer_return" | "supplier_return" | "opening_source";
+  sourceKind?: "purchase_bill" | "direct_cash" | "opening_inventory";
+  openingPaidMinor?: bigint;
+  openingEquityAccountId?: string;
+  paymentEvidenceJournalIds?: string[];
+  paymentEvidenceSnapshots?: CashJournalEvidenceSnapshot[];
   costMinor: bigint;
   reversesEvidenceId: string | null;
   evidenceReference: string;
@@ -32,6 +38,7 @@ export type CashInventoryEvidence = {
 export type CashInventoryPosition = {
   purchaseDocumentId: string;
   purchaseJournalId: string;
+  sourceKind: "purchase_bill" | "direct_cash" | "opening_inventory";
   inventoryAccountId: string;
   purchaseCostMinor: string;
   eligibleCostMinor: string;
@@ -51,15 +58,11 @@ export type CashInventoryTrace = {
   sources: CashInventoryPosition[];
   movements: Array<CashInventoryPosition & { date: string; deltaPaidCostSoldMinor: string }>;
 };
-type InventoryInput = Pick<
-  CashPnlInput,
-  "companyId" | "baseCurrency" | "journals" | "documentJournalLinks" | "creditAllocations"
-> & {
-  inventoryEvidence?: CashInventoryEvidence[];
-};
+type InventoryInput = CashPnlInput;
 type Slice = { from: bigint; to: bigint };
 type Source = {
   documentId: string;
+  sourceKind: "purchase_bill" | "direct_cash" | "opening_inventory";
   journal: CashJournal;
   accountId: string;
   cost: bigint;
@@ -128,6 +131,7 @@ function position(source: Source): CashInventoryPosition {
   const variance = source.refunded > returnedPaid ? returnedPaid - source.refunded : 0n;
   return {
     purchaseDocumentId: source.documentId,
+    sourceKind: source.sourceKind,
     purchaseJournalId: source.journal.id,
     inventoryAccountId: source.accountId,
     purchaseCostMinor: source.cost.toString(),
@@ -140,6 +144,141 @@ function position(source: Source): CashInventoryPosition {
     supplierRefundMinor: source.refunded.toString(),
     refundFxVarianceMinor: variance.toString(),
   };
+}
+
+export function verifiedCashOpeningInventory(
+  input: CashPnlInput,
+  cashEntries: CashPnlEntry[],
+  period: { from: string; to: string },
+): CashInventoryEvidence[] {
+  const journals = new Map(input.journals.map((j) => [j.id, j]));
+  const evidence = (input.inventoryEvidence ?? []).filter(
+    (row) =>
+      row.status === "approved" &&
+      !(input.inventoryEvidence ?? []).some(
+        (n) => n.status === "approved" && n.supersedesId === row.id,
+      ),
+  );
+  const seen = new Set<string>(),
+    result: CashInventoryEvidence[] = [];
+  const key = (journalId: string, accountId: string) => `${journalId}:${accountId}`;
+  const classification = cashClassificationContext(input, period);
+  const net = (j: CashJournal, id: string) =>
+    j.lines.reduce(
+      (sum, l) =>
+        sum +
+        (l.accountId === id
+          ? lineToBaseMinor(l.debit, j.rate, j.currency, input.baseCurrency) -
+            lineToBaseMinor(l.credit, j.rate, j.currency, input.baseCurrency)
+          : 0n),
+      0n,
+    );
+  function fail(
+    message: string,
+    journal: CashJournal | undefined,
+    accountId: string,
+    amount: bigint,
+    missingEvidence: string[],
+    documentId: string,
+  ): never {
+    throw new CashClassificationError([
+      {
+        code: "cash_inventory_evidence_required",
+        message,
+        companyId: input.companyId,
+        sourceAccountId: accountId,
+        journalId: journal?.id ?? null,
+        documentId,
+        amountMinor: amount.toString(),
+        currency: input.baseCurrency,
+        date: journal?.date ?? period.to,
+        period,
+        missingEvidence,
+      },
+    ]);
+  }
+  for (const row of evidence.filter((e) => e.movementKind === "opening_source")) {
+    const journal = journals.get(row.purchaseJournalId);
+    if (journal && journal.date > period.to) continue;
+    const paid = row.openingPaidMinor,
+      proofIds = row.paymentEvidenceJournalIds ?? [],
+      proof = row.paymentEvidenceSnapshots ?? [];
+    const validProof = proofIds.every((id) => {
+      const j = journals.get(id);
+      return (
+        j &&
+        j.companyId === input.companyId &&
+        j.sourceType !== "opening_balance" &&
+        j.date <= (journal?.date ?? "") &&
+        cashEvidenceMatches(
+          j,
+          proof.find((s) => s.id === id),
+        )
+      );
+    });
+    const verified = cashEntries
+      .filter(
+        (e) =>
+          proofIds.includes(e.journalId) &&
+          journals.get(e.journalId)?.sourceType !== "opening_balance" &&
+          e.date <= (journal?.date ?? "") &&
+          (e.sourceAccountId ?? e.accountId) === row.inventoryAccountId,
+      )
+      .reduce((sum, e) => sum + e.debit - e.credit, 0n);
+    if (
+      !journal ||
+      journal.companyId !== input.companyId ||
+      journal.sourceType !== "opening_balance" ||
+      row.companyId !== input.companyId ||
+      row.sourceKind !== "opening_inventory" ||
+      row.purchaseDocumentId !== journal.id ||
+      row.movementJournalId !== journal.id ||
+      row.reversesEvidenceId !== null ||
+      row.costMinor !== net(journal, row.inventoryAccountId) ||
+      row.costMinor <= 0n ||
+      paid === undefined ||
+      paid < 0n ||
+      paid > row.costMinor ||
+      input.accounts.find((a) => a.id === row.inventoryAccountId)?.account_type !== "asset" ||
+      input.accounts.find((a) => a.id === row.openingEquityAccountId)?.account_type !== "equity" ||
+      !journal.lines.some((l) => l.accountId === row.openingEquityAccountId) ||
+      !row.approvedBy ||
+      !row.approvedAt ||
+      row.version < 1 ||
+      !row.policyNote.trim() ||
+      !row.evidenceReference.trim() ||
+      !cashEvidenceMatches(journal, row.purchaseJournalSnapshot) ||
+      !cashEvidenceMatches(journal, row.movementJournalSnapshot) ||
+      !validProof ||
+      new Set(proofIds).size !== proofIds.length ||
+      (paid > 0n && (!proofIds.length || verified < paid)) ||
+      seen.has(key(journal.id, row.inventoryAccountId))
+    )
+      fail(
+        "Opening inventory needs its approved exact paid-cost carry and matching historical payment evidence.",
+        journal,
+        row.inventoryAccountId,
+        row.costMinor,
+        [
+          "Approved opening inventory cost, independently verified historical paid portion, and immutable posted payment/source snapshots",
+        ],
+        row.purchaseDocumentId,
+      );
+    classification.classify(
+      row.inventoryAccountId,
+      journal,
+      journal.date,
+      journal.lines.reduce(
+        (sum, line) =>
+          sum + (line.accountId === row.inventoryAccountId ? line.debit - line.credit : 0n),
+        0n,
+      ),
+      row.purchaseDocumentId,
+    );
+    seen.add(key(journal.id, row.inventoryAccountId));
+    result.push(row);
+  }
+  return result;
 }
 
 /**
@@ -230,6 +369,7 @@ export function traceCashInventory(
         );
       sources.set(key(journal.id, accountId), {
         documentId,
+        sourceKind: "purchase_bill",
         journal,
         accountId,
         cost,
@@ -243,10 +383,71 @@ export function traceCashInventory(
       });
     }
   }
+  // Direct acquisitions are established by the shared cash ledger, not by
+  // naming an inventory adjustment a cash purchase.
+  const direct = new Set(
+    cashEntries
+      .filter(
+        (e) =>
+          e.reason === "direct_cash" &&
+          e.debit > e.credit &&
+          inventory.has(e.sourceAccountId ?? e.accountId),
+      )
+      .map((e) => key(e.sourceJournalId, e.sourceAccountId ?? e.accountId)),
+  );
+  for (const journal of input.journals) {
+    if (journal.date > period.to || journal.sourceType === "opening_balance") continue;
+    for (const accountId of inventory) {
+      const k = key(journal.id, accountId),
+        cost = net(journal, accountId);
+      if (sources.has(k) || !direct.has(k) || cost <= 0n) continue;
+      if (
+        !journal.lines.some((l) => input.cashAccountIds.includes(l.accountId) && l.credit > l.debit)
+      )
+        fail(
+          "Direct inventory acquisition lacks its posted cash payment.",
+          journal,
+          accountId,
+          cost,
+          ["Matching posted bank/credit-card payment and inventory component"],
+        );
+      sources.set(k, {
+        documentId: journal.id,
+        sourceKind: "direct_cash",
+        journal,
+        accountId,
+        cost,
+        free: [{ from: 0n, to: cost }],
+        sales: new Map(),
+        returned: new Map(),
+        credited: new Map(),
+        paid: 0n,
+        refunded: 0n,
+        lastSoldPaid: 0n,
+      });
+    }
+  }
+  for (const row of verifiedCashOpeningInventory(input, cashEntries, period)) {
+    const journal = journals.get(row.purchaseJournalId)!;
+    sources.set(key(journal.id, row.inventoryAccountId), {
+      documentId: journal.id,
+      sourceKind: "opening_inventory",
+      journal,
+      accountId: row.inventoryAccountId,
+      cost: row.costMinor,
+      free: [{ from: 0n, to: row.costMinor }],
+      sales: new Map(),
+      returned: new Map(),
+      credited: new Map(),
+      paid: row.openingPaidMinor!,
+      refunded: 0n,
+      lastSoldPaid: 0n,
+    });
+  }
   const ids = new Set<string>();
   const movementCoverage = new Map<string, bigint>();
   const valid: Array<{ row: CashInventoryEvidence; source: Source; journal: CashJournal }> = [];
-  for (const row of evidence) {
+  for (const row of evidence.filter((e) => e.movementKind !== "opening_source")) {
     const source = sources.get(key(row.purchaseJournalId, row.inventoryAccountId));
     const journal = journals.get(row.movementJournalId);
     if (journal && journal.date > period.to) continue;
@@ -255,6 +456,7 @@ export function traceCashInventory(
       ids.has(row.id) ||
       !source ||
       source.documentId !== row.purchaseDocumentId ||
+      (row.sourceKind ?? "purchase_bill") !== source.sourceKind ||
       !journal ||
       journal.companyId !== input.companyId ||
       journal.date < source.journal.date ||
@@ -306,10 +508,22 @@ export function traceCashInventory(
   }
   // A stock decrease is never treated as paid COGS just because it is posted.
   for (const journal of input.journals) {
-    if (journal.date > period.to || journal.sourceType === "opening_balance") continue;
+    if (journal.date > period.to) continue;
+    if (journal.sourceType === "opening_balance") {
+      for (const accountId of inventory)
+        if (net(journal, accountId) > 0n && !sources.has(key(journal.id, accountId)))
+          fail(
+            "Opening inventory has no approved paid-cost carry evidence.",
+            journal,
+            accountId,
+            net(journal, accountId),
+            ["Verified opening inventory cost and historical paid/unpaid portion"],
+          );
+      continue;
+    }
     for (const accountId of inventory) {
       const amount = net(journal, accountId);
-      if (!amount || (journal.sourceType === "purchase_bill" && amount > 0n)) continue;
+      if (!amount || (sources.has(key(journal.id, accountId)) && amount > 0n)) continue;
       const covered = movementCoverage.get(key(journal.id, accountId)) ?? 0n;
       if (covered !== (amount < 0n ? -amount : amount))
         fail(
@@ -341,6 +555,7 @@ export function traceCashInventory(
     creditSources.set(creditKey, list);
   }
   for (const entry of cashEntries) {
+    if (journals.get(entry.journalId)?.sourceType === "opening_balance") continue;
     const accountId = entry.sourceAccountId ?? entry.accountId;
     if (!inventory.has(accountId) || entry.date > period.to) continue;
     const source = sources.get(key(entry.sourceJournalId, accountId));
@@ -396,7 +611,9 @@ export function traceCashInventory(
         credit: { id, source: item.source, amount, reverse: true },
       });
   }
-  const days = [...new Set(events.map((event) => event.date))].sort();
+  const days = [
+    ...new Set(events.filter((event) => event.date <= period.to).map((event) => event.date)),
+  ].sort();
   const movements: CashInventoryTrace["movements"] = [];
   const creditRefunded = new Map<string, bigint>();
   for (const date of days) {
@@ -492,7 +709,7 @@ export function traceCashInventory(
     for (const { entry, source } of day.filter((event) => event.entry)) {
       const amount = entry!.debit - entry!.credit;
       if (source) {
-        if (size([...source.returned.values()].flat()) && amount < 0n)
+        if (size([...source.returned.values()].flat()) && source.refunded > 0n && amount < 0n)
           fail(
             "A returned inventory purchase has a payment reallocation that needs explicit credit/payment slice evidence.",
             journals.get(entry!.journalId),
@@ -517,7 +734,7 @@ export function traceCashInventory(
       } else {
         const creditKey = key(entry!.sourceJournalId, entry!.sourceAccountId ?? entry!.accountId);
         const allocations = creditSources.get(creditKey)!;
-        if (amount > 0n)
+        if (amount > 0n && !journals.get(entry!.journalId)?.reverses)
           fail(
             "A supplier return has an unsupported positive inventory cash allocation.",
             journals.get(entry!.journalId),

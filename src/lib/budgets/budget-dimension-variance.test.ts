@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { batchPostedLineIds, buildDimensionVariance, eligibleDimensionActualLines } from "./budget-dimension-variance";
+import { batchPostedLineIds, buildDimensionVariance, eligibleDimensionActualLines, resolveDimensionActualCutoff } from "./budget-dimension-variance";
 
 const inputs = {
   months: ["2026-04-01", "2026-05-01"],
@@ -23,6 +23,25 @@ const inputs = {
 };
 
 describe("dimension budget vs posted journal actuals", () => {
+  it("defaults to the latest completed month, not the partial current month", () => {
+    expect(resolveDimensionActualCutoff("2026-04-01", "2026-11-06"))
+      .toEqual({ through: "2026-10-31", partialMonth: false });
+  });
+  it("labels a specifically requested partial current month", () => {
+    expect(resolveDimensionActualCutoff("2026-04-01", "2026-11-06", "2026-11-06"))
+      .toEqual({ through: "2026-11-06", partialMonth: true });
+    expect(resolveDimensionActualCutoff("2026-04-01", "2026-11-06", "2026-12-31"))
+      .toEqual({ through: "2026-11-06", partialMonth: true });
+  });
+  it("caps a historical financial year at its correct year-end date", () => {
+    expect(resolveDimensionActualCutoff("2025-04-01", "2026-11-06"))
+      .toEqual({ through: "2026-03-31", partialMonth: false });
+  });
+  it("does not invent completed months in a future financial year", () => {
+    expect(resolveDimensionActualCutoff("2027-04-01", "2026-11-06"))
+      .toEqual({ through: "2026-10-31", partialMonth: false });
+  });
+
   it("queries journal tracking assignments only in bounded posted-line batches", () => {
     const lines = Array.from({ length: 205 }, (_, i) => ({ line_id: `posted-${i}` }));
     const groups = batchPostedLineIds(lines);

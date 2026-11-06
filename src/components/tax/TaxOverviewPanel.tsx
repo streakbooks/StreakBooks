@@ -47,7 +47,7 @@ export function TaxOverviewPanel({
     queryFn: () => fetchCodes({ data: { companyId } }),
   });
   const returnsQ = useQuery({
-    queryKey: ["tax-return-list", companyId],
+    queryKey: ["tax-returns", companyId],
     queryFn: () => fetchReturns({ data: { companyId } }),
   });
 

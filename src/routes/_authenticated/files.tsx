@@ -1,5 +1,5 @@
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -59,7 +59,7 @@ import {
   deleteDocumentFolder,
   moveDocumentToFolder,
 } from "@/lib/documents/folders.functions";
-import { folderAncestors, folderDisplayPath, possibleParentFolders } from "@/lib/documents/folder-tree";
+import { folderAncestors, indexFolderPaths, possibleParentFolders } from "@/lib/documents/folder-tree";
 import {
   combinePossibleDuplicateFlags,
   internalFileUrl,
@@ -229,15 +229,15 @@ function FilesPage() {
   const folders = (foldersQ.data ?? []) as FolderRow[];
   const activeFolder = folders.find((f) => f.id === folderId);
   const breadcrumbs = folderAncestors(folders, folderId);
-  const folderMatches = folderSearch.trim()
-    ? folders
-        .filter((f) =>
-          folderDisplayPath(folders, f.id)
-            .toLowerCase()
-            .includes(folderSearch.trim().toLowerCase()),
-        )
-        .slice(0, 20)
-    : [];
+  const folderPaths = useMemo(() => indexFolderPaths(folders), [foldersQ.data]);
+  const folderMatches = useMemo(() => {
+    const searchTerm = folderSearch.trim().toLocaleLowerCase("en-US");
+    if (!searchTerm) return [];
+    return folders
+      .filter((folder) => (folderPaths.get(folder.id) ?? "")
+        .toLocaleLowerCase("en-US").includes(searchTerm))
+      .slice(0, 20);
+  }, [foldersQ.data, folderPaths, folderSearch]);
   const folderM = useMutation({
     mutationFn: async (name: string) =>
       createFolder({ data: { companyId: companyId!, name, parentId: folderId } }),
@@ -872,7 +872,7 @@ function FilesPage() {
                     }}
                   >
                     <Folder className="mr-2 size-4" />
-                    {folderDisplayPath(folders, matched.id)}
+                    {folderPaths.get(matched.id)}
                   </Link>
                 </Button>
               ))
@@ -961,7 +961,7 @@ function FilesPage() {
                 <SelectItem value="root">Root</SelectItem>
                 {possibleParentFolders(folders, activeFolder.id).map((f) => (
                   <SelectItem key={f.id} value={f.id}>
-                    {folderDisplayPath(folders, f.id)}
+                    {folderPaths.get(f.id)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -1449,7 +1449,7 @@ function FilesPage() {
                   <SelectItem value="unfiled">Unfiled</SelectItem>
                   {folders.map((folder) => (
                     <SelectItem key={folder.id} value={folder.id}>
-                      {folderDisplayPath(folders, folder.id)}
+                      {folderPaths.get(folder.id)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -1578,7 +1578,7 @@ function FilesPage() {
                             <SelectItem value="unfiled">Unfiled</SelectItem>
                             {folders.map((folder) => (
                               <SelectItem key={folder.id} value={folder.id}>
-                                {folderDisplayPath(folders, folder.id)}
+                                {folderPaths.get(folder.id)}
                               </SelectItem>
                             ))}
                           </SelectContent>

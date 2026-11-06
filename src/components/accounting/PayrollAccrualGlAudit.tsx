@@ -111,6 +111,8 @@ export function PayrollAccrualGlAudit({
           <p className="text-xs text-muted-foreground">
             Read-only source-to-GL accrual check. Does not verify net-pay payments,
             statutory payroll compliance, other ledger postings or exchange-rate valuations.
+            Current account settings and component mappings are used; changes made after posting
+            can produce exceptions without proving the original posting was incorrect.
           </p>
         </div>
       ) : null}

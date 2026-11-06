@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   fileFormatMimeTypes,
   filePreviewKind,
+  internalFileUrl,
   fileSortOrder,
   parseFileFormat,
   parseFileSort,
@@ -29,6 +30,17 @@ describe("Files workspace", () => {
     expect(filePreviewKind("application/pdf", "invoice.html")).toBeNull();
     expect(filePreviewKind(null, "invoice.pdf")).toBeNull();
   });
+  it("copies only a private application file route, never a Storage URL", () => {
+    const id = "123e4567-e89b-12d3-a456-426614174000";
+    expect(internalFileUrl("https://books.example.com/", id)).toBe(
+      "https://books.example.com/files?file=123e4567-e89b-12d3-a456-426614174000",
+    );
+    expect(() => internalFileUrl("https://books.example.com/", "javascript:alert(1)")).toThrow(
+      "Invalid file identifier",
+    );
+    expect(() => internalFileUrl("file:///tmp/app", id)).toThrow("Invalid application origin");
+  });
+
   it("restricts filters to named MIME groups", () => {
     expect(parseFileFormat("pdf")).toBe("pdf");
     expect(parseFileFormat("images")).toBe("images");

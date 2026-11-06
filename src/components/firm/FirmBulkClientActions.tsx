@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { listFirmServiceCategories } from "@/lib/firm/firm-catalogue.functions";
 import {
   CLIENT_STATUSES,
   bulkUpdateFirmClientProfiles,
@@ -73,6 +74,7 @@ export function FirmBulkClientActions({
   const bulkUpdate = useServerFn(bulkUpdateFirmClientProfiles);
   const bulkTags = useServerFn(bulkUpdateFirmClientTags);
   const listAudit = useServerFn(listFirmClientProfileAudit);
+  const listServices = useServerFn(listFirmServiceCategories);
   const [field, setField] = useState<BulkField>("status");
   const [status, setStatus] = useState<(typeof CLIENT_STATUSES)[number]>("active");
   const [service, setService] = useState("");
@@ -86,6 +88,11 @@ export function FirmBulkClientActions({
   const clientNames = new Map(
     clients.map((client) => [client.company_id, getFirmClientName(client)]),
   );
+  const servicesQ = useQuery({
+    queryKey: ["firm-service-categories", firmId],
+    queryFn: () => listServices({ data: { firmId } }),
+    enabled: Boolean(firmId),
+  });
   const auditQ = useQuery({
     queryKey: ["firm-client-profile-audit", firmId],
     queryFn: () => listAudit({ data: { firmId } }),
@@ -203,7 +210,15 @@ export function FirmBulkClientActions({
                 disabled={mutation.isPending}
                 onChange={(event) => setService(event.target.value)}
                 placeholder="Bookkeeping, Payroll, Advisory…"
+                list="firm-bulk-service-category-options"
               />
+              <datalist id="firm-bulk-service-category-options">
+                {(servicesQ.data ?? [])
+                  .filter((item) => item.is_active)
+                  .map((item) => (
+                    <option key={item.id} value={item.name} />
+                  ))}
+              </datalist>
             </div>
           ) : field === "tags" ? (
             <>

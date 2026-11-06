@@ -3,9 +3,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { listFirmServiceCategories } from "@/lib/firm/firm-catalogue.functions";
 import {
   CLIENT_STATUSES,
   bulkUpdateFirmClientProfiles,
+  bulkUpdateFirmClientTags,
   listFirmClientProfileAudit,
   type FirmClientProfile,
   type FirmClientBulkInput,
@@ -40,11 +42,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-type BulkField = FirmClientBulkInput["field"];
+type BulkField = FirmClientBulkInput["field"] | "tags";
+type TagOperation = "add" | "remove" | "replace";
+function formatAuditValue(value: string | string[] | null | undefined): string {
+  if (Array.isArray(value)) return value.join(", ") || "—";
+  return value || "—";
+}
 const AUDIT_LABELS = {
   status: "Status",
   service_line: "Service",
   next_review_date: "Review date",
+  tags: "Tags",
 } as const;
 
 export function FirmBulkClientActions({
@@ -64,11 +72,15 @@ export function FirmBulkClientActions({
 }) {
   const qc = useQueryClient();
   const bulkUpdate = useServerFn(bulkUpdateFirmClientProfiles);
+  const bulkTags = useServerFn(bulkUpdateFirmClientTags);
   const listAudit = useServerFn(listFirmClientProfileAudit);
+  const listServices = useServerFn(listFirmServiceCategories);
   const [field, setField] = useState<BulkField>("status");
   const [status, setStatus] = useState<(typeof CLIENT_STATUSES)[number]>("active");
   const [service, setService] = useState("");
   const [reviewDate, setReviewDate] = useState("");
+  const [tagOperation, setTagOperation] = useState<TagOperation>("add");
+  const [tagsText, setTagsText] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [auditOpen, setAuditOpen] = useState(false);
 
@@ -76,37 +88,48 @@ export function FirmBulkClientActions({
   const clientNames = new Map(
     clients.map((client) => [client.company_id, getFirmClientName(client)]),
   );
+  const servicesQ = useQuery({
+    queryKey: ["firm-service-categories", firmId],
+    queryFn: () => listServices({ data: { firmId } }),
+    enabled: Boolean(firmId),
+  });
   const auditQ = useQuery({
     queryKey: ["firm-client-profile-audit", firmId],
     queryFn: () => listAudit({ data: { firmId } }),
     enabled: auditOpen && Boolean(firmId),
   });
 
+  const tags = [...new Set(tagsText.split(",").map((tag) => tag.trim()).filter(Boolean))];
   const value =
     field === "status" ? status : field === "service_line" ? service.trim() : reviewDate || null;
+  const tagActionLabel =
+    tagOperation === "add" ? "Add" : tagOperation === "remove" ? "Remove" : "Replace with";
   const fieldDescription =
     field === "status"
       ? STATUS_LABELS[status]
       : field === "service_line"
         ? service.trim() || "Clear primary service"
-        : reviewDate || "Clear next review date";
+        : field === "tags"
+          ? `${tagActionLabel}: ${tags.join(", ") || "(clear all)"}`
+          : reviewDate || "Clear next review date";
 
   const mutation = useMutation({
     mutationFn: async () => {
       if (disabled || selectedClients.length < 1 || selectedClients.length > 50) {
         throw new Error("Select 1 to 50 accessible clients");
       }
-      return bulkUpdate({
-        data: {
-          firmId,
-          items: selectedClients.map((client) => ({
-            companyId: client.company_id,
-            expectedVersion: profileByCompany.get(client.company_id)?.version ?? 0,
-          })),
-          field,
-          value,
-        },
-      });
+      const items = selectedClients.map((client) => ({
+        companyId: client.company_id,
+        expectedVersion: profileByCompany.get(client.company_id)?.version ?? 0,
+      }));
+      if (field === "tags") {
+        if (tags.length > 12 || (tagOperation !== "replace" && !tags.length))
+          throw new Error("Enter 1 to 12 tags; replace may be empty to clear all");
+        if (tags.some((tag) => tag.length > 40))
+          throw new Error("Each tag must be no more than 40 characters");
+        return bulkTags({ data: { firmId, items, operation: tagOperation, tags } });
+      }
+      return bulkUpdate({ data: { firmId, items, field, value } });
     },
     onSuccess: async (result) => {
       setConfirmOpen(false);
@@ -154,6 +177,7 @@ export function FirmBulkClientActions({
                 <SelectItem value="status">Practice status</SelectItem>
                 <SelectItem value="service_line">Primary service</SelectItem>
                 <SelectItem value="next_review_date">Next review date</SelectItem>
+                <SelectItem value="tags">Client tags</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -188,8 +212,51 @@ export function FirmBulkClientActions({
                 disabled={mutation.isPending}
                 onChange={(event) => setService(event.target.value)}
                 placeholder="Bookkeeping, Payroll, Advisory…"
+                list="firm-bulk-service-category-options"
               />
+              <datalist id="firm-bulk-service-category-options">
+                {(servicesQ.data ?? [])
+                  .filter((item) => item.is_active)
+                  .map((item) => (
+                    <option key={item.id} value={item.name} />
+                  ))}
+              </datalist>
             </div>
+          ) : field === "tags" ? (
+            <>
+              <div className="min-w-36 space-y-1">
+                <Label>Tag operation</Label>
+                <Select
+                  value={tagOperation}
+                  disabled={mutation.isPending}
+                  onValueChange={(next) => setTagOperation(next as TagOperation)}
+                >
+                  {/* lookup-fixed-enum: Tag operations are explicitly validated. */}
+                  <SelectTrigger aria-label="Choose tag operation">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="add">Add tags</SelectItem>
+                    <SelectItem value="remove">Remove tags</SelectItem>
+                    <SelectItem value="replace">Replace all tags</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="min-w-48 flex-1 space-y-1">
+                <Label htmlFor="firm-bulk-tags">Tags (comma-separated, up to 12)</Label>
+                <Input
+                  id="firm-bulk-tags"
+                  value={tagsText}
+                  disabled={mutation.isPending}
+                  maxLength={500}
+                  placeholder="Payroll, Monthly, Advisory"
+                  onChange={(event) => setTagsText(event.target.value)}
+                />
+                {tagOperation === "replace" && (
+                  <p className="text-xs text-muted-foreground">Leave blank to clear all tags.</p>
+                )}
+              </div>
+            </>
           ) : (
             <div className="min-w-44 flex-1 space-y-1">
               <Label htmlFor="firm-bulk-review">Next review date (blank clears)</Label>
@@ -203,7 +270,12 @@ export function FirmBulkClientActions({
             </div>
           )}
           <Button
-            disabled={disabled || mutation.isPending || !selectedClients.length}
+            disabled={
+              disabled || mutation.isPending || !selectedClients.length ||
+              (field === "tags" && (tags.length > 12 ||
+                (tagOperation !== "replace" && !tags.length) ||
+                tags.some((tag) => tag.length > 40)))
+            }
             onClick={() => setConfirmOpen(true)}
           >
             Review changes ({selectedClients.length})
@@ -294,8 +366,8 @@ export function FirmBulkClientActions({
                         {entry.changed_fields.map((key) => {
                           const fieldKey = key as keyof typeof AUDIT_LABELS;
                           if (!(fieldKey in AUDIT_LABELS)) return null;
-                          const before = entry.before_values?.[fieldKey] ?? "—";
-                          const after = entry.after_values[fieldKey] ?? "—";
+                          const before = formatAuditValue(entry.before_values?.[fieldKey]);
+                          const after = formatAuditValue(entry.after_values[fieldKey]);
                           return (
                             <p key={key}>
                               {AUDIT_LABELS[fieldKey]}: {before} → {after}

@@ -52,11 +52,91 @@ DECLARE
   pair jsonb;
   mixed jsonb;
   audit_count integer;
+  category_id uuid;
+  custom_key text;
 BEGIN
   fid:=public.create_practice_firm('Bulk profile test practice');
   INSERT INTO public.firm_members(firm_id,user_id,role) VALUES(fid,staff_id,'member');
   PERFORM public.manage_practice_client(fid,a,'view',false);
   PERFORM public.manage_practice_client(fid,b,'view',false);
+
+  insert into public.firm_service_categories(firm_id,name,created_by,updated_by)
+  values(fid,'Bookkeeping',owner_id,owner_id) returning id into category_id;
+  update public.firm_service_categories set name='Monthly Bookkeeping',updated_by=owner_id
+    where id=category_id and version=1;
+  if not exists(select 1 from public.firm_service_categories
+    where id=category_id and version=2 and name='Monthly Bookkeeping') then
+    raise exception 'Service category version failed';
+  end if;
+  begin
+    insert into public.firm_service_categories(firm_id,name,created_by,updated_by)
+    values(fid,'monthly bookkeeping',owner_id,owner_id);
+    raise exception 'TEST: Duplicate name inserted';
+  exception when unique_violation then null; end;
+
+  insert into public.firm_onboarding_template_steps(firm_id,title,created_by,updated_by)
+    values(fid,'Check payroll registration',owner_id,owner_id)
+    returning task_key into custom_key;
+  if custom_key !~ '^custom_[0-9a-f]{32}$' then
+    raise exception 'Custom checklist key invalid';
+  end if;
+  result:=public.apply_firm_onboarding_template(fid,a);
+  if result->>'added'<>'1' then raise exception 'Custom step was not applied'; end if;
+  update public.firm_client_onboarding_steps
+    set note='Evidence retained',completed_at=now(),completed_by=owner_id,updated_by=owner_id
+    where firm_id=fid and company_id=a and task_key=custom_key;
+  -- At the 100-step limit, reapplying an existing template is a no-op.
+  insert into public.firm_client_onboarding_steps(
+    firm_id,company_id,task_key,title,updated_by
+  )
+  select fid,a,'limit_'||g,'Preexisting checklist '||g,owner_id
+  from generate_series(1,99) g;
+  result:=public.apply_firm_onboarding_template(fid,a);
+  if result->>'added'<>'0' then raise exception 'Custom step was duplicated'; end if;
+  if not exists(select 1 from public.firm_client_onboarding_steps where firm_id=fid
+    and company_id=a and task_key=custom_key and note='Evidence retained'
+    and completed_at is not null) then
+    raise exception 'Custom step reapply overwrote evidence';
+  end if;
+  update public.firm_onboarding_template_steps set is_active=false,updated_by=owner_id
+    where firm_id=fid and task_key=custom_key and version=1;
+  result:=public.apply_firm_onboarding_template(fid,b);
+  if result->>'added'<>'0' then raise exception 'Archived step applied'; end if;
+  begin
+    perform public.apply_firm_onboarding_template(fid,foreign_company);
+    raise exception 'TEST: Unauthorized client template applied';
+  exception when insufficient_privilege then null; end;
+
+  perform set_config('request.jwt.claims',
+    jsonb_build_object('sub',staff_id,'aal','aal2','role','authenticated')::text,true);
+  if not exists(select 1 from public.firm_service_categories
+    where firm_id=fid and id=category_id) then
+    raise exception 'Firm member cannot view service categories';
+  end if;
+  update public.firm_service_categories set is_active=false,updated_by=staff_id
+    where id=category_id;
+  if exists(select 1 from public.firm_service_categories
+    where id=category_id and is_active=false) then
+    raise exception 'Member changed service category';
+  end if;
+  update public.firm_onboarding_template_steps set is_active=true,updated_by=staff_id
+    where firm_id=fid and task_key=custom_key;
+  if exists(select 1 from public.firm_onboarding_template_steps
+    where firm_id=fid and task_key=custom_key and is_active=true) then
+    raise exception 'Member changed custom template';
+  end if;
+  begin
+    perform public.apply_firm_onboarding_template(fid,a);
+    raise exception 'TEST: Member applied custom steps';
+  exception when insufficient_privilege then null; end;
+
+  perform set_config('request.jwt.claims',
+    jsonb_build_object('sub',owner_id,'aal','aal1','role','authenticated')::text,true);
+  if exists(select 1 from public.firm_onboarding_template_steps where firm_id=fid) then
+    raise exception 'AAL1 bypassed template MFA';
+  end if;
+  perform set_config('request.jwt.claims',
+    jsonb_build_object('sub',owner_id,'aal','aal2','role','authenticated')::text,true);
   pair:=jsonb_build_array(
     jsonb_build_object('companyId',a,'expectedVersion',0),
     jsonb_build_object('companyId',b,'expectedVersion',0)
@@ -152,6 +232,60 @@ BEGIN
 
   SELECT count(*) INTO audit_count FROM public.firm_client_profile_audit WHERE firm_id=fid;
   IF audit_count<>5 THEN RAISE EXCEPTION 'Unexpected profile audit count: %',audit_count; END IF;
+
+  -- Bulk tags: add, repeat without version change, remove, clear and audit.
+  pair:=jsonb_build_array(
+    jsonb_build_object('companyId',a,'expectedVersion',3),
+    jsonb_build_object('companyId',b,'expectedVersion',2)
+  );
+  result:=public.bulk_update_firm_client_tags(fid,pair,'add',array['Payroll','Advisory']);
+  if (result->>'updated')::integer<>2 then raise exception 'Bulk tag addition failed'; end if;
+  pair:=jsonb_build_array(
+    jsonb_build_object('companyId',a,'expectedVersion',4),
+    jsonb_build_object('companyId',b,'expectedVersion',3)
+  );
+  result:=public.bulk_update_firm_client_tags(fid,pair,'add',array['Payroll']);
+  if (result->>'unchanged')::integer<>2 then raise exception 'Repeated tag addition advanced version'; end if;
+  result:=public.bulk_update_firm_client_tags(fid,pair,'remove',array['Advisory']);
+  if (result->>'updated')::integer<>2 then raise exception 'Bulk tag removal failed'; end if;
+  pair:=jsonb_build_array(
+    jsonb_build_object('companyId',a,'expectedVersion',5),
+    jsonb_build_object('companyId',b,'expectedVersion',4)
+  );
+  result:=public.bulk_update_firm_client_tags(fid,pair,'replace',array[]::text[]);
+  if (result->>'updated')::integer<>2 then raise exception 'Bulk tag clearing failed'; end if;
+  if (select count(*) from public.firm_client_profiles
+       where firm_id=fid and cardinality(tags)=0)<>2 then
+    raise exception 'Tag clearing did not persist';
+  end if;
+  if (select count(*) from public.firm_client_profile_audit
+       where firm_id=fid and action='updated' and changed_fields @> array['tags']::text[])<>6 then
+    raise exception 'Tag update audit entries missing';
+  end if;
+  begin
+    perform public.bulk_update_firm_client_tags(
+      fid,jsonb_build_array(
+        jsonb_build_object('companyId',a,'expectedVersion',6),
+        jsonb_build_object('companyId',foreign_company,'expectedVersion',0)
+      ),'add',array['Unauthorized']);
+    raise exception 'TEST: Unauthorized mixed tag operation succeeded';
+  exception when insufficient_privilege then null; end;
+  if (select count(*) from public.firm_client_profiles
+       where firm_id=fid and cardinality(tags)>0)<>0 then
+    raise exception 'Unauthorized tag batch partially committed';
+  end if;
+  begin
+    perform public.bulk_update_firm_client_tags(
+      fid,jsonb_build_array(jsonb_build_object('companyId',a,'expectedVersion',5)),
+      'add',array['Stale']);
+    raise exception 'TEST: Stale tag version accepted';
+  exception when serialization_failure then null; end;
+  begin
+    perform public.bulk_update_firm_client_tags(
+      fid,jsonb_build_array(jsonb_build_object('companyId',a,'expectedVersion',6)),
+      'add',array['']);
+    raise exception 'TEST: Empty tag accepted';
+  exception when invalid_parameter_value then null; end;
 
   BEGIN
     INSERT INTO public.firm_client_profile_audit(

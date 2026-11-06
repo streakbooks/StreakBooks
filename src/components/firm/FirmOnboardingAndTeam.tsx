@@ -19,6 +19,7 @@ import {
 } from "@/lib/firm/firm-workflows.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { getFirmClientName, type FirmClientRow } from "@/lib/firm/client-portfolio";
+import { FirmCustomOnboardingTemplates } from "@/components/firm/FirmCustomOnboardingTemplates";
 
 function FirmClientPicker({
   clients,
@@ -131,6 +132,11 @@ export function FirmOnboardingPanel({
               setSelected(value);
               setNotes({});
             }}
+          />
+          <FirmCustomOnboardingTemplates
+            firmId={firmId}
+            companyId={clientId}
+            canManage={canManage}
           />
           {stepsQ.isPending ? (
             <LoadingState />

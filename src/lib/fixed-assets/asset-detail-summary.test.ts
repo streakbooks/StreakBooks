@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { summarizeAssetDetailHistory } from "./asset-detail-summary";
 
-const active = { cost_minor: 12000, opening_accumulated_minor: 2000, status: "active" as const };
+const active = { cost_minor: 12000, residual_minor: 1000, opening_accumulated_minor: 2000, status: "active" as const };
 
 describe("fixed asset detail financial presentation", () => {
   it("shows cost, actual posted charges, total recorded depreciation and remaining amount", () => {
@@ -28,6 +28,7 @@ describe("fixed asset detail financial presentation", () => {
     const result = summarizeAssetDetailHistory(
       {
         cost_minor: "9007199254740994",
+        residual_minor: "0",
         opening_accumulated_minor: "9007199254740984",
         status: "active",
       },
@@ -56,6 +57,51 @@ describe("fixed asset detail financial presentation", () => {
     ).toMatchObject({
       remainingBeforeDisposalMinor: null,
       issue: expect.stringMatching(/whole minor-unit/i),
+    });
+  });
+
+  it("preserves the residual value as the exact minimum remaining amount", () => {
+    expect(summarizeAssetDetailHistory(
+      { ...active, cost_minor: 12000, residual_minor: 4000, opening_accumulated_minor: 2000 },
+      [{ amount_minor: 6000 }],
+    )).toMatchObject({
+      costMinor: "12000",
+      recordedAccumulatedMinor: "8000",
+      remainingBeforeDisposalMinor: "4000",
+      issue: null,
+    });
+  });
+
+  it("rejects depreciation below residual value, even if accumulated stays below gross cost", () => {
+    expect(summarizeAssetDetailHistory(
+      { ...active, residual_minor: 4000, opening_accumulated_minor: 2000 },
+      [{ amount_minor: 6001 }],
+    )).toMatchObject({
+      costMinor: null,
+      remainingBeforeDisposalMinor: null,
+      issue: expect.stringMatching(/depreciable cost/i),
+    });
+  });
+
+  it("rejects contradictory residual plus opening values and unsafe residual integers", () => {
+    expect(summarizeAssetDetailHistory(
+      { ...active, residual_minor: 11500, opening_accumulated_minor: 2000 },
+      [],
+    )).toMatchObject({ remainingBeforeDisposalMinor: null, issue: expect.stringMatching(/residual/i) });
+    expect(summarizeAssetDetailHistory(
+      { ...active, residual_minor: Number.MAX_SAFE_INTEGER + 1 },
+      [],
+    )).toMatchObject({ remainingBeforeDisposalMinor: null, issue: expect.stringMatching(/precision/i) });
+  });
+
+  it("continues to reject impossible posted depreciation for disposed assets", () => {
+    expect(summarizeAssetDetailHistory(
+      { ...active, status: "disposed", residual_minor: 4000 },
+      [{ amount_minor: 6001 }],
+    )).toMatchObject({
+      recordedAccumulatedMinor: null,
+      remainingBeforeDisposalMinor: null,
+      issue: expect.stringMatching(/depreciable cost/i),
     });
   });
 

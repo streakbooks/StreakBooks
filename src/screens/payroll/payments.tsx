@@ -87,6 +87,8 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
   const savePayment = useServerFn(recordPayrollPayment);
 
   const [recordOpen, setRecordOpen] = useState(false);
+  const [paymentSearch, setPaymentSearch] = useState("");
+  const [paymentStatus, setPaymentStatus] = useState<"all" | "posted" | "reversed">("all");
   const [paymentDate, setPaymentDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [paymentMethod, setPaymentMethod] = useState("bank_transfer");
   const [clearingAccountId, setClearingAccountId] = useState("");
@@ -296,6 +298,23 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
   }
 
   const payments = page?.payments ?? [];
+  const filtersActive = paymentStatus !== "all" || paymentSearch.trim() !== "";
+  const filteredPayments = payments.filter((payment) => {
+    if (paymentStatus !== "all" && payment.status !== paymentStatus) return false;
+    const needle = paymentSearch.trim().toLocaleLowerCase();
+    return (
+      !needle ||
+      [
+        payment.payment_date,
+        payment.reference ?? "",
+        METHOD_LABELS[payment.payment_method] ?? payment.payment_method,
+      ].some((value) => value.toLocaleLowerCase().includes(needle))
+    );
+  });
+  const clearPaymentFilters = () => {
+    setPaymentSearch("");
+    setPaymentStatus("all");
+  };
 
   return (
     <>
@@ -348,13 +367,52 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
         </Alert>
       ) : null}
 
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <Input
+          value={paymentSearch}
+          onChange={(event) => setPaymentSearch(event.target.value)}
+          placeholder="Search date, method or reference…"
+          aria-label="Search payroll payments"
+          className="w-full sm:w-72"
+        />
+        <Select
+          value={paymentStatus}
+          onValueChange={(value) => setPaymentStatus(value as typeof paymentStatus)}
+        >
+          <SelectTrigger className="w-[180px]" aria-label="Filter payment status">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All payments</SelectItem>
+            <SelectItem value="posted">Posted</SelectItem>
+            <SelectItem value="reversed">Reversed</SelectItem>
+          </SelectContent>
+        </Select>
+        {filtersActive ? (
+          <Button variant="ghost" size="sm" onClick={clearPaymentFilters}>
+            Clear filters
+          </Button>
+        ) : null}
+        <p className="w-full text-xs text-muted-foreground" aria-live="polite">
+          Showing {filteredPayments.length} of {payments.length} payments
+        </p>
+      </div>
+
       <TableCard>
-        {payments.length === 0 ? (
+        {filteredPayments.length === 0 ? (
           <EmptyState
-            title="No payroll payments yet"
-            description="Post a payroll run, then record net-pay payments here."
+            title={payments.length === 0 ? "No payroll payments yet" : "No matching payments"}
+            description={
+              payments.length === 0
+                ? "Post a payroll run, then record net-pay payments here."
+                : "Try another status or search term."
+            }
             action={
-              canPay ? (
+              filtersActive ? (
+                <Button size="sm" variant="outline" onClick={clearPaymentFilters}>
+                  Clear filters
+                </Button>
+              ) : canPay ? (
                 <Button size="sm" onClick={openRecordDialog}>
                   Record payment
                 </Button>
@@ -378,7 +436,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
               </TableRow>
             </TableHeader>
             <TableBody>
-              {payments.map((p) => (
+              {filteredPayments.map((p) => (
                 <TableRow key={p.id}>
                   <TableCell>{fmt.date(p.payment_date)}</TableCell>
                   <TableCell>{METHOD_LABELS[p.payment_method] ?? p.payment_method}</TableCell>

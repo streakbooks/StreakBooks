@@ -461,3 +461,40 @@ even though only the earlier payment existed.
   with synthetic organisational rows, authenticated UI + API tests and
   Vercel deployment verification have **not been run**. GitHub CI was
   **not run (per user instruction)**.
+
+
+### Rollback-only Payroll currency guard integration verification and settlement date validation (November 6, 2026)
+
+- Corrected and **executed** the end-to-end SQL currency-guard test fixture
+  `tests/integration/basic-payroll-payment-currency-guards.sql` on the
+  **connected Supabase database** inside an explicit `BEGIN ... ROLLBACK`
+  transaction, after removing the psql-only `\\set ON_ERROR_STOP` directive
+  for this execution. This was a transaction-only test against the connected
+  environment, **not an isolated PostgreSQL test instance**.
+- Aligned test setup with current schema: transaction-local
+  `linkbooks.trusted=on` for creating synthetic company ownership; chart of
+  accounts code length limit; bank account kind; explicit synthetic contact
+  account number to bypass unrelated authenticated auto-number allocation;
+  and `posted` payroll-run status. Restored the `DO $$` delimiter that an
+  earlier text replacement had accidentally reduced to `DO $`.
+- Verified in SQL: valid same-currency payment and allocation insertion;
+  rejection of a foreign-currency GL on INSERT and UPDATE; rejection of a
+  foreign linked bank; non-base currency payment INSERT and UPDATE
+  rejection; cross-currency payslip allocation rejection; and rejection of
+  changing allocation run ID or run employee ID. Also verified all 3
+  currency trigger helpers are not callable directly by anon/authenticated
+  and the clearing account guard trigger is enabled.
+- A separate post-transaction query confirmed **0 fixture companies,
+  contacts and GL accounts**, **0 Payroll payments or allocations**,
+  and **3 active currency guard triggers**. The fixture's synthetic
+  transaction did not persist.
+- Added `src/lib/payroll/payment-date.ts` and regression tests; the
+  `recordPayrollPayment` endpoint and both Payroll reversal endpoints
+  now reject non-calendar dates including non-leap February 29 and
+  April 31, rather than relying on format-only checks or PostgreSQL errors.
+  **14/14 focused direct-source runtime and wiring checks passed.** The
+  real Vitest suite remains unexecuted.
+- **Still pending:** complete repository typecheck, lint, Vitest and build;
+  authenticated RPC payment posting/idempotency/reversal and browser E2E
+  verification; merge and Vercel application deployment. GitHub CI
+  **not run (per user instruction)**.

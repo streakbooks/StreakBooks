@@ -208,6 +208,9 @@ export function AssetReconciliationPanel({ companyId }: { companyId: string }) {
                             params={{ reportId: "general-ledger" }}
                             search={{
                               account: row.accountId,
+                              // Match the reconciliation's inception-to-date ledger, not the
+                              // reports page's default current fiscal-year range.
+                              from: "0001-01-01",
                               to: asOf,
                               basis: "accrual",
                             }}

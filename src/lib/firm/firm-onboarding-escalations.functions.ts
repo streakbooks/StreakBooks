@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertCompanyPermission } from "@/lib/assert-company-access";
 
 const scope = z.object({ firmId: z.string().uuid() }).strict();
 
@@ -24,7 +25,7 @@ export type FirmOnboardingEscalationEvent = {
 };
 
 async function assertFirmMember(
-  context: { supabase: any; userId: string },
+  context: { supabase: Parameters<typeof assertCompanyPermission>[0]; userId: string },
   firmId: string,
   requireAdmin: boolean,
 ) {

@@ -255,3 +255,30 @@ GitHub source file
 - Remaining quality gates: full application typecheck/lint/Vitest/build,
   isolated SQL integration test, and authenticated end-to-end Payroll QA.
   GitHub CI was **not run per user instruction**.
+
+
+### Payment form precision and retry hardening (November 6, 2026)
+
+- Payment amount and each allocation must have no more fractional decimal
+  places than the selected currency supports: e.g., **GBP: 2**, **JPY: 0**,
+  **KWD: 3**. This is important because ordinary
+  `toMinorUnits` rounding is acceptable for calculated prices but must
+  not silently change the exact amount entered for a bank settlement.
+- Existing grouped amounts remain accepted (`1,234` JPY), while over-
+  precision amounts such as `12.345 GBP` and `123.4 JPY` are rejected
+  before any server request.
+- The payment entry dialog resets the previous clearing account, reference,
+  memo, allocations and payment amount before each new payment. A pending
+  submission prevents the dialog from closing or another new payment from
+  opening, avoiding a new idempotency key for the same in-flight payment.
+- Clearing-account loading errors are shown explicitly and payment
+  submission remains disabled until the account list succeeds.
+- Isolated non-CI execution of the exact current form/payment allocation/
+  minor-unit functions passed **16/16 behavior scenarios**. Direct
+  Settings validator execution passed **6/6 scenarios**.
+- SQL test fixture now creates its own company membership and tax settings
+  and checks attempted mismatched run-employee reassignment. This rollback-only
+  test is **committed but has not been executed on isolated PostgreSQL**.
+- Full repository Vitest, typecheck, lint, production build, browser QA,
+  and GitHub CI are **not run** in this session. GitHub CI was not run per
+  user instruction.

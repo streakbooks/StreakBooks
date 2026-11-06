@@ -52,9 +52,73 @@ export function stagingGateReady(env) {
   if (!env.E2E_BASE_URL || !env.E2E_EXPECTED_STAGING_HOST || !env.E2E_PRODUCTION_URL) {
     throw new Error("Dedicated staging URL, expected hostname and production comparison URL required.");
   }
+  // A release acceptance run must exercise both security-sensitive staging
+  // gates, not silently skip the formula-injection and cross-user checks.
+  if (!env.E2E_FIRM_TASK_CSV_CANARY ||
+      !/^[\s]*[=+\-@]/u.test(env.E2E_FIRM_TASK_CSV_CANARY)) {
+    throw new Error("Seed a formula-prefixed staging CSV canary and set E2E_FIRM_TASK_CSV_CANARY.");
+  }
+  if (!env.E2E_FIRM_RESTRICTED_EMAIL || !env.E2E_FIRM_RESTRICTED_PASSWORD ||
+      env.E2E_FIRM_RESTRICTED_EMAIL === env.E2E_EMAIL) {
+    throw new Error("A distinct restricted staging user is required for cross-client isolation.");
+  }
   return {
     stagingUrl: env.E2E_BASE_URL,
     expectedHost: env.E2E_EXPECTED_STAGING_HOST,
     productionUrl: env.E2E_PRODUCTION_URL,
+  };
+}
+
+/**
+ * A release check must run against an unmodified, up-to-date main checkout
+ * of the authoritative LinkBooks repository. A dirty/detached checkout or
+ * missing origin/main reference must never produce passing release evidence.
+ */
+export function localReleasePreflight(git) {
+  const blockers = [];
+  if (!git.workingTreeStatusKnown || !git.workingTreeClean) {
+    blockers.push("Working tree must be confirmed clean.");
+  }
+  if (git.branch !== "main") {
+    blockers.push("Local branch must be main.");
+  }
+  if (!git.originMatchesRepo) {
+    blockers.push("Origin must be the authorized LinkBooks GitHub repository.");
+  }
+  if (!git.commit || !git.originMainCommit || git.commit !== git.originMainCommit) {
+    blockers.push("Local HEAD must match fetched origin/main. Pull the latest main first.");
+  }
+  return { passed: blockers.length === 0, blockers };
+}
+
+/**
+ * Read Vitest's human summary without assuming that "passed" appears before
+ * "failed". Supports plain/ANSI output and the mixed-status "|" layout.
+ * No test output or sensitive fixture values are persisted in JSON evidence.
+ */
+export function extractVitestCounts(output) {
+  const plain = String(output).replace(/\u001b\[[0-9;]*m/g, "");
+  const lines = plain.split(/\r?\n/);
+  function summary(label) {
+    const line = [...lines].reverse().find((entry) =>
+      new RegExp("^\\s*" + label + "\\s+").test(entry));
+    if (!line) {
+      return { passed: null, failed: null, skipped: null };
+    }
+    const counts = { passed: 0, failed: 0, skipped: 0 };
+    for (const match of line.matchAll(/\b(\d+)\s+(passed|failed|skipped)\b/g)) {
+      counts[match[2]] += Number(match[1]);
+    }
+    return counts;
+  }
+  const tests = summary("Tests");
+  const files = summary("Test Files");
+  return {
+    passedTests: tests.passed,
+    failedTests: tests.failed,
+    skippedTests: tests.skipped,
+    passedFiles: files.passed,
+    failedFiles: files.failed,
+    skippedFiles: files.skipped,
   };
 }

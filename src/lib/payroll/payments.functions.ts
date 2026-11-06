@@ -3,6 +3,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { callRpc, companyIdOf, isMissingRelation, num } from "@/lib/planning/rpc";
 import { validatePayrollPaymentAllocations } from "@/lib/payroll/payroll-payment-allocation";
+import { payrollClearingCurrencyMismatch } from "@/lib/payroll/clearing-currency";
 import type { PayrollPaymentMethod } from "@/lib/payroll/types";
 import { PAYROLL_RUNS_MIGRATION } from "@/lib/payroll/runs.functions";
 
@@ -307,6 +308,33 @@ export const recordPayrollPayment = createServerFn({ method: "POST" })
         "Non-base-currency payroll payments are not yet supported by the FX journal workflow.",
       );
     }
+
+    // Prevent crediting a foreign-currency bank at FX=1. The SQL trigger
+    // enforces the same invariant inside record_payroll_payment for direct RPCs.
+    const clearingRes = await context.supabase
+      .from("accounts" as never)
+      .select("id, currency_code" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("id" as never, data.clearingAccountId as never)
+      .maybeSingle();
+    if (clearingRes.error) throw new Error(clearingRes.error.message);
+    if (!clearingRes.data) throw new Error("Clearing account not found for this organisation.");
+
+    const linkedRes = await context.supabase
+      .from("bank_accounts" as never)
+      .select("currency_code" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("gl_account_id" as never, data.clearingAccountId as never)
+      .eq("is_active" as never, true as never);
+    if (linkedRes.error) throw new Error(linkedRes.error.message);
+    const mismatch = payrollClearingCurrencyMismatch(
+      postingCurrency,
+      (clearingRes.data as { currency_code: string | null }).currency_code,
+      (linkedRes.data ?? []).map(
+        (bank) => (bank as { currency_code: string | null }).currency_code,
+      ),
+    );
+    if (mismatch) throw new Error(mismatch);
 
     const paymentAmountMinor = BigInt(data.amountMinor);
     const allocationInputs = data.allocations.map((a) => ({

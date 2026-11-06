@@ -165,12 +165,14 @@ export function selectedVisibleFirmClients(
 ): FirmClientRow[] {
   const selected = new Set(selectedCompanyIds);
   const distinct = new Set<string>();
-  return filtered.filter((client) => {
-    if (!client.companies || !selected.has(client.company_id) || distinct.has(client.company_id))
-      return false;
-    distinct.add(client.company_id);
-    return true;
-  }).slice(0, 50);
+  return filtered
+    .filter((client) => {
+      if (!client.companies || !selected.has(client.company_id) || distinct.has(client.company_id))
+        return false;
+      distinct.add(client.company_id);
+      return true;
+    })
+    .slice(0, 50);
 }
 
 export function firstFiftyFirmClientIds(filtered: FirmClientRow[]): string[] {

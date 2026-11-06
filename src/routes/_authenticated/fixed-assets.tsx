@@ -12,6 +12,7 @@ import { friendlyAuthError } from "@/lib/auth-helpers";
 import { addMonthsIso, monthEnd, monthStart, todayIso } from "@/lib/accounting/fiscal-year";
 import { DEPRECIATION_METHODS } from "@/lib/fixed-assets/depreciation";
 import {
+  assetStatusAsOf,
   selectRegisterAssets,
   summariseActiveAssets,
   type AssetRegisterSort,
@@ -602,7 +603,7 @@ function exportAssetRegisterCsv(
   const headers = [
     "Asset number",
     "Name",
-    "Status",
+    "Status as at " + asOf,
     "Asset type",
     "Asset account",
     "Purchase date",
@@ -614,7 +615,8 @@ function exportAssetRegisterCsv(
     "Depreciated through",
   ];
   const rows = assets.map((asset) => {
-    const future = asset.purchase_date > asOf;
+    const status = assetStatusAsOf(asset, asOf);
+    const future = status === "not_acquired";
     const accumulated = accumulatedOf(asset);
     if (!future && accumulated === null) {
       throw new Error("Cannot export without a complete as-at depreciation register.");
@@ -622,7 +624,7 @@ function exportAssetRegisterCsv(
     return [
       asset.asset_number,
       asset.name,
-      future ? "Not yet purchased" : asset.status,
+      future ? "Not yet purchased" : status,
       asset.asset_type_id ? (typeNames.get(asset.asset_type_id) ?? "Unlisted type") : "",
       accountNames.get(asset.asset_account_id) ?? "Unlisted account",
       asset.purchase_date,
@@ -630,7 +632,7 @@ function exportAssetRegisterCsv(
       asset.depreciation_method,
       asset.cost_minor,
       future ? null : accumulated,
-      future ? null : asset.status === "disposed" ? 0 : asset.cost_minor - (accumulated ?? 0),
+      future ? null : status === "disposed" ? 0 : asset.cost_minor - (accumulated ?? 0),
       asset.depreciated_through,
     ];
   });
@@ -694,6 +696,7 @@ function RegisterTable({
         {assets.map((a) => {
           const acc = accumulatedOf(a);
           const disposed = a.status === "disposed";
+          const asAtStatus = assetStatusAsOf(a, todayIso());
           const hasPosted = a.depreciated_through !== null;
           return (
             <TableRow key={a.id}>
@@ -729,7 +732,7 @@ function RegisterTable({
                 {acc === null ? "–" : fmt.amount(acc, currency)}
               </TableCell>
               <TableCell className="text-right tabular-nums">
-                {disposed || acc === null ? "–" : fmt.amount(a.cost_minor - acc, currency)}
+                {asAtStatus !== "active" || acc === null ? "–" : fmt.amount(a.cost_minor - acc, currency)}
               </TableCell>
               <TableCell>
                 {a.depreciated_through ? fmt.date(a.depreciated_through) : "Not yet"}

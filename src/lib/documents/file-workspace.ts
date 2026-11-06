@@ -44,7 +44,6 @@ export function filePreviewKind(
   return null;
 }
 
-
 /**
  * Rename only the display/download filename, never the immutable Storage object key.
  * Keeping the extension avoids disguising an existing file as a different format.

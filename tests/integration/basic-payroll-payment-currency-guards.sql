@@ -18,6 +18,7 @@ DECLARE
   _slip_gbp UUID := gen_random_uuid();
   _slip_usd UUID := gen_random_uuid();
   _bank UUID;
+  _foreign_account UUID;
   _payment UUID := gen_random_uuid();
 BEGIN
   IF NOT EXISTS (
@@ -61,6 +62,45 @@ BEGIN
     company_id, code, name, account_type, normal_balance, account_kind
   ) VALUES (_c, 'PAY-GUARD-BANK', 'Guard test bank', 'asset', 'debit', 'current_asset')
   RETURNING id INTO _bank;
+
+  -- Database guard 2: bank/GL currency must also match payment currency.
+  INSERT INTO public.accounts (
+    company_id, code, name, account_type, normal_balance, account_kind, currency_code
+  ) VALUES (
+    _c, 'PAY-GUARD-USD', 'Guard foreign-currency GL', 'asset', 'debit',
+    'current_asset', 'USD'
+  ) RETURNING id INTO _foreign_account;
+
+  BEGIN
+    INSERT INTO public.payroll_payments (
+      company_id, payment_date, payment_method, amount_minor, currency,
+      clearing_account_id
+    ) VALUES (_c, CURRENT_DATE, 'manual', 100, 'GBP', _foreign_account);
+    RAISE EXCEPTION 'Foreign clearing GL account unexpectedly succeeded';
+  EXCEPTION WHEN check_violation THEN
+    IF SQLERRM NOT LIKE 'Payroll clearing account currency differs%'
+    THEN RAISE; END IF;
+  END;
+
+  -- A linked bank can be foreign currency while the GL account override is
+  -- NULL. The trigger must catch that, too.
+  INSERT INTO public.bank_accounts (
+    company_id, name, currency_code, gl_account_id
+  ) VALUES (_c, 'Foreign linked test bank', 'USD', _bank);
+
+  BEGIN
+    INSERT INTO public.payroll_payments (
+      company_id, payment_date, payment_method, amount_minor, currency,
+      clearing_account_id
+    ) VALUES (_c, CURRENT_DATE, 'manual', 100, 'GBP', _bank);
+    RAISE EXCEPTION 'Foreign linked bank account unexpectedly succeeded';
+  EXCEPTION WHEN check_violation THEN
+    IF SQLERRM NOT LIKE 'Linked bank account currency differs%'
+    THEN RAISE; END IF;
+  END;
+
+  DELETE FROM public.bank_accounts
+  WHERE company_id = _c AND gl_account_id = _bank;
 
   -- Any non-base currency must fail, including direct inserts that bypass the
   -- application's recordPayrollPayment handler and invoke SQL directly.

@@ -24,9 +24,15 @@ export type GlAccountEvidence = {
 export type PostedGlEvidenceResult = {
   journalId: string; journalNumber: number; status: "passed" | "exceptions" | "not_posted";
   currencyCode: string; sourceType: string; lineCount: number; accountCount: number;
-  periodId: string | null; debitMinor: string | null; creditMinor: string | null;
+  periodId: string | null; periodStatus: string | null;
+  debitMinor: string | null; creditMinor: string | null;
   accounts: GlAccountEvidence[]; issues: string[];
 };
+function isRealIsoDay(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(value + "T00:00:00Z");
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
 function exactMinor(raw: number | string, label: string): bigint {
   if (typeof raw === "number" && Number.isSafeInteger(raw) && raw >= 0) return BigInt(raw);
   if (typeof raw === "string" && /^\d+$/.test(raw)) return BigInt(raw);
@@ -47,14 +53,18 @@ export function reviewPostedGlEvidence(
   const issues: string[] = [];
   if (journal.company_id !== expectedCompanyId) issues.push("Journal organisation differs from the request.");
   if (!journal.id) issues.push("Journal identity is missing.");
+  if (!Number.isSafeInteger(journal.journal_number) || journal.journal_number <= 0) {
+    issues.push("Journal number is invalid.");
+  }
+  if (!journal.source_type?.trim()) issues.push("Journal source type is missing.");
   if (!journal.currency_code?.trim()) issues.push("Journal currency is missing.");
-  if (!journal.journal_date || !/^\d{4}-\d{2}-\d{2}$/.test(journal.journal_date)) {
+  if (!journal.journal_date || !isRealIsoDay(journal.journal_date)) {
     issues.push("Journal date is missing or malformed.");
   }
   const result: PostedGlEvidenceResult = {
     journalId: journal.id, journalNumber: journal.journal_number, status: "not_posted",
     currencyCode: journal.currency_code ?? "", sourceType: journal.source_type,
-    lineCount: lines.length, accountCount: 0, periodId: null,
+    lineCount: lines.length, accountCount: 0, periodId: null, periodStatus: null,
     debitMinor: null, creditMinor: null, accounts: [], issues,
   };
   if (journal.status !== "posted") {
@@ -67,12 +77,19 @@ export function reviewPostedGlEvidence(
       issues.push("Accounting period belongs to a different organisation.");
       return false;
     }
+    if (!period.id || !isRealIsoDay(period.start_date) ||
+        !isRealIsoDay(period.end_date) || period.start_date > period.end_date ||
+        !period.status?.trim()) {
+      issues.push("Accounting period evidence is malformed.");
+      return false;
+    }
     return period.start_date <= journal.journal_date && period.end_date >= journal.journal_date;
   });
   if (matchingPeriods.length !== 1) {
     issues.push("Posted journal date must belong to exactly one accounting period.");
   } else {
     result.periodId = matchingPeriods[0]!.id;
+    result.periodStatus = matchingPeriods[0]!.status;
   }
   const accountMap = new Map<string, GlAuditAccount>();
   for (const account of accounts) {
@@ -116,6 +133,11 @@ export function reviewPostedGlEvidence(
       }
     } catch (error) {
       issues.push(error instanceof Error ? error.message : label + " has invalid monetary data.");
+    }
+  }
+  for (const account of accountMap.values()) {
+    if (!totalByAccount.has(account.id)) {
+      issues.push("Account evidence includes an unreferenced account.");
     }
   }
   if (debits === 0n || credits === 0n || debits !== credits) {

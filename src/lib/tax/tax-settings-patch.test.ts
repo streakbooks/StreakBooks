@@ -42,6 +42,8 @@ describe("TX-02 updateTaxSettings is a partial update", () => {
     expect(() => buildTaxSettingsPatch({ filingFrequency: "sometimes" })).toThrow();
     expect(() => buildTaxSettingsPatch({ outputTaxAccountId: "not-a-uuid" })).toThrow();
     expect(() => buildTaxSettingsPatch({ registrationDate: "01/02/2026" })).toThrow();
+    expect(() => buildTaxSettingsPatch({ registrationDate: "2026-02-29" })).toThrow();
+    expect(() => buildTaxSettingsPatch({ registrationEndDate: "2026-04-31" })).toThrow();
   });
 
   it("an empty input produces an empty patch", () => {

@@ -452,8 +452,10 @@ export function parsePayrollEmployeesCsv(
     }
     const get = (label: string) => {
       const i = idx(label);
-      // CSV exports prefix leading formula-like values with a single quote.
-      return i >= 0 ? (cells[i] ?? "").replace(/^'/, "") : "";
+      // Reverse the CSV writer's spreadsheet-formula prefix only for
+      // formula-like cells. Preserve legitimate names beginning with an apostrophe.
+      const value = i >= 0 ? (cells[i] ?? "") : "";
+      return /^'[=+\\-@\\t\\r]/.test(value) ? value.slice(1) : value;
     };
     const draft: PayrollEmployeeDraft = {
       ...emptyEmployeeDraft(

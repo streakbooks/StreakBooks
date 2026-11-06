@@ -68,7 +68,11 @@ export function formatFinancialMetric(
 }
 
 function metricRaw(snapshot: FinancialSnapshot, key: FinancialMetricId): bigint | null {
-  const value = snapshot.metrics[key]?.value;
+  const source = FINANCIAL_METRICS.find((item) => item.id === key)!;
+  const metric = snapshot.metrics[key];
+  // Fail closed if a changed reporting API no longer matches this documented source.
+  if (!metric || metric.format !== source.format || metric.reportId !== source.source) return null;
+  const value = metric.value;
   return typeof value === "string" && /^-?\d+$/.test(value) ? BigInt(value) : null;
 }
 
@@ -104,7 +108,7 @@ export function buildFinancialInsights(
     return {
       id: def.id,
       label: def.label,
-      value: formatFinancialMetric(current.metrics[def.id]?.value ?? null, def.format, currency),
+      value: formatFinancialMetric(actual === null ? null : actual.toString(), def.format, currency),
       priorValue: prior === null ? null : formatFinancialMetric(prior.toString(), def.format, currency),
       change: change === null ? null : formatFinancialMetric(change.toString(), def.format, currency),
       sourceReportId: def.source,

@@ -90,3 +90,35 @@ export function localReleasePreflight(git) {
   }
   return { passed: blockers.length === 0, blockers };
 }
+
+/**
+ * Read Vitest's human summary without assuming that "passed" appears before
+ * "failed". Supports plain/ANSI output and the mixed-status "|" layout.
+ * No test output or sensitive fixture values are persisted in JSON evidence.
+ */
+export function extractVitestCounts(output) {
+  const plain = String(output).replace(/\u001b\[[0-9;]*m/g, "");
+  const lines = plain.split(/\r?\n/);
+  function summary(label) {
+    const line = [...lines].reverse().find((entry) =>
+      new RegExp("^\\s*" + label + "\\s+").test(entry));
+    if (!line) {
+      return { passed: null, failed: null, skipped: null };
+    }
+    const counts = { passed: 0, failed: 0, skipped: 0 };
+    for (const match of line.matchAll(/\b(\d+)\s+(passed|failed|skipped)\b/g)) {
+      counts[match[2]] += Number(match[1]);
+    }
+    return counts;
+  }
+  const tests = summary("Tests");
+  const files = summary("Test Files");
+  return {
+    passedTests: tests.passed,
+    failedTests: tests.failed,
+    skippedTests: tests.skipped,
+    passedFiles: files.passed,
+    failedFiles: files.failed,
+    skippedFiles: files.skipped,
+  };
+}

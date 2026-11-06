@@ -286,7 +286,9 @@ export function FirmBulkClientActions({
                       <TableCell className="whitespace-nowrap text-xs">
                         {new Date(entry.created_at).toLocaleString()}
                       </TableCell>
-                      <TableCell>{clientNames.get(entry.company_id) ?? "Restricted client"}</TableCell>
+                      <TableCell>
+                        {clientNames.get(entry.company_id) ?? "Restricted client"}
+                      </TableCell>
                       <TableCell>{entry.action}</TableCell>
                       <TableCell className="max-w-xs text-xs">
                         {entry.changed_fields.map((key) => {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -84,7 +84,7 @@ export function AiFinancialInsights({
   const result = current ? buildFinancialInsights(current, previous ?? null, currency) : null;
   const waitingForComparison = compare && priorQ.isPending;
 
-  function applyFilters(event: React.FormEvent<HTMLFormElement>) {
+  function applyFilters(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!isReportDate(draft.from) || !isReportDate(draft.to) || draft.from > draft.to) {
       setError("Choose real dates with the end date on or after the start date.");

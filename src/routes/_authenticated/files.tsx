@@ -1219,8 +1219,8 @@ function FilesPage() {
       ) : null}
 
       {selected ? (
-        <section aria-label="Selected file details" className="mb-4 rounded-lg border bg-card p-4">
-          <div className="flex items-start justify-between gap-3">
+        <section aria-label="Selected file details" className="mb-4 min-w-0 rounded-lg border bg-card p-3 sm:p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="flex min-w-0 items-start gap-3">
               <FileText className="mt-1 size-5 shrink-0 text-muted-foreground" />
               <div className="min-w-0 space-y-1">
@@ -1496,7 +1496,10 @@ function FilesPage() {
               ) : null}
             </div>
           ) : null}
-          <Table>
+          <p className="mb-2 text-xs text-muted-foreground sm:hidden">
+            Swipe horizontally within the table to see all file columns.
+          </p>
+          <Table aria-label="Company files" className="min-w-[820px]">
             <TableHeader>
               <TableRow>
                 <TableHead className="w-10">
@@ -1617,11 +1620,11 @@ function FilesPage() {
               })}
             </TableBody>
           </Table>
-          <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
             <span>
               {filesQ.data.total} file{filesQ.data.total === 1 ? "" : "s"}
             </span>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 size="sm"
                 variant="outline"

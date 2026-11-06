@@ -601,6 +601,50 @@ function FilesPage() {
             migration if it is pending.
           </p>
         ) : null}
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <Input
+            className="w-full max-w-sm"
+            aria-label="Find a document folder"
+            placeholder="Find a folder by name or path"
+            value={folderSearch}
+            onChange={(e) => setFolderSearch(e.target.value)}
+          />
+          {folderSearch ? (
+            <Button size="sm" variant="ghost" onClick={() => setFolderSearch("")}>
+              Clear folder search
+            </Button>
+          ) : null}
+        </div>
+        {folderSearch.trim() ? (
+          <div className="mb-3 flex flex-wrap gap-2" aria-label="Matching folders">
+            {folderMatches.length ? (
+              folderMatches.map((matched) => (
+                <Button key={matched.id} size="sm" variant="outline" asChild>
+                  <Link
+                    to="/files"
+                    search={{ folder: matched.id }}
+                    onClick={(e) => {
+                      if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {
+                        setPage(0);
+                        setFolderSearch("");
+                      }
+                    }}
+                  >
+                    <Folder className="mr-2 size-4" />
+                    {folderDisplayPath(folders, matched.id)}
+                  </Link>
+                </Button>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">No matching folders.</p>
+            )}
+            {folderMatches.length === 20 ? (
+              <p className="basis-full text-xs text-muted-foreground">
+                Showing up to 20 folder matches. Refine your search to narrow the results.
+              </p>
+            ) : null}
+          </div>
+        ) : null}
         <div className="flex flex-wrap gap-2">
           {activeFolder?.parent_id ? (
             <Button size="sm" variant="outline" asChild>
@@ -632,8 +676,21 @@ function FilesPage() {
               </Button>
             ))}
         </div>
+        {activeFolder ? (
+          <label className="mt-3 flex cursor-pointer items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={includeSubfolders}
+              onChange={(e) => {
+                setIncludeSubfolders(e.target.checked);
+                setPage(0);
+              }}
+            />
+            Include files in nested subfolders
+          </label>
+        ) : null}
         {activeFolder && canUpload ? (
-          <div className="mt-3 flex gap-2">
+          <div className="mt-3 flex flex-wrap gap-2">
             <Button
               size="sm"
               variant="ghost"
@@ -784,6 +841,26 @@ function FilesPage() {
           </SelectContent>
         </Select>
         <Select
+          value={fileFormat}
+          onValueChange={(v) => {
+            setFileFormat(v as FileFormat);
+            setPage(0);
+          }}
+        >
+          {/* lookup-fixed-enum: File content categories map to fixed MIME allowlists. */}
+          <SelectTrigger className="w-48" aria-label="Filter by file format">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All file formats</SelectItem>
+            <SelectItem value="pdf">PDF</SelectItem>
+            <SelectItem value="images">Images</SelectItem>
+            <SelectItem value="spreadsheets">Spreadsheets &amp; CSV</SelectItem>
+            <SelectItem value="word">Word documents</SelectItem>
+            <SelectItem value="text">Text files</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select
           value={sort}
           onValueChange={(v) => {
             setSort(v as typeof sort);
@@ -801,7 +878,7 @@ function FilesPage() {
             <SelectItem value="largest">Largest first</SelectItem>
           </SelectContent>
         </Select>
-        {(search || type !== "all" || sort !== "newest") && (
+        {(search || type !== "all" || fileFormat !== "all" || sort !== "newest") && (
           <Button
             size="sm"
             variant="ghost"
@@ -809,6 +886,7 @@ function FilesPage() {
               setSearch("");
               setDebounced("");
               setType("all");
+              setFileFormat("all");
               setSort("newest");
               setPage(0);
             }}
@@ -820,6 +898,7 @@ function FilesPage() {
       {filesQ.data && !filesQ.isError ? (
         <p role="status" className="mb-3 text-xs text-muted-foreground">
           Showing {filesQ.data.files.length} of {filesQ.data.total} matching files
+          {folderId && includeSubfolders ? " (including nested folders)" : ""}
         </p>
       ) : null}
 
@@ -992,8 +1071,8 @@ function FilesPage() {
         <EmptyState
           title="No files"
           description={
-            debounced || type !== "all"
-              ? "No files match this search."
+            debounced || type !== "all" || fileFormat !== "all"
+              ? "No files match these filters."
               : activeView === "to-file"
                 ? "No unlinked, unfiled uploads need organising."
                 : canUpload

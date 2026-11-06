@@ -8,6 +8,7 @@ import {
   listReconciliationReviewAssignees,
   listReconciliationReviewCases,
   saveReconciliationReviewCase,
+  type SaveCaseInput,
 } from "@/lib/accounting/reconciliation-review.functions";
 import {
   reconciliationFindingFingerprint,
@@ -39,7 +40,7 @@ export function PersistentReconciliationReviews({
     mutationFn: () => fetchPeople({ data: { companyId } }),
   });
   const save = useMutation({
-    mutationFn: (input: Parameters<typeof submit>[0]["data"]) => submit({ data: input }),
+    mutationFn: (input: SaveCaseInput) => submit({ data: input }),
     onSuccess: async () => { await queue.mutateAsync(); },
   });
   const [selectedKey, setSelectedKey] = useState("");

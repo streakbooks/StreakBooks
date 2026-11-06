@@ -5,6 +5,7 @@ import {
   FIRM_ONBOARDING_UNIT_TESTS,
   stagingGateReady,
   localReleasePreflight,
+  extractVitestCounts,
 } from "./firm-onboarding-release-plan.mjs";
 
 describe("Firm onboarding local release plan", () => {
@@ -102,5 +103,30 @@ describe("Firm onboarding release checkout trust", () => {
     assert.equal(localReleasePreflight({
       ...trusted, originMainCommit: "4".repeat(40),
     }).passed, false);
+  });
+});
+
+describe("Firm onboarding release test evidence accuracy", () => {
+  it("parses standard successful Vitest summary with accurate test counts", () => {
+    const output = " Test Files  8 passed (8)\n      Tests  42 passed (42)\n";
+    assert.deepEqual(extractVitestCounts(output), {
+      passedTests: 42, failedTests: 0, skippedTests: 0,
+      passedFiles: 8, failedFiles: 0, skippedFiles: 0,
+    });
+  });
+  it("records failures and skips regardless of summary order", () => {
+    const output =
+      " Test Files  1 failed | 7 passed (8)\n" +
+      "      Tests  2 failed | 1 skipped | 38 passed (41)\n";
+    assert.deepEqual(extractVitestCounts(output), {
+      passedTests: 38, failedTests: 2, skippedTests: 1,
+      passedFiles: 7, failedFiles: 1, skippedFiles: 0,
+    });
+  });
+  it("does not invent counts when no test summary exists", () => {
+    assert.deepEqual(extractVitestCounts("tests never started"), {
+      passedTests: null, failedTests: null, skippedTests: null,
+      passedFiles: null, failedFiles: null, skippedFiles: null,
+    });
   });
 });

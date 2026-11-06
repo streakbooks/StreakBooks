@@ -359,7 +359,9 @@ function FilesPage() {
       if (movedIds.length)
         toast.success(`Moved ${movedIds.length} file${movedIds.length === 1 ? "" : "s"}`);
       if (failedIds.length)
-        toast.error(`${failedIds.length} file${failedIds.length === 1 ? "" : "s"} could not be moved. ${firstError ?? "Please retry."}`);
+        toast.error(
+          `${failedIds.length} file${failedIds.length === 1 ? "" : "s"} could not be moved. ${firstError ?? "Please retry."}`,
+        );
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });

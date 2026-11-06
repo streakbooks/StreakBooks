@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { ReconciliationReviewSignoffPanel } from "@/components/accounting/ReconciliationReviewSignoffPanel";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useCanDo } from "@/hooks/use-can";
@@ -123,8 +124,9 @@ export function PersistentReconciliationReviews({
       <CardHeader>
         <CardTitle className="text-base">Persistent reconciliation review cases</CardTitle>
         <CardDescription>
-          Save and assign exception investigations across sessions. Open, In review and
-          Blocked are operational statuses, not verified resolution or accounting approval.
+          Save and assign investigations across sessions. Open, In review and Blocked
+          are operational statuses. Ready for review and Reviewed record independent
+          assessment, not confirmed correction of an accounting discrepancy.
           This queue is separate from the session-only review checkboxes above.
         </CardDescription>
       </CardHeader>
@@ -211,7 +213,7 @@ export function PersistentReconciliationReviews({
             ) : null}
           </div>
         </div>
-        {selectedSaved && canManage ? (
+        {selectedSaved && canManage && !["ready_for_review","reviewed"].includes(selectedSaved.status) ? (
           <div className="space-y-3 rounded-md border p-3">
             <div className="flex flex-wrap gap-3 items-end">
               <div className="space-y-1">
@@ -290,6 +292,21 @@ export function PersistentReconciliationReviews({
               accounting discrepancy or changes the underlying journal.
             </p>
           </div>
+        ) : null}
+        {selectedSaved ? (
+          <ReconciliationReviewSignoffPanel
+            key={selectedSaved.id}
+            companyId={companyId}
+            caseRecord={selectedSaved}
+            canManage={canManage}
+            onChanged={() => {
+              queue.mutate();
+              const current = activeFindings.find(x => x.fingerprint === selectedKey);
+              if (current) lookup.mutate({
+                source: current.row.source, fingerprint: current.fingerprint,
+              });
+            }}
+          />
         ) : null}
         {lastError || save.isError ? (
           <p role="alert" className="text-sm text-destructive">

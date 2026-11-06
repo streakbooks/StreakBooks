@@ -8,7 +8,7 @@ import type {
 } from "./reconciliation-review";
 
 const SOURCES = ["ledger", "fx_realised", "fx_revaluation", "deferrals", "payroll", "fixed_assets"] as const;
-const STATUSES = ["open", "in_review", "blocked"] as const;
+const STATUSES = ["open", "in_review", "blocked"] as const; // Batch 4 operational status RPC never sets reviewed/ready states.
 const ACTIONS = ["open", "assign", "comment", "status"] as const;
 function limitedString(value: unknown, name: string, max: number, optional = false): string | null {
   if (value === null || value === undefined) {
@@ -40,7 +40,7 @@ export const listReconciliationReviewCases = createServerFn({ method: "GET" })
     await assertCompanyPermission(context.supabase, data.companyId, "accounting.view");
     const { data: rows, error } = await context.supabase
       .from("reconciliation_review_cases" as never)
-      .select("id,company_id,source_type,finding_fingerprint,severity,title,detail,source_reference,journal_id,status,assigned_to,version,created_at,updated_at,created_by,updated_by" as never)
+      .select("id,company_id,source_type,finding_fingerprint,severity,title,detail,source_reference,journal_id,status,assigned_to,version,created_at,updated_at,created_by,updated_by,evidence_url,evidence_added_by,evidence_added_at,submitted_by,submitted_at,reviewed_by,reviewed_at" as never)
       .eq("company_id" as never, data.companyId as never)
       .order("updated_at" as never, { ascending: false })
       .limit(101);
@@ -68,7 +68,7 @@ export const getReconciliationReviewCase = createServerFn({ method: "GET" })
     await assertCompanyPermission(context.supabase, data.companyId, "accounting.view");
     const { data: row, error } = await context.supabase
       .from("reconciliation_review_cases" as never)
-      .select("id,company_id,source_type,finding_fingerprint,severity,title,detail,source_reference,journal_id,status,assigned_to,version,created_at,updated_at,created_by,updated_by" as never)
+      .select("id,company_id,source_type,finding_fingerprint,severity,title,detail,source_reference,journal_id,status,assigned_to,version,created_at,updated_at,created_by,updated_by,evidence_url,evidence_added_by,evidence_added_at,submitted_by,submitted_at,reviewed_by,reviewed_at" as never)
       .eq("company_id" as never, data.companyId as never)
       .eq("source_type" as never, data.source as never)
       .eq("finding_fingerprint" as never, data.fingerprint as never)

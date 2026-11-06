@@ -269,7 +269,11 @@ export function FirmClientPortfolio({
             change accounting access.
           </p>
         </div>
-        <Button variant="outline" disabled={!filtered.length} onClick={exportVisible}>
+        <Button
+          variant="outline"
+          disabled={!filtered.length || profileUnavailable}
+          onClick={exportVisible}
+        >
           Export filtered clients (CSV)
         </Button>
       </div>

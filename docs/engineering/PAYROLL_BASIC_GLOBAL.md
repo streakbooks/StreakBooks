@@ -386,3 +386,33 @@ and reversal verification, full PostgreSQL fixture execution, application
 build/typecheck/lint and Vercel deployment verification remain pending. The
 current safeguard rejects unsupported foreign-bank posting; it does not add
 currency conversion.
+
+
+### Employee CSV import concurrency/review safety (November 6, 2026)
+
+The Payroll employee import now guards against concurrent or rapid repeated
+Import actions using a synchronous in-flight ref, instead of depending on
+React's asynchronous disabled-button render alone.
+
+- Import preview still compares against the **full, unfiltered organisation
+  employee ID list** and never updates existing employees.
+- Confirmation now **re-fetches** that full list. Employee IDs created by
+  another session between review and confirmation are skipped instead of
+  causing an avoidable import stop. The existing SQL RPC independently rejects
+  collisions even if they occur after this last check.
+- Preview/confirmation share a tested pure
+  `planPayrollEmployeeImport` helper. Blank IDs intentionally remain distinct
+  new employees with server-allocated employee numbers; duplicates present in
+  a batch cannot be attempted twice.
+- Progress now reports **processed** rows, including new skips, and success
+  feedback counts already-existing and newly-skipped IDs.
+- The in-flight lock is released in each `finally` path; confirmation UI
+  stays closed after batch completion and the employee list is invalidated.
+- Added `src/lib/payroll/employee-import-plan.test.ts`: dedicated Vitest
+  cases for stale IDs, blank IDs, within-file duplicates and whitespace.
+  The complete repository Vitest suite was not run. Direct execution of
+  current committed helper source passed **9/9** focused scenarios, with
+  **8/8** component/source assertions.
+- A mid-batch SQL failure still leaves earlier saved rows in place and
+  prevents later writes. **The CSV import is not an atomic DB transaction**.
+  Users continue to receive a partial-success warning if this occurs.

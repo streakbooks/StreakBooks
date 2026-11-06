@@ -279,43 +279,147 @@ function FixedAssetsPage() {
             </Button>
           </div>
           {d.assets.length > 0 ? (
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="relative min-w-[220px] flex-1">
-                <Search
-                  aria-hidden="true"
-                  className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-                />
-                <Input
-                  aria-label="Search fixed assets"
-                  className="pl-9"
-                  placeholder="Search asset number, name, description or notes"
-                  value={assetSearch}
-                  onChange={(event) => setAssetSearch(event.target.value)}
-                />
+            <div className="space-y-2 rounded-lg border p-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="relative min-w-[220px] flex-1">
+                  <Search
+                    aria-hidden="true"
+                    className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                  />
+                  <Input
+                    aria-label="Search fixed assets"
+                    className="pl-9"
+                    placeholder="Search asset, notes, type or account"
+                    value={assetSearch}
+                    onChange={(event) => setAssetSearch(event.target.value)}
+                  />
+                </div>
+                <select
+                  aria-label="Filter asset status"
+                  className="h-9 rounded-md border bg-background px-3 text-sm"
+                  value={assetStatus}
+                  onChange={(event) =>
+                    setAssetStatus(event.target.value as "all" | "active" | "disposed")
+                  }
+                >
+                  <option value="all">All statuses</option>
+                  <option value="active">Active</option>
+                  <option value="disposed">Disposed</option>
+                </select>
+                <div className="min-w-[170px] flex-1 sm:max-w-[250px]">
+                  <LookupSelect
+                    ariaLabel="Filter by asset type"
+                    value={assetTypeId}
+                    onChange={setAssetTypeId}
+                    placeholder="All asset types"
+                    searchPlaceholder="Search asset types"
+                    allowClear
+                    companyId={companyId}
+                    options={d.types.map((type) => ({
+                      id: type.id,
+                      name: type.name,
+                      label: type.name,
+                      keywords: type.name,
+                    }))}
+                  />
+                </div>
+                <div className="min-w-[185px] flex-1 sm:max-w-[290px]">
+                  <LookupSelect
+                    ariaLabel="Filter by asset GL account"
+                    value={assetAccountId}
+                    onChange={setAssetAccountId}
+                    placeholder="All asset accounts"
+                    searchPlaceholder="Search GL accounts"
+                    allowClear
+                    companyId={companyId}
+                    options={d.accounts
+                      .filter((account) => d.assets.some((a) => a.asset_account_id === account.id))
+                      .map((account) => ({
+                        id: account.id,
+                        name: account.name,
+                        label: account.code + " · " + account.name,
+                        keywords: account.code + " " + account.name,
+                      }))}
+                  />
+                </div>
               </div>
-              <select
-                aria-label="Filter asset status"
-                className="h-9 rounded-md border bg-background px-3 text-sm"
-                value={assetStatus}
-                onChange={(event) =>
-                  setAssetStatus(event.target.value as "all" | "active" | "disposed")
-                }
-              >
-                <option value="all">All statuses</option>
-                <option value="active">Active</option>
-                <option value="disposed">Disposed</option>
-              </select>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => exportAssetRegisterCsv(visibleAssets, accumulatedOf)}
-              >
-                <Download className="mr-2 size-4" /> Export CSV
-              </Button>
-              <span className="text-xs text-muted-foreground">
-                {visibleAssets.length} of {d.assets.length} assets
-              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <select
+                  aria-label="Sort fixed assets"
+                  className="h-9 rounded-md border bg-background px-3 text-sm"
+                  value={assetSort}
+                  onChange={(event) => setAssetSort(event.target.value as AssetRegisterSort)}
+                >
+                  <option value="number">Sort: Asset number</option>
+                  <option value="name">Sort: Name</option>
+                  <option value="purchase">Sort: Purchase date</option>
+                  <option value="cost">Sort: Original cost</option>
+                </select>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  aria-label={sortDescending ? "Sort ascending" : "Sort descending"}
+                  onClick={() => setSortDescending((current) => !current)}
+                >
+                  <ArrowDownUp className="mr-2 size-4" />
+                  {sortDescending ? "Descending" : "Ascending"}
+                </Button>
+                {filterActive ? (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setAssetSearch("");
+                      setAssetStatus("all");
+                      setAssetTypeId("");
+                      setAssetAccountId("");
+                    }}
+                  >
+                    Clear filters
+                  </Button>
+                ) : null}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={!exportReady}
+                  title={
+                    exportReady
+                      ? undefined
+                      : "A complete, current depreciation balance is required to export"
+                  }
+                  onClick={() =>
+                    exportAssetRegisterCsv(
+                      visibleAssets,
+                      accumulatedOf,
+                      today,
+                      new Map(d.types.map((type) => [type.id, type.name])),
+                      new Map(
+                        d.accounts.map((account) => [
+                          account.id,
+                          account.code + " · " + account.name,
+                        ]),
+                      ),
+                    )
+                  }
+                >
+                  <Download className="mr-2 size-4" /> Export CSV
+                </Button>
+                <span className="text-xs text-muted-foreground">
+                  {visibleAssets.length} of {d.assets.length} assets
+                </span>
+              </div>
             </div>
+          ) : null}
+          {register.isError ? (
+            <Alert variant="destructive">
+              <AlertDescription className="flex flex-wrap items-center gap-2">
+                Depreciation balances could not be loaded. Disposal and balance exports are paused
+                until a fresh register is available. {friendlyAuthError(register.error)}
+                <Button size="sm" variant="outline" onClick={() => void register.refetch()}>
+                  Retry balances
+                </Button>
+              </AlertDescription>
+            </Alert>
           ) : null}
           {d.assets.length === 0 ? (
             <EmptyState

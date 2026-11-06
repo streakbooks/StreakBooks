@@ -114,3 +114,72 @@ export function planDepreciationMonths(
     lastPeriodEnd: periodEnds[periodEnds.length - 1]!,
   };
 }
+
+/**
+ * Server-side posting request guard, independent of UI prompts.
+ * Never silently deduplicate, reorder or skip a posting period: an API caller
+ * must explicitly request consecutive chronological month ends (max 36).
+ */
+export function validateDepreciationPostingPeriods(
+  requested: readonly string[],
+  latestAllowedMonthEnd: string,
+): string[] {
+  if (!Array.isArray(requested) || requested.length === 0) {
+    throw new Error("Choose at least one depreciation month.");
+  }
+  if (requested.length > 36) {
+    throw new Error("Run at most 36 consecutive months at a time.");
+  }
+  if (
+    !/^\\d{4}-(0[1-9]|1[0-2])-\\d{2}$/.test(latestAllowedMonthEnd) ||
+    Number(latestAllowedMonthEnd.slice(0, 4)) === 0 ||
+    monthEnd(latestAllowedMonthEnd) !== latestAllowedMonthEnd
+  ) {
+    throw new Error("Invalid permitted posting month.");
+  }
+  for (let i = 0; i < requested.length; i++) {
+    const period = requested[i];
+    if (
+      typeof period !== "string" ||
+      !/^\\d{4}-(0[1-9]|1[0-2])-\\d{2}$/.test(period) ||
+      Number(period.slice(0, 4)) === 0 ||
+      monthEnd(period) !== period
+    ) {
+      throw new Error("Every requested depreciation period must be a real month end.");
+    }
+    if (period > latestAllowedMonthEnd) {
+      throw new Error("Cannot post depreciation for a month that has not started.");
+    }
+    if (i > 0) {
+      const expected = monthEnd(addMonthsIso(requested[i - 1]!.slice(0, 7) + "-01", 1));
+      if (period !== expected) {
+        throw new Error(
+          "Depreciation months must be consecutive, chronological and contain no duplicates.",
+        );
+      }
+    }
+  }
+  return [...requested];
+}
+
+/**
+ * Exact preview/posting sum at API number boundaries. Never round an unsafe
+ * accumulated total using IEEE doubles even when every line is individually safe.
+ */
+export function safeDepreciationTotalMinor(
+  rows: readonly Pick<DepreciationRunRow, "status" | "amount_minor">[],
+  includedStatus: "due" | "posted",
+): number {
+  let total = 0n;
+  for (const row of rows) {
+    if (row.status !== includedStatus) continue;
+    if (!Number.isSafeInteger(row.amount_minor) || row.amount_minor <= 0) {
+      throw new Error("Depreciation includes an invalid positive minor-unit charge.");
+    }
+    total += BigInt(row.amount_minor);
+  }
+  if (total > BigInt(Number.MAX_SAFE_INTEGER)) {
+    throw new Error("Depreciation total exceeds exact API number precision.");
+  }
+  return Number(total);
+}

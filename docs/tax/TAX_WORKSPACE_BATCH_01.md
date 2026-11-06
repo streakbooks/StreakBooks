@@ -358,3 +358,64 @@ npm.cmd run build
 **Status:** Code committed to draft PR #110. CI deliberately not run.
 PostgreSQL, TypeScript, ESLint, unit, browser and staging test results
 remain unverified. No main merge or production deployment.
+
+
+## Continuation — Batch 08: posted credit notes and direct-expense history
+
+### Committed code and regression cases
+- Extended the existing **unapplied** `20261106120000_tax_master_posted_history_guard.sql`
+  migration; no new migration history entry was generated.
+- Added a shared, restricted header trigger for posted sales credit notes,
+  purchase credit notes and direct expenses. Once `posted_journal_id` is set,
+  tax amounts, currencies, accounting dates and relevant expense GL accounts
+  cannot be silently changed; the posted journal reference cannot be cleared.
+- Added BEFORE DELETE protection for posted source headers while allowing
+  deletion of unposted credit-note drafts and their ON DELETE CASCADE lines.
+- Added a separate credit-note source line trigger that locks the parent
+  credit note before INSERT/UPDATE/DELETE, rejects cross-company or moved
+  lines, and blocks mutations after posting.
+- Document status and allocated amounts remain editable so legitimate void
+  and allocation workflows are not blocked.
+- IMPORTANT: credit-note lines do not currently carry tax_code_id; these
+  protections guard historical amounts/source lines, **not** changes to a
+  master tax-code classification that was never referenced by the line.
+  Direct expenses currently carry the tax amount on the header, not in
+  a separate tax-code line.
+- Added fixture tables to
+  `tests/fixtures/tax-master-history/baseline.sql`,
+  `tests/integration/tax-extended-posted-sources.sql`, and additional
+  fixture rows in `tests/fixtures/tax-master-history/posting-race.sql`.
+- The local PostgreSQL runner includes those assertions, followed by the
+  two-session posting test that now covers both credit-note types and
+  direct expenses, alongside invoices and bills.
+- Static checks found and corrected an inadvertently reduced SQL dollar
+  quote delimiter, plus three malformed quoted DELETE assertions.
+  JavaScript test scripts passed syntax parsing. SQL delimiters are now
+  balanced. **Neither is a substitute for execution in PostgreSQL.**
+
+### Verification gates
+1. Create a fresh isolated checkout/worktree so other Cursor work is safe.
+2. Run `npm.cmd run typecheck`, `npm.cmd run lint`,
+   `npm.cmd test -- src/lib/tax` and `npm.cmd run build`.
+3. With Docker Desktop, run
+   `node scripts/test-tax-master-history-postgres.mjs`
+   then `node scripts/test-tax-gl-review-postgres.mjs`.
+4. Against production-compatible staging schema, check sales/supplier credit
+   authorisation, partial allocations, void/reversal, credit refunds and
+   expense payment posting workflows.
+5. Run two-session lock regressions for every source type; review deadlocks,
+   lock timeout, RLS and retry behavior under real posting RPCs.
+6. Benchmark report calculations and confirm country-specific cash-basis
+   handling before deployment or claiming statutory accuracy.
+
+### Remaining limitations
+- The migration and test changes are not deployed and have not passed local
+  PostgreSQL, full TypeScript, ESLint, build, browser or staging checks.
+- Posting history of uncoded legacy lines and account mappings not captured
+  in original source documents cannot be reconstructed automatically.
+- New database triggers may interact with existing product posting code;
+  **do not merge without real posting-workflow regression tests**.
+- Another separately reviewed migration is required if the currently
+  unlinked credit-note lines later receive tax-code identifiers.
+- GitHub CI was deliberately not triggered. PR #110 remains a draft; no
+  main merge or production deployment is claimed.

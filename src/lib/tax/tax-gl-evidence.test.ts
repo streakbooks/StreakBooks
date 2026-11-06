@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { taxGlReviewSnapshot, taxJournalEvidence } from "./tax-gl-evidence";
+import { taxGlReviewSnapshot, taxJournalEvidence, taxGlJournalDigest } from "./tax-gl-evidence";
 import type { PostedLine } from "@/lib/accounting/reporting";
 
 const base = {
@@ -8,7 +8,7 @@ const base = {
   returnOutputMinor:"2000",returnInputMinor:"1000",
   glOutputMinor:"2000",glInputMinor:"1000",journalLines:2,
   documentOutputMinor:"2000",documentInputMinor:"1000",
-  reversalOutputMinor:"0",reversalInputMinor:"0",
+  reversalOutputMinor:"0",reversalInputMinor:"0",journalDigest:"digest-1",
 };
 describe("tax GL review evidence", () => {
   it("preserves exact movement signs and navigable journal IDs", () => {
@@ -25,11 +25,17 @@ describe("tax GL review evidence", () => {
     expect(res.truncated).toBe(true);
     expect(res.rows[0]).toMatchObject({journalId:"j2",accountSide:"input",movementMinor:"1000"});
     expect(lines[0]?.journal_id).toBe("j1");
+    const digest = taxGlJournalDigest(lines);
+    expect(digest).toBe(taxGlJournalDigest([...lines].reverse()));
+    expect(digest).not.toBe(taxGlJournalDigest([
+      {...lines[0]!, credit_minor: 2100n}, lines[1]!,
+    ] as PostedLine[]));
   });
   it("tracks changes to posting component even when net GL amount stays fixed", () => {
     expect(taxGlReviewSnapshot(base)).not.toBe(taxGlReviewSnapshot({
       ...base,documentOutputMinor:"1900",reversalOutputMinor:"100",
     }));
+    expect(taxGlReviewSnapshot(base)).not.toBe(taxGlReviewSnapshot({...base,journalDigest:"digest-2"}));
     expect(taxGlReviewSnapshot(base)).toBe(taxGlReviewSnapshot({...base}));
   });
 });

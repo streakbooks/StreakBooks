@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  isOcrDocument, minorUnits, parseAzureInvoiceSuggestions, OCR_MAX_FILE_BYTES,
+  fillBlankReviewFields, isOcrDocument, minorUnits, parseAzureInvoiceSuggestions, OCR_MAX_FILE_BYTES,
 } from "./ocr-model";
 
 describe("Files OCR suggestion mapping", () => {
@@ -51,6 +51,57 @@ describe("Files OCR suggestion mapping", () => {
     expect(minorUnits(1.234, "USD")).toBeNull();
     expect(minorUnits(-1, "USD")).toBeNull();
     expect(minorUnits(99999999999999, "USD")).toBeNull();
+  });
+
+  it("never overwrites existing values, review status or a valid zero amount", () => {
+    const original = {
+      status: "ready" as const,
+      documentType: "receipt" as const,
+      reference: "MANUAL-01",
+      supplierName: "Already checked",
+      documentDate: "2026-11-01",
+      currencyCode: "INR",
+      totalMinor: 0,
+      note: "Reviewed by staff",
+    };
+    const merged = fillBlankReviewFields(original, {
+      documentType: "bill",
+      reference: "OCR-WRONG",
+      supplierName: "OCR-WRONG",
+      documentDate: "2026-11-05",
+      currencyCode: "USD",
+      totalMinor: 99999,
+    });
+    expect(merged).toEqual(original);
+    expect(merged.status).toBe("ready");
+    const blanks = fillBlankReviewFields({
+      status: "needs_review", documentType: "unclassified",
+      reference: null, supplierName: null, documentDate: null,
+      currencyCode: null, totalMinor: null, note: "Preserve me",
+    }, {
+      documentType: "bill", reference: "BILL-17", totalMinor: 12345,
+    });
+    expect(blanks).toMatchObject({
+      status: "needs_review", documentType: "bill",
+      reference: "BILL-17", totalMinor: 12345, note: "Preserve me",
+    });
+  });
+
+  it("does not accept truncated dates or currency codes", () => {
+    const result = parseAzureInvoiceSuggestions({
+      status: "succeeded",
+      analyzeResult: {
+        documents: [{
+          fields: {
+            InvoiceDate: { valueDate: "2026-11-061" },
+            InvoiceTotal: { valueCurrency: { amount: 10, currencyCode: "USDX" } },
+          },
+        }],
+      },
+    });
+    expect(result.suggestions.documentDate).toBeUndefined();
+    expect(result.suggestions.currencyCode).toBeUndefined();
+    expect(result.suggestions.totalMinor).toBeUndefined();
   });
 
   it("rejects malformed date and no structured document", () => {

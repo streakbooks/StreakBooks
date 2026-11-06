@@ -8,6 +8,7 @@ import { friendlyAuthError } from "@/lib/auth-helpers";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { parseMinorOrThrow } from "@/lib/purchases/money-input";
 import { validCataloguePrice } from "@/lib/products/catalogue-input";
+import { CustomerPriceListDefaults } from "@/components/products/CustomerPriceListDefaults";
 import { listProducts } from "@/lib/products/products.functions";
 import {
   deleteProductPriceOverride,
@@ -441,6 +442,11 @@ export function PriceListsWorkspace({ companyId, currency }: WorkspaceProps) {
           </CardContent>
         </Card>
       ) : null}
+      <CustomerPriceListDefaults
+        companyId={companyId}
+        currency={currency}
+        priceLists={listsQ.data ?? []}
+      />
     </div>
   );
 }

@@ -22,6 +22,8 @@ import {
 import { authoriseCreditNote, saveCreditNoteDraft } from "@/lib/sales/sales-credits.functions";
 import { getSalesDocumentConfig } from "@/lib/sales/sales-config.functions";
 import { listProducts } from "@/lib/products/products.functions";
+import { getCustomerPriceListDefault } from "@/lib/products/customer-price-list.functions";
+import { resolvedDraftPriceList } from "@/lib/products/customer-price-list-rules";
 import {
   listProductPriceLists,
   resolveSalesDraftPriceList,
@@ -133,6 +135,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
   const fetchCustomers = useServerFn(listCustomers);
   const fetchAccounts = useServerFn(listAccounts);
   const fetchProducts = useServerFn(listProducts);
+  const fetchCustomerPriceList = useServerFn(getCustomerPriceListDefault);
   const fetchPriceLists = useServerFn(listProductPriceLists);
   const resolvePriceList = useServerFn(resolveSalesDraftPriceList);
   const fetchSettings = useServerFn(getWorkflowSettings);
@@ -204,7 +207,8 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
   const [sourceInvoiceId, setSourceInvoiceId] = useState(
     existing?.sourceInvoiceId ?? fromInvoiceId ?? "",
   );
-  const [selectedPriceListId, setSelectedPriceListId] = useState("");
+  // null: accept the customer's default; "": explicitly use normal catalogue prices.
+  const [manualPriceListId, setManualPriceListId] = useState<string | null>(null);
   const [applyPriceListOpen, setApplyPriceListOpen] = useState(false);
   const [priceListAmountsTouched, setPriceListAmountsTouched] = useState(false);
   const [lines, setLines] = useState<SalesLineFormState[]>(() =>
@@ -216,6 +220,25 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
   const [defaultsApplied, setDefaultsApplied] = useState(Boolean(existing));
   const [sourceApplied, setSourceApplied] = useState(Boolean(existing));
 
+  const customerDefaultQ = useQuery({
+    queryKey: ["customer-price-list", companyId, contactId, currency],
+    enabled: enabled && isSalesDraft && !existing && Boolean(contactId && currency),
+    queryFn: () => fetchCustomerPriceList({
+      data: {
+        companyId: companyId!,
+        contactId,
+        documentCurrency: currency,
+      },
+    }),
+  });
+  const selectedPriceListId = resolvedDraftPriceList(
+    manualPriceListId,
+    customerDefaultQ.data?.priceListId,
+  );
+  const customerDefaultPending = Boolean(
+    isSalesDraft && !existing && contactId && currency &&
+    manualPriceListId === null && customerDefaultQ.isPending,
+  );
   const selectedPriceList = priceListsQ.data?.find((list) =>
     list.id === selectedPriceListId && list.is_active && list.currency_code === currency,
   );
@@ -261,11 +284,11 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
     [draftPricesReady, lines, draftPriceOverrides, currency],
   );
 
-  // Changing currency resets the selected price list; existing line amounts are not converted.
+  // Changing organisation clears local manual selection; document line values stay untouched.
   useEffect(() => {
-    setSelectedPriceListId("");
+    setManualPriceListId(null);
     setApplyPriceListOpen(false);
-  }, [companyId, currency]);
+  }, [companyId]);
 
   const onDocumentCurrencyChange = (nextCurrency: string) => {
     if (nextCurrency === currency) return;
@@ -278,6 +301,8 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
     ) {
       return;
     }
+    setManualPriceListId("");
+    setApplyPriceListOpen(false);
     setCurrency(nextCurrency);
   };
 
@@ -375,7 +400,17 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
   const sourceLocked = kind === "credit_note" && Boolean(sourceInvoiceId);
 
   const onCustomerChange = (id: string) => {
+    if (id === contactId) return;
+    if (
+      priceListAmountsTouched &&
+      !window.confirm(
+        "Changing customer selects that customer's price-list default, if available. " +
+          "Previously entered unit prices will NOT be changed. Review them before saving. Continue?",
+      )
+    ) return;
     setContactId(id);
+    setManualPriceListId(existing ? "" : null);
+    setApplyPriceListOpen(false);
     if (kind === "credit_note") setSourceInvoiceId("");
     if (kind === "invoice") {
       const c = customers.find((x) => x.id === id);
@@ -768,7 +803,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
                 <Select
                   value={selectedPriceListId || "none"}
                   onValueChange={(value) => {
-                    setSelectedPriceListId(value === "none" ? "" : value);
+                    setManualPriceListId(value === "none" ? "" : value);
                     setApplyPriceListOpen(false);
                   }}
                 >
@@ -802,6 +837,33 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
               you explicitly preview and apply replacements. Saved documents retain their line
               prices; the list selection itself is not stored on the document.
             </p>
+            {customerDefaultPending ? (
+              <p className="text-xs text-muted-foreground">
+                Checking the selected customer's default price list…
+              </p>
+            ) : null}
+            {manualPriceListId === null && customerDefaultQ.data?.reason === "available" ? (
+              <p className="text-xs text-muted-foreground">
+                Customer default selected for this new draft. You can choose a different list.
+              </p>
+            ) : null}
+            {manualPriceListId === null &&
+              customerDefaultQ.data?.reason === "unavailable_or_currency_mismatch" ? (
+              <p className="text-xs text-muted-foreground">
+                The customer has a default list, but it is archived or uses another currency.
+                Catalogue pricing will apply unless you choose an eligible list.
+              </p>
+            ) : null}
+            {manualPriceListId === null && customerDefaultQ.isError ? (
+              <div role="alert" className="flex flex-wrap items-center gap-2">
+                <p className="text-sm text-destructive">
+                  Customer default lookup failed: {friendlyAuthError(customerDefaultQ.error)}
+                </p>
+                <Button size="sm" variant="outline" onClick={() => customerDefaultQ.refetch()}>
+                  Retry
+                </Button>
+              </div>
+            ) : null}
             {priceListsQ.isError ? (
               <p role="alert" className="text-sm text-destructive">
                 Could not load price lists: {friendlyAuthError(priceListsQ.error)}
@@ -858,7 +920,10 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
           onChange={setLines}
           products={(productsQ.data ?? []) as never}
           priceOverrides={draftPricesReady ? draftPriceOverrides : {}}
-          productSelectionDisabled={Boolean(selectedPriceListId) && !draftPricesReady}
+          productSelectionDisabled={
+            customerDefaultPending ||
+            (Boolean(selectedPriceListId) && !draftPricesReady)
+          }
           onPriceListProductSelected={() => setPriceListAmountsTouched(true)}
           accounts={incomeAccounts}
           currency={currency || base}

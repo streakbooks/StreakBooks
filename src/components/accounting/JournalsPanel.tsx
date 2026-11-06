@@ -124,7 +124,7 @@ export function JournalsPanel({
             : sort.key === "date"
               ? j.journal_date
               : sort.key === "source"
-                ? (journalSourceLabel(j.source_type))
+                ? journalSourceLabel(j.source_type)
                 : j.total_debit_minor,
         sort.dir,
       );
@@ -244,7 +244,7 @@ export function JournalsPanel({
           Export displayed journals CSV
         </Button>
         <span className="text-xs text-muted-foreground">
-          Export contains the displayed page only. Sorting also applies within this page.
+          Export contains the displayed page only. Amounts use each journal\'s own currency; amount sorting is not FX-converted.
         </span>
       </div>
 

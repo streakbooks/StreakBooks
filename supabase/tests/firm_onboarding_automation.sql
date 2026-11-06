@@ -40,7 +40,7 @@ DECLARE
   owner_id uuid:=current_setting('test.onboarding_owner')::uuid;
   staff_id uuid:=current_setting('test.onboarding_staff')::uuid;
   foreign_id uuid:=current_setting('test.onboarding_outsider')::uuid;
-  company_id uuid:=current_setting('test.onboarding_company')::uuid;
+  client_id uuid:=current_setting('test.onboarding_company')::uuid;
   foreign_company uuid:=current_setting('test.onboarding_foreign')::uuid;
   fid uuid;
   bad integer;
@@ -50,58 +50,58 @@ BEGIN
   PERFORM set_config('test.onboarding_firm',fid::text,true);
   INSERT INTO public.firm_members(firm_id,user_id,role)
   VALUES(fid,staff_id,'member');
-  PERFORM public.manage_practice_client(fid,company_id,'view',false);
+  PERFORM public.manage_practice_client(fid,client_id,'view',false);
 
   INSERT INTO public.firm_client_onboarding_steps(
     firm_id,company_id,task_key,title,updated_by
-  ) VALUES(fid,company_id,'client_details','Confirm contact',owner_id);
+  ) VALUES(fid,client_id,'client_details','Confirm contact',owner_id);
   INSERT INTO public.firm_client_onboarding_steps(
     firm_id,company_id,task_key,title,depends_on_task_key,assignee_id,
     due_date,reminders_enabled,updated_by
   ) VALUES(
-    fid,company_id,'verify_access','Verify client access','client_details',
+    fid,client_id,'verify_access','Verify client access','client_details',
     staff_id,current_date,true,owner_id
   );
   BEGIN
     UPDATE public.firm_client_onboarding_steps
       SET completed_at=now(),completed_by=owner_id,updated_by=owner_id
-      WHERE firm_id=fid AND company_id=company_id AND task_key='verify_access';
+      WHERE firm_id=fid AND company_id=client_id AND task_key='verify_access';
     RAISE EXCEPTION 'TEST: Dependent step completed before prerequisite';
   EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
   UPDATE public.firm_client_onboarding_steps
     SET completed_at=now(),completed_by=owner_id,updated_by=owner_id
-    WHERE firm_id=fid AND company_id=company_id AND task_key='client_details';
+    WHERE firm_id=fid AND company_id=client_id AND task_key='client_details';
   UPDATE public.firm_client_onboarding_steps
     SET completed_at=now(),completed_by=owner_id,updated_by=owner_id
-    WHERE firm_id=fid AND company_id=company_id AND task_key='verify_access';
+    WHERE firm_id=fid AND company_id=client_id AND task_key='verify_access';
   BEGIN
     UPDATE public.firm_client_onboarding_steps
       SET completed_at=null,completed_by=null,updated_by=owner_id
-      WHERE firm_id=fid AND company_id=company_id AND task_key='client_details';
+      WHERE firm_id=fid AND company_id=client_id AND task_key='client_details';
     RAISE EXCEPTION 'TEST: Reopened a completed prerequisite';
   EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
   UPDATE public.firm_client_onboarding_steps
     SET completed_at=null,completed_by=null,updated_by=owner_id
-    WHERE firm_id=fid AND company_id=company_id AND task_key='verify_access';
+    WHERE firm_id=fid AND company_id=client_id AND task_key='verify_access';
   UPDATE public.firm_client_onboarding_steps
     SET completed_at=null,completed_by=null,updated_by=owner_id
-    WHERE firm_id=fid AND company_id=company_id AND task_key='client_details';
+    WHERE firm_id=fid AND company_id=client_id AND task_key='client_details';
   BEGIN
     UPDATE public.firm_client_onboarding_steps
       SET depends_on_task_key='verify_access',updated_by=owner_id
-      WHERE firm_id=fid AND company_id=company_id AND task_key='client_details';
+      WHERE firm_id=fid AND company_id=client_id AND task_key='client_details';
     RAISE EXCEPTION 'TEST: Circular dependency permitted';
   EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
   BEGIN
     UPDATE public.firm_client_onboarding_steps
       SET assignee_id=foreign_id,updated_by=owner_id
-      WHERE firm_id=fid AND company_id=company_id AND task_key='verify_access';
+      WHERE firm_id=fid AND company_id=client_id AND task_key='verify_access';
     RAISE EXCEPTION 'TEST: Unlinked assignee permitted';
   EXCEPTION WHEN insufficient_privilege THEN NULL; END;
   BEGIN
     UPDATE public.firm_client_onboarding_steps
       SET depends_on_task_key='foreign_step',updated_by=owner_id
-      WHERE firm_id=fid AND company_id=company_id AND task_key='verify_access';
+      WHERE firm_id=fid AND company_id=client_id AND task_key='verify_access';
     RAISE EXCEPTION 'TEST: Missing dependency permitted';
   EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
 
@@ -109,19 +109,19 @@ BEGIN
   INSERT INTO public.firm_onboarding_template_steps(
     firm_id,title,due_in_days,reminders_enabled,created_by,updated_by
   ) VALUES(fid,'Review initial payroll',7,false,owner_id,owner_id);
-  result:=public.apply_firm_onboarding_template(fid,company_id);
+  result:=public.apply_firm_onboarding_template(fid,client_id);
   IF (result->>'added')::integer<>1 THEN
     RAISE EXCEPTION 'Template step not inserted';
   END IF;
   IF NOT EXISTS(
     SELECT 1 FROM public.firm_client_onboarding_steps
-    WHERE firm_id=fid AND company_id=company_id
+    WHERE firm_id=fid AND company_id=client_id
       AND title='Review initial payroll' AND due_date=current_date+7
       AND reminders_enabled=false
   ) THEN
     RAISE EXCEPTION 'Relative due date and reminder settings not copied';
   END IF;
-  result:=public.apply_firm_onboarding_template(fid,company_id);
+  result:=public.apply_firm_onboarding_template(fid,client_id);
   IF (result->>'added')::integer<>0 THEN
     RAISE EXCEPTION 'Template reapply was not idempotent';
   END IF;
@@ -130,11 +130,11 @@ BEGIN
     jsonb_build_object('sub',staff_id,'role','authenticated','aal','aal2')::text,true);
   IF NOT EXISTS(
     SELECT 1 FROM public.firm_client_onboarding_steps
-    WHERE firm_id=fid AND company_id=company_id AND task_key='verify_access'
+    WHERE firm_id=fid AND company_id=client_id AND task_key='verify_access'
   ) THEN RAISE EXCEPTION 'Eligible staff cannot see linked onboarding'; END IF;
   UPDATE public.firm_client_onboarding_steps
     SET note='Unauthorized write',updated_by=staff_id
-    WHERE firm_id=fid AND company_id=company_id AND task_key='verify_access';
+    WHERE firm_id=fid AND company_id=client_id AND task_key='verify_access';
   GET DIAGNOSTICS bad=ROW_COUNT;
   IF bad<>0 THEN RAISE EXCEPTION 'Non-admin edited checklist'; END IF;
 
@@ -142,7 +142,7 @@ BEGIN
     jsonb_build_object('sub',owner_id,'role','authenticated','aal','aal1')::text,true);
   IF EXISTS(
     SELECT 1 FROM public.firm_client_onboarding_steps
-    WHERE firm_id=fid AND company_id=company_id
+    WHERE firm_id=fid AND company_id=client_id
   ) THEN RAISE EXCEPTION 'MFA protection bypassed'; END IF;
 END $$;
 RESET ROLE;
@@ -150,7 +150,7 @@ DO $$
 DECLARE
   fid uuid:=current_setting('test.onboarding_firm')::uuid;
   staff_id uuid:=current_setting('test.onboarding_staff')::uuid;
-  company_id uuid:=current_setting('test.onboarding_company')::uuid;
+  client_id uuid:=current_setting('test.onboarding_company')::uuid;
   foreign_id uuid:=current_setting('test.onboarding_outsider')::uuid;
   first_run integer;
   repeat_run integer;
@@ -162,12 +162,12 @@ BEGIN
   END IF;
   IF NOT EXISTS(
     SELECT 1 FROM public.action_notifications
-    WHERE company_id=company_id AND recipient_user_id=staff_id
+    WHERE company_id=client_id AND recipient_user_id=staff_id
       AND event_key LIKE 'firm-onboard-due:%'
   ) THEN RAISE EXCEPTION 'Assignee notification not delivered in-app'; END IF;
   IF EXISTS(
     SELECT 1 FROM public.action_notifications
-    WHERE company_id=company_id AND recipient_user_id=foreign_id
+    WHERE company_id=client_id AND recipient_user_id=foreign_id
       AND event_key LIKE 'firm-onboard-due:%'
   ) THEN RAISE EXCEPTION 'Unauthorized recipient notified'; END IF;
   IF NOT EXISTS(

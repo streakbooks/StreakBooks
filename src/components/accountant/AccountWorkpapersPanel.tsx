@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { useCanDo } from "@/hooks/use-can";
 import { WorkpaperPeriodComparisonPanel } from "@/components/accountant/WorkpaperPeriodComparisonPanel";
+import { AiWorkpaperEvidencePanel } from "@/components/accountant/AiWorkpaperEvidencePanel";
 import { WorkpaperReconcilingItemsPanel } from "@/components/accountant/WorkpaperReconcilingItemsPanel";
 import { useFormat } from "@/hooks/use-format";
 import {
@@ -337,6 +338,17 @@ export function AccountWorkpapersPanel({
               The ledger changed. Reopen and reprepare before review.
             </p>
           )}
+          <AiWorkpaperEvidencePanel
+            key={selected.account_id + ":" + asOf}
+            companyId={companyId}
+            accountId={selected.account_id}
+            asOf={asOf}
+            canStageReference={canManage && (!saved || saved.status === "draft")}
+            onUseReference={(value) => {
+              setReference(value);
+              toast.message("AI review reference staged. Verify supporting documentation and save the workpaper manually.");
+            }}
+          />
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1">
               <Label>Supporting balance ({currency})</Label>

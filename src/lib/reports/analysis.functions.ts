@@ -1,3 +1,7 @@
+import { parseAccountingBasis, type AccountingBasis } from "./accounting-basis";
+import { resolveReportingBasis } from "./accounting-basis.server";
+import { loadCashReportLines } from "./cash-report.server";
+import { cashDocumentAnalysis } from "./cash-analysis.server";
 import { loadDepreciationExpenseAccounts } from "./depreciation-accounts.server";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -16,13 +20,13 @@ import { buildIndirectCashFlow } from "@/lib/reports/indirect-cash-flow";
 import { priorPeriodRange } from "@/lib/reports/statements";
 import { callRpc, companyIdOf, isoDate, num, REPORT_MIGRATION } from "@/lib/planning/rpc";
 
-type Range = { companyId: string; from: string; to: string };
+type Range = { companyId: string; from: string; to: string; basis?: AccountingBasis | undefined };
 
 function rangeInput(input: Range): Range {
   const from = isoDate(input?.from, "From");
   const to = isoDate(input?.to, "To");
   if (to < from) throw new Error("'To' date cannot be before 'From' date.");
-  return { companyId: companyIdOf(input), from, to };
+  return { companyId: companyIdOf(input), from, to, basis: parseAccountingBasis(input.basis) };
 }
 
 function asOfInput(input: { companyId: string; asOf: string }) {
@@ -118,6 +122,46 @@ export const getGlSummary = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
     const sb = context.supabase as unknown as Sb;
+    const accountingBasis = await resolveReportingBasis(sb, data.companyId, data.basis);
+    if (accountingBasis === "cash") {
+      const [meta, lines] = await Promise.all([
+        loadCompanyMeta(sb, data.companyId),
+        loadCashReportLines(sb, data.companyId, "0001-01-01", data.to),
+      ]);
+      const byAccount = new Map<string, GlSummaryRow>();
+      for (const line of lines) {
+        const row = byAccount.get(line.account_id) ?? {
+          account_id: line.account_id,
+          account_code: line.account_code,
+          account_name: line.account_name,
+          account_type: line.account_type,
+          opening_minor: 0,
+          debit_minor: 0,
+          credit_minor: 0,
+          closing_minor: 0,
+          line_count: 0,
+        };
+        const debit = Number(line.debit_minor),
+          credit = Number(line.credit_minor);
+        if (line.journal_date < data.from) row.opening_minor += debit - credit;
+        else {
+          row.debit_minor += debit;
+          row.credit_minor += credit;
+          row.line_count++;
+        }
+        row.closing_minor += debit - credit;
+        byAccount.set(line.account_id, row);
+      }
+      return {
+        currency: meta.baseCurrency,
+        from: data.from,
+        to: data.to,
+        accountingBasis,
+        rows: [...byAccount.values()]
+          .filter((r) => r.closing_minor || r.line_count)
+          .sort((a, b) => a.account_code.localeCompare(b.account_code)),
+      };
+    }
     const [meta, rows] = await Promise.all([
       loadCompanyMeta(sb, data.companyId),
       rpcReport<GlSummaryRow>(
@@ -127,7 +171,7 @@ export const getGlSummary = createServerFn({ method: "GET" })
         ["opening_minor", "debit_minor", "credit_minor", "closing_minor", "line_count"],
       ),
     ]);
-    return { currency: meta.baseCurrency, from: data.from, to: data.to, rows };
+    return { currency: meta.baseCurrency, from: data.from, to: data.to, accountingBasis, rows };
   });
 
 /* ------------------------------------------------------------------ */
@@ -150,6 +194,23 @@ export const getSalesByContact = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
     const sb = context.supabase as unknown as Sb;
+    const accountingBasis = await resolveReportingBasis(sb, data.companyId, data.basis);
+    if (accountingBasis === "cash") {
+      const [meta, result] = await Promise.all([
+        loadCompanyMeta(sb, data.companyId),
+        cashDocumentAnalysis(sb, data.companyId, data.from, data.to, "income", false),
+      ]);
+      return {
+        currency: meta.baseCurrency,
+        from: data.from,
+        to: data.to,
+        accountingBasis,
+        rows: result.contacts.map(({ document_count, ...row }) => ({
+          ...row,
+          invoice_count: document_count,
+        })),
+      };
+    }
     const [meta, rows] = await Promise.all([
       loadCompanyMeta(sb, data.companyId),
       rpcReport<SalesByContactRow>(
@@ -159,7 +220,7 @@ export const getSalesByContact = createServerFn({ method: "GET" })
         ["invoice_count", "credit_note_count", "net_minor", "tax_minor", "gross_minor"],
       ),
     ]);
-    return { currency: meta.baseCurrency, from: data.from, to: data.to, rows };
+    return { currency: meta.baseCurrency, from: data.from, to: data.to, accountingBasis, rows };
   });
 
 export type SalesByItemRow = {
@@ -178,6 +239,20 @@ export const getSalesByItem = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
     const sb = context.supabase as unknown as Sb;
+    const accountingBasis = await resolveReportingBasis(sb, data.companyId, data.basis);
+    if (accountingBasis === "cash") {
+      const [meta, result] = await Promise.all([
+        loadCompanyMeta(sb, data.companyId),
+        cashDocumentAnalysis(sb, data.companyId, data.from, data.to, "income", true),
+      ]);
+      return {
+        currency: meta.baseCurrency,
+        from: data.from,
+        to: data.to,
+        accountingBasis,
+        rows: result.items,
+      };
+    }
     const [meta, rows] = await Promise.all([
       loadCompanyMeta(sb, data.companyId),
       rpcReport<SalesByItemRow>(
@@ -187,7 +262,7 @@ export const getSalesByItem = createServerFn({ method: "GET" })
         ["quantity", "line_count", "net_minor", "tax_minor"],
       ),
     ]);
-    return { currency: meta.baseCurrency, from: data.from, to: data.to, rows };
+    return { currency: meta.baseCurrency, from: data.from, to: data.to, accountingBasis, rows };
   });
 
 export type PurchasesBySupplierRow = {
@@ -206,6 +281,23 @@ export const getPurchasesBySupplier = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "reports.view");
     const sb = context.supabase as unknown as Sb;
+    const accountingBasis = await resolveReportingBasis(sb, data.companyId, data.basis);
+    if (accountingBasis === "cash") {
+      const [meta, result] = await Promise.all([
+        loadCompanyMeta(sb, data.companyId),
+        cashDocumentAnalysis(sb, data.companyId, data.from, data.to, "expense", false),
+      ]);
+      return {
+        currency: meta.baseCurrency,
+        from: data.from,
+        to: data.to,
+        accountingBasis,
+        rows: result.contacts.map(({ document_count, ...row }) => ({
+          ...row,
+          bill_count: document_count,
+        })),
+      };
+    }
     const [meta, rows] = await Promise.all([
       loadCompanyMeta(sb, data.companyId),
       rpcReport<PurchasesBySupplierRow>(
@@ -215,7 +307,7 @@ export const getPurchasesBySupplier = createServerFn({ method: "GET" })
         ["bill_count", "credit_note_count", "net_minor", "tax_minor", "gross_minor"],
       ),
     ]);
-    return { currency: meta.baseCurrency, from: data.from, to: data.to, rows };
+    return { currency: meta.baseCurrency, from: data.from, to: data.to, accountingBasis, rows };
   });
 
 /* ------------------------------------------------------------------ */
@@ -298,8 +390,20 @@ async function periodFigures(
     cashReceivedMinor: cash.reduce((s, r) => s + r.received_minor, 0),
     cashSpentMinor: cash.reduce((s, r) => s + r.spent_minor, 0),
     closingCashMinor: cash.reduce((s, r) => s + r.closing_minor, 0),
-    receivablesMinor: Number(ar.net),
-    payablesMinor: Number(-ap.net),
+    receivablesMinor: Number(
+      ctx.accountingBasis === "cash"
+        ? bs.rows
+            .filter((r) => ctx.byId.get(r.account_id)?.system_key === "ar")
+            .reduce((sum, r) => sum + r.debit_minor - r.credit_minor, 0n)
+        : ar.net,
+    ),
+    payablesMinor: Number(
+      ctx.accountingBasis === "cash"
+        ? bs.rows
+            .filter((r) => ctx.byId.get(r.account_id)?.system_key === "ap")
+            .reduce((sum, r) => sum + r.credit_minor - r.debit_minor, 0n)
+        : -ap.net,
+    ),
     assetsMinor: Number(bs.assets),
     liabilitiesMinor: Number(bs.liabilities),
     days: daysInclusive(from, to),
@@ -310,7 +414,7 @@ export const getExecutiveSummary = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(rangeInput)
   .handler(async ({ data, context }) => {
-    const ctx = await loadCtx(context.supabase as unknown as Sb, data.companyId);
+    const ctx = await loadCtx(context.supabase as unknown as Sb, data.companyId, data.basis);
     const prior = priorPeriodRange(data.from, data.to);
     const [current, previous] = await Promise.all([
       periodFigures(ctx, data.from, data.to),
@@ -322,6 +426,7 @@ export const getExecutiveSummary = createServerFn({ method: "GET" })
       to: data.to,
       priorFrom: prior.from,
       priorTo: prior.to,
+      accountingBasis: ctx.accountingBasis,
       rows: buildExecutiveSummary(current, previous),
     };
   });
@@ -334,7 +439,7 @@ export const getCashFlowIndirect = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(rangeInput)
   .handler(async ({ data, context }) => {
-    const ctx = await loadCtx(context.supabase as unknown as Sb, data.companyId);
+    const ctx = await loadCtx(context.supabase as unknown as Sb, data.companyId, data.basis);
     const base = ctx.meta.baseCurrency;
     const bankIds = await bankAccountIds(ctx);
     const bankSet = new Set(bankIds);
@@ -353,9 +458,13 @@ export const getCashFlowIndirect = createServerFn({ method: "GET" })
       rows
         .filter((b) => bankSet.has(b.account_id))
         .reduce((n, b) => n + b.debit_minor - b.credit_minor, 0n);
+    const cashLines =
+      ctx.accountingBasis === "cash"
+        ? await loadCashReportLines(ctx.supabase, ctx.meta.id, data.from, data.to)
+        : null;
     const result = buildIndirectCashFlow({
       accounts: ctx.accounts,
-      movements: period.map((b) => ({
+      movements: (cashLines ?? period).map((b) => ({
         accountId: b.account_id,
         debitMinor: Number(b.debit_minor),
         creditMinor: Number(b.credit_minor),
@@ -370,8 +479,11 @@ export const getCashFlowIndirect = createServerFn({ method: "GET" })
       from: data.from,
       to: data.to,
       bankAccountCount: bankIds.length,
+      accountingBasis: ctx.accountingBasis,
       ...result,
       basis:
-        "Indirect method from the posted ledger (year-end closing journals excluded). A gain or loss on disposal stays in net profit and the asset's net book value shows under investing.",
+        ctx.accountingBasis === "cash"
+          ? "Cash basis indirect method from recognized allocations and direct cash movements, reconciled to posted bank balances."
+          : "Indirect method from the posted ledger (year-end closing journals excluded). A gain or loss on disposal stays in net profit and the asset's net book value shows under investing.",
     };
   });

@@ -1,6 +1,7 @@
-import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { getReportingBasis } from "@/lib/reports/accounting-basis.functions";
+import { useMemo } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { getReportById } from "@/lib/reports/catalog";
@@ -68,6 +69,12 @@ function ReportPage() {
   const navigate = useNavigate({ from: Route.fullPath });
   const { company, isPending } = useActiveCompany();
   const report = getReportById(reportId);
+  const loadBasis = useServerFn(getReportingBasis);
+  const companyBasis = useQuery({
+    queryKey: ["reporting-basis", company?.id],
+    enabled: Boolean(company),
+    queryFn: () => loadBasis({ data: { companyId: company!.id } }),
+  });
   const getConfig = useServerFn(getOrganisationConfig);
   const isStatement = report?.runner === "profit_loss" || report?.runner === "balance_sheet";
   const needsDefault =
@@ -87,7 +94,7 @@ function ReportPage() {
       )
     : today;
 
-  if (isPending) return <LoadingState />;
+  if (isPending || (company && companyBasis.isPending)) return <LoadingState />;
   if (!company) {
     return (
       <EmptyState
@@ -143,10 +150,26 @@ function ReportPage() {
     );
   }
 
+  if (companyBasis.isError)
+    return (
+      <Alert>
+        <AlertTitle>Could not load accounting preferences</AlertTitle>
+        <AlertDescription>{companyBasis.error.message}</AlertDescription>
+      </Alert>
+    );
+
   const effectiveSearch =
     needsDefault && reportDefaults.data
-      ? applyOrganisationReportDefaults(search, reportDefaults.data.document)
-      : search;
+      ? applyOrganisationReportDefaults(search, {
+          default_basis: companyBasis.data ?? "accrual",
+          ...reportDefaults.data.document,
+        })
+      : {
+          ...search,
+          ...(search.basis === undefined && search.settings === undefined && report.runner !== "tax"
+            ? { basis: companyBasis.data ?? "accrual" }
+            : {}),
+        };
   const ctx: ReportCtx = {
     reportId: report.id,
     companyId: company.id,

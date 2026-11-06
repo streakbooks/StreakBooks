@@ -120,7 +120,8 @@ describe("feature catalogue", () => {
       .filter(
         (name) =>
           name.endsWith("_entitlement_price_book.sql") ||
-          name.endsWith("_catalogue_entitlements.sql"),
+          name.endsWith("_catalogue_entitlements.sql") ||
+          name.endsWith("_billing_plans_catalogue.sql"),
       )
       .sort()
       .map((name) => readFileSync(`supabase/migrations/${name}`, "utf8"))

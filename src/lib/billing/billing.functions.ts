@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
 import { getRequestHeader } from "@tanstack/react-start/server";
 import { assertCheckoutRegion, resolveBillingRegion } from "@/lib/billing/region";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -19,6 +19,8 @@ import {
   type PayMethodId,
 } from "@/lib/billing/checkout-payload";
 import {
+  DEFAULT_TRIAL_DAYS,
+  DEFAULT_TRIAL_PLAN,
   isBillingCurrency,
   isPlanCode,
   planByCode,
@@ -28,18 +30,32 @@ import {
   type BillingInterval,
   type OfferRule,
   type PlanCode,
+  type PriceQuote,
 } from "@/lib/billing/pricing";
+import { planPrice, type PriceList } from "@/lib/billing/domain/country-pricing";
+import { providerAddsTax, type CheckoutTax } from "@/lib/billing/domain/tax";
 import { assertDiscountCap, assertPriceFloor } from "@/lib/billing/provider-actions";
 import { assertRazorpayTestKey, assertStripeTestKey } from "@/lib/billing/provider-keys";
 
 type Client = SupabaseClient<Database>;
+
+/** Visitor country from the edge, when the call runs inside a server-function request. */
+function visitorCountry(): string | undefined {
+  try {
+    return getRequestHeader("x-vercel-ip-country");
+  } catch {
+    return undefined;
+  }
+}
 
 export type BillingPlanView = {
   code: string;
   name: string;
   audience: string;
   summary: string;
-  monthlyMinor: number;
+  /** Null until the plan has a published price (price-book plans before phase 3). */
+  monthlyMinor: number | null;
+  pricePublished: boolean;
   monthlyGbp: number;
   monthlyUsd: number;
   monthlyInr: number;
@@ -49,6 +65,12 @@ export type BillingPlanView = {
   multiCurrency: boolean;
   highlights: string[];
   active: boolean;
+  isPublic: boolean;
+  rank: number;
+  trialEnabled: boolean;
+  trialDays: number;
+  /** Published country price for display; buying it opens with the phase 5 checkout. */
+  listPrice: { currency: string; monthlyMinor: number | null; yearlyMinor: number | null } | null;
 };
 
 export type BillingOfferView = {
@@ -139,9 +161,19 @@ type PlanRow = {
   highlights: unknown;
   sort_order: number;
   is_active: boolean;
+  is_public?: boolean;
+  plan_rank?: number;
+  trial_enabled?: boolean;
+  trial_days?: number;
+  pricing_source?: string;
 };
 
-function monthlyMinor(plan: PlanRow, currency: BillingCurrency): number {
+function hasLegacyPrice(plan: PlanRow): boolean {
+  return (plan.pricing_source ?? "legacy") === "legacy";
+}
+
+function monthlyMinor(plan: PlanRow, currency: BillingCurrency): number | null {
+  if (!hasLegacyPrice(plan)) return null;
   if (currency === "USD") return plan.monthly_usd;
   if (currency === "INR") return plan.monthly_inr;
   if (currency === "GBP") return plan.monthly_gbp;
@@ -155,6 +187,7 @@ function toPlanView(plan: PlanRow, currency: BillingCurrency): BillingPlanView {
     audience: plan.audience,
     summary: plan.summary,
     monthlyMinor: monthlyMinor(plan, currency),
+    pricePublished: hasLegacyPrice(plan),
     monthlyGbp: plan.monthly_gbp,
     monthlyUsd: plan.monthly_usd,
     monthlyInr: plan.monthly_inr,
@@ -164,6 +197,34 @@ function toPlanView(plan: PlanRow, currency: BillingCurrency): BillingPlanView {
     multiCurrency: plan.multi_currency,
     highlights: highlightsOf(plan.highlights),
     active: plan.is_active,
+    isPublic: plan.is_public ?? true,
+    rank: plan.plan_rank ?? plan.sort_order,
+    trialEnabled: plan.trial_enabled ?? true,
+    trialDays: plan.trial_days ?? DEFAULT_TRIAL_DAYS,
+    listPrice: null,
+  };
+}
+
+function withListPrice(plan: BillingPlanView, list: PriceList | null): BillingPlanView {
+  if (plan.pricePublished || !list) return plan;
+  const month = planPrice(list, plan.code, "month");
+  const year = planPrice(list, plan.code, "year");
+  const currency = month?.currency ?? year?.currency;
+  if (!currency) return plan;
+  const flags = providerFlags();
+  const purchasable =
+    month !== null &&
+    list.billingEnabled === true &&
+    isBillingCurrency(currency) &&
+    (list.providers ?? []).some((provider) => flags[provider]);
+  return {
+    ...plan,
+    pricePublished: purchasable,
+    listPrice: {
+      currency,
+      monthlyMinor: month?.amountMinor ?? null,
+      yearlyMinor: year?.currency === currency ? year.amountMinor : null,
+    },
   };
 }
 
@@ -307,8 +368,8 @@ async function assertOperator(supabase: Client): Promise<void> {
 }
 
 const EMPTY_SETTINGS = {
-  trialDays: 30,
-  trialPlanCode: "standard",
+  trialDays: DEFAULT_TRIAL_DAYS,
+  trialPlanCode: DEFAULT_TRIAL_PLAN as string,
   annualFreeMonths: 2,
   pastDueGraceDays: 7,
 };
@@ -381,17 +442,23 @@ export const getBillingOverview = createServerFn({ method: "GET" })
       annual_free_months: number;
       past_due_grace_days: number;
     } | null;
+    const priceListRes = await supabase.rpc(
+      "billing_price_list" as never,
+      { _country: company.country_code ?? region.country } as never,
+    );
+    const priceList = priceListRes.error ? null : (priceListRes.data as PriceList | null);
+    const plans = ((plansRes.data ?? []) as unknown as PlanRow[]).map((plan) =>
+      withListPrice(toPlanView(plan, currency), priceList),
+    );
+    const trialPlan = plans.find((plan) => plan.code === settingsRow?.trial_plan_code);
     const settings = settingsRow
       ? {
-          trialDays: settingsRow.trial_days,
+          trialDays: trialPlan?.trialDays ?? settingsRow.trial_days,
           trialPlanCode: settingsRow.trial_plan_code,
           annualFreeMonths: settingsRow.annual_free_months,
           pastDueGraceDays: settingsRow.past_due_grace_days,
         }
       : EMPTY_SETTINGS;
-    const plans = ((plansRes.data ?? []) as unknown as PlanRow[]).map((plan) =>
-      toPlanView(plan, currency),
-    );
     const sub = subRes.data as {
       plan_code: string;
       status: string;
@@ -522,13 +589,15 @@ export const previewBillingQuote = createServerFn({ method: "POST" })
     return priced.quote;
   });
 
-export const startBillingTrial = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; planCode: string }) => ({
+export function parseTrialRequest(input: { companyId: string; planCode: string }) {
+  return {
     companyId: assertUuid(input?.companyId),
     planCode: requirePlanCode(input?.planCode),
-  }))
-  .handler(async ({ data, context }) => {
+  };
+}
+
+export const startTrialFor = createServerOnlyFn(
+  async (context: { supabase: Client }, data: ReturnType<typeof parseTrialRequest>) => {
     const { supabase } = context;
     await assertCompanyPermission(supabase, data.companyId, "billing.manage");
     const { data: ends, error } = await supabase.rpc(
@@ -540,30 +609,42 @@ export const startBillingTrial = createServerFn({ method: "POST" })
       throw new Error(error.message);
     }
     return { trialEndsAt: String(ends) };
-  });
+  },
+);
 
-export const createBillingCheckout = createServerFn({ method: "POST" })
+export const startBillingTrial = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: {
-      companyId: string;
-      planCode: string;
-      interval: string;
-      method: string;
-      origin: string;
-      offerCode?: string;
-      billing?: CheckoutBillingInput;
-    }) => ({
-      companyId: assertUuid(input?.companyId),
-      planCode: requirePlanCode(input?.planCode),
-      interval: assertInterval(input?.interval),
-      method: requirePayMethod(input?.method),
-      origin: assertOrigin(input?.origin ?? ""),
-      offerCode: (input?.offerCode ?? "").trim().slice(0, 40),
-      billing: parseCheckoutBilling(input?.billing),
-    }),
-  )
-  .handler(async ({ data, context }) => {
+  .inputValidator(parseTrialRequest)
+  .handler(({ data, context }) => startTrialFor(context, data));
+
+export type CheckoutRequest = {
+  companyId: string;
+  planCode: string;
+  interval: string;
+  method: string;
+  origin: string;
+  offerCode?: string;
+  billing?: CheckoutBillingInput;
+};
+
+export function parseCheckoutRequest(input: CheckoutRequest) {
+  return {
+    companyId: assertUuid(input?.companyId),
+    planCode: requirePlanCode(input?.planCode),
+    interval: assertInterval(input?.interval),
+    method: requirePayMethod(input?.method),
+    origin: assertOrigin(input?.origin ?? ""),
+    offerCode: (input?.offerCode ?? "").trim().slice(0, 40),
+    billing: parseCheckoutBilling(input?.billing),
+  };
+}
+
+/** Opens a provider checkout; shared by the server function and REST v1. */
+export const createCheckoutFor = createServerOnlyFn(
+  async (
+    context: { supabase: Client; userId: string },
+    data: ReturnType<typeof parseCheckoutRequest>,
+  ) => {
     const { supabase, userId } = context;
     await assertCompanyPermission(supabase, data.companyId, "billing.manage");
     const priced = await priceSelection(
@@ -580,6 +661,14 @@ export const createBillingCheckout = createServerFn({ method: "POST" })
     if (!method?.available) {
       throw new Error(method?.reason ?? "That payment method is not available for this currency.");
     }
+    if (priced.checkout && !priced.checkout.billingEnabled) {
+      throw new Error(
+        "Online payment is not open in your country yet. Your trial and records are not affected.",
+      );
+    }
+    if (priced.checkout && !priced.checkout.providers.includes(method.provider)) {
+      throw new Error("That payment method is not offered in your country.");
+    }
     if (priced.quote.recurringMinor < 1)
       throw new Error("The recurring price must be at least one minor unit.");
     // Do not open a second paid subscription for the same organisation.
@@ -592,6 +681,21 @@ export const createBillingCheckout = createServerFn({ method: "POST" })
       throw new Error(
         "This organisation already has a payment subscription. Use Manage billing to change it.",
       );
+    }
+
+    if (priced.checkout) {
+      return openPriceBookCheckout({
+        supabase,
+        userId,
+        companyId: data.companyId,
+        origin: data.origin,
+        billing: data.billing,
+        provider: method.provider,
+        payMethod: method.id,
+        price: priced.checkout,
+        trialEndsAt: existing?.trial_ends_at ?? null,
+        offerCode: priced.quote.offerCode,
+      });
     }
 
     const { data: inserted, error: insertError } = await supabase
@@ -641,7 +745,142 @@ export const createBillingCheckout = createServerFn({ method: "POST" })
       .eq("id" as never, checkoutId as never);
     if (updateError) throw new Error(updateError.message);
     return { url: session.url, provider: method.provider };
+  },
+);
+
+export const createBillingCheckout = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(parseCheckoutRequest)
+  .handler(({ data, context }) => createCheckoutFor(context, data));
+
+async function openPriceBookCheckout(input: {
+  supabase: Client;
+  userId: string;
+  companyId: string;
+  origin: string;
+  billing: CheckoutBilling;
+  provider: "stripe" | "razorpay";
+  payMethod: PayMethodId;
+  price: CheckoutPrice;
+  trialEndsAt: string | null;
+  offerCode: string | null;
+}): Promise<{ url: string; provider: "stripe" | "razorpay" }> {
+  const { ensureProviderPrice, ensureStripeTaxRate } =
+    await import("@/lib/billing/providers/price-mapping.server");
+  const { createStripeClient, stripePriceCheckoutBody } =
+    await import("@/lib/billing/providers/stripe.server");
+  const { createRazorpayClient, razorpaySubscriptionRequest } =
+    await import("@/lib/billing/providers/razorpay.server");
+  if (providerAddsTax(input.price.tax) && input.provider !== "stripe") {
+    throw new Error(
+      "Tax for this country must be included in the price before it can be paid this way.",
+    );
+  }
+  const stripe = input.provider === "stripe" ? createStripeClient() : null;
+  const razorpay = input.provider === "razorpay" ? createRazorpayClient() : null;
+  const providerPriceId = await ensureProviderPrice(input.provider, {
+    planPriceId: input.price.planPriceId,
+    planName: input.price.planName,
+    currency: input.price.currency,
+    amountMinor: input.price.amountMinor,
+    interval: input.price.interval,
   });
+  const { data: inserted, error: insertError } = await input.supabase
+    .from("billing_checkouts" as never)
+    .insert({
+      company_id: input.companyId,
+      plan_code: input.price.planCode,
+      billing_interval: input.price.interval,
+      provider: input.provider,
+      currency: input.price.currency,
+      unit_amount_minor: input.price.amountMinor,
+      plan_price_id: input.price.planPriceId,
+      country_code: input.price.country,
+      provider_price_id: providerPriceId,
+      mode: (stripe ?? razorpay)!.mode,
+      created_by: input.userId,
+    } as never)
+    .select("id" as never)
+    .single();
+  if (insertError) throw new Error(insertError.message);
+  const checkoutId = (inserted as { id: string }).id;
+  const trialEndUnix = trialEndUnixOrNull(input.trialEndsAt, new Date());
+  let providerCouponId: string | null = null;
+  if (input.offerCode) {
+    const { data: reserved, error: reserveError } = await input.supabase.rpc(
+      "billing_attach_coupon" as never,
+      { _checkout_id: checkoutId, _code: input.offerCode } as never,
+    );
+    if (reserveError) throw new Error(reserveError.message);
+    const coupon = reserved as CouponQuote;
+    const { ensureProviderCoupon } = await import("@/lib/billing/providers/price-mapping.server");
+    providerCouponId = await ensureProviderCoupon(input.provider, {
+      code: coupon.code,
+      kind: coupon.kind,
+      percentBps: coupon.percentBps,
+      amountMinor: coupon.amountMinor,
+      currency: input.price.currency,
+      durationType: coupon.durationType,
+      durationMonths: coupon.durationMonths,
+    });
+  }
+  let session: { id: string; url: string };
+  if (stripe) {
+    const secret = process.env["STRIPE_SECRET_KEY"] ?? "";
+    const customerId = await createStripeCustomer(secret, input.billing);
+    const created = await stripe.request(
+      "POST",
+      "checkout/sessions",
+      stripePriceCheckoutBody({
+        priceId: providerPriceId,
+        checkoutId,
+        companyId: input.companyId,
+        planCode: input.price.planCode,
+        successUrl: `${input.origin}/settings?section=subscription&checkout=success`,
+        cancelUrl: `${input.origin}/settings?section=subscription&checkout=cancel`,
+        customerId,
+        email: input.billing.email || null,
+        trialEndUnix,
+        taxRateId:
+          input.price.tax && providerAddsTax(input.price.tax)
+            ? await ensureStripeTaxRate({
+                ruleId: input.price.tax.ruleId,
+                label: input.price.tax.label,
+                rateBps: input.price.tax.rateBps,
+                country: input.price.country,
+              })
+            : null,
+        couponId: providerCouponId,
+      }),
+      `linkbooks-checkout-${checkoutId}`,
+    );
+    session = { id: String(created["id"] ?? ""), url: String(created["url"] ?? "") };
+  } else {
+    const created = await razorpay!.request(
+      "POST",
+      "subscriptions",
+      razorpaySubscriptionRequest({
+        planId: providerPriceId,
+        interval: input.price.interval,
+        checkoutId,
+        companyId: input.companyId,
+        planCode: input.price.planCode,
+        startAtUnix: trialEndUnix,
+        offerId: providerCouponId,
+      }),
+    );
+    session = { id: String(created["id"] ?? ""), url: String(created["short_url"] ?? "") };
+  }
+  if (!session.id || !session.url)
+    throw new Error("The payment provider did not start the checkout.");
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { error: updateError } = await supabaseAdmin
+    .from("billing_checkouts" as never)
+    .update({ provider_session_id: session.id } as never)
+    .eq("id" as never, checkoutId as never);
+  if (updateError) throw new Error(updateError.message);
+  return { url: session.url, provider: input.provider };
+}
 
 function requirePayMethod(value: string | undefined): PayMethodId {
   if (!isPayMethodId(value)) throw new Error("Choose a payment method.");
@@ -674,7 +913,7 @@ async function priceSelection(
   if (!company) throw new Error("Company not found or you do not have access.");
   const region = resolveBillingRegion({
     organisationCountry: company.country_code,
-    visitorCountry: getRequestHeader("x-vercel-ip-country"),
+    visitorCountry: visitorCountry(),
   });
   const currency = region.currency;
   const { data: plan, error: planError } = await supabase
@@ -688,6 +927,15 @@ async function priceSelection(
   }
   const row = plan as PlanRow | null;
   if (!row || !row.is_active) throw new Error("That plan is not available.");
+  if (!hasLegacyPrice(row)) {
+    return priceBookSelection(supabase, companyId, row, interval, offerCode);
+  }
+  const monthly = monthlyMinor(row, currency);
+  if (monthly === null) {
+    throw new Error(
+      `${row.name} cannot be bought online yet. Your trial and existing records are not affected.`,
+    );
+  }
   const { data: settings, error: settingsError } = await supabase
     .from("billing_settings" as never)
     .select("trial_days, annual_free_months" as never)
@@ -697,16 +945,113 @@ async function priceSelection(
   const settingsRow = settings as { trial_days: number; annual_free_months: number } | null;
   const offer = offerCode ? await loadOffer(supabase, offerCode) : null;
   const quote = quotePrice({
-    monthlyMinor: monthlyMinor(row, currency),
+    monthlyMinor: monthly,
     interval,
     annualFreeMonths: settingsRow?.annual_free_months ?? 2,
     currency,
-    trialDays: settingsRow?.trial_days ?? 30,
+    trialDays: row.trial_days ?? settingsRow?.trial_days ?? DEFAULT_TRIAL_DAYS,
     offer,
     now: new Date(),
     planCode,
   });
-  return { quote, currency, country: region.country, planName: row.name };
+  return {
+    quote,
+    currency,
+    country: region.country,
+    planName: row.name,
+    checkout: null as CheckoutPrice | null,
+  };
+}
+
+type CheckoutPrice = {
+  planPriceId: string;
+  planCode: string;
+  planName: string;
+  interval: BillingInterval;
+  currency: string;
+  amountMinor: number;
+  country: string;
+  billingEnabled: boolean;
+  providers: Array<"stripe" | "razorpay">;
+  totalMinor?: number;
+  tax?: CheckoutTax | null;
+  coupon?: CouponQuote | null;
+};
+
+type CouponQuote = {
+  code: string;
+  kind: "percent" | "amount";
+  percentBps: number;
+  amountMinor: number;
+  currency: string;
+  discountMinor: number;
+  durationType: "once" | "repeating" | "forever";
+  durationMonths: number | null;
+};
+
+/** Country price-book plans: the published snapshot for the organisation country. */
+async function priceBookSelection(
+  supabase: Client,
+  companyId: string,
+  row: PlanRow,
+  interval: BillingInterval,
+  offerCode: string,
+) {
+  const { data, error } = offerCode
+    ? await supabase.rpc(
+        "billing_quote_coupon" as never,
+        {
+          _company_id: companyId,
+          _plan_code: row.code,
+          _interval: interval,
+          _code: offerCode,
+        } as never,
+      )
+    : await supabase.rpc(
+        "billing_checkout_price" as never,
+        { _company_id: companyId, _plan_code: row.code, _interval: interval } as never,
+      );
+  if (error) throw new Error(error.message);
+  const checkout = data as CheckoutPrice;
+  const coupon = checkout.coupon ?? null;
+  if (!isBillingCurrency(checkout.currency)) {
+    throw new Error(`Online payment in ${checkout.currency} is not available yet.`);
+  }
+  const amount = checkout.amountMinor;
+  const total = checkout.totalMinor ?? amount;
+  const quote: PriceQuote = {
+    currency: checkout.currency,
+    interval,
+    listMinor: amount,
+    discountMinor: coupon?.discountMinor ?? 0,
+    dueMinor: total,
+    recurringMinor: total,
+    promoDurationMonths:
+      coupon == null
+        ? null
+        : coupon.durationType === "repeating"
+          ? (coupon.durationMonths ?? 1)
+          : coupon.durationType === "once"
+            ? 1
+            : null,
+    freeMonths: 0,
+    trialDays: row.trial_days ?? DEFAULT_TRIAL_DAYS,
+    offerCode: coupon?.code ?? null,
+    ...(checkout.tax && checkout.tax.taxMinor > 0
+      ? {
+          taxMinor: checkout.tax.taxMinor,
+          taxLabel: checkout.tax.label,
+          taxIncluded: !providerAddsTax(checkout.tax),
+        }
+      : {}),
+  };
+  return {
+    quote,
+    currency: checkout.currency,
+    country: checkout.country,
+    planName: row.name,
+    checkout,
+  };
 }
 
 function requirePlanCode(value: string | undefined): PlanCode {
@@ -885,6 +1230,17 @@ export const saveBillingSettings = createServerFn({ method: "POST" })
       } as never)
       .eq("id" as never, true as never);
     if (error) throw new Error(error.message);
+    // Signup trials read the length from the trial plan, so keep it in step.
+    const { error: trialError } = await supabase.rpc(
+      "platform_set_plan_trial" as never,
+      {
+        _plan_code: data.trialPlanCode,
+        _enabled: data.trialDays > 0,
+        _days: data.trialDays > 0 ? data.trialDays : DEFAULT_TRIAL_DAYS,
+        _reason: "Billing settings updated",
+      } as never,
+    );
+    if (trialError && !missingTable(trialError)) throw new Error(trialError.message);
     return { ok: true as const };
   });
 
@@ -916,6 +1272,17 @@ export const saveBillingPlan = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     await assertOperator(supabase);
+    const { data: existing, error: existingError } = await supabase
+      .from("billing_plans" as never)
+      .select("*" as never)
+      .eq("code" as never, data.code as never)
+      .maybeSingle();
+    if (existingError) throw new Error(existingError.message);
+    if (existing && !hasLegacyPrice(existing as unknown as PlanRow)) {
+      throw new Error(
+        "This plan is priced from the price book. Change its limits as a new plan version instead.",
+      );
+    }
     assertPriceFloor("GBP", "month", data.monthlyGbp);
     assertPriceFloor("USD", "month", data.monthlyUsd);
     assertPriceFloor("INR", "month", data.monthlyInr);

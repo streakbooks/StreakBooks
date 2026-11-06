@@ -1,3 +1,4 @@
+import { filterCashEntries } from "./cash-report";
 import { cashLedger } from "./cash-ledger";
 import { fiscalYearStart } from "@/lib/accounting/fiscal-year";
 import type { ReportingFacts } from "./report-document";
@@ -19,8 +20,6 @@ export function cashStandardFacts(
     input.baseCurrency !== base.company.baseCurrency
   )
     throw new Error("Cash facts must match the requested company and base currency");
-  if (settings.filters.clauses.length)
-    throw new Error("Clear accrual posted-line filters before running cash basis");
   const plan = standardPeriods(
     report,
     base.from,
@@ -59,7 +58,11 @@ export function cashStandardFacts(
       base.company.fyEndDay ?? 31,
     );
     if (report === "balance-sheet") {
-      const entries = cashLedger(input, { from: "0001-01-01", to: period.to });
+      const entries = filterCashEntries(
+        cashLedger(input, { from: "0001-01-01", to: period.to }),
+        input,
+        settings.filters,
+      );
       return {
         ...period,
         fyStart,
@@ -71,7 +74,7 @@ export function cashStandardFacts(
     return {
       ...period,
       fyStart,
-      period: balances(cashProfitLoss(input, period)),
+      period: balances(filterCashEntries(cashProfitLoss(input, period), input, settings.filters)),
       bsPrior: [],
       bsCurrent: [],
     };

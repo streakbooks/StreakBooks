@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import { Download, Loader2, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,6 +47,11 @@ export function DataTableToolbar({
   summary?: ReactNode;
   exportDisabled?: boolean;
 }) {
+  const searchRef = useRef<HTMLInputElement>(null);
+  const clearSearch = () => {
+    onSearchChange?.("");
+    searchRef.current?.focus();
+  };
   if (selectedCount > 0) {
     return (
       <div
@@ -80,12 +85,25 @@ export function DataTableToolbar({
             aria-hidden
           />
           <Input
+            ref={searchRef}
             className="pl-9 pr-10"
             type="search"
             placeholder={searchPlaceholder}
             aria-label={searchPlaceholder}
             value={search ?? ""}
             onChange={(e) => onSearchChange(e.target.value)}
+            onKeyDown={(event) => {
+              if (
+                event.key !== "Escape" ||
+                event.defaultPrevented ||
+                !search ||
+                event.nativeEvent.isComposing
+              )
+                return;
+              event.preventDefault();
+              event.stopPropagation();
+              clearSearch();
+            }}
           />
           {search ? (
             <Button
@@ -94,7 +112,7 @@ export function DataTableToolbar({
               size="icon"
               className="absolute right-0 top-0 size-9"
               aria-label="Clear search"
-              onClick={() => onSearchChange("")}
+              onClick={clearSearch}
             >
               <X className="size-3.5" aria-hidden />
             </Button>

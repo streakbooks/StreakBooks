@@ -48,12 +48,33 @@ export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
       const pathname = new URL(request.url).pathname;
+      if (pathname.startsWith("/api/v1/")) {
+        const { handleApiV1 } = await import("./lib/billing/api/v1/router.server");
+        return handleApiV1(request);
+      }
       if (
         request.method === "POST" &&
         (pathname === "/api/billing/stripe" || pathname === "/api/billing/razorpay")
       ) {
         const { handleBillingWebhook } = await import("./lib/billing/webhooks");
         return handleBillingWebhook(request);
+      }
+      if (pathname === "/api/billing/webhook-retry") {
+        if (request.method !== "POST") return new Response("Method Not Allowed", { status: 405 });
+        const { authenticateCronRequest } = await import("./integrations/supabase/cron-auth");
+        const authFailure = await authenticateCronRequest(request);
+        if (authFailure) return authFailure;
+        const { retryDueWebhooks } = await import("./lib/billing/webhooks");
+        try {
+          const result = await retryDueWebhooks();
+          return Response.json(result, { headers: { "cache-control": "no-store" } });
+        } catch (error) {
+          console.error(
+            "Billing webhook retry error",
+            error instanceof Error ? error.message : error,
+          );
+          return Response.json({ error: "Billing webhook retry failed" }, { status: 503 });
+        }
       }
       if (
         request.method === "POST" &&

@@ -1,11 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { nextNotificationCursor, notificationCursorFilter } from "./notification-cursor";
+import {
+  nextNotificationCursor,
+  notificationCursorFilter,
+  notificationPageCountMode,
+} from "./notification-cursor";
 
 const stamp = "2026-11-06T12:35:00.123456+00:00";
 const id = "11111111-1111-4111-8111-111111111111";
 const cursor = { priorityRank: 1, createdAt: stamp, id };
 
 describe("Action Center stable keyset pagination", () => {
+  it("counts the complete history once, not after every cursor page", () => {
+    expect(notificationPageCountMode(null)).toBe("exact");
+    expect(notificationPageCountMode(cursor)).toBeUndefined();
+  });
   it("sorts beyond the priority, timestamp and ID cursor", () => {
     expect(notificationCursorFilter(cursor, "priority")).toBe(
       `priority_rank.gt.1,and(priority_rank.eq.1,created_at.lt.${stamp}),` +

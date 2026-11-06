@@ -10,6 +10,7 @@ import {
 import {
   nextNotificationCursor,
   notificationCursorFilter,
+  notificationPageCountMode,
   type NotificationCursor,
 } from "@/lib/notifications/notification-cursor";
 
@@ -76,7 +77,7 @@ export function useActionCenterFeed(
 
       let query = supabase
         .from("action_notification_inbox" as never)
-        .select(SELECT_FIELDS as never, { count: "exact" })
+        .select(SELECT_FIELDS as never, { count: notificationPageCountMode(pageParam) })
         .eq("company_id" as never, companyId as never);
 
       if (category !== "all") query = query.eq("category" as never, category as never);
@@ -136,7 +137,7 @@ export function useActionCenterFeed(
       const received = (data ?? []) as unknown as RankedActionNotification[];
       return {
         rows: received.slice(0, SERVER_PAGE_SIZE),
-        // Only the first page uses the full result count in the UI.
+        // Exact totals are requested only on the first page.
         total: count ?? 0,
         nextCursor: nextNotificationCursor(received, SERVER_PAGE_SIZE),
       };

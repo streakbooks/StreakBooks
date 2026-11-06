@@ -46,3 +46,14 @@ export function nextNotificationCursor<T extends {
     id: last.id,
   };
 }
+
+/**
+ * The first page needs an exact full-result count for the navigation header.
+ * Subsequent pages already use one-row lookahead; avoid repeated expensive
+ * COUNT(*) queries on growing notification history.
+ */
+export function notificationPageCountMode(
+  cursor: NotificationCursor | null,
+): "exact" | undefined {
+  return cursor === null ? "exact" : undefined;
+}

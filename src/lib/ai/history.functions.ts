@@ -3,7 +3,6 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
 import type { AiIntent } from "@/lib/ai/ai.functions";
-
 import type { AiConversationMode } from "@/lib/ai/history-store";
 
 export type AiConversationRow = {

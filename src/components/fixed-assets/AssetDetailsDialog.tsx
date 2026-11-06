@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { friendlyAuthError } from "@/lib/auth-helpers";
@@ -49,6 +50,7 @@ export function AssetDetailsDialog({
   const fmt = useFormat();
   const fetchAsset = useServerFn(getFixedAsset);
   const [schedulePage, setSchedulePage] = useState(0);
+  const [postedPage, setPostedPage] = useState(0);
   const query = useQuery({
     queryKey: ["fixed-assets", companyId, "detail", assetId],
     queryFn: () => fetchAsset({ data: { companyId, assetId } }),
@@ -67,6 +69,7 @@ export function AssetDetailsDialog({
   )?.label;
   const schedule = detail?.schedule ?? [];
   const numberOfPages = Math.ceil(schedule.length / PAGE_SIZE);
+  const postedPages = Math.ceil((detail?.entries.length ?? 0) / PAGE_SIZE);
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -106,7 +109,7 @@ export function AssetDetailsDialog({
                 ["Asset account", accountName(asset.asset_account_id)],
                 ["Accumulated account", accountName(asset.accumulated_account_id)],
                 ["Expense account", accountName(asset.expense_account_id)],
-                ["Source bill", asset.source_bill_id ?? "Not linked"],
+                ["Source bill", asset.source_bill_id ? "Linked" : "Not linked"],
               ].map(([label, value]) => (
                 <div key={label} className="min-w-0">
                   <dt className="text-muted-foreground">{label}</dt>
@@ -114,6 +117,13 @@ export function AssetDetailsDialog({
                 </div>
               ))}
             </dl>
+            {asset.source_bill_id ? (
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/purchases/bills/$billId" params={{ billId: asset.source_bill_id }}>
+                  Open source purchase bill
+                </Link>
+              </Button>
+            ) : null}
             {asset.description || asset.notes ? (
               <div className="space-y-1 rounded-lg border p-4 text-sm">
                 {asset.description ? <p><strong>Description:</strong> {asset.description}</p> : null}
@@ -127,14 +137,50 @@ export function AssetDetailsDialog({
                 <p>
                   Proceeds: {fmt.amount(asset.disposal_proceeds_minor ?? 0, currency)}
                 </p>
-                <p className="break-all text-xs text-muted-foreground">
-                  Journal: {asset.disposal_journal_id ?? "Not linked"}
-                </p>
+                {asset.disposal_journal_id ? (
+                  <Button variant="outline" size="sm" asChild>
+                    <Link
+                      to="/banking/journal/$journalId"
+                      params={{ journalId: asset.disposal_journal_id }}
+                    >
+                      View disposal journal
+                    </Link>
+                  </Button>
+                ) : (
+                  <p className="text-muted-foreground">No journal linked</p>
+                )}
               </div>
             ) : null}
 
             <section className="space-y-2">
-              <h3 className="font-semibold">Posted depreciation ({detail.entries.length})</h3>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="font-semibold">
+                  Posted depreciation ({detail.entries.length})
+                </h3>
+                {postedPages > 1 ? (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={postedPage === 0}
+                      onClick={() => setPostedPage((page) => page - 1)}
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-xs text-muted-foreground">
+                      {postedPage + 1} / {postedPages}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={postedPage >= postedPages - 1}
+                      onClick={() => setPostedPage((page) => page + 1)}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
               {detail.entries.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No depreciation journal entries posted.</p>
               ) : (
@@ -148,13 +194,23 @@ export function AssetDetailsDialog({
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {detail.entries.map((entry) => (
+                      {detail.entries
+                        .slice(postedPage * PAGE_SIZE, (postedPage + 1) * PAGE_SIZE)
+                        .map((entry) => (
                         <TableRow key={entry.id}>
                           <TableCell>{fmt.date(entry.period_end)}</TableCell>
                           <TableCell className="text-right tabular-nums">
                             {fmt.amount(entry.amount_minor, currency)}
                           </TableCell>
-                          <TableCell className="break-all font-mono text-xs">{entry.journal_id}</TableCell>
+                          <TableCell className="text-xs">
+                            <Link
+                              className="font-medium text-primary underline-offset-4 hover:underline"
+                              to="/banking/journal/$journalId"
+                              params={{ journalId: entry.journal_id }}
+                            >
+                              View posted journal
+                            </Link>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

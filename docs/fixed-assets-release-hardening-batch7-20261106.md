@@ -101,3 +101,22 @@ Do not trigger GitHub Actions/CI, merge, modify database environments or deploy 
 - The updated code and focused tests are committed to **draft PR #111**; no merge, deployment or GitHub Actions were performed.
 
 **Progress accounting:** Code batches *6/7 fully completed as committed development batches*; the seventh release-hardening batch has source changes and a successful limited isolated smoke test, but full-project verification remains incomplete. Count **0/7** batches as fully QA-approved and **0/7** as merged or deployed.
+
+
+## Further release-hardening increment — permission gate and local verification command
+
+**Security finding:** The earlier Fixed Assets GL reconciliation reader used only `assertCompanyMember`, which allows an organisation member to load detailed GL balances even without `accounting.view`. The endpoint now uses server-side `assertCompanyPermission(..., "accounting.view")`. The Fixed Assets reconciliation screen shows a clear permission explanation without fetching GL data when that permission is absent. The actual RLS/role integration must still be tested against distinct organisations and roles.
+
+**Local release gate implemented:** `scripts/check-fixed-assets-release.mjs`.
+- Invoked with `node scripts/check-fixed-assets-release.mjs` from a local checkout.
+- Confirms the Git origin is the authorised `linkbusinessadvisory/LinkBooks` repository and does not echo credential-bearing remote URLs.
+- Reports current branch, commit and whether the working tree is dirty, without modifying files.
+- Runs existing `npm` scripts for TypeScript typecheck, ESLint, Fixed Assets Vitest, UI contracts, lookup contracts, navigation contracts and production build, then displays a per-check pass/fail summary and returns nonzero when any check fails.
+- Explicitly does **not** call GitHub Actions, merge, fetch/pull, push, apply SQL migrations or deploy.
+- **Isolated script verification:** `node --check` passed, and a test from a directory without the correct Git origin refused execution with exit code 2. The gate's seven project commands were **not** run in that sandbox, because the private full checkout was unavailable.
+
+**Independent pure-helper smoke test evidence updated:** all **42/42** focused Node test cases passed (0 failed, 0 skipped) in a network-restricted isolated sandbox. Retrieved logs showed `EXIT=0` and `tests 42 / pass 42 / fail 0`. Covers the branch's helper source including the new FX/unlinked and tax-only protections. This is **not** the repository's actual Vitest suite, a UI build or authenticated integration coverage.
+
+**Coordination with main:** PR #140, `feat(accounting): audit Fixed Asset depreciation/disposal posting evidence — batch 1`, has merged into `main`. It changes three additional files outside PR #111, deliberately avoiding overlap with PR #111. Its new pure evidence contracts are **not** yet connected to PR #111's user-facing GL reconciliation, and semantic integration/permission/accessibility tests are still required after bringing the feature branch up to date.
+
+**Release status unchanged:** Batch 7 remains incomplete pending real checkout/full tests, two-tenant RLS role matrix verification, posting and FX fixture tests, browser/mobile QA, main integration, review, and separately verified deployment. The code branch may be mergeable in GitHub but does not qualify as production-ready.

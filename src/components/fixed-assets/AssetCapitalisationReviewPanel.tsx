@@ -83,7 +83,7 @@ export function AssetCapitalisationReviewPanel({
     if (!candidates.data || candidates.isFetching || !asOf || asOf > today) return;
     const csv = capitalisationReviewCsv(filtered, asOf, currency);
     const url = URL.createObjectURL(
-      new Blob(["\\uFEFF", csv], { type: "text/csv;charset=utf-8" }),
+      new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }),
     );
     const anchor = document.createElement("a");
     anchor.href = url;

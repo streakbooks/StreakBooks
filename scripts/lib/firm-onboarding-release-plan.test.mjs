@@ -4,6 +4,8 @@ import {
   firmOnboardingReleaseSteps,
   FIRM_ONBOARDING_UNIT_TESTS,
   stagingGateReady,
+  localReleasePreflight,
+  extractVitestCounts,
 } from "./firm-onboarding-release-plan.mjs";
 
 describe("Firm onboarding local release plan", () => {
@@ -50,10 +52,81 @@ describe("Firm onboarding local release plan", () => {
       E2E_BASE_URL: "https://dedicated-staging.example.invalid",
       E2E_EXPECTED_STAGING_HOST: "dedicated-staging.example.invalid",
       E2E_PRODUCTION_URL: "https://production.example.invalid",
+      E2E_FIRM_TASK_CSV_CANARY: "=SUM(1,1)",
+      E2E_FIRM_RESTRICTED_EMAIL: "restricted@example.invalid",
+      E2E_FIRM_RESTRICTED_PASSWORD: "not-a-real-other-secret",
     }), {
       stagingUrl: "https://dedicated-staging.example.invalid",
       expectedHost: "dedicated-staging.example.invalid",
       productionUrl: "https://production.example.invalid",
+    });
+    assert.throws(() => stagingGateReady({
+      ...env,
+      E2E_BASE_URL: "https://dedicated-staging.example.invalid",
+      E2E_EXPECTED_STAGING_HOST: "dedicated-staging.example.invalid",
+      E2E_PRODUCTION_URL: "https://production.example.invalid",
+    }), /canary/);
+    assert.throws(() => stagingGateReady({
+      ...env,
+      E2E_BASE_URL: "https://dedicated-staging.example.invalid",
+      E2E_EXPECTED_STAGING_HOST: "dedicated-staging.example.invalid",
+      E2E_PRODUCTION_URL: "https://production.example.invalid",
+      E2E_FIRM_TASK_CSV_CANARY: "=SUM(1,1)",
+    }), /distinct restricted/);
+  });
+});
+
+describe("Firm onboarding release checkout trust", () => {
+  const trusted = {
+    branch: "main",
+    commit: "3".repeat(40),
+    originMainCommit: "3".repeat(40),
+    originMatchesRepo: true,
+    workingTreeClean: true,
+    workingTreeStatusKnown: true,
+  };
+
+  it("accepts only a clean main matching the authorized origin/main commit", () => {
+    assert.deepEqual(localReleasePreflight(trusted), { passed: true, blockers: [] });
+  });
+  it("rejects dirty and unknown working-tree state", () => {
+    assert.equal(localReleasePreflight({ ...trusted, workingTreeClean: false }).passed, false);
+    assert.equal(localReleasePreflight({ ...trusted, workingTreeStatusKnown: false }).passed, false);
+  });
+  it("rejects detached and nonmain branches", () => {
+    assert.equal(localReleasePreflight({ ...trusted, branch: "" }).passed, false);
+    assert.equal(localReleasePreflight({ ...trusted, branch: "feature/new" }).passed, false);
+  });
+  it("rejects wrong origin and missing or stale origin/main", () => {
+    assert.equal(localReleasePreflight({ ...trusted, originMatchesRepo: false }).passed, false);
+    assert.equal(localReleasePreflight({ ...trusted, originMainCommit: null }).passed, false);
+    assert.equal(localReleasePreflight({
+      ...trusted, originMainCommit: "4".repeat(40),
+    }).passed, false);
+  });
+});
+
+describe("Firm onboarding release test evidence accuracy", () => {
+  it("parses standard successful Vitest summary with accurate test counts", () => {
+    const output = " Test Files  8 passed (8)\n      Tests  42 passed (42)\n";
+    assert.deepEqual(extractVitestCounts(output), {
+      passedTests: 42, failedTests: 0, skippedTests: 0,
+      passedFiles: 8, failedFiles: 0, skippedFiles: 0,
+    });
+  });
+  it("records failures and skips regardless of summary order", () => {
+    const output =
+      " Test Files  1 failed | 7 passed (8)\n" +
+      "      Tests  2 failed | 1 skipped | 38 passed (41)\n";
+    assert.deepEqual(extractVitestCounts(output), {
+      passedTests: 38, failedTests: 2, skippedTests: 1,
+      passedFiles: 7, failedFiles: 1, skippedFiles: 0,
+    });
+  });
+  it("does not invent counts when no test summary exists", () => {
+    assert.deepEqual(extractVitestCounts("tests never started"), {
+      passedTests: null, failedTests: null, skippedTests: null,
+      passedFiles: null, failedFiles: null, skippedFiles: null,
     });
   });
 });

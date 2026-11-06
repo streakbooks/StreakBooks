@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildBudgetVsActual, type BudgetReportAccount } from "./budget-report";
+import { buildBudgetVsActual, filterProfitLossActivity, parseSafeBudgetMinor, type BudgetReportAccount } from "./budget-report";
 import type { BudgetColumn } from "./budget-math";
 
 const accounts: BudgetReportAccount[] = [
@@ -29,6 +29,48 @@ const sample = {
 };
 
 describe("Budget vs Actual accounting integrity", () => {
+  it("preserves exact posted BIGINT values without first rounding in JavaScript", () => {
+    expect(parseSafeBudgetMinor("9007199254740991", "Budget")).toBe(Number.MAX_SAFE_INTEGER);
+    expect(parseSafeBudgetMinor("-9007199254740991", "Budget")).toBe(Number.MIN_SAFE_INTEGER);
+    expect(parseSafeBudgetMinor(9007199254740991n, "Budget")).toBe(Number.MAX_SAFE_INTEGER);
+    expect(parseSafeBudgetMinor("0", "Actual")).toBe(0);
+  });
+
+  it("rejects unsafe SQL BIGINT strings instead of rounding cents", () => {
+    expect(() => parseSafeBudgetMinor("9007199254740992", "Budget")).toThrow(/safe minor-unit/);
+    expect(() => parseSafeBudgetMinor("-9007199254740992", "Actual")).toThrow(/safe minor-unit/);
+    expect(() => parseSafeBudgetMinor(Number.MAX_SAFE_INTEGER + 1, "Actual")).toThrow(/safe integer/);
+  });
+
+  it("rejects missing, decimal, empty and malformed stored financial amounts", () => {
+    for (const invalid of [null, undefined, "", "1.2", " 12", "12x", 12.1]) {
+      expect(() => parseSafeBudgetMinor(invalid, "Amount")).toThrow();
+    }
+  });
+
+
+  it("excludes balance-sheet journal activity while retaining historical P&L accounts", () => {
+    const historical: BudgetReportAccount[] = [
+      ...accounts,
+      { id: "archived", code: "401", name: "Archived expense", kind: "expense" },
+    ];
+    const ledger = [
+      { accountId: "bank", month: "2026-04-01", debitMinor: 5000, creditMinor: 0 },
+      { accountId: "sales", month: "2026-04-01", debitMinor: 0, creditMinor: 1000 },
+      { accountId: "archived", month: "2026-04-01", debitMinor: 300, creditMinor: 0 },
+    ];
+    const filtered = filterProfitLossActivity(historical, ledger);
+    expect(filtered.map((row) => row.accountId)).toEqual(["sales", "archived"]);
+    const report = buildBudgetVsActual({
+      accounts: historical, budget: [], actuals: filtered, columns,
+    });
+    expect(report.income.totals[0]?.actualMinor).toBe(1000);
+    expect(report.expense.totals[0]?.actualMinor).toBe(300);
+    expect(report.expense.rows.find((row) => row.accountId === "archived")).toBeDefined();
+    expect(ledger).toHaveLength(3);
+  });
+
+
   it("reconciles monthly and YTD income, expense and profit using natural account signs", () => {
     const report = buildBudgetVsActual(sample);
     expect(report.income.totals[0]).toMatchObject({

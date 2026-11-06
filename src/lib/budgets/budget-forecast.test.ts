@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { filterProfitLossActivity } from "./budget-report";
 import {
   buildBudgetForecast,
   FORECAST_PRESETS,
@@ -27,6 +28,28 @@ const actuals = [
 const input = {months,accounts,budget,actuals,completedIndex:2,assumptions:FORECAST_PRESETS.base};
 
 describe("LinkBooks forecast", () => {
+  it("accepts historical P&L actuals while excluding balance-sheet ledger activity", () => {
+    const historical = [
+      ...accounts,
+      { id: "old-expense", code: "599", name: "Archived expense", kind: "expense" as const },
+    ];
+    const posted = [
+      ...actuals,
+      { accountId: "bank", month: months[0]!, debitMinor: 12000, creditMinor: 0 },
+      { accountId: "old-expense", month: months[0]!, debitMinor: 2500, creditMinor: 0 },
+    ];
+    const relevant = filterProfitLossActivity(historical, posted);
+    expect(relevant.some(row => row.accountId === "bank")).toBe(false);
+    const result = buildBudgetForecast({
+      ...input,
+      accounts: historical,
+      actuals: relevant,
+    });
+    expect(result.accounts.find(row => row.accountId === "old-expense")?.months[0]?.forecastMinor)
+      .toBe(2500);
+    expect(result.totals.expense.projectedMinor).toBe(65500);
+  });
+
   it("uses recorded natural actuals then unadjusted budget for remaining months", () => {
     const result=buildBudgetForecast(input);
     expect(result.completedMonths).toBe(3);

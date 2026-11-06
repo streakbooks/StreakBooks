@@ -44,10 +44,24 @@ node scripts/verify-firm-onboarding-release.mjs
 # node scripts/verify-firm-onboarding-release.mjs --skip-install --staging
 ```
 
+The runner **refuses to run checks or issue passing source evidence** if
+the checkout is not clean `main`, the origin is not the authoritative
+`linkbusinessadvisory/LinkBooks` GitHub repository, or local HEAD does not
+match the fetched `origin/main` commit. It rechecks the working tree after
+all test commands. Pull the latest main first (the script does not fetch).
+
 The runner executes `npm ci`, typecheck, lint, lookup/navigation checks,
 repository hygiene, eight onboarding Vitest files, build and bundle checks.
 It produces local JSON evidence at
-`artifacts/firm-onboarding-local-release-YYYY-MM-DD.json`.
+`artifacts/firm-onboarding-local-release-YYYY-MM-DDTHH-MM-SS-sssZ-<commit>.json`.
+Each invocation uses a unique timestamp and commit hash in the filename,
+so dry runs and subsequent executions do not overwrite prior release evidence.
+The script refuses to accept a dirty, detached, non-`main`, stale
+`origin/main`, or unauthorized Git remote; it rechecks the working tree
+after executing tests. All eight prescribed onboarding Vitest suites must
+report passed files, with no skipped or failed tests, for local release
+acceptance.
+
 The report is deliberately **never** labeled production-ready: Vercel
 deployment, real cron executions and human staging acceptance require separate
 evidence. Generated evidence is ignored by Git.
@@ -110,20 +124,26 @@ $env:E2E_PRODUCTION_URL="https://your-production-host.example"
 $env:E2E_EMAIL="<dedicated-staging-account-email>"
 $env:E2E_PASSWORD="<dedicated-staging-account-password>"
 
-# Optional seeded staging-only private task, must begin =, +, - or @.
-# The task must be visible to the authorized staging account.
-# $env:E2E_FIRM_TASK_CSV_CANARY="=SUM(1,1)"
+# Required for the complete release acceptance suite:
+# Create this staging-only private task, beginning =, +, - or @.
+# Confirm that the task is visible to the authorized primary staging account.
+$env:E2E_FIRM_TASK_CSV_CANARY="=SUM(1,1)"
 
-# Optional second member in the SAME practice without access to the
-# above task's client. Must not equal the primary account.
-# $env:E2E_FIRM_RESTRICTED_EMAIL="<restricted-staging-email>"
-# $env:E2E_FIRM_RESTRICTED_PASSWORD="<restricted-staging-password>"
+# Required: second member of the SAME practice who cannot view that
+# task's client. Credentials must be distinct from the primary account.
+$env:E2E_FIRM_RESTRICTED_EMAIL="<restricted-staging-email>"
+$env:E2E_FIRM_RESTRICTED_PASSWORD="<restricted-staging-password>"
 
 npm.cmd run test:e2e -- e2e/firm-onboarding-release.staging.spec.ts
 ```
 
 Do not set `E2E_BASE_URL` to production or run the staging smoke suite
 with real client/customer data. Run only on isolated test accounts.
+
+The staging release runner now fails closed if the CSV canary or second
+restricted account is absent, so optional test skips cannot be mistaken
+for release acceptance. Its JSON output reports successful local checks,
+but **never** marks production readiness without independent evidence.
 
 ## Production release evidence (not yet obtained)
 

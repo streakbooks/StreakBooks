@@ -27,7 +27,7 @@ function parseDateOnly(iso: string): Date {
 }
 
 function formatDateOnly(d: Date): string {
-  const y = d.getUTCFullYear();
+  const y = String(d.getUTCFullYear()).padStart(4, "0");
   const mo = String(d.getUTCMonth() + 1).padStart(2, "0");
   const day = String(d.getUTCDate()).padStart(2, "0");
   return `${y}-${mo}-${day}`;

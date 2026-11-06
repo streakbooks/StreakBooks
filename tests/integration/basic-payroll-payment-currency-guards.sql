@@ -49,6 +49,10 @@ BEGIN
     id, name, country_code, base_currency, fiscal_year_end_month, fiscal_year_end_day,
     timezone, created_by
   ) VALUES (_c, 'Payroll guard test organisation', 'GB', 'GBP', 12, 31, 'UTC', _u);
+  INSERT INTO public.company_members (company_id, user_id, role, status)
+  VALUES (_c, _u, 'owner', 'active');
+  INSERT INTO public.company_tax_settings (company_id) VALUES (_c);
+
   INSERT INTO public.payroll_settings (
     company_id, enabled, operating_country_code, payroll_currency
   ) VALUES (_c, true, 'GB', 'GBP');
@@ -130,6 +134,16 @@ BEGIN
     SET run_id = _run_usd
     WHERE payment_id = _payment AND payslip_id = _slip_gbp;
     RAISE EXCEPTION 'Foreign run reassignment unexpectedly succeeded';
+  EXCEPTION WHEN check_violation THEN
+    IF SQLERRM NOT LIKE 'Payroll allocation company, run, employee or currency mismatch%'
+    THEN RAISE; END IF;
+  END;
+
+  BEGIN
+    UPDATE public.payroll_payment_allocations
+    SET run_employee_id = _re_usd
+    WHERE payment_id = _payment AND payslip_id = _slip_gbp;
+    RAISE EXCEPTION 'Foreign run employee reassignment unexpectedly succeeded';
   EXCEPTION WHEN check_violation THEN
     IF SQLERRM NOT LIKE 'Payroll allocation company, run, employee or currency mismatch%'
     THEN RAISE; END IF;

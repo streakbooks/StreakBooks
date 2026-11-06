@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Copy, Loader2, Trash2 } from "lucide-react";
+import { Copy, GitCompareArrows, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
@@ -10,6 +10,7 @@ import { useFormat } from "@/hooks/use-format";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { fiscalYearStart, todayIso } from "@/lib/accounting/fiscal-year";
 import { nextBudgetYearStart } from "@/lib/budgets/budget-math";
+import { BudgetScenarioComparison } from "@/components/budgets/BudgetScenarioComparison";
 import {
   deleteBudget,
   duplicateBudget,
@@ -70,6 +71,7 @@ function BudgetsPage() {
   );
   const [name, setName] = useState("");
   const [search, setSearch] = useState("");
+  const [showScenarioComparison, setShowScenarioComparison] = useState(false);
   const [copySource, setCopySource] = useState<BudgetSummary | null>(null);
   const [copyName, setCopyName] = useState("");
   const [copyStart, setCopyStart] = useState("");
@@ -146,6 +148,16 @@ function BudgetsPage() {
         description="Plan income and expenses by account and month for a financial year, then compare with actuals."
         actions={
           <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant={showScenarioComparison ? "secondary" : "outline"}
+              disabled={!query.data?.available || query.data.budgets.length < 2}
+              onClick={() => setShowScenarioComparison((value) => !value)}
+              aria-expanded={showScenarioComparison}
+            >
+              <GitCompareArrows className="mr-2 size-4" />
+              Compare budgets
+            </Button>
             <Button asChild variant="outline" size="sm">
               <Link to="/imports" search={{ module: "budgets" }}>
                 Import budget CSV
@@ -304,6 +316,10 @@ function BudgetsPage() {
           </TableBody>
         </Table>
       )}
+
+      {showScenarioComparison && query.data?.available && query.data.budgets.length >= 2 ? (
+        <BudgetScenarioComparison companyId={companyId} budgets={query.data.budgets} />
+      ) : null}
 
       <Dialog
         open={copySource !== null}

@@ -5,6 +5,7 @@
  */
 import { roundDiv, type BudgetAccountKind, type VarianceStatus } from "@/lib/budgets/budget-math";
 import { isYearEndCloseLine } from "@/lib/accounting/reporting";
+import { addDaysIso, addMonthsIso, monthStart } from "@/lib/accounting/fiscal-year";
 
 /**
  * Align dimension actuals with the core P&L/ledger monthly activity reporting
@@ -43,6 +44,23 @@ export function batchPostedLineIds(
     batches.push(ids.slice(i, i + batchSize));
   }
   return batches;
+}
+
+
+/** Default to fully completed months; explicit as-of may include partial current month. */
+export function resolveDimensionActualCutoff(
+  fiscalStart: string,
+  today: string,
+  requestedThrough?: string,
+): { through: string; partialMonth: boolean } {
+  const start = monthStart(fiscalStart);
+  const fiscalEnd = addDaysIso(addMonthsIso(start, 12), -1);
+  const lastCompleted = addDaysIso(monthStart(today), -1);
+  const through = [requestedThrough ?? lastCompleted, today, fiscalEnd].sort()[0]!;
+  return {
+    through,
+    partialMonth: through >= start && through === today && through >= monthStart(today),
+  };
 }
 
 export type DimensionActualAccount = {

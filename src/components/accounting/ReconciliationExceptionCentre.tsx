@@ -7,6 +7,8 @@ import { runLedgerHealthCheck } from "@/lib/accounting/ledger-health.functions";
 import { auditRecentRealisedFx } from "@/lib/accounting/fx-ledger-audit.functions";
 import { auditFxRevaluationLedger } from "@/lib/accounting/fx-revaluation-ledger-audit.functions";
 import { auditDeferralLedger } from "@/lib/accounting/deferral-ledger-audit.functions";
+import { listDeferrals } from "@/lib/accounting/deferrals.functions";
+import { getFxOverview } from "@/lib/accounting/fx.functions";
 import { getPayrollLiabilityRollforward } from "@/lib/accounting/payroll-liability-rollforward.functions";
 import {
   createExceptionSnapshot, exceptionSnapshotCsv, filterExceptionFindings,
@@ -54,6 +56,8 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
   const fetchReval = useServerFn(auditFxRevaluationLedger);
   const fetchDeferral = useServerFn(auditDeferralLedger);
   const fetchPayroll = useServerFn(getPayrollLiabilityRollforward);
+  const fetchSchedules = useServerFn(listDeferrals);
+  const fetchRevaluations = useServerFn(getFxOverview);
   const ledger = useMutation({ mutationFn: () => fetchHealth({ data: { companyId } }) });
   const realised = useMutation({ mutationFn: () => fetchRealised({ data: { companyId } }) });
   const revaluation = useMutation({
@@ -65,6 +69,12 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
   const payroll = useMutation({
     mutationFn: (range: { from: string; to: string }) =>
       fetchPayroll({ data: { companyId, ...range } }),
+  });
+  const recentSchedules = useMutation({
+    mutationFn: () => fetchSchedules({ data: { companyId, page: 1 } }),
+  });
+  const recentRevaluations = useMutation({
+    mutationFn: () => fetchRevaluations({ data: { companyId } }),
   });
   const [rangeFrom, setRangeFrom] = useState("");
   const [rangeTo, setRangeTo] = useState("");
@@ -104,7 +114,8 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
   }, reviewed);
   const reviewedCount = snapshot.findings.filter(row => reviewed.has(row.key)).length;
   const hasPending = ledger.isPending || realised.isPending || revaluation.isPending ||
-    deferrals.isPending || payroll.isPending;
+    deferrals.isPending || payroll.isPending ||
+    recentSchedules.isPending || recentRevaluations.isPending;
   const clearReviews = () => setReviewed(new Set());
   const exportCsv = () => {
     const csv = exceptionSnapshotCsv(snapshot, reviewed);
@@ -166,8 +177,31 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
             <div className="space-y-2 rounded-md border p-3">
               <p className="text-sm font-semibold">Deferral recognition</p>
               <Label htmlFor="exc-schedule">Schedule ID</Label>
-              <Input id="exc-schedule" value={scheduleId} placeholder="Paste UUID from deferral schedule"
+              <Input id="exc-schedule" value={scheduleId} placeholder="Select or enter schedule UUID"
                 onChange={e => { setScheduleId(e.target.value); deferrals.reset(); clearReviews(); }}/>
+              <Button type="button" variant="ghost" size="sm" disabled={hasPending}
+                onClick={() => recentSchedules.mutate()}>
+                {recentSchedules.isPending ? "Loading schedules…" : "Load recent schedules"}
+              </Button>
+              {recentSchedules.data ? (
+                <select aria-label="Recent deferral schedules" value=""
+                  className="w-full rounded-md border bg-background p-2 text-xs"
+                  onChange={e => { setScheduleId(e.target.value); deferrals.reset(); clearReviews(); }}>
+                  <option value="">Choose a schedule</option>
+                  {recentSchedules.data.rows.map(row => (
+                    <option value={row.id} key={row.id}>{row.name} · {row.reference}</option>
+                  ))}
+                </select>
+              ) : null}
+              {recentSchedules.isError ? <p role="alert" className="text-xs text-destructive">
+                Schedules unavailable: {friendlyAuthError(recentSchedules.error)}
+              </p> : null}
+              {recentSchedules.data && recentSchedules.data.total > recentSchedules.data.rows.length ? (
+                <p className="text-xs text-muted-foreground">
+                  Showing latest {recentSchedules.data.rows.length} of {recentSchedules.data.total}.
+                  Older schedules can be entered by UUID.
+                </p>
+              ) : null}
               <Button type="button" variant="outline" size="sm" disabled={!UUID.test(scheduleId) || hasPending}
                 onClick={() => { clearReviews(); deferrals.mutate(scheduleId); }}>
                 Audit selected schedule
@@ -179,8 +213,28 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
             <div className="space-y-2 rounded-md border p-3">
               <p className="text-sm font-semibold">Unrealised FX</p>
               <Label htmlFor="exc-reval">Revaluation run ID</Label>
-              <Input id="exc-reval" value={revalId} placeholder="Paste UUID from revaluation history"
+              <Input id="exc-reval" value={revalId} placeholder="Select or enter revaluation UUID"
                 onChange={e => { setRevalId(e.target.value); revaluation.reset(); clearReviews(); }}/>
+              <Button type="button" variant="ghost" size="sm" disabled={hasPending}
+                onClick={() => recentRevaluations.mutate()}>
+                {recentRevaluations.isPending ? "Loading FX runs…" : "Load recent FX runs"}
+              </Button>
+              {recentRevaluations.data?.available ? (
+                <select aria-label="Recent FX revaluation runs" value=""
+                  className="w-full rounded-md border bg-background p-2 text-xs"
+                  onChange={e => { setRevalId(e.target.value); revaluation.reset(); clearReviews(); }}>
+                  <option value="">Choose a revaluation</option>
+                  {recentRevaluations.data.runs.map(row => (
+                    <option value={row.id} key={row.id}>{row.as_of_date} · Run {row.seq}</option>
+                  ))}
+                </select>
+              ) : null}
+              {recentRevaluations.isError || recentRevaluations.data?.unavailableReason ? (
+                <p role="alert" className="text-xs text-destructive">
+                  FX runs unavailable: {recentRevaluations.data?.unavailableReason ??
+                    friendlyAuthError(recentRevaluations.error)}
+                </p>
+              ) : null}
               <Button type="button" variant="outline" size="sm" disabled={!UUID.test(revalId) || hasPending}
                 onClick={() => { clearReviews(); revaluation.mutate(revalId); }}>
                 Audit selected revaluation

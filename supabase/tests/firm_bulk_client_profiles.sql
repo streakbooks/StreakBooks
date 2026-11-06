@@ -153,6 +153,60 @@ BEGIN
   SELECT count(*) INTO audit_count FROM public.firm_client_profile_audit WHERE firm_id=fid;
   IF audit_count<>5 THEN RAISE EXCEPTION 'Unexpected profile audit count: %',audit_count; END IF;
 
+  -- Bulk tags: add, repeat without version change, remove, clear and audit.
+  pair:=jsonb_build_array(
+    jsonb_build_object('companyId',a,'expectedVersion',3),
+    jsonb_build_object('companyId',b,'expectedVersion',2)
+  );
+  result:=public.bulk_update_firm_client_tags(fid,pair,'add',array['Payroll','Advisory']);
+  if (result->>'updated')::integer<>2 then raise exception 'Bulk tag addition failed'; end if;
+  pair:=jsonb_build_array(
+    jsonb_build_object('companyId',a,'expectedVersion',4),
+    jsonb_build_object('companyId',b,'expectedVersion',3)
+  );
+  result:=public.bulk_update_firm_client_tags(fid,pair,'add',array['Payroll']);
+  if (result->>'unchanged')::integer<>2 then raise exception 'Repeated tag addition advanced version'; end if;
+  result:=public.bulk_update_firm_client_tags(fid,pair,'remove',array['Advisory']);
+  if (result->>'updated')::integer<>2 then raise exception 'Bulk tag removal failed'; end if;
+  pair:=jsonb_build_array(
+    jsonb_build_object('companyId',a,'expectedVersion',5),
+    jsonb_build_object('companyId',b,'expectedVersion',4)
+  );
+  result:=public.bulk_update_firm_client_tags(fid,pair,'replace',array[]::text[]);
+  if (result->>'updated')::integer<>2 then raise exception 'Bulk tag clearing failed'; end if;
+  if (select count(*) from public.firm_client_profiles
+       where firm_id=fid and cardinality(tags)=0)<>2 then
+    raise exception 'Tag clearing did not persist';
+  end if;
+  if (select count(*) from public.firm_client_profile_audit
+       where firm_id=fid and action='updated' and changed_fields @> array['tags']::text[])<>6 then
+    raise exception 'Tag update audit entries missing';
+  end if;
+  begin
+    perform public.bulk_update_firm_client_tags(
+      fid,jsonb_build_array(
+        jsonb_build_object('companyId',a,'expectedVersion',6),
+        jsonb_build_object('companyId',foreign_company,'expectedVersion',0)
+      ),'add',array['Unauthorized']);
+    raise exception 'TEST: Unauthorized mixed tag operation succeeded';
+  exception when insufficient_privilege then null; end;
+  if (select count(*) from public.firm_client_profiles
+       where firm_id=fid and cardinality(tags)>0)<>0 then
+    raise exception 'Unauthorized tag batch partially committed';
+  end if;
+  begin
+    perform public.bulk_update_firm_client_tags(
+      fid,jsonb_build_array(jsonb_build_object('companyId',a,'expectedVersion',5)),
+      'add',array['Stale']);
+    raise exception 'TEST: Stale tag version accepted';
+  exception when serialization_failure then null; end;
+  begin
+    perform public.bulk_update_firm_client_tags(
+      fid,jsonb_build_array(jsonb_build_object('companyId',a,'expectedVersion',6)),
+      'add',array['']);
+    raise exception 'TEST: Empty tag accepted';
+  exception when invalid_parameter_value then null; end;
+
   BEGIN
     INSERT INTO public.firm_client_profile_audit(
       firm_id,company_id,actor_id,action,changed_fields,after_values

@@ -6,6 +6,13 @@ import { prepareBudgetImportCsv } from "@/lib/imports/budget-import";
 import { buildBudgetScenarioComparison } from "@/lib/budgets/budget-scenarios";
 import { validateBudgetDocumentInput } from "@/lib/budgets/budget-document";
 import {
+  validateForecastAssumptions,
+  type ForecastAccount,
+  type ForecastActivity,
+  type ForecastAmount,
+  type ForecastMethod,
+} from "@/lib/budgets/budget-forecast";
+import {
   validateBudgetApprovalAction,
   type BudgetApprovalStatus,
 } from "@/lib/budgets/budget-approval";
@@ -931,4 +938,234 @@ export const getBudgetVsActual = createServerFn({ method: "GET" })
       notStarted: false,
       unbudgetedActualsMinor: unbudgeted,
     };
+  });
+
+
+export type SavedBudgetForecastScenario = {
+  id: string;
+  name: string;
+  method: ForecastMethod;
+  incomeBps: number;
+  expenseBps: number;
+  notes: string | null;
+  updatedAt: string;
+  createdAt: string;
+};
+export type ForecastScenarioEvent = {
+  id:string;
+  scenarioId:string;
+  action:"created"|"updated"|"deleted";
+  recordedAt:string;
+  recordedBy:string|null;
+  name:string;
+};
+export type ForecastSourceData = {
+  budget: BudgetSummary;
+  currency: string;
+  months: string[];
+  accounts: ForecastAccount[];
+  budgetAmounts: ForecastAmount[];
+  actuals: ForecastActivity[];
+  maxCompletedIndex: number;
+  completedIndex: number;
+  accountingBasis: "accrual";
+  scenariosAvailable: boolean;
+  scenarios: SavedBudgetForecastScenario[];
+  events:ForecastScenarioEvent[];
+};
+
+/** Finished-month accrual forecast inputs; never treats partial current month as completed. */
+export const getBudgetForecastData = createServerFn({method:"GET"})
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: {
+    companyId:string;
+    budgetId:string;
+    completedIndex?:number;
+  })=>{
+    if(input.completedIndex!==undefined &&
+       (!Number.isInteger(input.completedIndex) ||
+         input.completedIndex < -1 || input.completedIndex > 11)){
+      throw new Error("Choose a valid completed fiscal month.");
+    }
+    return {
+      companyId:companyIdOf(input),
+      budgetId:assertUuid(input.budgetId,"budget"),
+      completedIndex:input.completedIndex,
+    };
+  })
+  .handler(async({data,context}):Promise<ForecastSourceData>=>{
+    await assertCompanyMember(context.supabase,data.companyId);
+    const sb=context.supabase as unknown as Sb;
+    const [head,meta,metas,lines] = await Promise.all([
+      loadBudgetHead(sb,data.companyId,data.budgetId),
+      loadCompanyMeta(sb,data.companyId),
+      loadAccountMetas(sb,data.companyId),
+      loadBudgetLines(sb,data.budgetId),
+    ]);
+    const months=fiscalMonthStarts(head.fiscal_year_start);
+    const currentMonth=monthStart(todayIso());
+    const maxCompletedIndex=months.filter(month=>month<currentMonth).length-1;
+    if(data.completedIndex!==undefined && data.completedIndex>maxCompletedIndex){
+      throw new Error("The selected month has not finished yet.");
+    }
+    const completedIndex=data.completedIndex??maxCompletedIndex;
+    const [activity,scenariosResult,eventsResult] = await Promise.all([
+      completedIndex<0 ? Promise.resolve([] as MonthActivity[]) :
+        monthlyActivity(sb,data.companyId,months[0]!,
+          addDaysIso(addMonthsIso(months[completedIndex]!,1),-1),"accrual"),
+      context.supabase
+        .from("budget_forecast_scenarios" as never)
+        .select("id,name,method,income_adjustment_bps,expense_adjustment_bps,notes,updated_at,created_at" as never)
+        .eq("company_id" as never,data.companyId as never)
+        .eq("budget_id" as never,data.budgetId as never)
+        .order("name" as never)
+        .limit(250),
+      context.supabase
+        .from("budget_forecast_scenario_events" as never)
+        .select("id,scenario_id,action,recorded_at,recorded_by,snapshot" as never)
+        .eq("company_id" as never,data.companyId as never)
+        .eq("budget_id" as never,data.budgetId as never)
+        .order("recorded_at" as never,{ascending:false} as never)
+        .limit(50),
+    ]);
+    if(scenariosResult.error&&!isMissingRelation(scenariosResult.error)){
+      throw new Error(scenariosResult.error.message);
+    }
+    if(eventsResult.error&&!isMissingRelation(eventsResult.error)){
+      throw new Error(eventsResult.error.message);
+    }
+    const scenariosAvailable=!scenariosResult.error&&!eventsResult.error;
+    const accountList:ForecastAccount[]=metas
+      .filter(a=>a.account_type==="income"||a.account_type==="expense")
+      .map(a=>({
+        id:a.id,code:a.code,name:a.name,kind:a.account_type as BudgetAccountKind,
+      }));
+    const exact=(amount:unknown,label:string):number=>{
+      if((typeof amount!=="number"&&typeof amount!=="string") ||
+        !/^-?\d+$/.test(String(amount)) ||
+        !Number.isSafeInteger(Number(amount))){
+        throw new Error(label+" exceeds safe minor-unit precision.");
+      }
+      return Number(amount);
+    };
+    const raw=(scenariosResult.data??[]) as Array<{
+      id:string;name:string;method:ForecastMethod;
+      income_adjustment_bps:number;expense_adjustment_bps:number;
+      notes:string|null;updated_at:string;created_at:string;
+    }>;
+    return {
+      budget:head,
+      currency:meta.baseCurrency,
+      months,
+      accounts:accountList,
+      budgetAmounts:lines.map(line=>({
+        ...line,amountMinor:exact(line.amountMinor,"Budget"),
+      })),
+      actuals:activity.map(a=>({
+        accountId:a.accountId,month:a.month,
+        debitMinor:exact(a.debitMinor,"Posted debit"),
+        creditMinor:exact(a.creditMinor,"Posted credit"),
+      })),
+      maxCompletedIndex,completedIndex,accountingBasis:"accrual",
+      scenariosAvailable,
+      scenarios:raw.map(row=>({
+        id:row.id,name:row.name,method:row.method,
+        incomeBps:row.income_adjustment_bps,expenseBps:row.expense_adjustment_bps,
+        notes:row.notes,updatedAt:row.updated_at,createdAt:row.created_at,
+      })),
+      events:((eventsResult.data??[]) as Array<{
+        id:string;scenario_id:string;
+        action:"created"|"updated"|"deleted";
+        recorded_at:string;recorded_by:string|null;
+        snapshot:{name:string};
+      }>).map(row=>({
+        id:row.id,scenarioId:row.scenario_id,
+        action:row.action,recordedAt:row.recorded_at,
+        recordedBy:row.recorded_by,
+        name:row.snapshot.name,
+      })),
+    };
+  });
+
+function validateForecastScenarioDraft(input:{
+  name:unknown;
+  notes:unknown;
+  method:unknown;
+  incomeBps:unknown;
+  expenseBps:unknown;
+}){
+  if(typeof input.name!=="string" ||
+     input.name.trim().length<3 || input.name.trim().length>100){
+    throw new Error("Scenario name must be 3 to 100 characters.");
+  }
+  if(input.notes!==undefined&&input.notes!==null&&typeof input.notes!=="string"){
+    throw new Error("Scenario notes must be text.");
+  }
+  const notes=typeof input.notes==="string" ? input.notes.trim():null;
+  if((notes?.length??0)>1000)throw new Error("Scenario notes must be under 1001 characters.");
+  const assumptions=validateForecastAssumptions(input);
+  return {...assumptions,name:input.name.trim(),notes:notes||null};
+}
+
+export const saveBudgetForecastScenario = createServerFn({method:"POST"})
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input:{
+    companyId:string;budgetId:string;
+    scenarioId?:string|null;expectedUpdatedAt?:string|null;
+    name:string;notes?:string|null;
+    method:ForecastMethod;incomeBps:number;expenseBps:number;
+  })=>{
+    const id=input.scenarioId?assertUuid(input.scenarioId,"scenario"):null;
+    if(id&&(!input.expectedUpdatedAt ||
+        !Number.isFinite(Date.parse(input.expectedUpdatedAt)))){
+      throw new Error("Reload the saved scenario before changing it.");
+    }
+    if(!id&&input.expectedUpdatedAt){
+      throw new Error("New scenarios cannot specify an existing version.");
+    }
+    return {
+      companyId:companyIdOf(input),
+      budgetId:assertUuid(input.budgetId,"budget"),
+      scenarioId:id,expectedUpdatedAt:id?input.expectedUpdatedAt!:null,
+      ...validateForecastScenarioDraft(input),
+    };
+  })
+  .handler(async({data,context})=>{
+    await assertCompanyPermission(context.supabase,data.companyId,"accounts.manage");
+    const result=await callRpc<{id:string;updated_at:string}>(
+      context.supabase,"save_budget_forecast_scenario",{
+        _company_id:data.companyId,_budget_id:data.budgetId,
+        _scenario_id:data.scenarioId,
+        _expected_updated_at:data.expectedUpdatedAt,
+        _name:data.name,_method:data.method,
+        _income_bps:data.incomeBps,_expense_bps:data.expenseBps,
+        _notes:data.notes,
+      },"Saving forecast scenarios requires migration 20261106214000_budget_forecast_scenarios.sql.",
+    );
+    return {id:result.id,updatedAt:result.updated_at};
+  });
+
+export const deleteBudgetForecastScenario = createServerFn({method:"POST"})
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input:{
+    companyId:string;budgetId:string;scenarioId:string;expectedUpdatedAt:string;
+  })=>{
+    if(typeof input.expectedUpdatedAt!=="string" ||
+       !Number.isFinite(Date.parse(input.expectedUpdatedAt))){
+      throw new Error("Reload the saved scenario before deleting it.");
+    }
+    return {
+      companyId:companyIdOf(input),
+      budgetId:assertUuid(input.budgetId,"budget"),
+      scenarioId:assertUuid(input.scenarioId,"scenario"),
+      expectedUpdatedAt:input.expectedUpdatedAt,
+    };
+  })
+  .handler(async({data,context})=>{
+    await assertCompanyPermission(context.supabase,data.companyId,"accounts.manage");
+    await callRpc<boolean>(context.supabase,"delete_budget_forecast_scenario",{
+      _company_id:data.companyId,_budget_id:data.budgetId,
+      _scenario_id:data.scenarioId,_expected_updated_at:data.expectedUpdatedAt,
+    },"Deleting forecast scenarios requires migration 20261106214000_budget_forecast_scenarios.sql.");
+    return {deleted:true as const};
   });

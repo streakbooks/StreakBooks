@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
+import { useCanDo } from "@/hooks/use-can";
 import { listAccounts } from "@/lib/accounting/accounting.functions";
 import {
   getTaxSettings,
@@ -63,6 +64,7 @@ export const Route = createFileRoute("/_authenticated/tax")({
 function TaxConfigPage() {
   const { company, isPending } = useActiveCompany();
   const companyId = company?.id;
+  const canTax = useCanDo("tax.settings");
   const activeTab = Route.useSearch().tab ?? "overview";
   const qc = useQueryClient();
 
@@ -207,6 +209,48 @@ function TaxConfigPage() {
   const outputAccounts = filterTaxAccountPicker(allAccounts, "output");
   const inputAccounts = filterTaxAccountPicker(allAccounts, "input");
   const nonRecAccounts = filterTaxAccountPicker(allAccounts, "non_recoverable");
+  const persisted = settingsQ.data as {
+    tax_regime: string;
+    jurisdiction_code: string | null;
+    registration_number: string | null;
+    registration_date: string | null;
+    prices_include_tax: boolean;
+    tax_basis: string;
+    filing_frequency: string | null;
+    output_tax_account_id: string | null;
+    input_tax_account_id: string | null;
+    non_recoverable_tax_account_id: string | null;
+  } | null;
+  const registrationDirty = Boolean(persisted) && (
+    regime !== (persisted?.tax_regime ?? "none") ||
+    jurisdiction.trim().toUpperCase() !== (persisted?.jurisdiction_code ?? "") ||
+    regNumber.trim() !== (persisted?.registration_number ?? "") ||
+    regDate !== (persisted?.registration_date ?? "") ||
+    includeTax !== Boolean(persisted?.prices_include_tax) ||
+    basis !== (persisted?.tax_basis ?? "invoice") ||
+    filing !== (persisted?.filing_frequency ?? "")
+  );
+  const mappingsDirty = Boolean(persisted) && (
+    outputAcc !== (persisted?.output_tax_account_id ?? "") ||
+    inputAcc !== (persisted?.input_tax_account_id ?? "") ||
+    nonRecAcc !== (persisted?.non_recoverable_tax_account_id ?? "")
+  );
+  const resetRegistration = () => {
+    if (!persisted) return;
+    setRegime(persisted.tax_regime ?? "none");
+    setJurisdiction(persisted.jurisdiction_code ?? "");
+    setRegNumber(persisted.registration_number ?? "");
+    setRegDate(persisted.registration_date ?? "");
+    setIncludeTax(Boolean(persisted.prices_include_tax));
+    setBasis(persisted.tax_basis ?? "invoice");
+    setFiling(persisted.filing_frequency ?? "");
+  };
+  const resetMappings = () => {
+    if (!persisted) return;
+    setOutputAcc(persisted.output_tax_account_id ?? "");
+    setInputAcc(persisted.input_tax_account_id ?? "");
+    setNonRecAcc(persisted.non_recoverable_tax_account_id ?? "");
+  };
 
   return (
     <>
@@ -321,7 +365,10 @@ function TaxConfigPage() {
 
         <TabsContent value="registration" className="space-y-4">
           <div className="grid max-w-2xl gap-4 rounded-md border p-4">
-            <h2 className="text-sm font-medium">Organisation tax settings</h2>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-sm font-medium">Organisation tax settings</h2>
+              <Badge variant="outline">{!canTax ? "View only" : registrationDirty ? "Unsaved changes" : "Saved"}</Badge>
+            </div>
             <p className="text-xs text-muted-foreground">
               Suggested regime for {orgCountry}:{" "}
               <strong>{suggestedRegimeForCountry(orgCountry)}</strong>. Country alone does not
@@ -330,7 +377,7 @@ function TaxConfigPage() {
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1">
                 <Label>Regime</Label>
-                <Select value={regime} onValueChange={setRegime}>
+                <Select value={regime} onValueChange={setRegime} disabled={!canTax}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -348,20 +395,21 @@ function TaxConfigPage() {
                 <Input
                   placeholder="e.g. GB, AU"
                   value={jurisdiction}
+                  disabled={!canTax}
                   onChange={(e) => setJurisdiction(e.target.value)}
                 />
               </div>
               <div className="space-y-1">
                 <Label>Registration number</Label>
-                <Input value={regNumber} onChange={(e) => setRegNumber(e.target.value)} />
+                <Input value={regNumber} disabled={!canTax} onChange={(e) => setRegNumber(e.target.value)} />
               </div>
               <div className="space-y-1">
                 <Label>Registration date</Label>
-                <Input type="date" value={regDate} onChange={(e) => setRegDate(e.target.value)} />
+                <Input type="date" value={regDate} disabled={!canTax} onChange={(e) => setRegDate(e.target.value)} />
               </div>
               <div className="space-y-1">
                 <Label>Tax basis (reporting preference)</Label>
-                <Select value={basis} onValueChange={setBasis}>
+                <Select value={basis} onValueChange={setBasis} disabled={!canTax}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -376,6 +424,7 @@ function TaxConfigPage() {
               <div className="space-y-1">
                 <Label>Filing frequency</Label>
                 <Select
+                  disabled={!canTax}
                   value={filing || "unset"}
                   onValueChange={(v) => setFiling(v === "unset" ? "" : v)}
                 >
@@ -394,22 +443,30 @@ function TaxConfigPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Switch checked={includeTax} onCheckedChange={setIncludeTax} />
+              <Switch checked={includeTax} disabled={!canTax} onCheckedChange={setIncludeTax} />
               <Label>Prices include tax (inclusive treatment on documents)</Label>
             </div>
-            <Button
-              size="sm"
-              disabled={registrationM.isPending}
-              onClick={() => registrationM.mutate()}
-            >
-              Save registration &amp; defaults
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                disabled={!canTax || !registrationDirty || registrationM.isPending}
+                onClick={() => registrationM.mutate()}
+              >
+                {registrationM.isPending ? "Saving..." : "Save registration & defaults"}
+              </Button>
+              <Button size="sm" variant="outline" disabled={!registrationDirty || registrationM.isPending} onClick={resetRegistration}>
+                Discard changes
+              </Button>
+            </div>
           </div>
         </TabsContent>
 
         <TabsContent value="mappings" className="space-y-4">
           <div className="grid max-w-2xl gap-4 rounded-md border p-4">
-            <h2 className="text-sm font-medium">GL mappings</h2>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-sm font-medium">GL mappings</h2>
+              <Badge variant="outline">{!canTax ? "View only" : mappingsDirty ? "Unsaved changes" : "Saved"}</Badge>
+            </div>
             <p className="text-xs text-muted-foreground">
               Posting uses these accounts when set; otherwise falls back to CoA codes 2100 (output)
               / 1200 (input). Each list only shows accounts of a suitable type (output tax:
@@ -421,6 +478,7 @@ function TaxConfigPage() {
                 <Label>Output tax liability</Label>
                 <AccountLookup
                   ariaLabel="Output tax liability"
+                  disabled={!canTax || accountsQ.isPending || accountsQ.isError}
                   accounts={outputAccounts}
                   value={outputAcc}
                   onChange={setOutputAcc}
@@ -433,6 +491,7 @@ function TaxConfigPage() {
                 <Label>Recoverable input tax</Label>
                 <AccountLookup
                   ariaLabel="Recoverable input tax"
+                  disabled={!canTax || accountsQ.isPending || accountsQ.isError}
                   accounts={inputAccounts}
                   value={inputAcc}
                   onChange={setInputAcc}
@@ -445,6 +504,7 @@ function TaxConfigPage() {
                 <Label>Non-recoverable tax (cost)</Label>
                 <AccountLookup
                   ariaLabel="Non-recoverable tax"
+                  disabled={!canTax || accountsQ.isPending || accountsQ.isError}
                   accounts={nonRecAccounts}
                   value={nonRecAcc}
                   onChange={setNonRecAcc}
@@ -454,9 +514,20 @@ function TaxConfigPage() {
                 />
               </div>
             </div>
-            <Button size="sm" disabled={mappingsM.isPending} onClick={() => mappingsM.mutate()}>
-              Save mappings
-            </Button>
+            {accountsQ.isError ? (
+              <Alert variant="destructive">
+                <AlertTitle>Accounts unavailable</AlertTitle>
+                <AlertDescription>{friendlyAuthError(accountsQ.error)}</AlertDescription>
+              </Alert>
+            ) : null}
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" disabled={!canTax || !mappingsDirty || accountsQ.isPending || accountsQ.isError || mappingsM.isPending} onClick={() => mappingsM.mutate()}>
+                {mappingsM.isPending ? "Saving..." : "Save mappings"}
+              </Button>
+              <Button size="sm" variant="outline" disabled={!mappingsDirty || mappingsM.isPending} onClick={resetMappings}>
+                Discard changes
+              </Button>
+            </div>
           </div>
         </TabsContent>
 
@@ -480,7 +551,7 @@ function TaxConfigPage() {
                     size="sm"
                     variant="outline"
                     className="mt-2"
-                    disabled={seedM.isPending}
+                    disabled={!canTax || seedM.isPending}
                     onClick={() => {
                       setSelectedPack(p.id);
                       seedM.mutate(p.id);

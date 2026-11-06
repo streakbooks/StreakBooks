@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sumJournalDebits } from "./journal-amounts";
+import { exactJournalMinor, sumJournalDebits } from "./journal-amounts";
 
 describe("journal list exact amount totals", () => {
   it("sums mixed database number and exact-text minor-unit values", () => {
@@ -25,5 +25,20 @@ describe("journal list exact amount totals", () => {
     for (const value of [-1, 1.25, Number.NaN, Infinity, "-2", "1.5", "12abc", ""]) {
       expect(() => sumJournalDebits([{ debit_minor: value }])).toThrow("invalid or unsafe");
     }
+  });
+});
+
+describe("expanded journal line precision", () => {
+  it("returns exact safe line amounts from number and text", () => {
+    expect(exactJournalMinor(123, "Journal credit")).toBe(123);
+    expect(exactJournalMinor("9007199254740991", "Journal debit")).toBe(Number.MAX_SAFE_INTEGER);
+    expect(exactJournalMinor("0005")).toBe(5);
+  });
+
+  it("fails closed for rounded JSON numbers and unsafe decimal text", () => {
+    expect(() => exactJournalMinor(Number.MAX_SAFE_INTEGER + 1)).toThrow("unsafe");
+    expect(() => exactJournalMinor("9007199254740992")).toThrow("precision");
+    expect(() => exactJournalMinor("12.50")).toThrow("invalid or unsafe");
+    expect(() => exactJournalMinor("-1")).toThrow("invalid or unsafe");
   });
 });

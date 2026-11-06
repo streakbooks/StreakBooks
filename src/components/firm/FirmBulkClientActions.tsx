@@ -102,13 +102,15 @@ export function FirmBulkClientActions({
   const tags = [...new Set(tagsText.split(",").map((tag) => tag.trim()).filter(Boolean))];
   const value =
     field === "status" ? status : field === "service_line" ? service.trim() : reviewDate || null;
+  const tagActionLabel =
+    tagOperation === "add" ? "Add" : tagOperation === "remove" ? "Remove" : "Replace with";
   const fieldDescription =
     field === "status"
       ? STATUS_LABELS[status]
       : field === "service_line"
         ? service.trim() || "Clear primary service"
         : field === "tags"
-          ? `${tagOperation === "add" ? "Add" : tagOperation === "remove" ? "Remove" : "Replace with"}: ${tags.join(", ") || "(clear all)"}`
+          ? `${tagActionLabel}: ${tags.join(", ") || "(clear all)"}`
           : reviewDate || "Clear next review date";
 
   const mutation = useMutation({

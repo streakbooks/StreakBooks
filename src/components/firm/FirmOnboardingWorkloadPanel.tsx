@@ -225,7 +225,7 @@ export function FirmOnboardingWorkloadPanel({
                 </p>
               ) : (
                 <div className="max-h-96 space-y-2 overflow-y-auto">
-                  {taskQueue.map((task) => (
+                  {taskQueue.slice(0, 40).map((task) => (
                     <div key={task.company_id + ":" + task.task_key}
                       className="flex flex-wrap items-center gap-2 rounded-md border p-3">
                       <div className="min-w-44 flex-1">
@@ -245,6 +245,11 @@ export function FirmOnboardingWorkloadPanel({
                     </div>
                   ))}
                 </div>
+              )}
+              {taskQueue.length > 40 && (
+                <p className="text-xs text-muted-foreground">
+                  Showing the first 40 urgent tasks. Open a client checklist for more.
+                </p>
               )}
             </div>
           </div>

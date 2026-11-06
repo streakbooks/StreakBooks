@@ -292,6 +292,22 @@ export function FirmOnboardingPanel({
                             Due {step.due_date}
                           </p>
                         ) : null}
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Assigned: {step.assignee_id
+                            ? (assigneesQ.data ?? []).find(
+                                (member) => member.user_id === step.assignee_id,
+                              )?.full_name ||
+                              (assigneesQ.data ?? []).find(
+                                (member) => member.user_id === step.assignee_id,
+                              )?.email ||
+                              "Assigned colleague"
+                            : "Unassigned"}
+                          {" · "}{step.reminders_enabled ? "In-app reminders enabled" : "Reminders off"}
+                          {step.depends_on_task_key
+                            ? ` · Depends on ${steps.find((candidate) =>
+                                candidate.task_key === step.depends_on_task_key)?.title ?? "another step"}`
+                            : ""}
+                        </p>
                         {blocked ? (
                           <p className="mt-1 text-xs text-muted-foreground">
                             Finish the prerequisite checklist item before completing this step.
@@ -316,7 +332,11 @@ export function FirmOnboardingPanel({
                           />
                           {canManage ? (
                             <>
-                            <div className="grid gap-3 rounded-md border p-3 sm:grid-cols-2">
+                            <details className="rounded-md border p-3">
+                              <summary className="cursor-pointer text-sm font-medium">
+                                Edit assignment, due date and prerequisite
+                              </summary>
+                              <div className="mt-3 grid gap-3 sm:grid-cols-2">
                               <div className="space-y-1">
                                 <Label>Assigned staff</Label>
                                 <LookupSelect
@@ -327,6 +347,7 @@ export function FirmOnboardingPanel({
                                     changePlan(step.task_key, plan, { assignee_id: value || null })
                                   }
                                   searchPlaceholder="Search eligible staff"
+                                  disabled={assigneesQ.isPending || assigneesQ.isError}
                                   options={(assigneesQ.data ?? []).map((member) => ({
                                     id: member.user_id,
                                     name: member.full_name || member.email || "Colleague",
@@ -335,7 +356,7 @@ export function FirmOnboardingPanel({
                                 />
                                 {assigneesQ.isError && (
                                   <p className="text-xs text-destructive">
-                                    Unable to load eligible staff: {friendlyAuthError(assigneesQ.error)}
+                                    Eligible staff unavailable: {friendlyAuthError(assigneesQ.error)}
                                   </p>
                                 )}
                               </div>
@@ -403,18 +424,24 @@ export function FirmOnboardingPanel({
                                   {planM.isPending ? "Saving plan…" : "Save assignment and schedule"}
                                 </Button>
                               </div>
-                            </div>
+                              </div>
+                            </details>
                             <div className="flex flex-wrap gap-2">
                               <Button
                                 size="sm"
                                 disabled={
-                                  updateM.isPending || planM.isPending || blocked || cannotReopen
+                                  updateM.isPending || planM.isPending || blocked ||
+                                  cannotReopen || planChanged
                                 }
-                                title={blocked
-                                  ? "Complete its prerequisite first"
-                                  : cannotReopen
-                                    ? "Reopen dependent steps first"
-                                    : undefined}
+                                title={
+                                  blocked
+                                    ? "Complete its prerequisite first"
+                                    : cannotReopen
+                                      ? "Reopen dependent steps first"
+                                      : planChanged
+                                        ? "Save the assignment and schedule first"
+                                        : undefined
+                                }
                                 onClick={() =>
                                   updateM.mutate({
                                     task_key: step.task_key,
@@ -429,7 +456,10 @@ export function FirmOnboardingPanel({
                               <Button
                                 size="sm"
                                 variant="outline"
-                                disabled={updateM.isPending || note === step.note}
+                                disabled={
+                                  updateM.isPending || planM.isPending ||
+                                  planChanged || note === step.note
+                                }
                                 onClick={() =>
                                   updateM.mutate({
                                     task_key: step.task_key,

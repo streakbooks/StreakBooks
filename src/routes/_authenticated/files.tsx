@@ -17,6 +17,8 @@ import {
   FolderInput,
   ClipboardCheck,
   Link2,
+  ArchiveRestore,
+  LockKeyhole,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
@@ -26,6 +28,8 @@ import { DocumentReviewQueue } from "@/components/documents/DocumentReviewQueue"
 import { DocumentEmailInbox } from "@/components/documents/DocumentEmailInbox";
 import { DocumentClassificationPanel } from "@/components/documents/DocumentClassificationPanel";
 import { DocumentVersionHistory } from "@/components/documents/DocumentVersionHistory";
+import { DocumentRecycleBin } from "@/components/documents/DocumentRecycleBin";
+import { setRecycleBinRetentionHold } from "@/lib/documents/recycle-bin.functions";
 import { listDocumentTags } from "@/lib/documents/file-classification.functions";
 import { FILE_CATEGORIES, FILE_CATEGORY_LABELS, type FileCategory } from "@/lib/documents/file-classification";
 import {
@@ -136,6 +140,7 @@ function FilesPage() {
   const fetchDownload = useServerFn(getAttachmentDownload);
   const fetchPreview = useServerFn(getAttachmentPreview);
   const remove = useServerFn(deleteAttachment);
+  const setHold = useServerFn(setRecycleBinRetentionHold);
   const inputRef = useRef<HTMLInputElement>(null);
   const getFolders = useServerFn(listDocumentFolders);
   const createFolder = useServerFn(createDocumentFolder);
@@ -171,7 +176,7 @@ function FilesPage() {
   const [page, setPage] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [sort, setSort] = useState<"newest" | "oldest" | "name" | "largest">("newest");
-  const [view, setView] = useState<"all" | "to-file" | "review" | "inbox">("all");
+  const [view, setView] = useState<"all" | "to-file" | "review" | "inbox" | "trash">("all");
   const activeView = folderId ? "all" : view;
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkTarget, setBulkTarget] = useState("unfiled");
@@ -295,7 +300,8 @@ function FilesPage() {
       categoryFilter,
       tagFilter,
     ],
-    enabled: Boolean(companyId) && activeView !== "review",
+    enabled: Boolean(companyId) &&
+      activeView !== "review" && activeView !== "inbox" && activeView !== "trash",
     queryFn: () =>
       fetchFiles({
         data: {
@@ -445,9 +451,19 @@ function FilesPage() {
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
 
+  const holdM = useMutation({
+    mutationFn: ({ attachmentId, enabled }: { attachmentId: string; enabled: boolean }) =>
+      setHold({ data: { companyId: companyId!, attachmentId, enabled } }),
+    onSuccess: async ({ enabled }) => {
+      await queryClient.invalidateQueries({ queryKey: ["company-file-details", companyId] });
+      toast.success(enabled ? "File retention protection enabled" : "File protection removed");
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+
   const deleteM = useMutation({
     mutationFn: (id: string) => remove({ data: { companyId: companyId!, attachmentId: id } }),
-    onSuccess: async (result, deletedId) => {
+    onSuccess: async (_result, deletedId) => {
       setPendingDelete(null);
       if (selectedFile === deletedId) setSelectedFile(null);
       await Promise.all([
@@ -455,9 +471,8 @@ function FilesPage() {
         queryClient.invalidateQueries({ queryKey: ["company-file-details", companyId] }),
         queryClient.invalidateQueries({ queryKey: ["company-file-preview", companyId] }),
       ]);
-      if (result.storageCleanup === "requires_admin")
-        toast.warning("File record deleted, but Storage cleanup needs administrator review.");
-      else toast.success("File deleted");
+      await queryClient.invalidateQueries({ queryKey: ["recycle-bin-files", companyId] });
+      toast.success("File moved to Recycle Bin. You can restore it during retention.");
     },
     onError: (e) => {
       setPendingDelete(null);
@@ -470,11 +485,10 @@ function FilesPage() {
       ...(await runFileBatch(
         ids,
         (attachmentId) => remove({ data: { companyId: sourceCompanyId, attachmentId } }),
-        (result) => result.storageCleanup === "requires_admin",
       )),
       sourceCompanyId,
     }),
-    onSuccess: async ({ completedIds, failedIds, warningIds, firstError, sourceCompanyId }) => {
+    onSuccess: async ({ completedIds, failedIds, firstError, sourceCompanyId }) => {
       setPendingBulkDelete(null);
       if (companyId === sourceCompanyId) {
         setSelectedIds(failedIds);
@@ -485,13 +499,10 @@ function FilesPage() {
         queryClient.invalidateQueries({ queryKey: ["company-files", sourceCompanyId] }),
         queryClient.invalidateQueries({ queryKey: ["company-file-details", sourceCompanyId] }),
         queryClient.invalidateQueries({ queryKey: ["company-file-preview", sourceCompanyId] }),
+        queryClient.invalidateQueries({ queryKey: ["recycle-bin-files", sourceCompanyId] }),
       ]);
       if (completedIds.length)
-        toast.success(`Deleted ${completedIds.length} file${completedIds.length === 1 ? "" : "s"}`);
-      if (warningIds.length)
-        toast.warning(
-          `${warningIds.length} deleted file${warningIds.length === 1 ? " needs" : "s need"} administrator Storage cleanup. Do not retry these deleted records.`,
-        );
+        toast.success(`Moved ${completedIds.length} file${completedIds.length === 1 ? "" : "s"} to Recycle Bin`);
       if (failedIds.length)
         toast.error(
           `${failedIds.length} file${failedIds.length === 1 ? "" : "s"} could not be deleted. ${friendlyAuthError(firstError)}`,
@@ -612,6 +623,10 @@ function FilesPage() {
   const preview = previewQ.data;
   const previewUrl =
     preview?.kind === "url" ? preview.url : preview?.kind === "inline" ? inlinePreviewUrl : null;
+
+  if (activeView === "trash") {
+    return <DocumentRecycleBin key={companyId} companyId={companyId} onClose={() => setView("all")} />;
+  }
 
   if (activeView === "inbox") {
     return <DocumentEmailInbox companyId={companyId} onClose={() => setView("all")} />;
@@ -1041,6 +1056,17 @@ function FilesPage() {
         >
           Email inbox
         </Button>
+        <Button
+          size="sm"
+          variant={activeView === "trash" ? "default" : "outline"}
+          onClick={() => {
+            setFolderId(null);
+            setView("trash");
+            setPage(0);
+          }}
+        >
+          <ArchiveRestore className="mr-1 size-4" /> Recycle Bin
+        </Button>
         <span className="text-xs text-muted-foreground">
           To file shows unlinked, unfiled uploads. Email inbox imports attachments into Document review.
         </span>
@@ -1244,6 +1270,21 @@ function FilesPage() {
               canManage={canManage(selected.entity_type)}
             />
           ) : null}
+          {canManage(selected.entity_type) ? (
+            <Button
+              className="mt-3"
+              size="sm"
+              variant="outline"
+              disabled={holdM.isPending}
+              onClick={() => holdM.mutate({
+                attachmentId: selected.id,
+                enabled: !selected.retention_hold,
+              })}
+            >
+              <LockKeyhole className="mr-1 size-4" />
+              {selected.retention_hold ? "Remove retention protection" : "Protect from deletion"}
+            </Button>
+          ) : null}
           <div className="mt-3 flex flex-wrap gap-2">
             <Button
               size="sm"
@@ -1282,7 +1323,7 @@ function FilesPage() {
                   onClick={() => setPendingDelete({ id: selected.id, name: selected.file_name })}
                 >
                   <Trash2 className="mr-1 size-4" />
-                  Delete
+                  Move to Recycle Bin
                 </Button>
               </>
             ) : null}
@@ -1438,7 +1479,7 @@ function FilesPage() {
                 onClick={() => setPendingBulkDelete(currentSelection)}
               >
                 <Trash2 className="mr-1 size-4" />
-                Delete selected
+                Move selected to Recycle Bin
               </Button>
               <Button
                 size="sm"
@@ -1673,13 +1714,13 @@ function FilesPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Permanently delete {pendingBulkDelete?.length ?? 0} selected files?
+              Move {pendingBulkDelete?.length ?? 0} selected files to Recycle Bin?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              This removes their attachment records and requests deletion of their private
-              stored copies. Files attached to accounting records will no longer appear there.
-              This is not reversible, and individual deletions may succeed while others fail.
-              Only the selected, manageable files from this page are included.
+              Files will be hidden from active folders and linked-record attachment lists,
+              but preserved for restore during their retention period. Protected and approved
+              documents cannot be recycled until their restrictions are resolved.
+              Only selected, manageable files on this page are included; partial success is possible.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1694,7 +1735,7 @@ function FilesPage() {
                 });
               }}
             >
-              {bulkDeleteM.isPending ? "Deleting…" : "Delete selected files"}
+              {bulkDeleteM.isPending ? "Moving…" : "Move selected to Recycle Bin"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1729,9 +1770,11 @@ function FilesPage() {
       <AlertDialog open={Boolean(pendingDelete)} onOpenChange={(o) => !o && setPendingDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this file?</AlertDialogTitle>
+            <AlertDialogTitle>Move this file to Recycle Bin?</AlertDialogTitle>
             <AlertDialogDescription>
-              “{pendingDelete?.name}” will be removed permanently. This cannot be undone.
+              “{pendingDelete?.name}” will be hidden from active documents, but its contents,
+              version history and tags remain available for restore during the retention period.
+              Protected or approved evidence cannot be recycled until restrictions are resolved.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1740,7 +1783,7 @@ function FilesPage() {
               disabled={deleteM.isPending}
               onClick={() => pendingDelete && deleteM.mutate(pendingDelete.id)}
             >
-              Delete file
+              Move to Recycle Bin
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

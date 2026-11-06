@@ -234,15 +234,19 @@ link requires an active account within its `company_limit` (row-locked check).
 
 ## Hosted apply procedure
 
-Phases 1 to 10 are **not applied** to project `ipxflpzfcqwtenodbxwc`. When approved:
+Phases 1 to 10 were **applied to production** (`ipxflpzfcqwtenodbxwc`) on 6 November 2026:
 
-Production has since received other migrations with later timestamps (for example payroll,
-`20261105153211`–`20261105181000`), so the billing series must be applied with
-`supabase db push --include-all` (or individually) after rehearsal.
-
-1. Take a restore-verified backup (`supabase db dump --linked` roles/schema/auth+storage/data,
-   restore into `supabase/postgres` and compare row counts).
-2. Rehearse the migrations on that restored copy.
-3. Apply each migration in its own transaction, record versions with
-   `supabase migration repair --status applied <version>`.
-4. Run the Supabase security and performance advisors and the behavioural checks above.
+1. A read-only pre-check matched the rehearsed state (3 companies, 3 subscriptions, 29 features, no
+   `billing` schema).
+2. All 13 migrations ran on production in one transaction that was forced to roll back (dry run);
+   nothing persisted.
+3. The 13 migrations and their history rows (repository versions `20261105161752` to
+   `20261105231127`) were applied in one atomic transaction with `supabase db query --remote --file`.
+   `supabase db push` was not used: production's history records many older repository migrations
+   under different versions, so a push would re-run them.
+4. Verified: 155 currencies, 249 countries, 40 features, 3 backfilled billing accounts and history
+   events, RLS on every `billing` table with no client grants, payouts off and the partner window
+   unset, the lifecycle job scheduled. The security and performance advisors raised only the
+   project's existing classes of finding (security-definer RPCs with internal permission checks,
+   intentionally public pricing functions, and older policies on `billing_offers`, `billing_plans`
+   and `billing_checkouts`).

@@ -1,8 +1,8 @@
 # LinkBooks Subscription & Billing Platform — Architecture and Implementation Plan
 
-Status: **Approved 5 November 2026. Phases 1 to 10 implemented and tested locally** (see
-[01-requirements.md](01-requirements.md)); not applied to the hosted database, not pushed.
-Branch: `feature/rohit-dev`. Date: 5 November 2026.
+Status: **Approved 5 November 2026. Phases 1 to 10 implemented** (see
+[01-requirements.md](01-requirements.md)); merged to `main` and applied to the production database
+on 6 November 2026.
 
 This plan answers sections 1–10 and 20 of the master billing brief: inspect, identify reuse and gaps,
 propose architecture, migrations, APIs, payment, security and test strategy, a file-by-file plan, open

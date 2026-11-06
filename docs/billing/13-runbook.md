@@ -6,14 +6,20 @@ access is audited and, where marked, needs a second platform owner.
 ## 1. Deploying the database changes
 
 The billing migrations (`20261105161752` to `20261105231127`, file names containing `_billing_`)
-are **not applied** to the hosted project `ipxflpzfcqwtenodbxwc`. The hosted project already has
-later-timestamped migrations, so the billing series is out of order there.
+were applied to production on 6 November 2026 (see `04-database-design.md`).
+
+Do **not** use `supabase db push` on this project: its history records many older repository
+migrations under different versions, so a push would try to re-run them. Apply new migrations
+individually:
 
 1. Take a backup or confirm point-in-time recovery is available.
-2. `supabase db push --include-all --dry-run`, review the list, then run it without `--dry-run`.
-3. Verify: `select count(*) from billing.currencies;`, the Supabase security and performance
-   advisors, and `npm run test:billing:postgres` locally against the same commit.
-4. Regenerate types if the app is changed to use them (`supabase gen types`).
+2. Dry run: wrap the migration in `BEGIN; … ROLLBACK;` and run it with
+   `supabase db query --remote --file <file>`.
+3. Apply it in one transaction together with its `supabase_migrations.schema_migrations` row
+   (repository version and name).
+4. Verify with read-only queries (`supabase db query --remote --read-only`) and
+   `supabase db advisors --remote`.
+5. Regenerate types if the app is changed to use them (`supabase gen types`).
 
 Rolling back is forward-only: billing tables hold immutable financial records. Fix forward with a
 new migration; do not drop tables with data.

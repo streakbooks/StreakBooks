@@ -59,7 +59,7 @@ const from = vi.fn((table: string) => {
   };
   return q;
 });
-const rpc = vi.fn(async () => ({
+const rpc = vi.fn(async (): Promise<{ data: unknown; error: { message: string } | null }> => ({
   data: { id: caseId, status: "in_review", version: 4,
     assigned_to: uid, updated_at: "2026-11-06T12:00:00Z",
     evidence_url: "https://example.com/report", submitted_by: null, reviewed_by: null },

@@ -428,15 +428,15 @@ export function JournalsPanel({
                                 <TableHeader>
                                   <TableRow>
                                     <TableHead>Account</TableHead>
-                                  <TableHead>Description</TableHead>
-                                  <TableHead className="text-right">Debit ({lineCurrency})</TableHead>
-                                  <TableHead className="text-right">Credit ({lineCurrency})</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {detail.data.lines.map((line) => (
-                                  <TableRow key={line.id}>
-                                    <TableCell>
+                                    <TableHead>Description</TableHead>
+                                    <TableHead className="text-right">Debit ({lineCurrency})</TableHead>
+                                    <TableHead className="text-right">Credit ({lineCurrency})</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {detail.data.lines.map((line) => (
+                                    <TableRow key={line.id}>
+                                      <TableCell>
                                       {line.account_code} {line.account_name}
                                     </TableCell>
                                     <TableCell>{line.description ?? "—"}</TableCell>
@@ -450,8 +450,8 @@ export function JournalsPanel({
                                         ? fmt.amount(line.credit_minor, lineCurrency)
                                         : ""}
                                     </TableCell>
-                                  </TableRow>
-                                ))}
+                                    </TableRow>
+                                  ))}
                                 </TableBody>
                               </Table>
                             </div>

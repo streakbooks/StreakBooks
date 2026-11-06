@@ -99,7 +99,7 @@ merge was performed. Review and test the draft PR before merging.
 ## Continuation — Batch 03: posted tax history guards and filed-return variance
 
 ### Implemented in code
-- Migration `20261106120000_tax_master_posted_history_guard.sql` adds
+- Migration `20261107010000_tax_master_posted_history_guard.sql` adds
   organisation-scoped database triggers. A posted invoice/bill with `tax_code_id`
   protects the referenced code's rate, treatment, recoverability, account,
   reporting class, usage, and identifier from retroactive mutation.
@@ -220,7 +220,7 @@ are not verified. No GitHub CI, production merge or deployment was performed.
 - GL comparisons now require `accounting.view`; review writes additionally require `tax.settings`.
 - Posted journal evidence (number, date, signed control-account amount, source, account, and Accounting navigation) is displayed on demand. The most recent 100 rows are shown; totals use the full selected period.
 - Review snapshots track comparison amounts, scope and a non-cryptographic digest of all posted journal evidence. Changed data marks prior review decisions stale, even where offsetting journals leave aggregate totals unchanged.
-- Migration `20261106134000_tax_gl_review_sessions.sql` creates review sessions, append-only events, scope RLS, an atomic save/audit RPC, authorisation checks, version-based concurrent edit rejection, active-member reviewer validation, and mandatory notes for internal resolution.
+- Migration `20261107011000_tax_gl_review_sessions.sql` creates review sessions, append-only events, scope RLS, an atomic save/audit RPC, authorisation checks, version-based concurrent edit rejection, active-member reviewer validation, and mandatory notes for internal resolution.
 - Review statuses: Open, In review, Resolved (internal). Old resolutions with changed evidence must be reopened before being resolved again. Cash-basis reviews cannot be marked resolved.
 - Reviewer assignment UI supports keep current, assign to me, or unassign. The form includes notes, version, change history and stale-evidence warning.
 - New tests `src/lib/tax/tax-gl-evidence.test.ts` and `tests/integration/tax-gl-review-sessions.sql`. Isolated local PostgreSQL runner: `node scripts/test-tax-gl-review-postgres.mjs`.
@@ -363,7 +363,7 @@ remain unverified. No main merge or production deployment.
 ## Continuation — Batch 08: posted credit notes and direct-expense history
 
 ### Committed code and regression cases
-- Extended the existing **unapplied** `20261106120000_tax_master_posted_history_guard.sql`
+- Extended the existing **unapplied** `20261107010000_tax_master_posted_history_guard.sql`
   migration; no new migration history entry was generated.
 - Added a shared, restricted header trigger for posted sales credit notes,
   purchase credit notes and direct expenses. Once `posted_journal_id` is set,

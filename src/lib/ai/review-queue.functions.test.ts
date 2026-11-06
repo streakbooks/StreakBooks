@@ -18,6 +18,7 @@ vi.mock("@/lib/assert-company-access", () => ({ assertCompanyPermission: vi.fn()
 
 import {
   listAiJournalReviewCases,
+  getAiJournalReviewCase,
   listAiJournalReviewEvents,
   saveAiJournalReview,
   reviewActionSchema,
@@ -58,6 +59,7 @@ function db() {
 }
 const list = listAiJournalReviewCases as unknown as (args: unknown) => Promise<unknown>;
 const history = listAiJournalReviewEvents as unknown as (args: unknown) => Promise<unknown>;
+const fetchOne = getAiJournalReviewCase as unknown as (args: unknown) => Promise<unknown>;
 const save = saveAiJournalReview as unknown as (args: unknown) => Promise<unknown>;
 
 beforeEach(() => { calls.length = 0; vi.clearAllMocks(); });
@@ -148,6 +150,30 @@ describe("AI review queue server authorization and transitions", () => {
       ["from","ai_journal_review_events"],
       ["eq","case_id",caseId],
     ]));
+  });
+
+  it("loads a deep-linked AI case by company and case ID, not by current page", async () => {
+    const client = db();
+    await fetchOne({
+      data: { companyId, caseId },
+      context: { supabase: client, userId },
+    });
+    expect(assertCompanyPermission).toHaveBeenCalledWith(client, companyId, "ai.use");
+    expect(assertCompanyPermission).toHaveBeenCalledWith(client, companyId, "reports.view");
+    expect(calls).toEqual(expect.arrayContaining([
+      ["from", "ai_journal_review_cases"],
+      ["eq", "company_id", companyId],
+      ["eq", "id", caseId],
+    ]));
+  });
+
+  it("rejects an unauthorised deep-linked case before reading rows", async () => {
+    vi.mocked(assertCompanyPermission).mockRejectedValueOnce(new Error("Access denied"));
+    await expect(fetchOne({
+      data: { companyId, caseId },
+      context: { supabase: db(), userId },
+    })).rejects.toThrow("Access denied");
+    expect(calls).toHaveLength(0);
   });
 
   it("supports a server-filtered assigned-to-me queue without exposing other tenants", async () => {

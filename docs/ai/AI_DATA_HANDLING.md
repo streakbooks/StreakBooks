@@ -175,3 +175,40 @@ authorization to post, reverse, reconcile or release a payment.
   applied to project \`ipxflpzfcqwtenodbxwc\`. Existing journal posting,
   journal approval, accountant exception and period-lock workflows are
   unchanged. A completed AI review has **no direct effect** on them.
+
+
+## 10. AI review → Accountant Workpapers handoff (Phase 7)
+
+Accountant Tools' existing **Workpapers** tab shows optional, supplemental AI
+journal-review records linked by actual posted journal lines to the selected
+**balance-sheet account** and its requested as-of date. This is a *read-only
+evidence discovery* integration, not a modification to the accounting
+workpaper, source journal, accountant exception approval or posting engine.
+
+- Read requires \`accounting.view\`, \`ai.use\` and \`reports.view\` on the
+  server, in addition to existing company-membership and row-level policies.
+  The selected chart-of-accounts record must be a postable asset, liability
+  or equity account in the active company.
+- The lookup examines the 100 most recently updated company AI review cases,
+  then checks only same-company journal lines and journal headers for that
+  account, dated on or before the workpaper date. A larger company case set
+  is explicitly labelled **truncated**, and a 500-line match limit fails
+  rather than claiming a complete sample. No absence of cases is presented
+  as evidence that an account is reconciled.
+- A signed-off AI case is labelled \`reviewed_evidence\` only while the linked
+  journal is still posted and a reviewer ID and review time are recorded.
+  A no-longer-posted journal is flagged as superseded regardless of its past
+  AI case status. Open, assigned and reopened AI cases require follow-up.
+- Accountants with \`accounting.post\` may click **Use reference** to stage
+  an exact case identifier in a draft workpaper's *evidence reference* text.
+  This does not save the workpaper, calculate a supporting balance or
+  trigger \`prepare\`, \`review\`, \`post\` or any other financial action.
+  The accountant must inspect supporting documents and explicitly save and
+  submit through the existing workpaper engine.
+- Deep links open the exact AI case by a validated UUID, with a separate
+  tenant-scoped, permission-checked GET endpoint even if it falls outside
+  the currently paged AI queue. AI cases also link back to the Accountant
+  Workpapers workspace.
+- There is no additional table, RLS policy, migration or AI-provider call
+  in Phase 7. Formal workpaper preparation/review and its independent
+  approval protections remain unchanged.

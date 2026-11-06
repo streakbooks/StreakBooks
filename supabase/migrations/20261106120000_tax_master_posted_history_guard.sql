@@ -337,8 +337,15 @@ REVOKE ALL ON FUNCTION public.guard_tax_source_line_after_posting()
 
 CREATE OR REPLACE FUNCTION public.guard_posted_tax_source_header()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
-SET search_path = public, pg_temp AS $$
+SET search_path = public, pg_temp AS $
 BEGIN
+  IF TG_OP = 'DELETE' THEN
+    IF OLD.posted_journal_id IS NOT NULL THEN
+      RAISE EXCEPTION 'Posted tax sources cannot be deleted; use a reversal';
+    END IF;
+    RETURN OLD;
+  END IF;
+
   IF NEW.company_id IS DISTINCT FROM OLD.company_id THEN
     RAISE EXCEPTION 'Cannot move a tax source to another organisation';
   END IF;
@@ -380,17 +387,17 @@ $$;
 
 DROP TRIGGER IF EXISTS sales_credit_tax_posted_header_guard ON public.sales_credit_notes;
 CREATE TRIGGER sales_credit_tax_posted_header_guard
-BEFORE UPDATE ON public.sales_credit_notes
+BEFORE UPDATE OR DELETE ON public.sales_credit_notes
 FOR EACH ROW EXECUTE FUNCTION public.guard_posted_tax_source_header();
 
 DROP TRIGGER IF EXISTS purchase_credit_tax_posted_header_guard ON public.purchase_credit_notes;
 CREATE TRIGGER purchase_credit_tax_posted_header_guard
-BEFORE UPDATE ON public.purchase_credit_notes
+BEFORE UPDATE OR DELETE ON public.purchase_credit_notes
 FOR EACH ROW EXECUTE FUNCTION public.guard_posted_tax_source_header();
 
 DROP TRIGGER IF EXISTS purchase_expense_tax_posted_header_guard ON public.purchase_expenses;
 CREATE TRIGGER purchase_expense_tax_posted_header_guard
-BEFORE UPDATE ON public.purchase_expenses
+BEFORE UPDATE OR DELETE ON public.purchase_expenses
 FOR EACH ROW EXECUTE FUNCTION public.guard_posted_tax_source_header();
 
 -- Lock the parent credit header on any line mutation so that edits cannot
@@ -429,6 +436,10 @@ BEGIN
     RAISE EXCEPTION 'Unsupported credit-note line table';
   END IF;
 
+  -- During ON DELETE CASCADE of an unposted draft, PostgreSQL may already
+  -- have removed the parent. The parent BEFORE DELETE guard rejects deletion
+  -- of posted documents, so only drafts can take this cascade path.
+  IF parent_company IS NULL AND TG_OP = 'DELETE' THEN RETURN OLD; END IF;
   IF parent_company IS NULL OR parent_company IS DISTINCT FROM requested_company THEN
     RAISE EXCEPTION 'Credit-note tax line must belong to its source organisation';
   END IF;

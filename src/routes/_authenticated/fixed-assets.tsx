@@ -769,6 +769,10 @@ function exportAssetRegisterCsv(
 
 function RegisterTable({
   assets,
+  types,
+  accounts,
+  columnVisible,
+  density,
   currency,
   accumulatedOf,
   canManage,
@@ -779,6 +783,10 @@ function RegisterTable({
   onDispose,
 }: {
   assets: FixedAssetRow[];
+  types: AssetTypeRow[];
+  accounts: Array<{ id: string; code: string; name: string }>;
+  columnVisible: (id: string) => boolean;
+  density: "comfortable" | "compact";
   currency: string;
   accumulatedOf: (a: FixedAssetRow) => number | null;
   canManage: boolean;
@@ -790,6 +798,9 @@ function RegisterTable({
 }) {
   const fmt = useFormat();
   const queryClient = useQueryClient();
+  const typeNames = new Map(types.map((type) => [type.id, type.name]));
+  const accountNames = new Map(accounts.map((account) => [account.id, account.code + " · " + account.name]));
+  const compactCellClass = density === "compact" ? "py-1.5" : undefined;
   const deleteFn = useServerFn(deleteFixedAsset);
   const asOf = todayIso();
   const remove = useMutation({
@@ -917,22 +928,26 @@ function RegisterTable({
           <TableHeader>
             <TableRow>
               <TableHead>Asset</TableHead>
-              <TableHead>Purchased</TableHead>
-              <TableHead>Method</TableHead>
-              <TableHead className="text-right">Cost</TableHead>
-              <TableHead className="text-right">Accumulated</TableHead>
-              <TableHead className="text-right">Net book value</TableHead>
-              <TableHead>Depreciated to</TableHead>
+              {columnVisible("status") ? <TableHead>Status</TableHead> : null}
+              {columnVisible("purchased") ? <TableHead>Purchased</TableHead> : null}
+              {columnVisible("method") ? <TableHead>Method</TableHead> : null}
+              {columnVisible("type") ? <TableHead>Asset type</TableHead> : null}
+              {columnVisible("account") ? <TableHead>Cost GL account</TableHead> : null}
+              {columnVisible("cost") ? <TableHead className="text-right">Cost</TableHead> : null}
+              {columnVisible("residual") ? <TableHead className="text-right">Residual</TableHead> : null}
+              {columnVisible("accumulated") ? <TableHead className="text-right">Accumulated</TableHead> : null}
+              {columnVisible("bookValue") ? <TableHead className="text-right">Net book value</TableHead> : null}
+              {columnVisible("depreciatedTo") ? <TableHead>Depreciated to</TableHead> : null}
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {assets.map((asset) => {
               const accumulated = accumulatedOf(asset);
-              const asAtStatus = assetStatusAsOf(asset, asOf);
+              const status = assetStatusAsOf(asset, asOf);
               return (
                 <TableRow key={asset.id}>
-                  <TableCell className="min-w-44">
+                  <TableCell className={compactCellClass}>
                     <span className="mr-2 font-mono text-xs text-muted-foreground">
                       {asset.asset_number}
                     </span>
@@ -944,30 +959,64 @@ function RegisterTable({
                     >
                       {asset.name}
                     </button>
-                    <span className="mt-1 block">{statusBadge(asset)}</span>
                   </TableCell>
-                  <TableCell>{fmt.date(asset.purchase_date)}</TableCell>
-                  <TableCell>{METHOD_LABEL.get(asset.depreciation_method)}</TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {fmt.amount(asset.cost_minor, currency)}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {accumulated === null ? "—" : fmt.amount(accumulated, currency)}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {asAtStatus !== "active" || accumulated === null
-                      ? "—"
-                      : fmt.amount(asset.cost_minor - accumulated, currency)}
-                  </TableCell>
-                  <TableCell>
-                    {asset.depreciated_through ? fmt.date(asset.depreciated_through) : "Not posted"}
-                  </TableCell>
-                  <TableCell>{actions(asset, accumulated)}</TableCell>
+                  {columnVisible("status") ? (
+                    <TableCell className={compactCellClass}>{statusBadge(asset)}</TableCell>
+                  ) : null}
+                  {columnVisible("purchased") ? (
+                    <TableCell className={compactCellClass}>{fmt.date(asset.purchase_date)}</TableCell>
+                  ) : null}
+                  {columnVisible("method") ? (
+                    <TableCell className={compactCellClass}>
+                      {METHOD_LABEL.get(asset.depreciation_method) ?? "—"}
+                    </TableCell>
+                  ) : null}
+                  {columnVisible("type") ? (
+                    <TableCell className={compactCellClass}>
+                      {asset.asset_type_id
+                        ? typeNames.get(asset.asset_type_id) ?? "Unlisted type"
+                        : "Unclassified"}
+                    </TableCell>
+                  ) : null}
+                  {columnVisible("account") ? (
+                    <TableCell className={compactCellClass}>
+                      {accountNames.get(asset.asset_account_id) ?? "Historical account"}
+                    </TableCell>
+                  ) : null}
+                  {columnVisible("cost") ? (
+                    <TableCell className={"text-right tabular-nums " + (compactCellClass ?? "")}>
+                      {fmt.amount(asset.cost_minor, currency)}
+                    </TableCell>
+                  ) : null}
+                  {columnVisible("residual") ? (
+                    <TableCell className={"text-right tabular-nums " + (compactCellClass ?? "")}>
+                      {fmt.amount(asset.residual_minor, currency)}
+                    </TableCell>
+                  ) : null}
+                  {columnVisible("accumulated") ? (
+                    <TableCell className={"text-right tabular-nums " + (compactCellClass ?? "")}>
+                      {accumulated === null ? "Unavailable" : fmt.amount(accumulated, currency)}
+                    </TableCell>
+                  ) : null}
+                  {columnVisible("bookValue") ? (
+                    <TableCell className={"text-right tabular-nums " + (compactCellClass ?? "")}>
+                      {status !== "active" || accumulated === null
+                        ? "—"
+                        : fmt.amount(asset.cost_minor - accumulated, currency)}
+                    </TableCell>
+                  ) : null}
+                  {columnVisible("depreciatedTo") ? (
+                    <TableCell className={compactCellClass}>
+                      {asset.depreciated_through ? fmt.date(asset.depreciated_through) : "Not posted"}
+                    </TableCell>
+                  ) : null}
+                  <TableCell className={compactCellClass}>{actions(asset, accumulated)}</TableCell>
                 </TableRow>
               );
             })}
           </TableBody>
         </Table>
+
       </div>
     </>
   );

@@ -205,3 +205,19 @@ Do not trigger GitHub Actions/CI, merge, modify database environments or deploy 
 **Remaining limitations:** None of these isolated tests prove the full TanStack route compiles, React UI works, or Supabase tenant roles/RLS are correct. The feature branch remains significantly behind main. The full local release script `node scripts/check-fixed-assets-release.mjs`, authenticated SQL posting and FX tests, browser/mobile/accessibility QA, latest-main integration, PR review and deployment verification remain mandatory.
 
 **State:** Committed to draft PR #111 only. No GitHub Actions/CI, database migration, production deployment or merge was performed in this increment.
+
+
+## Batch 7 continued — read-only connected schema and RLS metadata
+
+**Scope:** Connected Supabase project named `linkbook`, inspected read-only on 2026-11-06. This project's staging/production designation was **not** established, so these checks do not prove another environment is migrated, deployed or tested. No company IDs, users, transactions, keys, private data or journal contents were retrieved. No schema, policy, row or migration was modified.
+
+**Migration and schema observations:**
+- The database migration list contains `fixed_assets` (recorded as version `20261023130414`), `journal_source_types_fixed_assets` (`20261023130206`) and `fixed_asset_register_csv_import` (`20261030153000`).
+- All five related tables exist and are RLS-enabled: `asset_types`, `fixed_assets`, `asset_depreciation_runs`, `asset_depreciation_entries` and `fixed_asset_import_refs`. At the time of inspection, the schema reported 8 fixed asset rows, 0 asset-type rows and 0 depreciation runs/entries. These are schema metadata counts, not business or accounting verification.
+- Relevant `SECURITY DEFINER` functions `save_fixed_asset`, `delete_fixed_asset`, `run_depreciation`, `dispose_fixed_asset`, and `report_fixed_asset_register` are present. Metadata indicated `anon` does **not** have EXECUTE while `authenticated` does, and each function contains a company-membership check; the write/posting functions also contain a company-permission check. The register report uses the company-member rule.
+- RLS policies for all five tables show member-scoped `SELECT` policies and an MFA-required `ALL` policy. Critically, `mfa_aal2_required` is **RESTRICTIVE**, not `PERMISSIVE`, so it is combined with membership restrictions rather than providing an OR-based bypass. This is a verified structural check, **not** a logged-in cross-tenant RLS test.
+- The live database constraints include `asset_depreciation_entries_once UNIQUE (asset_id, period_end)`, `amount_minor > 0`, `fixed_assets_residual_le_cost`, `fixed_assets_start_not_before_purchase`, `fixed_assets_disposed_has_date`, and `fixed_assets_number_uniq UNIQUE (company_id, asset_number)`. This aligns with recent frontend fail-closed and reconciliation source-history validations.
+
+**Limitations:** A database catalog query cannot confirm correct runtime behaviour for all user roles, cross-tenant RLS, MFA sessions, locked periods, idempotent posting, FX conversions, journal correctness or restore/recovery. There were no existing depreciation rows in this project for safe, non-mutating posted-history integration tests. Do not run a depreciation RPC with `_preview=false` or disposal RPC without a separate isolated test database and explicit release approval. The full PR #111 application has not been deployed or merged here.
+
+**Recommended next isolated verification:** Use a dedicated non-production Supabase branch or local DB with two test companies and users of distinct roles, insert fixtures through versioned migrations, execute preview/post/lock/disposal scenarios and verify double-entry, RLS and audit history. This should be accompanied by the full local release script, browser QA and latest-main integration. No production or connected database mutations were made during this check.

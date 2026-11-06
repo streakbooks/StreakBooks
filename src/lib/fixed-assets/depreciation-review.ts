@@ -81,8 +81,12 @@ export function planDepreciationMonths(
   selectedMonth: string,
   maxMonths = 36,
 ): DepreciationRunPlan {
-  if (!/^\d{4}-\d{2}$/.test(selectedMonth) ||
-      (outstandingMonth !== null && !/^\d{4}-\d{2}-01$/.test(outstandingMonth))) {
+  const validMonth = (value: string) =>
+    /^\d{4}-(0[1-9]|1[0-2])$/.test(value) && Number(value.slice(0, 4)) > 0;
+  if (!validMonth(selectedMonth) ||
+      (outstandingMonth !== null &&
+        (!/^\d{4}-(0[1-9]|1[0-2])-01$/.test(outstandingMonth) ||
+          Number(outstandingMonth.slice(0, 4)) === 0))) {
     throw new Error("Choose a valid depreciation month.");
   }
   if (!Number.isInteger(maxMonths) || maxMonths < 1 || maxMonths > 36) {

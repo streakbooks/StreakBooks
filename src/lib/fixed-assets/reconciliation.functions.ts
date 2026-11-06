@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { assertCompanyMember } from "@/lib/assert-company-access";
+import { assertCompanyPermission } from "@/lib/assert-company-access";
 import { fetchAllPages, type PageResult } from "@/lib/accounting/fetch-all";
 import {
   loadAccountMetas,
@@ -31,7 +31,7 @@ export const getFixedAssetReconciliation = createServerFn({ method: "GET" })
     return { companyId: companyIdOf(input), asOf };
   })
   .handler(async ({ data, context }) => {
-    await assertCompanyMember(context.supabase, data.companyId);
+    await assertCompanyPermission(context.supabase, data.companyId, "accounting.view");
     const sb = context.supabase as unknown as Sb;
     const [company, accounts, assets, depreciationEntries] = await Promise.all([
       loadCompanyMeta(sb, data.companyId),

@@ -139,8 +139,12 @@ async function runRelease({ useStaging, dryRun, install }) {
   const preflight = localReleasePreflight(git);
   const results = [];
   const now = new Date();
+  // Each run gets a distinct evidence file; a dry run cannot overwrite a
+  // previous real test report from the same calendar day.
+  const reportId = now.toISOString().replace(/[:.]/g, "-") + "-" +
+    (git.commit?.slice(0, 8) ?? "unknown");
   const reportPath = path.join(
-    root, "artifacts", "firm-onboarding-local-release-" + now.toISOString().slice(0, 10) + ".json",
+    root, "artifacts", "firm-onboarding-local-release-" + reportId + ".json",
   );
   console.log("Firm onboarding local verification — no GitHub CI");
   console.log("Repository:", root, "commit:", git.commit || "unknown");

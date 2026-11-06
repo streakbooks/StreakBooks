@@ -17,6 +17,7 @@ describe("tax rate status", () => {
     expect(validateRateEndDate("2026-01-01", "2026-01-01")).toBeNull();
     expect(validateRateEndDate("2026-01-01", "2025-12-31")).toMatch(/before/);
     expect(validateRateEndDate("2026-01-01", "31/03/2026")).toMatch(/YYYY-MM-DD/);
+    expect(validateRateEndDate("2026-01-01", "2026-02-30")).toMatch(/real end date/);
   });
 
   it("finds the day before, across month and year ends", () => {

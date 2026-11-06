@@ -41,23 +41,30 @@ const input = {
   expectedVersion: 1,
 };
 
-function db(eventCount = 0) {
+function db(eventCount = 0, competingUpdate = false) {
+  let selectedCase = 0;
+  const auditEvents = Array.from({ length: eventCount }, (_, index) => ({
+    id: caseId, action: "comment", actor_id: userId, note: "A review note " + index,
+    previous_status: "open", new_status: "open", assigned_to: null,
+    created_at: "2026-11-06T09:00:00Z",
+  }));
   const builder = {
     select() { return this; },
     eq(key: string, value: unknown) { calls.push(["eq",key,value]); return this; },
     order() { return this; },
-    range() { return Promise.resolve({ data: [], count: 0, error: null }); },
-    maybeSingle() { return Promise.resolve({ data: { id: caseId }, error: null }); },
-    limit() {
-      return Promise.resolve({
-        data: Array.from({ length: eventCount }, (_, index) => ({
-          id: caseId, action: "comment", actor_id: userId, note: "A review note " + index,
-          previous_status: "open", new_status: "open", assigned_to: null,
-          created_at: "2026-11-06T09:00:00Z",
-        })),
-        error: null,
-      });
+    range(from = 0, to = 24) {
+      calls.push(["range",from,to]);
+      if (to === from + 199)
+        return Promise.resolve({ data: auditEvents.slice(from,to+1), error: null });
+      return Promise.resolve({ data: [], count: 0, error: null });
     },
+    maybeSingle() {
+      selectedCase++;
+      return Promise.resolve({ data: {
+        id: caseId, version: competingUpdate && selectedCase > 1 ? 2 : 1,
+      }, error: null });
+    },
+    limit() { return Promise.resolve({ data: [], error: null }); },
   };
   return {
     from(table: string) { calls.push(["from",table]); return builder; },
@@ -210,6 +217,24 @@ describe("AI review queue server authorization and transitions", () => {
     expect(result.events).toHaveLength(135);
     expect(calls).toContainEqual(["eq", "company_id", companyId]);
     expect(calls).toContainEqual(["eq", "case_id", caseId]);
+  });
+
+  it("fetches all audit event pages when the provider caps individual responses", async () => {
+    const result = await exportAudit({
+      data: { companyId, caseId },
+      context: { supabase: db(435), userId },
+    }) as { events: unknown[] };
+    expect(result.events).toHaveLength(435);
+    expect(calls).toContainEqual(["range",0,199]);
+    expect(calls).toContainEqual(["range",200,399]);
+    expect(calls).toContainEqual(["range",400,599]);
+  });
+
+  it("refuses to label an export complete if another reviewer changes the case during pagination", async () => {
+    await expect(exportAudit({
+      data: { companyId, caseId },
+      context: { supabase: db(201,true), userId },
+    })).rejects.toThrow(/changed during audit export/);
   });
 
   it("fails closed rather than generating a truncated export over 5,000 events", async () => {

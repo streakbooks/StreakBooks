@@ -46,7 +46,7 @@ import {
   deleteDocumentFolder,
   moveDocumentToFolder,
 } from "@/lib/documents/folders.functions";
-import { folderAncestors, possibleParentFolders } from "@/lib/documents/folder-tree";
+import { folderAncestors, folderDisplayPath, possibleParentFolders } from "@/lib/documents/folder-tree";
 import { downloadBase64, uploadCompanyDocument } from "@/lib/documents/upload-client";
 import { openSignedDownload } from "@/lib/documents/ui";
 import { friendlyAuthError } from "@/lib/auth-helpers";
@@ -635,7 +635,7 @@ function FilesPage() {
                 <SelectItem value="root">Root</SelectItem>
                 {possibleParentFolders(folders, activeFolder.id).map((f) => (
                   <SelectItem key={f.id} value={f.id}>
-                    {f.name}
+                    {folderDisplayPath(folders, f.id)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -987,7 +987,7 @@ function FilesPage() {
                   <SelectItem value="unfiled">Unfiled</SelectItem>
                   {folders.map((folder) => (
                     <SelectItem key={folder.id} value={folder.id}>
-                      {folder.name}
+                      {folderDisplayPath(folders, folder.id)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -1101,7 +1101,7 @@ function FilesPage() {
                             <SelectItem value="unfiled">Unfiled</SelectItem>
                             {folders.map((folder) => (
                               <SelectItem key={folder.id} value={folder.id}>
-                                {folder.name}
+                                {folderDisplayPath(folders, folder.id)}
                               </SelectItem>
                             ))}
                           </SelectContent>

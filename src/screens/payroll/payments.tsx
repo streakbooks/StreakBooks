@@ -280,8 +280,14 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
   });
 
   const openRecordDialog = () => {
+    if (recordMut.isPending) return;
+    // Do not inherit bank, allocation or memo fields from a previous settlement.
+    setClearingAccountId("");
     setAlloc({});
     setAmountMajor("");
+    setReference("");
+    setMemo("");
+    setPaymentMethod("bank_transfer");
     setIdempotencyKey(`pr-pay-${crypto.randomUUID()}`);
     setRecordOpen(true);
   };
@@ -356,7 +362,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
                 >
                   Generic bank CSV
                 </Button>
-                <Button size="sm" onClick={openRecordDialog}>
+                <Button size="sm" disabled={recordMut.isPending} onClick={openRecordDialog}>
                   Record payment
                 </Button>
               </>
@@ -436,7 +442,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
                   Clear filters
                 </Button>
               ) : canPay ? (
-                <Button size="sm" onClick={openRecordDialog}>
+                <Button size="sm" disabled={recordMut.isPending} onClick={openRecordDialog}>
                   Record payment
                 </Button>
               ) : (
@@ -494,7 +500,12 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
         )}
       </TableCard>
 
-      <Dialog open={recordOpen} onOpenChange={setRecordOpen}>
+      <Dialog
+        open={recordOpen}
+        onOpenChange={(open) => {
+          if (!recordMut.isPending) setRecordOpen(open);
+        }}
+      >
         <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Record payroll payment</DialogTitle>
@@ -532,6 +543,13 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
               <Alert variant="destructive">
                 <AlertDescription>
                   Could not load open payslips. {friendlyAuthError(payslipsQ.error)}
+                </AlertDescription>
+              </Alert>
+            ) : null}
+            {accountsQ.isError ? (
+              <Alert variant="destructive">
+                <AlertDescription>
+                  Could not load clearing accounts. {friendlyAuthError(accountsQ.error)}
                 </AlertDescription>
               </Alert>
             ) : null}
@@ -642,7 +660,11 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRecordOpen(false)}>
+            <Button
+              variant="outline"
+              disabled={recordMut.isPending}
+              onClick={() => setRecordOpen(false)}
+            >
               Cancel
             </Button>
             <Button
@@ -651,6 +673,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
                 !clearingAccountId ||
                 !settingsReady ||
                 !payslipsQ.isSuccess ||
+                !accountsQ.isSuccess ||
                 fxUnsupported
               }
               onClick={() => recordMut.mutate()}

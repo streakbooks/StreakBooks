@@ -539,3 +539,39 @@ user identity set within a privileged rollback-only test transaction.
 It does **not** verify real browser authentication, MFA, deployed app API,
 end-to-end UI, full project Vitest/typecheck/lint/build or Vercel release
 readiness. GitHub Actions CI was not run, per user instruction.
+
+
+### Payment and reversal UI cache coherence and duplicate-submit protection
+
+Additional Stage 7 application-source fixes improve consistency after a
+successful payroll settlement or payment reversal:
+
+- The Payments page previously invalidated `payroll-payments`,
+  `payroll-payslips` and `payroll-run` but **did not invalidate the active
+  `payroll-open-payslips` cache**. Reopening the dialog could display stale
+  net-pay outstanding balances until refetch. It also missed payment detail,
+  payslip detail, run journals and run lists. Both mutation success callbacks
+  now share `PAYROLL_SETTLEMENT_REFRESH_KEYS` and invalidate 8 verified
+  query families: payment list, payment detail, payslip list, open-payslip
+  selection, payslip detail, run list, run detail and run journals. Prefix
+  invalidation covers every organisation and run-filtered view.
+- Payment creation and reversal were relying on React Query's asynchronous
+  `isPending` render state to disable their submit buttons. The new
+  `src/lib/payroll/action-lock.ts` adds a **synchronous click gate**
+  maintained in component refs, preventing a second submit from being
+  queued while React re-renders. Both mutation `onSettled` callbacks
+  release the lock (success and failure), allowing a safe retry.
+- The Record Payment and Reverse dialogs reject in-flight dismissals;
+  reversal date changes and switching reversal targets are also blocked
+  during a running reversal. Database idempotency and reversal safeguards
+  remain the authoritative financial integrity protections.
+- Added `src/lib/payroll/settlement-query-keys.test.ts` and
+  `src/lib/payroll/action-lock.test.ts`. Checks against fetched committed
+  source: cache coverage/wiring **10/10 passed**, action-lock runtime and
+  UI wiring **13/13 passed**. **Actual Vitest and browser interaction
+  tests have not been executed**.
+
+These are additional Stage 7 hardening commits; **do not interpret the
+focused checks as completion of application-wide testing**. Pending gates
+remain TypeScript/ESLint/Vitest/build, real authenticated UI workflows,
+PR merge and Vercel deployment. GitHub Actions CI was not run as instructed.

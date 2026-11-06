@@ -32,9 +32,21 @@ export type FirmOnboardingStep = {
   note: string;
   completed_at: string | null;
   completed_by: string | null;
+  assignee_id: string | null;
+  due_date: string | null;
+  depends_on_task_key: string | null;
+  reminders_enabled: boolean;
   version: number;
   updated_at: string;
 };
+
+const onboardingProjection =
+  "firm_id,company_id,task_key,title,note,completed_at,completed_by,assignee_id,due_date,depends_on_task_key,reminders_enabled,version,updated_at";
+
+export type FirmOnboardingOverviewRow = Pick<
+  FirmOnboardingStep,
+  "company_id" | "task_key" | "title" | "completed_at" | "assignee_id" | "due_date" | "depends_on_task_key"
+>;
 
 export type FirmEngagement = {
   id: string;
@@ -116,7 +128,7 @@ export const listFirmOnboardingSteps = createServerFn({ method: "GET" })
     const { data: rows, error } = await context.supabase
       .from("firm_client_onboarding_steps" as never)
       .select(
-        "firm_id,company_id,task_key,title,note,completed_at,completed_by,version,updated_at" as never,
+        onboardingProjection as never,
       )
       .eq("firm_id" as never, data.firmId as never)
       .eq("company_id" as never, data.companyId as never)
@@ -192,13 +204,84 @@ export const updateFirmOnboardingStep = createServerFn({ method: "POST" })
       .eq("task_key" as never, data.task_key as never)
       .eq("version" as never, data.version as never)
       .select(
-        "firm_id,company_id,task_key,title,note,completed_at,completed_by,version,updated_at" as never,
+        onboardingProjection as never,
       )
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!updated)
       throw new Error("Checklist changed or access was revoked. Refresh before retrying.");
     return updated as FirmOnboardingStep;
+  });
+
+const planningInput = firmClientScope
+  .extend({
+    task_key: z.string().min(2).max(48),
+    version: z.number().int().positive(),
+    assignee_id: z.string().uuid().nullable(),
+    due_date: isoDate.nullable(),
+    depends_on_task_key: z.string().min(2).max(48).nullable(),
+    reminders_enabled: z.boolean(),
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    if (value.depends_on_task_key === value.task_key)
+      ctx.addIssue({ code: "custom", message: "A checklist step cannot depend on itself" });
+  });
+export type FirmOnboardingPlanInput = z.infer<typeof planningInput>;
+
+export const saveFirmOnboardingPlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => planningInput.parse(input))
+  .handler(async ({ data, context }): Promise<FirmOnboardingStep> => {
+    await checkScope(context, data.firmId, data.companyId, true);
+    const { data: saved, error } = await context.supabase
+      .from("firm_client_onboarding_steps" as never)
+      .update({
+        assignee_id: data.assignee_id,
+        due_date: data.due_date,
+        depends_on_task_key: data.depends_on_task_key,
+        reminders_enabled: data.reminders_enabled,
+        updated_by: context.userId,
+      } as never)
+      .eq("firm_id" as never, data.firmId as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("task_key" as never, data.task_key as never)
+      .eq("version" as never, data.version as never)
+      .select(onboardingProjection as never)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!saved) throw new Error("Checklist changed or access was revoked. Refresh and retry.");
+    return saved as FirmOnboardingStep;
+  });
+
+export const listFirmOnboardingOverview = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ firmId: z.string().uuid() }).strict().parse(input),
+  )
+  .handler(async ({ data, context }): Promise<FirmOnboardingOverviewRow[]> => {
+    const { data: membership, error: memberError } = await context.supabase
+      .from("firm_members" as never)
+      .select("id" as never)
+      .eq("firm_id" as never, data.firmId as never)
+      .eq("user_id" as never, context.userId as never)
+      .maybeSingle();
+    if (memberError) throw new Error(memberError.message);
+    if (!membership) throw new Error("Firm membership required");
+    // Database RLS filters independently inaccessible client organisations.
+    const { data: rows, error } = await context.supabase
+      .from("firm_client_onboarding_steps" as never)
+      .select(
+        "company_id,task_key,title,completed_at,assignee_id,due_date,depends_on_task_key" as never,
+      )
+      .eq("firm_id" as never, data.firmId as never)
+      .order("company_id" as never)
+      .order("task_key" as never)
+      .limit(5001);
+    if (error) throw new Error(error.message);
+    if ((rows ?? []).length > 5000)
+      throw new Error("Onboarding portfolio exceeds 5,000 steps; use a client checklist");
+    return (rows ?? []) as FirmOnboardingOverviewRow[];
   });
 
 export const listFirmEngagements = createServerFn({ method: "GET" })

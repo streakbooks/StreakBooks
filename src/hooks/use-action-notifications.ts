@@ -137,6 +137,7 @@ export function useActionNotifications(companyId: string | null, userId: string,
       void client.invalidateQueries({ queryKey: ["action-notifications", companyId] });
       void client.invalidateQueries({ queryKey: ["action-notifications-unread", companyId] });
       void client.invalidateQueries({ queryKey: ["action-center-feed", companyId] });
+      void client.invalidateQueries({ queryKey: ["action-center-summary", companyId] });
     },
     onError: (error) => notify.error(error, "Could not update notification"),
   });

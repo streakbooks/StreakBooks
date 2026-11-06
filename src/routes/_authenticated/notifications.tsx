@@ -20,9 +20,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { notify } from "@/lib/notify";
 import { NotificationPreferences } from "@/components/notifications/NotificationPreferences";
 import {
-  filterActionNotifications,
-  sortActionNotifications,
-  summarizeActionNotifications,
   mergeNotificationPages,
   parseActionCenterSearch,
   type NotificationSort,
@@ -69,10 +66,6 @@ function ActionCenterPage() {
   const { user } = useRouteContext({ from: "/_authenticated" });
   const { company } = useActiveCompany();
   const companyId = company?.id ?? null;
-  const { inbox, unreadQuery, changeState, refresh } = useActionCenterFeed(
-    companyId,
-    user.id,
-  );
   const query = Route.useSearch();
   const navigate = Route.useNavigate();
   const view = query.view ?? "action";
@@ -80,12 +73,17 @@ function ActionCenterPage() {
   const priority = query.priority ?? "all";
   const sort: NotificationSort = query.sort ?? "priority";
   const search = query.q ?? "";
+  const { inbox, workload, unreadQuery, changeState, refresh } = useActionCenterFeed(
+    companyId,
+    user.id,
+    { view, category, priority, search, sort },
+  );
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<string[]>([]);
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkError, setBulkError] = useState<string | null>(null);
   const rows = useMemo(
-    () => mergeNotificationPages(inbox.data?.pages ?? []),
+    () => mergeNotificationPages(inbox.data?.pages.map((item) => item.rows) ?? []),
     [inbox.data?.pages],
   );
   const visibleIds = useMemo(
@@ -108,17 +106,10 @@ function ActionCenterPage() {
     setPage(0);
   };
 
-  const summary = useMemo(() => summarizeActionNotifications(rows), [rows]);
-  const filtered = useMemo(
-    () =>
-      sortActionNotifications(
-        filterActionNotifications(rows, { view, category, priority, search }),
-        sort,
-      ),
-    [rows, view, category, priority, search, sort],
-  );
-  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const pageRows = filtered.slice(
+  const totalMatches = inbox.data?.pages[0]?.total ?? 0;
+  const summary = workload.data;
+  const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const pageRows = rows.slice(
     Math.min(page, pageCount - 1) * PAGE_SIZE,
     (Math.min(page, pageCount - 1) + 1) * PAGE_SIZE,
   );
@@ -196,7 +187,7 @@ function ActionCenterPage() {
             Smart Action Center
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {company?.name ?? "Current organisation"} · {unreadQuery.data ?? 0} unread alerts
+            {company?.name ?? "Current organisation"} · {unreadQuery.data?.toLocaleString() ?? "—"} unread alerts
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
             Review source records before taking action. Archiving an alert never approves or posts a transaction.
@@ -214,10 +205,10 @@ function ActionCenterPage() {
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Action Center overview">
         {(
           [
-            { label: "Needs action", value: summary.action, view: "action" as View, detail: "Open alerts" },
-            { label: "Unread", value: unreadQuery.data ?? summary.unread, view: "unread" as View, detail: "All accessible unread" },
-            { label: "Critical", value: summary.critical, view: "critical" as View, detail: "Urgent open alerts" },
-            { label: "Completed", value: summary.completed, view: "completed" as View, detail: "Resolved alerts" },
+            { label: "Needs action", value: summary?.action, view: "action" as View, detail: "Open alerts" },
+            { label: "Unread", value: summary?.unread, view: "unread" as View, detail: "All accessible unread" },
+            { label: "Critical", value: summary?.critical, view: "critical" as View, detail: "Urgent open alerts" },
+            { label: "Completed", value: summary?.completed, view: "completed" as View, detail: "Resolved alerts" },
           ]
         ).map((metric) => (
           <Link
@@ -229,17 +220,23 @@ function ActionCenterPage() {
           >
             <span className="text-xs font-medium text-muted-foreground">{metric.label}</span>
             <span className="mt-2 block text-2xl font-semibold tabular-nums">
-              {inbox.isPending ? "—" : metric.value.toLocaleString()}
+              {metric.value === undefined ? "—" : metric.value.toLocaleString()}
             </span>
             <span className="mt-1 block text-xs text-muted-foreground">{metric.detail}</span>
           </Link>
         ))}
       </div>
-      {rows.length > 0 && (
-        <p className="text-xs text-muted-foreground">
-          Workload counters and filters cover {rows.length} loaded alerts. Unread count covers your full
-          accessible inbox. Use Load older alerts to include earlier records.
-        </p>
+      <p className="text-xs text-muted-foreground">
+        Workload counts cover your full accessible inbox. Filters and priority ordering
+        run on the server before alerts are paged.
+      </p>
+      {workload.isError && (
+        <div role="alert" className="flex flex-wrap items-center gap-2 text-sm text-destructive">
+          Could not load complete workload counts.
+          <Button size="sm" variant="outline" onClick={() => void workload.refetch()}>
+            Retry counts
+          </Button>
+        </div>
       )}
       <div className="flex flex-wrap gap-2" role="group" aria-label="Notification views">
         {VIEWS.map((item) => (
@@ -318,7 +315,9 @@ function ActionCenterPage() {
       </div>
       {(search || category !== "all" || priority !== "all" || sort !== "priority") && (
         <div className="flex items-center justify-between gap-2">
-          <span className="text-xs text-muted-foreground">{filtered.length} matching alerts</span>
+          <span aria-live="polite" className="text-xs text-muted-foreground">
+            {inbox.isPending ? "Searching…" : totalMatches.toLocaleString() + " matching alerts"}
+          </span>
           <Button
             size="sm"
             variant="ghost"
@@ -374,23 +373,9 @@ function ActionCenterPage() {
             Retry
           </Button>
         </div>
-      ) : filtered.length === 0 ? (
-        <div className="space-y-3 rounded-lg border px-6 py-12 text-center text-muted-foreground">
-          <p>No matching notifications in the loaded history.</p>
-          {inbox.hasNextPage && (
-            <Button
-              variant="outline"
-              disabled={inbox.isFetchingNextPage}
-              onClick={() => void inbox.fetchNextPage()}
-            >
-              {inbox.isFetchingNextPage ? "Loading older alerts…" : "Search older alerts"}
-            </Button>
-          )}
-          {inbox.isFetchNextPageError && (
-            <p role="alert" className="text-sm text-destructive">
-              Could not load older alerts. Retry using Search older alerts.
-            </p>
-          )}
+      ) : rows.length === 0 ? (
+        <div className="rounded-lg border px-6 py-12 text-center text-muted-foreground">
+          No matching notifications across your accessible history.
         </div>
       ) : (
         <div className="space-y-2">
@@ -426,7 +411,8 @@ function ActionCenterPage() {
           ))}
           <div className="flex flex-wrap items-center justify-between gap-2 pt-3 text-sm text-muted-foreground">
             <span>
-              {filtered.length} matching · Page {Math.min(page, pageCount - 1) + 1} of {pageCount}
+              {rows.length.toLocaleString()} of {totalMatches.toLocaleString()} matching loaded ·
+              Page {Math.min(page, pageCount - 1) + 1} of {Math.max(1, Math.ceil(totalMatches / PAGE_SIZE))}
             </span>
             <div className="flex gap-2">
               <Button
@@ -440,8 +426,16 @@ function ActionCenterPage() {
               <Button
                 size="sm"
                 variant="outline"
-                disabled={page + 1 >= pageCount}
-                onClick={() => setPage((n) => n + 1)}
+                disabled={(page + 1 >= pageCount && !inbox.hasNextPage) || inbox.isFetchingNextPage}
+                onClick={() => {
+                  if (page + 1 < pageCount) {
+                    setPage((n) => n + 1);
+                  } else if (inbox.hasNextPage) {
+                    void inbox.fetchNextPage().then((result) => {
+                      if (result.isSuccess) setPage((n) => n + 1);
+                    });
+                  }
+                }}
               >
                 Next
               </Button>
@@ -450,20 +444,20 @@ function ActionCenterPage() {
           {inbox.hasNextPage && (
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3">
               <p className="text-xs text-muted-foreground">
-                Filters and sorting apply to loaded history. Older alerts are available on demand.
+                All filters and sorting apply across your accessible notification history.
               </p>
               <Button
                 variant="outline"
                 disabled={inbox.isFetchingNextPage || bulkBusy}
                 onClick={() => void inbox.fetchNextPage()}
               >
-                {inbox.isFetchingNextPage ? "Loading older alerts…" : "Load older alerts"}
+                {inbox.isFetchingNextPage ? "Loading more alerts…" : "Load more matching alerts"}
               </Button>
             </div>
           )}
           {inbox.isFetchNextPageError && (
             <p role="alert" className="text-sm text-destructive">
-              Could not load older alerts. You can retry.
+              Could not load more matching alerts. You can retry.
             </p>
           )}
         </div>
@@ -665,6 +659,7 @@ function DocumentRequests({ companyId, userId }: { companyId: string | null; use
     void queryClient.invalidateQueries({ queryKey: key });
     void queryClient.invalidateQueries({ queryKey: ["action-notifications", companyId] });
     void queryClient.invalidateQueries({ queryKey: ["action-center-feed", companyId] });
+    void queryClient.invalidateQueries({ queryKey: ["action-center-summary", companyId] });
   };
   const createRequest = useMutation({
     mutationFn: async () => {

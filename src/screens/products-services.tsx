@@ -17,6 +17,7 @@ import {
   listProductsPage,
   exportProductsCsv,
   setProductsActive,
+  setProductPrices,
   upsertProduct,
   type ProductRow,
 } from "@/lib/products/products.functions";
@@ -91,6 +92,7 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
   const saveProduct = useServerFn(upsertProduct);
   const doArchive = useServerFn(archiveProduct);
   const updateMany = useServerFn(setProductsActive);
+  const updatePrices = useServerFn(setProductPrices);
   const fetchTaxCodes = useServerFn(listTaxCodes);
   const canManage = useCanDo("products.manage");
   const canTax = useCanDo("tax.settings");
@@ -107,6 +109,11 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
   const [sort, setSort] = useState("name");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkAction, setBulkAction] = useState<"archive" | "restore" | null>(null);
+  const [bulkPriceOpen, setBulkPriceOpen] = useState(false);
+  const [bulkPriceField, setBulkPriceField] = useState<"sales_price_minor" | "purchase_cost_minor">(
+    "sales_price_minor",
+  );
+  const [bulkPriceAmount, setBulkPriceAmount] = useState("");
   const [open, setOpen] = useState(false);
   const productRecordRef = useRef<DocumentRecordHandle>(null);
   const [editing, setEditing] = useState<ProductRow | null>(null);
@@ -280,6 +287,37 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
       toast.success(`Exported ${file.count} catalogue item(s) in ${file.currency}`);
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+
+  const bulkPriceMut = useMutation({
+    mutationFn: () => {
+      if (!bulkPriceAmount.trim() || !validCataloguePrice(bulkPriceAmount, currency)) {
+        throw new Error("Enter a valid non-negative price for the organisation currency");
+      }
+      if (!selectedRows.length) throw new Error("Select items before setting their price");
+      return updatePrices({
+        data: {
+          companyId,
+          productIds: selectedRows.map((row) => row.id),
+          field: bulkPriceField,
+          valueMinor: Number(parseMinorOrThrow(bulkPriceAmount, currency, "Bulk price")),
+        },
+      });
+    },
+    onSuccess: async (result) => {
+      toast.success(`Updated the price of ${result.changed} catalogue item(s)`);
+      if (result.auditError) {
+        toast.warning(`Prices saved, but audit recording failed: ${result.auditError}`);
+      }
+      setBulkPriceOpen(false);
+      setBulkPriceAmount("");
+      setSelectedIds([]);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["products", companyId] }),
+        queryClient.invalidateQueries({ queryKey: ["products-page", companyId] }),
+      ]);
+    },
+    onError: (e) => toast.error(friendlyAuthError(e)),
   });
 
   const bulkMut = useMutation({
@@ -523,7 +561,23 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
           <Button
             size="sm"
             variant="outline"
-            disabled={!selectedRows.some((row) => row.is_active) || bulkMut.isPending}
+            disabled={bulkMut.isPending || bulkPriceMut.isPending}
+            onClick={() => {
+              setBulkPriceField("sales_price_minor");
+              setBulkPriceAmount("");
+              setBulkPriceOpen(true);
+            }}
+          >
+            Set prices
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={
+              !selectedRows.some((row) => row.is_active) ||
+              bulkMut.isPending ||
+              bulkPriceMut.isPending
+            }
             onClick={() => setBulkAction("archive")}
           >
             Archive selected
@@ -531,7 +585,11 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
           <Button
             size="sm"
             variant="outline"
-            disabled={!selectedRows.some((row) => !row.is_active) || bulkMut.isPending}
+            disabled={
+              !selectedRows.some((row) => !row.is_active) ||
+              bulkMut.isPending ||
+              bulkPriceMut.isPending
+            }
             onClick={() => setBulkAction("restore")}
           >
             Restore selected
@@ -768,6 +826,95 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
           </div>
         </div>
       ) : null}
+
+      <Dialog
+        open={bulkPriceOpen}
+        onOpenChange={(next) => {
+          if (!bulkPriceMut.isPending) setBulkPriceOpen(next);
+        }}
+      >
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Set a fixed price for selected items</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            This replaces one catalogue price field on {selectedRows.length} selected items.
+            It does not adjust prices by a percentage or change existing invoices, bills or journals.
+          </p>
+          <div className="grid gap-2">
+            <Label>Price to replace</Label>
+            <Select
+              value={bulkPriceField}
+              onValueChange={(field) =>
+                setBulkPriceField(field as "sales_price_minor" | "purchase_cost_minor")
+              }
+            >
+              <SelectTrigger aria-label="Bulk price field">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="sales_price_minor">Sales price</SelectItem>
+                <SelectItem value="purchase_cost_minor">Purchase cost</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="bulk-product-price">New price ({currency})</Label>
+            <Input
+              id="bulk-product-price"
+              inputMode="decimal"
+              value={bulkPriceAmount}
+              placeholder="Enter the exact amount"
+              aria-invalid={
+                Boolean(bulkPriceAmount) && !validCataloguePrice(bulkPriceAmount, currency)
+              }
+              onChange={(event) => setBulkPriceAmount(event.target.value)}
+            />
+          </div>
+          {bulkPriceAmount.trim() && validCataloguePrice(bulkPriceAmount, currency) ? (
+            <div className="rounded-md border p-3 text-sm">
+              <p className="font-medium">
+                Preview — replace the selected price with {currency} {bulkPriceAmount}
+              </p>
+              <div className="mt-2 space-y-1 text-muted-foreground">
+                {selectedRows.slice(0, 5).map((item) => (
+                  <p key={item.id}>
+                    {item.name}:{" "}
+                    {fmt.money(
+                      bulkPriceField === "sales_price_minor"
+                        ? item.sales_price_minor
+                        : item.purchase_cost_minor,
+                      currency,
+                    )}{" "}
+                    → {bulkPriceAmount}
+                  </p>
+                ))}
+                {selectedRows.length > 5 ? <p>And {selectedRows.length - 5} more item(s)</p> : null}
+              </div>
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              disabled={bulkPriceMut.isPending}
+              onClick={() => setBulkPriceOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              disabled={
+                bulkPriceMut.isPending ||
+                !selectedRows.length ||
+                !bulkPriceAmount.trim() ||
+                !validCataloguePrice(bulkPriceAmount, currency)
+              }
+              onClick={() => bulkPriceMut.mutate()}
+            >
+              {bulkPriceMut.isPending ? "Updating…" : `Set price on ${selectedRows.length} items`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={bulkAction !== null}

@@ -3,6 +3,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
 import { prepareProductsCsv } from "./products-import";
+import { productAccountProblem } from "@/lib/products/product-rules";
 
 export type ProductsImportResult = {
   created: number;
@@ -38,6 +39,49 @@ export const importProductsCsv = createServerFn({ method: "POST" })
 
     // Always revalidate on the authenticated server, regardless of client preview.
     const records = prepareProductsCsv(data.csvText, currency);
+
+    // Check every requested account in this organisation before any insert. A pasted
+    // foreign-company UUID must never become an accounting default for this company.
+    const accountIds = [...new Set(
+      records.flatMap((row) =>
+        [row.incomeAccountId, row.expenseAccountId].filter((id): id is string => Boolean(id)),
+      ),
+    )];
+    const accountById = new Map<
+      string,
+      { account_type: string; is_active: boolean; is_postable: boolean; archived_at: string | null }
+    >();
+    if (accountIds.length) {
+      const { data: accounts, error: accountsError } = await context.supabase
+        .from("accounts" as never)
+        .select("id, account_type, is_active, is_postable, archived_at" as never)
+        .eq("company_id" as never, data.companyId as never)
+        .in("id" as never, accountIds as never);
+      if (accountsError) throw new Error(accountsError.message);
+      for (const account of (accounts ?? []) as Array<{
+        id: string;
+        account_type: string;
+        is_active: boolean;
+        is_postable: boolean;
+        archived_at: string | null;
+      }>) {
+        accountById.set(account.id.toLowerCase(), account);
+      }
+    }
+    for (const row of records) {
+      for (const [role, accountId] of [
+        ["income", row.incomeAccountId],
+        ["expense", row.expenseAccountId],
+      ] as const) {
+        if (!accountId) continue;
+        const account = accountById.get(accountId.toLowerCase());
+        const problem = productAccountProblem(role, account?.account_type, row.kind);
+        if (problem) throw new Error(`Row ${row.sourceRow}: ${problem}`);
+        if (!account || !account.is_active || account.archived_at || !account.is_postable) {
+          throw new Error(`Row ${row.sourceRow}: The ${role} account is inactive or not postable`);
+        }
+      }
+    }
     const result: ProductsImportResult = {
       created: 0,
       skipped: 0,
@@ -54,6 +98,12 @@ export const importProductsCsv = createServerFn({ method: "POST" })
         name: row.name,
         sales_price_minor: row.salesPriceMinor,
         purchase_cost_minor: row.purchaseCostMinor,
+        description: row.description,
+        unit: row.unit,
+        sales_tax_rate_bps: row.salesTaxRateBps,
+        purchase_tax_rate_bps: row.purchaseTaxRateBps,
+        income_account_id: row.incomeAccountId,
+        expense_account_id: row.expenseAccountId,
         is_active: true,
       } as never);
       if (!error) {

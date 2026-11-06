@@ -3,26 +3,51 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tansta
 import { supabase } from "@/integrations/supabase/client";
 import { notify } from "@/lib/notify";
 import type { ActionNotification } from "@/hooks/use-action-notifications";
+import {
+  actionNotificationSearchPattern,
+  type ActionCenterFilters,
+} from "@/lib/notifications/notification-utils";
 
 const SELECT_FIELDS =
   "id,company_id,title,body,category,priority,target_path,entity_type,entity_id,created_at,read_at,archived_at,resolved_at";
+const SERVER_PAGE_SIZE = 100;
 
-/**
- * RLS-scoped, incrementally loaded Action Center history.
- * The notification bell continues to use its own small, cached recent-alert query.
- * Each history page has a deterministic two-column order; IDs are de-duplicated in UI.
- */
+type NotificationPage = { rows: ActionNotification[]; total: number };
+type WorkloadRow = {
+  action_count: number | string;
+  unread_count: number | string;
+  critical_count: number | string;
+  completed_count: number | string;
+  archived_count: number | string;
+};
 let historyChannelSequence = 0;
 
-export function useActionCenterFeed(companyId: string | null, userId: string, batchSize = 200) {
+/** Server-wide, recipient-RLS-protected filters and sorting before pagination. */
+export function useActionCenterFeed(
+  companyId: string | null,
+  userId: string,
+  filters: ActionCenterFilters,
+) {
   const client = useQueryClient();
-  const feedKey = ["action-center-feed", companyId, userId, batchSize] as const;
+  const { view, category, priority, search, sort } = filters;
+  const needle = search.trim();
+  const feedKey = [
+    "action-center-feed",
+    companyId,
+    userId,
+    view,
+    category,
+    priority,
+    needle.toLocaleLowerCase(),
+    sort,
+  ] as const;
+
   const inbox = useInfiniteQuery({
     queryKey: feedKey,
     enabled: Boolean(companyId && userId),
     initialPageParam: 0,
     refetchInterval: 60_000,
-    queryFn: async ({ pageParam }): Promise<ActionNotification[]> => {
+    queryFn: async ({ pageParam }): Promise<NotificationPage> => {
       if (pageParam === 0) {
         const { error: refreshError } = await supabase.rpc(
           "refresh_action_notifications" as never,
@@ -35,24 +60,95 @@ export function useActionCenterFeed(companyId: string | null, userId: string, ba
         );
         if (followupError) throw followupError;
       }
-      const from = pageParam * batchSize;
-      const { data, error } = await supabase
-        .from("action_notifications" as never)
-        .select(SELECT_FIELDS as never)
-        .eq("company_id" as never, companyId as never)
-        .order("created_at" as never, { ascending: false })
-        .order("id" as never, { ascending: false })
-        .range(from, from + batchSize - 1);
+
+      let query = supabase
+        .from("action_notification_inbox" as never)
+        .select(SELECT_FIELDS as never, { count: "exact" })
+        .eq("company_id" as never, companyId as never);
+
+      if (category !== "all") query = query.eq("category" as never, category as never);
+      if (priority !== "all") query = query.eq("priority" as never, priority as never);
+      if (needle) {
+        query = query.ilike(
+          "search_text" as never,
+          actionNotificationSearchPattern(needle) as never,
+        );
+      }
+
+      switch (view) {
+        case "unread":
+          query = query
+            .is("read_at" as never, null)
+            .is("archived_at" as never, null)
+            .is("resolved_at" as never, null);
+          break;
+        case "action":
+          query = query.is("archived_at" as never, null).is("resolved_at" as never, null);
+          break;
+        case "critical":
+          query = query
+            .eq("priority" as never, "critical" as never)
+            .is("archived_at" as never, null)
+            .is("resolved_at" as never, null);
+          break;
+        case "completed":
+          query = query.is("archived_at" as never, null).not("resolved_at" as never, "is", null);
+          break;
+        case "archived":
+          query = query.not("archived_at" as never, "is", null);
+          break;
+        case "all":
+          break;
+      }
+
+      if (sort === "priority") {
+        query = query
+          .order("priority_rank" as never, { ascending: true })
+          .order("created_at" as never, { ascending: false })
+          .order("id" as never, { ascending: false });
+      } else {
+        const ascending = sort === "oldest";
+        query = query
+          .order("created_at" as never, { ascending })
+          .order("id" as never, { ascending });
+      }
+
+      const from = pageParam * SERVER_PAGE_SIZE;
+      const { data, count, error } = await query.range(from, from + SERVER_PAGE_SIZE - 1);
       if (error) throw error;
-      return (data ?? []) as unknown as ActionNotification[];
+      return { rows: (data ?? []) as unknown as ActionNotification[], total: count ?? 0 };
     },
-    getNextPageParam: (lastPage, _allPages, lastPageParam) =>
-      lastPage.length === batchSize ? lastPageParam + 1 : undefined,
+    getNextPageParam: (lastPage, allPages) => {
+      const seen = allPages.reduce((total, page) => total + page.rows.length, 0);
+      return seen < lastPage.total && lastPage.rows.length > 0 ? allPages.length : undefined;
+    },
+  });
+
+  const workload = useQuery({
+    queryKey: ["action-center-summary", companyId, userId],
+    enabled: Boolean(companyId && userId) && inbox.isSuccess,
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc(
+        "action_notification_workload" as never,
+        { _company_id: companyId } as never,
+      );
+      if (error) throw error;
+      const row = ((data ?? []) as unknown as WorkloadRow[])[0];
+      if (!row) throw new Error("Could not load Action Center workload");
+      return {
+        action: Number(row.action_count),
+        unread: Number(row.unread_count),
+        critical: Number(row.critical_count),
+        completed: Number(row.completed_count),
+        archived: Number(row.archived_count),
+      };
+    },
   });
 
   const unreadQuery = useQuery({
     queryKey: ["action-notifications-unread", companyId, userId],
-    enabled: Boolean(companyId && userId),
+    enabled: Boolean(companyId && userId) && inbox.isSuccess,
     refetchInterval: 60_000,
     queryFn: async (): Promise<number> => {
       const { count, error } = await supabase
@@ -70,24 +166,23 @@ export function useActionCenterFeed(companyId: string | null, userId: string, ba
   useEffect(() => {
     if (!companyId || !userId) return;
     const channel = supabase
-      .channel(`action-center-history:${companyId}:${userId}:${++historyChannelSequence}`)
+      .channel("action-center-history:" + companyId + ":" + userId + ":" + ++historyChannelSequence)
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
           table: "action_notifications",
-          filter: `recipient_user_id=eq.${userId}`,
+          filter: "recipient_user_id=eq." + userId,
         },
         () => {
           void client.invalidateQueries({ queryKey: ["action-center-feed", companyId, userId] });
+          void client.invalidateQueries({ queryKey: ["action-center-summary", companyId, userId] });
           void client.invalidateQueries({ queryKey: ["action-notifications-unread", companyId, userId] });
         },
       )
       .subscribe();
-    return () => {
-      void supabase.removeChannel(channel);
-    };
+    return () => { void supabase.removeChannel(channel); };
   }, [client, companyId, userId]);
 
   const changeState = useMutation({
@@ -104,19 +199,21 @@ export function useActionCenterFeed(companyId: string | null, userId: string, ba
       if (!data) throw new Error("Notification no longer accessible or permission was revoked");
     },
     onSuccess: () => {
-      void client.invalidateQueries({ queryKey: ["action-center-feed", companyId, userId] });
+      void client.invalidateQueries({ queryKey: ["action-center-feed", companyId] });
+      void client.invalidateQueries({ queryKey: ["action-center-summary", companyId] });
       void client.invalidateQueries({ queryKey: ["action-notifications", companyId] });
-      void client.invalidateQueries({ queryKey: ["action-notifications-unread", companyId, userId] });
+      void client.invalidateQueries({ queryKey: ["action-notifications-unread", companyId] });
     },
     onError: (error) => notify.error(error, "Could not update notification"),
   });
 
   const refresh = () =>
     Promise.all([
-      client.invalidateQueries({ queryKey: ["action-center-feed", companyId, userId] }),
+      client.invalidateQueries({ queryKey: ["action-center-feed", companyId] }),
+      client.invalidateQueries({ queryKey: ["action-center-summary", companyId] }),
       client.invalidateQueries({ queryKey: ["action-notifications", companyId] }),
-      client.invalidateQueries({ queryKey: ["action-notifications-unread", companyId, userId] }),
+      client.invalidateQueries({ queryKey: ["action-notifications-unread", companyId] }),
     ]);
 
-  return { inbox, unreadQuery, changeState, refresh };
+  return { inbox, workload, unreadQuery, changeState, refresh };
 }

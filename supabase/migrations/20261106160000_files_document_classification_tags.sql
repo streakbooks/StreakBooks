@@ -119,4 +119,24 @@ CREATE POLICY document_attachment_tags_delete
       AND public.can_access_attachment(a.company_id, a.entity_type, 'manage')
   ));
 
+-- Prevent deletion of a label from silently stripping it off a restricted attachment.
+-- Company tag deletion is allowed only when the tag has NO relationships anywhere.
+CREATE OR REPLACE FUNCTION public.document_tags_reject_assigned_delete()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM public.document_attachment_tags t
+    WHERE t.company_id = OLD.company_id AND t.tag_id = OLD.id
+  ) THEN
+    RAISE EXCEPTION 'Tag is assigned to documents. Remove it from every document before deletion.';
+  END IF;
+  RETURN OLD;
+END $;
+REVOKE ALL ON FUNCTION public.document_tags_reject_assigned_delete()
+  FROM PUBLIC, anon, authenticated;
+DROP TRIGGER IF EXISTS document_tags_reject_assigned_delete_trg ON public.document_tags;
+CREATE TRIGGER document_tags_reject_assigned_delete_trg
+  BEFORE DELETE ON public.document_tags
+  FOR EACH ROW EXECUTE FUNCTION public.document_tags_reject_assigned_delete();
+
 -- No public Storage paths, no service-role grants, no modifications to accounting journals.

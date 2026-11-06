@@ -16,6 +16,7 @@ import { entityManagePermissions, entityViewPermissions } from "@/lib/documents/
 import { escapeLikeLiteral } from "@/lib/sales/list-filters";
 import {
   fileFormatMimeTypes,
+  fileListProjection,
   filePreviewKind,
   fileSortOrder,
   parseFileFormat,
@@ -579,9 +580,7 @@ export const listCompanyFiles = createServerFn({ method: "GET" })
     // Use PostgREST's RLS-aware inner relationship filter instead of materializing
     // thousands of UUIDs into a URL-sized .in() clause. Filtering happens before
     // ordering and pagination, even for large company tag collections.
-    const columns = data.tagId
-      ? `${COLUMNS}, tag_match:document_attachment_tags!inner(tag_id)`
-      : COLUMNS;
+    const columns = fileListProjection(COLUMNS, data.tagId);
     let q = supabase
       .from("document_attachments" as never)
       .select(columns as never, { count: "exact" })

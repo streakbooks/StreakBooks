@@ -119,6 +119,9 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
   const fxUnsupported = Boolean(
     settingsQ.data && company && payCurrency !== company.base_currency.toUpperCase(),
   );
+  const settingsReady = Boolean(
+    settingsQ.isSuccess && settingsQ.data?.available && settingsQ.data?.settings,
+  );
 
   const paymentsQ = useQuery({
     queryKey: ["payroll-payments", company?.id, runIdFilter ?? null],
@@ -139,8 +142,8 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
   });
 
   const payslipsQ = useQuery({
-    queryKey: ["payroll-open-payslips", company?.id],
-    queryFn: () => fetchPayslips({ data: { companyId: company!.id } }),
+    queryKey: ["payroll-open-payslips", company?.id, runIdFilter ?? null],
+    queryFn: () => fetchPayslips({ data: { companyId: company!.id, runId: runIdFilter ?? null } }),
     enabled: Boolean(company?.id) && canPay && recordOpen,
   });
 
@@ -183,7 +186,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
   }, [payslipsQ.data, payCurrency]);
 
   const exportMut = useMutation({
-    mutationFn: () => fetchExport({ data: { companyId: company!.id } }),
+    mutationFn: () => fetchExport({ data: { companyId: company!.id, runId: runIdFilter ?? null } }),
     onSuccess: (data) => {
       if (!data.rows.length) {
         toast.message("Nothing to export", {
@@ -208,7 +211,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
 
   const recordMut = useMutation({
     mutationFn: () => {
-      if (settingsQ.isPending || settingsQ.isError || !settingsQ.data) {
+      if (!settingsReady) {
         throw new Error("Payroll settings must finish loading before recording a payment.");
       }
       if (payslipsQ.isPending || payslipsQ.isError) {
@@ -501,6 +504,14 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            {settingsQ.isSuccess && !settingsReady ? (
+              <Alert variant="destructive">
+                <AlertDescription>
+                  Payroll settings are not configured or their database migration is pending.
+                  Complete Payroll settings before recording settlements.
+                </AlertDescription>
+              </Alert>
+            ) : null}
             {settingsQ.isError ? (
               <Alert variant="destructive">
                 <AlertDescription>
@@ -599,7 +610,8 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
                 <p className="text-sm text-muted-foreground">Loading open payslips…</p>
               ) : openPayslips.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  No outstanding payslips on posted runs. You can still record an unallocated
+                  No outstanding {payCurrency} payslips on posted runs
+                  {runIdFilter ? " in this pay run" : ""}. You can still record an unallocated
                   payment.
                 </p>
               ) : (
@@ -637,7 +649,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
               disabled={
                 recordMut.isPending ||
                 !clearingAccountId ||
-                !settingsQ.isSuccess ||
+                !settingsReady ||
                 !payslipsQ.isSuccess ||
                 fxUnsupported
               }

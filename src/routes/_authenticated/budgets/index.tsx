@@ -139,7 +139,13 @@ function BudgetsPage() {
         </div>
         <Button
           size="sm"
-          disabled={create.isPending || name.trim().length < 1 || !canManage || query.isPending || query.data?.available === false}
+          disabled={
+            create.isPending ||
+            name.trim().length < 1 ||
+            !canManage ||
+            query.isPending ||
+            query.data?.available === false
+          }
           title={canManage ? undefined : "You do not have permission to manage budgets"}
           onClick={() => create.mutate()}
         >

@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Columns3 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -12,9 +13,18 @@ import {
 } from "@/lib/firm/client-profiles.functions";
 import {
   STATUS_LABELS,
+  DEFAULT_FIRM_CLIENT_COLUMNS,
+  FIRM_CLIENT_COLUMNS,
   filterFirmClients,
   firmClientCsv,
+  firmClientReviewState,
   getFirmClientName,
+  localFirmDate,
+  normalizeFirmClientColumns,
+  toggleFirmClientColumn,
+  type FirmClientColumn,
+  type FirmClientReviewFilter,
+  type FirmClientSort,
   type FirmClientRow,
 } from "@/lib/firm/client-portfolio";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -29,6 +39,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -80,6 +99,42 @@ export function FirmClientPortfolio({
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<FirmClientStatus | "all">("all");
+  const [review, setReview] = useState<FirmClientReviewFilter>("all");
+  const [sort, setSort] = useState<FirmClientSort>("name");
+  const [savedColumns, setSavedColumns] = useState<{
+    firmId: string;
+    columns: FirmClientColumn[];
+  } | null>(null);
+  const visibleColumns =
+    savedColumns?.firmId === firmId ? savedColumns.columns : DEFAULT_FIRM_CLIENT_COLUMNS;
+  useEffect(() => {
+    let saved: unknown = null;
+    try {
+      const raw = window.localStorage.getItem("linkbooks:firm-client-columns:" + firmId);
+      saved = raw ? JSON.parse(raw) : null;
+    } catch {
+      // Browser preferences are optional; never prevent access to the directory.
+    }
+    setSavedColumns({ firmId, columns: normalizeFirmClientColumns(saved) });
+  }, [firmId]);
+
+  function setColumns(columns: FirmClientColumn[]) {
+    const next = normalizeFirmClientColumns(columns);
+    setSavedColumns({ firmId, columns: next });
+    try {
+      window.localStorage.setItem("linkbooks:firm-client-columns:" + firmId, JSON.stringify(next));
+    } catch {
+      toast.message("Columns changed for this session; browser storage is unavailable");
+    }
+  }
+
+  function resetFilters() {
+    setSearch("");
+    setStatus("all");
+    setReview("all");
+    setSort("name");
+  }
+
   const [editing, setEditing] = useState<FirmClientRow | null>(null);
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const profilesQ = useQuery({
@@ -93,8 +148,8 @@ export function FirmClientPortfolio({
     [profiles],
   );
   const filtered = useMemo(
-    () => filterFirmClients(clients, profiles, search, status),
-    [clients, profiles, search, status],
+    () => filterFirmClients(clients, profiles, search, status, { review, sort }),
+    [clients, profiles, search, status, review, sort],
   );
   const saveM = useMutation({
     mutationFn: async () => {
@@ -159,10 +214,12 @@ export function FirmClientPortfolio({
   const onboarding = clients.filter(
     (client) => profileMap.get(client.company_id)?.status === "onboarding",
   ).length;
-  const needsReview = clients.filter((client) => {
-    const date = profileMap.get(client.company_id)?.next_review_date;
-    return date !== null && date !== undefined && date <= new Date().toISOString().slice(0, 10);
-  }).length;
+  const today = localFirmDate();
+  const profileUnavailable = profilesQ.isPending || profilesQ.isError;
+  const needsReview = clients.filter(
+    (client) =>
+      firmClientReviewState(profileMap.get(client.company_id)?.next_review_date, today) === "due",
+  ).length;
 
   return (
     <section aria-label="Client portfolio" className="space-y-5">
@@ -173,13 +230,24 @@ export function FirmClientPortfolio({
         </div>
         <div className="rounded-lg border bg-card p-4">
           <p className="text-sm text-muted-foreground">Active in practice</p>
-          <p className="text-2xl font-semibold tabular-nums">{active}</p>
+          <p className="text-2xl font-semibold tabular-nums">
+            {profileUnavailable ? "—" : active}
+          </p>
         </div>
         <div className="rounded-lg border bg-card p-4">
           <p className="text-sm text-muted-foreground">Onboarding / Reviews due</p>
           <p className="text-2xl font-semibold tabular-nums">
-            {onboarding} / {needsReview}
+            {profileUnavailable ? "—" : `${onboarding} / ${needsReview}`}
           </p>
+          <Button
+            size="sm"
+            variant="link"
+            className="h-auto p-0"
+            disabled={profileUnavailable || !needsReview}
+            onClick={() => setReview("due")}
+          >
+            Show reviews due
+          </Button>
         </div>
       </div>
 
@@ -201,12 +269,16 @@ export function FirmClientPortfolio({
             change accounting access.
           </p>
         </div>
-        <Button variant="outline" disabled={!filtered.length} onClick={exportVisible}>
-          Export visible clients (CSV)
+        <Button
+          variant="outline"
+          disabled={!filtered.length || profileUnavailable}
+          onClick={exportVisible}
+        >
+          Export filtered clients (CSV)
         </Button>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_220px]">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_180px_180px_200px]">
         <div className="space-y-1">
           <Label htmlFor="firm-client-search">Search clients</Label>
           <Input
@@ -220,6 +292,7 @@ export function FirmClientPortfolio({
           <Label>Practice status</Label>
           <Select
             value={status}
+            disabled={profileUnavailable}
             onValueChange={(value) => setStatus(value as FirmClientStatus | "all")}
           >
             {/* lookup-fixed-enum: Practice status filter uses fixed lifecycle values. */}
@@ -236,11 +309,93 @@ export function FirmClientPortfolio({
             </SelectContent>
           </Select>
         </div>
+        <div className="space-y-1">
+          <Label>Review schedule</Label>
+          <Select
+            value={review}
+            disabled={profileUnavailable}
+            onValueChange={(value) => setReview(value as FirmClientReviewFilter)}
+          >
+            {/* lookup-fixed-enum: Review filter uses fixed operational values. */}
+            <SelectTrigger aria-label="Filter by next review date">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All review dates</SelectItem>
+              <SelectItem value="due">Due or overdue</SelectItem>
+              <SelectItem value="upcoming">Upcoming</SelectItem>
+              <SelectItem value="unscheduled">Not scheduled</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <Label>Sort clients</Label>
+          <Select value={sort} onValueChange={(value) => setSort(value as FirmClientSort)}>
+            {/* lookup-fixed-enum: Sort uses fixed directory fields. */}
+            <SelectTrigger aria-label="Sort client directory">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">Name A–Z</SelectItem>
+              <SelectItem value="name_desc">Name Z–A</SelectItem>
+              <SelectItem value="review">Review date: earliest</SelectItem>
+              <SelectItem value="review_desc">Review date: latest</SelectItem>
+              <SelectItem value="status">Practice status</SelectItem>
+              <SelectItem value="service">Primary service</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="sm" variant="outline" aria-label="Choose visible client columns">
+              <Columns3 className="mr-2 size-4" />
+              Columns ({visibleColumns.length + 1})
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="max-h-96 w-60 overflow-y-auto">
+            <DropdownMenuLabel>Visible columns (client name always shown)</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {FIRM_CLIENT_COLUMNS.map((column) => (
+              <DropdownMenuCheckboxItem
+                key={column.id}
+                checked={visibleColumns.includes(column.id)}
+                onCheckedChange={(checked) =>
+                  setColumns(toggleFirmClientColumn(visibleColumns, column.id, checked === true))
+                }
+                onSelect={(event) => event.preventDefault()}
+              >
+                {column.label}
+              </DropdownMenuCheckboxItem>
+            ))}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={() => setColumns([...DEFAULT_FIRM_CLIENT_COLUMNS])}>
+              Reset columns
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        {(search || status !== "all" || review !== "all" || sort !== "name") && (
+          <Button size="sm" variant="ghost" onClick={resetFilters}>
+            Clear filters and sorting
+          </Button>
+        )}
+        {profilesQ.isError && (
+          <Button size="sm" variant="outline" onClick={() => void profilesQ.refetch()}>
+            Retry client profiles
+          </Button>
+        )}
       </div>
 
       {filtered.length === 0 ? (
         <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
           No clients match these filters.
+          <div className="mt-3">
+            <Button size="sm" variant="outline" onClick={resetFilters}>
+              Clear filters
+            </Button>
+          </div>
         </div>
       ) : (
         <div className="overflow-x-auto rounded-lg border">
@@ -248,10 +403,11 @@ export function FirmClientPortfolio({
             <TableHeader>
               <TableRow>
                 <TableHead>Client</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Contact / Service</TableHead>
-                <TableHead>Access</TableHead>
-                <TableHead>Next review</TableHead>
+                {visibleColumns.map((column) => (
+                  <TableHead key={column}>
+                    {FIRM_CLIENT_COLUMNS.find((item) => item.id === column)?.label}
+                  </TableHead>
+                ))}
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -262,23 +418,57 @@ export function FirmClientPortfolio({
                   <TableRow key={client.id}>
                     <TableCell>
                       <div className="font-medium">{getFirmClientName(client)}</div>
-                      {profile?.industry ? (
-                        <div className="text-xs text-muted-foreground">{profile.industry}</div>
-                      ) : null}
                     </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">
-                        {STATUS_LABELS[profile?.status ?? "active"]}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="max-w-52">
-                      <div className="truncate">{profile?.primary_contact_name || "—"}</div>
-                      <div className="truncate text-xs text-muted-foreground">
-                        {profile?.service_line || "No service assigned"}
-                      </div>
-                    </TableCell>
-                    <TableCell>{client.access_level}</TableCell>
-                    <TableCell>{profile?.next_review_date ?? "—"}</TableCell>
+                    {visibleColumns.map((column) => (
+                      <TableCell key={column} className="max-w-56">
+                        {column === "status" ? (
+                          <Badge variant="secondary">
+                            {STATUS_LABELS[profile?.status ?? "active"]}
+                          </Badge>
+                        ) : column === "contact" ? (
+                          <span className="block truncate">
+                            {profile?.primary_contact_name || "—"}
+                          </span>
+                        ) : column === "email" ? (
+                          profile?.primary_contact_email ? (
+                            <a
+                              className="block truncate underline-offset-2 hover:underline"
+                              href={"mailto:" + profile.primary_contact_email}
+                            >
+                              {profile.primary_contact_email}
+                            </a>
+                          ) : "—"
+                        ) : column === "service" ? (
+                          <span className="block truncate">
+                            {profile?.service_line || "—"}
+                          </span>
+                        ) : column === "industry" ? (
+                          <span className="block truncate">
+                            {profile?.industry || "—"}
+                          </span>
+                        ) : column === "tags" ? (
+                          <span className="block truncate">
+                            {profile?.tags.join(", ") || "—"}
+                          </span>
+                        ) : column === "access" ? (
+                          client.access_level
+                        ) : column === "review" ? (
+                          <span
+                            className={
+                              firmClientReviewState(profile?.next_review_date, today) === "due"
+                                ? "font-medium text-destructive"
+                                : ""
+                            }
+                          >
+                            {profile?.next_review_date ?? "—"}
+                            {profile?.next_review_date &&
+                            firmClientReviewState(profile.next_review_date, today) === "due"
+                              ? " (due)"
+                              : ""}
+                          </span>
+                        ) : null}
+                      </TableCell>
+                    ))}
                     <TableCell>
                       <div className="flex justify-end gap-2">
                         <Button

@@ -3,6 +3,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
 import { productAccountProblem } from "@/lib/products/product-rules";
+import { productSkuProblem } from "@/lib/products/catalogue-input";
 import { buildIlikeOr } from "@/lib/purchases/search-terms";
 
 export type ProductRow = {
@@ -34,12 +35,27 @@ export const listProducts = createServerFn({ method: "GET" })
       q?: string;
       kind?: string;
       includeInactive?: boolean;
+      status?: string;
+      sort?: string;
       limit?: number;
     }) => ({
       companyId: assertUuid(input.companyId),
       q: (input.q ?? "").trim().slice(0, 100),
       kind: (input.kind ?? "all").trim(),
-      includeInactive: Boolean(input.includeInactive),
+      status: (() => {
+        const status = input.status ?? (input.includeInactive ? "all" : "active");
+        if (!["all", "active", "archived"].includes(status)) {
+          throw new Error("Invalid catalogue status");
+        }
+        return status;
+      })(),
+      sort: (() => {
+        const sort = input.sort ?? "name";
+        if (!["name", "name_desc", "code", "price_asc", "price_desc", "recent"].includes(sort)) {
+          throw new Error("Invalid catalogue sort");
+        }
+        return sort;
+      })(),
       limit: Math.min(Math.max(Number(input.limit) || 100, 1), 500),
     }),
   )
@@ -51,12 +67,22 @@ export const listProducts = createServerFn({ method: "GET" })
         "id, kind, code, name, description, sales_price_minor, purchase_cost_minor, income_account_id, expense_account_id, sales_tax_rate_bps, purchase_tax_rate_bps, unit, is_active, created_at" as never,
       )
       .eq("company_id" as never, data.companyId as never)
-      .order("name" as never)
       .limit(data.limit);
-    if (!data.includeInactive) q = q.eq("is_active" as never, true as never);
+    if (data.status !== "all") q = q.eq("is_active" as never, (data.status === "active") as never);
     if (data.kind !== "all") q = q.eq("kind" as never, data.kind as never);
     const search = buildIlikeOr(["name", "code", "description"], data.q);
     if (search) q = q.or(search as never);
+    const order = {
+      name: { column: "name", ascending: true },
+      name_desc: { column: "name", ascending: false },
+      code: { column: "code", ascending: true },
+      price_asc: { column: "sales_price_minor", ascending: true },
+      price_desc: { column: "sales_price_minor", ascending: false },
+      recent: { column: "created_at", ascending: false },
+    }[data.sort as "name" | "name_desc" | "code" | "price_asc" | "price_desc" | "recent"];
+    q = q
+      .order(order.column as never, { ascending: order.ascending, nullsFirst: false })
+      .order("id" as never);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
     return (rows ?? []) as ProductRow[];
@@ -102,6 +128,9 @@ export const upsertProduct = createServerFn({ method: "POST" })
     }) => {
       const name = (input.name ?? "").trim();
       if (!name) throw new Error("Name is required");
+      const code = (input.code ?? "").trim();
+      const skuProblem = productSkuProblem(code);
+      if (skuProblem) throw new Error(skuProblem);
       if (!["service", "product", "non_inventory"].includes(input.kind)) {
         throw new Error("Invalid product kind");
       }
@@ -126,7 +155,7 @@ export const upsertProduct = createServerFn({ method: "POST" })
         companyId: assertUuid(input.companyId),
         id: input.id ? assertUuid(input.id) : undefined,
         kind: input.kind,
-        code: (input.code ?? "").trim().slice(0, 40) || null,
+        code: code || null,
         name: name.slice(0, 200),
         description: (input.description ?? "").trim().slice(0, 2000) || null,
         salesPriceMinor: input.salesPriceMinor ?? 0,
@@ -153,7 +182,7 @@ export const upsertProduct = createServerFn({ method: "POST" })
       if (!accountId) continue;
       const { data: acct, error: acctErr } = await context.supabase
         .from("accounts" as never)
-        .select("account_type, is_active, archived_at" as never)
+        .select("account_type, is_active, is_postable, archived_at" as never)
         .eq("company_id" as never, data.companyId as never)
         .eq("id" as never, accountId as never)
         .maybeSingle();
@@ -161,11 +190,13 @@ export const upsertProduct = createServerFn({ method: "POST" })
       const a = acct as {
         account_type: string;
         is_active: boolean;
+        is_postable: boolean;
         archived_at: string | null;
       } | null;
       const problem = productAccountProblem(role, a?.account_type, data.kind);
       if (problem) throw new Error(problem);
       if (a && (!a.is_active || a.archived_at)) throw new Error(`The ${role} account is inactive`);
+      if (a && !a.is_postable) throw new Error(`The ${role} account is not postable`);
     }
     const payload = {
       company_id: data.companyId,
@@ -224,4 +255,52 @@ export const archiveProduct = createServerFn({ method: "POST" })
       .eq("company_id" as never, data.companyId as never);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+/**
+ * Batch archive/restore is a single company-scoped database statement.
+ * The active SKU unique index remains the final authority when restoring items.
+ */
+export const setProductsActive = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; productIds: string[]; isActive: boolean }) => {
+    if (
+      !Array.isArray(input.productIds) ||
+      input.productIds.length < 1 ||
+      input.productIds.length > 100
+    ) {
+      throw new Error("Select between 1 and 100 items");
+    }
+    if (typeof input.isActive !== "boolean") throw new Error("Invalid status");
+    const productIds = [...new Set(input.productIds.map((id) => assertUuid(id, "product")))];
+    return { companyId: assertUuid(input.companyId), productIds, isActive: input.isActive };
+  })
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "products.manage");
+    const { data: existing, error: readError } = await context.supabase
+      .from("products" as never)
+      .select("id, is_active" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .in("id" as never, data.productIds as never);
+    if (readError) throw new Error(readError.message);
+    const items = (existing ?? []) as { id: string; is_active: boolean }[];
+    if (items.length !== data.productIds.length) {
+      throw new Error("One or more selected items no longer exist in this organisation");
+    }
+    const idsToChange = items
+      .filter((item) => item.is_active !== data.isActive)
+      .map((item) => item.id);
+    if (!idsToChange.length) return { changed: 0 };
+    const { data: updated, error } = await context.supabase
+      .from("products" as never)
+      .update({
+        is_active: data.isActive,
+        archived_at: data.isActive ? null : new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      } as never)
+      .eq("company_id" as never, data.companyId as never)
+      .in("id" as never, idsToChange as never)
+      .select("id" as never);
+    if (error) throw new Error(productWriteError(error));
+    return { changed: (updated ?? []).length };
   });

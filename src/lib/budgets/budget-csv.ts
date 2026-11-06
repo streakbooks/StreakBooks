@@ -106,21 +106,39 @@ export function parseBudgetCsv(
   }
   const headers = splitCsvLine(lines[headerAt]!.line).map((part) => part.trim());
   if (headers.length < 14) {
-    return { values, issues: [{ row: lines[headerAt]!.n, message: "CSV must include twelve monthly columns." }] };
+    return {
+      values,
+      issues: [{ row: lines[headerAt]!.n, message: "CSV must include twelve monthly columns." }],
+    };
   }
   if (expectedMonths) {
     if (expectedMonths.length !== 12) throw new Error("Expected twelve budget months.");
     for (let i = 0; i < 12; i++) {
-      if (headers[i + 2]?.toLocaleLowerCase() !== monthLabel(expectedMonths[i]!).toLocaleLowerCase()) {
+      if (
+        headers[i + 2]?.toLocaleLowerCase() !==
+        monthLabel(expectedMonths[i]!).toLocaleLowerCase()
+      ) {
         return {
           values,
-          issues: [{ row: lines[headerAt]!.n, message: `Column ${i + 3} must be ${monthLabel(expectedMonths[i]!)}. Check the budget financial year and CSV month order.` }],
+          issues: [
+            {
+              row: lines[headerAt]!.n,
+              message: `Column ${i + 3} must be ${monthLabel(expectedMonths[i]!)}. Check the budget financial year and CSV month order.`,
+            },
+          ],
         };
       }
     }
   }
   for (const { line, n } of lines.slice(headerAt + 1)) {
     const cells = splitCsvLine(line);
+    if (cells.length < 14) {
+      issues.push({
+        row: n,
+        message: "Each account row must include all twelve monthly columns (use blanks for zero).",
+      });
+      continue;
+    }
     const code = (cells[0] ?? "").trim();
     if (!code) {
       issues.push({ row: n, message: "Missing account code." });

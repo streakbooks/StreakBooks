@@ -215,6 +215,12 @@ describe("budget CSV", () => {
     expect(parsed.values.size).toBe(0);
     expect(parsed.issues[0]?.message).toMatch(/financial year/);
   });
+  it("rejects rows with missing month columns rather than silently treating them as zero", () => {
+    const text = "Account code,Account name,Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec\n200,Sales,1,2";
+    const parsed = parseBudgetCsv(text, accounts, "GBP");
+    expect(parsed.values.size).toBe(0);
+    expect(parsed.issues[0]?.message).toMatch(/twelve monthly columns/);
+  });
   it("requires the header row", () => {
     expect(parseBudgetCsv("x,y\n1,2", accounts, "GBP").issues[0]!.message).toMatch(/Header/);
   });

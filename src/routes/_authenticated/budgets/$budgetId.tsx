@@ -129,9 +129,9 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
 
   const accounts = data.accounts;
   const byId = useMemo(() => new Map(accounts.map((a) => [a.id, a])), [accounts]);
-  const rowIds = Object.keys(cells).filter((id) => byId.has(id));
-  const rows = accounts.filter((a) => rowIds.includes(a.id));
-  const available = accounts.filter((a) => !rowIds.includes(a.id));
+  const rowIds = new Set(Object.keys(cells).filter((id) => byId.has(id)));
+  const rows = accounts.filter((a) => rowIds.has(a.id));
+  const available = accounts.filter((a) => !rowIds.has(a.id));
 
   const minor = (id: string): Array<number | null> =>
     (cells[id] ?? []).map((t) => parseCell(t, currency));
@@ -139,7 +139,8 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
   const invalidAnnualCount = rows.filter(
     (a) => annualDrafts[a.id] !== undefined && parseCell(annualDrafts[a.id]!, currency) === null,
   ).length;
-  const hasInvalidAmounts = invalidCount > 0 || invalidAnnualCount > 0;
+  const invalidAmountCount = invalidCount + invalidAnnualCount;
+  const hasInvalidAmounts = invalidAmountCount > 0;
   const visible = (a: (typeof rows)[number]) =>
     `${a.code} ${a.name}`.toLocaleLowerCase().includes(accountSearch.trim().toLocaleLowerCase());
 
@@ -169,6 +170,7 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
   const incomeTotals = totals("income");
   const expenseTotals = totals("expense");
   const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
+  const budgetNetMinor = sum(incomeTotals) - sum(expenseTotals);
 
   const applyMinor = (fn: (id: string, v: number[]) => number[]) => {
     if (hasInvalidAmounts) {
@@ -204,8 +206,11 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
   const onCopyActuals = async () => {
     if (
       rows.length > 0 &&
-      !window.confirm("Replace ALL account rows with last year\'s actuals? Unsaved amounts will be lost.")
-    ) return;
+      !window.confirm(
+        "Replace all account rows with last year\'s actuals? Unsaved amounts will be lost.",
+      )
+    )
+      return;
     try {
       const prior = addMonthsIso(monthStart(data.budget.fiscal_year_start), -12);
       const res = await actualsFn({ data: { companyId, fiscalYearStart: prior } });
@@ -247,7 +252,13 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
       toast.error("Budget CSV files must be 5 MB or smaller.");
       return;
     }
-    if (dirty && !window.confirm("Import into this unsaved budget draft? Matching account amounts will be replaced.")) return;
+    if (
+      dirty &&
+      !window.confirm(
+        "Import into this unsaved budget draft? Matching account amounts will be replaced.",
+      )
+    )
+      return;
     let res: ReturnType<typeof parseBudgetCsv>;
     try {
       res = parseBudgetCsv(await file.text(), accounts, currency, data.months);
@@ -355,7 +366,10 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
             inputMode="decimal"
             disabled={!canManage}
             value={annualDrafts[a.id] ?? (total === 0 ? "" : fromMinorUnits(total, currency))}
-            aria-invalid={annualDrafts[a.id] !== undefined && parseCell(annualDrafts[a.id]!, currency) === null}
+            aria-invalid={
+              annualDrafts[a.id] !== undefined &&
+              parseCell(annualDrafts[a.id]!, currency) === null
+            }
             onChange={(event) =>
               setAnnualDrafts((prev) => ({ ...prev, [a.id]: event.target.value }))
             }
@@ -378,7 +392,8 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
               });
             }}
             title="Enter an annual amount, then press Enter or leave the field to distribute it across the year"
-          />        </TableCell>
+          />
+        </TableCell>
         <TableCell className="whitespace-nowrap p-1">
           <Button
             size="sm"
@@ -498,16 +513,22 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
       <div className="mb-4 grid gap-3 sm:grid-cols-3">
         <div className="rounded-md border p-3">
           <p className="text-xs text-muted-foreground">Annual budgeted income</p>
-          <p className="mt-1 text-lg font-semibold tabular-nums">{fmt.amount(sum(incomeTotals), currency)}</p>
+          <p className="mt-1 text-lg font-semibold tabular-nums">
+            {fmt.amount(sum(incomeTotals), currency)}
+          </p>
         </div>
         <div className="rounded-md border p-3">
           <p className="text-xs text-muted-foreground">Annual budgeted expenses</p>
-          <p className="mt-1 text-lg font-semibold tabular-nums">{fmt.amount(sum(expenseTotals), currency)}</p>
+          <p className="mt-1 text-lg font-semibold tabular-nums">
+            {fmt.amount(sum(expenseTotals), currency)}
+          </p>
         </div>
         <div className="rounded-md border p-3">
           <p className="text-xs text-muted-foreground">Annual budgeted net profit</p>
-          <p className={`mt-1 text-lg font-semibold tabular-nums ${sum(incomeTotals) - sum(expenseTotals) < 0 ? "text-destructive" : ""}`}>
-            {fmt.amount(sum(incomeTotals) - sum(expenseTotals), currency)}
+          <p
+            className={`mt-1 text-lg font-semibold tabular-nums ${budgetNetMinor < 0 ? "text-destructive" : ""}`}
+          >
+            {fmt.amount(budgetNetMinor, currency)}
           </p>
         </div>
       </div>
@@ -650,8 +671,9 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
       {hasInvalidAmounts ? (
         <Alert variant="destructive" className="mb-3">
           <AlertDescription>
-            {invalidCount + invalidAnnualCount} amount{invalidCount + invalidAnnualCount === 1 ? " is" : "s are"} not a valid number. Fix the
-            highlighted monthly or annual amounts before saving, exporting or using bulk actions.
+            {invalidAmountCount} amount{invalidAmountCount === 1 ? " is" : "s are"} not a valid number. Fix
+            the highlighted monthly or annual amounts before saving, exporting or using bulk
+            actions.
           </AlertDescription>
         </Alert>
       ) : null}
@@ -683,7 +705,8 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
           />
         </div>
         <p className="text-xs text-muted-foreground">
-          Showing {rows.filter(visible).length} of {rows.length} accounts. Totals always include all accounts.
+          Showing {rows.filter(visible).length} of {rows.length} accounts. Totals always include
+          all accounts.
         </p>
       </div>
 

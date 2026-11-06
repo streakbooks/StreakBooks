@@ -14,6 +14,7 @@ import {
 } from "@/lib/ai/validate-suggestion";
 import { postJournal } from "@/lib/accounting/posting-engine";
 import { assertLinesBalance } from "@/lib/accounting/money";
+import { getJournalPreview } from "@/lib/ai/suggestion-review";
 
 export type AiIntent =
   "ask" | "explain" | "categorise" | "draft" | "duplicates" | "reconcile" | "unusual" | "navigate";
@@ -277,7 +278,10 @@ export const runAiAssistant = createServerFn({ method: "POST" })
           status: validation.ok ? "validated" : "invalid",
           title: parsed.title,
           summary: result.content.slice(0, 500),
-          payload: validation.normalized?.payload ?? parsed.payload,
+          payload: {
+            ...(validation.normalized?.payload ?? parsed.payload),
+            _ai_type: parsed.type,
+          },
           validation_errors: validation.errors,
         } as never)
         .select("id")
@@ -321,7 +325,7 @@ export const listAiSuggestions = createServerFn({ method: "GET" })
     const { data: rows, error } = await context.supabase
       .from("ai_suggestions" as never)
       .select(
-        "id, intent, status, title, summary, validation_errors, created_at, applied_journal_id" as never,
+        "id, intent, status, title, summary, payload, validation_errors, created_at, applied_journal_id" as never,
       )
       .eq("company_id" as never, data.companyId as never)
       .order("created_at" as never, { ascending: false })
@@ -333,6 +337,7 @@ export const listAiSuggestions = createServerFn({ method: "GET" })
       status: string;
       title: string;
       summary: string;
+      payload: Record<string, unknown>;
       validation_errors: string[];
       created_at: string;
       applied_journal_id: string | null;
@@ -346,18 +351,30 @@ export const listAiSuggestions = createServerFn({ method: "GET" })
  */
 export const applyAiSuggestion = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; suggestionId: string; confirm: boolean }) => ({
-    companyId: assertUuid(input.companyId),
-    suggestionId: assertUuid(input.suggestionId, "suggestion"),
-    confirm: input.confirm === true,
-  }))
+  .inputValidator((input: { companyId: string; suggestionId: string; confirm: boolean; journalDate?: string }) => {
+    const journalDate = input.journalDate ?? new Date().toISOString().slice(0, 10);
+    const parsedDate = new Date(journalDate + "T00:00:00.000Z");
+    if (
+      !/^\d{4}-\d{2}-\d{2}$/.test(journalDate) ||
+      !Number.isFinite(parsedDate.getTime()) ||
+      parsedDate.toISOString().slice(0, 10) !== journalDate
+    ) {
+      throw new Error("Choose a valid journal date (YYYY-MM-DD)");
+    }
+    return {
+      companyId: assertUuid(input.companyId),
+      suggestionId: assertUuid(input.suggestionId, "suggestion"),
+      confirm: input.confirm === true,
+      journalDate,
+    };
+  })
   .handler(async ({ data, context }) => {
     assertSafeApplyConfirm(data.confirm);
     await assertCompanyPermission(context.supabase, data.companyId, "ai.apply_suggestion");
 
     const { data: row, error } = await context.supabase
       .from("ai_suggestions" as never)
-      .select("id, company_id, status, payload, title" as never)
+      .select("id, company_id, intent, status, payload, title" as never)
       .eq("id" as never, data.suggestionId as never)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -365,16 +382,16 @@ export const applyAiSuggestion = createServerFn({ method: "POST" })
       id: string;
       company_id: string;
       status: string;
-      payload: { lines?: unknown };
+      intent: string;
+      payload: Record<string, unknown>;
       title: string;
     } | null;
     if (!suggestion) throw new Error("Suggestion not found");
     if (suggestion.company_id !== data.companyId) {
       throw new Error("Suggestion does not belong to this organisation");
     }
-    if (suggestion.status === "applied") throw new Error("Suggestion already applied");
-    if (suggestion.status === "invalid" || suggestion.status === "rejected") {
-      throw new Error("Suggestion is not valid to apply");
+    if (!getJournalPreview(suggestion)) {
+      throw new Error("Only validated, balanced journal drafts can be posted. Review or regenerate this suggestion.");
     }
 
     const { data: accounts } = await context.supabase
@@ -405,10 +422,9 @@ export const applyAiSuggestion = createServerFn({ method: "POST" })
     // Re-check balance immediately before post
     assertLinesBalance(validation.normalized.lines);
 
-    const today = new Date().toISOString().slice(0, 10);
     const posted = await postJournal(context.supabase, {
       company_id: data.companyId,
-      journal_date: today,
+      journal_date: data.journalDate,
       memo: `AI suggestion: ${suggestion.title}`.slice(0, 200),
       source_type: "other",
       source_id: data.suggestionId,
@@ -433,7 +449,7 @@ export const applyAiSuggestion = createServerFn({ method: "POST" })
         _action: "ai.suggestion_applied",
         _entity_type: "ai_suggestion",
         _entity_id: data.suggestionId,
-        _details: { journal_id: posted.journalId },
+        _details: { journal_id: posted.journalId, journal_date: data.journalDate },
       } as never,
     );
 
@@ -448,11 +464,15 @@ export const rejectAiSuggestion = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "ai.use");
-    const { error } = await context.supabase
+    const { data: rejected, error } = await context.supabase
       .from("ai_suggestions" as never)
       .update({ status: "rejected", updated_at: new Date().toISOString() } as never)
       .eq("id" as never, data.suggestionId as never)
-      .eq("company_id" as never, data.companyId as never);
+      .eq("company_id" as never, data.companyId as never)
+      .in("status" as never, ["pending", "validated"] as never)
+      .select("id" as never)
+      .maybeSingle();
     if (error) throw new Error(error.message);
+    if (!rejected) throw new Error("Suggestion is no longer pending or you cannot reject it");
     return { ok: true };
   });

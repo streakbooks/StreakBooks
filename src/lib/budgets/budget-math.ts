@@ -24,7 +24,7 @@ export function roundDiv(numerator: bigint, denominator: bigint): bigint {
 
 /** Apply an uplift in basis points (1000 = +10%, -500 = -5%) to an amount; rounds half away from zero. */
 export function applyUpliftBps(minor: number, bps: number): number {
-  if (!Number.isInteger(minor)) throw new Error("Amount must be an integer in minor units");
+  if (!Number.isSafeInteger(minor)) throw new Error("Amount must be a safe integer in minor units");
   if (!Number.isInteger(bps)) throw new Error("Uplift must be whole basis points");
   const result = Number(roundDiv(BigInt(minor) * BigInt(10_000 + bps), 10_000n));
   if (!Number.isSafeInteger(result)) throw new Error("Adjusted budget amount exceeds the supported range");
@@ -40,7 +40,7 @@ export function fillRight(row: readonly number[], fromIndex: number): number[] {
 
 /** Split an annual total across months; the last month takes the rounding remainder. */
 export function spreadEvenly(total: number, months = 12): number[] {
-  if (!Number.isInteger(total)) throw new Error("Amount must be an integer in minor units");
+  if (!Number.isSafeInteger(total)) throw new Error("Amount must be a safe integer in minor units");
   if (months < 1) return [];
   const each = Number(roundDiv(BigInt(total), BigInt(months)));
   const out = Array.from({ length: months }, () => each);

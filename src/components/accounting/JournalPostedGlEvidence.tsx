@@ -63,6 +63,7 @@ export function JournalPostedGlEvidence({
           </p>
           <p className="text-xs text-muted-foreground">
             Accounting period evidence: {audit.data.periodId ?? "not verified"}
+            {audit.data.periodStatus ? " · Status: " + audit.data.periodStatus : ""}
           </p>
           {audit.data.issues.length ? (
             <ul className="list-disc space-y-1 pl-5 text-destructive">

@@ -178,7 +178,7 @@ export function PayrollEmployeesPage() {
   };
 
   const exportCsv = () => {
-    const csv = payrollEmployeesToCsv(list.employees);
+    const csv = payrollEmployeesToCsv(displayedEmployees);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
@@ -186,7 +186,7 @@ export function PayrollEmployeesPage() {
     anchor.download = "linkbooks-payroll-employees.csv";
     anchor.click();
     URL.revokeObjectURL(url);
-    toast.success(`Exported ${list.employees.length} employees`);
+    toast.success(`Exported ${displayedEmployees.length} employees in displayed order`);
   };
 
   const importCsv = async (file: File | null) => {

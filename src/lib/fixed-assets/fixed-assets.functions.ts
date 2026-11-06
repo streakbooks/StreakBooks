@@ -616,7 +616,7 @@ export const runDepreciation = createServerFn({ method: "POST" })
     await assertCompanyPermission(context.supabase, data.companyId, "accounting.post").catch(
       async () => assertCompanyPermission(context.supabase, data.companyId, "journals.manual"),
     );
-    const posted: Array<{ periodEnd: string; totalMinor: number; assets: number }> = [];
+    const posted: Array<{ periodEnd: string; totalMinor: string; assets: number }> = [];
     let failure: { periodEnd: string; message: string } | null = null;
     for (const periodEnd of data.periodEnds) {
       try {

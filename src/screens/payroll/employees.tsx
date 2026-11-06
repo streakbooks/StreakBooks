@@ -68,6 +68,7 @@ export function PayrollEmployeesPage() {
   const saveEmployee = useServerFn(savePayrollEmployee);
 
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [sort, setSort] = useState<"name" | "number" | "hire-newest">("name");
   const [search, setSearch] = useState("");
   const q = useDebounced(search);
   const [addOpen, setAddOpen] = useState(false);
@@ -122,6 +123,15 @@ export function PayrollEmployeesPage() {
     );
   }
   if (listQ.isPending || settingsQ.isPending) return <LoadingState />;
+  if (settingsQ.isError) {
+    return (
+      <ErrorState
+        title="Could not load payroll settings"
+        description={friendlyAuthError(settingsQ.error)}
+        onRetry={() => settingsQ.refetch()}
+      />
+    );
+  }
   if (listQ.isError) {
     return (
       <ErrorState
@@ -142,6 +152,17 @@ export function PayrollEmployeesPage() {
     settings?.settings?.payroll_currency ??
     settings?.company.base_currency ??
     company.base_currency;
+
+  const filtersActive = statusFilter !== "all" || search.trim() !== "";
+  const clearFilters = () => {
+    setStatusFilter("all");
+    setSearch("");
+  };
+  const displayedEmployees = [...list.employees].sort((a, b) => {
+    if (sort === "number") return a.employee_number.localeCompare(b.employee_number);
+    if (sort === "hire-newest") return b.hire_date.localeCompare(a.hire_date);
+    return `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`);
+  });
 
   const openAdd = () => {
     setNewDraft(emptyEmployeeDraft(country, currency));
@@ -250,15 +271,42 @@ export function PayrollEmployeesPage() {
                 ))}
               </SelectContent>
             </Select>
+            <Select value={sort} onValueChange={(value) => setSort(value as typeof sort)}>
+              <SelectTrigger className="w-[170px]" aria-label="Sort employees">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name">Name: A to Z</SelectItem>
+                <SelectItem value="number">Employee ID</SelectItem>
+                <SelectItem value="hire-newest">Hire date: newest</SelectItem>
+              </SelectContent>
+            </Select>
+            {filtersActive ? (
+              <Button variant="ghost" size="sm" onClick={clearFilters}>
+                Clear filters
+              </Button>
+            ) : null}
+            <p className="w-full text-xs text-muted-foreground" aria-live="polite">
+              Showing {displayedEmployees.length} employees
+              {filtersActive ? " matching filters" : ""}
+            </p>
           </div>
 
           {list.employees.length === 0 ? (
             <EmptyState
               icon={Users}
-              title="No employees yet"
-              description="Add your first payroll employee to assign pay and payment details."
+              title={filtersActive ? "No matching employees" : "No employees yet"}
+              description={
+                filtersActive
+                  ? "No employees match the current search or status filter."
+                  : "Add your first payroll employee to assign pay and payment details."
+              }
               action={
-                canManage ? (
+                filtersActive ? (
+                  <Button size="sm" variant="outline" onClick={clearFilters}>
+                    Clear filters
+                  </Button>
+                ) : canManage ? (
                   <Button size="sm" onClick={openAdd}>
                     Add employee
                   </Button>
@@ -279,7 +327,7 @@ export function PayrollEmployeesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {list.employees.map((emp) => (
+                  {displayedEmployees.map((emp) => (
                     <TableRow key={emp.id}>
                       <TableCell>
                         <Link

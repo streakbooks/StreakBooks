@@ -4,6 +4,7 @@ import {
   firmOnboardingReleaseSteps,
   FIRM_ONBOARDING_UNIT_TESTS,
   stagingGateReady,
+  localReleasePreflight,
 } from "./firm-onboarding-release-plan.mjs";
 
 describe("Firm onboarding local release plan", () => {
@@ -55,5 +56,35 @@ describe("Firm onboarding local release plan", () => {
       expectedHost: "dedicated-staging.example.invalid",
       productionUrl: "https://production.example.invalid",
     });
+  });
+});
+
+describe("Firm onboarding release checkout trust", () => {
+  const trusted = {
+    branch: "main",
+    commit: "3".repeat(40),
+    originMainCommit: "3".repeat(40),
+    originMatchesRepo: true,
+    workingTreeClean: true,
+    workingTreeStatusKnown: true,
+  };
+
+  it("accepts only a clean main matching the authorized origin/main commit", () => {
+    assert.deepEqual(localReleasePreflight(trusted), { passed: true, blockers: [] });
+  });
+  it("rejects dirty and unknown working-tree state", () => {
+    assert.equal(localReleasePreflight({ ...trusted, workingTreeClean: false }).passed, false);
+    assert.equal(localReleasePreflight({ ...trusted, workingTreeStatusKnown: false }).passed, false);
+  });
+  it("rejects detached and nonmain branches", () => {
+    assert.equal(localReleasePreflight({ ...trusted, branch: "" }).passed, false);
+    assert.equal(localReleasePreflight({ ...trusted, branch: "feature/new" }).passed, false);
+  });
+  it("rejects wrong origin and missing or stale origin/main", () => {
+    assert.equal(localReleasePreflight({ ...trusted, originMatchesRepo: false }).passed, false);
+    assert.equal(localReleasePreflight({ ...trusted, originMainCommit: null }).passed, false);
+    assert.equal(localReleasePreflight({
+      ...trusted, originMainCommit: "4".repeat(40),
+    }).passed, false);
   });
 });

@@ -6,12 +6,14 @@ import { ArrowRight, Download, Loader2, Plus, RotateCcw, Save, Upload } from "lu
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
+import { BudgetGovernancePanel } from "@/components/budgets/BudgetGovernancePanel";
 import { useFormat } from "@/hooks/use-format";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { addMonthsIso, monthStart } from "@/lib/accounting/fiscal-year";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import {
   getBudget,
+  getBudgetGovernance,
   getYearActuals,
   saveBudget,
   saveBudgetLines,
@@ -102,6 +104,14 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
   const saveLinesFn = useServerFn(saveBudgetLines);
   const saveHeadFn = useServerFn(saveBudget);
   const actualsFn = useServerFn(getYearActuals);
+  const governanceFn = useServerFn(getBudgetGovernance);
+  const governanceQuery = useQuery({
+    queryKey: ["budget-governance", companyId, data.budget.id],
+    queryFn: () => governanceFn({ data: { companyId, budgetId: data.budget.id } }),
+  });
+  const locked = governanceQuery.data?.locked === true;
+  const canEdit =
+    canManage && !governanceQuery.isPending && !governanceQuery.isError && !locked;
   const fileRef = useRef<HTMLInputElement>(null);
 
   const initial = useMemo(() => {
@@ -281,6 +291,7 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
 
   const save = useMutation({
     mutationFn: async () => {
+      if (!canEdit) throw new Error("You cannot edit a locked or unavailable budget.");
       if (hasInvalidAmounts) throw new Error("Fix the highlighted amounts first.");
       await saveLinesWithHead();
     },
@@ -288,6 +299,9 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
       setDirty(false);
       await queryClient.invalidateQueries({ queryKey: ["budget", companyId, data.budget.id] });
       await queryClient.invalidateQueries({ queryKey: ["budgets", companyId] });
+      await queryClient.invalidateQueries({
+        queryKey: ["budget-governance", companyId, data.budget.id],
+      });
       toast.success("Budget saved");
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
@@ -347,7 +361,7 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
               inputMode="decimal"
               value={row[i] ?? ""}
               aria-invalid={vals[i] === null}
-              disabled={!canManage}
+              disabled={!canEdit}
               onFocus={() => {
                 focus.current[a.id] = i;
               }}
@@ -364,14 +378,15 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
             aria-label={`${a.name} annual total (spreads evenly)`}
             className="h-8 w-28 text-right font-medium tabular-nums"
             inputMode="decimal"
-            disabled={!canManage}
+            disabled={!canEdit}
             value={annualDrafts[a.id] ?? (total === 0 ? "" : fromMinorUnits(total, currency))}
             aria-invalid={
               annualDrafts[a.id] !== undefined &&
               parseCell(annualDrafts[a.id]!, currency) === null
             }
-            onChange={(event) =>
-              setAnnualDrafts((prev) => ({ ...prev, [a.id]: event.target.value }))
+            onChange={(event) => {
+              setAnnualDrafts((prev) => ({ ...prev, [a.id]: event.target.value }));
+              setDirty(true);
             }
             onKeyDown={(event) => {
               if (event.key === "Enter") event.currentTarget.blur();
@@ -398,7 +413,7 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
           <Button
             size="sm"
             variant="ghost"
-            disabled={!canManage}
+            disabled={!canEdit}
             title="Copy the amount in the cell you last edited into every later month"
             onClick={() => {
               const from = focus.current[a.id] ?? 0;
@@ -421,7 +436,7 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
           <Button
             size="sm"
             variant="ghost"
-            disabled={!canManage}
+            disabled={!canEdit}
             onClick={() => {
               const next = { ...cells };
               delete next[a.id];
@@ -501,11 +516,31 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
         }
       />
 
+      <BudgetGovernancePanel
+        companyId={companyId}
+        budgetId={data.budget.id}
+        currency={currency}
+        canManage={canManage}
+        dirty={dirty}
+        governance={governanceQuery.data}
+        loading={governanceQuery.isPending}
+        error={governanceQuery.error}
+        onRefresh={() => void governanceQuery.refetch()}
+      />
+
       {!canManage ? (
         <Alert className="mb-4">
           <AlertDescription>
             You can view this budget but not change it. Budgets are managed by owners,
             administrators and accountants.
+          </AlertDescription>
+        </Alert>
+      ) : null}
+      {locked ? (
+        <Alert className="mb-4">
+          <AlertDescription>
+            This budget is locked. You can review its accounts, revision history and export a
+            copy, but changes are blocked until an authorised user unlocks it.
           </AlertDescription>
         </Alert>
       ) : null}
@@ -541,7 +576,7 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
             className="w-56"
             value={name}
             maxLength={120}
-            disabled={!canManage}
+            disabled={!canEdit}
             onChange={(e) => {
               setName(e.target.value);
               setDirty(true);
@@ -557,7 +592,7 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
             maxLength={2000}
             placeholder="Optional planning assumptions"
             value={notes}
-            disabled={!canManage}
+            disabled={!canEdit}
             onChange={(event) => {
               setNotes(event.target.value);
               setDirty(true);
@@ -585,12 +620,12 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
               purpose="posting"
               placeholder="Choose an income or expense account"
               allowClear
-              disabled={!canManage}
+              disabled={!canEdit}
             />
             <Button
               size="sm"
               variant="outline"
-              disabled={!addId || !canManage}
+              disabled={!addId || !canEdit}
               onClick={() => {
                 update({ ...cells, [addId]: Array.from({ length: 12 }, () => "") });
                 setAddId("");
@@ -609,10 +644,10 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
               inputMode="decimal"
               placeholder="5"
               value={uplift}
-              disabled={!canManage}
+              disabled={!canEdit}
               onChange={(e) => setUplift(e.target.value)}
             />
-            <Button size="sm" variant="outline" disabled={!canManage} onClick={onUplift}>
+            <Button size="sm" variant="outline" disabled={!canEdit} onClick={onUplift}>
               Apply to all
             </Button>
           </div>
@@ -620,7 +655,7 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
         <Button
           size="sm"
           variant="outline"
-          disabled={!canManage}
+          disabled={!canEdit}
           onClick={() => void onCopyActuals()}
         >
           Copy last year's actuals
@@ -632,7 +667,7 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
           <Button
             size="sm"
             variant="outline"
-            disabled={!canManage}
+            disabled={!canEdit}
             onClick={() => fileRef.current?.click()}
           >
             <Upload className="mr-1 size-4" /> Import CSV
@@ -650,7 +685,7 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
           />
           <Button
             size="sm"
-            disabled={!canManage || !dirty || save.isPending || hasInvalidAmounts}
+            disabled={!canEdit || !dirty || save.isPending || hasInvalidAmounts}
             onClick={() => save.mutate()}
           >
             {save.isPending ? (

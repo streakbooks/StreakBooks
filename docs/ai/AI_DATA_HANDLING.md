@@ -43,3 +43,27 @@ Context is always loaded **after** server permission checks and **scoped to one 
 ## 5. Demo Company
 
 Same AI code path as live orgs. `is_demo` does not weaken permissions or skip validation.
+
+## 6. Financial insights (read-only reporting)
+
+The AI Assistant's **Financial insights** panel reads LinkBooks' existing
+`getManagementMetrics` reporting API. It does not ask a model to invent or
+calculate ledger values. The server API independently enforces
+`reports.view`, while the panel also requires `ai.use`.
+
+- Revenue, gross profit, net profit, cash, working capital and ratios come from
+  the same reporting-facts capture and financial calculations used in the Reports Centre.
+- A chosen accounting basis is honoured. Without an override, the company's
+  reporting-basis setting is used. Source links preserve the period and basis.
+- Prior-period comparisons use the preceding **equal number of calendar days**,
+  and are suppressed when the accounting bases or ranges do not match.
+- Changes are absolute movements only, **not** a percentage growth or root-cause
+  claim. Cash refers to bank **general-ledger** balances, not a verified bank feed.
+- Margin and current-ratio values are shown as unavailable when the reporting
+  calculation has no valid denominator. Exact integer minor units are formatted
+  without floating-point arithmetic.
+- The review observations are deterministic prompts, not accounting adjustments,
+  an audit opinion, or evidence of an error. Opening the cited report is the
+  next review step. They are not forwarded to the AI provider by this panel.
+- This phase does not introduce a new database table, migration, posting action,
+  scheduled automation or source-document attachment.

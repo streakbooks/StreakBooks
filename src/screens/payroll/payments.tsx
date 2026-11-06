@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
@@ -10,6 +10,7 @@ import { friendlyAuthError } from "@/lib/auth-helpers";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { todayLocalDateOnly } from "@/lib/payroll/local-date";
 import { PAYROLL_SETTLEMENT_REFRESH_KEYS } from "@/lib/payroll/settlement-query-keys";
+import { acquirePayrollMutationLock, releasePayrollMutationLock } from "@/lib/payroll/action-lock";
 import { buildGenericPayrollBankCsv } from "@/lib/payroll/payroll-bank-export";
 import { parsePayrollPaymentEntry } from "@/lib/payroll/payment-form-draft";
 import { payrollClearingCurrencyMismatch } from "@/lib/payroll/clearing-currency";
@@ -91,6 +92,8 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
   const savePayment = useServerFn(recordPayrollPayment);
 
   const [recordOpen, setRecordOpen] = useState(false);
+  const paymentSubmitLock = useRef(false);
+  const reversalSubmitLock = useRef(false);
   const [paymentSearch, setPaymentSearch] = useState("");
   const [paymentStatus, setPaymentStatus] = useState<"all" | "posted" | "reversed">("all");
   const [paymentDate, setPaymentDate] = useState(() => todayLocalDateOnly());
@@ -277,6 +280,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
       }
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
+    onSettled: () => releasePayrollMutationLock(paymentSubmitLock),
   });
 
   const reverseMut = useMutation({
@@ -299,10 +303,23 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
       }
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
+    onSettled: () => releasePayrollMutationLock(reversalSubmitLock),
   });
 
+  const submitRecordPayment = () => {
+    if (recordMut.isPending || !acquirePayrollMutationLock(paymentSubmitLock)) return;
+    recordMut.mutate();
+  };
+
+  const submitReversePayment = () => {
+    if (!reverseTarget || reverseMut.isPending || !acquirePayrollMutationLock(reversalSubmitLock)) {
+      return;
+    }
+    reverseMut.mutate();
+  };
+
   const openRecordDialog = () => {
-    if (recordMut.isPending) return;
+    if (recordMut.isPending || paymentSubmitLock.current) return;
     // Do not inherit bank, allocation or memo fields from a previous settlement.
     setClearingAccountId("");
     setAlloc({});
@@ -507,6 +524,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
                           size="sm"
                           variant="outline"
                           onClick={() => {
+                            if (reverseMut.isPending || reversalSubmitLock.current) return;
                             setReversalDate(todayLocalDateOnly());
                             setReverseTarget({ id: p.id, currency: p.currency });
                           }}
@@ -526,7 +544,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
       <Dialog
         open={recordOpen}
         onOpenChange={(open) => {
-          if (!recordMut.isPending) setRecordOpen(open);
+          if (!recordMut.isPending && !paymentSubmitLock.current) setRecordOpen(open);
         }}
       >
         <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
@@ -706,7 +724,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
                 !accountsQ.isSuccess ||
                 fxUnsupported
               }
-              onClick={() => recordMut.mutate()}
+              onClick={submitRecordPayment}
             >
               Record payment
             </Button>
@@ -797,6 +815,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
                       size="sm"
                       variant="outline"
                       onClick={() => {
+                        if (reverseMut.isPending || reversalSubmitLock.current) return;
                         setDetailPaymentId(null);
                         setReversalDate(todayLocalDateOnly());
                         setReverseTarget({ id: payment.id, currency: payment.currency });
@@ -814,7 +833,11 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
 
       <AlertDialog
         open={reverseTarget !== null}
-        onOpenChange={(open) => !open && setReverseTarget(null)}
+        onOpenChange={(open) => {
+          if (!open && !reverseMut.isPending && !reversalSubmitLock.current) {
+            setReverseTarget(null);
+          }
+        }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -831,14 +854,15 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
               type="date"
               value={reversalDate}
               onChange={(e) => setReversalDate(e.target.value)}
+              disabled={reverseMut.isPending || reversalSubmitLock.current}
             />
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={reverseMut.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={reverseMut.isPending || reversalSubmitLock.current}>Cancel</AlertDialogCancel>
             <Button
               variant="destructive"
-              disabled={reverseMut.isPending || !reversalDate}
-              onClick={() => reverseMut.mutate()}
+              disabled={reverseMut.isPending || reversalSubmitLock.current || !reversalDate}
+              onClick={submitReversePayment}
             >
               Reverse payment
             </Button>

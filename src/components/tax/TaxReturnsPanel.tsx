@@ -20,7 +20,11 @@ import { filterTaxAccountPicker, type PickerAccount } from "@/lib/tax/account-pi
 import { decimalPlacesFor } from "@/lib/accounting/money";
 import { csvFilename, csvMoney, downloadCsv, toCsv } from "@/lib/reports/csv";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { isValidTaxDate } from "@/lib/tax/tax-input-validation";
+import { returnVariances } from "@/lib/tax/tax-reconciliation";
+import { filterSavedTaxReturns, isStaleTaxPreview, type SavedReturnFilter } from "@/lib/tax/tax-return-view";
 import { useFormat } from "@/hooks/use-format";
+import { useCanDo } from "@/hooks/use-can";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +33,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { AccountLookup } from "@/components/lookup";
+import { TaxGlComparisonPanel } from "@/components/tax/TaxGlComparisonPanel";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -152,6 +157,7 @@ export function TaxReturnsPanel({
 }) {
   const qc = useQueryClient();
   const f = useFormat();
+  const canTax = useCanDo("tax.settings");
   const fetchList = useServerFn(listTaxReturns);
   const fetchDefaults = useServerFn(getReturnDefaults);
   const doPreview = useServerFn(previewTaxReturn);
@@ -171,6 +177,9 @@ export function TaxReturnsPanel({
   } | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [confirmFile, setConfirmFile] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [returnSearch, setReturnSearch] = useState("");
+  const [returnFilter, setReturnFilter] = useState<SavedReturnFilter>("all");
   const [settleAccount, setSettleAccount] = useState("");
   const [settleDate, setSettleDate] = useState("");
   const [confirmSettle, setConfirmSettle] = useState(false);
@@ -199,6 +208,11 @@ export function TaxReturnsPanel({
         data: { companyId, periodStart: calc!.start, periodEnd: calc!.end, basis: calc!.basis },
       }),
   });
+  const previewStale = isStaleTaxPreview(calc, { start, end, basis });
+  const matchingReturns = useMemo(
+    () => filterSavedTaxReturns(list.data?.returns ?? [], returnSearch, returnFilter),
+    [list.data, returnSearch, returnFilter],
+  );
   const detail = useQuery({
     queryKey: ["tax-return", companyId, openId],
     enabled: openId !== null,
@@ -237,6 +251,7 @@ export function TaxReturnsPanel({
     onSuccess: async () => {
       toast.success("Draft deleted");
       setOpenId(null);
+      setConfirmDelete(false);
       await refresh();
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
@@ -368,7 +383,7 @@ export function TaxReturnsPanel({
               </Select>
             </div>
             <Button
-              disabled={!start || !end || start > end}
+              disabled={!isValidTaxDate(start) || !isValidTaxDate(end) || start > end}
               onClick={() => setCalc({ start, end, basis })}
             >
               Calculate
@@ -379,6 +394,15 @@ export function TaxReturnsPanel({
               Cash basis counts invoices and bills in proportion to payments dated in the period.
               Credit notes and expenses use their own date.
             </p>
+          ) : null}
+
+          {previewStale ? (
+            <Alert>
+              <AlertTitle>Calculation needs refreshing</AlertTitle>
+              <AlertDescription>
+                The dates or basis have changed. Calculate again before saving a draft or exporting this preview.
+              </AlertDescription>
+            </Alert>
           ) : null}
 
           {calc === null ? null : preview.isPending ? (
@@ -406,9 +430,18 @@ export function TaxReturnsPanel({
                 isUk={pv.isUk}
                 jurisdiction={pv.jurisdiction}
               />
+              {!previewStale ? (
+                <TaxGlComparisonPanel
+                  key={`${companyId}-${pv.periodStart}-${pv.periodEnd}-${pv.basis}`}
+                  companyId={companyId}
+                  periodStart={pv.periodStart}
+                  periodEnd={pv.periodEnd}
+                  basis={pv.basis === "cash" ? "cash" : "accrual"}
+                />
+              ) : null}
               <div className="flex flex-wrap gap-2">
                 <Button
-                  disabled={saveDraft.isPending || (list.data ? !list.data.available : false)}
+                  disabled={!canTax || previewStale || saveDraft.isPending || (list.data ? !list.data.available : false)}
                   onClick={() => saveDraft.mutate()}
                 >
                   {saveDraft.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
@@ -416,6 +449,7 @@ export function TaxReturnsPanel({
                 </Button>
                 <Button
                   variant="outline"
+                  disabled={previewStale}
                   onClick={() =>
                     exportCsv(
                       pv.lines,
@@ -439,7 +473,30 @@ export function TaxReturnsPanel({
         <CardHeader>
           <CardTitle className="text-base">Returns</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Input
+              aria-label="Search tax returns"
+              placeholder="Search by period, basis or status"
+              className="w-full sm:max-w-xs"
+              value={returnSearch}
+              onChange={(e) => setReturnSearch(e.target.value)}
+            />
+            <Select value={returnFilter} onValueChange={(v) => setReturnFilter(v as SavedReturnFilter)}>
+              <SelectTrigger aria-label="Filter tax returns" className="w-full sm:w-48">
+                <SelectValue placeholder="All returns" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All returns</SelectItem>
+                <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="filed">Recorded filed</SelectItem>
+                <SelectItem value="settled">Settled</SelectItem>
+              </SelectContent>
+            </Select>
+            {!list.isPending && !list.isError ? (
+              <span className="text-xs text-muted-foreground">{matchingReturns.length} of {list.data?.returns.length ?? 0} saved returns</span>
+            ) : null}
+          </div>
           {list.isPending ? (
             <LoadingState />
           ) : list.isError ? (
@@ -453,6 +510,8 @@ export function TaxReturnsPanel({
               title="No saved returns"
               description="Calculate a period above and save it."
             />
+          ) : matchingReturns.length === 0 ? (
+            <EmptyState title="No matching returns" description="Change the search or status filter." />
           ) : (
             <Table>
               <TableHeader>
@@ -465,7 +524,7 @@ export function TaxReturnsPanel({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {list.data.returns.map((r) => (
+                {matchingReturns.map((r) => (
                   <TableRow key={r.id}>
                     <TableCell>
                       {f.date(r.period_start)} → {f.date(r.period_end)}
@@ -491,6 +550,7 @@ export function TaxReturnsPanel({
                         onClick={() => {
                           setOpenId(r.id);
                           setConfirmFile(false);
+                          setConfirmDelete(false);
                           setConfirmSettle(false);
                         }}
                       >
@@ -539,29 +599,77 @@ export function TaxReturnsPanel({
                   </Alert>
                 ))}
 
-                {d.changedSinceFiling.length > 0 ? (
-                  <Alert variant="destructive">
-                    <AlertTitle>Figures have changed since this return was filed</AlertTitle>
-                    <AlertDescription>
-                      Documents dated in this period were added, changed or voided after filing.
-                      Boxes affected:{" "}
-                      {d.changedSinceFiling
-                        .map(
-                          (c) =>
-                            `${c.box_key.replace("box", "")} (filed ${f.money(c.filed_minor, d.currency)}, now ${f.money(c.now_minor, d.currency)})`,
-                        )
-                        .join("; ")}
-                      . The filed figures above are unchanged. Correct the difference in your next
-                      return.
-                    </AlertDescription>
-                  </Alert>
+                {d.status === "filed" && d.changedSinceFiling.length > 0 ? (
+                  <div className="space-y-3">
+                    <Alert variant="destructive">
+                      <AlertTitle>Filed versus current calculation differs</AlertTitle>
+                      <AlertDescription>
+                        The recorded filed figures remain locked. Source postings, reversals or
+                        classifications may have changed since filing. Review the variances below
+                        and record any correction according to the applicable tax rules; this
+                        comparison does not amend or re-submit the return.
+                      </AlertDescription>
+                    </Alert>
+                    <div className="overflow-x-auto rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>{d.isUk ? "Box" : "Line"}</TableHead>
+                            <TableHead className="text-right">Recorded filed</TableHead>
+                            <TableHead className="text-right">Recalculated now</TableHead>
+                            <TableHead className="text-right">Change (now − filed)</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {returnVariances(d.changedSinceFiling).map((change) => (
+                            <TableRow key={change.box_key}>
+                              <TableCell>{change.box_key.replace("box", "")}</TableCell>
+                              <TableCell className="text-right tabular-nums">
+                                {f.money(change.filed_minor, d.currency)}
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums">
+                                {f.money(change.now_minor, d.currency)}
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums">
+                                {f.money(change.deltaMinor, d.currency)}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                ) : d.status === "filed" ? (
+                  <p className="text-xs text-muted-foreground">
+                    No differences in stored tax return boxes on recalculation. This does not
+                    establish reconciliation to the General Ledger or statutory compliance.
+                  </p>
                 ) : null}
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button size="sm" variant="outline" asChild>
+                    <Link to="/reports/$reportId" params={{ reportId: "tax-summary" }}>
+                      Compare to tax GL summary
+                    </Link>
+                  </Button>
+                  <span className="text-xs text-muted-foreground">
+                    The GL summary uses posted journal movements; differences may arise from
+                    timing, settlement and adjustments.
+                  </span>
+                </div>
 
                 <BoxTable
                   lines={d.lines}
                   currency={d.currency}
                   isUk={d.isUk}
                   jurisdiction={d.jurisdiction}
+                />
+                <TaxGlComparisonPanel
+                  key={`${companyId}-${d.id}-${d.period_start}-${d.period_end}`}
+                  companyId={companyId}
+                  periodStart={d.period_start}
+                  periodEnd={d.period_end}
+                  basis={d.basis === "cash" ? "cash" : "accrual"}
                 />
 
                 <div className="flex flex-wrap gap-2">
@@ -592,15 +700,27 @@ export function TaxReturnsPanel({
                       <Checkbox
                         id="confirm-file"
                         checked={confirmFile}
+                        disabled={!canTax}
                         onCheckedChange={(v) => setConfirmFile(v === true)}
                       />
                       <Label htmlFor="confirm-file" className="text-sm">
                         I have filed this return with the tax authority and want to lock it.
                       </Label>
                     </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Checkbox
+                        id="confirm-delete-tax-return"
+                        checked={confirmDelete}
+                        disabled={!canTax || remove.isPending}
+                        onCheckedChange={(value) => setConfirmDelete(value === true)}
+                      />
+                      <Label htmlFor="confirm-delete-tax-return" className="text-xs">
+                        Confirm permanent deletion of this draft return only.
+                      </Label>
+                    </div>
                     <div className="flex gap-2">
                       <Button
-                        disabled={!confirmFile || file.isPending}
+                        disabled={!canTax || !confirmFile || file.isPending}
                         onClick={() => file.mutate()}
                       >
                         {file.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
@@ -608,7 +728,7 @@ export function TaxReturnsPanel({
                       </Button>
                       <Button
                         variant="outline"
-                        disabled={remove.isPending}
+                        disabled={!canTax || !confirmDelete || remove.isPending}
                         onClick={() => remove.mutate()}
                       >
                         Delete draft
@@ -649,6 +769,7 @@ export function TaxReturnsPanel({
                             <AccountLookup
                               className="w-72"
                               ariaLabel="Settlement account"
+                              disabled={!canTax}
                               accounts={settlementAccounts}
                               value={settleAccount}
                               onChange={setSettleAccount}
@@ -663,6 +784,7 @@ export function TaxReturnsPanel({
                               id="settle-date"
                               type="date"
                               value={settleDate}
+                              disabled={!canTax}
                               onChange={(e) => setSettleDate(e.target.value)}
                             />
                           </div>
@@ -671,6 +793,7 @@ export function TaxReturnsPanel({
                           <Checkbox
                             id="confirm-settle"
                             checked={confirmSettle}
+                            disabled={!canTax}
                             onCheckedChange={(v) => setConfirmSettle(v === true)}
                           />
                           <Label htmlFor="confirm-settle" className="text-sm">
@@ -680,7 +803,7 @@ export function TaxReturnsPanel({
                         </div>
                         <Button
                           disabled={
-                            !confirmSettle || !settleAccount || !settleDate || settle.isPending
+                            !canTax || !confirmSettle || !settleAccount || !settleDate || settle.isPending
                           }
                           onClick={() => settle.mutate()}
                         >

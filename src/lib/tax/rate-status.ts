@@ -1,3 +1,5 @@
+import { isValidTaxDate } from "@/lib/tax/tax-input-validation";
+
 /** Display status and validation for effective-dated tax rates (TX-05). */
 
 export type RateDates = {
@@ -24,7 +26,7 @@ export const RATE_STATUS_LABEL: Record<RateStatus, string> = {
 
 /** Returns an error message, or null when the end date is acceptable. */
 export function validateRateEndDate(effectiveFrom: string, endDate: string): string | null {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(endDate)) return "Enter the end date as YYYY-MM-DD.";
+  if (!isValidTaxDate(endDate)) return "Enter a real end date as YYYY-MM-DD.";
   if (endDate < effectiveFrom) return "The end date cannot be before the rate starts.";
   return null;
 }

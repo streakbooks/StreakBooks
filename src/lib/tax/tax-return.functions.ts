@@ -3,12 +3,16 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
 import { isMissingRpc } from "@/lib/accounting/fetch-all";
-import { loadCompanyMeta, type Sb } from "@/lib/accounting/ledger-data";
+import { loadCompanyMeta, loadPostedLines, type Sb } from "@/lib/accounting/ledger-data";
+import { compareTaxReturnWithGl } from "@/lib/tax/tax-gl-comparison";
+import { taxGlReviewSnapshot, taxJournalEvidence, taxGlJournalDigest } from "@/lib/tax/tax-gl-evidence";
 import { postJournal } from "@/lib/accounting/posting-engine";
 import { requireAccountInCompany } from "@/lib/purchases/accounts";
 import { todayIso } from "@/lib/accounting/fiscal-year";
 import { loadTaxFacts } from "@/lib/tax/tax-return-data";
 import { suggestReturnPeriod } from "@/lib/tax/return-periods";
+import { validateTaxReturnPeriod, isValidTaxDate } from "@/lib/tax/tax-input-validation";
+import { exactTaxMinorUnits, safeTaxMinorNumber } from "@/lib/tax/tax-minor-units";
 import { isAccountTypeAllowedForTaxRole } from "@/lib/tax/account-pickers";
 import {
   buildReturnLines,
@@ -18,14 +22,13 @@ import {
   type BoxLine,
 } from "@/lib/tax/vat-return";
 
-const ISO = /^\d{4}-\d{2}-\d{2}$/;
 const MIGRATION_MESSAGE =
   "Tax returns are not available yet: the database update 20261024130200 has not been applied.";
 
 type Row = Record<string, unknown>;
 
 function isoDate(v: unknown, label: string): string {
-  if (typeof v !== "string" || !ISO.test(v)) throw new Error(`${label} must be YYYY-MM-DD`);
+  if (!isValidTaxDate(v)) throw new Error(`${label} must be a real YYYY-MM-DD calendar date`);
   return v;
 }
 
@@ -35,10 +38,7 @@ function periodInput(input: {
   periodEnd: string;
   basis?: string;
 }) {
-  const periodStart = isoDate(input?.periodStart, "Period start");
-  const periodEnd = isoDate(input?.periodEnd, "Period end");
-  if (periodStart > periodEnd) throw new Error("The period cannot end before it starts.");
-  const basis: "accrual" | "cash" = input?.basis === "cash" ? "cash" : "accrual";
+  const { periodStart, periodEnd, basis } = validateTaxReturnPeriod(input);
   return { companyId: assertUuid(input?.companyId), periodStart, periodEnd, basis };
 }
 
@@ -91,9 +91,9 @@ function summaryOf(r: Awaited<ReturnType<typeof computeReturn>>) {
     reverseChargeLines: r.totals.counts.reverseCharge,
     selfAssessedLines: r.totals.counts.selfAssessed,
     skippedNoRate: r.skippedNoRate,
-    nonRecoverableTaxMinor: Number(r.totals.nonRecoverableTax),
-    outputTaxMinor: Number(r.totals.outputTax),
-    inputTaxMinor: Number(r.totals.inputTax),
+    nonRecoverableTaxMinor: safeTaxMinorNumber(r.totals.nonRecoverableTax, "Non-recoverable tax"),
+    outputTaxMinor: safeTaxMinorNumber(r.totals.outputTax, "Output tax"),
+    inputTaxMinor: safeTaxMinorNumber(r.totals.inputTax, "Input tax"),
   };
 }
 
@@ -139,9 +139,244 @@ export const previewTaxReturn = createServerFn({ method: "GET" })
       currency: r.meta.baseCurrency,
       regime: r.settings.regime,
       lines: r.lines,
-      netTaxMinor: Number(r.totals.netTax),
+      netTaxMinor: safeTaxMinorNumber(r.totals.netTax, "Net tax"),
       summary: summaryOf(r),
     };
+  });
+
+type ReviewPeriod = {
+  companyId: string;
+  periodStart: string;
+  periodEnd: string;
+  basis: "cash" | "accrual";
+};
+
+/**
+ * Central read-only calculation shared by preview, snapshot verification and
+ * reviewer saves. Never rely on client-supplied reconciliation amounts.
+ */
+async function calculateGlReview(sb: Sb, params: ReviewPeriod) {
+  const settings = await taxSettings(sb, params.companyId);
+  if (!settings.outputAccountId || !settings.inputAccountId) {
+    return {
+      available: false as const,
+      reason: "Configure both tax control accounts under Tax → GL mappings.",
+    };
+  }
+  if (settings.outputAccountId === settings.inputAccountId) {
+    return {
+      available: false as const,
+      reason: "Distinct output and input tax GL accounts are required.",
+    };
+  }
+  await requireAccountInCompany(sb, params.companyId, settings.outputAccountId);
+  await requireAccountInCompany(sb, params.companyId, settings.inputAccountId);
+  const calculated = await computeReturn(sb, params);
+  const lines = await loadPostedLines(sb, params.companyId, calculated.meta.baseCurrency, {
+    from: params.periodStart, to: params.periodEnd,
+    accountIds: [settings.outputAccountId, settings.inputAccountId],
+  });
+  const comparison = compareTaxReturnWithGl({
+    basis: params.basis,
+    outputAccountId: settings.outputAccountId,
+    inputAccountId: settings.inputAccountId,
+    outputReturnMinor: safeTaxMinorNumber(calculated.totals.outputTax, "GL comparison output tax"),
+    inputReturnMinor: safeTaxMinorNumber(calculated.totals.inputTax, "GL comparison input tax"),
+    lines,
+  });
+  const evidence = taxJournalEvidence(
+    lines, settings.outputAccountId, settings.inputAccountId, 100,
+  );
+  const snapshot = taxGlReviewSnapshot({
+    periodStart: params.periodStart, periodEnd: params.periodEnd,
+    basis: params.basis,
+    outputAccountId: settings.outputAccountId,
+    inputAccountId: settings.inputAccountId,
+    returnOutputMinor: comparison.output.returnMinor,
+    returnInputMinor: comparison.input.returnMinor,
+    glOutputMinor: comparison.output.totalMinor,
+    glInputMinor: comparison.input.totalMinor,
+    journalLines: comparison.journalLines,
+    documentOutputMinor: comparison.output.documentMinor,
+    documentInputMinor: comparison.input.documentMinor,
+    reversalOutputMinor: comparison.output.reversalMinor,
+    reversalInputMinor: comparison.input.reversalMinor,
+    journalDigest: taxGlJournalDigest(lines),
+  });
+  return {
+    available: true as const,
+    currency: calculated.meta.baseCurrency,
+    periodStart: params.periodStart,
+    periodEnd: params.periodEnd,
+    outputAccountId: settings.outputAccountId,
+    inputAccountId: settings.inputAccountId,
+    snapshot,
+    evidence,
+    ...comparison,
+  };
+}
+
+/** Read-only, permissioned comparison with bounded journal evidence. */
+export const getTaxGlComparison = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(periodInput)
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "accounting.view");
+    return calculateGlReview(context.supabase as unknown as Sb, data);
+  });
+
+export type TaxGlReviewStatus = "open" | "in_review" | "resolved";
+
+type TaxGlReviewScope = ReviewPeriod & {
+  outputAccountId: string;
+  inputAccountId: string;
+};
+function taxGlReviewScope(input: TaxGlReviewScope): TaxGlReviewScope {
+  const period = periodInput(input);
+  return {
+    ...period,
+    outputAccountId: assertUuid(input.outputAccountId, "output tax GL account"),
+    inputAccountId: assertUuid(input.inputAccountId, "input tax GL account"),
+  };
+}
+
+/** Review state and immutable change history; never creates GL postings. */
+export const getTaxGlReview = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(taxGlReviewScope)
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "accounting.view");
+    const { data: row, error } = await context.supabase
+      .from("tax_gl_review_sessions" as never)
+      .select("id, status, review_note, reviewer_id, comparison_snapshot, version, created_at, updated_at, updated_by" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("period_start" as never, data.periodStart as never)
+      .eq("period_end" as never, data.periodEnd as never)
+      .eq("basis" as never, data.basis as never)
+      .eq("output_account_id" as never, data.outputAccountId as never)
+      .eq("input_account_id" as never, data.inputAccountId as never)
+      .maybeSingle();
+    if (error) {
+      if (error.code === "42P01" || error.code === "PGRST205") {
+        return { available: false as const, reason: "Tax review migration has not been applied.", review: null, events: [] };
+      }
+      throw new Error(error.message);
+    }
+    const review = row as ({
+      id: string; status: TaxGlReviewStatus; review_note: string;
+      reviewer_id: string | null; comparison_snapshot: string; version: number;
+      created_at: string; updated_at: string; updated_by: string | null;
+    } | null);
+    if (!review) return { available: true as const, review: null, events: [] };
+    const { data: events, error: eventsError } = await context.supabase
+      .from("tax_gl_review_events" as never)
+      .select("id, actor_user_id, event_type, previous_status, new_status, previous_reviewer_id, new_reviewer_id, review_note, comparison_snapshot, version, created_at" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("review_id" as never, review.id as never)
+      .order("created_at" as never, { ascending: false })
+      .limit(50);
+    if (eventsError) throw new Error(eventsError.message);
+    return {
+      available: true as const,
+      review,
+      events: (events ?? []) as Array<{
+        id: string; actor_user_id: string | null; event_type: string;
+        previous_status: string | null; new_status: string;
+        previous_reviewer_id: string | null; new_reviewer_id: string | null;
+        review_note: string; comparison_snapshot: string; version: number; created_at: string;
+      }>,
+    };
+  });
+
+/** Optimistic version + server-recalculated snapshot protect reviewer decisions. */
+export const saveTaxGlReview = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: TaxGlReviewScope & {
+    status: TaxGlReviewStatus;
+    reviewNote: string;
+    reviewerAssignment: "keep" | "mine" | "clear";
+    expectedVersion: number | null;
+    expectedSnapshot: string;
+  }) => {
+    const scope = taxGlReviewScope(input);
+    if (!["open", "in_review", "resolved"].includes(input.status)) {
+      throw new Error("Invalid review status");
+    }
+    const reviewNote = (input.reviewNote ?? "").trim();
+    if (reviewNote.length > 4000) throw new Error("Review note cannot exceed 4000 characters");
+    if (input.status === "resolved" && (scope.basis !== "accrual" || reviewNote.length < 10)) {
+      throw new Error("Only accrual reviews with a meaningful resolution note may be resolved");
+    }
+    if (input.expectedVersion !== null &&
+      (!Number.isSafeInteger(input.expectedVersion) || input.expectedVersion < 1)) {
+      throw new Error("Invalid expected review version");
+    }
+    if (typeof input.expectedSnapshot !== "string" || !input.expectedSnapshot ||
+      input.expectedSnapshot.length > 500) throw new Error("Refresh the GL comparison before saving");
+    if (!["keep", "mine", "clear"].includes(input.reviewerAssignment)) {
+      throw new Error("Invalid reviewer assignment");
+    }
+    return { ...scope, status: input.status, reviewNote,
+      reviewerAssignment: input.reviewerAssignment,
+      expectedVersion: input.expectedVersion,
+      expectedSnapshot: input.expectedSnapshot };
+  })
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "accounting.view");
+    await assertCompanyPermission(context.supabase, data.companyId, "tax.settings");
+    const current = await calculateGlReview(
+      context.supabase as unknown as Sb, data,
+    );
+    if (!current.available) throw new Error(current.reason);
+    if (current.outputAccountId !== data.outputAccountId ||
+      current.inputAccountId !== data.inputAccountId) {
+      throw new Error("Tax GL mapping has changed; refresh the review.");
+    }
+    if (current.snapshot !== data.expectedSnapshot) {
+      throw new Error("GL or return activity changed. Refresh the comparison before saving.");
+    }
+    let assignedTo: string | null = null;
+    if (data.reviewerAssignment === "mine") {
+      const { data: auth, error: authError } = await context.supabase.auth.getUser();
+      if (authError || !auth.user?.id) throw new Error("Cannot verify reviewer identity.");
+      assignedTo = auth.user.id;
+    } else if (data.reviewerAssignment === "keep") {
+      const { data: currentReview, error: readError } = await context.supabase
+        .from("tax_gl_review_sessions" as never)
+        .select("reviewer_id" as never)
+        .eq("company_id" as never, data.companyId as never)
+        .eq("period_start" as never, data.periodStart as never)
+        .eq("period_end" as never, data.periodEnd as never)
+        .eq("basis" as never, data.basis as never)
+        .eq("output_account_id" as never, data.outputAccountId as never)
+        .eq("input_account_id" as never, data.inputAccountId as never)
+        .maybeSingle();
+      if (readError) throw new Error(readError.message);
+      assignedTo = ((currentReview ?? null) as { reviewer_id?: string | null } | null)?.reviewer_id ?? null;
+    }
+    const { data: rows, error } = await context.supabase.rpc(
+      "save_tax_gl_review" as never,
+      {
+        _company_id: data.companyId,
+        _period_start: data.periodStart,
+        _period_end: data.periodEnd,
+        _basis: data.basis,
+        _output_account_id: data.outputAccountId,
+        _input_account_id: data.inputAccountId,
+        _status: data.status,
+        _review_note: data.reviewNote,
+        _reviewer_id: assignedTo,
+        _comparison_snapshot: current.snapshot,
+        _expected_version: data.expectedVersion,
+      } as never,
+    );
+    if (error) {
+      if (isMissingRpc(error)) throw new Error("Tax review database migration has not been applied.");
+      throw new Error(error.message);
+    }
+    const updated = ((rows ?? []) as Array<{ review_id: string; new_version: number }>)[0];
+    if (!updated) throw new Error("Tax review save did not return a version.");
+    return { reviewId: updated.review_id, version: updated.new_version };
   });
 
 /** Where the "new return" form should start, from the filing frequency and the last filed return. */
@@ -214,7 +449,10 @@ export const listTaxReturns = createServerFn({ method: "GET" })
         }
         throw new Error(error.message);
       }
-      return { available: true, returns: (rows ?? []) as unknown as TaxReturnListItem[] };
+      return { available: true, returns: ((rows ?? []) as unknown as TaxReturnListItem[]).map((row) => ({
+        ...row,
+        net_tax_minor: safeTaxMinorNumber(row.net_tax_minor, "Saved net tax"),
+      })) };
     },
   );
 
@@ -234,7 +472,7 @@ export const saveTaxReturnDraft = createServerFn({ method: "POST" })
         _basis: data.basis,
         _jurisdiction: r.jurisdiction,
         _currency: r.meta.baseCurrency,
-        _net_tax_minor: Number(r.totals.netTax),
+        _net_tax_minor: safeTaxMinorNumber(r.totals.netTax, "Draft net tax"),
         _summary: summaryOf(r),
         _lines: r.lines,
       } as never,
@@ -293,7 +531,7 @@ export const getTaxReturn = createServerFn({ method: "GET" })
     const lines = ((lineRows ?? []) as Row[]).map((l) => ({
       box_key: String(l["box_key"]) as BoxLine["box_key"],
       label: String(l["label"]),
-      amount_minor: Number(l["amount_minor"]),
+      amount_minor: safeTaxMinorNumber(l["amount_minor"], "Saved return box amount"),
       sort_order: Number(l["sort_order"]),
     }));
 
@@ -330,7 +568,7 @@ export const getTaxReturn = createServerFn({ method: "GET" })
       jurisdiction,
       isUk: isUkReturn(jurisdiction),
       currency: typeof h["currency_code"] === "string" ? h["currency_code"] : "",
-      net_tax_minor: Number(h["net_tax_minor"]),
+      net_tax_minor: safeTaxMinorNumber(h["net_tax_minor"], "Filed return net tax"),
       filed_at: typeof h["filed_at"] === "string" ? h["filed_at"] : null,
       settlement_journal_id:
         typeof h["settlement_journal_id"] === "string" ? h["settlement_journal_id"] : null,
@@ -449,7 +687,8 @@ export const postTaxReturnSettlement = createServerFn({ method: "POST" })
     if (lineError) throw new Error(lineError.message);
     const amount = (key: string): bigint => {
       const row = ((lineRows ?? []) as Row[]).find((l) => l["box_key"] === key);
-      return BigInt(Math.round(Number(row?.["amount_minor"] ?? 0)));
+      if (!row) throw new Error(`The filed tax return is missing ${key}; cannot settle.`);
+      return exactTaxMinorUnits(row["amount_minor"], `Filed return ${key}`);
     };
 
     const journal = buildTaxReturnSettlementJournal({

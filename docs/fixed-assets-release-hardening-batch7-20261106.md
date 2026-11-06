@@ -139,3 +139,20 @@ Do not trigger GitHub Actions/CI, merge, modify database environments or deploy 
 **Latest outstanding release gates:** The full project remains unavailable as an authenticated checkout here, so `npm.cmd run typecheck`, `npm.cmd run lint`, full fixed-assets Vitest, UI contracts, browser/RLS, latest-main reconciliation and deployment have **not** passed. No GitHub Actions/CI, merge, Supabase migration or production deployment was performed.
 
 **Local commands:** `node scripts/check-fixed-assets-release.mjs` in the authoritative repository's feature checkout, after saving existing local work. Afterwards perform logged-in cross-company accounting tests, a 36-month catch-up with locked periods and repeated post requests, and run against current main before release approval.
+
+
+## Batch 7 reconciliation history and residual-floor hardening
+
+**Source changes committed to PR #111 (2026-11-06):**
+1. The read-only reconciliation data query now selects `residual_minor` for tenant-scoped fixed assets. The pure `ReconciliationAsset` model and tests have been updated to match.
+2. The reconciliation calculator requires `opening_accumulated_minor + residual_minor <= cost_minor`, rejecting negative or inconsistent costs, residuals and opening balances. It also fails closed if recorded depreciation would reduce book value below residual value, not merely below zero.
+3. Source status integrity is now validated: disposed assets must have a disposal date on or after acquisition, while active assets cannot claim an inconsistent disposal date.
+4. For depreciation entries through the report cutoff, the calculator rejects dates before acquisition and after disposal. It checks posted-history amounts and residual floors even for assets disposed before the selected as-at date, rather than silently discarding invalid historical postings.
+5. The calculator now uses an asset-ID lookup map to avoid repeated O(assets × entries) scans while applying these validations. No journals are posted, reversed or mutated.
+6. `src/lib/fixed-assets/reconciliation.test.ts` adds regression cases for all of the above, and existing over-depreciation fixtures were adjusted to test the intended boundary accurately.
+
+**Test evidence:** An isolated, network-disabled non-deploying Node sandbox executed `src/lib/fixed-assets/reconciliation.ts` using Node's built-in TypeScript-strip support. **27/27 focused checks passed, 0 failed, 0 skipped; exit status 0.** Retrieved logs verified these results, including a real Excel/CSV formula-injection regression. This is an isolated pure-function smoke suite and **not** full Vitest, TypeScript, authenticated RLS, actual GL integration, UI accessibility or deployment verification.
+
+**Accounting limits remain:** This account-level check covers only accounts referenced by registered assets using their current GL mappings. It does not cover unregistered asset accounts, immutable historical mappings, journal-linked posting evidence, or a transactionally consistent snapshot. Separately merged Accounting PRs #140 and later audit batches contain independent posting-evidence contracts, but these have not yet been connected and verified end-to-end with PR #111. Never call a matched account reconciliation a complete source-level audit.
+
+**Release gate remains closed:** PR #111 is a draft and has not been merged or deployed. The branch must be integrated with the latest main and pass the local seven-check script, complete Vitest, browser/mobile and keyboard QA, two-tenant permission/RLS verification, period-lock/idempotency/FX fixture testing, and deployment verification. GitHub Actions remain intentionally untriggered.

@@ -3,7 +3,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
 import { isMissingRpc } from "@/lib/accounting/fetch-all";
-import { loadCompanyMeta, type Sb } from "@/lib/accounting/ledger-data";
+import { loadCompanyMeta, loadPostedLines, type Sb } from "@/lib/accounting/ledger-data";
+import { compareTaxReturnWithGl } from "@/lib/tax/tax-gl-comparison";
 import { postJournal } from "@/lib/accounting/posting-engine";
 import { requireAccountInCompany } from "@/lib/purchases/accounts";
 import { todayIso } from "@/lib/accounting/fiscal-year";
@@ -138,6 +139,57 @@ export const previewTaxReturn = createServerFn({ method: "GET" })
       lines: r.lines,
       netTaxMinor: Number(r.totals.netTax),
       summary: summaryOf(r),
+    };
+  });
+
+/**
+ * Read-only comparison of return document tax with the organisation's configured
+ * output/input tax control account movements over the same period.
+ * Does not treat the cash-basis document return as a GL reconciliation.
+ */
+export const getTaxGlComparison = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(periodInput)
+  .handler(async ({ data, context }) => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    const sb = context.supabase as unknown as Sb;
+    const settings = await taxSettings(sb, data.companyId);
+    if (!settings.outputAccountId || !settings.inputAccountId) {
+      return {
+        available: false as const,
+        reason: "Configure both tax control accounts in Tax → GL mappings before comparing the General Ledger.",
+      };
+    }
+    if (settings.outputAccountId === settings.inputAccountId) {
+      return {
+        available: false as const,
+        reason: "Output tax and input tax currently use the same GL account; distinct mapped accounts are required for this diagnostic.",
+      };
+    }
+    const calculated = await computeReturn(sb, data);
+    const lines = await loadPostedLines(sb, data.companyId, calculated.meta.baseCurrency, {
+      from: data.periodStart,
+      to: data.periodEnd,
+      accountIds: [settings.outputAccountId, settings.inputAccountId],
+    });
+    const outputTax = Number(calculated.totals.outputTax);
+    const inputTax = Number(calculated.totals.inputTax);
+    const comparison = compareTaxReturnWithGl({
+      basis: data.basis,
+      outputAccountId: settings.outputAccountId,
+      inputAccountId: settings.inputAccountId,
+      outputReturnMinor: outputTax,
+      inputReturnMinor: inputTax,
+      lines,
+    });
+    return {
+      available: true as const,
+      currency: calculated.meta.baseCurrency,
+      periodStart: data.periodStart,
+      periodEnd: data.periodEnd,
+      outputAccountId: settings.outputAccountId,
+      inputAccountId: settings.inputAccountId,
+      ...comparison,
     };
   });
 

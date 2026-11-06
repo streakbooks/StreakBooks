@@ -4,6 +4,8 @@ import {
   safeNotificationPath,
   sortActionNotifications,
   summarizeActionNotifications,
+  mergeNotificationPages,
+  parseActionCenterSearch,
 } from "./notification-utils";
 
 const base = {
@@ -178,5 +180,50 @@ describe("Action Center triage and overview", () => {
       completed: 1,
       archived: 1,
     });
+  });
+});
+
+describe("Smart Action Center history and bookmarkable filters", () => {
+  it("deduplicates changing offset pages without mutating source data", () => {
+    const first = [{ id: "a", value: 1 }, { id: "b", value: 2 }];
+    const second = [{ id: "b", value: 99 }, { id: "c", value: 3 }];
+    expect(mergeNotificationPages([first, second])).toEqual([
+      { id: "a", value: 1 },
+      { id: "b", value: 2 },
+      { id: "c", value: 3 },
+    ]);
+    expect(second[0].value).toBe(99);
+  });
+
+  it("restores whitelisted URL filters and drops unsafe or unexpected values", () => {
+    expect(
+      parseActionCenterSearch({
+        view: "unread",
+        category: "contact_followup",
+        priority: "critical",
+        sort: "oldest",
+        q: "  Customer  ",
+        other: "ignored",
+      }),
+    ).toEqual({
+      view: "unread",
+      category: "contact_followup",
+      priority: "critical",
+      sort: "oldest",
+      q: "Customer",
+    });
+    expect(
+      parseActionCenterSearch({
+        view: "admin",
+        category: "missing",
+        priority: "none",
+        sort: "random",
+        q: 7,
+      }),
+    ).toEqual({});
+  });
+
+  it("limits saved search terms to 120 characters", () => {
+    expect(parseActionCenterSearch({ q: "a".repeat(250) }).q).toHaveLength(120);
   });
 });

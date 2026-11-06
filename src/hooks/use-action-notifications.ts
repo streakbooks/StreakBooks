@@ -31,8 +31,8 @@ export type ActionNotification = {
 // setup/cleanup/setup cycle from reusing a still-subscribed Realtime channel.
 let realtimeChannelSequence = 0;
 
-export const notificationQueryKey = (companyId: string | null, limit = 100) =>
-  ["action-notifications", companyId, limit] as const;
+export const notificationQueryKey = (companyId: string | null, limit = 100, userId = "") =>
+  ["action-notifications", companyId, limit, userId] as const;
 
 export { safeNotificationPath } from "@/lib/notifications/notification-utils";
 
@@ -43,7 +43,7 @@ export { safeNotificationPath } from "@/lib/notifications/notification-utils";
  */
 export function useActionNotifications(companyId: string | null, userId: string, limit = 100) {
   const client = useQueryClient();
-  const key = notificationQueryKey(companyId, limit);
+  const key = notificationQueryKey(companyId, limit, userId);
   const inbox = useQuery({
     queryKey: key,
     enabled: Boolean(companyId),
@@ -74,7 +74,7 @@ export function useActionNotifications(companyId: string | null, userId: string,
     },
   });
   const unreadQuery = useQuery({
-    queryKey: ["action-notifications-unread", companyId],
+    queryKey: ["action-notifications-unread", companyId, userId],
     enabled: Boolean(companyId) && inbox.isSuccess,
     refetchInterval: 60_000,
     queryFn: async () => {

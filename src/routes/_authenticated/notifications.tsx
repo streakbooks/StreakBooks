@@ -1,5 +1,5 @@
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useRouteContext } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -14,11 +14,8 @@ import {
 } from "lucide-react";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
-import {
-  useActionNotifications,
-  safeNotificationPath,
-  type ActionNotification,
-} from "@/hooks/use-action-notifications";
+import { safeNotificationPath, type ActionNotification } from "@/hooks/use-action-notifications";
+import { useActionCenterFeed } from "@/hooks/use-action-center-feed";
 import { supabase } from "@/integrations/supabase/client";
 import { notify } from "@/lib/notify";
 import { NotificationPreferences } from "@/components/notifications/NotificationPreferences";
@@ -26,7 +23,10 @@ import {
   filterActionNotifications,
   sortActionNotifications,
   summarizeActionNotifications,
+  mergeNotificationPages,
+  parseActionCenterSearch,
   type NotificationSort,
+  type NotificationView,
 } from "@/lib/notifications/notification-utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,18 +41,12 @@ import {
 } from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/notifications")({
-  validateSearch: (raw: Record<string, unknown>): { view?: View | undefined } => ({
-    view: ["all", "unread", "action", "critical", "completed", "archived"].includes(
-      String(raw["view"]),
-    )
-      ? (raw["view"] as View)
-      : undefined,
-  }),
+  validateSearch: parseActionCenterSearch,
   head: () => ({ meta: [{ title: "Action Center — LinkBooks" }] }),
   component: ActionCenterPage,
 });
 
-type View = "all" | "unread" | "action" | "critical" | "completed" | "archived";
+type View = NotificationView;
 const VIEWS: { key: View; label: string }[] = [
   { key: "all", label: "All" },
   { key: "unread", label: "Unread" },
@@ -75,21 +69,44 @@ function ActionCenterPage() {
   const { user } = useRouteContext({ from: "/_authenticated" });
   const { company } = useActiveCompany();
   const companyId = company?.id ?? null;
-  const { inbox, unreadQuery, changeState, refresh } = useActionNotifications(
+  const { inbox, unreadQuery, changeState, refresh } = useActionCenterFeed(
     companyId,
     user.id,
-    500,
   );
-  const view = Route.useSearch().view ?? "action";
-  const [category, setCategory] = useState("all");
-  const [priority, setPriority] = useState("all");
-  const [sort, setSort] = useState<NotificationSort>("priority");
-  const [search, setSearch] = useState("");
+  const query = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const view = query.view ?? "action";
+  const category = query.category ?? "all";
+  const priority = query.priority ?? "all";
+  const sort: NotificationSort = query.sort ?? "priority";
+  const search = query.q ?? "";
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<string[]>([]);
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkError, setBulkError] = useState<string | null>(null);
-  const rows = useMemo(() => inbox.data ?? [], [inbox.data]);
+  const rows = useMemo(
+    () => mergeNotificationPages(inbox.data?.pages ?? []),
+    [inbox.data?.pages],
+  );
+  const visibleIds = useMemo(
+    () => new Set(rows.filter((row) => row.company_id === companyId).map((row) => row.id)),
+    [rows, companyId],
+  );
+  const validSelected = selected.filter((id) => visibleIds.has(id));
+  useEffect(() => {
+    setSelected([]);
+    setPage(0);
+    setBulkError(null);
+  }, [companyId, user.id]);
+  const changeFilters = (patch: Record<string, unknown>) => {
+    void navigate({
+      search: (previous) => parseActionCenterSearch({ ...previous, ...patch }),
+      replace: true,
+      resetScroll: false,
+    });
+    setSelected([]);
+    setPage(0);
+  };
 
   const summary = useMemo(() => summarizeActionNotifications(rows), [rows]);
   const filtered = useMemo(
@@ -110,28 +127,25 @@ function ActionCenterPage() {
     setPage(0);
     setSelected([]);
   };
-  const onCategory = (next: string) => {
-    setCategory(next);
-    setPage(0);
-    setSelected([]);
-  };
+  const onCategory = (next: string) =>
+    changeFilters({ category: next === "all" ? undefined : next });
   const pageIds = pageRows.map((row) => row.id);
-  const allPageSelected = pageIds.length > 0 && pageIds.every((id) => selected.includes(id));
+  const allPageSelected = pageIds.length > 0 && pageIds.every((id) => validSelected.includes(id));
   const togglePageSelection = (checked: boolean) =>
     setSelected((previous) =>
       checked
-        ? [...new Set([...previous, ...pageIds])]
-        : previous.filter((id) => !pageIds.includes(id)),
+        ? [...new Set([...previous.filter((id) => visibleIds.has(id)), ...pageIds])]
+        : previous.filter((id) => visibleIds.has(id) && !pageIds.includes(id)),
     );
 
   async function bulkState(action: "read" | "archive") {
-    if (!selected.length || bulkBusy || changeState.isPending) return;
+    if (!validSelected.length || bulkBusy || changeState.isPending) return;
     setBulkBusy(true);
     setBulkError(null);
     const failed: string[] = [];
     let updated = 0;
     let firstError: string | null = null;
-    for (const id of selected) {
+    for (const id of validSelected) {
       try {
         const { data, error } = await supabase.rpc(
           "set_action_notification_state" as never,
@@ -168,8 +182,10 @@ function ActionCenterPage() {
       setBulkError(`${failed.length} notification(s) could not be updated. ${firstError ?? ""}`);
     }
   }
-  const toggleSelection = (id: string) =>
+  const toggleSelection = (id: string) => {
+    if (!visibleIds.has(id)) return;
     setSelected((prev) => (prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]));
+  };
 
   return (
     <div className="space-y-6">
@@ -221,7 +237,8 @@ function ActionCenterPage() {
       </div>
       {rows.length > 0 && (
         <p className="text-xs text-muted-foreground">
-          Workload counts reflect the latest {rows.length} loaded alerts; unread is counted across your accessible inbox.
+          Workload counters and filters cover {rows.length} loaded alerts. Unread count covers your full
+          accessible inbox. Use Load older alerts to include earlier records.
         </p>
       )}
       <div className="flex flex-wrap gap-2" role="group" aria-label="Notification views">
@@ -232,7 +249,11 @@ function ActionCenterPage() {
             variant={view === item.key ? "default" : "outline"}
             asChild
           >
-            <Link to="/notifications" search={{ view: item.key }} onClick={onViewNavigate}>
+            <Link
+              to="/notifications"
+              search={{ ...query, view: item.key }}
+              onClick={onViewNavigate}
+            >
               {item.label}
             </Link>
           </Button>
@@ -243,11 +264,8 @@ function ActionCenterPage() {
           aria-label="Search notifications"
           placeholder="Search actions, invoices, bills…"
           value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(0);
-            setSelected([]);
-          }}
+          maxLength={120}
+          onChange={(e) => changeFilters({ q: e.target.value || undefined })}
         />
         <Select value={category} onValueChange={onCategory}>
           {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
@@ -265,11 +283,9 @@ function ActionCenterPage() {
         </Select>
         <Select
           value={priority}
-          onValueChange={(next) => {
-            setPriority(next);
-            setPage(0);
-            setSelected([]);
-          }}
+          onValueChange={(next) =>
+            changeFilters({ priority: next === "all" ? undefined : next })
+          }
         >
           {/* lookup-fixed-enum: Notification priority enumeration. */}
           <SelectTrigger aria-label="Filter by priority">
@@ -285,11 +301,9 @@ function ActionCenterPage() {
         </Select>
         <Select
           value={sort}
-          onValueChange={(next) => {
-            setSort(next as NotificationSort);
-            setPage(0);
-            setSelected([]);
-          }}
+          onValueChange={(next) =>
+            changeFilters({ sort: next === "priority" ? undefined : next })
+          }
         >
           {/* lookup-fixed-enum: Notification display order enumeration. */}
           <SelectTrigger aria-label="Sort notifications">
@@ -308,22 +322,22 @@ function ActionCenterPage() {
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => {
-              setSearch("");
-              setCategory("all");
-              setPriority("all");
-              setSort("priority");
-              setPage(0);
-              setSelected([]);
-            }}
+            onClick={() =>
+              changeFilters({
+                q: undefined,
+                category: undefined,
+                priority: undefined,
+                sort: undefined,
+              })
+            }
           >
             Clear filters
           </Button>
         </div>
       )}
-      {selected.length > 0 && (
+      {validSelected.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 rounded-lg border p-3 text-sm" aria-live="polite">
-          <span>{selected.length} selected</span>
+          <span>{validSelected.length} selected</span>
           <Button size="sm" disabled={bulkBusy || changeState.isPending} onClick={() => void bulkState("read")}>
             Mark selected read
           </Button>
@@ -361,8 +375,17 @@ function ActionCenterPage() {
           </Button>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-lg border px-6 py-12 text-center text-muted-foreground">
-          No matching notifications
+        <div className="space-y-3 rounded-lg border px-6 py-12 text-center text-muted-foreground">
+          <p>No matching notifications in the loaded history.</p>
+          {inbox.hasNextPage && (
+            <Button
+              variant="outline"
+              disabled={inbox.isFetchingNextPage}
+              onClick={() => void inbox.fetchNextPage()}
+            >
+              {inbox.isFetchingNextPage ? "Loading older alerts…" : "Search older alerts"}
+            </Button>
+          )}
         </div>
       ) : (
         <div className="space-y-2">
@@ -384,7 +407,7 @@ function ActionCenterPage() {
             <NotificationRow
               key={n.id}
               item={n}
-              selected={selected.includes(n.id)}
+              selected={validSelected.includes(n.id)}
               onSelect={() => toggleSelection(n.id)}
               busy={changeState.isPending || bulkBusy}
               change={(read, archive) =>
@@ -419,10 +442,23 @@ function ActionCenterPage() {
               </Button>
             </div>
           </div>
-          {rows.length === 500 && (
-            <p className="text-xs text-muted-foreground">
-              Showing the most recent 500 notifications. Archive older actions to keep this view
-              focused.
+          {inbox.hasNextPage && (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3">
+              <p className="text-xs text-muted-foreground">
+                Filters and sorting apply to loaded history. Older alerts are available on demand.
+              </p>
+              <Button
+                variant="outline"
+                disabled={inbox.isFetchingNextPage || bulkBusy}
+                onClick={() => void inbox.fetchNextPage()}
+              >
+                {inbox.isFetchingNextPage ? "Loading older alerts…" : "Load older alerts"}
+              </Button>
+            </div>
+          )}
+          {inbox.isFetchNextPageError && (
+            <p role="alert" className="text-sm text-destructive">
+              Could not load older alerts. You can retry.
             </p>
           )}
         </div>

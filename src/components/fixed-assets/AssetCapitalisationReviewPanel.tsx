@@ -76,7 +76,7 @@ export function AssetCapitalisationReviewPanel({
     try {
       return {
         result: reviewCapitalisableLines(
-          candidates.data?.asOf === asOf ? candidates.data.lines : [],
+          candidates.data && candidates.data.asOf === asOf ? candidates.data.lines : [],
           currency,
         ),
         issue: null as string | null,

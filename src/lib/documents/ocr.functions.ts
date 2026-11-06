@@ -45,6 +45,7 @@ async function eligibleDocument(
     .eq("company_id" as never, companyId as never)
     .eq("id" as never, attachmentId as never)
     .eq("entity_type" as never, "company" as never)
+    .is("deleted_at" as never, null)
     .maybeSingle();
   if (fileError) throw new Error(fileError.message);
   if (!file) throw new Error("Document not found or access denied.");

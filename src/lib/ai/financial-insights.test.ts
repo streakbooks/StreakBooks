@@ -98,7 +98,7 @@ describe("financial insights reuse exact financial report values", () => {
     expect(out.observations.map((v) => v.id)).toEqual([
       "loss", "negative_cash", "working_capital", "current_ratio",
     ]);
-    expect(out.observations.every((v) => v.text.includes("review") || v.text.includes("Review"))).toBe(true);
+    expect(out.observations.every((v) => v.sourceReportId && !/guaranteed|confirmed\s+overdraft/i.test(v.text))).toBe(true);
   });
 
   it("discloses missing period activity without misclassifying closing cash as missing", () => {
@@ -118,6 +118,14 @@ describe("financial insights reuse exact financial report values", () => {
     );
     expect(finding?.text).toContain("before attributing a cause");
     expect(finding?.sourceReportId).toBe("profit-and-loss");
+  });
+
+  it("fails closed on mismatched reporting provenance", () => {
+    const out = buildFinancialInsights(snapshot({}, {
+      cash: { value: "1000000", format: "money", reportId: "profit-and-loss" },
+    }), null, "USD");
+    expect(out.cards.find((v) => v.id === "cash")?.value).toBe("Not available");
+    expect(out.observations.some((v) => v.id === "negative_cash")).toBe(false);
   });
 
   it("does not create an unavailable current ratio from zero-liability balances", () => {

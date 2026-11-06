@@ -1,10 +1,13 @@
 #!/usr/bin/env node
 /**
- * Fixed Assets non-CI release gate (local, read-only with respect to GitHub).
+ * LinkBooks Fixed Assets — local, non-CI release verification.
  *
- * Runs existing project commands. It never commits, merges, fetches, pushes,
- * runs a remote workflow, applies migrations or deploys. A pass means only
- * these local commands passed on the exact worktree that was tested.
+ * Fail closed before running tests unless on a CLEAN authoritative main
+ * checkout at exactly the locally fetched origin/main SHA. No network,
+ * fetch/push, migration, deployment or GitHub workflow is initiated.
+ *
+ * A pass verifies only the listed local checks. Authenticated RLS, journals,
+ * browser QA, staging and production deployment are separate release gates.
  */
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -16,10 +19,12 @@ const tasks = [
   { name: "TypeScript", args: ["run", "typecheck"] },
   { name: "ESLint", args: ["run", "lint"] },
   { name: "Fixed Assets Vitest", args: ["test", "--", "src/lib/fixed-assets/"] },
+  { name: "Full Vitest suite", args: ["test"] },
   { name: "UI contracts", args: ["run", "check:ui"] },
   { name: "Lookup contracts", args: ["run", "check:lookups"] },
   { name: "Navigation contracts", args: ["run", "check:navigation"] },
   { name: "Production build", args: ["run", "build"] },
+  { name: "Client bundle audit", args: ["run", "check:bundle"] },
 ];
 
 function run(command, args, opts = {}) {
@@ -30,10 +35,20 @@ function run(command, args, opts = {}) {
   });
 }
 
+function git(args) {
+  const result = run("git", args);
+  return result.status === 0 && !result.error ? (result.stdout ?? "").trim() : null;
+}
+
+function refuse(reason) {
+  console.error("LOCAL RELEASE GATE BLOCKED:", reason);
+  console.error("No npm checks were run. No GitHub CI, deployment or SQL changes were made.");
+  process.exit(2);
+}
+
 function npmTask(args) {
   if (isWindows) {
-    // All arguments are fixed, trusted literals above; no user input is
-    // interpolated into the Windows shell command.
+    // No interpolated user input: every task is a trusted, fixed argument list.
     return run("cmd.exe", ["/d", "/s", "/c", "npm.cmd " + args.join(" ")], {
       stdio: "inherit",
     });
@@ -41,38 +56,48 @@ function npmTask(args) {
   return run("npm", args, { stdio: "inherit" });
 }
 
-if (process.argv.slice(2).length) {
+if (process.argv.length !== 2) {
   console.error("Usage: node scripts/check-fixed-assets-release.mjs (no arguments)");
   process.exit(2);
 }
 
-console.log("\nLinkBooks Fixed Assets — local release verification");
-console.log("This command cannot trigger GitHub Actions, merge a PR, or deploy.");
-const currentRepo = run("git", ["config", "--get", "remote.origin.url"]);
-const origin = (currentRepo.stdout ?? "").trim();
-if (currentRepo.status !== 0 ||
-    !/^((https:\/\/|ssh:\/\/git@)github\.com\/|git@github\.com:|https:\/\/[^@]+@github\.com\/)(linkbusinessadvisory\/LinkBooks)(\.git)?\/?$/i.test(origin)) {
-  console.error("Refusing to run: Git origin is not the authoritative linkbusinessadvisory/LinkBooks repository.");
-  console.error("Check that Git origin points to linkbusinessadvisory/LinkBooks (origin URL withheld).");
-  process.exit(2);
+console.log("\nLinkBooks Fixed Assets — local non-CI release verification");
+
+// Do not log the origin URL: it may contain a credential.
+const origin = git(["config", "--get", "remote.origin.url"]);
+const authoritative =
+  /^((https:\/\/|ssh:\/\/git@)github\.com\/|git@github\.com:|https:\/\/[^@]+@github\.com\/)(linkbusinessadvisory\/LinkBooks)(\.git)?\/?$/i;
+if (origin === null || !authoritative.test(origin)) {
+  refuse("Git origin is not linkbusinessadvisory/LinkBooks.");
 }
 
-const branch = run("git", ["branch", "--show-current"]).stdout?.trim() || "(detached)";
-const sha = run("git", ["rev-parse", "--short=12", "HEAD"]).stdout?.trim() || "(unknown)";
-const worktree = run("git", ["status", "--porcelain"]);
-if (worktree.status !== 0) {
-  console.error("Could not inspect the local worktree.");
-  process.exit(2);
+const root = git(["rev-parse", "--show-toplevel"]);
+if (root === null || resolve(root).toLowerCase() !== repoRoot.toLowerCase()) {
+  refuse("Script must run from the authoritative repository checkout.");
 }
-console.log("Git origin: linkbusinessadvisory/LinkBooks (verified; URL withheld)");
-console.log("Branch:", branch);
-console.log("Commit:", sha);
-if ((worktree.stdout ?? "").trim()) {
-  console.warn("WARNING: Worktree has uncommitted/untracked changes; results may include unfinished local edits.");
-} else {
-  console.log("Working tree: clean");
+
+const branch = git(["branch", "--show-current"]);
+if (branch !== "main") refuse("Check out main. Feature or detached branches cannot pass the release gate.");
+
+const worktree = git(["status", "--porcelain=v1", "--untracked-files=normal"]);
+if (worktree === null) refuse("Cannot inspect local Git status.");
+if (worktree !== "") refuse("Working tree has uncommitted or untracked changes.");
+
+const sha = git(["rev-parse", "--verify", "HEAD"]);
+const trackedMain = git(["rev-parse", "--verify", "refs/remotes/origin/main"]);
+if (sha === null || trackedMain === null) {
+  refuse("Missing HEAD or origin/main. Run git fetch origin first.");
 }
-console.log("Tests are run against this local tree only; no main integration, staging or deployment is implied.\n");
+if (sha !== trackedMain) {
+  refuse("Local main does not exactly match fetched origin/main. Fetch and fast-forward main first.");
+}
+
+console.log("Repository: linkbusinessadvisory/LinkBooks (origin verified; URL hidden)");
+console.log("Branch: main (verified clean)");
+console.log("Local HEAD: " + sha);
+console.log("Fetched origin/main: " + trackedMain);
+console.log("NOTE: origin/main is the LOCAL tracking ref; it may be stale if you have not fetched.");
+console.log("No network access, GitHub Actions/CI, migrations or deployment are invoked.\n");
 
 const results = [];
 for (const task of tasks) {
@@ -81,11 +106,11 @@ for (const task of tasks) {
   console.log("=".repeat(68));
   const started = Date.now();
   const result = npmTask(task.args);
-  const elapsed = Math.round((Date.now() - started) / 1000);
+  const seconds = Math.round((Date.now() - started) / 1000);
   const ok = !result.error && result.status === 0;
-  results.push({ name: task.name, ok, seconds: elapsed, code: result.status });
+  results.push({ name: task.name, ok, seconds, code: result.status });
   if (result.error) console.error("Execution error:", result.error.message);
-  console.log(task.name + ": " + (ok ? "PASS" : "FAIL") + " (" + elapsed + "s)");
+  console.log(task.name + ": " + (ok ? "PASS" : "FAIL") + " (" + seconds + "s)");
 }
 
 console.log("\nFixed Assets release gate — local verification summary");
@@ -95,10 +120,11 @@ for (const item of results) {
 }
 const passed = results.filter((item) => item.ok).length;
 console.log("Result:", passed + " / " + results.length + " checks passed.");
-console.log("Not included: authenticated browser, RLS, posting/FX integration, full suite, staging, CI, PR merge, deployment.");
+console.log("NOT VERIFIED HERE: authenticated browser, RLS, accounting posting/FX, staging, production deployment.");
 if (passed !== results.length) {
-  console.error("Local release gate FAILED. Do not merge or deploy based on these results.");
+  console.error("Local release gate FAILED. Full QA and production readiness remain unverified.");
   process.exitCode = 1;
 } else {
-  console.log("Local release gate PASSED. This is not production-readiness or merge approval.");
+  console.log("Local release gate PASSED for the printed commit only.");
+  console.log("This does NOT certify browser, database, staging or production readiness.");
 }

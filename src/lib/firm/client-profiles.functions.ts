@@ -187,14 +187,67 @@ export const bulkUpdateFirmClientProfiles = createServerFn({ method: "POST" })
     return result as { updated: number; unchanged: number; total: number };
   });
 
+const tagSchema = z
+  .object({
+    firmId: z.string().uuid(),
+    items: z
+      .array(
+        z
+          .object({
+            companyId: z.string().uuid(),
+            expectedVersion: z.number().int().min(0),
+          })
+          .strict(),
+      )
+      .min(1)
+      .max(50),
+    operation: z.enum(["add", "remove", "replace"]),
+    tags: z.array(z.string().trim().min(1).max(40)).max(12),
+  })
+  .strict()
+  .superRefine((input, ctx) => {
+    if (new Set(input.items.map((item) => item.companyId)).size !== input.items.length)
+      ctx.addIssue({ code: "custom", message: "Select each client once" });
+    if (input.operation !== "replace" && !input.tags.length)
+      ctx.addIssue({ code: "custom", message: "Enter at least one tag" });
+  });
+export type FirmBulkTagsInput = z.infer<typeof tagSchema>;
+
+export const bulkUpdateFirmClientTags = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => tagSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { data: result, error } = await context.supabase.rpc(
+      "bulk_update_firm_client_tags" as never,
+      {
+        _firm_id: data.firmId,
+        _items: data.items,
+        _operation: data.operation,
+        _tags: [...new Set(data.tags)],
+      } as never,
+    );
+    if (error) throw new Error(error.message);
+    return result as { updated: number; unchanged: number; total: number };
+  });
+
 export type FirmClientProfileAudit = {
   id: number;
   company_id: string;
   actor_id: string;
   action: "created" | "updated";
   changed_fields: string[];
-  before_values: { status: string; service_line: string; next_review_date: string | null } | null;
-  after_values: { status: string; service_line: string; next_review_date: string | null };
+  before_values: {
+    status: string;
+    service_line: string;
+    next_review_date: string | null;
+    tags?: string[];
+  } | null;
+  after_values: {
+    status: string;
+    service_line: string;
+    next_review_date: string | null;
+    tags?: string[];
+  };
   created_at: string;
 };
 

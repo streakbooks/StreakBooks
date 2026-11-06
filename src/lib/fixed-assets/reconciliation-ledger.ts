@@ -73,7 +73,7 @@ export async function loadExactReconciliationLedgerBalances(
     _to: asOf,
     _exclude_year_end_close: false,
   });
-  if (!error) return selectExactLedgerBalances(data ?? [], selected);
+  if (!error) return selectExactLedgerBalances(data, selected);
   if (!isMissingRpc(error)) throw new Error(error.message);
 
   const posted = await loadPostedLines(sb, companyId, baseCurrency, {

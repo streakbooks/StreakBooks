@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Download, Search, RefreshCw } from "lucide-react";
 import { useFormat } from "@/hooks/use-format";
 import { todayIso } from "@/lib/accounting/fiscal-year";
+import { isReportDate } from "@/lib/reports/date-validation";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import {
   listCapitalisableBillLines,
@@ -12,6 +13,7 @@ import {
 } from "@/lib/fixed-assets/fixed-assets.functions";
 import {
   capitalisationReviewCsv,
+  capitalisationReviewGuidance,
   reviewCapitalisableLines,
   selectCapitalisationReviewRows,
   type CapitalisationReviewStatus,
@@ -62,16 +64,37 @@ export function AssetCapitalisationReviewPanel({
   const [search, setSearch] = useState("");
   const [accountId, setAccountId] = useState("");
   const [page, setPage] = useState(0);
+  const [expandedLineId, setExpandedLineId] = useState<string | null>(null);
+  const validDate = isReportDate(asOf) && asOf <= today;
   const fetchCandidates = useServerFn(listCapitalisableBillLines);
   const candidates = useQuery({
     queryKey: ["fixed-assets", companyId, "capitalisation-review", asOf],
-    enabled: Boolean(companyId) && Boolean(asOf) && asOf <= today,
+    enabled: Boolean(companyId) && validDate,
     queryFn: () => fetchCandidates({ data: { companyId, asOf } }),
   });
-  const review = useMemo(
-    () => reviewCapitalisableLines(candidates.data?.lines ?? [], currency),
-    [candidates.data?.lines, currency],
-  );
+  const reviewed = useMemo(() => {
+    try {
+      return {
+        result: reviewCapitalisableLines(
+          candidates.data?.asOf === asOf ? candidates.data.lines : [],
+          currency,
+        ),
+        issue: null as string | null,
+      };
+    } catch (error) {
+      return {
+        result: null,
+        issue: error instanceof Error ? error.message : "Invalid purchase review data.",
+      };
+    }
+  }, [candidates.data, asOf, currency]);
+  const review = reviewed.result ?? {
+    rows: [],
+    totals: {
+      candidates: 0, unlinked: 0, partiallyLinked: 0, linked: 0,
+      fxReview: 0, overlinked: 0, nonPurchase: 0,
+    },
+  };
   const filtered = useMemo(
     () => selectCapitalisationReviewRows(review.rows, { status: filter, query: search, accountId }),
     [review.rows, filter, search, accountId],
@@ -79,8 +102,10 @@ export function AssetCapitalisationReviewPanel({
   const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, pages - 1);
   const shown = filtered.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
+  const expandedLine = shown.find((row) => row.lineId === expandedLineId) ?? null;
   const exportCsv = () => {
-    if (!candidates.data || candidates.isFetching || !asOf || asOf > today) return;
+    if (!candidates.data || candidates.data.asOf !== asOf ||
+        candidates.isFetching || !validDate || reviewed.issue) return;
     const csv = capitalisationReviewCsv(filtered, asOf, currency);
     const url = URL.createObjectURL(
       new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }),
@@ -129,6 +154,7 @@ export function AssetCapitalisationReviewPanel({
             onChange={(event) => {
               setAsOf(event.target.value);
               setPage(0);
+              setExpandedLineId(null);
             }}
           />
         </div>
@@ -142,6 +168,7 @@ export function AssetCapitalisationReviewPanel({
             onChange={(event) => {
               setFilter(event.target.value as Filter);
               setPage(0);
+              setExpandedLineId(null);
             }}
           >
             <option value="attention">Needs review</option>
@@ -160,7 +187,7 @@ export function AssetCapitalisationReviewPanel({
             ariaLabel="Filter review by GL account"
             companyId={companyId}
             value={accountId}
-            onChange={(value) => { setAccountId(value); setPage(0); }}
+            onChange={(value) => { setAccountId(value); setPage(0); setExpandedLineId(null); }}
             options={accounts}
             placeholder="All accounts"
             searchPlaceholder="Search GL account"
@@ -177,13 +204,13 @@ export function AssetCapitalisationReviewPanel({
             className="pl-9"
             value={search}
             placeholder="Bill, supplier, description"
-            onChange={(event) => { setSearch(event.target.value); setPage(0); }}
+            onChange={(event) => { setSearch(event.target.value); setPage(0); setExpandedLineId(null); }}
           />
         </div>
         <Button
           size="sm"
           variant="outline"
-          disabled={!asOf || asOf > today || candidates.isFetching}
+          disabled={!validDate || candidates.isFetching}
           onClick={() => void candidates.refetch()}
         >
           <RefreshCw className="mr-2 size-4" />
@@ -192,16 +219,17 @@ export function AssetCapitalisationReviewPanel({
         <Button
           size="sm"
           variant="outline"
-          disabled={!candidates.data || candidates.isFetching || !asOf || asOf > today}
+          disabled={!candidates.data || candidates.data.asOf !== asOf ||
+            candidates.isFetching || !validDate || reviewed.issue !== null}
           onClick={exportCsv}
         >
           <Download className="mr-2 size-4" />
           Export filtered CSV
         </Button>
       </div>
-      {!asOf || asOf > today ? (
+      {!validDate ? (
         <Alert variant="destructive">
-          <AlertDescription>Choose a date up to today.</AlertDescription>
+          <AlertDescription>Choose a real calendar date up to today.</AlertDescription>
         </Alert>
       ) : candidates.isPending ? (
         <LoadingState />
@@ -211,6 +239,12 @@ export function AssetCapitalisationReviewPanel({
           description={friendlyAuthError(candidates.error)}
           onRetry={() => void candidates.refetch()}
         />
+      ) : reviewed.issue ? (
+        <Alert variant="destructive">
+          <AlertDescription>
+            Purchase review data could not be interpreted safely: {reviewed.issue}
+          </AlertDescription>
+        </Alert>
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -293,23 +327,61 @@ export function AssetCapitalisationReviewPanel({
                           <Badge variant={line.status === "linked" ? "secondary" : "outline"}>
                             {STATUS_LABEL[line.status]}
                           </Badge>
+                          <span className="mt-1 block max-w-xs text-xs text-muted-foreground">
+                            {capitalisationReviewGuidance(line.status).reason}
+                          </span>
                         </TableCell>
                         <TableCell>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={!canManage || line.status === "non_purchase"}
-                            onClick={() => onCreate(line)}
-                            title="Review costs and link a new fixed asset; the bill will not be posted twice."
-                          >
-                            Review / add asset
-                          </Button>
+                          <div className="flex flex-wrap gap-2">
+                            <Button size="sm" variant="outline"
+                              aria-expanded={expandedLineId === line.lineId}
+                              onClick={() => setExpandedLineId(
+                                (id) => id === line.lineId ? null : line.lineId,
+                              )}>
+                              Why flagged?
+                            </Button>
+                            {capitalisationReviewGuidance(line.status).canPrepareNewAsset ? (
+                              <Button size="sm" variant="outline"
+                                disabled={!canManage}
+                                onClick={() => onCreate(line)}
+                                title="Verify treatment before saving; registration never posts the bill twice.">
+                                Review / add asset
+                              </Button>
+                            ) : null}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
               </div>
+              {expandedLine ? (
+                <section className="space-y-2 rounded-lg border bg-muted/20 p-4" aria-live="polite">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="font-semibold">
+                      {expandedLine.billNumber ?? "Supplier bill"} · {STATUS_LABEL[expandedLine.status]}
+                    </h3>
+                    <Button size="sm" variant="ghost"
+                      onClick={() => setExpandedLineId(null)}>Close explanation</Button>
+                  </div>
+                  <p className="text-sm">
+                    {capitalisationReviewGuidance(expandedLine.status).reason}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {capitalisationReviewGuidance(expandedLine.status).nextStep}
+                  </p>
+                  <Button size="sm" variant="outline" asChild>
+                    <Link to="/purchases/bills/$billId"
+                      params={{ billId: expandedLine.billId }}>
+                      Inspect source bill
+                    </Link>
+                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    Review guidance is advisory. No asset, tax adjustment or journal entry
+                    is created until a separately authorised action is performed.
+                  </p>
+                </section>
+              ) : null}
               <div className="flex items-center justify-between gap-3">
                 <span className="text-xs text-muted-foreground">
                   Page {currentPage + 1} of {pages} ({PAGE_SIZE} rows per page)

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { FileScan, Loader2, RefreshCw } from "lucide-react";
@@ -47,6 +47,8 @@ export function DocumentOcrPanel({
   const [confirmed, setConfirmed] = useState(false);
   const [jobToken, setJobToken] = useState<string | null>(null);
   const [result, setResult] = useState<Result | null>(null);
+  const liveScope = useRef(`${companyId}:${attachmentId}`);
+  liveScope.current = `${companyId}:${attachmentId}`;
 
   useEffect(() => {
     setConfirmed(false);
@@ -60,8 +62,10 @@ export function DocumentOcrPanel({
     retry: false,
   });
   const start = useMutation({
-    mutationFn: () => startFn({ data: { companyId, attachmentId, consent: confirmed } }),
-    onSuccess: (value) => {
+    mutationFn: (input: { companyId: string; attachmentId: string; consent: boolean }) =>
+      startFn({ data: input }),
+    onSuccess: (value, input) => {
+      if (liveScope.current !== `${input.companyId}:${input.attachmentId}`) return;
       setJobToken(value.jobToken);
       setResult({ status: "pending" });
       toast.success("Extraction requested. Select Check OCR result when ready.");
@@ -69,11 +73,10 @@ export function DocumentOcrPanel({
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
   const check = useMutation({
-    mutationFn: () => {
-      if (!jobToken) throw new Error("Start extraction first.");
-      return checkFn({ data: { companyId, attachmentId, jobToken } });
-    },
-    onSuccess: (value) => {
+    mutationFn: (input: { companyId: string; attachmentId: string; jobToken: string }) =>
+      checkFn({ data: input }),
+    onSuccess: (value, input) => {
+      if (liveScope.current !== `${input.companyId}:${input.attachmentId}`) return;
       setResult(value);
       if (value.status === "pending") toast.info("OCR is still processing. Check again shortly.");
       else if (value.status === "failed") toast.error(value.message);
@@ -98,10 +101,10 @@ export function DocumentOcrPanel({
         <p role="alert" className="text-sm text-destructive">
           {friendlyAuthError(available.error)}
         </p>
-      ) : !available.data.configured ? (
+      ) : !available.data?.configured ? (
         <p role="status" className="text-sm text-muted-foreground">
           OCR is not configured. Administrator setup needed:{" "}
-          {available.data.missing.join(", ")}.
+          {available.data?.missing.join(", ") || "Ask your administrator."}.
         </p>
       ) : (
         <>
@@ -121,7 +124,7 @@ export function DocumentOcrPanel({
               size="sm"
               type="button"
               disabled={!confirmed || start.isPending || Boolean(jobToken)}
-              onClick={() => start.mutate()}
+              onClick={() => start.mutate({ companyId, attachmentId, consent: confirmed })}
             >
               {start.isPending ? <Loader2 className="mr-1 size-4 animate-spin" /> :
                 <FileScan className="mr-1 size-4" />}
@@ -133,11 +136,26 @@ export function DocumentOcrPanel({
                 type="button"
                 variant="outline"
                 disabled={check.isPending}
-                onClick={() => check.mutate()}
+                onClick={() => check.mutate({ companyId, attachmentId, jobToken })}
               >
                 {check.isPending ? <Loader2 className="mr-1 size-4 animate-spin" /> :
                   <RefreshCw className="mr-1 size-4" />}
                 Check OCR result
+              </Button>
+            ) : null}
+            {jobToken ? (
+              <Button
+                size="sm"
+                type="button"
+                variant="ghost"
+                disabled={check.isPending || start.isPending}
+                onClick={() => {
+                  setJobToken(null);
+                  setResult(null);
+                  setConfirmed(false);
+                }}
+              >
+                Start new extraction
               </Button>
             ) : null}
           </div>

@@ -23,6 +23,7 @@ import { nextSort, sortRows, type SortState } from "@/lib/sort";
 import { journalPageInfo } from "@/lib/accounting/journal-paging";
 import { reviewJournalLines } from "@/lib/accounting/journal-line-review";
 import { JournalPostedGlEvidence } from "@/components/accounting/JournalPostedGlEvidence";
+import { PayrollAccrualGlAudit } from "@/components/accounting/PayrollAccrualGlAudit";
 import { JOURNAL_SOURCE_LABELS, journalSourceLabel, journalLineCurrency } from "@/lib/accounting/journal-display";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
@@ -114,6 +115,9 @@ export function JournalsPanel({
   const canReverse =
     company?.permissions?.includes("journals.manual") ??
     roleHasPermission(company?.role ?? "read_only", "journals.manual");
+  const canViewPayroll =
+    company?.permissions?.includes("payroll.view") ??
+    roleHasPermission(company?.role ?? "read_only", "payroll.view");
 
   const [search, setSearch] = useState("");
   const [source, setSource] = useState("");
@@ -426,6 +430,18 @@ export function JournalsPanel({
                             <div className="space-y-3">
                               <JournalLineReviewNotice journal={j} detail={detail.data} />
                               <JournalPostedGlEvidence companyId={companyId} journalId={j.id} status={j.status} />
+                              {canViewPayroll &&
+                              j.status === "posted" &&
+                              !j.reversed_by_journal_id &&
+                              j.source_type === "payroll" &&
+                              j.source_id &&
+                              j.idempotency_key === "payroll-run:" + j.source_id + ":accrual" ? (
+                                <PayrollAccrualGlAudit
+                                  companyId={companyId}
+                                  runId={j.source_id}
+                                  journalId={j.id}
+                                />
+                              ) : null}
                               <Table>
                                 <TableHeader>
                                   <TableRow>

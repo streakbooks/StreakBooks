@@ -102,6 +102,7 @@ export type JournalListItem = {
   memo: string | null;
   source_type: string;
   source_id: string | null;
+  idempotency_key: string | null;
   currency_code: string;
   reverses_journal_id: string | null;
   reversed_by_journal_id: string | null;
@@ -138,7 +139,7 @@ export const listJournals = createServerFn({ method: "GET" })
     let query = context.supabase
       .from("journals" as never)
       .select(
-        "id, journal_number, journal_date, status, memo, source_type, source_id, currency_code, reverses_journal_id, reversed_by_journal_id, journal_lines(debit_minor)" as never,
+        "id, journal_number, journal_date, status, memo, source_type, source_id, idempotency_key, currency_code, reverses_journal_id, reversed_by_journal_id, journal_lines(debit_minor)" as never,
       )
       .eq("company_id" as never, data.companyId as never)
       .order("journal_date" as never, { ascending: false } as never)

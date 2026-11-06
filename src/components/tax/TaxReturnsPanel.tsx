@@ -33,6 +33,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { AccountLookup } from "@/components/lookup";
+import { TaxGlComparisonPanel } from "@/components/tax/TaxGlComparisonPanel";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -429,6 +430,15 @@ export function TaxReturnsPanel({
                 isUk={pv.isUk}
                 jurisdiction={pv.jurisdiction}
               />
+              {!previewStale ? (
+                <TaxGlComparisonPanel
+                  key={`${companyId}-${pv.periodStart}-${pv.periodEnd}-${pv.basis}`}
+                  companyId={companyId}
+                  periodStart={pv.periodStart}
+                  periodEnd={pv.periodEnd}
+                  basis={pv.basis === "cash" ? "cash" : "accrual"}
+                />
+              ) : null}
               <div className="flex flex-wrap gap-2">
                 <Button
                   disabled={!canTax || previewStale || saveDraft.isPending || (list.data ? !list.data.available : false)}
@@ -653,6 +663,13 @@ export function TaxReturnsPanel({
                   currency={d.currency}
                   isUk={d.isUk}
                   jurisdiction={d.jurisdiction}
+                />
+                <TaxGlComparisonPanel
+                  key={`${companyId}-${d.id}-${d.period_start}-${d.period_end}`}
+                  companyId={companyId}
+                  periodStart={d.period_start}
+                  periodEnd={d.period_end}
+                  basis={d.basis === "cash" ? "cash" : "accrual"}
                 />
 
                 <div className="flex flex-wrap gap-2">

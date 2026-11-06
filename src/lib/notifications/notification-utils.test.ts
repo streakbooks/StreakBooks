@@ -210,7 +210,7 @@ describe("Smart Action Center history and bookmarkable filters", () => {
       category: "contact_followup",
       priority: "critical",
       sort: "oldest",
-      q: "Customer",
+      q: "  Customer  ",
     });
     expect(
       parseActionCenterSearch({
@@ -221,6 +221,11 @@ describe("Smart Action Center history and bookmarkable filters", () => {
         q: 7,
       }),
     ).toEqual({});
+  });
+
+  it("preserves spaces while a user types a multiword search term", () => {
+    expect(parseActionCenterSearch({ q: "Invoice " }).q).toBe("Invoice ");
+    expect(parseActionCenterSearch({ q: "    " })).toEqual({});
   });
 
   it("limits saved search terms to 120 characters", () => {

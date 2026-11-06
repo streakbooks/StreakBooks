@@ -11,6 +11,7 @@ import {
   firmOnboardingReleaseSteps,
   localReleasePreflight,
   extractVitestCounts,
+  playwrightReleaseGate,
   FIRM_ONBOARDING_UNIT_TESTS,
   stagingGateReady,
 } from "./lib/firm-onboarding-release-plan.mjs";
@@ -64,6 +65,25 @@ function gitInfo() {
   };
 }
 
+/**
+ * Fetch main from the authorized origin immediately before and after testing.
+ * Never cache a stale remote ref as proof that local HEAD is up to date.
+ * This is a read-only Git fetch, NOT a GitHub CI or Actions workflow call.
+ */
+function refreshRemoteMain() {
+  const result = spawnSync("git", [
+    "fetch", "--no-tags", "origin",
+    "refs/heads/main:refs/remotes/origin/main",
+  ], {
+    cwd: root,
+    encoding: "utf8",
+    windowsHide: true,
+    // Do not print Git remote/error output: a malformed remote could expose credentials.
+    stdio: ["ignore", "ignore", "ignore"],
+  });
+  return result.status === 0 && !result.error;
+}
+
 function npmLaunch(npmArgs) {
   if (process.platform === "win32") {
     // Windows requires cmd.exe for npm.cmd. Arguments here are code-defined,
@@ -109,6 +129,7 @@ async function runNpmStep(step) {
         exitCode: result.exitCode,
         durationSeconds: Math.round((Date.now() - started) / 1000),
         ...(step.id === "unit" ? { vitest: extractVitestCounts(output) } : {}),
+        ...(step.id === "staging" ? { playwright: playwrightReleaseGate(output).counts } : {}),
       });
     }
     child.on("error", (error) => {
@@ -124,8 +145,10 @@ async function runNpmStep(step) {
           counts.passedTests !== null && counts.passedTests > 0 &&
           counts.failedFiles === 0 && counts.failedTests === 0 &&
           counts.skippedFiles === 0 && counts.skippedTests === 0);
+      const stagingVerified = step.id !== "staging" ||
+        playwrightReleaseGate(output).passed;
       finish({
-        status: code === 0 && unitsVerified ? "passed" : "failed",
+        status: code === 0 && unitsVerified && stagingVerified ? "passed" : "failed",
         exitCode: code ?? (signal ? -1 : null),
       });
     });
@@ -134,7 +157,8 @@ async function runNpmStep(step) {
 
 async function runRelease({ useStaging, dryRun, install }) {
   const plan = firmOnboardingReleaseSteps({ install, staging: useStaging });
-  const git = gitInfo();
+  const initialRemoteFresh = !dryRun && refreshRemoteMain();
+  const git = { ...gitInfo(), remoteRefFresh: initialRemoteFresh };
   const preflight = localReleasePreflight(git);
   const results = [];
   const now = new Date();
@@ -172,7 +196,8 @@ async function runRelease({ useStaging, dryRun, install }) {
       }
     }
   }
-  const finalGit = gitInfo();
+  const finalRemoteFresh = !dryRun && refreshRemoteMain();
+  const finalGit = { ...gitInfo(), remoteRefFresh: finalRemoteFresh };
   const postflight = localReleasePreflight(finalGit);
   const checksPassed = !dryRun && preflight.passed && postflight.passed &&
     results.length === plan.length &&
@@ -184,6 +209,10 @@ async function runRelease({ useStaging, dryRun, install }) {
     git: finalGit,
     preflight,
     postflight,
+    liveOriginMainFetch: {
+      beforeTesting: initialRemoteFresh,
+      afterTesting: finalRemoteFresh,
+    },
     sourceChecksPassed: checksPassed,
     stagingE2EIncluded: useStaging,
     stagingE2EPassed: useStaging && results.some((r) => r.id === "staging" && r.status === "passed"),

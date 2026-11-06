@@ -297,3 +297,64 @@ are not verified. No GitHub CI, production merge or deployment was performed.
 - This runtime has Node, but no Docker or psql and no full LinkBooks
   checkout. The tests have not been executed, and migration rollout has not
   occurred. GitHub CI remains disabled by instruction.
+
+## Continuation — Batch 07: two-session posting race verification
+
+### Changes committed
+- Corrected remaining malformed dollar-quoted SQL statements in
+  `tests/integration/tax-master-posted-history.sql`; these previously
+  prevented the isolated PostgreSQL test from reaching the guard assertions.
+- Changed the two posted-history lookup functions from `STABLE` to
+  `VOLATILE`: `tax_code_has_posted_history` and
+  `tax_rate_last_posted_date`. PostgreSQL gives VOLATILE functions a
+  fresh snapshot at the start of their SQL queries, which matters when
+  a master UPDATE resumes after waiting for an invoice/bill posting lock.
+- Added a regression assertion against `pg_proc.provolatile` to keep both
+  snapshot-sensitive functions VOLATILE.
+- Created `tests/fixtures/tax-master-history/posting-race.sql` with
+  separate, initially unposted invoice/bill masters and source lines.
+- Added `scripts/tax-posting-races.mjs` and integrated it into
+  `node scripts/test-tax-master-history-postgres.mjs`.
+  This test runner launches two or more independent psql connections:
+  1. Hold a transaction after posting an invoice or bill, retaining the
+     database locks on the tax code/rate and parent document.
+  2. Attempt conflicting edits, first with a short lock timeout, then by
+     queueing live UPDATEs while posting is still uncommitted.
+  3. Check `pg_stat_activity.wait_event_type='Lock'` for the queued sessions
+     (using test-only application_name markers) before allowing posting
+     to commit.
+  4. Confirm the queued UPDATEs reject the now-posted history when they
+     resume, instead of changing historical treatment or source lines.
+  5. Cover invoice rate, invoice code and invoice source lines, plus
+     purchase-bill rate, code and source lines.
+- Performed JavaScript syntax parsing of the new and existing test runners.
+  **No live PostgreSQL execution** occurred.
+
+### Local command (Docker Desktop required)
+```powershell
+cd D:\MyApp\LinkBooks-Tax
+npm.cmd run typecheck
+npm.cmd run lint
+npm.cmd test -- src/lib/tax
+node scripts/test-tax-master-history-postgres.mjs
+node scripts/test-tax-gl-review-postgres.mjs
+npm.cmd run build
+```
+
+### Before merge or deployment
+- Run the tests above in an isolated local container; examine the
+  exact SQL failures if any. A syntax check is not a passing database test.
+- Repeat concurrency testing with the full production-compatible schema
+  and real posting RPCs: ensure sale/bill authorisation, reverse/void,
+  document line editing, FX, tax mapping and audit logging still work.
+- Confirm `READ COMMITTED` behavior and PostgreSQL version on staging.
+  The isolated harness uses PostgreSQL 17 and mocks minimal schemas.
+- Benchmark posting latency, deadlock frequency, lock waits and large-ledger
+  reconciliation reads. Extend immutable source coverage to expenses and
+  credit notes where tax code references are available.
+- Validate migrations in staging; **do not claim active protections**
+  until migration deployment and tenant RLS tests pass.
+
+**Status:** Code committed to draft PR #110. CI deliberately not run.
+PostgreSQL, TypeScript, ESLint, unit, browser and staging test results
+remain unverified. No main merge or production deployment.

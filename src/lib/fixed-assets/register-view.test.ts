@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { FixedAssetRow } from "./fixed-assets.functions";
 import {
+  assetStatusAsOf,
   selectRegisterAssets,
   summariseActiveAssets,
   type AssetRegisterFilters,
@@ -158,6 +159,18 @@ describe("Fixed asset as-at totals", () => {
       accumulatedMinor: null,
       netBookValueMinor: null,
     });
+  });
+
+  it("treats future purchases and disposals by their effective as-at dates", () => {
+    expect(
+      assetStatusAsOf(asset("future", "Future", { purchase_date: "2027-01-01" }), "2026-11-06"),
+    ).toBe("not_acquired");
+    const planned = asset("planned", "Planned disposal", {
+      status: "disposed",
+      disposal_date: "2026-12-01",
+    });
+    expect(assetStatusAsOf(planned, "2026-11-06")).toBe("active");
+    expect(assetStatusAsOf(planned, "2026-12-01")).toBe("disposed");
   });
 
   it("includes an asset only until its disposal date", () => {

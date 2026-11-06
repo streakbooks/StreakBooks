@@ -4,10 +4,10 @@ import { assertCompanyMember } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
 import { assertEntityAccess } from "@/lib/documents/attachments.functions";
 import { COMPANY_DOCUMENTS_BUCKET, isAttachmentEntityType } from "@/lib/documents/attachments";
+import { DEFAULT_DOCUMENT_RETENTION_DAYS, validateRetentionDays } from "@/lib/documents/recycle-bin-rules";
 
 const MIGRATION_HINT =
   "Recycle Bin requires migration 20261106183000_files_recycle_retention_cleanup.";
-const DEFAULT_RETENTION_DAYS = 30;
 
 function databaseError(error: { code?: string; message: string }): never {
   if (error.code === "42P01" || error.code === "42703" || error.code === "42883")
@@ -82,7 +82,7 @@ export const getDocumentRetentionSettings = createServerFn({ method: "GET" })
     if (error) databaseError(error);
     return {
       retentionDays: (settings as { retention_days: number } | null)?.retention_days
-        ?? DEFAULT_RETENTION_DAYS,
+        ?? DEFAULT_DOCUMENT_RETENTION_DAYS,
       minDays: 7,
       maxDays: 3650,
     };
@@ -91,9 +91,7 @@ export const getDocumentRetentionSettings = createServerFn({ method: "GET" })
 export const updateDocumentRetentionSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { companyId: string; retentionDays: number }) => {
-    const days = Number(input.retentionDays);
-    if (!Number.isSafeInteger(days) || days < 7 || days > 3650)
-      throw new Error("Retention must be between 7 and 3,650 days.");
+    const days = validateRetentionDays(input.retentionDays);
     return { companyId: assertUuid(input.companyId), retentionDays: days };
   })
   .handler(async ({ data, context }) => {

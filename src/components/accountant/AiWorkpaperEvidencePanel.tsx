@@ -108,6 +108,13 @@ export function AiWorkpaperEvidencePanel({
                         </p>
                       ) : null}
                     </div>
+                    <Link
+                      to="/ai-assistant"
+                      search={{ reviewCase: entry.reviewId }}
+                      className="text-xs font-medium text-primary underline-offset-2 hover:underline"
+                    >
+                      Open exact AI review
+                    </Link>
                     {canStageReference && entry.signal === "reviewed_evidence" ? (
                       <Button
                         type="button"

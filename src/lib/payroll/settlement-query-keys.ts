@@ -10,6 +10,8 @@ export const PAYROLL_SETTLEMENT_REFRESH_KEYS = [
   ["payroll-payment-detail"],
   ["payroll-payslips"],
   ["payroll-open-payslips"],
+  ["payroll-payslip"],
   ["payroll-runs"],
   ["payroll-run"],
+  ["payroll-run-journals"],
 ] as const;

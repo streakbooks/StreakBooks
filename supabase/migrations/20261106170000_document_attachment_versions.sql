@@ -124,8 +124,7 @@ BEGIN
   IF old_file.current_version >= 50 THEN
     RAISE EXCEPTION 'This document has reached the 50-version limit';
   END IF;
-  -- A reviewer must explicitly return a company document to Needs review
-  -- before its underlying evidence changes. Never preserve an approval on new bytes.
+  -- Replacing previously approved evidence must be a deliberate review action.
   IF old_file.entity_type = 'company' AND EXISTS (
     SELECT 1 FROM public.document_reviews r
     WHERE r.company_id=_company_id AND r.attachment_id=_attachment_id
@@ -133,147 +132,10 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'Return the document to Needs review before replacing its contents';
   END IF;
-  -- Enforce the existing format at the database RPC boundary too. The API
-  -- validates filename and MIME, but direct RPC requests cannot bypass it.
-  IF lower(coalesce(substring(old_file.file_name from '\\.([^.]+)
-  IF _new_storage_path IS NULL
-     OR _new_storage_path !~ ('^' || _company_id::text || '/' || old_file.entity_type ||
-       '/' || old_file.entity_id::text || '/[0-9a-fA-F-]{36}-[^/]+$')
-     OR _new_storage_path = old_file.storage_path THEN
-    RAISE EXCEPTION 'Invalid replacement Storage path';
-  END IF;
-  IF _new_size_bytes IS NULL OR _new_size_bytes < 1 OR _new_size_bytes > 20971520
-     OR _new_content_type IS NULL OR char_length(_new_content_type) > 120 THEN
-    RAISE EXCEPTION 'Invalid replacement metadata';
-  END IF;
-
-  -- User-owned upload must exist already; never adopt another user's file.
-  SELECT (o.metadata->>'size')::bigint, o.metadata->>'mimetype'
-    INTO actual_size, actual_mime
-    FROM storage.objects o
-   WHERE o.bucket_id='company-documents'
-     AND o.name=_new_storage_path
-     AND o.owner_id=auth.uid()::text;
-  IF actual_size IS NULL OR actual_size IS DISTINCT FROM _new_size_bytes
-     OR lower(coalesce(actual_mime,'')) IS DISTINCT FROM lower(_new_content_type) THEN
-    RAISE EXCEPTION 'Uploaded replacement is missing, unowned or inconsistent';
-  END IF;
-  IF EXISTS (
-    SELECT 1 FROM public.document_attachment_versions
-    WHERE storage_path=_new_storage_path
-  ) THEN
-    RAISE EXCEPTION 'Replacement object is already used in version history';
-  END IF;
-
-  -- The original becomes immutable version 1 on first replacement.
-  IF old_file.current_version=1 THEN
-    INSERT INTO public.document_attachment_versions(
-      company_id, attachment_id, version, storage_bucket, storage_path,
-      file_name, content_type, size_bytes, uploaded_by, created_at
-    ) VALUES(
-      _company_id, _attachment_id, 1, old_file.storage_bucket, old_file.storage_path,
-      old_file.file_name, old_file.content_type, old_file.size_bytes,
-      old_file.uploaded_by, old_file.created_at
-    );
-  END IF;
-
-  next_version := old_file.current_version + 1;
-  INSERT INTO public.document_attachment_versions(
-    company_id, attachment_id, version, storage_bucket, storage_path,
-    file_name, content_type, size_bytes, uploaded_by
-  ) VALUES (
-    _company_id, _attachment_id, next_version, 'company-documents', _new_storage_path,
-    old_file.file_name, _new_content_type, _new_size_bytes, auth.uid()
-  );
-
-  -- Only this transaction can set the current version pointer.
-  PERFORM set_config('linkbooks.document_version_write', 'allowed', true);
-  UPDATE public.document_attachments
-     SET storage_path=_new_storage_path, storage_bucket='company-documents',
-         size_bytes=_new_size_bytes, content_type=_new_content_type,
-         uploaded_by=auth.uid(), current_version=next_version
-   WHERE company_id=_company_id AND id=_attachment_id;
-  PERFORM set_config('linkbooks.document_version_write', '', true);
-  RETURN next_version;
-END $$;
-
-REVOKE ALL ON FUNCTION public.commit_document_attachment_version(
-  uuid,uuid,integer,text,bigint,text
-) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.commit_document_attachment_version(
-  uuid,uuid,integer,text,bigint,text
-) TO authenticated;
-), ''))
+  -- Keep logical file format immutable, even for direct RPC calls.
+  IF lower(coalesce(substring(old_file.file_name from '[.]([^./]+)$'), ''))
      IS DISTINCT FROM
-     lower(coalesce(substring(_new_storage_path from '\\.([^.\\/]+)
-  IF _new_storage_path IS NULL
-     OR _new_storage_path !~ ('^' || _company_id::text || '/' || old_file.entity_type ||
-       '/' || old_file.entity_id::text || '/[0-9a-fA-F-]{36}-[^/]+$')
-     OR _new_storage_path = old_file.storage_path THEN
-    RAISE EXCEPTION 'Invalid replacement Storage path';
-  END IF;
-  IF _new_size_bytes IS NULL OR _new_size_bytes < 1 OR _new_size_bytes > 20971520
-     OR _new_content_type IS NULL OR char_length(_new_content_type) > 120 THEN
-    RAISE EXCEPTION 'Invalid replacement metadata';
-  END IF;
-
-  -- User-owned upload must exist already; never adopt another user's file.
-  SELECT (o.metadata->>'size')::bigint, o.metadata->>'mimetype'
-    INTO actual_size, actual_mime
-    FROM storage.objects o
-   WHERE o.bucket_id='company-documents'
-     AND o.name=_new_storage_path
-     AND o.owner_id=auth.uid()::text;
-  IF actual_size IS NULL OR actual_size IS DISTINCT FROM _new_size_bytes
-     OR lower(coalesce(actual_mime,'')) IS DISTINCT FROM lower(_new_content_type) THEN
-    RAISE EXCEPTION 'Uploaded replacement is missing, unowned or inconsistent';
-  END IF;
-  IF EXISTS (
-    SELECT 1 FROM public.document_attachment_versions
-    WHERE storage_path=_new_storage_path
-  ) THEN
-    RAISE EXCEPTION 'Replacement object is already used in version history';
-  END IF;
-
-  -- The original becomes immutable version 1 on first replacement.
-  IF old_file.current_version=1 THEN
-    INSERT INTO public.document_attachment_versions(
-      company_id, attachment_id, version, storage_bucket, storage_path,
-      file_name, content_type, size_bytes, uploaded_by, created_at
-    ) VALUES(
-      _company_id, _attachment_id, 1, old_file.storage_bucket, old_file.storage_path,
-      old_file.file_name, old_file.content_type, old_file.size_bytes,
-      old_file.uploaded_by, old_file.created_at
-    );
-  END IF;
-
-  next_version := old_file.current_version + 1;
-  INSERT INTO public.document_attachment_versions(
-    company_id, attachment_id, version, storage_bucket, storage_path,
-    file_name, content_type, size_bytes, uploaded_by
-  ) VALUES (
-    _company_id, _attachment_id, next_version, 'company-documents', _new_storage_path,
-    old_file.file_name, _new_content_type, _new_size_bytes, auth.uid()
-  );
-
-  -- Only this transaction can set the current version pointer.
-  PERFORM set_config('linkbooks.document_version_write', 'allowed', true);
-  UPDATE public.document_attachments
-     SET storage_path=_new_storage_path, storage_bucket='company-documents',
-         size_bytes=_new_size_bytes, content_type=_new_content_type,
-         uploaded_by=auth.uid(), current_version=next_version
-   WHERE company_id=_company_id AND id=_attachment_id;
-  PERFORM set_config('linkbooks.document_version_write', '', true);
-  RETURN next_version;
-END $$;
-
-REVOKE ALL ON FUNCTION public.commit_document_attachment_version(
-  uuid,uuid,integer,text,bigint,text
-) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.commit_document_attachment_version(
-  uuid,uuid,integer,text,bigint,text
-) TO authenticated;
-), '')) THEN
+     lower(coalesce(substring(_new_storage_path from '[.]([^./]+)$'), '')) THEN
     RAISE EXCEPTION 'Replacement must keep the original file extension';
   END IF;
   IF _new_storage_path IS NULL

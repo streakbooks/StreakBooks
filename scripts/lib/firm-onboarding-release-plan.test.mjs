@@ -51,11 +51,27 @@ describe("Firm onboarding local release plan", () => {
       E2E_BASE_URL: "https://dedicated-staging.example.invalid",
       E2E_EXPECTED_STAGING_HOST: "dedicated-staging.example.invalid",
       E2E_PRODUCTION_URL: "https://production.example.invalid",
+      E2E_FIRM_TASK_CSV_CANARY: "=SUM(1,1)",
+      E2E_FIRM_RESTRICTED_EMAIL: "restricted@example.invalid",
+      E2E_FIRM_RESTRICTED_PASSWORD: "not-a-real-other-secret",
     }), {
       stagingUrl: "https://dedicated-staging.example.invalid",
       expectedHost: "dedicated-staging.example.invalid",
       productionUrl: "https://production.example.invalid",
     });
+    assert.throws(() => stagingGateReady({
+      ...env,
+      E2E_BASE_URL: "https://dedicated-staging.example.invalid",
+      E2E_EXPECTED_STAGING_HOST: "dedicated-staging.example.invalid",
+      E2E_PRODUCTION_URL: "https://production.example.invalid",
+    }), /canary/);
+    assert.throws(() => stagingGateReady({
+      ...env,
+      E2E_BASE_URL: "https://dedicated-staging.example.invalid",
+      E2E_EXPECTED_STAGING_HOST: "dedicated-staging.example.invalid",
+      E2E_PRODUCTION_URL: "https://production.example.invalid",
+      E2E_FIRM_TASK_CSV_CANARY: "=SUM(1,1)",
+    }), /distinct restricted/);
   });
 });
 

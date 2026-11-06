@@ -123,10 +123,10 @@ export function ReconciliationExceptionCentre({ companyId }: { companyId: string
     : { state: "unavailable", message: "Requires both Payroll and Accounting viewing permissions." };
   const fixedAssetsCapture: AuditCapture<FixedAssetExceptionAudit> =
     fixedAuditKind === "depreciation"
-      ? capture(depreciation.data ? { kind: "depreciation", evidence: depreciation.data } : undefined,
+      ? capture<FixedAssetExceptionAudit>(depreciation.data ? { kind: "depreciation", evidence: depreciation.data } : undefined,
           depreciation.isError, depreciation.error)
       : fixedAuditKind === "disposal"
-        ? capture(disposal.data ? { kind: "disposal", evidence: disposal.data } : undefined,
+        ? capture<FixedAssetExceptionAudit>(disposal.data ? { kind: "disposal", evidence: disposal.data } : undefined,
             disposal.isError, disposal.error)
         : { state: "not_run" };
   const snapshot = createExceptionSnapshot({

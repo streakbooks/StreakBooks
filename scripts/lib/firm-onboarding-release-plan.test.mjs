@@ -6,6 +6,9 @@ import {
   stagingGateReady,
   localReleasePreflight,
   extractVitestCounts,
+  extractPlaywrightCounts,
+  playwrightReleaseGate,
+  FIRM_ONBOARDING_STAGING_TEST_COUNT,
 } from "./firm-onboarding-release-plan.mjs";
 
 describe("Firm onboarding local release plan", () => {
@@ -82,6 +85,7 @@ describe("Firm onboarding release checkout trust", () => {
     commit: "3".repeat(40),
     originMainCommit: "3".repeat(40),
     originMatchesRepo: true,
+    remoteRefFresh: true,
     workingTreeClean: true,
     workingTreeStatusKnown: true,
   };
@@ -97,7 +101,8 @@ describe("Firm onboarding release checkout trust", () => {
     assert.equal(localReleasePreflight({ ...trusted, branch: "" }).passed, false);
     assert.equal(localReleasePreflight({ ...trusted, branch: "feature/new" }).passed, false);
   });
-  it("rejects wrong origin and missing or stale origin/main", () => {
+  it("rejects wrong origin, failed live fetch and missing or stale origin/main", () => {
+    assert.equal(localReleasePreflight({ ...trusted, remoteRefFresh: false }).passed, false);
     assert.equal(localReleasePreflight({ ...trusted, originMatchesRepo: false }).passed, false);
     assert.equal(localReleasePreflight({ ...trusted, originMainCommit: null }).passed, false);
     assert.equal(localReleasePreflight({
@@ -128,5 +133,33 @@ describe("Firm onboarding release test evidence accuracy", () => {
       passedTests: null, failedTests: null, skippedTests: null,
       passedFiles: null, failedFiles: null, skippedFiles: null,
     });
+  });
+});
+
+describe("Firm onboarding Playwright staging acceptance", () => {
+  it("expects exactly six real dedicated staging tests", () => {
+    assert.equal(FIRM_ONBOARDING_STAGING_TEST_COUNT, 6);
+    assert.deepEqual(playwrightReleaseGate("  6 passed (12.2s)"), {
+      passed: true,
+      counts: { passed: 6, failed: 0, skipped: 0, flaky: 0, interrupted: 0, didNotRun: 0 },
+    });
+  });
+  it("rejects an omitted or filtered browser test", () => {
+    assert.equal(playwrightReleaseGate("  5 passed (9.4s)").passed, false);
+    assert.equal(playwrightReleaseGate("  3 passed (5s)").passed, false);
+  });
+  it("rejects a skipped, failed, flaky or interrupted security test", () => {
+    for (const report of [
+      "  5 passed (12.2s)\n  1 skipped",
+      "  6 passed (12.2s)\n  1 failed",
+      "  5 passed (12.2s)\n  1 flaky",
+      "  5 passed (12.2s)\n  1 interrupted",
+      "  5 passed (12.2s)\n  1 did not run",
+    ]) assert.equal(playwrightReleaseGate(report).passed, false);
+  });
+  it("strips ANSI colors and refuses missing test summary evidence", () => {
+    assert.equal(playwrightReleaseGate("\u001b[32m  6 passed (2s)\u001b[0m").passed, true);
+    assert.equal(playwrightReleaseGate("playwright process started").passed, false);
+    assert.equal(extractPlaywrightCounts("no result"), null);
   });
 });

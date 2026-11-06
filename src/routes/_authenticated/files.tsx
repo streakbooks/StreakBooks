@@ -148,6 +148,10 @@ function FilesPage() {
   const [inlinePreviewUrl, setInlinePreviewUrl] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null);
+  const [pendingFolderDelete, setPendingFolderDelete] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -209,6 +213,7 @@ function FilesPage() {
     mutationFn: (id: string) => deleteFolder({ data: { companyId: companyId!, folderId: id } }),
     onSuccess: async () => {
       setFolderId(null);
+      setPendingFolderDelete(null);
       await queryClient.invalidateQueries({ queryKey: ["document-folders", companyId] });
       toast.success("Empty folder deleted");
     },
@@ -729,10 +734,9 @@ function FilesPage() {
               size="sm"
               variant="ghost"
               disabled={removeFolderM.isPending}
-              onClick={() => {
-                if (window.confirm("Delete this empty folder?"))
-                  removeFolderM.mutate(activeFolder.id);
-              }}
+              onClick={() =>
+                setPendingFolderDelete({ id: activeFolder.id, name: activeFolder.name })
+              }
             >
               <Trash2 className="mr-1 size-4" />
               Delete empty folder
@@ -1075,7 +1079,9 @@ function FilesPage() {
               ? "No files match these filters."
               : activeView === "to-file"
                 ? "No unlinked, unfiled uploads need organising."
-                : canUpload
+                : folderId && !includeSubfolders
+                  ? "This folder has no directly assigned files. Enable Include files in nested subfolders to search its children."
+                  : canUpload
                   ? `Upload a file here or attach one to an invoice or bill. Up to ${formatFileSize(MAX_FILE_BYTES)} each.`
                   : "No files have been added yet."
           }
@@ -1280,6 +1286,32 @@ function FilesPage() {
           </div>
         </>
       )}
+
+      <AlertDialog
+        open={Boolean(pendingFolderDelete)}
+        onOpenChange={(open) => !open && setPendingFolderDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete empty folder?</AlertDialogTitle>
+            <AlertDialogDescription>
+              “{pendingFolderDelete?.name}” can only be deleted when it has no files or subfolders.
+              Its contents are not deleted or moved automatically.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={removeFolderM.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={removeFolderM.isPending}
+              onClick={() => {
+                if (pendingFolderDelete) removeFolderM.mutate(pendingFolderDelete.id);
+              }}
+            >
+              Delete empty folder
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={Boolean(pendingDelete)} onOpenChange={(o) => !o && setPendingDelete(null)}>
         <AlertDialogContent>

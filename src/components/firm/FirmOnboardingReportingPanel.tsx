@@ -55,9 +55,13 @@ export function FirmOnboardingReportingPanel({
   const getOverview = useServerFn(listFirmOnboardingOverview);
   const getStaff = useServerFn(listFirmOnboardingWorkloadContext);
   const getTrends = useServerFn(listFirmOnboardingTrends);
-  const activeFirmRef = useRef(firmId);
+  const activeFirmRef = useRef<string | null>(firmId);
   useEffect(() => {
     activeFirmRef.current = firmId;
+    return () => {
+      // A pending export must not download after leaving the firm page.
+      activeFirmRef.current = null;
+    };
   }, [firmId]);
   const [selectedCompany, setSelectedCompany] = useState("all");
   const [selectedAssignee, setSelectedAssignee] = useState("all");

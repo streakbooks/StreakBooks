@@ -95,6 +95,27 @@ describe("fixed assets portfolio dashboard", () => {
     ]);
   });
 
+  it("refuses inconsistent register financial terms rather than showing misleading KPIs", () => {
+    expect(() => buildAssetPortfolioSnapshot(
+      [asset("invalid-residual", { residual_minor: 15000 })],
+      types,
+      "2026-11-06",
+      new Map([["invalid-residual", 0]]),
+    )).toThrow(/residual or opening/i);
+    expect(() => buildAssetPortfolioSnapshot(
+      [asset("invalid-opening", { opening_accumulated_minor: -10 })],
+      types,
+      "2026-11-06",
+      new Map([["invalid-opening", 0]]),
+    )).toThrow(/residual or opening/i);
+    expect(() => buildAssetPortfolioSnapshot(
+      [asset("imprecise-opening", { opening_accumulated_minor: Number.MAX_SAFE_INTEGER + 1 })],
+      types,
+      "2026-11-06",
+      new Map([["imprecise-opening", 0]]),
+    )).toThrow(/residual or opening/i);
+  });
+
   it("uses bigint across safe numeric asset costs to avoid portfolio precision loss", () => {
     const result = buildAssetPortfolioSnapshot(
       [asset("a", { cost_minor: 900_000_000_000_000 }),

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildDimensionVariance } from "./budget-dimension-variance";
+import { buildDimensionVariance, eligibleDimensionActualLines } from "./budget-dimension-variance";
 
 const inputs = {
   months: ["2026-04-01", "2026-05-01"],
@@ -23,6 +23,31 @@ const inputs = {
 };
 
 describe("dimension budget vs posted journal actuals", () => {
+  it("excludes recognized year-end closing postings exactly like the main P&L", () => {
+    const lines = [
+      { line_id: "ordinary", source_type: "other", memo: "Ordinary adjustment" },
+      { line_id: "close", source_type: "other", memo: "Year-end close FY 2026" },
+      { line_id: "close-other-type", source_type: "manual", memo: "Year-end close FY 2026" },
+      { line_id: "not-close", source_type: "other", memo: "year-end close FY 2026" },
+    ];
+    expect(eligibleDimensionActualLines(lines).map(line => line.line_id))
+      .toEqual(["ordinary", "close-other-type", "not-close"]);
+    expect(lines).toHaveLength(4);
+  });
+
+  it("does not include excluded closing values in option profit/expense variances", () => {
+    const posted = eligibleDimensionActualLines([
+      {
+        ...inputs.actual[0], source_type: "other",
+        memo: "Year-end close FY 2026", creditMinor: 50000,
+      },
+      { ...inputs.actual[1], source_type: "manual", memo: "Normal rent" },
+    ]);
+    const result = buildDimensionVariance({ ...inputs, actual: posted });
+    expect(result.summaries.find(s => s.optionId === "north")?.income.ytd.actualMinor).toBe(0);
+    expect(result.summaries.find(s => s.optionId === "north")?.expense.ytd.actualMinor).toBe(6000);
+  });
+
   it("computes income and expense variances with their natural accounting signs", () => {
     const result = buildDimensionVariance(inputs);
     const north = result.summaries.find((o) => o.optionId === "north")!;

@@ -11,6 +11,7 @@ import {
 } from "@/lib/accounting/ledger-data";
 import {
   buildDimensionVariance,
+  eligibleDimensionActualLines,
   type DimensionActualAccount,
   type DimensionActualOption,
   type DimensionBudgetAmount,
@@ -164,7 +165,7 @@ export const getBudgetDimensionVariance = createServerFn({ method: "GET" })
       month: row.period_month,
       amountMinor: exactMinor(row.amount_minor, "Budget allocation"),
     }));
-    const mappedActual: DimensionPostedActivity[] = posted.map((line) => {
+    const mappedActual: DimensionPostedActivity[] = eligibleDimensionActualLines(posted).map((line) => {
       if (!line.line_id) throw new Error("Posted journal line identity is missing.");
       return {
         lineId: line.line_id,

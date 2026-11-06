@@ -4,6 +4,21 @@
  * Unassigned journal-line activity is disclosed separately, not attributed to options.
  */
 import { roundDiv, type BudgetAccountKind, type VarianceStatus } from "@/lib/budgets/budget-math";
+import { isYearEndCloseLine } from "@/lib/accounting/reporting";
+
+/**
+ * Align dimension actuals with the core P&L/ledger monthly activity reporting
+ * policy. A recognised year-end closing journal is posted for balance carry-over,
+ * not economic income/expense activity. Never classify it as a tracking actual.
+ *
+ * Keep the full posted-line object for subsequent FX-safe debit/credit aggregation.
+ */
+export function eligibleDimensionActualLines<T extends {
+  source_type?: string;
+  memo?: string | null;
+}>(postedLines: readonly T[]): T[] {
+  return postedLines.filter((line) => !isYearEndCloseLine(line));
+}
 
 export type DimensionActualAccount = {
   id: string;

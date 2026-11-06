@@ -721,7 +721,7 @@ function safeAssetBillMinor(value: number | string | bigint, field: string): big
   if (typeof value === "number" && !Number.isSafeInteger(value)) {
     throw new Error(field + " exceeds JavaScript safe integer precision.");
   }
-  if (typeof value === "string" && !/^-?\\d+$/.test(value)) {
+  if (typeof value === "string" && !/^-?\d+$/.test(value)) {
     throw new Error(field + " is not a whole minor-unit amount.");
   }
   return BigInt(value);

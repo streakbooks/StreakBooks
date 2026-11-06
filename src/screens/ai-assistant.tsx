@@ -127,9 +127,18 @@ export function AiAssistantPage() {
       companyId={company.id}
       companyName={company.name}
       currency={company.base_currency}
-      canUse={roleHasPermission(company.role ?? "read_only", "ai.use")}
-      canApply={roleHasPermission(company.role ?? "read_only", "ai.apply_suggestion")}
-      canViewReports={roleHasPermission(company.role ?? "read_only", "reports.view")}
+      canUse={
+        company.permissions?.includes("ai.use") ??
+        roleHasPermission(company.role ?? "read_only", "ai.use")
+      }
+      canApply={
+        company.permissions?.includes("ai.apply_suggestion") ??
+        roleHasPermission(company.role ?? "read_only", "ai.apply_suggestion")
+      }
+      canViewReports={
+        company.permissions?.includes("reports.view") ??
+        roleHasPermission(company.role ?? "read_only", "reports.view")
+      }
     />
   );
 }

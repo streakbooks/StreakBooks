@@ -5,10 +5,12 @@ import { useServerFn } from "@tanstack/react-start";
 import { ClipboardList, RefreshCw, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { useCanDo } from "@/hooks/use-can";
+import { buildAiReviewAuditCsv } from "@/lib/ai/review-audit-csv";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import {
   listAiJournalReviewCases,
   getAiJournalReviewCase,
+  exportAiJournalReviewAudit,
   listAiJournalReviewEvents,
   listAiJournalReviewerCandidates,
   saveAiJournalReview,
@@ -55,8 +57,10 @@ export function AiJournalReviewQueue({
 }) {
   const { reviewCase } = useSearch({ from: "/_authenticated/ai-assistant" });
   const canAccountant = useCanDo("accounting.view");
+  const canExportAudit = useCanDo("reports.export");
   const listCases = useServerFn(listAiJournalReviewCases);
   const fetchCase = useServerFn(getAiJournalReviewCase);
+  const fetchAudit = useServerFn(exportAiJournalReviewAudit);
   const listEvents = useServerFn(listAiJournalReviewEvents);
   const listReviewers = useServerFn(listAiJournalReviewerCandidates);
   const save = useServerFn(saveAiJournalReview);
@@ -100,6 +104,20 @@ export function AiJournalReviewQueue({
     enabled: canRead && canAssign,
     queryFn: () => listReviewers({ data: { companyId } }),
     staleTime: 60_000,
+  });
+  const auditM = useMutation({
+    mutationFn: (caseId: string) => fetchAudit({ data: { companyId, caseId } }),
+    onSuccess: (result) => {
+      const csv = buildAiReviewAuditCsv(result);
+      const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "linkbooks-ai-journal-review-" + result.review.id.slice(0, 8) + ".csv";
+      anchor.click();
+      URL.revokeObjectURL(url);
+      toast.success("Complete AI review history exported; no accounting records were changed.");
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
   });
   const mutate = useMutation({
     mutationFn: ({
@@ -313,6 +331,17 @@ export function AiJournalReviewQueue({
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="outline">AI evidence review only</Badge>
+                  {canExportAudit ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={auditM.isPending}
+                      onClick={() => auditM.mutate(selected.id)}
+                    >
+                      {auditM.isPending ? "Preparing CSV…" : "Export complete audit CSV"}
+                    </Button>
+                  ) : null}
                     {canAccountant ? (
                       <Button variant="outline" size="sm" asChild>
                         <Link to="/accountant" search={{ tab: "workpapers" }}>

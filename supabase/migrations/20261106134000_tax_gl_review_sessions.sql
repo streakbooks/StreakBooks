@@ -165,13 +165,19 @@ BEGIN
     old_reviewer := NULL;
     saved_version := 1;
     kind := 'created';
-    INSERT INTO public.tax_gl_review_sessions (
-      company_id,period_start,period_end,basis,output_account_id,input_account_id,
-      status,reviewer_id,review_note,comparison_snapshot,version,created_by,updated_by
-    ) VALUES (
-      _company_id,_period_start,_period_end,_basis,_output_account_id,_input_account_id,
-      _status,_reviewer_id,normalized_note,coalesce(_comparison_snapshot,''),1,who,who
-    ) RETURNING id INTO saved_id;
+    BEGIN
+      INSERT INTO public.tax_gl_review_sessions (
+        company_id,period_start,period_end,basis,output_account_id,input_account_id,
+        status,reviewer_id,review_note,comparison_snapshot,version,created_by,updated_by
+      ) VALUES (
+        _company_id,_period_start,_period_end,_basis,_output_account_id,_input_account_id,
+        _status,_reviewer_id,normalized_note,coalesce(_comparison_snapshot,''),1,who,who
+      ) RETURNING id INTO saved_id;
+    EXCEPTION WHEN unique_violation THEN
+      -- Another reviewer created the same scoped review after our SELECT.
+      -- Return an actionable concurrency message, never overwrite their work.
+      RAISE EXCEPTION 'Review was created in another session. Refresh before saving.';
+    END;
   END IF;
 
   INSERT INTO public.tax_gl_review_events (

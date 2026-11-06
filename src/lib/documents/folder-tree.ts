@@ -82,3 +82,30 @@ export function folderDescendantIds(
   }
   return ids;
 }
+
+
+/**
+ * Index display paths once per folder query. Building a path via ancestor scans
+ * for each search candidate causes O(n²) work on large folder trees.
+ * Missing parents and malformed cycles are safely truncated.
+ */
+export function indexFolderPaths(
+  folders: readonly DocumentFolder[],
+): ReadonlyMap<string, string> {
+  const byId = new Map(folders.map((folder) => [folder.id, folder]));
+  const cache = new Map<string, string>();
+
+  const visit = (id: string, visiting: Set<string>): string => {
+    if (cache.has(id)) return cache.get(id)!;
+    const folder = byId.get(id);
+    if (!folder || visiting.has(id)) return "";
+    visiting.add(id);
+    const parentPath = folder.parent_id ? visit(folder.parent_id, visiting) : "";
+    visiting.delete(id);
+    const result = parentPath ? `${parentPath} / ${folder.name}` : folder.name;
+    cache.set(id, result);
+    return result;
+  };
+  for (const folder of folders) visit(folder.id, new Set<string>());
+  return cache;
+}

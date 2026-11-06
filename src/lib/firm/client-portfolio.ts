@@ -158,6 +158,31 @@ export function filterFirmClients(
     });
 }
 
+/** Only currently visible, named, eligible clients may enter a bulk change (max 50). */
+export function selectedVisibleFirmClients(
+  filtered: FirmClientRow[],
+  selectedCompanyIds: string[],
+): FirmClientRow[] {
+  const selected = new Set(selectedCompanyIds);
+  const distinct = new Set<string>();
+  return filtered.filter((client) => {
+    if (!client.companies || !selected.has(client.company_id) || distinct.has(client.company_id))
+      return false;
+    distinct.add(client.company_id);
+    return true;
+  }).slice(0, 50);
+}
+
+export function firstFiftyFirmClientIds(filtered: FirmClientRow[]): string[] {
+  const distinct = new Set<string>();
+  for (const client of filtered) {
+    if (!client.companies) continue;
+    distinct.add(client.company_id);
+    if (distinct.size === 50) break;
+  }
+  return [...distinct];
+}
+
 /** Safe spreadsheet exports: quote delimiters and neutralise formula cells. */
 export function csvField(value: string): string {
   const safe = /^[\s]*[=+\-@\t\r]/u.test(value) ? "'" + value : value;

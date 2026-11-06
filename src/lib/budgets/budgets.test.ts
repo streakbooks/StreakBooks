@@ -48,6 +48,9 @@ describe("rounding helpers", () => {
   it("rejects non-integer money", () => {
     expect(() => applyUpliftBps(10.5, 100)).toThrow();
   });
+  it("rejects uplifts that overflow safe integer accounting amounts", () => {
+    expect(() => applyUpliftBps(Number.MAX_SAFE_INTEGER, 100)).toThrow(/supported range/);
+  });
 });
 
 describe("fillRight and spreadEvenly", () => {
@@ -204,6 +207,13 @@ describe("budget CSV", () => {
     expect(r.issues.map((i) => i.row)).toEqual([2, 3, 5]);
     expect(r.values.has("b")).toBe(true);
     expect(r.values.has("a")).toBe(false);
+  });
+  it("rejects a CSV from a different financial year before changing draft amounts", () => {
+    const incorrect = ["Account code,Account name,Jan 26,Feb 26,Mar 26,Apr 26,May 26,Jun 26,Jul 26,Aug 26,Sep 26,Oct 26,Nov 26,Dec 26", "200,Sales,1,1,1,1,1,1,1,1,1,1,1,1"].join("\n");
+    const actualMonths = fiscalMonthStarts("2027-01-01");
+    const parsed = parseBudgetCsv(incorrect, accounts, "GBP", actualMonths);
+    expect(parsed.values.size).toBe(0);
+    expect(parsed.issues[0]?.message).toMatch(/financial year/);
   });
   it("requires the header row", () => {
     expect(parseBudgetCsv("x,y\n1,2", accounts, "GBP").issues[0]!.message).toMatch(/Header/);

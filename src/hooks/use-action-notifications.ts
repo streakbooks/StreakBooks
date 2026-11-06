@@ -143,6 +143,10 @@ export function useActionNotifications(companyId: string | null, userId: string,
     inbox,
     unreadQuery,
     changeState,
-    refresh: () => client.invalidateQueries({ queryKey: ["action-notifications", companyId] }),
+    refresh: () =>
+      Promise.all([
+        client.invalidateQueries({ queryKey: ["action-notifications", companyId] }),
+        client.invalidateQueries({ queryKey: ["action-notifications-unread", companyId] }),
+      ]),
   };
 }

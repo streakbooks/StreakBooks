@@ -5,6 +5,7 @@
 
 import { fromMinorUnits, toMinorUnits } from "@/lib/accounting/money";
 import { monthLabel, sumMinorNumbers } from "@/lib/budgets/budget-math";
+import { parseBudgetCsvRecords } from "@/lib/budgets/budget-csv-records";
 
 export type BudgetGridAccount = { id: string; code: string; name: string };
 
@@ -31,24 +32,11 @@ export function budgetToCsvRows(
   });
 }
 
+/** Parse one CSV record, including quoted commas and escaped quotations. */
 export function splitCsvLine(line: string): string[] {
-  const cells: string[] = [];
-  let cur = "";
-  let quoted = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (ch === '"') {
-      if (quoted && line[i + 1] === '"') {
-        cur += '"';
-        i++;
-      } else quoted = !quoted;
-    } else if (ch === "," && !quoted) {
-      cells.push(cur);
-      cur = "";
-    } else cur += ch;
-  }
-  cells.push(cur);
-  return cells;
+  const rows = parseBudgetCsvRecords(line);
+  if (rows.length > 1) throw new Error("Expected one CSV record.");
+  return rows[0]?.cells ?? [""];
 }
 
 export type BudgetCsvIssue = { row: number; message: string };
@@ -92,23 +80,22 @@ export function parseBudgetCsv(
   const issues: BudgetCsvIssue[] = [];
   const values = new Map<string, number[]>();
   const byCode = new Map(accounts.map((a) => [a.code.trim().toLowerCase(), a]));
-  const lines = text
-    .replace(/^\uFEFF/, "")
-    .split(/\r?\n/)
-    .map((l, i) => ({ line: l, n: i + 1 }))
-    .filter((l) => l.line.trim().length > 0);
-  const headerAt = lines.findIndex((l) => /^"?account code"?\s*,/i.test(l.line.trim()));
+  // Physical newlines can occur inside quoted account names or metadata.
+  const lines = parseBudgetCsvRecords(text);
+  const headerAt = lines.findIndex(
+    (record) => record.cells[0]?.trim().toLocaleLowerCase() === "account code",
+  );
   if (headerAt < 0) {
     return {
       values,
       issues: [{ row: 1, message: "Header row “Account code, Account name, …” not found." }],
     };
   }
-  const headers = splitCsvLine(lines[headerAt]!.line).map((part) => part.trim());
+  const headers = lines[headerAt]!.cells.map((part) => part.trim());
   if (headers.length < 14) {
     return {
       values,
-      issues: [{ row: lines[headerAt]!.n, message: "CSV must include twelve monthly columns." }],
+      issues: [{ row: lines[headerAt]!.row, message: "CSV must include twelve monthly columns." }],
     };
   }
   if (expectedMonths) {
@@ -122,7 +109,7 @@ export function parseBudgetCsv(
           values,
           issues: [
             {
-              row: lines[headerAt]!.n,
+              row: lines[headerAt]!.row,
               message: `Column ${i + 3} must be ${monthLabel(expectedMonths[i]!)}. Check the budget financial year and CSV month order.`,
             },
           ],
@@ -130,8 +117,7 @@ export function parseBudgetCsv(
       }
     }
   }
-  for (const { line, n } of lines.slice(headerAt + 1)) {
-    const cells = splitCsvLine(line);
+  for (const { cells, row: n } of lines.slice(headerAt + 1)) {
     if (cells.length < 14) {
       issues.push({
         row: n,
@@ -169,7 +155,7 @@ export function parseBudgetCsv(
     if (!bad) values.set(acct.id, months);
   }
   if (values.size === 0 && issues.length === 0) {
-    issues.push({ row: lines[headerAt]?.n ?? 1, message: "The file has no account rows." });
+    issues.push({ row: lines[headerAt]?.row ?? 1, message: "The file has no account rows." });
   }
   return { values, issues };
 }

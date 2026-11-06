@@ -3,7 +3,6 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember } from "@/lib/assert-company-access";
 import { fetchAllPages, type PageResult } from "@/lib/accounting/fetch-all";
 import {
-  fetchLedgerBalances,
   loadAccountMetas,
   loadCompanyMeta,
   type Sb,
@@ -15,6 +14,7 @@ import {
   type ReconciliationAsset,
   type ReconciliationDepreciationEntry,
 } from "./reconciliation";
+import { loadExactReconciliationLedgerBalances } from "./reconciliation-ledger";
 
 /**
  * Read-only, tenant-restricted account reconciliation.
@@ -60,9 +60,20 @@ export const getFixedAssetReconciliation = createServerFn({ method: "GET" })
             >,
       ),
     ]);
-    const ledgerBalances = await fetchLedgerBalances(sb, data.companyId, company.baseCurrency, {
-      to: data.asOf,
-    });
+    const referencedAccounts = [
+      ...new Set(
+        assets
+          .filter((asset) => asset.purchase_date <= data.asOf)
+          .flatMap((asset) => [asset.asset_account_id, asset.accumulated_account_id]),
+      ),
+    ];
+    const ledgerBalances = await loadExactReconciliationLedgerBalances(
+      sb,
+      data.companyId,
+      company.baseCurrency,
+      data.asOf,
+      referencedAccounts,
+    );
     const result = reconcileFixedAssets(
       assets,
       depreciationEntries,

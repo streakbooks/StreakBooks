@@ -8,6 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { listAssignableFirmMembers } from "@/lib/firm/firm-assignments.functions";
+import {
+  onboardingCanComplete,
+  onboardingCanReopen,
+  onboardingDependencyChoices,
+  onboardingStepSummary,
+} from "@/lib/firm/onboarding-insights";
+import { FirmOnboardingDashboard } from "@/components/firm/FirmOnboardingDashboard";
 import {
   ONBOARDING_TEMPLATE,
   OFFBOARDING_TEMPLATE,
@@ -16,10 +25,17 @@ import {
   listFirmOnboardingSteps,
   listFirmTeam,
   updateFirmOnboardingStep,
+  saveFirmOnboardingPlan,
+  type FirmOnboardingPlanInput,
 } from "@/lib/firm/firm-workflows.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { getFirmClientName, type FirmClientRow } from "@/lib/firm/client-portfolio";
 import { FirmCustomOnboardingTemplates } from "@/components/firm/FirmCustomOnboardingTemplates";
+
+type StepPlan = Omit<
+  FirmOnboardingPlanInput,
+  "firmId" | "companyId" | "task_key" | "version"
+>;
 
 function FirmClientPicker({
   clients,
@@ -66,10 +82,13 @@ export function FirmOnboardingPanel({
     ? selected
     : available[0]?.company_id || "";
   const [notes, setNotes] = useState<Record<string, string>>({});
+  const [plans, setPlans] = useState<Record<string, StepPlan>>({});
   const list = useServerFn(listFirmOnboardingSteps);
   const initialize = useServerFn(initializeFirmOnboarding);
   const initializeOffboarding = useServerFn(initializeFirmOffboarding);
   const update = useServerFn(updateFirmOnboardingStep);
+  const savePlan = useServerFn(saveFirmOnboardingPlan);
+  const listAssignees = useServerFn(listAssignableFirmMembers);
   const qc = useQueryClient();
   const queryKey = ["firm-onboarding-steps", firmId, clientId];
   const stepsQ = useQuery({
@@ -77,10 +96,18 @@ export function FirmOnboardingPanel({
     enabled: Boolean(clientId),
     queryFn: () => list({ data: { firmId, companyId: clientId } }),
   });
+  const assigneesQ = useQuery({
+    queryKey: ["firm-onboarding-eligible-assignees", firmId, clientId],
+    enabled: Boolean(clientId),
+    queryFn: () => listAssignees({ data: { firmId, companyId: clientId } }),
+  });
   const createM = useMutation({
     mutationFn: () => initialize({ data: { firmId, companyId: clientId } }),
     onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey });
+      await Promise.all([
+        qc.invalidateQueries({ queryKey }),
+        qc.invalidateQueries({ queryKey: ["firm-onboarding-overview", firmId] }),
+      ]);
       toast.success("Standard onboarding checklist added");
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
@@ -88,7 +115,10 @@ export function FirmOnboardingPanel({
   const offboardM = useMutation({
     mutationFn: () => initializeOffboarding({ data: { firmId, companyId: clientId } }),
     onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey });
+      await Promise.all([
+        qc.invalidateQueries({ queryKey }),
+        qc.invalidateQueries({ queryKey: ["firm-onboarding-overview", firmId] }),
+      ]);
       toast.success("Offboarding checklist added without revoking client access");
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
@@ -98,7 +128,10 @@ export function FirmOnboardingPanel({
       update({ data: { ...data, firmId, companyId: clientId } }),
     onSuccess: async () => {
       setNotes({});
-      await qc.invalidateQueries({ queryKey });
+      await Promise.all([
+        qc.invalidateQueries({ queryKey }),
+        qc.invalidateQueries({ queryKey: ["firm-onboarding-overview", firmId] }),
+      ]);
       toast.success("Checklist updated");
     },
     onError: async (error) => {
@@ -106,8 +139,27 @@ export function FirmOnboardingPanel({
       toast.error(friendlyAuthError(error));
     },
   });
+  const planM = useMutation({
+    mutationFn: (data: Omit<FirmOnboardingPlanInput, "firmId" | "companyId">) =>
+      savePlan({ data: { ...data, firmId, companyId: clientId } }),
+    onSuccess: async () => {
+      setPlans({});
+      await Promise.all([
+        qc.invalidateQueries({ queryKey }),
+        qc.invalidateQueries({ queryKey: ["firm-onboarding-overview", firmId] }),
+      ]);
+      toast.success("Onboarding ownership and schedule saved");
+    },
+    onError: async (error) => {
+      await qc.invalidateQueries({ queryKey });
+      toast.error(friendlyAuthError(error));
+    },
+  });
   const steps = stepsQ.data ?? [];
-  const done = steps.filter((step) => step.completed_at !== null).length;
+  const metrics = onboardingStepSummary(steps, new Date().toISOString().slice(0, 10));
+  function changePlan(key: string, step: StepPlan, patch: Partial<StepPlan>) {
+    setPlans((current) => ({ ...current, [key]: { ...step, ...patch } }));
+  }
 
   return (
     <section className="space-y-5" aria-label="Client onboarding">
@@ -131,6 +183,16 @@ export function FirmOnboardingPanel({
             onChange={(value) => {
               setSelected(value);
               setNotes({});
+              setPlans({});
+            }}
+          />
+          <FirmOnboardingDashboard
+            firmId={firmId}
+            clients={available}
+            onChooseClient={(companyId) => {
+              setSelected(companyId);
+              setNotes({});
+              setPlans({});
             }}
           />
           <FirmCustomOnboardingTemplates
@@ -151,12 +213,16 @@ export function FirmOnboardingPanel({
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card p-4">
                 <div>
                   <p className="font-semibold">
-                    {done} of {steps.length} checklist items completed
+                    {metrics.completed} of {steps.length} checklist items completed
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {steps.length === 0
                       ? "No checklist created for this client yet."
                       : "Checklists are operational evidence, not automatic accounting approval."}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {metrics.overdue} overdue · {metrics.dueSoon} due within 3 days ·{" "}
+                    {metrics.blocked} blocked · {metrics.unassigned} unassigned
                   </p>
                 </div>
                 {canManage ? (
@@ -191,17 +257,44 @@ export function FirmOnboardingPanel({
                   {steps.map((step) => {
                     const note = notes[step.task_key] ?? step.note;
                     const completed = Boolean(step.completed_at);
+                    const plan: StepPlan = plans[step.task_key] ?? {
+                      assignee_id: step.assignee_id,
+                      due_date: step.due_date,
+                      depends_on_task_key: step.depends_on_task_key,
+                      reminders_enabled: step.reminders_enabled,
+                    };
+                    const planChanged =
+                      plan.assignee_id !== step.assignee_id ||
+                      plan.due_date !== step.due_date ||
+                      plan.depends_on_task_key !== step.depends_on_task_key ||
+                      plan.reminders_enabled !== step.reminders_enabled;
+                    const blocked = !completed && !onboardingCanComplete(step, steps);
+                    const cannotReopen = completed && !onboardingCanReopen(step, steps);
                     return (
                       <div key={step.task_key} className="rounded-lg border bg-card p-4">
                         <div className="flex flex-wrap items-start justify-between gap-2">
                           <div className="font-medium">{step.title}</div>
                           <Badge variant={completed ? "secondary" : "outline"}>
-                            {completed ? "Complete" : "Pending"}
+                            {completed ? "Complete" : blocked ? "Blocked" : "Pending"}
                           </Badge>
                         </div>
                         {completed && step.completed_at ? (
                           <p className="mt-1 text-xs text-muted-foreground">
                             Completed {new Date(step.completed_at).toLocaleString()}
+                          </p>
+                        ) : null}
+                        {step.due_date && !completed ? (
+                          <p className={
+                            step.due_date < new Date().toISOString().slice(0, 10)
+                              ? "mt-1 text-xs font-medium text-destructive"
+                              : "mt-1 text-xs text-muted-foreground"
+                          }>
+                            Due {step.due_date}
+                          </p>
+                        ) : null}
+                        {blocked ? (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Finish the prerequisite checklist item before completing this step.
                           </p>
                         ) : null}
                         <div className="mt-3 space-y-2">
@@ -222,10 +315,106 @@ export function FirmOnboardingPanel({
                             placeholder="Add operational evidence or next action"
                           />
                           {canManage ? (
+                            <>
+                            <div className="grid gap-3 rounded-md border p-3 sm:grid-cols-2">
+                              <div className="space-y-1">
+                                <Label>Assigned staff</Label>
+                                <LookupSelect
+                                  ariaLabel={`Assign ${step.title}`}
+                                  allowClear
+                                  value={plan.assignee_id ?? ""}
+                                  onChange={(value) =>
+                                    changePlan(step.task_key, plan, { assignee_id: value || null })
+                                  }
+                                  searchPlaceholder="Search eligible staff"
+                                  options={(assigneesQ.data ?? []).map((member) => ({
+                                    id: member.user_id,
+                                    name: member.full_name || member.email || "Colleague",
+                                    label: member.full_name || member.email || "Colleague",
+                                  }))}
+                                />
+                                {assigneesQ.isError && (
+                                  <p className="text-xs text-destructive">
+                                    Unable to load eligible staff: {friendlyAuthError(assigneesQ.error)}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="space-y-1">
+                                <Label htmlFor={"onboarding-due-" + step.task_key}>Due date</Label>
+                                <Input
+                                  id={"onboarding-due-" + step.task_key}
+                                  type="date"
+                                  value={plan.due_date ?? ""}
+                                  onChange={(event) =>
+                                    changePlan(step.task_key, plan, {
+                                      due_date: event.target.value || null,
+                                    })
+                                  }
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <Label>Prerequisite</Label>
+                                <LookupSelect
+                                  ariaLabel={`Prerequisite for ${step.title}`}
+                                  allowClear
+                                  value={plan.depends_on_task_key ?? ""}
+                                  onChange={(value) =>
+                                    changePlan(step.task_key, plan, {
+                                      depends_on_task_key: value || null,
+                                    })
+                                  }
+                                  searchPlaceholder="Search checklist prerequisites"
+                                  options={onboardingDependencyChoices(step, steps).map((item) => ({
+                                    id: item.task_key,
+                                    name: item.title,
+                                    label: item.title,
+                                  }))}
+                                />
+                              </div>
+                              <div className="flex items-end gap-2 pb-2">
+                                <Checkbox
+                                  id={"onboarding-reminders-" + step.task_key}
+                                  checked={plan.reminders_enabled}
+                                  onCheckedChange={(checked) =>
+                                    changePlan(step.task_key, plan, {
+                                      reminders_enabled: checked === true,
+                                    })
+                                  }
+                                />
+                                <Label htmlFor={"onboarding-reminders-" + step.task_key}>
+                                  In-app due reminders for assignee
+                                </Label>
+                              </div>
+                              <div className="sm:col-span-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={
+                                    !planChanged || planM.isPending ||
+                                    updateM.isPending || assigneesQ.isPending ||
+                                    assigneesQ.isError
+                                  }
+                                  onClick={() => planM.mutate({
+                                    task_key: step.task_key,
+                                    version: step.version,
+                                    ...plan,
+                                  })}
+                                >
+                                  {planM.isPending ? "Saving plan…" : "Save assignment and schedule"}
+                                </Button>
+                              </div>
+                            </div>
                             <div className="flex flex-wrap gap-2">
                               <Button
                                 size="sm"
-                                disabled={updateM.isPending}
+                                disabled={
+                                  updateM.isPending || planM.isPending || blocked || cannotReopen
+                                }
+                                title={blocked
+                                  ? "Complete its prerequisite first"
+                                  : cannotReopen
+                                    ? "Reopen dependent steps first"
+                                    : undefined}
                                 onClick={() =>
                                   updateM.mutate({
                                     task_key: step.task_key,
@@ -253,6 +442,7 @@ export function FirmOnboardingPanel({
                                 Save note
                               </Button>
                             </div>
+                            </>
                           ) : null}
                         </div>
                       </div>

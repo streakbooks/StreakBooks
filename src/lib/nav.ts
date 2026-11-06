@@ -13,6 +13,7 @@ import {
   LifeBuoy,
   Briefcase,
   Building2,
+  Handshake,
   Percent,
   FolderOpen,
   PiggyBank,
@@ -149,6 +150,20 @@ export const navItems: NavItem[] = [
     icon: Building2,
     group: "practice",
     description: "Practice and client access",
+  },
+  {
+    label: "Advisors",
+    to: "/advisors-admin",
+    icon: Handshake,
+    group: "practice",
+    description: "Advisors inquiries, clients and delivery",
+  },
+  {
+    label: "Advisors portal",
+    to: "/advisors-portal",
+    icon: Handshake,
+    group: "practice",
+    description: "Customer Advisors plan, appointments and documents",
   },
   {
     label: "AI Assistant",

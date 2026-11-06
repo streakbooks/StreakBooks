@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-labelledby="title-coach desc-coach">
+  <title id="title-coach">LinkBooks Advisors  We coach you</title>
+  <desc id="desc-coach">Original illustration of two figures reviewing a shared financial chart, representing one-to-one bookkeeping coaching.</desc>
+  <defs>
+    <linearGradient id="coach-sky" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#08263B"/>
+      <stop offset="50%" stop-color="#0F4C6E"/>
+      <stop offset="100%" stop-color="#1C8A8C"/>
+    </linearGradient>
+    <linearGradient id="coach-panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F7FBFD"/>
+      <stop offset="100%" stop-color="#CFE4EF"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="420" rx="28" fill="url(#coach-sky)"/>
+  <circle cx="96" cy="84" r="40" fill="#35C4C7" opacity="0.28"/>
+  <rect x="118" y="110" width="404" height="230" rx="22" fill="url(#coach-panel)"/>
+  <path d="M168 278c34-58 70-88 108-88s78 36 118 88" fill="none" stroke="#1F7A8C" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="168" cy="278" r="8" fill="#0B1F3A"/>
+  <circle cx="276" cy="190" r="8" fill="#0B1F3A"/>
+  <circle cx="394" cy="278" r="8" fill="#0B1F3A"/>
+  <rect x="430" y="148" width="54" height="8" rx="3" fill="#0F4C6E" opacity="0.55"/>
+  <rect x="430" y="168" width="40" height="8" rx="3" fill="#0F4C6E" opacity="0.35"/>
+  <circle cx="188" cy="328" r="28" fill="#123B63"/>
+  <rect x="164" y="356" width="48" height="36" rx="14" fill="#1B5F86"/>
+  <circle cx="292" cy="320" r="28" fill="#0E3A57"/>
+  <rect x="268" y="348" width="48" height="40" rx="14" fill="#17607F"/>
+  <path d="M220 334h44" stroke="#7ED6E3" stroke-width="6" stroke-linecap="round"/>
+  <path d="M470 318c22-18 48-18 70 0" fill="none" stroke="#A8ECF2" stroke-width="8" stroke-linecap="round" opacity="0.8"/>
+</svg>

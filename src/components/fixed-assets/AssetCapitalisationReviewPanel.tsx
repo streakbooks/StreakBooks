@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Search, RefreshCw } from "lucide-react";
+import { Download, Search, RefreshCw } from "lucide-react";
 import { useFormat } from "@/hooks/use-format";
 import { todayIso } from "@/lib/accounting/fiscal-year";
 import { friendlyAuthError } from "@/lib/auth-helpers";
@@ -11,6 +11,7 @@ import {
   type CapitaliseLine,
 } from "@/lib/fixed-assets/fixed-assets.functions";
 import {
+  capitalisationReviewCsv,
   reviewCapitalisableLines,
   selectCapitalisationReviewRows,
   type CapitalisationReviewStatus,
@@ -78,6 +79,18 @@ export function AssetCapitalisationReviewPanel({
   const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, pages - 1);
   const shown = filtered.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
+  const exportCsv = () => {
+    if (!candidates.data || candidates.isFetching || !asOf || asOf > today) return;
+    const csv = capitalisationReviewCsv(filtered, asOf, currency);
+    const url = URL.createObjectURL(
+      new Blob(["\\uFEFF", csv], { type: "text/csv;charset=utf-8" }),
+    );
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "linkbooks-capitalisation-review-" + asOf + ".csv";
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
   const accounts = useMemo(() => {
     const found = new Map<string, { id: string; name: string; label: string; keywords: string }>();
     for (const line of review.rows) {
@@ -175,6 +188,15 @@ export function AssetCapitalisationReviewPanel({
         >
           <RefreshCw className="mr-2 size-4" />
           Refresh
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={!candidates.data || candidates.isFetching || !asOf || asOf > today}
+          onClick={exportCsv}
+        >
+          <Download className="mr-2 size-4" />
+          Export filtered CSV
         </Button>
       </div>
       {!asOf || asOf > today ? (

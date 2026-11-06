@@ -18,7 +18,11 @@ for (const key of ["DOCKER_HOST", "DOCKER_CONTEXT", "DOCKER_TLS",
 }
 
 function docker(args, input) {
-  return execFileSync("docker", ["--host=unix:///var/run/docker.sock", ...args], {
+  // Force a local Docker daemon: Unix socket on Linux/macOS, Docker pipe on Windows.
+  const localHost = process.platform === "win32"
+    ? "--host=npipe:////./pipe/docker_engine"
+    : "--host=unix:///var/run/docker.sock";
+  return execFileSync("docker", [localHost, ...args], {
     env: dockerEnv,
     input,
     encoding: "utf8",

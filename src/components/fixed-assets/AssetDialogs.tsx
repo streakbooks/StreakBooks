@@ -467,7 +467,9 @@ export function AssetDialog({
       ? t(editing.cost_minor)
       : fromBillLine && fromBillLine.currency === currency
         ? fromMinorUnits(
-            Math.max(0, fromBillLine.netMinor - fromBillLine.registeredMinor),
+            BigInt(fromBillLine.netMinor) > BigInt(fromBillLine.registeredMinor)
+              ? BigInt(fromBillLine.netMinor) - BigInt(fromBillLine.registeredMinor)
+              : 0n,
             currency,
           )
         : "",
@@ -575,13 +577,12 @@ export function AssetDialog({
         {fromBillLine ? (
           <Alert>
             <AlertDescription>
-              Capitalising bill {fromBillLine.billNumber ?? ""} (
-              {fromBillLine.supplier ?? "supplier"}): {fromBillLine.description}. The cost defaults
-              to the line's net amount less anything already registered against it
-              {fromBillLine.currency !== currency
-                ? `; the bill is in ${fromBillLine.currency}, so enter the cost in ${currency}`
-                : ""}
-              .
+              Review bill {fromBillLine.billNumber ?? ""} (
+              {fromBillLine.supplier ?? "supplier"}): {fromBillLine.description}.{" "}
+              {fromBillLine.currency === currency
+                ? "The cost starts at the bill line's net less the linked register cost. Check recoverable tax, partial purchases, and existing entries before saving."
+                : `The bill is in ${fromBillLine.currency}. The cost is intentionally blank: enter the verified acquisition amount in the organisation base currency (${currency}) using the transaction's applicable FX rate. Do not compare nominal foreign-currency and base-currency amounts.`}
+              {" "}Saving only registers the asset; it does not post the bill again.
             </AlertDescription>
           </Alert>
         ) : null}

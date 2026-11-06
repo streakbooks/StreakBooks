@@ -75,9 +75,9 @@ export type JournalEvidencePageSummary = {
 export function summariseJournalEvidence(rows: JournalEvidenceRow[]): JournalEvidencePageSummary {
   let balanced = 0;
   let review = 0;
-  let unavailable = 0;
   let pageDebit = 0n;
   let pageCredit = 0n;
+  let allExact = true;
   const currency = rows[0]?.currency_code ?? null;
   const singleCurrency =
     currency && rows.every((row) => row.currency_code === currency) ? currency : null;
@@ -86,20 +86,13 @@ export function summariseJournalEvidence(rows: JournalEvidenceRow[]): JournalEvi
     const check = assessJournalEvidence(row);
     if (check.status === "balanced_totals") balanced++;
     else if (check.status === "review_totals") review++;
-    else unavailable++;
     if (check.debit === null || check.credit === null) {
-      pageDebit = 0n;
-      pageCredit = 0n;
-      unavailable++;
+      allExact = false;
       continue;
     }
     pageDebit += check.debit;
     pageCredit += check.credit;
   }
-  const allExact = rows.every((row) => {
-    const check = assessJournalEvidence(row);
-    return check.debit !== null && check.credit !== null;
-  });
   return {
     displayed: rows.length,
     balanced,

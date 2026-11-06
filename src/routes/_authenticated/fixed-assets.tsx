@@ -99,6 +99,7 @@ function FixedAssetsPage() {
   const tab = requestedTab ?? "register";
   const fmt = useFormat();
   const canManage = useCanDo("accounts.manage");
+  const canViewAccounting = useCanDo("accounting.view");
   const canPostEntries = useCanDo("accounting.post");
   const canPostManual = useCanDo("journals.manual");
   const canPost = canPostEntries || canPostManual;
@@ -590,7 +591,16 @@ function FixedAssetsPage() {
         </TabsContent>
 
         <TabsContent value="reconciliation" className="space-y-4">
-          <AssetReconciliationPanel companyId={companyId} />
+          {canViewAccounting ? (
+            <AssetReconciliationPanel companyId={companyId} />
+          ) : (
+            <Alert>
+              <AlertDescription>
+                GL reconciliation requires accounting view permission for this organisation.
+                Ask an organisation administrator to review your access.
+              </AlertDescription>
+            </Alert>
+          )}
         </TabsContent>
 
         <TabsContent value="types" className="space-y-4">

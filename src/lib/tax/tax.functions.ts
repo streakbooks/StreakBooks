@@ -71,12 +71,12 @@ export const updateTaxSettings = createServerFn({ method: "POST" })
 
 export const listTaxRates = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; onDate?: string }) => ({
-    companyId: assertUuid(input.companyId),
-    onDate: input.onDate === undefined ? null : (
-      isValidTaxDate(input.onDate) ? input.onDate : (() => { throw new Error("onDate must be a real YYYY-MM-DD calendar date"); })()
-    ),
-  }))
+  .inputValidator((input: { companyId: string; onDate?: string }) => {
+    if (input.onDate && !isValidTaxDate(input.onDate)) {
+      throw new Error("onDate must be a real YYYY-MM-DD calendar date");
+    }
+    return { companyId: assertUuid(input.companyId), onDate: input.onDate || null };
+  })
   .handler(async ({ data, context }) => {
     await assertCompanyMember(context.supabase, data.companyId);
     const { data: rows, error } = await context.supabase

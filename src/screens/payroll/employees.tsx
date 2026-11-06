@@ -74,6 +74,14 @@ export function PayrollEmployeesPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [newDraft, setNewDraft] = useState<PayrollEmployeeDraft | null>(null);
   const [importing, setImporting] = useState(false);
+  const [importPreview, setImportPreview] = useState<{
+    companyId: string;
+    fileName: string;
+    total: number;
+    skipped: number;
+    drafts: PayrollEmployeeDraft[];
+  } | null>(null);
+  const [importDone, setImportDone] = useState(0);
   const importInputRef = useRef<HTMLInputElement>(null);
 
   const settingsQ = useQuery({
@@ -184,22 +192,54 @@ export function PayrollEmployeesPage() {
   const importCsv = async (file: File | null) => {
     if (!file || !company || !canManage) return;
     setImporting(true);
+    setImportPreview(null);
     try {
       const text = await file.text();
       const parsed = parsePayrollEmployeesCsv(text, { country, currency });
       if (!parsed.ok) throw new Error(parsed.error);
-      let created = 0;
-      for (const draft of parsed.drafts) {
-        await saveEmployee({ data: { companyId: company.id, draft } });
-        created += 1;
-      }
-      toast.success(`Imported ${created} employees`);
-      await queryClient.invalidateQueries({ queryKey: ["payroll-employees", company.id] });
+      // Compare against the full organisation list, not the current search subset.
+      // CSV lacks salary/bank fields, so existing employee IDs are never overwritten.
+      const current = await fetchList({ data: { companyId: company.id, status: null, q: null } });
+      if (!current.available) throw new Error(current.migrationMessage ?? "Employee data unavailable.");
+      const existing = new Set(current.employees.map((employee) => employee.employee_number));
+      const drafts = parsed.drafts.filter(
+        (draft) => !draft.employeeNumber.trim() || !existing.has(draft.employeeNumber.trim()),
+      );
+      setImportDone(0);
+      setImportPreview({
+        companyId: company.id,
+        fileName: file.name,
+        total: parsed.drafts.length,
+        skipped: parsed.drafts.length - drafts.length,
+        drafts,
+      });
     } catch (error) {
       toast.error(friendlyAuthError(error));
     } finally {
       setImporting(false);
       if (importInputRef.current) importInputRef.current.value = "";
+    }
+  };
+
+  const confirmImport = async () => {
+    if (!importPreview || !company || importPreview.companyId !== company.id || !canManage) return;
+    setImporting(true);
+    let created = 0;
+    try {
+      for (const draft of importPreview.drafts) {
+        await saveEmployee({ data: { companyId: company.id, draft } });
+        created += 1;
+        setImportDone(created);
+      }
+      toast.success(`Imported ${created} employees; skipped ${importPreview.skipped} existing IDs.`);
+    } catch (error) {
+      toast.error(`Import stopped after ${created} of ${importPreview.drafts.length} new rows.`, {
+        description: `Earlier rows were saved; later rows were not attempted. ${friendlyAuthError(error)}`,
+      });
+    } finally {
+      await queryClient.invalidateQueries({ queryKey: ["payroll-employees", company.id] });
+      setImportPreview(null);
+      setImporting(false);
     }
   };
 
@@ -212,7 +252,7 @@ export function PayrollEmployeesPage() {
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" onClick={exportCsv} disabled={!list.available}>
               <Download className="mr-2 h-4 w-4" />
-              Export CSV
+              Export current view
             </Button>
             {canManage ? (
               <>
@@ -230,7 +270,7 @@ export function PayrollEmployeesPage() {
                   onClick={() => importInputRef.current?.click()}
                 >
                   <Upload className="mr-2 h-4 w-4" />
-                  {importing ? "Importing…" : "Import CSV"}
+                  {importing ? "Preparing…" : "Import CSV"}
                 </Button>
                 <Button size="sm" onClick={openAdd} disabled={!list.available}>
                   <Plus className="mr-2 h-4 w-4" />
@@ -357,6 +397,63 @@ export function PayrollEmployeesPage() {
           )}
         </>
       )}
+
+      <Dialog
+        open={importPreview !== null}
+        onOpenChange={(open) => {
+          if (!open && !importing) setImportPreview(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Review employee CSV import</DialogTitle>
+          </DialogHeader>
+          {importPreview ? (
+            <div className="space-y-3 text-sm">
+              <p className="break-all text-muted-foreground">{importPreview.fileName}</p>
+              <dl className="grid grid-cols-3 gap-2 rounded-lg border p-3 text-center">
+                <div>
+                  <dt className="text-muted-foreground">In file</dt>
+                  <dd className="text-lg font-semibold tabular-nums">{importPreview.total}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">New</dt>
+                  <dd className="text-lg font-semibold tabular-nums">{importPreview.drafts.length}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Skipped</dt>
+                  <dd className="text-lg font-semibold tabular-nums">{importPreview.skipped}</dd>
+                </div>
+              </dl>
+              <Alert>
+                <AlertTitle>Create new employees only</AlertTitle>
+                <AlertDescription>
+                  Existing employee IDs will be skipped, never overwritten. Files without employee
+                  IDs generate new records; importing them twice may create duplicates. This is a
+                  sequential import, not a database transaction. If a row fails, earlier saved rows
+                  remain in place.
+                </AlertDescription>
+              </Alert>
+              {importing ? (
+                <p role="status" aria-live="polite">
+                  Imported {importDone} of {importPreview.drafts.length} new employees…
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button variant="outline" disabled={importing} onClick={() => setImportPreview(null)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={importing || !importPreview?.drafts.length || importPreview.companyId !== company.id}
+              onClick={() => void confirmImport()}
+            >
+              {importing ? "Importing…" : `Import ${importPreview?.drafts.length ?? 0} new employees`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">

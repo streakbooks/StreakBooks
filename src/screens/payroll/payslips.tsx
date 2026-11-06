@@ -2,11 +2,14 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
+import { Download } from "lucide-react";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
 import { useFormat } from "@/hooks/use-format";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { listPayrollPayslips } from "@/lib/payroll/runs.functions";
+import { payrollPayslipsToCsv, payslipNetBalances } from "@/lib/payroll/payslip-list-export";
+import { downloadCsv } from "@/lib/reports/csv";
 import type { PayrollPayslipsListPage, PayslipPaymentStatus } from "@/lib/payroll/types";
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
@@ -44,6 +47,7 @@ export function PayrollPayslipsPage({
 }) {
   const { company, isPending } = useActiveCompany();
   const canView = useCanDo("payroll.view");
+  const canExport = useCanDo("payroll.reports.view");
   const fmt = useFormat();
   const fetchList = useServerFn(listPayrollPayslips);
   const navigate = useNavigate({ from: "/payroll/payslips/" });
@@ -161,15 +165,33 @@ export function PayrollPayslipsPage({
         title="Payslips"
         description="Issued payslips from approved payroll runs."
         actions={
-          runIdFilter ? (
-            <Link
-              to="/payroll/runs/$runId"
-              params={{ runId: runIdFilter }}
-              className="text-sm text-primary hover:underline"
-            >
-              Back to run
-            </Link>
-          ) : null
+          <div className="flex flex-wrap items-center gap-2">
+            {canExport && list.available ? (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={filteredPayslips.length === 0}
+                onClick={() =>
+                  downloadCsv(
+                    "payroll-payslips-filtered.csv",
+                    payrollPayslipsToCsv(filteredPayslips),
+                  )
+                }
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Export filtered CSV
+              </Button>
+            ) : null}
+            {runIdFilter ? (
+              <Link
+                to="/payroll/runs/$runId"
+                params={{ runId: runIdFilter }}
+                className="text-sm text-primary hover:underline"
+              >
+                Back to run
+              </Link>
+            ) : null}
+          </div>
         }
       />
       <PayrollSubnav current="payslips" />
@@ -331,7 +353,7 @@ export function PayrollPayslipsPage({
                   </TableCell>
                   <TableCell className="text-right font-mono text-sm">
                     {fmt.money(
-                      Math.max(0, (payslip.snapshot.totals?.netPayMinor ?? 0) - payslip.amount_paid_minor),
+                      payslipNetBalances(payslip).outstandingMinor,
                       run.currency,
                     )}
                   </TableCell>

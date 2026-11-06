@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useCan } from "@/hooks/use-can";
 import { ATTACHMENT_ENTITIES, type AttachmentEntityType, formatFileSize } from "@/lib/documents/attachments";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { canOfferPermanentPurge, validateRetentionDays } from "@/lib/documents/recycle-bin-rules";
 import {
   getDocumentRetentionSettings, listRecycleBinFiles, listStorageCleanupJobs,
   purgeRecycleBinFile, restoreRecycleBinFile, retryDocumentStorageCleanup,
@@ -142,11 +143,8 @@ export function DocumentRecycleBin({
             className="flex flex-wrap items-end gap-2"
             onSubmit={(event) => {
               event.preventDefault();
-              const days = Number(daysInput);
-              if (!Number.isSafeInteger(days) || days < 7 || days > 3650) {
-                toast.error("Choose 7 to 3,650 days."); return;
-              }
-              policyM.mutate(days);
+              try { policyM.mutate(validateRetentionDays(daysInput)); }
+              catch (error) { toast.error(friendlyAuthError(error)); }
             }}
           >
             <label className="space-y-1 text-sm" htmlFor="document-retention-days">
@@ -194,7 +192,7 @@ export function DocumentRecycleBin({
             </p>
           ) : trash.data.rows.map((file) => {
             const allowed = canManageFile(file.entity_type);
-            const eligible = Date.parse(file.purge_after) <= Date.now() && !file.retention_hold;
+            const eligible = canOfferPermanentPurge(file, Date.now());
             return (
               <div key={file.id} className="rounded-lg border p-3">
                 <div className="flex flex-wrap items-start justify-between gap-3">

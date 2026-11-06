@@ -344,3 +344,45 @@ from the employee's remuneration configuration.
 - Full app Vitest/typecheck/lint/build, isolated SQL fixture, browser E2E,
   PR merge and deployment remain unverified; GitHub CI is
   **Not run (per user instruction)**.
+
+
+### Bank and clearing-account currency integrity (November 6, 2026)
+
+The payment RPC currently uses `fx_rate_to_base = 1`, so even a base-currency
+payroll settlement must **not** credit a foreign-currency bank account.
+
+- Frontend Payroll Payments now hides clearing GL accounts whose explicitly
+  configured `currency_code` differs from payroll payment currency and
+  explains why incompatible accounts are excluded. A GL currency of `NULL`
+  remains supported for the organisation's default-currency account.
+- The `recordPayrollPayment` server function checks `accounts.currency_code`
+  **and every active `bank_accounts.currency_code` linked to the selected GL
+  clearing account**. A different or unrecognised linked bank currency rejects
+  the payment, rather than posting at an invented FX rate.
+- Direct SQL calls remain guarded by the new `payroll_clearing_account_currency_guard`
+  trigger on `public.payroll_payments` (insert and payment currency/company/
+  clearing-account changes). The helper is `SECURITY DEFINER`, has a fixed
+  search path and is **not executable directly by anon/authenticated**.
+- Supabase project `ipxflpzfcqwtenodbxwc` has the new migration
+  `20261106081734_payroll_clearing_account_currency_guard` applied. The
+  committed source uses the exact applied filename
+  `supabase/migrations/20261106081734_payroll_clearing_account_currency_guard.sql`.
+  Together with the previous Payroll guard migration, the connected database
+  now has **3 enabled currency-guard triggers and 3 restricted helper functions**.
+  Payment and allocation counts remained **0** after verification. The current
+  Supabase security advisor reported **no new finding for the guard helper**.
+- The new DDL compiled successfully in an explicit rolled-back dry run
+  **before applying**, and verification confirmed the dry run left no trigger
+  behind. The full rollback-only SQL integration fixture was extended to
+  exercise mismatched GL and linked bank currencies, but was **not executed**.
+- Isolated runtime checks for `payrollClearingCurrencyMismatch` passed **9/9**
+  and application/source/SQL integration-marker checks passed **8/8**.
+  These are **not** a full application typecheck, Vitest suite, Postgres
+  integration test or browser E2E. GitHub Actions CI remains **not run**
+  per user instruction.
+
+**Release boundaries:** True FX payroll payment settlement, end-to-end posting
+and reversal verification, full PostgreSQL fixture execution, application
+build/typecheck/lint and Vercel deployment verification remain pending. The
+current safeguard rejects unsupported foreign-bank posting; it does not add
+currency conversion.

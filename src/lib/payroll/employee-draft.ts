@@ -1,5 +1,4 @@
-import { toMinorUnits } from "@/lib/accounting/money";
-import { percentStringToBps } from "@/components/sales/sales-form-utils";
+import { parsePayrollPercentageBps, parsePayrollSalaryMinor } from "@/lib/payroll/salary-input";
 import { toCsv } from "@/lib/sales/csv";
 import { readPayrollCsvRecords } from "@/lib/payroll/employee-csv-records";
 import { isValidPayrollDateOnly } from "@/lib/payroll/calendar-date";
@@ -266,15 +265,16 @@ export function parseSalaryStructureLineDraft(
   }
   let amountMinor = 0n;
   let rateMinor = 0n;
+  let percentageBps = 0;
   try {
-    amountMinor = toMinorUnits(line.amount || "0", currencyCode);
-    rateMinor = toMinorUnits(line.rate || "0", currencyCode);
-  } catch {
-    return { ok: false, error: "Enter valid fixed or rate amounts." };
-  }
-  const percentageBps = percentStringToBps(line.percentage || "0");
-  if (percentageBps > 1_000_000) {
-    return { ok: false, error: "Percentage is too large." };
+    amountMinor = parsePayrollSalaryMinor(line.amount, currencyCode, "Fixed salary amount");
+    rateMinor = parsePayrollSalaryMinor(line.rate, currencyCode, "Salary rate");
+    percentageBps = parsePayrollPercentageBps(line.percentage);
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Enter valid salary line amounts.",
+    };
   }
   return {
     ok: true,

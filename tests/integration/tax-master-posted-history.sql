@@ -142,6 +142,15 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'Internal tax history functions were exposed to clients';
   END IF;
+  -- Snapshot freshness is required when a master UPDATE waits behind
+  -- an uncommitted posting transaction. STABLE would use the old snapshot.
+  IF (SELECT count(*) FROM pg_proc p
+      JOIN pg_namespace n ON n.oid=p.pronamespace
+      WHERE n.nspname='public'
+        AND p.proname IN ('tax_code_has_posted_history','tax_rate_last_posted_date')
+        AND p.provolatile='v')<>2 THEN
+    RAISE EXCEPTION 'Tax history lookups must be VOLATILE for concurrency safety';
+  END IF;
   IF (SELECT rate_bps FROM public.tax_rates
     WHERE id='20000000-0000-4000-8000-000000000001')<>2100 THEN
     RAISE EXCEPTION 'Historical rate was mutated';

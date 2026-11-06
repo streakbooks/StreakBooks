@@ -47,6 +47,30 @@ describe("Payroll account currency selection", () => {
     expect(result.accounts).toHaveLength(1);
   });
 
+  it("recognises a bank-backed GL account that is typed as a current asset", () => {
+    const result = filterPayrollClearingAccounts(
+      [{ ...bankGl("linked"), account_kind: "current_asset" }],
+      [{ gl_account_id: "linked", currency_code: "GBP", is_active: true }], "GBP",
+    );
+    expect(result.accounts.map((a) => a.id)).toEqual(["linked"]);
+  });
+
+  it("fails closed when an active linked bank currency is blank", () => {
+    const result = filterPayrollClearingAccounts(
+      [bankGl("unknown")],
+      [{ gl_account_id: "unknown", currency_code: "", is_active: true }], "GBP",
+    );
+    expect(result.accounts).toHaveLength(0);
+    expect(result.excluded).toBe(1);
+  });
+
+  it("never selects archived GL accounts", () => {
+    const result = filterPayrollClearingAccounts(
+      [{ ...bankGl("archived"), archived_at: "2026-01-01T00:00:00Z" }], [], "GBP",
+    );
+    expect(result.accounts).toHaveLength(0);
+  });
+
   it("only presents eligible active postable bank/cash asset accounts", () => {
     const asset = { ...bankGl("other"), account_kind: "accounts_receivable" };
     const inactive = { ...bankGl("inactive"), is_active: false };

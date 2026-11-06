@@ -1,6 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { prepareFixedAssetsCsv } from "@/lib/imports/fixed-assets-import";
 import { pageCapitalisationBillLines } from "@/lib/fixed-assets/capitalisation-review";
+import {
+  exactDepreciationTotalMinor,
+  safeDepreciationTotalMinor,
+  validateDepreciationPostingPeriods,
+} from "@/lib/fixed-assets/depreciation-review";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
@@ -587,7 +592,7 @@ export const previewDepreciation = createServerFn({ method: "GET" })
     return {
       periodEnd: data.periodEnd,
       rows: list,
-      totalMinor: list.reduce((s, r) => s + (r.status === "due" ? r.amount_minor : 0), 0),
+      totalMinor: safeDepreciationTotalMinor(list, "due"),
     };
   });
 
@@ -599,15 +604,9 @@ export const previewDepreciation = createServerFn({ method: "GET" })
 export const runDepreciation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { companyId: string; periodEnds: string[] }) => {
-    if (!Array.isArray(input?.periodEnds) || input.periodEnds.length === 0) {
-      throw new Error("Choose the month to depreciate.");
-    }
-    if (input.periodEnds.length > 36) throw new Error("Run at most 36 months at a time.");
-    const ends = [...new Set(input.periodEnds.map(periodEndOf))].sort();
-    if (ends[ends.length - 1]! > monthEnd(todayIso())) {
-      throw new Error("Depreciation cannot be run for a month that has not started.");
-    }
-    return { companyId: companyIdOf(input), periodEnds: ends };
+    const ends = Array.isArray(input?.periodEnds) ? input.periodEnds.map(periodEndOf) : [];
+    const periods = validateDepreciationPostingPeriods(ends, monthEnd(todayIso()));
+    return { companyId: companyIdOf(input), periodEnds: periods };
   })
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "accounting.post").catch(
@@ -628,7 +627,7 @@ export const runDepreciation = createServerFn({ method: "POST" })
         const done = rows.filter((r) => r.status === "posted");
         posted.push({
           periodEnd,
-          totalMinor: done.reduce((s, r) => s + r.amount_minor, 0),
+          totalMinor: exactDepreciationTotalMinor(done, "posted"),
           assets: done.length,
         });
       } catch (e) {

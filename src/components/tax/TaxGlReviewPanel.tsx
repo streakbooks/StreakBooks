@@ -107,8 +107,9 @@ export function TaxGlReviewPanel({
             Reviewer decisions are versioned. This is an internal review, not a tax filing.
           </p>
         </div>
-        <Badge variant={record?.status === "resolved" ? "default" : "outline"}>
-          {record?.status === "resolved" ? "Review marked resolved" :
+        <Badge variant={savedSnapshotChanged ? "destructive" : record?.status === "resolved" ? "default" : "outline"}>
+          {savedSnapshotChanged ? "Stale review evidence" :
+            record?.status === "resolved" ? "Review marked resolved" :
             record?.status === "in_review" ? "In review" : "Open / not reviewed"}
         </Badge>
       </div>

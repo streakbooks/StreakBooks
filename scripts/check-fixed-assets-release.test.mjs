@@ -29,6 +29,8 @@ function fixture() {
     writeFileSync(join(bin, "npm.cmd"), [
       "@echo off",
       'echo %*>>"%FA_TEST_NPM_LOG%"',
+      'if /I "%FA_TEST_MUTATE%"=="tracked" if /I "%1"=="run" if /I "%2"=="typecheck" echo Modified>>README.md',
+      'if /I "%FA_TEST_MUTATE%"=="untracked" if /I "%1"=="run" if /I "%2"=="typecheck" echo Generated>output-from-build.txt',
       'if /I "%FA_TEST_FAIL%"=="lint" if /I "%1"=="run" if /I "%2"=="lint" exit /b 4',
       "exit /b 0",
       "",
@@ -37,6 +39,8 @@ function fixture() {
     writeFileSync(join(bin, "npm"), [
       "#!/bin/sh",
       'printf "%s\\n" "$*" >> "$FA_TEST_NPM_LOG"',
+      'if [ "$FA_TEST_MUTATE" = "tracked" ] && [ "$1" = "run" ] && [ "$2" = "typecheck" ]; then echo Modified >> README.md; fi',
+      'if [ "$FA_TEST_MUTATE" = "untracked" ] && [ "$1" = "run" ] && [ "$2" = "typecheck" ]; then echo Generated > output-from-build.txt; fi',
       'if [ "$FA_TEST_FAIL" = "lint" ] && [ "$1" = "run" ] && [ "$2" = "lint" ]; then exit 4; fi',
       "exit 0",
       "",
@@ -53,7 +57,7 @@ function fixture() {
   return { folder, repo, bin, logs };
 }
 
-function execute(f, { fail = "", args = [] } = {}) {
+function execute(f, { fail = "", mutate = "", args = [] } = {}) {
   const env = { ...process.env };
   const inheritedPath = process.env.PATH ?? process.env.Path ?? "";
   delete env.Path;
@@ -61,6 +65,7 @@ function execute(f, { fail = "", args = [] } = {}) {
   env.PATH = f.bin + delimiter + inheritedPath;
   env.FA_TEST_NPM_LOG = f.logs;
   env.FA_TEST_FAIL = fail;
+  env.FA_TEST_MUTATE = mutate;
   const output = spawnSync(process.execPath, [join(f.repo, "scripts", basename(runner)), ...args], {
     cwd: f.repo,
     encoding: "utf8",
@@ -185,6 +190,24 @@ describe("Fixed Assets local non-CI release gate", () => {
       assert.equal(x.status, 1, x.output);
       assert.match(x.output, /Result: 8 \/ 9 checks passed/);
       assert.match(x.output, /local release gate FAILED/i);
+      assert.equal(seen(f).length, 9);
+    }));
+
+  it("blocks final success if npm modifies tracked files after preflight", () =>
+    caseWithRepo((f) => {
+      const x = execute(f, { mutate: "tracked" });
+      assert.equal(x.status, 1, x.output);
+      assert.match(x.output, /Result: 9 \/ 9 checks passed/);
+      assert.match(x.output, /FINAL GIT CHECK FAILED/);
+      assert.match(x.output, /CHANGED — release gate blocked/);
+      assert.equal(seen(f).length, 9);
+    }));
+
+  it("blocks final success if npm creates unexpected untracked files", () =>
+    caseWithRepo((f) => {
+      const x = execute(f, { mutate: "untracked" });
+      assert.equal(x.status, 1, x.output);
+      assert.match(x.output, /FINAL GIT CHECK FAILED/);
       assert.equal(seen(f).length, 9);
     }));
 

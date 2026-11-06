@@ -119,9 +119,27 @@ for (const item of results) {
     (item.ok ? "" : " | exit " + (item.code ?? "unable to start")));
 }
 const passed = results.filter((item) => item.ok).length;
+
+// A test or build can modify generated/tracked files, create untracked output,
+// or change the Git checkout. Never issue a "PASSED" release result if any
+// preflight invariant changed while npm commands were executing.
+const finalBranch = git(["branch", "--show-current"]);
+const finalHead = git(["rev-parse", "--verify", "HEAD"]);
+const finalTrackedMain = git(["rev-parse", "--verify", "refs/remotes/origin/main"]);
+const finalWorktree = git(["status", "--porcelain=v1", "--untracked-files=normal"]);
+const statePreserved =
+  finalBranch === "main" &&
+  finalHead === sha &&
+  finalTrackedMain === trackedMain &&
+  finalWorktree === "";
+if (!statePreserved) {
+  console.error("FINAL GIT CHECK FAILED: branch, commit, origin/main or working tree changed during verification.");
+  console.error("Results are not accepted for release, even if the npm tasks themselves passed.");
+}
 console.log("Result:", passed + " / " + results.length + " checks passed.");
+console.log("Final Git state:", statePreserved ? "UNCHANGED" : "CHANGED — release gate blocked");
 console.log("NOT VERIFIED HERE: authenticated browser, RLS, accounting posting/FX, staging, production deployment.");
-if (passed !== results.length) {
+if (passed !== results.length || !statePreserved) {
   console.error("Local release gate FAILED. Full QA and production readiness remain unverified.");
   process.exitCode = 1;
 } else {

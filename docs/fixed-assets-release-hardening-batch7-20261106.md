@@ -296,3 +296,14 @@ node scripts/check-fixed-assets-release.mjs
 ```
 
 The final two commands must be executed on the local checkout only after the tooling PR is merged and the working tree is clean. They run no GitHub Actions. Record and share the output and exact main SHA before marking the release gate as verified.
+
+
+## Release-gate postflight integrity (2026-11-06, separate follow-up)
+
+**Verified issue:** The nine-check release script previously verified a clean, synced `main` only before running npm. A build/test task could modify tracked or untracked files, or alter checkout refs, and the gate could still print "PASSED." Such a result would not describe the exact reviewed source state.
+
+**Change:** At the end of all nine local tasks, `scripts/check-fixed-assets-release.mjs` now re-reads branch, HEAD SHA, locally tracked `origin/main` and the Git working tree. If any differ from the initial clean-main baseline, it reports `FINAL GIT CHECK FAILED`, identifies the state as changed and returns exit status 1 **even when all nine npm commands individually passed**. It does not delete or reset any modified files.
+
+**Non-CI verification:** Extended `scripts/check-fixed-assets-release.test.mjs` with real temporary Git fixtures and mocked npm tasks that deliberately modify a tracked file or create an untracked output after the initial preflight. The complete isolated Linux gate regression suite passed **14/14 cases, zero failures, zero skipped, exit 0**, with logs retrieved. Windows-specific invocation remains to be tested in the user's local checkout.
+
+**Release scope:** Tooling-only: no accounting or Supabase schema/data changes, no GitHub Actions/CI initiated, no staging/production deployment. The 14 checks validate the orchestration script, not actual TypeScript/Vitest/build success. The nine full local tasks and authenticated accounting/role/browser QA are still pending for production approval.

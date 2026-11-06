@@ -9,7 +9,8 @@ import { useFormat } from "@/hooks/use-format";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { buildGenericPayrollBankCsv } from "@/lib/payroll/payroll-bank-export";
-import { validatePayrollPaymentAllocations } from "@/lib/payroll/payroll-payment-allocation";
+import { parsePayrollPaymentEntry } from "@/lib/payroll/payment-form-draft";
+import { getPayrollSettingsPage } from "@/lib/payroll/payroll.functions";
 import {
   exportPayrollBankCsvRows,
   getPayrollPayment,
@@ -18,7 +19,6 @@ import {
   reversePayrollPayment,
   type PayrollPaymentDetailPage,
 } from "@/lib/payroll/payments.functions";
-import { parseMinorOrThrow, tryParseMinor } from "@/lib/purchases/money-input";
 import { listPayrollPayslips } from "@/lib/payroll/runs.functions";
 import { listPaymentAccounts } from "@/lib/purchases/purchases.functions";
 import type { PayslipSnapshot } from "@/lib/payroll/payslip-snapshot";
@@ -83,6 +83,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
   const fetchPayments = useServerFn(listPayrollPayments);
   const fetchExport = useServerFn(exportPayrollBankCsvRows);
   const fetchPayslips = useServerFn(listPayrollPayslips);
+  const fetchPayrollSettings = useServerFn(getPayrollSettingsPage);
   const fetchAccounts = useServerFn(listPaymentAccounts);
   const savePayment = useServerFn(recordPayrollPayment);
 
@@ -103,7 +104,21 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
   const reversePayment = useServerFn(reversePayrollPayment);
   const fetchPaymentDetail = useServerFn(getPayrollPayment);
 
-  const payCurrency = (company?.base_currency ?? "GBP").toUpperCase();
+  const settingsQ = useQuery({
+    queryKey: ["payroll-settings-page", company?.id],
+    queryFn: () => fetchPayrollSettings({ data: { companyId: company!.id } }),
+    enabled: Boolean(company?.id) && canPay && recordOpen,
+  });
+  const payCurrency = (
+    settingsQ.data?.settings?.payroll_currency ??
+    company?.base_currency ??
+    "GBP"
+  ).toUpperCase();
+  // The current SQL settlement journal uses FX rate 1. Recording cross-currency
+  // payments before supported conversion would misstate the GL.
+  const fxUnsupported = Boolean(
+    settingsQ.data && company && payCurrency !== company.base_currency.toUpperCase(),
+  );
 
   const paymentsQ = useQuery({
     queryKey: ["payroll-payments", company?.id, runIdFilter ?? null],
@@ -154,14 +169,18 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
           | undefined
       )?.payslips ?? [];
     return items
-      .filter((row) => ["posted", "paid", "complete"].includes(row.run.status))
+.filter(
+        (row) =>
+          ["posted", "paid", "complete"].includes(row.run.status) &&
+          row.run.currency.toUpperCase() === payCurrency,
+      )
       .map((row) => {
         const net = row.payslip.snapshot.totals?.netPayMinor ?? 0;
         const outstanding = Math.max(0, net - row.payslip.amount_paid_minor);
         return { ...row, outstanding, net };
       })
       .filter((row) => row.outstanding > 0);
-  }, [payslipsQ.data]);
+  }, [payslipsQ.data, payCurrency]);
 
   const exportMut = useMutation({
     mutationFn: () => fetchExport({ data: { companyId: company!.id } }),
@@ -189,28 +208,26 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
 
   const recordMut = useMutation({
     mutationFn: () => {
-      const amountMinor = Number(parseMinorOrThrow(amountMajor, payCurrency, "Payment amount"));
-      const allocations = Object.entries(alloc)
-        .map(([payslipId, v]) => {
-          const parsed = tryParseMinor(v, payCurrency);
-          if (parsed === null || parsed <= 0n) return null;
-          return { payslipId, amountMinor: Number(parsed) };
-        })
-        .filter((a): a is { payslipId: string; amountMinor: number } => a !== null);
-
-      const validated = validatePayrollPaymentAllocations(
-        BigInt(amountMinor),
-        allocations.map((a) => ({
-          payslipId: a.payslipId,
-          amountMinor: BigInt(a.amountMinor),
-        })),
-        openPayslips.map((row) => ({
+      if (settingsQ.isPending || settingsQ.isError || !settingsQ.data) {
+        throw new Error("Payroll settings must finish loading before recording a payment.");
+      }
+      if (payslipsQ.isPending || payslipsQ.isError) {
+        throw new Error("Outstanding payslips must finish loading before recording a payment.");
+      }
+      if (fxUnsupported) {
+        throw new Error("Foreign-currency payroll settlement requires configured FX accounting.");
+      }
+      const { amountMinor, allocations } = parsePayrollPaymentEntry({
+        amount: amountMajor,
+        currency: payCurrency,
+        allocations: alloc,
+        payslips: openPayslips.map((row) => ({
           payslipId: row.payslip.id,
-          netMinor: BigInt(row.net),
-          paidMinor: BigInt(row.payslip.amount_paid_minor),
+          currency: row.run.currency,
+          netMinor: row.net,
+          paidMinor: row.payslip.amount_paid_minor,
         })),
-      );
-      if (!validated.ok) throw new Error(validated.error);
+      });
 
       return savePayment({
         data: {
@@ -218,6 +235,7 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
           paymentDate,
           paymentMethod,
           amountMinor,
+          currencyCode: payCurrency,
           clearingAccountId,
           reference,
           memo,
@@ -259,6 +277,8 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
   });
 
   const openRecordDialog = () => {
+    setAlloc({});
+    setAmountMajor("");
     setIdempotencyKey(`pr-pay-${crypto.randomUUID()}`);
     setRecordOpen(true);
   };
@@ -481,6 +501,29 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            {settingsQ.isError ? (
+              <Alert variant="destructive">
+                <AlertDescription>
+                  Could not load payroll settings. {friendlyAuthError(settingsQ.error)}
+                </AlertDescription>
+              </Alert>
+            ) : null}
+            {fxUnsupported ? (
+              <Alert variant="destructive">
+                <AlertDescription>
+                  Payroll currency {payCurrency} differs from organisation base currency{" "}
+                  {company.base_currency.toUpperCase()}. Payment posting is unavailable until
+                  an approved FX accounting workflow is configured, to avoid an incorrect GL entry.
+                </AlertDescription>
+              </Alert>
+            ) : null}
+            {payslipsQ.isError ? (
+              <Alert variant="destructive">
+                <AlertDescription>
+                  Could not load open payslips. {friendlyAuthError(payslipsQ.error)}
+                </AlertDescription>
+              </Alert>
+            ) : null}
             <div className="grid gap-2">
               <Label htmlFor="pr-pay-date">Payment date</Label>
               <Input
@@ -591,7 +634,13 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
               Cancel
             </Button>
             <Button
-              disabled={recordMut.isPending || !clearingAccountId}
+              disabled={
+                recordMut.isPending ||
+                !clearingAccountId ||
+                !settingsQ.isSuccess ||
+                !payslipsQ.isSuccess ||
+                fxUnsupported
+              }
               onClick={() => recordMut.mutate()}
             >
               Record payment

@@ -150,8 +150,9 @@ export function parseActionCenterSearch(raw: Record<string, unknown>): ActionCen
   }
   const text = raw["q"];
   if (typeof text === "string") {
-    const clean = text.trim().slice(0, 120);
-    if (clean) result.q = clean;
+    // Keep typed spaces while editing; filterActionNotifications trims the actual search.
+    const clean = text.slice(0, 120);
+    if (clean.trim()) result.q = clean;
   }
   return result;
 }

@@ -364,7 +364,7 @@ function ActionCenterPage() {
           <Loader2 className="size-4 animate-spin" />
           Loading your actions…
         </p>
-      ) : inbox.isError ? (
+      ) : inbox.isError && !inbox.data ? (
         <div role="alert" className="rounded-lg border p-4">
           <p>
             Could not load Action Center:{" "}
@@ -385,6 +385,11 @@ function ActionCenterPage() {
             >
               {inbox.isFetchingNextPage ? "Loading older alerts…" : "Search older alerts"}
             </Button>
+          )}
+          {inbox.isFetchNextPageError && (
+            <p role="alert" className="text-sm text-destructive">
+              Could not load older alerts. Retry using Search older alerts.
+            </p>
           )}
         </div>
       ) : (
@@ -659,6 +664,7 @@ function DocumentRequests({ companyId, userId }: { companyId: string | null; use
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: key });
     void queryClient.invalidateQueries({ queryKey: ["action-notifications", companyId] });
+    void queryClient.invalidateQueries({ queryKey: ["action-center-feed", companyId] });
   };
   const createRequest = useMutation({
     mutationFn: async () => {

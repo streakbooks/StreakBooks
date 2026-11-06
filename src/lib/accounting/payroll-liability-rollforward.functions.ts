@@ -97,6 +97,17 @@ export const getPayrollLiabilityRollforward = createServerFn({ method: "GET" })
     }
     return calculatePayrollLiabilityRollforward(
       data.companyId, meta.baseCurrency, account.id, account.code, account.name,
-      data.from, data.to, ledgerLines, runs, payments,
+      data.from, data.to,
+      ledgerLines.map((row) => ({
+        line_id: row.line_id ?? "",
+        journal_id: row.journal_id ?? "",
+        journal_date: row.journal_date,
+        source_type: row.source_type ?? "",
+        source_id: row.source_id ?? null,
+        account_id: row.account_id,
+        debit_minor: row.debit_minor,
+        credit_minor: row.credit_minor,
+      })),
+      runs, payments,
     );
   });

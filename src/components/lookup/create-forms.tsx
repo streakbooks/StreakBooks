@@ -18,7 +18,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { AccountKind } from "@/lib/accounting/account-kinds";
 import { listAccounts } from "@/lib/accounting/accounting.functions";
-import { toMinorUnits } from "@/lib/accounting/money";
+import { parseMinorOrThrow } from "@/lib/purchases/money-input";
+import { productSkuProblem, validCataloguePrice } from "@/lib/products/catalogue-input";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { createBankAccount } from "@/lib/banking/banking.functions";
 import { upsertContact } from "@/lib/contacts/contacts.functions";
@@ -151,22 +152,25 @@ export function ProductCreateForm({
   const [name, setName] = useState(ctx.initialQuery);
   const [code, setCode] = useState("");
   const [description, setDescription] = useState("");
-  const [salesPrice, setSalesPrice] = useState("0.00");
+  const [salesPrice, setSalesPrice] = useState("0");
   const [pending, setPending] = useState(false);
   const recordRef = useRef<DocumentRecordHandle>(null);
 
   const onSave = async () => {
-    let salesPriceMinor = 0;
-    try {
-      salesPriceMinor = Number(toMinorUnits(salesPrice || "0", currency));
-    } catch (error) {
-      toast.error(friendlyAuthError(error));
+    if (!name.trim()) {
+      toast.error("Name is required");
       return;
     }
-    if (!Number.isSafeInteger(salesPriceMinor)) {
-      toast.error("Sales price is too large");
+    const skuProblem = productSkuProblem(code);
+    if (skuProblem) {
+      toast.error(skuProblem);
       return;
     }
+    if (!validCataloguePrice(salesPrice, currency)) {
+      toast.error("Enter a non-negative price using the exact decimals for this currency");
+      return;
+    }
+    const salesPriceMinor = Number(parseMinorOrThrow(salesPrice || "0", currency));
     setPending(true);
     try {
       const result = await save({
@@ -181,7 +185,13 @@ export function ProductCreateForm({
             : { salesPriceMinor }),
         },
       });
-      await recordRef.current?.flush(result.id);
+      try {
+        await recordRef.current?.flush(result.id);
+      } catch (error) {
+        toast.warning(
+          `Item created, but its notes or files could not be saved: ${friendlyAuthError(error)}`,
+        );
+      }
       await qc.invalidateQueries({ queryKey: ["products", companyId] });
       toast.success("Item created");
       const label = code.trim() ? `${code.trim()} — ${name.trim()}` : name.trim();
@@ -191,7 +201,7 @@ export function ProductCreateForm({
         code: code.trim() || null,
         name: name.trim(),
         description: description.trim() || name.trim(),
-        meta: salesPrice.trim() || "0.00",
+        meta: salesPrice.trim() || "0",
       });
     } catch (error) {
       toast.error(friendlyAuthError(error));
@@ -216,15 +226,29 @@ export function ProductCreateForm({
       </div>
       <div className="space-y-1.5">
         <Label>Name</Label>
-        <Input value={name} autoFocus onChange={(event) => setName(event.target.value)} />
+        <Input
+          value={name}
+          autoFocus
+          maxLength={200}
+          onChange={(event) => setName(event.target.value)}
+        />
       </div>
       <div className="space-y-1.5">
         <Label>Code / SKU</Label>
-        <Input value={code} onChange={(event) => setCode(event.target.value)} />
+        <Input
+          value={code}
+          maxLength={40}
+          aria-invalid={Boolean(productSkuProblem(code))}
+          onChange={(event) => setCode(event.target.value)}
+        />
       </div>
       <div className="space-y-1.5">
         <Label>Description</Label>
-        <Input value={description} onChange={(event) => setDescription(event.target.value)} />
+        <Input
+          value={description}
+          maxLength={2000}
+          onChange={(event) => setDescription(event.target.value)}
+        />
       </div>
       <div className="space-y-1.5">
         <Label>
@@ -232,6 +256,7 @@ export function ProductCreateForm({
         </Label>
         <Input
           inputMode="decimal"
+          aria-invalid={!validCataloguePrice(salesPrice, currency)}
           value={salesPrice}
           onChange={(event) => setSalesPrice(event.target.value)}
         />

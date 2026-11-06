@@ -1,24 +1,26 @@
 import { QueryErrorState } from "@/components/common/QueryErrorState";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Package, Plus, Archive } from "lucide-react";
+import { Package, Plus, Archive, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useFormat } from "@/hooks/use-format";
 import { listAccounts } from "@/lib/accounting/accounting.functions";
 import { fromMinorUnits } from "@/lib/accounting/money";
-import { parseMinorOrThrow, tryParseMinor } from "@/lib/purchases/money-input";
+import { parseMinorOrThrow } from "@/lib/purchases/money-input";
 import { listTaxCodes } from "@/lib/tax/tax.functions";
 import { useCanDo } from "@/hooks/use-can";
 import {
   archiveProduct,
   listProducts,
+  setProductsActive,
   upsertProduct,
   type ProductRow,
 } from "@/lib/products/products.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { productSkuProblem, validCataloguePrice } from "@/lib/products/catalogue-input";
 import {
   DocumentRecordPanel,
   type DocumentRecordHandle,
@@ -30,6 +32,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { AccountLookup, LookupSelect } from "@/components/lookup";
 import { TaxCodeCreateForm } from "@/components/lookup/create-forms";
 import { Label } from "@/components/ui/label";
@@ -77,14 +81,19 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
   const fetchAccounts = useServerFn(listAccounts);
   const saveProduct = useServerFn(upsertProduct);
   const doArchive = useServerFn(archiveProduct);
+  const updateMany = useServerFn(setProductsActive);
   const fetchTaxCodes = useServerFn(listTaxCodes);
   const canManage = useCanDo("products.manage");
   const canTax = useCanDo("tax.settings");
   const [limit, setLimit] = useState(100);
 
   const [q, setQ] = useState("");
+  const [debouncedQ, setDebouncedQ] = useState("");
   const [kind, setKind] = useState("all");
-  const [includeInactive, setIncludeInactive] = useState(false);
+  const [status, setStatus] = useState("active");
+  const [sort, setSort] = useState("name");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkAction, setBulkAction] = useState<"archive" | "restore" | null>(null);
   const [open, setOpen] = useState(false);
   const productRecordRef = useRef<DocumentRecordHandle>(null);
   const [editing, setEditing] = useState<ProductRow | null>(null);
@@ -98,18 +107,29 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
     purchaseCost: "",
     incomeAccountId: "",
     expenseAccountId: "",
-    salesTaxBps: "2000",
-    purchaseTaxBps: "2000",
+    salesTaxBps: "0",
+    purchaseTaxBps: "0",
     unit: "each",
+    isActive: true,
   });
 
+  useEffect(() => {
+    const handle = setTimeout(() => setDebouncedQ(q), 250);
+    return () => clearTimeout(handle);
+  }, [q]);
+
   const productsQ = useQuery({
-    queryKey: ["products", companyId, q, kind, includeInactive, limit],
-    queryFn: () =>
-      fetchProducts({
-        data: { companyId, q, kind, includeInactive, limit },
-      }),
+    queryKey: ["products", companyId, debouncedQ, kind, status, sort, limit],
+    queryFn: () => fetchProducts({ data: { companyId, q: debouncedQ, kind, status, sort, limit } }),
   });
+  const rows = (productsQ.data ?? []) as ProductRow[];
+  const selectedRows = rows.filter((row) => selectedIds.includes(row.id));
+  const allVisibleSelected =
+    rows.length > 0 && rows.slice(0, 100).every((row) => selectedIds.includes(row.id));
+  const hasFilters = Boolean(q || kind !== "all" || status !== "active");
+
+  // A selection is only ever valid for the current company and visible result set.
+  useEffect(() => setSelectedIds([]), [companyId, q, kind, status, sort, limit]);
   const accountsQ = useQuery({
     queryKey: ["accounts", companyId],
     queryFn: () => fetchAccounts({ data: { companyId } }),
@@ -147,8 +167,9 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
         .filter((c) => (seen.has(c.key) ? false : (seen.add(c.key), true)))
     );
   }, [taxCodesQ.data]);
-  const salesPriceInvalid = tryParseMinor(form.salesPrice || "0", currency) === null;
-  const purchaseCostInvalid = tryParseMinor(form.purchaseCost || "0", currency) === null;
+  const salesPriceInvalid = !validCataloguePrice(form.salesPrice, currency);
+  const purchaseCostInvalid = !validCataloguePrice(form.purchaseCost, currency);
+  const codeProblem = productSkuProblem(form.code);
 
   const incomeAccounts = useMemo(
     () =>
@@ -158,8 +179,10 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
           code: string;
           name: string;
           account_type: string;
+          is_active: boolean;
+          is_postable: boolean;
         }>
-      ).filter((a) => a.account_type === "income"),
+      ).filter((a) => a.account_type === "income" && a.is_active && a.is_postable),
     [accountsQ.data],
   );
   const expenseAccounts = useMemo(
@@ -170,8 +193,12 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
           code: string;
           name: string;
           account_type: string;
+          is_active: boolean;
+          is_postable: boolean;
         }>
-      ).filter((a) => a.account_type === "expense"),
+      ).filter((a) =>
+        a.is_active && a.is_postable && a.account_type === "expense",
+      ),
     [accountsQ.data],
   );
 
@@ -185,6 +212,7 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
         parseMinorOrThrow(form.purchaseCost || "0", currency, "Purchase cost"),
       );
       if (!form.name.trim()) throw new Error("Name is required");
+      if (codeProblem) throw new Error(codeProblem);
       const data: Parameters<typeof saveProduct>[0]["data"] = {
         companyId,
         kind: form.kind,
@@ -194,7 +222,7 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
         salesTaxRateBps: Number(form.salesTaxBps) || 0,
         purchaseTaxRateBps: Number(form.purchaseTaxBps) || 0,
         unit: form.unit,
-        isActive: true,
+        isActive: form.isActive,
       };
       if (editing?.id) data.id = editing.id;
       if (form.code) data.code = form.code;
@@ -207,8 +235,9 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
       try {
         await productRecordRef.current?.flush(result.id);
       } catch (e) {
-        toast.error(`Saved, but notes or files could not be stored: ${friendlyAuthError(e)}`);
-        return;
+        toast.warning(
+          `Item saved, but notes or files could not be stored: ${friendlyAuthError(e)}`,
+        );
       }
       toast.success(editing ? "Product updated" : "Product created");
       setOpen(false);
@@ -217,6 +246,32 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
+
+  const bulkMut = useMutation({
+    mutationFn: (action: "archive" | "restore") => {
+      const productIds = selectedRows
+        .filter((item) => action === "archive" ? item.is_active : !item.is_active)
+        .map((item) => item.id);
+      if (!productIds.length) throw new Error("No eligible items selected");
+      return updateMany({ data: { companyId, productIds, isActive: action === "restore" } });
+    },
+    onSuccess: async (result, action) => {
+      toast.success(`${result.changed} item(s) ${action === "archive" ? "archived" : "restored"}`);
+      setSelectedIds([]);
+      setBulkAction(null);
+      await queryClient.invalidateQueries({ queryKey: ["products", companyId] });
+    },
+    onError: (e) => toast.error(friendlyAuthError(e)),
+  });
+
+  function resetFilters() {
+    setQ("");
+    setKind("all");
+    setStatus("active");
+    setSort("name");
+    setLimit(100);
+    setSelectedIds([]);
+  }
 
   function openCreate() {
     setEditing(null);
@@ -227,11 +282,12 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
       description: "",
       salesPrice: "",
       purchaseCost: "",
-      incomeAccountId: incomeAccounts[0]?.id ?? "",
-      expenseAccountId: expenseAccounts[0]?.id ?? "",
-      salesTaxBps: "2000",
-      purchaseTaxBps: "2000",
+      incomeAccountId: "",
+      expenseAccountId: "",
+      salesTaxBps: "0",
+      purchaseTaxBps: "0",
       unit: "each",
+      isActive: true,
     });
     setOpen(true);
   }
@@ -250,11 +306,21 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
       salesTaxBps: String(p.sales_tax_rate_bps),
       purchaseTaxBps: String(p.purchase_tax_rate_bps),
       unit: p.unit,
+      isActive: p.is_active,
     });
     setOpen(true);
   }
 
-  const rows = (productsQ.data ?? []) as ProductRow[];
+  function openDuplicate(item: ProductRow) {
+    openEdit(item);
+    setEditing(null);
+    setForm((current) => ({
+      ...current,
+      code: "",
+      name: `${item.name.slice(0, 193)} (copy)`,
+      isActive: true,
+    }));
+  }
 
   const requiredQueries = [accountsQ, taxCodesQ];
   if (requiredQueries.some((query) => query.isError && query.data === undefined))
@@ -289,7 +355,7 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
         </AlertDescription>
       </Alert>
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-3">
+      <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-lg border bg-card p-4">
           <p className="text-xs text-muted-foreground">Items in current results</p>
           <p className="mt-1 text-2xl font-semibold tabular-nums">
@@ -306,6 +372,13 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
           <p className="text-xs text-muted-foreground">Non-stock services</p>
         </div>
         <div className="rounded-lg border bg-card p-4">
+          <p className="text-xs text-muted-foreground">Products (non-stock) in results</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums">
+            {rows.filter((p) => p.kind === "product").length}
+          </p>
+          <p className="text-xs text-muted-foreground">Catalogue only — no stock-on-hand</p>
+        </div>
+        <div className="rounded-lg border bg-card p-4">
           <p className="text-xs text-muted-foreground">Non-inventory items in results</p>
           <p className="mt-1 text-2xl font-semibold tabular-nums">
             {rows.filter((p) => p.kind === "non_inventory").length}
@@ -317,12 +390,14 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
       <div className="mb-4 flex flex-wrap gap-3">
         <Input
           className="max-w-xs"
-          placeholder="Search name or code…"
+          aria-label="Search products and services"
+          maxLength={100}
+          placeholder="Search name, code or description…"
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
         <Select value={kind} onValueChange={setKind}>
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="w-40" aria-label="Item kind">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -332,14 +407,60 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
             <SelectItem value="non_inventory">Non-inventory</SelectItem>
           </SelectContent>
         </Select>
-        <Button
-          variant={includeInactive ? "secondary" : "outline"}
-          size="sm"
-          onClick={() => setIncludeInactive((v) => !v)}
-        >
-          {includeInactive ? "Showing archived" : "Active only"}
+        <Select value={status} onValueChange={setStatus}>
+          <SelectTrigger className="w-40" aria-label="Item status">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="archived">Archived</SelectItem>
+            <SelectItem value="all">All statuses</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={sort} onValueChange={setSort}>
+          <SelectTrigger className="w-44" aria-label="Sort catalogue">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="name">Name: A–Z</SelectItem>
+            <SelectItem value="name_desc">Name: Z–A</SelectItem>
+            <SelectItem value="code">Code / SKU</SelectItem>
+            <SelectItem value="price_asc">Sales price: low to high</SelectItem>
+            <SelectItem value="price_desc">Sales price: high to low</SelectItem>
+            <SelectItem value="recent">Newest first</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button variant="ghost" size="sm" onClick={resetFilters}>
+          Reset filters
         </Button>
       </div>
+
+      {selectedRows.length > 0 && canManage ? (
+        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2">
+          <span className="mr-auto text-sm font-medium">
+            {selectedRows.length} selected (max 100 per batch)
+          </span>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={!selectedRows.some((row) => row.is_active) || bulkMut.isPending}
+            onClick={() => setBulkAction("archive")}
+          >
+            Archive selected
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={!selectedRows.some((row) => !row.is_active) || bulkMut.isPending}
+            onClick={() => setBulkAction("restore")}
+          >
+            Restore selected
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setSelectedIds([])}>
+            Clear selection
+          </Button>
+        </div>
+      ) : null}
 
       {productsQ.isPending ? (
         <LoadingState />
@@ -353,90 +474,139 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
         <div className="space-y-3">
           <EmptyState
             icon={Package}
-            title="No products yet"
-            description="Create services and non-inventory items with default accounts and tax rates."
+            title={hasFilters ? "No matching items" : "No products yet"}
+            description={hasFilters
+              ? "Try another search, kind or status filter."
+              : "Create services and non-inventory items with default accounts and tax rates."}
           />
           <div className="flex justify-center">
-            <Button size="sm" onClick={openCreate}>
-              <Plus className="size-4" />
-              New item
-            </Button>
+            {hasFilters ? (
+              <Button size="sm" variant="outline" onClick={resetFilters}>
+                Reset filters
+              </Button>
+            ) : (
+              <Button size="sm" onClick={openCreate} disabled={!canManage}>
+                <Plus className="size-4" /> New item
+              </Button>
+            )}
           </div>
         </div>
       ) : (
         <Card>
           <CardContent className="pt-6">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Code</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Kind</TableHead>
-                  <TableHead className="text-right">Sales price</TableHead>
-                  <TableHead className="text-right">Purchase cost</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((p) => (
-                  <TableRow key={p.id}>
-                    <TableCell className="font-mono text-xs">{p.code ?? "—"}</TableCell>
-                    <TableCell>
-                      <div className="font-medium">{p.name}</div>
-                      {p.description ? (
-                        <div className="text-xs text-muted-foreground line-clamp-1">
-                          {p.description}
-                        </div>
-                      ) : null}
-                    </TableCell>
-                    <TableCell className="capitalize">{p.kind.replace("_", " ")}</TableCell>
-                    <TableCell className="money">
-                      {fmt.money(p.sales_price_minor, currency)}
-                    </TableCell>
-                    <TableCell className="money">
-                      {fmt.money(p.purchase_cost_minor, currency)}
-                    </TableCell>
-                    <TableCell>
-                      {p.is_active ? (
-                        <Badge variant="success">Active</Badge>
-                      ) : (
-                        <Badge variant="neutral">Archived</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="space-x-1 text-right">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        disabled={!canManage}
-                        onClick={() => openEdit(p)}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        disabled={!canManage}
-                        onClick={async () => {
-                          try {
-                            await doArchive({
-                              data: { companyId, productId: p.id, restore: !p.is_active },
-                            });
-                            toast.success(p.is_active ? "Archived" : "Restored");
-                            await productsQ.refetch();
-                          } catch (e) {
-                            toast.error(friendlyAuthError(e));
-                          }
-                        }}
-                      >
-                        <Archive className="size-4" />
-                        {p.is_active ? "Archive" : "Restore"}
-                      </Button>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-10">
+                      <Checkbox
+                        aria-label="Select up to 100 visible items"
+                        disabled={!canManage || bulkMut.isPending}
+                        checked={
+                          allVisibleSelected ? true : selectedRows.length > 0 ? "indeterminate" : false
+                        }
+                        onCheckedChange={(checked) =>
+                          setSelectedIds(
+                            checked === true ? rows.slice(0, 100).map((item) => item.id) : [],
+                          )
+                        }
+                      />
+                    </TableHead>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Kind</TableHead>
+                    <TableHead className="text-right">Sales price</TableHead>
+                    <TableHead className="text-right">Purchase cost</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead />
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {rows.map((p) => (
+                    <TableRow key={p.id}>
+                      <TableCell>
+                        <Checkbox
+                          aria-label={`Select ${p.name}`}
+                          checked={selectedIds.includes(p.id)}
+                          disabled={
+                            !canManage ||
+                            bulkMut.isPending ||
+                            (selectedIds.length >= 100 && !selectedIds.includes(p.id))
+                          }
+                          onCheckedChange={(checked) =>
+                            setSelectedIds((previous) =>
+                              checked === true
+                                ? [...new Set([...previous, p.id])].slice(0, 100)
+                                : previous.filter((id) => id !== p.id),
+                            )
+                          }
+                        />
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">{p.code ?? "—"}</TableCell>
+                      <TableCell>
+                        <div className="font-medium">{p.name}</div>
+                        {p.description ? (
+                          <div className="text-xs text-muted-foreground line-clamp-1">
+                            {p.description}
+                          </div>
+                        ) : null}
+                      </TableCell>
+                      <TableCell className="capitalize">{p.kind.replace("_", " ")}</TableCell>
+                      <TableCell className="money">
+                        {fmt.money(p.sales_price_minor, currency)}
+                      </TableCell>
+                      <TableCell className="money">
+                        {fmt.money(p.purchase_cost_minor, currency)}
+                      </TableCell>
+                      <TableCell>
+                        {p.is_active ? (
+                          <Badge variant="success">Active</Badge>
+                        ) : (
+                          <Badge variant="neutral">Archived</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="space-x-1 text-right">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          disabled={!canManage}
+                          onClick={() => openEdit(p)}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          disabled={!canManage}
+                          onClick={() => openDuplicate(p)}
+                        >
+                          <Copy className="size-4" /> Duplicate
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          disabled={!canManage || bulkMut.isPending}
+                          onClick={async () => {
+                            try {
+                              await doArchive({
+                                data: { companyId, productId: p.id, restore: !p.is_active },
+                              });
+                              toast.success(p.is_active ? "Archived" : "Restored");
+                              await productsQ.refetch();
+                            } catch (e) {
+                              toast.error(friendlyAuthError(e));
+                            }
+                          }}
+                        >
+                          <Archive className="size-4" />
+                          {p.is_active ? "Archive" : "Restore"}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -457,7 +627,59 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
         </p>
       ) : null}
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog
+        open={bulkAction !== null}
+        onOpenChange={(next) => {
+          if (!next && !bulkMut.isPending) setBulkAction(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {bulkAction === "archive" ? "Archive selected items?" : "Restore selected items?"}
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            {
+              selectedRows.filter((row) =>
+                bulkAction === "archive" ? row.is_active : !row.is_active,
+              ).length
+            }{" "}
+            eligible items will change status. Historical documents are retained.
+            {bulkAction === "restore"
+              ? " Restoration may fail if an active item already uses the same SKU."
+              : ""}
+          </p>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              disabled={bulkMut.isPending}
+              onClick={() => setBulkAction(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              disabled={!bulkAction || bulkMut.isPending}
+              onClick={() => {
+                if (bulkAction) bulkMut.mutate(bulkAction);
+              }}
+            >
+              {bulkMut.isPending
+                ? "Updating…"
+                : bulkAction === "archive"
+                  ? "Archive items"
+                  : "Restore items"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          if (!saveMut.isPending) setOpen(next);
+        }}
+      >
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{editing ? "Edit item" : "New product / service"}</DialogTitle>
@@ -481,8 +703,11 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
                 <Label>Code / SKU</Label>
                 <Input
                   value={form.code}
+                  maxLength={40}
+                  aria-invalid={Boolean(codeProblem)}
                   onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
                 />
+                {codeProblem ? <p className="text-xs text-destructive">{codeProblem}</p> : null}
               </div>
               <div className="grid gap-1">
                 <Label>Unit</Label>
@@ -502,12 +727,15 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
               </Label>
               <Input
                 value={form.name}
+                maxLength={200}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               />
             </div>
             <div className="grid gap-1">
               <Label>Description</Label>
-              <Input
+              <Textarea
+                rows={3}
+                maxLength={2000}
                 value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
               />
@@ -547,9 +775,9 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
               />
             </div>
             <div className="grid gap-1">
-              <Label>Expense account</Label>
+              <Label>Purchase / expense account</Label>
               <AccountLookup
-                ariaLabel="Expense account"
+                ariaLabel="Purchase / expense account"
                 accounts={expenseAccounts}
                 value={form.expenseAccountId}
                 onChange={(v) => setForm((f) => ({ ...f, expenseAccountId: v }))}
@@ -582,6 +810,20 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
                 />
               </div>
             </div>
+            <div className="flex items-center gap-3 rounded-md border p-3">
+              <Checkbox
+                id="product-active"
+                checked={form.isActive}
+                onCheckedChange={(checked) =>
+                  setForm((current) => ({ ...current, isActive: checked === true }))
+                }
+              />
+              <Label htmlFor="product-active">Active — available for new sales and purchases</Label>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              New items default to no tax; choose the correct sales and purchase rates. This
+              catalogue does not value inventory or post COGS.
+            </p>
             <DocumentRecordPanel
               key={`${open ? "open" : "closed"}-${editing?.id ?? "new"}`}
               ref={productRecordRef}
@@ -591,12 +833,23 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              variant="outline"
+              disabled={saveMut.isPending}
+              onClick={() => setOpen(false)}
+            >
               Cancel
             </Button>
             <Button
               onClick={() => saveMut.mutate()}
-              disabled={saveMut.isPending || salesPriceInvalid || purchaseCostInvalid || !canManage}
+              disabled={
+                saveMut.isPending ||
+                salesPriceInvalid ||
+                purchaseCostInvalid ||
+                Boolean(codeProblem) ||
+                !form.name.trim() ||
+                !canManage
+              }
             >
               {saveMut.isPending ? "Saving…" : "Save"}
             </Button>

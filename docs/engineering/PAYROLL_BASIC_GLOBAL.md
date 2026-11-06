@@ -300,3 +300,26 @@ GitHub source file
   date before recording.
 - Full Vitest, TypeScript, lint, build, authenticated browser tests and
   GitHub CI were not run. GitHub CI remains **not run per user instruction**.
+
+
+### Salary entry integrity and employee local-date defaults (November 6, 2026)
+
+- The new Payroll employee form defaults the hire date to the **user's local
+  calendar day** rather than the UTC date, consistent with payment and reversal
+  forms. The user can still choose an earlier/later date.
+- Salary assignments now reject impossible effective dates before any server
+  submission (e.g. `2026-02-30` and year zero); valid leap dates are accepted.
+- Salary structures and custom salary versions now parse fixed and rate amounts
+  **exactly**, rejecting negative/malformed values and extra fractional digits
+  instead of silently rounding. Precision matches the currency
+  (`GBP=2`, `JPY=0`, `KWD=3`).
+- The database line bound `900000000000000` minor units is enforced before
+  converting to a JavaScript number. Invalid, negative, exponential and overly
+  precise percentage strings are rejected rather than silently becoming
+  `0` basis points. The SQL maximum `1000000` basis points (10000%)
+  remains enforced.
+- Regression tests for the salary parser and integration with
+  `parseSalaryStructureDraft` and `parseSalaryAssignDraft` are committed.
+  Focused **isolated direct-source** salary parser tests passed **20/20**;
+  the actual Vitest, typecheck, lint and build were not executed in this
+  environment. These checks do not establish production readiness.

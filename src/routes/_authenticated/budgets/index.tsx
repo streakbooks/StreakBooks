@@ -2,19 +2,35 @@ import { useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Trash2 } from "lucide-react";
+import { Copy, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
 import { useFormat } from "@/hooks/use-format";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { fiscalYearStart, todayIso } from "@/lib/accounting/fiscal-year";
-import { deleteBudget, listBudgets, saveBudget } from "@/lib/budgets/budgets.functions";
+import { nextBudgetYearStart } from "@/lib/budgets/budget-math";
+import {
+  deleteBudget,
+  duplicateBudget,
+  listBudgets,
+  saveBudget,
+  type BudgetSummary,
+} from "@/lib/budgets/budgets.functions";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -38,6 +54,7 @@ function BudgetsPage() {
   const listFn = useServerFn(listBudgets);
   const saveFn = useServerFn(saveBudget);
   const deleteFn = useServerFn(deleteBudget);
+  const duplicateFn = useServerFn(duplicateBudget);
   const companyId = company?.id;
 
   const defaultStart = useMemo(
@@ -53,6 +70,10 @@ function BudgetsPage() {
   );
   const [name, setName] = useState("");
   const [search, setSearch] = useState("");
+  const [copySource, setCopySource] = useState<BudgetSummary | null>(null);
+  const [copyName, setCopyName] = useState("");
+  const [copyStart, setCopyStart] = useState("");
+  const [copyAmounts, setCopyAmounts] = useState(true);
   const [start, setStart] = useState<string | null>(null);
   const fyStart = start ?? defaultStart;
 
@@ -73,6 +94,33 @@ function BudgetsPage() {
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
+
+  const copy = useMutation({
+    mutationFn: () =>
+      duplicateFn({
+        data: {
+          companyId: companyId!,
+          sourceBudgetId: copySource!.id,
+          name: copyName.trim(),
+          fiscalYearStart: copyStart,
+          includeAmounts: copyAmounts,
+        },
+      }),
+    onSuccess: async ({ id }) => {
+      setCopySource(null);
+      await queryClient.invalidateQueries({ queryKey: ["budgets", companyId] });
+      toast.success("Budget duplicated");
+      void navigate({ to: "/budgets/$budgetId", params: { budgetId: id } });
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+
+  const openCopy = (budget: BudgetSummary) => {
+    setCopySource(budget);
+    setCopyName(budget.name);
+    setCopyStart(nextBudgetYearStart(budget.fiscal_year_start));
+    setCopyAmounts(true);
+  };
 
   const remove = useMutation({
     mutationFn: (budgetId: string) => deleteFn({ data: { companyId: companyId!, budgetId } }),
@@ -205,7 +253,7 @@ function BudgetsPage() {
               <TableHead>Name</TableHead>
               <TableHead>Financial year from</TableHead>
               <TableHead>Last changed</TableHead>
-              <TableHead className="w-24" />
+              <TableHead className="w-28 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -222,7 +270,17 @@ function BudgetsPage() {
                 </TableCell>
                 <TableCell>{fmt.date(b.fiscal_year_start)}</TableCell>
                 <TableCell>{fmt.dateTime(b.updated_at)}</TableCell>
-                <TableCell className="text-right">
+                <TableCell className="whitespace-nowrap text-right">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    aria-label={`Duplicate ${b.name}`}
+                    title="Duplicate budget into another financial year"
+                    disabled={!canManage || copy.isPending || remove.isPending}
+                    onClick={() => openCopy(b)}
+                  >
+                    <Copy className="size-4" />
+                  </Button>
                   <Button
                     size="icon"
                     variant="ghost"
@@ -242,6 +300,77 @@ function BudgetsPage() {
           </TableBody>
         </Table>
       )}
+
+      <Dialog
+        open={copySource !== null}
+        onOpenChange={(open) => {
+          if (!open && !copy.isPending) setCopySource(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Duplicate budget</DialogTitle>
+            <DialogDescription>
+              Make a new budget from {copySource?.name}. The source budget will not be changed.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="duplicate-budget-name">New budget name</Label>
+              <Input
+                id="duplicate-budget-name"
+                maxLength={120}
+                value={copyName}
+                disabled={copy.isPending}
+                onChange={(event) => setCopyName(event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="duplicate-budget-start">Target financial year starts</Label>
+              <Input
+                id="duplicate-budget-start"
+                type="date"
+                value={copyStart}
+                disabled={copy.isPending}
+                onChange={(event) => setCopyStart(event.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Each monthly amount stays in its fiscal-month position, even when the target year differs.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Checkbox
+                id="duplicate-budget-amounts"
+                checked={copyAmounts}
+                disabled={copy.isPending}
+                onCheckedChange={(checked) => setCopyAmounts(checked === true)}
+              />
+              <Label htmlFor="duplicate-budget-amounts">Copy all existing monthly amounts</Label>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              If an original account is no longer active or postable, the full copy is rejected;
+              uncheck the option to create an empty budget instead.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" disabled={copy.isPending} onClick={() => setCopySource(null)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={
+                copy.isPending ||
+                !canManage ||
+                !copyName.trim() ||
+                !/^\\d{4}-\\d{2}-01$/.test(copyStart)
+              }
+              onClick={() => copy.mutate()}
+            >
+              {copy.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+              Duplicate and open
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

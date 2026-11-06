@@ -7,6 +7,11 @@ import { addMonthsIso, monthStart } from "@/lib/accounting/fiscal-year";
 
 export type BudgetAccountKind = "income" | "expense";
 
+/** First month of the following fiscal year; month based so leap years cannot shift the start. */
+export function nextBudgetYearStart(fiscalYearStart: string): string {
+  return addMonthsIso(monthStart(fiscalYearStart), 12);
+}
+
 /** Month starts (YYYY-MM-01) of the twelve months of the fiscal year beginning at `fyStart`. */
 export function fiscalMonthStarts(fyStart: string, count = 12): string[] {
   const first = monthStart(fyStart);

@@ -9,6 +9,7 @@ import { requireAccountInCompany } from "@/lib/purchases/accounts";
 import { todayIso } from "@/lib/accounting/fiscal-year";
 import { loadTaxFacts } from "@/lib/tax/tax-return-data";
 import { suggestReturnPeriod } from "@/lib/tax/return-periods";
+import { validateTaxReturnPeriod, isValidTaxDate } from "@/lib/tax/tax-input-validation";
 import { isAccountTypeAllowedForTaxRole } from "@/lib/tax/account-pickers";
 import {
   buildReturnLines,
@@ -18,14 +19,13 @@ import {
   type BoxLine,
 } from "@/lib/tax/vat-return";
 
-const ISO = /^\d{4}-\d{2}-\d{2}$/;
 const MIGRATION_MESSAGE =
   "Tax returns are not available yet: the database update 20261024130200 has not been applied.";
 
 type Row = Record<string, unknown>;
 
 function isoDate(v: unknown, label: string): string {
-  if (typeof v !== "string" || !ISO.test(v)) throw new Error(`${label} must be YYYY-MM-DD`);
+  if (!isValidTaxDate(v)) throw new Error(`${label} must be a real YYYY-MM-DD calendar date`);
   return v;
 }
 
@@ -35,10 +35,7 @@ function periodInput(input: {
   periodEnd: string;
   basis?: string;
 }) {
-  const periodStart = isoDate(input?.periodStart, "Period start");
-  const periodEnd = isoDate(input?.periodEnd, "Period end");
-  if (periodStart > periodEnd) throw new Error("The period cannot end before it starts.");
-  const basis: "accrual" | "cash" = input?.basis === "cash" ? "cash" : "accrual";
+  const { periodStart, periodEnd, basis } = validateTaxReturnPeriod(input);
   return { companyId: assertUuid(input?.companyId), periodStart, periodEnd, basis };
 }
 

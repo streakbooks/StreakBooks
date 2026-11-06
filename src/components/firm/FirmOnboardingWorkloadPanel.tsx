@@ -188,7 +188,7 @@ export function FirmOnboardingWorkloadPanel({
                   {workload.utilizationPercent}% of configured capacity
                   (based on accessible assigned work).
                 </p>
-                {contextQ.data.canManage && selected && (
+                {contextQ.data?.canManage && selected && (
                   <div className="mt-3 flex flex-wrap items-end gap-2">
                     <div className="w-40 space-y-1">
                       <Label htmlFor="firm-capacity-limit">Target open steps (1–200)</Label>

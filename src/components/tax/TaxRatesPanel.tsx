@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { listTaxRates, saveTaxRate } from "@/lib/tax/tax.functions";
 import { bpsToPercentLabel } from "@/lib/tax/tax-math";
+import { isValidTaxDate, percentToTaxBasisPoints } from "@/lib/tax/tax-input-validation";
 import {
   RATE_STATUS_LABEL,
   rateStatus,
@@ -62,12 +63,6 @@ const BADGE: Record<RateStatus, "default" | "secondary" | "outline"> = {
   inactive: "outline",
 };
 
-function percentToBps(percent: string): number {
-  const n = Number(percent.trim());
-  if (!Number.isFinite(n)) return NaN;
-  return Math.round(n * 100);
-}
-
 /** TX-05: add, edit, end-date and deactivate tax rates. Posted documents keep their amounts. */
 export function TaxRatesPanel({ companyId }: { companyId: string }) {
   const qc = useQueryClient();
@@ -114,16 +109,16 @@ export function TaxRatesPanel({ companyId }: { companyId: string }) {
 
   const submitDraft = () => {
     if (!draft) return;
-    const bps = percentToBps(draft.percent);
+    const bps = percentToTaxBasisPoints(draft.percent);
     if (!draft.name.trim()) {
       toast.error("Give the rate a name.");
       return;
     }
     if (!Number.isInteger(bps) || bps < 0 || bps > 10000) {
-      toast.error("Enter a rate between 0 and 100 percent.");
+      toast.error("Enter 0–100% with at most two decimal places (0.01% precision).");
       return;
     }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(draft.from)) {
+    if (!isValidTaxDate(draft.from)) {
       toast.error("Enter an effective start date.");
       return;
     }
@@ -320,8 +315,12 @@ export function TaxRatesPanel({ companyId }: { companyId: string }) {
                   inputMode="decimal"
                   value={draft.percent}
                   onChange={(e) => setDraft({ ...draft, percent: e.target.value })}
+                  aria-describedby="rate-precision-help"
                 />
               </div>
+              <p id="rate-precision-help" className="text-xs text-muted-foreground">
+                Percentages support two decimal places. For historical changes, end the old rate and add a new rate.
+              </p>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label htmlFor="rate-from">Effective from</Label>

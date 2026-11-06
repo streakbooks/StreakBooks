@@ -22,6 +22,14 @@ import {
 import { authoriseCreditNote, saveCreditNoteDraft } from "@/lib/sales/sales-credits.functions";
 import { getSalesDocumentConfig } from "@/lib/sales/sales-config.functions";
 import { listProducts } from "@/lib/products/products.functions";
+import {
+  listProductPriceLists,
+  resolveSalesDraftPriceList,
+} from "@/lib/products/catalogue-masterdata.functions";
+import {
+  indexDraftPriceOverrides,
+  previewPriceListApplication,
+} from "@/lib/sales/price-list-draft";
 import { getWorkflowSettings } from "@/lib/settings/workflow-settings.functions";
 import { addDaysIso } from "@/lib/sales/line-helpers";
 import { toMinorUnits } from "@/lib/accounting/money";
@@ -48,6 +56,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { VoiceInput as Input } from "@/components/ai-voice/voice-fields";
 import { Label } from "@/components/ui/label";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
 
 export type SalesDocKind = "invoice" | "quote" | "credit_note";
 
@@ -119,6 +133,8 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
   const fetchCustomers = useServerFn(listCustomers);
   const fetchAccounts = useServerFn(listAccounts);
   const fetchProducts = useServerFn(listProducts);
+  const fetchPriceLists = useServerFn(listProductPriceLists);
+  const resolvePriceList = useServerFn(resolveSalesDraftPriceList);
   const fetchSettings = useServerFn(getWorkflowSettings);
   const fetchConfig = useServerFn(getSalesDocumentConfig);
   const fetchInvoice = useServerFn(getInvoice);
@@ -147,6 +163,12 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
     queryKey: ["products", companyId],
     enabled,
     queryFn: () => fetchProducts({ data: { companyId: companyId!, limit: 200 } }),
+  });
+  const isSalesDraft = kind === "invoice" || kind === "quote";
+  const priceListsQ = useQuery({
+    queryKey: ["product-price-lists", companyId],
+    enabled: enabled && isSalesDraft,
+    queryFn: () => fetchPriceLists({ data: { companyId: companyId! } }),
   });
   const settingsQ = useQuery({
     queryKey: ["workflow-settings", companyId],
@@ -182,6 +204,9 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
   const [sourceInvoiceId, setSourceInvoiceId] = useState(
     existing?.sourceInvoiceId ?? fromInvoiceId ?? "",
   );
+  const [selectedPriceListId, setSelectedPriceListId] = useState("");
+  const [applyPriceListOpen, setApplyPriceListOpen] = useState(false);
+  const [priceListAmountsTouched, setPriceListAmountsTouched] = useState(false);
   const [lines, setLines] = useState<SalesLineFormState[]>(() =>
     existing
       ? existing.lines.map((l) => lineRowToForm(l, existing.currencyCode))
@@ -190,6 +215,71 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
   const [formError, setFormError] = useState<string | null>(null);
   const [defaultsApplied, setDefaultsApplied] = useState(Boolean(existing));
   const [sourceApplied, setSourceApplied] = useState(Boolean(existing));
+
+  const selectedPriceList = priceListsQ.data?.find((list) =>
+    list.id === selectedPriceListId && list.is_active && list.currency_code === currency,
+  );
+  const targetProductIds = useMemo(
+    () => [
+      ...new Set([
+        ...(productsQ.data ?? []).map((product) => product.id),
+        ...lines.map((line) => line.productId).filter(Boolean),
+      ]),
+    ],
+    [productsQ.data, lines],
+  );
+  const priceListTooLarge = targetProductIds.length > 250;
+  const draftPricesQ = useQuery({
+    queryKey: [
+      "sales-draft-price-list", companyId, selectedPriceListId, currency,
+      targetProductIds.join(","),
+    ],
+    enabled:
+      enabled && isSalesDraft && Boolean(selectedPriceListId && currency) &&
+      !priceListTooLarge && Boolean(selectedPriceList),
+    queryFn: () => resolvePriceList({
+      data: {
+        companyId: companyId!,
+        priceListId: selectedPriceListId,
+        documentCurrency: currency,
+        productIds: targetProductIds,
+      },
+    }),
+  });
+  const draftPricesReady = Boolean(selectedPriceList && draftPricesQ.isSuccess);
+  const draftPriceOverrides = useMemo(
+    () =>
+      draftPricesReady
+        ? indexDraftPriceOverrides(draftPricesQ.data?.items ?? [])
+        : {},
+    [draftPricesReady, draftPricesQ.data],
+  );
+  const pricePreview = useMemo(
+    () => draftPricesReady
+      ? previewPriceListApplication(lines, draftPriceOverrides, currency)
+      : null,
+    [draftPricesReady, lines, draftPriceOverrides, currency],
+  );
+
+  // Changing currency resets the selected price list; existing line amounts are not converted.
+  useEffect(() => {
+    setSelectedPriceListId("");
+    setApplyPriceListOpen(false);
+  }, [companyId, currency]);
+
+  const onDocumentCurrencyChange = (nextCurrency: string) => {
+    if (nextCurrency === currency) return;
+    if (
+      (selectedPriceListId || priceListAmountsTouched) &&
+      !window.confirm(
+        "Changing currency clears the selected price list. Unit prices already entered or " +
+          "applied are NOT converted. Review each line before saving. Continue?",
+      )
+    ) {
+      return;
+    }
+    setCurrency(nextCurrency);
+  };
 
   // Defaults (dates in the company's timezone, base currency, terms, notes) once config loads.
   useEffect(() => {
@@ -467,7 +557,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
             if (patch.currency !== undefined) {
               if (sourceLocked && patch.currency !== currency)
                 throw new Error("This credit note must keep the source invoice’s currency.");
-              setCurrency(patch.currency);
+              onDocumentCurrencyChange(patch.currency);
             }
             if (patch.memo !== undefined) setMemo(patch.memo);
             if (patch.number !== undefined) setNumber(patch.number);
@@ -646,7 +736,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
               className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
               value={currency}
               disabled={sourceLocked}
-              onChange={(e) => setCurrency(e.target.value)}
+              onChange={(e) => onDocumentCurrencyChange(e.target.value)}
             >
               {currencyOptions(base, currency ? [currency] : []).map((c) => (
                 <option key={c} value={c}>
@@ -670,6 +760,86 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
             </div>
           ) : null}
         </div>
+        {isSalesDraft ? (
+          <div className="space-y-3 rounded-md border p-3">
+            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+              <div className="space-y-2">
+                <Label htmlFor="sales-price-list">Sales price list (optional)</Label>
+                <Select
+                  value={selectedPriceListId || "none"}
+                  onValueChange={(value) => {
+                    setSelectedPriceListId(value === "none" ? "" : value);
+                    setApplyPriceListOpen(false);
+                  }}
+                >
+                  <SelectTrigger id="sales-price-list" aria-label="Sales price list">
+                    <SelectValue placeholder="Catalogue prices" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Catalogue prices (default)</SelectItem>
+                    {(priceListsQ.data ?? [])
+                      .filter((list) => list.is_active && list.currency_code === currency)
+                      .map((list) => (
+                        <SelectItem key={list.id} value={list.id}>{list.name}</SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={
+                  !draftPricesReady || !pricePreview?.changed || mutation.isPending
+                }
+                onClick={() => setApplyPriceListOpen(true)}
+              >
+                Preview existing-line prices
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Price lists are available in their own currency only. New catalogue selections use
+              the chosen list where an item price exists. Existing lines keep their prices unless
+              you explicitly preview and apply replacements. Saved documents retain their line
+              prices; the list selection itself is not stored on the document.
+            </p>
+            {priceListsQ.isError ? (
+              <p role="alert" className="text-sm text-destructive">
+                Could not load price lists: {friendlyAuthError(priceListsQ.error)}
+              </p>
+            ) : null}
+            {priceListTooLarge && selectedPriceListId ? (
+              <p role="alert" className="text-sm text-destructive">
+                Too many different products to resolve this list (maximum 250).
+                Reduce the catalogue selection before using a price list.
+              </p>
+            ) : null}
+            {selectedPriceListId && draftPricesQ.isPending && !priceListTooLarge ? (
+              <p className="text-sm text-muted-foreground">Loading price-list amounts…</p>
+            ) : null}
+            {selectedPriceListId && draftPricesQ.isError ? (
+              <div role="alert" className="flex flex-wrap items-center gap-2">
+                <p className="text-sm text-destructive">
+                  Price-list amounts unavailable: {friendlyAuthError(draftPricesQ.error)}
+                </p>
+                <Button variant="outline" size="sm" onClick={() => draftPricesQ.refetch()}>
+                  Retry
+                </Button>
+              </div>
+            ) : null}
+            {selectedPriceListId && !selectedPriceList && !priceListsQ.isPending ? (
+              <p role="alert" className="text-sm text-destructive">
+                This price list is archived or does not match the document currency.
+                Choose another list or the default catalogue prices.
+              </p>
+            ) : null}
+            {pricePreview ? (
+              <p className="text-xs text-muted-foreground" aria-live="polite">
+                {pricePreview.matched} current line(s) have list overrides;
+                {pricePreview.changed} price(s) differ. No existing line is automatically changed.
+              </p>
+            ) : null}
+          </div>
+        ) : null}
         <div className="space-y-2">
           <Label>Memo / customer message</Label>
           <Input
@@ -687,6 +857,9 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
           lines={lines}
           onChange={setLines}
           products={(productsQ.data ?? []) as never}
+          priceOverrides={draftPricesReady ? draftPriceOverrides : {}}
+          productSelectionDisabled={Boolean(selectedPriceListId) && !draftPricesReady}
+          onPriceListProductSelected={() => setPriceListAmountsTouched(true)}
           accounts={incomeAccounts}
           currency={currency || base}
           treatment={treatment}
@@ -719,6 +892,54 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
           ) : null}
         </div>
       </div>
+      <Dialog
+        open={applyPriceListOpen}
+        onOpenChange={(open) => {
+          if (!mutation.isPending) setApplyPriceListOpen(open);
+        }}
+      >
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Apply current price list to existing lines?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            {pricePreview?.changed ?? 0} price(s) will change.
+            This operation changes only unit prices on matching lines in this draft.
+            Quantity, tax, discount, account and unlisted item prices are retained.
+          </p>
+          <div className="space-y-2">
+            {lines.map((line, index) => {
+              const newPrice = pricePreview?.lines[index]?.unitPrice;
+              if (newPrice === undefined || newPrice === line.unitPrice) return null;
+              return (
+                <p key={index} className="text-sm">
+                  Line {index + 1}: {line.unitPrice} → {newPrice} {currency}
+                </p>
+              );
+            })}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setApplyPriceListOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={!draftPricesReady || !pricePreview?.changed || mutation.isPending}
+              onClick={() => {
+                if (!draftPricesReady || !pricePreview?.changed) return;
+                const count = pricePreview.changed;
+                setLines(pricePreview.lines);
+                setPriceListAmountsTouched(true);
+                setApplyPriceListOpen(false);
+                toast.success(
+                  `Updated ${count} draft line price(s). Save the document to retain them.`,
+                );
+              }}
+            >
+              Apply these prices
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </VoiceFields>
   );
 }

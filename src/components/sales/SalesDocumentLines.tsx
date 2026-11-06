@@ -5,6 +5,7 @@ import { type SalesLineFormState, emptySalesLine } from "@/lib/sales/line-form-s
 import { useVoiceSession } from "@/components/ai-voice/voice-context";
 
 import { fromMinorUnits } from "@/lib/accounting/money";
+import { selectedUnitPriceMinor } from "@/lib/sales/price-list-draft";
 import { computeTaxLineRounded } from "@/lib/sales/line-math-rounded";
 import type { TaxTreatment } from "@/lib/sales/line-helpers";
 import type { SalesTaxCode } from "@/lib/sales/tax-codes";
@@ -40,6 +41,12 @@ type Props = {
   lines: SalesLineFormState[];
   onChange: (lines: SalesLineFormState[]) => void;
   products: ProductOption[];
+  /** Alternate item prices from the selected active price list. Never alters existing lines. */
+  priceOverrides?: Readonly<Record<string, number>>;
+  /** Block catalogue selection while an active price list is being loaded or has failed. */
+  productSelectionDisabled?: boolean;
+  /** Called when a new line receives a selected price-list amount. */
+  onPriceListProductSelected?: () => void;
   accounts: AccountOption[];
   currency: string;
   treatment?: TaxTreatment;
@@ -57,6 +64,9 @@ export function SalesDocumentLines({
   lines,
   onChange,
   products,
+  priceOverrides = {},
+  productSelectionDisabled = false,
+  onPriceListProductSelected,
   accounts,
   currency,
   treatment = "exclusive",
@@ -74,7 +84,10 @@ export function SalesDocumentLines({
   const productOptions: EntityOption[] = products.map((p) => ({
     value: p.id,
     label: p.code ? `${p.code} — ${p.name}` : p.name,
-    description: fromMinorUnits(p.sales_price_minor, currency),
+    description: fromMinorUnits(
+      selectedUnitPriceMinor(p.id, p.sales_price_minor, priceOverrides),
+      currency,
+    ) + (Object.prototype.hasOwnProperty.call(priceOverrides, p.id) ? " (price list)" : ""),
     keywords: `${p.code ?? ""} ${p.description ?? ""}`,
   }));
 
@@ -110,11 +123,17 @@ export function SalesDocumentLines({
       update(idx, { productId });
       return;
     }
+    if (Object.prototype.hasOwnProperty.call(priceOverrides, productId)) {
+      onPriceListProductSelected?.();
+    }
     update(idx, {
       productId,
       description: p.description?.trim() || p.name,
       accountId: p.income_account_id ?? lines[idx]?.accountId ?? "",
-      unitPrice: fromMinorUnits(p.sales_price_minor, currency),
+      unitPrice: fromMinorUnits(
+        selectedUnitPriceMinor(p.id, p.sales_price_minor, priceOverrides),
+        currency,
+      ),
       taxRateBps: String(p.sales_tax_rate_bps ?? 0),
       taxCodeId: "",
     });
@@ -162,7 +181,7 @@ export function SalesDocumentLines({
                 onChange={(v) => applyProduct(idx, v)}
                 placeholder="Optional catalogue item"
                 emptyText="No products — enter a free-text line"
-                disabled={disabled}
+                disabled={disabled || productSelectionDisabled}
                 companyId={companyId}
                 canAddNew={canProduct}
                 createTitle="New product or service"

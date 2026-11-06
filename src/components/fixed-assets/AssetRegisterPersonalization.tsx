@@ -71,7 +71,7 @@ export function FixedAssetTableColumns({
               className="flex cursor-pointer items-center gap-3 rounded-md px-1 py-1 text-sm"
             >
               <Checkbox
-                checked={column.required ? true : visible(column.id)}
+                checked={"required" in column && column.required ? true : visible(column.id)}
                 disabled={"required" in column && column.required}
                 onCheckedChange={(value) => {
                   if (typeof value === "boolean" && !("required" in column && column.required)) {

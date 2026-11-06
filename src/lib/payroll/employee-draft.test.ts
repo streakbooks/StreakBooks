@@ -232,4 +232,65 @@ describe("payroll employee drafts", () => {
     expect(parsed.drafts[1]?.firstName).toBe("=FORMULA");
   });
 
+  it("rejects impossible dates for salary version changes", () => {
+    const baseAssignment = {
+      structureId: "22222222-2222-2222-2222-222222222222",
+      effectiveFrom: "2026-02-30",
+      changeReason: "Salary review",
+      customLines: [],
+    };
+    expect(parseSalaryAssignDraft(baseAssignment, "GBP").ok).toBe(false);
+    expect(parseSalaryAssignDraft({
+      ...baseAssignment,
+      effectiveFrom: "0000-01-01",
+    }, "GBP").ok).toBe(false);
+    expect(parseSalaryAssignDraft({
+      ...baseAssignment,
+      effectiveFrom: "2024-02-29",
+    }, "GBP").ok).toBe(true);
+  });
+
+  it("refuses invalid salary amounts, rates and percentages before server writes", () => {
+    const structure = {
+      name: "Salary review",
+      description: "",
+      isActive: true,
+      lines: [{
+        componentTypeId: "11111111-1111-1111-1111-111111111111",
+        amount: "123.456",
+        rate: "0",
+        percentage: "0",
+        isRecurring: true,
+        sortOrder: "100",
+      }],
+    };
+    const fraction = parseSalaryStructureDraft(structure, "GBP");
+    expect(fraction.ok).toBe(false);
+    if (!fraction.ok) expect(fraction.error).toMatch(/decimal places/);
+
+    const invalidPct = parseSalaryStructureDraft({
+      ...structure,
+      lines: [{ ...structure.lines[0]!, amount: "100", percentage: "unknown" }],
+    }, "GBP");
+    expect(invalidPct.ok).toBe(false);
+    if (!invalidPct.ok) expect(invalidPct.error).toMatch(/percentage/i);
+
+    const invalidRate = parseSalaryStructureDraft({
+      ...structure,
+      lines: [{ ...structure.lines[0]!, amount: "100", rate: "-12" }],
+    }, "GBP");
+    expect(invalidRate.ok).toBe(false);
+
+    const valid = parseSalaryStructureDraft({
+      ...structure,
+      lines: [{ ...structure.lines[0]!, amount: "100.25", rate: "0", percentage: "12.34" }],
+    }, "GBP");
+    expect(valid.ok).toBe(true);
+    if (valid.ok) {
+      const lines = valid.value["lines"] as Array<Record<string, number>>;
+      expect(lines[0]?.amount_minor).toBe(10025);
+      expect(lines[0]?.percentage_bps).toBe(1234);
+    }
+  });
+
 });

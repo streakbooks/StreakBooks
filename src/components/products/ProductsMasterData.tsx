@@ -9,6 +9,7 @@ import { fromMinorUnits } from "@/lib/accounting/money";
 import { parseMinorOrThrow } from "@/lib/purchases/money-input";
 import { validCataloguePrice } from "@/lib/products/catalogue-input";
 import { CustomerPriceListDefaults } from "@/components/products/CustomerPriceListDefaults";
+import { PriceListTierRules } from "@/components/products/PriceListTierRules";
 import { listProducts } from "@/lib/products/products.functions";
 import {
   deleteProductPriceOverride,
@@ -441,6 +442,16 @@ export function PriceListsWorkspace({ companyId, currency }: WorkspaceProps) {
             ) : null}
           </CardContent>
         </Card>
+      ) : null}
+      {chosen ? (
+        <PriceListTierRules
+          key={chosen.id}
+          companyId={companyId}
+          priceListId={chosen.id}
+          listName={chosen.name}
+          currency={chosen.currency_code}
+          isActive={chosen.is_active}
+        />
       ) : null}
       <CustomerPriceListDefaults
         companyId={companyId}

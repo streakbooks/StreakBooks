@@ -6,6 +6,7 @@ import { useVoiceSession } from "@/components/ai-voice/voice-context";
 
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { selectedUnitPriceMinor } from "@/lib/sales/price-list-draft";
+import { resolveTierUnitPrice, type DraftTierPriceRule } from "@/lib/products/price-list-tiers";
 import { computeTaxLineRounded } from "@/lib/sales/line-math-rounded";
 import type { TaxTreatment } from "@/lib/sales/line-helpers";
 import type { SalesTaxCode } from "@/lib/sales/tax-codes";
@@ -43,6 +44,9 @@ type Props = {
   products: ProductOption[];
   /** Alternate item prices from the selected active price list. Never alters existing lines. */
   priceOverrides?: Readonly<Record<string, number>>;
+  /** Quantity/date-effective list prices; applied only when choosing a product. */
+  priceRules?: readonly DraftTierPriceRule[];
+  pricingDate?: string;
   /** Block catalogue selection while an active price list is being loaded or has failed. */
   productSelectionDisabled?: boolean;
   /** Called when a new line receives a selected price-list amount. */
@@ -65,6 +69,8 @@ export function SalesDocumentLines({
   onChange,
   products,
   priceOverrides = {},
+  priceRules = [],
+  pricingDate = "",
   productSelectionDisabled = false,
   onPriceListProductSelected,
   accounts,
@@ -84,10 +90,12 @@ export function SalesDocumentLines({
   const productOptions: EntityOption[] = products.map((p) => ({
     value: p.id,
     label: p.code ? `${p.code} — ${p.name}` : p.name,
-    description: fromMinorUnits(
-      selectedUnitPriceMinor(p.id, p.sales_price_minor, priceOverrides),
-      currency,
-    ) + (Object.prototype.hasOwnProperty.call(priceOverrides, p.id) ? " (price list)" : ""),
+    description:
+      fromMinorUnits(selectedUnitPriceMinor(p.id, p.sales_price_minor, priceOverrides), currency) +
+      (priceRules.some((rule) => rule.product_id === p.id)
+        ? " (quantity/date rules)"
+        : Object.prototype.hasOwnProperty.call(priceOverrides, p.id)
+          ? " (price list)" : ""),
     keywords: `${p.code ?? ""} ${p.description ?? ""}`,
   }));
 
@@ -123,17 +131,15 @@ export function SalesDocumentLines({
       update(idx, { productId });
       return;
     }
-    if (Object.prototype.hasOwnProperty.call(priceOverrides, productId)) {
-      onPriceListProductSelected?.();
-    }
+    const selectedPrice = resolveTierUnitPrice(
+      productId, lines[idx]?.quantity ?? "1", pricingDate, priceOverrides, priceRules,
+    );
+    if (selectedPrice !== undefined) onPriceListProductSelected?.();
     update(idx, {
       productId,
       description: p.description?.trim() || p.name,
       accountId: p.income_account_id ?? lines[idx]?.accountId ?? "",
-      unitPrice: fromMinorUnits(
-        selectedUnitPriceMinor(p.id, p.sales_price_minor, priceOverrides),
-        currency,
-      ),
+      unitPrice: fromMinorUnits(selectedPrice ?? p.sales_price_minor, currency),
       taxRateBps: String(p.sales_tax_rate_bps ?? 0),
       taxCodeId: "",
     });

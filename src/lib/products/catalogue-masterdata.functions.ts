@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
+import { validateRuleInput, type DraftTierPriceRule } from "@/lib/products/price-list-tiers";
 import {
   assertMatchingCatalogueCurrency,
   validateCatalogueName,
@@ -304,9 +305,11 @@ export const resolveSalesDraftPriceList = createServerFn({ method: "GET" })
       data.documentCurrency,
     );
     if (!data.productIds.length) {
-      return { currency: data.documentCurrency, items: [] as Array<{
-        product_id: string; unit_price_minor: number;
-      }> };
+      return {
+        currency: data.documentCurrency,
+        items: [] as Array<{ product_id: string; unit_price_minor: number }>,
+        rules: [] as DraftTierPriceRule[],
+      };
     }
     const { data: rows, error } = await context.supabase
       .from("product_price_list_items" as never)
@@ -318,5 +321,40 @@ export const resolveSalesDraftPriceList = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     const items = (rows ?? []) as Array<{ product_id: string; unit_price_minor: number }>;
     for (const item of items) validateCataloguePriceMinor(item.unit_price_minor);
-    return { currency: data.documentCurrency, items };
+
+    // The query deliberately fetches ALL candidate rules for these products.
+    // Filtering by quantity and document date is performed for each draft line.
+    const { data: tiers, error: tiersError, count: tierCount } = await context.supabase
+      .from("product_price_list_rules" as never)
+      .select(
+        "id, product_id, min_quantity, effective_from, effective_to, unit_price_minor" as never,
+        { count: "exact" },
+      )
+      .eq("company_id" as never, data.companyId as never)
+      .eq("price_list_id" as never, data.priceListId as never)
+      .in("product_id" as never, data.productIds as never)
+      .limit(1001);
+    if (tiersError) throw new Error(tiersError.message);
+    if ((tierCount ?? 0) > 1000 || (tiers ?? []).length > 1000) {
+      throw new Error("The selected price list has too many matching rules (maximum 1,000)");
+    }
+    const rules: DraftTierPriceRule[] = ((tiers ?? []) as Array<{
+      id: string; product_id: string; min_quantity: string | number;
+      effective_from: string; effective_to: string | null; unit_price_minor: number;
+    }>).map((r) => {
+      const checked = validateRuleInput({
+        minQuantity: String(r.min_quantity),
+        effectiveFrom: r.effective_from,
+        effectiveTo: r.effective_to,
+        unitPriceMinor: r.unit_price_minor,
+      });
+      return {
+        id: r.id, product_id: r.product_id,
+        min_quantity: checked.minQuantity,
+        effective_from: checked.effectiveFrom,
+        effective_to: checked.effectiveTo,
+        unit_price_minor: checked.unitPriceMinor,
+      };
+    });
+    return { currency: data.documentCurrency, items, rules };
   });

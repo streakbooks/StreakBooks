@@ -135,6 +135,7 @@ export function DataTableToolbar({
         />
         {onExport ? (
           <Button
+            type="button"
             variant="outline"
             size="sm"
             onClick={onExport}

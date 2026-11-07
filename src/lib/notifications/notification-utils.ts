@@ -116,6 +116,7 @@ const ACTION_CATEGORIES = new Set([
   "bank_reconciliation",
   "document_request",
   "contact_followup",
+  "expense_claim",
   "system",
 ]);
 const ACTION_PRIORITIES = new Set(["low", "medium", "high", "critical"]);

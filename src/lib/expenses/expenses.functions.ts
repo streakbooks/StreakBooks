@@ -84,6 +84,12 @@ import {
   type ExpenseClaimExportRow,
   type ExpenseManagementReport,
 } from "@/lib/expenses/reports";
+import {
+  mapLegacyExpenseMigrationPreview,
+  mapLegacyExpenseMigrationResult,
+  type LegacyExpenseMigrationPreview,
+  type LegacyExpenseMigrationResult,
+} from "@/lib/expenses/legacy-migration";
 
 export const EXPENSE_MANAGEMENT_MIGRATION =
   "Expense Management is not available yet: the database update 20261107120000 has not been applied.";
@@ -129,6 +135,9 @@ export const EXPENSE_RISK_MIGRATION =
 
 export const EXPENSE_REPORTS_MIGRATION =
   "Expense reports are not available yet: apply database update 20261107147000.";
+
+export const EXPENSE_NOTIFICATIONS_MIGRATION =
+  "Expense notifications and legacy import are not available yet: apply database update 20261107148000.";
 
 export const EXPENSE_TEMPLATE_MIGRATION =
   "Expense claim templates are not available yet: apply database update 20261107130000.";
@@ -1968,4 +1977,40 @@ export const listExpenseClaimAuditEvents = createServerFn({ method: "GET" })
       EXPENSE_REPORTS_MIGRATION,
     );
     return mapExpenseClaimAuditEvents(raw);
+  });
+
+export const previewLegacyEmployeeExpenseMigration = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string }) => ({
+    companyId: companyIdOf(input),
+  }))
+  .handler(async ({ data, context }): Promise<LegacyExpenseMigrationPreview> => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "preview_legacy_employee_expense_migration",
+      { _company_id: data.companyId },
+      EXPENSE_NOTIFICATIONS_MIGRATION,
+    );
+    return mapLegacyExpenseMigrationPreview(raw);
+  });
+
+export const importLegacyEmployeeExpenseClaims = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; limit?: number }) => ({
+    companyId: companyIdOf(input),
+    limit: input.limit,
+  }))
+  .handler(async ({ data, context }): Promise<LegacyExpenseMigrationResult> => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "import_legacy_employee_expense_claims",
+      {
+        _company_id: data.companyId,
+        _limit: data.limit ?? 50,
+      },
+      EXPENSE_NOTIFICATIONS_MIGRATION,
+    );
+    return mapLegacyExpenseMigrationResult(raw);
   });

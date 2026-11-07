@@ -17,11 +17,24 @@ import { listAccounts } from "@/lib/accounting/accounting.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import {
   EXPENSE_MANAGEMENT_MIGRATION,
+  EXPENSE_NOTIFICATIONS_MIGRATION,
   getExpenseManagementSettings,
+  importLegacyEmployeeExpenseClaims,
+  previewLegacyEmployeeExpenseMigration,
   saveExpenseManagementSettings,
 } from "@/lib/expenses/expenses.functions";
+import { formatLegacyImportSummary } from "@/lib/expenses/legacy-migration";
 import type { ExpenseDistanceUnit, ExpenseManagementSettings } from "@/lib/expenses/types";
 import type { Permission } from "@/lib/permissions";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { fromMinorUnits } from "@/lib/accounting/money";
 
 type Draft = {
   version: number;
@@ -62,6 +75,8 @@ export function ExpenseManagementSettingsPage() {
   const { can } = useCan();
   const canEdit =
     can("expenses.manage_policies" as Permission) || can("expenses.admin" as Permission);
+  const canMigrate =
+    can("expenses.admin" as Permission) || can("expenses.manage_policies" as Permission);
   const canView =
     canEdit ||
     can("expenses.view" as Permission) ||
@@ -70,6 +85,8 @@ export function ExpenseManagementSettingsPage() {
   const fetchSettings = useServerFn(getExpenseManagementSettings);
   const saveSettings = useServerFn(saveExpenseManagementSettings);
   const fetchAccounts = useServerFn(listAccounts);
+  const fetchLegacyPreview = useServerFn(previewLegacyEmployeeExpenseMigration);
+  const runLegacyImport = useServerFn(importLegacyEmployeeExpenseClaims);
   const [draft, setDraft] = useState<Draft | null>(null);
 
   const settingsQ = useQuery({
@@ -82,6 +99,28 @@ export function ExpenseManagementSettingsPage() {
     queryKey: ["accounts", company?.id, "expense-settings"],
     queryFn: () => fetchAccounts({ data: { companyId: company!.id } }),
     enabled: Boolean(company?.id) && canView,
+  });
+
+  const legacyQ = useQuery({
+    queryKey: ["legacy-employee-expense-migration", company?.id],
+    queryFn: () => fetchLegacyPreview({ data: { companyId: company!.id } }),
+    enabled: Boolean(company?.id) && canMigrate,
+    retry: false,
+  });
+
+  const importMut = useMutation({
+    mutationFn: async () => {
+      if (!company) throw new Error("Select a company first.");
+      return runLegacyImport({ data: { companyId: company.id, limit: 50 } });
+    },
+    onSuccess: (result) => {
+      toast.success(formatLegacyImportSummary(result));
+      void queryClient.invalidateQueries({
+        queryKey: ["legacy-employee-expense-migration", company?.id],
+      });
+      void queryClient.invalidateQueries({ queryKey: ["expense-claims"] });
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
   });
 
   const liabilityAccounts = useMemo(
@@ -435,6 +474,85 @@ export function ExpenseManagementSettingsPage() {
           />
         </div>
       </div>
+
+      {canMigrate ? (
+        <section className="mt-10 space-y-4 border-t pt-8">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-base font-semibold">Legacy employee claim import</h2>
+              <p className="text-sm text-muted-foreground">
+                Copy unmigrated Purchases employee expense claims into Expense Management as
+                drafts. Journals and payments are not re-posted.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              disabled={
+                importMut.isPending ||
+                legacyQ.isLoading ||
+                (legacyQ.data?.pendingCount ?? 0) === 0
+              }
+              onClick={() => importMut.mutate()}
+            >
+              {importMut.isPending ? "Importing…" : "Import next 50 drafts"}
+            </Button>
+          </div>
+
+          {legacyQ.isLoading ? (
+            <LoadingState />
+          ) : legacyQ.isError ? (
+            friendlyAuthError(legacyQ.error).includes("20261107148000") ? (
+              <Alert>
+                <AlertTitle>Database update required</AlertTitle>
+                <AlertDescription>{EXPENSE_NOTIFICATIONS_MIGRATION}</AlertDescription>
+              </Alert>
+            ) : (
+              <ErrorState
+                title="Could not preview legacy claims"
+                description={friendlyAuthError(legacyQ.error)}
+                onRetry={() => legacyQ.refetch()}
+              />
+            )
+          ) : (
+            <>
+              <div className="flex flex-wrap gap-2 text-sm">
+                <span>{legacyQ.data?.pendingCount ?? 0} pending</span>
+                <span className="text-muted-foreground">·</span>
+                <span>{legacyQ.data?.alreadyImportedCount ?? 0} already imported</span>
+              </div>
+              {(legacyQ.data?.sample.length ?? 0) === 0 ? (
+                <EmptyState
+                  title="Nothing left to import"
+                  description="All legacy employee expense claims are already linked, or none exist."
+                />
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(legacyQ.data?.sample ?? []).map((row) => (
+                      <TableRow key={row.id}>
+                        <TableCell>{row.claimDate}</TableCell>
+                        <TableCell>{row.description}</TableCell>
+                        <TableCell>{row.status}</TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {fromMinorUnits(row.amountMinor, row.currencyCode || "USD")}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </>
+          )}
+        </section>
+      ) : null}
     </>
   );
 }

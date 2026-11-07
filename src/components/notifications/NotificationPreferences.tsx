@@ -30,6 +30,12 @@ const OPTIONS = [
     detail:
       "Opt in to scheduled in-app alerts for tasks assigned to you. Email and push are not enabled.",
   },
+  {
+    id: "expense_claim",
+    title: "Expense claim updates",
+    detail:
+      "Approvals waiting for you, and decisions or reimbursements on your own claims. In-app only.",
+  },
 ] as const;
 
 type Category = (typeof OPTIONS)[number]["id"];

@@ -36,6 +36,8 @@ import {
   deleteExpenseClaimDraft,
   duplicateExpenseClaim,
   EXPENSE_CLAIM_MIGRATION,
+  linkExpenseClaimCashAdvance,
+  listExpenseCashAdvances,
   listExpenseClaimTemplates,
   listExpenseClaims,
   saveExpenseClaim,
@@ -43,6 +45,7 @@ import {
   submitExpenseClaim,
   withdrawExpenseClaim,
 } from "@/lib/expenses/expenses.functions";
+import type { ExpensePaymentSource } from "@/lib/expenses/types";
 import {
   enqueueOfflineExpenseClaimDraft,
   isBrowserOffline,
@@ -78,6 +81,8 @@ export function ExpenseManagementClaimsPage({
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [paymentSource, setPaymentSource] = useState<ExpensePaymentSource>("employee_paid");
+  const [cashAdvanceId, setCashAdvanceId] = useState("");
   const [lines, setLines] = useState<ExpenseDraftLineForm[]>([emptyDraftLine(today)]);
   const [splitLineKey, setSplitLineKey] = useState<string | null>(null);
   const [splitAccountA, setSplitAccountA] = useState("");
@@ -89,7 +94,9 @@ export function ExpenseManagementClaimsPage({
   const fetchClaims = useServerFn(listExpenseClaims);
   const fetchAccounts = useServerFn(listAccounts);
   const fetchTemplates = useServerFn(listExpenseClaimTemplates);
+  const fetchAdvances = useServerFn(listExpenseCashAdvances);
   const saveClaim = useServerFn(saveExpenseClaim);
+  const linkAdvance = useServerFn(linkExpenseClaimCashAdvance);
   const submitClaim = useServerFn(submitExpenseClaim);
   const withdrawClaim = useServerFn(withdrawExpenseClaim);
   const deleteClaim = useServerFn(deleteExpenseClaimDraft);
@@ -134,6 +141,28 @@ export function ExpenseManagementClaimsPage({
     enabled: Boolean(company?.id) && canSubmit && mode === "my-expenses",
   });
 
+  const advancesQ = useQuery({
+    queryKey: ["expense-cash-advances", company?.id, "claim-link"],
+    queryFn: () =>
+      fetchAdvances({ data: { companyId: company!.id, scope: "own" } }),
+    enabled:
+      Boolean(company?.id) &&
+      canSubmit &&
+      mode === "my-expenses" &&
+      paymentSource === "cash_advance",
+  });
+
+  const openAdvances = useMemo(
+    () =>
+      (advancesQ.data ?? []).filter(
+        (adv) =>
+          (adv.status === "issued" || adv.status === "partially_settled") &&
+          adv.remainingMinor > 0 &&
+          adv.currencyCode === currency,
+      ),
+    [advancesQ.data, currency],
+  );
+
   const expenseAccounts = useMemo(
     () =>
       (accountsQ.data ?? []).filter(
@@ -161,28 +190,47 @@ export function ExpenseManagementClaimsPage({
         if (!line.description.trim()) throw new Error("Each line needs a description.");
         if (!line.accountId) throw new Error("Each line needs an expense account.");
       }
+      if (paymentSource === "cash_advance" && !cashAdvanceId) {
+        throw new Error("Select an issued cash advance to settle.");
+      }
       const draft = {
         title: title.trim() || "Expense claim",
         description: description.trim() || undefined,
         claimDate: today,
         claimCurrency: currency,
-        paymentSource: "employee_paid" as const,
+        paymentSource,
         lines: claimLines,
       };
       if (isBrowserOffline()) {
+        if (paymentSource === "cash_advance") {
+          throw new Error("Cash-advance claims cannot be saved offline yet.");
+        }
         enqueueOfflineExpenseClaimDraft(company.id, draft);
         return { offline: true as const };
       }
-      return saveClaim({
+      const saved = await saveClaim({
         data: {
           companyId: company.id,
           draft,
         },
       });
+      if (paymentSource === "cash_advance" && cashAdvanceId) {
+        return linkAdvance({
+          data: {
+            companyId: company.id,
+            claimId: saved.id,
+            version: saved.version,
+            advanceId: cashAdvanceId,
+          },
+        });
+      }
+      return saved;
     },
     onSuccess: (result) => {
       setTitle("");
       setDescription("");
+      setPaymentSource("employee_paid");
+      setCashAdvanceId("");
       setLines([emptyDraftLine(today)]);
       setTemplateName("");
       if (company?.id) setOfflineDrafts(listOfflineExpenseClaimDrafts(company.id));
@@ -473,6 +521,41 @@ export function ExpenseManagementClaimsPage({
                 onChange={(event) => setDescription(event.target.value)}
               />
             </div>
+            <div className="grid gap-2">
+              <Label htmlFor="em-claim-source">Payment source</Label>
+              <select
+                id="em-claim-source"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={paymentSource}
+                onChange={(event) => {
+                  const next = event.target.value as ExpensePaymentSource;
+                  setPaymentSource(next);
+                  if (next !== "cash_advance") setCashAdvanceId("");
+                }}
+              >
+                <option value="employee_paid">Employee paid (reimburse)</option>
+                <option value="cash_advance">Cash advance (settle float)</option>
+              </select>
+            </div>
+            {paymentSource === "cash_advance" ? (
+              <div className="grid gap-2">
+                <Label htmlFor="em-claim-advance">Cash advance</Label>
+                <select
+                  id="em-claim-advance"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={cashAdvanceId}
+                  onChange={(event) => setCashAdvanceId(event.target.value)}
+                >
+                  <option value="">Select issued advance</option>
+                  {openAdvances.map((adv) => (
+                    <option key={adv.id} value={adv.id}>
+                      {adv.advanceNumber} — remaining{" "}
+                      {fromMinorUnits(adv.remainingMinor, adv.currencyCode)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
           </div>
 
           <div className="space-y-3">

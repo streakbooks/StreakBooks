@@ -12,6 +12,7 @@ import {
 } from "@/lib/expenses/sections";
 import type { Permission } from "@/lib/permissions";
 import { ExpenseManagementApprovalsPage } from "@/screens/expense-management/approvals";
+import { ExpenseManagementCashAdvancesPage } from "@/screens/expense-management/cash-advances";
 import { ExpenseManagementClaimsPage } from "@/screens/expense-management/claims";
 import { ExpenseManagementMileagePage } from "@/screens/expense-management/mileage";
 import { ExpenseManagementReceiptsPage } from "@/screens/expense-management/receipts";
@@ -57,6 +58,9 @@ export function ExpenseManagementSectionPage({
   }
   if (sectionKey === "mileage") {
     return <ExpenseManagementMileagePage />;
+  }
+  if (sectionKey === "cash-advances") {
+    return <ExpenseManagementCashAdvancesPage />;
   }
 
   if (isPending) return <LoadingState />;

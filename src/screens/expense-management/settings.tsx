@@ -29,6 +29,7 @@ type Draft = {
   claimNumberPrefix: string;
   defaultClaimCurrency: string;
   employeePayableAccountId: string;
+  employeeAdvanceAccountId: string;
   requireReceiptAboveMinor: string;
   requireSpendingRequestAboveMinor: string;
   allowMultiCurrencyClaims: boolean;
@@ -43,6 +44,7 @@ function toDraft(settings: ExpenseManagementSettings): Draft {
     claimNumberPrefix: settings.claimNumberPrefix,
     defaultClaimCurrency: settings.defaultClaimCurrency ?? "",
     employeePayableAccountId: settings.employeePayableAccountId ?? "",
+    employeeAdvanceAccountId: settings.employeeAdvanceAccountId ?? "",
     requireReceiptAboveMinor: String(settings.requireReceiptAboveMinor),
     requireSpendingRequestAboveMinor: String(settings.requireSpendingRequestAboveMinor),
     allowMultiCurrencyClaims: settings.allowMultiCurrencyClaims,
@@ -87,6 +89,15 @@ export function ExpenseManagementSettingsPage() {
     [accountsQ.data],
   );
 
+  const assetAccounts = useMemo(
+    () =>
+      (accountsQ.data ?? []).filter(
+        (account) =>
+          account.is_active && account.is_postable && account.account_type === "asset",
+      ),
+    [accountsQ.data],
+  );
+
   useEffect(() => {
     if (settingsQ.data) setDraft(toDraft(settingsQ.data));
   }, [settingsQ.data]);
@@ -117,6 +128,7 @@ export function ExpenseManagementSettingsPage() {
             requireReceiptAboveMinor: threshold,
             requireSpendingRequestAboveMinor: spendThreshold,
             employeePayableAccountId: draft.employeePayableAccountId || null,
+            employeeAdvanceAccountId: draft.employeeAdvanceAccountId || null,
             allowMultiCurrencyClaims: draft.allowMultiCurrencyClaims,
             preventSelfApproval: draft.preventSelfApproval,
             defaultDistanceUnit: draft.defaultDistanceUnit,
@@ -260,6 +272,26 @@ export function ExpenseManagementSettingsPage() {
           />
           <p className="text-sm text-muted-foreground">
             Required before posting approved employee-paid claims (EM-06 accrual).
+          </p>
+        </div>
+
+        <div className="grid gap-2">
+          <Label>Employee advance account</Label>
+          <AccountLookup
+            companyId={company.id}
+            accounts={assetAccounts}
+            value={draft.employeeAdvanceAccountId || null}
+            onChange={(next) =>
+              setDraft({ ...draft, employeeAdvanceAccountId: next ?? "" })
+            }
+            allowClear
+            disabled={!canEdit || save.isPending}
+            ariaLabel="Employee advance account"
+            purpose="posting"
+          />
+          <p className="text-sm text-muted-foreground">
+            Asset cleared when cash-advance claims are posted (EM-08b). Required before
+            issuing advances.
           </p>
         </div>
 

@@ -23,7 +23,14 @@
 
 - [x] Company mileage rates with effective dates, unit, currency and expense account.
 - [x] Mileage trip drafts create employee-paid claim lines with server-side amount calc.
-- [ ] Travel / per diem / advances / petty cash (later EM-08 slices).
+- [ ] Travel / per diem / petty cash (later EM-08 slices).
+- [ ] Applied migration + authenticated browser verification.
+
+## Cash advances (EM-08b — local code)
+
+- [x] Draft → issue (DR advance asset / CR bank) with `expenses.manage_advances`.
+- [x] Link cash-advance claims and post as DR expense / CR advance; remaining balance updates.
+- [ ] Unused advance reclaim to bank.
 - [ ] Applied migration + authenticated browser verification.
 
 ## Explicitly out of scope for this navigation amendment

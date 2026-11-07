@@ -36,6 +36,12 @@ import {
   toExpenseMileageRatePayload,
   type ExpenseMileageRate,
 } from "@/lib/expenses/mileage";
+import {
+  mapExpenseCashAdvance,
+  toExpenseCashAdvancePayload,
+  type ExpenseCashAdvance,
+  type ExpenseCashAdvanceDraftInput,
+} from "@/lib/expenses/cash-advances";
 
 export const EXPENSE_MANAGEMENT_MIGRATION =
   "Expense Management is not available yet: the database update 20261107120000 has not been applied.";
@@ -57,6 +63,9 @@ export const EXPENSE_REIMBURSEMENT_MIGRATION =
 
 export const EXPENSE_MILEAGE_MIGRATION =
   "Expense mileage rates are not available yet: apply database update 20261107139000.";
+
+export const EXPENSE_CASH_ADVANCE_MIGRATION =
+  "Expense cash advances are not available yet: apply database update 20261107140000.";
 
 export const EXPENSE_TEMPLATE_MIGRATION =
   "Expense claim templates are not available yet: apply database update 20261107130000.";
@@ -963,4 +972,137 @@ export const saveExpenseMileageRate = createServerFn({ method: "POST" })
       EXPENSE_MILEAGE_MIGRATION,
     );
     return mapExpenseMileageRate(raw);
+  });
+
+export const listExpenseCashAdvances = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; scope?: "own" | "all" }) => ({
+    companyId: companyIdOf(input),
+    scope: input.scope === "all" ? "all" : "own",
+  }))
+  .handler(async ({ data, context }): Promise<ExpenseCashAdvance[]> => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    const raw = await callRpc<{ advances?: unknown[] }>(
+      context.supabase,
+      "list_expense_cash_advances",
+      { _company_id: data.companyId, _scope: data.scope },
+      EXPENSE_CASH_ADVANCE_MIGRATION,
+    );
+    return (raw.advances ?? []).map(mapExpenseCashAdvance);
+  });
+
+export const saveExpenseCashAdvance = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { companyId: string; draft: ExpenseCashAdvanceDraftInput }) => ({
+      companyId: companyIdOf(input),
+      draft: input.draft,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<ExpenseCashAdvance> => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    if (!data.draft.title.trim()) throw new Error("Advance title is required.");
+    if (data.draft.amountMinor <= 0) {
+      throw new Error("Advance amount must be greater than zero.");
+    }
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "save_expense_cash_advance",
+      {
+        _company_id: data.companyId,
+        _payload: toExpenseCashAdvancePayload(data.draft),
+      },
+      EXPENSE_CASH_ADVANCE_MIGRATION,
+    );
+    return mapExpenseCashAdvance(raw);
+  });
+
+export const issueExpenseCashAdvance = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      advanceId: string;
+      version: number;
+      bankAccountId: string;
+      issueDate?: string;
+    }) => ({
+      companyId: companyIdOf(input),
+      advanceId: input.advanceId,
+      version: input.version,
+      bankAccountId: input.bankAccountId,
+      issueDate: input.issueDate,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<ExpenseCashAdvance> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "expenses.manage_advances");
+    if (!data.bankAccountId) throw new Error("Choose a bank account to issue the advance.");
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "issue_expense_cash_advance",
+      {
+        _company_id: data.companyId,
+        _advance_id: data.advanceId,
+        _bank_account_id: data.bankAccountId,
+        _expected_version: data.version,
+        _issue_date: data.issueDate ?? null,
+      },
+      EXPENSE_CASH_ADVANCE_MIGRATION,
+    );
+    return mapExpenseCashAdvance(raw);
+  });
+
+export const cancelExpenseCashAdvance = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { companyId: string; advanceId: string; version: number }) => ({
+      companyId: companyIdOf(input),
+      advanceId: input.advanceId,
+      version: input.version,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<ExpenseCashAdvance> => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "cancel_expense_cash_advance",
+      {
+        _company_id: data.companyId,
+        _advance_id: data.advanceId,
+        _expected_version: data.version,
+      },
+      EXPENSE_CASH_ADVANCE_MIGRATION,
+    );
+    return mapExpenseCashAdvance(raw);
+  });
+
+export const linkExpenseClaimCashAdvance = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      claimId: string;
+      version: number;
+      advanceId: string;
+    }) => ({
+      companyId: companyIdOf(input),
+      claimId: input.claimId,
+      version: input.version,
+      advanceId: input.advanceId,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<ExpenseClaimDetail> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "expenses.submit");
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "link_expense_claim_cash_advance",
+      {
+        _company_id: data.companyId,
+        _claim_id: data.claimId,
+        _expected_version: data.version,
+        _advance_id: data.advanceId,
+      },
+      EXPENSE_CASH_ADVANCE_MIGRATION,
+    );
+    return mapExpenseClaimDetail(raw);
   });

@@ -4,7 +4,7 @@
  * detail page shows "Awaiting payment" or "Overdue" in the same colour and words.
  */
 
-export type StatusTone = "neutral" | "warning" | "info" | "success" | "danger";
+export type StatusTone = "neutral" | "warning" | "info" | "success" | "complete" | "danger";
 
 export type StatusDisplay = {
   label: string;
@@ -20,9 +20,9 @@ const MAP: Record<string, StatusDisplay> = {
   pending: { label: "Pending", tone: "warning" },
   authorised: { label: "Awaiting payment", tone: "info" },
   awaiting_payment: { label: "Awaiting payment", tone: "info" },
-  approved: { label: "Approved", tone: "info" },
+  approved: { label: "Approved", tone: "success" },
   partly_paid: { label: "Partly paid", tone: "info" },
-  paid: { label: "Paid", tone: "success" },
+  paid: { label: "Paid", tone: "complete" },
   overdue: { label: "Overdue", tone: "danger" },
   void: { label: "Void", tone: "neutral", muted: true },
   voided: { label: "Void", tone: "neutral", muted: true },
@@ -36,9 +36,26 @@ const MAP: Record<string, StatusDisplay> = {
   uncategorised: { label: "For review", tone: "warning" },
   matched: { label: "Matched", tone: "info" },
   excluded: { label: "Excluded", tone: "neutral", muted: true },
-  reconciled: { label: "Reconciled", tone: "success" },
+  reconciled: { label: "Reconciled", tone: "complete" },
   unreconciled: { label: "Unreconciled", tone: "warning" },
   posted: { label: "Posted", tone: "success" },
+  partially_paid: { label: "Partially paid", tone: "info" },
+  partially_reconciled: { label: "Partially reconciled", tone: "info" },
+  in_progress: { label: "In progress", tone: "info" },
+  processing: { label: "Processing", tone: "info" },
+  completed: { label: "Completed", tone: "complete" },
+  complete: { label: "Complete", tone: "complete" },
+  settled: { label: "Settled", tone: "complete" },
+  failed: { label: "Failed", tone: "danger" },
+  error: { label: "Error", tone: "danger" },
+  cancelled: { label: "Cancelled", tone: "neutral", muted: true },
+  canceled: { label: "Cancelled", tone: "neutral", muted: true },
+  inactive: { label: "Inactive", tone: "neutral", muted: true },
+  not_started: { label: "Not started", tone: "neutral" },
+  awaiting_review: { label: "Awaiting review", tone: "warning" },
+  awaiting_reimbursement: { label: "Awaiting reimbursement", tone: "warning" },
+  reimbursed: { label: "Reimbursed", tone: "complete" },
+  partially_approved: { label: "Partially approved", tone: "info" },
   reversed: { label: "Reversed", tone: "neutral", muted: true },
   rejected: { label: "Rejected", tone: "danger" },
   active: { label: "Active", tone: "success" },

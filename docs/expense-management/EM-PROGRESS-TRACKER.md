@@ -8,7 +8,7 @@ At the **end of every EM phase/slice chat response and final report**, paste thi
 
 ```
 EM progress  ███░░░░░░░░░  3/12 verified (25%)
-Migrations applied on linked project · Overview smoke OK · Full E2E/provider gates remain · Not pushed
+Migrations live · Draft+submit smoke OK · Self-approve blocked · Provider/E2E gates remain · Not pushed
 ```
 
 ## Visual progress
@@ -22,7 +22,7 @@ Migrations applied on linked project · Overview smoke OK · Full E2E/provider g
 | Area | Status |
 | --- | --- |
 | Code Development | 3 / 12 verified; EM SQL applied on linked project 2026-11-07; overview smoke OK; full E2E still open |
-| Local Testing | Unit 97 passed; overview browser smoke OK; full claim E2E open |
+| Local Testing | Unit 97; browser draft+submit EXP-0001 OK; approve/post/reimburse E2E open |
 | GitHub Commit | Local commits only; not pushed |
 | GitHub PR / Merge | Pending |
 | Database Migrations | Applied 2026-11-07 on linked project `ipxflpzfcqwtenodbxwc` (27 files) |

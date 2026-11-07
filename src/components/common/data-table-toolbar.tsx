@@ -64,7 +64,7 @@ export function DataTableToolbar({
         </span>
         <div className="flex flex-wrap items-center gap-2">{bulkActions}</div>
         {onClearSelection ? (
-          <Button variant="ghost" size="sm" className="ml-auto" aria-label="Clear selected records" onClick={onClearSelection}>
+          <Button type="button" variant="ghost" size="sm" className="ml-auto" aria-label="Clear selected records" onClick={onClearSelection}>
             <X />
             Clear
           </Button>

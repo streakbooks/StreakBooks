@@ -29,6 +29,21 @@ describe("LinkBooks responsive workflow contract", () => {
     expect(exportButtonOpening).toContain('type="button"');
   });
 
+  it("clears bulk selection without submitting an enclosing form", () => {
+    const markup = renderToStaticMarkup(
+      <form>
+        <DataTableToolbar selectedCount={3} onClearSelection={() => {}} />
+      </form>,
+    );
+    expect(markup).toContain('aria-label="Bulk actions"');
+    expect(markup).toContain("3 selected");
+    const clearButtonOpening = markup.slice(
+      markup.lastIndexOf("<button", markup.indexOf('aria-label="Clear selected records"')),
+      markup.indexOf('aria-label="Clear selected records"'),
+    );
+    expect(clearButtonOpening).toContain('type="button"');
+  });
+
   it("does not invent actions or an active selection for an empty batch", () => {
     expect(renderToStaticMarkup(
       <SelectionActionBar count={0} onClear={() => {}} />,

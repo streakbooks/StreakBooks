@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { parseBudgetListSearch, encodeBudgetListReturnContext } from "@/lib/budgets/budget-navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Copy, GitCompareArrows, Loader2, Trash2 } from "lucide-react";
@@ -42,6 +43,7 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/budgets/")({
+  validateSearch: parseBudgetListSearch,
   head: () => ({ meta: [{ title: "Budgets — LinkBooks" }] }),
   component: BudgetsPage,
 });
@@ -50,6 +52,12 @@ function BudgetsPage() {
   const { company } = useActiveCompany();
   const fmt = useFormat();
   const navigate = useNavigate();
+  const searchState = Route.useSearch();
+  const search = searchState.q ?? "";
+  const returnContext = encodeBudgetListReturnContext(searchState);
+  const setSearch = (value: string) => {
+    void navigate({ to: "/budgets", search: parseBudgetListSearch({ q: value }), replace: true, resetScroll: false });
+  };
   const queryClient = useQueryClient();
   const canManage = useCanDo("accounts.manage");
   const listFn = useServerFn(listBudgets);
@@ -70,7 +78,6 @@ function BudgetsPage() {
     [company],
   );
   const [name, setName] = useState("");
-  const [search, setSearch] = useState("");
   const [showScenarioComparison, setShowScenarioComparison] = useState(false);
   const [copySource, setCopySource] = useState<BudgetSummary | null>(null);
   const [copyName, setCopyName] = useState("");
@@ -92,7 +99,11 @@ function BudgetsPage() {
       setName("");
       await queryClient.invalidateQueries({ queryKey: ["budgets", companyId] });
       toast.success("Budget created");
-      void navigate({ to: "/budgets/$budgetId", params: { budgetId: id } });
+      void navigate({
+        to: "/budgets/$budgetId",
+        params: { budgetId: id },
+        search: returnContext ? { returnContext } : {},
+      });
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
@@ -112,7 +123,11 @@ function BudgetsPage() {
       setCopySource(null);
       await queryClient.invalidateQueries({ queryKey: ["budgets", companyId] });
       toast.success("Budget duplicated");
-      void navigate({ to: "/budgets/$budgetId", params: { budgetId: id } });
+      void navigate({
+        to: "/budgets/$budgetId",
+        params: { budgetId: id },
+        search: returnContext ? { returnContext } : {},
+      });
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
@@ -279,6 +294,7 @@ function BudgetsPage() {
                   <Link
                     to="/budgets/$budgetId"
                     params={{ budgetId: b.id }}
+                    search={returnContext ? { returnContext } : {}}
                     className="font-medium underline-offset-2 hover:underline"
                   >
                     {b.name}

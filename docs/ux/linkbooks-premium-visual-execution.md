@@ -97,6 +97,27 @@ The following are **committed React/CSS changes**, not accepted/screenshots of a
 - The current visual branch contains **direct partial source changes in all 22 currently inventoried sidebar modules**, with **0 complete/verified**. This does not imply every subpage, form, modal or route has been reviewed. The full inventory and 174 base routes remain the acceptance scope.
 - The main branch has advanced through independent Cursor work; do not assume this visual branch merges cleanly. First rebase/merge in a separate isolated checkout, resolve overlap with the browsing branch, then execute complete verification before any integration.
 
+## Implementation increment 3 — mobile transactions, shared document ledgers and truthful integration health
+
+**Actual React and CSS/frontend code written on this feature branch; no posting, integration network calls, RLS or schema changes.**
+
+- **Purchases:** `BillMobileCards.tsx` now uses `billCardDisplayStatus()` derived from the authorised row's persisted status, outstanding minor units and server-provided overdue days. Past-due *unpaid authorised/partly-paid* bills show Overdue; drafts, voids, cancelled and paid or settled bills never gain false overdue badges. The due date and badge use the **same** presentation status. Bill entry's three-pane workspace received responsive layout and theme-aware styling.
+- **Sales:** `InvoiceMobileCards.tsx` uses refined document cards and existing `invoiceIsOverdue()` logic; action buttons and native invoice links remain unchanged.
+- **Banking:** `BankTransactionMobileCards.tsx` and `BankTransactionQuickPreview.tsx` have improved accessible transaction summaries, amount hierarchy, selected/review buttons and authentic source status labels; no new code/match/post endpoint.
+- **Business forms:** `form-layout.tsx` establishes stronger responsive section hierarchy. `alert-dialog.tsx` and `popover.tsx` now use consistent theme-aware overlays and focused action hierarchy. `data-table-toolbar.tsx`, `SelectionActionBar.tsx`, `TableAppearanceControls.tsx`, `MobileListViewToggle.tsx` and `confirm-dialog.tsx` share coherent density, visible selection state, focus and destructive-action feedback without changing callbacks.
+- **Document and accounting tabs:** `DocumentPostingJournals.tsx` renders posted/reversed status from real returned journal records and makes actual reversing entries clear. Reversed documents display one authoritative reversed chip rather than contradictory status labels. `DocumentRecordPanel.tsx` improves the true backend activity history and internal note cards, preserving the existing permission-checked posting entries tab.
+- **Settings integration health:** `IntegrationHealthBadge.tsx` and `integrationStatusTone()` distinguish Configured (informational), Not configured (warning), Restricted in Demo Company (neutral) and Unavailable (neutral). **Configured never claims live connectivity, data sync or delivery success.** The Settings Centre uses these directly from existing server-provided health.
+
+### Tests written, pending execution
+
+- `src/lib/visual/transaction-card-status.test.ts` — four overdue status integrity cases.
+- `src/components/purchases/BillMobileCards.test.tsx` — four actual SSR markup/status cases.
+- `e2e/premium-mobile-transactions.spec.ts` — three authenticated mobile viewport scenarios with fixture-dependent skips.
+- `src/lib/settings/integration-health.test.ts` — additional honest configuration-state case.
+- `src/components/settings/IntegrationHealthBadge.test.tsx` — four labelled informational badge cases.
+
+**Status:** Code committed, source-level route and file inspections only; full TypeScript, ESLint, Vitest, production build, authenticated Playwright mobile screenshots, tablet/desktop and permissions/regression scenarios **NOT EXECUTED**. Do not count a completed verified batch or claim that automated tests passed.
+
 ## Next coding increment
 
-Next: finish Dashboard, Action Center, Contacts, Products, Files, Reports, Budgets and Settings visuals; test all status transitions with seeded authenticated data. Validate responsive AppShell and forms with real browsers and seven+ themes, check the separate browsing branch for merge conflicts, and deliver a fully implemented App Store marketplace once corresponding functional workflows exist. No module is considered accepted without evidence.
+Next: run isolated local TypeScript, lint, Vitest, full build and real browser checks for current direct visual work; resolve schema/permission and status-refresh defects. Continue screen-by-screen forms, responsive overlays, themes and accessibility in all 22 modules; then reconcile with Cursor's independently advancing main and the separate premium-browsing branch. Validate responsive AppShell and forms with real browsers and seven+ themes, check the separate browsing branch for merge conflicts, and deliver a fully implemented App Store marketplace once corresponding functional workflows exist. No module is considered accepted without evidence.

@@ -27,6 +27,31 @@ describe("statusDisplay", () => {
     expect(statusDisplay("cancelled").muted).toBe(true);
   });
 
+  it("shows real contact, fixed-asset and product lifecycle states without inventing success", () => {
+    expect(statusDisplay("open")).toMatchObject({ label: "Open", tone: "info" });
+    expect(statusDisplay("completed")).toMatchObject({ label: "Completed", tone: "complete" });
+    expect(statusDisplay("active")).toMatchObject({ label: "Active", tone: "success" });
+    expect(statusDisplay("archived")).toMatchObject({ label: "Archived", tone: "neutral", muted: true });
+    expect(statusDisplay("not_acquired")).toMatchObject({ label: "Future purchase", tone: "neutral" });
+    expect(statusDisplay("disposed")).toMatchObject({ label: "Disposed", tone: "neutral", muted: true });
+  });
+
+  it("distinguishes AI suggestions ready for review from actually applied", () => {
+    expect(statusDisplay("validated")).toMatchObject({
+      label: "Validated for review", tone: "info",
+    });
+    expect(statusDisplay("applied")).toMatchObject({ label: "Applied", tone: "complete" });
+    expect(statusDisplay("invalid")).toMatchObject({ label: "Invalid", tone: "danger" });
+    expect(statusDisplay("pending")).toMatchObject({ label: "Pending", tone: "warning" });
+    expect(statusDisplay("rejected")).toMatchObject({ label: "Rejected", tone: "danger" });
+  });
+
+  it("keeps accountant journals separate from payment completion", () => {
+    expect(statusDisplay("posted")).toMatchObject({ label: "Posted", tone: "success" });
+    expect(statusDisplay("reversed")).toMatchObject({ label: "Reversed", tone: "neutral", muted: true });
+    expect(statusDisplay("paid")).toMatchObject({ label: "Paid", tone: "complete" });
+  });
+
   it("covers bank statement line statuses", () => {
     expect(statusDisplay("uncategorised")).toMatchObject({ label: "For review", tone: "warning" });
     expect(statusDisplay("matched").tone).toBe("info");

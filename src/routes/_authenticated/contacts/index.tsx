@@ -1,12 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { ContactsPage } from "@/screens/contacts/index";
-import { parseContactDirectoryView } from "@/lib/contacts/contact-view-navigation";
+import { parseContactsDirectorySearch } from "@/lib/contacts/contact-view-navigation";
 
 export const Route = createFileRoute("/_authenticated/contacts/")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    view: parseContactDirectoryView(search["view"]),
-  }),
+  validateSearch: parseContactsDirectorySearch,
   head: () => ({
     meta: [
       { title: "Contacts — LinkBooks" },

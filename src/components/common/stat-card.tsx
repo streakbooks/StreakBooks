@@ -61,7 +61,7 @@ export function StatCard({
       <div className="flex items-start justify-between gap-3">
         <span className="text-sm font-medium text-muted-foreground">{label}</span>
         {Icon ? (
-          <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+          <span className="grid size-9 shrink-0 place-items-center rounded-xl border border-primary/15 bg-primary/10 text-primary">
             <Icon className="size-4" aria-hidden />
           </span>
         ) : null}
@@ -71,7 +71,7 @@ export function StatCard({
       ) : (
         <div
           className={cn(
-            "numeric mt-3 break-words text-2xl font-semibold tracking-tight",
+            "numeric mt-3 break-words text-2xl font-semibold tracking-[-0.025em] sm:text-[1.7rem]",
             TONE_CLASS[tone],
           )}
         >
@@ -100,7 +100,7 @@ export function StatCard({
     </CardContent>
   );
   return href ? (
-    <Card className="transition-shadow hover:border-primary/40 hover:shadow-sm">
+    <Card data-slot="stat-card" className="relative overflow-hidden transition-[box-shadow,border-color] hover:border-primary/30 hover:shadow-raised">
       <Link
         to={href as never}
         className="block rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2"
@@ -109,7 +109,7 @@ export function StatCard({
       </Link>
     </Card>
   ) : (
-    <Card>{body}</Card>
+    <Card data-slot="stat-card" className="relative overflow-hidden">{body}</Card>
   );
 }
 

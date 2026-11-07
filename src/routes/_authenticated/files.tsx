@@ -418,7 +418,7 @@ function FilesPage() {
         </p>
       ) : null}
       <div
-        className={`mb-4 rounded-lg border border-dashed p-4 text-sm transition-colors ${dragActive ? "border-primary bg-primary/5" : "border-border"}`}
+        className={`lb-files-dropzone mb-4 rounded-xl border-2 border-dashed px-5 py-6 text-sm transition-[background-color,border-color,box-shadow] ${dragActive ? "border-primary bg-primary/10 shadow-sm" : "border-border/85 bg-muted/20"}`}
         onDragOver={(e) => {
           if (!canUpload) return;
           e.preventDefault();
@@ -441,7 +441,7 @@ function FilesPage() {
             : "Files available to your organisation."}
         </div>
       </div>
-      <section aria-label="Document folders" className="mb-4 rounded-lg border p-4">
+      <section aria-label="Document folders" className="mb-5 rounded-2xl border border-border/85 bg-card p-4 shadow-card sm:p-5">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Folder className="size-4" />
@@ -595,7 +595,7 @@ function FilesPage() {
           </div>
         ) : null}
       </section>
-      <div className="mb-4 flex flex-wrap items-center gap-2" aria-label="Files workspace views">
+      <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-border/70 bg-muted/25 p-2" aria-label="Files workspace views">
         <Button
           size="sm"
           variant={activeView === "all" ? "default" : "outline"}
@@ -622,7 +622,7 @@ function FilesPage() {
           configured here.
         </span>
       </div>
-      <div className="mb-4 flex flex-wrap gap-3">
+      <div className="mb-5 flex flex-wrap gap-3 rounded-xl border border-border/75 bg-card p-3 shadow-xs">
         <Input
           className="w-64"
           placeholder="Search file names"
@@ -673,12 +673,12 @@ function FilesPage() {
       </div>
 
       {selected ? (
-        <section aria-label="Selected file details" className="mb-4 rounded-lg border bg-card p-4">
+        <section aria-label="Selected file details" className="mb-5 rounded-2xl border border-primary/20 bg-card p-5 shadow-card">
           <div className="flex items-start justify-between gap-3">
             <div className="flex min-w-0 items-start gap-3">
               <FileText className="mt-1 size-5 shrink-0 text-muted-foreground" />
               <div className="min-w-0 space-y-1">
-                <h2 className="break-all font-semibold">{selected.file_name}</h2>
+                <h2 className="break-all text-base font-bold tracking-[-0.02em]">{selected.file_name}</h2>
                 <p className="text-sm text-muted-foreground">
                   Attached to: {selected.entityLabel}
                   {selected.entityRef ? ` · ${selected.entityRef}` : ""}

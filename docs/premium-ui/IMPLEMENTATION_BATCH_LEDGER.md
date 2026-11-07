@@ -10,7 +10,8 @@
 | 14 | 8 | Bill RecordWorkspace + insights on orders/expenses/claims/payroll/budgets | `feature/premium-ui-batch14-bill-workspace-insights` | [PR #195](https://github.com/linkbusinessadvisory/LinkBooks/pull/195) → `3bf24f31` | bill detail + remaining records | merged |
 | 15 | 8 | Payslip/App Store/Accounting/Products/Dashboard rails + doc sync | `feature/premium-ui-batch15-remaining-rails-docs` | [PR #196](https://github.com/linkbusinessadvisory/LinkBooks/pull/196) → `0e98a58a` | payslip, app-store, accounting, products, dashboard | merged |
 | 16 | 8–9 | Empty/error honesty gate + production auth recorded | `feature/premium-ui-batch16-empty-error-honesty` | [PR #197](https://github.com/linkbusinessadvisory/LinkBooks/pull/197) → `d56eff77` | check:empty + bills empty CTA + readiness | merged |
-| 17 | 8–9 | Fix misplaced ListWorkspace/fragment closes blocking prod build | `feature/premium-ui-batch17-prod-build-fix` | pending merge | advisors, app-store, developer, EM, branding | ready |
-| 18+ | 8–9 | Staging DoD, RBAC, a11y, release close-out | TBD | — | | planned |
+| 17 | 8–9 | Fix misplaced ListWorkspace/fragment closes blocking prod build | `feature/premium-ui-batch17-prod-build-fix` | [PR #198](https://github.com/linkbusinessadvisory/LinkBooks/pull/198) → `a566ba94` | advisors, app-store, developer, EM, branding | merged |
+| 18 | 8–9 | Fix `escapeLikeLiteral` MISSING_EXPORT blocking Vercel prod SSR | `feature/premium-ui-batch18-escape-like-export` | [PR #199](https://github.com/linkbusinessadvisory/LinkBooks/pull/199) → `0c37373a` | customer-price-list.functions | merged |
+| 19+ | 8–9 | Staging DoD, RBAC, a11y, release close-out | TBD | — | | planned |
 
 Core finished-screen DoD remains **IN PROGRESS**. Chrome inheritance is enforced by `check:modules` + `check:workspace`.

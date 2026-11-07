@@ -5,7 +5,7 @@
 | Code (workspace architecture + route/insight adoption Batches 1–15) | Chrome inheritance largely complete; factual insight rails expanded |
 | Full route Section 14 finished-screen DoD | **not ready** — chrome PASS; staging/RBAC/a11y still open |
 | Local contract tests (`check:modules` / `check:workspace` / `check:ui` / modules vitest) | passing on each merged batch |
-| Merge to authoritative `main` | Batches 1–15 merged through PR [#196](https://github.com/linkbusinessadvisory/LinkBooks/pull/196) → `0e98a58a` |
+| Merge to authoritative `main` | Batches 1–18 merged through PR [#199](https://github.com/linkbusinessadvisory/LinkBooks/pull/199) → `0c37373a` |
 | Supabase migrations (premium UI chrome) | none required for chrome batches |
 | Security / accounting integrity | no intentional posting/RLS changes; full two-tenant audit **not-yet-verified** |
 | Staging authenticated QA | **not executed** |
@@ -22,4 +22,4 @@
 6. Rollback plan recorded for any production migration apply
 7. External integration sandbox validation where claimed
 
-Production URL (existing): https://linkbooks-navy.vercel.app — presence of a URL is **not** Section 14 DONE evidence.
+Production URL (Vercel alias after 2026-11-07 deploy): https://linkbooks-puce.vercel.app — deployment succeeded; presence of a URL is **not** Section 14/18 DONE evidence. Staging/RBAC/a11y/DoD remain open.

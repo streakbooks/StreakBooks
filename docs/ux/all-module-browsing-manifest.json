@@ -189,8 +189,20 @@
         "budgets/$budgetId.tsx",
         "budgets/index.tsx"
       ],
-      "browsingImplementation": "not_assessed_module_wide",
-      "fullyVerified": false
+      "browsingImplementation": "partial_code_not_runtime_verified",
+      "fullyVerified": false,
+      "currentEvidence": [
+        "src/lib/budgets/budget-navigation.ts — committed implementation",
+        "src/routes/_authenticated/budgets/index.tsx — committed implementation",
+        "src/routes/_authenticated/budgets/$budgetId.tsx — committed implementation",
+        "src/lib/budgets/budget-navigation.test.ts — written, NOT RUN",
+        "e2e/budgets-return-browsing.spec.ts — written, NOT RUN"
+      ],
+      "remaining": [
+        "Run app typecheck, lint, unit, browser and authenticated seeded-workspace tests",
+        "Verify all module subroutes and forms, permissions, data operations and browser Back/Forward",
+        "Verify responsive/mobile, accessibility, integration and deployment readiness"
+      ]
     },
     {
       "label": "Fixed assets",
@@ -198,8 +210,19 @@
       "routeFiles": [
         "fixed-assets.tsx"
       ],
-      "browsingImplementation": "not_assessed_module_wide",
-      "fullyVerified": false
+      "browsingImplementation": "partial_code_not_runtime_verified",
+      "fullyVerified": false,
+      "currentEvidence": [
+        "src/lib/fixed-assets/register-navigation.ts — committed implementation",
+        "src/routes/_authenticated/fixed-assets.tsx — committed implementation",
+        "src/lib/fixed-assets/register-navigation.test.ts — written, NOT RUN",
+        "e2e/fixed-assets-native-browsing.spec.ts — written, NOT RUN"
+      ],
+      "remaining": [
+        "Run app typecheck, lint, unit, browser and authenticated seeded-workspace tests",
+        "Verify all module subroutes and forms, permissions, data operations and browser Back/Forward",
+        "Verify responsive/mobile, accessibility, integration and deployment readiness"
+      ]
     },
     {
       "label": "Payroll",

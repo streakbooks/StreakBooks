@@ -29,6 +29,7 @@ import { JOURNAL_SOURCE_LABELS, journalSourceLabel, journalLineCurrency } from "
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -383,11 +384,9 @@ export function JournalsPanel({
                         {fmt.amount(j.total_debit_minor, j.currency_code || currency)}
                       </TableCell>
                       <TableCell className="space-x-1">
-                        <Badge variant="secondary" className="capitalize">
-                          {j.status}
-                        </Badge>
+                        <StatusBadge status={j.status} />
                         {j.reversed_by_journal_id ? (
-                          <Badge variant="outline">reversed</Badge>
+                          <StatusBadge status="reversed" />
                         ) : null}
                       </TableCell>
                       <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>

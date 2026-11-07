@@ -13,7 +13,8 @@ A screen is **not** DONE unless every applicable row is PASS or N/A with reason.
 | Themes / tokens inheritance | PASS | Shared `PageHeader` + `styles.css` tokens |
 | Scaffold / future inheritance | PARTIAL | `scaffold:module` + `check:modules`; live screenshot of probe not retained |
 | Authenticated staging QA | NOT VERIFIED | Not executed |
-| Production | BLOCKED | No authorization |
+| Production authorization | PASS | Granted 2026-11-07 by product owner |
+| Production go-live (Section 18) | BLOCKED | Staging/RBAC/a11y/DoD gates still open |
 
 ## Module matrices
 
@@ -23,7 +24,7 @@ A screen is **not** DONE unless every applicable row is PASS or N/A with reason.
 | - | ---- | ------ | ----- |
 | a | Route / inventory / registry | PASS | `MODULE_REGISTRY` + routes |
 | b | Visual/UX shared chrome | PASS | ListWorkspace on accounts, txn, reconcile, transfers, docs; Banking insights rail (Batch 12) |
-| c | Loading/empty/error | PARTIAL | Present on major screens; not every nested state audited |
+| c | Loading/empty/error | PARTIAL → enforcement PASS | Batch 16 `check:empty`; nested paths still spot-checked |
 | d | Real actions / posting | PARTIAL | Existing confirmed-transfer/reconcile flows; no new posting this program |
 | e | RBAC/RLS / cross-company | NOT VERIFIED | Relies on pre-existing server auth; not re-proved here |
 | f | Migrations | N/A | No schema from UI chrome |

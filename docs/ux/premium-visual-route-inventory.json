@@ -811,8 +811,8 @@
   "crossCuttingGaps": [
     {
       "name": "App Store & Integrations marketplace",
-      "status": "No independent marketplace route located in base revision",
-      "requiredAction": "Verify implementation location; add original marketplace route and full visual/functional acceptance when scope exists"
+      "status": "Present on independently advanced main as of inspected snapshot; absent in this isolated visual branch",
+      "requiredAction": "Review App Store UI and security, reconcile separate branches in an isolated checkout, then theme and visually verify full marketplace routes; do not copy/overwrite Cursor work"
     },
     {
       "name": "LinkBooks Signal",
@@ -833,6 +833,11 @@
       "name": "Global Search, Create New and import centre",
       "status": "Shared popovers, sheets and non-module routes",
       "requiredAction": "Verify keyboard, responsive, theme, status and real workflows"
+    },
+    {
+      "name": "Developer workspace",
+      "status": "Present on current main; absent from this visual branch",
+      "requiredAction": "Perform full developer portal screen, app approval, auth/permissions and responsive appearance review after safe integration"
     }
   ],
   "verification": {
@@ -859,6 +864,29 @@
     "localLint": "NOT_RUN",
     "authenticatedE2E": "NOT_RUN",
     "screenshots": "NOT_CAPTURED",
-    "lastIncrement": "read-only mobile status correctness, authentic document history, shared record toolbars, truthful integration setup"
+    "lastIncrement": "read-only mobile status correctness, authentic document history, shared record toolbars, truthful integration setup",
+    "productionReadiness": "NOT_VERIFIED",
+    "mainBranchRouteDrift": "24 modules and 179 routes on checked main; 5 new authenticated routes must be integrated before complete visual acceptance"
+  },
+  "parallelDevelopmentSnapshot": {
+    "sourceBranch": "main",
+    "inspectedHead": "f1d538129adf9bbc70093083f39e422050af0c4f",
+    "newSidebarModules": [
+      "App Store",
+      "Developer"
+    ],
+    "mainSidebarModules": 24,
+    "mainAllRouteFiles": 179,
+    "visualBranchSidebarModules": 22,
+    "visualBranchAllRouteFiles": 174,
+    "routesMissingFromVisualBranch": [
+      "_authenticated/app-store/$section.tsx",
+      "_authenticated/app-store/apps.$appCode.tsx",
+      "_authenticated/app-store/index.tsx",
+      "_authenticated/developer/$section.tsx",
+      "_authenticated/developer/index.tsx"
+    ],
+    "integrationStatus": "NOT_MERGED; shared UI impact and page acceptance PENDING",
+    "note": "Parallel Cursor main includes real App Store/Developer pages. Do not overwrite, duplicate, or mark them visually verified. Branch-scoped route guard remains accurate for this isolated visual feature branch."
   }
 }

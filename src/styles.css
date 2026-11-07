@@ -61,6 +61,8 @@
   --color-money-out: var(--money-out);
   --color-success-soft: var(--success-soft);
   --color-success-ink: var(--success-ink);
+  --color-complete-soft: var(--complete-soft);
+  --color-complete-ink: var(--complete-ink);
   --color-warning-soft: var(--warning-soft);
   --color-warning-ink: var(--warning-ink);
   --color-info-soft: var(--info-soft);
@@ -131,6 +133,9 @@
   --money-out: oklch(0.5 0.17 25);
   --success-soft: oklch(0.95 0.045 155);
   --success-ink: oklch(0.4 0.1 155);
+  /* Persisted completed/paid/reconciled states use teal, distinct from approval green. */
+  --complete-soft: oklch(0.946 0.052 194);
+  --complete-ink: oklch(0.36 0.092 195);
   --warning-soft: oklch(0.96 0.06 85);
   --warning-ink: oklch(0.42 0.09 65);
   --info-soft: oklch(0.95 0.03 250);
@@ -197,6 +202,8 @@
   --money-out: oklch(0.75 0.14 25);
   --success-soft: oklch(0.3 0.06 155 / 0.55);
   --success-ink: oklch(0.82 0.12 155);
+  --complete-soft: oklch(0.29 0.055 193);
+  --complete-ink: oklch(0.84 0.102 192);
   --warning-soft: oklch(0.34 0.06 80 / 0.55);
   --warning-ink: oklch(0.86 0.12 85);
   --info-soft: oklch(0.32 0.07 250 / 0.55);
@@ -353,6 +360,62 @@
   table tr {
     break-inside: avoid;
   }
+}
+
+/* Original LinkBooks status system. Semantic states do NOT depend on palette. */
+.lb-status {
+  vertical-align: middle;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.005em;
+}
+.lb-status[data-tone="complete"] {
+  background-color: var(--complete-soft);
+  color: var(--complete-ink);
+}
+.lb-status[data-muted="true"] {
+  opacity: 0.8;
+}
+.lb-status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 1.25rem;
+  font-size: 0.8125rem;
+  font-weight: 550;
+}
+.lb-status-indicator::before {
+  content: "";
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 2px var(--card);
+}
+
+/* Shared data/workspace polish: no per-module colour decisions required. */
+[data-slot="card"] {
+  isolation: isolate;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+[data-slot="card"]:focus-within {
+  border-color: color-mix(in oklab, var(--ring) 25%, var(--border));
+}
+[data-slot="card"] > :where([data-slot="card-header"]) {
+  border-radius: inherit;
+}
+[data-slot="card"] :where(h2, h3) {
+  text-wrap: balance;
+}
+:where(.lb-workspace-heading) {
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="card"] { transition: none; }
+}
+@media (forced-colors: active) {
+  .lb-status, .lb-status-indicator { border: 1px solid CanvasText; }
 }
 
 /* Table density: wrap a table in `data-density="compact"` (see DataTableToolbar). */

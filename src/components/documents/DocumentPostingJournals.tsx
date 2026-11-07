@@ -82,10 +82,11 @@ export function DocumentPostingJournals({
                 >
                   Journal #{journal.journal_number}
                 </Link>
-                <StatusBadge status={journal.status} />
-                {journal.reverses_journal_id ? <Badge variant="secondary">Reversal</Badge> : null}
-                {journal.reversed_by_journal_id ? (
-                  <StatusBadge status="reversed" />
+                <StatusBadge
+                  status={journal.reversed_by_journal_id ? "reversed" : journal.status}
+                />
+                {journal.reverses_journal_id ? (
+                  <Badge variant="outline">Reversal entry</Badge>
                 ) : null}
               </div>
               <span className="text-muted-foreground">

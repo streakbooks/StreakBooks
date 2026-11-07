@@ -52,6 +52,12 @@ The register below was derived from actual repository navigation and routes. The
 - `src/routes/_authenticated/profile.tsx`: native account-details form submit (including Enter key), dirty-state indication, disabled no-op save and empty-name guard; commit `001c16139edc99e3c61d1fad19a538b74995ef1c`. This is **partial source evidence only**, not completed profile or security-workflow acceptance.
 - Profile password change, security settings, route transitions, browser history, tenant permissions and authenticated acceptance remain **NOT VERIFIED**. Local typecheck, lint, unit, browser and `check:browsing-coverage` remain **NOT RUN** in this connector-only execution.
 
+### Inventory guard hardening evidence (2026-11-07)
+
+- `scripts/check-browsing-coverage.mjs` now rejects stale summary counts for sidebar modules, authenticated routes and supporting routes, as well as duplicate acceptance-criterion identifiers.
+- A module marked `fullyVerified: true` must supply exactly 12 nonempty evidence entries, one for each criterion. This is a **structural gate**, not proof that any tests passed.
+- Code commit: `e95f33b95202fc1ebbf129b233096fba47f4f1cf`. Local `npm run check:browsing-coverage`, typecheck, lint, unit and browser tests: **NOT RUN**. All 21 modules remain unverified.
+
 ## 2. Internal and supporting routes also included
 
 - `src/routes/_authenticated/documents.branding.tsx`

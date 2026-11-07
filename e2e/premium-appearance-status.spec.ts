@@ -88,6 +88,7 @@ test.describe("LinkBooks premium appearance: authenticated application shell", (
       getComputedStyle(document.documentElement).getPropertyValue("--complete-ink").trim(),
     );
     expect(darkTeal).toBeTruthy();
+    await appearance.click();
     await page.getByRole("menuitemradio", { name: /Light/ }).click();
     await expect(page.locator("html")).not.toHaveClass(/dark/);
     const lightTeal = await page.evaluate(() =>
@@ -95,6 +96,7 @@ test.describe("LinkBooks premium appearance: authenticated application shell", (
     );
     expect(lightTeal).not.toBe(darkTeal);
     await page.emulateMedia({ colorScheme: "dark" });
+    await appearance.click();
     await page.getByRole("menuitemradio", { name: /System/ }).click();
     await expect(page.locator("html")).toHaveClass(/dark/);
     await page.emulateMedia({ colorScheme: "light" });

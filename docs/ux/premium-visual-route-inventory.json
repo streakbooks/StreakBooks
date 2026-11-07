@@ -384,7 +384,7 @@
       "routeFiles": [
         "_authenticated/fixed-assets.tsx"
       ],
-      "visualReview": "shared_primitives_only_screen_review_pending",
+      "visualReview": "partial_shared_and_record_status_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -400,7 +400,11 @@
         "forms": false,
         "permissions": false,
         "browser": false
-      }
+      },
+      "changedScreens": [
+        "src/routes/_authenticated/fixed-assets.tsx — persisted/derived asset register lifecycle badges",
+        "src/components/fixed-assets/AssetDetailsDialog.tsx — status in the actual asset detail dialog"
+      ]
     },
     {
       "label": "Payroll",
@@ -438,7 +442,10 @@
       },
       "changedScreens": [
         "src/screens/payroll/overview.tsx — active/inactive readiness and semantic setup colours",
-        "src/screens/payroll/runs.tsx — persisted pay-run lifecycle badges"
+        "src/screens/payroll/runs.tsx — persisted pay-run lifecycle badges",
+        "src/screens/payroll/overview.tsx — organisation readiness status",
+        "src/screens/payroll/runs.tsx — pay run lifecycle",
+        "src/screens/payroll/employees.tsx — active/archived/terminated employee states"
       ]
     },
     {
@@ -497,7 +504,7 @@
       "routeFiles": [
         "_authenticated/firm.tsx"
       ],
-      "visualReview": "shared_primitives_only_screen_review_pending",
+      "visualReview": "partial_shared_and_record_status_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -513,7 +520,13 @@
         "forms": false,
         "permissions": false,
         "browser": false
-      }
+      },
+      "changedScreens": [
+        "src/components/firm/FirmEngagementPanel.tsx — engagement status",
+        "src/components/firm/FirmRequestsPanel.tsx — request completion/cancellation/overdue",
+        "src/lib/firm/request-visual-status.ts — strictly timestamp-derived presentation",
+        "src/lib/firm/request-visual-status.test.ts — unit scenarios written, NOT EXECUTED"
+      ]
     },
     {
       "label": "Advisors",
@@ -533,7 +546,7 @@
         "_authenticated/advisors-admin.tsx",
         "_authenticated/advisors-admin.workspaces.tsx"
       ],
-      "visualReview": "shared_primitives_only_screen_review_pending",
+      "visualReview": "partial_shared_and_record_status_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -549,7 +562,11 @@
         "forms": false,
         "permissions": false,
         "browser": false
-      }
+      },
+      "changedScreens": [
+        "src/screens/advisors/admin-engagements.tsx — engagement and proposal status",
+        "src/components/common/StatusBadge.tsx — shared semantic controls"
+      ]
     },
     {
       "label": "Advisors portal",
@@ -562,7 +579,7 @@
         "_authenticated/advisors-portal.messages.tsx",
         "_authenticated/advisors-portal.tasks.tsx"
       ],
-      "visualReview": "shared_primitives_only_screen_review_pending",
+      "visualReview": "partial_shared_and_record_status_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -578,7 +595,10 @@
         "forms": false,
         "permissions": false,
         "browser": false
-      }
+      },
+      "changedScreens": [
+        "src/screens/advisors/portal-tasks.tsx — live delivery task status"
+      ]
     },
     {
       "label": "AI Assistant",
@@ -762,13 +782,15 @@
   ],
   "verification": {
     "moduleFullyAccepted": 0,
-    "moduleInitialVisualImproved": 7,
+    "moduleInitialVisualImproved": 11,
     "fullBuild": "NOT_RUN",
     "authenticatedBrowser": "NOT_RUN",
     "deployment": "NOT_VERIFIED",
-    "sharedFoundation": "COMMITTED_NOT_BROWSER_VERIFIED",
+    "sharedFoundation": "Shared form and application shell code committed; full browser verification pending",
     "statusTransitions": "UNVERIFIED",
     "lightDarkSevenPresets": "NOT_BROWSER_VERIFIED",
-    "beforeAfterScreenshots": "NOT_CAPTURED"
+    "beforeAfterScreenshots": "NOT_CAPTURED",
+    "appShell": "Original CSS ledger mark, topbar, sidebar and canvas committed; responsive verification pending",
+    "formControls": "Inputs, textarea, labels, select, dialogs, sheets, tabs and table frames committed; browser regression pending"
   }
 }

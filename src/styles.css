@@ -381,6 +381,26 @@
   .lb-page-header::after { background: Highlight; }
 }
 
+/* KPI cards use a discreet palette-aware marker, not a hardcoded module colour. */
+[data-slot="stat-card"]::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: 1.25rem;
+  bottom: 1.25rem;
+  width: 2px;
+  border-radius: 0 999px 999px 0;
+  background: var(--primary);
+  opacity: 0.35;
+  pointer-events: none;
+}
+[data-slot="stat-card"]:focus-within::before {
+  opacity: 0.8;
+}
+@media print {
+  [data-slot="stat-card"]::before { display: none; }
+}
+
 /* Original LinkBooks status system. Semantic states do NOT depend on palette. */
 .lb-status {
   vertical-align: middle;

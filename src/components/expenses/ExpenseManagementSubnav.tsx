@@ -20,12 +20,12 @@ export function ExpenseManagementSubnav({
   return (
     <nav
       aria-label="Expense Management sections"
-      className="mb-6 flex flex-wrap gap-2 border-b border-border pb-3"
+      className="mb-6 flex min-w-0 items-center gap-2 overflow-x-auto overscroll-x-contain border-b border-border pb-3 print:hidden"
     >
       {visible.map((item) => {
         const active = current === item.key;
         const className = cn(
-          "rounded-md px-3 py-1.5 text-sm font-medium transition-colors pointer-coarse:min-h-11 pointer-coarse:inline-flex pointer-coarse:items-center",
+          "inline-flex min-h-10 shrink-0 items-center rounded-lg px-3 py-2 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:min-h-11 motion-reduce:transition-none",
           active
             ? "bg-primary text-primary-foreground"
             : "text-muted-foreground hover:bg-muted hover:text-foreground",

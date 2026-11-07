@@ -10,11 +10,11 @@ Compose `ListWorkspace` with:
 - role-aware primary create action (real backend only)
 - `ModuleSubnav` or native tab strip when the module owns sections
 - `DataTableToolbar` / saved views / selection bar when the domain supports them
-- optional insight rail (permission-aware, no fabricated AI facts)
+- optional insight rail via `WorkspaceInsights` (permission-aware, ledger/link facts only — no fabricated AI)
 
 ### Record workspace
 
-Compose `RecordWorkspace` with action header, status meta (`StatusBadge`), related tiles, form/tabs, attachments/timeline, posting journal links where authorised, insight rail.
+Compose `RecordWorkspace` with action header, status meta (`StatusBadge`), related tiles, form/tabs, attachments/timeline, posting journal links where authorised, and `WorkspaceInsights` for related native links + ledger-backed facts.
 
 ## State machines
 

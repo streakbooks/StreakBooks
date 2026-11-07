@@ -22,6 +22,7 @@ import { fromMinorUnits, toMinorUnits, toSafeMinorNumber } from "@/lib/accountin
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
+import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { Button } from "@/components/ui/button";
 import { DocumentRecordPanel } from "@/components/documents/DocumentRecordPanel";
 import { ContactPortalPanel } from "@/components/portals/staff-panels";
@@ -389,6 +390,68 @@ function ContactDetail() {
     <RecordWorkspace
       title={String(c.name)}
       description={`${kind} · terms ${terms} days${accountNumber ? ` · #${accountNumber}` : ""}`}
+      insights={
+        <WorkspaceInsights
+          title="Related"
+          facts={[
+            { label: "Type", value: kind },
+            { label: "Payment terms", value: `${terms} days` },
+            ...(archived ? [{ label: "Directory", value: "Archived" as const }] : []),
+            ...(balQ.data
+              ? [
+                  {
+                    label: `Receivable (${balQ.data.baseCurrency})`,
+                    value: fromMinorUnits(
+                      balQ.data.receivableMinor,
+                      balQ.data.baseCurrency,
+                    ),
+                  },
+                  {
+                    label: `Payable (${balQ.data.baseCurrency})`,
+                    value: fromMinorUnits(balQ.data.payableMinor, balQ.data.baseCurrency),
+                  },
+                ]
+              : []),
+          ]}
+          links={[
+            { label: "Contact directory", to: "/contacts", hint: "Browse all contacts" },
+            ...(isCustomer
+              ? [
+                  {
+                    label: "New invoice",
+                    to: "/sales/invoices/new",
+                    search: { contactId },
+                    hint: "Create a sales invoice for this customer",
+                  },
+                  {
+                    label: "Sales invoices",
+                    to: "/sales/invoices",
+                    hint: "Open the invoice list",
+                  },
+                ]
+              : []),
+            ...(isSupplier
+              ? [
+                  {
+                    label: "New bill",
+                    to: "/purchases/bills/new",
+                    hint: "Create a purchase bill for this supplier",
+                  },
+                  {
+                    label: "Purchase bills",
+                    to: "/purchases/bills",
+                    hint: "Open the bills list",
+                  },
+                ]
+              : []),
+          ]}
+          footer={
+            canManage
+              ? "Balances reflect authorised open items for this contact."
+              : "View-only: archive and edits stay disabled without contacts.manage."
+          }
+        />
+      }
       actions={
         <div className="flex flex-wrap gap-2">
           {isCustomer ? (

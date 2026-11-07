@@ -15,6 +15,8 @@ test("record workspace chrome wraps the bill fixture header", async ({ page }) =
   await expect(workspace).toBeVisible();
   await expect(workspace).toHaveAttribute("aria-label", "New bill");
   await expect(page.getByRole("heading", { level: 1, name: "New bill", exact: true })).toBeVisible();
+  await expect(page.getByRole("complementary", { name: "Contextual insights" })).toBeVisible();
+  await expect(page.locator('[data-slot="workspace-insights"]')).toContainText("Northfield");
 });
 
 test("search, clear and CSV export use exactly the visible records", async ({ page }) => {

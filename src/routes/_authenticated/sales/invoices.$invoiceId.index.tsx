@@ -20,6 +20,7 @@ import { friendlyAuthError } from "@/lib/auth-helpers";
 import { ProjectTagControl } from "@/components/projects/ProjectTagControl";
 import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
+import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { ReasonDialog } from "@/components/sales/ReasonDialog";
 import { bpsToPercentString, money } from "@/components/sales/sales-form-utils";
 import { StatusBadge } from "@/components/common/stat-card";
@@ -191,6 +192,60 @@ function InvoiceDetail() {
       <RecordWorkspace
           title={`Invoice ${inv.invoice_number ?? "(draft)"}`}
           description={`${customer?.name ?? "Customer"} · ${inv.invoice_date} · due ${inv.due_date}`}
+          meta={<StatusBadge status={inv.status} />}
+          insights={
+            <WorkspaceInsights
+              title="Related"
+              facts={[
+                { label: "Status", value: inv.status.replaceAll("_", " ") },
+                {
+                  label: "Outstanding",
+                  value:
+                    inv.status === "draft" || inv.status === "void"
+                      ? "—"
+                      : money(outstanding, cur),
+                },
+                ...(overdue ? [{ label: "Collection", value: "Past due" as const }] : []),
+              ]}
+              links={[
+                ...(inv.contact_id
+                  ? [
+                      {
+                        label: customer?.name ?? "Customer",
+                        to: "/contacts/$contactId",
+                        params: { contactId: inv.contact_id },
+                        hint: "Open contact record",
+                      },
+                    ]
+                  : []),
+                {
+                  label: "All invoices",
+                  to: "/sales/invoices",
+                  hint: "Return to the sales invoice list",
+                },
+                ...(posted
+                  ? [
+                      {
+                        label: "Record receipt",
+                        to: "/sales/receipts/new",
+                        search: {
+                          contactId: inv.contact_id,
+                          invoiceId: inv.id,
+                        },
+                        hint: "Apply a payment to this invoice",
+                      },
+                      {
+                        label: "Credit this invoice",
+                        to: "/sales/credit-notes/new",
+                        search: { invoiceId },
+                        hint: "Raise a credit note against this invoice",
+                      },
+                    ]
+                  : []),
+              ]}
+              footer="Links open real records only. Balances come from this invoice’s ledger fields."
+            />
+          }
           actions={
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" size="sm" asChild>

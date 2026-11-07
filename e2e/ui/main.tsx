@@ -21,6 +21,7 @@ import { matchesQuery } from "@/lib/list-search";
 import { DataTableToolbar } from "@/components/common/data-table-toolbar";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
+import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { CsvImportPreview } from "@/components/common/CsvImportPreview";
 import { FormSection, FormField } from "@/components/common/form-layout";
 import { Button } from "@/components/ui/button";
@@ -196,7 +197,15 @@ function BillFixture() {
         onSidebarStateChange={() => {}}
         onSidebarWidthChange={() => {}}
         header={
-          <RecordWorkspace title="New bill">
+          <RecordWorkspace
+            title="New bill"
+            insights={
+              <WorkspaceInsights
+                facts={[{ label: "Supplier", value: "Northfield" }]}
+                footer="Fixture insight rail — ledger facts only."
+              />
+            }
+          >
             <span className="sr-only">Bill entry workspace</span>
           </RecordWorkspace>
         }

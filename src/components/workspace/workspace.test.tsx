@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
+import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 
 describe("shared workspaces", () => {
   it("ListWorkspace exposes labelled section chrome and optional insight rail", () => {
@@ -36,6 +37,20 @@ describe("shared workspaces", () => {
     expect(html).toContain("Paid");
     expect(html).toContain("Body");
     expect(html).not.toContain("Contextual insights");
+  });
+
+  it("WorkspaceInsights renders ledger facts and omits empty rails", () => {
+    const html = renderToStaticMarkup(
+      <WorkspaceInsights
+        facts={[{ label: "Outstanding", value: "£12.00" }]}
+        footer="Ledger-backed only."
+      />,
+    );
+    expect(html).toContain('data-slot="workspace-insights"');
+    expect(html).toContain("Outstanding");
+    expect(html).toContain("£12.00");
+    expect(html).toContain("Ledger-backed only.");
+    expect(renderToStaticMarkup(<WorkspaceInsights />)).toBe("");
   });
 
   it("omits undefined optional header props under exactOptionalPropertyTypes-safe spreading", () => {

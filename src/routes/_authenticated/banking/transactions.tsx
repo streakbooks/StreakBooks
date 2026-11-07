@@ -915,7 +915,7 @@ function BankTransactions() {
                       <TableCell className="whitespace-nowrap">
                         <Link
                           to="/banking/transactions"
-                          search={{ transactionId: t.id, statusGroup: "all" }}
+                          search={{ ...search, transactionId: t.id, statusGroup: "all" }}
                           className="rounded-sm font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-ring"
                         >
                           {fmt.date(t.txn_date)}
@@ -924,7 +924,7 @@ function BankTransactions() {
                       <TableCell>
                         <Link
                           to="/banking/transactions"
-                          search={{ transactionId: t.id, statusGroup: "all" }}
+                          search={{ ...search, transactionId: t.id, statusGroup: "all" }}
                           className="rounded-sm font-medium text-foreground underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-ring"
                         >
                           {t.description ?? "—"}

@@ -8,7 +8,8 @@ import { useFormat } from "@/hooks/use-format";
 import { exportCreditNotesCsv, listCreditNotes } from "@/lib/sales/sales-credits.functions";
 import { creditNoteStatusLabel } from "@/lib/sales/allocation-rules";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
+import { ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { StatusBadge } from "@/components/common/stat-card";
 import { ListToolbar, Pager, TableCard, SortHead } from "@/components/sales/ListKit";
 import { downloadCsv, initialListState, type ListState } from "@/lib/sales/list-state";
@@ -75,16 +76,15 @@ function CreditNotesList() {
   const rows = query.data?.rows ?? [];
 
   return (
-    <>
-      <PageHeader
-        title="Credit notes"
-        description="Authorising posts a reversing AR journal. Apply the credit to invoices without a second posting."
-        actions={
-          <Button size="sm" asChild>
-            <Link to="/sales/credit-notes/new">New credit note</Link>
-          </Button>
-        }
-      />
+    <ListWorkspace
+      title="Credit notes"
+      description="Authorising posts a reversing AR journal. Apply the credit to invoices without a second posting."
+      actions={
+        <Button size="sm" asChild>
+          <Link to="/sales/credit-notes/new">New credit note</Link>
+        </Button>
+      }
+    >
       <ListToolbar
         state={state}
         onChange={patch}
@@ -206,6 +206,6 @@ function CreditNotesList() {
           <Pager total={query.data?.total ?? 0} state={state} onChange={patch} />
         </>
       )}
-    </>
+    </ListWorkspace>
   );
 }

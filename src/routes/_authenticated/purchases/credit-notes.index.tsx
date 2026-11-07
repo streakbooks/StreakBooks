@@ -5,7 +5,8 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { useFormat } from "@/hooks/use-format";
 import { listCreditNotes } from "@/lib/purchases/purchases.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
+import { ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { ListToolbar } from "@/components/common/ListTools";
 import { useListSearch } from "@/hooks/use-list-search";
 import { fromMinorUnits } from "@/lib/accounting/money";
@@ -49,16 +50,15 @@ function CreditNotesList() {
   const list = useListSearch(rows, (c) => `${c.credit_date} ${c.contacts?.name ?? ""} ${c.status}`);
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
   return (
-    <>
-      <PageHeader
-        title="Supplier credit notes"
-        description="Authorising posts DR AP / CR expense+tax. Allocate to open bills to reduce outstanding."
-        actions={
-          <Button size="sm" asChild>
-            <Link to="/purchases/credit-notes/new">New credit note</Link>
-          </Button>
-        }
-      />
+    <ListWorkspace
+      title="Supplier credit notes"
+      description="Authorising posts DR AP / CR expense+tax. Allocate to open bills to reduce outstanding."
+      actions={
+        <Button size="sm" asChild>
+          <Link to="/purchases/credit-notes/new">New credit note</Link>
+        </Button>
+      }
+    >
       {query.isPending ? (
         <ListSkeleton />
       ) : query.isError ? (
@@ -157,6 +157,6 @@ function CreditNotesList() {
           </TableCard>
         </>
       )}
-    </>
+    </ListWorkspace>
   );
 }

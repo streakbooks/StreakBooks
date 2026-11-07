@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -304,29 +305,27 @@ export function ExpenseManagementReimbursementsPage() {
   const allSelected = openClaims.length > 0 && selectedIds.length === openClaims.length;
 
   return (
-    <>
-      <PageHeader
-        title="Reimbursements"
-        description="Pay posted employee-paid claims from a bank account (clears employee payable)."
-        actions={
-          <div className="flex flex-wrap gap-2">
-            <Button
-              size="sm"
-              disabled={batchPay.isPending || selectedIds.length === 0 || !bankGlAccountId}
-              onClick={() => batchPay.mutate()}
-            >
-              {batchPay.isPending
-                ? "Paying batch…"
-                : `Pay selected (${selectedIds.length})`}
-            </Button>
-            <Button asChild variant="outline" size="sm">
-              <Link to="/purchases/employee-expenses">Legacy employee expenses</Link>
-            </Button>
-          </div>
-        }
-      />
-      <ExpenseManagementSubnav current="reimbursements" />
-
+    <ListWorkspace
+      title="Reimbursements"
+      description="Pay posted employee-paid claims from a bank account (clears employee payable)."
+      actions={
+        <div className="flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            disabled={batchPay.isPending || selectedIds.length === 0 || !bankGlAccountId}
+            onClick={() => batchPay.mutate()}
+          >
+            {batchPay.isPending
+              ? "Paying batch…"
+              : `Pay selected (${selectedIds.length})`}
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/purchases/employee-expenses">Legacy employee expenses</Link>
+          </Button>
+        </div>
+      }
+      subnav={<ExpenseManagementSubnav current="reimbursements" />}
+    >
       <Alert className="mb-6">
         <AlertTitle>Bank, partial, batch, or payroll queue</AlertTitle>
         <AlertDescription>
@@ -634,6 +633,6 @@ export function ExpenseManagementReimbursementsPage() {
           </Table>
         </section>
       ) : null}
-    </>
+    </ListWorkspace>
   );
 }

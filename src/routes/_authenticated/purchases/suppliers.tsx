@@ -8,7 +8,8 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { listSuppliers, upsertSupplier } from "@/lib/purchases/purchases.functions";
 import { useCanDo } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -69,12 +70,10 @@ function SuppliersPage() {
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
 
   return (
-    <>
-      <PageHeader
-        title="Suppliers"
-        description="Supplier contacts, payment terms and tax identifiers used on bills and payments."
-      />
-
+    <ListWorkspace
+      title="Suppliers"
+      description="Supplier contacts, payment terms and tax identifiers used on bills and payments."
+    >
       <div className="mb-6 grid max-w-xl gap-3 rounded-md border border-border p-4">
         <div className="space-y-2">
           <Label>Name</Label>
@@ -186,6 +185,6 @@ function SuppliersPage() {
           </TableBody>
         </Table>
       )}
-    </>
+    </ListWorkspace>
   );
 }

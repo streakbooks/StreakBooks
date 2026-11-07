@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -310,18 +311,16 @@ export function ExpenseManagementReceiptsPage() {
   };
 
   return (
-    <>
-      <PageHeader
-        title="Receipts & Inbox"
-        description="Upload receipts, then match them to a claim. Email OCR is not configured."
-        actions={
-          <Button asChild variant="outline" size="sm">
-            <Link to="/expense-management/$section" params={{ section: "my-expenses" }}>Open My Expenses</Link>
-          </Button>
-        }
-      />
-      <ExpenseManagementSubnav current="receipts" />
-
+    <ListWorkspace
+      title="Receipts & Inbox"
+      description="Upload receipts, then match them to a claim. Email OCR is not configured."
+      actions={
+        <Button asChild variant="outline" size="sm">
+          <Link to="/expense-management/$section" params={{ section: "my-expenses" }}>Open My Expenses</Link>
+        </Button>
+      }
+      subnav={<ExpenseManagementSubnav current="receipts" />}
+    >
       <Alert className="mb-6">
         <AlertTitle>
           {inbox.inboundEmailEnabled ? "Inbound email enabled" : "Inbound email not configured"}
@@ -478,6 +477,6 @@ export function ExpenseManagementReceiptsPage() {
           </TableBody>
         </Table>
       )}
-    </>
+    </ListWorkspace>
   );
 }

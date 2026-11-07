@@ -22,7 +22,8 @@ import { parseMinorOrThrow } from "@/lib/purchases/money-input";
 import { emptyOrderLine } from "@/lib/purchases/purchase-order";
 import { validateSalesLines, sumLines } from "@/lib/sales/line-helpers";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { StatusBadge } from "@/components/common/stat-card";
 import { ContactLookup } from "@/components/lookup";
 import { OrderEntryLines } from "@/components/orders/OrderEntryLines";
@@ -109,24 +110,23 @@ function OrdersWorkspace({ companyId, currency }: { companyId: string; currency:
     void navigate({ search: { order: id } });
   };
   return (
-    <>
-      <PageHeader
-        title="Sales orders"
-        description="Agree customer orders, confirm them and convert to a draft invoice. Orders have no ledger impact."
-        actions={
-          can("sales.draft") ? (
-            <Button
-              size="sm"
-              onClick={() => {
-                void navigate({ search: {} });
-                setEditing("new");
-              }}
-            >
-              New sales order
-            </Button>
-          ) : null
-        }
-      />
+    <ListWorkspace
+      title="Sales orders"
+      description="Agree customer orders, confirm them and convert to a draft invoice. Orders have no ledger impact."
+      actions={
+        can("sales.draft") ? (
+          <Button
+            size="sm"
+            onClick={() => {
+              void navigate({ search: {} });
+              setEditing("new");
+            }}
+          >
+            New sales order
+          </Button>
+        ) : null
+      }
+    >
       {editing ? (
         <SalesOrderForm
           key={`${editing}:${orderId ?? "new"}`}
@@ -357,7 +357,7 @@ function OrdersWorkspace({ companyId, currency }: { companyId: string; currency:
           </>
         )}
       </div>
-    </>
+    </ListWorkspace>
   );
 }
 function SalesOrderForm({

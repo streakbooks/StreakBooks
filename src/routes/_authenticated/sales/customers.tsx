@@ -6,7 +6,8 @@ import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { listCustomers, upsertCustomer } from "@/lib/sales/sales.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -58,18 +59,17 @@ function Customers() {
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
 
   return (
-    <>
-      <PageHeader
-        title="Customers"
-        description="Shared contact records. Full hub at Contacts."
-        actions={
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/contacts" search={{ view: undefined }}>
-              Open Contacts
-            </Link>
-          </Button>
-        }
-      />
+    <ListWorkspace
+      title="Customers"
+      description="Shared contact records. Full hub at Contacts."
+      actions={
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/contacts" search={{ view: undefined }}>
+            Open Contacts
+          </Link>
+        </Button>
+      }
+    >
       <div className="mb-6 grid max-w-lg gap-2 rounded-md border p-4">
         <Label>New customer</Label>
         <Input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
@@ -154,6 +154,6 @@ function Customers() {
           </TableBody>
         </Table>
       )}
-    </>
+    </ListWorkspace>
   );
 }

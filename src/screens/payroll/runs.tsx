@@ -15,6 +15,7 @@ import { PAYROLL_RUN_STATUSES, type PayrollRunStatus } from "@/lib/payroll/types
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { TableCard } from "@/components/common/table-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -203,24 +204,22 @@ export function PayrollRunsPage() {
       : null;
 
   return (
-    <>
-      <PageHeader
-        title="Payroll runs"
-        description="Create pay runs, calculate amounts, review and approve."
-        actions={
-          canPrepare && list.available ? (
-            <Button size="sm" onClick={() => {
-                setUserEditedDates(false);
-                setCreateOpen(true);
-              }}>
-              <Plus className="mr-2 h-4 w-4" />
-              New run
-            </Button>
-          ) : null
-        }
-      />
-      <PayrollSubnav current="runs" />
-
+    <ListWorkspace
+      title="Payroll runs"
+      description="Create pay runs, calculate amounts, review and approve."
+      actions={
+        canPrepare && list.available ? (
+          <Button size="sm" onClick={() => {
+              setUserEditedDates(false);
+              setCreateOpen(true);
+            }}>
+            <Plus className="mr-2 h-4 w-4" />
+            New run
+          </Button>
+        ) : null
+      }
+      subnav={<PayrollSubnav current="runs" />}
+    >
       {!list.available ? (
         <Alert>
           <AlertTitle>Database update required</AlertTitle>
@@ -439,6 +438,6 @@ export function PayrollRunsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </ListWorkspace>
   );
 }

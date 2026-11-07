@@ -5,7 +5,8 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { useFormat } from "@/hooks/use-format";
 import { listPayments } from "@/lib/purchases/purchases.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
+import { ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { ListToolbar } from "@/components/common/ListTools";
 import { useListSearch } from "@/hooks/use-list-search";
 import { fromMinorUnits } from "@/lib/accounting/money";
@@ -56,21 +57,20 @@ function PaymentsList() {
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
 
   return (
-    <>
-      <PageHeader
-        title="Supplier payments"
-        description="Full or partial payments allocated to authorised bills. Overpayments remain unallocated on the payment."
-        actions={
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" asChild>
-              <Link to="/purchases/payments/batch">Batch payment</Link>
-            </Button>
-            <Button size="sm" asChild>
-              <Link to="/purchases/payments/new">New payment</Link>
-            </Button>
-          </div>
-        }
-      />
+    <ListWorkspace
+      title="Supplier payments"
+      description="Full or partial payments allocated to authorised bills. Overpayments remain unallocated on the payment."
+      actions={
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" asChild>
+            <Link to="/purchases/payments/batch">Batch payment</Link>
+          </Button>
+          <Button size="sm" asChild>
+            <Link to="/purchases/payments/new">New payment</Link>
+          </Button>
+        </div>
+      }
+    >
       {query.isPending ? (
         <ListSkeleton />
       ) : query.isError ? (
@@ -169,6 +169,6 @@ function PaymentsList() {
           </TableCard>
         </>
       )}
-    </>
+    </ListWorkspace>
   );
 }

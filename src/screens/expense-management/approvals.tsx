@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -380,18 +381,16 @@ export function ExpenseManagementApprovalsPage() {
   );
 
   return (
-    <>
-      <PageHeader
-        title="Approvals"
-        description="Review submitted claims and post approved employee-paid accruals."
-        actions={
-          <Button asChild variant="outline" size="sm">
-            <Link to="/purchases/employee-expenses">Legacy employee expenses</Link>
-          </Button>
-        }
-      />
-      <ExpenseManagementSubnav current="approvals" />
-
+    <ListWorkspace
+      title="Approvals"
+      description="Review submitted claims and post approved employee-paid accruals."
+      actions={
+        <Button asChild variant="outline" size="sm">
+          <Link to="/purchases/employee-expenses">Legacy employee expenses</Link>
+        </Button>
+      }
+      subnav={<ExpenseManagementSubnav current="approvals" />}
+    >
       <Alert className="mb-6">
         <AlertTitle>Approval and accrual posting</AlertTitle>
         <AlertDescription>
@@ -839,6 +838,6 @@ export function ExpenseManagementApprovalsPage() {
           )}
         </div>
       ) : null}
-    </>
+    </ListWorkspace>
   );
 }

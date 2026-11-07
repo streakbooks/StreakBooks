@@ -14,7 +14,8 @@ import { fromMinorUnits } from "@/lib/accounting/money";
 import { buildBatchPayments, type BatchBill } from "@/lib/purchases/batch-payment";
 import { useCanDo } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, LoadingState, EmptyState, ErrorState } from "@/components/common/states";
+import { LoadingState, EmptyState, ErrorState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { AccountLookup } from "@/components/lookup";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -120,16 +121,15 @@ function BatchPayment() {
     );
 
   return (
-    <>
-      <PageHeader
-        title="Batch payment"
-        description="Pay several bills in one go. One payment is created per supplier and currency; all post together or not at all."
-        actions={
-          <Button size="sm" variant="outline" asChild>
-            <Link to="/purchases/payments">Cancel</Link>
-          </Button>
-        }
-      />
+    <ListWorkspace
+      title="Batch payment"
+      description="Pay several bills in one go. One payment is created per supplier and currency; all post together or not at all."
+      actions={
+        <Button size="sm" variant="outline" asChild>
+          <Link to="/purchases/payments">Cancel</Link>
+        </Button>
+      }
+    >
       <div className="max-w-4xl space-y-4">
         {accountsQ.isError ? (
           <ErrorState
@@ -237,6 +237,6 @@ function BatchPayment() {
           </Button>
         </div>
       </div>
-    </>
+    </ListWorkspace>
   );
 }

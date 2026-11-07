@@ -29,6 +29,7 @@ import type { PayslipSnapshot } from "@/lib/payroll/payslip-snapshot";
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { TableCard } from "@/components/common/table-card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -378,32 +379,30 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
   };
 
   return (
-    <>
-      <PageHeader
-        title="Payroll payments"
-        description="Record net-pay settlements against posted runs. Partial and multiple payments are supported."
-        actions={
-          <div className="flex flex-wrap gap-2">
-            {canPay ? (
-              <>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={exportMut.isPending}
-                  onClick={() => exportMut.mutate()}
-                >
-                  Generic bank CSV
-                </Button>
-                <Button size="sm" disabled={recordMut.isPending} onClick={openRecordDialog}>
-                  Record payment
-                </Button>
-              </>
-            ) : null}
-          </div>
-        }
-      />
-      <PayrollSubnav current="payments" />
-
+    <ListWorkspace
+      title="Payroll payments"
+      description="Record net-pay settlements against posted runs. Partial and multiple payments are supported."
+      actions={
+        <div className="flex flex-wrap gap-2">
+          {canPay ? (
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={exportMut.isPending}
+                onClick={() => exportMut.mutate()}
+              >
+                Generic bank CSV
+              </Button>
+              <Button size="sm" disabled={recordMut.isPending} onClick={openRecordDialog}>
+                Record payment
+              </Button>
+            </>
+          ) : null}
+        </div>
+      }
+      subnav={<PayrollSubnav current="payments" />}
+    >
       {runIdFilter ? (
         <Alert className="mb-4">
           <AlertDescription className="flex flex-wrap items-center justify-between gap-2">
@@ -868,6 +867,6 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </ListWorkspace>
   );
 }

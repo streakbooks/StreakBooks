@@ -14,6 +14,7 @@ import type { PayrollPayslipsListPage, PayslipPaymentStatus } from "@/lib/payrol
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { TableCard } from "@/components/common/table-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -160,42 +161,40 @@ export function PayrollPayslipsPage({
   const list = listQ.data as PayrollPayslipsListPage;
 
   return (
-    <>
-      <PageHeader
-        title="Payslips"
-        description="Issued payslips from approved payroll runs."
-        actions={
-          <div className="flex flex-wrap items-center gap-2">
-            {canExport && list.available ? (
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={filteredPayslips.length === 0}
-                onClick={() =>
-                  downloadCsv(
-                    "payroll-payslips-filtered.csv",
-                    payrollPayslipsToCsv(filteredPayslips),
-                  )
-                }
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Export filtered CSV
-              </Button>
-            ) : null}
-            {runIdFilter ? (
-              <Link
-                to="/payroll/runs/$runId"
-                params={{ runId: runIdFilter }}
-                className="text-sm text-primary hover:underline"
-              >
-                Back to run
-              </Link>
-            ) : null}
-          </div>
-        }
-      />
-      <PayrollSubnav current="payslips" />
-
+    <ListWorkspace
+      title="Payslips"
+      description="Issued payslips from approved payroll runs."
+      actions={
+        <div className="flex flex-wrap items-center gap-2">
+          {canExport && list.available ? (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={filteredPayslips.length === 0}
+              onClick={() =>
+                downloadCsv(
+                  "payroll-payslips-filtered.csv",
+                  payrollPayslipsToCsv(filteredPayslips),
+                )
+              }
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Export filtered CSV
+            </Button>
+          ) : null}
+          {runIdFilter ? (
+            <Link
+              to="/payroll/runs/$runId"
+              params={{ runId: runIdFilter }}
+              className="text-sm text-primary hover:underline"
+            >
+              Back to run
+            </Link>
+          ) : null}
+        </div>
+      }
+      subnav={<PayrollSubnav current="payslips" />}
+    >
       {list.available ? (
         <div className="mb-4 flex flex-wrap items-end gap-4">
           <div className="grid gap-1.5">
@@ -363,6 +362,6 @@ export function PayrollPayslipsPage({
           </Table>
         </TableCard>
       )}
-    </>
+    </ListWorkspace>
   );
 }

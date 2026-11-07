@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PageHeader, LoadingState } from "@/components/common/states";
+import { LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { PortalInbox } from "@/components/portals/staff-panels";
 import { useActiveCompany } from "@/hooks/use-active-company";
 
@@ -13,12 +14,11 @@ function PortalInboxPage() {
   if (isPending) return <LoadingState />;
   if (!company) return null;
   return (
-    <div className="space-y-4">
-      <PageHeader
-        title="Portal inbox"
-        description="Review supplier bills, credit notes and bank-detail changes before they affect the ledger."
-      />
+    <ListWorkspace
+      title="Portal inbox"
+      description="Review supplier bills, credit notes and bank-detail changes before they affect the ledger."
+    >
       <PortalInbox companyId={company.id} />
-    </div>
+    </ListWorkspace>
   );
 }

@@ -23,6 +23,7 @@ import { EMPLOYEE_STATUSES, EMPLOYMENT_TYPES, PAYMENT_METHODS } from "@/lib/payr
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { TableCard } from "@/components/common/table-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -260,23 +261,22 @@ export function PayrollEmployeesPage() {
   };
 
   return (
-    <>
-      <PageHeader
-        title="Payroll employees"
-        description="Manage employee profiles, payment details and salary assignments."
-        actions={
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={exportCsv} disabled={!list.available}>
-              <Download className="mr-2 h-4 w-4" />
-              Export current view
-            </Button>
-            {canManage ? (
-              <>
-                <input
-                  ref={importInputRef}
-                  type="file"
-                  accept=".csv,text/csv"
-                  className="hidden"
+    <ListWorkspace
+      title="Payroll employees"
+      description="Manage employee profiles, payment details and salary assignments."
+      actions={
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" onClick={exportCsv} disabled={!list.available}>
+            <Download className="mr-2 h-4 w-4" />
+            Export current view
+          </Button>
+          {canManage ? (
+            <>
+              <input
+                ref={importInputRef}
+                type="file"
+                accept=".csv,text/csv"
+                className="hidden"
                   onChange={(e) => void importCsv(e.target.files?.[0] ?? null)}
                 />
                 <Button
@@ -296,9 +296,8 @@ export function PayrollEmployeesPage() {
             ) : null}
           </div>
         }
-      />
-      <PayrollSubnav current="employees" />
-
+      subnav={<PayrollSubnav current="employees" />}
+    >
       {!list.available ? (
         <Alert>
           <AlertTitle>Database update required</AlertTitle>
@@ -502,7 +501,7 @@ export function PayrollEmployeesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </ListWorkspace>
   );
 }
 

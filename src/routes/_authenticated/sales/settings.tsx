@@ -4,7 +4,8 @@ import { ModuleSettingsLinks } from "@/components/settings/ModuleSettingsLinks";
 import { createFileRoute } from "@tanstack/react-router";
 import { useActiveCompany } from "@/hooks/use-active-company";
 
-import { PageHeader, LoadingState } from "@/components/common/states";
+import { LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { Button } from "@/components/ui/button";
 
@@ -20,20 +21,19 @@ function SalesSettingsPage() {
     return <CompanyEmptyState title="No organisation" description="Select a company first." />;
   }
   return (
-    <>
-      <PageHeader
-        title="Sales settings"
-        description="Payment terms, quotes and invoice notes, with quick access to branding, numbering and other sales settings."
-        actions={
-          <Button variant="outline" size="sm" asChild>
-            <SettingsDestinationLink destination={{ to: "/settings", section: "overview" }}>
-              Organisation settings
-            </SettingsDestinationLink>
-          </Button>
-        }
-      />
+    <ListWorkspace
+      title="Sales settings"
+      description="Payment terms, quotes and invoice notes, with quick access to branding, numbering and other sales settings."
+      actions={
+        <Button variant="outline" size="sm" asChild>
+          <SettingsDestinationLink destination={{ to: "/settings", section: "overview" }}>
+            Organisation settings
+          </SettingsDestinationLink>
+        </Button>
+      }
+    >
       <ModuleSettingsLinks category="sales" />
       <SalesDefaultsForm key={company.id} companyId={company.id} />
-    </>
+    </ListWorkspace>
   );
 }

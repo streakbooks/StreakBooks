@@ -5,7 +5,8 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { useFormat } from "@/hooks/use-format";
 import { listExpenses } from "@/lib/purchases/purchases.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
+import { ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { ListToolbar } from "@/components/common/ListTools";
 import { useListSearch } from "@/hooks/use-list-search";
 import { fromMinorUnits } from "@/lib/accounting/money";
@@ -53,16 +54,15 @@ function ExpensesList() {
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
 
   return (
-    <>
-      <PageHeader
-        title="Direct expenses"
-        description="Paid immediately from a bank/cash account — not supplier bills on AP. Distinct from employee claims."
-        actions={
-          <Button size="sm" asChild>
-            <Link to="/purchases/expenses/new">New expense</Link>
-          </Button>
-        }
-      />
+    <ListWorkspace
+      title="Direct expenses"
+      description="Paid immediately from a bank/cash account — not supplier bills on AP. Distinct from employee claims."
+      actions={
+        <Button size="sm" asChild>
+          <Link to="/purchases/expenses/new">New expense</Link>
+        </Button>
+      }
+    >
       {query.isPending ? (
         <ListSkeleton />
       ) : query.isError ? (
@@ -150,6 +150,6 @@ function ExpensesList() {
           </TableCard>
         </>
       )}
-    </>
+    </ListWorkspace>
   );
 }

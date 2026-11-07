@@ -7,7 +7,8 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { useFormat } from "@/hooks/use-format";
 import { exportReceiptsCsv, listReceipts } from "@/lib/sales/sales-receipts.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
+import { ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { StatusBadge } from "@/components/common/stat-card";
 import { ListToolbar, Pager, TableCard, SortHead } from "@/components/sales/ListKit";
 import { downloadCsv, initialListState, type ListState } from "@/lib/sales/list-state";
@@ -73,16 +74,15 @@ function ReceiptsList() {
   const rows = query.data?.rows ?? [];
 
   return (
-    <>
-      <PageHeader
-        title="Receipts"
-        description="Customer payments allocated to invoices. Overpayments stay unallocated until you apply them."
-        actions={
-          <Button size="sm" asChild>
-            <Link to="/sales/receipts/new">Record receipt</Link>
-          </Button>
-        }
-      />
+    <ListWorkspace
+      title="Receipts"
+      description="Customer payments allocated to invoices. Overpayments stay unallocated until you apply them."
+      actions={
+        <Button size="sm" asChild>
+          <Link to="/sales/receipts/new">Record receipt</Link>
+        </Button>
+      }
+    >
       <ListToolbar
         state={state}
         onChange={patch}
@@ -215,6 +215,6 @@ function ReceiptsList() {
           <Pager total={query.data?.total ?? 0} state={state} onChange={patch} />
         </>
       )}
-    </>
+    </ListWorkspace>
   );
 }

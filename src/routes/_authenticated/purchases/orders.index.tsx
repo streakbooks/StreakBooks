@@ -18,7 +18,8 @@ import {
   listPurchaseOrders,
 } from "@/lib/purchases/purchases.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
+import { ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { ListToolbar } from "@/components/common/ListTools";
 
 import { fromMinorUnits } from "@/lib/accounting/money";
@@ -84,18 +85,17 @@ function OrdersList() {
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
 
   return (
-    <>
-      <PageHeader
-        title="Purchase orders"
-        description="POs never post AP or expense. Convert to a draft bill when ready — posting happens only when the bill is authorised."
-        actions={
-          can("purchases.draft") ? (
-            <Button size="sm" asChild>
-              <Link to="/purchases/orders/new">New order</Link>
-            </Button>
-          ) : null
-        }
-      />
+    <ListWorkspace
+      title="Purchase orders"
+      description="POs never post AP or expense. Convert to a draft bill when ready — posting happens only when the bill is authorised."
+      actions={
+        can("purchases.draft") ? (
+          <Button size="sm" asChild>
+            <Link to="/purchases/orders/new">New order</Link>
+          </Button>
+        ) : null
+      }
+    >
       {query.isPending ? (
         <ListSkeleton />
       ) : query.isError ? (
@@ -252,6 +252,6 @@ function OrdersList() {
           </TableCard>
         </>
       )}
-    </>
+    </ListWorkspace>
   );
 }

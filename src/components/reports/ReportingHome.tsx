@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getReportingWorkspace } from "@/lib/reports/ecosystem.functions";
 import { listReportLibrary } from "@/lib/reports/report-views.functions";
 import { parseReportSearch } from "@/lib/reports/search";
-import { useReportingCentreOrigin } from "@/lib/reports/centre-return";
+import { useReportingCentreOrigin } from "@/hooks/use-reporting-centre-origin";
 import { QUICK_REPORT_IDS, getReportById } from "@/lib/reports/catalog";
 import type { ReportingPack } from "@/lib/reports/ecosystem-model";
 import { Button } from "@/components/ui/button";

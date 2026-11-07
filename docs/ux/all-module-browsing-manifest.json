@@ -519,7 +519,7 @@
   },
   "inventoryGuardEvidence": {
     "source": "scripts/check-browsing-coverage.mjs",
-    "commit": "3484d29ad8b9746d42006e063df2d63d8a9aa0f5",
+    "commit": "eae7c968a846d7305fd9301300509ea91b9c7520",
     "checks": [
       "Sidebar/module and route inventory uniqueness and exact presence",
       "Manifest count summaries equal current source inventory",
@@ -527,7 +527,8 @@
       "Any fully verified module has 12 nonempty evidence entries",
       "Supporting route verification evidence must contain 12 nonempty entries when fullyVerified",
       "Cross-cutting workflow verification evidence must contain 12 nonempty entries when fullyVerified",
-      "Reject unknown supporting evidence keys, duplicate cross-cutting areas and malformed acceptance criteria"
+      "Reject unknown supporting evidence keys, duplicate cross-cutting areas and malformed acceptance criteria",
+      "Reject duplicate sidebar label/path pairs in either source navigation or manifest, and invalid manifest labels/paths"
     ],
     "execution": "NOT RUN",
     "note": "Structural guard only; no route, module or workflow accepted"

@@ -14,6 +14,7 @@ import { ensureLedgerMasters } from "@/lib/accounting/accounting.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { EmptyState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -71,6 +72,52 @@ export function AccountingWorkspace({
     <ListWorkspace
       title="Accounting"
       description="Authoritative double-entry ledger: chart of accounts, journals, financial years and period close."
+      insights={
+        <WorkspaceInsights
+          title="Accounting shortcuts"
+          facts={[
+            {
+              label: "Posting engine",
+              value: "post_journal RPC only",
+            },
+            {
+              label: "History",
+              value: "Immutable — correct via reversal",
+            },
+          ]}
+          links={[
+            {
+              label: "Chart of accounts",
+              to: "/accounting",
+              search: { tab: "coa" },
+              hint: "Ledger account structure",
+            },
+            {
+              label: "Journals",
+              to: "/accounting",
+              search: { tab: "journals" },
+              hint: "Posted and draft journals",
+            },
+            {
+              label: "Financial years",
+              to: "/accounting",
+              search: { tab: "periods" },
+              hint: "Fiscal years and period close",
+            },
+            {
+              label: "Recurring journals",
+              to: "/recurring-journals",
+              hint: "Scheduled journal templates",
+            },
+            {
+              label: "Reports",
+              to: "/reports",
+              hint: "Financial statements from the ledger",
+            },
+          ]}
+          footer="All posts use the shared ledger engine. Empty periods are not treated as successful closes."
+        />
+      }
       actions={
         <div className="flex gap-2">
           <Button size="sm" variant="outline" asChild>

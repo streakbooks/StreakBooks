@@ -6,6 +6,7 @@ import { TrustBadges } from "@/components/app-store/TrustBadges";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
+import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -128,6 +129,58 @@ export function AppStoreAppDetailPage({ appCode }: { appCode: string }) {
   return (
       <RecordWorkspace title={app.name}
         description={app.headline}
+        insights={
+          <WorkspaceInsights
+            title="Related"
+            facts={[
+              {
+                label: "Kind",
+                value:
+                  app.kind === "native"
+                    ? "Native"
+                    : app.kind === "partner_api"
+                      ? "Partner API"
+                      : "Hybrid",
+              },
+              {
+                label: "Status",
+                value: connectorStatusLabel(app.implementationStatus),
+              },
+              {
+                label: "Install state",
+                value: app.installStatus?.replaceAll("_", " ") ?? "not installed",
+              },
+              {
+                label: "Security review",
+                value: app.securityReviewPassed ? "passed" : "pending",
+              },
+              {
+                label: "Real customer data",
+                value: app.realCustomerDataEnabled ? "enabled" : "disabled",
+              },
+            ]}
+            links={[
+              {
+                label: "Explore catalogue",
+                to: "/app-store/$section",
+                params: { section: "explore" },
+                hint: "Return to the App Store catalogue",
+              },
+              {
+                label: "CSV / import alternative",
+                to: "/imports",
+                hint: "Use file import when a connector is unavailable",
+              },
+              {
+                label: "Public API docs",
+                to: "/developer/$section",
+                params: { section: "api-docs" },
+                hint: "Developer portal documentation",
+              },
+            ]}
+            footer="Install stays fail-closed until verified E2E sync and activation gates pass. No fabricated readiness."
+          />
+        }
         actions={
           <div className="flex flex-wrap gap-2">
             <Button asChild variant="outline" size="sm">

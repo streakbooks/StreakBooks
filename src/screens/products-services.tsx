@@ -33,6 +33,7 @@ import {
 } from "@/components/documents/DocumentRecordPanel";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -460,6 +461,41 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
     <ListWorkspace
       title="Products & Services"
       description="Catalogue defaults for sales and purchase lines. Stock valuation is not enabled — this is a non-inventory catalogue."
+      insights={
+        <WorkspaceInsights
+          title="Catalogue shortcuts"
+          facts={[
+            { label: "Matching items", value: String(total) },
+            {
+              label: "Inventory engine",
+              value: "Not enabled — non-inventory catalogue",
+            },
+            {
+              label: "Manage permission",
+              value: canManage ? "products.manage" : "view only",
+            },
+          ]}
+          links={[
+            {
+              label: "Import catalogue CSV",
+              to: "/imports",
+              search: { module: "products" },
+              hint: "Bulk import products and services",
+            },
+            {
+              label: "Sales invoices",
+              to: "/sales/invoices",
+              hint: "Use catalogue defaults on sales lines",
+            },
+            {
+              label: "Purchase bills",
+              to: "/purchases/bills",
+              hint: "Use catalogue defaults on bill lines",
+            },
+          ]}
+          footer="Counts are exact for the active filters. No stock-on-hand or COGS inventory is claimed."
+        />
+      }
       actions={
         <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="outline" asChild>

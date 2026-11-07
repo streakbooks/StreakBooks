@@ -13,6 +13,7 @@ import { getDashboardSnapshot } from "@/lib/dashboard/dashboard.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { ErrorState, LoadingState, CardGridSkeleton } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { GettingStarted, KpiRow } from "@/components/dashboard/DashboardWidgets";
 import { PersonalizedDashboardWidgets } from "@/components/dashboard/PersonalizedDashboardWidgets";
@@ -118,6 +119,53 @@ function Dashboard() {
     <ListWorkspace
       title="Financial overview"
       description={`${company?.name ?? "Your organisation"} · ${company?.base_currency ?? ""} · Balances from your posted ledger and documents.`}
+      insights={
+        <WorkspaceInsights
+          title="Workspace shortcuts"
+          facts={[
+            {
+              label: "Organisation",
+              value: company?.name ?? "—",
+            },
+            {
+              label: "Base currency",
+              value: company?.base_currency ?? "—",
+            },
+            {
+              label: "Balances",
+              value: "Posted ledger and documents only",
+            },
+          ]}
+          links={[
+            {
+              label: "Sales invoices",
+              to: "/sales/invoices",
+              hint: "Customer invoices",
+            },
+            {
+              label: "Bills to pay",
+              to: "/purchases/bills",
+              hint: "Supplier bills workspace",
+            },
+            {
+              label: "Banking",
+              to: "/banking",
+              hint: "Bank and cash accounts",
+            },
+            {
+              label: "Reports",
+              to: "/reports",
+              hint: "Financial statements",
+            },
+            {
+              label: "New invoice",
+              to: "/sales/invoices/new",
+              hint: "Create a customer invoice",
+            },
+          ]}
+          footer="Dashboard figures come from posted ledger data. Empty demo journals are not treated as a successful seed."
+        />
+      }
       actions={
         <>
           <Button variant="ghost" size="sm" asChild>

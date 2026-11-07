@@ -1,5 +1,5 @@
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -73,6 +73,7 @@ function BankingAccounts() {
   const update = useServerFn(updateBankAccount);
 
   const [name, setName] = useState("");
+  const accountNameRef = useRef<HTMLInputElement>(null);
   const [glAccountId, setGlAccountId] = useState("");
   const [currency, setCurrency] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
@@ -171,6 +172,8 @@ function BankingAccounts() {
           icon={Landmark}
           title="No bank accounts"
           description="Add a bank or cash account linked to a GL code."
+          actionLabel="Add bank account"
+          onActionClick={() => accountNameRef.current?.focus()}
         />
       ) : (
         <div className="mb-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -338,9 +341,11 @@ function BankingAccounts() {
         </Button>
       ) : null}
 
-      <div className="grid max-w-lg gap-3 rounded-md border p-4">
-        <Label>Add bank / cash account</Label>
+      <div className="grid max-w-lg gap-3 rounded-md border p-4" role="group" aria-label="Add bank or cash account">
+        <Label htmlFor="bank-account-name">Add bank / cash account</Label>
         <Input
+          ref={accountNameRef}
+          id="bank-account-name"
           placeholder="Name (e.g. Operating account)"
           value={name}
           onChange={(e) => setName(e.target.value)}

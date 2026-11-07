@@ -46,6 +46,17 @@ const parsedSidebar = [...navSource.matchAll(
   /\{\s*label:\s*"([^"]+)",\s*to:\s*"([^"]+)",/g,
 )].map((match) => ({ label: match[1], href: match[2] }));
 const sidebar = manifest.modules.map(({ label, href }) => ({ label, href }));
+// A set-based inventory comparison alone cannot detect duplicate sidebar
+// declarations. Reject duplicates in both the source navigation and manifest.
+for (const [name, entries] of [["Source navigation", parsedSidebar], ["Browsing manifest", sidebar]]) {
+  const keys = entries.map(({ label, href }) => label + " | " + href);
+  if (new Set(keys).size !== keys.length) {
+    throw new Error(name + " contains duplicate top-level sidebar entries");
+  }
+}
+if (sidebar.some(({ label, href }) => typeof label !== "string" || !label.trim() || typeof href !== "string" || !href.startsWith("/"))) {
+  throw new Error("Browsing manifest contains invalid top-level sidebar entries");
+}
 compareList(
   parsedSidebar.map((m) => m.label + " | " + m.href),
   sidebar.map((m) => m.label + " | " + m.href),

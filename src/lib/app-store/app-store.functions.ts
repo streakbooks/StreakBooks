@@ -1225,3 +1225,117 @@ export const suspendMarketplaceAppListing = createServerFn({ method: "POST" })
       };
     },
   );
+
+export type EnqueueSyncAttemptResult = {
+  enqueued: false;
+  reason: string;
+};
+
+/**
+ * Attempt to enqueue a sync job. Always fail-closed until E2E + vault + activation gates.
+ * Does not insert fabricated job rows.
+ */
+export const attemptEnqueueMarketplaceSyncJob = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      appCode: string;
+      connectionId?: string | null;
+      trigger?: "manual" | "scheduled" | "webhook";
+    }) => ({
+      companyId: companyIdOf(input),
+      appCode: String(input.appCode ?? "")
+        .trim()
+        .slice(0, 80),
+      connectionId:
+        typeof input.connectionId === "string" && input.connectionId.trim()
+          ? assertUuid(input.connectionId)
+          : null,
+      trigger: (input.trigger ?? "manual") as "manual" | "scheduled" | "webhook",
+    }),
+  )
+  .handler(async ({ data, context }): Promise<EnqueueSyncAttemptResult> => {
+    if (!data.appCode) throw new Error("App code is required.");
+    await assertCompanyMember(context.supabase, data.companyId);
+    try {
+      await assertCompanyPermission(context.supabase, data.companyId, "appstore.view_sync");
+    } catch {
+      await assertCompanyPermission(context.supabase, data.companyId, "appstore.view");
+    }
+
+    const { decideEnqueueSyncJob } = await import("@/lib/app-store/engine/enqueue");
+    const { DEFAULT_MARKETPLACE_APPS } = await import("@/lib/app-store/catalogue");
+    type Impl = (typeof DEFAULT_MARKETPLACE_APPS)[number]["implementationStatus"];
+
+    let implementationStatus: Impl =
+      DEFAULT_MARKETPLACE_APPS.find((a) => a.code === data.appCode)?.implementationStatus ??
+      "catalogue_only";
+    let securityReviewPassed = false;
+    let realCustomerDataEnabled = false;
+    let suspended = false;
+
+    try {
+      const rows = await callRpc(
+        context.supabase,
+        "list_company_marketplace_apps",
+        { _company_id: data.companyId },
+        MARKETPLACE_MIGRATION,
+      );
+      const match = Array.isArray(rows)
+        ? (rows as Record<string, unknown>[]).find(
+            (r) => String(r["code"] ?? "") === data.appCode,
+          )
+        : undefined;
+      if (match) {
+        const rawStatus = String(
+          match["implementationStatus"] ?? match["implementation_status"] ?? implementationStatus,
+        );
+        implementationStatus = (rawStatus as Impl) || implementationStatus;
+        securityReviewPassed = Boolean(
+          match["securityReviewPassed"] ?? match["security_review_passed"] ?? false,
+        );
+        realCustomerDataEnabled = Boolean(
+          match["realCustomerDataEnabled"] ?? match["real_customer_data_enabled"] ?? false,
+        );
+        suspended = Boolean(match["suspended"] ?? false);
+      }
+    } catch {
+      // defaults remain fail-closed
+    }
+
+    let hasInstallPermission = false;
+    try {
+      await assertCompanyPermission(context.supabase, data.companyId, "appstore.install");
+      hasInstallPermission = true;
+    } catch {
+      hasInstallPermission = false;
+    }
+
+    const decision = decideEnqueueSyncJob({
+      companyId: data.companyId,
+      appCode: data.appCode,
+      connectionId: data.connectionId,
+      trigger: data.trigger,
+      implementationStatus,
+      securityReviewPassed,
+      realCustomerDataEnabled,
+      suspended,
+      hasInstallPermission,
+      oauthVaultConfigured: Boolean(
+        process.env["MARKETPLACE_OAUTH_VAULT_KEY"]?.trim() ||
+          process.env["APP_STORE_OAUTH_VAULT_CONFIGURED"] === "true",
+      ),
+    });
+
+    if (!decision.allowed) {
+      return { enqueued: false, reason: decision.reason };
+    }
+
+    // Live persistence requires a claim/enqueue RPC + worker — not invented here.
+    return {
+      enqueued: false,
+      reason:
+        "FAIL CLOSED: sync worker persistence is not enabled; gates passed but no job was written.",
+    };
+  });

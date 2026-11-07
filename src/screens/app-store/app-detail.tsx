@@ -29,6 +29,7 @@ import {
 } from "@/lib/app-store/security/activation";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import type { Permission } from "@/lib/permissions";
+import { AppStoreInstallWizard } from "@/screens/app-store/install-wizard";
 import { toast } from "sonner";
 
 export function AppStoreAppDetailPage({ appCode }: { appCode: string }) {
@@ -289,6 +290,14 @@ export function AppStoreAppDetailPage({ appCode }: { appCode: string }) {
             </CardContent>
           </Card>
         </div>
+      </div>
+
+      <div className="mt-6">
+        <AppStoreInstallWizard
+          app={app}
+          companyName={company.name}
+          hasInstallPermission={canInstall}
+        />
       </div>
     </>
   );

@@ -108,6 +108,13 @@ export const APP_STORE_SECTIONS = [
     anyOf: ["appstore.view", "appstore.manage_certification"] as const,
     batch: "AS-XP-10",
   },
+  {
+    key: "admin",
+    label: "Platform Administration",
+    path: `${APP_STORE_BASE}/admin`,
+    anyOf: ["appstore.manage_certification"] as const,
+    batch: "AS-06",
+  },
 ] as const;
 
 export type AppStoreSectionKey = (typeof APP_STORE_SECTIONS)[number]["key"];

@@ -40,3 +40,9 @@ export {
   validateWebhookEnvelope,
   type WebhookPayloadValidation,
 } from "@/lib/app-store/security/webhook-payload";
+export {
+  buildMarketplaceAbuseAlert,
+  type MarketplaceAlertDraft,
+  type MarketplaceAlertType,
+} from "@/lib/app-store/security/abuse-alert";
+

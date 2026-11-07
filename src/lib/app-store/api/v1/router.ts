@@ -32,101 +32,101 @@ export type PublicApiRoute = {
   path: string;
   scope: string;
   summary: string;
-  status: "documented" | "implemented" | "gated";
+  status: "gated" | "implemented" | "gated";
 };
 
-/** Catalogue of v1 routes. Gated until OAuth clients can be issued securely. */
+/** Catalogue of v1 routes. HTTP under /api/marketplace/v1; gated until vault + review. */
 export const PUBLIC_API_V1_ROUTES: readonly PublicApiRoute[] = [
   {
     method: "GET",
     path: "/api/v1/organisation",
     scope: "organisation.read",
     summary: "Read organisation profile",
-    status: "documented",
+    status: "gated",
   },
   {
     method: "GET",
     path: "/api/v1/contacts",
     scope: "contacts.read",
     summary: "List contacts",
-    status: "documented",
+    status: "gated",
   },
   {
     method: "POST",
     path: "/api/v1/contacts",
     scope: "contacts.write",
     summary: "Create or update a contact",
-    status: "documented",
+    status: "gated",
   },
   {
     method: "GET",
     path: "/api/v1/products",
     scope: "products.read",
     summary: "List products and services",
-    status: "documented",
+    status: "gated",
   },
   {
     method: "POST",
     path: "/api/v1/products",
     scope: "products.write",
     summary: "Create or update a product",
-    status: "documented",
+    status: "gated",
   },
   {
     method: "GET",
     path: "/api/v1/sales/invoices",
     scope: "sales.read",
     summary: "List sales invoices",
-    status: "documented",
+    status: "gated",
   },
   {
     method: "POST",
     path: "/api/v1/sales/invoices",
     scope: "sales.write",
     summary: "Create a draft sales invoice via accounting-safe paths",
-    status: "documented",
+    status: "gated",
   },
   {
     method: "GET",
     path: "/api/v1/purchases/bills",
     scope: "purchases.read",
     summary: "List bills",
-    status: "documented",
+    status: "gated",
   },
   {
     method: "POST",
     path: "/api/v1/purchases/bills",
     scope: "purchases.write",
     summary: "Create a draft bill via accounting-safe paths",
-    status: "documented",
+    status: "gated",
   },
   {
     method: "GET",
     path: "/api/v1/banking/accounts",
     scope: "banking.read",
     summary: "List bank accounts",
-    status: "documented",
+    status: "gated",
   },
   {
     method: "GET",
     path: "/api/v1/accounting/accounts",
     scope: "accounting.read",
     summary: "List chart of accounts",
-    status: "documented",
+    status: "gated",
   },
   {
     method: "POST",
     path: "/api/v1/files",
     scope: "files.write",
     summary: "Upload an attachment",
-    status: "documented",
+    status: "gated",
   },
   {
     method: "POST",
     path: "/api/v1/webhooks/subscriptions",
     scope: "webhooks.manage",
     summary: "Register a webhook subscription",
-    status: "documented",
+    status: "gated",
   },
 ] as const;
 
@@ -135,13 +135,28 @@ export function listPublicApiCatalog() {
     apiVersion: PUBLIC_API_VERSION,
     scopes: PUBLIC_API_SCOPES,
     routes: PUBLIC_API_V1_ROUTES,
+    httpBase: "/api/marketplace/v1",
     auth: {
       type: "oauth2",
       pkce: true,
       tokenStorage: "server_vault_hash_only",
-      note: "Token issuance is gated until the credential vault is configured.",
+      note: "Token issuance is gated until the credential vault is configured. HTTP is mounted at /api/marketplace/v1 (billing SaaS API remains at /api/v1).",
     },
   };
+}
+
+/** Match a documented catalogue path (always /api/v1/...). */
+export function matchPublicApiRoute(
+  method: string,
+  cataloguePath: string,
+): PublicApiRoute | null {
+  const normalized = cataloguePath.replace(/\/+$/, "") || "/";
+  const upper = method.toUpperCase();
+  return (
+    PUBLIC_API_V1_ROUTES.find(
+      (route) => route.method === upper && route.path.replace(/\/+$/, "") === normalized,
+    ) ?? null
+  );
 }
 
 export function requireScope(

@@ -33,7 +33,10 @@ See in-app **App Store → Integration Register** (`/app-store/register`) for th
 - Connector adapter interface + Shopify/Amazon/Stripe scaffolds (`installEligible: false`)
 - Sync jobs, events, mappings, webhook subscriptions/deliveries (SQL)
 - Idempotency, webhook security, OAuth token vault contracts
-- Public API v1 route catalogue (documented, gated)
+- Fail-closed sync enqueue decision helper (`engine/enqueue.ts`) — does not write fabricated jobs
+- Public API v1 catalogue **HTTP-mounted** at `/api/marketplace/v1` (routes catalogue open; data routes `security_locked` until vault + review + consent). Billing SaaS API remains at `/api/v1`
+- Customer screens: exceptions, billing honesty, ratings (zero fabricated), install wizard (activate locked), platform admin
+- Developer portal sections: publisher, applications, register, webhooks, sandbox, versions, analytics, usage, partner, support (vault-locked credentials)
 - Partner tiers, trust/certification, analytics event tables
 
 ## Non-claims

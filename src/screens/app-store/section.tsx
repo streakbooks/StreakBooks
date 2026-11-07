@@ -45,6 +45,18 @@ const AppStoreSyncActivityPage = lazy(() =>
     default: m.AppStoreSyncActivityPage,
   })),
 );
+const AppStoreExceptionsPage = lazy(() =>
+  import("@/screens/app-store/exceptions").then((m) => ({ default: m.AppStoreExceptionsPage })),
+);
+const AppStoreBillingPage = lazy(() =>
+  import("@/screens/app-store/billing").then((m) => ({ default: m.AppStoreBillingPage })),
+);
+const AppStoreReviewsPage = lazy(() =>
+  import("@/screens/app-store/reviews").then((m) => ({ default: m.AppStoreReviewsPage })),
+);
+const AppStoreAdminPage = lazy(() =>
+  import("@/screens/app-store/admin").then((m) => ({ default: m.AppStoreAdminPage })),
+);
 
 function SectionSuspense({ children }: { children: ReactNode }) {
   return <Suspense fallback={<LoadingState />}>{children}</Suspense>;
@@ -129,6 +141,34 @@ export function AppStoreSectionPage({ sectionKey }: { sectionKey: AppStoreSectio
     return (
       <SectionSuspense>
         <AppStoreTrustPage />
+      </SectionSuspense>
+    );
+  }
+  if (sectionKey === "exceptions") {
+    return (
+      <SectionSuspense>
+        <AppStoreExceptionsPage />
+      </SectionSuspense>
+    );
+  }
+  if (sectionKey === "billing") {
+    return (
+      <SectionSuspense>
+        <AppStoreBillingPage />
+      </SectionSuspense>
+    );
+  }
+  if (sectionKey === "reviews") {
+    return (
+      <SectionSuspense>
+        <AppStoreReviewsPage />
+      </SectionSuspense>
+    );
+  }
+  if (sectionKey === "admin") {
+    return (
+      <SectionSuspense>
+        <AppStoreAdminPage />
       </SectionSuspense>
     );
   }

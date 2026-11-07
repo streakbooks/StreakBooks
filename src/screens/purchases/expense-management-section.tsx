@@ -11,13 +11,12 @@ import {
   type ExpenseManagementSectionKey,
 } from "@/lib/expenses/sections";
 import type { Permission } from "@/lib/permissions";
+import { ExpenseManagementClaimsPage } from "@/screens/purchases/expense-management-claims";
 import { ExpenseManagementSettingsPage } from "@/screens/purchases/expense-management-settings";
 
 const LEGACY_LINKS: Partial<
   Record<ExpenseManagementSectionKey, { label: string; to: string }>
 > = {
-  "my-expenses": { label: "Open legacy employee expenses", to: "/purchases/employee-expenses" },
-  claims: { label: "Open legacy employee expenses", to: "/purchases/employee-expenses" },
   approvals: { label: "Review legacy submitted claims", to: "/purchases/employee-expenses" },
   reimbursements: {
     label: "Legacy reimbursements live on employee expenses",
@@ -37,6 +36,12 @@ export function ExpenseManagementSectionPage({
 
   if (sectionKey === "settings") {
     return <ExpenseManagementSettingsPage />;
+  }
+  if (sectionKey === "my-expenses") {
+    return <ExpenseManagementClaimsPage mode="my-expenses" />;
+  }
+  if (sectionKey === "claims") {
+    return <ExpenseManagementClaimsPage mode="claims" />;
   }
 
   if (isPending) return <LoadingState />;

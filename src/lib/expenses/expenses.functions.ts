@@ -6,6 +6,14 @@ import {
   mapExpenseManagementSettings,
   toExpenseManagementSettingsPayload,
 } from "@/lib/expenses/settings";
+import {
+  mapExpenseClaimDetail,
+  mapExpenseClaimSummary,
+  toExpenseClaimPayload,
+  type ExpenseClaimDetail,
+  type ExpenseClaimDraftInput,
+  type ExpenseClaimSummary,
+} from "@/lib/expenses/claims";
 import { emptyExpenseOverviewKpis, type ExpenseOverviewResponse } from "@/lib/expenses/overview";
 import type {
   ExpenseManagementSettings,
@@ -14,6 +22,9 @@ import type {
 
 export const EXPENSE_MANAGEMENT_MIGRATION =
   "Expense Management is not available yet: the database update 20261107120000 has not been applied.";
+
+export const EXPENSE_CLAIM_MIGRATION =
+  "Expense claim workflows are not available yet: apply database updates 20261107120000 and 20261107123000.";
 
 type CountResult = {
   count: number | null;
@@ -172,4 +183,123 @@ export const getExpenseManagementOverview = createServerFn({ method: "GET" })
       kpis,
       migrationMessage: foundationAvailable ? null : EXPENSE_MANAGEMENT_MIGRATION,
     };
+  });
+
+export const listExpenseClaims = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; scope?: "own" | "all" }) => ({
+    companyId: companyIdOf(input),
+    scope: input.scope === "all" ? ("all" as const) : ("own" as const),
+  }))
+  .handler(async ({ data, context }): Promise<ExpenseClaimSummary[]> => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    const raw = await callRpc<{ claims?: unknown[] }>(
+      context.supabase,
+      "list_expense_claims",
+      { _company_id: data.companyId, _scope: data.scope },
+      EXPENSE_CLAIM_MIGRATION,
+    );
+    return (raw.claims ?? []).map(mapExpenseClaimSummary);
+  });
+
+export const getExpenseClaim = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; claimId: string }) => ({
+    companyId: companyIdOf(input),
+    claimId: input.claimId,
+  }))
+  .handler(async ({ data, context }): Promise<ExpenseClaimDetail> => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "get_expense_claim",
+      { _company_id: data.companyId, _claim_id: data.claimId },
+      EXPENSE_CLAIM_MIGRATION,
+    );
+    return mapExpenseClaimDetail(raw);
+  });
+
+export const saveExpenseClaim = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; draft: ExpenseClaimDraftInput }) => ({
+    companyId: companyIdOf(input),
+    draft: input.draft,
+  }))
+  .handler(async ({ data, context }): Promise<ExpenseClaimDetail> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "expenses.submit");
+    if (!data.draft.title.trim()) throw new Error("Claim title is required.");
+    if (!data.draft.lines.length) throw new Error("Add at least one expense line.");
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "save_expense_claim",
+      { _company_id: data.companyId, _payload: toExpenseClaimPayload(data.draft) },
+      EXPENSE_CLAIM_MIGRATION,
+    );
+    return mapExpenseClaimDetail(raw);
+  });
+
+export const submitExpenseClaim = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; claimId: string; version: number }) => ({
+    companyId: companyIdOf(input),
+    claimId: input.claimId,
+    version: input.version,
+  }))
+  .handler(async ({ data, context }): Promise<ExpenseClaimDetail> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "expenses.submit");
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "submit_expense_claim",
+      {
+        _company_id: data.companyId,
+        _claim_id: data.claimId,
+        _expected_version: data.version,
+      },
+      EXPENSE_CLAIM_MIGRATION,
+    );
+    return mapExpenseClaimDetail(raw);
+  });
+
+export const withdrawExpenseClaim = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; claimId: string; version: number }) => ({
+    companyId: companyIdOf(input),
+    claimId: input.claimId,
+    version: input.version,
+  }))
+  .handler(async ({ data, context }): Promise<ExpenseClaimDetail> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "expenses.submit");
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "withdraw_expense_claim",
+      {
+        _company_id: data.companyId,
+        _claim_id: data.claimId,
+        _expected_version: data.version,
+      },
+      EXPENSE_CLAIM_MIGRATION,
+    );
+    return mapExpenseClaimDetail(raw);
+  });
+
+export const deleteExpenseClaimDraft = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; claimId: string; version: number }) => ({
+    companyId: companyIdOf(input),
+    claimId: input.claimId,
+    version: input.version,
+  }))
+  .handler(async ({ data, context }): Promise<{ deleted: boolean; id: string }> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "expenses.submit");
+    const raw = await callRpc<{ deleted?: boolean; id?: string }>(
+      context.supabase,
+      "delete_expense_claim_draft",
+      {
+        _company_id: data.companyId,
+        _claim_id: data.claimId,
+        _expected_version: data.version,
+      },
+      EXPENSE_CLAIM_MIGRATION,
+    );
+    return { deleted: Boolean(raw.deleted), id: String(raw.id ?? data.claimId) };
   });

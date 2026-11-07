@@ -12,6 +12,7 @@ import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/c
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import { cn } from "@/lib/utils";
 
 export function PayrollOverviewPage() {
@@ -126,7 +127,7 @@ export function PayrollOverviewPage() {
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           {showSetupChecklist ? (
-            <Card className="lg:col-span-2 border-amber-200/80 bg-amber-50/40 dark:border-amber-900/50 dark:bg-amber-950/20">
+            <Card className="lg:col-span-2 border-warning/30 bg-warning-soft/35">
               <CardHeader>
                 <CardTitle className="text-base">Get payroll ready</CardTitle>
                 <CardDescription>
@@ -143,12 +144,12 @@ export function PayrollOverviewPage() {
                         key={step.label}
                         className={cn(
                           "flex items-start gap-2 rounded-md px-1 py-0.5",
-                          isFirstUndone && "bg-amber-100/60 dark:bg-amber-950/40",
+                          isFirstUndone && "bg-warning-soft/75",
                         )}
                       >
                         {step.done ? (
                           <CheckCircle2
-                            className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600"
+                            className="mt-0.5 h-4 w-4 shrink-0 text-success-ink"
                             aria-hidden
                           />
                         ) : (
@@ -156,7 +157,7 @@ export function PayrollOverviewPage() {
                             className={cn(
                               "mt-0.5 h-4 w-4 shrink-0",
                               isFirstUndone
-                                ? "text-amber-700 dark:text-amber-400"
+                                ? "text-warning-ink"
                                 : "text-muted-foreground",
                             )}
                             aria-hidden
@@ -210,12 +211,10 @@ export function PayrollOverviewPage() {
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <div className="flex items-center gap-2">
-                {enabled ? (
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600" aria-hidden />
-                ) : (
-                  <AlertTriangle className="h-4 w-4 text-amber-600" aria-hidden />
-                )}
-                <span>{enabled ? "Enabled" : "Disabled"}</span>
+                <StatusBadge
+                  status={enabled ? "active" : "inactive"}
+                  label={enabled ? "Enabled" : "Disabled"}
+                />
               </div>
               <dl className="grid grid-cols-2 gap-2">
                 <div>

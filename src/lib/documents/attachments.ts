@@ -21,6 +21,7 @@ export const ATTACHMENT_ENTITY_TYPES = [
   "journal",
   "company",
   "purchase_expense",
+  "expense_claim",
   "product",
   "recurring_journal",
   "project",
@@ -132,6 +133,20 @@ export const ATTACHMENT_ENTITIES: Record<AttachmentEntityType, EntityInfo> = {
     view: "purchases.view",
     manage: ["purchases.draft"],
     path: (id) => `/purchases/expenses/${id}`,
+  },
+  expense_claim: {
+    label: "Expense claim",
+    table: "expense_claims",
+    view: null,
+    viewAny: [
+      "expenses.submit",
+      "expenses.view",
+      "expenses.approve",
+      "expenses.audit",
+      "expenses.admin",
+    ],
+    manage: ["expenses.submit", "expenses.admin"],
+    path: (id) => `/purchases/expense-management/claims/${id}`,
   },
   product: {
     label: "Product",

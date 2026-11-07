@@ -35,6 +35,25 @@ export const EXPENSE_CLAIM_MIGRATION =
 export const EXPENSE_TEMPLATE_MIGRATION =
   "Expense claim templates are not available yet: apply database update 20261107130000.";
 
+export const EXPENSE_RECEIPT_MIGRATION =
+  "Expense receipt inbox is not available yet: apply database update 20261107133000.";
+
+export type ExpenseReceiptInboxEntry = {
+  id: string;
+  fileName: string;
+  source: string;
+  status: string;
+  contentType: string | null;
+  sizeBytes: number | null;
+  createdAt: string;
+};
+
+export type ExpenseReceiptInboxResponse = {
+  entries: ExpenseReceiptInboxEntry[];
+  inboundEmailEnabled: boolean;
+  note: string;
+};
+
 type CountResult = {
   count: number | null;
   error: { message: string; code?: string } | null;
@@ -376,4 +395,86 @@ export const saveExpenseClaimTemplate = createServerFn({ method: "POST" })
       EXPENSE_TEMPLATE_MIGRATION,
     );
     return mapExpenseClaimTemplate(raw);
+  });
+
+function mapReceiptInboxEntry(row: unknown): ExpenseReceiptInboxEntry {
+  const r = (row && typeof row === "object" ? row : {}) as Record<string, unknown>;
+  return {
+    id: String(r.id ?? ""),
+    fileName: String(r.file_name ?? r.fileName ?? ""),
+    source: String(r.source ?? "upload"),
+    status: String(r.status ?? "unassigned"),
+    contentType: (r.content_type ?? r.contentType ?? null) as string | null,
+    sizeBytes:
+      typeof r.size_bytes === "number"
+        ? r.size_bytes
+        : typeof r.sizeBytes === "number"
+          ? r.sizeBytes
+          : null,
+    createdAt: String(r.created_at ?? r.createdAt ?? ""),
+  };
+}
+
+export const listExpenseReceiptInbox = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .handler(async ({ data, context }): Promise<ExpenseReceiptInboxResponse> => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    const raw = await callRpc<{
+      entries?: unknown[];
+      inbound_email_enabled?: boolean;
+      note?: string;
+    }>(
+      context.supabase,
+      "list_expense_receipt_inbox",
+      { _company_id: data.companyId },
+      EXPENSE_RECEIPT_MIGRATION,
+    );
+    return {
+      entries: (raw.entries ?? []).map(mapReceiptInboxEntry),
+      inboundEmailEnabled: Boolean(raw.inbound_email_enabled),
+      note:
+        raw.note ??
+        "Inbound email receipt routing is not configured. Upload receipts on a claim detail page.",
+    };
+  });
+
+export const registerExpenseReceiptInboxEntry = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      fileName: string;
+      source?: "upload" | "email" | "mobile" | "import";
+      contentType?: string;
+      sizeBytes?: number;
+      notes?: string;
+    }) => ({
+      companyId: companyIdOf(input),
+      fileName: input.fileName,
+      source: input.source ?? "upload",
+      contentType: input.contentType,
+      sizeBytes: input.sizeBytes,
+      notes: input.notes,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<ExpenseReceiptInboxEntry> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "expenses.submit");
+    if (!data.fileName.trim()) throw new Error("File name is required.");
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "register_expense_receipt_inbox_entry",
+      {
+        _company_id: data.companyId,
+        _payload: {
+          file_name: data.fileName.trim(),
+          source: data.source,
+          content_type: data.contentType ?? null,
+          size_bytes: data.sizeBytes ?? null,
+          notes: data.notes ?? null,
+        },
+      },
+      EXPENSE_RECEIPT_MIGRATION,
+    );
+    return mapReceiptInboxEntry(raw);
   });

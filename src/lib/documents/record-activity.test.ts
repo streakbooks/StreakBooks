@@ -82,6 +82,14 @@ describe("record permissions", () => {
       "purchases.view",
     ]);
     expect(entityManagePermissions("purchase_expense")).toEqual(["purchases.draft"]);
+    expect(entityManagePermissions("expense_claim")).toEqual(["expenses.submit", "expenses.admin"]);
+    expect(entityViewPermissions("expense_claim")).toEqual([
+      "expenses.submit",
+      "expenses.view",
+      "expenses.approve",
+      "expenses.audit",
+      "expenses.admin",
+    ]);
     expect(entityViewPermissions("contact")).toEqual([]);
   });
 

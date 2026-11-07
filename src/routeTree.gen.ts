@@ -172,6 +172,7 @@ import { Route as AdvisorsPortalInviteTokenRouteImport } from './routes/advisors
 import { Route as PortalAppInvoicesInvoiceIdRouteImport } from './routes/portal/app/invoices.$invoiceId'
 import { Route as AuthenticatedDocumentsPrintKindIdRouteImport } from './routes/_authenticated/documents.print.$kind.$id'
 import { Route as AuthenticatedPurchasesBillsBillIdEditRouteImport } from './routes/_authenticated/purchases/bills.$billId.edit'
+import { Route as AuthenticatedPurchasesExpenseManagementClaimsClaimIdRouteImport } from './routes/_authenticated/purchases/expense-management/claims.$claimId'
 import { Route as AuthenticatedSalesCreditNotesCreditNoteIdIndexRouteImport } from './routes/_authenticated/sales/credit-notes.$creditNoteId.index'
 import { Route as AuthenticatedSalesCreditNotesCreditNoteIdEditRouteImport } from './routes/_authenticated/sales/credit-notes.$creditNoteId.edit'
 import { Route as AuthenticatedSalesInvoicesInvoiceIdIndexRouteImport } from './routes/_authenticated/sales/invoices.$invoiceId.index'
@@ -1108,6 +1109,12 @@ const AuthenticatedPurchasesBillsBillIdEditRoute =
     path: '/edit',
     getParentRoute: () => AuthenticatedPurchasesBillsBillIdRoute,
   } as any)
+const AuthenticatedPurchasesExpenseManagementClaimsClaimIdRoute =
+  AuthenticatedPurchasesExpenseManagementClaimsClaimIdRouteImport.update({
+    id: '/expense-management/claims/$claimId',
+    path: '/expense-management/claims/$claimId',
+    getParentRoute: () => AuthenticatedPurchasesRouteRoute,
+  } as any)
 const AuthenticatedSalesCreditNotesCreditNoteIdIndexRoute =
   AuthenticatedSalesCreditNotesCreditNoteIdIndexRouteImport.update({
     id: '/',
@@ -1308,6 +1315,7 @@ export interface FileRoutesByFullPath {
   '/sales/receipts/': typeof AuthenticatedSalesReceiptsIndexRoute
   '/documents/print/$kind/$id': typeof AuthenticatedDocumentsPrintKindIdRoute
   '/purchases/bills/$billId/edit': typeof AuthenticatedPurchasesBillsBillIdEditRoute
+  '/purchases/expense-management/claims/$claimId': typeof AuthenticatedPurchasesExpenseManagementClaimsClaimIdRoute
   '/sales/credit-notes/$creditNoteId/edit': typeof AuthenticatedSalesCreditNotesCreditNoteIdEditRoute
   '/sales/invoices/$invoiceId/edit': typeof AuthenticatedSalesInvoicesInvoiceIdEditRoute
   '/sales/quotes/$quoteId/edit': typeof AuthenticatedSalesQuotesQuoteIdEditRoute
@@ -1467,6 +1475,7 @@ export interface FileRoutesByTo {
   '/sales/receipts': typeof AuthenticatedSalesReceiptsIndexRoute
   '/documents/print/$kind/$id': typeof AuthenticatedDocumentsPrintKindIdRoute
   '/purchases/bills/$billId/edit': typeof AuthenticatedPurchasesBillsBillIdEditRoute
+  '/purchases/expense-management/claims/$claimId': typeof AuthenticatedPurchasesExpenseManagementClaimsClaimIdRoute
   '/sales/credit-notes/$creditNoteId/edit': typeof AuthenticatedSalesCreditNotesCreditNoteIdEditRoute
   '/sales/invoices/$invoiceId/edit': typeof AuthenticatedSalesInvoicesInvoiceIdEditRoute
   '/sales/quotes/$quoteId/edit': typeof AuthenticatedSalesQuotesQuoteIdEditRoute
@@ -1639,6 +1648,7 @@ export interface FileRoutesById {
   '/_authenticated/sales/receipts/': typeof AuthenticatedSalesReceiptsIndexRoute
   '/_authenticated/documents/print/$kind/$id': typeof AuthenticatedDocumentsPrintKindIdRoute
   '/_authenticated/purchases/bills/$billId/edit': typeof AuthenticatedPurchasesBillsBillIdEditRoute
+  '/_authenticated/purchases/expense-management/claims/$claimId': typeof AuthenticatedPurchasesExpenseManagementClaimsClaimIdRoute
   '/_authenticated/sales/credit-notes/$creditNoteId/edit': typeof AuthenticatedSalesCreditNotesCreditNoteIdEditRoute
   '/_authenticated/sales/invoices/$invoiceId/edit': typeof AuthenticatedSalesInvoicesInvoiceIdEditRoute
   '/_authenticated/sales/quotes/$quoteId/edit': typeof AuthenticatedSalesQuotesQuoteIdEditRoute
@@ -1811,6 +1821,7 @@ export interface FileRouteTypes {
     | '/sales/receipts/'
     | '/documents/print/$kind/$id'
     | '/purchases/bills/$billId/edit'
+    | '/purchases/expense-management/claims/$claimId'
     | '/sales/credit-notes/$creditNoteId/edit'
     | '/sales/invoices/$invoiceId/edit'
     | '/sales/quotes/$quoteId/edit'
@@ -1970,6 +1981,7 @@ export interface FileRouteTypes {
     | '/sales/receipts'
     | '/documents/print/$kind/$id'
     | '/purchases/bills/$billId/edit'
+    | '/purchases/expense-management/claims/$claimId'
     | '/sales/credit-notes/$creditNoteId/edit'
     | '/sales/invoices/$invoiceId/edit'
     | '/sales/quotes/$quoteId/edit'
@@ -2141,6 +2153,7 @@ export interface FileRouteTypes {
     | '/_authenticated/sales/receipts/'
     | '/_authenticated/documents/print/$kind/$id'
     | '/_authenticated/purchases/bills/$billId/edit'
+    | '/_authenticated/purchases/expense-management/claims/$claimId'
     | '/_authenticated/sales/credit-notes/$creditNoteId/edit'
     | '/_authenticated/sales/invoices/$invoiceId/edit'
     | '/_authenticated/sales/quotes/$quoteId/edit'
@@ -3313,6 +3326,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPurchasesBillsBillIdEditRouteImport
       parentRoute: typeof AuthenticatedPurchasesBillsBillIdRoute
     }
+    '/_authenticated/purchases/expense-management/claims/$claimId': {
+      id: '/_authenticated/purchases/expense-management/claims/$claimId'
+      path: '/expense-management/claims/$claimId'
+      fullPath: '/purchases/expense-management/claims/$claimId'
+      preLoaderRoute: typeof AuthenticatedPurchasesExpenseManagementClaimsClaimIdRouteImport
+      parentRoute: typeof AuthenticatedPurchasesRouteRoute
+    }
     '/_authenticated/sales/credit-notes/$creditNoteId/': {
       id: '/_authenticated/sales/credit-notes/$creditNoteId/'
       path: '/'
@@ -3477,6 +3497,7 @@ interface AuthenticatedPurchasesRouteRouteChildren {
   AuthenticatedPurchasesExpensesIndexRoute: typeof AuthenticatedPurchasesExpensesIndexRoute
   AuthenticatedPurchasesOrdersIndexRoute: typeof AuthenticatedPurchasesOrdersIndexRoute
   AuthenticatedPurchasesPaymentsIndexRoute: typeof AuthenticatedPurchasesPaymentsIndexRoute
+  AuthenticatedPurchasesExpenseManagementClaimsClaimIdRoute: typeof AuthenticatedPurchasesExpenseManagementClaimsClaimIdRoute
 }
 
 const AuthenticatedPurchasesRouteRouteChildren: AuthenticatedPurchasesRouteRouteChildren =
@@ -3525,6 +3546,8 @@ const AuthenticatedPurchasesRouteRouteChildren: AuthenticatedPurchasesRouteRoute
       AuthenticatedPurchasesOrdersIndexRoute,
     AuthenticatedPurchasesPaymentsIndexRoute:
       AuthenticatedPurchasesPaymentsIndexRoute,
+    AuthenticatedPurchasesExpenseManagementClaimsClaimIdRoute:
+      AuthenticatedPurchasesExpenseManagementClaimsClaimIdRoute,
   }
 
 const AuthenticatedPurchasesRouteRouteWithChildren =

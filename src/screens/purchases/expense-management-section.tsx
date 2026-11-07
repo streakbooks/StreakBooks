@@ -12,6 +12,7 @@ import {
 } from "@/lib/expenses/sections";
 import type { Permission } from "@/lib/permissions";
 import { ExpenseManagementClaimsPage } from "@/screens/purchases/expense-management-claims";
+import { ExpenseManagementReceiptsPage } from "@/screens/purchases/expense-management-receipts";
 import { ExpenseManagementSettingsPage } from "@/screens/purchases/expense-management-settings";
 
 const LEGACY_LINKS: Partial<
@@ -42,6 +43,9 @@ export function ExpenseManagementSectionPage({
   }
   if (sectionKey === "claims") {
     return <ExpenseManagementClaimsPage mode="claims" />;
+  }
+  if (sectionKey === "receipts") {
+    return <ExpenseManagementReceiptsPage />;
   }
 
   if (isPending) return <LoadingState />;

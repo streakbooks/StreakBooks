@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Plus, Trash2 } from "lucide-react";
@@ -600,7 +601,15 @@ export function ExpenseManagementClaimsPage({
           <TableBody>
             {claims.map((claim) => (
               <TableRow key={claim.id}>
-                <TableCell className="font-medium">{claim.claimNumber}</TableCell>
+                <TableCell className="font-medium">
+                  <Link
+                    to="/purchases/expense-management/claims/$claimId"
+                    params={{ claimId: claim.id }}
+                    className="underline-offset-2 hover:underline"
+                  >
+                    {claim.claimNumber}
+                  </Link>
+                </TableCell>
                 <TableCell>{claim.title}</TableCell>
                 <TableCell>{claim.claimDate}</TableCell>
                 <TableCell>

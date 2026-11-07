@@ -55,8 +55,15 @@
         "banking/transactions.tsx",
         "banking/transfers.tsx"
       ],
-      "browsingImplementation": "not_assessed_module_wide",
-      "fullyVerified": false
+      "browsingImplementation": "partial_code_not_runtime_verified",
+      "fullyVerified": false,
+      "currentEvidence": [
+        "src/lib/banking/transaction-return.ts — allowlisted banking list origin",
+        "src/routes/_authenticated/banking/transactions.tsx — linked journal and preview context",
+        "src/routes/_authenticated/banking/journal.$journalId.tsx — restored back links and reversal context",
+        "src/lib/banking/transaction-return.test.ts — 8 unit test cases written but NOT RUN",
+        "e2e/banking-journal-return-browsing.spec.ts — 3 browser tests written but NOT RUN"
+      ]
     },
     {
       "label": "Sales",
@@ -222,8 +229,17 @@
         "reports/builder/$viewId.tsx",
         "reports/index.tsx"
       ],
-      "browsingImplementation": "not_assessed_module_wide",
-      "fullyVerified": false
+      "browsingImplementation": "partial_code_not_runtime_verified",
+      "fullyVerified": false,
+      "currentEvidence": [
+        "src/lib/reports/centre-return.ts — bounded catalogue/workspace origin",
+        "src/lib/reports/search.ts — validated return token on report routes",
+        "src/components/reports/ReportShell.tsx — native deterministic origin link",
+        "src/components/reports/ReportCatalogue.tsx, ReportDirectory.tsx, ReportingHome.tsx, ReportLibrary.tsx, ManagementWorkspace.tsx — origin propagation",
+        "src/lib/reports/centre-return.test.ts — 9 unit test cases written but NOT RUN",
+        "src/lib/reports/search.test.ts — 2 existing suite test cases added but NOT RUN",
+        "e2e/reports-centre-return-browsing.spec.ts — 3 browser tests written but NOT RUN"
+      ]
     },
     {
       "label": "Accountant",

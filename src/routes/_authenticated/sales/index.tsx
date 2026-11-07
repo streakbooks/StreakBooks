@@ -17,7 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/common/StatusBadge";
 
 export const Route = createFileRoute("/_authenticated/sales/")({
   head: () => ({
@@ -200,7 +200,11 @@ function SalesOverview() {
         <EmptyState
           title="No invoices yet"
           description="Create a customer invoice to start posting receivables."
-          actionLabel="New invoice"
+          action={
+            <Button asChild>
+              <Link to="/sales/invoices/new">New invoice</Link>
+            </Button>
+          }
         />
       ) : (
         <Table>
@@ -226,7 +230,7 @@ function SalesOverview() {
                 </TableCell>
                 <TableCell>{inv.contacts?.name ?? "—"}</TableCell>
                 <TableCell>
-                  <Badge variant="secondary">{inv.status}</Badge>
+                  <StatusBadge status={inv.status} />
                 </TableCell>
                 <TableCell className="text-right">
                   {money(inv.total_minor, inv.currency_code)}

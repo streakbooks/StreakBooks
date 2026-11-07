@@ -10,6 +10,7 @@ import {
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { PageHeader, LoadingState, EmptyState, ErrorState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const Route = createFileRoute("/_authenticated/purchases/")({
@@ -272,9 +273,13 @@ function PurchasesOverview() {
                           {bill.reference || "View bill"}
                         </Link>
                       </td>
-                      <td className={`py-3 ${bill.overdue ? "font-medium text-destructive" : ""}`}>
-                        {bill.dueDate ?? "Not set"}
-                        {bill.overdue ? " · Overdue" : ""}
+                      <td className="py-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className={bill.overdue ? "font-medium text-destructive" : ""}>
+                            {bill.dueDate ?? "Not set"}
+                          </span>
+                          {bill.overdue ? <StatusBadge status="overdue" /> : null}
+                        </div>
                       </td>
                       <td className="py-3 text-right tabular-nums">
                         {money(bill.outstandingMinor, bill.currency)}

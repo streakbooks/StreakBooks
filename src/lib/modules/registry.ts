@@ -120,7 +120,8 @@ export const MODULE_REGISTRY: readonly ModuleDefinition[] = [
     viewModes: ["list", "mobile-card"],
     screenRoot: "src/screens/sales",
     experience: DEFAULT_AUTHENTICATED_EXPERIENCE,
-    premiumStatus: "partial",
+    premiumStatus: "in-progress",
+    notes: "Batch 3: ListWorkspace on Sales overview.",
   },
   {
     id: "purchases",
@@ -134,7 +135,8 @@ export const MODULE_REGISTRY: readonly ModuleDefinition[] = [
     viewModes: ["list", "mobile-card"],
     screenRoot: "src/screens/purchases",
     experience: DEFAULT_AUTHENTICATED_EXPERIENCE,
-    premiumStatus: "partial",
+    premiumStatus: "in-progress",
+    notes: "Batch 3: ListWorkspace on Purchases overview.",
   },
   {
     id: "expense-management",

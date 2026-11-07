@@ -8,7 +8,8 @@ import {
   getPurchasesOverview,
 } from "@/lib/purchases/purchases.functions";
 import { fromMinorUnits } from "@/lib/accounting/money";
-import { PageHeader, LoadingState, EmptyState, ErrorState } from "@/components/common/states";
+import { LoadingState, EmptyState, ErrorState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -78,32 +79,31 @@ function PurchasesOverview() {
     },
   ];
   return (
-    <>
-      <PageHeader
-        title="Purchases"
-        description="Your supplier balances, upcoming payments and bills requiring attention."
-        actions={
-          <>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/imports" search={{ module: "purchases" }}>
-                Import bills
-              </Link>
-            </Button>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/contacts/new" search={{ kind: "supplier" }}>
-                New supplier
-              </Link>
-            </Button>
+    <ListWorkspace
+      title="Purchases"
+      description="Your supplier balances, upcoming payments and bills requiring attention."
+      actions={
+        <>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/imports" search={{ module: "purchases" }}>
+              Import bills
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/contacts/new" search={{ kind: "supplier" }}>
+              New supplier
+            </Link>
+          </Button>
 
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/purchases/expenses/new">New expense</Link>
-            </Button>
-            <Button size="sm" asChild>
-              <Link to="/purchases/bills/new">New bill</Link>
-            </Button>
-          </>
-        }
-      />
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/purchases/expenses/new">New expense</Link>
+          </Button>
+          <Button size="sm" asChild>
+            <Link to="/purchases/bills/new">New bill</Link>
+          </Button>
+        </>
+      }
+    >
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {cards.map((card) => (
           <a
@@ -292,6 +292,6 @@ function PurchasesOverview() {
           )}
         </CardContent>
       </Card>
-    </>
+    </ListWorkspace>
   );
 }

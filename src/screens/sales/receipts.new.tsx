@@ -18,7 +18,8 @@ import {
   DocumentRecordPanel,
   type DocumentRecordHandle,
 } from "@/components/documents/DocumentRecordPanel";
-import { PageHeader, LoadingState, EmptyState } from "@/components/common/states";
+import { LoadingState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { EntityCombobox } from "@/components/common/EntityCombobox";
 import { AccountLookup } from "@/components/lookup";
 import { ContactCreateForm } from "@/components/lookup/create-forms";
@@ -247,16 +248,15 @@ function ReceiptForm({
   if (customersQ.isPending || depositsQ.isPending || configQ.isPending) return <LoadingState />;
 
   return (
-    <>
-      <PageHeader
-        title="Record receipt"
-        description="Posts DR bank / CR accounts receivable in one step together with the invoice allocations."
-        actions={
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/sales/receipts">Back</Link>
-          </Button>
-        }
-      />
+    <ListWorkspace
+      title="Record receipt"
+      description="Posts DR bank / CR accounts receivable in one step together with the invoice allocations."
+      actions={
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/sales/receipts">Back</Link>
+        </Button>
+      }
+    >
       {formError ? (
         <Alert variant="destructive" className="mb-4">
           <AlertDescription>{formError}</AlertDescription>
@@ -448,6 +448,6 @@ function ReceiptForm({
           </Button>
         </div>
       </div>
-    </>
+    </ListWorkspace>
   );
 }

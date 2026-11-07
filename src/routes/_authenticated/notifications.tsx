@@ -5,7 +5,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Archive,
   ArrowUpRight,
-  Bell,
   Check,
   FilePlus2,
   Loader2,
@@ -28,6 +27,7 @@ import {
   type NotificationSort,
   type NotificationView,
 } from "@/lib/notifications/notification-utils";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Input } from "@/components/ui/input";
@@ -259,20 +259,12 @@ function ActionCenterPage() {
   };
 
   return (
-    <div data-action-center-root className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-semibold">
-            <Bell className="size-6" />
-            Smart Action Center
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {company?.name ?? "Current organisation"} · {unreadQuery.data?.toLocaleString() ?? "—"} unread alerts
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Review source records before taking action. Archiving an alert never approves or posts a transaction.
-          </p>
-        </div>
+    <div data-action-center-root>
+      <ListWorkspace
+      className="space-y-6"
+      title="Smart Action Center"
+      description={`${company?.name ?? "Current organisation"} · ${unreadQuery.data?.toLocaleString() ?? "—"} unread alerts. Review source records before taking action. Archiving an alert never approves or posts a transaction.`}
+      actions={
         <Button
           variant="outline"
           disabled={!companyId || inbox.isFetching}
@@ -281,7 +273,8 @@ function ActionCenterPage() {
           <RefreshCcw className="mr-2 size-4" />
           Refresh alerts
         </Button>
-      </div>
+      }
+    >
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Action Center overview">
         {(
           [
@@ -645,6 +638,7 @@ function ActionCenterPage() {
       )}
       <NotificationPreferences companyId={companyId} userId={user.id} />
       <DocumentRequests companyId={companyId} userId={user.id} />
+      </ListWorkspace>
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -324,42 +324,42 @@ export function ExpenseManagementApprovalsPage() {
 
   if (delegationProbePending) {
     return (
-      <>
-        <PageHeader title="Approvals" description="Expense Management" />
-        <ExpenseManagementSubnav current="approvals" />
-        <LoadingState />
-      </>
+      <ListWorkspace title="Approvals" description="Expense Management"
+      subnav={<ExpenseManagementSubnav current="approvals"/>}
+    >
+      <LoadingState />
+    </ListWorkspace>
     );
   }
 
   if (!canActAsApprover && !canPost) {
     return (
-      <>
-        <PageHeader title="Approvals" />
-        <ExpenseManagementSubnav current="approvals" />
-        <EmptyState
+      <ListWorkspace title="Approvals"
+      subnav={<ExpenseManagementSubnav current="approvals"/>}
+    >
+      <EmptyState
           title="No access"
           description="Ask an administrator for expenses.approve or expenses.post, or request temporary approval cover."
         />
-      </>
+    </ListWorkspace>
     );
   }
   if ((canActAsApprover && queueQ.isLoading) || (canPost && readyToPostQ.isLoading)) {
     return (
-      <>
-        <PageHeader title="Approvals" description="Expense Management" />
-        <ExpenseManagementSubnav current="approvals" />
-        <LoadingState />
-      </>
+      <ListWorkspace title="Approvals" description="Expense Management"
+      subnav={<ExpenseManagementSubnav current="approvals"/>}
+    >
+      <LoadingState />
+    </ListWorkspace>
     );
   }
   if (canActAsApprover && queueQ.isError) {
     const message = friendlyAuthError(queueQ.error);
     return (
-      <>
-        <PageHeader title="Approvals" />
-        <ExpenseManagementSubnav current="approvals" />
-        {message.includes("20261107135000") || message.includes("20261107123000") ? (
+      <ListWorkspace title="Approvals"
+      subnav={<ExpenseManagementSubnav current="approvals"/>}
+    >
+      {message.includes("20261107135000") || message.includes("20261107123000") ? (
           <Alert>
             <AlertTitle>Migration required</AlertTitle>
             <AlertDescription>{EXPENSE_APPROVAL_MIGRATION}</AlertDescription>
@@ -371,7 +371,7 @@ export function ExpenseManagementApprovalsPage() {
             onRetry={() => queueQ.refetch()}
           />
         )}
-      </>
+    </ListWorkspace>
     );
   }
 

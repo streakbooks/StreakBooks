@@ -31,7 +31,8 @@ import {
   parseBudgetCsv,
 } from "@/lib/budgets/budget-csv";
 import { csvFilename, downloadCsv, toCsv } from "@/lib/reports/csv";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -552,28 +553,26 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
   );
 
   return (
-    <>
-      <PageHeader
-        title={data.budget.name}
-        description={`Budget for the financial year from ${fmt.date(data.budget.fiscal_year_start)}, in ${currency}. Amounts are for the account's natural direction: income and expenses as positive numbers.`}
-        actions={
-          <>
-            <Button asChild variant="outline" size="sm">
-              <Link to="/budgets">All budgets</Link>
-            </Button>
-            <Button asChild variant="outline" size="sm">
-              <Link
-                to="/reports/$reportId"
-                params={{ reportId: "budget-vs-actual" }}
-                search={{ budget: data.budget.id }}
-              >
-                Budget versus Actual
-              </Link>
-            </Button>
-          </>
-        }
-      />
-
+    <RecordWorkspace
+      title={data.budget.name}
+      description={`Budget for the financial year from ${fmt.date(data.budget.fiscal_year_start)}, in ${currency}. Amounts are for the account's natural direction: income and expenses as positive numbers.`}
+      actions={
+        <>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/budgets">All budgets</Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link
+              to="/reports/$reportId"
+              params={{ reportId: "budget-vs-actual" }}
+              search={{ budget: data.budget.id }}
+            >
+              Budget versus Actual
+            </Link>
+          </Button>
+        </>
+      }
+    >
       <BudgetApprovalPanel
         companyId={companyId}
         budgetId={data.budget.id}
@@ -934,6 +933,6 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
         canManage={canManage}
         parentDirty={dirty}
       />
-    </>
+    </RecordWorkspace>
   );
 }

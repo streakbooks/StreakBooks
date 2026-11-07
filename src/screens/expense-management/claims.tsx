@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -487,10 +487,10 @@ export function ExpenseManagementClaimsPage({
   }
   if (!allowed) {
     return (
-      <>
-        <PageHeader title={mode === "my-expenses" ? "My Expenses" : "All Claims"} />
-        <ExpenseManagementSubnav current={sectionKey} />
-        <EmptyState
+      <ListWorkspace title={mode === "my-expenses" ? "My Expenses" : "All Claims"}
+      subnav={<ExpenseManagementSubnav current={sectionKey}/>}
+    >
+      <EmptyState
           title="No access"
           description={
             mode === "my-expenses"
@@ -498,7 +498,7 @@ export function ExpenseManagementClaimsPage({
               : "Ask an administrator for expenses.view or expenses.approve."
           }
         />
-      </>
+    </ListWorkspace>
     );
   }
   if (claimsQ.isLoading) {
@@ -512,10 +512,10 @@ export function ExpenseManagementClaimsPage({
   if (claimsQ.isError) {
     const message = friendlyAuthError(claimsQ.error);
     return (
-      <>
-        <PageHeader title={mode === "my-expenses" ? "My Expenses" : "All Claims"} />
-        <ExpenseManagementSubnav current={sectionKey} />
-        {message.includes("202611071") ? (
+      <ListWorkspace title={mode === "my-expenses" ? "My Expenses" : "All Claims"}
+      subnav={<ExpenseManagementSubnav current={sectionKey}/>}
+    >
+      {message.includes("202611071") ? (
           <Alert>
             <AlertTitle>Database update required</AlertTitle>
             <AlertDescription>
@@ -531,7 +531,7 @@ export function ExpenseManagementClaimsPage({
             onRetry={() => claimsQ.refetch()}
           />
         )}
-      </>
+    </ListWorkspace>
     );
   }
 

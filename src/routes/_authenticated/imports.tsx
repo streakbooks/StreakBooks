@@ -42,7 +42,7 @@ import {
 } from "@/lib/imports/import-definitions";
 import { previewImportCsv } from "@/lib/imports/import-preflight";
 import { Button } from "@/components/ui/button";
-import { PageHeader } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 
 export const Route = createFileRoute("/_authenticated/imports")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -333,19 +333,19 @@ function ImportCentre() {
     preview?.result?.issues.length,
   ]);
   return (
-    <div className="space-y-5">
-      <PageHeader
-        title={
-          scopedModule
-            ? `${scopedModule === "fixed_assets" ? "Fixed assets" : scopedModule.charAt(0).toUpperCase() + scopedModule.slice(1)} imports`
-            : "Data import centre"
-        }
-        description={
-          scopedModule
-            ? "Import records for this module. Validate and review before saving; posting requires explicit authorisation."
-            : "Organisation-wide data management: download templates, inspect files and validate before saving."
-        }
-      />
+    <ListWorkspace
+      className="space-y-5"
+      title={
+        scopedModule
+          ? `${scopedModule === "fixed_assets" ? "Fixed assets" : scopedModule.charAt(0).toUpperCase() + scopedModule.slice(1)} imports`
+          : "Data import centre"
+      }
+      description={
+        scopedModule
+          ? "Import records for this module. Validate and review before saving; posting requires explicit authorisation."
+          : "Organisation-wide data management: download templates, inspect files and validate before saving."
+      }
+    >
       {scopedModule && (
         <p className="text-sm text-muted-foreground">
           Only {scopedModule.replace("_", " ")} import types are shown here. For organisation-wide
@@ -1130,6 +1130,6 @@ function ImportCentre() {
           </Button>
         )}
       </div>
-    </div>
+    </ListWorkspace>
   );
 }

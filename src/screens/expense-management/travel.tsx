@@ -5,7 +5,8 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -196,14 +197,14 @@ export function ExpenseManagementTravelPage() {
   }
   if (!canView) {
     return (
-      <>
-        <PageHeader title="Travel" description="Expense Management" />
-        <ExpenseManagementSubnav current="travel" />
-        <EmptyState
+      <ListWorkspace title="Travel" description="Expense Management"
+      subnav={<ExpenseManagementSubnav current="travel"/>}
+    >
+      <EmptyState
           title="No access"
           description="Your role cannot open travel or per diem rates."
         />
-      </>
+    </ListWorkspace>
     );
   }
 
@@ -212,18 +213,15 @@ export function ExpenseManagementTravelPage() {
     String(ratesQ.error.message ?? "").includes(EXPENSE_TRAVEL_MIGRATION);
 
   return (
-    <>
-      <PageHeader
-        title="Travel"
+      <ListWorkspace title="Travel"
         description="Configure per diem rates and create travel claim drafts."
         actions={
           <Button asChild variant="outline" size="sm">
             <Link to="/expense-management/$section" params={{ section: "my-expenses" }}>My expenses</Link>
           </Button>
         }
-      />
-      <ExpenseManagementSubnav current="travel" />
-
+      subnav={<ExpenseManagementSubnav current="travel"/>}
+    >
       <Alert className="mb-6">
         <AlertTitle>Per diem trips only in this release</AlertTitle>
         <AlertDescription>
@@ -443,6 +441,6 @@ export function ExpenseManagementTravelPage() {
           </Table>
         )}
       </section>
-    </>
-  );
+    </ListWorkspace>
+    );
 }

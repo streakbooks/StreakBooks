@@ -11,7 +11,8 @@ import { listPaymentAccounts, saveAndPostExpense } from "@/lib/purchases/purchas
 import { parseMinorOrThrow, tryParseMinor } from "@/lib/purchases/money-input";
 import { useCanDo } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, LoadingState, EmptyState } from "@/components/common/states";
+import { LoadingState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import {
   DocumentRecordPanel,
   type DocumentRecordHandle,
@@ -112,16 +113,15 @@ export function NewExpense() {
   if (accountsQ.isPending || paymentAccountsQ.isPending) return <LoadingState />;
 
   return (
-    <>
-      <PageHeader
-        title="New direct expense"
-        description="Pays immediately (DR expense / CR bank). Use Bills for supplier invoices paid later."
-        actions={
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/purchases/expenses">Back</Link>
-          </Button>
-        }
-      />
+    <ListWorkspace
+      title="New direct expense"
+      description="Pays immediately (DR expense / CR bank). Use Bills for supplier invoices paid later."
+      actions={
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/purchases/expenses">Back</Link>
+        </Button>
+      }
+    >
       <div className="grid max-w-lg gap-4">
         <div className="space-y-2">
           <Label>Payee</Label>
@@ -211,6 +211,6 @@ export function NewExpense() {
           </Button>
         </div>
       </div>
-    </>
+    </ListWorkspace>
   );
 }

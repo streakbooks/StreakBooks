@@ -11,7 +11,8 @@ import {
 } from "@/lib/demo/demo.functions";
 import { getDashboardSnapshot } from "@/lib/dashboard/dashboard.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, ErrorState, LoadingState, CardGridSkeleton } from "@/components/common/states";
+import { ErrorState, LoadingState, CardGridSkeleton } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { GettingStarted, KpiRow } from "@/components/dashboard/DashboardWidgets";
 import { PersonalizedDashboardWidgets } from "@/components/dashboard/PersonalizedDashboardWidgets";
@@ -101,13 +102,12 @@ function Dashboard() {
   if (isPending) return <LoadingState />;
   if (!companyId) {
     return (
-      <>
-        <PageHeader title="Dashboard" description="Select or create an organisation to begin." />
+      <ListWorkspace title="Dashboard" description="Select or create an organisation to begin.">
         <CompanyEmptyState
           title="No organisation selected"
           description="Create a company or open Demo Company from the switcher."
         />
-      </>
+      </ListWorkspace>
     );
   }
 
@@ -115,25 +115,23 @@ function Dashboard() {
   const demoSnap = demoSnapQ.data;
 
   return (
-    <>
-      <PageHeader
-        title="Financial overview"
-        description={`${company?.name ?? "Your organisation"} · ${company?.base_currency ?? ""} · Balances from your posted ledger and documents.`}
-        actions={
-          <>
-            <Button variant="ghost" size="sm" asChild>
-              <Link to="/reports">Reports</Link>
-            </Button>
-            <Button variant="outline" size="sm" asChild>
-              <a href="#bookkeeping-attention">Review tasks</a>
-            </Button>
-            <Button size="sm" asChild>
-              <Link to="/sales/invoices/new">New invoice</Link>
-            </Button>
-          </>
-        }
-      />
-
+    <ListWorkspace
+      title="Financial overview"
+      description={`${company?.name ?? "Your organisation"} · ${company?.base_currency ?? ""} · Balances from your posted ledger and documents.`}
+      actions={
+        <>
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/reports">Reports</Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <a href="#bookkeeping-attention">Review tasks</a>
+          </Button>
+          <Button size="sm" asChild>
+            <Link to="/sales/invoices/new">New invoice</Link>
+          </Button>
+        </>
+      }
+    >
       {isDemo && demoSnapQ.isSuccess && (demoSnap?.journalLineCount ?? 0) === 0 ? (
         <Alert className="mb-6 border-warning/40 bg-warning-soft">
           <AlertTitle>Preparing demo records</AlertTitle>
@@ -208,6 +206,6 @@ function Dashboard() {
           </div>
         </div>
       ) : null}
-    </>
+    </ListWorkspace>
   );
 }

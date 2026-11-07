@@ -7,7 +7,8 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
 import { findPotentialDuplicates, mergeContacts } from "@/lib/contacts/contacts.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -60,19 +61,17 @@ function DuplicatesPage() {
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
 
   return (
-    <>
-      <PageHeader
-        title="Potential duplicates"
-        description="Matches use name, email, phone, tax ID and account number. Merges are never automatic."
-        actions={
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/contacts" search={{ view: undefined }}>
-              Directory
-            </Link>
-          </Button>
-        }
-      />
-
+    <ListWorkspace
+      title="Potential duplicates"
+      description="Matches use name, email, phone, tax ID and account number. Merges are never automatic."
+      actions={
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/contacts" search={{ view: undefined }}>
+            Directory
+          </Link>
+        </Button>
+      }
+    >
       {query.isPending ? (
         <LoadingState />
       ) : query.isError ? (
@@ -206,6 +205,6 @@ function DuplicatesPage() {
           })}
         </ul>
       )}
-    </>
+    </ListWorkspace>
   );
 }

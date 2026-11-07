@@ -5,7 +5,8 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -171,14 +172,14 @@ export function ExpenseManagementPettyCashPage() {
   }
   if (!canView) {
     return (
-      <>
-        <PageHeader title="Petty Cash" description="Expense Management" />
-        <ExpenseManagementSubnav current="petty-cash" />
-        <EmptyState
+      <ListWorkspace title="Petty Cash" description="Expense Management"
+      subnav={<ExpenseManagementSubnav current="petty-cash"/>}
+    >
+      <EmptyState
           title="No access"
           description="Ask an administrator for expenses.manage_advances or expenses.view."
         />
-      </>
+    </ListWorkspace>
     );
   }
 
@@ -188,18 +189,15 @@ export function ExpenseManagementPettyCashPage() {
   const pettyConfigured = Boolean(settingsQ.data?.pettyCashAccountId);
 
   return (
-    <>
-      <PageHeader
-        title="Petty Cash"
+      <ListWorkspace title="Petty Cash"
         description="Maintain office floats, fund from bank, and settle spends as company-paid claims."
         actions={
           <Button asChild variant="outline" size="sm">
             <Link to="/expense-management/$section" params={{ section: "settings" }}>Settings</Link>
           </Button>
         }
-      />
-      <ExpenseManagementSubnav current="petty-cash" />
-
+      subnav={<ExpenseManagementSubnav current="petty-cash"/>}
+    >
       {migrationMissing ? (
         <Alert className="mb-6" variant="destructive">
           <AlertTitle>Database update required</AlertTitle>
@@ -284,8 +282,8 @@ export function ExpenseManagementPettyCashPage() {
               />
             </div>
           </section>
-        </>
-      ) : null}
+    </ListWorkspace>
+    ) : null}
 
       {floatsQ.isLoading ? (
         <LoadingState />

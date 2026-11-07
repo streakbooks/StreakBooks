@@ -8,7 +8,8 @@ import { PlatformResource } from "@/components/platform/PlatformResource";
 import { PlatformHealth } from "@/components/platform/PlatformHealth";
 import { PlatformApprovals } from "@/components/platform/PlatformApprovals";
 import { parsePlatformSearch } from "@/lib/platform/navigation";
-import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 export const Route = createFileRoute("/_authenticated/platform/")({
   validateSearch: parsePlatformSearch,
   component: PlatformHome,
@@ -43,8 +44,7 @@ function PlatformHome() {
     );
   const [id, title, description] = current;
   return (
-    <>
-      <PageHeader title={title} description={description} />
+    <ListWorkspace title={title} description={description}>
       {id === "approvals" ? (
         <PlatformApprovals
           canManage={query.data.permissions.includes("approvals.manage")}
@@ -66,6 +66,6 @@ function PlatformHome() {
           }
         />
       )}
-    </>
+    </ListWorkspace>
   );
 }

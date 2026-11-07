@@ -44,7 +44,8 @@ import {
 } from "@/components/reports/PlanningViews";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 
 export const Route = createFileRoute("/_authenticated/reports/$reportId")({
   validateSearch: (raw: Record<string, unknown>): ReportSearch => parseReportSearch(raw),
@@ -117,15 +118,14 @@ function ReportPage() {
 
   if (!report) {
     return (
-      <div className="space-y-4">
-        <PageHeader
-          title="Report not found"
-          description={`No catalogue entry for “${reportId}”.`}
-        />
+      <ListWorkspace
+        title="Report not found"
+        description={`No catalogue entry for “${reportId}”.`}
+      >
         <Button asChild variant="outline">
           <Link to="/reports">Back to Reports Centre</Link>
         </Button>
-      </div>
+      </ListWorkspace>
     );
   }
 
@@ -135,8 +135,7 @@ function ReportPage() {
 
   if (report.status !== "ready" || report.runner === "none") {
     return (
-      <div className="space-y-4">
-        <PageHeader title={report.title} description={report.description} />
+      <ListWorkspace title={report.title} description={report.description}>
         <Alert>
           <AlertTitle>Not available yet</AlertTitle>
           <AlertDescription>
@@ -146,7 +145,7 @@ function ReportPage() {
         <Button asChild variant="outline">
           <Link to="/reports">Back to Reports Centre</Link>
         </Button>
-      </div>
+      </ListWorkspace>
     );
   }
 

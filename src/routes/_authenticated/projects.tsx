@@ -9,7 +9,8 @@ import { getProjectProfitability } from "@/lib/projects/projects.functions";
 import { budgetUsedPercent, marginPercent, totalsOf } from "@/lib/projects/projects";
 import { ProjectPanel } from "@/components/create-new/ProjectPanel";
 import { StatementBasisSelect } from "@/components/reports/StatementBasisSelect";
-import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -63,18 +64,17 @@ function ProjectsPage() {
   const money = (n: number) => fromMinorUnits(n, base);
 
   return (
-    <>
-      <PageHeader
-        title="Projects"
-        description={`Profit by project in ${base}, from posted figures. Tag invoices, bills and bank lines to a project from their own screens. Untagged activity is not included.`}
-        actions={
-          <Button asChild variant="outline" size="sm">
-            <Link to="/imports" search={{ module: "projects" }}>
-              Import projects
-            </Link>
-          </Button>
-        }
-      />
+    <ListWorkspace
+      title="Projects"
+      description={`Profit by project in ${base}, from posted figures. Tag invoices, bills and bank lines to a project from their own screens. Untagged activity is not included.`}
+      actions={
+        <Button asChild variant="outline" size="sm">
+          <Link to="/imports" search={{ module: "projects" }}>
+            Import projects
+          </Link>
+        </Button>
+      }
+    >
       <div className="mb-4 flex flex-wrap items-end gap-3">
         <div className="space-y-1">
           <Label htmlFor="pp-from">From</Label>
@@ -177,6 +177,6 @@ function ProjectsPage() {
         <h2 className="mb-2 text-lg font-semibold">New project</h2>
         <ProjectPanel />
       </div>
-    </>
+    </ListWorkspace>
   );
 }

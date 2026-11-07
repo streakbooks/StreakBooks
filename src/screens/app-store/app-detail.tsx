@@ -4,7 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
 import { TrustBadges } from "@/components/app-store/TrustBadges";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -73,19 +74,18 @@ export function AppStoreAppDetailPage({ appCode }: { appCode: string }) {
   }
   if (!canView) {
     return (
-      <>
-        <PageHeader title="Application" description="App Store" />
-        <EmptyState title="No access" description="Requires appstore.view." />
-      </>
+      <RecordWorkspace title="Application" description="App Store"
+    >
+      <EmptyState title="No access" description="Requires appstore.view." />
+    </RecordWorkspace>
     );
   }
   if (catalogue.isLoading) {
     return (
-      <>
-        <PageHeader title="Application" description="Loading listing…" />
+      <RecordWorkspace title="Application" description="Loading listing…">
         <AppStoreSubnav current="explore" />
         <LoadingState />
-      </>
+    </RecordWorkspace>
     );
   }
   if (catalogue.isError) {
@@ -101,8 +101,7 @@ export function AppStoreAppDetailPage({ appCode }: { appCode: string }) {
   const app = catalogue.data?.apps.find((a) => a.code === appCode);
   if (!app) {
     return (
-      <>
-        <PageHeader title="Application not found" description="App Store" />
+      <RecordWorkspace title="Application not found" description="App Store">
         <AppStoreSubnav current="explore" />
         <EmptyState
           title="Listing not found"
@@ -115,7 +114,7 @@ export function AppStoreAppDetailPage({ appCode }: { appCode: string }) {
             </Button>
           }
         />
-      </>
+    </RecordWorkspace>
     );
   }
 
@@ -127,9 +126,7 @@ export function AppStoreAppDetailPage({ appCode }: { appCode: string }) {
   const already = app.installStatus === "installed" || app.installStatus === "disabled";
 
   return (
-    <>
-      <PageHeader
-        title={app.name}
+      <RecordWorkspace title={app.name}
         description={app.headline}
         actions={
           <div className="flex flex-wrap gap-2">
@@ -160,7 +157,7 @@ export function AppStoreAppDetailPage({ appCode }: { appCode: string }) {
             </Button>
           </div>
         }
-      />
+    >
       <AppStoreSubnav current="explore" />
 
       <div className="mb-6 space-y-3">
@@ -299,6 +296,6 @@ export function AppStoreAppDetailPage({ appCode }: { appCode: string }) {
           hasInstallPermission={canInstall}
         />
       </div>
-    </>
-  );
+    </RecordWorkspace>
+    );
 }

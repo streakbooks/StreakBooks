@@ -19,7 +19,8 @@ import { parseMinorOrThrow, tryParseMinor } from "@/lib/purchases/money-input";
 import { useCan } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { AccountLookup } from "@/components/lookup";
-import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -129,12 +130,10 @@ export function EmployeeExpensesPage() {
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
 
   return (
-    <>
-      <PageHeader
-        title="Employee expenses"
-        description="Staff submit claims; approvers reimburse via the shared posting engine (DR expense / CR bank)."
-      />
-
+    <ListWorkspace
+      title="Employee expenses"
+      description="Staff submit claims; approvers reimburse via the shared posting engine (DR expense / CR bank)."
+    >
       <div className="mb-6 grid max-w-xl gap-3 rounded-md border border-border p-4">
         <div className="space-y-2">
           <Label>Description</Label>
@@ -283,6 +282,6 @@ export function EmployeeExpensesPage() {
           </TableBody>
         </Table>
       )}
-    </>
+    </ListWorkspace>
   );
 }

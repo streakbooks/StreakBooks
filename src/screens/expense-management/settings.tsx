@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { AccountLookup } from "@/components/lookup";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -206,13 +207,13 @@ export function ExpenseManagementSettingsPage() {
   }
   if (!canView) {
     return (
-      <>
-        <PageHeader title="Expense settings" />
-        <EmptyState
+      <ListWorkspace title="Expense settings"
+    >
+      <EmptyState
           title="No access"
           description="Ask an administrator for expenses.manage_policies."
         />
-      </>
+    </ListWorkspace>
     );
   }
   if (settingsQ.isPending || !draft) return <LoadingState />;
@@ -220,10 +221,10 @@ export function ExpenseManagementSettingsPage() {
     const message = friendlyAuthError(settingsQ.error);
     const migrationPending = message.includes("20261107120000");
     return (
-      <>
-        <PageHeader title="Expense settings" description="Policies, numbering and account defaults." />
-        <ExpenseManagementSubnav current="settings" />
-        {migrationPending ? (
+      <ListWorkspace title="Expense settings" description="Policies, numbering and account defaults."
+      subnav={<ExpenseManagementSubnav current="settings"/>}
+    >
+      {migrationPending ? (
           <Alert>
             <AlertTitle>Migration required</AlertTitle>
             <AlertDescription>{EXPENSE_MANAGEMENT_MIGRATION}</AlertDescription>
@@ -235,14 +236,12 @@ export function ExpenseManagementSettingsPage() {
             onRetry={() => settingsQ.refetch()}
           />
         )}
-      </>
+    </ListWorkspace>
     );
   }
 
   return (
-    <>
-      <PageHeader
-        title="Expense settings"
+      <ListWorkspace title="Expense settings"
         description="Organisation defaults for Expense Management."
         actions={
           canEdit ? (
@@ -255,9 +254,8 @@ export function ExpenseManagementSettingsPage() {
             </Button>
           ) : null
         }
-      />
-      <ExpenseManagementSubnav current="settings" />
-
+      subnav={<ExpenseManagementSubnav current="settings"/>}
+    >
       {!settingsQ.data.exists ? (
         <Alert className="mb-6">
           <AlertTitle>Using defaults</AlertTitle>
@@ -549,8 +547,8 @@ export function ExpenseManagementSettingsPage() {
                   </TableBody>
                 </Table>
               )}
-            </>
-          )}
+    </ListWorkspace>
+    )}
         </section>
       ) : null}
     </>

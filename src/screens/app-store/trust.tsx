@@ -3,7 +3,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
 import { MarketplaceAppCard } from "@/components/app-store/MarketplaceAppCard";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -113,19 +114,19 @@ export function AppStoreTrustPage() {
   }
   if (!canView) {
     return (
-      <>
-        <PageHeader title="Trust & Certification" description="App Store" />
-        <EmptyState title="No access" description="Requires appstore.view." />
-      </>
+      <ListWorkspace title="Trust & Certification" description="App Store"
+    >
+      <EmptyState title="No access" description="Requires appstore.view." />
+    </ListWorkspace>
     );
   }
   if (catalogue.isLoading) {
     return (
-      <>
-        <PageHeader title="Trust & Certification" description="Marketplace trust signals." />
-        <AppStoreSubnav current="trust" />
-        <LoadingState />
-      </>
+      <ListWorkspace title="Trust & Certification" description="Marketplace trust signals."
+      subnav={<AppStoreSubnav current="trust"/>}
+    >
+      <LoadingState />
+    </ListWorkspace>
     );
   }
   if (catalogue.isError) {
@@ -146,13 +147,10 @@ export function AppStoreTrustPage() {
   const realDataLocked = apps.filter((a) => !a.realCustomerDataEnabled);
 
   return (
-    <>
-      <PageHeader
-        title="Trust & Certification"
+      <ListWorkspace title="Trust & Certification"
         description="Verified publishers, certification status, security approval and compatibility notices."
-      />
-      <AppStoreSubnav current="trust" />
-
+      subnav={<AppStoreSubnav current="trust"/>}
+    >
       <Alert className="mb-6">
         <AlertTitle>Certification is earned, not claimed</AlertTitle>
         <AlertDescription>
@@ -287,8 +285,8 @@ export function AppStoreTrustPage() {
                               >
                                 Reject
                               </Button>
-                            </>
-                          ) : (
+    </ListWorkspace>
+    ) : (
                             <span className="text-sm text-muted-foreground">Decided</span>
                           )}
                         </TableCell>

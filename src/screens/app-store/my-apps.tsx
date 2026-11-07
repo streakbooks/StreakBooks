@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,22 +43,22 @@ export function AppStoreMyAppsPage() {
   }
   if (!canView) {
     return (
-      <>
-        <PageHeader title="My Apps" description="App Store" />
-        <EmptyState
+      <ListWorkspace title="My Apps" description="App Store"
+    >
+      <EmptyState
           title="No access"
           description="Requires App Store view or install permission."
         />
-      </>
+    </ListWorkspace>
     );
   }
   if (catalogue.isLoading) {
     return (
-      <>
-        <PageHeader title="My Apps" description="Installed and requested applications." />
-        <AppStoreSubnav current="my-apps" />
-        <LoadingState />
-      </>
+      <ListWorkspace title="My Apps" description="Installed and requested applications."
+      subnav={<AppStoreSubnav current="my-apps"/>}
+    >
+      <LoadingState />
+    </ListWorkspace>
     );
   }
   if (catalogue.isError) {
@@ -75,9 +76,7 @@ export function AppStoreMyAppsPage() {
   );
 
   return (
-    <>
-      <PageHeader
-        title="My Apps"
+      <ListWorkspace title="My Apps"
         description="Organisation installations and requests. Live connection and sync actions arrive after verified E2E connectors."
         actions={
           <Button asChild size="sm">
@@ -86,9 +85,8 @@ export function AppStoreMyAppsPage() {
             </Link>
           </Button>
         }
-      />
-      <AppStoreSubnav current="my-apps" />
-
+      subnav={<AppStoreSubnav current="my-apps"/>}
+    >
       {rows.length === 0 ? (
         <EmptyState
           title="No apps installed yet"
@@ -139,6 +137,6 @@ export function AppStoreMyAppsPage() {
           </Table>
         </div>
       )}
-    </>
-  );
+    </ListWorkspace>
+    );
 }

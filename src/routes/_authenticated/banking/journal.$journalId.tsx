@@ -5,7 +5,8 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { getJournalDetail } from "@/lib/banking/journal.functions";
-import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DocumentRecordPanel } from "@/components/documents/DocumentRecordPanel";
@@ -52,16 +53,15 @@ function JournalDetail() {
   const credit = lines.reduce((a, l) => a + BigInt(l.credit_minor), 0n);
 
   return (
-    <>
-      <PageHeader
-        title={`Journal #${journal.journal_number}`}
-        description={`${journal.journal_date} · ${journal.source_type.replace(/_/g, " ")}${journal.memo ? ` · ${journal.memo}` : ""}`}
-        actions={
-          <Button size="sm" variant="outline" asChild>
-            <Link to="/banking/transactions">Back to transactions</Link>
-          </Button>
-        }
-      />
+    <RecordWorkspace
+      title={`Journal #${journal.journal_number}`}
+      description={`${journal.journal_date} · ${journal.source_type.replace(/_/g, " ")}${journal.memo ? ` · ${journal.memo}` : ""}`}
+      actions={
+        <Button size="sm" variant="outline" asChild>
+          <Link to="/banking/transactions">Back to transactions</Link>
+        </Button>
+      }
+    >
       <div className="mb-3 flex flex-wrap gap-2">
         <Badge variant="outline">{journal.status}</Badge>
         {journal.reversed_by_journal_id ? (
@@ -115,6 +115,6 @@ function JournalDetail() {
         </TableFooter>
       </Table>
       <DocumentRecordPanel entityType="journal" entityId={journalId} audience="internal" />
-    </>
+    </RecordWorkspace>
   );
 }

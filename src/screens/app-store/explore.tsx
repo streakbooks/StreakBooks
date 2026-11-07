@@ -5,7 +5,8 @@ import { AppStoreHero } from "@/components/app-store/AppStoreHero";
 import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
 import { MarketplaceAppCard } from "@/components/app-store/MarketplaceAppCard";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -62,10 +63,10 @@ export function AppStoreExplorePage() {
   }
   if (!canView) {
     return (
-      <>
-        <PageHeader title="Explore All Apps" description="App Store" />
-        <EmptyState title="No access" description="Requires appstore.view." />
-      </>
+      <ListWorkspace title="Explore All Apps" description="App Store"
+    >
+      <EmptyState title="No access" description="Requires appstore.view." />
+    </ListWorkspace>
     );
   }
 

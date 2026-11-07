@@ -2,7 +2,8 @@ import { lazy, Suspense, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useActiveCompany } from "@/hooks/use-active-company";
@@ -181,26 +182,24 @@ export function AppStoreSectionPage({ sectionKey }: { sectionKey: AppStoreSectio
   const allowed = section.anyOf.some((permission) => can(permission as Permission));
   if (!allowed) {
     return (
-      <>
-        <PageHeader title={section.label} description="App Store" />
-        <AppStoreSubnav current={sectionKey} />
-        <EmptyState title="No access" description="Your role cannot open this App Store section." />
-      </>
+      <ListWorkspace title={section.label} description="App Store"
+      subnav={<AppStoreSubnav current={sectionKey}/>}
+    >
+      <EmptyState title="No access" description="Your role cannot open this App Store section." />
+    </ListWorkspace>
     );
   }
 
   return (
-    <>
-      <PageHeader
-        title={section.label}
+      <ListWorkspace title={section.label}
         description="Part of the LinkBooks App Store and open integration platform."
         actions={
           <Button asChild variant="outline" size="sm">
             <Link to="/app-store">Back to overview</Link>
           </Button>
         }
-      />
-      <AppStoreSubnav current={sectionKey} />
+      subnav={<AppStoreSubnav current={sectionKey}/>}
+    >
       <Alert className="mb-6">
         <AlertTitle>
           {section.label} continues in {section.batch}
@@ -215,6 +214,6 @@ export function AppStoreSectionPage({ sectionKey }: { sectionKey: AppStoreSectio
         title={`${section.label} workspace ready`}
         description="Foundation schema and role checks are in place. Feature implementation continues in the scheduled batch."
       />
-    </>
-  );
+    </ListWorkspace>
+    );
 }

@@ -24,7 +24,8 @@ import {
   TaxCodeCreateForm,
 } from "@/components/lookup/create-forms";
 import { toContactLookupOption } from "@/lib/lookup/eligibility";
-import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -260,19 +261,17 @@ function CashCoding() {
   );
 
   return (
-    <>
-      <PageHeader
-        title="Cash coding"
-        description="Select uncategorised statement lines and apply one account (and optional tax code). Each line posts its own balanced journal through the shared posting engine."
-        actions={
-          <Button size="sm" variant="outline" asChild>
-            <Link to="/banking/transactions" search={{ status: "uncategorised" }}>
-              For review
-            </Link>
-          </Button>
-        }
-      />
-
+    <ListWorkspace
+      title="Cash coding"
+      description="Select uncategorised statement lines and apply one account (and optional tax code). Each line posts its own balanced journal through the shared posting engine."
+      actions={
+        <Button size="sm" variant="outline" asChild>
+          <Link to="/banking/transactions" search={{ status: "uncategorised" }}>
+            For review
+          </Link>
+        </Button>
+      }
+    >
       <Alert className="mb-4">
         <AlertTitle>Accountant workflow</AlertTitle>
         <AlertDescription>
@@ -524,6 +523,6 @@ function CashCoding() {
           </div>
         </>
       )}
-    </>
+    </ListWorkspace>
   );
 }

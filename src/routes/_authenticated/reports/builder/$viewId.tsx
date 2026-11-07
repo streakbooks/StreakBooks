@@ -32,7 +32,8 @@ import { downloadReportFile } from "@/lib/reports/download";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 export const Route = createFileRoute("/_authenticated/reports/builder/$viewId")({
   component: BuilderPage,
   validateSearch: parseReportSearch,
@@ -208,11 +209,11 @@ function BuilderEditor({
     String(saved?.config["from"]) !== from ||
     String(saved?.config["to"]) !== to;
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Custom report builder"
-        description="Build financial reports from your chart of accounts and posted-ledger balances."
-      />
+    <ListWorkspace
+      title="Custom report builder"
+      description="Build financial reports from your chart of accounts and posted-ledger balances."
+      className="space-y-6"
+    >
       <div className="flex flex-wrap items-end gap-3 print:hidden">
         <div>
           <Label htmlFor="builder-from">From</Label>
@@ -283,6 +284,6 @@ function BuilderEditor({
       )}
       {previewMutation.isPending && <LoadingState />}
       {document && <DocumentPreview document={document} />}
-    </div>
+    </ListWorkspace>
   );
 }

@@ -4,7 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -125,23 +126,20 @@ export function AppStorePrivacyPage() {
   }
   if (!canView) {
     return (
-      <>
-        <PageHeader title="Privacy & access" description="App Store" />
-        <EmptyState title="No access" description="Requires appstore.view or manage_connections." />
-      </>
+      <ListWorkspace title="Privacy & access" description="App Store"
+    >
+      <EmptyState title="No access" description="Requires appstore.view or manage_connections." />
+    </ListWorkspace>
     );
   }
 
   const activeConsents = (consents.data ?? []).filter((c) => c.status === "active");
 
   return (
-    <>
-      <PageHeader
-        title="Privacy & access"
+      <ListWorkspace title="Privacy & access"
         description="Granular consent, permission visibility, connection history and revocation for marketplace apps."
-      />
-      <AppStoreSubnav current="privacy" />
-
+      subnav={<AppStoreSubnav current="privacy"/>}
+    >
       <Alert className="mb-6">
         <AlertTitle>Zero-trust customer controls</AlertTitle>
         <AlertDescription>
@@ -333,6 +331,6 @@ export function AppStorePrivacyPage() {
           )
         ) : null}
       </div>
-    </>
-  );
+    </ListWorkspace>
+    );
 }

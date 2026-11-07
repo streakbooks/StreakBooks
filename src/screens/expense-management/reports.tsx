@@ -5,7 +5,8 @@ import { toast } from "sonner";
 import { ExpenseManagementLoadingShell } from "@/components/expenses/ExpenseManagementLoadingShell";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -110,14 +111,14 @@ export function ExpenseManagementReportsPage() {
   }
   if (!canView) {
     return (
-      <>
-        <PageHeader title="Reports" />
-        <ExpenseManagementSubnav current="reports" />
-        <EmptyState
+      <ListWorkspace title="Reports"
+      subnav={<ExpenseManagementSubnav current="reports"/>}
+    >
+      <EmptyState
           title="No access"
           description="Ask an administrator for expenses.view, expenses.export, or expenses.audit."
         />
-      </>
+    </ListWorkspace>
     );
   }
   if (reportQ.isLoading) {
@@ -126,10 +127,10 @@ export function ExpenseManagementReportsPage() {
   if (reportQ.isError) {
     const message = friendlyAuthError(reportQ.error);
     return (
-      <>
-        <PageHeader title="Reports" description="Expense Management" />
-        <ExpenseManagementSubnav current="reports" />
-        {message.includes("20261107147000") ? (
+      <ListWorkspace title="Reports" description="Expense Management"
+      subnav={<ExpenseManagementSubnav current="reports"/>}
+    >
+      {message.includes("20261107147000") ? (
           <Alert>
             <AlertTitle>Database update required</AlertTitle>
             <AlertDescription>{EXPENSE_REPORTS_MIGRATION}</AlertDescription>
@@ -141,7 +142,7 @@ export function ExpenseManagementReportsPage() {
             onRetry={() => reportQ.refetch()}
           />
         )}
-      </>
+    </ListWorkspace>
     );
   }
 
@@ -149,9 +150,7 @@ export function ExpenseManagementReportsPage() {
   const currency = company.base_currency ?? "USD";
 
   return (
-    <>
-      <PageHeader
-        title="Reports"
+      <ListWorkspace title="Reports"
         description="Claim volumes, open aging, CSV export and recent audit events."
         actions={
           canExport ? (
@@ -164,9 +163,8 @@ export function ExpenseManagementReportsPage() {
             </Button>
           ) : null
         }
-      />
-      <ExpenseManagementSubnav current="reports" />
-
+      subnav={<ExpenseManagementSubnav current="reports"/>}
+    >
       <section className="mb-6 grid max-w-xl gap-3 sm:grid-cols-2">
         <div className="grid gap-2">
           <Label htmlFor="em-report-from">From</Label>
@@ -266,8 +264,8 @@ export function ExpenseManagementReportsPage() {
           </Table>
         )}
       </section>
-    </>
-  );
+    </ListWorkspace>
+    );
 }
 
 function StatusTable({

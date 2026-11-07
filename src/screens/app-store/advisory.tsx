@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -45,24 +46,21 @@ export function AppStoreAdvisoryPage() {
   }
   if (!canAdvise) {
     return (
-      <>
-        <PageHeader title="Accountant Advisory" description="App Store" />
-        <EmptyState
+      <ListWorkspace title="Accountant Advisory" description="App Store"
+    >
+      <EmptyState
           title="No advisory access"
           description="Requires appstore.advise on the practice organisation."
         />
-      </>
+    </ListWorkspace>
     );
   }
 
   return (
-    <>
-      <PageHeader
-        title="Accountant Advisory"
+      <ListWorkspace title="Accountant Advisory"
         description="Recommend apps to authorized client organisations, request approvals and monitor integrations — without bypassing client consent."
-      />
-      <AppStoreSubnav current="advisory" />
-
+      subnav={<AppStoreSubnav current="advisory"/>}
+    >
       <Alert className="mb-6">
         <AlertTitle>Practice-scoped recommendations</AlertTitle>
         <AlertDescription>
@@ -133,6 +131,6 @@ export function AppStoreAdvisoryPage() {
           </div>
         )
       ) : null}
-    </>
-  );
+    </ListWorkspace>
+    );
 }

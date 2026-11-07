@@ -45,7 +45,8 @@ import {
 import { AccountLookup, LookupSelect, type LookupCreateContext } from "@/components/lookup";
 import { BankAccountCreateForm, TaxCodeCreateForm } from "@/components/lookup/create-forms";
 import { toContactLookupOption } from "@/lib/lookup/eligibility";
-import { PageHeader, ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
+import { ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -464,24 +465,22 @@ function BankTransactions() {
   );
 
   return (
-    <>
-      <PageHeader
-        title={title}
-        description="Code a line (one balanced journal), match it to existing ledger activity, or exclude it. Unmatch undoes a coding by posting a reversing journal."
-        actions={
-          <>
-            <Button size="sm" variant="outline" asChild>
-              <Link to="/banking/rules" search={{ review: "1" } as never}>
-                Review rule suggestions
-              </Link>
-            </Button>
-            <Button size="sm" variant="outline" asChild>
-              <Link to="/banking/cash-coding">Open cash coding</Link>
-            </Button>
-          </>
-        }
-      />
-
+    <ListWorkspace
+      title={title}
+      description="Code a line (one balanced journal), match it to existing ledger activity, or exclude it. Unmatch undoes a coding by posting a reversing journal."
+      actions={
+        <>
+          <Button size="sm" variant="outline" asChild>
+            <Link to="/banking/rules" search={{ review: "1" } as never}>
+              Review rule suggestions
+            </Link>
+          </Button>
+          <Button size="sm" variant="outline" asChild>
+            <Link to="/banking/cash-coding">Open cash coding</Link>
+          </Button>
+        </>
+      }
+    >
       {search.transactionId ? (
         <div className="mb-3 flex items-center gap-3 text-sm text-muted-foreground" role="status">
           <span>Showing the bank transaction selected from global search.</span>
@@ -1326,6 +1325,6 @@ function BankTransactions() {
           </div>
         </div>
       ) : null}
-    </>
+    </ListWorkspace>
   );
 }

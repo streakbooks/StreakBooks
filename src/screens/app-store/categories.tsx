@@ -2,7 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
@@ -30,19 +31,19 @@ export function AppStoreCategoriesPage() {
   }
   if (!canView) {
     return (
-      <>
-        <PageHeader title="Categories" description="App Store" />
-        <EmptyState title="No access" description="Requires appstore.view." />
-      </>
+      <ListWorkspace title="Categories" description="App Store"
+    >
+      <EmptyState title="No access" description="Requires appstore.view." />
+    </ListWorkspace>
     );
   }
   if (catalogue.isLoading) {
     return (
-      <>
-        <PageHeader title="Categories" description="Browse the marketplace taxonomy." />
-        <AppStoreSubnav current="categories" />
-        <LoadingState />
-      </>
+      <ListWorkspace title="Categories" description="Browse the marketplace taxonomy."
+      subnav={<AppStoreSubnav current="categories"/>}
+    >
+      <LoadingState />
+    </ListWorkspace>
     );
   }
   if (catalogue.isError) {
@@ -58,12 +59,10 @@ export function AppStoreCategoriesPage() {
   const counts = new Map(categoryCounts(catalogue.data?.apps ?? []).map((c) => [c.code, c.count]));
 
   return (
-    <>
-      <PageHeader
-        title="Categories"
+      <ListWorkspace title="Categories"
         description="Configurable taxonomy covering e-commerce, payments, document capture and more."
-      />
-      <AppStoreSubnav current="categories" />
+      subnav={<AppStoreSubnav current="categories"/>}
+    >
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {APP_CATEGORIES.map((cat) => {
           const count = counts.get(cat.code) ?? 0;
@@ -85,6 +84,6 @@ export function AppStoreCategoriesPage() {
           );
         })}
       </div>
-    </>
-  );
+    </ListWorkspace>
+    );
 }

@@ -20,7 +20,7 @@ This includes native browser navigation, discoverable module sections, connected
 | Scroll restoration | `src/router.tsx` has `scrollRestoration: true` | Verify filters, sorting, selections and route transitions across workspaces |
 | Module subnavigation | Shared `ModuleSubnav.tsx` exposes all sections in a scrollable strip; Sales/Purchases/Banking reuse it | Authenticated/mobile validation, keyboard and responsive overflow checks |
 | Purchases list state | Bills list URL search validates tab, query, dates, status, page, sort; bill record links now carry allowlisted return context | Run pure helper tests and seeded authenticated browser journey |
-| Sales invoices list | `src/routes/_authenticated/sales/invoices.index.tsx` still holds list filters in React local state | Add URL-backed state and return-to-origin behavior without breaking saved filter views |
+| Sales invoices list | `src/routes/_authenticated/sales/invoices.index.tsx` now uses validated URL search state; detail, New/Edit and mobile links preserve return context | Run local typecheck, unit tests and authenticated browser journeys; verify saved views and live deep links |
 | Reporting and other modules | Existing native navigation audit (`scripts/check-native-navigation.mjs`) covers key sections | Full screen/action inventory and real-browser testing |
 | Accessibility and performance | Shared controls include focus states and route preloading | Measure with realistic datasets and assistive technology checks |
 | Finance/security | Existing accounting services, auth and Supabase RLS are separate | Never bypass posting, period locks, tenant isolation or authorization; regression test them |
@@ -33,6 +33,13 @@ This includes native browser navigation, discoverable module sections, connected
 - `src/routes/_authenticated/purchases/bills.index.tsx`: preserve list context in record navigation from table, preview and programmatic opening.
 - `src/routes/_authenticated/purchases/bills.$billId.tsx`: restore context when returning to Bills.
 - `e2e/module-subnav-browsing.spec.ts`: four authenticated browser scenarios (written; not executed).
+- `src/lib/sales/invoice-list-navigation.ts`: validated, allowlisted invoice list URL state, safe return-context encoding/decoding.
+- `src/lib/sales/invoice-list-navigation.test.ts`: nine Sales state unit-test cases (written; not executed).
+- `src/routes/_authenticated/sales/invoices.index.tsx`: URL-backed filters, sort, pagination, overdue filter and record return links.
+- `src/routes/_authenticated/sales/invoices.$invoiceId.tsx`, `src/routes/_authenticated/sales/invoices.$invoiceId.index.tsx` and `src/routes/_authenticated/sales/invoices.$invoiceId.edit.tsx`: preserve origin on detail/edit navigation.
+- `src/routes/_authenticated/sales/invoices.new.tsx`, `src/screens/sales/invoices.new.tsx`, `src/components/sales/SalesDocumentEditor.tsx` and `src/components/sales/InvoiceMobileCards.tsx`: carry list context across new/edit, saving and mobile record links.
+- `src/components/sales/ListKit.tsx`: allow 200-row page sizes already supported by saved views.
+- `e2e/sales-invoice-browsing-context.spec.ts`: three authenticated Sales navigation tests (written; not executed).
 
 ## Required acceptance criteria
 
@@ -55,7 +62,7 @@ This includes native browser navigation, discoverable module sections, connected
 | 2 | Original shared design system and semantic status colours | Pending application-wide verification |
 | 3 | Shell, module/sub-navigation, native browser interactions | Partial implementation; tests pending |
 | 4 | Shared forms, tables, search, filters, saved views and context retention | Bills work in progress |
-| 5 | Sales, invoices and receivables navigation/forms | Next: URL-backed invoice list context |
+| 5 | Sales, invoices and receivables navigation/forms | Invoice URL/return-context code committed; tests and remaining flows pending |
 | 6 | Purchases, bills and payables navigation/forms | Bills context implemented; tests pending |
 | 7 | Products, Services, Inventory and Contacts | Pending |
 | 8 | Banking, Accounting and Reports | Pending |
@@ -65,6 +72,8 @@ This includes native browser navigation, discoverable module sections, connected
 | 12 | Final gap audit, recovery and production-release verification | Pending |
 
 The denominator is provisional until the full feature inventory is reconciled. **Fully verified coding batches: 0 / 12**; don't increase this without actual checks and acceptance evidence.
+
+**Next:** Execute `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run check:navigation`, `npm.cmd test -- src/lib/sales/invoice-list-navigation.test.ts src/lib/purchases/bills-return-context.test.ts`, and authenticated browser suites in an isolated local worktree. Then fix any failures before considering the browsing-context sub-batch verified. Continue with Products/Contacts and reporting return navigation only after the Sales/Bills local checks.
 
 ## Operating boundaries
 

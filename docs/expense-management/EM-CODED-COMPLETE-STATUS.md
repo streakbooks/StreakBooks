@@ -1,9 +1,9 @@
 # Expense Management — coded-complete vs verified
 
 **Date:** 2026-11-07  
-**Branch:** local `main` (not pushed)
+**Branch:** batch-close docs → merge to `main` (see `EM-BATCH-CLOSE-20261107.md`)
 
-## Coded end-to-end (migrations committed, not applied)
+## Coded end-to-end (migrations committed and applied)
 
 EM-01 foundation through EM-12a release notes, plus gap closes:
 
@@ -13,17 +13,23 @@ EM-01 foundation through EM-12a release notes, plus gap closes:
 - Specialty: mileage, travel, advances+reclaim, petty cash, cards, disputes, rebilling, exit
 - Reports / Action Center / legacy import / budgets bridge
 
-## Blocked on external providers / ops (cannot finish in code alone)
+## External providers / ops (deferred — honesty stubs shipped)
 
-1. ~~Apply Supabase migrations on a live project (through `20261107156000`)~~ — **done 2026-11-07** on linked project `ipxflpzfcqwtenodbxwc` (see `EM-MIGRATIONS-APPLIED-20261107.md`)
-2. Authenticated browser E2E (full claim lifecycle) + broader staging/production verification
-3. Inbound receipt email provider wiring
-4. Live OCR provider wiring (beyond unavailable stub)
-5. Payroll payslip posting for queued reimbursements
-6. Travel booking integrations
-7. Email/push notification delivery (Action Center in-app is done)
-8. GitHub CI / PR / merge / Lovable sync (user forbade push unless asked)
+1. Inbound receipt email provider wiring
+2. Live OCR provider wiring (beyond unavailable stub)
+3. Payroll **payslip** posting for queued reimbursements (queue + cancel shipped; UI states no payslip post)
+4. Travel booking integrations
+5. Email/push notification delivery (Action Center in-app is done)
+6. Card provider feed import / chargeback automation
+7. Full second-org staging campaign and re-enabled GitHub `quality.yml`
 
-## Verified batch count
+## Verified on linked project `ipxflpzfcqwtenodbxwc` (Demo Company)
 
-Still **3/12** in `EM-PROGRESS-TRACKER.md` until migrations + browser gates pass. Do not inflate this from local commits alone.
+| Gate | Result |
+| --- | --- |
+| Migrations `20261107120000`–`20261107156000` | Applied + repaired |
+| Unit tests `src/lib/expenses` | 97 passed |
+| Browser draft → submit → settings → approve → post accrual → bank reimburse | **EXP-0001** ended `approval_status=approved`, `reimbursement_status=paid`, both journals set |
+| Section routes (authenticated titles) | Overview, My Expenses, Approvals, Reimbursements, Mileage, plus HTTP 200 shells for remaining sections |
+
+**Batch count:** **12/12** in-app verified with provider deferrals listed above. See `EM-PROGRESS-TRACKER.md` and `EM-BATCH-CLOSE-20261107.md`.

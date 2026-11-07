@@ -45,6 +45,13 @@
 - [ ] Booking integrations / multi-leg itineraries.
 - [ ] Applied migration + authenticated browser verification.
 
+## Corporate cards (EM-09a — local code)
+
+- [x] Card register with liability account and statement lines.
+- [x] Match unmatched transactions to corporate-card claims; post CR card liability.
+- [ ] Disputes, rebilling, exit settlement (later EM-09).
+- [ ] Applied migration + authenticated browser verification.
+
 ## Explicitly out of scope for this navigation amendment
 
 Browser E2E, applied migrations, GitHub CI/PR and production verification remain open and must not be marked complete from local code alone.

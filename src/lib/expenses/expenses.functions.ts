@@ -53,6 +53,15 @@ import {
   toExpensePerDiemRatePayload,
   type ExpensePerDiemRate,
 } from "@/lib/expenses/travel";
+import {
+  mapExpenseCorporateCard,
+  mapExpenseCorporateCardTransaction,
+  toExpenseCorporateCardPayload,
+  toExpenseCorporateCardTxPayload,
+  type ExpenseCorporateCard,
+  type ExpenseCorporateCardDraftInput,
+  type ExpenseCorporateCardTransaction,
+} from "@/lib/expenses/corporate-cards";
 
 export const EXPENSE_MANAGEMENT_MIGRATION =
   "Expense Management is not available yet: the database update 20261107120000 has not been applied.";
@@ -83,6 +92,9 @@ export const EXPENSE_PETTY_CASH_MIGRATION =
 
 export const EXPENSE_TRAVEL_MIGRATION =
   "Expense travel / per diem is not available yet: apply database update 20261107142000.";
+
+export const EXPENSE_CORPORATE_CARD_MIGRATION =
+  "Expense corporate cards are not available yet: apply database update 20261107143000.";
 
 export const EXPENSE_TEMPLATE_MIGRATION =
   "Expense claim templates are not available yet: apply database update 20261107130000.";
@@ -1315,4 +1327,165 @@ export const saveExpensePerDiemRate = createServerFn({ method: "POST" })
       EXPENSE_TRAVEL_MIGRATION,
     );
     return mapExpensePerDiemRate(raw);
+  });
+
+export const listExpenseCorporateCards = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string }) => ({
+    companyId: companyIdOf(input),
+  }))
+  .handler(async ({ data, context }): Promise<ExpenseCorporateCard[]> => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    const raw = await callRpc<{ cards?: unknown[] }>(
+      context.supabase,
+      "list_expense_corporate_cards",
+      { _company_id: data.companyId },
+      EXPENSE_CORPORATE_CARD_MIGRATION,
+    );
+    return (raw.cards ?? []).map(mapExpenseCorporateCard);
+  });
+
+export const saveExpenseCorporateCard = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { companyId: string; draft: ExpenseCorporateCardDraftInput }) => ({
+      companyId: companyIdOf(input),
+      draft: input.draft,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<ExpenseCorporateCard> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "expenses.manage_cards");
+    if (!data.draft.label.trim()) throw new Error("Card label is required.");
+    if (!/^\d{4}$/.test(data.draft.last4)) {
+      throw new Error("Last 4 digits must be exactly four numbers.");
+    }
+    if (!data.draft.liabilityAccountId) {
+      throw new Error("Choose a liability account for the card.");
+    }
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "save_expense_corporate_card",
+      {
+        _company_id: data.companyId,
+        _payload: toExpenseCorporateCardPayload(data.draft),
+      },
+      EXPENSE_CORPORATE_CARD_MIGRATION,
+    );
+    return mapExpenseCorporateCard(raw);
+  });
+
+export const listExpenseCorporateCardTransactions = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { companyId: string; cardId?: string; status?: string }) => ({
+      companyId: companyIdOf(input),
+      cardId: input.cardId,
+      status: input.status,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<ExpenseCorporateCardTransaction[]> => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    const raw = await callRpc<{ transactions?: unknown[] }>(
+      context.supabase,
+      "list_expense_corporate_card_transactions",
+      {
+        _company_id: data.companyId,
+        _card_id: data.cardId ?? null,
+        _status: data.status ?? null,
+      },
+      EXPENSE_CORPORATE_CARD_MIGRATION,
+    );
+    return (raw.transactions ?? []).map(mapExpenseCorporateCardTransaction);
+  });
+
+export const saveExpenseCorporateCardTransaction = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      draft: {
+        id?: string;
+        cardId: string;
+        transactionDate: string;
+        postedDate?: string | null;
+        merchantName?: string | null;
+        description: string;
+        amountMinor: number;
+        currencyCode?: string;
+        externalRef?: string | null;
+      };
+    }) => ({
+      companyId: companyIdOf(input),
+      draft: input.draft,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<ExpenseCorporateCardTransaction> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "expenses.manage_cards");
+    if (!data.draft.description.trim()) throw new Error("Description is required.");
+    if (data.draft.amountMinor <= 0) throw new Error("Amount must be greater than zero.");
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "save_expense_corporate_card_transaction",
+      {
+        _company_id: data.companyId,
+        _payload: toExpenseCorporateCardTxPayload(data.draft),
+      },
+      EXPENSE_CORPORATE_CARD_MIGRATION,
+    );
+    return mapExpenseCorporateCardTransaction(raw);
+  });
+
+export const matchExpenseCorporateCardTransaction = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { companyId: string; transactionId: string; claimId: string }) => ({
+      companyId: companyIdOf(input),
+      transactionId: input.transactionId,
+      claimId: input.claimId,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<ExpenseCorporateCardTransaction> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "expenses.manage_cards");
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "match_expense_corporate_card_transaction",
+      {
+        _company_id: data.companyId,
+        _transaction_id: data.transactionId,
+        _claim_id: data.claimId,
+      },
+      EXPENSE_CORPORATE_CARD_MIGRATION,
+    );
+    return mapExpenseCorporateCardTransaction(raw);
+  });
+
+export const linkExpenseClaimCorporateCard = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      claimId: string;
+      version: number;
+      cardId: string;
+    }) => ({
+      companyId: companyIdOf(input),
+      claimId: input.claimId,
+      version: input.version,
+      cardId: input.cardId,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<ExpenseClaimDetail> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "expenses.submit");
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "link_expense_claim_corporate_card",
+      {
+        _company_id: data.companyId,
+        _claim_id: data.claimId,
+        _expected_version: data.version,
+        _card_id: data.cardId,
+      },
+      EXPENSE_CORPORATE_CARD_MIGRATION,
+    );
+    return mapExpenseClaimDetail(raw);
   });

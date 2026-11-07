@@ -37,10 +37,12 @@ import {
   duplicateExpenseClaim,
   EXPENSE_CLAIM_MIGRATION,
   linkExpenseClaimCashAdvance,
+  linkExpenseClaimCorporateCard,
   linkExpenseClaimPettyCashFloat,
   listExpenseCashAdvances,
   listExpenseClaimTemplates,
   listExpenseClaims,
+  listExpenseCorporateCards,
   listExpensePettyCashFloats,
   saveExpenseClaim,
   saveExpenseClaimTemplate,
@@ -86,6 +88,7 @@ export function ExpenseManagementClaimsPage({
   const [paymentSource, setPaymentSource] = useState<ExpensePaymentSource>("employee_paid");
   const [cashAdvanceId, setCashAdvanceId] = useState("");
   const [pettyCashFloatId, setPettyCashFloatId] = useState("");
+  const [corporateCardId, setCorporateCardId] = useState("");
   const [lines, setLines] = useState<ExpenseDraftLineForm[]>([emptyDraftLine(today)]);
   const [splitLineKey, setSplitLineKey] = useState<string | null>(null);
   const [splitAccountA, setSplitAccountA] = useState("");
@@ -99,9 +102,11 @@ export function ExpenseManagementClaimsPage({
   const fetchTemplates = useServerFn(listExpenseClaimTemplates);
   const fetchAdvances = useServerFn(listExpenseCashAdvances);
   const fetchPettyFloats = useServerFn(listExpensePettyCashFloats);
+  const fetchCards = useServerFn(listExpenseCorporateCards);
   const saveClaim = useServerFn(saveExpenseClaim);
   const linkAdvance = useServerFn(linkExpenseClaimCashAdvance);
   const linkPettyFloat = useServerFn(linkExpenseClaimPettyCashFloat);
+  const linkCard = useServerFn(linkExpenseClaimCorporateCard);
   const submitClaim = useServerFn(submitExpenseClaim);
   const withdrawClaim = useServerFn(withdrawExpenseClaim);
   const deleteClaim = useServerFn(deleteExpenseClaimDraft);
@@ -167,6 +172,16 @@ export function ExpenseManagementClaimsPage({
       paymentSource === "company_paid",
   });
 
+  const cardsQ = useQuery({
+    queryKey: ["expense-corporate-cards", company?.id, "claim-link"],
+    queryFn: () => fetchCards({ data: { companyId: company!.id } }),
+    enabled:
+      Boolean(company?.id) &&
+      canSubmit &&
+      mode === "my-expenses" &&
+      paymentSource === "corporate_card",
+  });
+
   const openAdvances = useMemo(
     () =>
       (advancesQ.data ?? []).filter(
@@ -187,6 +202,14 @@ export function ExpenseManagementClaimsPage({
           float.currencyCode === currency,
       ),
     [pettyFloatsQ.data, currency],
+  );
+
+  const openCards = useMemo(
+    () =>
+      (cardsQ.data ?? []).filter(
+        (card) => card.status === "active" && card.currencyCode === currency,
+      ),
+    [cardsQ.data, currency],
   );
 
   const expenseAccounts = useMemo(
@@ -222,6 +245,9 @@ export function ExpenseManagementClaimsPage({
       if (paymentSource === "company_paid" && !pettyCashFloatId) {
         throw new Error("Select a petty cash float with enough balance.");
       }
+      if (paymentSource === "corporate_card" && !corporateCardId) {
+        throw new Error("Select a corporate card.");
+      }
       const draft = {
         title: title.trim() || "Expense claim",
         description: description.trim() || undefined,
@@ -231,8 +257,14 @@ export function ExpenseManagementClaimsPage({
         lines: claimLines,
       };
       if (isBrowserOffline()) {
-        if (paymentSource === "cash_advance" || paymentSource === "company_paid") {
-          throw new Error("Cash-advance and petty-cash claims cannot be saved offline yet.");
+        if (
+          paymentSource === "cash_advance" ||
+          paymentSource === "company_paid" ||
+          paymentSource === "corporate_card"
+        ) {
+          throw new Error(
+            "Cash-advance, petty-cash and corporate-card claims cannot be saved offline yet.",
+          );
         }
         enqueueOfflineExpenseClaimDraft(company.id, draft);
         return { offline: true as const };
@@ -263,6 +295,16 @@ export function ExpenseManagementClaimsPage({
           },
         });
       }
+      if (paymentSource === "corporate_card" && corporateCardId) {
+        return linkCard({
+          data: {
+            companyId: company.id,
+            claimId: saved.id,
+            version: saved.version,
+            cardId: corporateCardId,
+          },
+        });
+      }
       return saved;
     },
     onSuccess: (result) => {
@@ -271,6 +313,7 @@ export function ExpenseManagementClaimsPage({
       setPaymentSource("employee_paid");
       setCashAdvanceId("");
       setPettyCashFloatId("");
+      setCorporateCardId("");
       setLines([emptyDraftLine(today)]);
       setTemplateName("");
       if (company?.id) setOfflineDrafts(listOfflineExpenseClaimDrafts(company.id));
@@ -572,11 +615,13 @@ export function ExpenseManagementClaimsPage({
                   setPaymentSource(next);
                   if (next !== "cash_advance") setCashAdvanceId("");
                   if (next !== "company_paid") setPettyCashFloatId("");
+                  if (next !== "corporate_card") setCorporateCardId("");
                 }}
               >
                 <option value="employee_paid">Employee paid (reimburse)</option>
                 <option value="cash_advance">Cash advance (settle float)</option>
                 <option value="company_paid">Petty cash (company paid)</option>
+                <option value="corporate_card">Corporate card</option>
               </select>
             </div>
             {paymentSource === "cash_advance" ? (
@@ -612,6 +657,24 @@ export function ExpenseManagementClaimsPage({
                     <option key={float.id} value={float.id}>
                       {float.floatNumber} — {float.name} (
                       {fromMinorUnits(float.balanceMinor, float.currencyCode)})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
+            {paymentSource === "corporate_card" ? (
+              <div className="grid gap-2">
+                <Label htmlFor="em-claim-card">Corporate card</Label>
+                <select
+                  id="em-claim-card"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={corporateCardId}
+                  onChange={(event) => setCorporateCardId(event.target.value)}
+                >
+                  <option value="">Select card</option>
+                  {openCards.map((card) => (
+                    <option key={card.id} value={card.id}>
+                      {card.label} ****{card.last4}
                     </option>
                   ))}
                 </select>

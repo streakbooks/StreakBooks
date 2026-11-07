@@ -8,11 +8,11 @@ Update after every verified batch. The visual percentage counts only **completed
 
 `███░░░░░░░░░ 25%`
 
-**Remaining batches:** 9 (EM-04–08 in progress)
+**Remaining batches:** 9 (EM-04–09 in progress)
 
 | Area | Status |
 | --- | --- |
-| Code Development | 3 / 12 verified (+ EM-04–08a slices coded; those batches not closed) |
+| Code Development | 3 / 12 verified (+ EM-04–09a slices coded; those batches not closed) |
 | Local Testing | Partial (unit + check:ui; no DB/browser) |
 | GitHub Commit | Local commits only; not pushed |
 | GitHub PR / Merge | Pending |
@@ -32,7 +32,7 @@ Update after every verified batch. The visual percentage counts only **completed
 | EM-06 | Accounting, tax, journals, FX, refunds, budgets | In progress — EM-06a employee-paid accrual posting; FX/refunds/budgets pending |
 | EM-07 | Reimbursements, partial/batch payments, bank matching, payroll | In progress — EM-07a full bank reimbursement; partial/batch/payroll pending |
 | EM-08 | Mileage, travel, per diem, advances, petty cash, settlements | In progress — EM-08a–d core paths coded; unused-advance reclaim / booking integrations pending |
-| EM-09 | Corporate cards, disputes, rebilling, exit settlement | Not started |
+| EM-09 | Corporate cards, disputes, rebilling, exit settlement | In progress — EM-09a register + statement match + posting; disputes/rebilling pending |
 | EM-10 | AI OCR, categorisation, duplicates, fraud indicators | Not started |
 | EM-11 | Reports, analytics, notifications, migration, exports, audit | Not started |
 | EM-12 | Integration, security, performance, recovery, UX, release verification | Not started |

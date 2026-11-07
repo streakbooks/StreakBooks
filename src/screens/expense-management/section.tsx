@@ -14,6 +14,7 @@ import type { Permission } from "@/lib/permissions";
 import { ExpenseManagementApprovalsPage } from "@/screens/expense-management/approvals";
 import { ExpenseManagementCashAdvancesPage } from "@/screens/expense-management/cash-advances";
 import { ExpenseManagementClaimsPage } from "@/screens/expense-management/claims";
+import { ExpenseManagementCorporateCardsPage } from "@/screens/expense-management/corporate-cards";
 import { ExpenseManagementMileagePage } from "@/screens/expense-management/mileage";
 import { ExpenseManagementPettyCashPage } from "@/screens/expense-management/petty-cash";
 import { ExpenseManagementReceiptsPage } from "@/screens/expense-management/receipts";
@@ -69,6 +70,9 @@ export function ExpenseManagementSectionPage({
   }
   if (sectionKey === "travel") {
     return <ExpenseManagementTravelPage />;
+  }
+  if (sectionKey === "corporate-cards") {
+    return <ExpenseManagementCorporateCardsPage />;
   }
 
   if (isPending) return <LoadingState />;

@@ -10,6 +10,7 @@ export const badgeVariants = cva(
         outline: "text-foreground",
         /* Soft semantic variants (AA contrast on their own surface, light and dark). */
         success: "border-transparent bg-success-soft text-success-ink",
+        complete: "border-transparent bg-complete-soft text-complete-ink",
         warning: "border-transparent bg-warning-soft text-warning-ink",
         info: "border-transparent bg-info-soft text-info-ink",
         danger: "border-transparent bg-destructive-soft text-destructive-ink",

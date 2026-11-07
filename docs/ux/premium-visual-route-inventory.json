@@ -32,7 +32,7 @@
       "routeFiles": [
         "_authenticated/index.tsx"
       ],
-      "visualReview": "shared_primitives_only_screen_review_pending",
+      "visualReview": "partial_direct_visual_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -48,7 +48,11 @@
         "forms": false,
         "permissions": false,
         "browser": false
-      }
+      },
+      "changedScreens": [
+        "src/components/dashboard/DashboardWidgets.tsx — refined KPI cards and financial widget hierarchy",
+        "src/components/dashboard/PersonalizedDashboardWidgets.tsx — responsive dashboard customization surfaces"
+      ]
     },
     {
       "label": "Banking",
@@ -236,7 +240,7 @@
         "_authenticated/contacts/new.tsx",
         "_authenticated/contacts/settings.tsx"
       ],
-      "visualReview": "shared_primitives_only_screen_review_pending",
+      "visualReview": "partial_direct_visual_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -252,7 +256,10 @@
         "forms": false,
         "permissions": false,
         "browser": false
-      }
+      },
+      "changedScreens": [
+        "src/components/contacts/ContactTimeline.tsx — task-completion status badges and premium activity cards"
+      ]
     },
     {
       "label": "Products & Services",
@@ -260,7 +267,7 @@
       "routeFiles": [
         "_authenticated/products-services.tsx"
       ],
-      "visualReview": "shared_primitives_only_screen_review_pending",
+      "visualReview": "partial_direct_visual_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -276,7 +283,10 @@
         "forms": false,
         "permissions": false,
         "browser": false
-      }
+      },
+      "changedScreens": [
+        "src/components/products/ProductsMasterData.tsx — persisted category and price-list statuses, richer catalogue master data surfaces"
+      ]
     },
     {
       "label": "Accounting",
@@ -311,7 +321,7 @@
       "routeFiles": [
         "_authenticated/notifications.tsx"
       ],
-      "visualReview": "shared_primitives_only_screen_review_pending",
+      "visualReview": "partial_direct_visual_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -327,7 +337,12 @@
         "forms": false,
         "permissions": false,
         "browser": false
-      }
+      },
+      "changedScreens": [
+        "src/routes/_authenticated/notifications.tsx — notification workload cards, high/critical priority and archived/completed states",
+        "src/components/notifications/NotificationPriorityBadge.tsx — accessible priority indicator and label",
+        "src/lib/notifications/priority-visual.ts — source-based priority mapping"
+      ]
     },
     {
       "label": "Files",
@@ -335,7 +350,7 @@
       "routeFiles": [
         "_authenticated/files.tsx"
       ],
-      "visualReview": "shared_primitives_only_screen_review_pending",
+      "visualReview": "partial_direct_visual_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -351,7 +366,10 @@
         "forms": false,
         "permissions": false,
         "browser": false
-      }
+      },
+      "changedScreens": [
+        "src/routes/_authenticated/files.tsx — upload dropzone, folder explorer, file selection and filtering surfaces"
+      ]
     },
     {
       "label": "Budgets",
@@ -360,7 +378,7 @@
         "_authenticated/budgets/$budgetId.tsx",
         "_authenticated/budgets/index.tsx"
       ],
-      "visualReview": "shared_primitives_only_screen_review_pending",
+      "visualReview": "partial_direct_visual_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -376,7 +394,10 @@
         "forms": false,
         "permissions": false,
         "browser": false
-      }
+      },
+      "changedScreens": [
+        "src/routes/_authenticated/budgets/index.tsx — financial-year creation and budget directory surfaces"
+      ]
     },
     {
       "label": "Fixed assets",
@@ -456,7 +477,7 @@
         "_authenticated/reports/builder/$viewId.tsx",
         "_authenticated/reports/index.tsx"
       ],
-      "visualReview": "shared_primitives_only_screen_review_pending",
+      "visualReview": "partial_direct_visual_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -472,7 +493,11 @@
         "forms": false,
         "permissions": false,
         "browser": false
-      }
+      },
+      "changedScreens": [
+        "src/components/reports/ReportCatalogue.tsx — search/category/popular report filters",
+        "src/components/reports/ReportDirectory.tsx — grouped linked report workspaces"
+      ]
     },
     {
       "label": "Accountant",
@@ -480,7 +505,7 @@
       "routeFiles": [
         "_authenticated/accountant.tsx"
       ],
-      "visualReview": "shared_primitives_only_screen_review_pending",
+      "visualReview": "partial_direct_visual_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -496,7 +521,10 @@
         "forms": false,
         "permissions": false,
         "browser": false
-      }
+      },
+      "changedScreens": [
+        "src/routes/_authenticated/accountant.tsx — financial review queue, journals and adjustment form, posted status badges"
+      ]
     },
     {
       "label": "Firm",
@@ -606,7 +634,7 @@
       "routeFiles": [
         "_authenticated/ai-assistant.tsx"
       ],
-      "visualReview": "shared_primitives_only_screen_review_pending",
+      "visualReview": "partial_direct_visual_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -622,7 +650,10 @@
         "forms": false,
         "permissions": false,
         "browser": false
-      }
+      },
+      "changedScreens": [
+        "src/screens/ai-assistant.tsx — transcript, conversation empty state and persisted suggestion lifecycle badges"
+      ]
     },
     {
       "label": "Tax",
@@ -657,7 +688,7 @@
       "routeFiles": [
         "_authenticated/settings.tsx"
       ],
-      "visualReview": "shared_primitives_only_screen_review_pending",
+      "visualReview": "partial_direct_visual_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -673,7 +704,10 @@
         "forms": false,
         "permissions": false,
         "browser": false
-      }
+      },
+      "changedScreens": [
+        "src/components/settings/SettingsOverviewPanel.tsx — organisation setup cards, shortcuts and integration health"
+      ]
     },
     {
       "label": "Help",
@@ -681,7 +715,7 @@
       "routeFiles": [
         "_authenticated/help.tsx"
       ],
-      "visualReview": "shared_primitives_only_screen_review_pending",
+      "visualReview": "partial_direct_visual_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -697,7 +731,10 @@
         "forms": false,
         "permissions": false,
         "browser": false
-      }
+      },
+      "changedScreens": [
+        "src/routes/_authenticated/help.tsx — help search, article cards and glossary layouts"
+      ]
     }
   ],
   "supportingRoutes": [
@@ -782,7 +819,7 @@
   ],
   "verification": {
     "moduleFullyAccepted": 0,
-    "moduleInitialVisualImproved": 11,
+    "moduleInitialVisualImproved": 22,
     "fullBuild": "NOT_RUN",
     "authenticatedBrowser": "NOT_RUN",
     "deployment": "NOT_VERIFIED",
@@ -791,6 +828,10 @@
     "lightDarkSevenPresets": "NOT_BROWSER_VERIFIED",
     "beforeAfterScreenshots": "NOT_CAPTURED",
     "appShell": "Original CSS ledger mark, topbar, sidebar and canvas committed; responsive verification pending",
-    "formControls": "Inputs, textarea, labels, select, dialogs, sheets, tabs and table frames committed; browser regression pending"
+    "formControls": "Inputs, textarea, labels, select, dialogs, sheets, tabs and table frames committed; browser regression pending",
+    "directScreenEvidence": "All 22 sidebar areas have at least one committed direct UI change; full screen, forms, dialogs, themes and responsive acceptance NOT VERIFIED",
+    "browserScreenshots": "NOT_CAPTURED",
+    "testsExecuted": "NOT_RUN",
+    "gitHubMain": "UNCHANGED_BY_THIS_BRANCH; new main commits may exist from other agents"
   }
 }

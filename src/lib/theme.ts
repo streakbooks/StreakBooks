@@ -18,6 +18,8 @@ export type PaletteId =
 
 export type CustomPalette = {
   primary: string;
+  /** Independent accent for selected surfaces and the second chart series. */
+  accent: string;
   sidebar: string;
   lightBackground: string;
   darkBackground: string;
@@ -29,6 +31,7 @@ export const CUSTOM_PALETTE_STORAGE_KEY = "linkbooks-theme-custom";
 
 export const DEFAULT_CUSTOM_PALETTE: CustomPalette = {
   primary: "#225eae",
+  accent: "#167e93",
   sidebar: "#101d32",
   lightBackground: "#f7f9fd",
   darkBackground: "#152135",
@@ -44,15 +47,15 @@ export const PALETTE_OPTIONS: readonly {
 }[] = [
   {
     id: "classic",
-    name: "LinkBooks Classic",
-    description: "Original signature",
+    name: "LinkBooks Signature",
+    description: "Premium blue",
     primary: "#2460ab",
     sidebar: "#101d32",
     surface: "#f7f9fc",
   },
   {
     id: "sapphire",
-    name: "Sapphire",
+    name: "Sapphire Focus",
     description: "Confident blues",
     primary: "#2554ad",
     sidebar: "#0c2040",
@@ -60,7 +63,7 @@ export const PALETTE_OPTIONS: readonly {
   },
   {
     id: "rose",
-    name: "Rose Blush",
+    name: "Rose Professional",
     description: "Soft pink elegance",
     primary: "#993b6e",
     sidebar: "#38243c",
@@ -68,15 +71,15 @@ export const PALETTE_OPTIONS: readonly {
   },
   {
     id: "amethyst",
-    name: "Amethyst",
-    description: "Refined violet",
+    name: "Royal Indigo",
+    description: "Rich indigo confidence",
     primary: "#7542a6",
     sidebar: "#2b2044",
     surface: "#faf6ff",
   },
   {
     id: "emerald",
-    name: "Emerald",
+    name: "Emerald Professional",
     description: "Calm green",
     primary: "#1b7458",
     sidebar: "#123b35",
@@ -84,7 +87,7 @@ export const PALETTE_OPTIONS: readonly {
   },
   {
     id: "teal",
-    name: "Ocean Teal",
+    name: "Modern Teal",
     description: "Modern and clear",
     primary: "#126d79",
     sidebar: "#123541",
@@ -92,16 +95,16 @@ export const PALETTE_OPTIONS: readonly {
   },
   {
     id: "champagne",
-    name: "Champagne",
-    description: "Warm understated gold",
+    name: "Warm Sand",
+    description: "Warm natural canvas",
     primary: "#825d2b",
     sidebar: "#332b21",
     surface: "#fffbf3",
   },
   {
     id: "graphite",
-    name: "Graphite",
-    description: "Timeless monochrome",
+    name: "Executive Slate",
+    description: "Sophisticated slate",
     primary: "#394e69",
     sidebar: "#171f2b",
     surface: "#f5f7fa",
@@ -126,6 +129,7 @@ export function validateCustomPalette(v: unknown): CustomPalette {
   const r = v as Record<string, unknown>;
   return {
     primary: isHexColor(r["primary"]) ? r["primary"] : DEFAULT_CUSTOM_PALETTE.primary,
+    accent: isHexColor(r["accent"]) ? r["accent"] : DEFAULT_CUSTOM_PALETTE.accent,
     sidebar: isHexColor(r["sidebar"]) ? r["sidebar"] : DEFAULT_CUSTOM_PALETTE.sidebar,
     lightBackground: isHexColor(r["lightBackground"])
       ? r["lightBackground"]
@@ -199,6 +203,7 @@ export function computeCustomTokens(colors: CustomPalette, dark: boolean): Recor
     return target;
   };
   const primary = colors.primary;
+  const accentColor = colors.accent;
   const sidebar = colors.sidebar;
   const canvas = dark ? colors.darkBackground : colors.lightBackground;
   const foreground = ink(canvas);
@@ -227,6 +232,7 @@ export function computeCustomTokens(colors: CustomPalette, dark: boolean): Recor
     "--ring": readable(readable(primary, canvas, 3), card, 3),
     "--link-ink": readable(readable(primary, canvas), card),
     "--chart-1": primary,
+    "--chart-2": accentColor,
     "--background": canvas,
     "--foreground": foreground,
     "--card": card,
@@ -240,7 +246,7 @@ export function computeCustomTokens(colors: CustomPalette, dark: boolean): Recor
       readable(readable(blend(foreground, canvas, 0.3), canvas), card),
       muted,
     ),
-    "--accent": tint(canvas, primary, foreground),
+    "--accent": tint(canvas, accentColor, foreground),
     "--accent-foreground": foreground,
     "--border": blend(canvas, foreground, 0.2),
     "--input": readable(readable(blend(canvas, foreground, 0.28), canvas, 3), card, 3),

@@ -11,10 +11,12 @@ export function ReportDirectory({
   reports,
   from,
   to,
+  centre,
 }: {
   reports: ReportDef[];
   from: string;
   to: string;
+  centre?: string;
 }) {
   const sections = REPORT_CATEGORIES.map((category) => ({
     ...category,
@@ -82,7 +84,7 @@ export function ReportDirectory({
                     key={report.id}
                     to="/reports/$reportId"
                     params={{ reportId: report.id }}
-                    search={{ from, to }}
+                    search={{ from, to, centre }}
                     className="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/40 focus-visible:outline-2 focus-visible:outline-ring"
                   >
                     <FileText

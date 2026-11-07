@@ -3,6 +3,7 @@ import { ACCOUNTING_TABS, type AccountingSearch } from "@/lib/navigation/workspa
 import { createFileRoute } from "@tanstack/react-router";
 
 import { validPeriodDeepLink } from "@/lib/accounting/financial-years-review";
+import { parseJournalBrowseSearch } from "@/lib/accounting/journal-browsing";
 
 import { Accounting } from "@/screens/accounting";
 
@@ -21,6 +22,7 @@ export const Route = createFileRoute("/_authenticated/accounting")({
     const tab = raw["tab"];
     const journal = raw["journal"];
     return {
+      ...parseJournalBrowseSearch(raw),
       tab: ACCOUNTING_TABS.find((t) => t === tab),
       journal: typeof journal === "string" && journal ? journal : undefined,
       period: validPeriodDeepLink(raw["period"]),

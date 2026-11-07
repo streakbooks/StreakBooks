@@ -1,5 +1,22 @@
 import { expect, test } from "@playwright/test";
 
+test("list workspace chrome is present with labelled landmark and heading", async ({ page }) => {
+  await page.goto("/sales/invoices");
+  const workspace = page.locator('[data-slot="list-workspace"]');
+  await expect(workspace).toBeVisible();
+  await expect(workspace).toHaveAttribute("aria-label", "Invoices");
+  await expect(page.getByRole("heading", { level: 1, name: "Invoices", exact: true })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Sales sections" })).toBeVisible();
+});
+
+test("record workspace chrome wraps the bill fixture header", async ({ page }) => {
+  await page.goto("/?flow=bill");
+  const workspace = page.locator('[data-slot="record-workspace"]');
+  await expect(workspace).toBeVisible();
+  await expect(workspace).toHaveAttribute("aria-label", "New bill");
+  await expect(page.getByRole("heading", { level: 1, name: "New bill", exact: true })).toBeVisible();
+});
+
 test("search, clear and CSV export use exactly the visible records", async ({ page }) => {
   await page.goto("/sales/invoices");
   await page.getByRole("searchbox", { name: "Search invoices" }).fill("Northfield");

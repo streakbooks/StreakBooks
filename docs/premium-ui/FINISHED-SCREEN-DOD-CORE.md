@@ -36,6 +36,8 @@ A screen is **not** DONE unless every applicable row is PASS or N/A with reason.
 
 **Module verdict:** `IN PROGRESS` — chrome PASS; finished-screen DoD not complete.
 
+**Batch 11 source evidence:** `npm run check:workspace` requires Banking accounts/transactions/reconcile/transfers (and other high-traffic surfaces) compose `ListWorkspace`/`RecordWorkspace`.
+
 ### Sales (`/sales` + nested lists/details)
 
 | # | Gate | Status |
@@ -47,13 +49,15 @@ A screen is **not** DONE unless every applicable row is PASS or N/A with reason.
 | e | RBAC/RLS | NOT VERIFIED this program |
 | f | Migrations | N/A |
 | g | Honest copy | PARTIAL |
-| h | a11y/responsive | PARTIAL |
-| i | Tests | PARTIAL |
+| h | a11y/responsive | PARTIAL → fixture PASS for list landmark |
+| i | Tests | PARTIAL → `e2e/ui` workspace landmark + search/export fixtures |
 | j | Originality | PASS |
 | k | Docs | PASS |
 | l | Merge evidence | PASS |
 
 **Module verdict:** `IN PROGRESS`
+
+**Batch 11 fixture evidence:** UI harness `/sales/invoices` uses `ListWorkspace` (`data-slot="list-workspace"`) with Sales subnav; bill fixture header uses `RecordWorkspace`; Playwright asserts labelled landmarks + h1.
 
 ### Purchases (`/purchases` + nested)
 

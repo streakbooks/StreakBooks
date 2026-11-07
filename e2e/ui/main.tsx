@@ -14,11 +14,13 @@ import { BillWorkspaceLayout } from "@/components/purchases/BillWorkspaceLayout"
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
 import { createRootRoute, createRoute, createRouter, RouterProvider } from "@tanstack/react-router";
-import { PageHeader, EmptyState, ErrorState, ListSkeleton } from "@/components/common/states";
+import { EmptyState, ErrorState, ListSkeleton } from "@/components/common/states";
 import { ModuleSubnav } from "@/components/common/ModuleSubnav";
 import { ListToolbar } from "@/components/common/ListTools";
 import { matchesQuery } from "@/lib/list-search";
 import { DataTableToolbar } from "@/components/common/data-table-toolbar";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { CsvImportPreview } from "@/components/common/CsvImportPreview";
 import { FormSection, FormField } from "@/components/common/form-layout";
 import { Button } from "@/components/ui/button";
@@ -63,7 +65,7 @@ export function Fixture() {
         <div className="flex justify-end">
           <ThemeToggle />
         </div>
-        <PageHeader
+        <ListWorkspace
           title="Invoices"
           description="Review and manage customer invoices."
           actions={
@@ -89,85 +91,92 @@ export function Fixture() {
               </DialogContent>
             </Dialog>
           }
-        />
-        <ModuleSubnav
-          label="Sales"
-          settings={{ to: "/sales/settings" }}
-          items={[
-            { to: "/sales", label: "Overview", exact: true },
-            { to: "/sales/invoices", label: "Invoices" },
-            { to: "/sales/quotes", label: "Quotes" },
-            { to: "/sales/receipts", label: "Receipts" },
-            { to: "/sales/credits", label: "Credit notes" },
-            { to: "/sales/recurring", label: "Recurring" },
-            { to: "/sales/statements", label: "Statements" },
-          ]}
-        />
-        <ListToolbar
-          query={query}
-          onQuery={setQuery}
-          shown={filtered.length}
-          total={rows.length}
-          placeholder="Search invoices"
-          exportCsv={{
-            company: "Fixture",
-            title: "Invoices",
-            currency: "GBP",
-            headers: ["Number", "Customer", "Amount"],
-            rows: filtered.map((r) => [r.number, r.name, r.amount]),
-          }}
-        />
-        <DataTableToolbar
-          columns={[{ id: "customer", label: "Customer", visible: !hidden }]}
-          onToggleColumn={() => setHidden(!hidden)}
-          density={density}
-          onDensityChange={setDensity}
-          selectedCount={selected}
-          onClearSelection={() => setSelected(0)}
-          bulkActions={<Button onClick={() => setSelected(0)}>Review selected</Button>}
-        />
-        <p role="status">Spacing: {density}</p>
-        <div className="overflow-hidden rounded-xl border bg-card">
-          <Table aria-label="Invoices">
-            <TableHeader>
-              <TableRow>
-                <TableHead>Number</TableHead>
-                {!hidden ? <TableHead>Customer</TableHead> : null}
-                <TableHead className="text-right">Amount</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((r) => (
-                <TableRow key={r.number}>
-                  <TableCell>{r.number}</TableCell>
-                  {!hidden ? <TableCell>{r.name}</TableCell> : null}
-                  <TableCell className="text-right">{r.amount}</TableCell>
+          subnav={
+            <ModuleSubnav
+              label="Sales"
+              settings={{ to: "/sales/settings" }}
+              items={[
+                { to: "/sales", label: "Overview", exact: true },
+                { to: "/sales/invoices", label: "Invoices" },
+                { to: "/sales/quotes", label: "Quotes" },
+                { to: "/sales/receipts", label: "Receipts" },
+                { to: "/sales/credits", label: "Credit notes" },
+                { to: "/sales/recurring", label: "Recurring" },
+                { to: "/sales/statements", label: "Statements" },
+              ]}
+            />
+          }
+          toolbar={
+            <>
+              <ListToolbar
+                query={query}
+                onQuery={setQuery}
+                shown={filtered.length}
+                total={rows.length}
+                placeholder="Search invoices"
+                exportCsv={{
+                  company: "Fixture",
+                  title: "Invoices",
+                  currency: "GBP",
+                  headers: ["Number", "Customer", "Amount"],
+                  rows: filtered.map((r) => [r.number, r.name, r.amount]),
+                }}
+              />
+              <DataTableToolbar
+                columns={[{ id: "customer", label: "Customer", visible: !hidden }]}
+                onToggleColumn={() => setHidden(!hidden)}
+                density={density}
+                onDensityChange={setDensity}
+                selectedCount={selected}
+                onClearSelection={() => setSelected(0)}
+                bulkActions={<Button onClick={() => setSelected(0)}>Review selected</Button>}
+              />
+            </>
+          }
+        >
+          <p role="status">Spacing: {density}</p>
+          <div className="overflow-hidden rounded-xl border bg-card">
+            <Table aria-label="Invoices">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Number</TableHead>
+                  {!hidden ? <TableHead>Customer</TableHead> : null}
+                  <TableHead className="text-right">Amount</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-        <Button className="my-4" variant="outline" onClick={() => setSelected(2)}>
-          Select records
-        </Button>
-        <CsvImportPreview text={csv} />
-        <section aria-label="Error recovery">
-          {retry ? (
-            <p role="status">Records reloaded</p>
-          ) : (
-            <ErrorState title="Could not load records" onRetry={() => setRetry(true)} />
-          )}
-        </section>
-        <div className="mt-4">
-          <EmptyState
-            title="No records"
-            description="Choose a different view."
-            actionLabel="Unavailable action"
-          />
-        </div>
-        <div className="mt-4">
-          <ListSkeleton />
-        </div>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((r) => (
+                  <TableRow key={r.number}>
+                    <TableCell>{r.number}</TableCell>
+                    {!hidden ? <TableCell>{r.name}</TableCell> : null}
+                    <TableCell className="text-right">{r.amount}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          <Button className="my-4" variant="outline" onClick={() => setSelected(2)}>
+            Select records
+          </Button>
+          <CsvImportPreview text={csv} />
+          <section aria-label="Error recovery">
+            {retry ? (
+              <p role="status">Records reloaded</p>
+            ) : (
+              <ErrorState title="Could not load records" onRetry={() => setRetry(true)} />
+            )}
+          </section>
+          <div className="mt-4">
+            <EmptyState
+              title="No records"
+              description="Choose a different view."
+              actionLabel="Unavailable action"
+            />
+          </div>
+          <div className="mt-4">
+            <ListSkeleton />
+          </div>
+        </ListWorkspace>
       </main>
     </div>
   );
@@ -186,7 +195,11 @@ function BillFixture() {
         onSidebarTabChange={setTab}
         onSidebarStateChange={() => {}}
         onSidebarWidthChange={() => {}}
-        header={<PageHeader title="New bill" />}
+        header={
+          <RecordWorkspace title="New bill">
+            <span className="sr-only">Bill entry workspace</span>
+          </RecordWorkspace>
+        }
       >
         <Input aria-label="Unsaved bill note" defaultValue="Keep this note" />
       </BillWorkspaceLayout>

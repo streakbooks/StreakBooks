@@ -2,6 +2,7 @@ import { Eye, ExternalLink, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { StatusBadge } from "@/components/common/stat-card";
+import { billCardDisplayStatus } from "@/lib/visual/transaction-card-status";
 import { cn } from "@/lib/utils";
 
 export type BillMobileRow = {
@@ -46,26 +47,27 @@ export function BillMobileCards({
         const currency = bill.currency_code || baseCurrency;
         const reference = bill.display_reference ?? bill.id.slice(0, 8);
         const unposted = bill.status === "draft" || bill.status === "awaiting_approval";
+        const visualStatus = billCardDisplayStatus(bill);
         return (
           <article
             key={bill.id}
             className={cn(
-              "rounded-xl border shadow-sm",
-              selected.has(bill.id) ? "border-primary/40 bg-primary/5" : "bg-card",
+              "rounded-2xl border shadow-card transition-[border-color,box-shadow] hover:shadow-sm",
+              selected.has(bill.id) ? "border-primary/45 bg-primary/5" : "border-border/85 bg-card",
               density === "compact" ? "p-3" : "p-4",
             )}
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-xs text-muted-foreground">Supplier bill</p>
-                <h3 className="mt-1 break-words text-base font-semibold">{reference}</h3>
+                <h3 className="mt-1 break-words text-base font-bold tracking-[-0.02em]">{reference}</h3>
                 <p className="mt-1 break-words text-sm text-muted-foreground">
                   {bill.contacts?.name ?? "Supplier not specified"}
                 </p>
               </div>
-              <StatusBadge status={bill.status} />
+              <StatusBadge status={visualStatus} />
             </div>
-            <dl className="mt-3 grid grid-cols-2 gap-3 rounded-lg bg-muted/30 p-3 text-sm">
+            <dl className="mt-3 grid grid-cols-2 gap-3 rounded-xl border border-border/55 bg-muted/25 p-3 text-sm">
               <div>
                 <dt className="text-xs text-muted-foreground">Bill date</dt>
                 <dd className="mt-1 font-medium">{bill.bill_date}</dd>
@@ -75,7 +77,7 @@ export function BillMobileCards({
                 <dd
                   className={cn(
                     "mt-1 font-medium",
-                    bill.days_overdue > 0 && "text-amber-700 dark:text-amber-400",
+                    visualStatus === "overdue" && "text-destructive",
                   )}
                 >
                   {bill.due_date || "—"}
@@ -98,7 +100,7 @@ export function BillMobileCards({
                 </dd>
               </div>
             </dl>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
+            <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border/60 pt-3">
               <label className="mr-auto flex min-h-9 cursor-pointer items-center gap-2 text-xs">
                 <Checkbox
                   checked={selected.has(bill.id)}

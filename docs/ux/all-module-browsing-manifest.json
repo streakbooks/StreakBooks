@@ -35,8 +35,20 @@
       "routeFiles": [
         "index.tsx"
       ],
-      "browsingImplementation": "not_assessed_module_wide",
-      "fullyVerified": false
+      "browsingImplementation": "partial_code_not_runtime_verified",
+      "fullyVerified": false,
+      "currentEvidence": [
+        "src/lib/dashboard/attention-navigation.ts — validated attention deep links",
+        "src/routes/_authenticated/index.tsx — route search validator",
+        "src/components/dashboard/BookkeepingAttentionCentre.tsx — native queue-filter links with hash anchors",
+        "src/lib/dashboard/attention-navigation.test.ts — 5 unit cases WRITTEN, NOT RUN",
+        "e2e/dashboard-attention-browsing.spec.ts — 2 browser cases WRITTEN, NOT RUN"
+      ],
+      "remaining": [
+        "Verify authorization and KPI links, reporting and creation workflows with real data",
+        "Verify personalized widgets, responsive layout, accessibility, performance and consistency",
+        "Run full TypeScript, Vitest, build and authenticated browser suites"
+      ]
     },
     {
       "label": "Banking",
@@ -161,8 +173,22 @@
       "routeFiles": [
         "accounting.tsx"
       ],
-      "browsingImplementation": "not_assessed_module_wide",
-      "fullyVerified": false
+      "browsingImplementation": "partial_code_not_runtime_verified",
+      "fullyVerified": false,
+      "currentEvidence": [
+        "src/lib/accounting/journal-browsing.ts — validated journal list query, source, dates, sort, page and pageSize",
+        "src/routes/_authenticated/accounting.tsx and src/lib/navigation/workspace-search.ts — typed route state",
+        "src/components/accounting/JournalsPanel.tsx — URL-backed list filters and sort",
+        "src/screens/accounting.tsx — retain journal list context across 13 native tabs",
+        "src/routes/_authenticated/recurring-journals.tsx — return to Journals workspace",
+        "src/lib/accounting/journal-browsing.test.ts — 8 unit cases WRITTEN, NOT RUN",
+        "e2e/accounting-journal-native-browsing.spec.ts — 3 browser cases WRITTEN, NOT RUN"
+      ],
+      "remaining": [
+        "Journal source permission and tenant tests, list/expanded-detail integration and filters tested with fixtures",
+        "Review CoA, GL, period close, deferrals, cash basis, FX, reversals and other accounting workflows",
+        "Run full TypeScript, Vitest, build, browser and accounting reconciliation tests"
+      ]
     },
     {
       "label": "Action Center",

@@ -52,14 +52,14 @@ Gaps found and addressed in this implementation increment:
 | 1 | Baseline audit, palette/status tokens, shared Card/Table/Button/PageHeader and status components | **Code committed; complete runtime verification pending** |
 | 2 | Theme editor, seven mandatory named presets, extra eighth, custom primary/accent, light/dark/system, charts, contrast | **Code committed; all-theme real-browser verification pending** |
 | 3 | Sidebar, top shell, module navigation, global search, Create New, breadcrumbs, sheets and dialogs | Original sidebar/topbar and premium sheets/dialogs coded; global search, Create New and real-browser states still pending |
-| 4 | Dashboard, Action Center, Help, Profile, onboarding | Pending screen-by-screen |
+| 4 | Dashboard, Action Center, Help, Profile, onboarding | Dashboard widgets, Action Center priority and Help catalogue partially visually implemented; other workflows and browser QA pending |
 | 5 | Banking, Sales, Purchases, Expense Management, Contacts | Partial status visual integration; remaining forms/tables/workflows pending |
-| 6 | Products & Services, Inventory, Files & Documents, Imports, Projects | Pending screen-by-screen |
-| 7 | Accounting, Accountant, Reports and recurring journals | Partial journal status integration; other screens pending |
+| 6 | Products & Services, Inventory, Files & Documents, Imports, Projects | Products master-data category/pricelist statuses and Files folder/inbox polish coded; inventory/imports/projects pending |
+| 7 | Accounting, Accountant, Reports and recurring journals | Accounting and Accountant journal badge/queue design, Reports catalogue cards coded; remaining subflows pending |
 | 8 | Tax, Budgets, Fixed Assets, multi-currency and country-specific settings | Tax and Fixed Assets status visuals coded; Budgets, country settings and full workflows pending |
 | 9 | Payroll, employee claims, reimbursements, settings and payroll statements | Payroll overview/runs/employees and Reimbursements statuses coded; other screens and full verification pending |
 | 10 | Firm, Advisors, Advisors Portal, client workspaces, contracts and documents | Firm engagements/requests and Advisors tasks/engagements/proposals statuses coded; other screens pending |
-| 11 | AI Assistant, LinkBooks Signal, Settings Centre, billing, Superadmin, App Store/integrations | Pending; App Store route gap to resolve |
+| 11 | AI Assistant, LinkBooks Signal, Settings Centre, billing, Superadmin, App Store/integrations | AI Assistant transcript/status and Settings overview partially styled; Signal, Superadmin and App Store scope pending |
 | 12 | Cross-module final acceptance: all 22+ modules, extra routes, 7 themes + custom, desktop/tablet/mobile, accessibility, permissions, regressions, deployment/recovery | Pending |
 
 The *batch count is not a percentage of code written.* A batch is fully verified only after the relevant automated tests and real authenticated screen/browser acceptance checks pass. **Fully verified visual batches: 0/12.**
@@ -71,6 +71,31 @@ The *batch count is not a percentage of code written.* A batch is fully verified
 - **Required local commands:** `npm run typecheck`, `npm run lint`, `npm test -- src/lib/theme.test.ts src/lib/status-badge.test.ts src/lib/status-token-contrast.test.ts src/lib/firm/request-visual-status.test.ts src/components/common/StatusBadge.test.tsx src/components/ui/premium-form-primitives.test.tsx`, `npm run check:ui`, `npm run check:visual-coverage`, `npm run build`.
 - **Required browser checks (authenticated environment):** seven named themes + Sapphire eighth, light/dark/system/custom, status contrasts/labels, all major module list/form/detail states, desktop/tablet/mobile screenshots, keyboard, overflow, colour contrast, post-save/approve/pay/reconcile transitions and permission variations.
 - These checks are **not represented as passed until executed and inspected**. In this connector-only environment the full repository build, browser screenshots and authenticated workflows are not presently available. Do not merge or deploy solely based on this implementation log.
+
+## Implementation increment 2 — real workspace visual changes
+
+The following are **committed React/CSS changes**, not accepted/screenshots of a running app:
+
+- **Dashboard:** improved widget headers, KPI spacing, financial panels and dashboard personalization controls in `DashboardWidgets.tsx` and `PersonalizedDashboardWidgets.tsx`.
+- **Reports:** original grouped catalogue surfaces, popular-report links, search and category controls in `ReportCatalogue.tsx` and `ReportDirectory.tsx`. Real report data/execution remains unchanged.
+- **Budgets:** professional budget creation surface and table frame in `src/routes/_authenticated/budgets/index.tsx`; all create/duplicate/delete/compare actions remain wired to their original handlers.
+- **Action Center:** critical/high/normal/low severity is visually distinct, derived strictly from the real priority value, with an icon and label; archived/completed chips use existing notification timestamps. Source: `NotificationPriorityBadge.tsx`, `priority-visual.ts`, `notifications.tsx`.
+- **Files:** upgraded upload/drop zone, folder explorer, views, search and document-detail panels, without changing folder, upload or attachment mutations.
+- **Contacts:** premium interaction timeline cards and follow-up editor; completed/open task badges derive from real `completed_at` values.
+- **Products & Services:** category and price-list cards, real `is_active` states rendered with the shared status system.
+- **Settings:** more cohesive organisation setup metrics, quick-link cards and integration configuration display, with no invented successful connector states.
+- **Accountant:** stronger review-queue hierarchy, tax adjustment form, and journal badges derived from persisted journal statuses.
+- **AI Assistant:** premium answer cards and empty state; validated suggestions shown as **info/ready to review** (not posted), applied suggestions shown as **complete**, invalid shown as **danger**. Existing approval and posting controls untouched.
+- **Help:** dedicated search surface, grouped article cards and glossary layout using actual help articles.
+
+### Checks added, but not executed
+
+- `src/lib/notifications/priority-visual.test.tsx` — priority mapping, labels, icons and unknown values.
+- `src/lib/status-badge.test.ts` — additional AI, contact, product, asset and journal lifecycle cases.
+- Source-level inspections confirmed expected shared imports and markup in representative new screens and found/fixed one unused Accountant Badge import.
+- **No full TypeScript/lint/build/Vitest/Playwright, real screenshots, authenticated workflow or real-device checks were executed here.**
+- The current visual branch contains **direct partial source changes in all 22 currently inventoried sidebar modules**, with **0 complete/verified**. This does not imply every subpage, form, modal or route has been reviewed. The full inventory and 174 base routes remain the acceptance scope.
+- The main branch has advanced through independent Cursor work; do not assume this visual branch merges cleanly. First rebase/merge in a separate isolated checkout, resolve overlap with the browsing branch, then execute complete verification before any integration.
 
 ## Next coding increment
 

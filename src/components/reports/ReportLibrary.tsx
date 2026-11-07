@@ -14,7 +14,7 @@ import { Star, MoreHorizontal, Plus, LockKeyhole, FileText } from "lucide-react"
 import { toast } from "sonner";
 import { REPORT_CATALOG, getReportById } from "@/lib/reports/catalog";
 import { parseReportSearch } from "@/lib/reports/search";
-import { useReportingCentreOrigin } from "@/lib/reports/centre-return";
+import { useReportingCentreOrigin } from "@/hooks/use-reporting-centre-origin";
 import { libraryMetadata, type SavedReport } from "@/lib/reports/saved-report";
 import {
   listReportLibrary,

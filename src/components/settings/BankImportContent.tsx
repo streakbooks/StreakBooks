@@ -37,7 +37,8 @@ import {
   saveBankImportMapping,
 } from "@/lib/banking/import.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -369,14 +370,8 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
     rowsToImport > 0 &&
     !mutation.isPending;
 
-  return (
+  const workspace = (
     <>
-      {!embedded && (
-        <PageHeader
-          title="Import bank transactions"
-          description="Upload a statement, map fields, review errors and duplicates, then confirm the import."
-        />
-      )}
       <div className="mb-6 flex flex-wrap gap-2" aria-label="Import steps">
         {["1. Upload", "2. Map fields", "3. Review", "4. Import"].map((step, i) => (
           <span
@@ -847,5 +842,15 @@ export function BankImportContent({ embedded = false }: { embedded?: boolean }) 
         </Table>
       )}
     </>
+  );
+
+  if (embedded) return workspace;
+  return (
+    <ListWorkspace
+      title="Import bank transactions"
+      description="Upload a statement, map fields, review errors and duplicates, then confirm the import."
+    >
+      {workspace}
+    </ListWorkspace>
   );
 }

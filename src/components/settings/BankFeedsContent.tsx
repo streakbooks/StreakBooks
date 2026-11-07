@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { listBankAccounts } from "@/lib/banking/banking.functions";
-import { PageHeader, EmptyState, LoadingState, ErrorState } from "@/components/common/states";
+import { EmptyState, LoadingState, ErrorState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -29,20 +30,8 @@ export function BankFeedsContent({ embedded = false }: { embedded?: boolean }) {
 
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
 
-  return (
+  const workspace = (
     <>
-      {!embedded && (
-        <PageHeader
-          title="Bank feed connections"
-          description="Live bank feeds require a configured provider. CSV import remains fully supported without a feed."
-          actions={
-            <Button size="sm" variant="outline" asChild>
-              <Link to="/banking/import">Import CSV</Link>
-            </Button>
-          }
-        />
-      )}
-
       <Alert className="mb-4">
         <AlertTitle>Bank feed availability</AlertTitle>
         <AlertDescription>
@@ -102,5 +91,20 @@ export function BankFeedsContent({ embedded = false }: { embedded?: boolean }) {
         </Table>
       )}
     </>
+  );
+
+  if (embedded) return workspace;
+  return (
+    <ListWorkspace
+      title="Bank feed connections"
+      description="Live bank feeds require a configured provider. CSV import remains fully supported without a feed."
+      actions={
+        <Button size="sm" variant="outline" asChild>
+          <Link to="/banking/import">Import CSV</Link>
+        </Button>
+      }
+    >
+      {workspace}
+    </ListWorkspace>
   );
 }

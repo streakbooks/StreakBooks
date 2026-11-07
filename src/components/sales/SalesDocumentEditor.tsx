@@ -40,7 +40,8 @@ import { friendlyAuthError } from "@/lib/auth-helpers";
 import { useVoiceForm } from "@/components/ai-voice/voice-context";
 import { validateVoiceDraft } from "@/lib/ai-voice/form-adapter";
 import { recordVoiceDraftOutcome } from "@/lib/ai-voice/voice-audit.functions";
-import { PageHeader, LoadingState, EmptyState } from "@/components/common/states";
+import { LoadingState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { EntityCombobox } from "@/components/common/EntityCombobox";
 import { ContactCreateForm } from "@/components/lookup/create-forms";
 import { SalesDocumentLines } from "@/components/sales/SalesDocumentLines";
@@ -684,7 +685,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
 
   return (
     <VoiceFields token={voiceToken}>
-      <PageHeader
+      <ListWorkspace
         title={title}
         description={
           kind === "credit_note"
@@ -698,7 +699,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
             <Link to={backTo}>Back</Link>
           </Button>
         }
-      />
+      >
       {formError ? (
         <Alert variant="destructive" className="mb-4">
           <AlertDescription>{formError}</AlertDescription>
@@ -1005,6 +1006,7 @@ export function SalesDocumentEditor({ kind, existing, fromInvoiceId, initialCont
           ) : null}
         </div>
       </div>
+      </ListWorkspace>
       <Dialog
         open={applyPriceListOpen}
         onOpenChange={(open) => {

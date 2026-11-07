@@ -145,7 +145,36 @@ if (!exists("scripts/scaffold-module.mjs")) {
   }
 }
 
-// Optional: run assertRegistryMatchesNav via vitest elsewhere; keep this script Node-only.
+// Route/screen modules must inherit via ListWorkspace/RecordWorkspace — not raw PageHeader.
+const pageHeaderAllowlist = new Set([
+  // None: authenticated screens/routes should compose shared workspaces.
+]);
+function scanPageHeaderBypass(dir, relativePrefix) {
+  if (!fs.existsSync(dir)) return;
+  for (const item of fs.readdirSync(dir, { withFileTypes: true })) {
+    const file = path.join(dir, item.name);
+    const rel = path.relative(root, file).replace(/\\/g, "/");
+    if (item.isDirectory()) {
+      scanPageHeaderBypass(file, relativePrefix);
+      continue;
+    }
+    if (!file.endsWith(".tsx")) continue;
+    if (pageHeaderAllowlist.has(rel)) continue;
+    const source = fs.readFileSync(file, "utf8");
+    const importsPageHeader =
+      /import\s*\{[^}]*\bPageHeader\b[^}]*\}\s*from\s*["']@\/components\/common\/states["']/.test(
+        source,
+      ) ||
+      /import\s*\{[^}]*\bPageHeader\b[^}]*\}\s*from\s*["']\.\.\/.*states["']/.test(source);
+    if (importsPageHeader) {
+      failures.push(
+        `${rel} imports PageHeader directly; use ListWorkspace/RecordWorkspace for premium inheritance`,
+      );
+    }
+  }
+}
+scanPageHeaderBypass(path.join(root, "src", "screens"), "src/screens");
+scanPageHeaderBypass(path.join(root, "src", "routes"), "src/routes");
 
 if (failures.length) {
   for (const reason of failures) process.stderr.write(`FAIL ${reason}\n`);

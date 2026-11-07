@@ -19,7 +19,8 @@ import {
 } from "@/lib/documents/reminders";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { EMAIL_NOT_CONFIGURED_TEXT } from "@/lib/documents/ui";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -112,14 +113,8 @@ export function ReminderSettingsContent({ embedded = false }: { embedded?: boole
       return n;
     });
 
-  return (
+  const workspace = (
     <>
-      {!embedded && (
-        <PageHeader
-          title="Payment reminders"
-          description="Overdue invoices and whether the next reminder is due under your schedule. Reminders are sent only when you press send — nothing is sent automatically."
-        />
-      )}
       {!data.emailConfigured ? (
         <p className="mb-4 rounded border border-border bg-muted/40 p-3 text-sm">
           {EMAIL_NOT_CONFIGURED_TEXT} You can still open any invoice and use “Open in my email
@@ -290,6 +285,16 @@ export function ReminderSettingsContent({ embedded = false }: { embedded?: boole
         </Card>
       ) : null}
     </>
+  );
+
+  if (embedded) return workspace;
+  return (
+    <ListWorkspace
+      title="Payment reminders"
+      description="Overdue invoices and whether the next reminder is due under your schedule. Reminders are sent only when you press send — nothing is sent automatically."
+    >
+      {workspace}
+    </ListWorkspace>
   );
 }
 

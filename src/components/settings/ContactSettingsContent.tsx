@@ -15,7 +15,8 @@ import {
   upsertContactTag,
 } from "@/lib/contacts/contacts.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -162,22 +163,8 @@ export function ContactSettingsContent({
     );
   }
 
-  return (
+  const workspace = (
     <>
-      {!embedded && (
-        <PageHeader
-          title="Contact settings"
-          description="Numbering, defaults, groups and tags for this organisation."
-          actions={
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/contacts" search={{ view: undefined }}>
-                Back to directory
-              </Link>
-            </Button>
-          }
-        />
-      )}
-
       <section className="mb-8 max-w-lg space-y-3 rounded-md border p-4">
         <h2 className="text-sm font-medium">
           {sharedOnly ? "Shared contact numbering" : "General"}
@@ -413,5 +400,22 @@ export function ContactSettingsContent({
         </AlertDialogContent>
       </AlertDialog>
     </>
+  );
+
+  if (embedded) return workspace;
+  return (
+    <ListWorkspace
+      title="Contact settings"
+      description="Numbering, defaults, groups and tags for this organisation."
+      actions={
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/contacts" search={{ view: undefined }}>
+            Back to directory
+          </Link>
+        </Button>
+      }
+    >
+      {workspace}
+    </ListWorkspace>
   );
 }

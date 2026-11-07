@@ -9,7 +9,8 @@
 | 5 | 4–6 | ListWorkspace on Help, Tax, Fixed assets, Reports, Payroll overview, App Store | `feature/premium-ui-batch5-more-modules` | [PR #186](https://github.com/linkbusinessadvisory/LinkBooks/pull/186) → `c7729c2e` | help, tax, fixed-assets, reports, payroll, app-store | merged |
 | 6 | 3–4 | Nested Sales/Purchases/EM/Payroll lists + Accounting shell | `feature/premium-ui-batch6-nested-lists` | [PR #187](https://github.com/linkbusinessadvisory/LinkBooks/pull/187) → `52653bd8` | 28 list/index screens | merged |
 | 7 | 3–6 | RecordWorkspace details + Advisors/Firm/Settings/Developer/AI | `feature/premium-ui-batch7-records-practice` | [PR #188](https://github.com/linkbusinessadvisory/LinkBooks/pull/188) → `345b8e87` | detail + practice/platform | merged |
-| 8 | 3–6 | Remaining App Store, EM, Banking, Dashboard, Action Center, create forms | `feature/premium-ui-batch8-remaining-headers` | pending | 58 screens/routes | in progress |
-| 9 | 7–9 | Shared component shells (settings panels, loading shells) + DoD/hardening | TBD | — | | planned |
+| 8 | 3–6 | Remaining App Store, EM, Banking, Dashboard, Action Center, create forms | `feature/premium-ui-batch8-remaining-headers` | [PR #189](https://github.com/linkbusinessadvisory/LinkBooks/pull/189) → `dc2436f3` | 58 screens/routes | merged |
+| 9 | 2 + §20 | Shared component shells + PageHeader bypass enforcement | `feature/premium-ui-batch9-shared-shells` | pending | settings/EM/sales editor shells | in progress |
+| 10 | 8–9 | Finished-screen DoD, a11y/visual hardening, staging | TBD | — | | planned |
 
-Route-level PageHeader adoption is largely complete; remaining PageHeader imports are mostly the PageHeader definition, List/RecordWorkspace wrappers, settings panel frames, and a few shared component shells.
+Authenticated `src/screens` / `src/routes` no longer import `PageHeader` directly; `check:modules` enforces that going forward.

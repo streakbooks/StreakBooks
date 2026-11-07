@@ -172,8 +172,8 @@ function BudgetsPage() {
         }
       />
 
-      <div className="mb-6 grid max-w-xl gap-3 rounded-md border border-border p-4">
-        <h2 className="text-sm font-semibold">New budget</h2>
+      <section aria-label="Create budget" className="lb-budget-create mb-6 grid max-w-2xl gap-4 rounded-2xl border border-border/85 bg-card p-5 shadow-card sm:p-6">
+        <div className="space-y-1"><h2 className="text-base font-bold tracking-[-0.02em]">New budget</h2><p className="text-xs text-muted-foreground">Create a financial-year plan, then add your accounts and monthly amounts.</p></div>
         <div className="space-y-2">
           <Label htmlFor="budget-name">Name</Label>
           <Input
@@ -212,12 +212,12 @@ function BudgetsPage() {
           {create.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
           Create budget
         </Button>
-      </div>
+      </section>
 
       {query.data?.available ? (
-        <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-border/65 pb-3">
           <div>
-            <h2 className="text-base font-semibold">Existing budgets</h2>
+            <h2 className="text-lg font-bold tracking-[-0.02em]">Existing budgets</h2>
             <p className="text-xs text-muted-foreground">
               {query.data.budgets.length} budget{query.data.budgets.length === 1 ? "" : "s"} in
               this organisation
@@ -263,6 +263,7 @@ function BudgetsPage() {
           description="Try another name, financial year or note."
         />
       ) : (
+        <div className="overflow-hidden rounded-xl border border-border/85 bg-card shadow-card">
         <Table>
           <TableHeader>
             <TableRow>
@@ -315,6 +316,7 @@ function BudgetsPage() {
             ))}
           </TableBody>
         </Table>
+        </div>
       )}
 
       {showScenarioComparison && query.data?.available && query.data.budgets.length >= 2 ? (

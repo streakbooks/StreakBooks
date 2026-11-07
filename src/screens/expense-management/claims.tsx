@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -537,17 +538,15 @@ export function ExpenseManagementClaimsPage({
   const claims = claimsQ.data ?? [];
 
   return (
-    <>
-      <PageHeader
-        title={mode === "my-expenses" ? "My Expenses" : "All Claims"}
-        description={
-          mode === "my-expenses"
-            ? "Multi-line drafts, equal splits, templates, submit and withdraw."
-            : "Organisation-wide expense claims visible to finance and approvers."
-        }
-      />
-      <ExpenseManagementSubnav current={sectionKey} />
-
+    <ListWorkspace
+      title={mode === "my-expenses" ? "My Expenses" : "All Claims"}
+      description={
+        mode === "my-expenses"
+          ? "Multi-line drafts, equal splits, templates, submit and withdraw."
+          : "Organisation-wide expense claims visible to finance and approvers."
+      }
+      subnav={<ExpenseManagementSubnav current={sectionKey} />}
+    >
       {mode === "my-expenses" && canSubmit ? (
         <form
           className="mb-8 grid max-w-4xl gap-4 rounded-lg border p-4"
@@ -968,6 +967,6 @@ export function ExpenseManagementClaimsPage({
           </TableBody>
         </Table>
       )}
-    </>
+    </ListWorkspace>
   );
 }

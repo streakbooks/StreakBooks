@@ -17,7 +17,8 @@ import { TableAppearanceControls } from "@/components/common/TableAppearanceCont
 import { DocumentPreviewExtras } from "@/components/documents/DocumentPreviewExtras";
 import { exportInvoicesCsv, listInvoices } from "@/lib/sales/sales.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
+import { ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { StatusBadge } from "@/components/common/stat-card";
 import { ListToolbar, Pager, TableCard, SortHead } from "@/components/sales/ListKit";
 import { downloadCsv, initialListState, type ListState } from "@/lib/sales/list-state";
@@ -155,16 +156,15 @@ function InvoicesList() {
     : rows.find((invoice) => invoice.id === previewId);
 
   return (
-    <>
-      <PageHeader
-        title="Invoices"
-        description="Customer invoices. Authorising posts Accounts Receivable via the shared ledger."
-        actions={
-          <Button size="sm" asChild>
-            <Link to="/sales/invoices/new">New invoice</Link>
-          </Button>
-        }
-      />
+    <ListWorkspace
+      title="Invoices"
+      description="Customer invoices. Authorising posts Accounts Receivable via the shared ledger."
+      actions={
+        <Button size="sm" asChild>
+          <Link to="/sales/invoices/new">New invoice</Link>
+        </Button>
+      }
+    >
       <ListToolbar
         state={state}
         onChange={patch}
@@ -520,6 +520,6 @@ function InvoicesList() {
           ) : null}
         </SheetContent>
       </Sheet>
-    </>
+    </ListWorkspace>
   );
 }

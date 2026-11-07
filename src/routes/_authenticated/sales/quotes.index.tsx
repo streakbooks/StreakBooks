@@ -8,7 +8,8 @@ import { useFormat } from "@/hooks/use-format";
 import { convertQuoteToInvoice, exportQuotesCsv, listQuotes } from "@/lib/sales/sales.functions";
 import { isQuoteConvertible } from "@/lib/sales/quote-status";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
+import { ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { StatusBadge } from "@/components/common/stat-card";
 import { ListToolbar, Pager, TableCard, SortHead } from "@/components/sales/ListKit";
 import { downloadCsv, initialListState, type ListState } from "@/lib/sales/list-state";
@@ -92,16 +93,15 @@ function QuotesList() {
   const today = query.data?.today ?? "";
 
   return (
-    <>
-      <PageHeader
-        title="Quotes"
-        description="Quotes do not post to the ledger until converted and the invoice is authorised."
-        actions={
-          <Button size="sm" asChild>
-            <Link to="/sales/quotes/new">New quote</Link>
-          </Button>
-        }
-      />
+    <ListWorkspace
+      title="Quotes"
+      description="Quotes do not post to the ledger until converted and the invoice is authorised."
+      actions={
+        <Button size="sm" asChild>
+          <Link to="/sales/quotes/new">New quote</Link>
+        </Button>
+      }
+    >
       <ListToolbar
         state={state}
         onChange={patch}
@@ -237,6 +237,6 @@ function QuotesList() {
           <Pager total={query.data?.total ?? 0} state={state} onChange={patch} />
         </>
       )}
-    </>
+    </ListWorkspace>
   );
 }

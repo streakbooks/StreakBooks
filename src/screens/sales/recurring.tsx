@@ -21,7 +21,8 @@ import {
 import { getSalesDocumentConfig } from "@/lib/sales/sales-config.functions";
 import { toMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { EntityCombobox } from "@/components/common/EntityCombobox";
 import { ContactCreateForm } from "@/components/lookup/create-forms";
 import { SalesDocumentLines } from "@/components/sales/SalesDocumentLines";
@@ -256,28 +257,27 @@ export function RecurringInvoices() {
   const rows = listQ.data ?? [];
 
   return (
-    <>
-      <PageHeader
-        title="Recurring invoices"
-        description="Generates draft invoices on demand with customer terms and tax. Auto-authorise posts only when you have sales.authorise. Base currency only."
-        actions={
-          !formOpen ? (
-            <div className="flex gap-2">
-              <RunDueButton
-                label="invoices"
-                run={() => runDue({ data: { companyId: companyId! } })}
-                invalidateKeys={[
-                  ["sales-recurring", companyId],
-                  ["sales-invoices", companyId],
-                ]}
-              />
-              <Button size="sm" onClick={() => setFormOpen(true)}>
-                New recurring invoice
-              </Button>
-            </div>
-          ) : null
-        }
-      />
+    <ListWorkspace
+      title="Recurring invoices"
+      description="Generates draft invoices on demand with customer terms and tax. Auto-authorise posts only when you have sales.authorise. Base currency only."
+      actions={
+        !formOpen ? (
+          <div className="flex gap-2">
+            <RunDueButton
+              label="invoices"
+              run={() => runDue({ data: { companyId: companyId! } })}
+              invalidateKeys={[
+                ["sales-recurring", companyId],
+                ["sales-invoices", companyId],
+              ]}
+            />
+            <Button size="sm" onClick={() => setFormOpen(true)}>
+              New recurring invoice
+            </Button>
+          </div>
+        ) : null
+      }
+    >
       {formOpen ? (
         <div className="mb-8 grid max-w-4xl gap-3 rounded-md border p-4">
           <Label className="text-base">{editingId ? "Edit schedule" : "Create schedule"}</Label>
@@ -483,6 +483,6 @@ export function RecurringInvoices() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </ListWorkspace>
   );
 }

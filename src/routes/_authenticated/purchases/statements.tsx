@@ -9,7 +9,8 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { getSupplierStatement, listSuppliers } from "@/lib/purchases/purchases.functions";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { ContactLookup } from "@/components/lookup";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,16 +77,15 @@ function Statements() {
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
 
   return (
-    <>
-      <PageHeader
-        title="Supplier statements"
-        description="Chronological bills, payments and credits. Print/PDF only — email delivery is not configured."
-        actions={
-          <Button variant="outline" size="sm" onClick={() => window.print()}>
-            <Printer className="mr-1 size-4" /> Print / PDF
-          </Button>
-        }
-      />
+    <ListWorkspace
+      title="Supplier statements"
+      description="Chronological bills, payments and credits. Print/PDF only — email delivery is not configured."
+      actions={
+        <Button variant="outline" size="sm" onClick={() => window.print()}>
+          <Printer className="mr-1 size-4" /> Print / PDF
+        </Button>
+      }
+    >
       <div className="mb-6 flex flex-wrap gap-3">
         <div className="w-64 space-y-1">
           <Label>Supplier</Label>
@@ -265,6 +265,6 @@ function Statements() {
           </Table>
         </div>
       )}
-    </>
+    </ListWorkspace>
   );
 }

@@ -12,7 +12,8 @@ import { toast } from "sonner";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { ensureLedgerMasters } from "@/lib/accounting/accounting.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, EmptyState, LoadingState } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -67,28 +68,26 @@ export function AccountingWorkspace({
   });
 
   return (
-    <>
-      <PageHeader
-        title="Accounting"
-        description="Authoritative double-entry ledger: chart of accounts, journals, financial years and period close."
-        actions={
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" asChild>
-              <Link to="/recurring-journals">Recurring journals</Link>
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={seedMutation.isPending}
-              onClick={() => seedMutation.mutate()}
-            >
-              {seedMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-              Ensure CoA & periods
-            </Button>
-          </div>
-        }
-      />
-
+    <ListWorkspace
+      title="Accounting"
+      description="Authoritative double-entry ledger: chart of accounts, journals, financial years and period close."
+      actions={
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" asChild>
+            <Link to="/recurring-journals">Recurring journals</Link>
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={seedMutation.isPending}
+            onClick={() => seedMutation.mutate()}
+          >
+            {seedMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+            Ensure CoA & periods
+          </Button>
+        </div>
+      }
+    >
       <Alert className="mb-6">
         <AlertTitle>Single posting engine</AlertTitle>
         <AlertDescription>
@@ -311,6 +310,6 @@ export function AccountingWorkspace({
           />
         </TabsContent>
       </Tabs>
-    </>
+    </ListWorkspace>
   );
 }

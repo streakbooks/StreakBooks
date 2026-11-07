@@ -5,7 +5,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { useActiveCompany } from "@/hooks/use-active-company";
-import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { RunDueButton } from "@/components/recurring/RunDueButton";
@@ -165,22 +166,20 @@ function RecurringTransactionsPage() {
   }
 
   return (
-    <>
-      <PageHeader
-        title="Recurring transactions"
-        description="Supplier bill schedules — premium overlay, idempotent generation, exceptions and forecast."
-        actions={
-          <RunDueButton
-            label="bills"
-            run={() => runDue({ data: { companyId: companyId! } })}
-            invalidateKeys={[
-              ["recurring-bills", companyId],
-              ["bills", companyId],
-            ]}
-          />
-        }
-      />
-
+    <ListWorkspace
+      title="Recurring transactions"
+      description="Supplier bill schedules — premium overlay, idempotent generation, exceptions and forecast."
+      actions={
+        <RunDueButton
+          label="bills"
+          run={() => runDue({ data: { companyId: companyId! } })}
+          invalidateKeys={[
+            ["recurring-bills", companyId],
+            ["bills", companyId],
+          ]}
+        />
+      }
+    >
       <Tabs value={view} className="mb-4">
         <TabsList onKeyDown={handleNativeTabKeyDown}>
           <Link
@@ -582,6 +581,6 @@ function RecurringTransactionsPage() {
           navigate({ search: (prev) => ({ ...prev, id, tab: "details" }) });
         }}
       />
-    </>
+    </ListWorkspace>
   );
 }

@@ -15,7 +15,8 @@ import { getDocumentBranding, getDocumentDelivery } from "@/lib/documents/docume
 import { renderEmail } from "@/lib/documents/email-templates";
 import { EmailDocumentDialog } from "@/components/documents/EmailDocumentDialog";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { ContactLookup } from "@/components/lookup";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -80,26 +81,25 @@ export function Statements() {
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
 
   return (
-    <>
-      <PageHeader
-        title="Customer statements"
-        description="Chronological activity from posted invoices, receipts and credit notes, with a running balance. Print or save as PDF, or email the statement."
-        actions={
-          <>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={!contactId || !stmtQ.data}
-              onClick={() => setEmailOpen(true)}
-            >
-              <Mail className="mr-1 size-4" /> Email…
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => window.print()}>
-              <Printer className="mr-1 size-4" /> Print / PDF
-            </Button>
-          </>
-        }
-      />
+    <ListWorkspace
+      title="Customer statements"
+      description="Chronological activity from posted invoices, receipts and credit notes, with a running balance. Print or save as PDF, or email the statement."
+      actions={
+        <>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!contactId || !stmtQ.data}
+            onClick={() => setEmailOpen(true)}
+          >
+            <Mail className="mr-1 size-4" /> Email…
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => window.print()}>
+            <Printer className="mr-1 size-4" /> Print / PDF
+          </Button>
+        </>
+      }
+    >
       <div className="mb-6 flex flex-wrap gap-3">
         <div className="w-64 space-y-1">
           <Label>Customer</Label>
@@ -235,6 +235,6 @@ export function Statements() {
           }
         />
       ) : null}
-    </>
+    </ListWorkspace>
   );
 }

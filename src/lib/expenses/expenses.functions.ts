@@ -61,6 +61,10 @@ import {
   type ExpenseReimbursementBankSuggestion,
 } from "@/lib/expenses/bank-match";
 import {
+  mapExpenseBudgetExposure,
+  type ExpenseBudgetExposure,
+} from "@/lib/expenses/budget-exposure";
+import {
   mapExpensePettyCashFloat,
   toExpensePettyCashFloatPayload,
   type ExpensePettyCashFloat,
@@ -147,6 +151,9 @@ export const EXPENSE_FX_REFUND_MIGRATION =
 
 export const EXPENSE_BANK_MATCH_MIGRATION =
   "Expense reimbursement bank suggestions are not available yet: apply database update 20261107155000.";
+
+export const EXPENSE_BUDGET_EXPOSURE_MIGRATION =
+  "Expense budget exposure is not available yet: apply database update 20261107156000.";
 
 export const EXPENSE_MILEAGE_MIGRATION =
   "Expense mileage rates are not available yet: apply database update 20261107139000.";
@@ -1267,6 +1274,26 @@ export const suggestExpenseReimbursementBankMatches = createServerFn({ method: "
       EXPENSE_BANK_MATCH_MIGRATION,
     );
     return mapExpenseReimbursementBankSuggestions(raw);
+  });
+
+export const getExpenseBudgetExposure = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; asOf?: string }) => ({
+    companyId: companyIdOf(input),
+    asOf: input.asOf,
+  }))
+  .handler(async ({ data, context }): Promise<ExpenseBudgetExposure> => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "get_expense_budget_exposure",
+      {
+        _company_id: data.companyId,
+        _as_of: data.asOf ?? null,
+      },
+      EXPENSE_BUDGET_EXPOSURE_MIGRATION,
+    );
+    return mapExpenseBudgetExposure(raw);
   });
 
 export const batchReimburseExpenseClaims = createServerFn({ method: "POST" })

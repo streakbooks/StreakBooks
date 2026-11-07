@@ -6,6 +6,7 @@ import { ExpenseManagementLoadingShell } from "@/components/expenses/ExpenseMana
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,7 +21,12 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { listExpenseClaims } from "@/lib/expenses/expenses.functions";
+import { isBudgetOverExposed } from "@/lib/expenses/budget-exposure";
+import {
+  EXPENSE_BUDGET_EXPOSURE_MIGRATION,
+  getExpenseBudgetExposure,
+  listExpenseClaims,
+} from "@/lib/expenses/expenses.functions";
 import type { Permission } from "@/lib/permissions";
 
 export function ExpenseManagementBudgetsPage() {
@@ -32,6 +38,7 @@ export function ExpenseManagementBudgetsPage() {
     can("expenses.audit" as Permission) ||
     can("expenses.admin" as Permission);
   const fetchClaims = useServerFn(listExpenseClaims);
+  const fetchExposure = useServerFn(getExpenseBudgetExposure);
 
   const claimsQ = useQuery({
     queryKey: ["expense-claims", company?.id, "budgets-bridge"],
@@ -43,6 +50,13 @@ export function ExpenseManagementBudgetsPage() {
           approvalStatuses: ["submitted", "in_review", "approved"],
         },
       }),
+    enabled: Boolean(company?.id) && canView,
+    retry: false,
+  });
+
+  const exposureQ = useQuery({
+    queryKey: ["expense-budget-exposure", company?.id],
+    queryFn: () => fetchExposure({ data: { companyId: company!.id } }),
     enabled: Boolean(company?.id) && canView,
     retry: false,
   });
@@ -63,7 +77,7 @@ export function ExpenseManagementBudgetsPage() {
         <ExpenseManagementSubnav current="budgets" />
         <EmptyState
           title="No access"
-          description="Ask an administrator for expenses.view or budgets.view."
+          description="Ask an administrator for expenses.view."
         />
       </>
     );
@@ -92,7 +106,7 @@ export function ExpenseManagementBudgetsPage() {
     <>
       <PageHeader
         title="Budgets"
-        description="Open claim commitments that should be considered in budget control. Full budget envelopes live in the Budgets module."
+        description="Open claim commitments and soft budget exposure for the current month."
         actions={
           <Button asChild size="sm">
             <Link to="/budgets">Open Budgets module</Link>
@@ -107,6 +121,64 @@ export function ExpenseManagementBudgetsPage() {
           Commitment {fromMinorUnits(openTotal, currency)} {currency}
         </Badge>
       </div>
+
+      <section className="mb-10 space-y-3">
+        <h2 className="text-base font-semibold">Current-month budget exposure</h2>
+        {exposureQ.isLoading ? (
+          <LoadingState />
+        ) : exposureQ.isError ? (
+          friendlyAuthError(exposureQ.error).includes("20261107156000") ? (
+            <Alert>
+              <AlertTitle>Database update required</AlertTitle>
+              <AlertDescription>{EXPENSE_BUDGET_EXPOSURE_MIGRATION}</AlertDescription>
+            </Alert>
+          ) : (
+            <ErrorState
+              title="Could not load budget exposure"
+              description={friendlyAuthError(exposureQ.error)}
+              onRetry={() => exposureQ.refetch()}
+            />
+          )
+        ) : (exposureQ.data?.rows.length ?? 0) === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No budget lines for this month, or no matching expense accounts.
+          </p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Account</TableHead>
+                <TableHead>Budget</TableHead>
+                <TableHead className="text-right">Budget</TableHead>
+                <TableHead className="text-right">Open claims</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {(exposureQ.data?.rows ?? []).map((row) => (
+                <TableRow key={`${row.budgetId}-${row.accountId}`}>
+                  <TableCell>
+                    <div className="font-medium">
+                      {row.accountCode} {row.accountName}
+                    </div>
+                  </TableCell>
+                  <TableCell>{row.budgetName}</TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {fromMinorUnits(row.budgetAmountMinor, currency)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {fromMinorUnits(row.openClaimMinor, currency)}
+                    {isBudgetOverExposed(row) ? (
+                      <Badge variant="destructive" className="ml-2">
+                        Over
+                      </Badge>
+                    ) : null}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </section>
 
       {rows.length === 0 ? (
         <EmptyState

@@ -15,7 +15,7 @@ EM-01 foundation through EM-12a release notes, plus gap closes:
 
 ## Blocked on external providers / ops (cannot finish in code alone)
 
-1. Apply Supabase migrations on a live project
+1. Apply Supabase migrations on a live project (through `20261107156000`)
 2. Authenticated browser E2E + staging/production verification
 3. Inbound receipt email provider wiring
 4. Live OCR provider wiring (beyond unavailable stub)

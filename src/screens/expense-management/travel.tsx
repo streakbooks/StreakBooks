@@ -224,6 +224,14 @@ export function ExpenseManagementTravelPage() {
       />
       <ExpenseManagementSubnav current="travel" />
 
+      <Alert className="mb-6">
+        <AlertTitle>Per diem trips only in this release</AlertTitle>
+        <AlertDescription>
+          Booking integrations (flights, hotels, multi-leg itineraries) are not configured. Create
+          per diem claim lines from company rates below.
+        </AlertDescription>
+      </Alert>
+
       {migrationMissing ? (
         <Alert className="mb-6" variant="destructive">
           <AlertTitle>Database update required</AlertTitle>

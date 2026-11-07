@@ -38,7 +38,7 @@ Coded surface largely complete · Provider/ops gates remain · Migrations not ap
 | EM-03 | Claims, lines, splitting, allocations, templates, lifecycle | Verified locally (core); Kanban/print/dimension pickers deferred |
 | EM-04 | Receipts, email inbox, file security, mobile capture, offline drafts | In progress — EM-04a/b upload+match+offline queue; inbound email/OCR still pending |
 | EM-05 | Approvals, policies, delegation, escalation, spending requests | In progress — EM-05a–e coded (incl. multi-level); batch not closed |
-| EM-06 | Accounting, tax, journals, FX, refunds, budgets | In progress — EM-06a/b posting + FX validate + refund; live budget envelopes still via Budgets module |
+| EM-06 | Accounting, tax, journals, FX, refunds, budgets | In progress — EM-06a–c posting, FX/refund, soft budget exposure; envelopes still owned by Budgets module |
 | EM-07 | Reimbursements, partial/batch payments, bank matching, payroll | In progress — EM-07a–d full/batch/partial/bank-suggest + payroll queue; payslip posting still out |
 | EM-08 | Mileage, travel, per diem, advances, petty cash, settlements | In progress — EM-08a–d + reclaim UI coded; booking integrations pending |
 | EM-09 | Corporate cards, disputes, rebilling, exit settlement | In progress — EM-09a–c cards, disputes, rebilling, exit settlement coded; batch not closed |

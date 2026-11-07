@@ -518,14 +518,17 @@
   },
   "inventoryGuardEvidence": {
     "source": "scripts/check-browsing-coverage.mjs",
-    "commit": "e95f33b95202fc1ebbf129b233096fba47f4f1cf",
+    "commit": "3484d29ad8b9746d42006e063df2d63d8a9aa0f5",
     "checks": [
       "Sidebar/module and route inventory uniqueness and exact presence",
       "Manifest count summaries equal current source inventory",
       "12 unique acceptance criterion identifiers",
-      "Any fully verified module has 12 nonempty evidence entries"
+      "Any fully verified module has 12 nonempty evidence entries",
+      "Supporting route verification evidence must contain 12 nonempty entries when fullyVerified",
+      "Cross-cutting workflow verification evidence must contain 12 nonempty entries when fullyVerified",
+      "Reject unknown supporting evidence keys, duplicate cross-cutting areas and malformed acceptance criteria"
     ],
     "execution": "NOT RUN",
-    "note": "Structural inventory guard only; no module or workflow accepted"
+    "note": "Structural guard only; no route, module or workflow accepted"
   }
 }

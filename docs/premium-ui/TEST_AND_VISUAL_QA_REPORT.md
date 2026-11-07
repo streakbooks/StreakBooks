@@ -10,6 +10,7 @@
 | `check:workspace` high-traffic adoption | **Passed** (Batch 11) | Banking/Sales/Purchases/Contacts/Dashboard/Accounting/Action Center + e2e fixture |
 | Playwright UI workspace landmarks | **Passed** (Batch 11–12) | list + record chrome (+ insight complementary) in `e2e/ui/ui.spec.ts` |
 | WorkspaceInsights adoption | **Expanded** (Batch 13–15) | + payslip, App Store, Accounting, Products & Services, Dashboard; factual links/balances only |
+| Empty-state honesty gate | **Passed** (Batch 16) | `npm run check:empty`; bills empty CTA fixed to real Link |
 | `npm run check:ui` | **Passed** | 0 violations across batches |
 | `npm run check:navigation` | **Passed** (Batch 1 baseline) | 24 modules native-nav audit |
 | Route/screen List/RecordWorkspace adoption | **In progress → largely complete** | PRs #182–#189 + Batch 9 shared shells |

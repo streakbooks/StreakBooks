@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { Inbox } from "lucide-react";
 import { EmptyState } from "@/components/common/states";
 import { useActiveCompany } from "@/hooks/use-active-company";
@@ -9,16 +10,22 @@ export const NO_FIGURE = "—";
  * Empty state scoped to the active company. Company-owned records are not
  * stored yet, so this states plainly that the selected company has none —
  * it never substitutes sample data.
+ *
+ * CTAs must be real: pass `action`, or `actionLabel` + `onActionClick` together.
  */
 export function CompanyEmptyState({
   title,
   description,
   actionLabel,
+  onActionClick,
+  action,
   icon,
 }: {
   title: string;
   description: string;
   actionLabel?: string;
+  onActionClick?: () => void;
+  action?: ReactNode;
   icon?: typeof Inbox;
 }) {
   const { company } = useActiveCompany();
@@ -27,7 +34,10 @@ export function CompanyEmptyState({
     <EmptyState
       title={title}
       description={`${scope}${description}`}
-      {...(actionLabel !== undefined ? { actionLabel } : {})}
+      {...(action !== undefined ? { action } : {})}
+      {...(actionLabel !== undefined && onActionClick !== undefined
+        ? { actionLabel, onActionClick }
+        : {})}
       {...(icon !== undefined ? { icon } : {})}
     />
   );

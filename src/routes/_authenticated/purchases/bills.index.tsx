@@ -1102,7 +1102,11 @@ function BillsWorkspace() {
               <EmptyState
                 title="No bills in this view"
                 description="Adjust filters or create a new supplier bill."
-                actionLabel="New bill"
+                action={
+                  <Button size="sm" asChild>
+                    <Link to="/purchases/bills/new">New bill</Link>
+                  </Button>
+                }
               />
             ) : isMobile && mobileView === "cards" ? (
               <BillMobileCards

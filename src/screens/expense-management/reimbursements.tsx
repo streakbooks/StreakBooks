@@ -172,7 +172,7 @@ export function ExpenseManagementReimbursementsPage() {
           claimId: input.id,
           version: input.version,
           bankAccountId: bankGlAccountId,
-          paymentDate: paymentDate || undefined,
+          ...(paymentDate ? { paymentDate } : {}),
           amountMinor,
         },
       });
@@ -233,7 +233,7 @@ export function ExpenseManagementReimbursementsPage() {
           companyId: company.id,
           claimIds: selectedIds,
           bankAccountId: bankGlAccountId,
-          paymentDate: paymentDate || undefined,
+          ...(paymentDate ? { paymentDate } : {}),
         },
       });
     },

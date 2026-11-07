@@ -115,6 +115,19 @@ export function ExpenseManagementOverviewPage() {
     );
   }
 
+  if (!overview.data) {
+    return (
+      <>
+        <PageHeader
+          title="Expense Management"
+          description="Claims, receipts, approvals and reimbursements."
+        />
+        <ExpenseManagementSubnav current="overview" />
+        <LoadingState />
+      </>
+    );
+  }
+
   const { kpis, migrationMessage } = overview.data;
   const canManagePolicies =
     can("expenses.manage_policies" as Permission) || can("expenses.admin" as Permission);

@@ -74,9 +74,10 @@ export function toClaimLineInputs(
     const netMinor = parseMinor(line.netInput, "Net amount");
     const taxMinor = parseMinor(line.taxInput || "0", "Tax amount");
     const grossMinor = netMinor + taxMinor;
+    const merchantName = line.merchantName.trim();
     return {
       expenseDate: line.expenseDate,
-      merchantName: line.merchantName.trim() || undefined,
+      ...(merchantName ? { merchantName } : {}),
       description: line.description.trim(),
       accountId: line.accountId,
       netMinor,

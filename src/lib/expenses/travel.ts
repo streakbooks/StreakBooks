@@ -117,15 +117,15 @@ export function buildPerDiemClaimLine(input: ExpensePerDiemLineDraft) {
 export function mapExpensePerDiemRate(row: unknown): ExpensePerDiemRate {
   const r = asRecord(row);
   return {
-    id: str(r.id),
-    name: str(r.name),
-    locationLabel: (r.location_label ?? r.locationLabel ?? null) as string | null,
-    rateMinorPerDay: num(r.rate_minor_per_day ?? r.rateMinorPerDay),
-    currencyCode: str(r.currency_code ?? r.currencyCode).toUpperCase(),
-    accountId: str(r.account_id ?? r.accountId),
-    effectiveFrom: str(r.effective_from ?? r.effectiveFrom),
-    effectiveTo: (r.effective_to ?? r.effectiveTo ?? null) as string | null,
-    isActive: Boolean(r.is_active ?? r.isActive ?? true),
+    id: str(r["id"]),
+    name: str(r["name"]),
+    locationLabel: (r["location_label"] ?? r["locationLabel"] ?? null) as string | null,
+    rateMinorPerDay: num(r["rate_minor_per_day"] ?? r["rateMinorPerDay"]),
+    currencyCode: str(r["currency_code"] ?? r["currencyCode"]).toUpperCase(),
+    accountId: str(r["account_id"] ?? r["accountId"]),
+    effectiveFrom: str(r["effective_from"] ?? r["effectiveFrom"]),
+    effectiveTo: (r["effective_to"] ?? r["effectiveTo"] ?? null) as string | null,
+    isActive: Boolean(r["is_active"] ?? r["isActive"] ?? true),
   };
 }
 

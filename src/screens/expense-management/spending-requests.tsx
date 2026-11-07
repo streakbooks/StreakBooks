@@ -83,7 +83,7 @@ export function ExpenseManagementSpendingRequestsPage() {
           companyId: company.id,
           draft: {
             title: title.trim() || "Spending request",
-            description: description.trim() || undefined,
+            ...(description.trim() ? { description: description.trim() } : {}),
             neededBy: neededBy || null,
             currencyCode: currency,
             amountMinor,
@@ -137,13 +137,14 @@ export function ExpenseManagementSpendingRequestsPage() {
       decision: "approved" | "returned" | "rejected";
     }) => {
       if (!company) throw new Error("Select a company first.");
+      const note = decisionNotes[input.id]?.trim();
       return decideRequest({
         data: {
           companyId: company.id,
           requestId: input.id,
           version: input.version,
           decision: input.decision,
-          note: decisionNotes[input.id],
+          ...(note ? { note } : {}),
         },
       });
     },

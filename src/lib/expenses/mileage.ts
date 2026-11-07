@@ -99,25 +99,25 @@ export function buildMileageClaimLine(input: ExpenseMileageLineDraft) {
     distanceValue: input.distanceValue,
     distanceUnit: input.distanceUnit,
     mileageRateId: input.rate.id,
-    tripOrigin: origin || undefined,
-    tripDestination: destination || undefined,
+    ...(origin ? { tripOrigin: origin } : {}),
+    ...(destination ? { tripDestination: destination } : {}),
   };
 }
 
 export function mapExpenseMileageRate(row: unknown): ExpenseMileageRate {
   const r = asRecord(row);
-  const unit = str(r.distance_unit ?? r.distanceUnit, "km");
+  const unit = str(r["distance_unit"] ?? r["distanceUnit"], "km");
   return {
-    id: str(r.id),
-    name: str(r.name),
-    vehicleClass: (r.vehicle_class ?? r.vehicleClass ?? null) as string | null,
+    id: str(r["id"]),
+    name: str(r["name"]),
+    vehicleClass: (r["vehicle_class"] ?? r["vehicleClass"] ?? null) as string | null,
     distanceUnit: unit === "mi" ? "mi" : "km",
-    rateMinorPerUnit: num(r.rate_minor_per_unit ?? r.rateMinorPerUnit),
-    currencyCode: str(r.currency_code ?? r.currencyCode).toUpperCase(),
-    accountId: str(r.account_id ?? r.accountId),
-    effectiveFrom: str(r.effective_from ?? r.effectiveFrom),
-    effectiveTo: (r.effective_to ?? r.effectiveTo ?? null) as string | null,
-    isActive: Boolean(r.is_active ?? r.isActive ?? true),
+    rateMinorPerUnit: num(r["rate_minor_per_unit"] ?? r["rateMinorPerUnit"]),
+    currencyCode: str(r["currency_code"] ?? r["currencyCode"]).toUpperCase(),
+    accountId: str(r["account_id"] ?? r["accountId"]),
+    effectiveFrom: str(r["effective_from"] ?? r["effectiveFrom"]),
+    effectiveTo: (r["effective_to"] ?? r["effectiveTo"] ?? null) as string | null,
+    isActive: Boolean(r["is_active"] ?? r["isActive"] ?? true),
   };
 }
 

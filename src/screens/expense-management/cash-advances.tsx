@@ -240,7 +240,10 @@ export function ExpenseManagementCashAdvancesPage() {
       ) : null}
 
       {advancesQ.isError && !migrationMissing ? (
-        <ErrorState title="Could not load cash advances" error={advancesQ.error} />
+        <ErrorState
+          title="Could not load cash advances"
+          description={friendlyAuthError(advancesQ.error)}
+        />
       ) : null}
 
       {(canSubmit || canManage) && (

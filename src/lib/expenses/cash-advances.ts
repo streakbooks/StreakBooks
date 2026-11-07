@@ -51,22 +51,22 @@ function num(value: unknown): number {
 
 export function mapExpenseCashAdvance(row: unknown): ExpenseCashAdvance {
   const r = asRecord(row);
-  const status = str(r.status, "draft") as ExpenseCashAdvanceStatus;
+  const status = str(r["status"], "draft") as ExpenseCashAdvanceStatus;
   return {
-    id: str(r.id),
-    advanceNumber: str(r.advance_number ?? r.advanceNumber),
-    title: str(r.title),
-    description: (r.description ?? null) as string | null,
-    employeeUserId: str(r.employee_user_id ?? r.employeeUserId),
-    advanceDate: str(r.advance_date ?? r.advanceDate),
-    currencyCode: str(r.currency_code ?? r.currencyCode).toUpperCase(),
-    amountMinor: num(r.amount_minor ?? r.amountMinor),
-    remainingMinor: num(r.remaining_minor ?? r.remainingMinor),
+    id: str(r["id"]),
+    advanceNumber: str(r["advance_number"] ?? r["advanceNumber"]),
+    title: str(r["title"]),
+    description: (r["description"] ?? null) as string | null,
+    employeeUserId: str(r["employee_user_id"] ?? r["employeeUserId"]),
+    advanceDate: str(r["advance_date"] ?? r["advanceDate"]),
+    currencyCode: str(r["currency_code"] ?? r["currencyCode"]).toUpperCase(),
+    amountMinor: num(r["amount_minor"] ?? r["amountMinor"]),
+    remainingMinor: num(r["remaining_minor"] ?? r["remainingMinor"]),
     status: EXPENSE_CASH_ADVANCE_STATUSES.includes(status) ? status : "draft",
-    bankAccountId: (r.bank_account_id ?? r.bankAccountId ?? null) as string | null,
-    issueJournalId: (r.issue_journal_id ?? r.issueJournalId ?? null) as string | null,
-    version: num(r.version),
-    updatedAt: str(r.updated_at ?? r.updatedAt),
+    bankAccountId: (r["bank_account_id"] ?? r["bankAccountId"] ?? null) as string | null,
+    issueJournalId: (r["issue_journal_id"] ?? r["issueJournalId"] ?? null) as string | null,
+    version: num(r["version"]),
+    updatedAt: str(r["updated_at"] ?? r["updatedAt"]),
   };
 }
 

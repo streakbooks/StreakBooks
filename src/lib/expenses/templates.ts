@@ -25,39 +25,43 @@ function num(value: unknown): number {
 
 function mapTemplateLine(row: unknown): ExpenseClaimLineInput {
   const r = asRecord(row);
-  const netMinor = num(r.net_minor ?? r.netMinor);
-  const taxMinor = num(r.tax_minor ?? r.taxMinor);
-  const grossMinor = num(r.gross_minor ?? r.grossMinor ?? netMinor + taxMinor);
+  const netMinor = num(r["net_minor"] ?? r["netMinor"]);
+  const taxMinor = num(r["tax_minor"] ?? r["taxMinor"]);
+  const grossMinor = num(r["gross_minor"] ?? r["grossMinor"] ?? netMinor + taxMinor);
+  const merchantName = str(r["merchant_name"] ?? r["merchantName"]);
+  const currencyCode = str(r["currency_code"] ?? r["currencyCode"]);
   return {
-    expenseDate: str(r.expense_date ?? r.expenseDate, new Date().toISOString().slice(0, 10)),
-    merchantName: str(r.merchant_name ?? r.merchantName) || undefined,
-    description: str(r.description, "Expense"),
-    accountId: str(r.account_id ?? r.accountId),
+    expenseDate: str(r["expense_date"] ?? r["expenseDate"], new Date().toISOString().slice(0, 10)),
+    ...(merchantName ? { merchantName } : {}),
+    description: str(r["description"], "Expense"),
+    accountId: str(r["account_id"] ?? r["accountId"]),
     netMinor,
     taxMinor,
     grossMinor,
-    currencyCode: str(r.currency_code ?? r.currencyCode) || undefined,
-    reimbursableMinor: num(r.reimbursable_minor ?? r.reimbursableMinor ?? grossMinor),
-    nonReimbursableMinor: num(r.non_reimbursable_minor ?? r.nonReimbursableMinor ?? 0),
-    isBillable: Boolean(r.is_billable ?? r.isBillable),
+    ...(currencyCode ? { currencyCode } : {}),
+    reimbursableMinor: num(r["reimbursable_minor"] ?? r["reimbursableMinor"] ?? grossMinor),
+    nonReimbursableMinor: num(r["non_reimbursable_minor"] ?? r["nonReimbursableMinor"] ?? 0),
+    isBillable: Boolean(r["is_billable"] ?? r["isBillable"]),
   };
 }
 
 export function mapExpenseClaimTemplate(row: unknown): ExpenseClaimTemplate {
   const r = asRecord(row);
-  const linesRaw = Array.isArray(r.default_lines)
-    ? r.default_lines
-    : Array.isArray(r.defaultLines)
-      ? r.defaultLines
+  const linesRaw = Array.isArray(r["default_lines"])
+    ? r["default_lines"]
+    : Array.isArray(r["defaultLines"])
+      ? r["defaultLines"]
       : [];
   return {
-    id: str(r.id),
-    name: str(r.name),
-    titleTemplate: str(r.title_template ?? r.titleTemplate),
-    descriptionTemplate: (r.description_template ?? r.descriptionTemplate ?? null) as string | null,
-    claimCurrency: (r.claim_currency ?? r.claimCurrency ?? null) as string | null,
+    id: str(r["id"]),
+    name: str(r["name"]),
+    titleTemplate: str(r["title_template"] ?? r["titleTemplate"]),
+    descriptionTemplate: (r["description_template"] ?? r["descriptionTemplate"] ?? null) as
+      | string
+      | null,
+    claimCurrency: (r["claim_currency"] ?? r["claimCurrency"] ?? null) as string | null,
     paymentSource: str(
-      r.payment_source ?? r.paymentSource,
+      r["payment_source"] ?? r["paymentSource"],
       "employee_paid",
     ) as ExpensePaymentSource,
     defaultLines: linesRaw.map(mapTemplateLine),

@@ -48,17 +48,17 @@ function num(value: unknown): number {
 export function mapExpenseSpendingRequest(row: unknown): ExpenseSpendingRequestSummary {
   const r = asRecord(row);
   return {
-    id: str(r.id),
-    requestNumber: str(r.request_number ?? r.requestNumber),
-    title: str(r.title),
-    description: (r.description as string | null) ?? null,
-    neededBy: (r.needed_by ?? r.neededBy ?? null) as string | null,
-    currencyCode: str(r.currency_code ?? r.currencyCode, "USD"),
-    amountMinor: num(r.amount_minor ?? r.amountMinor),
-    status: str(r.status, "draft") as ExpenseSpendingRequestStatus,
-    decisionNote: (r.decision_note ?? r.decisionNote ?? null) as string | null,
-    version: num(r.version),
-    updatedAt: str(r.updated_at ?? r.updatedAt),
+    id: str(r["id"]),
+    requestNumber: str(r["request_number"] ?? r["requestNumber"]),
+    title: str(r["title"]),
+    description: (r["description"] as string | null) ?? null,
+    neededBy: (r["needed_by"] ?? r["neededBy"] ?? null) as string | null,
+    currencyCode: str(r["currency_code"] ?? r["currencyCode"], "USD"),
+    amountMinor: num(r["amount_minor"] ?? r["amountMinor"]),
+    status: str(r["status"], "draft") as ExpenseSpendingRequestStatus,
+    decisionNote: (r["decision_note"] ?? r["decisionNote"] ?? null) as string | null,
+    version: num(r["version"]),
+    updatedAt: str(r["updated_at"] ?? r["updatedAt"]),
   };
 }
 

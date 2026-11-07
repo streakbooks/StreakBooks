@@ -113,9 +113,9 @@ export function ExpenseManagementReceiptsPage() {
           companyId: company.id,
           fileName: file.name,
           source,
-          contentType: file.type || undefined,
+          ...(file.type ? { contentType: file.type } : {}),
           sizeBytes: file.size,
-          notes: notes.trim() || undefined,
+          ...(notes.trim() ? { notes: notes.trim() } : {}),
         },
       });
 
@@ -275,6 +275,15 @@ export function ExpenseManagementReceiptsPage() {
   }
 
   const inbox = inboxQ.data;
+  if (!inbox) {
+    return (
+      <>
+        <PageHeader title="Receipts & Inbox" />
+        <ExpenseManagementSubnav current="receipts" />
+        <LoadingState />
+      </>
+    );
+  }
   const draftClaims = (claimsQ.data ?? []).filter(
     (claim) =>
       claim.approvalStatus === "draft" ||

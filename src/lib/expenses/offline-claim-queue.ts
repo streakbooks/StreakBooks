@@ -58,15 +58,12 @@ export function enqueueOfflineExpenseClaimDraft(
   companyId: string,
   draft: ExpenseClaimDraftInput,
 ): OfflineExpenseClaimDraft {
+  const { id: _omitId, version: _omitVersion, ...draftWithoutIds } = draft;
   const item: OfflineExpenseClaimDraft = {
     id: crypto.randomUUID(),
     savedAt: new Date().toISOString(),
-    draft: {
-      ...draft,
-      // Server assigns claim id on sync; keep local-only drafts free of stale ids.
-      id: undefined,
-      version: undefined,
-    },
+    // Server assigns claim id on sync; keep local-only drafts free of stale ids.
+    draft: draftWithoutIds,
   };
   const next = [item, ...readRaw(companyId)];
   writeRaw(companyId, next);

@@ -240,7 +240,10 @@ export function ExpenseManagementTravelPage() {
       ) : null}
 
       {ratesQ.isError && !migrationMissing ? (
-        <ErrorState title="Could not load per diem rates" error={ratesQ.error} />
+        <ErrorState
+          title="Could not load per diem rates"
+          description={friendlyAuthError(ratesQ.error)}
+        />
       ) : null}
 
       {canSubmit ? (
@@ -372,7 +375,7 @@ export function ExpenseManagementTravelPage() {
               <AccountLookup
                 companyId={company.id}
                 accounts={expenseAccounts}
-                value={rateAccountId || null}
+                value={rateAccountId}
                 onChange={(next) => setRateAccountId(next ?? "")}
                 allowClear
                 disabled={saveRateMut.isPending}

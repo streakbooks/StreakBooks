@@ -87,14 +87,17 @@ export function mapExpenseClaimDuplicates(row: unknown): ExpenseClaimDuplicateMa
 
 export function mapExpenseCategorySuggestion(row: unknown): ExpenseCategorySuggestion {
   const r = asRecord(row);
+  const merchantName = str(r["merchant_name"] ?? r["merchantName"]);
   if (!r["suggested"]) {
-    return { suggested: false, merchantName: str(r["merchant_name"] ?? r["merchantName"]) || undefined };
+    return { suggested: false, ...(merchantName ? { merchantName } : {}) };
   }
+  const categoryId = str(r["category_id"] ?? r["categoryId"]);
+  const categoryName = str(r["category_name"] ?? r["categoryName"]);
   return {
     suggested: true,
-    merchantName: str(r["merchant_name"] ?? r["merchantName"]) || undefined,
-    categoryId: str(r["category_id"] ?? r["categoryId"]) || undefined,
-    categoryName: str(r["category_name"] ?? r["categoryName"]) || undefined,
+    ...(merchantName ? { merchantName } : {}),
+    ...(categoryId ? { categoryId } : {}),
+    ...(categoryName ? { categoryName } : {}),
     priorUses: num(r["prior_uses"] ?? r["priorUses"]),
   };
 }

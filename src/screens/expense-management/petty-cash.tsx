@@ -218,7 +218,10 @@ export function ExpenseManagementPettyCashPage() {
       ) : null}
 
       {floatsQ.isError && !migrationMissing ? (
-        <ErrorState title="Could not load petty cash floats" error={floatsQ.error} />
+        <ErrorState
+          title="Could not load petty cash floats"
+          description={friendlyAuthError(floatsQ.error)}
+        />
       ) : null}
 
       {canManage ? (

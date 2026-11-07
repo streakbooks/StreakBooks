@@ -187,8 +187,9 @@ export function ExpenseManagementApprovalsPage() {
       };
       if (input.action === "review") return startReview({ data: base });
       if (input.action === "approve") {
+        const note = notes[input.claim.id]?.trim();
         return approveClaim({
-          data: { ...base, note: notes[input.claim.id]?.trim() || undefined },
+          data: note ? { ...base, note } : base,
         });
       }
       const note = (notes[input.claim.id] ?? "").trim();
@@ -219,13 +220,14 @@ export function ExpenseManagementApprovalsPage() {
     mutationFn: async () => {
       if (!company) throw new Error("Select a company first.");
       if (!delegateUserId) throw new Error("Choose a delegate.");
+      const note = delegateNote.trim();
       return saveDelegation({
         data: {
           companyId: company.id,
           toUserId: delegateUserId,
           startsOn: delegateStart,
           endsOn: delegateEnd,
-          note: delegateNote.trim() || undefined,
+          ...(note ? { note } : {}),
         },
       });
     },

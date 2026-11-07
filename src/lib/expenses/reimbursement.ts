@@ -73,16 +73,18 @@ export function mapBatchReimburseResult(row: unknown): BatchReimburseResult {
         item && typeof item === "object"
           ? (item as Record<string, unknown>)
           : ({} as Record<string, unknown>);
+      const claimNumber =
+        typeof entry["claim_number"] === "string"
+          ? entry["claim_number"]
+          : typeof entry["claimNumber"] === "string"
+            ? entry["claimNumber"]
+            : "";
+      const error = typeof entry["error"] === "string" ? entry["error"] : "";
       return {
         claimId: String(entry["claim_id"] ?? entry["claimId"] ?? ""),
         ok: Boolean(entry["ok"]),
-        claimNumber:
-          typeof entry["claim_number"] === "string"
-            ? entry["claim_number"]
-            : typeof entry["claimNumber"] === "string"
-              ? entry["claimNumber"]
-              : undefined,
-        error: typeof entry["error"] === "string" ? entry["error"] : undefined,
+        ...(claimNumber ? { claimNumber } : {}),
+        ...(error ? { error } : {}),
       };
     }),
   };

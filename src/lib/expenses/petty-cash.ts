@@ -42,19 +42,19 @@ function num(value: unknown): number {
 
 export function mapExpensePettyCashFloat(row: unknown): ExpensePettyCashFloat {
   const r = asRecord(row);
-  const status = str(r.status, "active") as ExpensePettyCashFloatStatus;
+  const status = str(r["status"], "active") as ExpensePettyCashFloatStatus;
   return {
-    id: str(r.id),
-    floatNumber: str(r.float_number ?? r.floatNumber),
-    name: str(r.name),
-    description: (r.description ?? null) as string | null,
-    custodianUserId: str(r.custodian_user_id ?? r.custodianUserId),
-    currencyCode: str(r.currency_code ?? r.currencyCode).toUpperCase(),
-    targetMinor: num(r.target_minor ?? r.targetMinor),
-    balanceMinor: num(r.balance_minor ?? r.balanceMinor),
+    id: str(r["id"]),
+    floatNumber: str(r["float_number"] ?? r["floatNumber"]),
+    name: str(r["name"]),
+    description: (r["description"] ?? null) as string | null,
+    custodianUserId: str(r["custodian_user_id"] ?? r["custodianUserId"]),
+    currencyCode: str(r["currency_code"] ?? r["currencyCode"]).toUpperCase(),
+    targetMinor: num(r["target_minor"] ?? r["targetMinor"]),
+    balanceMinor: num(r["balance_minor"] ?? r["balanceMinor"]),
     status: EXPENSE_PETTY_CASH_FLOAT_STATUSES.includes(status) ? status : "active",
-    version: num(r.version),
-    updatedAt: str(r.updated_at ?? r.updatedAt),
+    version: num(r["version"]),
+    updatedAt: str(r["updated_at"] ?? r["updatedAt"]),
   };
 }
 

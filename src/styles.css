@@ -362,6 +362,25 @@
   }
 }
 
+/* Signature workspace hierarchy: a restrained 44px brand rule beneath each page title. */
+.lb-page-header::after {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  bottom: -1px;
+  width: 2.75rem;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--primary);
+  opacity: 0.85;
+}
+@media print {
+  .lb-page-header::after { display: none; }
+}
+@media (forced-colors: active) {
+  .lb-page-header::after { background: Highlight; }
+}
+
 /* Original LinkBooks status system. Semantic states do NOT depend on palette. */
 .lb-status {
   vertical-align: middle;

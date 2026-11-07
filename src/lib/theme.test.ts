@@ -40,7 +40,7 @@ describe("appearance modes and palettes", () => {
       for (const canvas of ["#777777", "#ffffff", "#000000", "#123456"]) {
         for (const dark of [false, true]) {
           const tokens = computeCustomTokens(
-            { primary, sidebar: canvas, lightBackground: canvas, darkBackground: canvas },
+            { primary, accent: "#168393", sidebar: canvas, lightBackground: canvas, darkBackground: canvas },
             dark,
           );
           for (const [foreground, background] of [
@@ -103,6 +103,7 @@ describe("appearance modes and palettes", () => {
       }),
     ).toEqual({
       primary: DEFAULT_CUSTOM_PALETTE.primary,
+      accent: DEFAULT_CUSTOM_PALETTE.accent,
       sidebar: "#123456",
       lightBackground: "#fefefe",
       darkBackground: DEFAULT_CUSTOM_PALETTE.darkBackground,
@@ -113,6 +114,7 @@ describe("appearance modes and palettes", () => {
   it("derives complete readable tokens for arbitrary custom palettes in both modes", () => {
     const colors = {
       primary: "#ffffff",
+      accent: "#227f8b",
       sidebar: "#ffffff",
       lightBackground: "#101010",
       darkBackground: "#ffffff",
@@ -125,6 +127,8 @@ describe("appearance modes and palettes", () => {
     expect(light["--sidebar-foreground"]).toBe("#142033");
     expect(light["--sidebar-active-foreground"]).toBe("#142033");
     expect(light["--background"]).toBe("#101010");
+    expect(light["--chart-2"]).toBe("#227f8b");
+
     expect(dark["--background"]).toBe("#ffffff");
     expect(light["--money-in"]).toBeUndefined();
     expect(dark["--success"]).toBeUndefined();
@@ -132,6 +136,29 @@ describe("appearance modes and palettes", () => {
       expect(name).toMatch(/^--[a-z0-9-]+$/);
       expect(value).toMatch(/^#[0-9a-f]{6}$/i);
     }
+  });
+
+  it("exposes the requested professional palette labels without changing persisted IDs", () => {
+    for (const name of [
+      "LinkBooks Signature", "Executive Slate", "Emerald Professional",
+      "Royal Indigo", "Modern Teal", "Rose Professional", "Warm Sand",
+    ]) {
+      expect(PALETTE_OPTIONS.some((option) => option.name === name)).toBe(true);
+    }
+  });
+
+  it("validates a separate custom accent and coordinates chart colours", () => {
+    const palette = validateCustomPalette({
+      ...DEFAULT_CUSTOM_PALETTE, accent: "#28a3b1",
+    });
+    const tokens = computeCustomTokens(palette, false);
+    expect(tokens["--chart-1"]).toBe(palette.primary);
+    expect(tokens["--chart-2"]).toBe("#28a3b1");
+    expect(tokens["--chart-3"]).toMatch(/^#[0-9a-f]{6}$/i);
+    expect(tokens["--chart-4"]).toMatch(/^#[0-9a-f]{6}$/i);
+    expect(tokens["--chart-5"]).toMatch(/^#[0-9a-f]{6}$/i);
+    expect(validateCustomPalette({ accent: "javascript:alert(1)" }).accent)
+      .toBe(DEFAULT_CUSTOM_PALETTE.accent);
   });
 
   it("prepaint initializer retains the original mode key and applies chosen palette", () => {
@@ -147,6 +174,7 @@ describe("appearance modes and palettes", () => {
       [PALETTE_STORAGE_KEY]: "custom",
       [CUSTOM_PALETTE_STORAGE_KEY]: JSON.stringify({
         primary: "#c24174",
+        accent: "#387f85",
         sidebar: "#402138",
         lightBackground: "#fff2f7",
         darkBackground: "#241a29",
@@ -177,6 +205,7 @@ describe("appearance modes and palettes", () => {
     expect(classes["dark"]).toBe(true);
     expect(attrs["data-linkbooks-palette"]).toBe("custom");
     expect(styles["--primary"]).toBe("#c24174");
+    expect(styles["--chart-2"]).toBe("#387f85");
     expect(styles["--background"]).toBe("#241a29");
   });
 

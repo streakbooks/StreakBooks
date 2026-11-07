@@ -65,18 +65,18 @@ function num(value: unknown): number {
 
 export function mapExpenseCorporateCard(row: unknown): ExpenseCorporateCard {
   const r = asRecord(row);
-  const status = str(r.status, "active") as ExpenseCorporateCardStatus;
+  const status = str(r["status"], "active") as ExpenseCorporateCardStatus;
   return {
-    id: str(r.id),
-    label: str(r.label),
-    network: (r.network ?? null) as string | null,
-    last4: str(r.last4),
-    holderUserId: (r.holder_user_id ?? r.holderUserId ?? null) as string | null,
-    liabilityAccountId: str(r.liability_account_id ?? r.liabilityAccountId),
-    currencyCode: str(r.currency_code ?? r.currencyCode).toUpperCase(),
+    id: str(r["id"]),
+    label: str(r["label"]),
+    network: (r["network"] ?? null) as string | null,
+    last4: str(r["last4"]),
+    holderUserId: (r["holder_user_id"] ?? r["holderUserId"] ?? null) as string | null,
+    liabilityAccountId: str(r["liability_account_id"] ?? r["liabilityAccountId"]),
+    currencyCode: str(r["currency_code"] ?? r["currencyCode"]).toUpperCase(),
     status: EXPENSE_CORPORATE_CARD_STATUSES.includes(status) ? status : "active",
-    version: num(r.version),
-    updatedAt: str(r.updated_at ?? r.updatedAt),
+    version: num(r["version"]),
+    updatedAt: str(r["updated_at"] ?? r["updatedAt"]),
   };
 }
 
@@ -84,19 +84,19 @@ export function mapExpenseCorporateCardTransaction(
   row: unknown,
 ): ExpenseCorporateCardTransaction {
   const r = asRecord(row);
-  const status = str(r.status, "unmatched") as ExpenseCorporateCardTxStatus;
+  const status = str(r["status"], "unmatched") as ExpenseCorporateCardTxStatus;
   return {
-    id: str(r.id),
-    cardId: str(r.card_id ?? r.cardId),
-    transactionDate: str(r.transaction_date ?? r.transactionDate),
-    postedDate: (r.posted_date ?? r.postedDate ?? null) as string | null,
-    merchantName: (r.merchant_name ?? r.merchantName ?? null) as string | null,
-    description: str(r.description),
-    amountMinor: num(r.amount_minor ?? r.amountMinor),
-    currencyCode: str(r.currency_code ?? r.currencyCode).toUpperCase(),
+    id: str(r["id"]),
+    cardId: str(r["card_id"] ?? r["cardId"]),
+    transactionDate: str(r["transaction_date"] ?? r["transactionDate"]),
+    postedDate: (r["posted_date"] ?? r["postedDate"] ?? null) as string | null,
+    merchantName: (r["merchant_name"] ?? r["merchantName"] ?? null) as string | null,
+    description: str(r["description"]),
+    amountMinor: num(r["amount_minor"] ?? r["amountMinor"]),
+    currencyCode: str(r["currency_code"] ?? r["currencyCode"]).toUpperCase(),
     status: EXPENSE_CARD_TX_STATUSES.includes(status) ? status : "unmatched",
-    matchedClaimId: (r.matched_claim_id ?? r.matchedClaimId ?? null) as string | null,
-    externalRef: (r.external_ref ?? r.externalRef ?? null) as string | null,
+    matchedClaimId: (r["matched_claim_id"] ?? r["matchedClaimId"] ?? null) as string | null,
+    externalRef: (r["external_ref"] ?? r["externalRef"] ?? null) as string | null,
   };
 }
 

@@ -35,11 +35,11 @@ export type ExpenseClaimDraftInput = {
   id?: string;
   version?: number;
   title: string;
-  description?: string;
+  description?: string | undefined;
   claimDate: string;
   claimCurrency: string;
-  reimbursementCurrency?: string;
-  paymentSource?: ExpensePaymentSource;
+  reimbursementCurrency?: string | undefined;
+  paymentSource?: ExpensePaymentSource | undefined;
   lines: ExpenseClaimLineInput[];
 };
 
@@ -118,20 +118,23 @@ function num(value: unknown): number {
 export function mapExpenseClaimSummary(row: unknown): ExpenseClaimSummary {
   const r = asRecord(row);
   return {
-    id: str(r.id),
-    claimNumber: str(r.claim_number ?? r.claimNumber),
-    title: str(r.title),
-    claimDate: str(r.claim_date ?? r.claimDate),
-    claimCurrency: str(r.claim_currency ?? r.claimCurrency),
-    approvalStatus: str(r.approval_status ?? r.approvalStatus) as ExpenseApprovalStatus,
-    postingStatus: str(r.posting_status ?? r.postingStatus),
-    reimbursementStatus: str(r.reimbursement_status ?? r.reimbursementStatus),
-    paymentSource: str(r.payment_source ?? r.paymentSource, "employee_paid") as ExpensePaymentSource,
-    totalMinor: num(r.total_minor ?? r.totalMinor),
-    reimbursableMinor: num(r.reimbursable_minor ?? r.reimbursableMinor),
-    postedJournalId: (r.posted_journal_id ?? r.postedJournalId ?? null) as string | null,
-    version: num(r.version),
-    updatedAt: str(r.updated_at ?? r.updatedAt),
+    id: str(r["id"]),
+    claimNumber: str(r["claim_number"] ?? r["claimNumber"]),
+    title: str(r["title"]),
+    claimDate: str(r["claim_date"] ?? r["claimDate"]),
+    claimCurrency: str(r["claim_currency"] ?? r["claimCurrency"]),
+    approvalStatus: str(r["approval_status"] ?? r["approvalStatus"]) as ExpenseApprovalStatus,
+    postingStatus: str(r["posting_status"] ?? r["postingStatus"]),
+    reimbursementStatus: str(r["reimbursement_status"] ?? r["reimbursementStatus"]),
+    paymentSource: str(
+      r["payment_source"] ?? r["paymentSource"],
+      "employee_paid",
+    ) as ExpensePaymentSource,
+    totalMinor: num(r["total_minor"] ?? r["totalMinor"]),
+    reimbursableMinor: num(r["reimbursable_minor"] ?? r["reimbursableMinor"]),
+    postedJournalId: (r["posted_journal_id"] ?? r["postedJournalId"] ?? null) as string | null,
+    version: num(r["version"]),
+    updatedAt: str(r["updated_at"] ?? r["updatedAt"]),
   };
 }
 

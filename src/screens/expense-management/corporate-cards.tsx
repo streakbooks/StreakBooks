@@ -356,7 +356,7 @@ export function ExpenseManagementCorporateCardsPage() {
               <AccountLookup
                 companyId={company.id}
                 accounts={liabilityAccounts}
-                value={liabilityAccountId || undefined}
+                value={liabilityAccountId}
                 onChange={(next) => setLiabilityAccountId(next ?? "")}
                 allowClear
                 disabled={createCardMut.isPending}

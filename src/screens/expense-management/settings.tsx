@@ -276,7 +276,7 @@ export function ExpenseManagementSettingsPage() {
           <AccountLookup
             companyId={company.id}
             accounts={liabilityAccounts}
-            value={draft.employeePayableAccountId || undefined}
+            value={draft.employeePayableAccountId}
             onChange={(next) =>
               setDraft({ ...draft, employeePayableAccountId: next ?? "" })
             }
@@ -295,7 +295,7 @@ export function ExpenseManagementSettingsPage() {
           <AccountLookup
             companyId={company.id}
             accounts={assetAccounts}
-            value={draft.employeeAdvanceAccountId || undefined}
+            value={draft.employeeAdvanceAccountId}
             onChange={(next) =>
               setDraft({ ...draft, employeeAdvanceAccountId: next ?? "" })
             }
@@ -315,7 +315,7 @@ export function ExpenseManagementSettingsPage() {
           <AccountLookup
             companyId={company.id}
             accounts={assetAccounts}
-            value={draft.pettyCashAccountId || undefined}
+            value={draft.pettyCashAccountId}
             onChange={(next) =>
               setDraft({ ...draft, pettyCashAccountId: next ?? "" })
             }
@@ -335,7 +335,7 @@ export function ExpenseManagementSettingsPage() {
           <AccountLookup
             companyId={company.id}
             accounts={incomeAccounts}
-            value={draft.rebillingIncomeAccountId || undefined}
+            value={draft.rebillingIncomeAccountId}
             onChange={(next) =>
               setDraft({ ...draft, rebillingIncomeAccountId: next ?? "" })
             }

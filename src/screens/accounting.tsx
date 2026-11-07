@@ -1,6 +1,7 @@
 import { CashClassificationPanel } from "@/components/accounting/CashClassificationPanel";
 import { getRouteApi } from "@tanstack/react-router";
 import { type AccountingTab } from "@/lib/navigation/workspace-search";
+import { pickJournalBrowseSearch } from "@/lib/accounting/journal-browsing";
 import { DeferralsPanel } from "@/components/accounting/DeferralsPanel";
 import { nativeTabLinkClass, handleNativeTabKeyDown } from "@/lib/navigation/native-tab";
 import { TransactionCorrections } from "@/components/accounting/corrections/TransactionCorrections";
@@ -55,6 +56,7 @@ export function AccountingWorkspace({
   const search = routeApi.useSearch();
   const seedMasters = useServerFn(ensureLedgerMasters);
   const tab: AccountingTab = search.tab ?? (search.journal ? "journals" : "coa");
+  const journalBrowseContext = pickJournalBrowseSearch(search);
 
   const seedMutation = useMutation({
     mutationFn: () => seedMasters({ data: { companyId } }),
@@ -105,7 +107,7 @@ export function AccountingWorkspace({
             aria-selected={tab === "coa"}
             data-state={tab === "coa" ? "active" : "inactive"}
             to="/accounting"
-            search={{ tab: "coa" }}
+            search={{ ...journalBrowseContext, tab: "coa" }}
             resetScroll={false}
           >
             Chart of accounts
@@ -116,7 +118,7 @@ export function AccountingWorkspace({
             aria-selected={tab === "industry"}
             data-state={tab === "industry" ? "active" : "inactive"}
             to="/accounting"
-            search={{ tab: "industry" }}
+            search={{ ...journalBrowseContext, tab: "industry" }}
             resetScroll={false}
           >
             Industry library
@@ -127,7 +129,7 @@ export function AccountingWorkspace({
             aria-selected={tab === "corrections"}
             data-state={tab === "corrections" ? "active" : "inactive"}
             to="/accounting"
-            search={{ tab: "corrections" }}
+            search={{ ...journalBrowseContext, tab: "corrections" }}
             resetScroll={false}
           >
             Transaction corrections
@@ -138,7 +140,7 @@ export function AccountingWorkspace({
             aria-selected={tab === "journals"}
             data-state={tab === "journals" ? "active" : "inactive"}
             to="/accounting"
-            search={{ tab: "journals" }}
+            search={{ ...journalBrowseContext, tab: "journals" }}
             resetScroll={false}
           >
             Journals
@@ -149,7 +151,7 @@ export function AccountingWorkspace({
             aria-selected={tab === "post"}
             data-state={tab === "post" ? "active" : "inactive"}
             to="/accounting"
-            search={{ tab: "post" }}
+            search={{ ...journalBrowseContext, tab: "post" }}
             resetScroll={false}
           >
             Post manual journal
@@ -160,7 +162,7 @@ export function AccountingWorkspace({
             aria-selected={tab === "periods"}
             data-state={tab === "periods" ? "active" : "inactive"}
             to="/accounting"
-            search={{ tab: "periods" }}
+            search={{ ...journalBrowseContext, tab: "periods" }}
             resetScroll={false}
           >
             Financial years
@@ -171,7 +173,7 @@ export function AccountingWorkspace({
             aria-selected={tab === "close"}
             data-state={tab === "close" ? "active" : "inactive"}
             to="/accounting"
-            search={{ tab: "close" }}
+            search={{ ...journalBrowseContext, tab: "close" }}
             resetScroll={false}
           >
             Period close
@@ -182,7 +184,7 @@ export function AccountingWorkspace({
             aria-selected={tab === "health"}
             data-state={tab === "health" ? "active" : "inactive"}
             to="/accounting"
-            search={{ tab: "health" }}
+            search={{ ...journalBrowseContext, tab: "health" }}
             resetScroll={false}
           >
             Ledger health
@@ -193,7 +195,7 @@ export function AccountingWorkspace({
             aria-selected={tab === "exceptions"}
             data-state={tab === "exceptions" ? "active" : "inactive"}
             to="/accounting"
-            search={{ tab: "exceptions" }}
+            search={{ ...journalBrowseContext, tab: "exceptions" }}
             resetScroll={false}
           >
             Reconciliation exceptions
@@ -204,7 +206,7 @@ export function AccountingWorkspace({
             aria-selected={tab === "conversion"}
             data-state={tab === "conversion" ? "active" : "inactive"}
             to="/accounting"
-            search={{ tab: "conversion" }}
+            search={{ ...journalBrowseContext, tab: "conversion" }}
             resetScroll={false}
           >
             Opening balances
@@ -215,7 +217,7 @@ export function AccountingWorkspace({
             aria-selected={tab === "fx"}
             data-state={tab === "fx" ? "active" : "inactive"}
             to="/accounting"
-            search={{ tab: "fx" }}
+            search={{ ...journalBrowseContext, tab: "fx" }}
             resetScroll={false}
           >
             FX &amp; reversals
@@ -226,7 +228,7 @@ export function AccountingWorkspace({
             aria-selected={tab === "deferrals"}
             data-state={tab === "deferrals" ? "active" : "inactive"}
             to="/accounting"
-            search={{ tab: "deferrals" }}
+            search={{ ...journalBrowseContext, tab: "deferrals" }}
             resetScroll={false}
           >
             Prepayments & deferred income
@@ -237,7 +239,7 @@ export function AccountingWorkspace({
             aria-selected={tab === "cash-classification"}
             data-state={tab === "cash-classification" ? "active" : "inactive"}
             to="/accounting"
-            search={{ tab: "cash-classification" }}
+            search={{ ...journalBrowseContext, tab: "cash-classification" }}
             resetScroll={false}
           >
             Cash classification

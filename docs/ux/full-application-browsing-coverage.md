@@ -18,7 +18,7 @@ The register below was derived from actual repository navigation and routes. The
 | # | Module | Main route | Route files | Premium browsing status |
 |---:|---|---|---:|---|
 | 1 | Dashboard | `/` | 1 | Not yet verified for premium browsing |
-| 2 | Banking | `/banking` | 12 | Not yet verified for premium browsing |
+| 2 | Banking | `/banking` | 12 | Partial browsing code committed; not runtime-verified |
 | 3 | Sales | `/sales` | 26 | Partial browsing code committed; not runtime-verified |
 | 4 | Purchases | `/purchases` | 25 | Partial browsing code committed; not runtime-verified |
 | 5 | Contacts | `/contacts` | 6 | Partial browsing code committed; not runtime-verified |
@@ -29,7 +29,7 @@ The register below was derived from actual repository navigation and routes. The
 | 10 | Budgets | `/budgets` | 2 | Not yet verified for premium browsing |
 | 11 | Fixed assets | `/fixed-assets` | 1 | Not yet verified for premium browsing |
 | 12 | Payroll | `/payroll` | 12 | Not yet verified for premium browsing |
-| 13 | Reports | `/reports` | 3 | Not yet verified for premium browsing |
+| 13 | Reports | `/reports` | 3 | Partial browsing code committed; not runtime-verified |
 | 14 | Accountant | `/accountant` | 1 | Not yet verified for premium browsing |
 | 15 | Firm | `/firm` | 1 | Not yet verified for premium browsing |
 | 16 | Advisors | `/advisors-admin` | 13 | Not yet verified for premium browsing |
@@ -330,7 +330,7 @@ Every batch may require multiple small implementation increments; do not rush a 
 
 ## 8. Current evidence / limitations
 
-- Some navigation and context preservation code is committed for Sales, Purchases, Contacts and Products & Services, including shared navigation inherited in the branch history.
+- Navigation and context preservation code is committed for Sales, Purchases, Contacts, Products & Services, Banking and Reports, including shared navigation inherited in the branch history. Banking covers transaction-to-journal return and transaction previews; Reports covers catalogue, overview, management and saved-report return navigation. Neither module is fully verified.
 - Standalone helper compilations and isolated assertions have been reported, but these do not demonstrate application-wide readiness.
 - Full `npm run typecheck`, `npm run lint`, `npm run build`, full `vitest`, authenticated Playwright, tenancy/security and staging/deployment verification remain outstanding for this branch.
 - The two branches have diverged; integrating into `main` requires a conflict review and explicit testing. No merge is authorized merely by this coverage policy.

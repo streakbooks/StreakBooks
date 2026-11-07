@@ -55,6 +55,8 @@ function ProfilePage() {
     }
   }, [profileQuery.data]);
 
+  const profileDirty = !!profileQuery.data && (fullName !== profileQuery.data.full_name || jobTitle !== (profileQuery.data.job_title ?? ""));
+
   const mutation = useMutation({
     mutationFn: () => saveProfile({ data: { full_name: fullName, job_title: jobTitle } }),
     onSuccess: (data) => {
@@ -86,7 +88,8 @@ function ProfilePage() {
               <CardTitle className="text-base">Account details</CardTitle>
               <CardDescription>This is real account data, not demo data.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent>
+              <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); if (profileDirty && fullName.trim() && !mutation.isPending) mutation.mutate(); }}>
               <div className="space-y-2">
                 <Label htmlFor="profile-email">Email</Label>
                 <Input id="profile-email" value={profileQuery.data.email} disabled readOnly />
@@ -111,10 +114,12 @@ function ProfilePage() {
                   onChange={(e) => setJobTitle(e.target.value)}
                 />
               </div>
-              <Button onClick={() => mutation.mutate()} disabled={mutation.isPending}>
+              <Button type="submit" disabled={mutation.isPending || !profileDirty || !fullName.trim()}>
                 {mutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
                 {mutation.isPending ? "Saving…" : "Save changes"}
               </Button>
+              {profileDirty ? <p role="status" className="text-xs text-muted-foreground">Unsaved profile changes</p> : null}
+              </form>
             </CardContent>
           </Card>
 

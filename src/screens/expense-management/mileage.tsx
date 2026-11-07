@@ -219,7 +219,7 @@ export function ExpenseManagementMileagePage() {
         description="Configure company rates and create mileage claim drafts."
         actions={
           <Button asChild variant="outline" size="sm">
-            <Link to="/expense-management/my-expenses">My expenses</Link>
+            <Link to="/expense-management/$section" params={{ section: "my-expenses" }}>My expenses</Link>
           </Button>
         }
       />

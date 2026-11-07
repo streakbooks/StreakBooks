@@ -57,6 +57,7 @@ export type ExpenseManagementSettings = {
   employeePayableAccountId: string | null;
   employeeAdvanceAccountId: string | null;
   pettyCashAccountId: string | null;
+  rebillingIncomeAccountId: string | null;
   fxGainAccountId: string | null;
   fxLossAccountId: string | null;
   requireReceiptAboveMinor: number;
@@ -77,6 +78,7 @@ export type ExpenseManagementSettingsInput = {
   employeePayableAccountId?: string | null;
   employeeAdvanceAccountId?: string | null;
   pettyCashAccountId?: string | null;
+  rebillingIncomeAccountId?: string | null;
   fxGainAccountId?: string | null;
   fxLossAccountId?: string | null;
   requireSpendingRequestAboveMinor?: number;

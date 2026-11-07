@@ -32,13 +32,20 @@ import { useCan } from "@/hooks/use-can";
 import { listAccounts } from "@/lib/accounting/accounting.functions";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { canMatchCardTransaction } from "@/lib/expenses/corporate-cards";
+import {
+  canDisputeCardTransaction,
+  canMatchCardTransaction,
+  canResolveCardDispute,
+} from "@/lib/expenses/corporate-cards";
 import {
   EXPENSE_CORPORATE_CARD_MIGRATION,
+  EXPENSE_DISPUTES_REBILLING_MIGRATION,
+  disputeExpenseCorporateCardTransaction,
   listExpenseClaims,
   listExpenseCorporateCards,
   listExpenseCorporateCardTransactions,
   matchExpenseCorporateCardTransaction,
+  resolveExpenseCorporateCardTransaction,
   saveExpenseCorporateCard,
   saveExpenseCorporateCardTransaction,
 } from "@/lib/expenses/expenses.functions";
@@ -77,6 +84,8 @@ export function ExpenseManagementCorporateCardsPage() {
   const saveCard = useServerFn(saveExpenseCorporateCard);
   const saveTx = useServerFn(saveExpenseCorporateCardTransaction);
   const matchTx = useServerFn(matchExpenseCorporateCardTransaction);
+  const disputeTx = useServerFn(disputeExpenseCorporateCardTransaction);
+  const resolveTx = useServerFn(resolveExpenseCorporateCardTransaction);
 
   const cardsQ = useQuery({
     queryKey: ["expense-corporate-cards", company?.id],
@@ -90,12 +99,20 @@ export function ExpenseManagementCorporateCardsPage() {
       fetchTx({
         data: {
           companyId: company!.id,
-          cardId: selectedCardId || undefined,
-          status: "unmatched",
+          cardId: selectedCardId,
         },
       }),
-    enabled: Boolean(company?.id) && canManage,
+    enabled: Boolean(company?.id) && canManage && Boolean(selectedCardId),
   });
+
+  const unmatchedTx = useMemo(
+    () => (txQ.data ?? []).filter((tx) => tx.status === "unmatched"),
+    [txQ.data],
+  );
+  const disputedTx = useMemo(
+    () => (txQ.data ?? []).filter((tx) => tx.status === "disputed"),
+    [txQ.data],
+  );
 
   const claimsQ = useQuery({
     queryKey: ["expense-claims", company?.id, "card-match"],
@@ -208,6 +225,45 @@ export function ExpenseManagementCorporateCardsPage() {
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
 
+  const disputeMut = useMutation({
+    mutationFn: async (transactionId: string) =>
+      disputeTx({
+        data: {
+          companyId: company!.id,
+          transactionId,
+          reason: "Disputed from Corporate Cards",
+        },
+      }),
+    onSuccess: async () => {
+      toast.success("Transaction marked disputed");
+      await queryClient.invalidateQueries({
+        queryKey: ["expense-corporate-card-tx", company?.id],
+      });
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+
+  const resolveMut = useMutation({
+    mutationFn: async (input: {
+      transactionId: string;
+      resolution: "unmatched" | "excluded";
+    }) =>
+      resolveTx({
+        data: {
+          companyId: company!.id,
+          transactionId: input.transactionId,
+          resolution: input.resolution,
+        },
+      }),
+    onSuccess: async () => {
+      toast.success("Dispute resolved");
+      await queryClient.invalidateQueries({
+        queryKey: ["expense-corporate-card-tx", company?.id],
+      });
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+
   if (isPending) return <LoadingState />;
   if (!company) {
     return <CompanyEmptyState title="No organisation" description="Select a company first." />;
@@ -226,8 +282,10 @@ export function ExpenseManagementCorporateCardsPage() {
   }
 
   const migrationMissing =
-    cardsQ.error &&
-    String(cardsQ.error.message ?? "").includes(EXPENSE_CORPORATE_CARD_MIGRATION);
+    (cardsQ.error &&
+      String(cardsQ.error.message ?? "").includes("20261107143000")) ||
+    (txQ.error &&
+      String(txQ.error.message ?? "").includes("20261107144000"));
 
   return (
     <>
@@ -236,7 +294,9 @@ export function ExpenseManagementCorporateCardsPage() {
         description="Register cards, import statement lines, and match them to corporate-card claims."
         actions={
           <Button asChild variant="outline" size="sm">
-            <Link to="/expense-management/my-expenses">My expenses</Link>
+            <Link to="/expense-management/$section" params={{ section: "my-expenses" }}>
+              My expenses
+            </Link>
           </Button>
         }
       />
@@ -245,12 +305,20 @@ export function ExpenseManagementCorporateCardsPage() {
       {migrationMissing ? (
         <Alert className="mb-6" variant="destructive">
           <AlertTitle>Database update required</AlertTitle>
-          <AlertDescription>{EXPENSE_CORPORATE_CARD_MIGRATION}</AlertDescription>
+          <AlertDescription>
+            {String(txQ.error?.message ?? "").includes("20261107144000")
+              ? EXPENSE_DISPUTES_REBILLING_MIGRATION
+              : EXPENSE_CORPORATE_CARD_MIGRATION}
+          </AlertDescription>
         </Alert>
       ) : null}
 
       {cardsQ.isError && !migrationMissing ? (
-        <ErrorState title="Could not load corporate cards" error={cardsQ.error} />
+        <ErrorState
+          title="Could not load corporate cards"
+          description={friendlyAuthError(cardsQ.error)}
+          onRetry={() => cardsQ.refetch()}
+        />
       ) : null}
 
       {canManage ? (
@@ -288,7 +356,7 @@ export function ExpenseManagementCorporateCardsPage() {
               <AccountLookup
                 companyId={company.id}
                 accounts={liabilityAccounts}
-                value={liabilityAccountId || null}
+                value={liabilityAccountId || undefined}
                 onChange={(next) => setLiabilityAccountId(next ?? "")}
                 allowClear
                 disabled={createCardMut.isPending}
@@ -430,7 +498,7 @@ export function ExpenseManagementCorporateCardsPage() {
             <h2 className="text-lg font-medium">Unmatched transactions</h2>
             {txQ.isLoading ? (
               <LoadingState />
-            ) : (txQ.data ?? []).length === 0 ? (
+            ) : unmatchedTx.length === 0 ? (
               <EmptyState
                 title="No unmatched lines"
                 description="Add statement lines or they are already matched."
@@ -442,11 +510,11 @@ export function ExpenseManagementCorporateCardsPage() {
                     <TableHead>Date</TableHead>
                     <TableHead>Description</TableHead>
                     <TableHead>Amount</TableHead>
-                    <TableHead className="text-right">Match</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(txQ.data ?? []).map((tx) => {
+                  {unmatchedTx.map((tx) => {
                     const claim = cardClaims.find((c) => c.id === matchClaimId);
                     const gate =
                       claim &&
@@ -460,6 +528,9 @@ export function ExpenseManagementCorporateCardsPage() {
                         claimCurrency: claim.claimCurrency,
                         claimCardId: selectedCardId,
                       });
+                    const disputeGate = canDisputeCardTransaction({
+                      txStatus: tx.status,
+                    });
                     return (
                       <TableRow key={tx.id}>
                         <TableCell>{tx.transactionDate}</TableCell>
@@ -474,7 +545,7 @@ export function ExpenseManagementCorporateCardsPage() {
                         <TableCell>
                           {fromMinorUnits(tx.amountMinor, tx.currencyCode)}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="space-x-2 text-right">
                           <Button
                             size="sm"
                             disabled={
@@ -486,6 +557,94 @@ export function ExpenseManagementCorporateCardsPage() {
                             onClick={() => matchMut.mutate(tx.id)}
                           >
                             Match
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={
+                              disputeMut.isPending || disputeGate.ok === false
+                            }
+                            onClick={() => disputeMut.mutate(tx.id)}
+                          >
+                            Dispute
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            )}
+          </section>
+
+          <section className="mt-8 space-y-3">
+            <h2 className="text-lg font-medium">Disputed transactions</h2>
+            {disputedTx.length === 0 ? (
+              <EmptyState
+                title="No disputes"
+                description="Disputed statement lines appear here until resolved."
+              />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead className="text-right">Resolve</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {disputedTx.map((tx) => {
+                    const toUnmatched = canResolveCardDispute({
+                      txStatus: tx.status,
+                      resolution: "unmatched",
+                    });
+                    const toExcluded = canResolveCardDispute({
+                      txStatus: tx.status,
+                      resolution: "excluded",
+                    });
+                    return (
+                      <TableRow key={tx.id}>
+                        <TableCell>{tx.transactionDate}</TableCell>
+                        <TableCell>
+                          <div className="font-medium">
+                            {tx.merchantName ?? tx.description}
+                          </div>
+                          <Badge variant="secondary">disputed</Badge>
+                        </TableCell>
+                        <TableCell>
+                          {fromMinorUnits(tx.amountMinor, tx.currencyCode)}
+                        </TableCell>
+                        <TableCell className="space-x-2 text-right">
+                          <Button
+                            size="sm"
+                            disabled={
+                              resolveMut.isPending || toUnmatched.ok === false
+                            }
+                            onClick={() =>
+                              resolveMut.mutate({
+                                transactionId: tx.id,
+                                resolution: "unmatched",
+                              })
+                            }
+                          >
+                            Back to unmatched
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={
+                              resolveMut.isPending || toExcluded.ok === false
+                            }
+                            onClick={() =>
+                              resolveMut.mutate({
+                                transactionId: tx.id,
+                                resolution: "excluded",
+                              })
+                            }
+                          >
+                            Exclude
                           </Button>
                         </TableCell>
                       </TableRow>

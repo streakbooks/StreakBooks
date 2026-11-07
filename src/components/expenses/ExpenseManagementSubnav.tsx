@@ -24,16 +24,30 @@ export function ExpenseManagementSubnav({
     >
       {visible.map((item) => {
         const active = current === item.key;
+        const className = cn(
+          "rounded-md px-3 py-1.5 text-sm font-medium transition-colors pointer-coarse:min-h-11 pointer-coarse:inline-flex pointer-coarse:items-center",
+          active
+            ? "bg-primary text-primary-foreground"
+            : "text-muted-foreground hover:bg-muted hover:text-foreground",
+        );
+        if (item.key === "overview") {
+          return (
+            <Link
+              key={item.key}
+              to="/expense-management"
+              className={className}
+              aria-current={active ? "page" : undefined}
+            >
+              {item.label}
+            </Link>
+          );
+        }
         return (
           <Link
             key={item.key}
-            to={item.path}
-            className={cn(
-              "rounded-md px-3 py-1.5 text-sm font-medium transition-colors pointer-coarse:min-h-11 pointer-coarse:inline-flex pointer-coarse:items-center",
-              active
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground",
-            )}
+            to="/expense-management/$section"
+            params={{ section: item.key }}
+            className={className}
             aria-current={active ? "page" : undefined}
           >
             {item.label}

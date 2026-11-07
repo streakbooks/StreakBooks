@@ -192,7 +192,7 @@ export function ExpenseManagementCashAdvancesPage() {
         description="Issue employee floats from bank and settle them via cash-advance claims."
         actions={
           <Button asChild variant="outline" size="sm">
-            <Link to="/expense-management/settings">Settings</Link>
+            <Link to="/expense-management/$section" params={{ section: "settings" }}>Settings</Link>
           </Button>
         }
       />

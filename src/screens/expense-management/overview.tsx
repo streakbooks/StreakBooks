@@ -17,12 +17,14 @@ function KpiCard({
   label,
   value,
   hint,
-  to,
+  href,
 }: {
   label: string;
   value: number;
   hint: string;
-  to?: string;
+  href?:
+    | { kind: "absolute"; to: "/purchases/employee-expenses" | "/purchases/expenses" }
+    | { kind: "section"; section: string };
 }) {
   const body = (
     <Card>
@@ -35,9 +37,23 @@ function KpiCard({
       </CardContent>
     </Card>
   );
-  if (!to) return body;
+  if (!href) return body;
+  if (href.kind === "absolute") {
+    return (
+      <Link
+        to={href.to}
+        className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        {body}
+      </Link>
+    );
+  }
   return (
-    <Link to={to} className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+    <Link
+      to="/expense-management/$section"
+      params={{ section: href.section }}
+      className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
       {body}
     </Link>
   );
@@ -106,7 +122,9 @@ export function ExpenseManagementOverviewPage() {
             </Button>
             {canManagePolicies ? (
               <Button asChild size="sm">
-                <Link to="/expense-management/settings">Settings</Link>
+                <Link to="/expense-management/$section" params={{ section: "settings" }}>
+                  Settings
+                </Link>
               </Button>
             ) : null}
           </div>
@@ -126,25 +144,25 @@ export function ExpenseManagementOverviewPage() {
           label="Pending legacy claims"
           value={kpis.legacySubmittedClaims}
           hint="Submitted on the current employee-expenses path"
-          to="/purchases/employee-expenses"
+          href={{ kind: "absolute", to: "/purchases/employee-expenses" }}
         />
         <KpiCard
           label="Reimbursed legacy claims"
           value={kpis.legacyReimbursedClaims}
           hint="Already paid through the MVP approve-and-pay flow"
-          to="/purchases/employee-expenses"
+          href={{ kind: "absolute", to: "/purchases/employee-expenses" }}
         />
         <KpiCard
           label="Rejected legacy claims"
           value={kpis.legacyRejectedClaims}
           hint="Returned or declined MVP claims"
-          to="/purchases/employee-expenses"
+          href={{ kind: "absolute", to: "/purchases/employee-expenses" }}
         />
         <KpiCard
           label="Posted spend-money expenses"
           value={kpis.directExpensesPosted}
           hint={`${kpis.directExpensesDraft} draft direct expenses remain`}
-          to="/purchases/expenses"
+          href={{ kind: "absolute", to: "/purchases/expenses" }}
         />
       </div>
 
@@ -157,25 +175,25 @@ export function ExpenseManagementOverviewPage() {
               ? "Rows in the new expense_claims table"
               : "Unavailable until migration 20261107120000 is applied"
           }
-          to="/expense-management/claims"
+          href={{ kind: "section", section: "claims" }}
         />
         <KpiCard
           label="Pending EM approvals"
           value={kpis.emPendingApproval}
           hint="Submitted or in review"
-          to="/expense-management/approvals"
+          href={{ kind: "section", section: "approvals" }}
         />
         <KpiCard
           label="Approved EM claims"
           value={kpis.emApproved}
           hint="Approved and ready for posting or reimbursement"
-          to="/expense-management/claims"
+          href={{ kind: "section", section: "claims" }}
         />
         <KpiCard
           label="Awaiting reimbursement"
           value={kpis.emAwaitingReimbursement}
           hint="Eligible, awaiting payment, or payment initiated"
-          to="/expense-management/reimbursements"
+          href={{ kind: "section", section: "reimbursements" }}
         />
       </div>
 
@@ -189,7 +207,9 @@ export function ExpenseManagementOverviewPage() {
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
           <Button asChild variant="secondary" size="sm">
-            <Link to="/expense-management/my-expenses">Open My Expenses</Link>
+            <Link to="/expense-management/$section" params={{ section: "my-expenses" }}>
+              Open My Expenses
+            </Link>
           </Button>
           <Button asChild variant="secondary" size="sm">
             <Link to="/purchases/employee-expenses">Submit legacy claim</Link>

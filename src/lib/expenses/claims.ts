@@ -60,6 +60,13 @@ export type ExpenseClaimSummary = {
   updatedAt: string;
 };
 
+export type ExpenseRebillingStatus =
+  | "not_applicable"
+  | "ready"
+  | "invoiced"
+  | "partially_invoiced"
+  | "cancelled";
+
 export type ExpenseClaimDetail = ExpenseClaimSummary & {
   description: string | null;
   paymentSource: ExpensePaymentSource;
@@ -68,6 +75,9 @@ export type ExpenseClaimDetail = ExpenseClaimSummary & {
   taxMinor: number;
   postedJournalId: string | null;
   reimbursementJournalId: string | null;
+  customerContactId: string | null;
+  rebillingStatus: ExpenseRebillingStatus;
+  rebillingInvoiceId: string | null;
   lines: Array<{
     id: string;
     lineNo: number;
@@ -79,6 +89,8 @@ export type ExpenseClaimDetail = ExpenseClaimSummary & {
     taxMinor: number;
     grossMinor: number;
     currencyCode: string;
+    isBillable?: boolean;
+    rebillingMethod?: "actual" | "markup" | "agreed_rate" | null;
     isMileage?: boolean;
     distanceValue?: number | null;
     distanceUnit?: "km" | "mi" | null;
@@ -123,54 +135,83 @@ export function mapExpenseClaimSummary(row: unknown): ExpenseClaimSummary {
   };
 }
 
+function asRebillingStatus(value: unknown): ExpenseRebillingStatus {
+  const raw = str(value, "not_applicable");
+  if (
+    raw === "ready" ||
+    raw === "invoiced" ||
+    raw === "partially_invoiced" ||
+    raw === "cancelled"
+  ) {
+    return raw;
+  }
+  return "not_applicable";
+}
+
 export function mapExpenseClaimDetail(row: unknown): ExpenseClaimDetail {
   const r = asRecord(row);
   const summary = mapExpenseClaimSummary(r);
-  const linesRaw = Array.isArray(r.lines) ? r.lines : [];
+  const linesRaw = Array.isArray(r["lines"]) ? r["lines"] : [];
   return {
     ...summary,
-    description: (r.description as string | null | undefined) ?? null,
-    paymentSource: str(r.payment_source ?? r.paymentSource, "employee_paid") as ExpensePaymentSource,
-    reimbursementCurrency: str(r.reimbursement_currency ?? r.reimbursementCurrency, summary.claimCurrency),
-    subtotalMinor: num(r.subtotal_minor ?? r.subtotalMinor),
-    taxMinor: num(r.tax_minor ?? r.taxMinor),
-    postedJournalId: (r.posted_journal_id ?? r.postedJournalId ?? null) as string | null,
-    reimbursementJournalId: (r.reimbursement_journal_id ??
-      r.reimbursementJournalId ??
+    description: (r["description"] as string | null | undefined) ?? null,
+    paymentSource: str(r["payment_source"] ?? r["paymentSource"], "employee_paid") as ExpensePaymentSource,
+    reimbursementCurrency: str(
+      r["reimbursement_currency"] ?? r["reimbursementCurrency"],
+      summary.claimCurrency,
+    ),
+    subtotalMinor: num(r["subtotal_minor"] ?? r["subtotalMinor"]),
+    taxMinor: num(r["tax_minor"] ?? r["taxMinor"]),
+    postedJournalId: (r["posted_journal_id"] ?? r["postedJournalId"] ?? null) as string | null,
+    reimbursementJournalId: (r["reimbursement_journal_id"] ??
+      r["reimbursementJournalId"] ??
       null) as string | null,
+    customerContactId: (r["customer_contact_id"] ?? r["customerContactId"] ?? null) as
+      | string
+      | null,
+    rebillingStatus: asRebillingStatus(r["rebilling_status"] ?? r["rebillingStatus"]),
+    rebillingInvoiceId: (r["rebilling_invoice_id"] ?? r["rebillingInvoiceId"] ?? null) as
+      | string
+      | null,
     lines: linesRaw.map((line) => {
       const l = asRecord(line);
-      const unitRaw = str(l.distance_unit ?? l.distanceUnit);
+      const unitRaw = str(l["distance_unit"] ?? l["distanceUnit"]);
+      const methodRaw = str(l["rebilling_method"] ?? l["rebillingMethod"]);
       return {
-        id: str(l.id),
-        lineNo: num(l.line_no ?? l.lineNo),
-        expenseDate: str(l.expense_date ?? l.expenseDate),
-        merchantName: (l.merchant_name ?? l.merchantName ?? null) as string | null,
-        description: str(l.description),
-        accountId: str(l.account_id ?? l.accountId),
-        netMinor: num(l.net_minor ?? l.netMinor),
-        taxMinor: num(l.tax_minor ?? l.taxMinor),
-        grossMinor: num(l.gross_minor ?? l.grossMinor),
-        currencyCode: str(l.currency_code ?? l.currencyCode, summary.claimCurrency),
-        isMileage: Boolean(l.is_mileage ?? l.isMileage ?? false),
+        id: str(l["id"]),
+        lineNo: num(l["line_no"] ?? l["lineNo"]),
+        expenseDate: str(l["expense_date"] ?? l["expenseDate"]),
+        merchantName: (l["merchant_name"] ?? l["merchantName"] ?? null) as string | null,
+        description: str(l["description"]),
+        accountId: str(l["account_id"] ?? l["accountId"]),
+        netMinor: num(l["net_minor"] ?? l["netMinor"]),
+        taxMinor: num(l["tax_minor"] ?? l["taxMinor"]),
+        grossMinor: num(l["gross_minor"] ?? l["grossMinor"]),
+        currencyCode: str(l["currency_code"] ?? l["currencyCode"], summary.claimCurrency),
+        isBillable: Boolean(l["is_billable"] ?? l["isBillable"] ?? false),
+        rebillingMethod:
+          methodRaw === "actual" || methodRaw === "markup" || methodRaw === "agreed_rate"
+            ? methodRaw
+            : null,
+        isMileage: Boolean(l["is_mileage"] ?? l["isMileage"] ?? false),
         distanceValue:
-          l.distance_value == null && l.distanceValue == null
+          l["distance_value"] == null && l["distanceValue"] == null
             ? null
-            : num(l.distance_value ?? l.distanceValue),
+            : num(l["distance_value"] ?? l["distanceValue"]),
         distanceUnit: unitRaw === "mi" || unitRaw === "km" ? unitRaw : null,
-        tripOrigin: (l.trip_origin ?? l.tripOrigin ?? null) as string | null,
-        tripDestination: (l.trip_destination ?? l.tripDestination ?? null) as
+        tripOrigin: (l["trip_origin"] ?? l["tripOrigin"] ?? null) as string | null,
+        tripDestination: (l["trip_destination"] ?? l["tripDestination"] ?? null) as
           | string
           | null,
-        isPerDiem: Boolean(l.is_per_diem ?? l.isPerDiem ?? false),
+        isPerDiem: Boolean(l["is_per_diem"] ?? l["isPerDiem"] ?? false),
         travelDayCount:
-          l.travel_day_count == null && l.travelDayCount == null
+          l["travel_day_count"] == null && l["travelDayCount"] == null
             ? null
-            : num(l.travel_day_count ?? l.travelDayCount),
-        travelStartDate: (l.travel_start_date ?? l.travelStartDate ?? null) as
+            : num(l["travel_day_count"] ?? l["travelDayCount"]),
+        travelStartDate: (l["travel_start_date"] ?? l["travelStartDate"] ?? null) as
           | string
           | null,
-        travelEndDate: (l.travel_end_date ?? l.travelEndDate ?? null) as string | null,
+        travelEndDate: (l["travel_end_date"] ?? l["travelEndDate"] ?? null) as string | null,
       };
     }),
   };

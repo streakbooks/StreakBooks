@@ -21,6 +21,7 @@ describe("expense management settings mapping", () => {
         enabled: true,
         claim_number_prefix: "CLM-",
         default_claim_currency: "AUD",
+        rebilling_income_account_id: "inc-1",
         require_receipt_above_minor: 2500,
         allow_multi_currency_claims: false,
         prevent_self_approval: true,
@@ -34,6 +35,7 @@ describe("expense management settings mapping", () => {
       enabled: true,
       claimNumberPrefix: "CLM-",
       defaultClaimCurrency: "AUD",
+      rebillingIncomeAccountId: "inc-1",
       requireReceiptAboveMinor: 2500,
       allowMultiCurrencyClaims: false,
       defaultDistanceUnit: "mi",
@@ -49,6 +51,7 @@ describe("expense management settings mapping", () => {
         enabled: true,
         claimNumberPrefix: "EXP-",
         defaultClaimCurrency: "USD",
+        rebillingIncomeAccountId: "inc-9",
         requireReceiptAboveMinor: 0,
         allowMultiCurrencyClaims: true,
         preventSelfApproval: true,
@@ -58,6 +61,7 @@ describe("expense management settings mapping", () => {
       version: 2,
       claim_number_prefix: "EXP-",
       default_claim_currency: "USD",
+      rebilling_income_account_id: "inc-9",
       default_distance_unit: "km",
     });
   });

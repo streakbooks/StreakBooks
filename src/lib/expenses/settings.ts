@@ -18,6 +18,8 @@ type SettingsRow = {
   employeeAdvanceAccountId?: string | null;
   petty_cash_account_id?: string | null;
   pettyCashAccountId?: string | null;
+  rebilling_income_account_id?: string | null;
+  rebillingIncomeAccountId?: string | null;
   fx_gain_account_id?: string | null;
   fxGainAccountId?: string | null;
   fx_loss_account_id?: string | null;
@@ -55,6 +57,7 @@ export function mapExpenseManagementSettings(
       employeePayableAccountId: null,
       employeeAdvanceAccountId: null,
       pettyCashAccountId: null,
+      rebillingIncomeAccountId: null,
       fxGainAccountId: null,
       fxLossAccountId: null,
       requireReceiptAboveMinor: 0,
@@ -84,6 +87,9 @@ export function mapExpenseManagementSettings(
     pettyCashAccountId: (row.petty_cash_account_id ?? row.pettyCashAccountId ?? null) as
       | string
       | null,
+    rebillingIncomeAccountId: (row.rebilling_income_account_id ??
+      row.rebillingIncomeAccountId ??
+      null) as string | null,
     fxGainAccountId: (row.fx_gain_account_id ?? row.fxGainAccountId ?? null) as string | null,
     fxLossAccountId: (row.fx_loss_account_id ?? row.fxLossAccountId ?? null) as string | null,
     requireReceiptAboveMinor: Number(
@@ -118,6 +124,7 @@ export function toExpenseManagementSettingsPayload(
     employee_payable_account_id: input.employeePayableAccountId,
     employee_advance_account_id: input.employeeAdvanceAccountId,
     petty_cash_account_id: input.pettyCashAccountId,
+    rebilling_income_account_id: input.rebillingIncomeAccountId,
     fx_gain_account_id: input.fxGainAccountId,
     fx_loss_account_id: input.fxLossAccountId,
     require_receipt_above_minor: input.requireReceiptAboveMinor,

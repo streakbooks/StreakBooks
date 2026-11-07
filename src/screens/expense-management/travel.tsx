@@ -218,7 +218,7 @@ export function ExpenseManagementTravelPage() {
         description="Configure per diem rates and create travel claim drafts."
         actions={
           <Button asChild variant="outline" size="sm">
-            <Link to="/expense-management/my-expenses">My expenses</Link>
+            <Link to="/expense-management/$section" params={{ section: "my-expenses" }}>My expenses</Link>
           </Button>
         }
       />

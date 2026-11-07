@@ -31,6 +31,7 @@ type Draft = {
   employeePayableAccountId: string;
   employeeAdvanceAccountId: string;
   pettyCashAccountId: string;
+  rebillingIncomeAccountId: string;
   requireReceiptAboveMinor: string;
   requireSpendingRequestAboveMinor: string;
   allowMultiCurrencyClaims: boolean;
@@ -47,6 +48,7 @@ function toDraft(settings: ExpenseManagementSettings): Draft {
     employeePayableAccountId: settings.employeePayableAccountId ?? "",
     employeeAdvanceAccountId: settings.employeeAdvanceAccountId ?? "",
     pettyCashAccountId: settings.pettyCashAccountId ?? "",
+    rebillingIncomeAccountId: settings.rebillingIncomeAccountId ?? "",
     requireReceiptAboveMinor: String(settings.requireReceiptAboveMinor),
     requireSpendingRequestAboveMinor: String(settings.requireSpendingRequestAboveMinor),
     allowMultiCurrencyClaims: settings.allowMultiCurrencyClaims,
@@ -100,6 +102,15 @@ export function ExpenseManagementSettingsPage() {
     [accountsQ.data],
   );
 
+  const incomeAccounts = useMemo(
+    () =>
+      (accountsQ.data ?? []).filter(
+        (account) =>
+          account.is_active && account.is_postable && account.account_type === "income",
+      ),
+    [accountsQ.data],
+  );
+
   useEffect(() => {
     if (settingsQ.data) setDraft(toDraft(settingsQ.data));
   }, [settingsQ.data]);
@@ -132,6 +143,7 @@ export function ExpenseManagementSettingsPage() {
             employeePayableAccountId: draft.employeePayableAccountId || null,
             employeeAdvanceAccountId: draft.employeeAdvanceAccountId || null,
             pettyCashAccountId: draft.pettyCashAccountId || null,
+            rebillingIncomeAccountId: draft.rebillingIncomeAccountId || null,
             allowMultiCurrencyClaims: draft.allowMultiCurrencyClaims,
             preventSelfApproval: draft.preventSelfApproval,
             defaultDistanceUnit: draft.defaultDistanceUnit,
@@ -264,7 +276,7 @@ export function ExpenseManagementSettingsPage() {
           <AccountLookup
             companyId={company.id}
             accounts={liabilityAccounts}
-            value={draft.employeePayableAccountId || null}
+            value={draft.employeePayableAccountId || undefined}
             onChange={(next) =>
               setDraft({ ...draft, employeePayableAccountId: next ?? "" })
             }
@@ -283,7 +295,7 @@ export function ExpenseManagementSettingsPage() {
           <AccountLookup
             companyId={company.id}
             accounts={assetAccounts}
-            value={draft.employeeAdvanceAccountId || null}
+            value={draft.employeeAdvanceAccountId || undefined}
             onChange={(next) =>
               setDraft({ ...draft, employeeAdvanceAccountId: next ?? "" })
             }
@@ -303,7 +315,7 @@ export function ExpenseManagementSettingsPage() {
           <AccountLookup
             companyId={company.id}
             accounts={assetAccounts}
-            value={draft.pettyCashAccountId || null}
+            value={draft.pettyCashAccountId || undefined}
             onChange={(next) =>
               setDraft({ ...draft, pettyCashAccountId: next ?? "" })
             }
@@ -315,6 +327,26 @@ export function ExpenseManagementSettingsPage() {
           <p className="text-sm text-muted-foreground">
             Asset funded from bank and credited when company-paid petty cash claims post
             (EM-08c).
+          </p>
+        </div>
+
+        <div className="grid gap-2">
+          <Label>Rebilling income account</Label>
+          <AccountLookup
+            companyId={company.id}
+            accounts={incomeAccounts}
+            value={draft.rebillingIncomeAccountId || undefined}
+            onChange={(next) =>
+              setDraft({ ...draft, rebillingIncomeAccountId: next ?? "" })
+            }
+            allowClear
+            disabled={!canEdit || save.isPending}
+            ariaLabel="Rebilling income account"
+            purpose="posting"
+          />
+          <p className="text-sm text-muted-foreground">
+            Income account used when creating a customer invoice from a billable claim
+            (EM-09b).
           </p>
         </div>
 

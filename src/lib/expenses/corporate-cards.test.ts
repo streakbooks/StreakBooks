@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   buildCorporateCardAccrualCredit,
+  canDisputeCardTransaction,
   canMatchCardTransaction,
+  canResolveCardDispute,
   mapExpenseCorporateCard,
   mapExpenseCorporateCardTransaction,
 } from "./corporate-cards";
@@ -28,6 +30,23 @@ describe("canMatchCardTransaction", () => {
     ).toBe(false);
     expect(
       canMatchCardTransaction({ ...base, claimPaymentSource: "employee_paid" }).ok,
+    ).toBe(false);
+  });
+});
+
+describe("card disputes", () => {
+  it("allows dispute from unmatched or matched", () => {
+    expect(canDisputeCardTransaction({ txStatus: "unmatched" })).toEqual({ ok: true });
+    expect(canDisputeCardTransaction({ txStatus: "matched" })).toEqual({ ok: true });
+    expect(canDisputeCardTransaction({ txStatus: "excluded" }).ok).toBe(false);
+  });
+
+  it("resolves disputed lines to unmatched or excluded", () => {
+    expect(
+      canResolveCardDispute({ txStatus: "disputed", resolution: "unmatched" }),
+    ).toEqual({ ok: true });
+    expect(
+      canResolveCardDispute({ txStatus: "unmatched", resolution: "excluded" }).ok,
     ).toBe(false);
   });
 });

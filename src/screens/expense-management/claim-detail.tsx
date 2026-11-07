@@ -1,14 +1,17 @@
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { DocumentRecordPanel } from "@/components/documents/DocumentRecordPanel";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { ContactLookup } from "@/components/lookup";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -21,12 +24,28 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { listContacts } from "@/lib/contacts/contacts.functions";
 import {
+  EXPENSE_DISPUTES_REBILLING_MIGRATION,
   EXPENSE_POSTING_MIGRATION,
   getExpenseClaim,
+  getExpenseManagementSettings,
+  markExpenseClaimRebilled,
   postExpenseClaim,
+  prepareExpenseClaimForRebilling,
 } from "@/lib/expenses/expenses.functions";
+import {
+  buildRebillSalesLines,
+  canPrepareClaimForRebilling,
+} from "@/lib/expenses/rebilling";
+import { saveInvoiceDraft } from "@/lib/sales/sales.functions";
 import type { Permission } from "@/lib/permissions";
+
+function addDaysIso(isoDate: string, days: number): string {
+  const d = new Date(`${isoDate}T00:00:00.000Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
 
 export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string }) {
   const { company, isPending } = useActiveCompany();
@@ -34,14 +53,53 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
   const queryClient = useQueryClient();
   const canPost =
     can("expenses.post" as Permission) || can("expenses.admin" as Permission);
+  const canRebill =
+    can("expenses.submit" as Permission) || can("expenses.admin" as Permission);
+  const canDraftInvoice =
+    can("sales.draft" as Permission) || can("expenses.admin" as Permission);
   const fetchClaim = useServerFn(getExpenseClaim);
   const postClaim = useServerFn(postExpenseClaim);
+  const fetchSettings = useServerFn(getExpenseManagementSettings);
+  const fetchContacts = useServerFn(listContacts);
+  const prepareRebill = useServerFn(prepareExpenseClaimForRebilling);
+  const markRebilled = useServerFn(markExpenseClaimRebilled);
+  const createInvoice = useServerFn(saveInvoiceDraft);
+  const [customerContactId, setCustomerContactId] = useState("");
 
   const claimQ = useQuery({
     queryKey: ["expense-claim", company?.id, claimId],
     queryFn: () => fetchClaim({ data: { companyId: company!.id, claimId } }),
     enabled: Boolean(company?.id && claimId),
   });
+
+  const settingsQ = useQuery({
+    queryKey: ["expense-management-settings", company?.id],
+    queryFn: () => fetchSettings({ data: { companyId: company!.id } }),
+    enabled: Boolean(company?.id) && canRebill,
+  });
+
+  const contactsQ = useQuery({
+    queryKey: ["contacts", company?.id, "expense-rebill"],
+    queryFn: () =>
+      fetchContacts({
+        data: { companyId: company!.id, kind: "customers", limit: 200 },
+      }),
+    enabled: Boolean(company?.id) && canRebill,
+  });
+
+  const customers = useMemo(() => {
+    const rows = (contactsQ.data ?? []) as Array<{
+      id: string;
+      name: string | null;
+      is_active?: boolean | null;
+    }>;
+    return rows.map((c) => ({
+      id: String(c.id ?? ""),
+      name: String(c.name ?? "Customer"),
+      kind: "customer" as const,
+      is_active: c.is_active !== false,
+    }));
+  }, [contactsQ.data]);
 
   const post = useMutation({
     mutationFn: async () => {
@@ -63,6 +121,77 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
 
+  const rebill = useMutation({
+    mutationFn: async () => {
+      if (!company || !claimQ.data) throw new Error("Claim not loaded.");
+      const contactId = customerContactId || claimQ.data.customerContactId || "";
+      if (!contactId) throw new Error("Select a customer to rebill.");
+      const incomeAccountId = settingsQ.data?.rebillingIncomeAccountId;
+      if (!incomeAccountId) {
+        throw new Error("Set the rebilling income account in Expense settings first.");
+      }
+      const gate = canPrepareClaimForRebilling({
+        rebillingStatus: claimQ.data.rebillingStatus,
+        rebillingInvoiceId: claimQ.data.rebillingInvoiceId,
+        hasLines: claimQ.data.lines.length > 0,
+      });
+      if (!gate.ok) throw new Error(gate.error);
+
+      let claim = claimQ.data;
+      if (claim.rebillingStatus !== "ready" || claim.customerContactId !== contactId) {
+        claim = await prepareRebill({
+          data: {
+            companyId: company.id,
+            claimId: claim.id,
+            version: claim.version,
+            customerContactId: contactId,
+          },
+        });
+      }
+
+      const built = buildRebillSalesLines({
+        incomeAccountId,
+        lines: claim.lines.map((line) => ({
+          description: `${claim.claimNumber}: ${line.description}`,
+          netMinor: line.netMinor,
+          ...(line.isBillable != null ? { isBillable: line.isBillable } : {}),
+          ...(line.rebillingMethod ? { rebillingMethod: line.rebillingMethod } : {}),
+        })),
+      });
+      if (!built.ok) throw new Error(built.error);
+
+      const invoice = await createInvoice({
+        data: {
+          companyId: company.id,
+          contactId,
+          invoiceDate: claim.claimDate,
+          dueDate: addDaysIso(claim.claimDate, 30),
+          currencyCode: claim.claimCurrency,
+          memo: `Rebill of expense claim ${claim.claimNumber}`,
+          lines: built.lines,
+        },
+      });
+
+      return markRebilled({
+        data: {
+          companyId: company.id,
+          claimId: claim.id,
+          version: claim.version,
+          invoiceId: invoice.id,
+        },
+      });
+    },
+    onSuccess: (claim) => {
+      void queryClient.invalidateQueries({ queryKey: ["expense-claim", company?.id, claimId] });
+      toast.success(
+        claim.rebillingInvoiceId
+          ? `Rebilling invoice ${claim.rebillingInvoiceId} linked.`
+          : "Claim marked as rebilled.",
+      );
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+
   if (isPending) return <LoadingState />;
   if (!company) {
     return <CompanyEmptyState title="No organisation" description="Select a company first." />;
@@ -77,6 +206,11 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
           <Alert>
             <AlertTitle>Migration required</AlertTitle>
             <AlertDescription>{EXPENSE_POSTING_MIGRATION}</AlertDescription>
+          </Alert>
+        ) : message.includes("20261107144000") ? (
+          <Alert>
+            <AlertTitle>Migration required</AlertTitle>
+            <AlertDescription>{EXPENSE_DISPUTES_REBILLING_MIGRATION}</AlertDescription>
           </Alert>
         ) : (
           <ErrorState
@@ -101,6 +235,13 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
     (claim.postingStatus === "ready" || claim.postingStatus === "failed") &&
     !claim.postedJournalId;
 
+  const alreadyRebilled = claim.rebillingStatus === "invoiced" && Boolean(claim.rebillingInvoiceId);
+  const canRebillNow =
+    canRebill &&
+    canDraftInvoice &&
+    !alreadyRebilled &&
+    claim.lines.length > 0;
+
   return (
     <>
       <PageHeader
@@ -114,7 +255,12 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
               </Button>
             ) : null}
             <Button asChild variant="outline" size="sm">
-              <Link to="/expense-management/my-expenses">Back to My Expenses</Link>
+              <Link
+                to="/expense-management/$section"
+                params={{ section: "my-expenses" }}
+              >
+                Back to My Expenses
+              </Link>
             </Button>
           </div>
         }
@@ -125,6 +271,7 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
         <Badge variant="secondary">{claim.approvalStatus}</Badge>
         <Badge variant="outline">Posting: {claim.postingStatus}</Badge>
         <Badge variant="outline">Reimbursement: {claim.reimbursementStatus}</Badge>
+        <Badge variant="outline">Rebilling: {claim.rebillingStatus}</Badge>
         <Badge variant="outline">
           Total {fromMinorUnits(claim.totalMinor, claim.claimCurrency)}
         </Badge>
@@ -152,6 +299,7 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
               <TableHead>Date</TableHead>
               <TableHead>Description</TableHead>
               <TableHead>Merchant</TableHead>
+              <TableHead>Billable</TableHead>
               <TableHead className="text-right">Gross</TableHead>
             </TableRow>
           </TableHeader>
@@ -162,6 +310,7 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
                 <TableCell>{line.expenseDate}</TableCell>
                 <TableCell>{line.description}</TableCell>
                 <TableCell>{line.merchantName ?? "—"}</TableCell>
+                <TableCell>{line.isBillable ? "Yes" : "No"}</TableCell>
                 <TableCell className="text-right tabular-nums">
                   {fromMinorUnits(line.grossMinor, line.currencyCode)}
                 </TableCell>
@@ -170,6 +319,62 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
           </TableBody>
         </Table>
       </div>
+
+      {canRebill ? (
+        <section className="mb-8 space-y-4 rounded-lg border p-4">
+          <h2 className="text-base font-semibold">Customer rebilling</h2>
+          {alreadyRebilled ? (
+            <Alert>
+              <AlertTitle>Rebilled</AlertTitle>
+              <AlertDescription>
+                Linked sales invoice {claim.rebillingInvoiceId}.{" "}
+                <Link
+                  className="underline"
+                  to="/sales/invoices/$invoiceId"
+                  params={{ invoiceId: claim.rebillingInvoiceId! }}
+                >
+                  Open invoice
+                </Link>
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <>
+              <p className="text-sm text-muted-foreground">
+                Prepare billable lines and create a draft sales invoice against the configured
+                rebilling income account.
+              </p>
+              <div className="grid max-w-md gap-2">
+                <Label>Customer</Label>
+                <ContactLookup
+                  ariaLabel="Rebilling customer"
+                  contacts={customers}
+                  value={customerContactId || claim.customerContactId || ""}
+                  onChange={(next) => setCustomerContactId(next ?? "")}
+                  companyId={company.id}
+                  placeholder="Select customer"
+                  allowClear
+                />
+              </div>
+              {!settingsQ.data?.rebillingIncomeAccountId ? (
+                <Alert>
+                  <AlertTitle>Income account required</AlertTitle>
+                  <AlertDescription>
+                    Set the rebilling income account under Expense settings before creating an
+                    invoice.
+                  </AlertDescription>
+                </Alert>
+              ) : null}
+              <Button
+                size="sm"
+                disabled={rebill.isPending || !canRebillNow}
+                onClick={() => rebill.mutate()}
+              >
+                {rebill.isPending ? "Creating invoice…" : "Create rebilling invoice"}
+              </Button>
+            </>
+          )}
+        </section>
+      ) : null}
 
       <DocumentRecordPanel entityType="expense_claim" entityId={claim.id} audience="internal" />
     </>

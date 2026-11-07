@@ -141,6 +141,28 @@ export function toExpenseCorporateCardTxPayload(input: {
   };
 }
 
+export function canDisputeCardTransaction(input: {
+  txStatus: string;
+}): { ok: true } | { ok: false; error: string } {
+  if (!["unmatched", "matched"].includes(input.txStatus)) {
+    return { ok: false, error: "Only unmatched or matched transactions can be disputed." };
+  }
+  return { ok: true };
+}
+
+export function canResolveCardDispute(input: {
+  txStatus: string;
+  resolution: "unmatched" | "excluded";
+}): { ok: true } | { ok: false; error: string } {
+  if (input.txStatus !== "disputed") {
+    return { ok: false, error: "Only disputed transactions can be resolved this way." };
+  }
+  if (!["unmatched", "excluded"].includes(input.resolution)) {
+    return { ok: false, error: "Resolution must be unmatched or excluded." };
+  }
+  return { ok: true };
+}
+
 export function canMatchCardTransaction(input: {
   txStatus: string;
   txAmountMinor: number;

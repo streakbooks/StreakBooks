@@ -277,7 +277,7 @@ export function ExpenseManagementReceiptsPage() {
         description="Upload receipts, then match them to a claim. Email OCR is not configured."
         actions={
           <Button asChild variant="outline" size="sm">
-            <Link to="/expense-management/my-expenses">Open My Expenses</Link>
+            <Link to="/expense-management/$section" params={{ section: "my-expenses" }}>Open My Expenses</Link>
           </Button>
         }
       />

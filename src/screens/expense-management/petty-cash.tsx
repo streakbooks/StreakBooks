@@ -194,7 +194,7 @@ export function ExpenseManagementPettyCashPage() {
         description="Maintain office floats, fund from bank, and settle spends as company-paid claims."
         actions={
           <Button asChild variant="outline" size="sm">
-            <Link to="/expense-management/settings">Settings</Link>
+            <Link to="/expense-management/$section" params={{ section: "settings" }}>Settings</Link>
           </Button>
         }
       />

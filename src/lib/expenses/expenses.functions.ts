@@ -96,6 +96,9 @@ export const EXPENSE_TRAVEL_MIGRATION =
 export const EXPENSE_CORPORATE_CARD_MIGRATION =
   "Expense corporate cards are not available yet: apply database update 20261107143000.";
 
+export const EXPENSE_DISPUTES_REBILLING_MIGRATION =
+  "Expense card disputes and rebilling are not available yet: apply database update 20261107144000.";
+
 export const EXPENSE_TEMPLATE_MIGRATION =
   "Expense claim templates are not available yet: apply database update 20261107130000.";
 
@@ -221,6 +224,8 @@ export const getExpenseManagementOverview = createServerFn({ method: "GET" })
     await assertCompanyMember(context.supabase, data.companyId);
     const sb = context.supabase as unknown as CountClient;
 
+    // Probe EM foundation once. When migrations are not applied, skip the three extra
+    // expense_claims counts that would otherwise each hit a missing-relation failure.
     const [
       legacySubmitted,
       legacyReimbursed,
@@ -228,9 +233,6 @@ export const getExpenseManagementOverview = createServerFn({ method: "GET" })
       directDraft,
       directPosted,
       emTotal,
-      emPending,
-      emApproved,
-      emAwaiting,
     ] = await Promise.all([
       countRows(sb, "employee_expense_claims", data.companyId, [
         { column: "status", value: "submitted" },
@@ -246,21 +248,32 @@ export const getExpenseManagementOverview = createServerFn({ method: "GET" })
         { column: "status", values: ["authorised", "paid", "partly_paid"] },
       ]),
       countRows(sb, "expense_claims", data.companyId, []),
-      countRows(sb, "expense_claims", data.companyId, [
-        { column: "approval_status", values: ["submitted", "in_review"] },
-      ]),
-      countRows(sb, "expense_claims", data.companyId, [
-        { column: "approval_status", value: "approved" },
-      ]),
-      countRows(sb, "expense_claims", data.companyId, [
-        {
-          column: "reimbursement_status",
-          values: ["eligible", "awaiting_payment", "payment_initiated"],
-        },
-      ]),
     ]);
 
     const foundationAvailable = !emTotal.missing;
+    let emPendingCount = 0;
+    let emApprovedCount = 0;
+    let emAwaitingCount = 0;
+    if (foundationAvailable) {
+      const [emPending, emApproved, emAwaiting] = await Promise.all([
+        countRows(sb, "expense_claims", data.companyId, [
+          { column: "approval_status", values: ["submitted", "in_review"] },
+        ]),
+        countRows(sb, "expense_claims", data.companyId, [
+          { column: "approval_status", value: "approved" },
+        ]),
+        countRows(sb, "expense_claims", data.companyId, [
+          {
+            column: "reimbursement_status",
+            values: ["eligible", "awaiting_payment", "payment_initiated"],
+          },
+        ]),
+      ]);
+      emPendingCount = emPending.count;
+      emApprovedCount = emApproved.count;
+      emAwaitingCount = emAwaiting.count;
+    }
+
     const kpis = emptyExpenseOverviewKpis(foundationAvailable);
     kpis.legacySubmittedClaims = legacySubmitted.count;
     kpis.legacyReimbursedClaims = legacyReimbursed.count;
@@ -268,9 +281,9 @@ export const getExpenseManagementOverview = createServerFn({ method: "GET" })
     kpis.directExpensesDraft = directDraft.count;
     kpis.directExpensesPosted = directPosted.count;
     kpis.emClaimsTotal = emTotal.count;
-    kpis.emPendingApproval = emPending.count;
-    kpis.emApproved = emApproved.count;
-    kpis.emAwaitingReimbursement = emAwaiting.count;
+    kpis.emPendingApproval = emPendingCount;
+    kpis.emApproved = emApprovedCount;
+    kpis.emAwaitingReimbursement = emAwaitingCount;
 
     return {
       companyId: data.companyId,
@@ -1486,6 +1499,122 @@ export const linkExpenseClaimCorporateCard = createServerFn({ method: "POST" })
         _card_id: data.cardId,
       },
       EXPENSE_CORPORATE_CARD_MIGRATION,
+    );
+    return mapExpenseClaimDetail(raw);
+  });
+
+export const disputeExpenseCorporateCardTransaction = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { companyId: string; transactionId: string; reason?: string }) => ({
+      companyId: companyIdOf(input),
+      transactionId: input.transactionId,
+      reason: input.reason,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<ExpenseCorporateCardTransaction> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "expenses.manage_cards");
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "dispute_expense_corporate_card_transaction",
+      {
+        _company_id: data.companyId,
+        _transaction_id: data.transactionId,
+        _reason: data.reason ?? null,
+      },
+      EXPENSE_DISPUTES_REBILLING_MIGRATION,
+    );
+    return mapExpenseCorporateCardTransaction(raw);
+  });
+
+export const resolveExpenseCorporateCardTransaction = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      transactionId: string;
+      resolution?: "unmatched" | "excluded";
+    }) => ({
+      companyId: companyIdOf(input),
+      transactionId: input.transactionId,
+      resolution: input.resolution ?? "unmatched",
+    }),
+  )
+  .handler(async ({ data, context }): Promise<ExpenseCorporateCardTransaction> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "expenses.manage_cards");
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "resolve_expense_corporate_card_transaction",
+      {
+        _company_id: data.companyId,
+        _transaction_id: data.transactionId,
+        _resolution: data.resolution,
+      },
+      EXPENSE_DISPUTES_REBILLING_MIGRATION,
+    );
+    return mapExpenseCorporateCardTransaction(raw);
+  });
+
+export const prepareExpenseClaimForRebilling = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      claimId: string;
+      version: number;
+      customerContactId: string;
+    }) => ({
+      companyId: companyIdOf(input),
+      claimId: input.claimId,
+      version: input.version,
+      customerContactId: input.customerContactId,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<ExpenseClaimDetail> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "expenses.submit");
+    if (!data.customerContactId) throw new Error("Select a customer to rebill.");
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "prepare_expense_claim_for_rebilling",
+      {
+        _company_id: data.companyId,
+        _claim_id: data.claimId,
+        _expected_version: data.version,
+        _customer_contact_id: data.customerContactId,
+      },
+      EXPENSE_DISPUTES_REBILLING_MIGRATION,
+    );
+    return mapExpenseClaimDetail(raw);
+  });
+
+export const markExpenseClaimRebilled = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      claimId: string;
+      version: number;
+      invoiceId: string;
+    }) => ({
+      companyId: companyIdOf(input),
+      claimId: input.claimId,
+      version: input.version,
+      invoiceId: input.invoiceId,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<ExpenseClaimDetail> => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    if (!data.invoiceId) throw new Error("Invoice id is required.");
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "mark_expense_claim_rebilled",
+      {
+        _company_id: data.companyId,
+        _claim_id: data.claimId,
+        _expected_version: data.version,
+        _invoice_id: data.invoiceId,
+      },
+      EXPENSE_DISPUTES_REBILLING_MIGRATION,
     );
     return mapExpenseClaimDetail(raw);
   });

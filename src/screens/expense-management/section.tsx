@@ -20,6 +20,7 @@ import { ExpenseManagementReceiptsPage } from "@/screens/expense-management/rece
 import { ExpenseManagementReimbursementsPage } from "@/screens/expense-management/reimbursements";
 import { ExpenseManagementSettingsPage } from "@/screens/expense-management/settings";
 import { ExpenseManagementSpendingRequestsPage } from "@/screens/expense-management/spending-requests";
+import { ExpenseManagementTravelPage } from "@/screens/expense-management/travel";
 
 const LEGACY_LINKS: Partial<
   Record<ExpenseManagementSectionKey, { label: string; to: string }>
@@ -65,6 +66,9 @@ export function ExpenseManagementSectionPage({
   }
   if (sectionKey === "petty-cash") {
     return <ExpenseManagementPettyCashPage />;
+  }
+  if (sectionKey === "travel") {
+    return <ExpenseManagementTravelPage />;
   }
 
   if (isPending) return <LoadingState />;

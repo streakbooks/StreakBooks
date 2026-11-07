@@ -23,7 +23,6 @@
 
 - [x] Company mileage rates with effective dates, unit, currency and expense account.
 - [x] Mileage trip drafts create employee-paid claim lines with server-side amount calc.
-- [ ] Travel / per diem / petty cash (later EM-08 slices).
 - [ ] Applied migration + authenticated browser verification.
 
 ## Cash advances (EM-08b — local code)
@@ -37,7 +36,13 @@
 
 - [x] Float create/fund/replenish (DR petty cash / CR bank).
 - [x] Company-paid claims link a float and post as DR expense / CR petty cash.
-- [ ] Travel / per diem (later EM-08).
+- [ ] Applied migration + authenticated browser verification.
+
+## Travel / per diem (EM-08d — local code)
+
+- [x] Company per diem rates with location, daily amount, account and effective dates.
+- [x] Travel trip drafts create employee-paid per diem claim lines (inclusive days × rate).
+- [ ] Booking integrations / multi-leg itineraries.
 - [ ] Applied migration + authenticated browser verification.
 
 ## Explicitly out of scope for this navigation amendment

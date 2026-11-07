@@ -48,6 +48,11 @@ import {
   type ExpensePettyCashFloat,
   type ExpensePettyCashFloatDraftInput,
 } from "@/lib/expenses/petty-cash";
+import {
+  mapExpensePerDiemRate,
+  toExpensePerDiemRatePayload,
+  type ExpensePerDiemRate,
+} from "@/lib/expenses/travel";
 
 export const EXPENSE_MANAGEMENT_MIGRATION =
   "Expense Management is not available yet: the database update 20261107120000 has not been applied.";
@@ -75,6 +80,9 @@ export const EXPENSE_CASH_ADVANCE_MIGRATION =
 
 export const EXPENSE_PETTY_CASH_MIGRATION =
   "Expense petty cash is not available yet: apply database update 20261107141000.";
+
+export const EXPENSE_TRAVEL_MIGRATION =
+  "Expense travel / per diem is not available yet: apply database update 20261107142000.";
 
 export const EXPENSE_TEMPLATE_MIGRATION =
   "Expense claim templates are not available yet: apply database update 20261107130000.";
@@ -1250,4 +1258,61 @@ export const linkExpenseClaimPettyCashFloat = createServerFn({ method: "POST" })
       EXPENSE_PETTY_CASH_MIGRATION,
     );
     return mapExpenseClaimDetail(raw);
+  });
+
+export const listExpensePerDiemRates = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; activeOnly?: boolean }) => ({
+    companyId: companyIdOf(input),
+    activeOnly: input.activeOnly !== false,
+  }))
+  .handler(async ({ data, context }): Promise<ExpensePerDiemRate[]> => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    const raw = await callRpc<{ rates?: unknown[] }>(
+      context.supabase,
+      "list_expense_per_diem_rates",
+      { _company_id: data.companyId, _active_only: data.activeOnly },
+      EXPENSE_TRAVEL_MIGRATION,
+    );
+    return (raw.rates ?? []).map(mapExpensePerDiemRate);
+  });
+
+export const saveExpensePerDiemRate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      draft: {
+        id?: string;
+        name: string;
+        locationLabel?: string | null;
+        rateMinorPerDay: number;
+        currencyCode: string;
+        accountId: string;
+        effectiveFrom: string;
+        effectiveTo?: string | null;
+        isActive?: boolean;
+      };
+    }) => ({
+      companyId: companyIdOf(input),
+      draft: input.draft,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<ExpensePerDiemRate> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "expenses.admin");
+    if (!data.draft.name.trim()) throw new Error("Per diem rate name is required.");
+    if (!data.draft.accountId) throw new Error("Choose an expense account for the rate.");
+    if (data.draft.rateMinorPerDay <= 0) {
+      throw new Error("Rate per day must be greater than zero.");
+    }
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "save_expense_per_diem_rate",
+      {
+        _company_id: data.companyId,
+        _payload: toExpensePerDiemRatePayload(data.draft),
+      },
+      EXPENSE_TRAVEL_MIGRATION,
+    );
+    return mapExpensePerDiemRate(raw);
   });

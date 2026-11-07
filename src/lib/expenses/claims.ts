@@ -24,6 +24,11 @@ export type ExpenseClaimLineInput = {
   mileageRateId?: string | null;
   tripOrigin?: string;
   tripDestination?: string;
+  isPerDiem?: boolean;
+  travelDayCount?: number;
+  perDiemRateId?: string | null;
+  travelStartDate?: string;
+  travelEndDate?: string;
 };
 
 export type ExpenseClaimDraftInput = {
@@ -79,6 +84,10 @@ export type ExpenseClaimDetail = ExpenseClaimSummary & {
     distanceUnit?: "km" | "mi" | null;
     tripOrigin?: string | null;
     tripDestination?: string | null;
+    isPerDiem?: boolean;
+    travelDayCount?: number | null;
+    travelStartDate?: string | null;
+    travelEndDate?: string | null;
   }>;
 };
 
@@ -153,6 +162,15 @@ export function mapExpenseClaimDetail(row: unknown): ExpenseClaimDetail {
         tripDestination: (l.trip_destination ?? l.tripDestination ?? null) as
           | string
           | null,
+        isPerDiem: Boolean(l.is_per_diem ?? l.isPerDiem ?? false),
+        travelDayCount:
+          l.travel_day_count == null && l.travelDayCount == null
+            ? null
+            : num(l.travel_day_count ?? l.travelDayCount),
+        travelStartDate: (l.travel_start_date ?? l.travelStartDate ?? null) as
+          | string
+          | null,
+        travelEndDate: (l.travel_end_date ?? l.travelEndDate ?? null) as string | null,
       };
     }),
   };
@@ -192,6 +210,11 @@ export function toExpenseClaimPayload(draft: ExpenseClaimDraftInput): Record<str
       mileage_rate_id: line.mileageRateId ?? null,
       trip_origin: line.tripOrigin ?? null,
       trip_destination: line.tripDestination ?? null,
+      is_per_diem: line.isPerDiem ?? false,
+      travel_day_count: line.travelDayCount ?? null,
+      per_diem_rate_id: line.perDiemRateId ?? null,
+      travel_start_date: line.travelStartDate ?? null,
+      travel_end_date: line.travelEndDate ?? null,
     })),
   };
 }

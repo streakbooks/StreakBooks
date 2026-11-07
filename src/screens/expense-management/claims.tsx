@@ -37,9 +37,11 @@ import {
   duplicateExpenseClaim,
   EXPENSE_CLAIM_MIGRATION,
   linkExpenseClaimCashAdvance,
+  linkExpenseClaimPettyCashFloat,
   listExpenseCashAdvances,
   listExpenseClaimTemplates,
   listExpenseClaims,
+  listExpensePettyCashFloats,
   saveExpenseClaim,
   saveExpenseClaimTemplate,
   submitExpenseClaim,
@@ -83,6 +85,7 @@ export function ExpenseManagementClaimsPage({
   const [description, setDescription] = useState("");
   const [paymentSource, setPaymentSource] = useState<ExpensePaymentSource>("employee_paid");
   const [cashAdvanceId, setCashAdvanceId] = useState("");
+  const [pettyCashFloatId, setPettyCashFloatId] = useState("");
   const [lines, setLines] = useState<ExpenseDraftLineForm[]>([emptyDraftLine(today)]);
   const [splitLineKey, setSplitLineKey] = useState<string | null>(null);
   const [splitAccountA, setSplitAccountA] = useState("");
@@ -95,8 +98,10 @@ export function ExpenseManagementClaimsPage({
   const fetchAccounts = useServerFn(listAccounts);
   const fetchTemplates = useServerFn(listExpenseClaimTemplates);
   const fetchAdvances = useServerFn(listExpenseCashAdvances);
+  const fetchPettyFloats = useServerFn(listExpensePettyCashFloats);
   const saveClaim = useServerFn(saveExpenseClaim);
   const linkAdvance = useServerFn(linkExpenseClaimCashAdvance);
+  const linkPettyFloat = useServerFn(linkExpenseClaimPettyCashFloat);
   const submitClaim = useServerFn(submitExpenseClaim);
   const withdrawClaim = useServerFn(withdrawExpenseClaim);
   const deleteClaim = useServerFn(deleteExpenseClaimDraft);
@@ -152,6 +157,16 @@ export function ExpenseManagementClaimsPage({
       paymentSource === "cash_advance",
   });
 
+  const pettyFloatsQ = useQuery({
+    queryKey: ["expense-petty-cash-floats", company?.id, "claim-link"],
+    queryFn: () => fetchPettyFloats({ data: { companyId: company!.id } }),
+    enabled:
+      Boolean(company?.id) &&
+      canSubmit &&
+      mode === "my-expenses" &&
+      paymentSource === "company_paid",
+  });
+
   const openAdvances = useMemo(
     () =>
       (advancesQ.data ?? []).filter(
@@ -161,6 +176,17 @@ export function ExpenseManagementClaimsPage({
           adv.currencyCode === currency,
       ),
     [advancesQ.data, currency],
+  );
+
+  const openPettyFloats = useMemo(
+    () =>
+      (pettyFloatsQ.data ?? []).filter(
+        (float) =>
+          float.status === "active" &&
+          float.balanceMinor > 0 &&
+          float.currencyCode === currency,
+      ),
+    [pettyFloatsQ.data, currency],
   );
 
   const expenseAccounts = useMemo(
@@ -193,6 +219,9 @@ export function ExpenseManagementClaimsPage({
       if (paymentSource === "cash_advance" && !cashAdvanceId) {
         throw new Error("Select an issued cash advance to settle.");
       }
+      if (paymentSource === "company_paid" && !pettyCashFloatId) {
+        throw new Error("Select a petty cash float with enough balance.");
+      }
       const draft = {
         title: title.trim() || "Expense claim",
         description: description.trim() || undefined,
@@ -202,8 +231,8 @@ export function ExpenseManagementClaimsPage({
         lines: claimLines,
       };
       if (isBrowserOffline()) {
-        if (paymentSource === "cash_advance") {
-          throw new Error("Cash-advance claims cannot be saved offline yet.");
+        if (paymentSource === "cash_advance" || paymentSource === "company_paid") {
+          throw new Error("Cash-advance and petty-cash claims cannot be saved offline yet.");
         }
         enqueueOfflineExpenseClaimDraft(company.id, draft);
         return { offline: true as const };
@@ -224,6 +253,16 @@ export function ExpenseManagementClaimsPage({
           },
         });
       }
+      if (paymentSource === "company_paid" && pettyCashFloatId) {
+        return linkPettyFloat({
+          data: {
+            companyId: company.id,
+            claimId: saved.id,
+            version: saved.version,
+            floatId: pettyCashFloatId,
+          },
+        });
+      }
       return saved;
     },
     onSuccess: (result) => {
@@ -231,6 +270,7 @@ export function ExpenseManagementClaimsPage({
       setDescription("");
       setPaymentSource("employee_paid");
       setCashAdvanceId("");
+      setPettyCashFloatId("");
       setLines([emptyDraftLine(today)]);
       setTemplateName("");
       if (company?.id) setOfflineDrafts(listOfflineExpenseClaimDrafts(company.id));
@@ -531,10 +571,12 @@ export function ExpenseManagementClaimsPage({
                   const next = event.target.value as ExpensePaymentSource;
                   setPaymentSource(next);
                   if (next !== "cash_advance") setCashAdvanceId("");
+                  if (next !== "company_paid") setPettyCashFloatId("");
                 }}
               >
                 <option value="employee_paid">Employee paid (reimburse)</option>
                 <option value="cash_advance">Cash advance (settle float)</option>
+                <option value="company_paid">Petty cash (company paid)</option>
               </select>
             </div>
             {paymentSource === "cash_advance" ? (
@@ -551,6 +593,25 @@ export function ExpenseManagementClaimsPage({
                     <option key={adv.id} value={adv.id}>
                       {adv.advanceNumber} — remaining{" "}
                       {fromMinorUnits(adv.remainingMinor, adv.currencyCode)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
+            {paymentSource === "company_paid" ? (
+              <div className="grid gap-2">
+                <Label htmlFor="em-claim-petty">Petty cash float</Label>
+                <select
+                  id="em-claim-petty"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={pettyCashFloatId}
+                  onChange={(event) => setPettyCashFloatId(event.target.value)}
+                >
+                  <option value="">Select float with balance</option>
+                  {openPettyFloats.map((float) => (
+                    <option key={float.id} value={float.id}>
+                      {float.floatNumber} — {float.name} (
+                      {fromMinorUnits(float.balanceMinor, float.currencyCode)})
                     </option>
                   ))}
                 </select>

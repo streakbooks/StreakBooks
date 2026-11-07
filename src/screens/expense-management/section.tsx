@@ -15,6 +15,7 @@ import { ExpenseManagementApprovalsPage } from "@/screens/expense-management/app
 import { ExpenseManagementCashAdvancesPage } from "@/screens/expense-management/cash-advances";
 import { ExpenseManagementClaimsPage } from "@/screens/expense-management/claims";
 import { ExpenseManagementMileagePage } from "@/screens/expense-management/mileage";
+import { ExpenseManagementPettyCashPage } from "@/screens/expense-management/petty-cash";
 import { ExpenseManagementReceiptsPage } from "@/screens/expense-management/receipts";
 import { ExpenseManagementReimbursementsPage } from "@/screens/expense-management/reimbursements";
 import { ExpenseManagementSettingsPage } from "@/screens/expense-management/settings";
@@ -61,6 +62,9 @@ export function ExpenseManagementSectionPage({
   }
   if (sectionKey === "cash-advances") {
     return <ExpenseManagementCashAdvancesPage />;
+  }
+  if (sectionKey === "petty-cash") {
+    return <ExpenseManagementPettyCashPage />;
   }
 
   if (isPending) return <LoadingState />;

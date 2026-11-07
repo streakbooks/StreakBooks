@@ -33,6 +33,13 @@
 - [ ] Unused advance reclaim to bank.
 - [ ] Applied migration + authenticated browser verification.
 
+## Petty cash (EM-08c — local code)
+
+- [x] Float create/fund/replenish (DR petty cash / CR bank).
+- [x] Company-paid claims link a float and post as DR expense / CR petty cash.
+- [ ] Travel / per diem (later EM-08).
+- [ ] Applied migration + authenticated browser verification.
+
 ## Explicitly out of scope for this navigation amendment
 
 Browser E2E, applied migrations, GitHub CI/PR and production verification remain open and must not be marked complete from local code alone.

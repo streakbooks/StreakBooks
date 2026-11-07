@@ -42,6 +42,12 @@ import {
   type ExpenseCashAdvance,
   type ExpenseCashAdvanceDraftInput,
 } from "@/lib/expenses/cash-advances";
+import {
+  mapExpensePettyCashFloat,
+  toExpensePettyCashFloatPayload,
+  type ExpensePettyCashFloat,
+  type ExpensePettyCashFloatDraftInput,
+} from "@/lib/expenses/petty-cash";
 
 export const EXPENSE_MANAGEMENT_MIGRATION =
   "Expense Management is not available yet: the database update 20261107120000 has not been applied.";
@@ -66,6 +72,9 @@ export const EXPENSE_MILEAGE_MIGRATION =
 
 export const EXPENSE_CASH_ADVANCE_MIGRATION =
   "Expense cash advances are not available yet: apply database update 20261107140000.";
+
+export const EXPENSE_PETTY_CASH_MIGRATION =
+  "Expense petty cash is not available yet: apply database update 20261107141000.";
 
 export const EXPENSE_TEMPLATE_MIGRATION =
   "Expense claim templates are not available yet: apply database update 20261107130000.";
@@ -1103,6 +1112,142 @@ export const linkExpenseClaimCashAdvance = createServerFn({ method: "POST" })
         _advance_id: data.advanceId,
       },
       EXPENSE_CASH_ADVANCE_MIGRATION,
+    );
+    return mapExpenseClaimDetail(raw);
+  });
+
+export const listExpensePettyCashFloats = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string }) => ({
+    companyId: companyIdOf(input),
+  }))
+  .handler(async ({ data, context }): Promise<ExpensePettyCashFloat[]> => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    const raw = await callRpc<{ floats?: unknown[] }>(
+      context.supabase,
+      "list_expense_petty_cash_floats",
+      { _company_id: data.companyId },
+      EXPENSE_PETTY_CASH_MIGRATION,
+    );
+    return (raw.floats ?? []).map(mapExpensePettyCashFloat);
+  });
+
+export const saveExpensePettyCashFloat = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { companyId: string; draft: ExpensePettyCashFloatDraftInput }) => ({
+      companyId: companyIdOf(input),
+      draft: input.draft,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<ExpensePettyCashFloat> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "expenses.manage_advances");
+    if (!data.draft.name.trim()) throw new Error("Float name is required.");
+    if (data.draft.targetMinor <= 0) {
+      throw new Error("Target float amount must be greater than zero.");
+    }
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "save_expense_petty_cash_float",
+      {
+        _company_id: data.companyId,
+        _payload: toExpensePettyCashFloatPayload(data.draft),
+      },
+      EXPENSE_PETTY_CASH_MIGRATION,
+    );
+    return mapExpensePettyCashFloat(raw);
+  });
+
+export const fundExpensePettyCashFloat = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      floatId: string;
+      version: number;
+      bankAccountId: string;
+      amountMinor: number;
+      fundDate?: string;
+    }) => ({
+      companyId: companyIdOf(input),
+      floatId: input.floatId,
+      version: input.version,
+      bankAccountId: input.bankAccountId,
+      amountMinor: input.amountMinor,
+      fundDate: input.fundDate,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<ExpensePettyCashFloat> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "expenses.manage_advances");
+    if (!data.bankAccountId) throw new Error("Choose a bank account to fund petty cash.");
+    if (data.amountMinor <= 0) throw new Error("Fund amount must be greater than zero.");
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "fund_expense_petty_cash_float",
+      {
+        _company_id: data.companyId,
+        _float_id: data.floatId,
+        _bank_account_id: data.bankAccountId,
+        _amount_minor: data.amountMinor,
+        _expected_version: data.version,
+        _fund_date: data.fundDate ?? null,
+      },
+      EXPENSE_PETTY_CASH_MIGRATION,
+    );
+    return mapExpensePettyCashFloat(raw);
+  });
+
+export const closeExpensePettyCashFloat = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { companyId: string; floatId: string; version: number }) => ({
+      companyId: companyIdOf(input),
+      floatId: input.floatId,
+      version: input.version,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<ExpensePettyCashFloat> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "expenses.manage_advances");
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "close_expense_petty_cash_float",
+      {
+        _company_id: data.companyId,
+        _float_id: data.floatId,
+        _expected_version: data.version,
+      },
+      EXPENSE_PETTY_CASH_MIGRATION,
+    );
+    return mapExpensePettyCashFloat(raw);
+  });
+
+export const linkExpenseClaimPettyCashFloat = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      claimId: string;
+      version: number;
+      floatId: string;
+    }) => ({
+      companyId: companyIdOf(input),
+      claimId: input.claimId,
+      version: input.version,
+      floatId: input.floatId,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<ExpenseClaimDetail> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "expenses.submit");
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "link_expense_claim_petty_cash_float",
+      {
+        _company_id: data.companyId,
+        _claim_id: data.claimId,
+        _expected_version: data.version,
+        _float_id: data.floatId,
+      },
+      EXPENSE_PETTY_CASH_MIGRATION,
     );
     return mapExpenseClaimDetail(raw);
   });

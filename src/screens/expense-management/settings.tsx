@@ -30,6 +30,7 @@ type Draft = {
   defaultClaimCurrency: string;
   employeePayableAccountId: string;
   employeeAdvanceAccountId: string;
+  pettyCashAccountId: string;
   requireReceiptAboveMinor: string;
   requireSpendingRequestAboveMinor: string;
   allowMultiCurrencyClaims: boolean;
@@ -45,6 +46,7 @@ function toDraft(settings: ExpenseManagementSettings): Draft {
     defaultClaimCurrency: settings.defaultClaimCurrency ?? "",
     employeePayableAccountId: settings.employeePayableAccountId ?? "",
     employeeAdvanceAccountId: settings.employeeAdvanceAccountId ?? "",
+    pettyCashAccountId: settings.pettyCashAccountId ?? "",
     requireReceiptAboveMinor: String(settings.requireReceiptAboveMinor),
     requireSpendingRequestAboveMinor: String(settings.requireSpendingRequestAboveMinor),
     allowMultiCurrencyClaims: settings.allowMultiCurrencyClaims,
@@ -129,6 +131,7 @@ export function ExpenseManagementSettingsPage() {
             requireSpendingRequestAboveMinor: spendThreshold,
             employeePayableAccountId: draft.employeePayableAccountId || null,
             employeeAdvanceAccountId: draft.employeeAdvanceAccountId || null,
+            pettyCashAccountId: draft.pettyCashAccountId || null,
             allowMultiCurrencyClaims: draft.allowMultiCurrencyClaims,
             preventSelfApproval: draft.preventSelfApproval,
             defaultDistanceUnit: draft.defaultDistanceUnit,
@@ -292,6 +295,26 @@ export function ExpenseManagementSettingsPage() {
           <p className="text-sm text-muted-foreground">
             Asset cleared when cash-advance claims are posted (EM-08b). Required before
             issuing advances.
+          </p>
+        </div>
+
+        <div className="grid gap-2">
+          <Label>Petty cash account</Label>
+          <AccountLookup
+            companyId={company.id}
+            accounts={assetAccounts}
+            value={draft.pettyCashAccountId || null}
+            onChange={(next) =>
+              setDraft({ ...draft, pettyCashAccountId: next ?? "" })
+            }
+            allowClear
+            disabled={!canEdit || save.isPending}
+            ariaLabel="Petty cash account"
+            purpose="posting"
+          />
+          <p className="text-sm text-muted-foreground">
+            Asset funded from bank and credited when company-paid petty cash claims post
+            (EM-08c).
           </p>
         </div>
 

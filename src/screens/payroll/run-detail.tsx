@@ -35,6 +35,7 @@ import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
+import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { TableCard } from "@/components/common/table-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -366,6 +367,51 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
           schedule
             ? `${schedule.name} · ${fmt.date(run.period_start)} – ${fmt.date(run.period_end)}`
             : `${fmt.date(run.period_start)} – ${fmt.date(run.period_end)}`
+        }
+        insights={
+          <WorkspaceInsights
+            title="Related"
+            facts={[
+              { label: "Status", value: STATUS_LABEL[run.status] },
+              { label: "Employees", value: String(employees.length) },
+              {
+                label: "Net outstanding",
+                value: fmt.money(net_outstanding_minor, run.currency),
+              },
+              {
+                label: "Accrual journal",
+                value: run.accrual_journal_id ? "Posted" : "Not posted",
+              },
+            ]}
+            links={[
+              {
+                label: "All runs",
+                to: "/payroll/runs",
+                hint: "Return to payroll runs",
+              },
+              ...(run.status !== "draft" && run.status !== "void"
+                ? [
+                    {
+                      label: "Payslips",
+                      to: "/payroll/payslips",
+                      search: { runId: run.id },
+                      hint: "Payslips for this run",
+                    },
+                  ]
+                : []),
+              ...(run.accrual_journal_id
+                ? [
+                    {
+                      label: "Payments",
+                      to: "/payroll/payments",
+                      search: { runId: run.id },
+                      hint: "Settle net pay for this run",
+                    },
+                  ]
+                : []),
+            ]}
+            footer="Outstanding net pay is calculated from this run’s posted lines and payments."
+          />
         }
         actions={
           <div className="flex flex-wrap gap-2">

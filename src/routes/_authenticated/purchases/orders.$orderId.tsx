@@ -15,6 +15,7 @@ import { friendlyAuthError } from "@/lib/auth-helpers";
 import { impliedDiscountMinor } from "@/lib/purchases/po-convert";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
+import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { StatusBadge } from "@/components/common/stat-card";
 import { TableCard } from "@/components/common/table-card";
 import { DocumentActions } from "@/components/documents/DocumentActions";
@@ -124,6 +125,48 @@ function PurchaseOrderDetail({ companyId, orderId }: { companyId: string; orderI
       <RecordWorkspace
         title={order.order_number || "Purchase order"}
         description={`${order.contacts?.name ?? "Supplier"} · ${fmt.date(order.order_date)} · ${currency}`}
+        meta={<StatusBadge status={order.status} />}
+        insights={
+          <WorkspaceInsights
+            title="Related"
+            facts={[
+              { label: "Status", value: order.status.replaceAll("_", " ") },
+              { label: "Total", value: fmt.money(order.total_minor, currency) },
+              {
+                label: "Ledger impact",
+                value: "None until converted bill is authorised",
+              },
+            ]}
+            links={[
+              ...(order.contact_id
+                ? [
+                    {
+                      label: order.contacts?.name ?? "Supplier",
+                      to: "/contacts/$contactId",
+                      params: { contactId: order.contact_id },
+                      hint: "Open supplier contact",
+                    },
+                  ]
+                : []),
+              {
+                label: "All orders",
+                to: "/purchases/orders",
+                hint: "Return to purchase orders",
+              },
+              ...(order.billed_bill_id
+                ? [
+                    {
+                      label: "Converted bill",
+                      to: "/purchases/bills/$billId",
+                      params: { billId: order.billed_bill_id },
+                      hint: "Bill created from this order",
+                    },
+                  ]
+                : []),
+            ]}
+            footer="Purchase orders never post. Converted bills affect the ledger only when authorised."
+          />
+        }
         actions={
           <Button variant="outline" size="sm" asChild>
             <Link to="/purchases/orders">All orders</Link>

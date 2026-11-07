@@ -1,10 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowDownRight, ArrowUpRight, Minus, type LucideIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StatusBadge as SemanticStatusBadge } from "@/components/common/StatusBadge";
 import { cn } from "@/lib/utils";
-import { statusDisplay } from "@/lib/status-badge";
 
 export type StatTone = "neutral" | "positive" | "negative" | "warning";
 
@@ -115,8 +114,8 @@ export function StatCard({
 }
 
 /**
- * Status chip with consistent colours (draft / awaiting approval / awaiting payment / overdue /
- * paid / void …). Pass the raw status; `label` overrides the wording only (colour is unchanged).
+ * Existing public StatusBadge import remains compatible in every LinkBooks module.
+ * All status visuals now share the original LinkBooks semantic palette and labels.
  */
 export function StatusBadge({
   status,
@@ -127,14 +126,12 @@ export function StatusBadge({
   label?: string;
   className?: string;
 }) {
-  const d = statusDisplay(status);
   return (
-    <Badge
-      variant={d.tone}
-      className={cn("whitespace-nowrap", d.muted && "line-through", className)}
-    >
-      {label ?? d.label}
-    </Badge>
+    <SemanticStatusBadge
+      status={status}
+      label={label}
+      className={cn("whitespace-nowrap", className)}
+    />
   );
 }
 

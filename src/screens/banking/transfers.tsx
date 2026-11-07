@@ -221,13 +221,26 @@ export function Transfers({
           entityId={recordId}
           audience="internal"
         />
-        <Button
-          size="sm"
+        <ConfirmButton
+          variant="default"
+          title="Post this bank transfer?"
+          description={
+            <span>
+              Transfer {amount} {currency} from {fromAcc?.name ?? "source account"} to{" "}
+              {toAcc?.name ?? "destination account"} on {date}.
+              {currencyMismatch ? ` Destination receives ${received} ${toCurrency}.` : ""}
+              {" "}This creates a ledger journal; corrections require a reversal.
+            </span>
+          }
+          confirmLabel="Post transfer"
           disabled={mutation.isPending || !canPost}
-          onClick={() => mutation.mutate()}
+          onConfirm={() => {
+            if (canPost && !mutation.isPending) mutation.mutate();
+          }}
         >
-          {mutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null} Post transfer
-        </Button>
+          {mutation.isPending ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : null}
+          Post transfer
+        </ConfirmButton>
       </div>
 
       <h2 className="mb-2 mt-8 text-lg font-semibold">Transfer history</h2>

@@ -471,13 +471,27 @@ function Reconcile() {
                 onChange={(e) => setNotes(e.target.value)}
               />
             </div>
-            <Button
+            <ConfirmButton
+              variant="default"
+              size="default"
+              title="Complete this bank reconciliation?"
+              description={
+                <span>
+                  Reconcile the statement dated {statementDate} with closing balance{" "}
+                  {money(Number(closingMinor))}. This will mark {tickedTxnIds.length} bank
+                  transaction(s) and {tickedLineIds.length} journal line(s) as reconciled.
+                  The difference must remain zero. Reopening is a separate controlled action.
+                </span>
+              }
+              confirmLabel="Complete reconciliation"
               disabled={!canComplete || completeM.isPending}
-              onClick={() => completeM.mutate()}
+              onConfirm={() => {
+                if (canComplete && !completeM.isPending) completeM.mutate();
+              }}
             >
-              {completeM.isPending ? <Loader2 className="mr-1 size-4 animate-spin" /> : null}
+              {completeM.isPending ? <Loader2 className="mr-1 size-4 animate-spin" aria-hidden="true" /> : null}
               Complete reconciliation
-            </Button>
+            </ConfirmButton>
             {summary && !summary.balanced ? (
               <span className="text-sm text-destructive">
                 Difference {money(summary.difference)} must be zero.

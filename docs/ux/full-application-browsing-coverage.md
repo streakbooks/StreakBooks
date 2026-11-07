@@ -41,6 +41,11 @@ The register below was derived from actual repository navigation and routes. The
 
 **Status meaning:** "Partial browsing code" means some navigation/state improvements are committed; tests of the complete module are not finished. "Not yet verified" does **not** mean the existing module lacks functionality; it means this initiative has not established full coverage or acceptance.
 
+### Latest supporting-route implementation evidence (2026-11-07)
+
+- `src/routes/_authenticated/profile.tsx`: native account-details form submit (including Enter key), dirty-state indication, disabled no-op save and empty-name guard; commit `001c16139edc99e3c61d1fad19a538b74995ef1c`. This is **partial source evidence only**, not completed profile or security-workflow acceptance.
+- Profile password change, security settings, route transitions, browser history, tenant permissions and authenticated acceptance remain **NOT VERIFIED**. Local typecheck, lint, unit, browser and `check:browsing-coverage` remain **NOT RUN** in this connector-only execution.
+
 ## 2. Internal and supporting routes also included
 
 - `src/routes/_authenticated/documents.branding.tsx`

@@ -225,8 +225,15 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const showColumn = (column: string) => visibleColumns.includes(column);
   useEffect(() => {
-    if (!productsQ.isPending && page > totalPages) setPage(totalPages);
-  }, [page, totalPages, productsQ.isPending]);
+    if (!productsQ.isPending && page > totalPages) {
+      void navigate({
+        to: "/products-services",
+        search: (previous) => parseCatalogueSearch({ ...previous, page: totalPages }),
+        replace: true,
+        resetScroll: false,
+      });
+    }
+  }, [page, totalPages, productsQ.isPending, navigate]);
   const selectedRows = rows.filter((row) => selectedIds.includes(row.id));
   const allVisibleSelected =
     rows.length > 0 && rows.slice(0, 100).every((row) => selectedIds.includes(row.id));

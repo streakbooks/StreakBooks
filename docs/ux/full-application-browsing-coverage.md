@@ -25,7 +25,7 @@ The register below was derived from actual repository navigation and routes. The
 | 6 | Products & Services | `/products-services` | 1 | Partial browsing code committed; not runtime-verified |
 | 7 | Accounting | `/accounting` | 1 | Not yet verified for premium browsing |
 | 8 | Action Center | `/notifications` | 1 | Partial browsing code committed; not runtime-verified |
-| 9 | Files | `/files` | 1 | Not yet verified for premium browsing |
+| 9 | Files | `/files` | 1 | Partial browsing code committed; not runtime-verified |
 | 10 | Budgets | `/budgets` | 2 | Partial browsing code committed; not runtime-verified |
 | 11 | Fixed assets | `/fixed-assets` | 1 | Partial browsing code committed; not runtime-verified |
 | 12 | Payroll | `/payroll` | 12 | Not yet verified for premium browsing |
@@ -333,7 +333,7 @@ Every batch may require multiple small implementation increments; do not rush a 
 - 2026-11-07 Help browsing increment: `9a4181ca3ad6fc4569bd30da440b9d47131c87b3` replaces component-only search state with bounded URL query state for shareable searches, refresh, and native history continuity; `cca5b62160437ef50052286606a4cd358acaea48` records the manifest evidence. Help remains **not fully verified**; no local checks or authenticated browser tests were executed in this run. All 12 acceptance criteria remain open until tested.
 
 
-- Navigation and context preservation code is committed for Sales, Purchases, Contacts, Products & Services, Banking, Reports, Budgets, Fixed Assets and Action Center, including shared navigation inherited in the branch history. Banking covers transaction-to-journal return and transaction previews; Reports covers catalogue, overview, management and saved-report return navigation. Neither module is fully verified.
+- Navigation and context preservation code is committed for Sales, Purchases, Contacts, Products & Services, Banking, Reports, Budgets, Fixed Assets, Action Center and Files, including shared navigation inherited in the branch history. Banking covers transaction-to-journal return and transaction previews; Reports covers catalogue, overview, management and saved-report return navigation. Neither module is fully verified.
 - Standalone helper compilations and isolated assertions have been reported, but these do not demonstrate application-wide readiness.
 - Full `npm run typecheck`, `npm run lint`, `npm run build`, full `vitest`, authenticated Playwright, tenancy/security and staging/deployment verification remain outstanding for this branch.
 - The two branches have diverged; integrating into `main` requires a conflict review and explicit testing. No merge is authorized merely by this coverage policy.

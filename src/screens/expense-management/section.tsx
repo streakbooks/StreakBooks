@@ -11,6 +11,7 @@ import {
   type ExpenseManagementSectionKey,
 } from "@/lib/expenses/sections";
 import type { Permission } from "@/lib/permissions";
+import { ExpenseManagementApprovalsPage } from "@/screens/expense-management/approvals";
 import { ExpenseManagementClaimsPage } from "@/screens/expense-management/claims";
 import { ExpenseManagementReceiptsPage } from "@/screens/expense-management/receipts";
 import { ExpenseManagementSettingsPage } from "@/screens/expense-management/settings";
@@ -18,7 +19,6 @@ import { ExpenseManagementSettingsPage } from "@/screens/expense-management/sett
 const LEGACY_LINKS: Partial<
   Record<ExpenseManagementSectionKey, { label: string; to: string }>
 > = {
-  approvals: { label: "Review legacy submitted claims", to: "/purchases/employee-expenses" },
   reimbursements: {
     label: "Legacy reimbursements live on employee expenses",
     to: "/purchases/employee-expenses",
@@ -46,6 +46,9 @@ export function ExpenseManagementSectionPage({
   }
   if (sectionKey === "receipts") {
     return <ExpenseManagementReceiptsPage />;
+  }
+  if (sectionKey === "approvals") {
+    return <ExpenseManagementApprovalsPage />;
   }
 
   if (isPending) return <LoadingState />;

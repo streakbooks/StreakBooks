@@ -485,7 +485,9 @@ export const resetDemoCompany = createServerFn({ method: "POST" })
       companyId: data.companyId,
       userId: context.userId,
     });
-    return { ok: true, ...seeded };
+    const { seedDemoModules } = await import("@/lib/demo/seed-demo-modules");
+    const modules = await seedDemoModules(context.supabase, data.companyId);
+    return { ok: true, ...seeded, modules };
   });
 
 export const listCompanyAuditEvents = createServerFn({ method: "GET" })

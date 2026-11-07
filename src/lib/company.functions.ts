@@ -136,6 +136,10 @@ export const openDemoCompany = createServerFn({ method: "POST" })
         companyId,
         userId: context.userId,
       });
+      const { seedDemoModules } = await import("@/lib/demo/seed-demo-modules");
+      await seedDemoModules(context.supabase, companyId).catch((error: unknown) => {
+        console.warn("[demo seed] modules:", error instanceof Error ? error.message : error);
+      });
     }
     return { id: companyId };
   });

@@ -3,6 +3,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
 import { seedDemoCompanyData } from "@/lib/demo/seed-demo";
+import { seedDemoModules } from "@/lib/demo/seed-demo-modules";
 import { DEMO_EXPECTED, DEMO_MODULE_STATUS, DEMO_COMPANY_NAME } from "@/lib/demo/demo-dataset";
 import {
   buildAgingReport,
@@ -54,11 +55,13 @@ export const reseedDemoCompany = createServerFn({ method: "POST" })
       companyId: data.companyId,
       userId: context.userId,
     });
+    const modules = await seedDemoModules(context.supabase, data.companyId);
 
     return {
       ok: true,
       companyName: company.name,
       ...seeded,
+      modules,
       expected: {
         asOf: DEMO_EXPECTED.asOf,
         netProfitMinor: String(DEMO_EXPECTED.netProfit),
@@ -99,7 +102,8 @@ export const ensureDemoSeeded = createServerFn({ method: "POST" })
       companyId: data.companyId,
       userId: context.userId,
     });
-    return { seeded: true, reason: "seeded" as const, ...result };
+    const modules = await seedDemoModules(context.supabase, data.companyId);
+    return { seeded: true, reason: "seeded" as const, ...result, modules };
   });
 
 /**

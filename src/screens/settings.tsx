@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { useActiveCompany, companyContextKey } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
 import { getCompanyDetails, updateCompany } from "@/lib/company.functions";
+import { summariseDemoModules } from "@/lib/demo/seed-demo-modules";
 import {
   createExchangeRate,
   getOrgExtendedSettings,
@@ -573,9 +574,20 @@ export function SettingsForCompany({
 
   const demoResetM = useMutation({
     mutationFn: () => doDemoReset({ data: { companyId } }),
-    onSuccess: async () => {
+    onSuccess: async (result) => {
       await queryClient.invalidateQueries();
-      toast.success("Demo Company reset — transactional data cleared and masters reseeded");
+      const summary = summariseDemoModules(result.modules ?? null);
+      if (summary.failed.length) {
+        toast.warning(
+          `Demo Company reset. ${summary.seeded} of ${summary.total} modules have sample data; not seeded: ${summary.failed.join(", ")}.`,
+        );
+      } else {
+        toast.success(
+          summary.total
+            ? `Demo Company reset with sample data in all ${summary.total} modules.`
+            : "Demo Company reset — transactional data cleared and masters reseeded",
+        );
+      }
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
@@ -1692,16 +1704,17 @@ export function SettingsForCompany({
                         <CardHeader>
                           <CardTitle className="text-base">Demo Company reset & reseed</CardTitle>
                           <CardDescription>
-                            Clears transactional data for this demo organisation only, reseeds chart
-                            of accounts / periods, then posts the canonical sample ledger through
-                            the real PostingEngine (invoices, bills, bank, journals). Cannot target
-                            non-demo organisations or touch production customer data.
+                            Clears every module's data for this demo organisation only, reseeds the
+                            chart of accounts and periods, posts the sample ledger through the real
+                            PostingEngine, then adds sample data to every module (expenses, payroll,
+                            fixed assets, budgets, tax, reports, files, accountant, firm, advisors
+                            portal, App Store and more). Cannot target non-demo organisations.
                           </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-3">
                           <p className="text-sm text-muted-foreground">
-                            After reset, Trial Balance / P&amp;L / Balance Sheet should match the
-                            known demo dataset (see docs/demo/).
+                            Payroll, depreciation and expense postings are added on top of the core
+                            sample ledger, so totals include them. Steps are in docs/demo/RESET.md.
                           </p>
                           <Button
                             variant="destructive"

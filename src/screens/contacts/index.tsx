@@ -310,12 +310,16 @@ function ContactDirectoryCell({
 }
 
 function ContactRecordLink({ contactId, children }: { contactId: string; children: ReactNode }) {
-  const { view } = routeApi.useSearch();
+  const search = routeApi.useSearch();
+  const returnContext = encodeContactsReturnContext(search);
   return (
     <Link
       to="/contacts/$contactId"
       params={{ contactId }}
-      search={view && view !== "all" ? { fromView: view } : {}}
+      search={{
+        ...(search.view && search.view !== "all" ? { fromView: search.view } : {}),
+        ...(returnContext ? { returnContext } : {}),
+      }}
       className="rounded-sm underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-ring"
     >
       {children}

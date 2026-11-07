@@ -57,6 +57,10 @@ import {
   type ExpenseApprovalEscalationRefresh,
 } from "@/lib/expenses/escalation";
 import {
+  mapExpenseReimbursementBankSuggestions,
+  type ExpenseReimbursementBankSuggestion,
+} from "@/lib/expenses/bank-match";
+import {
   mapExpensePettyCashFloat,
   toExpensePettyCashFloatPayload,
   type ExpensePettyCashFloat,
@@ -140,6 +144,9 @@ export const EXPENSE_MULTILEVEL_APPROVAL_MIGRATION =
 
 export const EXPENSE_FX_REFUND_MIGRATION =
   "Expense FX validation / refund is not available yet: apply database update 20261107154000.";
+
+export const EXPENSE_BANK_MATCH_MIGRATION =
+  "Expense reimbursement bank suggestions are not available yet: apply database update 20261107155000.";
 
 export const EXPENSE_MILEAGE_MIGRATION =
   "Expense mileage rates are not available yet: apply database update 20261107139000.";
@@ -1240,6 +1247,26 @@ export const refundExpenseClaimReimbursement = createServerFn({ method: "POST" }
       EXPENSE_FX_REFUND_MIGRATION,
     );
     return mapExpenseClaimDetail(raw);
+  });
+
+export const suggestExpenseReimbursementBankMatches = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; limit?: number }) => ({
+    companyId: companyIdOf(input),
+    limit: input.limit,
+  }))
+  .handler(async ({ data, context }): Promise<ExpenseReimbursementBankSuggestion[]> => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "suggest_expense_reimbursement_bank_matches",
+      {
+        _company_id: data.companyId,
+        _limit: data.limit ?? 50,
+      },
+      EXPENSE_BANK_MATCH_MIGRATION,
+    );
+    return mapExpenseReimbursementBankSuggestions(raw);
   });
 
 export const batchReimburseExpenseClaims = createServerFn({ method: "POST" })

@@ -8,7 +8,7 @@ At the **end of every EM phase/slice chat response and final report**, paste thi
 
 ```
 EM progress  ███░░░░░░░░░  3/12 verified (25%)
-Coded slices EM-04…EM-12a + EM-05c–e + EM-06b + EM-07c · Migrations not applied · Not pushed
+Coded surface largely complete · Provider/ops gates remain · Migrations not applied · Not pushed
 ```
 
 ## Visual progress
@@ -39,12 +39,12 @@ Coded slices EM-04…EM-12a + EM-05c–e + EM-06b + EM-07c · Migrations not app
 | EM-04 | Receipts, email inbox, file security, mobile capture, offline drafts | In progress — EM-04a/b upload+match+offline queue; inbound email/OCR still pending |
 | EM-05 | Approvals, policies, delegation, escalation, spending requests | In progress — EM-05a–e coded (incl. multi-level); batch not closed |
 | EM-06 | Accounting, tax, journals, FX, refunds, budgets | In progress — EM-06a/b posting + FX validate + refund; live budget envelopes still via Budgets module |
-| EM-07 | Reimbursements, partial/batch payments, bank matching, payroll | In progress — EM-07a–c full/batch/partial + payroll queue; payslip posting still out |
+| EM-07 | Reimbursements, partial/batch payments, bank matching, payroll | In progress — EM-07a–d full/batch/partial/bank-suggest + payroll queue; payslip posting still out |
 | EM-08 | Mileage, travel, per diem, advances, petty cash, settlements | In progress — EM-08a–d + reclaim UI coded; booking integrations pending |
 | EM-09 | Corporate cards, disputes, rebilling, exit settlement | In progress — EM-09a–c cards, disputes, rebilling, exit settlement coded; batch not closed |
 | EM-10 | AI OCR, categorisation, duplicates, fraud indicators | In progress — EM-10a rule-based risk/duplicates/category + OCR unavailable stub |
 | EM-11 | Reports, analytics, notifications, migration, exports, audit | In progress — EM-11a+11b coded (reports/CSV/audit + Action Center + legacy import); email/push still out |
-| EM-12 | Integration, security, performance, recovery, UX, release verification | In progress — EM-12a budgets bridge + release checklist; browser/CI gate still open |
+| EM-12 | Integration, security, performance, recovery, UX, release verification | In progress — EM-12a + coded-complete status; browser/CI/migration apply still open |
 
 ## Navigation note
 

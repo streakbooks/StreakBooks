@@ -35,12 +35,14 @@ import { listBankAccounts } from "@/lib/banking/banking.functions";
 import {
   batchReimburseExpenseClaims,
   cancelExpenseClaimPayrollQueue,
+  EXPENSE_BANK_MATCH_MIGRATION,
   EXPENSE_BATCH_REIMBURSE_MIGRATION,
   EXPENSE_REIMBURSEMENT_MIGRATION,
   listExpenseClaims,
   queueExpenseClaimForPayroll,
   reimburseExpenseClaim,
   refundExpenseClaimReimbursement,
+  suggestExpenseReimbursementBankMatches,
 } from "@/lib/expenses/expenses.functions";
 import {
   canReimburseClaim,
@@ -68,6 +70,7 @@ export function ExpenseManagementReimbursementsPage() {
   const queuePayroll = useServerFn(queueExpenseClaimForPayroll);
   const cancelPayroll = useServerFn(cancelExpenseClaimPayrollQueue);
   const refundPayment = useServerFn(refundExpenseClaimReimbursement);
+  const fetchBankSuggestions = useServerFn(suggestExpenseReimbursementBankMatches);
 
   const claimsQ = useQuery({
     queryKey: ["expense-claims", company?.id, "reimbursements"],
@@ -86,6 +89,13 @@ export function ExpenseManagementReimbursementsPage() {
   const banksQ = useQuery({
     queryKey: ["bank-accounts", company?.id, "expense-reimburse"],
     queryFn: () => fetchBanks({ data: { companyId: company!.id } }),
+    enabled: Boolean(company?.id) && canPay,
+    retry: false,
+  });
+
+  const bankSuggestQ = useQuery({
+    queryKey: ["expense-reimburse-bank-suggestions", company?.id],
+    queryFn: () => fetchBankSuggestions({ data: { companyId: company!.id } }),
     enabled: Boolean(company?.id) && canPay,
     retry: false,
   });
@@ -471,6 +481,81 @@ export function ExpenseManagementReimbursementsPage() {
           </TableBody>
         </Table>
       )}
+
+      <section className="mt-10 space-y-3">
+        <h2 className="text-base font-semibold">Suggested bank matches</h2>
+        <p className="text-sm text-muted-foreground">
+          Uncategorised bank outflows with the same remaining amount near the claim date. Paying
+          still posts the reimbursement journal; categorise the bank line separately in Banking if
+          needed.
+        </p>
+        {bankSuggestQ.isError ? (
+          friendlyAuthError(bankSuggestQ.error).includes("20261107155000") ? (
+            <Alert>
+              <AlertTitle>Database update required</AlertTitle>
+              <AlertDescription>{EXPENSE_BANK_MATCH_MIGRATION}</AlertDescription>
+            </Alert>
+          ) : (
+            <ErrorState
+              title="Could not load bank suggestions"
+              description={friendlyAuthError(bankSuggestQ.error)}
+              onRetry={() => bankSuggestQ.refetch()}
+            />
+          )
+        ) : (bankSuggestQ.data ?? []).length === 0 ? (
+          <p className="text-sm text-muted-foreground">No amount/date matches right now.</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Claim</TableHead>
+                <TableHead>Bank line</TableHead>
+                <TableHead className="text-right">Action</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {(bankSuggestQ.data ?? []).map((row) => {
+                const claim = openClaims.find((item) => item.id === row.claimId);
+                const bank = bankOptions.find((account) => account.id === row.bankAccountId);
+                return (
+                  <TableRow key={`${row.claimId}-${row.bankTransactionId}`}>
+                    <TableCell>
+                      <div className="font-medium">{row.claimNumber}</div>
+                      <div className="text-sm text-muted-foreground">{row.claimTitle}</div>
+                    </TableCell>
+                    <TableCell>
+                      <div>{row.txnDate}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {row.bankDescription || "Bank outflow"} ·{" "}
+                        {fromMinorUnits(Math.abs(row.bankAmountMinor), row.claimCurrency)}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        size="sm"
+                        disabled={
+                          pay.isPending || !claim || !bank?.gl_account_id
+                        }
+                        onClick={() => {
+                          if (!claim || !bank?.gl_account_id) return;
+                          setBankGlAccountId(bank.gl_account_id);
+                          pay.mutate({
+                            id: claim.id,
+                            version: claim.version,
+                            remainingMinor: row.remainingMinor,
+                          });
+                        }}
+                      >
+                        Pay matched amount
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        )}
+      </section>
 
       {payrollQueued.length > 0 ? (
         <section className="mt-10 space-y-3">

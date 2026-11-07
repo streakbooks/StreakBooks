@@ -46,7 +46,11 @@ import {
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ContactTimeline } from "@/components/contacts/ContactTimeline";
-import { parseContactDirectoryView } from "@/lib/contacts/contact-view-navigation";
+import {
+  parseContactDirectoryView,
+  decodeContactsReturnContext,
+  encodeContactsReturnContext,
+} from "@/lib/contacts/contact-view-navigation";
 
 export const Route = createFileRoute("/_authenticated/contacts/$contactId")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -56,6 +60,11 @@ export const Route = createFileRoute("/_authenticated/contacts/$contactId")({
       ? String(search["tab"])
       : "overview",
     fromView: parseContactDirectoryView(search["fromView"]),
+    returnContext:
+      typeof search["returnContext"] === "string"
+        ? encodeContactsReturnContext(decodeContactsReturnContext(search["returnContext"])) ||
+          undefined
+        : undefined,
   }),
   head: () => ({ meta: [{ title: "Contact — LinkBooks" }] }),
   component: ContactDetail,
@@ -65,7 +74,11 @@ const HISTORY_PAGE_SIZE = 50;
 
 function ContactDetail() {
   const { contactId } = Route.useParams();
-  const { tab, fromView } = Route.useSearch();
+  const { tab, fromView, returnContext } = Route.useSearch();
+  const restoredDirectory = decodeContactsReturnContext(returnContext);
+  const backSearch = Object.keys(restoredDirectory).length > 0
+    ? restoredDirectory
+    : { view: fromView };
   const { company } = useActiveCompany();
   const companyId = company?.id;
   const currency = company?.base_currency ?? "GBP";
@@ -413,7 +426,7 @@ function ContactDetail() {
               {archived ? "Restore" : "Archive"}
             </Button>
             <Button variant="outline" size="sm" asChild>
-              <Link to="/contacts" search={{ view: fromView }}>
+              <Link to="/contacts" search={backSearch}>
                 Directory
               </Link>
             </Button>
@@ -453,7 +466,7 @@ function ContactDetail() {
             data-state={tab === "overview" ? "active" : "inactive"}
             to="/contacts/$contactId"
             params={{ contactId }}
-            search={{ tab: "overview", fromView }}
+            search={{ tab: "overview", fromView, returnContext }}
             resetScroll={false}
           >
             Overview
@@ -465,7 +478,7 @@ function ContactDetail() {
             data-state={tab === "edit" ? "active" : "inactive"}
             to="/contacts/$contactId"
             params={{ contactId }}
-            search={{ tab: "edit", fromView }}
+            search={{ tab: "edit", fromView, returnContext }}
             resetScroll={false}
           >
             Edit
@@ -477,7 +490,7 @@ function ContactDetail() {
             data-state={tab === "people" ? "active" : "inactive"}
             to="/contacts/$contactId"
             params={{ contactId }}
-            search={{ tab: "people", fromView }}
+            search={{ tab: "people", fromView, returnContext }}
             resetScroll={false}
           >
             People
@@ -489,7 +502,7 @@ function ContactDetail() {
             data-state={tab === "groups" ? "active" : "inactive"}
             to="/contacts/$contactId"
             params={{ contactId }}
-            search={{ tab: "groups", fromView }}
+            search={{ tab: "groups", fromView, returnContext }}
             resetScroll={false}
           >
             Groups & tags
@@ -501,7 +514,7 @@ function ContactDetail() {
             data-state={tab === "activity" ? "active" : "inactive"}
             to="/contacts/$contactId"
             params={{ contactId }}
-            search={{ tab: "activity", fromView }}
+            search={{ tab: "activity", fromView, returnContext }}
             resetScroll={false}
           >
             Transactions
@@ -513,7 +526,7 @@ function ContactDetail() {
             data-state={tab === "timeline" ? "active" : "inactive"}
             to="/contacts/$contactId"
             params={{ contactId }}
-            search={{ tab: "timeline", fromView }}
+            search={{ tab: "timeline", fromView, returnContext }}
             resetScroll={false}
           >
             Timeline
@@ -525,7 +538,7 @@ function ContactDetail() {
             data-state={tab === "portal" ? "active" : "inactive"}
             to="/contacts/$contactId"
             params={{ contactId }}
-            search={{ tab: "portal", fromView }}
+            search={{ tab: "portal", fromView, returnContext }}
             resetScroll={false}
           >
             Portal

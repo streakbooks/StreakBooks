@@ -1,6 +1,8 @@
 "use client";
 
 import { Fragment, useEffect, useState } from "react";
+import { getRouteApi, useNavigate } from "@tanstack/react-router";
+import { parseJournalBrowseSearch, type JournalBrowseSearch } from "@/lib/accounting/journal-browsing";
 import { JournalQualityReviewPanel } from "@/components/accountant/JournalQualityReviewPanel";
 import { BulkJournalImportPanel } from "@/components/accountant/BulkJournalImportPanel";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -97,6 +99,8 @@ function canReverseHere(journal: JournalListItem): boolean {
   );
 }
 
+const journalRoute = getRouteApi("/_authenticated/accounting");
+
 export function JournalsPanel({
   companyId,
   currency,
@@ -120,14 +124,49 @@ export function JournalsPanel({
     company?.permissions?.includes("payroll.view") ??
     roleHasPermission(company?.role ?? "read_only", "payroll.view");
 
-  const [search, setSearch] = useState("");
-  const [source, setSource] = useState("");
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
-  const [pageSize, setPageSize] = useState(100);
-  const [page, setPage] = useState(0);
+  const routeSearch = journalRoute.useSearch();
+  const navigate = useNavigate();
+  const search = routeSearch.journalQ ?? "";
+  const source = routeSearch.journalSource ?? "";
+  const from = routeSearch.journalFrom ?? "";
+  const to = routeSearch.journalTo ?? "";
+  const pageSize = routeSearch.journalPageSize ?? 100;
+  const page = routeSearch.journalPage ?? 0;
+  type JournalSortKey = "number" | "date" | "source" | "amount";
+  const sort: SortState<JournalSortKey> | null = routeSearch.journalSort
+    ? { key: routeSearch.journalSort, dir: routeSearch.journalDir ?? "asc" }
+    : null;
+  const patchJournalBrowse = (patch: Partial<JournalBrowseSearch>, replace = false) => {
+    void navigate({
+      to: "/accounting",
+      search: (previous) => ({
+        ...previous,
+        ...parseJournalBrowseSearch({ ...previous, ...patch }),
+        // Reset cleared filters rather than reviving them from previous URL state.
+        ...patch,
+        tab: "journals" as const,
+      }),
+      replace,
+      resetScroll: false,
+    });
+  };
+  const setPage = (next: number | ((current: number) => number)) =>
+    patchJournalBrowse({ journalPage: typeof next === "function" ? next(page) : next });
+  const setPageSize = (value: number) =>
+    patchJournalBrowse({ journalPageSize: value as JournalBrowseSearch["journalPageSize"], journalPage: 0 });
+  const setSort = (next: (current: SortState<JournalSortKey> | null) => SortState<JournalSortKey>) => {
+    const chosen = next(sort);
+    patchJournalBrowse({ journalSort: chosen.key, journalDir: chosen.dir });
+  };
+  const setSearch = (value: string) =>
+    patchJournalBrowse({ journalQ: value, journalPage: 0 }, true);
+  const setSource = (value: string) =>
+    patchJournalBrowse({ journalSource: value, journalPage: 0 });
+  const setFrom = (value: string) =>
+    patchJournalBrowse({ journalFrom: value, journalPage: 0 });
+  const setTo = (value: string) =>
+    patchJournalBrowse({ journalTo: value, journalPage: 0 });
   const [open, setOpen] = useState<string | null>(initialOpenJournalId ?? null);
-  const [sort, setSort] = useState<SortState<"number" | "date" | "source" | "amount"> | null>(null);
   const invalidDateRange = Boolean(from && to && from > to);
 
   useEffect(() => {

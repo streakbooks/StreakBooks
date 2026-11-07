@@ -71,7 +71,7 @@ Chrome **PASS** (directory + detail RecordWorkspace). Import/duplicates ListWork
 
 ### Expense Management / Payroll / Accounting / App Store / Advisors / Settings
 
-Chrome largely **PASS** after Batches 5–9. Per-screen action/permission/staging gates remain **NOT VERIFIED** / **PARTIAL**.
+Chrome largely **PASS** after Batches 5–9. Batch 15 adds factual insight rails on payslip, App Store detail, Accounting, Products & Services, and Dashboard. Per-screen action/permission/staging gates remain **NOT VERIFIED** / **PARTIAL**.
 
 ## How to promote a module to DONE
 

@@ -20,6 +20,7 @@ import { PRINT_CSS } from "@/components/documents/DocumentSheet";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
+import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { Button } from "@/components/ui/button";
 
 function parseSnapshot(raw: PayslipSnapshot): PayslipSnapshot | null {
@@ -107,7 +108,7 @@ export function PayrollPayslipDetailPage({ payslipId }: { payslipId: string }) {
     );
   }
 
-  const { payslip, run } = pageQ.data;
+  const { payslip, run, employee } = pageQ.data;
   const snapshot = parseSnapshot(payslip.snapshot as PayslipSnapshot);
   const currency = snapshot?.branding.currency ?? run.currency;
   const earnings = snapshot ? payslipEarnings(snapshot) : [];
@@ -122,6 +123,50 @@ export function PayrollPayslipDetailPage({ payslipId }: { payslipId: string }) {
     <RecordWorkspace
       title={payslip.payslip_number}
       description={`Pay run ${run.run_number}`}
+      insights={
+        <WorkspaceInsights
+          title="Related"
+          facts={[
+            {
+              label: "Employee",
+              value: `${employee.first_name} ${employee.last_name}`.trim(),
+            },
+            { label: "Employee #", value: employee.employee_number },
+            {
+              label: "Period",
+              value: `${fmt.date(run.period_start)} – ${fmt.date(run.period_end)}`,
+            },
+            ...(totals
+              ? [
+                  {
+                    label: "Net pay",
+                    value: fmt.money(totals.netPayMinor, currency),
+                  },
+                ]
+              : []),
+          ]}
+          links={[
+            {
+              label: "All payslips",
+              to: "/payroll/payslips",
+              hint: "Return to the payslip list",
+            },
+            {
+              label: `Pay run ${run.run_number}`,
+              to: "/payroll/runs/$runId",
+              params: { runId: run.id },
+              hint: "Open the source payroll run",
+            },
+            {
+              label: "Employee record",
+              to: "/payroll/employees/$employeeId",
+              params: { employeeId: employee.id },
+              hint: "Open payroll employee master data",
+            },
+          ]}
+          footer="Amounts come from the payslip snapshot. Print uses the browser print dialog."
+        />
+      }
       actions={
         <div className="flex flex-wrap gap-2 print:hidden">
           <Button asChild variant="outline" size="sm">

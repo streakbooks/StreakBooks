@@ -2,10 +2,10 @@
 
 | Gate | Status |
 | ---- | ------ |
-| Code (workspace architecture + route adoption Batches 1–9) | in progress → largely complete for chrome inheritance |
-| Full route Section 14 finished-screen DoD | **not ready** |
-| Local contract tests (`check:modules` / `check:ui` / modules vitest) | passing on each merged batch |
-| Merge to authoritative `main` | Batches 1–9 merged (#182–#190); Batch 10 pending |
+| Code (workspace architecture + route/insight adoption Batches 1–15) | Chrome inheritance largely complete; factual insight rails expanded |
+| Full route Section 14 finished-screen DoD | **not ready** — chrome PASS; staging/RBAC/a11y still open |
+| Local contract tests (`check:modules` / `check:workspace` / `check:ui` / modules vitest) | passing on each merged batch |
+| Merge to authoritative `main` | Batches 1–14 merged (#182–#195); Batch 15 in progress |
 | Supabase migrations | none required for premium UI chrome batches |
 | Security / accounting integrity | no intentional posting/RLS changes; full two-tenant audit not-yet-verified |
 | Staging authenticated QA | not executed |

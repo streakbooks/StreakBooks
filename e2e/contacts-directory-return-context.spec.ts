@@ -53,4 +53,41 @@ test.describe("Contacts: preserving the originating directory view", () => {
       "aria-selected", "true",
     );
   });
+
+  test("contact directory deep-link query and sorting survive refresh and role tabs", async ({
+    page,
+  }) => {
+    await signIn(page, "/contacts?view=customers&q=consulting&sort=name_desc&page=0");
+    await expect(page.getByRole("textbox", { name: "Search contacts" })).toHaveValue(
+      "consulting",
+    );
+    await page.reload();
+    await expect(page.getByRole("textbox", { name: "Search contacts" })).toHaveValue(
+      "consulting",
+    );
+    await page.getByRole("tab", { name: "Suppliers" }).click();
+    const params = new URL(page.url()).searchParams;
+    expect(params.get("view")).toBe("suppliers");
+    expect(params.get("q")).toBe("consulting");
+    expect(params.get("sort")).toBe("name_desc");
+  });
+
+  test("contact record can return to its originating directory sorting and page", async ({
+    page,
+  }) => {
+    await signIn(page, "/contacts?view=all&sort=name_desc&page=0");
+    const contact = page.locator(
+      'tbody a[href*="/contacts/"][href*="returnContext="]',
+    ).first();
+    test.skip((await contact.count()) === 0, "Requires an authorised contact fixture");
+    await contact.click();
+    await expect(page).toHaveURL(/\/contacts\/[^/?]+/);
+    await page.getByRole("tab", { name: "People" }).click();
+    expect(new URL(page.url()).searchParams.has("returnContext")).toBe(true);
+    await page.getByRole("link", { name: "Directory" }).click();
+    const params = new URL(page.url()).searchParams;
+    expect(params.get("sort")).toBe("name_desc");
+    expect(params.get("page")).toBe("0");
+  });
+
 });

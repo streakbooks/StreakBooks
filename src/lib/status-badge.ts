@@ -91,6 +91,10 @@ const MAP: Record<string, StatusDisplay> = {
   unhealthy: { label: "Unhealthy", tone: "danger" },
   unknown: { label: "Unknown", tone: "neutral" },
   archived: { label: "Archived", tone: "neutral", muted: true },
+  locked: { label: "Locked", tone: "neutral" },
+  scheduled: { label: "Scheduled", tone: "info" },
+  synced: { label: "Synced", tone: "success" },
+  needs_attention: { label: "Needs attention", tone: "warning" },
 };
 
 /** "partly_paid" -> "Partly paid" for statuses we have no explicit entry for. */

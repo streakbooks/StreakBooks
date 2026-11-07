@@ -1,0 +1,200 @@
+#!/usr/bin/env node
+/**
+ * LinkBooks new-module scaffold (Section 20.2).
+ * Generates route + screen stubs that use shared workspace chrome and fail-closed actions.
+ *
+ * Usage:
+ *   node scripts/scaffold-module.mjs --id demo-ops --label "Demo Ops" --kind list
+ *   node scripts/scaffold-module.mjs --id demo-ops --label "Demo Ops" --kind list --nested overview
+ *   node scripts/scaffold-module.mjs --id demo-ops --dry-run
+ *
+ * Does NOT register sidebar navigation automatically — add to nav.ts + MODULE_REGISTRY
+ * only after the backend/authorization plan exists. Scaffolded primary actions stay disabled.
+ */
+import fs from "node:fs";
+import path from "node:path";
+
+const args = process.argv.slice(2);
+function flag(name, fallback = undefined) {
+  const index = args.indexOf(`--${name}`);
+  if (index === -1) return fallback;
+  return args[index + 1] ?? fallback;
+}
+function has(name) {
+  return args.includes(`--${name}`);
+}
+
+const id = flag("id");
+const label = flag("label", id);
+const kind = flag("kind", "list");
+const nested = flag("nested");
+const dryRun = has("dry-run");
+const force = has("force");
+
+const KINDS = new Set(["list", "record", "wizard", "report", "dashboard", "portal", "settings"]);
+
+if (!id || !/^[a-z][a-z0-9-]*$/.test(id)) {
+  process.stderr.write(
+    "Usage: node scripts/scaffold-module.mjs --id <kebab-id> --label <Label> [--kind list|record|wizard|report|dashboard|portal|settings] [--nested <section>] [--dry-run]\n",
+  );
+  process.exit(1);
+}
+if (!KINDS.has(kind)) {
+  process.stderr.write(`Unknown kind "${kind}". Allowed: ${[...KINDS].join(", ")}\n`);
+  process.exit(1);
+}
+
+const root = process.cwd();
+const routeDir = path.join(root, "src", "routes", "_authenticated", id);
+const screenDir = path.join(root, "src", "screens", id);
+const routeFile = nested
+  ? path.join(routeDir, `${nested}.tsx`)
+  : path.join(routeDir, "index.tsx");
+const screenFile = nested
+  ? path.join(screenDir, `${nested}.tsx`)
+  : path.join(screenDir, "index.tsx");
+const readmeFile = path.join(screenDir, "README.md");
+const testFile = path.join(root, "src", "lib", "modules", `scaffold-${id}.test.ts`);
+
+const nestedPascal = nested
+  ? nested
+      .split("-")
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join("")
+  : "";
+const pascal =
+  id
+    .split("-")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join("") + nestedPascal;
+const routePath = nested ? `/_authenticated/${id}/${nested}` : `/_authenticated/${id}/`;
+const publicPath = nested ? `/${id}/${nested}` : `/${id}`;
+const importPath = nested ? `@/screens/${id}/${nested}` : `@/screens/${id}`;
+const useRecordShell = kind === "record" || kind === "portal";
+
+const screenSource = `import { ${useRecordShell ? "RecordWorkspace" : "ListWorkspace"} } from "@/components/workspace/${useRecordShell ? "RecordWorkspace" : "ListWorkspace"}";
+import { EmptyState } from "@/components/common/states";
+import { Button } from "@/components/ui/button";
+
+/**
+ * Scaffolded ${label} screen (${kind}).
+ * Primary actions are intentionally disabled until a real authorised backend exists.
+ * See docs/engineering/NEW-MODULE-DEFINITION-OF-DONE.md before enabling controls.
+ */
+export function ${pascal}Screen() {
+  const title = ${JSON.stringify(nested ? `${label} · ${nested}` : label)};
+  const body = (
+    <EmptyState
+      title="Backend not connected"
+      description="This scaffold inherits LinkBooks premium shell, themes and navigation. Wire a fail-closed service before enabling create/post/pay actions."
+      action={
+        <Button type="button" disabled title="Blocked until authorisation and persistence exist">
+          Create (unavailable)
+        </Button>
+      }
+    />
+  );
+
+  return (
+    <${useRecordShell ? "RecordWorkspace" : "ListWorkspace"}
+      title={title}
+      description="Scaffolded ${kind} workspace — inherits PageHeader, themes and density."
+      breadcrumbs={[
+        { label: ${JSON.stringify(label)}${nested ? `, to: ${JSON.stringify(`/${id}`)}` : ""} },
+        ${nested ? `{ label: ${JSON.stringify(nested)} },` : ""}
+      ]}
+      ${
+        useRecordShell
+          ? ""
+          : `actions={
+        <Button type="button" disabled title="Blocked until authorisation and persistence exist">
+          New (unavailable)
+        </Button>
+      }`
+      }
+    >
+      {body}
+    </${useRecordShell ? "RecordWorkspace" : "ListWorkspace"}>
+  );
+}
+`;
+
+const routeSource = `import { createFileRoute } from "@tanstack/react-router";
+import { ${pascal}Screen } from "${importPath}";
+
+export const Route = createFileRoute("${routePath}")({
+  component: ${pascal}Screen,
+  staticData: {
+    moduleId: ${JSON.stringify(id)},
+    pageKind: ${JSON.stringify(kind)},
+    scaffolded: true,
+  },
+});
+`;
+
+const readmeSource = `# ${label} (scaffold)
+
+- Module id: \`${id}\`
+- Kind: \`${kind}\`
+- Public path: \`${publicPath}\`
+- Generated by \`scripts/scaffold-module.mjs\`
+
+## Before enabling
+
+1. Add \`MODULE_REGISTRY\` entry and (only if intended) \`navItems\` sidebar registration.
+2. Implement authorised server functions / RLS; keep UI fail-closed until then.
+3. Complete \`docs/engineering/NEW-MODULE-DEFINITION-OF-DONE.md\`.
+4. Run \`npm run check:modules\`, \`npm run check:ui\`, \`npm run check:navigation\`.
+`;
+
+const testSource = `import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+describe("scaffold ${id}", () => {
+  it("generated screen uses shared workspace chrome and fail-closed actions", () => {
+    const source = readFileSync(
+      resolve(${JSON.stringify(path.relative(root, screenFile).replace(/\\/g, "/"))}),
+      "utf8",
+    );
+    expect(source).toMatch(/ListWorkspace|RecordWorkspace/);
+    expect(source).toContain("disabled");
+    expect(source).toContain("Backend not connected");
+  });
+});
+`;
+
+function write(file, contents) {
+  if (fs.existsSync(file) && !force) {
+    process.stderr.write(`Skip existing ${path.relative(root, file)} (use --force)\n`);
+    return false;
+  }
+  if (dryRun) {
+    process.stdout.write(`[dry-run] would write ${path.relative(root, file)}\n`);
+    return true;
+  }
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, contents, "utf8");
+  process.stdout.write(`Wrote ${path.relative(root, file)}\n`);
+  return true;
+}
+
+write(screenFile, screenSource);
+write(routeFile, routeSource);
+if (!nested) write(readmeFile, readmeSource);
+write(testFile, testSource);
+
+process.stdout.write(
+  dryRun
+    ? "Dry run complete. No files written.\n"
+    : [
+        "Scaffold complete.",
+        "Next:",
+        `  1. Register module id "${id}" in src/lib/modules/registry.ts`,
+        "  2. Add navItems only when the module is intentional product surface",
+        "  3. Implement authorised backends before enabling buttons",
+        "  4. npm run check:modules && npm run check:ui",
+        "  5. Remove temporary probe modules after inheritance verification",
+        "",
+      ].join("\n"),
+);

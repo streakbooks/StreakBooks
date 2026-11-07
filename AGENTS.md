@@ -29,3 +29,5 @@ The user workstation is `D:\MyApp\LinkBooks`; the development URL is `http://loc
 A separate cloud checkout does not modify the user's Windows project.
 
 - Reusable route screens live in `src/screens/`. TSX file routes export only the `Route` runtime value (types are allowed); overlays import screens directly. Keep URL validators and metadata in route registration. Why: reusable route exports defeat component splitting and inflate bootstrap imports. `check:ui` and `check:bundle` enforce this boundary.
+
+- **All newly added routes/modules are subject to the LinkBooks premium design and functional acceptance contract.** Use `ListWorkspace` / `RecordWorkspace` / `PageHeader` / shared tokens; register the module in `src/lib/modules/registry.ts`; scaffold with `npm run scaffold:module -- --id <kebab> --label <Label>`; complete `docs/engineering/NEW-MODULE-DEFINITION-OF-DONE.md`; keep actions fail-closed until authorised backends exist. Local enforcement: `npm run check:modules`, `npm run check:ui`, `npm run check:navigation`. Design system: `docs/premium-ui/LINKBOOKS_DESIGN_SYSTEM.md`.

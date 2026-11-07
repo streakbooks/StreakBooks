@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -81,28 +82,26 @@ export function ExpenseManagementOverviewPage() {
   }
   if (!canOpen) {
     return (
-      <>
-        <PageHeader
-          title="Expense Management"
-          description="Claims, receipts, approvals and reimbursements."
-        />
+      <ListWorkspace
+        title="Expense Management"
+        description="Claims, receipts, approvals and reimbursements."
+      >
         <EmptyState
           title="No expense access"
           description="Ask an administrator for expenses.submit or expenses.view."
         />
-      </>
+      </ListWorkspace>
     );
   }
   if (overview.isLoading) {
     return (
-      <>
-        <PageHeader
-          title="Expense Management"
-          description="Claims, receipts, approvals and reimbursements."
-        />
-        <ExpenseManagementSubnav current="overview" />
+      <ListWorkspace
+        title="Expense Management"
+        description="Claims, receipts, approvals and reimbursements."
+        subnav={<ExpenseManagementSubnav current="overview" />}
+      >
         <LoadingState />
-      </>
+      </ListWorkspace>
     );
   }
   if (overview.isError) {
@@ -117,14 +116,13 @@ export function ExpenseManagementOverviewPage() {
 
   if (!overview.data) {
     return (
-      <>
-        <PageHeader
-          title="Expense Management"
-          description="Claims, receipts, approvals and reimbursements."
-        />
-        <ExpenseManagementSubnav current="overview" />
+      <ListWorkspace
+        title="Expense Management"
+        description="Claims, receipts, approvals and reimbursements."
+        subnav={<ExpenseManagementSubnav current="overview" />}
+      >
         <LoadingState />
-      </>
+      </ListWorkspace>
     );
   }
 
@@ -133,29 +131,28 @@ export function ExpenseManagementOverviewPage() {
     can("expenses.manage_policies" as Permission) || can("expenses.admin" as Permission);
 
   return (
-    <>
-      <PageHeader
-        title="Expense Management"
-        description="Top-level module for employee and contractor expenses."
-        actions={
-          <div className="flex flex-wrap gap-2">
-            <Button asChild variant="outline" size="sm">
-              <Link to="/purchases/employee-expenses">Legacy claims</Link>
+    <ListWorkspace
+      title="Expense Management"
+      description="Top-level module for employee and contractor expenses."
+      actions={
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link to="/purchases/employee-expenses">Legacy claims</Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/purchases/expenses">Spend money</Link>
+          </Button>
+          {canManagePolicies ? (
+            <Button asChild size="sm">
+              <Link to="/expense-management/$section" params={{ section: "settings" }}>
+                Settings
+              </Link>
             </Button>
-            <Button asChild variant="outline" size="sm">
-              <Link to="/purchases/expenses">Spend money</Link>
-            </Button>
-            {canManagePolicies ? (
-              <Button asChild size="sm">
-                <Link to="/expense-management/$section" params={{ section: "settings" }}>
-                  Settings
-                </Link>
-              </Button>
-            ) : null}
-          </div>
-        }
-      />
-      <ExpenseManagementSubnav current="overview" />
+          ) : null}
+        </div>
+      }
+      subnav={<ExpenseManagementSubnav current="overview" />}
+    >
 
       {migrationMessage ? (
         <Alert className="mb-6">
@@ -244,6 +241,6 @@ export function ExpenseManagementOverviewPage() {
           </Button>
         </CardContent>
       </Card>
-    </>
+    </ListWorkspace>
   );
 }

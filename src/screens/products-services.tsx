@@ -31,7 +31,8 @@ import {
   DocumentRecordPanel,
   type DocumentRecordHandle,
 } from "@/components/documents/DocumentRecordPanel";
-import { PageHeader, EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -456,35 +457,33 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
     );
 
   return (
-    <>
-      <PageHeader
-        title="Products & Services"
-        description="Catalogue defaults for sales and purchase lines. Stock valuation is not enabled — this is a non-inventory catalogue."
-        actions={
-          <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="outline" asChild>
-              <Link to="/imports" search={{ module: "products" }}>
-                Import catalogue CSV
-              </Link>
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={exportMut.isPending || productsQ.isPending || q !== debouncedQ}
-              title="Reporting export (up to 5,000 items / 5 MB). Existing CSV import is not lossless."
-              onClick={() => exportMut.mutate()}
-            >
-              <Download className="size-4" />
-              {exportMut.isPending ? "Exporting…" : "Export CSV"}
-            </Button>
-            <Button size="sm" onClick={openCreate} disabled={!canManage}>
-              <Plus className="size-4" />
-              New item
-            </Button>
-          </div>
-        }
-      />
-
+    <ListWorkspace
+      title="Products & Services"
+      description="Catalogue defaults for sales and purchase lines. Stock valuation is not enabled — this is a non-inventory catalogue."
+      actions={
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" asChild>
+            <Link to="/imports" search={{ module: "products" }}>
+              Import catalogue CSV
+            </Link>
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={exportMut.isPending || productsQ.isPending || q !== debouncedQ}
+            title="Reporting export (up to 5,000 items / 5 MB). Existing CSV import is not lossless."
+            onClick={() => exportMut.mutate()}
+          >
+            <Download className="size-4" />
+            {exportMut.isPending ? "Exporting…" : "Export CSV"}
+          </Button>
+          <Button size="sm" onClick={openCreate} disabled={!canManage}>
+            <Plus className="size-4" />
+            New item
+          </Button>
+        </div>
+      }
+    >
       <Alert className="mb-4">
         <AlertDescription>
           Selecting an item on invoices/bills can use these defaults. No stock-on-hand or COGS
@@ -1244,7 +1243,7 @@ function ProductsWorkspace({ companyId, currency }: { companyId: string; currenc
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </ListWorkspace>
   );
 }
 

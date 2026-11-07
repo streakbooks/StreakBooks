@@ -150,7 +150,8 @@ export const MODULE_REGISTRY: readonly ModuleDefinition[] = [
     viewModes: ["list", "mobile-card"],
     screenRoot: "src/screens/expense-management",
     experience: DEFAULT_AUTHENTICATED_EXPERIENCE,
-    premiumStatus: "partial",
+    premiumStatus: "in-progress",
+    notes: "Batch 4: ListWorkspace on EM overview.",
   },
   {
     id: "contacts",
@@ -177,7 +178,8 @@ export const MODULE_REGISTRY: readonly ModuleDefinition[] = [
     pageKind: "list",
     screenRoot: "src/screens/products-services.tsx",
     experience: DEFAULT_AUTHENTICATED_EXPERIENCE,
-    premiumStatus: "partial",
+    premiumStatus: "in-progress",
+    notes: "Batch 4: ListWorkspace on catalogue.",
   },
   {
     id: "files",
@@ -189,7 +191,8 @@ export const MODULE_REGISTRY: readonly ModuleDefinition[] = [
     pageKind: "list",
     screenRoot: "src/screens",
     experience: DEFAULT_AUTHENTICATED_EXPERIENCE,
-    premiumStatus: "partial",
+    premiumStatus: "in-progress",
+    notes: "Batch 4: ListWorkspace on Files + document review.",
   },
   {
     id: "accounting",
@@ -228,7 +231,8 @@ export const MODULE_REGISTRY: readonly ModuleDefinition[] = [
     pageKind: "list",
     screenRoot: "src/screens",
     experience: DEFAULT_AUTHENTICATED_EXPERIENCE,
-    premiumStatus: "partial",
+    premiumStatus: "in-progress",
+    notes: "Batch 4: ListWorkspace on budgets list.",
   },
   {
     id: "fixed-assets",

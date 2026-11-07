@@ -48,7 +48,8 @@ import { folderAncestors, possibleParentFolders } from "@/lib/documents/folder-t
 import { downloadBase64, uploadCompanyDocument } from "@/lib/documents/upload-client";
 import { openSignedDownload } from "@/lib/documents/ui";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -370,67 +371,65 @@ function FilesPage() {
 
   if (activeView === "review") {
     return (
-      <>
-        <PageHeader
-          title="Document review"
-          description="Organise and approve uploaded documents without changing accounting records."
-          actions={
-            <Button size="sm" variant="outline" onClick={() => setView("all")}>
-              Back to Files
-            </Button>
-          }
-        />
+      <ListWorkspace
+        title="Document review"
+        description="Organise and approve uploaded documents without changing accounting records."
+        actions={
+          <Button size="sm" variant="outline" onClick={() => setView("all")}>
+            Back to Files
+          </Button>
+        }
+      >
         <DocumentReviewQueue companyId={companyId} onClose={() => setView("all")} />
-      </>
+      </ListWorkspace>
     );
   }
 
   return (
-    <>
-      <PageHeader
-        title="Files"
-        description="Everything attached to invoices, bills, contacts and journals, plus files you upload here. You only see files for records you are allowed to view."
-        actions={
-          <>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                setView("review");
-                setFolderId(null);
-              }}
-            >
-              <ClipboardCheck className="mr-1 size-4" />
-              Document review
-            </Button>
-            {canUpload ? (
-              <>
-                <input
-                  ref={inputRef}
-                  type="file"
-                  multiple
-                  hidden
-                  accept={FILE_INPUT_ACCEPT}
-                  aria-label="Choose files to upload"
-                  onChange={(e) => onPick(e.target.files)}
-                />
-                <Button
-                  size="sm"
-                  disabled={uploadM.isPending}
-                  onClick={() => inputRef.current?.click()}
-                >
-                  {uploadM.isPending ? (
-                    <Loader2 className="mr-1 size-4 animate-spin" />
-                  ) : (
-                    <Upload className="mr-1 size-4" />
-                  )}
-                  Upload files
-                </Button>
-              </>
-            ) : null}
-          </>
-        }
-      />
+    <ListWorkspace
+      title="Files"
+      description="Everything attached to invoices, bills, contacts and journals, plus files you upload here. You only see files for records you are allowed to view."
+      actions={
+        <>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setView("review");
+              setFolderId(null);
+            }}
+          >
+            <ClipboardCheck className="mr-1 size-4" />
+            Document review
+          </Button>
+          {canUpload ? (
+            <>
+              <input
+                ref={inputRef}
+                type="file"
+                multiple
+                hidden
+                accept={FILE_INPUT_ACCEPT}
+                aria-label="Choose files to upload"
+                onChange={(e) => onPick(e.target.files)}
+              />
+              <Button
+                size="sm"
+                disabled={uploadM.isPending}
+                onClick={() => inputRef.current?.click()}
+              >
+                {uploadM.isPending ? (
+                  <Loader2 className="mr-1 size-4 animate-spin" />
+                ) : (
+                  <Upload className="mr-1 size-4" />
+                )}
+                Upload files
+              </Button>
+            </>
+          ) : null}
+        </>
+      }
+    >
       {error ? (
         <p role="alert" className="mb-3 text-sm text-destructive">
           {error}
@@ -1101,6 +1100,6 @@ function FilesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </ListWorkspace>
   );
 }

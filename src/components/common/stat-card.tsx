@@ -129,7 +129,7 @@ export function StatusBadge({
   return (
     <SemanticStatusBadge
       status={status}
-      label={label}
+      {...(label !== undefined ? { label } : {})}
       className={cn("whitespace-nowrap", className)}
     />
   );

@@ -182,7 +182,7 @@ function InvoicesList() {
         description="Customer invoices. Authorising posts Accounts Receivable via the shared ledger."
         actions={
           <Button size="sm" asChild>
-            <Link to="/sales/invoices/new">New invoice</Link>
+            <Link to="/sales/invoices/new" search={returnContext ? { returnContext } : {}}>New invoice</Link>
           </Button>
         }
       />
@@ -300,7 +300,7 @@ function InvoicesList() {
           }
           action={
             <Button size="sm" asChild>
-              <Link to="/sales/invoices/new">New invoice</Link>
+              <Link to="/sales/invoices/new" search={returnContext ? { returnContext } : {}}>New invoice</Link>
             </Button>
           }
         />

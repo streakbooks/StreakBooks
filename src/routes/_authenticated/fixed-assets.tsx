@@ -53,6 +53,7 @@ import { buildFixedAssetRegisterCsv } from "@/lib/fixed-assets/register-export";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -835,14 +836,9 @@ function RegisterTable({
     );
   };
 
-  const statusBadge = (asset: FixedAssetRow) => {
-    const status = assetStatusAsOf(asset, asOf);
-    if (status === "not_acquired")
-      return <Badge variant="outline">Future purchase</Badge>;
-    if (status === "disposed")
-      return <Badge variant="secondary">Disposed</Badge>;
-    return <Badge variant="outline">Active</Badge>;
-  };
+  const statusBadge = (asset: FixedAssetRow) => (
+    <StatusBadge status={assetStatusAsOf(asset, asOf)} />
+  );
 
   return (
     <>

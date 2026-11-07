@@ -5,7 +5,7 @@ import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -141,10 +141,10 @@ export function AppStoreConnectionsPage() {
                     </TableCell>
                     <TableCell>{row.authMethod}</TableCell>
                     <TableCell>
-                      <Badge variant="outline">{row.status}</Badge>
+                      <StatusBadge status={row.status} />
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary">{row.health}</Badge>
+                      <StatusBadge status={row.health} />
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {row.lastSuccessfulSyncAt ?? "—"}

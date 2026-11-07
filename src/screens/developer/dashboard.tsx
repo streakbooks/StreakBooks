@@ -65,7 +65,7 @@ export function DeveloperDashboardPage() {
       </Alert>
 
       <div className="mb-8 grid gap-4 md:grid-cols-3">
-        <Card>
+        <Card className="transition-colors hover:border-primary/30">
           <CardHeader className="pb-2">
             <CardDescription>Published API scopes</CardDescription>
             <CardTitle className="text-3xl tabular-nums">
@@ -80,24 +80,30 @@ export function DeveloperDashboardPage() {
             </Button>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="transition-colors hover:border-primary/30">
           <CardHeader className="pb-2">
-            <CardDescription>Publisher applications</CardDescription>
-            <CardTitle className="text-3xl tabular-nums">0</CardTitle>
+            <CardDescription>Credentials</CardDescription>
+            <CardTitle className="text-base">Vault locked</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">Registration UI ships in AS-05.</p>
+            <Button asChild variant="link" className="h-auto p-0">
+              <Link to="/developer/$section" params={{ section: "credentials" }}>
+                Open credentials
+              </Link>
+            </Button>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="transition-colors hover:border-primary/30">
           <CardHeader className="pb-2">
-            <CardDescription>OAuth clients</CardDescription>
-            <CardTitle className="text-3xl tabular-nums">0</CardTitle>
+            <CardDescription>OAuth / PKCE</CardDescription>
+            <CardTitle className="text-base">Fail closed</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Client secrets are hash-only when issued.
-            </p>
+            <Button asChild variant="link" className="h-auto p-0">
+              <Link to="/developer/$section" params={{ section: "oauth" }}>
+                Configure OAuth
+              </Link>
+            </Button>
           </CardContent>
         </Card>
       </div>

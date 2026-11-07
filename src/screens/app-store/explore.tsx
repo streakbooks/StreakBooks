@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { AppStoreHero } from "@/components/app-store/AppStoreHero";
 import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
 import { MarketplaceAppCard } from "@/components/app-store/MarketplaceAppCard";
 import { CompanyEmptyState } from "@/components/common/company-empty";
@@ -70,9 +71,9 @@ export function AppStoreExplorePage() {
 
   return (
     <>
-      <PageHeader
-        title="Explore All Apps"
-        description="Search the marketplace catalogue. Results come from persisted listings or local defaults when migrations are pending."
+      <AppStoreHero
+        title="Explore the marketplace"
+        description="Search published listings by capability, country and pricing. Results use the database catalogue when migrations are applied, otherwise local defaults — never inventing live connections."
       />
       <AppStoreSubnav current="explore" />
 

@@ -14,6 +14,12 @@ const DeveloperApiDocsPage = lazy(() =>
 const DeveloperSubmissionPage = lazy(() =>
   import("@/screens/developer/submission").then((m) => ({ default: m.DeveloperSubmissionPage })),
 );
+const DeveloperCredentialsPage = lazy(() =>
+  import("@/screens/developer/credentials").then((m) => ({ default: m.DeveloperCredentialsPage })),
+);
+const DeveloperOAuthPage = lazy(() =>
+  import("@/screens/developer/oauth").then((m) => ({ default: m.DeveloperOAuthPage })),
+);
 
 function SectionSuspense({ children }: { children: ReactNode }) {
   return <Suspense fallback={<LoadingState />}>{children}</Suspense>;
@@ -34,6 +40,20 @@ export function DeveloperSectionPage({ sectionKey }: { sectionKey: DeveloperPort
     return (
       <SectionSuspense>
         <DeveloperSubmissionPage />
+      </SectionSuspense>
+    );
+  }
+  if (sectionKey === "credentials") {
+    return (
+      <SectionSuspense>
+        <DeveloperCredentialsPage />
+      </SectionSuspense>
+    );
+  }
+  if (sectionKey === "oauth") {
+    return (
+      <SectionSuspense>
+        <DeveloperOAuthPage />
       </SectionSuspense>
     );
   }

@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { AppStoreHero } from "@/components/app-store/AppStoreHero";
 import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
 import { MarketplaceAppCard } from "@/components/app-store/MarketplaceAppCard";
 import { CompanyEmptyState } from "@/components/common/company-empty";
@@ -83,12 +84,12 @@ export function AppStoreOverviewPage() {
 
   return (
     <>
-      <PageHeader
-        title="App Store"
-        description="Connect third-party software to LinkBooks through native connectors and the public developer API."
+      <AppStoreHero
+        title="Connect your stack to LinkBooks"
+        description={`Native Amazon, Shopify and Stripe first — partners like Hubdoc and Link My Books via the public API. ${verifiedCount} of ${roadmap.length || 0} native adapters are E2E verified. Real customer data stays locked until security gates pass.`}
         actions={
-          <div className="flex flex-wrap gap-2">
-            <Button asChild variant="outline" size="sm">
+          <>
+            <Button asChild size="sm">
               <Link to="/app-store/$section" params={{ section: "explore" }}>
                 Explore all apps
               </Link>
@@ -98,25 +99,21 @@ export function AppStoreOverviewPage() {
                 Integration register
               </Link>
             </Button>
-            <Button asChild size="sm">
+            <Button asChild variant="secondary" size="sm">
               <Link to="/developer">Developer portal</Link>
             </Button>
-          </div>
+          </>
         }
       />
       <AppStoreSubnav current="overview" />
 
       <Alert className="mb-6">
-        <AlertTitle>Open integration platform — fail closed</AlertTitle>
+        <AlertTitle>Fail closed</AlertTitle>
         <AlertDescription>
-          Native priority: Amazon, Shopify and Stripe. Partner providers such as Hubdoc and Link My
-          Books integrate through the LinkBooks public API when API access, cooperation and
-          technical approvals allow. No connector is marked complete until real end-to-end
-          synchronization is verified ({verifiedCount} of {roadmap.length || 0} native adapters
-          currently E2E verified). Real customer data stays locked until security review and
-          activation gates pass. Catalogue source: {catalogue.data?.source ?? "defaults"}
+          Catalogue source: {catalogue.data?.source ?? "defaults"}
           {catalogue.data?.ready ? "" : " (migration not applied — using defaults)"}. Use Privacy
-          &amp; Access to review consents and revoke connections.
+          &amp; Access to review consents and revoke connections. Install remains interest-only
+          until E2E verification, security review and real-data enablement.
         </AlertDescription>
       </Alert>
 
@@ -151,50 +148,57 @@ export function AppStoreOverviewPage() {
       </div>
 
       <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Catalogue apps</CardDescription>
-            <CardTitle className="text-3xl tabular-nums">{apps.length}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">Published listings available to browse.</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Installed / requested</CardDescription>
-            <CardTitle className="text-3xl tabular-nums">{installed.length}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Button asChild variant="link" className="h-auto p-0">
-              <Link to="/app-store/$section" params={{ section: "my-apps" }}>
-                Open My Apps
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Categories</CardDescription>
-            <CardTitle className="text-3xl tabular-nums">{categories.length}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Button asChild variant="link" className="h-auto p-0">
-              <Link to="/app-store/$section" params={{ section: "categories" }}>
-                Browse categories
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>E2E verified natives</CardDescription>
-            <CardTitle className="text-3xl tabular-nums">{verifiedCount}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">Install stays blocked until verified.</p>
-          </CardContent>
-        </Card>
+        {[
+          {
+            label: "Catalogue apps",
+            value: apps.length,
+            body: (
+              <p className="text-sm text-muted-foreground">
+                Published listings available to browse.
+              </p>
+            ),
+          },
+          {
+            label: "Installed / requested",
+            value: installed.length,
+            body: (
+              <Button asChild variant="link" className="h-auto p-0">
+                <Link to="/app-store/$section" params={{ section: "my-apps" }}>
+                  Open My Apps
+                </Link>
+              </Button>
+            ),
+          },
+          {
+            label: "Categories",
+            value: categories.length,
+            body: (
+              <Button asChild variant="link" className="h-auto p-0">
+                <Link to="/app-store/$section" params={{ section: "categories" }}>
+                  Browse categories
+                </Link>
+              </Button>
+            ),
+          },
+          {
+            label: "E2E verified natives",
+            value: verifiedCount,
+            body: (
+              <p className="text-sm text-muted-foreground">Install stays blocked until verified.</p>
+            ),
+          },
+        ].map((stat) => (
+          <Card
+            key={stat.label}
+            className="border-border/80 bg-card/90 transition-colors hover:border-primary/30"
+          >
+            <CardHeader className="pb-2">
+              <CardDescription>{stat.label}</CardDescription>
+              <CardTitle className="text-3xl tabular-nums">{stat.value}</CardTitle>
+            </CardHeader>
+            <CardContent>{stat.body}</CardContent>
+          </Card>
+        ))}
       </div>
 
       <section className="mb-10 space-y-4">

@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertCompanyMember, assertCompanyPermission } from "@/lib/assert-company-access";
 import { assertUuid } from "@/lib/company-validation";
-import { escapeLikeLiteral } from "@/lib/purchases/search-terms";
+import { escapeLikeLiteral } from "@/lib/sales/list-filters";
 import { usableCustomerPriceList } from "@/lib/products/customer-price-list-rules";
 
 export type CustomerPriceListAssignment = {

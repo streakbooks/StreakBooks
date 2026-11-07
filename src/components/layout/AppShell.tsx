@@ -115,16 +115,18 @@ function Brand({ collapsed }: { collapsed?: boolean }) {
       to="/"
       aria-label="LinkBooks dashboard"
       className={cn(
-        "flex items-center gap-2.5 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+        "flex items-center gap-3 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
         collapsed ? "justify-center" : "px-1",
       )}
     >
-      <div className="grid size-8 shrink-0 place-items-center rounded-md bg-sidebar-primary text-sm font-bold text-sidebar-primary-foreground">
-        LB
-      </div>
+      <span className="lb-brand-mark" aria-hidden="true">
+        <span className="lb-brand-mark-spine" />
+        <span className="lb-brand-mark-page lb-brand-mark-page-left" />
+        <span className="lb-brand-mark-page lb-brand-mark-page-right" />
+      </span>
       {collapsed ? null : (
         <div className="leading-tight">
-          <div className="text-sm font-semibold text-sidebar-accent-foreground">LinkBooks</div>
+          <div className="text-[15px] font-bold tracking-[-0.03em] text-sidebar-accent-foreground">LinkBooks</div>
           <div className="text-[11px] text-sidebar-foreground/70">Cloud accounting</div>
         </div>
       )}
@@ -338,7 +340,7 @@ function NavList({
             <label htmlFor={searchId} className="sr-only">
               Filter navigation
             </label>
-            <div className="flex items-center gap-2 rounded-lg border border-sidebar-border bg-sidebar-accent/40 px-3 focus-within:ring-2 focus-within:ring-sidebar-ring">
+            <div className="lb-nav-search flex items-center gap-2 rounded-xl border border-sidebar-border/80 bg-sidebar-accent/40 px-3 transition-[border-color,box-shadow] focus-within:border-sidebar-ring/75 focus-within:ring-2 focus-within:ring-sidebar-ring/40">
               <Search className="size-4 shrink-0 text-sidebar-foreground/60" aria-hidden />
               <input
                 id={searchId}
@@ -514,7 +516,7 @@ function AppShellLayout({ children }: { children: ReactNode }) {
       <aside
         aria-label="Sidebar"
         className={cn(
-          "lb-premium-sidebar fixed inset-y-0 left-0 z-40 hidden flex-col bg-sidebar transition-[width] duration-200 print:hidden lg:flex",
+          "lb-premium-sidebar fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-sidebar-border/65 bg-sidebar transition-[width] duration-200 print:hidden lg:flex",
           collapsed ? "w-[4.5rem]" : "w-64",
         )}
       >
@@ -562,7 +564,7 @@ function AppShellLayout({ children }: { children: ReactNode }) {
           collapsed ? "lg:pl-[4.5rem]" : "lg:pl-64",
         )}
       >
-        <header className="sticky top-0 z-30 flex min-h-16 items-center gap-1 border-b border-border bg-card px-3 py-2 print:hidden sm:gap-2 md:px-6">
+        <header className="lb-workspace-topbar sticky top-0 z-30 flex min-h-16 items-center gap-1 border-b border-border/80 bg-card/95 px-3 py-2 print:hidden sm:gap-2 md:px-6">
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open menu">
@@ -627,7 +629,7 @@ function AppShellLayout({ children }: { children: ReactNode }) {
           aria-label={title}
           tabIndex={-1}
           className={cn(
-            "mx-auto w-full min-w-0 max-w-[1440px] px-4 py-6 outline-none md:px-7 md:py-8 xl:px-9 print:max-w-none print:p-0",
+            "lb-workspace-canvas mx-auto w-full min-w-0 max-w-[1600px] px-4 py-6 outline-none md:px-7 md:py-8 xl:px-9 print:max-w-none print:p-0",
           )}
         >
           <SettingsSurface

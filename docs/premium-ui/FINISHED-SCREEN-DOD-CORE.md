@@ -14,7 +14,7 @@ A screen is **not** DONE unless every applicable row is PASS or N/A with reason.
 | Scaffold / future inheritance | PARTIAL | `scaffold:module` + `check:modules`; live screenshot of probe not retained |
 | Authenticated staging QA | NOT VERIFIED | Authorized; `E2E_*` staging credentials not configured on workstation |
 | Program / production authorization | PASS | Full authorization granted 2026-11-07 by product owner |
-| Production go-live (Section 18) | BLOCKED | Staging/RBAC/manual a11y/DoD gates still evidence-open |
+| Production go-live (Section 18) | BLOCKED | `npm run check:section18` reports open gates; staging/RBAC/manual a11y still evidence-open |
 
 ## Module matrices
 

@@ -445,14 +445,14 @@ export function FirmClientPortfolio({
           />
         </div>
         <div className="space-y-1">
-          <Label>Practice status</Label>
+          <Label htmlFor="firm-client-status">Practice status</Label>
           <Select
             value={status}
             disabled={profileUnavailable}
             onValueChange={(value) => setStatus(value as FirmClientStatus | "all")}
           >
             {/* lookup-fixed-enum: Practice status filter uses fixed lifecycle values. */}
-            <SelectTrigger aria-label="Filter by practice status">
+            <SelectTrigger id="firm-client-status">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -466,14 +466,14 @@ export function FirmClientPortfolio({
           </Select>
         </div>
         <div className="space-y-1">
-          <Label>Review schedule</Label>
+          <Label htmlFor="firm-client-review">Review schedule</Label>
           <Select
             value={review}
             disabled={profileUnavailable}
             onValueChange={(value) => setReview(value as FirmClientReviewFilter)}
           >
             {/* lookup-fixed-enum: Review filter uses fixed operational values. */}
-            <SelectTrigger aria-label="Filter by next review date">
+            <SelectTrigger id="firm-client-review">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -485,10 +485,10 @@ export function FirmClientPortfolio({
           </Select>
         </div>
         <div className="space-y-1">
-          <Label>Sort clients</Label>
+          <Label htmlFor="firm-client-sort">Sort clients</Label>
           <Select value={sort} onValueChange={(value) => setSort(value as FirmClientSort)}>
             {/* lookup-fixed-enum: Sort uses fixed directory fields. */}
-            <SelectTrigger aria-label="Sort client directory">
+            <SelectTrigger id="firm-client-sort">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

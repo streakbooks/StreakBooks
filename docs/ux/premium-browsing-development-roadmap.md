@@ -72,6 +72,12 @@ This includes native browser navigation, discoverable module sections, connected
 - `e2e/banking-journal-return-browsing.spec.ts`: three browser journeys (NOT RUN).
 - The current environment cannot clone GitHub directly (`Could not resolve host: github.com`); full app typecheck, lint, build, Vitest and Playwright remain **NOT RUN**. The connected GitHub tools were used to inspect and commit, and source-level consistency was checked.
 
+- `src/lib/fixed-assets/register-navigation.ts`, `src/routes/_authenticated/fixed-assets.tsx`: allowlisted URL-backed register search, status, account/type, sort and native section context; saved filter views apply in one navigation update.
+- `src/lib/fixed-assets/register-navigation.test.ts`: seven unit scenarios WRITTEN, NOT RUN. `e2e/fixed-assets-native-browsing.spec.ts`: three browser scenarios WRITTEN, NOT RUN.
+- `src/lib/budgets/budget-navigation.ts`, `src/routes/_authenticated/budgets/index.tsx`, `src/routes/_authenticated/budgets/$budgetId.tsx`: budget list search URL and return-to-origin. Five unit scenarios and two browser scenarios WRITTEN, NOT RUN.
+- `src/lib/notifications/notification-utils.ts`, `src/routes/_authenticated/notifications.tsx`: Action Center page grouping stored as URL state, preserving current filters and native history. Two unit scenarios added; one browser scenario WRITTEN, NOT RUN.
+- No full `npm`/TypeScript/Vitest/Playwright execution or deployment verification is available in this connected GitHub-only session. Do not upgrade any module to fully verified from source checks.
+
 ## Required acceptance criteria
 
 1. **Modules:** All existing top-level and sub-navigation items resolve to their permitted page, preserve correct active section, and expose native anchors.
@@ -91,12 +97,12 @@ This includes native browser navigation, discoverable module sections, connected
 | --- | --- | --- |
 | 1 | Complete repository-wide feature/route inventory, PRD/HLD/LLD and design baseline | Route/sidebar inventory recorded; full UX feature audit pending |
 | 2 | Original design system, themes/colour schemes, shared shell/sidebar/context navigation, global search and Create New | Shared navigation partly coded; not fully verified |
-| 3 | Dashboard, Action Center/Notifications, Help, Profile, onboarding, workspace entry and role-sensitive flow | Pending |
+| 3 | Dashboard, Action Center/Notifications, Help, Profile, onboarding, workspace entry and role-sensitive flow | Action Center grouping URL state partially coded; full Dashboard, Help and other workflows unverified |
 | 4 | All Sales and Purchases submodules, payment/credit/recurring/expense workflows, supplier and customer navigation | Partial invoice/bill browsing code; remaining work pending |
 | 5 | Banking accounts, feeds, cash coding, imports, transfers, rules, reconciliation and related money workflows | Transaction/journal browsing improvements committed; remaining submodules and end-to-end tests pending |
 | 6 | Contacts, Products/Services and requested inventory scope, Files/Documents, import centre, Projects | Partial Contacts/Products browsing code; remaining work pending |
 | 7 | Accounting, recurring journals, GL/COA/periods, Accountant workflows, Reports centre and report builder | Reports Centre return navigation partially implemented; Accounting, report builder and runtime verification pending |
-| 8 | Tax, country support, Budgets, Fixed Assets, related accounting/report drilldowns | Pending |
+| 8 | Tax, country support, Budgets, Fixed Assets, related accounting/report drilldowns | Budgets list-to-detail return and Fixed Assets register URL filters coded; Tax and remaining workflows unverified |
 | 9 | Payroll and complete Expense Claims/Expense Management including approvals, reimbursements and payment integrations | Pending |
 | 10 | Firm, Advisors administration, Advisors customer portal, engagement and billing/document workflows | Pending |
 | 11 | AI Assistant/LinkBooks Signal, Settings, Platform/Superadmin, subscription billing, automation, integrations and localization | Pending |
@@ -106,7 +112,7 @@ This includes native browser navigation, discoverable module sections, connected
 
 The denominator is provisional until the full feature inventory is reconciled. **Fully verified coding batches: 0 / 12**; don't increase this without actual checks and acceptance evidence.
 
-**Next:** Execute `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run check:navigation`, `npm.cmd run check:ui`, `npm.cmd run check:browsing-coverage`, `npm.cmd test -- src/lib/sales/invoice-list-navigation.test.ts src/lib/purchases/bills-return-context.test.ts src/lib/contacts/contact-view-navigation.test.ts src/lib/products/catalogue-navigation.test.ts src/lib/reports/centre-return.test.ts src/lib/banking/transaction-return.test.ts`, and authenticated browser suites in an isolated local worktree. Fix any failures before considering a batch verified. Next coding priorities: Banking reconciliation/import state, Reports saved-library subfilters, Accounting and Dashboard navigation, followed by every remaining module. Browser tests require authenticated fixtures.
+**Next:** Execute `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run check:navigation`, `npm.cmd run check:ui`, `npm.cmd run check:browsing-coverage`, `npm.cmd test -- src/lib/sales/invoice-list-navigation.test.ts src/lib/purchases/bills-return-context.test.ts src/lib/contacts/contact-view-navigation.test.ts src/lib/products/catalogue-navigation.test.ts src/lib/reports/centre-return.test.ts src/lib/banking/transaction-return.test.ts`, and authenticated browser suites in an isolated local worktree. Fix any failures before considering a batch verified. Next coding priorities: Accounting and Dashboard linked workspace navigation, Files search/grouping, Tax and Payroll entry flows, Banking reconciliation/import state and Reports saved-library subfilters, followed by every remaining module. Browser tests require authenticated fixtures.
 
 ## Operating boundaries
 

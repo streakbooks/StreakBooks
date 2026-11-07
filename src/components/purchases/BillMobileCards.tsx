@@ -47,6 +47,7 @@ export function BillMobileCards({
         const currency = bill.currency_code || baseCurrency;
         const reference = bill.display_reference ?? bill.id.slice(0, 8);
         const unposted = bill.status === "draft" || bill.status === "awaiting_approval";
+        const visualStatus = billCardDisplayStatus(bill);
         return (
           <article
             key={bill.id}
@@ -64,7 +65,7 @@ export function BillMobileCards({
                   {bill.contacts?.name ?? "Supplier not specified"}
                 </p>
               </div>
-              <StatusBadge status={billCardDisplayStatus(bill)} />
+              <StatusBadge status={visualStatus} />
             </div>
             <dl className="mt-3 grid grid-cols-2 gap-3 rounded-xl border border-border/55 bg-muted/25 p-3 text-sm">
               <div>
@@ -76,7 +77,7 @@ export function BillMobileCards({
                 <dd
                   className={cn(
                     "mt-1 font-medium",
-                    bill.days_overdue > 0 && bill.balance_due_minor > 0 && !unposted && "text-destructive",
+                    visualStatus === "overdue" && "text-destructive",
                   )}
                 >
                   {bill.due_date || "—"}

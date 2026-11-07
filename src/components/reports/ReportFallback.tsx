@@ -1,10 +1,17 @@
 import { Link } from "@tanstack/react-router";
 import type { ReportDef } from "@/lib/reports/catalog";
+import type { ReportingCentreContext } from "@/lib/reports/centre-return";
 import { PageHeader } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
 
 /** Reports that already exist as a dedicated screen elsewhere: one click through, no fake runner. */
-export function ReportShellFallbackLink({ report }: { report: ReportDef }) {
+export function ReportShellFallbackLink({
+  report,
+  backSearch,
+}: {
+  report: ReportDef;
+  backSearch?: ReportingCentreContext;
+}) {
   if (!report.linkTo) return null;
   return (
     <div className="space-y-4">
@@ -13,7 +20,7 @@ export function ReportShellFallbackLink({ report }: { report: ReportDef }) {
         <Link to={report.linkTo}>Open</Link>
       </Button>
       <Button asChild variant="outline">
-        <Link to="/reports">Back to Reports Centre</Link>
+        <Link to="/reports" search={backSearch ?? { tab: "standard" }}>Back to Reports Centre</Link>
       </Button>
     </div>
   );

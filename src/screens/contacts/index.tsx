@@ -826,7 +826,13 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
         actions={
           <div className="flex flex-wrap gap-2">
             <Button size="sm" asChild>
-              <Link to="/contacts/new" search={{ kind: "customer" }}>
+              <Link
+                to="/contacts/new"
+                search={{
+                  kind: "customer",
+                  returnContext: encodeContactsReturnContext(directorySearch) || undefined,
+                }}
+              >
                 New contact
               </Link>
             </Button>

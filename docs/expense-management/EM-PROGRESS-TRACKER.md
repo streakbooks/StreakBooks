@@ -21,7 +21,7 @@ Coded surface largely complete · Provider/ops gates remain · Migrations not ap
 
 | Area | Status |
 | --- | --- |
-| Code Development | 3 / 12 verified (+ EM-04–12a + EM-05c–e + EM-06b + EM-07c coded; batches not closed) |
+| Code Development | 3 / 12 verified; EM SQL applied on linked project 2026-11-07; overview smoke OK; full E2E still open |
 | Local Testing | Partial (unit + check:ui; no DB/browser) |
 | GitHub Commit | Local commits only; not pushed |
 | GitHub PR / Merge | Pending |

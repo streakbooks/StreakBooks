@@ -8,7 +8,7 @@ At the **end of every EM phase/slice chat response and final report**, paste thi
 
 ```
 EM progress  ███░░░░░░░░░  3/12 verified (25%)
-Coded slices EM-04…EM-10a · Migrations not applied · Not pushed
+Coded slices EM-04…EM-11a · Migrations not applied · Not pushed
 ```
 
 ## Visual progress
@@ -21,7 +21,7 @@ Coded slices EM-04…EM-10a · Migrations not applied · Not pushed
 
 | Area | Status |
 | --- | --- |
-| Code Development | 3 / 12 verified (+ EM-04–10a slices coded; those batches not closed) |
+| Code Development | 3 / 12 verified (+ EM-04–11a slices coded; those batches not closed) |
 | Local Testing | Partial (unit + check:ui; no DB/browser) |
 | GitHub Commit | Local commits only; not pushed |
 | GitHub PR / Merge | Pending |
@@ -43,7 +43,7 @@ Coded slices EM-04…EM-10a · Migrations not applied · Not pushed
 | EM-08 | Mileage, travel, per diem, advances, petty cash, settlements | In progress — EM-08a–d core paths coded; unused-advance reclaim / booking integrations pending |
 | EM-09 | Corporate cards, disputes, rebilling, exit settlement | In progress — EM-09a–c cards, disputes, rebilling, exit settlement coded; batch not closed |
 | EM-10 | AI OCR, categorisation, duplicates, fraud indicators | In progress — EM-10a rule-based risk/duplicates/category + OCR unavailable stub |
-| EM-11 | Reports, analytics, notifications, migration, exports, audit | Not started |
+| EM-11 | Reports, analytics, notifications, migration, exports, audit | In progress — EM-11a summary/aging/CSV/audit coded; notifications/migration tooling pending |
 | EM-12 | Integration, security, performance, recovery, UX, release verification | Not started |
 
 ## Navigation note

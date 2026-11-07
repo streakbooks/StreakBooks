@@ -76,6 +76,14 @@ import {
   type ExpenseClaimDuplicateMatch,
   type ExpenseClaimRiskScan,
 } from "@/lib/expenses/risk";
+import {
+  mapExpenseClaimAuditEvents,
+  mapExpenseClaimExportRows,
+  mapExpenseManagementReport,
+  type ExpenseClaimAuditEvent,
+  type ExpenseClaimExportRow,
+  type ExpenseManagementReport,
+} from "@/lib/expenses/reports";
 
 export const EXPENSE_MANAGEMENT_MIGRATION =
   "Expense Management is not available yet: the database update 20261107120000 has not been applied.";
@@ -118,6 +126,9 @@ export const EXPENSE_EXIT_SETTLEMENT_MIGRATION =
 
 export const EXPENSE_RISK_MIGRATION =
   "Expense risk and duplicate checks are not available yet: apply database update 20261107146000.";
+
+export const EXPENSE_REPORTS_MIGRATION =
+  "Expense reports are not available yet: apply database update 20261107147000.";
 
 export const EXPENSE_TEMPLATE_MIGRATION =
   "Expense claim templates are not available yet: apply database update 20261107130000.";
@@ -1880,4 +1891,81 @@ export const requestExpenseReceiptOcr = createServerFn({ method: "POST" })
       EXPENSE_RISK_MIGRATION,
     );
     return mapReceiptInboxEntry(raw);
+  });
+
+export const getExpenseManagementReport = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { companyId: string; fromDate?: string; toDate?: string }) => ({
+      companyId: companyIdOf(input),
+      fromDate: input.fromDate,
+      toDate: input.toDate,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<ExpenseManagementReport> => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "get_expense_management_report",
+      {
+        _company_id: data.companyId,
+        _from_date: data.fromDate ?? null,
+        _to_date: data.toDate ?? null,
+      },
+      EXPENSE_REPORTS_MIGRATION,
+    );
+    return mapExpenseManagementReport(raw);
+  });
+
+export const exportExpenseClaimsReport = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { companyId: string; fromDate?: string; toDate?: string }) => ({
+      companyId: companyIdOf(input),
+      fromDate: input.fromDate,
+      toDate: input.toDate,
+    }),
+  )
+  .handler(
+    async ({
+      data,
+      context,
+    }): Promise<{ fromDate: string; toDate: string; rows: ExpenseClaimExportRow[] }> => {
+      await assertCompanyMember(context.supabase, data.companyId);
+      const raw = await callRpc<{ from_date?: string; to_date?: string; claims?: unknown[] }>(
+        context.supabase,
+        "export_expense_claims_report",
+        {
+          _company_id: data.companyId,
+          _from_date: data.fromDate ?? null,
+          _to_date: data.toDate ?? null,
+        },
+        EXPENSE_REPORTS_MIGRATION,
+      );
+      return {
+        fromDate: String(raw.from_date ?? data.fromDate ?? ""),
+        toDate: String(raw.to_date ?? data.toDate ?? ""),
+        rows: mapExpenseClaimExportRows(raw),
+      };
+    },
+  );
+
+export const listExpenseClaimAuditEvents = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; limit?: number }) => ({
+    companyId: companyIdOf(input),
+    limit: input.limit,
+  }))
+  .handler(async ({ data, context }): Promise<ExpenseClaimAuditEvent[]> => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "list_expense_claim_audit_events",
+      {
+        _company_id: data.companyId,
+        _limit: data.limit ?? 50,
+      },
+      EXPENSE_REPORTS_MIGRATION,
+    );
+    return mapExpenseClaimAuditEvents(raw);
   });

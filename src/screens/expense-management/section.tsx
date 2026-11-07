@@ -38,6 +38,11 @@ const ExpenseManagementExitSettlementPage = lazy(() =>
     default: m.ExpenseManagementExitSettlementPage,
   })),
 );
+const ExpenseManagementReportsPage = lazy(() =>
+  import("@/screens/expense-management/reports").then((m) => ({
+    default: m.ExpenseManagementReportsPage,
+  })),
+);
 const ExpenseManagementMileagePage = lazy(() =>
   import("@/screens/expense-management/mileage").then((m) => ({
     default: m.ExpenseManagementMileagePage,
@@ -181,6 +186,13 @@ export function ExpenseManagementSectionPage({
     return (
       <SectionSuspense>
         <ExpenseManagementExitSettlementPage />
+      </SectionSuspense>
+    );
+  }
+  if (sectionKey === "reports") {
+    return (
+      <SectionSuspense>
+        <ExpenseManagementReportsPage />
       </SectionSuspense>
     );
   }

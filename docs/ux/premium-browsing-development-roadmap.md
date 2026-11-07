@@ -78,6 +78,10 @@ This includes native browser navigation, discoverable module sections, connected
 - `src/lib/notifications/notification-utils.ts`, `src/routes/_authenticated/notifications.tsx`: Action Center page grouping stored as URL state, preserving current filters and native history. Two unit scenarios added; one browser scenario WRITTEN, NOT RUN.
 - No full `npm`/TypeScript/Vitest/Playwright execution or deployment verification is available in this connected GitHub-only session. Do not upgrade any module to fully verified from source checks.
 
+- `src/lib/documents/files-navigation.ts` and `src/routes/_authenticated/files.tsx`: URL-backed file list search, record type, sort, page, folder, selected preview and workspace view; native folder breadcrumbs and document review links.
+- `src/lib/documents/files-navigation.test.ts`: seven unit tests WRITTEN, NOT RUN; `e2e/files-native-browsing.spec.ts`: three authenticated browser scenarios WRITTEN, NOT RUN.
+- Existing folders, uploads, attachments and bulk actions are unchanged on the server; organization access and authenticated browser regression still must be verified.
+
 ## Required acceptance criteria
 
 1. **Modules:** All existing top-level and sub-navigation items resolve to their permitted page, preserve correct active section, and expose native anchors.
@@ -100,7 +104,7 @@ This includes native browser navigation, discoverable module sections, connected
 | 3 | Dashboard, Action Center/Notifications, Help, Profile, onboarding, workspace entry and role-sensitive flow | Action Center grouping URL state partially coded; full Dashboard, Help and other workflows unverified |
 | 4 | All Sales and Purchases submodules, payment/credit/recurring/expense workflows, supplier and customer navigation | Partial invoice/bill browsing code; remaining work pending |
 | 5 | Banking accounts, feeds, cash coding, imports, transfers, rules, reconciliation and related money workflows | Transaction/journal browsing improvements committed; remaining submodules and end-to-end tests pending |
-| 6 | Contacts, Products/Services and requested inventory scope, Files/Documents, import centre, Projects | Partial Contacts/Products browsing code; remaining work pending |
+| 6 | Contacts, Products/Services and requested inventory scope, Files/Documents, import centre, Projects | Contacts, Products and Files URL-backed navigation partly coded; imports, Projects and tests pending |
 | 7 | Accounting, recurring journals, GL/COA/periods, Accountant workflows, Reports centre and report builder | Reports Centre return navigation partially implemented; Accounting, report builder and runtime verification pending |
 | 8 | Tax, country support, Budgets, Fixed Assets, related accounting/report drilldowns | Budgets list-to-detail return and Fixed Assets register URL filters coded; Tax and remaining workflows unverified |
 | 9 | Payroll and complete Expense Claims/Expense Management including approvals, reimbursements and payment integrations | Pending |

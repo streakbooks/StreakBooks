@@ -8,6 +8,7 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
 import { upsertContact, upsertContactPerson } from "@/lib/contacts/contacts.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { decodeContactsReturnContext } from "@/lib/contacts/contact-view-navigation";
 import { PageHeader, EmptyState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,8 +24,8 @@ import {
 const routeApi = getRouteApi("/_authenticated/contacts/new");
 
 export function NewContactRoute() {
-  const { kind } = routeApi.useSearch();
-  return <NewContact initialKind={kind} />;
+  const { kind, returnContext } = routeApi.useSearch();
+  return <NewContact initialKind={kind} returnContext={returnContext} />;
 }
 
 const sections = [
@@ -70,11 +71,13 @@ export function NewContact({
   initialKind = "customer",
   embedded = false,
   onSaved,
-}: { initialKind?: "customer" | "supplier"; embedded?: boolean; onSaved?: () => void } = {}) {
+  returnContext,
+}: { initialKind?: "customer" | "supplier"; embedded?: boolean; onSaved?: () => void; returnContext?: string } = {}) {
   const { company } = useActiveCompany();
   const companyId = company?.id;
   const canManage = useCanDo("contacts.manage");
   const navigate = useNavigate();
+  const directorySearch = decodeContactsReturnContext(returnContext);
   const qc = useQueryClient();
   const save = useServerFn(upsertContact);
   const savePerson = useServerFn(upsertContactPerson);
@@ -175,7 +178,11 @@ export function NewContact({
         toast.warning("Contact saved, but some people could not be added. Review the People tab.");
       else toast.success("Contact created");
       if (onSaved) onSaved();
-      else void navigate({ to: "/contacts/$contactId", params: { contactId: id } });
+      else void navigate({
+        to: "/contacts/$contactId",
+        params: { contactId: id },
+        search: returnContext ? { returnContext } : {},
+      });
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
@@ -190,7 +197,7 @@ export function NewContact({
           description="Create a shared customer or supplier profile with accounting defaults."
           actions={
             <Button variant="outline" asChild>
-              <Link to="/contacts" search={{ view: undefined }}>
+              <Link to="/contacts" search={directorySearch}>
                 Back to directory
               </Link>
             </Button>

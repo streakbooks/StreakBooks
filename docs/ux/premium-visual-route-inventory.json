@@ -89,7 +89,10 @@
         "browser": false
       },
       "changedScreens": [
-        "src/components/common/stat-card.tsx — existing bank transaction status chips now render semantic StatusBadge"
+        "src/components/common/stat-card.tsx — existing bank transaction status chips now render semantic StatusBadge",
+        "src/components/banking/BankTransactionMobileCards.tsx — responsive premium transaction cards",
+        "src/components/banking/BankTransactionQuickPreview.tsx — improved authorised preview panel",
+        "src/components/common/SelectionActionBar.tsx — consistent bank list contextual actions"
       ]
     },
     {
@@ -141,7 +144,11 @@
         "browser": false
       },
       "changedScreens": [
-        "src/components/common/stat-card.tsx — existing invoice status chips now render semantic StatusBadge"
+        "src/components/common/stat-card.tsx — existing invoice status chips now render semantic StatusBadge",
+        "src/components/sales/InvoiceMobileCards.tsx — premium mobile invoice presentation with unchanged authorised invoice route and due-date status",
+        "src/components/common/data-table-toolbar.tsx — premium shared record search and bulk actions",
+        "src/components/documents/DocumentPostingJournals.tsx — real posted/reversed journal states on documents",
+        "src/components/documents/DocumentRecordPanel.tsx — notes, real activity history and journal tabs"
       ]
     },
     {
@@ -195,7 +202,13 @@
         "browser": false
       },
       "changedScreens": [
-        "src/components/common/stat-card.tsx — existing bills status chips now render semantic StatusBadge"
+        "src/components/common/stat-card.tsx — existing bills status chips now render semantic StatusBadge",
+        "src/components/purchases/BillMobileCards.tsx — premium mobile bill layout and verified overdue display",
+        "src/components/purchases/BillWorkspaceLayout.tsx — palette-aware three-pane bill entry",
+        "src/lib/visual/transaction-card-status.ts — safe read-only overdue presentation",
+        "src/components/purchases/BillMobileCards.test.tsx — SSR regression tests WRITTEN, NOT RUN",
+        "src/components/documents/DocumentPostingJournals.tsx — authentic ledger status and reversal indicator",
+        "src/components/documents/DocumentRecordPanel.tsx — accessible actual activity table"
       ]
     },
     {
@@ -312,7 +325,8 @@
         "browser": false
       },
       "changedScreens": [
-        "src/components/accounting/JournalsPanel.tsx — posted and reversed status badges"
+        "src/components/accounting/JournalsPanel.tsx — posted and reversed status badges",
+        "src/components/documents/DocumentPostingJournals.tsx — source-authorised posted and reversed status badges"
       ]
     },
     {
@@ -706,7 +720,11 @@
         "browser": false
       },
       "changedScreens": [
-        "src/components/settings/SettingsOverviewPanel.tsx — organisation setup cards, shortcuts and integration health"
+        "src/components/settings/SettingsOverviewPanel.tsx — organisation setup cards, shortcuts and integration health",
+        "src/components/settings/IntegrationHealthBadge.tsx — configuration-evidence badges distinct from delivery verification",
+        "src/components/settings/SettingsOverviewPanel.tsx — integration health visually backed by actual configuration status",
+        "src/lib/settings/integration-health.test.ts — severity and truthful label checks WRITTEN, NOT RUN",
+        "src/components/settings/IntegrationHealthBadge.test.tsx — accessible badge render checks WRITTEN, NOT RUN"
       ]
     },
     {
@@ -832,6 +850,15 @@
     "directScreenEvidence": "All 22 sidebar areas have at least one committed direct UI change; full screen, forms, dialogs, themes and responsive acceptance NOT VERIFIED",
     "browserScreenshots": "NOT_CAPTURED",
     "testsExecuted": "NOT_RUN",
-    "gitHubMain": "UNCHANGED_BY_THIS_BRANCH; new main commits may exist from other agents"
+    "gitHubMain": "UNCHANGED_BY_THIS_BRANCH; new main commits may exist from other agents",
+    "mobileViews": "Sales invoice, Purchases bill and Banking transaction cards code committed, 390px browser tests WRITTEN NOT RUN",
+    "documentWorkflow": "Notes, journal entries and real activity history styling COMMITTED, persisted transitions NOT VERIFIED",
+    "integrationHealth": "Configured is informational only; verified delivery never claimed by presentation",
+    "localTypecheck": "NOT_RUN",
+    "localBuild": "NOT_RUN",
+    "localLint": "NOT_RUN",
+    "authenticatedE2E": "NOT_RUN",
+    "screenshots": "NOT_CAPTURED",
+    "lastIncrement": "read-only mobile status correctness, authentic document history, shared record toolbars, truthful integration setup"
   }
 }

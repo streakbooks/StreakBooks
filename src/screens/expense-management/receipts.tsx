@@ -80,12 +80,14 @@ export function ExpenseManagementReceiptsPage() {
     queryKey: ["expense-receipt-inbox", company?.id],
     queryFn: () => fetchInbox({ data: { companyId: company!.id } }),
     enabled: Boolean(company?.id) && canOpen,
+    retry: false,
   });
 
   const claimsQ = useQuery({
     queryKey: ["expense-claims", company?.id, "receipt-match"],
     queryFn: () => fetchClaims({ data: { companyId: company!.id, scope: "own" } }),
     enabled: Boolean(company?.id) && canSubmit,
+    retry: false,
   });
 
   const invalidate = () => {
@@ -221,7 +223,15 @@ export function ExpenseManagementReceiptsPage() {
       </>
     );
   }
-  if (inboxQ.isPending) return <LoadingState />;
+  if (inboxQ.isLoading) {
+    return (
+      <>
+        <PageHeader title="Receipts & Inbox" description="Expense Management" />
+        <ExpenseManagementSubnav current="receipts" />
+        <LoadingState />
+      </>
+    );
+  }
   if (inboxQ.isError) {
     const message = friendlyAuthError(inboxQ.error);
     return (

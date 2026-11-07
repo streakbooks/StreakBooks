@@ -67,6 +67,7 @@ export function ExpenseManagementSpendingRequestsPage() {
     queryKey: ["expense-spending-requests", company?.id, scope],
     queryFn: () => fetchRequests({ data: { companyId: company!.id, scope } }),
     enabled: Boolean(company?.id) && canOpen,
+    retry: false,
   });
 
   const invalidate = () => {
@@ -174,7 +175,15 @@ export function ExpenseManagementSpendingRequestsPage() {
       </>
     );
   }
-  if (listQ.isPending) return <LoadingState />;
+  if (listQ.isLoading) {
+    return (
+      <>
+        <PageHeader title="Spending Requests" description="Expense Management" />
+        <ExpenseManagementSubnav current="spending-requests" />
+        <LoadingState />
+      </>
+    );
+  }
   if (listQ.isError) {
     const message = friendlyAuthError(listQ.error);
     return (

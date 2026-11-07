@@ -70,6 +70,7 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
     queryKey: ["expense-claim", company?.id, claimId],
     queryFn: () => fetchClaim({ data: { companyId: company!.id, claimId } }),
     enabled: Boolean(company?.id && claimId),
+    retry: false,
   });
 
   const settingsQ = useQuery({
@@ -196,7 +197,15 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
   if (!company) {
     return <CompanyEmptyState title="No organisation" description="Select a company first." />;
   }
-  if (claimQ.isPending) return <LoadingState />;
+  if (claimQ.isLoading) {
+    return (
+      <>
+        <PageHeader title="Expense claim" description="Expense Management" />
+        <ExpenseManagementSubnav current="my-expenses" />
+        <LoadingState />
+      </>
+    );
+  }
   if (claimQ.isError) {
     const message = friendlyAuthError(claimQ.error);
     return (

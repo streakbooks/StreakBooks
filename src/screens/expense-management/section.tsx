@@ -33,6 +33,11 @@ const ExpenseManagementCorporateCardsPage = lazy(() =>
     default: m.ExpenseManagementCorporateCardsPage,
   })),
 );
+const ExpenseManagementExitSettlementPage = lazy(() =>
+  import("@/screens/expense-management/exit-settlement").then((m) => ({
+    default: m.ExpenseManagementExitSettlementPage,
+  })),
+);
 const ExpenseManagementMileagePage = lazy(() =>
   import("@/screens/expense-management/mileage").then((m) => ({
     default: m.ExpenseManagementMileagePage,
@@ -169,6 +174,13 @@ export function ExpenseManagementSectionPage({
     return (
       <SectionSuspense>
         <ExpenseManagementCorporateCardsPage />
+      </SectionSuspense>
+    );
+  }
+  if (sectionKey === "exit-settlement") {
+    return (
+      <SectionSuspense>
+        <ExpenseManagementExitSettlementPage />
       </SectionSuspense>
     );
   }

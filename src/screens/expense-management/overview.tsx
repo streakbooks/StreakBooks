@@ -72,6 +72,7 @@ export function ExpenseManagementOverviewPage() {
     queryKey: ["expense-management-overview", company?.id],
     queryFn: () => fetchOverview({ data: { companyId: company!.id } }),
     enabled: Boolean(company?.id) && canOpen,
+    retry: false,
   });
 
   if (isPending) return <LoadingState />;
@@ -92,7 +93,18 @@ export function ExpenseManagementOverviewPage() {
       </>
     );
   }
-  if (overview.isPending) return <LoadingState />;
+  if (overview.isLoading) {
+    return (
+      <>
+        <PageHeader
+          title="Expense Management"
+          description="Claims, receipts, approvals and reimbursements."
+        />
+        <ExpenseManagementSubnav current="overview" />
+        <LoadingState />
+      </>
+    );
+  }
   if (overview.isError) {
     return (
       <ErrorState

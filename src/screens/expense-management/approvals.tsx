@@ -69,6 +69,7 @@ export function ExpenseManagementApprovalsPage() {
         },
       }),
     enabled: Boolean(company?.id) && canApprove,
+    retry: false,
   });
 
   const readyToPostQ = useQuery({
@@ -82,6 +83,7 @@ export function ExpenseManagementApprovalsPage() {
         },
       }),
     enabled: Boolean(company?.id) && canPost,
+    retry: false,
   });
 
   const invalidate = () => {
@@ -160,8 +162,14 @@ export function ExpenseManagementApprovalsPage() {
       </>
     );
   }
-  if ((canApprove && queueQ.isPending) || (canPost && readyToPostQ.isPending)) {
-    return <LoadingState />;
+  if ((canApprove && queueQ.isLoading) || (canPost && readyToPostQ.isLoading)) {
+    return (
+      <>
+        <PageHeader title="Approvals" description="Expense Management" />
+        <ExpenseManagementSubnav current="approvals" />
+        <LoadingState />
+      </>
+    );
   }
   if (canApprove && queueQ.isError) {
     const message = friendlyAuthError(queueQ.error);

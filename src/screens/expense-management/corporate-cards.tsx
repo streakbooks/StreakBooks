@@ -91,6 +91,7 @@ export function ExpenseManagementCorporateCardsPage() {
     queryKey: ["expense-corporate-cards", company?.id],
     queryFn: () => fetchCards({ data: { companyId: company!.id } }),
     enabled: Boolean(company?.id) && canView,
+    retry: false,
   });
 
   const txQ = useQuery({
@@ -103,6 +104,7 @@ export function ExpenseManagementCorporateCardsPage() {
         },
       }),
     enabled: Boolean(company?.id) && canManage && Boolean(selectedCardId),
+    retry: false,
   });
 
   const unmatchedTx = useMemo(
@@ -121,12 +123,14 @@ export function ExpenseManagementCorporateCardsPage() {
         data: { companyId: company!.id, scope: "all" },
       }),
     enabled: Boolean(company?.id) && canManage,
+    retry: false,
   });
 
   const accountsQ = useQuery({
     queryKey: ["accounts", company?.id, "expense-cards"],
     queryFn: () => fetchAccounts({ data: { companyId: company!.id } }),
     enabled: Boolean(company?.id) && canManage,
+    retry: false,
   });
 
   const liabilityAccounts = useMemo(

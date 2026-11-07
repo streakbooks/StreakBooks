@@ -50,8 +50,8 @@
 - [x] Card register with liability account and statement lines.
 - [x] Match unmatched transactions to corporate-card claims; post CR card liability.
 - [x] Dispute / resolve card transactions + customer rebilling invoice prep (EM-09b local code).
-- [ ] Exit settlement (later EM-09c).
-- [ ] Applied migration + authenticated browser verification.
+- [x] Exit settlement outstanding snapshot, advance reclaim, finalize (EM-09c local code).
+- [ ] Applied migrations + authenticated browser verification.
 
 ## Explicitly out of scope for this navigation amendment
 

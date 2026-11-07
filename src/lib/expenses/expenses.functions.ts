@@ -62,6 +62,12 @@ import {
   type ExpenseCorporateCardDraftInput,
   type ExpenseCorporateCardTransaction,
 } from "@/lib/expenses/corporate-cards";
+import {
+  mapExpenseExitOutstanding,
+  mapExpenseExitSettlement,
+  type ExpenseExitOutstanding,
+  type ExpenseExitSettlement,
+} from "@/lib/expenses/exit-settlement";
 
 export const EXPENSE_MANAGEMENT_MIGRATION =
   "Expense Management is not available yet: the database update 20261107120000 has not been applied.";
@@ -98,6 +104,9 @@ export const EXPENSE_CORPORATE_CARD_MIGRATION =
 
 export const EXPENSE_DISPUTES_REBILLING_MIGRATION =
   "Expense card disputes and rebilling are not available yet: apply database update 20261107144000.";
+
+export const EXPENSE_EXIT_SETTLEMENT_MIGRATION =
+  "Expense exit settlement is not available yet: apply database update 20261107145000.";
 
 export const EXPENSE_TEMPLATE_MIGRATION =
   "Expense claim templates are not available yet: apply database update 20261107130000.";
@@ -1617,4 +1626,133 @@ export const markExpenseClaimRebilled = createServerFn({ method: "POST" })
       EXPENSE_DISPUTES_REBILLING_MIGRATION,
     );
     return mapExpenseClaimDetail(raw);
+  });
+
+export const getExpenseExitOutstanding = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; employeeUserId: string }) => ({
+    companyId: companyIdOf(input),
+    employeeUserId: input.employeeUserId,
+  }))
+  .handler(async ({ data, context }): Promise<ExpenseExitOutstanding> => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    if (!data.employeeUserId) throw new Error("Select an employee.");
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "get_expense_exit_outstanding",
+      {
+        _company_id: data.companyId,
+        _employee_user_id: data.employeeUserId,
+      },
+      EXPENSE_EXIT_SETTLEMENT_MIGRATION,
+    );
+    return mapExpenseExitOutstanding(raw);
+  });
+
+export const listExpenseExitSettlements = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string }) => ({
+    companyId: companyIdOf(input),
+  }))
+  .handler(async ({ data, context }): Promise<ExpenseExitSettlement[]> => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    const raw = await callRpc<{ settlements?: unknown[] }>(
+      context.supabase,
+      "list_expense_exit_settlements",
+      { _company_id: data.companyId },
+      EXPENSE_EXIT_SETTLEMENT_MIGRATION,
+    );
+    return (raw.settlements ?? []).map(mapExpenseExitSettlement);
+  });
+
+export const createExpenseExitSettlement = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { companyId: string; employeeUserId: string; notes?: string }) => ({
+      companyId: companyIdOf(input),
+      employeeUserId: input.employeeUserId,
+      notes: input.notes,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<ExpenseExitSettlement> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "expenses.manage_advances");
+    if (!data.employeeUserId) throw new Error("Select an employee.");
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "create_expense_exit_settlement",
+      {
+        _company_id: data.companyId,
+        _employee_user_id: data.employeeUserId,
+        _notes: data.notes ?? null,
+      },
+      EXPENSE_EXIT_SETTLEMENT_MIGRATION,
+    );
+    return mapExpenseExitSettlement(raw);
+  });
+
+export const reclaimExpenseCashAdvance = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      advanceId: string;
+      version: number;
+      bankAccountId: string;
+      reclaimDate?: string;
+    }) => ({
+      companyId: companyIdOf(input),
+      advanceId: input.advanceId,
+      version: input.version,
+      bankAccountId: input.bankAccountId,
+      reclaimDate: input.reclaimDate,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<ExpenseCashAdvance> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "expenses.manage_advances");
+    if (!data.bankAccountId) throw new Error("Choose a bank account.");
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "reclaim_expense_cash_advance",
+      {
+        _company_id: data.companyId,
+        _advance_id: data.advanceId,
+        _bank_account_id: data.bankAccountId,
+        _expected_version: data.version,
+        _reclaim_date: data.reclaimDate ?? null,
+      },
+      EXPENSE_EXIT_SETTLEMENT_MIGRATION,
+    );
+    return mapExpenseCashAdvance(raw);
+  });
+
+export const finalizeExpenseExitSettlement = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      settlementId: string;
+      version: number;
+      bankAccountId: string;
+    }) => ({
+      companyId: companyIdOf(input),
+      settlementId: input.settlementId,
+      version: input.version,
+      bankAccountId: input.bankAccountId,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<ExpenseExitSettlement> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "expenses.manage_advances");
+    if (!data.bankAccountId) throw new Error("Choose a bank account for advance reclaim.");
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "finalize_expense_exit_settlement",
+      {
+        _company_id: data.companyId,
+        _settlement_id: data.settlementId,
+        _expected_version: data.version,
+        _bank_account_id: data.bankAccountId,
+      },
+      EXPENSE_EXIT_SETTLEMENT_MIGRATION,
+    );
+    return mapExpenseExitSettlement(raw);
   });

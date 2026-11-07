@@ -11,6 +11,7 @@ const SEGMENT_LABEL: Record<string, string> = {
   "my-expenses": "My Expenses",
   receipts: "Receipts & Inbox",
   "corporate-cards": "Corporate Cards",
+  "exit-settlement": "Exit Settlement",
   "cash-advances": "Cash Advances",
   "spending-requests": "Spending Requests",
   "petty-cash": "Petty Cash",

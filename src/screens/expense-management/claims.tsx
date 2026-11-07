@@ -57,7 +57,9 @@ import {
   removeOfflineExpenseClaimDraft,
   type OfflineExpenseClaimDraft,
 } from "@/lib/expenses/offline-claim-queue";
+import { expenseQueryOptions } from "@/lib/expenses/query-options";
 import type { ExpenseManagementSectionKey } from "@/lib/expenses/sections";
+import { ExpenseManagementLoadingShell } from "@/components/expenses/ExpenseManagementLoadingShell";
 import { parseMinorOrThrow } from "@/lib/purchases/money-input";
 import type { Permission } from "@/lib/permissions";
 
@@ -137,22 +139,21 @@ export function ExpenseManagementClaimsPage({
         data: { companyId: company!.id, scope: mode === "claims" ? "all" : "own" },
       }),
     enabled: Boolean(company?.id) && allowed,
-    // Missing RPCs (migrations not applied) should fail once, not retry into a long skeleton.
-    retry: false,
+    ...expenseQueryOptions,
   });
 
   const accountsQ = useQuery({
     queryKey: ["accounts", company?.id, "expense-claims"],
     queryFn: () => fetchAccounts({ data: { companyId: company!.id } }),
     enabled: Boolean(company?.id) && canSubmit && mode === "my-expenses",
-    retry: false,
+    ...expenseQueryOptions,
   });
 
   const templatesQ = useQuery({
     queryKey: ["expense-claim-templates", company?.id],
     queryFn: () => fetchTemplates({ data: { companyId: company!.id } }),
     enabled: Boolean(company?.id) && canSubmit && mode === "my-expenses",
-    retry: false,
+    ...expenseQueryOptions,
   });
 
   const advancesQ = useQuery({
@@ -500,14 +501,10 @@ export function ExpenseManagementClaimsPage({
   }
   if (claimsQ.isLoading) {
     return (
-      <>
-        <PageHeader
-          title={mode === "my-expenses" ? "My Expenses" : "All Claims"}
-          description="Expense Management"
-        />
-        <ExpenseManagementSubnav current={sectionKey} />
-        <LoadingState />
-      </>
+      <ExpenseManagementLoadingShell
+        title={mode === "my-expenses" ? "My Expenses" : "All Claims"}
+        current={sectionKey}
+      />
     );
   }
   if (claimsQ.isError) {

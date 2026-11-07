@@ -30,6 +30,7 @@ describe("expense management sections", () => {
       "mileage",
       "travel",
       "corporate-cards",
+      "exit-settlement",
       "cash-advances",
       "spending-requests",
       "budgets",

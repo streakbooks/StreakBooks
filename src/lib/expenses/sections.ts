@@ -66,6 +66,13 @@ export const EXPENSE_MANAGEMENT_SECTIONS = [
     batch: "EM-09",
   },
   {
+    key: "exit-settlement",
+    label: "Exit Settlement",
+    path: `${EXPENSE_MANAGEMENT_BASE}/exit-settlement`,
+    anyOf: ["expenses.manage_advances", "expenses.admin", "expenses.view"] as const,
+    batch: "EM-09",
+  },
+  {
     key: "cash-advances",
     label: "Cash Advances",
     path: `${EXPENSE_MANAGEMENT_BASE}/cash-advances`,

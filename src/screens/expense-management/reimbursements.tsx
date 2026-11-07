@@ -63,12 +63,14 @@ export function ExpenseManagementReimbursementsPage() {
         },
       }),
     enabled: Boolean(company?.id) && canPay,
+    retry: false,
   });
 
   const banksQ = useQuery({
     queryKey: ["bank-accounts", company?.id, "expense-reimburse"],
     queryFn: () => fetchBanks({ data: { companyId: company!.id } }),
     enabled: Boolean(company?.id) && canPay,
+    retry: false,
   });
 
   const openClaims = useMemo(
@@ -130,7 +132,15 @@ export function ExpenseManagementReimbursementsPage() {
       </>
     );
   }
-  if (claimsQ.isPending || banksQ.isPending) return <LoadingState />;
+  if (claimsQ.isLoading || banksQ.isLoading) {
+    return (
+      <>
+        <PageHeader title="Reimbursements" description="Expense Management" />
+        <ExpenseManagementSubnav current="reimbursements" />
+        <LoadingState />
+      </>
+    );
+  }
   if (claimsQ.isError) {
     const message = friendlyAuthError(claimsQ.error);
     return (

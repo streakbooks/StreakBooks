@@ -51,6 +51,12 @@ import {
   type ExpenseApprovalDelegation,
 } from "@/lib/expenses/delegation";
 import {
+  mapExpenseApprovalEscalationList,
+  mapExpenseApprovalEscalationRefresh,
+  type ExpenseApprovalEscalationList,
+  type ExpenseApprovalEscalationRefresh,
+} from "@/lib/expenses/escalation";
+import {
   mapExpensePettyCashFloat,
   toExpensePettyCashFloatPayload,
   type ExpensePettyCashFloat,
@@ -122,6 +128,9 @@ export const EXPENSE_BATCH_REIMBURSE_MIGRATION =
 
 export const EXPENSE_DELEGATION_MIGRATION =
   "Expense approval delegation is not available yet: apply database update 20261107150000.";
+
+export const EXPENSE_ESCALATION_MIGRATION =
+  "Expense approval escalation is not available yet: apply database update 20261107151000.";
 
 export const EXPENSE_MILEAGE_MIGRATION =
   "Expense mileage rates are not available yet: apply database update 20261107139000.";
@@ -1124,6 +1133,73 @@ export const revokeExpenseApprovalDelegation = createServerFn({ method: "POST" }
     );
     return mapExpenseApprovalDelegation(raw);
   });
+
+export const listExpenseApprovalEscalations = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string }) => ({
+    companyId: companyIdOf(input),
+  }))
+  .handler(async ({ data, context }): Promise<ExpenseApprovalEscalationList> => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "list_expense_approval_escalations",
+      { _company_id: data.companyId },
+      EXPENSE_ESCALATION_MIGRATION,
+    );
+    return mapExpenseApprovalEscalationList(raw);
+  });
+
+export const refreshExpenseApprovalEscalations = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string }) => ({
+    companyId: companyIdOf(input),
+  }))
+  .handler(async ({ data, context }): Promise<ExpenseApprovalEscalationRefresh> => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "refresh_expense_approval_escalations",
+      { _company_id: data.companyId },
+      EXPENSE_ESCALATION_MIGRATION,
+    );
+    return mapExpenseApprovalEscalationRefresh(raw);
+  });
+
+export const saveExpenseApprovalEscalationDays = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; days: number }) => ({
+    companyId: companyIdOf(input),
+    days: input.days,
+  }))
+  .handler(
+    async ({
+      data,
+      context,
+    }): Promise<{ approvalEscalationDays: number; version: number }> => {
+      await assertCompanyPermission(
+        context.supabase,
+        data.companyId,
+        "expenses.manage_policies",
+      );
+      const raw = await callRpc<{
+        approval_escalation_days?: number;
+        version?: number;
+      }>(
+        context.supabase,
+        "save_expense_approval_escalation_days",
+        {
+          _company_id: data.companyId,
+          _days: data.days,
+        },
+        EXPENSE_ESCALATION_MIGRATION,
+      );
+      return {
+        approvalEscalationDays: Number(raw.approval_escalation_days ?? data.days),
+        version: Number(raw.version ?? 0),
+      };
+    },
+  );
 
 export const listExpenseMileageRates = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

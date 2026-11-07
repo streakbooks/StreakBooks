@@ -1,7 +1,7 @@
 import { Link, useRouteContext } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
@@ -37,17 +37,22 @@ import {
   userHasActiveIncomingDelegation,
 } from "@/lib/expenses/delegation";
 import type { ExpenseClaimSummary } from "@/lib/expenses/claims";
+import { formatEscalationRefreshSummary } from "@/lib/expenses/escalation";
 import {
   approveExpenseClaim,
   EXPENSE_APPROVAL_MIGRATION,
   EXPENSE_DELEGATION_MIGRATION,
+  EXPENSE_ESCALATION_MIGRATION,
   listExpenseApprovalDelegations,
+  listExpenseApprovalEscalations,
   listExpenseClaims,
   postExpenseClaim,
+  refreshExpenseApprovalEscalations,
   rejectExpenseClaim,
   returnExpenseClaim,
   revokeExpenseApprovalDelegation,
   saveExpenseApprovalDelegation,
+  saveExpenseApprovalEscalationDays,
   startExpenseClaimReview,
 } from "@/lib/expenses/expenses.functions";
 import type { Permission } from "@/lib/permissions";
@@ -74,6 +79,7 @@ export function ExpenseManagementApprovalsPage() {
   const [delegateStart, setDelegateStart] = useState(today);
   const [delegateEnd, setDelegateEnd] = useState(today);
   const [delegateNote, setDelegateNote] = useState("");
+  const [escalationDaysDraft, setEscalationDaysDraft] = useState("5");
 
   const fetchClaims = useServerFn(listExpenseClaims);
   const startReview = useServerFn(startExpenseClaimReview);
@@ -85,6 +91,16 @@ export function ExpenseManagementApprovalsPage() {
   const saveDelegation = useServerFn(saveExpenseApprovalDelegation);
   const revokeDelegation = useServerFn(revokeExpenseApprovalDelegation);
   const fetchMembers = useServerFn(listCompanyMembers);
+  const fetchEscalations = useServerFn(listExpenseApprovalEscalations);
+  const refreshEscalations = useServerFn(refreshExpenseApprovalEscalations);
+  const saveEscalationDays = useServerFn(saveExpenseApprovalEscalationDays);
+
+  const escalationsQ = useQuery({
+    queryKey: ["expense-approval-escalations", company?.id],
+    queryFn: () => fetchEscalations({ data: { companyId: company!.id } }),
+    enabled: Boolean(company?.id) && (canApprove || can("expenses.audit" as Permission)),
+    retry: false,
+  });
 
   const delegationsQ = useQuery({
     queryKey: ["expense-approval-delegations", company?.id],
@@ -236,6 +252,49 @@ export function ExpenseManagementApprovalsPage() {
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
 
+  const refreshEscalationMut = useMutation({
+    mutationFn: async () => {
+      if (!company) throw new Error("Select a company first.");
+      return refreshEscalations({ data: { companyId: company.id } });
+    },
+    onSuccess: async (result) => {
+      toast.success(formatEscalationRefreshSummary(result));
+      await queryClient.invalidateQueries({
+        queryKey: ["expense-approval-escalations", company?.id],
+      });
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+
+  const saveEscalationDaysMut = useMutation({
+    mutationFn: async () => {
+      if (!company) throw new Error("Select a company first.");
+      const days = Number(escalationDaysDraft);
+      if (!Number.isFinite(days) || days < 0 || days > 90) {
+        throw new Error("Escalation days must be between 0 and 90.");
+      }
+      return saveEscalationDays({ data: { companyId: company.id, days } });
+    },
+    onSuccess: async (result) => {
+      setEscalationDaysDraft(String(result.approvalEscalationDays));
+      toast.success(
+        result.approvalEscalationDays === 0
+          ? "Escalation disabled"
+          : `Escalation set to ${result.approvalEscalationDays} day(s)`,
+      );
+      await queryClient.invalidateQueries({
+        queryKey: ["expense-approval-escalations", company?.id],
+      });
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+
+  useEffect(() => {
+    if (escalationsQ.data) {
+      setEscalationDaysDraft(String(escalationsQ.data.escalationDays));
+    }
+  }, [escalationsQ.data]);
+
   if (isPending) return <LoadingState />;
   if (!company) {
     return <CompanyEmptyState title="No organisation" description="Select a company first." />;
@@ -322,6 +381,102 @@ export function ExpenseManagementApprovalsPage() {
             : ""}
         </AlertDescription>
       </Alert>
+
+      {canApprove || can("expenses.audit" as Permission) ? (
+        <section className="mb-8 space-y-4 rounded-lg border p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-base font-semibold">Stale approval escalation</h2>
+              <p className="text-sm text-muted-foreground">
+                Claims waiting longer than the threshold get a critical Action Center alert.
+                Set days to 0 to disable.
+              </p>
+            </div>
+            {canApprove ? (
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={refreshEscalationMut.isPending}
+                onClick={() => refreshEscalationMut.mutate()}
+              >
+                {refreshEscalationMut.isPending ? "Refreshing…" : "Refresh escalations"}
+              </Button>
+            ) : null}
+          </div>
+          {escalationsQ.isError ? (
+            friendlyAuthError(escalationsQ.error).includes("20261107151000") ? (
+              <Alert>
+                <AlertTitle>Database update required</AlertTitle>
+                <AlertDescription>{EXPENSE_ESCALATION_MIGRATION}</AlertDescription>
+              </Alert>
+            ) : (
+              <ErrorState
+                title="Could not load escalations"
+                description={friendlyAuthError(escalationsQ.error)}
+                onRetry={() => escalationsQ.refetch()}
+              />
+            )
+          ) : (
+            <>
+              {canApprove ? (
+                <div className="flex flex-wrap items-end gap-3">
+                  <div className="grid gap-2">
+                    <Label htmlFor="em-escalation-days">Escalation days</Label>
+                    <Input
+                      id="em-escalation-days"
+                      type="number"
+                      min={0}
+                      max={90}
+                      className="w-28"
+                      value={escalationDaysDraft}
+                      onChange={(event) => setEscalationDaysDraft(event.target.value)}
+                    />
+                  </div>
+                  <Button
+                    size="sm"
+                    disabled={saveEscalationDaysMut.isPending}
+                    onClick={() => saveEscalationDaysMut.mutate()}
+                  >
+                    {saveEscalationDaysMut.isPending ? "Saving…" : "Save threshold"}
+                  </Button>
+                </div>
+              ) : null}
+              <p className="text-sm">
+                {(escalationsQ.data?.claims.length ?? 0) === 0
+                  ? "No claims currently past the escalation threshold."
+                  : `${escalationsQ.data?.claims.length} claim(s) past the ${escalationsQ.data?.escalationDays}-day threshold.`}
+              </p>
+              {(escalationsQ.data?.claims.length ?? 0) > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Claim</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(escalationsQ.data?.claims ?? []).map((claim) => (
+                      <TableRow key={claim.id}>
+                        <TableCell>
+                          <div className="font-medium">{claim.claimNumber}</div>
+                          <div className="text-sm text-muted-foreground">{claim.title}</div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="destructive">{claim.approvalStatus}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {fromMinorUnits(claim.totalMinor, claim.claimCurrency)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : null}
+            </>
+          )}
+        </section>
+      ) : null}
 
       {canApprove ? (
         <section className="mb-8 space-y-4 rounded-lg border p-4">

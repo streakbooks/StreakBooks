@@ -59,6 +59,8 @@ This includes native browser navigation, discoverable module sections, connected
 - `src/lib/products/catalogue-navigation.test.ts`: nine unit scenarios (written; not run with Vitest).
 - `src/lib/contacts/contact-view-navigation.ts`, `src/routes/_authenticated/contacts/index.tsx`, `src/screens/contacts/index.tsx`, `src/routes/_authenticated/contacts/$contactId.tsx`: URL-backed directory search/sort/page and validated return context across all seven detail tabs.
 - `src/lib/contacts/contact-view-navigation.test.ts`: nine unit scenarios (written; not run with Vitest).
+- `src/routes/_authenticated/contacts/new.tsx`, `src/screens/contacts/index.tsx`, `src/screens/contacts/new.tsx`: carry validated directory search/sort/page context into New Contact, Back to Directory, and post-save contact detail.
+- `e2e/contacts-new-return-context.spec.ts`: two authenticated browser scenarios covering list-origin restoration and untrusted return parameter stripping (written; not executed).
 - `e2e/contacts-directory-return-context.spec.ts`: four authenticated browser scenarios (written; not executed).
 - **Executed on exact Git source copies in an isolated Node + TypeScript 5.8.3 environment:** TypeScript standalone compilation passed for the Products and Contacts navigation helpers; 29 Products and 36 Contacts assertions passed (65 total in this development turn). Checks compare Git blob hashes against GitHub before execution. This is not a full app typecheck or Vitest run.
 - **Executed in an isolated Node environment:** 40 assertions for the exact Git blob hashes of the Bills, Sales, and Contacts navigation helpers passed; 11 assertions for the Products section helper passed. This is NOT a full npm/TypeScript/build/Vitest/Playwright run.

@@ -1,0 +1,392 @@
+{
+  "schemaVersion": 1,
+  "title": "LinkBooks — Mandatory all-module browsing coverage register",
+  "source": {
+    "repository": "linkbusinessadvisory/LinkBooks",
+    "sourceBranch": "feature/chatgpt-premium-browsing-20261107",
+    "routeInventoryCommit": "8935c7bd180d94d8539f75460f8542dffd648b5b",
+    "navigationSource": "src/lib/nav.ts",
+    "routeRoot": "src/routes/_authenticated/"
+  },
+  "invariant": "Every top-level sidebar item and every authenticated route file must appear exactly once in this manifest. New ones require an explicit coverage entry. Inventory inclusion is not implementation verification.",
+  "counts": {
+    "sidebarModules": 21,
+    "authenticatedRouteFiles": 132,
+    "supportingRouteFiles": 15
+  },
+  "acceptanceCriteria": [
+    "NATIVE_NAVIGATION",
+    "CONTEXTUAL_SUBNAV",
+    "CONNECTED_WORKSPACES",
+    "ORIGINAL_DESIGN_SYSTEM",
+    "RESPONSIVE_INTERACTIONS",
+    "DEEP_LINK_REFRESH_BACK_FORWARD_NEW_TAB",
+    "PRESERVE_FILTER_SORT_PAGE_SCROLL_DRAFT",
+    "REAL_FORMS_AND_ACTIONS",
+    "FEEDBACK_LOADING_ERRORS",
+    "DATA_RICH_TABLES_AND_DRILLDOWNS",
+    "PERFORMANCE_ACCESSIBILITY",
+    "SECURITY_ACCOUNTING_AND_TESTING"
+  ],
+  "modules": [
+    {
+      "label": "Dashboard",
+      "href": "/",
+      "routeFiles": [
+        "index.tsx"
+      ],
+      "browsingImplementation": "not_assessed_module_wide",
+      "fullyVerified": false
+    },
+    {
+      "label": "Banking",
+      "href": "/banking",
+      "routeFiles": [
+        "banking/cash-coding.tsx",
+        "banking/feeds.tsx",
+        "banking/import.tsx",
+        "banking/index.tsx",
+        "banking/journal.$journalId.tsx",
+        "banking/money-documents.tsx",
+        "banking/reconcile.tsx",
+        "banking/reconciliation-report.$sessionId.tsx",
+        "banking/route.tsx",
+        "banking/rules.tsx",
+        "banking/transactions.tsx",
+        "banking/transfers.tsx"
+      ],
+      "browsingImplementation": "not_assessed_module_wide",
+      "fullyVerified": false
+    },
+    {
+      "label": "Sales",
+      "href": "/sales",
+      "routeFiles": [
+        "sales/credit-notes.$creditNoteId.edit.tsx",
+        "sales/credit-notes.$creditNoteId.index.tsx",
+        "sales/credit-notes.$creditNoteId.tsx",
+        "sales/credit-notes.index.tsx",
+        "sales/credit-notes.new.tsx",
+        "sales/customers.tsx",
+        "sales/index.tsx",
+        "sales/invoices.$invoiceId.edit.tsx",
+        "sales/invoices.$invoiceId.index.tsx",
+        "sales/invoices.$invoiceId.tsx",
+        "sales/invoices.index.tsx",
+        "sales/invoices.new.tsx",
+        "sales/orders.tsx",
+        "sales/quotes.$quoteId.edit.tsx",
+        "sales/quotes.$quoteId.index.tsx",
+        "sales/quotes.$quoteId.tsx",
+        "sales/quotes.index.tsx",
+        "sales/quotes.new.tsx",
+        "sales/receipts.$receiptId.tsx",
+        "sales/receipts.index.tsx",
+        "sales/receipts.new.tsx",
+        "sales/recurring.tsx",
+        "sales/reminders.tsx",
+        "sales/route.tsx",
+        "sales/settings.tsx",
+        "sales/statements.tsx"
+      ],
+      "browsingImplementation": "partial_code_not_runtime_verified",
+      "fullyVerified": false
+    },
+    {
+      "label": "Purchases",
+      "href": "/purchases",
+      "routeFiles": [
+        "purchases/bills.$billId.edit.tsx",
+        "purchases/bills.$billId.tsx",
+        "purchases/bills.index.tsx",
+        "purchases/bills.new.tsx",
+        "purchases/credit-notes.$creditNoteId.tsx",
+        "purchases/credit-notes.index.tsx",
+        "purchases/credit-notes.new.tsx",
+        "purchases/employee-expenses.tsx",
+        "purchases/expenses.$expenseId.tsx",
+        "purchases/expenses.index.tsx",
+        "purchases/expenses.new.tsx",
+        "purchases/index.tsx",
+        "purchases/orders.$orderId.tsx",
+        "purchases/orders.index.tsx",
+        "purchases/orders.new.tsx",
+        "purchases/payments.$paymentId.tsx",
+        "purchases/payments.batch.tsx",
+        "purchases/payments.index.tsx",
+        "purchases/payments.new.tsx",
+        "purchases/portal-inbox.tsx",
+        "purchases/recurring.tsx",
+        "purchases/route.tsx",
+        "purchases/settings.tsx",
+        "purchases/statements.tsx",
+        "purchases/suppliers.tsx"
+      ],
+      "browsingImplementation": "partial_code_not_runtime_verified",
+      "fullyVerified": false
+    },
+    {
+      "label": "Contacts",
+      "href": "/contacts",
+      "routeFiles": [
+        "contacts/$contactId.tsx",
+        "contacts/duplicates.tsx",
+        "contacts/import.tsx",
+        "contacts/index.tsx",
+        "contacts/new.tsx",
+        "contacts/settings.tsx"
+      ],
+      "browsingImplementation": "partial_code_not_runtime_verified",
+      "fullyVerified": false
+    },
+    {
+      "label": "Products & Services",
+      "href": "/products-services",
+      "routeFiles": [
+        "products-services.tsx"
+      ],
+      "browsingImplementation": "partial_code_not_runtime_verified",
+      "fullyVerified": false
+    },
+    {
+      "label": "Accounting",
+      "href": "/accounting",
+      "routeFiles": [
+        "accounting.tsx"
+      ],
+      "browsingImplementation": "not_assessed_module_wide",
+      "fullyVerified": false
+    },
+    {
+      "label": "Action Center",
+      "href": "/notifications",
+      "routeFiles": [
+        "notifications.tsx"
+      ],
+      "browsingImplementation": "not_assessed_module_wide",
+      "fullyVerified": false
+    },
+    {
+      "label": "Files",
+      "href": "/files",
+      "routeFiles": [
+        "files.tsx"
+      ],
+      "browsingImplementation": "not_assessed_module_wide",
+      "fullyVerified": false
+    },
+    {
+      "label": "Budgets",
+      "href": "/budgets",
+      "routeFiles": [
+        "budgets/$budgetId.tsx",
+        "budgets/index.tsx"
+      ],
+      "browsingImplementation": "not_assessed_module_wide",
+      "fullyVerified": false
+    },
+    {
+      "label": "Fixed assets",
+      "href": "/fixed-assets",
+      "routeFiles": [
+        "fixed-assets.tsx"
+      ],
+      "browsingImplementation": "not_assessed_module_wide",
+      "fullyVerified": false
+    },
+    {
+      "label": "Payroll",
+      "href": "/payroll",
+      "routeFiles": [
+        "payroll/employees.$employeeId.tsx",
+        "payroll/employees.index.tsx",
+        "payroll/index.tsx",
+        "payroll/payments.index.tsx",
+        "payroll/payslips.$payslipId.tsx",
+        "payroll/payslips.index.tsx",
+        "payroll/reports.tsx",
+        "payroll/route.tsx",
+        "payroll/runs.$runId.tsx",
+        "payroll/runs.index.tsx",
+        "payroll/salary-structures.tsx",
+        "payroll/settings.tsx"
+      ],
+      "browsingImplementation": "not_assessed_module_wide",
+      "fullyVerified": false
+    },
+    {
+      "label": "Reports",
+      "href": "/reports",
+      "routeFiles": [
+        "reports/$reportId.tsx",
+        "reports/builder/$viewId.tsx",
+        "reports/index.tsx"
+      ],
+      "browsingImplementation": "not_assessed_module_wide",
+      "fullyVerified": false
+    },
+    {
+      "label": "Accountant",
+      "href": "/accountant",
+      "routeFiles": [
+        "accountant.tsx"
+      ],
+      "browsingImplementation": "not_assessed_module_wide",
+      "fullyVerified": false
+    },
+    {
+      "label": "Firm",
+      "href": "/firm",
+      "routeFiles": [
+        "firm.tsx"
+      ],
+      "browsingImplementation": "not_assessed_module_wide",
+      "fullyVerified": false
+    },
+    {
+      "label": "Advisors",
+      "href": "/advisors-admin",
+      "routeFiles": [
+        "advisors-admin.appointments.tsx",
+        "advisors-admin.billing.tsx",
+        "advisors-admin.clients.tsx",
+        "advisors-admin.conversations.tsx",
+        "advisors-admin.documents.tsx",
+        "advisors-admin.engagements.tsx",
+        "advisors-admin.index.tsx",
+        "advisors-admin.inquiries.tsx",
+        "advisors-admin.onboarding.tsx",
+        "advisors-admin.settings.services-pricing.tsx",
+        "advisors-admin.staff.tsx",
+        "advisors-admin.tsx",
+        "advisors-admin.workspaces.tsx"
+      ],
+      "browsingImplementation": "not_assessed_module_wide",
+      "fullyVerified": false
+    },
+    {
+      "label": "Advisors portal",
+      "href": "/advisors-portal",
+      "routeFiles": [
+        "advisors-portal.account.tsx",
+        "advisors-portal.appointments.tsx",
+        "advisors-portal.documents.tsx",
+        "advisors-portal.index.tsx",
+        "advisors-portal.messages.tsx",
+        "advisors-portal.tasks.tsx"
+      ],
+      "browsingImplementation": "not_assessed_module_wide",
+      "fullyVerified": false
+    },
+    {
+      "label": "AI Assistant",
+      "href": "/ai-assistant",
+      "routeFiles": [
+        "ai-assistant.tsx"
+      ],
+      "browsingImplementation": "not_assessed_module_wide",
+      "fullyVerified": false
+    },
+    {
+      "label": "Tax",
+      "href": "/tax",
+      "routeFiles": [
+        "tax.tsx"
+      ],
+      "browsingImplementation": "not_assessed_module_wide",
+      "fullyVerified": false
+    },
+    {
+      "label": "Settings",
+      "href": "/settings",
+      "routeFiles": [
+        "settings.tsx"
+      ],
+      "browsingImplementation": "not_assessed_module_wide",
+      "fullyVerified": false
+    },
+    {
+      "label": "Help",
+      "href": "/help",
+      "routeFiles": [
+        "help.tsx"
+      ],
+      "browsingImplementation": "not_assessed_module_wide",
+      "fullyVerified": false
+    }
+  ],
+  "supportingRoutes": [
+    "documents.branding.tsx",
+    "documents.print.$kind.$id.tsx",
+    "firm-invite.$token.tsx",
+    "imports.tsx",
+    "invite.$token.tsx",
+    "onboarding.tsx",
+    "platform.automation.tsx",
+    "platform.billing.tsx",
+    "platform.index.tsx",
+    "platform.operations.tsx",
+    "platform.tsx",
+    "profile.tsx",
+    "projects.tsx",
+    "recurring-journals.tsx",
+    "route.tsx"
+  ],
+  "crossCutting": [
+    {
+      "area": "Expense Management and Employee Claims",
+      "evidence": "Purchases employee expenses route; requested separate standalone module",
+      "status": "Navigation/product scope reconciliation required"
+    },
+    {
+      "area": "Smart Action Center",
+      "evidence": "Action Center sidebar maps to /notifications",
+      "status": "Full approvals, alerts and actions unverified"
+    },
+    {
+      "area": "LinkBooks Signal / voice commands",
+      "evidence": "Voice components and form adapters are internal, not standalone sidebar items",
+      "status": "Full command and keyboard accessibility coverage pending"
+    },
+    {
+      "area": "Files and Documents",
+      "evidence": "Files sidebar and supporting document printing/branding routes",
+      "status": "Folder/inbox/attachments/print workflows unverified"
+    },
+    {
+      "area": "Import Centre and Migration",
+      "evidence": "imports.tsx and Contacts/Purchases/Banking import routes",
+      "status": "All import types and errors unverified"
+    },
+    {
+      "area": "Recurring journals and schedules",
+      "evidence": "recurring-journals.tsx, Sales/Purchases recurring",
+      "status": "Creation, scheduling, posting and notifications unverified"
+    },
+    {
+      "area": "Platform Superadmin and subscription billing",
+      "evidence": "platform.* routes, Settings and Advisors billing",
+      "status": "Role gating, payments and operations unverified"
+    },
+    {
+      "area": "Customer/supplier portals and invite/onboarding",
+      "evidence": "advisors-portal.*, invite and firm-invite routes",
+      "status": "Auth, handoff, back navigation and tenant tests pending"
+    },
+    {
+      "area": "Global search and universal Create New",
+      "evidence": "AppShell global search and creation entry points",
+      "status": "Search context, exact amount, permissions and every destination unverified"
+    },
+    {
+      "area": "AI Assistant integrations and external automation",
+      "evidence": "AI Assistant and platform automation routes",
+      "status": "Permissions, approvals, integration error cases and UX unverified"
+    },
+    {
+      "area": "Regional tax, currencies and localization",
+      "evidence": "Tax, Settings, accounting surfaces",
+      "status": "Country-gated flows and currency/timezone formatting unverified"
+    }
+  ]
+}

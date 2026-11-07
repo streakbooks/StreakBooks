@@ -29,7 +29,7 @@ export function PageHeader({
   meta?: ReactNode;
 }) {
   return (
-    <div className="lb-page-header mb-7 flex flex-col gap-4 border-b border-border/70 pb-5 lg:flex-row lg:items-end lg:justify-between print:border-0 print:pb-0">
+    <div className="lb-page-header relative mb-7 flex flex-col gap-4 border-b border-border/70 pb-5 lg:flex-row lg:items-end lg:justify-between print:border-0 print:pb-0">
       <div className="min-w-0">
         {breadcrumbs && breadcrumbs.length > 0 ? (
           <nav aria-label="Breadcrumb" className="mb-1.5">
@@ -55,7 +55,7 @@ export function PageHeader({
           </nav>
         ) : null}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <h1 className="break-words text-2xl font-semibold tracking-tight sm:text-[1.75rem] sm:leading-tight">
+          <h1 className="lb-workspace-heading break-words text-2xl font-semibold tracking-tight sm:text-[1.8rem] sm:leading-tight">
             {title}
           </h1>
           {meta}
@@ -118,11 +118,11 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card px-6 text-center",
+        "flex flex-col items-center justify-center rounded-xl border border-dashed border-border/90 bg-gradient-to-b from-card via-card to-muted/35 px-6 text-center",
         compact ? "py-8" : "py-14",
       )}
     >
-      <div className="grid size-11 place-items-center rounded-full bg-secondary text-muted-foreground">
+      <div className="grid size-11 place-items-center rounded-xl bg-primary/10 text-primary">
         <Icon className="size-5" aria-hidden />
       </div>
       <h3 className="mt-4 text-sm font-semibold">{title}</h3>
@@ -260,7 +260,7 @@ export function ErrorState({
     <div
       role="alert"
       className={cn(
-        "flex flex-col items-center justify-center rounded-lg border border-destructive/30 bg-destructive-soft px-6 text-center",
+        "flex flex-col items-center justify-center rounded-xl border border-destructive/30 bg-destructive-soft px-6 text-center",
         compact ? "py-6" : "py-12",
       )}
     >

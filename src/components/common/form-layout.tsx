@@ -23,17 +23,17 @@ export function FormSection({
     <section
       aria-label={title}
       className={cn(
-        "grid gap-4 border-b py-6 first:pt-0 last:border-b-0 lg:grid-cols-[14rem_1fr] lg:gap-8",
+        "grid min-w-0 gap-4 border-b border-border/70 py-6 first:pt-0 last:border-b-0 lg:grid-cols-[minmax(11rem,14rem)_minmax(0,1fr)] lg:gap-8",
         className,
       )}
     >
       <div>
-        <h2 className="text-sm font-semibold">{title}</h2>
-        {description ? <p className="mt-1 text-xs text-muted-foreground">{description}</p> : null}
+        <h2 className="border-l-[3px] border-primary/65 pl-3 text-sm font-bold tracking-[-0.01em] text-foreground">{title}</h2>
+        {description ? <p className="mt-2 pl-3 text-xs leading-relaxed text-muted-foreground">{description}</p> : null}
       </div>
       <div
         className={cn(
-          "grid gap-4",
+          "grid min-w-0 gap-4",
           columns === 1 && "grid-cols-1",
           columns === 2 && "sm:grid-cols-2",
           columns === 3 && "sm:grid-cols-2 xl:grid-cols-3",
@@ -68,7 +68,7 @@ export function FormField({
   className?: string;
 }) {
   return (
-    <div className={cn("space-y-1.5", className)}>
+    <div className={cn("min-w-0 space-y-1.5", className)}>
       <Label htmlFor={htmlFor}>
         {label}
         {required ? (
@@ -100,7 +100,7 @@ export function FormActions({ children, className }: { children: ReactNode; clas
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center justify-end gap-2 border-t border-border pt-5 print:hidden",
+        "flex flex-wrap items-center justify-end gap-2 border-t border-border/70 bg-card/60 px-1 py-4 print:hidden sm:px-2",
         className,
       )}
     >

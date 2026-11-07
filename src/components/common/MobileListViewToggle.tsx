@@ -19,7 +19,7 @@ export function MobileListViewToggle({
       type="button"
       size="sm"
       variant="outline"
-      className="md:hidden"
+      className="min-h-10 gap-2 rounded-xl border-border/85 shadow-xs md:hidden"
       aria-label={"Switch " + context + " to " + next + " view"}
       aria-pressed={view === "table"}
       onClick={() => onChange(next)}

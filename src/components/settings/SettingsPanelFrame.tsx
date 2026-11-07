@@ -8,7 +8,7 @@ import {
   panelLabel,
 } from "@/lib/settings/panels";
 import { workspaceSettingsFor } from "@/lib/settings/module-navigation";
-import { PageHeader } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 export function SettingsPanelFrame({
   panel,
@@ -35,7 +35,7 @@ export function SettingsPanelFrame({
       : "Back to previous screen";
   return (
     <section aria-label="Settings detail" ref={focus} tabIndex={-1} className="space-y-4">
-      <PageHeader
+      <ListWorkspace
         title={panelLabel(panel, typeof owner === "string" ? owner : undefined)}
         actions={
           <Button variant="outline" asChild>
@@ -49,8 +49,9 @@ export function SettingsPanelFrame({
             </Link>
           </Button>
         }
-      />
-      {children}
+      >
+        {children}
+      </ListWorkspace>
     </section>
   );
 }

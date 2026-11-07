@@ -2,12 +2,12 @@
 
 | Gate | Status |
 | ---- | ------ |
-| Code (Batch 1 architecture) | in progress |
-| Full route premium DoD | **not ready** |
-| Local tests | pending verification this batch |
-| Merge to authoritative `main` | pending |
-| Supabase migrations | none required for Batch 1 |
-| Security / accounting integrity | no intentional posting changes; full two-tenant audit not-yet-verified |
+| Code (workspace architecture + route adoption Batches 1–9) | in progress → largely complete for chrome inheritance |
+| Full route Section 14 finished-screen DoD | **not ready** |
+| Local contract tests (`check:modules` / `check:ui` / modules vitest) | passing on each merged batch |
+| Merge to authoritative `main` | Batches 1–8 merged (#182–#189); Batch 9 pending |
+| Supabase migrations | none required for premium UI chrome batches |
+| Security / accounting integrity | no intentional posting/RLS changes; full two-tenant audit not-yet-verified |
 | Staging authenticated QA | not executed |
 | Production deployment | **blocked** — no authorization |
 

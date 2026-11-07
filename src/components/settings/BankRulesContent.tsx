@@ -28,7 +28,8 @@ import {
   TaxCodeCreateForm,
 } from "@/components/lookup/create-forms";
 import { toContactLookupOption } from "@/lib/lookup/eligibility";
-import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -217,20 +218,8 @@ export function BankRulesContent({ embedded = false }: { embedded?: boolean }) {
     !amountsInvalid &&
     !saveM.isPending;
 
-  return (
+  const workspace = (
     <>
-      {!embedded && (
-        <PageHeader
-          title="Bank rules"
-          description="A rule suggests a coding for matching statement lines. Nothing posts until you confirm. The lowest priority number wins."
-          actions={
-            <Button size="sm" variant="outline" onClick={() => setReviewOpen((v) => !v)}>
-              {reviewOpen ? "Hide" : "Review"} suggestions
-            </Button>
-          }
-        />
-      )}
-
       {reviewOpen ? (
         <section className="mb-8 space-y-2 rounded-md border p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -623,5 +612,20 @@ export function BankRulesContent({ embedded = false }: { embedded?: boolean }) {
         </Table>
       )}
     </>
+  );
+
+  if (embedded) return workspace;
+  return (
+    <ListWorkspace
+      title="Bank rules"
+      description="A rule suggests a coding for matching statement lines. Nothing posts until you confirm. The lowest priority number wins."
+      actions={
+        <Button size="sm" variant="outline" onClick={() => setReviewOpen((v) => !v)}>
+          {reviewOpen ? "Hide" : "Review"} suggestions
+        </Button>
+      }
+    >
+      {workspace}
+    </ListWorkspace>
   );
 }

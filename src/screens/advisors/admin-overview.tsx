@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { AdvisorsSubnav } from "@/components/advisors/AdvisorsSubnav";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import { getAdvisorsOverview } from "@/lib/advisors/management.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 
@@ -139,9 +140,7 @@ export function AdvisorsAdminOverviewPage() {
                       {inquiry.businessName ? ` · ${inquiry.businessName}` : ""}
                     </p>
                   </div>
-                  <span className="text-xs tracking-wide text-muted-foreground uppercase">
-                    {inquiry.status}
-                  </span>
+                  <StatusBadge status={inquiry.status} className="shrink-0" />
                 </li>
               ))}
             </ul>

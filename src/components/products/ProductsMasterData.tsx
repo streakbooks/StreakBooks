@@ -24,6 +24,7 @@ import {
   type ProductPriceList,
 } from "@/lib/products/catalogue-masterdata.functions";
 import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -105,10 +106,12 @@ export function CategoriesWorkspace({ companyId }: WorkspaceProps) {
             >
               <div className="min-w-0">
                 <p className="font-medium">{category.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {category.is_active ? "Active" : "Archived"}
-                  {category.description ? ` · ${category.description}` : ""}
-                </p>
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <StatusBadge status={category.is_active ? "active" : "archived"} />
+                  {category.description ? (
+                    <p className="text-xs text-muted-foreground">{category.description}</p>
+                  ) : null}
+                </div>
               </div>
               <Button
                 variant="outline"
@@ -285,9 +288,10 @@ export function PriceListsWorkspace({ companyId, currency }: WorkspaceProps) {
               >
                 <div>
                   <p className="font-medium">{list.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {list.currency_code} · {list.is_active ? "Active" : "Archived"}
-                  </p>
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <span className="text-xs text-muted-foreground">{list.currency_code}</span>
+                    <StatusBadge status={list.is_active ? "active" : "archived"} />
+                  </div>
                   {list.description ? (
                     <p className="text-sm text-muted-foreground">{list.description}</p>
                   ) : null}

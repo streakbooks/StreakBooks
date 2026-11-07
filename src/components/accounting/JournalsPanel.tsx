@@ -269,19 +269,13 @@ export function JournalsPanel({
           className="h-9 w-56"
           placeholder="Search number or narration"
           value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(0);
-          }}
+          onChange={(e) => setSearch(e.target.value)}
         />
         <select
           aria-label="Journal source"
           className="h-9 rounded-md border border-input bg-background px-2 text-sm"
           value={source}
-          onChange={(e) => {
-            setSource(e.target.value);
-            setPage(0);
-          }}
+          onChange={(e) => setSource(e.target.value)}
         >
           {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
 
@@ -297,32 +291,28 @@ export function JournalsPanel({
           type="date"
           className="h-9 w-40"
           value={from}
-          onChange={(e) => {
-            setFrom(e.target.value);
-            setPage(0);
-          }}
+          onChange={(e) => setFrom(e.target.value)}
         />
         <Input
           aria-label="To date"
           type="date"
           className="h-9 w-40"
           value={to}
-          onChange={(e) => {
-            setTo(e.target.value);
-            setPage(0);
-          }}
+          onChange={(e) => setTo(e.target.value)}
         />
         {search || source || from || to ? (
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => {
-              setSearch("");
-              setSource("");
-              setFrom("");
-              setTo("");
-              setPage(0);
-            }}
+            onClick={() =>
+              patchJournalBrowse({
+                journalQ: undefined,
+                journalSource: undefined,
+                journalFrom: undefined,
+                journalTo: undefined,
+                journalPage: 0,
+              })
+            }
           >
             Clear filters
           </Button>
@@ -552,7 +542,6 @@ export function JournalsPanel({
                 className="h-9 rounded-md border border-input bg-background px-2 text-sm"
                 onChange={(event) => {
                   setPageSize(Number(event.target.value));
-                  setPage(0);
                   setOpen(null);
                 }}
               >

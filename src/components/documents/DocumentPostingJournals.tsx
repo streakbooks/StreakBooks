@@ -11,6 +11,7 @@ import {
 } from "@/lib/documents/posting-journal-sources";
 import { listDocumentPostingJournals } from "@/lib/documents/posting-journals.functions";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import {
   Table,
   TableBody,
@@ -65,33 +66,33 @@ export function DocumentPostingJournals({
     );
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5" aria-label="Document journal entries">
       {q.data.map((journal) => {
         const currency = journal.currency_code || company?.base_currency || "GBP";
         const debit = journal.lines.reduce((sum, line) => sum + BigInt(line.debit_minor), 0n);
         const credit = journal.lines.reduce((sum, line) => sum + BigInt(line.credit_minor), 0n);
         return (
-          <section key={journal.id} className="space-y-2 rounded-md border border-border p-3">
+          <section key={journal.id} className="space-y-3 rounded-xl border border-border/85 bg-card p-4 shadow-card">
             <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
               <div className="flex flex-wrap items-center gap-2">
                 <Link
                   to="/banking/journal/$journalId"
                   params={{ journalId: journal.id }}
-                  className="font-medium underline underline-offset-4"
+                  className="font-bold tracking-[-0.01em] text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-ring"
                 >
                   Journal #{journal.journal_number}
                 </Link>
-                <Badge variant="outline">{journal.status}</Badge>
+                <StatusBadge status={journal.status} />
                 {journal.reverses_journal_id ? <Badge variant="secondary">Reversal</Badge> : null}
                 {journal.reversed_by_journal_id ? (
-                  <Badge variant="secondary">Reversed</Badge>
+                  <StatusBadge status="reversed" />
                 ) : null}
               </div>
               <span className="text-muted-foreground">
                 {journal.journal_date} · {currency}
               </span>
             </div>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto rounded-xl border border-border/70">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -139,7 +140,7 @@ export function DocumentPostingJournals({
                 Journal is out of balance. Contact your accountant.
               </p>
             ) : (
-              <p className="text-xs text-muted-foreground">Balanced posted journal · read only</p>
+              <p className="text-xs font-medium text-muted-foreground">Balanced journal lines · read only</p>
             )}
           </section>
         );

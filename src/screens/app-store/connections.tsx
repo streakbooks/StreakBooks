@@ -5,6 +5,17 @@ import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import {
@@ -151,14 +162,41 @@ export function AppStoreConnectionsPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       {canRevoke && row.status !== "disconnected" ? (
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          disabled={revokeMutation.isPending}
-                          onClick={() => revokeMutation.mutate(row.appCode)}
-                        >
-                          Disconnect
-                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="destructive"
+                              aria-label={`Revoke ${row.appCode} access for this organisation`}
+                              disabled={revokeMutation.isPending}
+                            >
+                              Disconnect
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Revoke {row.appCode} access?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This revokes {row.appCode} access for the entire current organisation,
+                                including every linked account for this app. It is not limited to
+                                the account shown in this row. Existing accounting records are not
+                                deleted. Reconnecting requires new authorisation.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel disabled={revokeMutation.isPending}>
+                                Keep connected
+                              </AlertDialogCancel>
+                              <AlertDialogAction
+                                disabled={revokeMutation.isPending}
+                                onClick={() => revokeMutation.mutate(row.appCode)}
+                              >
+                                Revoke app access
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       ) : (
                         <span className="text-sm text-muted-foreground">—</span>
                       )}

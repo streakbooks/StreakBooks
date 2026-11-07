@@ -45,6 +45,8 @@ import {
 } from "@/lib/purchases/bill-history";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
+import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { EntityCombobox } from "@/components/common/EntityCombobox";
 import { ContactCreateForm } from "@/components/lookup/create-forms";
 import {
@@ -201,7 +203,6 @@ function BillDocumentWorkspace() {
   const companyId = company?.id;
   const baseCurrency = company?.base_currency ?? "GBP";
 
-  const [supplierOpen, setSupplierOpen] = useState(true);
   const [historyOpen, setHistoryOpen] = useState(true);
   const [noteDraft, setNoteDraft] = useState("");
   const [approvalComment, setApprovalComment] = useState("");
@@ -639,30 +640,112 @@ function BillDocumentWorkspace() {
   };
 
   return (
-    <div className="space-y-4">
-      <header className="rounded-xl border border-border/80 bg-gradient-to-br from-background to-muted/30 p-4 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0 space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Purchase bill{canEdit ? " · editing" : ""}
-            </p>
-            <h1 className="truncate text-xl font-semibold tracking-tight">
-              {bill.contacts?.name ?? "Supplier"}
-              {bill.display_reference ? (
-                <span className="ml-2 font-mono text-base font-normal text-muted-foreground">
-                  {bill.display_reference}
-                </span>
+    <RecordWorkspace
+      title={`${bill.contacts?.name ?? "Supplier"}${bill.display_reference ? ` · ${bill.display_reference}` : ""}`}
+      description={
+        canEdit
+          ? `Purchase bill · editing — save before leaving.`
+          : `Purchase bill · ${bill.bill_date} · Due ${bill.due_date}${
+              bill.bill_number ? ` · Internal ${bill.bill_number}` : ""
+            }`
+      }
+      meta={<StatusBadge status={bill.status} />}
+      insights={
+        <div className="space-y-4">
+          <WorkspaceInsights
+            title="Related"
+            facts={[
+              {
+                label: "Document total",
+                value: fromMinorUnits(
+                  BigInt(bill.document_total_minor ?? bill.total_minor),
+                  currency,
+                ),
+              },
+              {
+                label: "Paid",
+                value: fromMinorUnits(BigInt(bill.amount_paid_minor), currency),
+              },
+              {
+                label: "Balance due",
+                value: canEdit ? "— (unposted)" : fromMinorUnits(BigInt(outstanding), currency),
+              },
+              { label: "Currency", value: currency },
+              { label: "Internal #", value: bill.bill_number ?? "—" },
+            ]}
+            links={[
+              ...(bill.contact_id
+                ? [
+                    {
+                      label: bill.contacts?.name ?? "Supplier",
+                      to: "/contacts/$contactId",
+                      params: { contactId: bill.contact_id },
+                      hint: bill.contacts?.email ?? "Open supplier contact",
+                    },
+                  ]
+                : []),
+              {
+                label: "All bills",
+                to: "/purchases/bills",
+                hint: "Return to the bills workspace",
+              },
+              ...(["authorised", "partly_paid"].includes(bill.status)
+                ? [
+                    {
+                      label: "Credit this bill",
+                      to: "/purchases/credit-notes/new",
+                      search: { billId },
+                      hint: "Raise a supplier credit against this bill",
+                    },
+                  ]
+                : []),
+            ]}
+            footer="Balances come from this bill’s ledger fields. Empty supplier invoice numbers are not fabricated."
+          />
+          {bill.contacts?.phone || bill.contacts?.email ? (
+            <div className="rounded-lg border border-border/70 bg-background/60 p-3 text-sm">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Supplier
+              </p>
+              {bill.contacts?.email ? <p className="mt-1">{bill.contacts.email}</p> : null}
+              {bill.contacts?.phone ? <p>{bill.contacts.phone}</p> : null}
+            </div>
+          ) : null}
+          {canEdit ? (
+            <div className="rounded-lg border border-border/70 bg-background/60 p-3 text-sm">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Approval
+              </p>
+              <Input
+                className="mt-2"
+                placeholder="Comment / reason"
+                value={approvalComment}
+                onChange={(e) => setApprovalComment(e.target.value)}
+              />
+              {bill.approval_comment ? (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Last comment: {bill.approval_comment}
+                </p>
               ) : null}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {canEdit
-                ? "All fields below are editable. Save before leaving."
-                : `Bill ${bill.bill_date} · Due ${bill.due_date}${
-                    bill.bill_number ? ` · Internal ${bill.bill_number}` : ""
-                  }`}
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
+              {bill.rejection_reason ? (
+                <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
+                  Rejection: {bill.rejection_reason}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+          {bill.status === "void" ? (
+            <Alert>
+              <AlertTitle>Voided</AlertTitle>
+              <AlertDescription>
+                Historical read-only. Posted journals were reversed.
+              </AlertDescription>
+            </Alert>
+          ) : null}
+        </div>
+      }
+      actions={
+        <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" size="sm" asChild>
               <Link to="/purchases/bills" search={backSearch}>
                 Back to Bills
@@ -803,51 +886,24 @@ function BillDocumentWorkspace() {
                 ) : null}
               </>
             )}
-          </div>
         </div>
-
-        <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
-          <StatusBadge status={bill.status} />
-          <span>
-            Document total{" "}
-            <strong className="tabular-nums">
-              {fromMinorUnits(BigInt(bill.document_total_minor ?? bill.total_minor), currency)}
-            </strong>
+      }
+    >
+      <div className="flex flex-wrap items-center gap-3 text-sm">
+        {bill.posted_journal_id ? (
+          <span className="font-mono text-xs text-muted-foreground">
+            Journal {bill.posted_journal_id.slice(0, 8)}…
           </span>
-          <span>
-            Paid{" "}
-            <strong className="tabular-nums">
-              {fromMinorUnits(BigInt(bill.amount_paid_minor), currency)}
-            </strong>
+        ) : null}
+        {neighbors?.position ? (
+          <span className="text-xs text-muted-foreground">
+            {neighbors.position} of {neighbors.total}
           </span>
-          <span>
-            Balance due{" "}
-            <strong className="tabular-nums">
-              {canEdit ? "— (unposted)" : fromMinorUnits(BigInt(outstanding), currency)}
-            </strong>
-          </span>
-          {bill.posted_journal_id ? (
-            <span className="font-mono text-xs text-muted-foreground">
-              Journal {bill.posted_journal_id.slice(0, 8)}…
-            </span>
-          ) : null}
-          {neighbors?.position ? (
-            <span className="text-xs text-muted-foreground">
-              {neighbors.position} of {neighbors.total}
-            </span>
-          ) : null}
-          {bill.status !== "void" ? (
-            <ProjectTagControl kind="purchase_bill" documentId={billId} />
-          ) : null}
-          {["authorised", "partly_paid"].includes(bill.status) ? (
-            <Button size="sm" variant="outline" asChild>
-              <Link to="/purchases/credit-notes/new" search={{ billId }}>
-                Credit this bill
-              </Link>
-            </Button>
-          ) : null}
-        </div>
-      </header>
+        ) : null}
+        {bill.status !== "void" ? (
+          <ProjectTagControl kind="purchase_bill" documentId={billId} />
+        ) : null}
+      </div>
 
       {formError ? (
         <Alert variant="destructive">
@@ -865,8 +921,7 @@ function BillDocumentWorkspace() {
         </Alert>
       ) : null}
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
-        <div className="space-y-4">
+      <div className="space-y-4">
           {canEdit ? (
             <section className="space-y-4 rounded-lg border border-border bg-background p-4">
               <h2 className="text-sm font-semibold">Bill details</h2>
@@ -1333,88 +1388,6 @@ function BillDocumentWorkspace() {
               </CollapsibleContent>
             </section>
           </Collapsible>
-        </div>
-
-        <aside className="space-y-3">
-          <Collapsible open={supplierOpen} onOpenChange={setSupplierOpen}>
-            <div className="rounded-lg border border-border bg-background p-4">
-              <CollapsibleTrigger asChild>
-                <button
-                  type="button"
-                  className="flex w-full items-center justify-between text-left text-sm font-semibold"
-                >
-                  Supplier
-                  <span className="text-xs font-normal text-muted-foreground">
-                    {supplierOpen ? "Hide" : "Show"}
-                  </span>
-                </button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="mt-3 space-y-2 text-sm">
-                <p className="font-medium">{bill.contacts?.name ?? "—"}</p>
-                {bill.contacts?.email ? <p>{bill.contacts.email}</p> : null}
-                {bill.contacts?.phone ? <p>{bill.contacts.phone}</p> : null}
-                {bill.contact_id ? (
-                  <Button variant="link" className="h-auto p-0" asChild>
-                    <Link to="/contacts/$contactId" params={{ contactId: bill.contact_id }}>
-                      Open contact
-                    </Link>
-                  </Button>
-                ) : null}
-              </CollapsibleContent>
-            </div>
-          </Collapsible>
-
-          <div className="rounded-lg border border-border bg-background p-4 text-sm">
-            <h3 className="font-semibold">Document details</h3>
-            <dl className="mt-2 space-y-2">
-              <div className="flex justify-between gap-2">
-                <dt className="text-muted-foreground">Currency</dt>
-                <dd>{currency}</dd>
-              </div>
-              <div className="flex justify-between gap-2">
-                <dt className="text-muted-foreground">Internal #</dt>
-                <dd className="font-mono text-xs">{bill.bill_number ?? "—"}</dd>
-              </div>
-              <div className="flex justify-between gap-2">
-                <dt className="text-muted-foreground">Internal ID</dt>
-                <dd className="max-w-[9rem] truncate font-mono text-xs" title={bill.id}>
-                  {bill.id.slice(0, 8)}…
-                </dd>
-              </div>
-            </dl>
-          </div>
-
-          {canEdit ? (
-            <div className="rounded-lg border border-border bg-background p-4 text-sm">
-              <h3 className="font-semibold">Approval</h3>
-              <Input
-                className="mt-2"
-                placeholder="Comment / reason"
-                value={approvalComment}
-                onChange={(e) => setApprovalComment(e.target.value)}
-              />
-              {bill.approval_comment ? (
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Last comment: {bill.approval_comment}
-                </p>
-              ) : null}
-              {bill.rejection_reason ? (
-                <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
-                  Rejection: {bill.rejection_reason}
-                </p>
-              ) : null}
-            </div>
-          ) : null}
-
-          {bill.status === "void" ? (
-            <Alert>
-              <AlertTitle>Voided</AlertTitle>
-              <AlertDescription>
-                Historical read-only. Posted journals were reversed.
-              </AlertDescription>
-            </Alert>
-          ) : null}
-        </aside>
       </div>
 
       <DocumentActions kind="purchase_bill" id={billId} />
@@ -1427,6 +1400,6 @@ function BillDocumentWorkspace() {
         attachments={bill.attachments ?? []}
         canUpload={canEdit}
       />
-    </div>
+    </RecordWorkspace>
   );
 }

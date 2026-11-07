@@ -8,6 +8,7 @@ import { DocumentRecordPanel } from "@/components/documents/DocumentRecordPanel"
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
+import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { ContactLookup } from "@/components/lookup";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -299,6 +300,39 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
     <RecordWorkspace
       title={claim.claimNumber}
       description={claim.title}
+      insights={
+        <WorkspaceInsights
+          title="Related"
+          facts={[
+            { label: "Approval", value: claim.approvalStatus.replaceAll("_", " ") },
+            { label: "Posting", value: claim.postingStatus.replaceAll("_", " ") },
+            {
+              label: "Total",
+              value: fromMinorUnits(claim.totalMinor, claim.claimCurrency),
+            },
+            { label: "Lines", value: String(claim.lines.length) },
+          ]}
+          links={[
+            {
+              label: "My expenses",
+              to: "/expense-management/$section",
+              params: { section: "my-expenses" },
+              hint: "Return to expense claims",
+            },
+            ...(claim.rebillingInvoiceId
+              ? [
+                  {
+                    label: "Rebilling invoice",
+                    to: "/sales/invoices/$invoiceId",
+                    params: { invoiceId: claim.rebillingInvoiceId },
+                    hint: "Linked sales invoice for this claim",
+                  },
+                ]
+              : []),
+          ]}
+          footer="Statuses come from the claim record. Posting creates an employee payable accrual when authorised."
+        />
+      }
       actions={
         <div className="flex flex-wrap gap-2">
           {canPostNow ? (

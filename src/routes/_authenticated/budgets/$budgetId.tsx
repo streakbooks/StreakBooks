@@ -33,6 +33,7 @@ import {
 import { csvFilename, downloadCsv, toCsv } from "@/lib/reports/csv";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
+import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -556,6 +557,38 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
     <RecordWorkspace
       title={data.budget.name}
       description={`Budget for the financial year from ${fmt.date(data.budget.fiscal_year_start)}, in ${currency}. Amounts are for the account's natural direction: income and expenses as positive numbers.`}
+      insights={
+        <WorkspaceInsights
+          title="Related"
+          facts={[
+            { label: "Currency", value: currency },
+            {
+              label: "Fiscal year start",
+              value: fmt.date(data.budget.fiscal_year_start),
+            },
+            { label: "Accounts with lines", value: String(data.lines.length) },
+            {
+              label: "Lock",
+              value: locked ? "Locked" : canManage ? "Editable when unlocked" : "View only",
+            },
+          ]}
+          links={[
+            {
+              label: "All budgets",
+              to: "/budgets",
+              hint: "Return to the budget list",
+            },
+            {
+              label: "Budget versus Actual",
+              to: "/reports/$reportId",
+              params: { reportId: "budget-vs-actual" },
+              search: { budget: data.budget.id },
+              hint: "Compare budgeted amounts to posted actuals",
+            },
+          ]}
+          footer="Budget amounts are planning figures. Actuals come from the ledger report."
+        />
+      }
       actions={
         <>
           <Button asChild variant="outline" size="sm">

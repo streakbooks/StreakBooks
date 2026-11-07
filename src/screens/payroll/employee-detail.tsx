@@ -34,6 +34,7 @@ import { bpsToPercentString } from "@/components/sales/sales-form-utils";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
+import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -225,6 +226,47 @@ export function PayrollEmployeeDetailPage({ employeeId }: { employeeId: string }
     <RecordWorkspace
       title={`${emp.first_name} ${emp.last_name}`}
       description={`${emp.employee_number} · ${emp.payroll_currency} payroll`}
+      insights={
+        <WorkspaceInsights
+          title="Related"
+          facts={[
+            { label: "Employee #", value: emp.employee_number },
+            { label: "Currency", value: currency },
+            {
+              label: "Salary",
+              value: currentVersion ? "Current version on file" : "Not assigned",
+            },
+            {
+              label: "Payment details",
+              value: hasPaymentOnFile ? "On file" : "Missing",
+            },
+            { label: "Recent payslips", value: String(recentPayslips.length) },
+          ]}
+          links={[
+            {
+              label: "All employees",
+              to: "/payroll/employees",
+              hint: "Return to the employee directory",
+            },
+            {
+              label: "Payslips",
+              to: "/payroll/payslips",
+              hint: "Browse payslips",
+            },
+            ...(emp.contact_id
+              ? [
+                  {
+                    label: "Linked contact",
+                    to: "/contacts/$contactId",
+                    params: { contactId: emp.contact_id },
+                    hint: "Open the HR contact record",
+                  },
+                ]
+              : []),
+          ]}
+          footer="Facts reflect payroll master data only — no invented balances."
+        />
+      }
       actions={
         <Button asChild variant="outline" size="sm">
           <Link to="/payroll/employees">Back to employees</Link>

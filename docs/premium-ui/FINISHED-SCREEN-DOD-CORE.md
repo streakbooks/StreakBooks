@@ -63,7 +63,7 @@ A screen is **not** DONE unless every applicable row is PASS or N/A with reason.
 
 ### Purchases (`/purchases` + nested)
 
-Same pattern as Sales — chrome **PASS**, full DoD **IN PROGRESS**. Batch 13 adds Purchases overview + supplier credit/payment insight rails.
+Same pattern as Sales — chrome **PASS**, full DoD **IN PROGRESS**. Batch 13–14 add Purchases overview, bill `RecordWorkspace`, and supplier credit/payment/order/expense insight rails.
 
 ### Contacts (`/contacts`)
 

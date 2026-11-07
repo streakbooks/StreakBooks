@@ -13,6 +13,7 @@ import { fromMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
+import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { StatusBadge } from "@/components/common/stat-card";
 import { DocumentRecordPanel } from "@/components/documents/DocumentRecordPanel";
 import { Button } from "@/components/ui/button";
@@ -86,6 +87,35 @@ function ExpenseDetail() {
     <RecordWorkspace
       title={e.payee_name}
       description={`Direct expense · ${e.expense_date}`}
+      meta={<StatusBadge status={e.status} />}
+      insights={
+        <WorkspaceInsights
+          title="Related"
+          facts={[
+            { label: "Status", value: e.status.replaceAll("_", " ") },
+            { label: "Total", value: fromMinorUnits(BigInt(e.total_minor), currency) },
+            { label: "Net", value: fromMinorUnits(BigInt(e.net_minor), currency) },
+            { label: "Tax", value: fromMinorUnits(BigInt(e.tax_minor), currency) },
+            {
+              label: "Posting",
+              value: e.posted_journal_id ? "Posted to ledger" : "Draft — not posted",
+            },
+          ]}
+          links={[
+            {
+              label: "All expenses",
+              to: "/purchases/expenses",
+              hint: "Return to the expense list",
+            },
+            {
+              label: "New expense",
+              to: "/purchases/expenses/new",
+              hint: "Record another direct expense",
+            },
+          ]}
+          footer="Draft expenses have no ledger impact until posted."
+        />
+      }
       actions={
         <div className="flex flex-wrap gap-2">
           {e.status === "draft" ? (

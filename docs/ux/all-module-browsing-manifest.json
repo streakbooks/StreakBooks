@@ -327,8 +327,12 @@
       "routeFiles": [
         "help.tsx"
       ],
-      "browsingImplementation": "not_assessed_module_wide",
-      "fullyVerified": false
+      "browsingImplementation": "partial_code_not_runtime_verified",
+      "fullyVerified": false,
+      "currentEvidence": [
+        "src/routes/_authenticated/help.tsx — URL-backed bounded help search with replace navigation and preserved scroll; committed 9a4181ca3ad6fc4569bd30da440b9d47131c87b3",
+        "Local typecheck, lint, unit, browser and check:browsing-coverage: NOT RUN"
+      ]
     }
   ],
   "supportingRoutes": [

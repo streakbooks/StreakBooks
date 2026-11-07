@@ -25,7 +25,7 @@ import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
 import { TableCard } from "@/components/common/table-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -398,9 +398,7 @@ export function PayrollEmployeesPage() {
                         {emp.first_name} {emp.last_name}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={emp.status === "active" ? "default" : "secondary"}>
-                          {STATUS_LABEL[emp.status]}
-                        </Badge>
+                        <StatusBadge status={emp.status} label={STATUS_LABEL[emp.status]} />
                       </TableCell>
                       <TableCell>{emp.department ?? "—"}</TableCell>
                       <TableCell>{emp.hire_date}</TableCell>

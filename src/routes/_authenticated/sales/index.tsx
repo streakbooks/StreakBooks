@@ -6,7 +6,8 @@ import { listInvoices } from "@/lib/sales/sales.functions";
 import { getSalesOverview } from "@/lib/sales/sales-statements.functions";
 import { money } from "@/components/sales/sales-form-utils";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { StatCard } from "@/components/common/stat-card";
 import { Button } from "@/components/ui/button";
 import {
@@ -52,31 +53,30 @@ function SalesOverview() {
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
 
   return (
-    <>
-      <PageHeader
-        title="Sales"
-        description="Quotes, invoices, receipts and credit notes post through the shared ledger."
-        actions={
-          <>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/imports" search={{ module: "sales" }}>
-                Import invoices
-              </Link>
-            </Button>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/contacts/new" search={{ kind: "customer" }}>
-                New customer
-              </Link>
-            </Button>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/sales/receipts/new">Record receipt</Link>
-            </Button>
-            <Button size="sm" asChild>
-              <Link to="/sales/invoices/new">New invoice</Link>
-            </Button>
-          </>
-        }
-      />
+    <ListWorkspace
+      title="Sales"
+      description="Quotes, invoices, receipts and credit notes post through the shared ledger."
+      actions={
+        <>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/imports" search={{ module: "sales" }}>
+              Import invoices
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/contacts/new" search={{ kind: "customer" }}>
+              New customer
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/sales/receipts/new">Record receipt</Link>
+          </Button>
+          <Button size="sm" asChild>
+            <Link to="/sales/invoices/new">New invoice</Link>
+          </Button>
+        </>
+      }
+    >
 
       {overviewQ.isPending ? (
         <LoadingState />
@@ -240,6 +240,6 @@ function SalesOverview() {
           </TableBody>
         </Table>
       )}
-    </>
+    </ListWorkspace>
   );
 }

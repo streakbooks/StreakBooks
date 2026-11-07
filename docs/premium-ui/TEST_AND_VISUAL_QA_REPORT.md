@@ -20,6 +20,9 @@
 | Label-in-name shared controls (Batch 20) | **Fixed** | Columns/Clear accessible names match visible text |
 | Error-retry gate + Bills ListWorkspace (Batch 21) | **Passed** | `check:error-retry`; bills.index ListWorkspace + factual insights |
 | Demo + globalSearch isolation units (Batch 21) | **Passed** | Non-demo reseed deny; search membership + company_id scope |
+| Section 18 gate reporter (Batch 22) | **Reporting** | `npm run check:section18`; go-live still FORBIDDEN |
+| Firm filter label association (Batch 22) | **Fixed** | Practice status / review / sort use Label htmlFor + trigger id |
+| Accounting invariant local suite (Batch 22) | **Passed** 54/54 | `npm run test:accounting-invariants` |
 | Authenticated staging smoke | **Not run** | Authorized; `E2E_*` credentials unset on workstation |
 | GitHub CI | Not dispatched by instruction | Push may auto-trigger; full auth allows observation |
 

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
@@ -25,16 +26,29 @@ import { listAccounts } from "@/lib/accounting/accounting.functions";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import {
+  emptyDraftLine,
+  splitDraftLine,
+  toClaimLineInputs,
+  type ExpenseDraftLineForm,
+} from "@/lib/expenses/draft-lines";
+import {
   deleteExpenseClaimDraft,
+  duplicateExpenseClaim,
   EXPENSE_CLAIM_MIGRATION,
+  listExpenseClaimTemplates,
   listExpenseClaims,
   saveExpenseClaim,
+  saveExpenseClaimTemplate,
   submitExpenseClaim,
   withdrawExpenseClaim,
 } from "@/lib/expenses/expenses.functions";
 import type { ExpenseManagementSectionKey } from "@/lib/expenses/sections";
 import { parseMinorOrThrow } from "@/lib/purchases/money-input";
 import type { Permission } from "@/lib/permissions";
+
+function parseMinorNumber(value: string, label: string): number {
+  return Number(parseMinorOrThrow(value, label));
+}
 
 export function ExpenseManagementClaimsPage({
   mode,
@@ -56,23 +70,23 @@ export function ExpenseManagementClaimsPage({
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [merchant, setMerchant] = useState("");
-  const [lineDescription, setLineDescription] = useState("");
-  const [accountId, setAccountId] = useState("");
-  const [amount, setAmount] = useState("");
-  const [tax, setTax] = useState("0");
+  const [lines, setLines] = useState<ExpenseDraftLineForm[]>([emptyDraftLine(today)]);
+  const [splitLineKey, setSplitLineKey] = useState<string | null>(null);
+  const [splitAccountA, setSplitAccountA] = useState("");
+  const [splitAccountB, setSplitAccountB] = useState("");
+  const [templateName, setTemplateName] = useState("");
 
   const fetchClaims = useServerFn(listExpenseClaims);
   const fetchAccounts = useServerFn(listAccounts);
+  const fetchTemplates = useServerFn(listExpenseClaimTemplates);
   const saveClaim = useServerFn(saveExpenseClaim);
   const submitClaim = useServerFn(submitExpenseClaim);
   const withdrawClaim = useServerFn(withdrawExpenseClaim);
   const deleteClaim = useServerFn(deleteExpenseClaimDraft);
+  const duplicateClaim = useServerFn(duplicateExpenseClaim);
+  const saveTemplate = useServerFn(saveExpenseClaimTemplate);
 
-  const allowed =
-    mode === "my-expenses"
-      ? canSubmit || canViewAll
-      : canViewAll;
+  const allowed = mode === "my-expenses" ? canSubmit || canViewAll : canViewAll;
 
   const claimsQ = useQuery({
     queryKey: ["expense-claims", company?.id, mode],
@@ -89,6 +103,12 @@ export function ExpenseManagementClaimsPage({
     enabled: Boolean(company?.id) && canSubmit && mode === "my-expenses",
   });
 
+  const templatesQ = useQuery({
+    queryKey: ["expense-claim-templates", company?.id],
+    queryFn: () => fetchTemplates({ data: { companyId: company!.id } }),
+    enabled: Boolean(company?.id) && canSubmit && mode === "my-expenses",
+  });
+
   const expenseAccounts = useMemo(
     () =>
       (accountsQ.data ?? []).filter(
@@ -98,14 +118,24 @@ export function ExpenseManagementClaimsPage({
     [accountsQ.data],
   );
 
-  const invalidate = () =>
+  const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: ["expense-claims", company?.id] });
+    void queryClient.invalidateQueries({ queryKey: ["expense-claim-templates", company?.id] });
+    void queryClient.invalidateQueries({ queryKey: ["expense-management-overview", company?.id] });
+  };
+
+  const updateLine = (key: string, patch: Partial<ExpenseDraftLineForm>) => {
+    setLines((current) => current.map((line) => (line.key === key ? { ...line, ...patch } : line)));
+  };
 
   const create = useMutation({
     mutationFn: async () => {
       if (!company) throw new Error("Select a company first.");
-      const netMinor = parseMinorOrThrow(amount, "Amount");
-      const taxMinor = parseMinorOrThrow(tax || "0", "Tax");
+      const claimLines = toClaimLineInputs(lines, currency, parseMinorNumber);
+      for (const line of claimLines) {
+        if (!line.description.trim()) throw new Error("Each line needs a description.");
+        if (!line.accountId) throw new Error("Each line needs an expense account.");
+      }
       return saveClaim({
         data: {
           companyId: company.id,
@@ -115,19 +145,7 @@ export function ExpenseManagementClaimsPage({
             claimDate: today,
             claimCurrency: currency,
             paymentSource: "employee_paid",
-            lines: [
-              {
-                expenseDate: today,
-                merchantName: merchant.trim() || undefined,
-                description: lineDescription.trim() || title.trim() || "Expense",
-                accountId,
-                netMinor,
-                taxMinor,
-                grossMinor: netMinor + taxMinor,
-                reimbursableMinor: netMinor + taxMinor,
-                nonReimbursableMinor: 0,
-              },
-            ],
+            lines: claimLines,
           },
         },
       });
@@ -135,13 +153,36 @@ export function ExpenseManagementClaimsPage({
     onSuccess: () => {
       setTitle("");
       setDescription("");
-      setMerchant("");
-      setLineDescription("");
-      setAccountId("");
-      setAmount("");
-      setTax("0");
+      setLines([emptyDraftLine(today)]);
+      setTemplateName("");
       invalidate();
       toast.success("Draft claim saved.");
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+
+  const saveAsTemplate = useMutation({
+    mutationFn: async () => {
+      if (!company) throw new Error("Select a company first.");
+      const claimLines = toClaimLineInputs(lines, currency, parseMinorNumber);
+      return saveTemplate({
+        data: {
+          companyId: company.id,
+          draft: {
+            name: templateName.trim(),
+            titleTemplate: title.trim() || "Expense claim",
+            descriptionTemplate: description.trim() || null,
+            claimCurrency: currency,
+            paymentSource: "employee_paid",
+            defaultLines: claimLines,
+          },
+        },
+      });
+    },
+    onSuccess: () => {
+      setTemplateName("");
+      invalidate();
+      toast.success("Template saved.");
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
@@ -181,6 +222,72 @@ export function ExpenseManagementClaimsPage({
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
+
+  const duplicate = useMutation({
+    mutationFn: (claimId: string) =>
+      duplicateClaim({ data: { companyId: company!.id, claimId } }),
+    onSuccess: () => {
+      invalidate();
+      toast.success("Claim duplicated as a new draft.");
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+
+  const applySplit = () => {
+    const line = lines.find((row) => row.key === splitLineKey);
+    if (!line) return;
+    if (!splitAccountA || !splitAccountB) {
+      toast.error("Choose two accounts for the equal split.");
+      return;
+    }
+    const result = splitDraftLine(
+      line,
+      "equal",
+      [
+        { accountId: splitAccountA, label: "Split A" },
+        { accountId: splitAccountB, label: "Split B" },
+      ],
+      currency,
+      parseMinorNumber,
+      (minor, code) => fromMinorUnits(minor, code),
+    );
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
+    }
+    setLines((current) =>
+      current.flatMap((row) => (row.key === line.key ? result.lines : [row])),
+    );
+    setSplitLineKey(null);
+    setSplitAccountA("");
+    setSplitAccountB("");
+    toast.success("Line split equally across two accounts.");
+  };
+
+  const applyTemplate = (templateId: string) => {
+    const template = (templatesQ.data ?? []).find((row) => row.id === templateId);
+    if (!template) return;
+    setTitle(template.titleTemplate || template.name);
+    setDescription(template.descriptionTemplate ?? "");
+    setLines(
+      template.defaultLines.length > 0
+        ? template.defaultLines.map((line) => {
+            const blank = emptyDraftLine(line.expenseDate || today);
+            return {
+              ...blank,
+              merchantName: line.merchantName ?? "",
+              description: line.description,
+              accountId: line.accountId,
+              netInput: fromMinorUnits(line.netMinor, currency),
+              taxInput: fromMinorUnits(line.taxMinor, currency),
+              reimbursable: (line.reimbursableMinor ?? line.grossMinor) > 0,
+              isBillable: Boolean(line.isBillable),
+            };
+          })
+        : [emptyDraftLine(today)],
+    );
+    toast.success(`Loaded template “${template.name}”.`);
+  };
 
   if (isPending) return <LoadingState />;
   if (!company) {
@@ -233,7 +340,7 @@ export function ExpenseManagementClaimsPage({
         title={mode === "my-expenses" ? "My Expenses" : "All Claims"}
         description={
           mode === "my-expenses"
-            ? "Create drafts, submit claims and withdraw eligible submissions."
+            ? "Multi-line drafts, equal splits, templates, submit and withdraw."
             : "Organisation-wide expense claims visible to finance and approvers."
         }
       />
@@ -241,79 +348,231 @@ export function ExpenseManagementClaimsPage({
 
       {mode === "my-expenses" && canSubmit ? (
         <form
-          className="mb-8 grid max-w-3xl gap-4 rounded-lg border p-4"
+          className="mb-8 grid max-w-4xl gap-4 rounded-lg border p-4"
           onSubmit={(event) => {
             event.preventDefault();
             create.mutate();
           }}
         >
-          <h2 className="text-base font-semibold">New draft claim</h2>
-          <div className="grid gap-2">
-            <Label htmlFor="em-claim-title">Title</Label>
-            <Input
-              id="em-claim-title"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              required
-            />
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <h2 className="text-base font-semibold">New multi-line draft</h2>
+            {(templatesQ.data?.length ?? 0) > 0 ? (
+              <div className="grid gap-1">
+                <Label htmlFor="em-template">Load template</Label>
+                <select
+                  id="em-template"
+                  className="flex h-10 rounded-md border border-input bg-background px-3 text-sm"
+                  defaultValue=""
+                  onChange={(event) => {
+                    if (event.target.value) applyTemplate(event.target.value);
+                    event.target.value = "";
+                  }}
+                >
+                  <option value="">Select template</option>
+                  {(templatesQ.data ?? []).map((template) => (
+                    <option key={template.id} value={template.id}>
+                      {template.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="em-claim-desc">Description</Label>
-            <Input
-              id="em-claim-desc"
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-            />
-          </div>
+
           <div className="grid gap-2 sm:grid-cols-2">
             <div className="grid gap-2">
-              <Label htmlFor="em-merchant">Merchant</Label>
+              <Label htmlFor="em-claim-title">Title</Label>
               <Input
-                id="em-merchant"
-                value={merchant}
-                onChange={(event) => setMerchant(event.target.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="em-line-desc">Line description</Label>
-              <Input
-                id="em-line-desc"
-                value={lineDescription}
-                onChange={(event) => setLineDescription(event.target.value)}
-              />
-            </div>
-          </div>
-          <div className="grid gap-2">
-            <Label>Expense account</Label>
-            <AccountLookup
-              ariaLabel="Expense account"
-              purpose="expense"
-              accounts={expenseAccounts}
-              value={accountId}
-              onChange={setAccountId}
-              companyId={company.id}
-              placeholder="Select expense account"
-              allowClear={false}
-            />
-          </div>
-          <div className="grid gap-2 sm:grid-cols-2">
-            <div className="grid gap-2">
-              <Label htmlFor="em-amount">Net amount ({currency})</Label>
-              <Input
-                id="em-amount"
-                value={amount}
-                onChange={(event) => setAmount(event.target.value)}
+                id="em-claim-title"
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
                 required
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="em-tax">Tax amount</Label>
-              <Input id="em-tax" value={tax} onChange={(event) => setTax(event.target.value)} />
+              <Label htmlFor="em-claim-desc">Description</Label>
+              <Input
+                id="em-claim-desc"
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+              />
             </div>
           </div>
-          <Button type="submit" disabled={create.isPending || !accountId}>
-            {create.isPending ? "Saving…" : "Save draft"}
-          </Button>
+
+          <div className="space-y-3">
+            {lines.map((line, index) => (
+              <div key={line.key} className="grid gap-3 rounded-md border p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-medium">Line {index + 1}</p>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setSplitLineKey(line.key)}
+                    >
+                      Split equally
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      disabled={lines.length === 1}
+                      onClick={() =>
+                        setLines((current) => current.filter((row) => row.key !== line.key))
+                      }
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Remove line</span>
+                    </Button>
+                  </div>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <div className="grid gap-2">
+                    <Label>Date</Label>
+                    <Input
+                      type="date"
+                      value={line.expenseDate}
+                      onChange={(event) =>
+                        updateLine(line.key, { expenseDate: event.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Merchant</Label>
+                    <Input
+                      value={line.merchantName}
+                      onChange={(event) =>
+                        updateLine(line.key, { merchantName: event.target.value })
+                      }
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Description</Label>
+                  <Input
+                    value={line.description}
+                    onChange={(event) =>
+                      updateLine(line.key, { description: event.target.value })
+                    }
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Expense account</Label>
+                  <AccountLookup
+                    ariaLabel={`Expense account for line ${index + 1}`}
+                    purpose="expense"
+                    accounts={expenseAccounts}
+                    value={line.accountId}
+                    onChange={(value) => updateLine(line.key, { accountId: value })}
+                    companyId={company.id}
+                    placeholder="Select expense account"
+                    allowClear={false}
+                  />
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <div className="grid gap-2">
+                    <Label>Net ({currency})</Label>
+                    <Input
+                      value={line.netInput}
+                      onChange={(event) => updateLine(line.key, { netInput: event.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Tax</Label>
+                    <Input
+                      value={line.taxInput}
+                      onChange={(event) => updateLine(line.key, { taxInput: event.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {splitLineKey ? (
+            <div className="grid gap-3 rounded-md border border-dashed p-3">
+              <p className="text-sm font-medium">Equal split across two accounts</p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label>Account A</Label>
+                  <AccountLookup
+                    ariaLabel="Split account A"
+                    purpose="expense"
+                    accounts={expenseAccounts}
+                    value={splitAccountA}
+                    onChange={setSplitAccountA}
+                    companyId={company.id}
+                    placeholder="Select account A"
+                    allowClear={false}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Account B</Label>
+                  <AccountLookup
+                    ariaLabel="Split account B"
+                    purpose="expense"
+                    accounts={expenseAccounts}
+                    value={splitAccountB}
+                    onChange={setSplitAccountB}
+                    companyId={company.id}
+                    placeholder="Select account B"
+                    allowClear={false}
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button type="button" size="sm" onClick={applySplit}>
+                  Apply split
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setSplitLineKey(null)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : null}
+
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setLines((current) => [...current, emptyDraftLine(today)])}
+            >
+              <Plus className="mr-1 h-4 w-4" />
+              Add line
+            </Button>
+            <Button type="submit" disabled={create.isPending}>
+              {create.isPending ? "Saving…" : "Save draft"}
+            </Button>
+          </div>
+
+          <div className="grid gap-2 border-t pt-4 sm:grid-cols-[1fr_auto] sm:items-end">
+            <div className="grid gap-2">
+              <Label htmlFor="em-template-name">Save current lines as template</Label>
+              <Input
+                id="em-template-name"
+                value={templateName}
+                onChange={(event) => setTemplateName(event.target.value)}
+                placeholder="Template name"
+              />
+            </div>
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={saveAsTemplate.isPending || !templateName.trim()}
+              onClick={() => saveAsTemplate.mutate()}
+            >
+              {saveAsTemplate.isPending ? "Saving…" : "Save template"}
+            </Button>
+          </div>
         </form>
       ) : null}
 
@@ -322,7 +581,7 @@ export function ExpenseManagementClaimsPage({
           title="No claims yet"
           description={
             mode === "my-expenses"
-              ? "Save a draft above to start a multi-line expense claim."
+              ? "Add one or more lines above to create a draft claim."
               : "No organisation claims are visible yet."
           }
         />
@@ -352,6 +611,16 @@ export function ExpenseManagementClaimsPage({
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
+                    {canSubmit ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={duplicate.isPending}
+                        onClick={() => duplicate.mutate(claim.id)}
+                      >
+                        Duplicate
+                      </Button>
+                    ) : null}
                     {mode === "my-expenses" && claim.approvalStatus === "draft" ? (
                       <>
                         <Button

@@ -4,15 +4,15 @@ Update after every verified batch. The visual percentage counts only **completed
 
 ## Visual progress
 
-**Development batches coded:** 2 / 12
+**Development batches coded:** 3 / 12
 
-`██░░░░░░░░░░ 17%`
+`███░░░░░░░░░ 25%`
 
-**Remaining batches:** 10 (EM-03 in progress)
+**Remaining batches:** 9
 
 | Area | Status |
 | --- | --- |
-| Code Development | 2 / 12 verified (+ EM-03a claim lifecycle coded) |
+| Code Development | 3 / 12 verified |
 | Local Testing | Partial (unit + check:ui; no DB/browser) |
 | GitHub Commit | Local commits only; not pushed |
 | GitHub PR / Merge | Pending |
@@ -26,7 +26,7 @@ Update after every verified batch. The visual percentage counts only **completed
 | --- | --- | --- |
 | EM-01 | Audit, architecture, gap analysis, schema foundation, permissions | Verified locally |
 | EM-02 | Navigation, dashboard, list/Kanban, employee profiles | Verified locally (nav + overview KPIs) |
-| EM-03 | Claims, lines, splitting, allocations, templates, lifecycle | In progress — EM-03a draft lifecycle done; splitting/templates remain |
+| EM-03 | Claims, lines, splitting, allocations, templates, lifecycle | Verified locally (core); Kanban/print/dimension pickers deferred |
 | EM-04 | Receipts, email inbox, file security, mobile capture, offline drafts | Not started |
 | EM-05 | Approvals, policies, delegation, escalation, spending requests | Not started |
 | EM-06 | Accounting, tax, journals, FX, refunds, budgets | Not started |
@@ -39,4 +39,4 @@ Update after every verified batch. The visual percentage counts only **completed
 
 ## Coexistence note
 
-Until cutover completes, legacy submit/approve remains on `/purchases/employee-expenses`. New claim drafts live under Expense Management → My Expenses after migrations are applied.
+Legacy submit/approve remains on `/purchases/employee-expenses`. New multi-line drafts live under Expense Management → My Expenses after migrations are applied.

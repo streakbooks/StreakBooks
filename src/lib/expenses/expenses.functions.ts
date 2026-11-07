@@ -15,9 +15,15 @@ import {
   type ExpenseClaimSummary,
 } from "@/lib/expenses/claims";
 import { emptyExpenseOverviewKpis, type ExpenseOverviewResponse } from "@/lib/expenses/overview";
+import {
+  mapExpenseClaimTemplate,
+  toExpenseClaimTemplatePayload,
+  type ExpenseClaimTemplate,
+} from "@/lib/expenses/templates";
 import type {
   ExpenseManagementSettings,
   ExpenseManagementSettingsInput,
+  ExpensePaymentSource,
 } from "@/lib/expenses/types";
 
 export const EXPENSE_MANAGEMENT_MIGRATION =
@@ -25,6 +31,9 @@ export const EXPENSE_MANAGEMENT_MIGRATION =
 
 export const EXPENSE_CLAIM_MIGRATION =
   "Expense claim workflows are not available yet: apply database updates 20261107120000 and 20261107123000.";
+
+export const EXPENSE_TEMPLATE_MIGRATION =
+  "Expense claim templates are not available yet: apply database update 20261107130000.";
 
 type CountResult = {
   count: number | null;
@@ -302,4 +311,69 @@ export const deleteExpenseClaimDraft = createServerFn({ method: "POST" })
       EXPENSE_CLAIM_MIGRATION,
     );
     return { deleted: Boolean(raw.deleted), id: String(raw.id ?? data.claimId) };
+  });
+
+export const duplicateExpenseClaim = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; claimId: string }) => ({
+    companyId: companyIdOf(input),
+    claimId: input.claimId,
+  }))
+  .handler(async ({ data, context }): Promise<ExpenseClaimDetail> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "expenses.submit");
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "duplicate_expense_claim",
+      { _company_id: data.companyId, _claim_id: data.claimId },
+      EXPENSE_TEMPLATE_MIGRATION,
+    );
+    return mapExpenseClaimDetail(raw);
+  });
+
+export const listExpenseClaimTemplates = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .handler(async ({ data, context }): Promise<ExpenseClaimTemplate[]> => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    const raw = await callRpc<{ templates?: unknown[] }>(
+      context.supabase,
+      "list_expense_claim_templates",
+      { _company_id: data.companyId },
+      EXPENSE_TEMPLATE_MIGRATION,
+    );
+    return (raw.templates ?? []).map(mapExpenseClaimTemplate);
+  });
+
+export const saveExpenseClaimTemplate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      draft: {
+        id?: string;
+        name: string;
+        titleTemplate?: string;
+        descriptionTemplate?: string | null;
+        claimCurrency?: string | null;
+        paymentSource?: ExpensePaymentSource;
+        defaultLines: ExpenseClaimDraftInput["lines"];
+      };
+    }) => ({
+      companyId: companyIdOf(input),
+      draft: input.draft,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<ExpenseClaimTemplate> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "expenses.submit");
+    if (!data.draft.name.trim()) throw new Error("Template name is required.");
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "save_expense_claim_template",
+      {
+        _company_id: data.companyId,
+        _payload: toExpenseClaimTemplatePayload(data.draft),
+      },
+      EXPENSE_TEMPLATE_MIGRATION,
+    );
+    return mapExpenseClaimTemplate(raw);
   });

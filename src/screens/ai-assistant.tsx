@@ -37,6 +37,7 @@ import { deleteAiConversationHistory, listAiConversationHistory, type AiConversa
 import { PageHeader, LoadingState, ErrorState } from "@/components/common/states";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -360,7 +361,7 @@ function AiAssistantWorkspace({
       ) : null}
 
       <div className="grid gap-5 xl:grid-cols-3">
-        <Card className="xl:col-span-2">
+        <Card className="xl:col-span-2 overflow-hidden border-border/85 shadow-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <MessageSquareText className="size-4" /> Accounting assistant
@@ -463,13 +464,13 @@ function AiAssistantWorkspace({
                 <div className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="size-3 animate-spin" /> Loading saved conversations…</div>
               ) : null}
               {exchanges.length === 0 ? (
-                <div className="rounded-lg border border-dashed bg-muted/30 px-4 py-8 text-center text-sm text-muted-foreground">
+                <div className="rounded-2xl border border-dashed border-primary/20 bg-primary/5 px-5 py-9 text-center text-sm text-muted-foreground">
                   <Sparkles className="mx-auto mb-2 size-6" />
                   Responses will appear here. Nothing is posted automatically.
                 </div>
               ) : (
                 exchanges.map((entry) => (
-                  <article key={entry.id} className="space-y-3 rounded-lg border p-4">
+                  <article key={entry.id} className="space-y-3 rounded-xl border border-border/85 bg-background p-4 shadow-xs">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <Badge variant="outline">{INTENT_LABELS[entry.intent]}</Badge>
                       <Badge variant={entry.mode === "not_configured" ? "destructive" : "secondary"}>
@@ -668,9 +669,7 @@ function AiAssistantWorkspace({
                         </TableCell>
                         <TableCell className="whitespace-nowrap text-xs">{kind.replaceAll("_", " ")}</TableCell>
                         <TableCell>
-                          <Badge variant={item.status === "validated" ? "secondary" : item.status === "invalid" ? "destructive" : "outline"}>
-                            {item.status}
-                          </Badge>
+                          <StatusBadge status={item.status} />
                         </TableCell>
                         <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
                           <Clock3 className="mr-1 inline size-3" /> {item.created_at.slice(0, 10)}

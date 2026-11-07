@@ -234,6 +234,7 @@ export function ExpenseManagementMileagePage() {
         <ErrorState
           title="Could not load mileage rates"
           description={friendlyAuthError(ratesQ.error)}
+          onRetry={() => void ratesQ.refetch()}
         />
       ) : null}
 

@@ -26,7 +26,7 @@ A screen is **not** DONE unless every applicable row is PASS or N/A with reason.
 | b | Visual/UX shared chrome | PASS | ListWorkspace on accounts, txn, reconcile, transfers, docs; Banking insights rail (Batch 12) |
 | c | Loading/empty/error | PARTIAL → enforcement PASS | Batch 16 `check:empty`; nested paths still spot-checked |
 | d | Real actions / posting | PARTIAL | Existing confirmed-transfer/reconcile flows; no new posting this program |
-| e | RBAC/RLS / cross-company | PARTIAL | Batch 20 unit deny-path for `assertCompany*`; live/staging two-tenant still NOT VERIFIED |
+| e | RBAC/RLS / cross-company | PARTIAL | Batches 20–21 unit deny-path (`assertCompany*`, demo reseed, globalSearch); live/staging two-tenant still NOT VERIFIED |
 | f | Migrations | N/A | No schema from UI chrome |
 | g | Honest empty/error copy | PARTIAL | Spot-checked feeds/CSV honesty preserved |
 | h | Responsive / a11y | PARTIAL | Landmarks Batch 10; fixture axe on list/record Batch 19; manual SR/zoom NOT VERIFIED |

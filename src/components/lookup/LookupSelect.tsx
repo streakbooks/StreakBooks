@@ -451,7 +451,8 @@ export function LookupSelect({
           disabled={disabled}
           onClick={() => onChange("")}
         >
-          <X className="size-3.5" />
+          <X className="size-3.5" aria-hidden />
+          <span className="sr-only">Clear selection</span>
         </Button>
       ) : null}
       {renderCreate ? (

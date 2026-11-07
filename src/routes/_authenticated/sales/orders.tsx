@@ -454,6 +454,11 @@ function SalesOrderForm({
       <ErrorState
         title="Could not load order options"
         description={friendlyAuthError(customers.error ?? accounts.error ?? config.error)}
+        onRetry={() => {
+          void customers.refetch();
+          void accounts.refetch();
+          void config.refetch();
+        }}
       />
     );
   return (

@@ -150,6 +150,10 @@ export function FirmStaffAssignments({
             <ErrorState
               title="Could not load staff assignments"
               description={friendlyAuthError(assignmentsQ.error ?? membersQ.error)}
+              onRetry={() => {
+                void assignmentsQ.refetch();
+                void membersQ.refetch();
+              }}
             />
           ) : (
             <div className="space-y-3">

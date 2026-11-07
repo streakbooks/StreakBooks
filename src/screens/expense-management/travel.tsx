@@ -241,6 +241,7 @@ export function ExpenseManagementTravelPage() {
         <ErrorState
           title="Could not load per diem rates"
           description={friendlyAuthError(ratesQ.error)}
+          onRetry={() => void ratesQ.refetch()}
         />
       ) : null}
 

@@ -44,6 +44,8 @@ import { useCan } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { cn } from "@/lib/utils";
 import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { StatusBadge } from "@/components/common/stat-card";
 import { Badge } from "@/components/ui/badge";
@@ -578,91 +580,78 @@ function BillsWorkspace() {
 
   return (
     <TooltipProvider>
-      <div className="space-y-4">
-        {/* A. Workspace header */}
-        <header className="rounded-xl border border-border/80 bg-gradient-to-br from-background via-background to-muted/40 p-5 shadow-sm">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="min-w-0 space-y-1">
-              <div className="flex items-center gap-2">
-                <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground">
-                  Bills
-                </h1>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="size-7 text-muted-foreground"
-                      aria-label="Bills help"
-                      onClick={() => setShowHelp((v) => !v)}
-                    >
-                      <HelpCircle className="size-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Workspace help</TooltipContent>
-                </Tooltip>
-              </div>
-              <p className="max-w-xl text-sm text-muted-foreground">
-                Manage supplier bills from draft through payment. Authorising posts Accounts Payable
-                through the shared ledger — drafts never inflate posted AP.
+      <ListWorkspace
+        title="Bills"
+        description="Manage supplier bills from draft through payment. Authorising posts Accounts Payable through the shared ledger — drafts never inflate posted AP."
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-7 text-muted-foreground"
+                  aria-label="Bills help"
+                  onClick={() => setShowHelp((v) => !v)}
+                >
+                  <HelpCircle className="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Workspace help</TooltipContent>
+            </Tooltip>
+            <Button size="sm" asChild>
+              <Link to="/purchases/bills/new">
+                <Plus className="mr-1 size-4" />
+                New Bill
+              </Link>
+            </Button>
+          </div>
+        }
+        insights={
+          <WorkspaceInsights
+            title="Bill balances"
+            facts={[
+              {
+                label: "Outstanding AP",
+                value: fromMinorUnits(
+                  BigInt(summaryQ.data?.outstandingMinor ?? 0),
+                  baseCurrency,
+                ),
+              },
+              {
+                label: "Overdue",
+                value: fromMinorUnits(BigInt(summaryQ.data?.overdueMinor ?? 0), baseCurrency),
+              },
+              {
+                label: "Approval queue",
+                value: String(summaryQ.data?.approvalQueue ?? 0),
+              },
+            ]}
+            footer={otherCurrencyHint(
+              summaryQ.data?.totalsByCurrency,
+              summaryQ.data?.baseCurrency ?? baseCurrency,
+              "outstandingMinor",
+              "Outstanding and overdue use organisation currency; other currencies are not summed.",
+            )}
+          />
+        }
+      >
+        {showHelp ? (
+          <Alert className="mb-4">
+            <AlertTitle>How this workspace works</AlertTitle>
+            <AlertDescription className="space-y-1 text-sm">
+              <p>
+                Tabs filter by workflow. Click a supplier name or bill reference to open the full
+                document at <code className="text-xs">/purchases/bills/[id]</code>.
               </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button size="sm" asChild>
-                <Link to="/purchases/bills/new">
-                  <Plus className="mr-1 size-4" />
-                  New Bill
-                </Link>
-              </Button>
-            </div>
-          </div>
-
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            <SummaryChip
-              label="Outstanding AP"
-              value={fromMinorUnits(BigInt(summaryQ.data?.outstandingMinor ?? 0), baseCurrency)}
-              hint={otherCurrencyHint(
-                summaryQ.data?.totalsByCurrency,
-                summaryQ.data?.baseCurrency ?? baseCurrency,
-                "outstandingMinor",
-                "Authorised & partly paid balances",
-              )}
-            />
-            <SummaryChip
-              label="Overdue"
-              value={fromMinorUnits(BigInt(summaryQ.data?.overdueMinor ?? 0), baseCurrency)}
-              hint={otherCurrencyHint(
-                summaryQ.data?.totalsByCurrency,
-                summaryQ.data?.baseCurrency ?? baseCurrency,
-                "overdueMinor",
-                "Past due with remaining balance",
-              )}
-              tone="warn"
-            />
-            <SummaryChip
-              label="Approval queue"
-              value={String(summaryQ.data?.approvalQueue ?? 0)}
-              hint="Bills awaiting approval"
-            />
-          </div>
-
-          {showHelp ? (
-            <Alert className="mt-4">
-              <AlertTitle>How this workspace works</AlertTitle>
-              <AlertDescription className="space-y-1 text-sm">
-                <p>
-                  Tabs filter by workflow. Click a supplier name or bill reference to open the full
-                  document at <code className="text-xs">/purchases/bills/[id]</code>.
-                </p>
-                <p>
-                  Invoice # shows the supplier invoice number when present; otherwise the internal
-                  bill number. Empty supplier invoice numbers are not invented.
-                </p>
-              </AlertDescription>
-            </Alert>
-          ) : null}
-        </header>
+              <p>
+                Invoice # shows the supplier invoice number when present; otherwise the internal
+                bill number. Empty supplier invoice numbers are not invented.
+              </p>
+            </AlertDescription>
+          </Alert>
+        ) : null}
 
         {/* B. Workflow tabs */}
         <nav
@@ -1455,7 +1444,7 @@ function BillsWorkspace() {
             ) : null}
           </SheetContent>
         </Sheet>
-      </div>
+      </ListWorkspace>
     </TooltipProvider>
   );
 }
@@ -1472,33 +1461,6 @@ function otherCurrencyHint(
   return `${fallback} (${base}). Also ${others
     .map((t) => `${fromMinorUnits(BigInt(t[field]), t.currency)} ${t.currency}`)
     .join(", ")}`;
-}
-
-function SummaryChip({
-  label,
-  value,
-  hint,
-  tone,
-}: {
-  label: string;
-  value: string;
-  hint: string;
-  tone?: "warn";
-}) {
-  return (
-    <div className="rounded-lg border border-border/60 bg-background/80 px-3 py-2">
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p
-        className={cn(
-          "mt-0.5 text-lg font-semibold tabular-nums",
-          tone === "warn" && "text-amber-700 dark:text-amber-400",
-        )}
-      >
-        {value}
-      </p>
-      <p className="text-[11px] text-muted-foreground">{hint}</p>
-    </div>
-  );
 }
 
 function PreviewBody({

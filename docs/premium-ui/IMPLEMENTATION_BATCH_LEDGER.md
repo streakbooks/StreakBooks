@@ -15,7 +15,8 @@
 | 19 | 8–9 | Full-auth record + workspace axe fixtures + rollback plan + local gate evidence | `feature/premium-ui-batch19-a11y-auth-evidence` | [PR #201](https://github.com/linkbusinessadvisory/LinkBooks/pull/201) → `3db2a508` | e2e/ui a11y + readiness docs | merged |
 | 20 | 8–9 | Deny-path RBAC unit evidence + label-in-name honesty on shared controls | `feature/premium-ui-batch20-rbac-a11y-honesty` | [PR #202](https://github.com/linkbusinessadvisory/LinkBooks/pull/202) → `fc385286` | assert-company-access + Columns/Clear a11y | merged |
 | 21 | 8–9 | Error-retry gate + Bills ListWorkspace + demo/search isolation + Lookup clear a11y | `feature/premium-ui-batch21-error-retry-bills-isolation` | [PR #203](https://github.com/linkbusinessadvisory/LinkBooks/pull/203) → `e31e4f7f` | bills.index + check:error-retry + demo/search tests | merged |
-| 22 | 8–9 | Section 18 gate reporter + firm filter label association + accounting invariant npm script | `feature/premium-ui-batch22-section18-gate-firm-a11y-invariants` | pending merge | check:section18 + firm portfolio + test:accounting-invariants | ready |
-| 23+ | 8–9 | Staging smoke (when E2E creds), live RBAC, manual a11y, release close-out | TBD | — | | planned |
+| 22 | 8–9 | Section 18 gate reporter + firm filter label association + accounting invariant npm script | `feature/premium-ui-batch22-section18-gate-firm-a11y-invariants` | [PR #204](https://github.com/linkbusinessadvisory/LinkBooks/pull/204) → `64f6fe82` | check:section18 + firm portfolio + test:accounting-invariants | merged |
+| 23 | 8–9 | Apply pending Nov budget/tax/recon SQL to linked prod + evidence docs | `feature/premium-ui-batch23-supabase-migration-apply` | pending merge | 11 migrations via db query + repair | ready |
+| 24+ | 8–9 | Staging smoke (when E2E creds), live RBAC, manual a11y, release close-out | TBD | — | | planned |
 
 Core finished-screen DoD remains **IN PROGRESS**. Chrome inheritance is enforced by `check:modules` + `check:workspace`.

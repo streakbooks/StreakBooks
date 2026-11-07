@@ -72,7 +72,13 @@ export function TableAppearanceControls({
       {density && onDensityChange ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" aria-label="Choose row density">
+            <Button
+              variant="outline"
+              size="sm"
+              aria-label={
+                density === "compact" ? "Compact row density" : "Comfortable row density"
+              }
+            >
               <Rows3 className="size-4" aria-hidden />
               {density === "compact" ? "Compact" : "Comfortable"}
             </Button>

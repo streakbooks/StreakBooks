@@ -1,6 +1,30 @@
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
+test("list workspace fixture has no serious WCAG axe violations", async ({ page }) => {
+  await page.goto("/sales/invoices");
+  const workspace = page.locator('[data-slot="list-workspace"]');
+  await expect(workspace).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Invoices", exact: true })).toBeVisible();
+  const results = await new AxeBuilder({ page })
+    .include('[data-slot="list-workspace"]')
+    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+    .analyze();
+  expect(results.violations).toEqual([]);
+});
+
+test("record workspace fixture has no serious WCAG axe violations", async ({ page }) => {
+  await page.goto("/?flow=bill");
+  const workspace = page.locator('[data-slot="record-workspace"]');
+  await expect(workspace).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "New bill", exact: true })).toBeVisible();
+  const results = await new AxeBuilder({ page })
+    .include('[data-slot="record-workspace"]')
+    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+    .analyze();
+  expect(results.violations).toEqual([]);
+});
+
 test("money validation announces the matching error and clears it after correction", async ({
   page,
 }) => {

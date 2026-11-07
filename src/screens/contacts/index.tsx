@@ -61,6 +61,11 @@ import {
 } from "@/lib/contacts/contact-directory-preferences.functions";
 import type { ContactPreferenceKind } from "@/lib/contacts/contact-directory-preferences";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import {
+  encodeContactsReturnContext,
+  parseContactsDirectorySearch,
+  type ContactsDirectorySearch,
+} from "@/lib/contacts/contact-view-navigation";
 import { PageHeader, ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
 import { ContactFollowUpsPanel } from "@/components/contacts/ContactFollowUpsPanel";
 import { Button } from "@/components/ui/button";
@@ -338,11 +343,23 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
   const persistCloudPreference = useServerFn(saveContactDirectoryPreference);
   const canManage = useCanDo("contacts.manage");
 
-  const { view: requestedView } = routeApi.useSearch();
-  const view = requestedView ?? "all";
-  const [page, setPage] = useState(0);
-  const [q, setQ] = useState("");
-  const [sort, setSort] = useState("default");
+  const directorySearch = routeApi.useSearch();
+  const view = directorySearch.view ?? "all";
+  const page = directorySearch.page ?? 0;
+  const q = directorySearch.q ?? "";
+  const sort = directorySearch.sort ?? "default";
+  const patchDirectory = (patch: Partial<ContactsDirectorySearch>, replace = false) => {
+    void navigate({
+      to: "/contacts",
+      search: (previous) => parseContactsDirectorySearch({ ...previous, ...patch }),
+      replace,
+      resetScroll: false,
+    });
+  };
+  const setPage = (next: number | ((current: number) => number)) =>
+    patchDirectory({ page: typeof next === "function" ? next(page) : next });
+  const setQ = (value: string) => patchDirectory({ q: value, page: 0 }, true);
+  const setSort = (value: string) => patchDirectory({ sort: value, page: 0 });
   const [filters, setFilters] = useState<ContactAdvancedFilters>({
     ...DEFAULT_CONTACT_ADVANCED_FILTERS,
   });
@@ -548,12 +565,11 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
   const applySavedView = (id: string) => {
     const selected = savedViews.find((saved) => saved.id === id);
     if (!selected) return;
-    setQ(selected.query);
-    setSort(selected.sort);
     setFilters(selected.filters);
-    setPage(0);
     setSelectedSavedViewId(id);
-    void navigate({ to: "/contacts", search: { view: selected.view } });
+    patchDirectory({
+      view: selected.view, q: selected.query, sort: selected.sort, page: 0,
+    });
   };
 
   const deleteSavedView = () => {
@@ -870,8 +886,9 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
               aria-selected={view === "all"}
               data-state={view === "all" ? "active" : "inactive"}
               to="/contacts"
-              search={{ view: "all" }}
-              onClick={() => setPage(0)}
+              search={(previous) =>
+                parseContactsDirectorySearch({ ...previous, view: "all", page: 0 })
+              }
             >
               All
             </Link>
@@ -881,8 +898,9 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
               aria-selected={view === "customers"}
               data-state={view === "customers" ? "active" : "inactive"}
               to="/contacts"
-              search={{ view: "customers" }}
-              onClick={() => setPage(0)}
+              search={(previous) =>
+                parseContactsDirectorySearch({ ...previous, view: "customers", page: 0 })
+              }
             >
               Customers
             </Link>
@@ -892,8 +910,9 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
               aria-selected={view === "suppliers"}
               data-state={view === "suppliers" ? "active" : "inactive"}
               to="/contacts"
-              search={{ view: "suppliers" }}
-              onClick={() => setPage(0)}
+              search={(previous) =>
+                parseContactsDirectorySearch({ ...previous, view: "suppliers", page: 0 })
+              }
             >
               Suppliers
             </Link>
@@ -903,8 +922,9 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
               aria-selected={view === "both"}
               data-state={view === "both" ? "active" : "inactive"}
               to="/contacts"
-              search={{ view: "both" }}
-              onClick={() => setPage(0)}
+              search={(previous) =>
+                parseContactsDirectorySearch({ ...previous, view: "both", page: 0 })
+              }
             >
               Both roles
             </Link>
@@ -914,8 +934,9 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
               aria-selected={view === "recent"}
               data-state={view === "recent" ? "active" : "inactive"}
               to="/contacts"
-              search={{ view: "recent" }}
-              onClick={() => setPage(0)}
+              search={(previous) =>
+                parseContactsDirectorySearch({ ...previous, view: "recent", page: 0 })
+              }
             >
               Recently added
             </Link>
@@ -925,8 +946,9 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
               aria-selected={view === "updated"}
               data-state={view === "updated" ? "active" : "inactive"}
               to="/contacts"
-              search={{ view: "updated" }}
-              onClick={() => setPage(0)}
+              search={(previous) =>
+                parseContactsDirectorySearch({ ...previous, view: "updated", page: 0 })
+              }
             >
               Recently updated
             </Link>
@@ -936,8 +958,9 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
               aria-selected={view === "inactive"}
               data-state={view === "inactive" ? "active" : "inactive"}
               to="/contacts"
-              search={{ view: "inactive" }}
-              onClick={() => setPage(0)}
+              search={(previous) =>
+                parseContactsDirectorySearch({ ...previous, view: "inactive", page: 0 })
+              }
             >
               Inactive
             </Link>
@@ -947,8 +970,9 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
               aria-selected={view === "archived"}
               data-state={view === "archived" ? "active" : "inactive"}
               to="/contacts"
-              search={{ view: "archived" }}
-              onClick={() => setPage(0)}
+              search={(previous) =>
+                parseContactsDirectorySearch({ ...previous, view: "archived", page: 0 })
+              }
             >
               Archived
             </Link>
@@ -958,7 +982,6 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
               value={sort}
               onValueChange={(value) => {
                 setSort(value);
-                setPage(0);
               }}
             >
               <SelectTrigger className="w-52" aria-label="Sort contacts">
@@ -1270,7 +1293,6 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
               value={q}
               onChange={(e) => {
                 setQ(e.target.value);
-                setPage(0);
               }}
               aria-label="Search contacts"
             />
@@ -1505,7 +1527,6 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
                           view={view}
                           onSort={(key) => {
                             setSort(nextContactSort(sort, key, view));
-                            setPage(0);
                           }}
                         />
                       ) : (

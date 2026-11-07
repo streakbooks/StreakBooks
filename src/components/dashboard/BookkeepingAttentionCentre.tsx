@@ -1,5 +1,6 @@
-import { useMemo, useState, type ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
+import { useMemo, type ReactNode } from "react";
+import { Link, getRouteApi } from "@tanstack/react-router";
+import { type DashboardAttentionFilter } from "@/lib/dashboard/attention-navigation";
 import {
   ArrowRight,
   CalendarClock,
@@ -16,14 +17,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
-type AttentionFilter = "all" | "overdue" | "upcoming" | "bank";
+type AttentionFilter = DashboardAttentionFilter;
+const dashboardRoute = getRouteApi("/_authenticated/");
 type AttentionRecord =
   | { kind: "document"; record: DashboardData["attention"]["items"][number] }
   | { kind: "bank"; record: DashboardData["attention"]["bank"][number] };
 
 export function BookkeepingAttentionCentre({ data }: { data: DashboardData }) {
   const fmt = useFormat();
-  const [filter, setFilter] = useState<AttentionFilter>("all");
+  const { attention } = dashboardRoute.useSearch();
+  const filter: AttentionFilter = attention ?? "all";
   const alerts = data.attention;
   const approvalCount = alerts.access.purchases
     ? data.approvals.bills.reduce((total, row) => total + row.count, 0)
@@ -166,15 +169,20 @@ export function BookkeepingAttentionCentre({ data }: { data: DashboardData }) {
             >
               {filters.map((item) => (
                 <Button
-                  type="button"
                   key={item.id}
                   variant={filter === item.id ? "secondary" : "ghost"}
                   size="sm"
-                  aria-pressed={filter === item.id}
-                  onClick={() => setFilter(item.id)}
+                  asChild
                 >
-                  {item.label}{" "}
-                  <span className="ml-1 text-xs tabular-nums">{fmt.number(item.count)}</span>
+                  <Link
+                    to="/"
+                    search={{ attention: item.id }}
+                    hash="bookkeeping-attention"
+                    aria-current={filter === item.id ? "page" : undefined}
+                  >
+                    {item.label}{" "}
+                    <span className="ml-1 text-xs tabular-nums">{fmt.number(item.count)}</span>
+                  </Link>
                 </Button>
               ))}
             </div>

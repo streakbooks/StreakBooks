@@ -5,6 +5,10 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { getJournalDetail } from "@/lib/banking/journal.functions";
+import {
+  decodeBankTransactionReturnContext,
+  encodeBankTransactionReturnContext,
+} from "@/lib/banking/transaction-return";
 import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,12 +24,20 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/banking/journal/$journalId")({
+  validateSearch: (raw: Record<string, unknown>) => {
+    const returnContext = encodeBankTransactionReturnContext(
+      decodeBankTransactionReturnContext(raw["returnContext"]),
+    );
+    return returnContext ? { returnContext } : {};
+  },
   head: () => ({ meta: [{ title: "Journal — LinkBooks" }] }),
   component: JournalDetail,
 });
 
 function JournalDetail() {
   const { journalId } = Route.useParams();
+  const { returnContext } = Route.useSearch();
+  const backSearch = decodeBankTransactionReturnContext(returnContext);
   const { company } = useActiveCompany();
   const companyId = company?.id;
   const fetchJournal = useServerFn(getJournalDetail);
@@ -58,7 +70,7 @@ function JournalDetail() {
         description={`${journal.journal_date} · ${journal.source_type.replace(/_/g, " ")}${journal.memo ? ` · ${journal.memo}` : ""}`}
         actions={
           <Button size="sm" variant="outline" asChild>
-            <Link to="/banking/transactions">Back to transactions</Link>
+            <Link to="/banking/transactions" search={backSearch}>Back to transactions</Link>
           </Button>
         }
       />
@@ -68,6 +80,7 @@ function JournalDetail() {
           <Link
             to="/banking/journal/$journalId"
             params={{ journalId: journal.reversed_by_journal_id }}
+            search={returnContext ? { returnContext } : {}}
             className="text-sm underline underline-offset-4"
           >
             Reversed by another journal
@@ -77,6 +90,7 @@ function JournalDetail() {
           <Link
             to="/banking/journal/$journalId"
             params={{ journalId: journal.reverses_journal_id }}
+            search={returnContext ? { returnContext } : {}}
             className="text-sm underline underline-offset-4"
           >
             Reverses another journal

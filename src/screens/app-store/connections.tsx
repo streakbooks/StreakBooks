@@ -3,7 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -72,21 +73,18 @@ export function AppStoreConnectionsPage() {
   }
   if (!canView) {
     return (
-      <>
-        <PageHeader title="Connections" description="App Store" />
+      <ListWorkspace title="Connections" description="App Store">
         <EmptyState title="No access" description="Requires appstore.view or manage_connections." />
-      </>
+      </ListWorkspace>
     );
   }
 
   return (
-    <>
-      <PageHeader
-        title="Connections"
-        description="Central connection workspace. Access and refresh tokens are never displayed."
-      />
-      <AppStoreSubnav current="connections" />
-
+    <ListWorkspace
+      title="Connections"
+      description="Central connection workspace. Access and refresh tokens are never displayed."
+      subnav={<AppStoreSubnav current="connections" />}
+    >
       <Alert className="mb-6">
         <AlertTitle>Connection lifecycle (AS-02 / AS-SEC)</AlertTitle>
         <AlertDescription>
@@ -208,6 +206,6 @@ export function AppStoreConnectionsPage() {
           </div>
         )
       ) : null}
-    </>
+    </ListWorkspace>
   );
 }

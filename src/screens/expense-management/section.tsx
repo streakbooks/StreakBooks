@@ -2,7 +2,8 @@ import { lazy, Suspense, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useActiveCompany } from "@/hooks/use-active-company";
@@ -217,31 +218,29 @@ export function ExpenseManagementSectionPage({
   const allowed = section.anyOf.some((permission) => can(permission as Permission));
   if (!allowed) {
     return (
-      <>
-        <PageHeader title={section.label} description="Expense Management" />
-        <ExpenseManagementSubnav current={sectionKey} />
-        <EmptyState
+      <ListWorkspace title={section.label} description="Expense Management"
+      subnav={<ExpenseManagementSubnav current={sectionKey}/>}
+    >
+      <EmptyState
           title="No access"
           description="Your role cannot open this Expense Management section."
         />
-      </>
+    </ListWorkspace>
     );
   }
 
   const legacy = LEGACY_LINKS[sectionKey];
 
   return (
-    <>
-      <PageHeader
-        title={section.label}
+      <ListWorkspace title={section.label}
         description="Part of the Expense Management module."
         actions={
           <Button asChild variant="outline" size="sm">
             <Link to="/expense-management">Back to overview</Link>
           </Button>
         }
-      />
-      <ExpenseManagementSubnav current={sectionKey} />
+      subnav={<ExpenseManagementSubnav current={sectionKey}/>}
+    >
       <Alert className="mb-6">
         <AlertTitle>{section.label} is scheduled for {section.batch}</AlertTitle>
         <AlertDescription>
@@ -264,6 +263,6 @@ export function ExpenseManagementSectionPage({
           ) : undefined
         }
       />
-    </>
-  );
+    </ListWorkspace>
+    );
 }

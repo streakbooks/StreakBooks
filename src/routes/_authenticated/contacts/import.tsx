@@ -8,7 +8,8 @@ import { useCanDo } from "@/hooks/use-can";
 import { getContactImportTemplate, importContactsCsv } from "@/lib/contacts/contacts.functions";
 import { buildContactsCsv, parseContactsCsv } from "@/lib/contacts/contact-helpers";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, EmptyState } from "@/components/common/states";
+import { EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -96,19 +97,17 @@ function ContactImportPage() {
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
 
   return (
-    <>
-      <PageHeader
-        title="Import contacts"
-        description="Upload a CSV. Existing contacts with the same name are skipped by default."
-        actions={
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/contacts" search={{ view: undefined }}>
-              Directory
-            </Link>
-          </Button>
-        }
-      />
-
+    <ListWorkspace
+      title="Import contacts"
+      description="Upload a CSV. Existing contacts with the same name are skipped by default."
+      actions={
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/contacts" search={{ view: undefined }}>
+            Directory
+          </Link>
+        </Button>
+      }
+    >
       <ol className="mb-6 list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
         <li>Download the LinkBooks template</li>
         <li>Fill name (required), kind, email, phone, tax_number, payment_terms_days</li>
@@ -291,6 +290,6 @@ function ContactImportPage() {
           ) : null}
         </div>
       ) : null}
-    </>
+    </ListWorkspace>
   );
 }

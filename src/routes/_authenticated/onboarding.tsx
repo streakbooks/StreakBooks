@@ -9,7 +9,7 @@ import { companyContextKey } from "@/hooks/use-active-company";
 import { createCompany, openDemoCompany, setActiveCompany } from "@/lib/company.functions";
 import { countries, currencies, months, timezones } from "@/lib/company-constants";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -96,12 +96,11 @@ function OnboardingPage() {
   const busy = createMutation.isPending || demoMutation.isPending;
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <PageHeader
-        title="Set up your organisation"
-        description="Create a real company to keep your books, or explore Demo Company with the same engine and sample data."
-      />
-
+    <ListWorkspace
+      className="mx-auto max-w-2xl space-y-6"
+      title="Set up your organisation"
+      description="Create a real company to keep your books, or explore Demo Company with the same engine and sample data."
+    >
       <Alert>
         <AlertTitle>Multi-company ready</AlertTitle>
         <AlertDescription>
@@ -258,6 +257,6 @@ function OnboardingPage() {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </ListWorkspace>
   );
 }

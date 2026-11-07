@@ -2,7 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -37,23 +38,20 @@ export function AppStoreBillingPage() {
   }
   if (!canView) {
     return (
-      <>
-        <PageHeader title="App Billing" description="App Store" />
-        <EmptyState title="No access" description="Requires appstore.view." />
-      </>
+      <ListWorkspace title="App Billing" description="App Store"
+    >
+      <EmptyState title="No access" description="Requires appstore.view." />
+    </ListWorkspace>
     );
   }
 
   const apps = catalogue.data?.apps ?? [];
 
   return (
-    <>
-      <PageHeader
-        title="App Billing"
+      <ListWorkspace title="App Billing"
         description="Marketplace pricing models for catalogue apps. Separate from LinkBooks SaaS and Advisors billing. No charges are collected here."
-      />
-      <AppStoreSubnav current="billing" />
-
+      subnav={<AppStoreSubnav current="billing"/>}
+    >
       <Alert className="mb-6">
         <AlertTitle>No marketplace charges without authorization</AlertTitle>
         <AlertDescription>
@@ -105,6 +103,6 @@ export function AppStoreBillingPage() {
           </div>
         )
       ) : null}
-    </>
-  );
+    </ListWorkspace>
+    );
 }

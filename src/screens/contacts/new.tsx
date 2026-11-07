@@ -8,7 +8,8 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCanDo } from "@/hooks/use-can";
 import { upsertContact, upsertContactPerson } from "@/lib/contacts/contacts.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, EmptyState } from "@/components/common/states";
+import { EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -182,21 +183,7 @@ export function NewContact({
   if (!companyId)
     return <EmptyState title="No organisation" description="Select an organisation first." />;
   const activeIndex = sections.findIndex(([id]) => id === section);
-  return (
-    <>
-      {!embedded && (
-        <PageHeader
-          title="New contact"
-          description="Create a shared customer or supplier profile with accounting defaults."
-          actions={
-            <Button variant="outline" asChild>
-              <Link to="/contacts" search={{ view: undefined }}>
-                Back to directory
-              </Link>
-            </Button>
-          }
-        />
-      )}
+  const workspace = (
       <div className="overflow-hidden rounded-xl border bg-card">
         <div className="border-b px-6 py-4">
           <h2 className="text-lg font-semibold">Contact workspace</h2>
@@ -432,6 +419,21 @@ export function NewContact({
           </div>
         </div>
       </div>
-    </>
+  );
+  if (embedded) return workspace;
+  return (
+    <ListWorkspace
+      title="New contact"
+      description="Create a shared customer or supplier profile with accounting defaults."
+      actions={
+        <Button variant="outline" asChild>
+          <Link to="/contacts" search={{ view: undefined }}>
+            Back to directory
+          </Link>
+        </Button>
+      }
+    >
+      {workspace}
+    </ListWorkspace>
   );
 }

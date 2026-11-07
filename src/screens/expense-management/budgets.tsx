@@ -5,7 +5,8 @@ import { useMemo } from "react";
 import { ExpenseManagementLoadingShell } from "@/components/expenses/ExpenseManagementLoadingShell";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -72,14 +73,14 @@ export function ExpenseManagementBudgetsPage() {
   }
   if (!canView) {
     return (
-      <>
-        <PageHeader title="Budgets" />
-        <ExpenseManagementSubnav current="budgets" />
-        <EmptyState
+      <ListWorkspace title="Budgets"
+      subnav={<ExpenseManagementSubnav current="budgets"/>}
+    >
+      <EmptyState
           title="No access"
           description="Ask an administrator for expenses.view."
         />
-      </>
+    </ListWorkspace>
     );
   }
   if (claimsQ.isLoading) {
@@ -87,15 +88,15 @@ export function ExpenseManagementBudgetsPage() {
   }
   if (claimsQ.isError) {
     return (
-      <>
-        <PageHeader title="Budgets" description="Expense Management" />
-        <ExpenseManagementSubnav current="budgets" />
-        <ErrorState
+      <ListWorkspace title="Budgets" description="Expense Management"
+      subnav={<ExpenseManagementSubnav current="budgets"/>}
+    >
+      <ErrorState
           title="Could not load claim commitments"
           description={friendlyAuthError(claimsQ.error)}
           onRetry={() => claimsQ.refetch()}
         />
-      </>
+    </ListWorkspace>
     );
   }
 
@@ -103,18 +104,15 @@ export function ExpenseManagementBudgetsPage() {
   const rows = claimsQ.data ?? [];
 
   return (
-    <>
-      <PageHeader
-        title="Budgets"
+      <ListWorkspace title="Budgets"
         description="Open claim commitments and soft budget exposure for the current month."
         actions={
           <Button asChild size="sm">
             <Link to="/budgets">Open Budgets module</Link>
           </Button>
         }
-      />
-      <ExpenseManagementSubnav current="budgets" />
-
+      subnav={<ExpenseManagementSubnav current="budgets"/>}
+    >
       <div className="mb-6 flex flex-wrap gap-2">
         <Badge variant="secondary">{rows.length} open claims</Badge>
         <Badge variant="outline">
@@ -222,6 +220,6 @@ export function ExpenseManagementBudgetsPage() {
           </TableBody>
         </Table>
       )}
-    </>
-  );
+    </ListWorkspace>
+    );
 }

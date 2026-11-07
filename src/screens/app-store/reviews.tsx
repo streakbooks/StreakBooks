@@ -2,7 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Table,
@@ -40,23 +41,20 @@ export function AppStoreReviewsPage() {
   }
   if (!canView) {
     return (
-      <>
-        <PageHeader title="Ratings & Reviews" description="App Store" />
-        <EmptyState title="No access" description="Requires appstore.view." />
-      </>
+      <ListWorkspace title="Ratings & Reviews" description="App Store"
+    >
+      <EmptyState title="No access" description="Requires appstore.view." />
+    </ListWorkspace>
     );
   }
 
   const apps = catalogue.data?.apps ?? [];
 
   return (
-    <>
-      <PageHeader
-        title="Ratings & Reviews"
+      <ListWorkspace title="Ratings & Reviews"
         description="Genuine customer ratings only. Fabricated or seeded star ratings are never shown."
-      />
-      <AppStoreSubnav current="reviews" />
-
+      subnav={<AppStoreSubnav current="reviews"/>}
+    >
       <Alert className="mb-6">
         <AlertTitle>No fabricated reviews</AlertTitle>
         <AlertDescription>
@@ -104,6 +102,6 @@ export function AppStoreReviewsPage() {
           </div>
         )
       ) : null}
-    </>
-  );
+    </ListWorkspace>
+    );
 }

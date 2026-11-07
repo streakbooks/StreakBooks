@@ -14,7 +14,8 @@ import type { DocumentBranding, PrintDocument } from "@/lib/documents/types";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { DocumentThemes } from "@/components/documents/DocumentThemes";
 import { DocumentSheet } from "@/components/documents/DocumentSheet";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -181,25 +182,11 @@ export function BrandingWorkspace({
       />
     );
 
-  return (
-    <>
-      {!embedded && (
-        <PageHeader
-          title={
-            from === "purchases"
-              ? "Purchase document themes & branding"
-              : "Invoice themes & branding"
-          }
-          actions={
-            <Button variant="outline" asChild>
-              <Link to={from === "purchases" ? "/purchases/settings" : "/sales/settings"}>
-                Back to {from === "purchases" ? "purchases" : "sales"} settings
-              </Link>
-            </Button>
-          }
-          description="Logo, colours, address, tax and bank details printed on invoices, credit notes, quotes, statements and other documents."
-        />
-      )}
+  const brandingTitle =
+    from === "purchases"
+      ? "Purchase document themes & branding"
+      : "Invoice themes & branding";
+  const workspace = (
       <div className="mb-8">
         <DocumentThemes
           companyId={companyId}
@@ -419,7 +406,22 @@ export function BrandingWorkspace({
           </div>
         </div>
       </details>
-    </>
+  );
+  if (embedded) return workspace;
+  return (
+    <ListWorkspace
+      title={brandingTitle}
+      description="Logo, colours, address, tax and bank details printed on invoices, credit notes, quotes, statements and other documents."
+      actions={
+        <Button variant="outline" asChild>
+          <Link to={from === "purchases" ? "/purchases/settings" : "/sales/settings"}>
+            Back to {from === "purchases" ? "purchases" : "sales"} settings
+          </Link>
+        </Button>
+      }
+    >
+      {workspace}
+    </ListWorkspace>
   );
 }
 

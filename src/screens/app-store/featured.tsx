@@ -3,7 +3,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
 import { MarketplaceAppCard } from "@/components/app-store/MarketplaceAppCard";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
 import { listCompanyMarketplaceApps } from "@/lib/app-store/app-store.functions";
@@ -29,19 +30,19 @@ export function AppStoreFeaturedPage() {
   }
   if (!canView) {
     return (
-      <>
-        <PageHeader title="Featured & Recommended" description="App Store" />
-        <EmptyState title="No access" description="Requires appstore.view." />
-      </>
+      <ListWorkspace title="Featured & Recommended" description="App Store"
+    >
+      <EmptyState title="No access" description="Requires appstore.view." />
+    </ListWorkspace>
     );
   }
   if (catalogue.isLoading) {
     return (
-      <>
-        <PageHeader title="Featured & Recommended" description="Eligibility-based collections." />
-        <AppStoreSubnav current="featured" />
-        <LoadingState />
-      </>
+      <ListWorkspace title="Featured & Recommended" description="Eligibility-based collections."
+      subnav={<AppStoreSubnav current="featured"/>}
+    >
+      <LoadingState />
+    </ListWorkspace>
     );
   }
   if (catalogue.isError) {
@@ -59,13 +60,10 @@ export function AppStoreFeaturedPage() {
   const recommended = filterMarketplaceApps(apps, { recommended: true });
 
   return (
-    <>
-      <PageHeader
-        title="Featured & Recommended"
+      <ListWorkspace title="Featured & Recommended"
         description="Collections use catalogue flags and eligibility — not fabricated popularity metrics."
-      />
-      <AppStoreSubnav current="featured" />
-
+      subnav={<AppStoreSubnav current="featured"/>}
+    >
       <section className="mb-10 space-y-4">
         <h2 className="text-xl font-semibold tracking-tight">Featured</h2>
         {featured.length === 0 ? (
@@ -94,6 +92,6 @@ export function AppStoreFeaturedPage() {
           </div>
         )}
       </section>
-    </>
-  );
+    </ListWorkspace>
+    );
 }

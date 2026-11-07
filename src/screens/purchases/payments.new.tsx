@@ -18,7 +18,8 @@ import { minorOrZero, parseMinorOrThrow, tryParseMinor } from "@/lib/purchases/m
 import { useCan, useCanDo } from "@/hooks/use-can";
 import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, LoadingState, EmptyState } from "@/components/common/states";
+import { LoadingState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { EntityCombobox } from "@/components/common/EntityCombobox";
 import { AccountLookup } from "@/components/lookup";
 import { ContactCreateForm } from "@/components/lookup/create-forms";
@@ -175,16 +176,15 @@ export function NewPayment() {
   if (suppliersQ.isPending || accountsQ.isPending) return <LoadingState />;
 
   return (
-    <>
-      <PageHeader
-        title="New supplier payment"
-        description="Posts DR Accounts Payable / CR bank, then updates bill outstanding balances."
-        actions={
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/purchases/payments">Back</Link>
-          </Button>
-        }
-      />
+    <ListWorkspace
+      title="New supplier payment"
+      description="Posts DR Accounts Payable / CR bank, then updates bill outstanding balances."
+      actions={
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/purchases/payments">Back</Link>
+        </Button>
+      }
+    >
       <div className="grid max-w-2xl gap-4">
         <div className="space-y-2">
           <Label>Supplier</Label>
@@ -391,6 +391,6 @@ export function NewPayment() {
           Post payment
         </Button>
       </div>
-    </>
+    </ListWorkspace>
   );
 }

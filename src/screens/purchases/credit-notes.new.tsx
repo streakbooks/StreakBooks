@@ -25,7 +25,8 @@ import {
 import { DEFAULT_CURRENCY_DECIMALS, fromMinorUnits } from "@/lib/accounting/money";
 import { useCan } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, LoadingState, EmptyState } from "@/components/common/states";
+import { LoadingState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { AccountLookup, ContactLookup, LookupSelect } from "@/components/lookup";
 import { AccountCreateForm, ContactCreateForm } from "@/components/lookup/create-forms";
 import {
@@ -242,11 +243,10 @@ export function NewCreditNote({ initialBillId }: { initialBillId?: string | unde
     mutation.isPending || anyInvalid || incomplete || fxInvalid || !contactId || totalMinor <= 0;
 
   return (
-    <>
-      <PageHeader
-        title="New credit note"
-        description="Reduce AP and reverse expense/tax on authorise. Pick a bill to copy its lines and apply the credit to it."
-      />
+    <ListWorkspace
+      title="New credit note"
+      description="Reduce AP and reverse expense/tax on authorise. Pick a bill to copy its lines and apply the credit to it."
+    >
       <div className="grid max-w-3xl gap-4">
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-2">
@@ -443,6 +443,6 @@ export function NewCreditNote({ initialBillId }: { initialBillId?: string | unde
           </Button>
         </div>
       </div>
-    </>
+    </ListWorkspace>
   );
 }

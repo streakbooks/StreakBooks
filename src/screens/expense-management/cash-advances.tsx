@@ -5,7 +5,8 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -192,14 +193,14 @@ export function ExpenseManagementCashAdvancesPage() {
   }
   if (!canView) {
     return (
-      <>
-        <PageHeader title="Cash Advances" description="Expense Management" />
-        <ExpenseManagementSubnav current="cash-advances" />
-        <EmptyState
+      <ListWorkspace title="Cash Advances" description="Expense Management"
+      subnav={<ExpenseManagementSubnav current="cash-advances"/>}
+    >
+      <EmptyState
           title="No access"
           description="Ask an administrator for expenses.submit or expenses.manage_advances."
         />
-      </>
+    </ListWorkspace>
     );
   }
 
@@ -210,18 +211,15 @@ export function ExpenseManagementCashAdvancesPage() {
   const advanceAccountConfigured = Boolean(settingsQ.data?.employeeAdvanceAccountId);
 
   return (
-    <>
-      <PageHeader
-        title="Cash Advances"
+      <ListWorkspace title="Cash Advances"
         description="Issue employee floats, settle via cash-advance claims, and reclaim unused balances."
         actions={
           <Button asChild variant="outline" size="sm">
             <Link to="/expense-management/$section" params={{ section: "settings" }}>Settings</Link>
           </Button>
         }
-      />
-      <ExpenseManagementSubnav current="cash-advances" />
-
+      subnav={<ExpenseManagementSubnav current="cash-advances"/>}
+    >
       {migrationMissing ? (
         <Alert className="mb-6" variant="destructive">
           <AlertTitle>Database update required</AlertTitle>
@@ -394,6 +392,6 @@ export function ExpenseManagementCashAdvancesPage() {
           </TableBody>
         </Table>
       )}
-    </>
-  );
+    </ListWorkspace>
+    );
 }

@@ -3,7 +3,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -101,13 +102,13 @@ export function AppStoreAdminPage() {
   }
   if (!canAdmin) {
     return (
-      <>
-        <PageHeader title="Platform Administration" description="App Store" />
-        <EmptyState
+      <ListWorkspace title="Platform Administration" description="App Store"
+    >
+      <EmptyState
           title="No access"
           description="Requires appstore.manage_certification. Privileged admin tools are not exposed by hiding links alone."
         />
-      </>
+    </ListWorkspace>
     );
   }
 
@@ -117,13 +118,10 @@ export function AppStoreAdminPage() {
   const suspended = (catalogue.data?.apps ?? []).filter((a) => a.suspended);
 
   return (
-    <>
-      <PageHeader
-        title="Platform Administration"
+      <ListWorkspace title="Platform Administration"
         description="Approval queue, listing controls and audit-oriented marketplace operations."
-      />
-      <AppStoreSubnav current="admin" />
-
+      subnav={<AppStoreSubnav current="admin"/>}
+    >
       <Alert className="mb-6">
         <AlertTitle>Administrator controls</AlertTitle>
         <AlertDescription>
@@ -243,6 +241,6 @@ export function AppStoreAdminPage() {
           {(catalogue.data?.apps ?? []).length}. Live third-party connectors completed: 0.
         </p>
       </section>
-    </>
-  );
+    </ListWorkspace>
+    );
 }

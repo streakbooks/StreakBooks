@@ -21,7 +21,8 @@ import {
 import { sumLines } from "@/lib/purchases/line-math";
 import { useCan } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, LoadingState, EmptyState, ErrorState } from "@/components/common/states";
+import { LoadingState, EmptyState, ErrorState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import {
   DocumentRecordPanel,
   type DocumentRecordHandle,
@@ -212,11 +213,10 @@ function OrderForm({
     );
   const locked = mutation.isPending || Boolean(savedId);
   return (
-    <>
-      <PageHeader
-        title={initial ? `Edit ${initial.order_number ?? "purchase order"}` : "New purchase order"}
-        description="Agree supplier costs before billing. A purchase order does not affect the ledger."
-      />
+    <ListWorkspace
+      title={initial ? `Edit ${initial.order_number ?? "purchase order"}` : "New purchase order"}
+      description="Agree supplier costs before billing. A purchase order does not affect the ledger."
+    >
       {savedId ? (
         <div role="status" className="mb-4 rounded-md border p-4">
           <p>Purchase order saved.</p>
@@ -430,6 +430,6 @@ function OrderForm({
           <Link to="/purchases/orders">Back to orders</Link>
         </Button>
       </div>
-    </>
+    </ListWorkspace>
   );
 }

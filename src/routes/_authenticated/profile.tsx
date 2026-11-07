@@ -5,7 +5,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { getMyProfile, updateMyProfile } from "@/lib/profile.functions";
-import { PageHeader, ErrorState, LoadingState } from "@/components/common/states";
+import { ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -65,12 +66,10 @@ function ProfilePage() {
   });
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Your profile"
-        description="Your personal account details. Organisation settings arrive in a later phase."
-      />
-
+    <ListWorkspace
+      title="Your profile"
+      description="Your personal account details. Organisation settings arrive in a later phase."
+    >
       {profileQuery.isPending ? (
         <LoadingState />
       ) : profileQuery.isError ? (
@@ -122,7 +121,7 @@ function ProfilePage() {
           <SecuritySettingsCard />
         </div>
       )}
-    </div>
+    </ListWorkspace>
   );
 }
 

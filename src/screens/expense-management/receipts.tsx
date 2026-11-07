@@ -5,7 +5,7 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -234,32 +234,32 @@ export function ExpenseManagementReceiptsPage() {
   }
   if (!canOpen) {
     return (
-      <>
-        <PageHeader title="Receipts & Inbox" />
-        <ExpenseManagementSubnav current="receipts" />
-        <EmptyState
+      <ListWorkspace title="Receipts & Inbox"
+      subnav={<ExpenseManagementSubnav current="receipts"/>}
+    >
+      <EmptyState
           title="No access"
           description="Ask an administrator for expenses.submit or expenses.view."
         />
-      </>
+    </ListWorkspace>
     );
   }
   if (inboxQ.isLoading) {
     return (
-      <>
-        <PageHeader title="Receipts & Inbox" description="Expense Management" />
-        <ExpenseManagementSubnav current="receipts" />
-        <LoadingState />
-      </>
+      <ListWorkspace title="Receipts & Inbox" description="Expense Management"
+      subnav={<ExpenseManagementSubnav current="receipts"/>}
+    >
+      <LoadingState />
+    </ListWorkspace>
     );
   }
   if (inboxQ.isError) {
     const message = friendlyAuthError(inboxQ.error);
     return (
-      <>
-        <PageHeader title="Receipts & Inbox" />
-        <ExpenseManagementSubnav current="receipts" />
-        {message.includes("2026110713") ? (
+      <ListWorkspace title="Receipts & Inbox"
+      subnav={<ExpenseManagementSubnav current="receipts"/>}
+    >
+      {message.includes("2026110713") ? (
           <Alert>
             <AlertTitle>Migration required</AlertTitle>
             <AlertDescription>{EXPENSE_RECEIPT_MIGRATION}</AlertDescription>
@@ -271,18 +271,18 @@ export function ExpenseManagementReceiptsPage() {
             onRetry={() => inboxQ.refetch()}
           />
         )}
-      </>
+    </ListWorkspace>
     );
   }
 
   const inbox = inboxQ.data;
   if (!inbox) {
     return (
-      <>
-        <PageHeader title="Receipts & Inbox" />
-        <ExpenseManagementSubnav current="receipts" />
-        <LoadingState />
-      </>
+      <ListWorkspace title="Receipts & Inbox"
+      subnav={<ExpenseManagementSubnav current="receipts"/>}
+    >
+      <LoadingState />
+    </ListWorkspace>
     );
   }
   const draftClaims = (claimsQ.data ?? []).filter(

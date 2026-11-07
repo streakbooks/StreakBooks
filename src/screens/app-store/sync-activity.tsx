@@ -2,7 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -37,21 +38,18 @@ export function AppStoreSyncActivityPage() {
   }
   if (!canView) {
     return (
-      <>
-        <PageHeader title="Synchronization Activity" description="App Store" />
-        <EmptyState title="No access" description="Requires appstore.view_sync or appstore.view." />
-      </>
+      <ListWorkspace title="Synchronization Activity" description="App Store"
+    >
+      <EmptyState title="No access" description="Requires appstore.view_sync or appstore.view." />
+    </ListWorkspace>
     );
   }
 
   return (
-    <>
-      <PageHeader
-        title="Synchronization Activity"
+      <ListWorkspace title="Synchronization Activity"
         description="Durable sync jobs with correlation IDs, retries and checkpoints. Empty until a verified connector runs."
-      />
-      <AppStoreSubnav current="sync-activity" />
-
+      subnav={<AppStoreSubnav current="sync-activity"/>}
+    >
       <Alert className="mb-6">
         <AlertTitle>Engine ready — connectors not E2E verified</AlertTitle>
         <AlertDescription>
@@ -108,6 +106,6 @@ export function AppStoreSyncActivityPage() {
           </div>
         )
       ) : null}
-    </>
-  );
+    </ListWorkspace>
+    );
 }

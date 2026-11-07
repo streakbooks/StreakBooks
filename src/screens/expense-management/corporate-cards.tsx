@@ -5,7 +5,8 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -274,14 +275,14 @@ export function ExpenseManagementCorporateCardsPage() {
   }
   if (!canView) {
     return (
-      <>
-        <PageHeader title="Corporate Cards" description="Expense Management" />
-        <ExpenseManagementSubnav current="corporate-cards" />
-        <EmptyState
+      <ListWorkspace title="Corporate Cards" description="Expense Management"
+      subnav={<ExpenseManagementSubnav current="corporate-cards"/>}
+    >
+      <EmptyState
           title="No access"
           description="Ask an administrator for expenses.manage_cards."
         />
-      </>
+    </ListWorkspace>
     );
   }
 
@@ -292,9 +293,7 @@ export function ExpenseManagementCorporateCardsPage() {
       String(txQ.error.message ?? "").includes("20261107144000"));
 
   return (
-    <>
-      <PageHeader
-        title="Corporate Cards"
+      <ListWorkspace title="Corporate Cards"
         description="Register cards, import statement lines, and match them to corporate-card claims."
         actions={
           <Button asChild variant="outline" size="sm">
@@ -303,9 +302,8 @@ export function ExpenseManagementCorporateCardsPage() {
             </Link>
           </Button>
         }
-      />
-      <ExpenseManagementSubnav current="corporate-cards" />
-
+      subnav={<ExpenseManagementSubnav current="corporate-cards"/>}
+    >
       {migrationMissing ? (
         <Alert className="mb-6" variant="destructive">
           <AlertTitle>Database update required</AlertTitle>
@@ -658,8 +656,8 @@ export function ExpenseManagementCorporateCardsPage() {
               </Table>
             )}
           </section>
-        </>
-      ) : null}
+    </ListWorkspace>
+    ) : null}
     </>
   );
 }

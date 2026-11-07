@@ -19,7 +19,8 @@ import {
 import { ConfirmButton } from "@/components/banking/ConfirmButton";
 import { MoneyField } from "@/components/banking/MoneyField";
 import { moneyFieldMinor } from "@/lib/banking/money-field";
-import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -202,12 +203,10 @@ function Reconcile() {
   };
 
   return (
-    <>
-      <PageHeader
-        title="Reconcile"
-        description="Tick the statement and ledger items that appear on your bank statement. Opening balance + ticked items must equal the statement closing balance before you can complete."
-      />
-
+    <ListWorkspace
+      title="Reconcile"
+      description="Tick the statement and ledger items that appear on your bank statement. Opening balance + ticked items must equal the statement closing balance before you can complete."
+    >
       <div className="mb-6 grid max-w-3xl gap-3 sm:grid-cols-2">
         <div className="space-y-1">
           <Label>Bank account</Label>
@@ -566,6 +565,6 @@ function Reconcile() {
           )}
         </section>
       ) : null}
-    </>
+    </ListWorkspace>
   );
 }

@@ -4,7 +4,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -166,32 +167,32 @@ export function ExpenseManagementSpendingRequestsPage() {
   }
   if (!canOpen) {
     return (
-      <>
-        <PageHeader title="Spending Requests" />
-        <ExpenseManagementSubnav current="spending-requests" />
-        <EmptyState
+      <ListWorkspace title="Spending Requests"
+      subnav={<ExpenseManagementSubnav current="spending-requests"/>}
+    >
+      <EmptyState
           title="No access"
           description="Ask an administrator for expenses.submit or expenses.approve."
         />
-      </>
+    </ListWorkspace>
     );
   }
   if (listQ.isLoading) {
     return (
-      <>
-        <PageHeader title="Spending Requests" description="Expense Management" />
-        <ExpenseManagementSubnav current="spending-requests" />
-        <LoadingState />
-      </>
+      <ListWorkspace title="Spending Requests" description="Expense Management"
+      subnav={<ExpenseManagementSubnav current="spending-requests"/>}
+    >
+      <LoadingState />
+    </ListWorkspace>
     );
   }
   if (listQ.isError) {
     const message = friendlyAuthError(listQ.error);
     return (
-      <>
-        <PageHeader title="Spending Requests" />
-        <ExpenseManagementSubnav current="spending-requests" />
-        {message.includes("20261107136000") ? (
+      <ListWorkspace title="Spending Requests"
+      subnav={<ExpenseManagementSubnav current="spending-requests"/>}
+    >
+      {message.includes("20261107136000") ? (
           <Alert>
             <AlertTitle>Migration required</AlertTitle>
             <AlertDescription>{EXPENSE_SPENDING_REQUEST_MIGRATION}</AlertDescription>
@@ -203,20 +204,17 @@ export function ExpenseManagementSpendingRequestsPage() {
             onRetry={() => listQ.refetch()}
           />
         )}
-      </>
+    </ListWorkspace>
     );
   }
 
   const requests = listQ.data ?? [];
 
   return (
-    <>
-      <PageHeader
-        title="Spending Requests"
+      <ListWorkspace title="Spending Requests"
         description="Pre-spend authorisation before large claims. Does not create accounting journals."
-      />
-      <ExpenseManagementSubnav current="spending-requests" />
-
+      subnav={<ExpenseManagementSubnav current="spending-requests"/>}
+    >
       <Alert className="mb-6">
         <AlertTitle>Policy threshold</AlertTitle>
         <AlertDescription>
@@ -400,8 +398,8 @@ export function ExpenseManagementSpendingRequestsPage() {
                             Reject
                           </Button>
                         </div>
-                      </>
-                    ) : null}
+    </ListWorkspace>
+    ) : null}
                   </div>
                 </TableCell>
               </TableRow>

@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -261,32 +261,32 @@ export function ExpenseManagementReimbursementsPage() {
   }
   if (!canPay) {
     return (
-      <>
-        <PageHeader title="Reimbursements" />
-        <ExpenseManagementSubnav current="reimbursements" />
-        <EmptyState
+      <ListWorkspace title="Reimbursements"
+      subnav={<ExpenseManagementSubnav current="reimbursements"/>}
+    >
+      <EmptyState
           title="No access"
           description="Ask an administrator for expenses.reimburse."
         />
-      </>
+    </ListWorkspace>
     );
   }
   if (claimsQ.isLoading || banksQ.isLoading) {
     return (
-      <>
-        <PageHeader title="Reimbursements" description="Expense Management" />
-        <ExpenseManagementSubnav current="reimbursements" />
-        <LoadingState />
-      </>
+      <ListWorkspace title="Reimbursements" description="Expense Management"
+      subnav={<ExpenseManagementSubnav current="reimbursements"/>}
+    >
+      <LoadingState />
+    </ListWorkspace>
     );
   }
   if (claimsQ.isError) {
     const message = friendlyAuthError(claimsQ.error);
     return (
-      <>
-        <PageHeader title="Reimbursements" />
-        <ExpenseManagementSubnav current="reimbursements" />
-        {message.includes("20261107138000") || message.includes("20261107123000") ? (
+      <ListWorkspace title="Reimbursements"
+      subnav={<ExpenseManagementSubnav current="reimbursements"/>}
+    >
+      {message.includes("20261107138000") || message.includes("20261107123000") ? (
           <Alert>
             <AlertTitle>Migration required</AlertTitle>
             <AlertDescription>{EXPENSE_REIMBURSEMENT_MIGRATION}</AlertDescription>
@@ -298,7 +298,7 @@ export function ExpenseManagementReimbursementsPage() {
             onRetry={() => claimsQ.refetch()}
           />
         )}
-      </>
+    </ListWorkspace>
     );
   }
 

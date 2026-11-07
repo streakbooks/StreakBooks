@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
-import { EmptyState, PageHeader } from "@/components/common/states";
+import { EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -56,21 +57,18 @@ export function AppStoreRegisterPage() {
 
   if (!canView) {
     return (
-      <>
-        <PageHeader title="Integration Register" description="App Store" />
+      <ListWorkspace title="Integration Register" description="App Store">
         <EmptyState title="No access" description="Requires appstore.view." />
-      </>
+      </ListWorkspace>
     );
   }
 
   return (
-    <>
-      <PageHeader
-        title="Integration Register"
-        description="Authoritative status for every researched, planned, in-development, testing, available or unsupported integration. Install is never offered without verified E2E sync."
-      />
-      <AppStoreSubnav current="register" />
-
+    <ListWorkspace
+      title="Integration Register"
+      description="Authoritative status for every researched, planned, in-development, testing, available or unsupported integration. Install is never offered without verified E2E sync."
+      subnav={<AppStoreSubnav current="register" />}
+    >
       <Alert className="mb-6">
         <AlertTitle>Completed vs planned</AlertTitle>
         <AlertDescription>
@@ -200,6 +198,6 @@ export function AppStoreRegisterPage() {
           description="Clear filters to see the full register."
         />
       ) : null}
-    </>
+    </ListWorkspace>
   );
 }

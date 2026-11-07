@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -53,13 +54,13 @@ export function AppStoreRequestsPage() {
   }
   if (!canView) {
     return (
-      <>
-        <PageHeader title="App Requests" description="App Store" />
-        <EmptyState
+      <ListWorkspace title="App Requests" description="App Store"
+    >
+      <EmptyState
           title="No access"
           description="Requires App Store request or view permission."
         />
-      </>
+    </ListWorkspace>
     );
   }
 
@@ -68,13 +69,10 @@ export function AppStoreRequestsPage() {
   );
 
   return (
-    <>
-      <PageHeader
-        title="App Requests"
+      <ListWorkspace title="App Requests"
         description="Installation requests and approvals. Approval never bypasses connector authorization."
-      />
-      <AppStoreSubnav current="requests" />
-
+      subnav={<AppStoreSubnav current="requests"/>}
+    >
       <Alert className="mb-6">
         <AlertTitle>Requests foundation</AlertTitle>
         <AlertDescription>
@@ -180,8 +178,8 @@ export function AppStoreRequestsPage() {
               </div>
             )}
           </section>
-        </>
-      ) : null}
+    </ListWorkspace>
+    ) : null}
     </>
   );
 }

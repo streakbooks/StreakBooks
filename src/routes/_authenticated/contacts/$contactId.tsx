@@ -20,7 +20,8 @@ import {
 } from "@/lib/contacts/contacts.functions";
 import { fromMinorUnits, toMinorUnits, toSafeMinorNumber } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { Button } from "@/components/ui/button";
 import { DocumentRecordPanel } from "@/components/documents/DocumentRecordPanel";
 import { ContactPortalPanel } from "@/components/portals/staff-panels";
@@ -385,40 +386,38 @@ function ContactDetail() {
   const archived = Boolean(c.archived_at);
 
   return (
-    <>
-      <PageHeader
-        title={String(c.name)}
-        description={`${kind} · terms ${terms} days${accountNumber ? ` · #${accountNumber}` : ""}`}
-        actions={
-          <div className="flex flex-wrap gap-2">
-            {isCustomer ? (
-              <Button variant="outline" size="sm" asChild>
-                <Link to="/sales/invoices/new">New invoice</Link>
-              </Button>
-            ) : null}
-            {isSupplier ? (
-              <Button variant="outline" size="sm" asChild>
-                <Link to="/purchases/bills/new">New bill</Link>
-              </Button>
-            ) : null}
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={archiveM.isPending || !canManage}
-              title={canManage ? undefined : "You do not have permission to archive contacts"}
-              onClick={() => archiveM.mutate(archived)}
-            >
-              {archived ? "Restore" : "Archive"}
-            </Button>
+    <RecordWorkspace
+      title={String(c.name)}
+      description={`${kind} · terms ${terms} days${accountNumber ? ` · #${accountNumber}` : ""}`}
+      actions={
+        <div className="flex flex-wrap gap-2">
+          {isCustomer ? (
             <Button variant="outline" size="sm" asChild>
-              <Link to="/contacts" search={{ view: undefined }}>
-                Directory
-              </Link>
+              <Link to="/sales/invoices/new">New invoice</Link>
             </Button>
-          </div>
-        }
-      />
-
+          ) : null}
+          {isSupplier ? (
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/purchases/bills/new">New bill</Link>
+            </Button>
+          ) : null}
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={archiveM.isPending || !canManage}
+            title={canManage ? undefined : "You do not have permission to archive contacts"}
+            onClick={() => archiveM.mutate(archived)}
+          >
+            {archived ? "Restore" : "Archive"}
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/contacts" search={{ view: undefined }}>
+              Directory
+            </Link>
+          </Button>
+        </div>
+      }
+    >
       {balQ.data ? (
         <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Metric
@@ -1157,7 +1156,7 @@ function ContactDetail() {
         </TabsContent>
       </Tabs>
       <DocumentRecordPanel entityType="contact" entityId={contactId} audience="internal" />
-    </>
+    </RecordWorkspace>
   );
 }
 

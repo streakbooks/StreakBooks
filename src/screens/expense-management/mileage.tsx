@@ -5,7 +5,8 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -197,14 +198,14 @@ export function ExpenseManagementMileagePage() {
   }
   if (!canView) {
     return (
-      <>
-        <PageHeader title="Mileage" description="Expense Management" />
-        <ExpenseManagementSubnav current="mileage" />
-        <EmptyState
+      <ListWorkspace title="Mileage" description="Expense Management"
+      subnav={<ExpenseManagementSubnav current="mileage"/>}
+    >
+      <EmptyState
           title="No access"
           description="Your role cannot open mileage rates or trips."
         />
-      </>
+    </ListWorkspace>
     );
   }
 
@@ -213,18 +214,15 @@ export function ExpenseManagementMileagePage() {
     String(ratesQ.error.message ?? "").includes(EXPENSE_MILEAGE_MIGRATION);
 
   return (
-    <>
-      <PageHeader
-        title="Mileage"
+      <ListWorkspace title="Mileage"
         description="Configure company rates and create mileage claim drafts."
         actions={
           <Button asChild variant="outline" size="sm">
             <Link to="/expense-management/$section" params={{ section: "my-expenses" }}>My expenses</Link>
           </Button>
         }
-      />
-      <ExpenseManagementSubnav current="mileage" />
-
+      subnav={<ExpenseManagementSubnav current="mileage"/>}
+    >
       {migrationMissing ? (
         <Alert className="mb-6" variant="destructive">
           <AlertTitle>Database update required</AlertTitle>
@@ -448,6 +446,6 @@ export function ExpenseManagementMileagePage() {
           </Table>
         )}
       </section>
-    </>
-  );
+    </ListWorkspace>
+    );
 }

@@ -14,7 +14,8 @@ import {
 import { generateRecurringJournal } from "@/lib/create-new/money-documents.functions";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -91,26 +92,25 @@ function RecurringJournalsPage() {
   const dueCount = rows.filter((r) => r.is_active && r.next_date <= today).length;
 
   return (
-    <>
-      <PageHeader
-        title="Recurring journals"
-        description="Manual journals that repeat on a schedule (rent, depreciation, accruals)."
-        actions={
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" asChild>
-              <Link to="/accounting">Accounting</Link>
-            </Button>
-            <Button
-              size="sm"
-              disabled={!canPost || runMutation.isPending || dueCount === 0}
-              onClick={() => runMutation.mutate()}
-            >
-              {runMutation.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
-              Run due now{dueCount > 0 ? ` (${dueCount})` : ""}
-            </Button>
-          </div>
-        }
-      />
+    <ListWorkspace
+      title="Recurring journals"
+      description="Manual journals that repeat on a schedule (rent, depreciation, accruals)."
+      actions={
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" asChild>
+            <Link to="/accounting">Accounting</Link>
+          </Button>
+          <Button
+            size="sm"
+            disabled={!canPost || runMutation.isPending || dueCount === 0}
+            onClick={() => runMutation.mutate()}
+          >
+            {runMutation.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+            Run due now{dueCount > 0 ? ` (${dueCount})` : ""}
+          </Button>
+        </div>
+      }
+    >
       <Alert className="mb-4">
         <AlertTitle>Scheduling</AlertTitle>
         <AlertDescription>
@@ -199,6 +199,6 @@ function RecurringJournalsPage() {
           </TableBody>
         </Table>
       )}
-    </>
+    </ListWorkspace>
   );
 }

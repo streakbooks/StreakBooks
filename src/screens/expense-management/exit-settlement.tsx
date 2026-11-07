@@ -5,7 +5,8 @@ import { toast } from "sonner";
 import { ExpenseManagementLoadingShell } from "@/components/expenses/ExpenseManagementLoadingShell";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -164,14 +165,14 @@ export function ExpenseManagementExitSettlementPage() {
   }
   if (!canView) {
     return (
-      <>
-        <PageHeader title="Exit Settlement" />
-        <ExpenseManagementSubnav current="exit-settlement" />
-        <EmptyState
+      <ListWorkspace title="Exit Settlement"
+      subnav={<ExpenseManagementSubnav current="exit-settlement"/>}
+    >
+      <EmptyState
           title="No access"
           description="Ask an administrator for expenses.manage_advances."
         />
-      </>
+    </ListWorkspace>
     );
   }
   if (settlementsQ.isLoading) {
@@ -180,10 +181,10 @@ export function ExpenseManagementExitSettlementPage() {
   if (settlementsQ.isError) {
     const message = friendlyAuthError(settlementsQ.error);
     return (
-      <>
-        <PageHeader title="Exit Settlement" description="Expense Management" />
-        <ExpenseManagementSubnav current="exit-settlement" />
-        {message.includes("20261107145000") ? (
+      <ListWorkspace title="Exit Settlement" description="Expense Management"
+      subnav={<ExpenseManagementSubnav current="exit-settlement"/>}
+    >
+      {message.includes("20261107145000") ? (
           <Alert>
             <AlertTitle>Database update required</AlertTitle>
             <AlertDescription>{EXPENSE_EXIT_SETTLEMENT_MIGRATION}</AlertDescription>
@@ -195,7 +196,7 @@ export function ExpenseManagementExitSettlementPage() {
             onRetry={() => settlementsQ.refetch()}
           />
         )}
-      </>
+    </ListWorkspace>
     );
   }
 
@@ -204,13 +205,10 @@ export function ExpenseManagementExitSettlementPage() {
   );
 
   return (
-    <>
-      <PageHeader
-        title="Exit Settlement"
+      <ListWorkspace title="Exit Settlement"
         description="Clear open advances, drafts and card lines when an employee leaves."
-      />
-      <ExpenseManagementSubnav current="exit-settlement" />
-
+      subnav={<ExpenseManagementSubnav current="exit-settlement"/>}
+    >
       {canManage ? (
         <section className="mb-8 space-y-4 rounded-lg border p-4">
           <h2 className="text-lg font-medium">Review employee</h2>
@@ -356,8 +354,8 @@ export function ExpenseManagementExitSettlementPage() {
                   ) : null}
                 </TableBody>
               </Table>
-            </>
-          ) : null}
+    </ListWorkspace>
+    ) : null}
         </section>
       ) : null}
 

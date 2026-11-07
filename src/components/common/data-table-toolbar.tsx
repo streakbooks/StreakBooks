@@ -57,7 +57,7 @@ export function DataTableToolbar({
       <div
         role="region"
         aria-label="Bulk actions"
-        className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-primary/30 bg-info-soft px-3 py-2 print:hidden"
+        className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-primary/30 bg-info-soft/80 px-4 py-3 shadow-xs print:hidden"
       >
         <span className="text-sm font-medium text-info-ink" aria-live="polite">
           {selectedCount} selected
@@ -74,19 +74,19 @@ export function DataTableToolbar({
   }
   return (
     <div
-      className="mb-4 flex min-w-0 flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-3 print:hidden"
+      className="mb-4 flex min-w-0 flex-wrap items-center gap-3 rounded-xl border border-border/85 bg-card p-3.5 shadow-card print:hidden"
       role="search"
       aria-label="Filter records"
     >
       {onSearchChange ? (
-        <div className="relative w-full sm:w-64 sm:flex-1 sm:max-w-sm">
+        <div className="relative w-full sm:w-64 sm:flex-1 sm:max-w-md">
           <Search
             className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
             aria-hidden
           />
           <Input
             ref={searchRef}
-            className="pl-9 pr-10"
+            className="bg-muted/15 pl-9 pr-10"
             type="search"
             placeholder={searchPlaceholder}
             aria-label={searchPlaceholder}
@@ -121,7 +121,7 @@ export function DataTableToolbar({
       ) : null}
       {filters}
       {summary ? (
-        <span className="text-xs text-muted-foreground" role="status">
+        <span className="rounded-md bg-muted/45 px-2 py-1 text-xs font-medium tabular-nums text-muted-foreground" role="status">
           {summary}
         </span>
       ) : null}

@@ -10,7 +10,8 @@
 | 6 | 3–4 | Nested Sales/Purchases/EM/Payroll lists + Accounting shell | `feature/premium-ui-batch6-nested-lists` | [PR #187](https://github.com/linkbusinessadvisory/LinkBooks/pull/187) → `52653bd8` | 28 list/index screens | merged |
 | 7 | 3–6 | RecordWorkspace details + Advisors/Firm/Settings/Developer/AI | `feature/premium-ui-batch7-records-practice` | [PR #188](https://github.com/linkbusinessadvisory/LinkBooks/pull/188) → `345b8e87` | detail + practice/platform | merged |
 | 8 | 3–6 | Remaining App Store, EM, Banking, Dashboard, Action Center, create forms | `feature/premium-ui-batch8-remaining-headers` | [PR #189](https://github.com/linkbusinessadvisory/LinkBooks/pull/189) → `dc2436f3` | 58 screens/routes | merged |
-| 9 | 2 + §20 | Shared component shells + PageHeader bypass enforcement | `feature/premium-ui-batch9-shared-shells` | pending | settings/EM/sales editor shells | in progress |
-| 10 | 8–9 | Finished-screen DoD, a11y/visual hardening, staging | TBD | — | | planned |
+| 9 | 2 + §20 | Shared component shells + PageHeader bypass enforcement | `feature/premium-ui-batch9-shared-shells` | [PR #190](https://github.com/linkbusinessadvisory/LinkBooks/pull/190) → `ad19d5a8` | settings/EM/sales editor shells | merged |
+| 10 | 8 + §14 | Workspace landmarks, chrome unit tests, core DoD matrices | `feature/premium-ui-batch10-dod-hardening` | pending | shared workspaces + docs | in progress |
+| 11 | 8–9 | Per-module browser DoD + staging | TBD | — | | planned |
 
-Authenticated `src/screens` / `src/routes` no longer import `PageHeader` directly; `check:modules` enforces that going forward.
+Authenticated screens/routes must not import `PageHeader` directly (`check:modules`). Core module finished-screen DoD is tracked in `FINISHED-SCREEN-DOD-CORE.md` and remains **IN PROGRESS**.

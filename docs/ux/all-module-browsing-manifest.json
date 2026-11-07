@@ -170,8 +170,19 @@
       "routeFiles": [
         "notifications.tsx"
       ],
-      "browsingImplementation": "not_assessed_module_wide",
-      "fullyVerified": false
+      "browsingImplementation": "partial_code_not_runtime_verified",
+      "fullyVerified": false,
+      "currentEvidence": [
+        "src/lib/notifications/notification-utils.ts — grouped page display preference added to validated URL search",
+        "src/routes/_authenticated/notifications.tsx — native grouping URL navigation, original permission controls left unchanged",
+        "src/lib/notifications/notification-utils.test.ts — two additional cases WRITTEN, NOT RUN",
+        "e2e/action-center-grouping-browsing.spec.ts — one authenticated browser scenario WRITTEN, NOT RUN"
+      ],
+      "remaining": [
+        "Verify existing Action Center filters, paging, selection, notification permissions and UI against authenticated fixture data",
+        "Run complete app check, unit/integration, browser, accessibility and performance verification",
+        "Confirm other workspace tasks and cross-module actions in the module inventory"
+      ]
     },
     {
       "label": "Files",

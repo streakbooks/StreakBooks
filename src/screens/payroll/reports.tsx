@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
@@ -79,7 +79,8 @@ export function PayrollReportsPage() {
   const fetchReport = useServerFn(runPayrollReportServer);
 
   const today = new Date().toISOString().slice(0, 10);
-  const [reportId, setReportId] = useState<PayrollReportId>("payroll_summary");
+  const reportId = useSearch({ from: "/_authenticated/payroll/reports" }).reportId ?? "payroll_summary";
+  const navigate = useNavigate();
   const [dateFrom, setDateFrom] = useState(`${today.slice(0, 4)}-01-01`);
   const [dateTo, setDateTo] = useState(today);
   const [employeeId, setEmployeeId] = useState<string>("all");
@@ -236,7 +237,7 @@ export function PayrollReportsPage() {
               <div className="grid gap-4 p-4 md:grid-cols-2 lg:grid-cols-3">
                 <div className="space-y-2 lg:col-span-3">
                   <Label htmlFor="payroll-report-type">Report</Label>
-                  <Select value={reportId} onValueChange={(v) => setReportId(v as PayrollReportId)}>
+                  <Select value={reportId} onValueChange={(v) => void navigate({ to: "/payroll/reports", search: { reportId: v as PayrollReportId }, resetScroll: false })}>
                     <SelectTrigger id="payroll-report-type">
                       <SelectValue />
                     </SelectTrigger>

@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AlertTriangle, ArrowUpRight, CheckCircle2, CircleDashed, RefreshCcw } from "lucide-react";
-import { integrationStatusLabel } from "@/lib/settings/integration-health";
+import { IntegrationHealthBadge } from "@/components/settings/IntegrationHealthBadge";
 import { getSettingsOverview } from "@/lib/settings/settings-centre.functions";
 import { resolveSettingsCategory } from "@/lib/settings/registry";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -229,7 +229,7 @@ export function SettingsOverviewPanel({ companyId }: Props) {
                   <p className="text-sm font-medium">{integration.name}</p>
                   <p className="mt-1 text-xs text-muted-foreground">{integration.detail}</p>
                 </div>
-                <Badge variant="outline">{integrationStatusLabel(integration.status)}</Badge>
+                <IntegrationHealthBadge status={integration.status} />
               </div>
             ))}
             {d.integrations.length === 0 ? (

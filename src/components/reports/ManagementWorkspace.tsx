@@ -1,5 +1,6 @@
 import { StatementBasisSelect } from "./StatementBasisSelect";
 import type { AccountingBasis } from "@/lib/reports/accounting-basis";
+import { useReportingCentreOrigin } from "@/lib/reports/centre-return";
 import { useCanDo } from "@/hooks/use-can";
 import { exportForecast } from "@/lib/reports/forecast-export.functions";
 import { downloadReportFile } from "@/lib/reports/download";
@@ -48,6 +49,7 @@ export function ManagementWorkspace({
   to: string;
   onPeriodChange: (range: { from: string; to: string }) => void;
 }) {
+  const centre = useReportingCentreOrigin();
   const client = useQueryClient(),
     fetch = useServerFn(getManagementMetrics),
     save = useServerFn(saveReportingModel);
@@ -209,7 +211,7 @@ export function ManagementWorkspace({
                   key={id}
                   to="/reports/$reportId"
                   params={{ reportId: metric.reportId }}
-                  search={{ from, to, basis: q.data.accountingBasis }}
+                  search={{ from, to, basis: q.data.accountingBasis, centre }}
                   className="space-y-2 rounded-lg border p-4 transition-shadow hover:shadow-md"
                 >
                   <h3 className="text-sm font-medium capitalize text-muted-foreground">

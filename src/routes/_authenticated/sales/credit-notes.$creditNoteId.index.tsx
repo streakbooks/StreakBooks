@@ -18,7 +18,8 @@ import { getSalesDocumentConfig } from "@/lib/sales/sales-config.functions";
 import { canVoidCreditNote, creditNoteStatusLabel } from "@/lib/sales/allocation-rules";
 import { fromMinorUnits, toMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { ReasonDialog } from "@/components/sales/ReasonDialog";
 import { bpsToPercentString, money } from "@/components/sales/sales-form-utils";
 import { StatusBadge } from "@/components/common/stat-card";
@@ -222,7 +223,7 @@ function CreditNoteDetail() {
 
   return (
     <>
-      <PageHeader
+      <RecordWorkspace
         title={`Credit note ${cn.credit_number ?? ""} · ${cn.contacts?.name ?? "Customer"}`}
         description={`${cn.credit_date} · authorising posts DR revenue/tax / CR AR once`}
         actions={
@@ -257,7 +258,7 @@ function CreditNoteDetail() {
             ) : null}
           </div>
         }
-      />
+      >
       <div className="mb-4 flex flex-wrap gap-3 text-sm">
         <StatusBadge status={cn.status} label={creditNoteStatusLabel(cn.status)} />
         <span>#{cn.credit_number ?? "—"}</span>
@@ -484,6 +485,7 @@ function CreditNoteDetail() {
           </div>
         </div>
       ) : null}
+      </RecordWorkspace>
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>

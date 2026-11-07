@@ -15,7 +15,8 @@ import { minorOrZero, parseMinorOrThrow, tryParseMinor } from "@/lib/purchases/m
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { formatHistoryDay } from "@/lib/purchases/bill-history";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { StatusBadge } from "@/components/common/stat-card";
 import { Button } from "@/components/ui/button";
 import { DocumentActions } from "@/components/documents/DocumentActions";
@@ -162,33 +163,31 @@ function PaymentDocument() {
   const currency = payment.currency_code || company?.base_currency || "GBP";
 
   return (
-    <div className="space-y-4">
-      <PageHeader
-        title={payment.supplier_name ?? "Supplier payment"}
-        description={`${formatHistoryDay(payment.payment_date)} · ${fromMinorUnits(BigInt(payment.amount_minor), currency)} ${currency}`}
-        actions={
-          payment.status !== "void" && payment.posted_journal_id && can("purchases.payment") ? (
-            <Button
-              size="sm"
-              variant="outline"
-              className="text-destructive"
-              disabled={reverseM.isPending}
-              onClick={() => {
-                if (
-                  confirm(
-                    "Reverse this payment? The bank and accounts payable journal will be voided and the bill balance restored.",
-                  )
-                ) {
-                  reverseM.mutate();
-                }
-              }}
-            >
-              Reverse payment
-            </Button>
-          ) : null
-        }
-      />
-
+    <RecordWorkspace
+      title={payment.supplier_name ?? "Supplier payment"}
+      description={`${formatHistoryDay(payment.payment_date)} · ${fromMinorUnits(BigInt(payment.amount_minor), currency)} ${currency}`}
+      actions={
+        payment.status !== "void" && payment.posted_journal_id && can("purchases.payment") ? (
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-destructive"
+            disabled={reverseM.isPending}
+            onClick={() => {
+              if (
+                confirm(
+                  "Reverse this payment? The bank and accounts payable journal will be voided and the bill balance restored.",
+                )
+              ) {
+                reverseM.mutate();
+              }
+            }}
+          >
+            Reverse payment
+          </Button>
+        ) : null
+      }
+    >
       <section className="rounded-lg border border-border bg-background p-4">
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <StatusBadge
@@ -366,6 +365,6 @@ function PaymentDocument() {
         </section>
       ) : null}
       <DocumentActions kind="supplier_remittance" id={paymentId} />
-    </div>
+    </RecordWorkspace>
   );
 }

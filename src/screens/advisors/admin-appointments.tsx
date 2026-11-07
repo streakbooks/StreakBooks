@@ -3,7 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AdvisorsSubnav } from "@/components/advisors/AdvisorsSubnav";
-import { ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -126,13 +127,14 @@ export function AdvisorsAdminAppointmentsPage() {
   if (query.isError) {
     return (
       <main className="mx-auto max-w-5xl space-y-6 p-6">
-        <PageHeader title="Appointments" description="Advisor calendar and booking controls." />
+        <ListWorkspace title="Appointments" description="Advisor calendar and booking controls.">
         <ErrorState
           title="Booking admin unavailable"
           description={friendlyAuthError(query.error)}
           onRetry={() => void query.refetch()}
         />
-      </main>
+          </ListWorkspace>
+  </main>
     );
   }
 
@@ -140,11 +142,10 @@ export function AdvisorsAdminAppointmentsPage() {
 
   return (
     <main className="mx-auto max-w-6xl space-y-6 p-6">
-      <PageHeader
+      <ListWorkspace
         title="Appointments"
         description="Configure working hours, buffers and manage consultation bookings. Availability is computed from real calendar rules."
-      />
-      <AdvisorsSubnav />
+       subnav={<AdvisorsSubnav />}>
 
       <section className="grid gap-3 rounded-xl border border-border/70 p-4 sm:grid-cols-2">
         <div className="space-y-1 sm:col-span-2">
@@ -300,6 +301,7 @@ export function AdvisorsAdminAppointmentsPage() {
           </ul>
         )}
       </section>
-    </main>
+        </ListWorkspace>
+  </main>
   );
 }

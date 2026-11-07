@@ -3,7 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AdvisorsPortalSubnav } from "@/components/advisors/AdvisorsPortalSubnav";
-import { ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -93,13 +94,14 @@ export function AdvisorsPortalAccountPage() {
   if (homeQuery.isError) {
     return (
       <main className="mx-auto max-w-5xl space-y-6 p-6">
-        <PageHeader title="Account" description="Contact details and service requests." />
+        <ListWorkspace title="Account" description="Contact details and service requests.">
         <ErrorState
           title="Account unavailable"
           description={friendlyAuthError(homeQuery.error)}
           onRetry={() => void homeQuery.refetch()}
         />
-      </main>
+          </ListWorkspace>
+  </main>
     );
   }
 
@@ -107,12 +109,11 @@ export function AdvisorsPortalAccountPage() {
 
   return (
     <main className="mx-auto max-w-5xl space-y-6 p-6">
-      <PageHeader
+      <ListWorkspace
         title="Account"
         description="Update permitted contact details, notifications, and plan or cancellation requests."
-      />
-      <AdvisorsPortalSubnav />
-
+        subnav={<AdvisorsPortalSubnav />}
+      >
       <section className="space-y-3 rounded-lg border border-border p-4">
         <h2 className="text-lg font-medium">Contact</h2>
         <p className="text-sm text-muted-foreground">
@@ -201,6 +202,7 @@ export function AdvisorsPortalAccountPage() {
       </section>
 
       <p className="text-xs text-muted-foreground">{homeQuery.data.calendarOAuth.note}</p>
-    </main>
+        </ListWorkspace>
+  </main>
   );
 }

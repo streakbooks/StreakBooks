@@ -3,7 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AdvisorsSubnav } from "@/components/advisors/AdvisorsSubnav";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -104,16 +105,16 @@ export function AdvisorsAdminInquiriesPage() {
   if (query.isError) {
     return (
       <main className="mx-auto max-w-6xl space-y-6 p-6">
-        <PageHeader
+        <ListWorkspace
           title="Inquiries"
-          description="Leads captured from Advisors chat and handoffs."
-        />
+          description="Leads captured from Advisors chat and handoffs.">
         <ErrorState
           title="Inquiries unavailable"
           description={friendlyAuthError(query.error)}
           onRetry={() => void query.refetch()}
         />
-      </main>
+          </ListWorkspace>
+  </main>
     );
   }
 
@@ -121,11 +122,10 @@ export function AdvisorsAdminInquiriesPage() {
 
   return (
     <main className="mx-auto max-w-6xl space-y-6 p-6">
-      <PageHeader
+      <ListWorkspace
         title="Inquiries"
         description="Search, assign and progress Advisors leads. Promote qualified leads into clients."
-      />
-      <AdvisorsSubnav />
+       subnav={<AdvisorsSubnav />}>
 
       <div className="flex flex-wrap items-end gap-3">
         <div className="space-y-1">
@@ -284,10 +284,12 @@ export function AdvisorsAdminInquiriesPage() {
               >
                 Promote to client
               </Button>
+    </ListWorkspace>
             </>
           )}
         </section>
       </div>
-    </main>
+        </ListWorkspace>
+  </main>
   );
 }

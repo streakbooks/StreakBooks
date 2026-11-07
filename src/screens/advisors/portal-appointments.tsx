@@ -2,7 +2,8 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AdvisorsPortalSubnav } from "@/components/advisors/AdvisorsPortalSubnav";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Badge } from "@/components/ui/badge";
 import { listAdvisorsPortalAppointments } from "@/lib/advisors/portal.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
@@ -19,27 +20,25 @@ export function AdvisorsPortalAppointmentsPage() {
   if (query.isError) {
     return (
       <main className="mx-auto max-w-5xl space-y-6 p-6">
-        <PageHeader
+        <ListWorkspace
           title="Appointments"
-          description="Consultations linked to your Advisors email."
-        />
+          description="Consultations linked to your Advisors email.">
         <ErrorState
           title="Appointments unavailable"
           description={friendlyAuthError(query.error)}
           onRetry={() => void query.refetch()}
         />
-      </main>
+          </ListWorkspace>
+  </main>
     );
   }
 
   return (
     <main className="mx-auto max-w-5xl space-y-6 p-6">
-      <PageHeader
+      <ListWorkspace
         title="Appointments"
         description="View and manage consultations. Reminder emails are scheduled automatically."
-      />
-      <AdvisorsPortalSubnav />
-      {query.data.length === 0 ? (
+       subnav={<AdvisorsPortalSubnav />}>{query.data.length === 0 ? (
         <EmptyState
           title="No appointments yet"
           description="Book a consultation from the public Advisors booking page."
@@ -72,6 +71,7 @@ export function AdvisorsPortalAppointmentsPage() {
           ))}
         </ul>
       )}
-    </main>
+        </ListWorkspace>
+  </main>
   );
 }

@@ -3,7 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AdvisorsPortalSubnav } from "@/components/advisors/AdvisorsPortalSubnav";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,23 +41,24 @@ export function AdvisorsPortalDocumentsPage() {
   if (query.isError) {
     return (
       <main className="mx-auto max-w-5xl space-y-6 p-6">
-        <PageHeader title="Documents" description="Requested files for your delivery periods." />
+        <ListWorkspace title="Documents" description="Requested files for your delivery periods.">
         <ErrorState
           title="Documents unavailable"
           description={friendlyAuthError(query.error)}
           onRetry={() => void query.refetch()}
         />
-      </main>
+          </ListWorkspace>
+  </main>
     );
   }
 
   return (
     <main className="mx-auto max-w-5xl space-y-6 p-6">
-      <PageHeader
+      <ListWorkspace
         title="Documents"
         description="Mark requested items as uploaded. Binary file storage reuses your linked company Files area when available."
-      />
-      <AdvisorsPortalSubnav />
+        subnav={<AdvisorsPortalSubnav />}
+      >
       <div className="max-w-md space-y-2">
         <label className="text-sm font-medium" htmlFor="doc-note">
           Upload note (optional)
@@ -101,6 +103,7 @@ export function AdvisorsPortalDocumentsPage() {
           ))}
         </ul>
       )}
-    </main>
+        </ListWorkspace>
+  </main>
   );
 }

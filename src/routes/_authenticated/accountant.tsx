@@ -21,7 +21,8 @@ import { postTaxAdjustment } from "@/lib/tax/tax.functions";
 import { toMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { AccountLookup } from "@/components/lookup";
-import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -141,11 +142,10 @@ function AccountantTools() {
   ).filter((a) => a.is_active && a.is_postable);
 
   return (
-    <>
-      <PageHeader
-        title="Accountant tools"
-        description="A connected workspace for review queues, client work, journals, reconciliations, financial close and tax adjustments."
-      />
+    <ListWorkspace
+      title="Accountant tools"
+      description="A connected workspace for review queues, client work, journals, reconciliations, financial close and tax adjustments."
+    >
       <Tabs value={tab}>
         <TabsList
           onKeyDown={handleNativeTabKeyDown}
@@ -449,7 +449,7 @@ function AccountantTools() {
           </div>
         </TabsContent>
       </Tabs>
-    </>
+    </ListWorkspace>
   );
 }
 

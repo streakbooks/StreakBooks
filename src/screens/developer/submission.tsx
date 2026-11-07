@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { DeveloperSubnav } from "@/components/app-store/DeveloperSubnav";
-import { EmptyState, PageHeader } from "@/components/common/states";
+import { EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -62,23 +63,23 @@ export function DeveloperSubmissionPage() {
   if (!canSubmit) {
     return (
       <>
-        <PageHeader title="App Submission" description="Developer portal" />
+        <ListWorkspace title="App Submission" description="Developer portal">
         <EmptyState
           title="No access"
           description="Requires developer.submit_apps or developer.manage_apps."
         />
+    </ListWorkspace>
       </>
     );
   }
 
   return (
     <>
-      <PageHeader
+      <ListWorkspace
         title="App Submission"
         description="Security verification checklist before third-party apps can be publicly listed or activated."
-      />
-      <DeveloperSubnav current="submission" />
-
+        subnav={<DeveloperSubnav current="submission" />}
+      >
       <Alert className="mb-6">
         <AlertTitle>Fail closed</AlertTitle>
         <AlertDescription>
@@ -142,6 +143,6 @@ export function DeveloperSubmissionPage() {
       >
         Submit for security review
       </Button>
-    </>
+        </ListWorkspace>
   );
 }

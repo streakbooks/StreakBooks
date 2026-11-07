@@ -3,7 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AdvisorsSubnav } from "@/components/advisors/AdvisorsSubnav";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -178,6 +179,7 @@ function PlanEditor({
                 }
               />
             </div>
+    </ListWorkspace>
           </>
         ) : (
           <div className="space-y-1">
@@ -327,16 +329,16 @@ export function AdvisorsServicesPricingPage() {
   if (query.isError) {
     return (
       <main className="mx-auto max-w-5xl space-y-6 p-6">
-        <PageHeader
+        <ListWorkspace
           title="Services & Pricing"
-          description="Manage LinkBooks Advisors plans without a code deployment."
-        />
+          description="Manage LinkBooks Advisors plans without a code deployment.">
         <ErrorState
           title="Advisors admin unavailable"
           description={friendlyAuthError(query.error)}
           onRetry={() => void query.refetch()}
         />
-      </main>
+          </ListWorkspace>
+  </main>
     );
   }
 
@@ -344,11 +346,10 @@ export function AdvisorsServicesPricingPage() {
 
   return (
     <main className="mx-auto max-w-6xl space-y-6 p-6">
-      <PageHeader
+      <ListWorkspace
         title="Services & Pricing"
         description="Save draft, preview, publish and restore Advisors catalogue versions. Publishing does not change existing subscriptions or invoices."
-      />
-      <AdvisorsSubnav />
+       subnav={<AdvisorsSubnav />}>
       <p className="text-sm text-muted-foreground" role="status">
         Signed in as {query.data.role}. Live catalogue is what visitors see on `/advisors`.
       </p>
@@ -673,6 +674,7 @@ export function AdvisorsServicesPricingPage() {
           {JSON.stringify(draft, null, 2)}
         </pre>
       </section>
-    </main>
+        </ListWorkspace>
+  </main>
   );
 }

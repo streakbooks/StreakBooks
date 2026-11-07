@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { DeveloperSubnav } from "@/components/app-store/DeveloperSubnav";
-import { EmptyState, PageHeader } from "@/components/common/states";
+import { EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,15 +20,16 @@ export function DeveloperOAuthPage() {
   if (!canManage) {
     return (
       <>
-        <PageHeader title="OAuth Configuration" description="Developer portal" />
+        <ListWorkspace title="OAuth Configuration" description="Developer portal">
         <EmptyState title="No access" description="Requires developer.manage_apps." />
+    </ListWorkspace>
       </>
     );
   }
 
   return (
     <>
-      <PageHeader
+      <ListWorkspace
         title="OAuth Configuration"
         description={`Authorization Code + PKCE for LinkBooks Public API ${PUBLIC_API_VERSION}.`}
         actions={
@@ -37,9 +39,8 @@ export function DeveloperOAuthPage() {
             </Link>
           </Button>
         }
-      />
-      <DeveloperSubnav current="oauth" />
-
+        subnav={<DeveloperSubnav current="oauth" />}
+      >
       <Alert className="mb-6">
         <AlertTitle>Production token issuance locked</AlertTitle>
         <AlertDescription>
@@ -95,6 +96,6 @@ export function DeveloperOAuthPage() {
           </Button>
         </CardContent>
       </Card>
-    </>
+        </ListWorkspace>
   );
 }

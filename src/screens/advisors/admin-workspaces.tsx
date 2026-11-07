@@ -3,7 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AdvisorsSubnav } from "@/components/advisors/AdvisorsSubnav";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -176,23 +177,23 @@ export function AdvisorsAdminWorkspacesPage() {
   if (listQ.isError) {
     return (
       <main className="mx-auto max-w-6xl space-y-6 p-6">
-        <PageHeader title="Workspaces" description="Advisors delivery workspaces." />
+        <ListWorkspace title="Workspaces" description="Advisors delivery workspaces.">
         <ErrorState
           title="Workspaces unavailable"
           description={friendlyAuthError(listQ.error)}
           onRetry={() => void listQ.refetch()}
         />
-      </main>
+          </ListWorkspace>
+  </main>
     );
   }
 
   return (
     <main className="mx-auto max-w-6xl space-y-6 p-6">
-      <PageHeader
+      <ListWorkspace
         title="Workspaces"
         description="Bookkeeping months and coaching sessions with delivery tasks, document requests and advisor notes. No ledger posting."
-      />
-      <AdvisorsSubnav />
+       subnav={<AdvisorsSubnav />}>
 
       <div className="space-y-1">
         <Label htmlFor="workspace-reason">Change reason</Label>
@@ -429,10 +430,12 @@ export function AdvisorsAdminWorkspacesPage() {
                   ))}
                 </ul>
               </div>
+    </ListWorkspace>
             </>
           ) : null}
         </section>
       </div>
-    </main>
+        </ListWorkspace>
+  </main>
   );
 }

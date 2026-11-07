@@ -1,5 +1,6 @@
 import { lazy, Suspense, type ReactNode } from "react";
-import { EmptyState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { DeveloperSubnav } from "@/components/app-store/DeveloperSubnav";
 import { useCan } from "@/hooks/use-can";
 import { developerPortalSection, type DeveloperPortalSectionKey } from "@/lib/app-store/sections";
@@ -88,24 +89,32 @@ export function DeveloperSectionPage({ sectionKey }: { sectionKey: DeveloperPort
   if (!allowed) {
     return (
       <>
-        <PageHeader title={section.label} description="Developer portal" />
-        <DeveloperSubnav current={sectionKey} />
-        <EmptyState
-          title="No access"
-          description="Your role cannot open this developer workspace."
-        />
+        <ListWorkspace
+          title={section.label}
+          description="Developer portal"
+          subnav={<DeveloperSubnav current={sectionKey} />}
+        >
+          <EmptyState
+            title="No access"
+            description="Your role cannot open this developer workspace."
+          />
+        </ListWorkspace>
       </>
     );
   }
 
   return (
     <>
-      <PageHeader title={section.label} description="Developer portal" />
-      <DeveloperSubnav current={sectionKey} />
-      <EmptyState
-        title="Section not implemented"
-        description="This developer section key has no dedicated screen yet."
-      />
+      <ListWorkspace
+        title={section.label}
+        description="Developer portal"
+        subnav={<DeveloperSubnav current={sectionKey} />}
+      >
+        <EmptyState
+          title="Section not implemented"
+          description="This developer section key has no dedicated screen yet."
+        />
+      </ListWorkspace>
     </>
   );
 }

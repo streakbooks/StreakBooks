@@ -28,7 +28,7 @@ import { listPayrollPayslips } from "@/lib/payroll/runs.functions";
 import type { PayslipSnapshot } from "@/lib/payroll/payslip-snapshot";
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { TableCard } from "@/components/common/table-card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -331,10 +331,9 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
   }
   if (!canView) {
     return (
-      <>
-        <PageHeader title="Payroll payments" />
+      <ListWorkspace title="Payroll payments" description="Record net-pay settlements.">
         <EmptyState title="No payroll access" description="Ask for payroll.view permission." />
-      </>
+      </ListWorkspace>
     );
   }
 
@@ -351,11 +350,13 @@ export function PayrollPaymentsPage({ runIdFilter }: { runIdFilter?: string | nu
   }
   if (page && !page.available) {
     return (
-      <>
-        <PageHeader title="Payroll payments" />
-        <PayrollSubnav current="payments" />
+      <ListWorkspace
+        title="Payroll payments"
+        description="Record net-pay settlements."
+        subnav={<PayrollSubnav current="payments" />}
+      >
         <EmptyState title="Migration pending" description={page.migrationMessage ?? ""} />
-      </>
+      </ListWorkspace>
     );
   }
 

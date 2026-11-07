@@ -3,7 +3,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { PageHeader } from "@/components/common/states";
+
 import { Button } from "@/components/ui/button";
 import { acceptAdvisorsPortalInvite } from "@/lib/advisors/portal.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
@@ -25,10 +25,9 @@ export function AdvisorsPortalInvitePage({ token }: { token: string }) {
 
   return (
     <main className="mx-auto max-w-lg space-y-6 p-6">
-      <PageHeader
+      <ListWorkspace
         title="Accept Advisors portal invite"
-        description="Sign in with the invited email, then link this account to your Advisors client record."
-      />
+        description="Sign in with the invited email, then link this account to your Advisors client record.">
       <p className="text-sm text-muted-foreground">
         Not signed in yet?{" "}
         <Link
@@ -49,6 +48,7 @@ export function AdvisorsPortalInvitePage({ token }: { token: string }) {
           Open portal
         </Link>
       </p>
-    </main>
+        </ListWorkspace>
+  </main>
   );
 }

@@ -20,7 +20,8 @@ import type {
 import { csvFilename, downloadCsv, toCsv, csvMoney } from "@/lib/reports/csv";
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { TableCard } from "@/components/common/table-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -174,13 +175,12 @@ export function PayrollReportsPage() {
   }
   if (!canView) {
     return (
-      <>
-        <PageHeader title="Payroll reports" description="Operational payroll reporting." />
+      <ListWorkspace title="Payroll reports" description="Operational payroll reporting.">
         <EmptyState
           title="No payroll report access"
           description="Ask an organisation administrator for the payroll.reports.view permission."
         />
-      </>
+      </ListWorkspace>
     );
   }
   if (catalogQ.isPending) return <LoadingState />;
@@ -198,32 +198,30 @@ export function PayrollReportsPage() {
   const selectedDef = catalog.reports.find((r) => r.id === reportId);
 
   return (
-    <>
-      <PageHeader
-        title="Payroll reports"
-        description="Approved and posted payroll runs with filters by period, employee, department and schedule."
-        actions={
-          result ? (
-            <div className="flex flex-wrap gap-2 print:hidden">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={exportCsv}
-                disabled={result.rows.length === 0}
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Export CSV
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => window.print()}>
-                <Printer className="mr-2 h-4 w-4" />
-                Print / PDF
-              </Button>
-            </div>
-          ) : null
-        }
-      />
-      <PayrollSubnav current="reports" />
-
+    <ListWorkspace
+      title="Payroll reports"
+      description="Approved and posted payroll runs with filters by period, employee, department and schedule."
+      actions={
+        result ? (
+          <div className="flex flex-wrap gap-2 print:hidden">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={exportCsv}
+              disabled={result.rows.length === 0}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Export CSV
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => window.print()}>
+              <Printer className="mr-2 h-4 w-4" />
+              Print / PDF
+            </Button>
+          </div>
+        ) : null
+      }
+      subnav={<PayrollSubnav current="reports" />}
+    >
       {!catalog.available ? (
         <Alert>
           <AlertTitle>Database update required</AlertTitle>
@@ -346,7 +344,7 @@ export function PayrollReportsPage() {
           ) : null}
         </div>
       )}
-    </>
+    </ListWorkspace>
   );
 }
 

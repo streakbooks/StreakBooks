@@ -7,7 +7,8 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { getReceipt, unallocateReceipt, voidReceipt } from "@/lib/sales/sales-receipts.functions";
 import { getSalesDocumentConfig } from "@/lib/sales/sales-config.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { ReasonDialog } from "@/components/sales/ReasonDialog";
 import { money } from "@/components/sales/sales-form-utils";
 import { StatusBadge } from "@/components/common/stat-card";
@@ -112,7 +113,7 @@ function ReceiptDetail() {
 
   return (
     <>
-      <PageHeader
+      <RecordWorkspace
         title={`Receipt ${receipt.reference ?? receipt.id.slice(0, 8)}`}
         description={receipt.contacts?.name ?? "Customer receipt"}
         actions={
@@ -136,7 +137,7 @@ function ReceiptDetail() {
             ) : null}
           </div>
         }
-      />
+      >
       <div className="grid max-w-4xl gap-4">
         <Card>
           <CardHeader>
@@ -280,6 +281,7 @@ function ReceiptDetail() {
       />
       <DocumentActions kind="sales_receipt" id={receiptId} />
       <DocumentRecordPanel entityType="sales_receipt" entityId={receiptId} audience="customer" />
+      </RecordWorkspace>
     </>
   );
 }

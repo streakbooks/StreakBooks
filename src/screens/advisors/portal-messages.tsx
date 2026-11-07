@@ -3,7 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AdvisorsPortalSubnav } from "@/components/advisors/AdvisorsPortalSubnav";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -38,20 +39,24 @@ export function AdvisorsPortalMessagesPage() {
   if (query.isError) {
     return (
       <main className="mx-auto max-w-5xl space-y-6 p-6">
-        <PageHeader title="Messages" description="Talk with your advisor." />
+        <ListWorkspace title="Messages" description="Talk with your advisor.">
         <ErrorState
           title="Messages unavailable"
           description={friendlyAuthError(query.error)}
           onRetry={() => void query.refetch()}
         />
-      </main>
+          </ListWorkspace>
+  </main>
     );
   }
 
   return (
     <main className="mx-auto max-w-5xl space-y-6 p-6">
-      <PageHeader title="Messages" description="Secure thread with your assigned Advisors team." />
-      <AdvisorsPortalSubnav />
+      <ListWorkspace
+        title="Messages"
+        description="Secure thread with your assigned Advisors team."
+        subnav={<AdvisorsPortalSubnav />}
+      >
       <form
         className="space-y-3"
         onSubmit={(event) => {
@@ -84,6 +89,7 @@ export function AdvisorsPortalMessagesPage() {
           ))}
         </ul>
       )}
-    </main>
+        </ListWorkspace>
+  </main>
   );
 }

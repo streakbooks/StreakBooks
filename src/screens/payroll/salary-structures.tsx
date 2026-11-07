@@ -22,7 +22,8 @@ import type { PayrollSalaryStructureRow } from "@/lib/payroll/types";
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { bpsToPercentString } from "@/components/sales/sales-form-utils";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { TableCard } from "@/components/common/table-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -186,27 +187,25 @@ export function PayrollSalaryStructuresPage() {
   };
 
   return (
-    <>
-      <PageHeader
-        title="Salary structures"
-        description="Reusable component templates for employee salary assignments."
-        actions={
-          canManage && list.available ? (
-            <Button
-              size="sm"
-              onClick={() => {
-                setSelectedId("new");
-                setDraft(emptyStructureDraft());
-              }}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              New structure
-            </Button>
-          ) : null
-        }
-      />
-      <PayrollSubnav current="salary-structures" />
-
+    <ListWorkspace
+      title="Salary structures"
+      description="Reusable component templates for employee salary assignments."
+      actions={
+        canManage && list.available ? (
+          <Button
+            size="sm"
+            onClick={() => {
+              setSelectedId("new");
+              setDraft(emptyStructureDraft());
+            }}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            New structure
+          </Button>
+        ) : null
+      }
+      subnav={<PayrollSubnav current="salary-structures" />}
+    >
       {!list.available ? (
         <Alert>
           <AlertTitle>Database update required</AlertTitle>
@@ -432,6 +431,6 @@ export function PayrollSalaryStructuresPage() {
           </Card>
         </div>
       )}
-    </>
+    </ListWorkspace>
   );
 }

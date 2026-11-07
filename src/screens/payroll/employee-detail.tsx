@@ -32,7 +32,8 @@ import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { AttachmentsPanel } from "@/components/documents/AttachmentsPanel";
 import { bpsToPercentString } from "@/components/sales/sales-form-utils";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -221,16 +222,15 @@ export function PayrollEmployeeDetailPage({ employeeId }: { employeeId: string }
     recentPayslipsQ.data?.available === true ? recentPayslipsQ.data.payslips : [];
 
   return (
-    <>
-      <PageHeader
-        title={`${emp.first_name} ${emp.last_name}`}
-        description={`${emp.employee_number} · ${emp.payroll_currency} payroll`}
-        actions={
-          <Button asChild variant="outline" size="sm">
-            <Link to="/payroll/employees">Back to employees</Link>
-          </Button>
-        }
-      />
+    <RecordWorkspace
+      title={`${emp.first_name} ${emp.last_name}`}
+      description={`${emp.employee_number} · ${emp.payroll_currency} payroll`}
+      actions={
+        <Button asChild variant="outline" size="sm">
+          <Link to="/payroll/employees">Back to employees</Link>
+        </Button>
+      }
+    >
       <PayrollSubnav current="employees" />
 
       {canManage && (!currentVersion || !hasPaymentOnFile) ? (
@@ -893,6 +893,6 @@ export function PayrollEmployeeDetailPage({ employeeId }: { employeeId: string }
           />
         </div>
       </div>
-    </>
+    </RecordWorkspace>
   );
 }

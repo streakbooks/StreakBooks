@@ -3,7 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AdvisorsSubnav } from "@/components/advisors/AdvisorsSubnav";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -169,23 +170,23 @@ export function AdvisorsAdminEngagementsPage() {
   if (listQ.isError) {
     return (
       <main className="mx-auto max-w-6xl space-y-6 p-6">
-        <PageHeader title="Engagements" description="Proposals and service delivery engagements." />
+        <ListWorkspace title="Engagements" description="Proposals and service delivery engagements.">
         <ErrorState
           title="Engagements unavailable"
           description={friendlyAuthError(listQ.error)}
           onRetry={() => void listQ.refetch()}
         />
-      </main>
+          </ListWorkspace>
+  </main>
     );
   }
 
   return (
     <main className="mx-auto max-w-6xl space-y-6 p-6">
-      <PageHeader
+      <ListWorkspace
         title="Engagements"
         description="Create client engagements, send priced proposals and track acceptance. Acceptance does not start billing."
-      />
-      <AdvisorsSubnav />
+       subnav={<AdvisorsSubnav />}>
 
       <div className="flex flex-wrap items-end gap-3">
         <div className="space-y-1">
@@ -480,11 +481,13 @@ export function AdvisorsAdminEngagementsPage() {
                     ))}
                   </div>
                 ) : null}
+    </ListWorkspace>
               </>
             ) : null}
           </section>
         </div>
       </div>
-    </main>
+        </ListWorkspace>
+  </main>
   );
 }

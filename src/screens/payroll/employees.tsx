@@ -22,7 +22,7 @@ import { getPayrollSettingsPage } from "@/lib/payroll/payroll.functions";
 import { EMPLOYEE_STATUSES, EMPLOYMENT_TYPES, PAYMENT_METHODS } from "@/lib/payroll/types";
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { TableCard } from "@/components/common/table-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -126,13 +126,12 @@ export function PayrollEmployeesPage() {
   }
   if (!canView) {
     return (
-      <>
-        <PageHeader title="Payroll employees" description="Employee records for Basic Payroll." />
+      <ListWorkspace title="Payroll employees" description="Employee records for Basic Payroll.">
         <EmptyState
           title="No payroll access"
           description="Ask an organisation administrator for the payroll.view permission."
         />
-      </>
+      </ListWorkspace>
     );
   }
   if (listQ.isPending || settingsQ.isPending) return <LoadingState />;

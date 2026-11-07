@@ -13,7 +13,7 @@ import { downloadCsv } from "@/lib/reports/csv";
 import type { PayrollPayslipsListPage, PayslipPaymentStatus } from "@/lib/payroll/types";
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { TableCard } from "@/components/common/table-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -141,10 +141,9 @@ export function PayrollPayslipsPage({
   }
   if (!canView) {
     return (
-      <>
-        <PageHeader title="Payslips" />
+      <ListWorkspace title="Payslips" description="Employee payslips for posted runs.">
         <EmptyState title="No payroll access" description="Ask for payroll.view permission." />
-      </>
+      </ListWorkspace>
     );
   }
   if (listQ.isPending) return <LoadingState />;

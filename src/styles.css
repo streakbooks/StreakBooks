@@ -636,6 +636,17 @@
   }
 }
 
+/* Every built-in palette owns its chart series, not just sidebar and buttons. 
+ * Keep success, money and status colours semantic and independent of this selection.
+ * Custom palettes receive coordinated chart tokens from computeCustomTokens(). */
+:root[data-linkbooks-palette]:not([data-linkbooks-palette="custom"]) {
+  --chart-1: var(--primary);
+  --chart-2: color-mix(in oklab, var(--primary) 50%, #078b94);
+  --chart-3: color-mix(in oklab, var(--primary) 38%, #cb9152);
+  --chart-4: color-mix(in oklab, var(--primary) 36%, #c36473);
+  --chart-5: color-mix(in oklab, var(--primary) 52%, #9b76b8);
+}
+
 /* Optional premium presets; Classic intentionally inherits the original LinkBooks theme. */
 /* sapphire — coherent light/dark surface, action and navigator palette. */
 :root[data-linkbooks-palette="sapphire"] {

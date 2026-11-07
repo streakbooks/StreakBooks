@@ -94,6 +94,129 @@ for (const tab of tabs)
   if (!reports.includes(`["${tab}",`) && !reports.includes(`["${tab}"`))
     failures.push(`Reports Centre is missing the ${tab} native section link.`);
 
+// Comprehensive top-level source/route coverage; not a claim of live functionality.
+const EXPECTED_TOP_LEVEL = new Map([
+  [
+    "Dashboard",
+    "/"
+  ],
+  [
+    "Banking",
+    "/banking"
+  ],
+  [
+    "Sales",
+    "/sales"
+  ],
+  [
+    "Purchases",
+    "/purchases"
+  ],
+  [
+    "Expense Management",
+    "/expense-management"
+  ],
+  [
+    "Contacts",
+    "/contacts"
+  ],
+  [
+    "Products & Services",
+    "/products-services"
+  ],
+  [
+    "Files",
+    "/files"
+  ],
+  [
+    "Accounting",
+    "/accounting"
+  ],
+  [
+    "Action Center",
+    "/notifications"
+  ],
+  [
+    "Budgets",
+    "/budgets"
+  ],
+  [
+    "Fixed assets",
+    "/fixed-assets"
+  ],
+  [
+    "Payroll",
+    "/payroll"
+  ],
+  [
+    "Reports",
+    "/reports"
+  ],
+  [
+    "Tax",
+    "/tax"
+  ],
+  [
+    "Accountant",
+    "/accountant"
+  ],
+  [
+    "Firm",
+    "/firm"
+  ],
+  [
+    "Advisors",
+    "/advisors-admin"
+  ],
+  [
+    "Advisors portal",
+    "/advisors-portal"
+  ],
+  [
+    "App Store",
+    "/app-store"
+  ],
+  [
+    "Developer",
+    "/developer"
+  ],
+  [
+    "AI Assistant",
+    "/ai-assistant"
+  ],
+  [
+    "Settings",
+    "/settings"
+  ],
+  [
+    "Help",
+    "/help"
+  ]
+]);
+const registeredRoutePaths = new Set(
+  [...read("src/routeTree.gen.ts").matchAll(/\bpath:\s*'([^']+)'/g)]
+    .map((match) => match[1].replace(/\/+$/, "") || "/"),
+);
+const navigationEntries = [...read("src/lib/nav.ts").matchAll(
+  /\blabel:\s*"([^"]+)"\s*,\s*to:\s*"([^"]+)"/g,
+)].map((match) => ({ label: match[1], to: match[2] }));
+const seenLabels = new Set();
+const seenPaths = new Set();
+for (const item of navigationEntries) {
+  if (seenLabels.has(item.label)) failures.push(`Duplicate sidebar label: ${item.label}`);
+  if (seenPaths.has(item.to)) failures.push(`Duplicate sidebar destination: ${item.to}`);
+  seenLabels.add(item.label);
+  seenPaths.add(item.to);
+  if (!registeredRoutePaths.has(item.to))
+    failures.push(`Sidebar destination missing in generated router: ${item.label} (${item.to})`);
+}
+for (const [label, destination] of EXPECTED_TOP_LEVEL) {
+  if (!navigationEntries.some((item) => item.label === label && item.to === destination))
+    failures.push(`Missing/moved required module: ${label} -> ${destination}`);
+}
+if (navigationEntries.length !== EXPECTED_TOP_LEVEL.size)
+  failures.push(`Expected ${EXPECTED_TOP_LEVEL.size} unique top-level modules; found ${navigationEntries.length}`);
+
 const nav = read("src/lib/nav.ts");
 const known = (nav.match(/\blabel:\s*"/g) ?? []).length;
 if (known < 18)

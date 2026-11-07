@@ -8,7 +8,7 @@ At the **end of every EM phase/slice chat response and final report**, paste thi
 
 ```
 EM progress  ███░░░░░░░░░  3/12 verified (25%)
-Coded slices EM-04…EM-11b · Migrations not applied · Not pushed
+Coded slices EM-04…EM-12a · Migrations not applied · Not pushed
 ```
 
 ## Visual progress
@@ -21,7 +21,7 @@ Coded slices EM-04…EM-11b · Migrations not applied · Not pushed
 
 | Area | Status |
 | --- | --- |
-| Code Development | 3 / 12 verified (+ EM-04–11b slices coded; those batches not closed) |
+| Code Development | 3 / 12 verified (+ EM-04–12a slices coded; those batches not closed) |
 | Local Testing | Partial (unit + check:ui; no DB/browser) |
 | GitHub Commit | Local commits only; not pushed |
 | GitHub PR / Merge | Pending |
@@ -39,12 +39,12 @@ Coded slices EM-04…EM-11b · Migrations not applied · Not pushed
 | EM-04 | Receipts, email inbox, file security, mobile capture, offline drafts | In progress — EM-04a/b upload+match+offline queue; inbound email/OCR still pending |
 | EM-05 | Approvals, policies, delegation, escalation, spending requests | In progress — EM-05a/b approvals + spending requests; delegation/escalation pending |
 | EM-06 | Accounting, tax, journals, FX, refunds, budgets | In progress — EM-06a employee-paid accrual posting; FX/refunds/budgets pending |
-| EM-07 | Reimbursements, partial/batch payments, bank matching, payroll | In progress — EM-07a full bank reimbursement; partial/batch/payroll pending |
-| EM-08 | Mileage, travel, per diem, advances, petty cash, settlements | In progress — EM-08a–d core paths coded; unused-advance reclaim / booking integrations pending |
+| EM-07 | Reimbursements, partial/batch payments, bank matching, payroll | In progress — EM-07a/b full + batch bank reimbursement; partial-within-claim / payroll pending |
+| EM-08 | Mileage, travel, per diem, advances, petty cash, settlements | In progress — EM-08a–d + reclaim UI coded; booking integrations pending |
 | EM-09 | Corporate cards, disputes, rebilling, exit settlement | In progress — EM-09a–c cards, disputes, rebilling, exit settlement coded; batch not closed |
 | EM-10 | AI OCR, categorisation, duplicates, fraud indicators | In progress — EM-10a rule-based risk/duplicates/category + OCR unavailable stub |
 | EM-11 | Reports, analytics, notifications, migration, exports, audit | In progress — EM-11a+11b coded (reports/CSV/audit + Action Center + legacy import); email/push still out |
-| EM-12 | Integration, security, performance, recovery, UX, release verification | Not started |
+| EM-12 | Integration, security, performance, recovery, UX, release verification | In progress — EM-12a budgets bridge + release checklist; browser/CI gate still open |
 
 ## Navigation note
 

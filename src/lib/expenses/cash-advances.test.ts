@@ -3,6 +3,7 @@ import {
   buildCashAdvanceIssueLines,
   buildCashAdvanceSettlementCredit,
   canIssueCashAdvance,
+  canReclaimCashAdvance,
   mapExpenseCashAdvance,
 } from "./cash-advances";
 
@@ -14,6 +15,20 @@ describe("canIssueCashAdvance", () => {
   it("blocks non-draft or zero amounts", () => {
     expect(canIssueCashAdvance({ status: "issued", amountMinor: 5000 }).ok).toBe(false);
     expect(canIssueCashAdvance({ status: "draft", amountMinor: 0 }).ok).toBe(false);
+  });
+});
+
+describe("canReclaimCashAdvance", () => {
+  it("allows issued advances with remaining balance", () => {
+    expect(canReclaimCashAdvance({ status: "issued", remainingMinor: 1000 }).ok).toBe(true);
+    expect(canReclaimCashAdvance({ status: "partially_settled", remainingMinor: 500 }).ok).toBe(
+      true,
+    );
+  });
+
+  it("blocks settled or zero remaining", () => {
+    expect(canReclaimCashAdvance({ status: "settled", remainingMinor: 0 }).ok).toBe(false);
+    expect(canReclaimCashAdvance({ status: "issued", remainingMinor: 0 }).ok).toBe(false);
   });
 });
 

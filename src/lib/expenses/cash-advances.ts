@@ -99,6 +99,20 @@ export function canIssueCashAdvance(input: {
   return { ok: true };
 }
 
+/** Unused (or partially used) issued advances can be reclaimed to bank. */
+export function canReclaimCashAdvance(input: {
+  status: string;
+  remainingMinor: number;
+}): { ok: true } | { ok: false; error: string } {
+  if (!["issued", "partially_settled"].includes(input.status)) {
+    return { ok: false, error: "Only issued advances with remaining balance can be reclaimed." };
+  }
+  if (input.remainingMinor <= 0) {
+    return { ok: false, error: "Advance has no remaining balance to reclaim." };
+  }
+  return { ok: true };
+}
+
 export function buildCashAdvanceIssueLines(input: {
   advanceAccountId: string;
   bankAccountId: string;

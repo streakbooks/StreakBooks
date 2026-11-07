@@ -29,7 +29,7 @@
 
 - [x] Draft → issue (DR advance asset / CR bank) with `expenses.manage_advances`.
 - [x] Link cash-advance claims and post as DR expense / CR advance; remaining balance updates.
-- [ ] Unused advance reclaim to bank.
+- [x] Unused advance reclaim to bank (UI wired to EM-09c RPC).
 - [ ] Applied migration + authenticated browser verification.
 
 ## Petty cash (EM-08c — local code)

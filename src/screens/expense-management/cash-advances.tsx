@@ -31,13 +31,14 @@ import { useCan } from "@/hooks/use-can";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { listBankAccounts } from "@/lib/banking/banking.functions";
-import { canIssueCashAdvance } from "@/lib/expenses/cash-advances";
+import { canIssueCashAdvance, canReclaimCashAdvance } from "@/lib/expenses/cash-advances";
 import {
   cancelExpenseCashAdvance,
   EXPENSE_CASH_ADVANCE_MIGRATION,
   getExpenseManagementSettings,
   issueExpenseCashAdvance,
   listExpenseCashAdvances,
+  reclaimExpenseCashAdvance,
   saveExpenseCashAdvance,
 } from "@/lib/expenses/expenses.functions";
 import { parseMinorOrThrow } from "@/lib/purchases/money-input";
@@ -69,6 +70,7 @@ export function ExpenseManagementCashAdvancesPage() {
   const saveAdvance = useServerFn(saveExpenseCashAdvance);
   const issueAdvance = useServerFn(issueExpenseCashAdvance);
   const cancelAdvance = useServerFn(cancelExpenseCashAdvance);
+  const reclaimAdvance = useServerFn(reclaimExpenseCashAdvance);
 
   const scope = canManage || can("expenses.view" as Permission) ? "all" : "own";
 
@@ -162,6 +164,28 @@ export function ExpenseManagementCashAdvancesPage() {
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
 
+  const reclaimMut = useMutation({
+    mutationFn: async (input: { id: string; version: number }) => {
+      if (!bankGlAccountId) throw new Error("Choose a bank account first.");
+      return reclaimAdvance({
+        data: {
+          companyId: company!.id,
+          advanceId: input.id,
+          version: input.version,
+          bankAccountId: bankGlAccountId,
+          reclaimDate: today,
+        },
+      });
+    },
+    onSuccess: async () => {
+      toast.success("Unused advance balance reclaimed to bank");
+      await queryClient.invalidateQueries({
+        queryKey: ["expense-cash-advances", company?.id],
+      });
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+
   if (isPending) return <LoadingState />;
   if (!company) {
     return <CompanyEmptyState title="No organisation" description="Select a company first." />;
@@ -189,7 +213,7 @@ export function ExpenseManagementCashAdvancesPage() {
     <>
       <PageHeader
         title="Cash Advances"
-        description="Issue employee floats from bank and settle them via cash-advance claims."
+        description="Issue employee floats, settle via cash-advance claims, and reclaim unused balances."
         actions={
           <Button asChild variant="outline" size="sm">
             <Link to="/expense-management/$section" params={{ section: "settings" }}>Settings</Link>
@@ -264,7 +288,7 @@ export function ExpenseManagementCashAdvancesPage() {
 
       {canManage ? (
         <section className="mb-6 grid max-w-md gap-2">
-          <Label>Bank account for issuing</Label>
+          <Label>Bank account for issuing / reclaim</Label>
           <Select value={bankGlAccountId} onValueChange={setBankGlAccountId}>
             <SelectTrigger>
               <SelectValue placeholder="Select bank / cash account" />
@@ -304,6 +328,10 @@ export function ExpenseManagementCashAdvancesPage() {
                 status: adv.status,
                 amountMinor: adv.amountMinor,
               });
+              const reclaimGate = canReclaimCashAdvance({
+                status: adv.status,
+                remainingMinor: adv.remainingMinor,
+              });
               return (
                 <TableRow key={adv.id}>
                   <TableCell>
@@ -328,6 +356,20 @@ export function ExpenseManagementCashAdvancesPage() {
                         }
                       >
                         Issue
+                      </Button>
+                    ) : null}
+                    {canManage && reclaimGate.ok ? (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        disabled={
+                          reclaimMut.isPending || !bankGlAccountId || !advanceAccountConfigured
+                        }
+                        onClick={() =>
+                          reclaimMut.mutate({ id: adv.id, version: adv.version })
+                        }
+                      >
+                        Reclaim
                       </Button>
                     ) : null}
                     {adv.status === "draft" ? (

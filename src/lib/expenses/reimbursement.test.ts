@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { buildReimbursementJournalLines, canReimburseClaim } from "./reimbursement";
+import {
+  buildReimbursementJournalLines,
+  canReimburseClaim,
+  formatBatchReimburseSummary,
+  mapBatchReimburseResult,
+} from "./reimbursement";
 
 describe("expense claim reimbursement", () => {
   it("allows posted eligible employee-paid claims", () => {
@@ -40,5 +45,18 @@ describe("expense claim reimbursement", () => {
     expect(result.lines).toHaveLength(2);
     expect(result.lines[0]?.debitMinor).toBe(1100);
     expect(result.lines[1]?.creditMinor).toBe(1100);
+  });
+
+  it("maps and summarises batch reimbursement results", () => {
+    const mapped = mapBatchReimburseResult({
+      paid_count: 2,
+      failed_count: 1,
+      results: [
+        { claim_id: "c1", ok: true, claim_number: "EXP-1" },
+        { claim_id: "c2", ok: false, error: "Already paid" },
+      ],
+    });
+    expect(mapped.paidCount).toBe(2);
+    expect(formatBatchReimburseSummary(mapped)).toContain("failed");
   });
 });

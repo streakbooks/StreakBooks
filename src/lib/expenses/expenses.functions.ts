@@ -43,6 +43,10 @@ import {
   type ExpenseCashAdvanceDraftInput,
 } from "@/lib/expenses/cash-advances";
 import {
+  mapBatchReimburseResult,
+  type BatchReimburseResult,
+} from "@/lib/expenses/reimbursement";
+import {
   mapExpensePettyCashFloat,
   toExpensePettyCashFloatPayload,
   type ExpensePettyCashFloat,
@@ -108,6 +112,9 @@ export const EXPENSE_POSTING_MIGRATION =
 
 export const EXPENSE_REIMBURSEMENT_MIGRATION =
   "Expense claim reimbursement is not available yet: apply database update 20261107138000.";
+
+export const EXPENSE_BATCH_REIMBURSE_MIGRATION =
+  "Batch expense reimbursement is not available yet: apply database update 20261107149000.";
 
 export const EXPENSE_MILEAGE_MIGRATION =
   "Expense mileage rates are not available yet: apply database update 20261107139000.";
@@ -1005,6 +1012,39 @@ export const reimburseExpenseClaim = createServerFn({ method: "POST" })
       EXPENSE_REIMBURSEMENT_MIGRATION,
     );
     return mapExpenseClaimDetail(raw);
+  });
+
+export const batchReimburseExpenseClaims = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      claimIds: string[];
+      bankAccountId: string;
+      paymentDate?: string;
+    }) => ({
+      companyId: companyIdOf(input),
+      claimIds: input.claimIds,
+      bankAccountId: input.bankAccountId,
+      paymentDate: input.paymentDate,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<BatchReimburseResult> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "expenses.reimburse");
+    if (!data.bankAccountId) throw new Error("Choose a bank account for the reimbursement.");
+    if (!data.claimIds.length) throw new Error("Select at least one claim to reimburse.");
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "batch_reimburse_expense_claims",
+      {
+        _company_id: data.companyId,
+        _claim_ids: data.claimIds,
+        _bank_account_id: data.bankAccountId,
+        _payment_date: data.paymentDate ?? null,
+      },
+      EXPENSE_BATCH_REIMBURSE_MIGRATION,
+    );
+    return mapBatchReimburseResult(raw);
   });
 
 export const listExpenseMileageRates = createServerFn({ method: "GET" })

@@ -351,7 +351,7 @@ export const DocumentRecordPanel = forwardRef<
           ) : notes.length > 0 ? (
             <ul className="space-y-2 text-sm">
               {notes.map((note) => (
-                <li key={note.id} className="rounded border border-border p-2">
+                <li key={note.id} className="rounded-xl border border-border/80 bg-card p-3.5 shadow-xs">
                   <p className="whitespace-pre-wrap">{note.body}</p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {new Date(note.created_at).toLocaleString()} · {note.created_by_name || "—"}
@@ -373,28 +373,30 @@ export const DocumentRecordPanel = forwardRef<
           ) : activity.length === 0 ? (
             <p className="text-sm text-muted-foreground">{activityEmptyMessage(true)}</p>
           ) : (
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto rounded-xl border border-border/80 bg-card shadow-xs">
+              <table className="w-full min-w-[580px] text-sm">
               <thead>
-                <tr className="text-left text-muted-foreground">
-                  <th className="py-1">Date &amp; time</th>
-                  <th>User</th>
-                  <th>Action</th>
-                  <th>Details</th>
+                <tr className="bg-muted/35 text-left text-xs font-semibold text-muted-foreground">
+                  <th className="px-3 py-2.5">Date &amp; time</th>
+                  <th className="px-3 py-2.5">User</th>
+                  <th className="px-3 py-2.5">Action</th>
+                  <th className="px-3 py-2.5">Details</th>
                 </tr>
               </thead>
               <tbody>
                 {activity.map((row) => (
-                  <tr key={row.id} className="border-t">
-                    <td className="whitespace-nowrap py-1">
+                  <tr key={row.id} className="border-t border-border/70 transition-colors hover:bg-muted/25">
+                    <td className="whitespace-nowrap px-3 py-2.5 tabular-nums">
                       {new Date(row.created_at).toLocaleString()}
                     </td>
-                    <td>{row.actor_name || "—"}</td>
-                    <td>{activityActionLabel(row.action)}</td>
-                    <td className="max-w-xs truncate text-muted-foreground">{row.detail}</td>
+                    <td className="px-3 py-2.5">{row.actor_name || "—"}</td>
+                    <td className="px-3 py-2.5 font-medium">{activityActionLabel(row.action)}</td>
+                    <td className="max-w-xs break-words px-3 py-2.5 text-muted-foreground">{row.detail}</td>
                   </tr>
                 ))}
               </tbody>
-            </table>
+              </table>
+            </div>
           )}
         </TabsContent>
         {can("accounting.view") && postingJournalSourceTypes(entityType).length > 0 ? (

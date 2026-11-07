@@ -17,13 +17,13 @@ The register below was derived from actual repository navigation and routes. The
 
 | # | Module | Main route | Route files | Premium browsing status |
 |---:|---|---|---:|---|
-| 1 | Dashboard | `/` | 1 | Not yet verified for premium browsing |
+| 1 | Dashboard | `/` | 1 | Partial browsing code committed; not runtime-verified |
 | 2 | Banking | `/banking` | 12 | Partial browsing code committed; not runtime-verified |
 | 3 | Sales | `/sales` | 26 | Partial browsing code committed; not runtime-verified |
 | 4 | Purchases | `/purchases` | 25 | Partial browsing code committed; not runtime-verified |
 | 5 | Contacts | `/contacts` | 6 | Partial browsing code committed; not runtime-verified |
 | 6 | Products & Services | `/products-services` | 1 | Partial browsing code committed; not runtime-verified |
-| 7 | Accounting | `/accounting` | 1 | Not yet verified for premium browsing |
+| 7 | Accounting | `/accounting` | 1 | Partial browsing code committed; not runtime-verified |
 | 8 | Action Center | `/notifications` | 1 | Partial browsing code committed; not runtime-verified |
 | 9 | Files | `/files` | 1 | Partial browsing code committed; not runtime-verified |
 | 10 | Budgets | `/budgets` | 2 | Partial browsing code committed; not runtime-verified |
@@ -34,7 +34,7 @@ The register below was derived from actual repository navigation and routes. The
 | 15 | Firm | `/firm` | 1 | Not yet verified for premium browsing |
 | 16 | Advisors | `/advisors-admin` | 13 | Not yet verified for premium browsing |
 | 17 | Advisors portal | `/advisors-portal` | 6 | Not yet verified for premium browsing |
-| 18 | AI Assistant | `/ai-assistant` | 1 | Not yet verified for premium browsing |
+| 18 | AI Assistant | `/ai-assistant` | 1 | Partial browsing code committed; not runtime-verified |
 | 19 | Tax | `/tax` | 1 | Not yet verified for premium browsing |
 | 20 | Settings | `/settings` | 1 | Not yet verified for premium browsing |
 | 21 | Help | `/help` | 1 | Partial URL-backed search code committed; not runtime-verified |
@@ -333,7 +333,7 @@ Every batch may require multiple small implementation increments; do not rush a 
 - 2026-11-07 Help browsing increment: `9a4181ca3ad6fc4569bd30da440b9d47131c87b3` replaces component-only search state with bounded URL query state for shareable searches, refresh, and native history continuity; `cca5b62160437ef50052286606a4cd358acaea48` records the manifest evidence. Help remains **not fully verified**; no local checks or authenticated browser tests were executed in this run. All 12 acceptance criteria remain open until tested.
 
 
-- Navigation and context preservation code is committed for Sales, Purchases, Contacts, Products & Services, Banking, Reports, Budgets, Fixed Assets, Action Center and Files, including shared navigation inherited in the branch history. Banking covers transaction-to-journal return and transaction previews; Reports covers catalogue, overview, management and saved-report return navigation. Neither module is fully verified.
+- Navigation and context preservation code is committed for Dashboard, Banking, Sales, Purchases, Contacts, Products & Services, Accounting, Action Center, Files, Budgets, Fixed Assets, Reports and AI Assistant, with Help also recorded as partially coded, including shared navigation inherited in the branch history. Banking covers transaction-to-journal return and transaction previews; Reports covers catalogue, overview, management and saved-report return navigation. Neither module is fully verified.
 - Standalone helper compilations and isolated assertions have been reported, but these do not demonstrate application-wide readiness.
 - Full `npm run typecheck`, `npm run lint`, `npm run build`, full `vitest`, authenticated Playwright, tenancy/security and staging/deployment verification remain outstanding for this branch.
 - The two branches have diverged; integrating into `main` requires a conflict review and explicit testing. No merge is authorized merely by this coverage policy.

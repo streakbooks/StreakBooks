@@ -12,7 +12,8 @@
 | 16 | 8–9 | Empty/error honesty gate + production auth recorded | `feature/premium-ui-batch16-empty-error-honesty` | [PR #197](https://github.com/linkbusinessadvisory/LinkBooks/pull/197) → `d56eff77` | check:empty + bills empty CTA + readiness | merged |
 | 17 | 8–9 | Fix misplaced ListWorkspace/fragment closes blocking prod build | `feature/premium-ui-batch17-prod-build-fix` | [PR #198](https://github.com/linkbusinessadvisory/LinkBooks/pull/198) → `a566ba94` | advisors, app-store, developer, EM, branding | merged |
 | 18 | 8–9 | Fix `escapeLikeLiteral` MISSING_EXPORT blocking Vercel prod SSR | `feature/premium-ui-batch18-escape-like-export` | [PR #199](https://github.com/linkbusinessadvisory/LinkBooks/pull/199) → `0c37373a` | customer-price-list.functions | merged |
-| 19 | 8–9 | Full-auth record + workspace axe fixtures + rollback plan + local gate evidence | `feature/premium-ui-batch19-a11y-auth-evidence` | pending merge | e2e/ui a11y + readiness docs | ready |
-| 20+ | 8–9 | Staging smoke (when E2E creds), live RBAC, manual a11y, release close-out | TBD | — | | planned |
+| 19 | 8–9 | Full-auth record + workspace axe fixtures + rollback plan + local gate evidence | `feature/premium-ui-batch19-a11y-auth-evidence` | [PR #201](https://github.com/linkbusinessadvisory/LinkBooks/pull/201) → `3db2a508` | e2e/ui a11y + readiness docs | merged |
+| 20 | 8–9 | Deny-path RBAC unit evidence + label-in-name honesty on shared controls | `feature/premium-ui-batch20-rbac-a11y-honesty` | pending merge | assert-company-access + Columns/Clear a11y | ready |
+| 21+ | 8–9 | Staging smoke (when E2E creds), live RBAC, manual a11y, release close-out | TBD | — | | planned |
 
 Core finished-screen DoD remains **IN PROGRESS**. Chrome inheritance is enforced by `check:modules` + `check:workspace`.

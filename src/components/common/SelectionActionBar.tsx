@@ -33,7 +33,7 @@ export function SelectionActionBar({ count, onClear, children, description }: Pr
         variant="ghost"
         size="sm"
         className="ml-auto"
-        aria-label="Clear selected records"
+        aria-label="Clear selection"
         onClick={onClear}
       >
         <X className="size-4" aria-hidden />

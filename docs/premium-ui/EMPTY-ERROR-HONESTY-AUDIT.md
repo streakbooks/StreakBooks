@@ -1,15 +1,16 @@
-# Empty / error honesty audit (Batch 16)
+# Empty / error honesty audit
 
-Labels: `PASS` | `PARTIAL` | `FAIL` | `N/A`.
+Labels: `PASS` | `PARTIAL` | `FAIL` | `N/A` | `NOT VERIFIED`.
 
 | Check | Status | Evidence |
 | ----- | ------ | -------- |
 | `EmptyState` hides CTA unless `onActionClick` or `action` provided | PASS | `src/components/common/states.tsx` |
 | Source gate: `actionLabel` must pair with handler/action | PASS | `npm run check:empty` (wired into `check:modules`) |
-| Bills empty CTA was dead `actionLabel` only | PASS (fixed) | Now uses native `Link` to `/purchases/bills/new` |
+| Bills empty CTA was dead `actionLabel` only | PASS (fixed Batch 16) | Native `Link` to `/purchases/bills/new` |
 | Banking / recurring empty CTAs | PASS | Focus create field / open create dialog |
 | Fixture advertises unavailable action without rendering button | PASS | `e2e/ui` “Unavailable action” count 0 |
-| Every nested empty/error path audited | PARTIAL | High-traffic samples only this batch |
-| Authenticated staging empty/error walkthrough | NOT VERIFIED | Not executed |
+| `ErrorState` only renders Try again when `onRetry` is provided | PASS | `states.tsx` (Batch 20 re-confirmed) |
+| Every nested empty/error path audited | PARTIAL | High-traffic samples; full route walk still open |
+| Authenticated staging empty/error walkthrough | NOT VERIFIED | Authorized; `E2E_*` unset |
 
-**Verdict:** enforcement + one real fix landed; full route-by-route empty/error DoD remains **IN PROGRESS**.
+**Verdict:** enforcement + real fixes landed; full route-by-route empty/error DoD remains **IN PROGRESS**.

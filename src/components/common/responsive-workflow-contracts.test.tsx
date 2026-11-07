@@ -40,8 +40,8 @@ describe("LinkBooks responsive workflow contract", () => {
     expect(markup).toContain('aria-label="Bulk actions"');
     expect(markup).toContain("3 selected");
     const clearButtonOpening = markup.slice(
-      markup.lastIndexOf("<button", markup.indexOf('aria-label="Clear selected records"')),
-      markup.indexOf('aria-label="Clear selected records"'),
+      markup.lastIndexOf("<button", markup.indexOf('aria-label="Clear"')),
+      markup.indexOf('aria-label="Clear"'),
     );
     expect(clearButtonOpening).toContain('type="button"');
   });
@@ -59,7 +59,8 @@ describe("LinkBooks responsive workflow contract", () => {
       </SelectionActionBar>,
     );
     expect(markup).toContain('aria-label="Selected record actions"');
-    expect(markup).toContain('aria-label="Clear selected records"');
+    expect(markup).toContain('aria-label="Clear selection"');
+    expect(markup).toContain("Clear selection");
     expect(markup).toContain("2 records selected");
     expect(markup).toContain("Assign");
     expect(markup).toContain("sm:w-auto");

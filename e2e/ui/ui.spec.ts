@@ -85,7 +85,7 @@ test("Escape does not clear a search while composing text", async ({ page }) => 
 
 test("shared appearance and selection controls update the active list", async ({ page }) => {
   await page.goto("/sales/invoices");
-  await page.getByRole("button", { name: "Choose table columns" }).click();
+  await page.getByRole("button", { name: "Columns", exact: true }).click();
   await page.getByRole("menuitemcheckbox", { name: "Customer", exact: true }).click();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("columnheader", { name: "Customer", exact: true })).toHaveCount(0);
@@ -96,7 +96,7 @@ test("shared appearance and selection controls update the active list", async ({
   await expect(page.getByRole("region", { name: "Bulk actions", exact: true })).toContainText(
     "2 selected",
   );
-  await page.getByRole("button", { name: "Clear selected records", exact: true }).click();
+  await page.getByRole("button", { name: "Clear", exact: true }).click();
   await expect(page.getByRole("region", { name: "Bulk actions", exact: true })).toHaveCount(0);
 });
 

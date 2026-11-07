@@ -48,7 +48,7 @@ test.describe("authenticated LinkBooks staging smoke", () => {
       page.getByRole("combobox", { name: "Choose follow-up owner scope" }),
     ).toBeVisible();
 
-    await page.getByRole("button", { name: "Choose visible contact columns" }).click();
+    await page.getByRole("button", { name: /^Columns \(/ }).click();
     await expect(
       page.getByRole("menuitemcheckbox", { name: "Contact", exact: true }),
     ).toHaveAttribute("aria-checked", "true");
@@ -75,7 +75,7 @@ test.describe("authenticated LinkBooks staging smoke", () => {
     // This test uses the dedicated staging account only. Restore the original
     // preference even if cross-browser verification fails. No financial data changes.
     await signIn(page, "/contacts");
-    const columns = page.getByRole("button", { name: "Choose visible contact columns" });
+    const columns = page.getByRole("button", { name: /^Columns \(/ });
     await columns.click();
     const city = page.getByRole("menuitemcheckbox", { name: "City", exact: true });
     await expect(city).toBeVisible();
@@ -92,7 +92,7 @@ test.describe("authenticated LinkBooks staging smoke", () => {
       try {
         const secondPage = await secondContext.newPage();
         await signIn(secondPage, "/contacts");
-        await secondPage.getByRole("button", { name: "Choose visible contact columns" }).click();
+        await secondPage.getByRole("button", { name: /^Columns \(/ }).click();
         await expect(
           secondPage.getByRole("menuitemcheckbox", { name: "City", exact: true }),
         ).toHaveAttribute("aria-checked", String(!originallyChecked));

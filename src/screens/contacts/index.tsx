@@ -996,7 +996,11 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
             </Select>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" aria-label="Choose visible contact columns">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  aria-label={`Columns (${visibleColumns.length})`}
+                >
                   <Columns3 className="mr-1 size-4" />
                   Columns ({visibleColumns.length})
                 </Button>

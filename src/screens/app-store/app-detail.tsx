@@ -22,6 +22,11 @@ import {
   connectorStatusLabel,
   isConnectorE2EVerified,
 } from "@/lib/app-store/connector-status";
+import {
+  canActivateMarketplaceApp,
+  evaluateActivation,
+  marketplaceAppActivationGates,
+} from "@/lib/app-store/security/activation";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import type { Permission } from "@/lib/permissions";
 import { toast } from "sonner";
@@ -30,8 +35,8 @@ export function AppStoreAppDetailPage({ appCode }: { appCode: string }) {
   const { company, isPending } = useActiveCompany();
   const { can } = useCan();
   const canView = can("appstore.view" as Permission);
-  const canRequest =
-    can("appstore.request_install" as Permission) || can("appstore.install" as Permission);
+  const canInstall = can("appstore.install" as Permission);
+  const canRequest = can("appstore.request_install" as Permission) || canInstall;
   const queryClient = useQueryClient();
   const fetchCatalogue = useServerFn(listCompanyMarketplaceApps);
   const requestInstall = useServerFn(requestMarketplaceAppInstall);
@@ -47,12 +52,12 @@ export function AppStoreAppDetailPage({ appCode }: { appCode: string }) {
     mutationFn: () => requestInstall({ data: { companyId: company!.id, appCode } }),
     onSuccess: (result) => {
       void queryClient.invalidateQueries({ queryKey: ["app-store-catalogue", company?.id] });
-      if (result.status === "installed") {
+      if (result.status === "installed" && result.canActivate) {
         toast.success("App installed");
       } else {
         toast.success("Interest registered", {
           description:
-            "This connector is not available for installation until E2E synchronization is verified. Your interest was recorded — no live connection was created.",
+            "Fail closed: live activation requires E2E verification, security review and real-data enablement. Your interest was recorded — no live customer-data connection was created.",
         });
       }
     },
@@ -114,7 +119,9 @@ export function AppStoreAppDetailPage({ appCode }: { appCode: string }) {
   }
 
   const e2e = isConnectorE2EVerified(app.implementationStatus);
-  const installable = e2e && isInstallableNativeConnector(app.code);
+  const activation = evaluateActivation(marketplaceAppActivationGates(app, canInstall));
+  const installable =
+    e2e && isInstallableNativeConnector(app.code) && canActivateMarketplaceApp(app, canInstall);
   const action = connectorInstallActionLabel(app.implementationStatus);
   const already = app.installStatus === "installed" || app.installStatus === "disabled";
 
@@ -146,7 +153,9 @@ export function AppStoreAppDetailPage({ appCode }: { appCode: string }) {
               </Button>
             ) : null}
             <Button asChild variant="outline" size="sm">
-              <Link to="/imports">CSV / import alternative</Link>
+              <Link to="/imports" search={{ module: undefined }}>
+                CSV / import alternative
+              </Link>
             </Button>
           </div>
         }
@@ -183,15 +192,20 @@ export function AppStoreAppDetailPage({ appCode }: { appCode: string }) {
         ) : null}
       </div>
 
-      {!e2e ? (
+      {!activation.allowed ? (
         <Alert className="mb-6">
-          <AlertTitle>End-to-end synchronization not verified</AlertTitle>
+          <AlertTitle>Real customer data locked (fail closed)</AlertTitle>
           <AlertDescription>
-            {app.blockerNotes ??
-              "This connector is not considered complete. Install remains limited to requests until real sync is verified."}
+            {activation.reason}{" "}
+            {!e2e
+              ? (app.blockerNotes ??
+                "Install remains limited to interest registration until real sync is verified.")
+              : null}
             {app.kind === "partner_api"
               ? " Partner integrations require API availability, cooperation and technical approvals, then connect through the LinkBooks public API and developer portal."
-              : null}
+              : null}{" "}
+            Security review: {app.securityReviewPassed ? "passed" : "pending"}. Real-data flag:{" "}
+            {app.realCustomerDataEnabled ? "enabled" : "disabled"}.
           </AlertDescription>
         </Alert>
       ) : null}

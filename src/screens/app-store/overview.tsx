@@ -107,14 +107,16 @@ export function AppStoreOverviewPage() {
       <AppStoreSubnav current="overview" />
 
       <Alert className="mb-6">
-        <AlertTitle>Open integration platform</AlertTitle>
+        <AlertTitle>Open integration platform — fail closed</AlertTitle>
         <AlertDescription>
           Native priority: Amazon, Shopify and Stripe. Partner providers such as Hubdoc and Link My
           Books integrate through the LinkBooks public API when API access, cooperation and
           technical approvals allow. No connector is marked complete until real end-to-end
           synchronization is verified ({verifiedCount} of {roadmap.length || 0} native adapters
-          currently E2E verified). Catalogue source: {catalogue.data?.source ?? "defaults"}
-          {catalogue.data?.ready ? "" : " (migration not applied — using defaults)"}.
+          currently E2E verified). Real customer data stays locked until security review and
+          activation gates pass. Catalogue source: {catalogue.data?.source ?? "defaults"}
+          {catalogue.data?.ready ? "" : " (migration not applied — using defaults)"}. Use Privacy
+          &amp; Access to review consents and revoke connections.
         </AlertDescription>
       </Alert>
 

@@ -73,3 +73,77 @@ export function createUnconfiguredTokenVault(): TokenVault {
     },
   };
 }
+
+/**
+ * Ephemeral in-memory vault for unit tests only.
+ * Never use in production — no encryption, no durability.
+ */
+export function createEphemeralMemoryTokenVault(): TokenVault {
+  const byRef = new Map<
+    string,
+    StoredCredentialRef & { tokens: OAuthTokenSet | null; generation: number }
+  >();
+  let seq = 0;
+
+  return {
+    async store(input) {
+      seq += 1;
+      const credentialRef = `mem_${input.companyId}_${input.connectionId}_${seq}`;
+      const meta: StoredCredentialRef & { tokens: OAuthTokenSet | null; generation: number } = {
+        credentialRef,
+        connectionId: input.connectionId,
+        companyId: input.companyId,
+        expiresAt: input.tokens.expiresAt,
+        revokedAt: null,
+        tokens: { ...input.tokens },
+        generation: 1,
+      };
+      byRef.set(credentialRef, meta);
+      return {
+        credentialRef,
+        connectionId: meta.connectionId,
+        companyId: meta.companyId,
+        expiresAt: meta.expiresAt,
+        revokedAt: null,
+      };
+    },
+    async refresh(credentialRef) {
+      const existing = byRef.get(credentialRef);
+      if (!existing || existing.revokedAt || !existing.tokens) {
+        throw new Error("Cannot refresh revoked or missing credential.");
+      }
+      existing.generation += 1;
+      existing.tokens = {
+        ...existing.tokens,
+        accessToken: `rotated_${existing.generation}`,
+      };
+      const nextRef = `${credentialRef}_r${existing.generation}`;
+      byRef.delete(credentialRef);
+      byRef.set(nextRef, { ...existing, credentialRef: nextRef });
+      return {
+        credentialRef: nextRef,
+        connectionId: existing.connectionId,
+        companyId: existing.companyId,
+        expiresAt: existing.expiresAt,
+        revokedAt: null,
+      };
+    },
+    async revoke(credentialRef) {
+      const existing = byRef.get(credentialRef);
+      if (!existing) return;
+      existing.revokedAt = new Date().toISOString();
+      existing.tokens = null;
+    },
+    async peekMeta(credentialRef) {
+      const existing = byRef.get(credentialRef);
+      if (!existing) throw new Error("Credential not found.");
+      return {
+        credentialRef: existing.credentialRef,
+        connectionId: existing.connectionId,
+        companyId: existing.companyId,
+        expiresAt: existing.expiresAt,
+        revokedAt: existing.revokedAt,
+      };
+    },
+  };
+}

@@ -2,9 +2,12 @@
  * LinkBooks Public API v1 — versioned surface for authorized third-party developers.
  * Partners never receive service-role or unrestricted database access.
  * Runtime HTTP mounting continues after OAuth token issuance is production-ready.
+ * FAIL CLOSED: production data routes stay gated until OAuth vault + security review.
  */
 
 import { PUBLIC_API_SCOPES, PUBLIC_API_VERSION } from "@/lib/app-store/public-api-scopes";
+import { evaluateRateLimit } from "@/lib/app-store/security/rate-limit";
+import { detectDangerousScopeEscalation } from "@/lib/app-store/security/tenant-isolation";
 
 export type PublicApiErrorCode =
   | "unauthorized"
@@ -13,7 +16,8 @@ export type PublicApiErrorCode =
   | "validation_error"
   | "rate_limited"
   | "conflict"
-  | "not_implemented";
+  | "not_implemented"
+  | "security_locked";
 
 export type PublicApiResponse<T> =
   | { ok: true; data: T; apiVersion: typeof PUBLIC_API_VERSION }
@@ -165,5 +169,80 @@ export function notImplemented(feature: string): PublicApiResponse<never> {
       code: "not_implemented",
       message: `${feature} is documented but not yet available for production partner calls.`,
     },
+  };
+}
+
+/** Production partner calls remain locked until vault + security review + consent. */
+export function assertPublicApiProductionReady(input: {
+  oauthVaultConfigured: boolean;
+  securityReviewPassed: boolean;
+  consentActive: boolean;
+  tokenRevoked: boolean;
+}): PublicApiResponse<null> {
+  if (input.tokenRevoked) {
+    return {
+      ok: false,
+      apiVersion: PUBLIC_API_VERSION,
+      error: { code: "unauthorized", message: "Access token has been revoked." },
+    };
+  }
+  if (!input.oauthVaultConfigured || !input.securityReviewPassed || !input.consentActive) {
+    return {
+      ok: false,
+      apiVersion: PUBLIC_API_VERSION,
+      error: {
+        code: "security_locked",
+        message:
+          "FAIL CLOSED: public API production access is locked until OAuth vault, security review and active consent are verified.",
+      },
+    };
+  }
+  return { ok: true, apiVersion: PUBLIC_API_VERSION, data: null };
+}
+
+export function rejectScopeEscalation(
+  requested: readonly string[],
+  granted: readonly string[],
+): PublicApiResponse<null> {
+  const escalated = detectDangerousScopeEscalation(requested, granted);
+  if (escalated.length > 0) {
+    return {
+      ok: false,
+      apiVersion: PUBLIC_API_VERSION,
+      error: {
+        code: "forbidden",
+        message: `Scope escalation denied: ${escalated.join(", ")}`,
+      },
+    };
+  }
+  return { ok: true, apiVersion: PUBLIC_API_VERSION, data: null };
+}
+
+export function checkPublicApiRateLimit(input: {
+  nowMs: number;
+  priorTimestamps: readonly number[];
+  max?: number;
+  windowMs?: number;
+}): PublicApiResponse<{ remaining: number }> {
+  const decision = evaluateRateLimit({
+    nowMs: input.nowMs,
+    priorTimestamps: input.priorTimestamps,
+    max: input.max ?? 60,
+    windowMs: input.windowMs ?? 60_000,
+  });
+  if (!decision.allowed) {
+    return {
+      ok: false,
+      apiVersion: PUBLIC_API_VERSION,
+      error: {
+        code: "rate_limited",
+        message: `Too many API requests. Retry after ${Math.ceil(decision.retryAfterMs / 1000)}s.`,
+      },
+    };
+  }
+  return {
+    ok: true,
+    apiVersion: PUBLIC_API_VERSION,
+    data: { remaining: decision.remaining },
   };
 }

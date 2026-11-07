@@ -1,6 +1,7 @@
 import type { ProviderAdapter } from "@/lib/app-store/adapters/types";
+import { assertRealDataAccessAllowed } from "@/lib/app-store/security/activation";
 
-/** Native Amazon SP-API adapter scaffold — credentials blocked, not E2E verified. */
+/** Native Amazon SP-API adapter scaffold — credentials blocked, not E2E verified. Fail closed. */
 export const amazonSellerAdapter: ProviderAdapter = {
   code: "amazon_seller",
   kind: "native",
@@ -9,6 +10,13 @@ export const amazonSellerAdapter: ProviderAdapter = {
   supportedSync: ["one_way_import", "scheduled", "historical_import", "incremental"],
   installEligible: false,
   async beginAuthorization() {
+    assertRealDataAccessAllowed({
+      implementationStatus: "credentials_blocked",
+      securityReviewPassed: false,
+      realCustomerDataEnabled: false,
+      suspended: false,
+      hasInstallPermission: true,
+    });
     return {
       type: "oauth2",
       authorizeUrl: null,

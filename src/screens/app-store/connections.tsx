@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
@@ -17,21 +17,42 @@ import {
 } from "@/components/ui/table";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
-import { listCompanyIntegrationConnections } from "@/lib/app-store/app-store.functions";
+import {
+  listCompanyIntegrationConnections,
+  revokeMarketplaceAppAccess,
+} from "@/lib/app-store/app-store.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import type { Permission } from "@/lib/permissions";
+import { toast } from "sonner";
 
 export function AppStoreConnectionsPage() {
   const { company, isPending } = useActiveCompany();
   const { can } = useCan();
   const canView =
     can("appstore.view" as Permission) || can("appstore.manage_connections" as Permission);
+  const canRevoke = can("appstore.manage_connections" as Permission);
+  const queryClient = useQueryClient();
   const fetchConnections = useServerFn(listCompanyIntegrationConnections);
+  const revokeAccess = useServerFn(revokeMarketplaceAppAccess);
   const connections = useQuery({
     queryKey: ["app-store-connections", company?.id],
     queryFn: () => fetchConnections({ data: { companyId: company!.id } }),
     enabled: Boolean(company?.id) && canView,
     retry: false,
+  });
+  const revokeMutation = useMutation({
+    mutationFn: (appCode: string) =>
+      revokeAccess({
+        data: { companyId: company!.id, appCode, reason: "customer_revoked" },
+      }),
+    onSuccess: (result) => {
+      void queryClient.invalidateQueries({ queryKey: ["app-store-connections", company?.id] });
+      void queryClient.invalidateQueries({ queryKey: ["app-store-consents", company?.id] });
+      toast.success(`Access revoked for ${result.appCode}`);
+    },
+    onError: (error) => {
+      toast.error(friendlyAuthError(error));
+    },
   });
 
   if (isPending) return <LoadingState />;
@@ -56,11 +77,12 @@ export function AppStoreConnectionsPage() {
       <AppStoreSubnav current="connections" />
 
       <Alert className="mb-6">
-        <AlertTitle>Connection lifecycle (AS-02)</AlertTitle>
+        <AlertTitle>Connection lifecycle (AS-02 / AS-SEC)</AlertTitle>
         <AlertDescription>
           Schema and list RPCs are in place. OAuth authorization, reauthorize, pause/resume and
-          disconnect complete when at least one native connector passes E2E verification. Until then
-          this list stays empty rather than inventing connected accounts.
+          disconnect complete when at least one native connector passes E2E verification and
+          security gates. Tokens are never displayed. Use Privacy &amp; Access for consent history.
+          Until then this list stays empty rather than inventing connected accounts.
         </AlertDescription>
       </Alert>
 
@@ -98,6 +120,7 @@ export function AppStoreConnectionsPage() {
                   <TableHead>Status</TableHead>
                   <TableHead>Health</TableHead>
                   <TableHead>Last sync</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -125,6 +148,20 @@ export function AppStoreConnectionsPage() {
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {row.lastSuccessfulSyncAt ?? "—"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {canRevoke && row.status !== "disconnected" ? (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          disabled={revokeMutation.isPending}
+                          onClick={() => revokeMutation.mutate(row.appCode)}
+                        >
+                          Disconnect
+                        </Button>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">—</span>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}

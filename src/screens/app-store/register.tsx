@@ -131,6 +131,7 @@ export function AppStoreRegisterPage() {
               <TableHead>Application</TableHead>
               <TableHead>Kind</TableHead>
               <TableHead>Register status</TableHead>
+              <TableHead>Security</TableHead>
               <TableHead>Install</TableHead>
               <TableHead>Categories</TableHead>
               <TableHead>Notes / fallback</TableHead>
@@ -152,6 +153,16 @@ export function AppStoreRegisterPage() {
                   </Badge>
                 </TableCell>
                 <TableCell>
+                  <div className="flex flex-col gap-1">
+                    <Badge variant={entry.securityReviewPassed ? "secondary" : "outline"}>
+                      Review {entry.securityReviewPassed ? "passed" : "pending"}
+                    </Badge>
+                    <Badge variant={entry.realCustomerDataEnabled ? "destructive" : "outline"}>
+                      Real data {entry.realCustomerDataEnabled ? "on" : "locked"}
+                    </Badge>
+                  </div>
+                </TableCell>
+                <TableCell>
                   {entry.installAvailable ? (
                     <Badge>Available</Badge>
                   ) : (
@@ -166,7 +177,9 @@ export function AppStoreRegisterPage() {
                   {entry.csvFallbackPath ? (
                     <Button asChild variant="link" className="h-auto px-0 text-xs">
                       {entry.csvFallbackPath === "/imports" ? (
-                        <Link to="/imports">CSV / import alternative</Link>
+                        <Link to="/imports" search={{ module: undefined }}>
+                          CSV / import alternative
+                        </Link>
                       ) : entry.csvFallbackPath === "/banking" ? (
                         <Link to="/banking">Banking import</Link>
                       ) : (

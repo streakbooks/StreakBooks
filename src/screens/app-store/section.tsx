@@ -25,6 +25,9 @@ const AppStoreMyAppsPage = lazy(() =>
 const AppStoreConnectionsPage = lazy(() =>
   import("@/screens/app-store/connections").then((m) => ({ default: m.AppStoreConnectionsPage })),
 );
+const AppStorePrivacyPage = lazy(() =>
+  import("@/screens/app-store/privacy").then((m) => ({ default: m.AppStorePrivacyPage })),
+);
 const AppStoreRequestsPage = lazy(() =>
   import("@/screens/app-store/requests").then((m) => ({ default: m.AppStoreRequestsPage })),
 );
@@ -98,6 +101,13 @@ export function AppStoreSectionPage({ sectionKey }: { sectionKey: AppStoreSectio
     return (
       <SectionSuspense>
         <AppStoreConnectionsPage />
+      </SectionSuspense>
+    );
+  }
+  if (sectionKey === "privacy") {
+    return (
+      <SectionSuspense>
+        <AppStorePrivacyPage />
       </SectionSuspense>
     );
   }

@@ -36,7 +36,9 @@ describe("integration engine foundations", () => {
     const now = Date.now();
     expect(assertWebhookTimestampFresh(Math.floor(now / 1000), now).ok).toBe(true);
     expect(assertWebhookTimestampFresh(Math.floor(now / 1000) - 10_000, now).ok).toBe(false);
-    expect(assertWebhookNotReplayed("evt_1", new Set(["evt_1"])).reason).toBe("replay");
+    const replayed = assertWebhookNotReplayed("evt_1", new Set(["evt_1"]));
+    expect(replayed.ok).toBe(false);
+    if (!replayed.ok) expect(replayed.reason).toBe("replay");
     expect(timingSafeEqualHex("abcd", "abcd")).toBe(true);
     expect(verifyWebhookSignature({ providedSignature: null, expectedSignature: "aa" }).ok).toBe(
       false,

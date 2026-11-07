@@ -53,6 +53,13 @@ export const APP_STORE_SECTIONS = [
     batch: "AS-02",
   },
   {
+    key: "privacy",
+    label: "Privacy & Access",
+    path: `${APP_STORE_BASE}/privacy`,
+    anyOf: ["appstore.manage_connections", "appstore.view"] as const,
+    batch: "AS-SEC",
+  },
+  {
     key: "sync-activity",
     label: "Synchronization Activity",
     path: `${APP_STORE_BASE}/sync-activity`,

@@ -11,6 +11,9 @@ import type { Permission } from "@/lib/permissions";
 const DeveloperApiDocsPage = lazy(() =>
   import("@/screens/developer/api-docs").then((m) => ({ default: m.DeveloperApiDocsPage })),
 );
+const DeveloperSubmissionPage = lazy(() =>
+  import("@/screens/developer/submission").then((m) => ({ default: m.DeveloperSubmissionPage })),
+);
 
 function SectionSuspense({ children }: { children: ReactNode }) {
   return <Suspense fallback={<LoadingState />}>{children}</Suspense>;
@@ -24,6 +27,13 @@ export function DeveloperSectionPage({ sectionKey }: { sectionKey: DeveloperPort
     return (
       <SectionSuspense>
         <DeveloperApiDocsPage />
+      </SectionSuspense>
+    );
+  }
+  if (sectionKey === "submission") {
+    return (
+      <SectionSuspense>
+        <DeveloperSubmissionPage />
       </SectionSuspense>
     );
   }

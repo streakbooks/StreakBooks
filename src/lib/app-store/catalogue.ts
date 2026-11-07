@@ -68,10 +68,20 @@ export type MarketplaceAppDefinition = {
   supportUrl: string | null;
   /** Public API scopes a partner app may request when kind is partner_api. */
   requestedApiScopes: string[];
+  /**
+   * FAIL CLOSED. Must remain false until isolation and security controls are verified.
+   * Never enable for real customer data without security_review_passed + e2e_verified.
+   */
+  realCustomerDataEnabled: boolean;
+  securityReviewPassed: boolean;
 } & MarketplaceTrustFields;
 
-type MarketplaceAppSeed = Omit<MarketplaceAppDefinition, keyof MarketplaceTrustFields> &
-  Partial<MarketplaceTrustFields>;
+type MarketplaceAppSeed = Omit<
+  MarketplaceAppDefinition,
+  keyof MarketplaceTrustFields | "realCustomerDataEnabled" | "securityReviewPassed"
+> &
+  Partial<MarketplaceTrustFields> &
+  Partial<Pick<MarketplaceAppDefinition, "realCustomerDataEnabled" | "securityReviewPassed">>;
 
 /**
  * Seed catalogue. Database rows override when the marketplace migration is applied.
@@ -369,27 +379,25 @@ const MARKETPLACE_APP_SEED: readonly MarketplaceAppSeed[] = [
 
 function withTrustDefaults(app: MarketplaceAppSeed): MarketplaceAppDefinition {
   const nativeFirstParty = app.kind === "native" && app.publisherName === "LinkBooks";
+  const defaultDisclosure = nativeFirstParty
+    ? "LinkBooks first-party connector. External provider terms also apply. Not certified until formal reviews pass."
+    : null;
   return {
     ...DEFAULT_TRUST_FIELDS,
-    publisherVerified: nativeFirstParty,
-    privacyDisclosure: nativeFirstParty
-      ? "LinkBooks first-party connector. External provider terms also apply. Not certified until formal reviews pass."
-      : null,
     ...app,
     publisherVerified: app.publisherVerified ?? nativeFirstParty,
     certificationStatus: app.certificationStatus ?? "none",
     certificationTier: app.certificationTier ?? null,
     certificationExpiresAt: app.certificationExpiresAt ?? null,
-    privacyDisclosure:
-      app.privacyDisclosure ??
-      (nativeFirstParty
-        ? "LinkBooks first-party connector. External provider terms also apply. Not certified until formal reviews pass."
-        : null),
+    privacyDisclosure: app.privacyDisclosure ?? defaultDisclosure,
     suspended: app.suspended ?? false,
     apiVersion: app.apiVersion ?? "v1",
     minLinkbooksApi: app.minLinkbooksApi ?? null,
     deprecationAt: app.deprecationAt ?? null,
     breakingChangeNotes: app.breakingChangeNotes ?? null,
+    // Fail closed for every seed listing — never auto-enable real customer data.
+    realCustomerDataEnabled: app.realCustomerDataEnabled ?? false,
+    securityReviewPassed: app.securityReviewPassed ?? false,
   };
 }
 
@@ -479,6 +487,12 @@ export function normalizeMarketplaceApps(raw: unknown): MarketplaceAppDefinition
       supportUrl:
         nullableString(r["supportUrl"] ?? r["support_url"]) ?? fallback?.supportUrl ?? null,
       requestedApiScopes: arrayOfStrings(r["requestedApiScopes"] ?? r["requested_api_scopes"]),
+      realCustomerDataEnabled: Boolean(
+        r["realCustomerDataEnabled"] ?? r["real_customer_data_enabled"] ?? false,
+      ),
+      securityReviewPassed: Boolean(
+        r["securityReviewPassed"] ?? r["security_review_passed"] ?? false,
+      ),
       ...(() => {
         const trust = parseTrustFields(r);
         return {

@@ -1,9 +1,10 @@
 import type { ProviderAdapter } from "@/lib/app-store/adapters/types";
+import { assertRealDataAccessAllowed } from "@/lib/app-store/security/activation";
 
 /**
  * Native merchant Stripe connector scaffold.
  * Separate from LinkBooks SaaS billing Stripe integration.
- * Not E2E verified for merchant payout reconciliation.
+ * Not E2E verified for merchant payout reconciliation. Fail closed.
  */
 export const stripePaymentsAdapter: ProviderAdapter = {
   code: "stripe_payments",
@@ -13,6 +14,13 @@ export const stripePaymentsAdapter: ProviderAdapter = {
   supportedSync: ["one_way_import", "webhook", "scheduled", "incremental"],
   installEligible: false,
   async beginAuthorization() {
+    assertRealDataAccessAllowed({
+      implementationStatus: "adapter_scaffolded",
+      securityReviewPassed: false,
+      realCustomerDataEnabled: false,
+      suspended: false,
+      hasInstallPermission: true,
+    });
     return {
       type: "oauth2",
       authorizeUrl: null,

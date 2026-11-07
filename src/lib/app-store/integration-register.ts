@@ -46,6 +46,9 @@ export type IntegrationRegisterEntry = {
   implementationStatus: ConnectorImplementationStatus | "n/a";
   installAvailable: boolean;
   e2eVerified: boolean;
+  /** FAIL CLOSED gates — never true in seed data for live connectors. */
+  securityReviewPassed: boolean;
+  realCustomerDataEnabled: boolean;
   notes: string;
   csvFallbackPath: string | null;
   officialApiKnown: boolean | null;
@@ -173,6 +176,8 @@ const EXTRA_REGISTER: readonly IntegrationRegisterEntry[] = [
     implementationStatus: "n/a",
     installAvailable: false,
     e2eVerified: true,
+    securityReviewPassed: true,
+    realCustomerDataEnabled: false,
     notes: "Use Data Import Centre for invoice CSV imports when no live connector exists.",
     csvFallbackPath: "/imports",
     officialApiKnown: null,
@@ -188,6 +193,8 @@ const EXTRA_REGISTER: readonly IntegrationRegisterEntry[] = [
     implementationStatus: "n/a",
     installAvailable: false,
     e2eVerified: true,
+    securityReviewPassed: true,
+    realCustomerDataEnabled: false,
     notes: "Use Data Import Centre for bill/expense CSV imports.",
     csvFallbackPath: "/imports",
     officialApiKnown: null,
@@ -203,6 +210,8 @@ const EXTRA_REGISTER: readonly IntegrationRegisterEntry[] = [
     implementationStatus: "n/a",
     installAvailable: false,
     e2eVerified: true,
+    securityReviewPassed: true,
+    realCustomerDataEnabled: false,
     notes: "Import contacts and products via Data Import Centre.",
     csvFallbackPath: "/imports",
     officialApiKnown: null,
@@ -218,6 +227,8 @@ const EXTRA_REGISTER: readonly IntegrationRegisterEntry[] = [
     implementationStatus: "n/a",
     installAvailable: false,
     e2eVerified: true,
+    securityReviewPassed: true,
+    realCustomerDataEnabled: false,
     notes: "Banking CSV import and reconciliation — not a live bank feed connector.",
     csvFallbackPath: "/banking",
     officialApiKnown: null,
@@ -233,6 +244,8 @@ const EXTRA_REGISTER: readonly IntegrationRegisterEntry[] = [
     implementationStatus: "n/a",
     installAvailable: false,
     e2eVerified: true,
+    securityReviewPassed: true,
+    realCustomerDataEnabled: false,
     notes: "Migration labels only — not a live Xero OAuth sync. Use Import & Migration.",
     csvFallbackPath: "/imports",
     officialApiKnown: true,
@@ -248,6 +261,8 @@ const EXTRA_REGISTER: readonly IntegrationRegisterEntry[] = [
     implementationStatus: "n/a",
     installAvailable: false,
     e2eVerified: true,
+    securityReviewPassed: true,
+    realCustomerDataEnabled: false,
     notes: "Migration labels only — not a live QuickBooks connector.",
     csvFallbackPath: "/imports",
     officialApiKnown: true,
@@ -263,6 +278,8 @@ const EXTRA_REGISTER: readonly IntegrationRegisterEntry[] = [
     implementationStatus: "catalogue_only",
     installAvailable: false,
     e2eVerified: false,
+    securityReviewPassed: false,
+    realCustomerDataEnabled: false,
     notes: "Hospitality PMS — feasibility depends on official API, licensing and partner approval.",
     csvFallbackPath: "/imports",
     officialApiKnown: null,
@@ -278,6 +295,8 @@ const EXTRA_REGISTER: readonly IntegrationRegisterEntry[] = [
     implementationStatus: "catalogue_only",
     installAvailable: false,
     e2eVerified: false,
+    securityReviewPassed: false,
+    realCustomerDataEnabled: false,
     notes: "Short-let PMS — research only; no partnership claimed.",
     csvFallbackPath: "/imports",
     officialApiKnown: null,
@@ -293,6 +312,8 @@ const EXTRA_REGISTER: readonly IntegrationRegisterEntry[] = [
     implementationStatus: "catalogue_only",
     installAvailable: false,
     e2eVerified: false,
+    securityReviewPassed: false,
+    realCustomerDataEnabled: false,
     notes: "CRM target — AppExchange-style partner or native OAuth TBD; not available.",
     csvFallbackPath: "/imports",
     officialApiKnown: true,
@@ -304,6 +325,8 @@ export function buildIntegrationRegister(): IntegrationRegisterEntry[] {
   const fromCatalogue: IntegrationRegisterEntry[] = DEFAULT_MARKETPLACE_APPS.map((app) => {
     const registerStatus = registerStatusFromImplementation(app.implementationStatus);
     const e2eVerified = app.implementationStatus === "e2e_verified";
+    const securityReviewPassed = app.securityReviewPassed === true;
+    const realCustomerDataEnabled = app.realCustomerDataEnabled === true;
     return {
       code: app.code,
       name: app.name,
@@ -312,8 +335,10 @@ export function buildIntegrationRegister(): IntegrationRegisterEntry[] {
       categoryGroups: groupsForCategories(app.categoryCodes),
       registerStatus,
       implementationStatus: app.implementationStatus,
-      installAvailable: e2eVerified,
+      installAvailable: e2eVerified && securityReviewPassed && realCustomerDataEnabled,
       e2eVerified,
+      securityReviewPassed,
+      realCustomerDataEnabled,
       notes: app.blockerNotes ?? "See App Store listing.",
       csvFallbackPath: e2eVerified ? null : "/imports",
       officialApiKnown: app.kind === "native" ? true : null,
@@ -339,7 +364,13 @@ export function countRegisterByStatus(
   return counts;
 }
 
-/** Only Available + e2eVerified may be offered as Install. */
+/** Only Available + E2E + security gates may be offered as Install. */
 export function isGenuinelyInstallable(entry: IntegrationRegisterEntry): boolean {
-  return entry.installAvailable && entry.e2eVerified && entry.registerStatus === "Available";
+  return (
+    entry.installAvailable &&
+    entry.e2eVerified &&
+    entry.securityReviewPassed &&
+    entry.realCustomerDataEnabled &&
+    entry.registerStatus === "Available"
+  );
 }

@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { AccountLookup } from "@/components/lookup";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
+import { listAccounts } from "@/lib/accounting/accounting.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import {
   EXPENSE_MANAGEMENT_MIGRATION,
@@ -26,6 +28,7 @@ type Draft = {
   enabled: boolean;
   claimNumberPrefix: string;
   defaultClaimCurrency: string;
+  employeePayableAccountId: string;
   requireReceiptAboveMinor: string;
   requireSpendingRequestAboveMinor: string;
   allowMultiCurrencyClaims: boolean;
@@ -39,6 +42,7 @@ function toDraft(settings: ExpenseManagementSettings): Draft {
     enabled: settings.enabled,
     claimNumberPrefix: settings.claimNumberPrefix,
     defaultClaimCurrency: settings.defaultClaimCurrency ?? "",
+    employeePayableAccountId: settings.employeePayableAccountId ?? "",
     requireReceiptAboveMinor: String(settings.requireReceiptAboveMinor),
     requireSpendingRequestAboveMinor: String(settings.requireSpendingRequestAboveMinor),
     allowMultiCurrencyClaims: settings.allowMultiCurrencyClaims,
@@ -59,6 +63,7 @@ export function ExpenseManagementSettingsPage() {
   const queryClient = useQueryClient();
   const fetchSettings = useServerFn(getExpenseManagementSettings);
   const saveSettings = useServerFn(saveExpenseManagementSettings);
+  const fetchAccounts = useServerFn(listAccounts);
   const [draft, setDraft] = useState<Draft | null>(null);
 
   const settingsQ = useQuery({
@@ -66,6 +71,21 @@ export function ExpenseManagementSettingsPage() {
     queryFn: () => fetchSettings({ data: { companyId: company!.id } }),
     enabled: Boolean(company?.id) && canView,
   });
+
+  const accountsQ = useQuery({
+    queryKey: ["accounts", company?.id, "expense-settings"],
+    queryFn: () => fetchAccounts({ data: { companyId: company!.id } }),
+    enabled: Boolean(company?.id) && canView,
+  });
+
+  const liabilityAccounts = useMemo(
+    () =>
+      (accountsQ.data ?? []).filter(
+        (account) =>
+          account.is_active && account.is_postable && account.account_type === "liability",
+      ),
+    [accountsQ.data],
+  );
 
   useEffect(() => {
     if (settingsQ.data) setDraft(toDraft(settingsQ.data));
@@ -96,6 +116,7 @@ export function ExpenseManagementSettingsPage() {
               : null,
             requireReceiptAboveMinor: threshold,
             requireSpendingRequestAboveMinor: spendThreshold,
+            employeePayableAccountId: draft.employeePayableAccountId || null,
             allowMultiCurrencyClaims: draft.allowMultiCurrencyClaims,
             preventSelfApproval: draft.preventSelfApproval,
             defaultDistanceUnit: draft.defaultDistanceUnit,
@@ -221,6 +242,25 @@ export function ExpenseManagementSettingsPage() {
               setDraft({ ...draft, defaultClaimCurrency: event.target.value.toUpperCase() })
             }
           />
+        </div>
+
+        <div className="grid gap-2">
+          <Label>Employee payable account</Label>
+          <AccountLookup
+            companyId={company.id}
+            accounts={liabilityAccounts}
+            value={draft.employeePayableAccountId || null}
+            onChange={(next) =>
+              setDraft({ ...draft, employeePayableAccountId: next ?? "" })
+            }
+            allowClear
+            disabled={!canEdit || save.isPending}
+            ariaLabel="Employee payable account"
+            purpose="posting"
+          />
+          <p className="text-sm text-muted-foreground">
+            Required before posting approved employee-paid claims (EM-06 accrual).
+          </p>
         </div>
 
         <div className="grid gap-2">

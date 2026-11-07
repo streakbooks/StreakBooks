@@ -28,6 +28,7 @@ import {
   approveExpenseClaim,
   EXPENSE_APPROVAL_MIGRATION,
   listExpenseClaims,
+  postExpenseClaim,
   rejectExpenseClaim,
   returnExpenseClaim,
   startExpenseClaimReview,
@@ -42,6 +43,8 @@ export function ExpenseManagementApprovalsPage() {
   const queryClient = useQueryClient();
   const canApprove =
     can("expenses.approve" as Permission) || can("expenses.admin" as Permission);
+  const canPost =
+    can("expenses.post" as Permission) || can("expenses.admin" as Permission);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [activeDecision, setActiveDecision] = useState<{
     claimId: string;
@@ -53,6 +56,7 @@ export function ExpenseManagementApprovalsPage() {
   const approveClaim = useServerFn(approveExpenseClaim);
   const returnClaim = useServerFn(returnExpenseClaim);
   const rejectClaim = useServerFn(rejectExpenseClaim);
+  const postClaim = useServerFn(postExpenseClaim);
 
   const queueQ = useQuery({
     queryKey: ["expense-claims", company?.id, "approvals"],
@@ -67,10 +71,37 @@ export function ExpenseManagementApprovalsPage() {
     enabled: Boolean(company?.id) && canApprove,
   });
 
+  const readyToPostQ = useQuery({
+    queryKey: ["expense-claims", company?.id, "ready-to-post"],
+    queryFn: () =>
+      fetchClaims({
+        data: {
+          companyId: company!.id,
+          scope: "all",
+          approvalStatuses: ["approved"],
+        },
+      }),
+    enabled: Boolean(company?.id) && canPost,
+  });
+
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: ["expense-claims", company?.id] });
     void queryClient.invalidateQueries({ queryKey: ["expense-management-overview", company?.id] });
   };
+
+  const post = useMutation({
+    mutationFn: async (claim: ExpenseClaimSummary) => {
+      if (!company) throw new Error("Select a company first.");
+      return postClaim({
+        data: { companyId: company.id, claimId: claim.id, version: claim.version },
+      });
+    },
+    onSuccess: () => {
+      invalidate();
+      toast.success("Claim posted to the ledger.");
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
 
   const runDecision = useMutation({
     mutationFn: async (input: {
@@ -117,20 +148,22 @@ export function ExpenseManagementApprovalsPage() {
   if (!company) {
     return <CompanyEmptyState title="No organisation" description="Select a company first." />;
   }
-  if (!canApprove) {
+  if (!canApprove && !canPost) {
     return (
       <>
         <PageHeader title="Approvals" />
         <ExpenseManagementSubnav current="approvals" />
         <EmptyState
           title="No access"
-          description="Ask an administrator for expenses.approve."
+          description="Ask an administrator for expenses.approve or expenses.post."
         />
       </>
     );
   }
-  if (queueQ.isPending) return <LoadingState />;
-  if (queueQ.isError) {
+  if ((canApprove && queueQ.isPending) || (canPost && readyToPostQ.isPending)) {
+    return <LoadingState />;
+  }
+  if (canApprove && queueQ.isError) {
     const message = friendlyAuthError(queueQ.error);
     return (
       <>
@@ -153,12 +186,15 @@ export function ExpenseManagementApprovalsPage() {
   }
 
   const queue = queueQ.data ?? [];
+  const readyToPost = (readyToPostQ.data ?? []).filter(
+    (claim) => claim.postingStatus === "ready" || claim.postingStatus === "failed",
+  );
 
   return (
     <>
       <PageHeader
         title="Approvals"
-        description="Review submitted expense claims. Approval does not post journals or pay reimbursements."
+        description="Review submitted claims and post approved employee-paid accruals."
         actions={
           <Button asChild variant="outline" size="sm">
             <Link to="/purchases/employee-expenses">Legacy employee expenses</Link>
@@ -168,19 +204,20 @@ export function ExpenseManagementApprovalsPage() {
       <ExpenseManagementSubnav current="approvals" />
 
       <Alert className="mb-6">
-        <AlertTitle>Approval only</AlertTitle>
+        <AlertTitle>Approval and accrual posting</AlertTitle>
         <AlertDescription>
-          Approving marks the claim ready for later posting (EM-06) and reimbursement (EM-07).
-          Self-approval is blocked when organisation settings require it.
+          Approving marks the claim ready to post. Posting creates the expense accrual journal (not
+          a bank payment). Self-approval is blocked when organisation settings require it.
         </AlertDescription>
       </Alert>
 
-      {queue.length === 0 ? (
+      {canApprove && queue.length === 0 ? (
         <EmptyState
           title="No claims waiting"
           description="Submitted and in-review claims appear here."
         />
-      ) : (
+      ) : null}
+      {canApprove && queue.length > 0 ? (
         <Table>
           <TableHeader>
             <TableRow>
@@ -304,7 +341,55 @@ export function ExpenseManagementApprovalsPage() {
             })}
           </TableBody>
         </Table>
-      )}
+      ) : null}
+
+      {canPost ? (
+        <div className="mt-10">
+          <h2 className="mb-3 text-base font-semibold">Ready to post</h2>
+          {readyToPost.length === 0 ? (
+            <EmptyState
+              title="No approved claims ready"
+              description="Approved employee-paid claims awaiting ledger accrual appear here."
+            />
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Claim</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Total</TableHead>
+                  <TableHead className="text-right">Post</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {readyToPost.map((claim) => (
+                  <TableRow key={claim.id}>
+                    <TableCell>
+                      <div className="font-medium">{claim.claimNumber || "Claim"}</div>
+                      <div className="text-sm text-muted-foreground">{claim.title}</div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{claim.postingStatus}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {fromMinorUnits(claim.totalMinor, claim.claimCurrency)} {claim.claimCurrency}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        size="sm"
+                        disabled={post.isPending}
+                        onClick={() => post.mutate(claim)}
+                      >
+                        Post accrual
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </div>
+      ) : null}
     </>
   );
 }

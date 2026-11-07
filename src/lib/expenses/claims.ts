@@ -53,6 +53,7 @@ export type ExpenseClaimDetail = ExpenseClaimSummary & {
   reimbursementCurrency: string;
   subtotalMinor: number;
   taxMinor: number;
+  postedJournalId: string | null;
   lines: Array<{
     id: string;
     lineNo: number;
@@ -108,6 +109,7 @@ export function mapExpenseClaimDetail(row: unknown): ExpenseClaimDetail {
     reimbursementCurrency: str(r.reimbursement_currency ?? r.reimbursementCurrency, summary.claimCurrency),
     subtotalMinor: num(r.subtotal_minor ?? r.subtotalMinor),
     taxMinor: num(r.tax_minor ?? r.taxMinor),
+    postedJournalId: (r.posted_journal_id ?? r.postedJournalId ?? null) as string | null,
     lines: linesRaw.map((line) => {
       const l = asRecord(line);
       return {

@@ -44,6 +44,9 @@ export const EXPENSE_APPROVAL_MIGRATION =
 export const EXPENSE_SPENDING_REQUEST_MIGRATION =
   "Expense spending requests are not available yet: apply database update 20261107136000.";
 
+export const EXPENSE_POSTING_MIGRATION =
+  "Expense claim posting is not available yet: apply database update 20261107137000.";
+
 export const EXPENSE_TEMPLATE_MIGRATION =
   "Expense claim templates are not available yet: apply database update 20261107130000.";
 
@@ -830,6 +833,28 @@ export const linkExpenseClaimSpendingRequest = createServerFn({ method: "POST" }
         _spending_request_id: data.spendingRequestId,
       },
       EXPENSE_SPENDING_REQUEST_MIGRATION,
+    );
+    return mapExpenseClaimDetail(raw);
+  });
+
+export const postExpenseClaim = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; claimId: string; version: number }) => ({
+    companyId: companyIdOf(input),
+    claimId: input.claimId,
+    version: input.version,
+  }))
+  .handler(async ({ data, context }): Promise<ExpenseClaimDetail> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "expenses.post");
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "post_expense_claim",
+      {
+        _company_id: data.companyId,
+        _claim_id: data.claimId,
+        _expected_version: data.version,
+      },
+      EXPENSE_POSTING_MIGRATION,
     );
     return mapExpenseClaimDetail(raw);
   });

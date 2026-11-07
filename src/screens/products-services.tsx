@@ -1,6 +1,6 @@
 import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, getRouteApi } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Package, Plus, Archive, Copy, Download, Columns3 } from "lucide-react";
@@ -13,7 +13,8 @@ import { parseMinorOrThrow } from "@/lib/purchases/money-input";
 import { listTaxCodes } from "@/lib/tax/tax.functions";
 import { listProductCategories } from "@/lib/products/catalogue-masterdata.functions";
 import { CategoriesWorkspace, PriceListsWorkspace } from "@/components/products/ProductsMasterData";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsContent } from "@/components/ui/tabs";
+import { nativeTabLinkClass, handleNativeTabKeyDown } from "@/lib/navigation/native-tab";
 import { useCanDo } from "@/hooks/use-can";
 import {
   archiveProduct,
@@ -72,7 +73,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+const productsRoute = getRouteApi("/_authenticated/products-services");
+
 export function ProductsPage() {
+  const { section } = productsRoute.useSearch();
   const { company, isPending } = useActiveCompany();
   if (isPending) return <LoadingState />;
   if (!company) {
@@ -84,11 +88,29 @@ export function ProductsPage() {
     );
   }
   return (
-    <Tabs defaultValue="catalogue" className="space-y-4">
-      <TabsList aria-label="Products and services sections">
-        <TabsTrigger value="catalogue">Catalogue</TabsTrigger>
-        <TabsTrigger value="categories">Categories</TabsTrigger>
-        <TabsTrigger value="price-lists">Price Lists</TabsTrigger>
+    <Tabs value={section} className="space-y-4">
+      <TabsList
+        aria-label="Products and services sections"
+        onKeyDown={handleNativeTabKeyDown}
+        className="flex h-auto flex-wrap"
+      >
+        {([
+          ["catalogue", "Catalogue"],
+          ["categories", "Categories"],
+          ["price-lists", "Price Lists"],
+        ] as const).map(([id, label]) => (
+          <Link
+            key={id}
+            role="tab"
+            to="/products-services"
+            search={{ section: id }}
+            aria-selected={section === id}
+            data-state={section === id ? "active" : "inactive"}
+            className={nativeTabLinkClass}
+          >
+            {label}
+          </Link>
+        ))}
       </TabsList>
       <TabsContent value="catalogue">
         <ProductsWorkspace companyId={company.id} currency={company.base_currency} />

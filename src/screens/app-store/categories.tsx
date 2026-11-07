@@ -1,0 +1,90 @@
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
+import { CompanyEmptyState } from "@/components/common/company-empty";
+import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useActiveCompany } from "@/hooks/use-active-company";
+import { useCan } from "@/hooks/use-can";
+import { listCompanyMarketplaceApps } from "@/lib/app-store/app-store.functions";
+import { APP_CATEGORIES } from "@/lib/app-store/categories";
+import { categoryCounts } from "@/lib/app-store/catalogue";
+import { friendlyAuthError } from "@/lib/auth-helpers";
+import type { Permission } from "@/lib/permissions";
+
+export function AppStoreCategoriesPage() {
+  const { company, isPending } = useActiveCompany();
+  const { can } = useCan();
+  const canView = can("appstore.view" as Permission);
+  const fetchCatalogue = useServerFn(listCompanyMarketplaceApps);
+  const catalogue = useQuery({
+    queryKey: ["app-store-catalogue", company?.id],
+    queryFn: () => fetchCatalogue({ data: { companyId: company!.id } }),
+    enabled: Boolean(company?.id) && canView,
+    retry: false,
+  });
+
+  if (isPending) return <LoadingState />;
+  if (!company) {
+    return <CompanyEmptyState title="No organisation" description="Select a company first." />;
+  }
+  if (!canView) {
+    return (
+      <>
+        <PageHeader title="Categories" description="App Store" />
+        <EmptyState title="No access" description="Requires appstore.view." />
+      </>
+    );
+  }
+  if (catalogue.isLoading) {
+    return (
+      <>
+        <PageHeader title="Categories" description="Browse the marketplace taxonomy." />
+        <AppStoreSubnav current="categories" />
+        <LoadingState />
+      </>
+    );
+  }
+  if (catalogue.isError) {
+    return (
+      <ErrorState
+        title="Could not load categories"
+        description={friendlyAuthError(catalogue.error)}
+        onRetry={() => catalogue.refetch()}
+      />
+    );
+  }
+
+  const counts = new Map(categoryCounts(catalogue.data?.apps ?? []).map((c) => [c.code, c.count]));
+
+  return (
+    <>
+      <PageHeader
+        title="Categories"
+        description="Configurable taxonomy covering e-commerce, payments, document capture and more."
+      />
+      <AppStoreSubnav current="categories" />
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {APP_CATEGORIES.map((cat) => {
+          const count = counts.get(cat.code) ?? 0;
+          return (
+            <a
+              key={cat.code}
+              href={`/app-store/explore?category=${encodeURIComponent(cat.code)}`}
+              className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Card className="h-full transition-colors hover:border-primary/40">
+                <CardHeader>
+                  <CardTitle className="text-lg">{cat.name}</CardTitle>
+                  <CardDescription>
+                    {cat.description} · {count} app{count === 1 ? "" : "s"}
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            </a>
+          );
+        })}
+      </div>
+    </>
+  );
+}

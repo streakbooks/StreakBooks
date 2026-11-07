@@ -21,6 +21,7 @@ import { BankAccountDetailsDialog } from "@/components/banking/BankAccountDetail
 import { listBankAccountDetails } from "@/lib/banking/bank-ops.functions";
 import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -143,6 +144,40 @@ function BankingAccounts() {
     <ListWorkspace
       title="Bank & cash accounts"
       description="Link bank/cash accounts to ledger GL codes. Live bank feeds appear only when a provider connection exists."
+      insights={
+        <WorkspaceInsights
+          title="Banking shortcuts"
+          facts={[
+            { label: "Active accounts", value: String(accounts.filter((a) => a.isActive).length) },
+            ...(archivedCount > 0
+              ? [{ label: "Archived", value: String(archivedCount) }]
+              : []),
+          ]}
+          links={[
+            {
+              label: "Transactions",
+              to: "/banking/transactions",
+              hint: "Review ledger bank movements",
+            },
+            {
+              label: "Reconcile",
+              to: "/banking/reconcile",
+              hint: "Match statement lines to the ledger",
+            },
+            {
+              label: "Import CSV",
+              to: "/banking/import",
+              hint: "No live feed is connected for this organisation",
+            },
+            {
+              label: "Transfers",
+              to: "/banking/transfers",
+              hint: "Move funds between bank accounts",
+            },
+          ]}
+          footer="Shortcuts only. Feed emptiness is not treated as a successful sync."
+        />
+      }
       actions={
         <Button size="sm" asChild>
           <Link to="/banking/import">Import CSV</Link>

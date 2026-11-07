@@ -22,7 +22,7 @@ A screen is **not** DONE unless every applicable row is PASS or N/A with reason.
 | # | Gate | Status | Notes |
 | - | ---- | ------ | ----- |
 | a | Route / inventory / registry | PASS | `MODULE_REGISTRY` + routes |
-| b | Visual/UX shared chrome | PASS | ListWorkspace on accounts, txn, reconcile, transfers, docs |
+| b | Visual/UX shared chrome | PASS | ListWorkspace on accounts, txn, reconcile, transfers, docs; Banking insights rail (Batch 12) |
 | c | Loading/empty/error | PARTIAL | Present on major screens; not every nested state audited |
 | d | Real actions / posting | PARTIAL | Existing confirmed-transfer/reconcile flows; no new posting this program |
 | e | RBAC/RLS / cross-company | NOT VERIFIED | Relies on pre-existing server auth; not re-proved here |
@@ -49,8 +49,8 @@ A screen is **not** DONE unless every applicable row is PASS or N/A with reason.
 | e | RBAC/RLS | NOT VERIFIED this program |
 | f | Migrations | N/A |
 | g | Honest copy | PARTIAL |
-| h | a11y/responsive | PARTIAL → fixture PASS for list landmark |
-| i | Tests | PARTIAL → `e2e/ui` workspace landmark + search/export fixtures |
+| h | a11y/responsive | PARTIAL → fixture PASS for list/record landmarks + insight complementary |
+| i | Tests | PARTIAL → `e2e/ui` workspace landmarks; invoice/contact insights wired in app |
 | j | Originality | PASS |
 | k | Docs | PASS |
 | l | Merge evidence | PASS |

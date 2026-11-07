@@ -9,7 +9,7 @@
 | Semantic status ≠ health ≠ payment | existing-working (`StatusBadge`, status-badge map) | Often conflated colours | Distinct tones + labels + icons |
 | Company-isolated search/commands | partially-implemented | Strong in mature ERPs | Permission-filtered GlobalSearch |
 | Unified list workspace | partially-implemented | Ubiquitous | `ListWorkspace` + toolbar primitives |
-| Related-record insight rail | missing / partial | Common “smart buttons” | Original `lb-insight-rail` pattern |
+| Related-record insight rail | partial (Batch 12) | Common “smart buttons” | Original `WorkspaceInsights` + `lb-insight-rail`; ledger/link facts only — no fabricated AI |
 | Fail-closed scaffolds | partial (Batch 1) | Varies | Disabled actions until backend exists |
 | Bank recon match suggestions | partially-implemented | Strong in Xero/QBO class | Transparent match reasons only |
 | Multi-view Kanban on ledgers | not-applicable | Often overused | Explicitly refused for journals |

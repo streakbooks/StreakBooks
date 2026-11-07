@@ -67,6 +67,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
   Table,
@@ -580,18 +581,35 @@ function FilesPage() {
                 ))}
               </SelectContent>
             </RecordLookupSelect>
-            <Button
-              size="sm"
-              variant="ghost"
-              disabled={removeFolderM.isPending}
-              onClick={() => {
-                if (window.confirm("Delete this empty folder?"))
-                  removeFolderM.mutate(activeFolder.id);
-              }}
-            >
-              <Trash2 className="mr-1 size-4" />
-              Delete empty folder
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button type="button" size="sm" variant="ghost" disabled={removeFolderM.isPending}>
+                  <Trash2 className="mr-1 size-4" aria-hidden="true" />
+                  Delete empty folder
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete folder “{activeFolder.name}”?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This removes the empty folder from the current organisation. Folders
+                    containing files or child folders cannot be deleted. This action cannot
+                    be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={removeFolderM.isPending}>
+                    Keep folder
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    disabled={removeFolderM.isPending}
+                    onClick={() => removeFolderM.mutate(activeFolder.id)}
+                  >
+                    Delete empty folder
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         ) : null}
       </section>

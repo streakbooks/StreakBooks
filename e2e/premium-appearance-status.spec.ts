@@ -77,4 +77,43 @@ test.describe("LinkBooks premium appearance: authenticated application shell", (
     await expect(dialog.getByLabel("Accent colour")).toBeVisible();
     await expect(dialog.getByLabel("Live palette preview")).toBeVisible();
   });
+
+  test("light, dark and system appearance preserve readable status colours", async ({ page }) => {
+    await signIn(page);
+    const appearance = page.getByRole("button", { name: "Appearance and colour themes" });
+    await appearance.click();
+    await page.getByRole("menuitemradio", { name: /Dark/ }).click();
+    await expect(page.locator("html")).toHaveClass(/dark/);
+    const darkTeal = await page.evaluate(() =>
+      getComputedStyle(document.documentElement).getPropertyValue("--complete-ink").trim(),
+    );
+    expect(darkTeal).toBeTruthy();
+    await page.getByRole("menuitemradio", { name: /Light/ }).click();
+    await expect(page.locator("html")).not.toHaveClass(/dark/);
+    const lightTeal = await page.evaluate(() =>
+      getComputedStyle(document.documentElement).getPropertyValue("--complete-ink").trim(),
+    );
+    expect(lightTeal).not.toBe(darkTeal);
+    await page.emulateMedia({ colorScheme: "dark" });
+    await page.getByRole("menuitemradio", { name: /System/ }).click();
+    await expect(page.locator("html")).toHaveClass(/dark/);
+    await page.emulateMedia({ colorScheme: "light" });
+    await expect(page.locator("html")).not.toHaveClass(/dark/);
+  });
+
+  test("record status badges include readable labels and real lifecycle tones", async ({ page }) => {
+    await signIn(page);
+    await page.goto("/sales/invoices");
+    const badges = page.locator('[data-slot="status-badge"]');
+    test.skip((await badges.count()) === 0, "Requires authorised seeded invoice records");
+    const badge = badges.first();
+    const text = (await badge.textContent())?.trim() ?? "";
+    expect(text.length).toBeGreaterThan(0);
+    const tone = await badge.getAttribute("data-tone");
+    expect(["neutral", "warning", "info", "success", "complete", "danger"]).toContain(tone);
+    if (/^paid$/i.test(text)) expect(tone).toBe("complete");
+    if (/^overdue$/i.test(text)) expect(tone).toBe("danger");
+    if (/^draft$/i.test(text)) expect(tone).toBe("neutral");
+  });
+
 });

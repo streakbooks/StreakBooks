@@ -17,7 +17,7 @@ import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
 import { TableCard } from "@/components/common/table-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -54,15 +54,6 @@ const STATUS_LABEL: Record<PayrollRunStatus, string> = {
   complete: "Complete",
   void: "Void",
 };
-
-function statusVariant(
-  status: PayrollRunStatus,
-): "default" | "secondary" | "destructive" | "outline" {
-  if (status === "approved" || status === "complete") return "default";
-  if (status === "void") return "destructive";
-  if (status === "draft") return "outline";
-  return "secondary";
-}
 
 export function PayrollRunsPage() {
   const { company, isPending } = useActiveCompany();
@@ -339,9 +330,7 @@ export function PayrollRunsPage() {
                       </TableCell>
                       <TableCell>{fmt.date(run.payment_date)}</TableCell>
                       <TableCell>
-                        <Badge variant={statusVariant(run.status)}>
-                          {STATUS_LABEL[run.status]}
-                        </Badge>
+                        <StatusBadge status={run.status} label={STATUS_LABEL[run.status]} />
                       </TableCell>
                       <TableCell className="text-right font-mono text-sm">
                         {fmt.money(run.net_minor, run.currency)}

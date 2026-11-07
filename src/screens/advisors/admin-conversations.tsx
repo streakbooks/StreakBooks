@@ -274,7 +274,6 @@ export function AdvisorsAdminConversationsPage() {
                   Save notes
                 </Button>
               </div>
-    </ListWorkspace>
             </>
           ) : null}
         </section>

@@ -90,6 +90,7 @@ export function DeveloperCredentialsPage() {
           Issue client credentials
         </Button>
       </div>
-        </ListWorkspace>
+      </ListWorkspace>
+    </>
   );
 }

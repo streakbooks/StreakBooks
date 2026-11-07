@@ -284,7 +284,6 @@ export function AdvisorsAdminInquiriesPage() {
               >
                 Promote to client
               </Button>
-    </ListWorkspace>
             </>
           )}
         </section>

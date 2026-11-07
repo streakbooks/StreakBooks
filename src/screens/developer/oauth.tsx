@@ -96,6 +96,7 @@ export function DeveloperOAuthPage() {
           </Button>
         </CardContent>
       </Card>
-        </ListWorkspace>
+      </ListWorkspace>
+    </>
   );
 }

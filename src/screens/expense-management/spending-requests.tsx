@@ -398,8 +398,8 @@ export function ExpenseManagementSpendingRequestsPage() {
                             Reject
                           </Button>
                         </div>
-    </ListWorkspace>
-    ) : null}
+                        </>
+                          ) : null}
                   </div>
                 </TableCell>
               </TableRow>
@@ -407,6 +407,6 @@ export function ExpenseManagementSpendingRequestsPage() {
           </TableBody>
         </Table>
       )}
-    </>
+    </ListWorkspace>
   );
 }

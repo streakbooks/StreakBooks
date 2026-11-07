@@ -131,6 +131,7 @@ export function DeveloperApiDocsPage() {
           </section>
         </div>
       ) : null}
-        </ListWorkspace>
+      </ListWorkspace>
+    </>
   );
 }

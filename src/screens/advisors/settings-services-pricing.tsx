@@ -179,7 +179,6 @@ function PlanEditor({
                 }
               />
             </div>
-    </ListWorkspace>
           </>
         ) : (
           <div className="space-y-1">

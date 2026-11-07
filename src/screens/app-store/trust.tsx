@@ -285,8 +285,8 @@ export function AppStoreTrustPage() {
                               >
                                 Reject
                               </Button>
-    </ListWorkspace>
-    ) : (
+                            </>
+                          ) : (
                             <span className="text-sm text-muted-foreground">Decided</span>
                           )}
                         </TableCell>
@@ -308,6 +308,6 @@ export function AppStoreTrustPage() {
           ))}
         </div>
       </section>
-    </>
+    </ListWorkspace>
   );
 }

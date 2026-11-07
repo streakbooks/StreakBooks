@@ -406,7 +406,6 @@ export function AdvisorsAdminBillingPage() {
                   </p>
                 </div>
               ) : null}
-    </ListWorkspace>
             </>
           )}
         </section>

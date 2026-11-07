@@ -166,7 +166,6 @@ export function AdvisorsAdminOnboardingPage() {
                   </li>
                 ))}
               </ul>
-    </ListWorkspace>
             </>
           )}
         </section>

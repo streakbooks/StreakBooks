@@ -98,7 +98,7 @@ function RecurringJournalsPage() {
         actions={
           <div className="flex gap-2">
             <Button size="sm" variant="outline" asChild>
-              <Link to="/accounting">Accounting</Link>
+              <Link to="/accounting" search={{ tab: "journals" }}>Back to journals</Link>
             </Button>
             <Button
               size="sm"

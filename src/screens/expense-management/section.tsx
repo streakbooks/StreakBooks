@@ -13,6 +13,7 @@ import {
 import type { Permission } from "@/lib/permissions";
 import { ExpenseManagementApprovalsPage } from "@/screens/expense-management/approvals";
 import { ExpenseManagementClaimsPage } from "@/screens/expense-management/claims";
+import { ExpenseManagementMileagePage } from "@/screens/expense-management/mileage";
 import { ExpenseManagementReceiptsPage } from "@/screens/expense-management/receipts";
 import { ExpenseManagementReimbursementsPage } from "@/screens/expense-management/reimbursements";
 import { ExpenseManagementSettingsPage } from "@/screens/expense-management/settings";
@@ -53,6 +54,9 @@ export function ExpenseManagementSectionPage({
   }
   if (sectionKey === "reimbursements") {
     return <ExpenseManagementReimbursementsPage />;
+  }
+  if (sectionKey === "mileage") {
+    return <ExpenseManagementMileagePage />;
   }
 
   if (isPending) return <LoadingState />;

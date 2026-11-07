@@ -19,6 +19,13 @@
 - [ ] Reimbursements reuse Banking / Payroll posting patterns (EM-07).
 - [ ] Budgets, Tax, Files and Reports integrations verified per later batches.
 
+## Mileage (EM-08a — local code)
+
+- [x] Company mileage rates with effective dates, unit, currency and expense account.
+- [x] Mileage trip drafts create employee-paid claim lines with server-side amount calc.
+- [ ] Travel / per diem / advances / petty cash (later EM-08 slices).
+- [ ] Applied migration + authenticated browser verification.
+
 ## Explicitly out of scope for this navigation amendment
 
 Browser E2E, applied migrations, GitHub CI/PR and production verification remain open and must not be marked complete from local code alone.

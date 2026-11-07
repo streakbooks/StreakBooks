@@ -31,6 +31,11 @@ import type {
   ExpenseManagementSettingsInput,
   ExpensePaymentSource,
 } from "@/lib/expenses/types";
+import {
+  mapExpenseMileageRate,
+  toExpenseMileageRatePayload,
+  type ExpenseMileageRate,
+} from "@/lib/expenses/mileage";
 
 export const EXPENSE_MANAGEMENT_MIGRATION =
   "Expense Management is not available yet: the database update 20261107120000 has not been applied.";
@@ -49,6 +54,9 @@ export const EXPENSE_POSTING_MIGRATION =
 
 export const EXPENSE_REIMBURSEMENT_MIGRATION =
   "Expense claim reimbursement is not available yet: apply database update 20261107138000.";
+
+export const EXPENSE_MILEAGE_MIGRATION =
+  "Expense mileage rates are not available yet: apply database update 20261107139000.";
 
 export const EXPENSE_TEMPLATE_MIGRATION =
   "Expense claim templates are not available yet: apply database update 20261107130000.";
@@ -895,4 +903,64 @@ export const reimburseExpenseClaim = createServerFn({ method: "POST" })
       EXPENSE_REIMBURSEMENT_MIGRATION,
     );
     return mapExpenseClaimDetail(raw);
+  });
+
+export const listExpenseMileageRates = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { companyId: string; activeOnly?: boolean }) => ({
+      companyId: companyIdOf(input),
+      activeOnly: input.activeOnly !== false,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<ExpenseMileageRate[]> => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    const raw = await callRpc<{ rates?: unknown[] }>(
+      context.supabase,
+      "list_expense_mileage_rates",
+      { _company_id: data.companyId, _active_only: data.activeOnly },
+      EXPENSE_MILEAGE_MIGRATION,
+    );
+    return (raw.rates ?? []).map(mapExpenseMileageRate);
+  });
+
+export const saveExpenseMileageRate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      draft: {
+        id?: string;
+        name: string;
+        vehicleClass?: string | null;
+        distanceUnit: "km" | "mi";
+        rateMinorPerUnit: number;
+        currencyCode: string;
+        accountId: string;
+        effectiveFrom: string;
+        effectiveTo?: string | null;
+        isActive?: boolean;
+      };
+    }) => ({
+      companyId: companyIdOf(input),
+      draft: input.draft,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<ExpenseMileageRate> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "expenses.admin");
+    if (!data.draft.name.trim()) throw new Error("Mileage rate name is required.");
+    if (!data.draft.accountId) throw new Error("Choose an expense account for the rate.");
+    if (data.draft.rateMinorPerUnit <= 0) {
+      throw new Error("Rate per unit must be greater than zero.");
+    }
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "save_expense_mileage_rate",
+      {
+        _company_id: data.companyId,
+        _payload: toExpenseMileageRatePayload(data.draft),
+      },
+      EXPENSE_MILEAGE_MIGRATION,
+    );
+    return mapExpenseMileageRate(raw);
   });

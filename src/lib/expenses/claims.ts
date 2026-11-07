@@ -18,6 +18,12 @@ export type ExpenseClaimLineInput = {
   nonReimbursableMinor?: number;
   isBillable?: boolean;
   notes?: string;
+  isMileage?: boolean;
+  distanceValue?: number;
+  distanceUnit?: "km" | "mi";
+  mileageRateId?: string | null;
+  tripOrigin?: string;
+  tripDestination?: string;
 };
 
 export type ExpenseClaimDraftInput = {
@@ -68,6 +74,11 @@ export type ExpenseClaimDetail = ExpenseClaimSummary & {
     taxMinor: number;
     grossMinor: number;
     currencyCode: string;
+    isMileage?: boolean;
+    distanceValue?: number | null;
+    distanceUnit?: "km" | "mi" | null;
+    tripOrigin?: string | null;
+    tripDestination?: string | null;
   }>;
 };
 
@@ -120,6 +131,7 @@ export function mapExpenseClaimDetail(row: unknown): ExpenseClaimDetail {
       null) as string | null,
     lines: linesRaw.map((line) => {
       const l = asRecord(line);
+      const unitRaw = str(l.distance_unit ?? l.distanceUnit);
       return {
         id: str(l.id),
         lineNo: num(l.line_no ?? l.lineNo),
@@ -131,6 +143,16 @@ export function mapExpenseClaimDetail(row: unknown): ExpenseClaimDetail {
         taxMinor: num(l.tax_minor ?? l.taxMinor),
         grossMinor: num(l.gross_minor ?? l.grossMinor),
         currencyCode: str(l.currency_code ?? l.currencyCode, summary.claimCurrency),
+        isMileage: Boolean(l.is_mileage ?? l.isMileage ?? false),
+        distanceValue:
+          l.distance_value == null && l.distanceValue == null
+            ? null
+            : num(l.distance_value ?? l.distanceValue),
+        distanceUnit: unitRaw === "mi" || unitRaw === "km" ? unitRaw : null,
+        tripOrigin: (l.trip_origin ?? l.tripOrigin ?? null) as string | null,
+        tripDestination: (l.trip_destination ?? l.tripDestination ?? null) as
+          | string
+          | null,
       };
     }),
   };
@@ -164,6 +186,12 @@ export function toExpenseClaimPayload(draft: ExpenseClaimDraftInput): Record<str
       non_reimbursable_minor: line.nonReimbursableMinor ?? 0,
       is_billable: line.isBillable ?? false,
       notes: line.notes ?? null,
+      is_mileage: line.isMileage ?? false,
+      distance_value: line.distanceValue ?? null,
+      distance_unit: line.distanceUnit ?? null,
+      mileage_rate_id: line.mileageRateId ?? null,
+      trip_origin: line.tripOrigin ?? null,
+      trip_destination: line.tripDestination ?? null,
     })),
   };
 }

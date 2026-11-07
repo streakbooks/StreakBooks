@@ -47,6 +47,9 @@ export const EXPENSE_SPENDING_REQUEST_MIGRATION =
 export const EXPENSE_POSTING_MIGRATION =
   "Expense claim posting is not available yet: apply database update 20261107137000.";
 
+export const EXPENSE_REIMBURSEMENT_MIGRATION =
+  "Expense claim reimbursement is not available yet: apply database update 20261107138000.";
+
 export const EXPENSE_TEMPLATE_MIGRATION =
   "Expense claim templates are not available yet: apply database update 20261107130000.";
 
@@ -855,6 +858,41 @@ export const postExpenseClaim = createServerFn({ method: "POST" })
         _expected_version: data.version,
       },
       EXPENSE_POSTING_MIGRATION,
+    );
+    return mapExpenseClaimDetail(raw);
+  });
+
+export const reimburseExpenseClaim = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      claimId: string;
+      version: number;
+      bankAccountId: string;
+      paymentDate?: string;
+    }) => ({
+      companyId: companyIdOf(input),
+      claimId: input.claimId,
+      version: input.version,
+      bankAccountId: input.bankAccountId,
+      paymentDate: input.paymentDate,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<ExpenseClaimDetail> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "expenses.reimburse");
+    if (!data.bankAccountId) throw new Error("Choose a bank account for the reimbursement.");
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "reimburse_expense_claim",
+      {
+        _company_id: data.companyId,
+        _claim_id: data.claimId,
+        _bank_account_id: data.bankAccountId,
+        _expected_version: data.version,
+        _payment_date: data.paymentDate ?? null,
+      },
+      EXPENSE_REIMBURSEMENT_MIGRATION,
     );
     return mapExpenseClaimDetail(raw);
   });

@@ -41,8 +41,10 @@ export type ExpenseClaimSummary = {
   approvalStatus: ExpenseApprovalStatus;
   postingStatus: string;
   reimbursementStatus: string;
+  paymentSource: ExpensePaymentSource;
   totalMinor: number;
   reimbursableMinor: number;
+  postedJournalId: string | null;
   version: number;
   updatedAt: string;
 };
@@ -54,6 +56,7 @@ export type ExpenseClaimDetail = ExpenseClaimSummary & {
   subtotalMinor: number;
   taxMinor: number;
   postedJournalId: string | null;
+  reimbursementJournalId: string | null;
   lines: Array<{
     id: string;
     lineNo: number;
@@ -91,8 +94,10 @@ export function mapExpenseClaimSummary(row: unknown): ExpenseClaimSummary {
     approvalStatus: str(r.approval_status ?? r.approvalStatus) as ExpenseApprovalStatus,
     postingStatus: str(r.posting_status ?? r.postingStatus),
     reimbursementStatus: str(r.reimbursement_status ?? r.reimbursementStatus),
+    paymentSource: str(r.payment_source ?? r.paymentSource, "employee_paid") as ExpensePaymentSource,
     totalMinor: num(r.total_minor ?? r.totalMinor),
     reimbursableMinor: num(r.reimbursable_minor ?? r.reimbursableMinor),
+    postedJournalId: (r.posted_journal_id ?? r.postedJournalId ?? null) as string | null,
     version: num(r.version),
     updatedAt: str(r.updated_at ?? r.updatedAt),
   };
@@ -110,6 +115,9 @@ export function mapExpenseClaimDetail(row: unknown): ExpenseClaimDetail {
     subtotalMinor: num(r.subtotal_minor ?? r.subtotalMinor),
     taxMinor: num(r.tax_minor ?? r.taxMinor),
     postedJournalId: (r.posted_journal_id ?? r.postedJournalId ?? null) as string | null,
+    reimbursementJournalId: (r.reimbursement_journal_id ??
+      r.reimbursementJournalId ??
+      null) as string | null,
     lines: linesRaw.map((line) => {
       const l = asRecord(line);
       return {

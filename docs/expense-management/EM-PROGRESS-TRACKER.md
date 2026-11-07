@@ -12,7 +12,7 @@ Update after every verified batch. The visual percentage counts only **completed
 
 | Area | Status |
 | --- | --- |
-| Code Development | 3 / 12 verified (+ EM-04a/b + EM-05a/b + EM-06a coded; those batches not closed) |
+| Code Development | 3 / 12 verified (+ EM-04–07a slices coded; those batches not closed) |
 | Local Testing | Partial (unit + check:ui; no DB/browser) |
 | GitHub Commit | Local commits only; not pushed |
 | GitHub PR / Merge | Pending |
@@ -30,7 +30,7 @@ Update after every verified batch. The visual percentage counts only **completed
 | EM-04 | Receipts, email inbox, file security, mobile capture, offline drafts | In progress — EM-04a/b upload+match+offline queue; inbound email/OCR still pending |
 | EM-05 | Approvals, policies, delegation, escalation, spending requests | In progress — EM-05a/b approvals + spending requests; delegation/escalation pending |
 | EM-06 | Accounting, tax, journals, FX, refunds, budgets | In progress — EM-06a employee-paid accrual posting; FX/refunds/budgets pending |
-| EM-07 | Reimbursements, partial/batch payments, bank matching, payroll | Not started |
+| EM-07 | Reimbursements, partial/batch payments, bank matching, payroll | In progress — EM-07a full bank reimbursement; partial/batch/payroll pending |
 | EM-08 | Mileage, travel, per diem, advances, petty cash, settlements | Not started |
 | EM-09 | Corporate cards, disputes, rebilling, exit settlement | Not started |
 | EM-10 | AI OCR, categorisation, duplicates, fraud indicators | Not started |

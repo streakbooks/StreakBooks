@@ -14,16 +14,13 @@ import type { Permission } from "@/lib/permissions";
 import { ExpenseManagementApprovalsPage } from "@/screens/expense-management/approvals";
 import { ExpenseManagementClaimsPage } from "@/screens/expense-management/claims";
 import { ExpenseManagementReceiptsPage } from "@/screens/expense-management/receipts";
+import { ExpenseManagementReimbursementsPage } from "@/screens/expense-management/reimbursements";
 import { ExpenseManagementSettingsPage } from "@/screens/expense-management/settings";
 import { ExpenseManagementSpendingRequestsPage } from "@/screens/expense-management/spending-requests";
 
 const LEGACY_LINKS: Partial<
   Record<ExpenseManagementSectionKey, { label: string; to: string }>
 > = {
-  reimbursements: {
-    label: "Legacy reimbursements live on employee expenses",
-    to: "/purchases/employee-expenses",
-  },
   budgets: { label: "Open Budgets module", to: "/budgets" },
 };
 
@@ -53,6 +50,9 @@ export function ExpenseManagementSectionPage({
   }
   if (sectionKey === "spending-requests") {
     return <ExpenseManagementSpendingRequestsPage />;
+  }
+  if (sectionKey === "reimbursements") {
+    return <ExpenseManagementReimbursementsPage />;
   }
 
   if (isPending) return <LoadingState />;

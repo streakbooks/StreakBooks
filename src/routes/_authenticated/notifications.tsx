@@ -29,6 +29,7 @@ import {
   type NotificationView,
 } from "@/lib/notifications/notification-utils";
 import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -702,10 +703,11 @@ function NotificationRow({
             >
               {n.priority}
             </span>
-            {n.archived_at && <span className="text-xs text-muted-foreground">Archived</span>}
-            {n.resolved_at && !n.archived_at && (
-              <span className="text-xs text-muted-foreground">Completed</span>
-            )}
+            {n.archived_at ? (
+              <StatusBadge status="archived" />
+            ) : n.resolved_at ? (
+              <StatusBadge status="completed" />
+            ) : null}
             <span className="text-xs text-muted-foreground">
               {CATEGORIES[n.category] ?? n.category}
             </span>

@@ -37,6 +37,7 @@ import { deleteAiConversationHistory, listAiConversationHistory, type AiConversa
 import { PageHeader, LoadingState, ErrorState } from "@/components/common/states";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -668,9 +669,7 @@ function AiAssistantWorkspace({
                         </TableCell>
                         <TableCell className="whitespace-nowrap text-xs">{kind.replaceAll("_", " ")}</TableCell>
                         <TableCell>
-                          <Badge variant={item.status === "validated" ? "secondary" : item.status === "invalid" ? "destructive" : "outline"}>
-                            {item.status}
-                          </Badge>
+                          <StatusBadge status={item.status} />
                         </TableCell>
                         <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
                           <Clock3 className="mr-1 inline size-3" /> {item.created_at.slice(0, 10)}

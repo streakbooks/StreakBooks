@@ -18,6 +18,7 @@ import {
 } from "@/lib/ai/review-queue.functions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -265,9 +266,7 @@ export function AiJournalReviewQueue({
                       <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3">
                         <div className="min-w-0 space-y-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <Badge variant={item.status === "reviewed" ? "secondary" : "outline"}>
-                              {STATUS_LABEL[item.status]}
-                            </Badge>
+                            <StatusBadge status={item.status} label={STATUS_LABEL[item.status]} />
                             {item.is_assigned_to_me ? <Badge variant="outline">Assigned to you</Badge> : null}
                             {item.is_my_case ? <Badge variant="outline">You prepared this</Badge> : null}
                           </div>

@@ -24,7 +24,8 @@ import {
   revokeFirmClient,
 } from "@/lib/firm/firm.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -175,11 +176,10 @@ function FirmPage() {
   );
 
   return (
-    <>
-      <PageHeader
-        title="Firm & clients"
-        description="Manage your client portfolio, practice work, deadlines, and firm access in one workspace."
-      />
+    <ListWorkspace
+      title="Firm & clients"
+      description="Manage your client portfolio, practice work, deadlines, and firm access in one workspace."
+    >
       {firmsQ.isPending ? (
         <LoadingState />
       ) : firmsQ.isError ? (
@@ -512,6 +512,6 @@ function FirmPage() {
           </Tabs>
         </>
       )}
-    </>
+    </ListWorkspace>
   );
 }

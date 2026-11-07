@@ -13,7 +13,8 @@ import {
 } from "@/lib/purchases/purchases.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { impliedDiscountMinor } from "@/lib/purchases/po-convert";
-import { PageHeader, EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { StatusBadge } from "@/components/common/stat-card";
 import { TableCard } from "@/components/common/table-card";
 import { DocumentActions } from "@/components/documents/DocumentActions";
@@ -120,7 +121,7 @@ function PurchaseOrderDetail({ companyId, orderId }: { companyId: string; orderI
   const editableStatus = !order.billed_bill_id && ["draft", "sent"].includes(order.status);
   return (
     <>
-      <PageHeader
+      <RecordWorkspace
         title={order.order_number || "Purchase order"}
         description={`${order.contacts?.name ?? "Supplier"} · ${fmt.date(order.order_date)} · ${currency}`}
         actions={
@@ -128,7 +129,7 @@ function PurchaseOrderDetail({ companyId, orderId }: { companyId: string; orderI
             <Link to="/purchases/orders">All orders</Link>
           </Button>
         }
-      />
+      >
       <div className="mb-5 flex flex-wrap items-center gap-2">
         <StatusBadge status={order.status} />
         {editableStatus && can("purchases.draft") ? (
@@ -235,6 +236,7 @@ function PurchaseOrderDetail({ companyId, orderId }: { companyId: string; orderI
       ) : null}
       <DocumentActions kind="purchase_order" id={orderId} />
       <DocumentRecordPanel entityType="purchase_order" entityId={orderId} audience="supplier" />
+      </RecordWorkspace>
       <AlertDialog open={cancelOpen} onOpenChange={setCancelOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

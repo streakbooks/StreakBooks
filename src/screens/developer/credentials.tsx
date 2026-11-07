@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { DeveloperSubnav } from "@/components/app-store/DeveloperSubnav";
-import { EmptyState, PageHeader } from "@/components/common/states";
+import { EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,15 +27,16 @@ export function DeveloperCredentialsPage() {
   if (!canManage) {
     return (
       <>
-        <PageHeader title="API Credentials" description="Developer portal" />
+        <ListWorkspace title="API Credentials" description="Developer portal">
         <EmptyState title="No access" description="Requires developer.manage_apps." />
+    </ListWorkspace>
       </>
     );
   }
 
   return (
     <>
-      <PageHeader
+      <ListWorkspace
         title="API Credentials"
         description="OAuth client identifiers and secret hashes for partner applications. Raw secrets are never stored or shown."
         actions={
@@ -44,9 +46,8 @@ export function DeveloperCredentialsPage() {
             </Link>
           </Button>
         }
-      />
-      <DeveloperSubnav current="credentials" />
-
+        subnav={<DeveloperSubnav current="credentials" />}
+      >
       <Alert className="mb-6">
         <AlertTitle>Credential vault locked</AlertTitle>
         <AlertDescription>
@@ -89,6 +90,6 @@ export function DeveloperCredentialsPage() {
           Issue client credentials
         </Button>
       </div>
-    </>
+        </ListWorkspace>
   );
 }

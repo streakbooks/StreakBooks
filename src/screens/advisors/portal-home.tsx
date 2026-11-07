@@ -2,7 +2,8 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AdvisorsPortalSubnav } from "@/components/advisors/AdvisorsPortalSubnav";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Badge } from "@/components/ui/badge";
 import { getAdvisorsPortalHome } from "@/lib/advisors/portal.functions";
 import { formatMinorAmount } from "@/lib/advisors/portal";
@@ -20,25 +21,25 @@ export function AdvisorsPortalHomePage() {
   if (query.isError) {
     return (
       <main className="mx-auto max-w-5xl space-y-6 p-6">
-        <PageHeader title="Advisors portal" description="Your Advisors service account." />
+        <ListWorkspace title="Advisors portal" description="Your Advisors service account.">
         <ErrorState
           title="Portal unavailable"
           description={friendlyAuthError(query.error)}
           onRetry={() => void query.refetch()}
         />
-      </main>
+          </ListWorkspace>
+  </main>
     );
   }
 
   const home = query.data;
   return (
     <main className="mx-auto max-w-5xl space-y-6 p-6">
-      <PageHeader
+      <ListWorkspace
         title={`Hello, ${home.client.name || home.client.email}`}
         description="Plan, appointments, documents and messages for your Advisors engagement."
-      />
-      <AdvisorsPortalSubnav />
-
+        subnav={<AdvisorsPortalSubnav />}
+      >
       <section className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-lg border border-border p-4">
           <p className="text-sm text-muted-foreground">Open tasks</p>
@@ -79,6 +80,7 @@ export function AdvisorsPortalHomePage() {
                 {home.plan.sessionsIncluded} included
               </p>
             ) : null}
+    </ListWorkspace>
           </>
         ) : (
           <EmptyState
@@ -125,6 +127,7 @@ export function AdvisorsPortalHomePage() {
       </section>
 
       <p className="text-xs text-muted-foreground">{home.calendarOAuth.note}</p>
-    </main>
+        </ListWorkspace>
+  </main>
   );
 }

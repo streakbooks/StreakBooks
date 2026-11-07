@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { DeveloperSubnav } from "@/components/app-store/DeveloperSubnav";
-import { EmptyState, PageHeader } from "@/components/common/states";
+import { EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -46,18 +47,19 @@ export function DeveloperPortalSectionShell({
   if (!allowed) {
     return (
       <>
-        <PageHeader title={title ?? section.label} description="Developer portal" />
+        <ListWorkspace title={title ?? section.label} description="Developer portal">
         <EmptyState
           title="No access"
           description="Your role cannot open this developer workspace."
         />
+    </ListWorkspace>
       </>
     );
   }
 
   return (
     <>
-      <PageHeader
+      <ListWorkspace
         title={title ?? section.label}
         description={description}
         actions={
@@ -65,8 +67,8 @@ export function DeveloperPortalSectionShell({
             <Link to="/developer">Back to dashboard</Link>
           </Button>
         }
-      />
-      <DeveloperSubnav current={sectionKey} />
+        subnav={<DeveloperSubnav current={sectionKey} />}
+      >
       <Alert className="mb-6">
         <AlertTitle>{alertTitle}</AlertTitle>
         <AlertDescription>{alertBody}</AlertDescription>
@@ -81,7 +83,7 @@ export function DeveloperPortalSectionShell({
         </div>
       ) : null}
       {children}
-    </>
+        </ListWorkspace>
   );
 }
 

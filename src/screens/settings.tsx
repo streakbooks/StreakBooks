@@ -33,7 +33,8 @@ import {
   resolveSettingsCategory,
   type SettingsCategory,
 } from "@/lib/settings/registry";
-import { ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { PortalSettingsPanel } from "@/components/portals/staff-panels";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
@@ -139,8 +140,7 @@ export function SettingsPage() {
   if (companyPending) return <LoadingState />;
   if (!companyId) {
     return (
-      <>
-        <PageHeader title="Settings" description="Choose or create an organisation first." />
+      <ListWorkspace title="Settings" description="Choose or create an organisation first.">
         <Alert>
           <AlertTitle>No organisation selected</AlertTitle>
           <AlertDescription>
@@ -150,7 +150,7 @@ export function SettingsPage() {
             to manage settings.
           </AlertDescription>
         </Alert>
-      </>
+      </ListWorkspace>
     );
   }
 
@@ -595,24 +595,8 @@ export function SettingsForCompany({
   const sectionMeta = categoryMeta.find((c) => c.id === section);
   const showLegacy = Boolean(legacyTab);
 
-  return (
+  const settingsMain = (
     <>
-      {!embeddedSection && (
-        <PageHeader
-          title="Settings Centre"
-          description="Manage your organisation, financial controls and connected workflows in one place."
-          actions={
-            <Button variant="outline" size="sm" onClick={() => setCmdOpen(true)}>
-              <Search className="mr-1.5 size-3.5" />
-              Search
-              <kbd className="ml-2 hidden rounded border px-1 text-[10px] sm:inline">
-                Ctrl/⌘ Shift K
-              </kbd>
-            </Button>
-          }
-        />
-      )}
-
       {!embeddedSection && (
         <SettingsCommandPalette
           open={cmdOpen}
@@ -1791,6 +1775,26 @@ export function SettingsForCompany({
         </AlertDialogContent>
       </AlertDialog>
     </>
+  );
+
+  if (embeddedSection) return settingsMain;
+
+  return (
+    <ListWorkspace
+      title="Settings Centre"
+      description="Manage your organisation, financial controls and connected workflows in one place."
+      actions={
+        <Button variant="outline" size="sm" onClick={() => setCmdOpen(true)}>
+          <Search className="mr-1.5 size-3.5" />
+          Search
+          <kbd className="ml-2 hidden rounded border px-1 text-[10px] sm:inline">
+            Ctrl/⌘ Shift K
+          </kbd>
+        </Button>
+      }
+    >
+      {settingsMain}
+    </ListWorkspace>
   );
 }
 

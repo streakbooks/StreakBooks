@@ -7,8 +7,8 @@
 | 3 | 3 | ListWorkspace on Sales + Purchases overviews | `feature/premium-ui-batch3-sales-purchases` | [PR #184](https://github.com/linkbusinessadvisory/LinkBooks/pull/184) → `2218927d` | `/sales`, `/purchases` | merged |
 | 4 | 2–4 | Fix workspace exactOptional props + ListWorkspace on Products, Files, EM, Budgets | `feature/premium-ui-batch4-fix-and-more` | [PR #185](https://github.com/linkbusinessadvisory/LinkBooks/pull/185) → `45745e39` | products, files, EM overview, budgets | merged |
 | 5 | 4–6 | ListWorkspace on Help, Tax, Fixed assets, Reports, Payroll overview, App Store | `feature/premium-ui-batch5-more-modules` | [PR #186](https://github.com/linkbusinessadvisory/LinkBooks/pull/186) → `c7729c2e` | help, tax, fixed-assets, reports, payroll, app-store | merged |
-| 6 | 3–4 | Nested Sales/Purchases/EM/Payroll lists + Accounting shell | `feature/premium-ui-batch6-nested-lists` | pending | 28 list/index screens | in progress |
-| 7 | 3–5 | RecordWorkspace on detail screens; Advisors/Firm/Settings/Developer | TBD | — | | planned |
+| 6 | 3–4 | Nested Sales/Purchases/EM/Payroll lists + Accounting shell | `feature/premium-ui-batch6-nested-lists` | [PR #187](https://github.com/linkbusinessadvisory/LinkBooks/pull/187) → `52653bd8` | 28 list/index screens | merged |
+| 7 | 3–6 | RecordWorkspace details + Advisors/Firm/Settings/Developer/AI | `feature/premium-ui-batch7-records-practice` | pending | detail + practice/platform | in progress |
 | 8 | 7–8 | Smart views where applicable + hardening | TBD | — | | planned |
 | 9 | 9 | Staging readiness | TBD | — | | planned |
 

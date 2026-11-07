@@ -2,7 +2,8 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { DeveloperSubnav } from "@/components/app-store/DeveloperSubnav";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,21 +28,21 @@ export function DeveloperDashboardPage() {
   if (!canOpen) {
     return (
       <>
-        <PageHeader
+        <ListWorkspace
           title="Developer portal"
-          description="Build partner integrations on the LinkBooks public API."
-        />
+          description="Build partner integrations on the LinkBooks public API.">
         <EmptyState
           title="No developer access"
           description="Ask an owner or admin for developer.manage_apps or developer.submit_apps."
         />
+    </ListWorkspace>
       </>
     );
   }
 
   return (
     <>
-      <PageHeader
+      <ListWorkspace
         title="Developer portal"
         description="Secure public API, OAuth clients and partner publishing for Hubdoc, Link My Books and other approved providers."
         actions={
@@ -51,9 +52,8 @@ export function DeveloperDashboardPage() {
             </Link>
           </Button>
         }
-      />
-      <DeveloperSubnav current="dashboard" />
-
+        subnav={<DeveloperSubnav current="dashboard" />}
+      >
       <Alert className="mb-6">
         <AlertTitle>Open platform foundation ({PUBLIC_API_VERSION})</AlertTitle>
         <AlertDescription>
@@ -144,6 +144,7 @@ export function DeveloperDashboardPage() {
           </CardContent>
         </Card>
       ) : null}
+      </ListWorkspace>
     </>
   );
 }

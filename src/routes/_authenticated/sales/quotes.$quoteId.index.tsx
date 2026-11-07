@@ -14,7 +14,8 @@ import {
 import { getSalesDocumentConfig } from "@/lib/sales/sales-config.functions";
 import { isQuoteConvertible, quoteStatusActions, type QuoteStatus } from "@/lib/sales/quote-status";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { bpsToPercentString, money } from "@/components/sales/sales-form-utils";
 import { StatusBadge } from "@/components/common/stat-card";
 import { Button } from "@/components/ui/button";
@@ -131,7 +132,7 @@ function QuoteDetailPage() {
 
   return (
     <>
-      <PageHeader
+      <RecordWorkspace
         title={`Quote ${q.quote_number ?? ""} · ${q.contacts?.name ?? "Customer"}`}
         description={`${q.quote_date}${q.expiry_date ? ` · expires ${q.expiry_date}` : ""} · never posts to the ledger`}
         actions={
@@ -188,7 +189,7 @@ function QuoteDetailPage() {
             ) : null}
           </div>
         }
-      />
+      >
       <div className="mb-4 flex flex-wrap gap-3 text-sm">
         <StatusBadge status={q.status} />
         <span>#{q.quote_number ?? "—"}</span>
@@ -256,6 +257,7 @@ function QuoteDetailPage() {
           <span>{money(q.total_minor, cur)}</span>
         </div>
       </div>
+      </RecordWorkspace>
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>

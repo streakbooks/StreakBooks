@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { DeveloperSubnav } from "@/components/app-store/DeveloperSubnav";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -36,20 +37,20 @@ export function DeveloperApiDocsPage() {
   if (!canOpen) {
     return (
       <>
-        <PageHeader title="API Documentation" description="Developer portal" />
+        <ListWorkspace title="API Documentation" description="Developer portal">
         <EmptyState title="No access" description="Requires developer or App Store view access." />
+    </ListWorkspace>
       </>
     );
   }
 
   return (
     <>
-      <PageHeader
+      <ListWorkspace
         title="API Documentation"
         description={`LinkBooks public API ${PUBLIC_API_VERSION} — scoped, versioned access for approved partners.`}
-      />
-      <DeveloperSubnav current="api-docs" />
-
+        subnav={<DeveloperSubnav current="api-docs" />}
+      >
       <Alert className="mb-6">
         <AlertTitle>Security model</AlertTitle>
         <AlertDescription>
@@ -130,6 +131,6 @@ export function DeveloperApiDocsPage() {
           </section>
         </div>
       ) : null}
-    </>
+        </ListWorkspace>
   );
 }

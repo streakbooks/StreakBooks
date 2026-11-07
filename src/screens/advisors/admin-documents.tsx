@@ -3,7 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AdvisorsSubnav } from "@/components/advisors/AdvisorsSubnav";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,23 +64,23 @@ export function AdvisorsAdminDocumentsPage() {
   if (query.isError) {
     return (
       <main className="mx-auto max-w-6xl space-y-6 p-6">
-        <PageHeader title="Documents" description="Advisors delivery document requests." />
+        <ListWorkspace title="Documents" description="Advisors delivery document requests.">
         <ErrorState
           title="Document requests unavailable"
           description={friendlyAuthError(query.error)}
           onRetry={() => void query.refetch()}
         />
-      </main>
+          </ListWorkspace>
+  </main>
     );
   }
 
   return (
     <main className="mx-auto max-w-6xl space-y-6 p-6">
-      <PageHeader
+      <ListWorkspace
         title="Documents"
         description="Track Advisors document requests for delivery periods. Binary uploads reuse company documents when a billing company is linked (AD-07/AD-09)."
-      />
-      <AdvisorsSubnav />
+       subnav={<AdvisorsSubnav />}>
 
       <div className="flex flex-wrap items-end gap-3">
         <div className="space-y-1">
@@ -169,6 +170,7 @@ export function AdvisorsAdminDocumentsPage() {
           ))
         )}
       </section>
-    </main>
+        </ListWorkspace>
+  </main>
   );
 }

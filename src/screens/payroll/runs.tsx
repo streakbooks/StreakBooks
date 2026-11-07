@@ -14,7 +14,7 @@ import { createPayrollRun, listPayrollRuns } from "@/lib/payroll/runs.functions"
 import { PAYROLL_RUN_STATUSES, type PayrollRunStatus } from "@/lib/payroll/types";
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { TableCard } from "@/components/common/table-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -139,10 +139,9 @@ export function PayrollRunsPage() {
   }
   if (!canView) {
     return (
-      <>
-        <PageHeader title="Payroll runs" description="Prepare and approve pay runs." />
+      <ListWorkspace title="Payroll runs" description="Prepare and approve pay runs.">
         <EmptyState title="No payroll access" description="Ask for payroll.view permission." />
-      </>
+      </ListWorkspace>
     );
   }
   if (settingsQ.isPending || listQ.isPending) return <LoadingState />;

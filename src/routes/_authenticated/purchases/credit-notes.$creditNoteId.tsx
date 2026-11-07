@@ -21,7 +21,8 @@ import {
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { minorOrZero, parseMinorOrThrow, tryParseMinor } from "@/lib/purchases/money-input";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { StatusBadge } from "@/components/common/stat-card";
 import { Button } from "@/components/ui/button";
 import { DocumentActions } from "@/components/documents/DocumentActions";
@@ -277,7 +278,7 @@ function CreditNoteDetail() {
 
   return (
     <>
-      <PageHeader
+      <RecordWorkspace
         title={`Supplier credit · ${cn.contacts?.name ?? "Supplier"}`}
         description={`${cn.credit_date} · authorising posts DR AP / CR expense+tax once`}
         actions={
@@ -340,7 +341,7 @@ function CreditNoteDetail() {
             </Button>
           </div>
         }
-      />
+      >
       <div className="mb-4 flex flex-wrap gap-3 text-sm">
         <StatusBadge status={cn.status} />
         <span>#{cn.credit_number ?? "—"}</span>
@@ -616,6 +617,7 @@ function CreditNoteDetail() {
         entityId={creditNoteId}
         audience="supplier"
       />
+      </RecordWorkspace>
     </>
   );
 }

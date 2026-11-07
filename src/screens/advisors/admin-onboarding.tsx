@@ -3,7 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AdvisorsSubnav } from "@/components/advisors/AdvisorsSubnav";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,23 +54,23 @@ export function AdvisorsAdminOnboardingPage() {
   if (query.isError) {
     return (
       <main className="mx-auto max-w-6xl space-y-6 p-6">
-        <PageHeader title="Onboarding" description="Track Advisors customer onboarding tasks." />
+        <ListWorkspace title="Onboarding" description="Track Advisors customer onboarding tasks.">
         <ErrorState
           title="Onboarding unavailable"
           description={friendlyAuthError(query.error)}
           onRetry={() => void query.refetch()}
         />
-      </main>
+          </ListWorkspace>
+  </main>
     );
   }
 
   return (
     <main className="mx-auto max-w-6xl space-y-6 p-6">
-      <PageHeader
+      <ListWorkspace
         title="Onboarding"
         description="Progress checklist after agreement acceptance. Completing all tasks moves the engagement to active. Paid subscription start remains AD-07."
-      />
-      <AdvisorsSubnav />
+       subnav={<AdvisorsSubnav />}>
 
       <div className="space-y-1">
         <Label htmlFor="onboarding-reason">Change reason</Label>
@@ -165,10 +166,12 @@ export function AdvisorsAdminOnboardingPage() {
                   </li>
                 ))}
               </ul>
+    </ListWorkspace>
             </>
           )}
         </section>
       </div>
-    </main>
+        </ListWorkspace>
+  </main>
   );
 }

@@ -6,7 +6,8 @@ import { toast } from "sonner";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { DocumentRecordPanel } from "@/components/documents/DocumentRecordPanel";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { ContactLookup } from "@/components/lookup";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -244,18 +245,16 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
   }
   if (claimQ.isLoading) {
     return (
-      <>
-        <PageHeader title="Expense claim" description="Expense Management" />
+      <RecordWorkspace title="Expense claim" description="Expense Management">
         <ExpenseManagementSubnav current="my-expenses" />
         <LoadingState />
-      </>
+      </RecordWorkspace>
     );
   }
   if (claimQ.isError) {
     const message = friendlyAuthError(claimQ.error);
     return (
-      <>
-        <PageHeader title="Expense claim" />
+      <RecordWorkspace title="Expense claim">
         {message.includes("20261107137000") ? (
           <Alert>
             <AlertTitle>Migration required</AlertTitle>
@@ -273,7 +272,7 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
             onRetry={() => claimQ.refetch()}
           />
         )}
-      </>
+      </RecordWorkspace>
     );
   }
 
@@ -297,36 +296,35 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
     claim.lines.length > 0;
 
   return (
-    <>
-      <PageHeader
-        title={claim.claimNumber}
-        description={claim.title}
-        actions={
-          <div className="flex flex-wrap gap-2">
-            {canPostNow ? (
-              <Button size="sm" disabled={post.isPending} onClick={() => post.mutate()}>
-                {post.isPending ? "Posting…" : "Post to ledger"}
-              </Button>
-            ) : null}
-            <Button
-              size="sm"
-              variant="secondary"
-              disabled={fxMut.isPending}
-              onClick={() => fxMut.mutate()}
+    <RecordWorkspace
+      title={claim.claimNumber}
+      description={claim.title}
+      actions={
+        <div className="flex flex-wrap gap-2">
+          {canPostNow ? (
+            <Button size="sm" disabled={post.isPending} onClick={() => post.mutate()}>
+              {post.isPending ? "Posting…" : "Post to ledger"}
+            </Button>
+          ) : null}
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={fxMut.isPending}
+            onClick={() => fxMut.mutate()}
+          >
+            {fxMut.isPending ? "Checking FX…" : "Validate FX"}
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link
+              to="/expense-management/$section"
+              params={{ section: "my-expenses" }}
             >
-              {fxMut.isPending ? "Checking FX…" : "Validate FX"}
-            </Button>
-            <Button asChild variant="outline" size="sm">
-              <Link
-                to="/expense-management/$section"
-                params={{ section: "my-expenses" }}
-              >
-                Back to My Expenses
-              </Link>
-            </Button>
-          </div>
-        }
-      />
+              Back to My Expenses
+            </Link>
+          </Button>
+        </div>
+      }
+    >
       <ExpenseManagementSubnav current="my-expenses" />
 
       {fxQ.data && !fxQ.data.ok ? (
@@ -535,6 +533,6 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
       ) : null}
 
       <DocumentRecordPanel entityType="expense_claim" entityId={claim.id} audience="internal" />
-    </>
+    </RecordWorkspace>
   );
 }

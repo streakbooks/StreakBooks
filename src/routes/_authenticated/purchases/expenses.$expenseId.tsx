@@ -11,7 +11,8 @@ import {
 } from "@/lib/purchases/purchases.functions";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { StatusBadge } from "@/components/common/stat-card";
 import { DocumentRecordPanel } from "@/components/documents/DocumentRecordPanel";
 import { Button } from "@/components/ui/button";
@@ -82,44 +83,43 @@ function ExpenseDetail() {
   };
 
   return (
-    <>
-      <PageHeader
-        title={e.payee_name}
-        description={`Direct expense · ${e.expense_date}`}
-        actions={
-          <div className="flex flex-wrap gap-2">
-            {e.status === "draft" ? (
-              <>
-                <Button
-                  size="sm"
-                  disabled={postM.isPending || !can("purchases.authorise")}
-                  title={
-                    can("purchases.authorise")
-                      ? undefined
-                      : "You do not have permission to post expenses"
-                  }
-                  onClick={() => postM.mutate()}
-                >
-                  Post to ledger
-                </Button>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  disabled={deleteM.isPending || !can("expenses.submit")}
-                  onClick={() => {
-                    if (confirm("Delete this draft expense?")) deleteM.mutate();
-                  }}
-                >
-                  Delete draft
-                </Button>
-              </>
-            ) : null}
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/purchases/expenses">Back</Link>
-            </Button>
-          </div>
-        }
-      />
+    <RecordWorkspace
+      title={e.payee_name}
+      description={`Direct expense · ${e.expense_date}`}
+      actions={
+        <div className="flex flex-wrap gap-2">
+          {e.status === "draft" ? (
+            <>
+              <Button
+                size="sm"
+                disabled={postM.isPending || !can("purchases.authorise")}
+                title={
+                  can("purchases.authorise")
+                    ? undefined
+                    : "You do not have permission to post expenses"
+                }
+                onClick={() => postM.mutate()}
+              >
+                Post to ledger
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                disabled={deleteM.isPending || !can("expenses.submit")}
+                onClick={() => {
+                  if (confirm("Delete this draft expense?")) deleteM.mutate();
+                }}
+              >
+                Delete draft
+              </Button>
+            </>
+          ) : null}
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/purchases/expenses">Back</Link>
+          </Button>
+        </div>
+      }
+    >
       <div className="space-y-2 text-sm">
         <StatusBadge status={e.status} />
         <p>Net {fromMinorUnits(BigInt(e.net_minor), currency)}</p>
@@ -140,6 +140,6 @@ function ExpenseDetail() {
           audience="supplier"
         />
       </div>
-    </>
+    </RecordWorkspace>
   );
 }

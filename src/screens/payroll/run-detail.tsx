@@ -33,7 +33,8 @@ import { fromMinorUnits } from "@/lib/accounting/money";
 import { parseMinorOrThrow } from "@/lib/purchases/money-input";
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { TableCard } from "@/components/common/table-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -293,10 +294,9 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
   }
   if (!canView) {
     return (
-      <>
-        <PageHeader title="Payroll run" />
+      <RecordWorkspace title="Payroll run">
         <EmptyState title="No payroll access" description="Ask for payroll.view permission." />
-      </>
+      </RecordWorkspace>
     );
   }
   if (pageQ.isPending) return <LoadingState />;
@@ -360,7 +360,7 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
 
   return (
     <>
-      <PageHeader
+      <RecordWorkspace
         title={run.run_number}
         description={
           schedule
@@ -388,7 +388,7 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
             ) : null}
           </div>
         }
-      />
+      >
       <PayrollSubnav current="runs" />
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -755,6 +755,7 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </RecordWorkspace>
 
       <Dialog
         open={adjustTarget !== null}

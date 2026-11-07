@@ -3,7 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AdvisorsSubnav } from "@/components/advisors/AdvisorsSubnav";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -166,13 +167,14 @@ export function AdvisorsAdminBillingPage() {
   if (query.isError) {
     return (
       <main className="mx-auto max-w-6xl space-y-6 p-6">
-        <PageHeader title="Billing" description="Advisors subscriptions via LinkBooks billing." />
+        <ListWorkspace title="Billing" description="Advisors subscriptions via LinkBooks billing.">
         <ErrorState
           title="Advisors billing unavailable"
           description={friendlyAuthError(query.error)}
           onRetry={() => void query.refetch()}
         />
-      </main>
+          </ListWorkspace>
+  </main>
     );
   }
 
@@ -180,11 +182,10 @@ export function AdvisorsAdminBillingPage() {
 
   return (
     <main className="mx-auto max-w-6xl space-y-6 p-6">
-      <PageHeader
+      <ListWorkspace
         title="Billing"
         description="Map Advisors plans to existing billing SKUs, prepare checkout on a dedicated company, and sync provider status. Proposal/agreement acceptance never starts payment."
-      />
-      <AdvisorsSubnav />
+       subnav={<AdvisorsSubnav />}>
 
       <div className="space-y-1">
         <Label htmlFor="billing-reason">Change reason</Label>
@@ -405,6 +406,7 @@ export function AdvisorsAdminBillingPage() {
                   </p>
                 </div>
               ) : null}
+    </ListWorkspace>
             </>
           )}
         </section>
@@ -437,6 +439,7 @@ export function AdvisorsAdminBillingPage() {
           ))
         )}
       </section>
-    </main>
+        </ListWorkspace>
+  </main>
   );
 }

@@ -37,7 +37,8 @@ import {
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { AccountLookup } from "@/components/lookup";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -297,13 +298,12 @@ export function PayrollSettingsPage() {
   }
   if (!canView) {
     return (
-      <>
-        <PageHeader title="Payroll settings" description="Organisation payroll configuration." />
+      <ListWorkspace title="Payroll settings" description="Organisation payroll configuration.">
         <EmptyState
           title="No payroll access"
           description="Ask an organisation administrator for the payroll.view permission."
         />
-      </>
+      </ListWorkspace>
     );
   }
   if (page.isPending || !draft) return <LoadingState />;
@@ -321,18 +321,16 @@ export function PayrollSettingsPage() {
   const parsedSettings = parsePayrollSettingsDraft(draft);
 
   return (
-    <>
-      <PageHeader
-        title="Payroll settings"
-        description="Enable Basic Global Payroll, configure schedules, accounts, numbering and components."
-        actions={
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/payroll">Back to overview</Link>
-          </Button>
-        }
-      />
-      <PayrollSubnav current="settings" />
-
+    <ListWorkspace
+      title="Payroll settings"
+      description="Enable Basic Global Payroll, configure schedules, accounts, numbering and components."
+      actions={
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/payroll">Back to overview</Link>
+        </Button>
+      }
+      subnav={<PayrollSubnav current="settings" />}
+    >
       {!data.available ? (
         <Alert>
           <AlertTitle>Database update required</AlertTitle>
@@ -1075,7 +1073,7 @@ export function PayrollSettingsPage() {
           </Card>
         </div>
       )}
-    </>
+    </ListWorkspace>
   );
 }
 

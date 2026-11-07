@@ -18,7 +18,8 @@ import { getSalesDocumentConfig } from "@/lib/sales/sales-config.functions";
 import { canVoidInvoice } from "@/lib/sales/allocation-rules";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { ProjectTagControl } from "@/components/projects/ProjectTagControl";
-import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { ReasonDialog } from "@/components/sales/ReasonDialog";
 import { bpsToPercentString, money } from "@/components/sales/sales-form-utils";
 import { StatusBadge } from "@/components/common/stat-card";
@@ -181,14 +182,13 @@ function InvoiceDetail() {
   return (
     <>
       {/* Hide the app chrome when printing so the page reads as a clean document. */}
-      <style>{`@media print { aside, nav, [data-sidebar], [data-app-header] { display: none !important; } }`}</style>
+      <style>{`@media print { aside, nav, [data-sidebar], [data-app-header], .lb-record-workspace > :first-child { display: none !important; } }`}</style>
       {inv.price_list_name_snapshot ? (
         <p className="mb-3 text-sm text-muted-foreground print:hidden">
           Selected sales price list at save: {inv.price_list_name_snapshot}
         </p>
       ) : null}
-      <div className="print:hidden">
-        <PageHeader
+      <RecordWorkspace
           title={`Invoice ${inv.invoice_number ?? "(draft)"}`}
           description={`${customer?.name ?? "Customer"} · ${inv.invoice_date} · due ${inv.due_date}`}
           actions={
@@ -275,7 +275,8 @@ function InvoiceDetail() {
               ) : null}
             </div>
           }
-        />
+        >
+        <div className="print:hidden">
         {inv.status === "authorised" || inv.status === "partly_paid" || inv.status === "paid" ? (
           !voidable ? (
             <p className="mb-3 text-xs text-muted-foreground">
@@ -290,7 +291,7 @@ function InvoiceDetail() {
             <ProjectTagControl kind="sales_invoice" documentId={invoiceId} />
           </div>
         ) : null}
-      </div>
+        </div>
 
       <article className="max-w-4xl space-y-6 rounded-md border border-border bg-card p-6 print:border-0 print:p-0">
         <header className="flex flex-wrap items-start justify-between gap-4">
@@ -477,6 +478,7 @@ function InvoiceDetail() {
 
       <DocumentActions kind="sales_invoice" id={invoiceId} />
       <DocumentRecordPanel entityType="sales_invoice" entityId={invoiceId} audience="customer" />
+      </RecordWorkspace>
 
       <ReasonDialog
         open={voidOpen}

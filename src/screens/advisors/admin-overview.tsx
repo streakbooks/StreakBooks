@@ -2,7 +2,8 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AdvisorsSubnav } from "@/components/advisors/AdvisorsSubnav";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { getAdvisorsOverview } from "@/lib/advisors/management.functions";
@@ -32,13 +33,14 @@ export function AdvisorsAdminOverviewPage() {
   if (query.isError) {
     return (
       <main className="mx-auto max-w-6xl space-y-6 p-6">
-        <PageHeader title="Advisors overview" description="Inquiry and delivery console." />
+        <ListWorkspace title="Advisors overview" description="Inquiry and delivery console.">
         <ErrorState
           title="Overview unavailable"
           description={friendlyAuthError(query.error)}
           onRetry={() => void query.refetch()}
         />
-      </main>
+          </ListWorkspace>
+  </main>
     );
   }
 
@@ -46,11 +48,10 @@ export function AdvisorsAdminOverviewPage() {
 
   return (
     <main className="mx-auto max-w-6xl space-y-6 p-6">
-      <PageHeader
+      <ListWorkspace
         title="Advisors overview"
         description="Live counts from inquiries, conversations, consultations and clients. Only metrics backed by existing Advisors data are shown."
-      />
-      <AdvisorsSubnav />
+       subnav={<AdvisorsSubnav />}>
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Metric label="New inquiries" value={data.newInquiries} to="/advisors-admin/inquiries" />
@@ -182,6 +183,7 @@ export function AdvisorsAdminOverviewPage() {
           )}
         </div>
       </section>
-    </main>
+        </ListWorkspace>
+  </main>
   );
 }

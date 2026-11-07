@@ -18,7 +18,8 @@ import { getPayrollPayslipPage } from "@/lib/payroll/runs.functions";
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { PRINT_CSS } from "@/components/documents/DocumentSheet";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 import { Button } from "@/components/ui/button";
 
 function parseSnapshot(raw: PayslipSnapshot): PayslipSnapshot | null {
@@ -90,10 +91,9 @@ export function PayrollPayslipDetailPage({ payslipId }: { payslipId: string }) {
   }
   if (!canView) {
     return (
-      <>
-        <PageHeader title="Payslip" />
+      <RecordWorkspace title="Payslip">
         <EmptyState title="No payroll access" description="Ask for payroll.view permission." />
-      </>
+      </RecordWorkspace>
     );
   }
   if (pageQ.isPending) return <LoadingState />;
@@ -119,23 +119,22 @@ export function PayrollPayslipDetailPage({ payslipId }: { payslipId: string }) {
   const footerNote = payslip.footer_note ?? snapshot?.branding.footerNote;
 
   return (
-    <>
+    <RecordWorkspace
+      title={payslip.payslip_number}
+      description={`Pay run ${run.run_number}`}
+      actions={
+        <div className="flex flex-wrap gap-2 print:hidden">
+          <Button asChild variant="outline" size="sm">
+            <Link to="/payroll/payslips">All payslips</Link>
+          </Button>
+          <Button size="sm" variant="secondary" onClick={() => window.print()}>
+            <Printer className="mr-2 h-4 w-4" />
+            Print / Save as PDF
+          </Button>
+        </div>
+      }
+    >
       <div className="print:hidden">
-        <PageHeader
-          title={payslip.payslip_number}
-          description={`Pay run ${run.run_number}`}
-          actions={
-            <div className="flex flex-wrap gap-2">
-              <Button asChild variant="outline" size="sm">
-                <Link to="/payroll/payslips">All payslips</Link>
-              </Button>
-              <Button size="sm" variant="secondary" onClick={() => window.print()}>
-                <Printer className="mr-2 h-4 w-4" />
-                Print / Save as PDF
-              </Button>
-            </div>
-          }
-        />
         <PayrollSubnav current="payslips" />
         <p className="mb-4 hidden text-xs text-muted-foreground sm:block">
           In the print dialog choose &ldquo;Save as PDF&rdquo; as the destination to download a PDF.
@@ -220,6 +219,6 @@ export function PayrollPayslipDetailPage({ payslipId }: { payslipId: string }) {
           </footer>
         ) : null}
       </article>
-    </>
+    </RecordWorkspace>
   );
 }

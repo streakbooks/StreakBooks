@@ -3,7 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AdvisorsSubnav } from "@/components/advisors/AdvisorsSubnav";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,13 +83,14 @@ export function AdvisorsAdminConversationsPage() {
   if (query.isError) {
     return (
       <main className="mx-auto max-w-6xl space-y-6 p-6">
-        <PageHeader title="Conversations" description="Review Advisors qualification chats." />
+        <ListWorkspace title="Conversations" description="Review Advisors qualification chats.">
         <ErrorState
           title="Conversations unavailable"
           description={friendlyAuthError(query.error)}
           onRetry={() => void query.refetch()}
         />
-      </main>
+          </ListWorkspace>
+  </main>
     );
   }
 
@@ -97,11 +99,10 @@ export function AdvisorsAdminConversationsPage() {
 
   return (
     <main className="mx-auto max-w-6xl space-y-6 p-6">
-      <PageHeader
+      <ListWorkspace
         title="Conversations"
         description="Open chat transcripts, assign advisors and close or hand off conversations."
-      />
-      <AdvisorsSubnav />
+       subnav={<AdvisorsSubnav />}>
 
       <div className="flex flex-wrap items-end gap-3">
         <div className="space-y-1">
@@ -273,10 +274,12 @@ export function AdvisorsAdminConversationsPage() {
                   Save notes
                 </Button>
               </div>
+    </ListWorkspace>
             </>
           ) : null}
         </section>
       </div>
-    </main>
+        </ListWorkspace>
+  </main>
   );
 }

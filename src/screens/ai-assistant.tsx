@@ -34,7 +34,8 @@ import { AiFinancialInsights } from "@/components/ai/FinancialInsights";
 import { AiJournalEvidenceExplorer } from "@/components/ai/JournalEvidenceExplorer";
 import { AiJournalReviewQueue } from "@/components/ai/JournalReviewQueue";
 import { deleteAiConversationHistory, listAiConversationHistory, type AiConversationRow } from "@/lib/ai/history.functions";
-import { PageHeader, LoadingState, ErrorState } from "@/components/common/states";
+import { LoadingState, ErrorState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -114,13 +115,12 @@ export function AiAssistantPage() {
   if (isPending) return <LoadingState />;
   if (!company) {
     return (
-      <>
-        <PageHeader title="AI Assistant" description="Select an organisation to start." />
+      <ListWorkspace title="AI Assistant" description="Select an organisation to start.">
         <Alert>
           <AlertTitle>No organisation selected</AlertTitle>
           <AlertDescription>Choose an organisation using the company switcher.</AlertDescription>
         </Alert>
-      </>
+      </ListWorkspace>
     );
   }
   // Switching organisations discards in-memory responses rather than showing old tenant context.
@@ -323,12 +323,14 @@ function AiAssistantWorkspace({
   const formatAmount = (minor: number) => currency + " " + fromMinorUnits(BigInt(minor), currency);
 
   return (
-    <>
-      <PageHeader
-        title="AI Assistant"
-        description={"Organisation: " + companyName + ". Guidance and drafts are review-only unless explicitly posted by an authorised user."}
-      />
-
+    <ListWorkspace
+      title="AI Assistant"
+      description={
+        "Organisation: " +
+        companyName +
+        ". Guidance and drafts are review-only unless explicitly posted by an authorised user."
+      }
+    >
       <Alert className="mb-5">
         <ShieldCheck className="size-4" />
         <AlertTitle>Human-reviewed accounting assistance</AlertTitle>
@@ -786,6 +788,6 @@ function AiAssistantWorkspace({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </ListWorkspace>
   );
 }

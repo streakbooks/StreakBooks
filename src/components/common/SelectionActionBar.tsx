@@ -19,7 +19,7 @@ export function SelectionActionBar({ count, onClear, children, description }: Pr
     <section
       aria-label="Selected record actions"
       aria-live="polite"
-      className="flex flex-wrap items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 shadow-xs print:hidden"
+      className="flex min-w-0 flex-wrap items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-3 py-3 shadow-xs sm:px-4 print:hidden"
     >
       <div className="min-w-0">
         <p className="text-sm font-bold tabular-nums text-foreground">
@@ -27,7 +27,7 @@ export function SelectionActionBar({ count, onClear, children, description }: Pr
         </p>
         {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}
       </div>
-      {children ? <div className="flex flex-wrap items-center gap-2 border-l border-primary/15 pl-3">{children}</div> : null}
+      {children ? <div className="flex min-w-0 w-full flex-wrap items-center gap-2 border-t border-primary/15 pt-3 sm:w-auto sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">{children}</div> : null}
       <Button
         type="button"
         variant="ghost"

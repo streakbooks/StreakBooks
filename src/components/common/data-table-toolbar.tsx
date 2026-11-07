@@ -57,14 +57,14 @@ export function DataTableToolbar({
       <div
         role="region"
         aria-label="Bulk actions"
-        className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-primary/30 bg-info-soft/80 px-4 py-3 shadow-xs print:hidden"
+        className="mb-4 flex min-w-0 flex-wrap items-center gap-3 rounded-xl border border-primary/30 bg-info-soft/80 px-3 py-3 shadow-xs sm:px-4 print:hidden"
       >
         <span className="text-sm font-medium text-info-ink" aria-live="polite">
           {selectedCount} selected
         </span>
         <div className="flex flex-wrap items-center gap-2">{bulkActions}</div>
         {onClearSelection ? (
-          <Button variant="ghost" size="sm" className="ml-auto" onClick={onClearSelection}>
+          <Button variant="ghost" size="sm" className="ml-auto" aria-label="Clear selected records" onClick={onClearSelection}>
             <X />
             Clear
           </Button>
@@ -74,7 +74,7 @@ export function DataTableToolbar({
   }
   return (
     <div
-      className="mb-4 flex min-w-0 flex-wrap items-center gap-3 rounded-xl border border-border/85 bg-card p-3.5 shadow-card print:hidden"
+      className="mb-4 flex min-w-0 flex-wrap items-center gap-3 rounded-xl border border-border/85 bg-card p-3 shadow-card sm:p-3.5 print:hidden"
       role="search"
       aria-label="Filter records"
     >
@@ -125,7 +125,7 @@ export function DataTableToolbar({
           {summary}
         </span>
       ) : null}
-      <div className="ml-auto flex max-w-full flex-wrap items-center gap-2">
+      <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:ml-auto sm:w-auto">
         <TableAppearanceControls
           columns={columns ?? []}
           hidden={columns?.filter((column) => !column.visible).map((column) => column.id) ?? []}

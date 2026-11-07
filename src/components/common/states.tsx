@@ -32,7 +32,7 @@ export function PageHeader({
     <div className="lb-page-header relative mb-7 flex flex-col gap-4 border-b border-border/70 pb-5 lg:flex-row lg:items-end lg:justify-between print:border-0 print:pb-0">
       <div className="min-w-0">
         {breadcrumbs && breadcrumbs.length > 0 ? (
-          <nav aria-label="Breadcrumb" className="mb-1.5">
+          <nav aria-label="Breadcrumb" className="mb-1.5 min-w-0">
             <ol className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
               {breadcrumbs.map((c, i) => (
                 <li key={`${c.label}-${i}`} className="flex items-center gap-1">
@@ -65,7 +65,7 @@ export function PageHeader({
         ) : null}
       </div>
       {actions ? (
-        <div className="flex max-w-full flex-wrap items-center gap-2 lg:max-w-[60%] lg:justify-end print:hidden">
+        <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto lg:max-w-[60%] lg:justify-end print:hidden">
           {actions}
         </div>
       ) : null}
@@ -84,12 +84,12 @@ export function SectionHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+    <div className="mb-3 flex min-w-0 flex-wrap items-end justify-between gap-3">
       <div>
         <h2 className="text-base font-semibold tracking-tight">{title}</h2>
         {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
       </div>
-      {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
+      {actions ? <div className="flex max-w-full flex-wrap items-center gap-2">{actions}</div> : null}
     </div>
   );
 }

@@ -675,6 +675,74 @@
   }
 }
 
+/* LinkBooks visual identity — original paired-leaf ledger mark, drawn entirely in CSS. */
+.lb-brand-mark {
+  position: relative;
+  isolation: isolate;
+  display: inline-block;
+  flex-shrink: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  overflow: hidden;
+  border-radius: 0.7rem;
+  border: 1px solid color-mix(in oklab, var(--sidebar-primary) 35%, transparent);
+  background:
+    radial-gradient(circle at 24% 20%, color-mix(in oklab, var(--sidebar-primary) 31%, transparent), transparent 48%),
+    linear-gradient(140deg, var(--sidebar-accent), var(--sidebar));
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--sidebar-foreground) 12%, transparent),
+    0 3px 8px color-mix(in oklab, var(--sidebar) 45%, transparent);
+}
+.lb-brand-mark-spine {
+  position: absolute;
+  top: 0.48rem;
+  left: calc(50% - 1px);
+  width: 2px;
+  height: 1.26rem;
+  border-radius: 999px;
+  background: var(--sidebar-primary);
+}
+.lb-brand-mark-page {
+  position: absolute;
+  top: 0.57rem;
+  width: 0.62rem;
+  height: 1.15rem;
+  border: 2px solid var(--sidebar-primary);
+  border-top: 0;
+  border-radius: 2px 2px 7px 3px;
+  opacity: 0.95;
+}
+.lb-brand-mark-page-left {
+  left: 0.41rem;
+  transform: skewY(11deg);
+  border-right: 0;
+}
+.lb-brand-mark-page-right {
+  right: 0.41rem;
+  transform: skewY(-11deg);
+  border-left: 0;
+}
+.lb-premium-sidebar {
+  background: linear-gradient(160deg, var(--sidebar-top), var(--sidebar) 43%, var(--sidebar-bottom));
+  box-shadow: 8px 0 28px -24px color-mix(in oklab, var(--sidebar) 80%, transparent);
+}
+.lb-workspace-topbar {
+  backdrop-filter: saturate(1.25) blur(12px);
+  box-shadow: 0 1px 6px color-mix(in oklab, var(--foreground) 4%, transparent);
+}
+.lb-workspace-canvas {
+  background-image: radial-gradient(ellipse at 80% -14%, color-mix(in oklab, var(--primary) 6%, transparent), transparent 50%);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .lb-workspace-topbar { backdrop-filter: none; }
+}
+@media print {
+  .lb-workspace-canvas { background: transparent !important; }
+}
+@media (forced-colors: active) {
+  .lb-brand-mark { border: 2px solid CanvasText; background: Canvas; }
+  .lb-brand-mark-page, .lb-brand-mark-spine { border-color: CanvasText; background-color: CanvasText; }
+}
+
 /* Every built-in palette owns its chart series, not just sidebar and buttons. 
  * Keep success, money and status colours semantic and independent of this selection.
  * Custom palettes receive coordinated chart tokens from computeCustomTokens(). */

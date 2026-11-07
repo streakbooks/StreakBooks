@@ -44,7 +44,7 @@ export function BankTransactionQuickPreview({
   return (
     <Sheet open={Boolean(transaction)} onOpenChange={(open) => !open && onClose()}>
       <SheetContent
-        className="w-full overflow-y-auto sm:max-w-lg"
+        className="w-full overflow-y-auto sm:max-w-xl"
         aria-label="Bank transaction preview"
         onKeyDown={(event) => {
           const target = event.target;
@@ -79,24 +79,24 @@ export function BankTransactionQuickPreview({
         </SheetHeader>
         {transaction ? (
           <div className="mt-6 space-y-5">
-            <div className="rounded-xl border bg-muted/30 p-4">
+            <div className="rounded-2xl border border-border/85 bg-gradient-to-br from-muted/40 to-card p-5 shadow-card">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {formatDate(transaction.txn_date)}
                 </p>
                 <StatusBadge status={transaction.status} />
               </div>
-              <p className="mt-3 break-words text-lg font-semibold">
+              <p className="mt-3 break-words text-lg font-bold tracking-[-0.02em]">
                 {transaction.description ?? "Bank transaction"}
               </p>
-              <p className="mt-2 text-2xl font-semibold tabular-nums">
+              <p className="mt-2 text-[1.75rem] font-bold tracking-[-0.03em] tabular-nums">
                 {formatMoney(transaction.amount_minor, currency)}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 Amount in the bank account's currency
               </p>
             </div>
-            <dl className="grid grid-cols-2 gap-4 text-sm">
+            <dl className="grid grid-cols-2 gap-4 rounded-xl border border-border/75 bg-muted/20 p-4 text-sm">
               <div>
                 <dt className="text-muted-foreground">Bank account</dt>
                 <dd className="mt-1 break-words font-medium">{accountName}</dd>

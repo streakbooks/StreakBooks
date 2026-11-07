@@ -48,6 +48,16 @@ function Help() {
           type="search"
           placeholder="Reconcile, invoice, tax return, shortcut…"
         />
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs text-muted-foreground" role="status" aria-live="polite">
+            {articles.length} {articles.length === 1 ? "article" : "articles"} found
+          </p>
+          {q ? (
+            <Button type="button" size="sm" variant="ghost" onClick={() => setQ("")}>
+              Clear search
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       {articles.length === 0 ? (

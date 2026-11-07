@@ -515,5 +515,17 @@
       ],
       "tests": "NOT RUN"
     }
+  },
+  "inventoryGuardEvidence": {
+    "source": "scripts/check-browsing-coverage.mjs",
+    "commit": "e95f33b95202fc1ebbf129b233096fba47f4f1cf",
+    "checks": [
+      "Sidebar/module and route inventory uniqueness and exact presence",
+      "Manifest count summaries equal current source inventory",
+      "12 unique acceptance criterion identifiers",
+      "Any fully verified module has 12 nonempty evidence entries"
+    ],
+    "execution": "NOT RUN",
+    "note": "Structural inventory guard only; no module or workflow accepted"
   }
 }

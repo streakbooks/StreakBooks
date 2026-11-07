@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AdvisorsSubnav } from "@/components/advisors/AdvisorsSubnav";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -250,7 +250,7 @@ export function AdvisorsAdminEngagementsPage() {
                       {engagement.clientName || engagement.clientEmail || engagement.clientId}
                     </p>
                   </div>
-                  <Badge variant="secondary">{engagement.status}</Badge>
+                  <StatusBadge status={engagement.status} />
                 </div>
                 <p className="mt-2 text-xs text-muted-foreground">
                   {engagement.serviceCode}
@@ -411,7 +411,7 @@ export function AdvisorsAdminEngagementsPage() {
                           <span>
                             v{proposal.versionNumber} · {proposal.title}
                           </span>
-                          <Badge variant="outline">{proposal.status}</Badge>
+                          <StatusBadge status={proposal.status} />
                         </div>
                         {proposal.status !== "draft" ? (
                           <p className="mt-1 break-all text-xs text-muted-foreground">

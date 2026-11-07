@@ -34,6 +34,7 @@ import { GlobalSearch } from "@/components/layout/GlobalSearch";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 import { CreateNewMenu } from "@/components/create-new/CreateNewMenu";
+import { AppLauncher } from "@/components/app-store/AppLauncher";
 import { VoiceAssistant } from "@/components/ai-voice/VoiceAssistant";
 import { VoiceProvider } from "@/components/ai-voice/VoiceProvider";
 import { BillingAccessBanner } from "@/components/billing/BillingAccessBanner";
@@ -591,6 +592,7 @@ function AppShellLayout({ children }: { children: ReactNode }) {
           </div>
 
           <VoiceAssistant />
+          <AppLauncher />
           <NotificationBell companyId={company?.id ?? null} userId={user.id} />
           <CreateNewMenu />
           <ThemeToggle />

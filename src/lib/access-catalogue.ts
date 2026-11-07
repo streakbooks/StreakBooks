@@ -369,6 +369,83 @@ export const ACCESS_AREAS: readonly AccessArea[] = [
     ],
   },
   {
+    id: "appstore",
+    label: "App Store & integrations",
+    description: "Marketplace discovery, installations, connections, sync and exception handling.",
+    items: [
+      {
+        permission: "appstore.view",
+        label: "View App Store",
+        detail: "Browse the catalogue and open integration workspaces.",
+      },
+      {
+        permission: "appstore.request_install",
+        label: "Request app installation",
+        detail: "Submit an installation request for organisation approval.",
+      },
+      {
+        permission: "appstore.install",
+        label: "Install apps",
+        detail: "Install verified connectors for the organisation.",
+      },
+      {
+        permission: "appstore.manage_connections",
+        label: "Manage connections",
+        detail: "Reconnect, pause, resume or disconnect integrations.",
+      },
+      {
+        permission: "appstore.manage_mappings",
+        label: "Manage accounting mappings",
+        detail: "Map external accounts, products and tax codes.",
+      },
+      {
+        permission: "appstore.view_sync",
+        label: "View synchronization activity",
+        detail: "Inspect sync jobs, checkpoints and outcomes.",
+      },
+      {
+        permission: "appstore.resolve_exceptions",
+        label: "Resolve integration exceptions",
+        detail: "Correct and retry failed integration records.",
+      },
+      {
+        permission: "appstore.advise",
+        label: "Advise client apps",
+        detail: "Recommend and monitor apps for authorized client organisations.",
+      },
+      {
+        permission: "appstore.manage_certification",
+        label: "Manage app certification",
+        detail: "Record certification reviews and reassessment outcomes.",
+      },
+      {
+        permission: "developer.manage_apps",
+        label: "Manage developer applications",
+        detail: "Register publishers, OAuth clients and partner apps.",
+      },
+      {
+        permission: "developer.submit_apps",
+        label: "Submit apps for publication",
+        detail: "Submit partner applications for marketplace review.",
+      },
+      {
+        permission: "developer.partner_manage",
+        label: "Manage partner program",
+        detail: "Partner tiers, commercial terms and API access levels.",
+      },
+      {
+        permission: "developer.view_analytics",
+        label: "View publisher analytics",
+        detail: "Genuine impressions, installs and conversion metrics.",
+      },
+      {
+        permission: "developer.view_usage",
+        label: "View API usage",
+        detail: "Request quotas, rate limits and usage alerts.",
+      },
+    ],
+  },
+  {
     id: "assistance",
     label: "Assistance",
     description: "In-product guidance. Suggestions never post by themselves.",

@@ -186,10 +186,15 @@ export const categoryMeta: CategoryMeta[] = [
   {
     id: "integrations",
     label: "Integrations & API",
-    description: "Catalogue of connections with honest status.",
-    synonyms: ["api", "webhook", "oauth", "bank feed", "gateway"],
+    description:
+      "Platform connection health. Browse and manage marketplace apps in the App Store.",
+    synonyms: ["api", "webhook", "oauth", "bank feed", "gateway", "app store", "marketplace"],
     legacyTab: "integrations",
     availability: "partial",
+    moduleLinks: [
+      { label: "App Store", to: "/app-store" },
+      { label: "Developer portal", to: "/developer" },
+    ],
   },
   {
     id: "audit",

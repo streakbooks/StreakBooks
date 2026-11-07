@@ -20,6 +20,8 @@ import {
   Warehouse,
   WalletCards,
   HandCoins,
+  Store,
+  Code2,
   type LucideIcon,
 } from "lucide-react";
 
@@ -172,6 +174,20 @@ export const navItems: NavItem[] = [
     icon: Handshake,
     group: "practice",
     description: "Customer Advisors plan, appointments and documents",
+  },
+  {
+    label: "App Store",
+    to: "/app-store",
+    icon: Store,
+    group: "tools",
+    description: "Integrations marketplace and connections",
+  },
+  {
+    label: "Developer",
+    to: "/developer",
+    icon: Code2,
+    group: "tools",
+    description: "Public API, OAuth apps and partner publishing",
   },
   {
     label: "AI Assistant",

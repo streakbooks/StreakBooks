@@ -43,28 +43,29 @@ export function InvoiceMobileCards({
           <article
             key={invoice.id}
             className={cn(
-              "rounded-xl border bg-card shadow-sm",
+              "rounded-2xl border bg-card shadow-card transition-[border-color,box-shadow] hover:shadow-sm",
+              overdue ? "border-destructive/30" : "border-border/85",
               density === "compact" ? "p-3" : "p-4",
             )}
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-xs text-muted-foreground">Invoice</p>
-                <h3 className="mt-1 break-words text-base font-semibold">{number}</h3>
+                <h3 className="mt-1 break-words text-base font-bold tracking-[-0.02em]">{number}</h3>
                 <p className="mt-1 break-words text-sm text-muted-foreground">
                   {invoice.contacts?.name ?? "Customer not specified"}
                 </p>
               </div>
               <StatusBadge status={overdue ? "overdue" : invoice.status} />
             </div>
-            <dl className="mt-3 grid grid-cols-2 gap-3 rounded-lg bg-muted/30 p-3 text-sm">
+            <dl className="mt-3 grid grid-cols-2 gap-3 rounded-xl border border-border/55 bg-muted/25 p-3 text-sm">
               <div>
                 <dt className="text-xs text-muted-foreground">Invoice date</dt>
                 <dd className="mt-1 font-medium">{date(invoice.invoice_date)}</dd>
               </div>
               <div>
                 <dt className="text-xs text-muted-foreground">Due date</dt>
-                <dd className="mt-1 font-medium">{date(invoice.due_date)}</dd>
+                <dd className={cn("mt-1 font-medium", overdue && "text-destructive")}>{date(invoice.due_date)}</dd>
               </div>
               <div>
                 <dt className="text-xs text-muted-foreground">Total</dt>
@@ -79,7 +80,7 @@ export function InvoiceMobileCards({
                 </dd>
               </div>
             </dl>
-            <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
+            <div className="mt-3 flex flex-wrap items-center justify-end gap-2 border-t border-border/60 pt-3">
               <Button
                 type="button"
                 size="sm"

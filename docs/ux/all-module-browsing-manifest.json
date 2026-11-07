@@ -371,8 +371,20 @@
       "routeFiles": [
         "ai-assistant.tsx"
       ],
-      "browsingImplementation": "not_assessed_module_wide",
-      "fullyVerified": false
+      "browsingImplementation": "partial_code_not_runtime_verified",
+      "fullyVerified": false,
+      "currentEvidence": [
+        "src/lib/ai/assistant-browsing.ts — strictly validated reviewCase/suggestionStatus/suggestionQ",
+        "src/routes/_authenticated/ai-assistant.tsx — typed URL search state",
+        "src/screens/ai-assistant.tsx — navigation-backed suggestion query/status, preserved review-case parameter",
+        "src/lib/ai/assistant-browsing.test.ts — 6 unit cases WRITTEN, NOT RUN",
+        "e2e/ai-assistant-suggestion-browsing.spec.ts — 2 browser cases WRITTEN, NOT RUN"
+      ],
+      "remaining": [
+        "Run authenticated AI-enabled browser tests and full app TypeScript, build and unit checks",
+        "Verify conversation, recommendations, journal evidence, reviewCase and security/approvals remain correct",
+        "Audit every AI Assistant subpanel and LinkBooks Signal/voice features for browsing and accessibility"
+      ]
     },
     {
       "label": "Tax",

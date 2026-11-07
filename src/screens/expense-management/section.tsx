@@ -15,6 +15,7 @@ import { ExpenseManagementApprovalsPage } from "@/screens/expense-management/app
 import { ExpenseManagementClaimsPage } from "@/screens/expense-management/claims";
 import { ExpenseManagementReceiptsPage } from "@/screens/expense-management/receipts";
 import { ExpenseManagementSettingsPage } from "@/screens/expense-management/settings";
+import { ExpenseManagementSpendingRequestsPage } from "@/screens/expense-management/spending-requests";
 
 const LEGACY_LINKS: Partial<
   Record<ExpenseManagementSectionKey, { label: string; to: string }>
@@ -49,6 +50,9 @@ export function ExpenseManagementSectionPage({
   }
   if (sectionKey === "approvals") {
     return <ExpenseManagementApprovalsPage />;
+  }
+  if (sectionKey === "spending-requests") {
+    return <ExpenseManagementSpendingRequestsPage />;
   }
 
   if (isPending) return <LoadingState />;

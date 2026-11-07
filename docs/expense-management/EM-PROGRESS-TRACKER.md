@@ -12,7 +12,7 @@ Update after every verified batch. The visual percentage counts only **completed
 
 | Area | Status |
 | --- | --- |
-| Code Development | 3 / 12 verified (+ EM-04a/b + EM-05a coded; those batches not closed) |
+| Code Development | 3 / 12 verified (+ EM-04a/b + EM-05a/b coded; those batches not closed) |
 | Local Testing | Partial (unit + check:ui; no DB/browser) |
 | GitHub Commit | Local commits only; not pushed |
 | GitHub PR / Merge | Pending |
@@ -28,7 +28,7 @@ Update after every verified batch. The visual percentage counts only **completed
 | EM-02 | Navigation, dashboard, list/Kanban, employee profiles | Verified locally (nav + overview KPIs) |
 | EM-03 | Claims, lines, splitting, allocations, templates, lifecycle | Verified locally (core); Kanban/print/dimension pickers deferred |
 | EM-04 | Receipts, email inbox, file security, mobile capture, offline drafts | In progress — EM-04a/b upload+match+offline queue; inbound email/OCR still pending |
-| EM-05 | Approvals, policies, delegation, escalation, spending requests | In progress — EM-05a approve/return/reject; policies/delegation/spending requests pending |
+| EM-05 | Approvals, policies, delegation, escalation, spending requests | In progress — EM-05a/b approvals + spending requests; delegation/escalation pending |
 | EM-06 | Accounting, tax, journals, FX, refunds, budgets | Not started |
 | EM-07 | Reimbursements, partial/batch payments, bank matching, payroll | Not started |
 | EM-08 | Mileage, travel, per diem, advances, petty cash, settlements | Not started |

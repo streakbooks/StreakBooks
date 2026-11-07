@@ -27,6 +27,7 @@ type Draft = {
   claimNumberPrefix: string;
   defaultClaimCurrency: string;
   requireReceiptAboveMinor: string;
+  requireSpendingRequestAboveMinor: string;
   allowMultiCurrencyClaims: boolean;
   preventSelfApproval: boolean;
   defaultDistanceUnit: ExpenseDistanceUnit;
@@ -39,6 +40,7 @@ function toDraft(settings: ExpenseManagementSettings): Draft {
     claimNumberPrefix: settings.claimNumberPrefix,
     defaultClaimCurrency: settings.defaultClaimCurrency ?? "",
     requireReceiptAboveMinor: String(settings.requireReceiptAboveMinor),
+    requireSpendingRequestAboveMinor: String(settings.requireSpendingRequestAboveMinor),
     allowMultiCurrencyClaims: settings.allowMultiCurrencyClaims,
     preventSelfApproval: settings.preventSelfApproval,
     defaultDistanceUnit: settings.defaultDistanceUnit,
@@ -76,6 +78,12 @@ export function ExpenseManagementSettingsPage() {
       if (!Number.isSafeInteger(threshold) || threshold < 0) {
         throw new Error("Receipt threshold must be a whole number of minor units ≥ 0.");
       }
+      const spendThreshold = Number(draft.requireSpendingRequestAboveMinor);
+      if (!Number.isSafeInteger(spendThreshold) || spendThreshold < 0) {
+        throw new Error(
+          "Spending-request threshold must be a whole number of minor units ≥ 0.",
+        );
+      }
       return saveSettings({
         data: {
           companyId: company.id,
@@ -87,6 +95,7 @@ export function ExpenseManagementSettingsPage() {
               ? draft.defaultClaimCurrency.trim().toUpperCase()
               : null,
             requireReceiptAboveMinor: threshold,
+            requireSpendingRequestAboveMinor: spendThreshold,
             allowMultiCurrencyClaims: draft.allowMultiCurrencyClaims,
             preventSelfApproval: draft.preventSelfApproval,
             defaultDistanceUnit: draft.defaultDistanceUnit,
@@ -225,6 +234,25 @@ export function ExpenseManagementSettingsPage() {
               setDraft({ ...draft, requireReceiptAboveMinor: event.target.value })
             }
           />
+        </div>
+
+        <div className="grid gap-2">
+          <Label htmlFor="em-spend-req">
+            Require approved spending request above (minor units)
+          </Label>
+          <Input
+            id="em-spend-req"
+            inputMode="numeric"
+            value={draft.requireSpendingRequestAboveMinor}
+            disabled={!canEdit || save.isPending}
+            onChange={(event) =>
+              setDraft({ ...draft, requireSpendingRequestAboveMinor: event.target.value })
+            }
+          />
+          <p className="text-sm text-muted-foreground">
+            Set to 0 to disable. Claims at or above this amount must link an approved spending
+            request before submit.
+          </p>
         </div>
 
         <div className="grid gap-2">

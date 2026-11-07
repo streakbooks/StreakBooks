@@ -60,6 +60,7 @@ export type ExpenseManagementSettings = {
   fxGainAccountId: string | null;
   fxLossAccountId: string | null;
   requireReceiptAboveMinor: number;
+  requireSpendingRequestAboveMinor: number;
   allowMultiCurrencyClaims: boolean;
   preventSelfApproval: boolean;
   defaultDistanceUnit: ExpenseDistanceUnit;
@@ -78,6 +79,7 @@ export type ExpenseManagementSettingsInput = {
   pettyCashAccountId?: string | null;
   fxGainAccountId?: string | null;
   fxLossAccountId?: string | null;
+  requireSpendingRequestAboveMinor?: number;
   requireReceiptAboveMinor?: number;
   allowMultiCurrencyClaims?: boolean;
   preventSelfApproval?: boolean;

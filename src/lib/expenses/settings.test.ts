@@ -7,6 +7,7 @@ describe("expense management settings mapping", () => {
       companyId: "company-1",
       enabled: false,
       claimNumberPrefix: "EXP-",
+      requireSpendingRequestAboveMinor: 0,
       version: 0,
       exists: false,
       preventSelfApproval: true,

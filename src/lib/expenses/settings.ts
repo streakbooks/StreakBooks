@@ -24,6 +24,8 @@ type SettingsRow = {
   fxLossAccountId?: string | null;
   require_receipt_above_minor?: number;
   requireReceiptAboveMinor?: number;
+  require_spending_request_above_minor?: number;
+  requireSpendingRequestAboveMinor?: number;
   allow_multi_currency_claims?: boolean;
   allowMultiCurrencyClaims?: boolean;
   prevent_self_approval?: boolean;
@@ -56,6 +58,7 @@ export function mapExpenseManagementSettings(
       fxGainAccountId: null,
       fxLossAccountId: null,
       requireReceiptAboveMinor: 0,
+      requireSpendingRequestAboveMinor: 0,
       allowMultiCurrencyClaims: true,
       preventSelfApproval: true,
       defaultDistanceUnit: "km",
@@ -86,6 +89,9 @@ export function mapExpenseManagementSettings(
     requireReceiptAboveMinor: Number(
       row.require_receipt_above_minor ?? row.requireReceiptAboveMinor ?? 0,
     ),
+    requireSpendingRequestAboveMinor: Number(
+      row.require_spending_request_above_minor ?? row.requireSpendingRequestAboveMinor ?? 0,
+    ),
     allowMultiCurrencyClaims: Boolean(
       row.allow_multi_currency_claims ?? row.allowMultiCurrencyClaims ?? true,
     ),
@@ -115,6 +121,7 @@ export function toExpenseManagementSettingsPayload(
     fx_gain_account_id: input.fxGainAccountId,
     fx_loss_account_id: input.fxLossAccountId,
     require_receipt_above_minor: input.requireReceiptAboveMinor,
+    require_spending_request_above_minor: input.requireSpendingRequestAboveMinor,
     allow_multi_currency_claims: input.allowMultiCurrencyClaims,
     prevent_self_approval: input.preventSelfApproval,
     default_distance_unit: input.defaultDistanceUnit,

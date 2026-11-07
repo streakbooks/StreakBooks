@@ -12,7 +12,8 @@ import { ReportCatalogue } from "@/components/reports/ReportCatalogue";
 import { Tabs, TabsList, TabsContent } from "@/components/ui/tabs";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useActiveCompany } from "@/hooks/use-active-company";
-import { PageHeader, EmptyState, LoadingState } from "@/components/common/states";
+import { EmptyState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -72,12 +73,10 @@ function ReportsCentre() {
     fiscalYearStart(periodTo, company.fiscal_year_end_month, company.fiscal_year_end_day ?? 31);
   const readyCount = REPORT_CATALOG.filter((r) => r.status === "ready").length;
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Reports Centre"
-        description={`Financial statements, saved reports and performance analysis for ${company.name}. ${readyCount} reports connected to your accounting records.`}
-      />
-
+    <ListWorkspace
+      title="Reports Centre"
+      description={`Financial statements, saved reports and performance analysis for ${company.name}. ${readyCount} reports connected to your accounting records.`}
+    >
       <div className="flex flex-wrap gap-3">
         <div>
           <Label htmlFor="centre-from">Reporting period from</Label>
@@ -257,6 +256,6 @@ function ReportsCentre() {
           />
         </TabsContent>
       </Tabs>
-    </div>
+    </ListWorkspace>
   );
 }

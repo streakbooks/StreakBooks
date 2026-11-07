@@ -50,7 +50,8 @@ import {
 } from "@/components/fixed-assets/AssetRegisterPersonalization";
 import { capitalisationReviewGuidance, reviewCapitalisableLines, selectCapitalisationReviewRows } from "@/lib/fixed-assets/capitalisation-review";
 import { buildFixedAssetRegisterCsv } from "@/lib/fixed-assets/register-export";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -165,18 +166,17 @@ function FixedAssetsPage() {
   const d = page.data;
   if (!d.available) {
     return (
-      <>
-        <PageHeader
-          title="Fixed assets"
-          description="Register, depreciate and dispose of assets."
-        />
+      <ListWorkspace
+        title="Fixed assets"
+        description="Register, depreciate and dispose of assets."
+      >
         <Alert>
           <AlertDescription>
             Fixed assets are not available yet: the database updates that add them have not been
             applied.
           </AlertDescription>
         </Alert>
-      </>
+      </ListWorkspace>
     );
   }
   const currency = d.currency;
@@ -207,7 +207,7 @@ function FixedAssetsPage() {
 
   return (
     <>
-      <PageHeader
+      <ListWorkspace
         title="Fixed assets"
         description="Keep a register of what you own, post monthly depreciation and record disposals. Every posting goes through the same journal engine as the rest of your books."
         actions={
@@ -224,7 +224,7 @@ function FixedAssetsPage() {
             </Button>
           </>
         }
-      />
+      >
       <Tabs value={tab}>
         <TabsList
           className="flex min-h-11 w-full max-w-full flex-nowrap justify-start overflow-x-auto gap-1"
@@ -650,6 +650,7 @@ function FixedAssetsPage() {
           )}
         </TabsContent>
       </Tabs>
+      </ListWorkspace>
 
       {dialog?.kind === "asset" ? (
         <AssetDialog

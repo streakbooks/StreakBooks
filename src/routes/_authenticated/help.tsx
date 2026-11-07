@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { PageHeader, EmptyState } from "@/components/common/states";
+import { EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,12 +27,10 @@ function Help() {
   const topics = [...new Set(articles.map((a) => a.topic))];
 
   return (
-    <>
-      <PageHeader
-        title="Help centre"
-        description="Step-by-step guides for the things you do most, written for what LinkBooks does today."
-      />
-
+    <ListWorkspace
+      title="Help centre"
+      description="Step-by-step guides for the things you do most, written for what LinkBooks does today."
+    >
       <section aria-label="Search LinkBooks help" className="mb-7 max-w-2xl space-y-2 rounded-2xl border border-border/85 bg-gradient-to-r from-card to-accent/30 p-5 shadow-card">
         <Label htmlFor="help-search">Search help</Label>
         <Input
@@ -106,6 +105,6 @@ function Help() {
         organisation. LinkBooks has no live chat; none is implied.
       </p>
       <p className="sr-only">{HELP_ARTICLES.length} articles</p>
-    </>
+    </ListWorkspace>
   );
 }

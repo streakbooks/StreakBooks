@@ -5,7 +5,8 @@ import { AppStoreHero } from "@/components/app-store/AppStoreHero";
 import { AppStoreSubnav } from "@/components/app-store/AppStoreSubnav";
 import { MarketplaceAppCard } from "@/components/app-store/MarketplaceAppCard";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,25 +43,23 @@ export function AppStoreOverviewPage() {
   }
   if (!canView) {
     return (
-      <>
-        <PageHeader title="App Store" description="Integrations marketplace." />
+      <ListWorkspace title="App Store" description="Integrations marketplace.">
         <EmptyState
           title="No App Store access"
           description="Ask an administrator for appstore.view."
         />
-      </>
+      </ListWorkspace>
     );
   }
   if (catalogue.isLoading) {
     return (
-      <>
-        <PageHeader
-          title="App Store"
-          description="Connect third-party software to LinkBooks through a secure open platform."
-        />
-        <AppStoreSubnav current="overview" />
+      <ListWorkspace
+        title="App Store"
+        description="Connect third-party software to LinkBooks through a secure open platform."
+        subnav={<AppStoreSubnav current="overview" />}
+      >
         <LoadingState />
-      </>
+      </ListWorkspace>
     );
   }
   if (catalogue.isError) {

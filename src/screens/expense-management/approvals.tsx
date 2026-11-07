@@ -53,6 +53,7 @@ import {
   revokeExpenseApprovalDelegation,
   saveExpenseApprovalDelegation,
   saveExpenseApprovalEscalationDays,
+  saveExpenseRequiredApprovalCount,
   startExpenseClaimReview,
 } from "@/lib/expenses/expenses.functions";
 import type { Permission } from "@/lib/permissions";
@@ -80,6 +81,7 @@ export function ExpenseManagementApprovalsPage() {
   const [delegateEnd, setDelegateEnd] = useState(today);
   const [delegateNote, setDelegateNote] = useState("");
   const [escalationDaysDraft, setEscalationDaysDraft] = useState("5");
+  const [requiredApprovalsDraft, setRequiredApprovalsDraft] = useState("1");
 
   const fetchClaims = useServerFn(listExpenseClaims);
   const startReview = useServerFn(startExpenseClaimReview);
@@ -94,6 +96,7 @@ export function ExpenseManagementApprovalsPage() {
   const fetchEscalations = useServerFn(listExpenseApprovalEscalations);
   const refreshEscalations = useServerFn(refreshExpenseApprovalEscalations);
   const saveEscalationDays = useServerFn(saveExpenseApprovalEscalationDays);
+  const saveRequiredApprovals = useServerFn(saveExpenseRequiredApprovalCount);
 
   const escalationsQ = useQuery({
     queryKey: ["expense-approval-escalations", company?.id],
@@ -289,6 +292,22 @@ export function ExpenseManagementApprovalsPage() {
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
 
+  const saveRequiredApprovalsMut = useMutation({
+    mutationFn: async () => {
+      if (!company) throw new Error("Select a company first.");
+      const count = Number(requiredApprovalsDraft);
+      if (!Number.isFinite(count) || count < 1 || count > 10) {
+        throw new Error("Required approvals must be between 1 and 10.");
+      }
+      return saveRequiredApprovals({ data: { companyId: company.id, count } });
+    },
+    onSuccess: (result) => {
+      setRequiredApprovalsDraft(String(result.requiredApprovalCount));
+      toast.success(`Required approvals set to ${result.requiredApprovalCount}`);
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+
   useEffect(() => {
     if (escalationsQ.data) {
       setEscalationDaysDraft(String(escalationsQ.data.escalationDays));
@@ -374,13 +393,38 @@ export function ExpenseManagementApprovalsPage() {
       <Alert className="mb-6">
         <AlertTitle>Approval and accrual posting</AlertTitle>
         <AlertDescription>
-          Approving marks the claim ready to post. Posting creates the expense accrual journal (not
-          a bank payment). Self-approval is blocked when organisation settings require it.
+          Approving records one approval step. When the organisation requires multiple distinct
+          approvers, the claim stays in review until the final step, then becomes ready to post.
+          Self-approval is blocked when organisation settings require it.
           {actingAsDelegate
             ? " You are currently acting as a delegated approver."
             : ""}
         </AlertDescription>
       </Alert>
+
+      {canApprove ? (
+        <section className="mb-8 flex flex-wrap items-end gap-3 rounded-lg border p-4">
+          <div className="grid gap-2">
+            <Label htmlFor="em-required-approvals">Required distinct approvers</Label>
+            <Input
+              id="em-required-approvals"
+              type="number"
+              min={1}
+              max={10}
+              className="w-28"
+              value={requiredApprovalsDraft}
+              onChange={(event) => setRequiredApprovalsDraft(event.target.value)}
+            />
+          </div>
+          <Button
+            size="sm"
+            disabled={saveRequiredApprovalsMut.isPending}
+            onClick={() => saveRequiredApprovalsMut.mutate()}
+          >
+            {saveRequiredApprovalsMut.isPending ? "Saving…" : "Save policy"}
+          </Button>
+        </section>
+      ) : null}
 
       {canApprove || can("expenses.audit" as Permission) ? (
         <section className="mb-8 space-y-4 rounded-lg border p-4">

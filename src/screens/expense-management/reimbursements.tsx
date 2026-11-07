@@ -34,15 +34,20 @@ import { friendlyAuthError } from "@/lib/auth-helpers";
 import { listBankAccounts } from "@/lib/banking/banking.functions";
 import {
   batchReimburseExpenseClaims,
+  cancelExpenseClaimPayrollQueue,
   EXPENSE_BATCH_REIMBURSE_MIGRATION,
   EXPENSE_REIMBURSEMENT_MIGRATION,
   listExpenseClaims,
+  queueExpenseClaimForPayroll,
   reimburseExpenseClaim,
+  refundExpenseClaimReimbursement,
 } from "@/lib/expenses/expenses.functions";
 import {
   canReimburseClaim,
   formatBatchReimburseSummary,
+  remainingReimbursableMinor,
 } from "@/lib/expenses/reimbursement";
+import { parseMinorOrThrow } from "@/lib/purchases/money-input";
 import type { Permission } from "@/lib/permissions";
 
 export function ExpenseManagementReimbursementsPage() {
@@ -54,11 +59,15 @@ export function ExpenseManagementReimbursementsPage() {
   const [bankGlAccountId, setBankGlAccountId] = useState("");
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().slice(0, 10));
   const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const [partialAmounts, setPartialAmounts] = useState<Record<string, string>>({});
 
   const fetchClaims = useServerFn(listExpenseClaims);
   const fetchBanks = useServerFn(listBankAccounts);
   const reimburse = useServerFn(reimburseExpenseClaim);
   const batchReimburse = useServerFn(batchReimburseExpenseClaims);
+  const queuePayroll = useServerFn(queueExpenseClaimForPayroll);
+  const cancelPayroll = useServerFn(cancelExpenseClaimPayrollQueue);
+  const refundPayment = useServerFn(refundExpenseClaimReimbursement);
 
   const claimsQ = useQuery({
     queryKey: ["expense-claims", company?.id, "reimbursements"],
@@ -91,7 +100,27 @@ export function ExpenseManagementReimbursementsPage() {
           reimbursementStatus: claim.reimbursementStatus,
           postedJournalId: claim.postedJournalId,
           reimbursableMinor: claim.reimbursableMinor,
+          reimbursedMinor: claim.reimbursedMinor,
+          reimbursementChannel: claim.reimbursementChannel,
         }).ok,
+      ),
+    [claimsQ.data],
+  );
+
+  const payrollQueued = useMemo(
+    () =>
+      (claimsQ.data ?? []).filter(
+        (claim) =>
+          claim.reimbursementChannel === "payroll" &&
+          claim.reimbursementStatus === "payment_initiated",
+      ),
+    [claimsQ.data],
+  );
+
+  const refundable = useMemo(
+    () =>
+      (claimsQ.data ?? []).filter((claim) =>
+        ["paid", "partially_paid"].includes(claim.reimbursementStatus),
       ),
     [claimsQ.data],
   );
@@ -113,9 +142,20 @@ export function ExpenseManagementReimbursementsPage() {
   };
 
   const pay = useMutation({
-    mutationFn: async (input: { id: string; version: number }) => {
+    mutationFn: async (input: {
+      id: string;
+      version: number;
+      remainingMinor: number;
+    }) => {
       if (!company) throw new Error("Select a company first.");
       if (!bankGlAccountId) throw new Error("Choose a bank account.");
+      const rawAmount = partialAmounts[input.id]?.trim();
+      const amountMinor = rawAmount
+        ? Number(parseMinorOrThrow(rawAmount, "Payment amount"))
+        : input.remainingMinor;
+      if (amountMinor <= 0 || amountMinor > input.remainingMinor) {
+        throw new Error("Payment amount must be between 0.01 and the remaining balance.");
+      }
       return reimburse({
         data: {
           companyId: company.id,
@@ -123,12 +163,52 @@ export function ExpenseManagementReimbursementsPage() {
           version: input.version,
           bankAccountId: bankGlAccountId,
           paymentDate: paymentDate || undefined,
+          amountMinor,
         },
       });
     },
     onSuccess: () => {
       invalidate();
-      toast.success("Claim reimbursed from bank.");
+      toast.success("Bank reimbursement recorded.");
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+
+  const payrollMut = useMutation({
+    mutationFn: async (input: { id: string; version: number; cancel?: boolean }) => {
+      if (!company) throw new Error("Select a company first.");
+      if (input.cancel) {
+        return cancelPayroll({
+          data: { companyId: company.id, claimId: input.id, version: input.version },
+        });
+      }
+      return queuePayroll({
+        data: { companyId: company.id, claimId: input.id, version: input.version },
+      });
+    },
+    onSuccess: (_result, variables) => {
+      invalidate();
+      toast.success(
+        variables.cancel ? "Payroll queue cancelled." : "Claim queued for payroll.",
+      );
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+
+  const refundMut = useMutation({
+    mutationFn: async (input: { id: string; version: number }) => {
+      if (!company) throw new Error("Select a company first.");
+      return refundPayment({
+        data: {
+          companyId: company.id,
+          claimId: input.id,
+          version: input.version,
+        },
+      });
+    },
+    onSuccess: () => {
+      invalidate();
+      toast.success("Latest bank reimbursement refunded.");
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
@@ -238,10 +318,11 @@ export function ExpenseManagementReimbursementsPage() {
       <ExpenseManagementSubnav current="reimbursements" />
 
       <Alert className="mb-6">
-        <AlertTitle>Full amount per claim</AlertTitle>
+        <AlertTitle>Bank, partial, batch, or payroll queue</AlertTitle>
         <AlertDescription>
-          Each selected claim is paid in full via its own journal (up to 50 per batch). Partial
-          amounts within a claim are not supported yet.
+          Leave the amount blank to pay the remaining balance. Enter a smaller amount for a
+          partial bank payment. Batch pays remaining balances (up to 50). Payroll queue marks the
+          claim for payroll processing without posting a payslip in this release.
         </AlertDescription>
       </Alert>
 
@@ -304,50 +385,170 @@ export function ExpenseManagementReimbursementsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {openClaims.map((claim) => (
-              <TableRow key={claim.id}>
-                <TableCell>
-                  <Checkbox
-                    aria-label={`Select ${claim.claimNumber || claim.id}`}
-                    checked={Boolean(selected[claim.id])}
-                    onCheckedChange={(checked) =>
-                      setSelected((prev) => ({ ...prev, [claim.id]: Boolean(checked) }))
-                    }
-                  />
-                </TableCell>
-                <TableCell>
-                  <div className="font-medium">{claim.claimNumber || "Claim"}</div>
-                  <div className="text-sm text-muted-foreground">{claim.title}</div>
-                  <Button asChild variant="link" className="h-auto px-0" size="sm">
-                    <Link
-                      to="/expense-management/claims/$claimId"
-                      params={{ claimId: claim.id }}
+            {openClaims.map((claim) => {
+              const remaining = remainingReimbursableMinor({
+                reimbursableMinor: claim.reimbursableMinor,
+                reimbursedMinor: claim.reimbursedMinor,
+              });
+              return (
+                <TableRow key={claim.id}>
+                  <TableCell>
+                    <Checkbox
+                      aria-label={`Select ${claim.claimNumber || claim.id}`}
+                      checked={Boolean(selected[claim.id])}
+                      onCheckedChange={(checked) =>
+                        setSelected((prev) => ({ ...prev, [claim.id]: Boolean(checked) }))
+                      }
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <div className="font-medium">{claim.claimNumber || "Claim"}</div>
+                    <div className="text-sm text-muted-foreground">{claim.title}</div>
+                    <Button asChild variant="link" className="h-auto px-0" size="sm">
+                      <Link
+                        to="/expense-management/claims/$claimId"
+                        params={{ claimId: claim.id }}
+                      >
+                        Open detail
+                      </Link>
+                    </Button>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">{claim.reimbursementStatus}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div>
+                      Remaining {fromMinorUnits(remaining, claim.claimCurrency)}{" "}
+                      {claim.claimCurrency}
+                    </div>
+                    {claim.reimbursedMinor > 0 ? (
+                      <div className="text-xs text-muted-foreground">
+                        Paid {fromMinorUnits(claim.reimbursedMinor, claim.claimCurrency)}
+                      </div>
+                    ) : null}
+                    <Input
+                      className="mt-2 h-8 max-w-[9rem]"
+                      inputMode="decimal"
+                      placeholder="Full remaining"
+                      aria-label={`Partial amount for ${claim.claimNumber}`}
+                      value={partialAmounts[claim.id] ?? ""}
+                      onChange={(event) =>
+                        setPartialAmounts((prev) => ({
+                          ...prev,
+                          [claim.id]: event.target.value,
+                        }))
+                      }
+                    />
+                  </TableCell>
+                  <TableCell className="space-x-2 text-right">
+                    <Button
+                      size="sm"
+                      disabled={pay.isPending || !bankGlAccountId}
+                      onClick={() =>
+                        pay.mutate({
+                          id: claim.id,
+                          version: claim.version,
+                          remainingMinor: remaining,
+                        })
+                      }
                     >
-                      Open detail
-                    </Link>
-                  </Button>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="secondary">{claim.reimbursementStatus}</Badge>
-                </TableCell>
-                <TableCell>
-                  {fromMinorUnits(claim.reimbursableMinor, claim.claimCurrency)}{" "}
-                  {claim.claimCurrency}
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    size="sm"
-                    disabled={pay.isPending || !bankGlAccountId}
-                    onClick={() => pay.mutate({ id: claim.id, version: claim.version })}
-                  >
-                    Reimburse
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
+                      Pay bank
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={payrollMut.isPending || claim.reimbursedMinor > 0}
+                      onClick={() =>
+                        payrollMut.mutate({ id: claim.id, version: claim.version })
+                      }
+                    >
+                      Queue payroll
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       )}
+
+      {payrollQueued.length > 0 ? (
+        <section className="mt-10 space-y-3">
+          <h2 className="text-base font-semibold">Payroll queue</h2>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Claim</TableHead>
+                <TableHead className="text-right">Action</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {payrollQueued.map((claim) => (
+                <TableRow key={claim.id}>
+                  <TableCell>
+                    {claim.claimNumber} — {claim.title}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={payrollMut.isPending}
+                      onClick={() =>
+                        payrollMut.mutate({
+                          id: claim.id,
+                          version: claim.version,
+                          cancel: true,
+                        })
+                      }
+                    >
+                      Cancel queue
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </section>
+      ) : null}
+
+      {refundable.length > 0 ? (
+        <section className="mt-10 space-y-3">
+          <h2 className="text-base font-semibold">Refund latest bank payment</h2>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Claim</TableHead>
+                <TableHead>Paid</TableHead>
+                <TableHead className="text-right">Refund</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {refundable.map((claim) => (
+                <TableRow key={claim.id}>
+                  <TableCell>
+                    {claim.claimNumber} — {claim.title}
+                  </TableCell>
+                  <TableCell>
+                    {fromMinorUnits(claim.reimbursedMinor, claim.claimCurrency)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={refundMut.isPending || claim.reimbursedMinor <= 0}
+                      onClick={() =>
+                        refundMut.mutate({ id: claim.id, version: claim.version })
+                      }
+                    >
+                      Refund last payment
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </section>
+      ) : null}
     </>
   );
 }

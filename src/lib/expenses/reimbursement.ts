@@ -7,6 +7,8 @@ export function canReimburseClaim(input: {
   reimbursementStatus: string;
   postedJournalId: string | null;
   reimbursableMinor: number;
+  reimbursedMinor?: number;
+  reimbursementChannel?: string | null;
 }): { ok: true } | { ok: false; error: string } {
   if (input.approvalStatus !== "approved") {
     return { ok: false, error: "Only approved claims can be reimbursed." };
@@ -21,16 +23,35 @@ export function canReimburseClaim(input: {
     return { ok: false, error: "Claim is already reimbursed." };
   }
   if (
-    !["eligible", "awaiting_payment", "payment_initiated", "payment_failed"].includes(
-      input.reimbursementStatus,
-    )
+    ![
+      "eligible",
+      "awaiting_payment",
+      "payment_initiated",
+      "payment_failed",
+      "partially_paid",
+    ].includes(input.reimbursementStatus)
   ) {
     return { ok: false, error: `Claim is not open for reimbursement (${input.reimbursementStatus}).` };
   }
   if (input.reimbursableMinor <= 0) {
     return { ok: false, error: "Claim has no reimbursable amount." };
   }
+  const reimbursed = input.reimbursedMinor ?? 0;
+  if (reimbursed >= input.reimbursableMinor) {
+    return { ok: false, error: "Claim is already fully reimbursed." };
+  }
+  if (input.reimbursementChannel === "payroll" && input.reimbursementStatus === "payment_initiated") {
+    return { ok: false, error: "Claim is queued for payroll. Cancel payroll queue first." };
+  }
   return { ok: true };
+}
+
+/** Remaining reimbursable amount after prior bank payments. */
+export function remainingReimbursableMinor(input: {
+  reimbursableMinor: number;
+  reimbursedMinor?: number;
+}): number {
+  return Math.max(input.reimbursableMinor - (input.reimbursedMinor ?? 0), 0);
 }
 
 export type BatchReimburseResult = {

@@ -20,6 +20,20 @@ describe("expense claim reimbursement", () => {
     ).toBe(true);
   });
 
+  it("allows remaining balance on partially paid claims", () => {
+    expect(
+      canReimburseClaim({
+        approvalStatus: "approved",
+        postingStatus: "posted",
+        paymentSource: "employee_paid",
+        reimbursementStatus: "partially_paid",
+        postedJournalId: "j1",
+        reimbursableMinor: 1100,
+        reimbursedMinor: 400,
+      }).ok,
+    ).toBe(true);
+  });
+
   it("blocks reimbursement before accrual", () => {
     expect(
       canReimburseClaim({

@@ -8,7 +8,7 @@ At the **end of every EM phase/slice chat response and final report**, paste thi
 
 ```
 EM progress  ███░░░░░░░░░  3/12 verified (25%)
-Coded slices EM-04…EM-12a + EM-05c/d · Migrations not applied · Not pushed
+Coded slices EM-04…EM-12a + EM-05c–e + EM-06b + EM-07c · Migrations not applied · Not pushed
 ```
 
 ## Visual progress
@@ -21,7 +21,7 @@ Coded slices EM-04…EM-12a + EM-05c/d · Migrations not applied · Not pushed
 
 | Area | Status |
 | --- | --- |
-| Code Development | 3 / 12 verified (+ EM-04–12a slices coded; those batches not closed) |
+| Code Development | 3 / 12 verified (+ EM-04–12a + EM-05c–e + EM-06b + EM-07c coded; batches not closed) |
 | Local Testing | Partial (unit + check:ui; no DB/browser) |
 | GitHub Commit | Local commits only; not pushed |
 | GitHub PR / Merge | Pending |
@@ -37,9 +37,9 @@ Coded slices EM-04…EM-12a + EM-05c/d · Migrations not applied · Not pushed
 | EM-02 | Navigation, dashboard, list/Kanban, employee profiles | Verified locally (nav + overview KPIs) |
 | EM-03 | Claims, lines, splitting, allocations, templates, lifecycle | Verified locally (core); Kanban/print/dimension pickers deferred |
 | EM-04 | Receipts, email inbox, file security, mobile capture, offline drafts | In progress — EM-04a/b upload+match+offline queue; inbound email/OCR still pending |
-| EM-05 | Approvals, policies, delegation, escalation, spending requests | In progress — EM-05a–d approvals, spending requests, delegation, escalation coded; multi-level chains pending |
-| EM-06 | Accounting, tax, journals, FX, refunds, budgets | In progress — EM-06a employee-paid accrual posting; FX/refunds/budgets pending |
-| EM-07 | Reimbursements, partial/batch payments, bank matching, payroll | In progress — EM-07a/b full + batch bank reimbursement; partial-within-claim / payroll pending |
+| EM-05 | Approvals, policies, delegation, escalation, spending requests | In progress — EM-05a–e coded (incl. multi-level); batch not closed |
+| EM-06 | Accounting, tax, journals, FX, refunds, budgets | In progress — EM-06a/b posting + FX validate + refund; live budget envelopes still via Budgets module |
+| EM-07 | Reimbursements, partial/batch payments, bank matching, payroll | In progress — EM-07a–c full/batch/partial + payroll queue; payslip posting still out |
 | EM-08 | Mileage, travel, per diem, advances, petty cash, settlements | In progress — EM-08a–d + reclaim UI coded; booking integrations pending |
 | EM-09 | Corporate cards, disputes, rebilling, exit settlement | In progress — EM-09a–c cards, disputes, rebilling, exit settlement coded; batch not closed |
 | EM-10 | AI OCR, categorisation, duplicates, fraud indicators | In progress — EM-10a rule-based risk/duplicates/category + OCR unavailable stub |

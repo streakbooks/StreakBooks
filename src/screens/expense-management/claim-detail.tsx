@@ -27,6 +27,7 @@ import { friendlyAuthError } from "@/lib/auth-helpers";
 import { listContacts } from "@/lib/contacts/contacts.functions";
 import {
   EXPENSE_DISPUTES_REBILLING_MIGRATION,
+  EXPENSE_FX_REFUND_MIGRATION,
   EXPENSE_POSTING_MIGRATION,
   EXPENSE_RISK_MIGRATION,
   findExpenseClaimDuplicates,
@@ -36,6 +37,7 @@ import {
   postExpenseClaim,
   prepareExpenseClaimForRebilling,
   scanExpenseClaimRisks,
+  validateExpenseClaimFx,
 } from "@/lib/expenses/expenses.functions";
 import {
   buildRebillSalesLines,
@@ -70,7 +72,9 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
   const createInvoice = useServerFn(saveInvoiceDraft);
   const scanRisks = useServerFn(scanExpenseClaimRisks);
   const findDuplicates = useServerFn(findExpenseClaimDuplicates);
+  const validateFx = useServerFn(validateExpenseClaimFx);
   const [customerContactId, setCustomerContactId] = useState("");
+  const [fxChecked, setFxChecked] = useState(false);
 
   const claimQ = useQuery({
     queryKey: ["expense-claim", company?.id, claimId],
@@ -91,6 +95,25 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
     queryFn: () => scanRisks({ data: { companyId: company!.id, claimId } }),
     enabled: Boolean(company?.id && claimId),
     retry: false,
+  });
+
+  const fxQ = useQuery({
+    queryKey: ["expense-claim-fx", company?.id, claimId],
+    queryFn: () => validateFx({ data: { companyId: company!.id, claimId } }),
+    enabled: Boolean(company?.id && claimId) && fxChecked,
+    retry: false,
+  });
+
+  const fxMut = useMutation({
+    mutationFn: async () => {
+      setFxChecked(true);
+      return validateFx({ data: { companyId: company!.id, claimId } });
+    },
+    onSuccess: (result) => {
+      void queryClient.setQueryData(["expense-claim-fx", company?.id, claimId], result);
+      toast.success(result.ok ? "FX check passed" : `${result.issues.length} FX issue(s)`);
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
   });
 
   const duplicatesQ = useQuery({
@@ -284,6 +307,14 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
                 {post.isPending ? "Posting…" : "Post to ledger"}
               </Button>
             ) : null}
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={fxMut.isPending}
+              onClick={() => fxMut.mutate()}
+            >
+              {fxMut.isPending ? "Checking FX…" : "Validate FX"}
+            </Button>
             <Button asChild variant="outline" size="sm">
               <Link
                 to="/expense-management/$section"
@@ -296,6 +327,31 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
         }
       />
       <ExpenseManagementSubnav current="my-expenses" />
+
+      {fxQ.data && !fxQ.data.ok ? (
+        <Alert className="mb-6" variant="destructive">
+          <AlertTitle>FX issues</AlertTitle>
+          <AlertDescription>
+            <ul className="list-disc pl-4">
+              {fxQ.data.issues.map((issue) => (
+                <li key={`${issue.lineNo}-${issue.code}`}>
+                  Line {issue.lineNo}: {issue.message}
+                </li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      ) : null}
+      {fxQ.isError ? (
+        <Alert className="mb-6">
+          <AlertTitle>FX check unavailable</AlertTitle>
+          <AlertDescription>
+            {friendlyAuthError(fxQ.error).includes("20261107154000")
+              ? EXPENSE_FX_REFUND_MIGRATION
+              : friendlyAuthError(fxQ.error)}
+          </AlertDescription>
+        </Alert>
+      ) : null}
 
       <div className="mb-6 flex flex-wrap gap-2">
         <Badge variant="secondary">{claim.approvalStatus}</Badge>

@@ -132,6 +132,15 @@ export const EXPENSE_DELEGATION_MIGRATION =
 export const EXPENSE_ESCALATION_MIGRATION =
   "Expense approval escalation is not available yet: apply database update 20261107151000.";
 
+export const EXPENSE_PARTIAL_REIMBURSE_MIGRATION =
+  "Partial / payroll reimbursement is not available yet: apply database update 20261107152000.";
+
+export const EXPENSE_MULTILEVEL_APPROVAL_MIGRATION =
+  "Multi-level expense approvals are not available yet: apply database update 20261107153000.";
+
+export const EXPENSE_FX_REFUND_MIGRATION =
+  "Expense FX validation / refund is not available yet: apply database update 20261107154000.";
+
 export const EXPENSE_MILEAGE_MIGRATION =
   "Expense mileage rates are not available yet: apply database update 20261107139000.";
 
@@ -1004,12 +1013,14 @@ export const reimburseExpenseClaim = createServerFn({ method: "POST" })
       version: number;
       bankAccountId: string;
       paymentDate?: string;
+      amountMinor?: number;
     }) => ({
       companyId: companyIdOf(input),
       claimId: input.claimId,
       version: input.version,
       bankAccountId: input.bankAccountId,
       paymentDate: input.paymentDate,
+      amountMinor: input.amountMinor,
     }),
   )
   .handler(async ({ data, context }): Promise<ExpenseClaimDetail> => {
@@ -1024,8 +1035,209 @@ export const reimburseExpenseClaim = createServerFn({ method: "POST" })
         _bank_account_id: data.bankAccountId,
         _expected_version: data.version,
         _payment_date: data.paymentDate ?? null,
+        _amount_minor: data.amountMinor ?? null,
       },
-      EXPENSE_REIMBURSEMENT_MIGRATION,
+      data.amountMinor != null
+        ? EXPENSE_PARTIAL_REIMBURSE_MIGRATION
+        : EXPENSE_REIMBURSEMENT_MIGRATION,
+    );
+    return mapExpenseClaimDetail(raw);
+  });
+
+export const queueExpenseClaimForPayroll = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { companyId: string; claimId: string; version: number }) => ({
+      companyId: companyIdOf(input),
+      claimId: input.claimId,
+      version: input.version,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<ExpenseClaimDetail> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "expenses.reimburse");
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "queue_expense_claim_for_payroll",
+      {
+        _company_id: data.companyId,
+        _claim_id: data.claimId,
+        _expected_version: data.version,
+      },
+      EXPENSE_PARTIAL_REIMBURSE_MIGRATION,
+    );
+    return mapExpenseClaimDetail(raw);
+  });
+
+export const cancelExpenseClaimPayrollQueue = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { companyId: string; claimId: string; version: number }) => ({
+      companyId: companyIdOf(input),
+      claimId: input.claimId,
+      version: input.version,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<ExpenseClaimDetail> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "expenses.reimburse");
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "cancel_expense_claim_payroll_queue",
+      {
+        _company_id: data.companyId,
+        _claim_id: data.claimId,
+        _expected_version: data.version,
+      },
+      EXPENSE_PARTIAL_REIMBURSE_MIGRATION,
+    );
+    return mapExpenseClaimDetail(raw);
+  });
+
+export const saveExpenseRequiredApprovalCount = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; count: number }) => ({
+    companyId: companyIdOf(input),
+    count: input.count,
+  }))
+  .handler(
+    async ({
+      data,
+      context,
+    }): Promise<{ requiredApprovalCount: number; version: number }> => {
+      await assertCompanyPermission(
+        context.supabase,
+        data.companyId,
+        "expenses.manage_policies",
+      );
+      const raw = await callRpc<{
+        required_approval_count?: number;
+        version?: number;
+      }>(
+        context.supabase,
+        "save_expense_required_approval_count",
+        {
+          _company_id: data.companyId,
+          _count: data.count,
+        },
+        EXPENSE_MULTILEVEL_APPROVAL_MIGRATION,
+      );
+      return {
+        requiredApprovalCount: Number(raw.required_approval_count ?? data.count),
+        version: Number(raw.version ?? 0),
+      };
+    },
+  );
+
+export const listExpenseClaimApprovals = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; claimId: string }) => ({
+    companyId: companyIdOf(input),
+    claimId: input.claimId,
+  }))
+  .handler(
+    async ({
+      data,
+      context,
+    }): Promise<{
+      requiredApprovalCount: number;
+      approvals: Array<{
+        id: string;
+        approverUserId: string;
+        stepNo: number;
+        note: string | null;
+        actedAt: string;
+      }>;
+    }> => {
+      await assertCompanyMember(context.supabase, data.companyId);
+      const raw = await callRpc<{
+        required_approval_count?: number;
+        approvals?: Array<Record<string, unknown>>;
+      }>(
+        context.supabase,
+        "list_expense_claim_approvals",
+        {
+          _company_id: data.companyId,
+          _claim_id: data.claimId,
+        },
+        EXPENSE_MULTILEVEL_APPROVAL_MIGRATION,
+      );
+      return {
+        requiredApprovalCount: Number(raw.required_approval_count ?? 1),
+        approvals: (raw.approvals ?? []).map((row) => ({
+          id: String(row["id"] ?? ""),
+          approverUserId: String(row["approver_user_id"] ?? row["approverUserId"] ?? ""),
+          stepNo: Number(row["step_no"] ?? row["stepNo"] ?? 0),
+          note: (row["note"] ?? null) as string | null,
+          actedAt: String(row["acted_at"] ?? row["actedAt"] ?? ""),
+        })),
+      };
+    },
+  );
+
+export const validateExpenseClaimFx = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; claimId: string }) => ({
+    companyId: companyIdOf(input),
+    claimId: input.claimId,
+  }))
+  .handler(
+    async ({
+      data,
+      context,
+    }): Promise<{
+      ok: boolean;
+      issues: Array<{ lineNo: number; code: string; message: string }>;
+    }> => {
+      await assertCompanyMember(context.supabase, data.companyId);
+      const raw = await callRpc<{
+        ok?: boolean;
+        issues?: Array<Record<string, unknown>>;
+      }>(
+        context.supabase,
+        "validate_expense_claim_fx",
+        {
+          _company_id: data.companyId,
+          _claim_id: data.claimId,
+        },
+        EXPENSE_FX_REFUND_MIGRATION,
+      );
+      return {
+        ok: Boolean(raw.ok),
+        issues: (raw.issues ?? []).map((issue) => ({
+          lineNo: Number(issue["line_no"] ?? issue["lineNo"] ?? 0),
+          code: String(issue["code"] ?? ""),
+          message: String(issue["message"] ?? ""),
+        })),
+      };
+    },
+  );
+
+export const refundExpenseClaimReimbursement = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      claimId: string;
+      version: number;
+      paymentId?: string;
+    }) => ({
+      companyId: companyIdOf(input),
+      claimId: input.claimId,
+      version: input.version,
+      paymentId: input.paymentId,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<ExpenseClaimDetail> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "expenses.reimburse");
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "refund_expense_claim_reimbursement",
+      {
+        _company_id: data.companyId,
+        _claim_id: data.claimId,
+        _expected_version: data.version,
+        _payment_id: data.paymentId ?? null,
+      },
+      EXPENSE_FX_REFUND_MIGRATION,
     );
     return mapExpenseClaimDetail(raw);
   });

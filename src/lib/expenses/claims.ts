@@ -55,6 +55,8 @@ export type ExpenseClaimSummary = {
   paymentSource: ExpensePaymentSource;
   totalMinor: number;
   reimbursableMinor: number;
+  reimbursedMinor: number;
+  reimbursementChannel: "bank" | "payroll";
   postedJournalId: string | null;
   version: number;
   updatedAt: string;
@@ -132,6 +134,11 @@ export function mapExpenseClaimSummary(row: unknown): ExpenseClaimSummary {
     ) as ExpensePaymentSource,
     totalMinor: num(r["total_minor"] ?? r["totalMinor"]),
     reimbursableMinor: num(r["reimbursable_minor"] ?? r["reimbursableMinor"]),
+    reimbursedMinor: num(r["reimbursed_minor"] ?? r["reimbursedMinor"]),
+    reimbursementChannel:
+      str(r["reimbursement_channel"] ?? r["reimbursementChannel"], "bank") === "payroll"
+        ? "payroll"
+        : "bank",
     postedJournalId: (r["posted_journal_id"] ?? r["postedJournalId"] ?? null) as string | null,
     version: num(r["version"]),
     updatedAt: str(r["updated_at"] ?? r["updatedAt"]),

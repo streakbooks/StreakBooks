@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { LookupSelect } from "@/components/lookup";
 import { ErrorState, LoadingState, EmptyState } from "@/components/common/states";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -193,9 +193,7 @@ export function FirmEngagementPanel({
                     <tr key={item.id} className="border-t">
                       <td className="p-3 font-medium">{item.name}</td>
                       <td className="p-3">
-                        <Badge variant="secondary" className="capitalize">
-                          {item.status}
-                        </Badge>
+                        <StatusBadge status={item.status} />
                       </td>
                       <td className="p-3 capitalize">{item.frequency.replace("_", " ")}</td>
                       <td className="whitespace-nowrap p-3">

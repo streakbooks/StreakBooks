@@ -82,6 +82,14 @@ const MAP: Record<string, StatusDisplay> = {
   rejected: { label: "Rejected", tone: "danger" },
   active: { label: "Active", tone: "success" },
   paused: { label: "Paused", tone: "neutral" },
+  // App Store connections and explicit health states, supplied by authorised backend records.
+  // A connected connection is not evidence of a successful sync or healthy integration.
+  connected: { label: "Connected", tone: "info" },
+  disconnected: { label: "Disconnected", tone: "neutral", muted: true },
+  healthy: { label: "Healthy", tone: "success" },
+  degraded: { label: "Degraded", tone: "warning" },
+  unhealthy: { label: "Unhealthy", tone: "danger" },
+  unknown: { label: "Unknown", tone: "neutral" },
   archived: { label: "Archived", tone: "neutral", muted: true },
 };
 

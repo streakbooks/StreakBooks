@@ -46,6 +46,19 @@ describe("statusDisplay", () => {
     expect(statusDisplay("rejected")).toMatchObject({ label: "Rejected", tone: "danger" });
   });
 
+  it("distinguishes actual App Store connection and health states", () => {
+    expect(statusDisplay("connected")).toMatchObject({ label: "Connected", tone: "info" });
+    expect(statusDisplay("disconnected")).toMatchObject({
+      label: "Disconnected", tone: "neutral", muted: true,
+    });
+    expect(statusDisplay("healthy")).toMatchObject({ label: "Healthy", tone: "success" });
+    expect(statusDisplay("degraded")).toMatchObject({ label: "Degraded", tone: "warning" });
+    expect(statusDisplay("unhealthy")).toMatchObject({ label: "Unhealthy", tone: "danger" });
+    expect(statusDisplay("unknown")).toMatchObject({ label: "Unknown", tone: "neutral" });
+    expect(statusDisplay("CONNECTED").tone).toBe("info");
+    expect(statusDisplay("unfamiliar_health").tone).toBe("neutral");
+  });
+
   it("keeps accountant journals separate from payment completion", () => {
     expect(statusDisplay("posted")).toMatchObject({ label: "Posted", tone: "success" });
     expect(statusDisplay("reversed")).toMatchObject({ label: "Reversed", tone: "neutral", muted: true });

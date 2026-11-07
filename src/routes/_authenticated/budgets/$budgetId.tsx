@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+  decodeBudgetListReturnContext,
+  encodeBudgetListReturnContext,
+  type BudgetListSearch,
+} from "@/lib/budgets/budget-navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowRight, Download, Loader2, Plus, RotateCcw, Save, Upload } from "lucide-react";
@@ -48,6 +53,12 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/budgets/$budgetId")({
+  validateSearch: (raw: Record<string, unknown>) => {
+    const returnContext = encodeBudgetListReturnContext(
+      decodeBudgetListReturnContext(raw["returnContext"]),
+    );
+    return returnContext ? { returnContext } : {};
+  },
   head: () => ({ meta: [{ title: "Budget — LinkBooks" }] }),
   component: BudgetEditorPage,
 });
@@ -56,6 +67,8 @@ type BudgetData = Awaited<ReturnType<typeof getBudget>>;
 
 function BudgetEditorPage() {
   const { budgetId } = Route.useParams();
+  const { returnContext } = Route.useSearch();
+  const backSearch = decodeBudgetListReturnContext(returnContext);
   const { company } = useActiveCompany();
   const fetchFn = useServerFn(getBudget);
   const companyId = company?.id;
@@ -81,6 +94,7 @@ function BudgetEditorPage() {
       key={`${query.data.budget.id}-${query.data.budget.updated_at}`}
       companyId={companyId}
       data={query.data}
+      backSearch={backSearch}
     />
   );
 }
@@ -100,7 +114,15 @@ function parseCell(text: string, currency: string): number | null {
   }
 }
 
-function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData }) {
+function BudgetEditor({
+  companyId,
+  data,
+  backSearch,
+}: {
+  companyId: string;
+  data: BudgetData;
+  backSearch: BudgetListSearch;
+}) {
   const { company } = useActiveCompany();
   const fmt = useFormat();
   const queryClient = useQueryClient();
@@ -559,7 +581,7 @@ function BudgetEditor({ companyId, data }: { companyId: string; data: BudgetData
         actions={
           <>
             <Button asChild variant="outline" size="sm">
-              <Link to="/budgets">All budgets</Link>
+              <Link to="/budgets" search={backSearch}>All budgets</Link>
             </Button>
             <Button asChild variant="outline" size="sm">
               <Link

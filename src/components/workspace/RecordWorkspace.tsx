@@ -33,10 +33,10 @@ export function RecordWorkspace({
     <div className={cn("lb-record-workspace flex min-w-0 flex-col gap-4", className)}>
       <PageHeader
         title={title}
-        description={description}
-        breadcrumbs={breadcrumbs}
-        meta={meta}
-        actions={actions}
+        {...(description !== undefined ? { description } : {})}
+        {...(breadcrumbs !== undefined ? { breadcrumbs } : {})}
+        {...(meta !== undefined ? { meta } : {})}
+        {...(actions !== undefined ? { actions } : {})}
       />
       {related}
       <div

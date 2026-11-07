@@ -22,7 +22,8 @@ const SEGMENT_LABEL: Record<string, string> = {
   explore: "Explore All Apps",
   categories: "Categories",
   featured: "Featured & Recommended",
-  register: "Integration Register",
+  // Shared segment "register" appears under App Store and Developer; keep one neutral label.
+  register: "Register",
   "my-apps": "My Apps",
   connections: "Connections",
   "sync-activity": "Synchronization Activity",
@@ -36,7 +37,8 @@ const SEGMENT_LABEL: Record<string, string> = {
   developer: "Developer",
   publisher: "Publisher Profile",
   applications: "My Applications",
-  register: "Register Application",
+  "integration-register": "Integration Register",
+
   credentials: "API Credentials",
   oauth: "OAuth Configuration",
   "api-docs": "API Documentation",

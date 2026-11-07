@@ -20,7 +20,9 @@ describe("scaffold-module CLI", () => {
       { encoding: "utf8", cwd: resolve(".") },
     );
     expect(result.status).toBe(0);
-    expect(result.stdout).toContain("src\\screens\\premium-scaffold-probe\\index.tsx");
+    expect(result.stdout.replace(/\\/g, "/")).toContain(
+      "src/screens/premium-scaffold-probe/index.tsx",
+    );
     expect(result.stdout).toContain("Dry run complete");
   });
 

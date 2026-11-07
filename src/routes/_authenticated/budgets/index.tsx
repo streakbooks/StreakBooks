@@ -18,7 +18,8 @@ import {
   saveBudget,
   type BudgetSummary,
 } from "@/lib/budgets/budgets.functions";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -142,36 +143,34 @@ function BudgetsPage() {
   if (!companyId) return <EmptyState title="No organisation" description="Select a company." />;
 
   return (
-    <>
-      <PageHeader
-        title="Budgets"
-        description="Plan income and expenses by account and month for a financial year, then compare with actuals."
-        actions={
-          <div className="flex flex-wrap gap-2">
-            <Button
-              size="sm"
-              variant={showScenarioComparison ? "secondary" : "outline"}
-              disabled={!query.data?.available || query.data.budgets.length < 2}
-              onClick={() => setShowScenarioComparison((value) => !value)}
-              aria-expanded={showScenarioComparison}
-            >
-              <GitCompareArrows className="mr-2 size-4" />
-              Compare budgets
-            </Button>
-            <Button asChild variant="outline" size="sm">
-              <Link to="/imports" search={{ module: "budgets" }}>
-                Import budget CSV
-              </Link>
-            </Button>
-            <Button asChild variant="outline" size="sm">
-              <Link to="/reports/$reportId" params={{ reportId: "budget-vs-actual" }}>
-                Budget versus Actual report
-              </Link>
-            </Button>
-          </div>
-        }
-      />
-
+    <ListWorkspace
+      title="Budgets"
+      description="Plan income and expenses by account and month for a financial year, then compare with actuals."
+      actions={
+        <div className="flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            variant={showScenarioComparison ? "secondary" : "outline"}
+            disabled={!query.data?.available || query.data.budgets.length < 2}
+            onClick={() => setShowScenarioComparison((value) => !value)}
+            aria-expanded={showScenarioComparison}
+          >
+            <GitCompareArrows className="mr-2 size-4" />
+            Compare budgets
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/imports" search={{ module: "budgets" }}>
+              Import budget CSV
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/reports/$reportId" params={{ reportId: "budget-vs-actual" }}>
+              Budget versus Actual report
+            </Link>
+          </Button>
+        </div>
+      }
+    >
       <section aria-label="Create budget" className="lb-budget-create mb-6 grid max-w-2xl gap-4 rounded-2xl border border-border/85 bg-card p-5 shadow-card sm:p-6">
         <div className="space-y-1"><h2 className="text-base font-bold tracking-[-0.02em]">New budget</h2><p className="text-xs text-muted-foreground">Create a financial-year plan, then add your accounts and monthly amounts.</p></div>
         <div className="space-y-2">
@@ -394,6 +393,6 @@ function BudgetsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </ListWorkspace>
   );
 }

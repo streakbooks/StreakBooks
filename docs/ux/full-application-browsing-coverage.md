@@ -68,6 +68,11 @@ The register below was derived from actual repository navigation and routes. The
 - `src/routes/_authenticated/help.tsx`: search now shows a screen-reader-announced matching article count and a keyboard-accessible Clear search action that preserves the URL-backed search behavior; code commit `0c456a75bbc6405cfaa743726d0e13f294f01408`.
 - This is **partial source evidence only**. No claim of complete Help module acceptance. Local typecheck, lint, build, unit, authenticated browser, accessibility and `check:browsing-coverage`: **NOT RUN**.
 
+### Sidebar inventory duplicate guard increment (2026-11-08)
+
+- `scripts/check-browsing-coverage.mjs` now rejects duplicate top-level sidebar label/path pairs in both `src/lib/nav.ts` and the browsing manifest, and rejects invalid manifest sidebar labels or non-rooted paths. Code commit: `eae7c968a846d7305fd9301300509ea91b9c7520`.
+- Manifest evidence recorded separately; this is structural inventory protection, **not** screen-level implementation or runtime acceptance. Local `check:browsing-coverage`, typecheck, lint, unit, browser, RLS and accounting regression tests: **NOT RUN**. No module or batch is marked fully verified.
+
 ## 2. Internal and supporting routes also included
 
 - `src/routes/_authenticated/documents.branding.tsx`

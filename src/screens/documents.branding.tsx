@@ -187,6 +187,7 @@ export function BrandingWorkspace({
       ? "Purchase document themes & branding"
       : "Invoice themes & branding";
   const workspace = (
+    <>
       <div className="mb-8">
         <DocumentThemes
           companyId={companyId}
@@ -406,6 +407,7 @@ export function BrandingWorkspace({
           </div>
         </div>
       </details>
+    </>
   );
   if (embedded) return workspace;
   return (

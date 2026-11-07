@@ -178,8 +178,8 @@ export function AppStoreRequestsPage() {
               </div>
             )}
           </section>
+        </>
+      ) : null}
     </ListWorkspace>
-    ) : null}
-    </>
   );
 }

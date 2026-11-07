@@ -656,8 +656,8 @@ export function ExpenseManagementCorporateCardsPage() {
               </Table>
             )}
           </section>
+        </>
+      ) : null}
     </ListWorkspace>
-    ) : null}
-    </>
   );
 }

@@ -46,29 +46,26 @@ export function DeveloperPortalSectionShell({
 
   if (!allowed) {
     return (
-      <>
-        <ListWorkspace title={title ?? section.label} description="Developer portal">
+      <ListWorkspace title={title ?? section.label} description="Developer portal">
         <EmptyState
           title="No access"
           description="Your role cannot open this developer workspace."
         />
-    </ListWorkspace>
-      </>
+      </ListWorkspace>
     );
   }
 
   return (
-    <>
-      <ListWorkspace
-        title={title ?? section.label}
-        description={description}
-        actions={
-          <Button asChild variant="outline" size="sm">
-            <Link to="/developer">Back to dashboard</Link>
-          </Button>
-        }
-        subnav={<DeveloperSubnav current={sectionKey} />}
-      >
+    <ListWorkspace
+      title={title ?? section.label}
+      description={description}
+      actions={
+        <Button asChild variant="outline" size="sm">
+          <Link to="/developer">Back to dashboard</Link>
+        </Button>
+      }
+      subnav={<DeveloperSubnav current={sectionKey} />}
+    >
       <Alert className="mb-6">
         <AlertTitle>{alertTitle}</AlertTitle>
         <AlertDescription>{alertBody}</AlertDescription>
@@ -83,7 +80,7 @@ export function DeveloperPortalSectionShell({
         </div>
       ) : null}
       {children}
-        </ListWorkspace>
+    </ListWorkspace>
   );
 }
 

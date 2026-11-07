@@ -481,7 +481,6 @@ export function AdvisorsAdminEngagementsPage() {
                     ))}
                   </div>
                 ) : null}
-    </ListWorkspace>
               </>
             ) : null}
           </section>

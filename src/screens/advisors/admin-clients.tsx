@@ -387,7 +387,6 @@ export function AdvisorsAdminClientsPage() {
                 >
                   Unlink portal
                 </Button>
-    </ListWorkspace>
               </>
             ) : null}
           </div>

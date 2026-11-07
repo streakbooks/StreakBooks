@@ -80,7 +80,6 @@ export function AdvisorsPortalHomePage() {
                 {home.plan.sessionsIncluded} included
               </p>
             ) : null}
-    </ListWorkspace>
           </>
         ) : (
           <EmptyState

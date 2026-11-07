@@ -143,6 +143,7 @@ export function DeveloperSubmissionPage() {
       >
         Submit for security review
       </Button>
-        </ListWorkspace>
+      </ListWorkspace>
+    </>
   );
 }

@@ -547,10 +547,10 @@ export function ExpenseManagementSettingsPage() {
                   </TableBody>
                 </Table>
               )}
-    </ListWorkspace>
-    )}
+            </>
+          )}
         </section>
       ) : null}
-    </>
+    </ListWorkspace>
   );
 }

@@ -430,7 +430,6 @@ export function AdvisorsAdminWorkspacesPage() {
                   ))}
                 </ul>
               </div>
-    </ListWorkspace>
             </>
           ) : null}
         </section>

@@ -354,8 +354,8 @@ export function ExpenseManagementExitSettlementPage() {
                   ) : null}
                 </TableBody>
               </Table>
-    </ListWorkspace>
-    ) : null}
+            </>
+          ) : null}
         </section>
       ) : null}
 
@@ -393,6 +393,6 @@ export function ExpenseManagementExitSettlementPage() {
           </Table>
         )}
       </section>
-    </>
+    </ListWorkspace>
   );
 }

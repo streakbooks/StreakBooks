@@ -282,8 +282,8 @@ export function ExpenseManagementPettyCashPage() {
               />
             </div>
           </section>
-    </ListWorkspace>
-    ) : null}
+        </>
+      ) : null}
 
       {floatsQ.isLoading ? (
         <LoadingState />
@@ -392,6 +392,6 @@ export function ExpenseManagementPettyCashPage() {
           </TableBody>
         </Table>
       )}
-    </>
+    </ListWorkspace>
   );
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildIntegrationHealth, integrationStatusLabel } from "./integration-health";
+import { buildIntegrationHealth, integrationStatusLabel, integrationStatusTone } from "./integration-health";
 describe("integration configuration evidence", () => {
   it.each([
     [false, false, "not_configured"],
@@ -16,6 +16,14 @@ describe("integration configuration evidence", () => {
         .filter((integration) => integration.key !== "email")
         .every((integration) => integration.status === "unavailable"),
     ).toBe(true);
+  });
+  it("distinguishes configuration, missing setup, restricted and unavailable without claiming connection", () => {
+    expect(integrationStatusTone("configured")).toBe("info");
+    expect(integrationStatusTone("not_configured")).toBe("warning");
+    expect(integrationStatusTone("restricted")).toBe("neutral");
+    expect(integrationStatusTone("unavailable")).toBe("neutral");
+    expect(integrationStatusLabel("configured")).toBe("Configured");
+    expect(integrationStatusLabel("configured")).not.toBe("Connected");
   });
   it("does not claim delivery verification from credential presence", () => {
     const email = buildIntegrationHealth({ emailConfigured: true, isDemo: false })[0]!;

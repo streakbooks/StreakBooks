@@ -364,8 +364,10 @@ function FilesPage() {
           title="Document review"
           description="Organise and approve uploaded documents without changing accounting records."
           actions={
-            <Button size="sm" variant="outline" onClick={() => setView("all")}>
-              Back to Files
+            <Button size="sm" variant="outline" asChild>
+              <Link to="/files" search={{ ...routeSearch, view: "all", file: undefined, page: 0 }}>
+                Back to Files
+              </Link>
             </Button>
           }
         />
@@ -381,16 +383,14 @@ function FilesPage() {
         description="Everything attached to invoices, bills, contacts and journals, plus files you upload here. You only see files for records you are allowed to view."
         actions={
           <>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                setView("review");
-                setFolderId(null);
-              }}
-            >
-              <ClipboardCheck className="mr-1 size-4" />
-              Document review
+            <Button size="sm" variant="outline" asChild>
+              <Link
+                to="/files"
+                search={{ ...routeSearch, view: "review", folder: undefined, file: undefined, page: 0 }}
+              >
+                <ClipboardCheck className="mr-1 size-4" />
+                Document review
+              </Link>
             </Button>
             {canUpload ? (
               <>
@@ -455,26 +455,17 @@ function FilesPage() {
             <Folder className="size-4" />
             <Link
               to="/files"
-              search={{ folder: undefined, file: undefined }}
+              search={{ ...routeSearch, folder: undefined, file: undefined, view: "all", page: 0 }}
               className="text-sm underline"
-              onClick={(e) => {
-                if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {
-                  setPage(0);
-                  setView("all");
-                }
-              }}
             >
               All files
             </Link>
             {breadcrumbs.map((crumb) => (
               <Link
                 to="/files"
-                search={{ folder: crumb.id }}
+                search={{ ...routeSearch, folder: crumb.id, file: undefined, page: 0 }}
                 key={crumb.id}
                 className="text-sm underline"
-                onClick={(e) => {
-                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) setPage(0);
-                }}
               >
                 / {crumb.name}
               </Link>
@@ -521,10 +512,7 @@ function FilesPage() {
             <Button size="sm" variant="outline" asChild>
               <Link
                 to="/files"
-                search={{ folder: activeFolder.parent_id }}
-                onClick={(e) => {
-                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) setPage(0);
-                }}
+                search={{ ...routeSearch, folder: activeFolder.parent_id, file: undefined, page: 0 }}
               >
                 Parent folder
               </Link>
@@ -536,10 +524,7 @@ function FilesPage() {
               <Button key={folder.id} size="sm" variant="outline" asChild>
                 <Link
                   to="/files"
-                  search={{ folder: folder.id }}
-                  onClick={(e) => {
-                    if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) setPage(0);
-                  }}
+                  search={{ ...routeSearch, folder: folder.id, file: undefined, page: 0 }}
                 >
                   <Folder className="mr-2 size-4" />
                   {folder.name}
@@ -604,26 +589,23 @@ function FilesPage() {
         ) : null}
       </section>
       <div className="mb-4 flex flex-wrap items-center gap-2" aria-label="Files workspace views">
-        <Button
-          size="sm"
-          variant={activeView === "all" ? "default" : "outline"}
-          onClick={() => {
-            setView("all");
-            setPage(0);
-          }}
-        >
-          All files
+        <Button size="sm" variant={activeView === "all" ? "default" : "outline"} asChild>
+          <Link
+            to="/files"
+            search={{ ...routeSearch, view: "all", file: undefined, page: 0 }}
+            aria-current={activeView === "all" ? "page" : undefined}
+          >
+            All files
+          </Link>
         </Button>
-        <Button
-          size="sm"
-          variant={activeView === "to-file" ? "default" : "outline"}
-          onClick={() => {
-            setView("to-file");
-            setPage(0);
-            setFolderId(null);
-          }}
-        >
-          To file
+        <Button size="sm" variant={activeView === "to-file" ? "default" : "outline"} asChild>
+          <Link
+            to="/files"
+            search={{ ...routeSearch, view: "to-file", folder: undefined, file: undefined, page: 0 }}
+            aria-current={activeView === "to-file" ? "page" : undefined}
+          >
+            To file
+          </Link>
         </Button>
         <span className="text-xs text-muted-foreground">
           To file shows unlinked uploads that have not been assigned a folder. Email intake is not
@@ -641,10 +623,7 @@ function FilesPage() {
         <Select
           value={type}
           disabled={activeView === "to-file"}
-          onValueChange={(v) => {
-            setType(v);
-            setPage(0);
-          }}
+          onValueChange={(v) => setType(v)}
         >
           {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
 
@@ -662,10 +641,7 @@ function FilesPage() {
         </Select>
         <Select
           value={sort}
-          onValueChange={(v) => {
-            setSort(v as typeof sort);
-            setPage(0);
-          }}
+          onValueChange={(v) => setSort(v as typeof sort)}
         >
           <SelectTrigger className="w-48" aria-label="Sort files">
             <ArrowUpDown className="mr-2 size-4" />
@@ -862,7 +838,7 @@ function FilesPage() {
                     <TableCell className="max-w-xs">
                       <Link
                         to="/files"
-                        search={(previous) => ({ ...previous, file: f.id }) as never}
+                        search={(previous) => parseFilesListSearch({ ...previous, file: f.id })}
                         className="block max-w-xs truncate text-left font-medium hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                         aria-label={`View details for ${f.file_name}`}
                       >

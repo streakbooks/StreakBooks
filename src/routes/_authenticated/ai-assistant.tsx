@@ -1,15 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { AiAssistantPage } from "@/screens/ai-assistant";
+import { parseAiAssistantSearch } from "@/lib/ai/assistant-browsing";
 
 export const Route = createFileRoute("/_authenticated/ai-assistant")({
-  validateSearch: (raw: Record<string, unknown>): { reviewCase?: string } => ({
-    reviewCase:
-      typeof raw.reviewCase === "string" &&
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(raw.reviewCase)
-        ? raw.reviewCase
-        : undefined,
-  }),
+  validateSearch: parseAiAssistantSearch,
   head: () => ({
     meta: [
       { title: "AI Assistant — LinkBooks" },

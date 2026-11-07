@@ -74,12 +74,37 @@ for (const [key, actual] of Object.entries(expectedCounts)) {
     throw new Error(`Browsing manifest counts.${key} is ${manifest.counts?.[key]}; expected ${actual}. Update the coverage inventory.`);
   }
 }
+if (!Array.isArray(manifest.acceptanceCriteria) || manifest.acceptanceCriteria.length !== 12 || manifest.acceptanceCriteria.some((criterion) => typeof criterion !== "string" || !criterion.trim())) {
+  throw new Error("Exactly 12 nonempty browsing acceptance criteria are required");
+}
 if (new Set(manifest.acceptanceCriteria).size !== manifest.acceptanceCriteria.length) {
   throw new Error("Browsing acceptance criteria must be unique");
 }
 for (const module of manifest.modules) {
   if (module.fullyVerified && (!Array.isArray(module.verificationEvidence) || module.verificationEvidence.length !== 12 || module.verificationEvidence.some((entry) => typeof entry !== "string" || !entry.trim()))) {
     throw new Error("Fully verified module requires 12 nonempty acceptance evidence entries: " + module.label);
+  }
+}
+
+// Supporting routes and cross-cutting workflows are first-class coverage areas.
+// A verified status cannot be asserted without evidence for every criterion.
+for (const [route, entry] of Object.entries(manifest.supportingRouteEvidence ?? {})) {
+  if (!manifest.supportingRoutes.includes(route)) {
+    throw new Error("Supporting-route evidence refers to an unknown route: " + route);
+  }
+  if (entry.fullyVerified === true && (!Array.isArray(entry.verificationEvidence) || entry.verificationEvidence.length !== 12 || entry.verificationEvidence.some((value) => typeof value !== "string" || !value.trim()))) {
+    throw new Error("Verified supporting route requires 12 nonempty acceptance evidence entries: " + route);
+  }
+}
+if (!Array.isArray(manifest.crossCutting) || manifest.crossCutting.some((entry) => !entry || typeof entry.area !== "string" || !entry.area.trim() || typeof entry.status !== "string" || !entry.status.trim())) {
+  throw new Error("Cross-cutting browsing areas require named, nonempty status entries");
+}
+if (new Set(manifest.crossCutting.map((entry) => entry.area)).size !== manifest.crossCutting.length) {
+  throw new Error("Duplicate cross-cutting browsing areas");
+}
+for (const entry of manifest.crossCutting) {
+  if (entry.fullyVerified === true && (!Array.isArray(entry.verificationEvidence) || entry.verificationEvidence.length !== 12 || entry.verificationEvidence.some((value) => typeof value !== "string" || !value.trim()))) {
+    throw new Error("Verified cross-cutting workflow requires 12 nonempty acceptance evidence entries: " + entry.area);
   }
 }
 

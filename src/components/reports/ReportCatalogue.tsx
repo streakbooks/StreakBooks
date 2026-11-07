@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useReportingCentreOrigin } from "@/lib/reports/centre-return";
+import { useReportingCentreOrigin } from "@/hooks/use-reporting-centre-origin";
 import { Link } from "@tanstack/react-router";
 import {
   QUICK_REPORT_IDS,

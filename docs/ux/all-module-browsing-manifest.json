@@ -491,5 +491,20 @@
       "evidence": "Tax, Settings, accounting surfaces",
       "status": "Country-gated flows and currency/timezone formatting unverified"
     }
-  ]
+  ],
+  "supportingRouteEvidence": {
+    "profile.tsx": {
+      "status": "partial_code_not_runtime_verified",
+      "commit": "001c16139edc99e3c61d1fad19a538b74995ef1c",
+      "evidence": [
+        "Native profile form submit and Enter key",
+        "Unsaved changes status, no-op save disabled, empty-name guard"
+      ],
+      "remaining": [
+        "Password and security settings full acceptance",
+        "Browser, role/RLS, accessibility and authenticated tests"
+      ],
+      "tests": "NOT RUN"
+    }
+  }
 }

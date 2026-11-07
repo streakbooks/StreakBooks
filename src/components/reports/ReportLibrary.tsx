@@ -14,6 +14,7 @@ import { Star, MoreHorizontal, Plus, LockKeyhole, FileText } from "lucide-react"
 import { toast } from "sonner";
 import { REPORT_CATALOG, getReportById } from "@/lib/reports/catalog";
 import { parseReportSearch } from "@/lib/reports/search";
+import { useReportingCentreOrigin } from "@/lib/reports/centre-return";
 import { libraryMetadata, type SavedReport } from "@/lib/reports/saved-report";
 import {
   listReportLibrary,
@@ -58,6 +59,7 @@ export function ReportLibrary({
   initialState?: "active" | "archived" | "templates";
 }) {
   const fmt = useFormat();
+  const centre = useReportingCentreOrigin();
   const { company } = useActiveCompany();
   const canExport = useCanDo("reports.export");
   const exportFn = useServerFn(exportReportDocument);
@@ -336,7 +338,7 @@ export function ReportLibrary({
                               className="font-medium hover:underline"
                               to="/reports/$reportId"
                               params={{ reportId: row.report_id }}
-                              search={parseReportSearch(row.config)}
+                              search={{ ...parseReportSearch(row.config), centre }}
                             >
                               {row.name}
                             </Link>

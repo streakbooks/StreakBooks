@@ -28,7 +28,7 @@ The register below was derived from actual repository navigation and routes. The
 | 9 | Files | `/files` | 1 | Partial browsing code committed; not runtime-verified |
 | 10 | Budgets | `/budgets` | 2 | Partial browsing code committed; not runtime-verified |
 | 11 | Fixed assets | `/fixed-assets` | 1 | Partial browsing code committed; not runtime-verified |
-| 12 | Payroll | `/payroll` | 12 | Not yet verified for premium browsing |
+| 12 | Payroll | `/payroll` | 12 | Partial report deep-link code committed; not runtime-verified |
 | 13 | Reports | `/reports` | 3 | Partial browsing code committed; not runtime-verified |
 | 14 | Accountant | `/accountant` | 1 | Not yet verified for premium browsing |
 | 15 | Firm | `/firm` | 1 | Not yet verified for premium browsing |
@@ -40,6 +40,12 @@ The register below was derived from actual repository navigation and routes. The
 | 21 | Help | `/help` | 1 | Partial URL-backed search code committed; not runtime-verified |
 
 **Status meaning:** "Partial browsing code" means some navigation/state improvements are committed; tests of the complete module are not finished. "Not yet verified" does **not** mean the existing module lacks functionality; it means this initiative has not established full coverage or acceptance.
+
+### Latest Payroll browsing implementation evidence (2026-11-07)
+
+- `src/routes/_authenticated/payroll/reports.tsx`: validates `reportId` against the actual payroll report catalogue IDs; commit `da98e6382bfb473dbf7fbe83bc341c70c47e16df`.
+- `src/screens/payroll/reports.tsx`: report selector writes a native URL search state so report selection can participate in Back/Forward, deep linking and refresh; commit `e163c19d6cbd7f7714c4e9706b0a0e1cace76cb3`.
+- Scope is **one report selection workflow**, not complete Payroll coverage. Local typecheck, lint, build, unit tests, authenticated browser and `check:browsing-coverage` are **NOT RUN**. All other Payroll screens and the 12 acceptance criteria remain pending.
 
 ### Latest supporting-route implementation evidence (2026-11-07)
 

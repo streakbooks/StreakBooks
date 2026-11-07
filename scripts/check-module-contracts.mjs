@@ -33,6 +33,7 @@ const requiredDocs = [
   "docs/premium-ui/SUPABASE_MIGRATION_AND_SECURITY_REGISTER.md",
   "docs/premium-ui/IMPLEMENTATION_BATCH_LEDGER.md",
   "docs/premium-ui/RELEASE_READINESS.md",
+  "docs/premium-ui/FINISHED-SCREEN-DOD-CORE.md",
   "docs/engineering/NEW-MODULE-DEFINITION-OF-DONE.md",
 ];
 for (const doc of requiredDocs) {

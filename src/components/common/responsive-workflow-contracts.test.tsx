@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { DataTableToolbar } from "./data-table-toolbar";
 import { SelectionActionBar } from "./SelectionActionBar";
 import { PageHeader, SectionHeader } from "./states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
 
 describe("LinkBooks responsive workflow contract", () => {
   it("keeps table search available with an accessible, keyboard-reachable field", () => {
@@ -78,4 +80,25 @@ describe("LinkBooks responsive workflow contract", () => {
     expect(section).toContain("flex-wrap");
     expect(section).toContain("Add list");
   });
+
+  it("shared workspaces keep page headings and labelled landmarks", () => {
+    const list = renderToStaticMarkup(
+      <ListWorkspace title="Sales" actions={<Button type="button">New invoice</Button>}>
+        <p>Rows</p>
+      </ListWorkspace>,
+    );
+    expect(list).toContain('data-slot="list-workspace"');
+    expect(list).toContain("<h1");
+    expect(list).toContain("Sales");
+    expect(list).toContain("New invoice");
+    const record = renderToStaticMarkup(
+      <RecordWorkspace title="Bill detail">
+        <p>Lines</p>
+      </RecordWorkspace>,
+    );
+    expect(record).toContain('data-slot="record-workspace"');
+    expect(record).toContain("<h1");
+    expect(record).toContain("Bill detail");
+  });
 });
+

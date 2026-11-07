@@ -30,7 +30,11 @@ export function RecordWorkspace({
   className?: string;
 }) {
   return (
-    <div className={cn("lb-record-workspace flex min-w-0 flex-col gap-4", className)}>
+    <section
+      data-slot="record-workspace"
+      aria-label={title}
+      className={cn("lb-record-workspace flex min-w-0 flex-col gap-4", className)}
+    >
       <PageHeader
         title={title}
         {...(description !== undefined ? { description } : {})}
@@ -58,6 +62,6 @@ export function RecordWorkspace({
           </aside>
         ) : null}
       </div>
-    </div>
+    </section>
   );
 }

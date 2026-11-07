@@ -30,7 +30,11 @@ export function ListWorkspace({
   className?: string;
 }) {
   return (
-    <div className={cn("lb-list-workspace flex min-w-0 flex-col gap-4", className)}>
+    <section
+      data-slot="list-workspace"
+      aria-label={title}
+      className={cn("lb-list-workspace flex min-w-0 flex-col gap-4", className)}
+    >
       <PageHeader
         title={title}
         {...(description !== undefined ? { description } : {})}
@@ -56,6 +60,6 @@ export function ListWorkspace({
           </aside>
         ) : null}
       </div>
-    </div>
+    </section>
   );
 }

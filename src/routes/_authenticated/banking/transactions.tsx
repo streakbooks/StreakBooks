@@ -3,6 +3,7 @@ import { ProjectTagControl } from "@/components/projects/ProjectTagControl";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Eye, MoreHorizontal, Rows3, Table2 } from "lucide-react";
 import { createFileRoute, Link, useRouteContext } from "@tanstack/react-router";
+import { encodeBankTransactionReturnContext } from "@/lib/banking/transaction-return";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -165,6 +166,7 @@ function BankTransactions() {
   const canTax = useCanDo("tax.settings");
   const canBank = useCanDo("banking.feeds.manage");
   const search = Route.useSearch();
+  const returnContext = encodeBankTransactionReturnContext(search);
   const navigate = Route.useNavigate();
   const qc = useQueryClient();
 
@@ -974,6 +976,7 @@ function BankTransactions() {
                                     key={l.journalLineId}
                                     to="/banking/journal/$journalId"
                                     params={{ journalId: l.journalId }}
+                                    search={returnContext ? { returnContext } : {}}
                                     className="text-sm underline-offset-4 hover:underline"
                                   >
                                     Journal #{l.journalNumber}

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -43,9 +43,12 @@ export function ConfirmDialog({
 }) {
   return (
     <AlertDialog open={open} onOpenChange={(v) => (pending ? undefined : onOpenChange(v))}>
-      <AlertDialogContent>
+      <AlertDialogContent className={tone === "destructive" ? "border-destructive/30" : undefined}>
         <AlertDialogHeader>
-          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogTitle className="flex items-center gap-2">
+            {tone === "destructive" ? <AlertTriangle className="size-4 shrink-0 text-destructive" aria-hidden="true" /> : null}
+            {title}
+          </AlertDialogTitle>
           {description ? <AlertDialogDescription>{description}</AlertDialogDescription> : null}
         </AlertDialogHeader>
         {children}
@@ -55,6 +58,7 @@ export function ConfirmDialog({
             type="button"
             variant={tone === "destructive" ? "destructive" : "default"}
             disabled={pending}
+            aria-busy={pending || undefined}
             onClick={() => void onConfirm()}
           >
             {pending ? <Loader2 className="animate-spin" /> : null}

@@ -2,16 +2,9 @@
 
 | Batch | Wave | Scope | Branch | PR/commit | Routes touched | Status |
 | ----- | ---- | ----- | ------ | --------- | -------------- | ------ |
-| 1 | 0–1 + §20 | ModuleDefinition, workspaces, scaffold, checks, docs | `feature/premium-ui-master-wave0-1-inplace` | [PR #182](https://github.com/linkbusinessadvisory/LinkBooks/pull/182) → `511a3713` | architecture (all inherit) | merged |
-| 2 | 2 | Adopt ListWorkspace on Banking + Contacts | `feature/premium-ui-batch2-workspaces` | [PR #183](https://github.com/linkbusinessadvisory/LinkBooks/pull/183) → `7b323413` | `/banking`, transfers, money-documents, `/contacts` | merged |
-| 3 | 3 | ListWorkspace on Sales + Purchases overviews | `feature/premium-ui-batch3-sales-purchases` | [PR #184](https://github.com/linkbusinessadvisory/LinkBooks/pull/184) → `2218927d` | `/sales`, `/purchases` | merged |
-| 4 | 2–4 | Fix workspace exactOptional props + ListWorkspace on Products, Files, EM, Budgets | `feature/premium-ui-batch4-fix-and-more` | [PR #185](https://github.com/linkbusinessadvisory/LinkBooks/pull/185) → `45745e39` | products, files, EM overview, budgets | merged |
-| 5 | 4–6 | ListWorkspace on Help, Tax, Fixed assets, Reports, Payroll overview, App Store | `feature/premium-ui-batch5-more-modules` | [PR #186](https://github.com/linkbusinessadvisory/LinkBooks/pull/186) → `c7729c2e` | help, tax, fixed-assets, reports, payroll, app-store | merged |
-| 6 | 3–4 | Nested Sales/Purchases/EM/Payroll lists + Accounting shell | `feature/premium-ui-batch6-nested-lists` | [PR #187](https://github.com/linkbusinessadvisory/LinkBooks/pull/187) → `52653bd8` | 28 list/index screens | merged |
-| 7 | 3–6 | RecordWorkspace details + Advisors/Firm/Settings/Developer/AI | `feature/premium-ui-batch7-records-practice` | [PR #188](https://github.com/linkbusinessadvisory/LinkBooks/pull/188) → `345b8e87` | detail + practice/platform | merged |
-| 8 | 3–6 | Remaining App Store, EM, Banking, Dashboard, Action Center, create forms | `feature/premium-ui-batch8-remaining-headers` | [PR #189](https://github.com/linkbusinessadvisory/LinkBooks/pull/189) → `dc2436f3` | 58 screens/routes | merged |
-| 9 | 2 + §20 | Shared component shells + PageHeader bypass enforcement | `feature/premium-ui-batch9-shared-shells` | [PR #190](https://github.com/linkbusinessadvisory/LinkBooks/pull/190) → `ad19d5a8` | settings/EM/sales editor shells | merged |
-| 10 | 8 + §14 | Workspace landmarks, chrome unit tests, core DoD matrices | `feature/premium-ui-batch10-dod-hardening` | pending | shared workspaces + docs | in progress |
-| 11 | 8–9 | Per-module browser DoD + staging | TBD | — | | planned |
+| 1–9 | 0–6 + §20 | Architecture through shared shells | — | PRs [#182](https://github.com/linkbusinessadvisory/LinkBooks/pull/182)–[#190](https://github.com/linkbusinessadvisory/LinkBooks/pull/190) | see prior ledger history | merged |
+| 10 | 8 + §14 | Workspace landmarks, chrome unit tests, core DoD matrices | `feature/premium-ui-batch10-dod-hardening` | [PR #191](https://github.com/linkbusinessadvisory/LinkBooks/pull/191) → `f915a6a5` | shared workspaces + docs | merged |
+| 11 | 8 + §12/14 | UI fixture List/RecordWorkspace, Playwright landmark tests, `check:workspace` | `feature/premium-ui-batch11-dod-evidence` | pending merge | e2e/ui + adoption script | ready |
+| 12 | 8–9 | Authenticated browser DoD + staging | TBD | — | | planned |
 
-Authenticated screens/routes must not import `PageHeader` directly (`check:modules`). Core module finished-screen DoD is tracked in `FINISHED-SCREEN-DOD-CORE.md` and remains **IN PROGRESS**.
+Core finished-screen DoD remains **IN PROGRESS**. Chrome inheritance is enforced by `check:modules` + `check:workspace`.

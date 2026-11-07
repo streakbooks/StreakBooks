@@ -62,8 +62,8 @@ export function BillWorkspaceLayout({
     if (wide) setMobileSummaryOpen(false);
   }, [wide]);
   return (
-    <div className={cn("flex min-h-[calc(100vh-4rem)] flex-col", className)}>
-      <div className="shrink-0 border-b border-border bg-background px-1 pb-3">
+    <div className={cn("flex min-h-[calc(100vh-4rem)] min-w-0 flex-col", className)}>
+      <div className="shrink-0 border-b border-border/75 bg-gradient-to-r from-card via-card to-accent/20 px-2 pb-4 pt-1 sm:px-3">
         {header}
         {sidebarState === "closed" ? (
           <div className="mt-2 hidden items-center gap-3 xl:flex">
@@ -77,7 +77,7 @@ export function BillWorkspaceLayout({
         ) : null}
       </div>
       <div className="flex min-h-0 flex-1">
-        <div role="region" aria-label="Bill entry" className="min-w-0 flex-1 px-1 py-4">
+        <div role="region" aria-label="Bill entry" className="min-w-0 flex-1 px-1 py-5 sm:px-3">
           {children}
         </div>
         {wide ? (
@@ -98,7 +98,7 @@ export function BillWorkspaceLayout({
         ) : null}
       </div>
       <Sheet open={mobileSummaryOpen} onOpenChange={setMobileSummaryOpen}>
-        <div className="sticky bottom-0 border-t border-border bg-card p-2 xl:hidden print:hidden">
+        <div className="sticky bottom-0 z-10 border-t border-border/80 bg-card/95 p-3 shadow-raised xl:hidden print:hidden">
           <SheetTrigger asChild>
             <Button
               type="button"

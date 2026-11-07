@@ -68,6 +68,14 @@ import {
   type ExpenseExitOutstanding,
   type ExpenseExitSettlement,
 } from "@/lib/expenses/exit-settlement";
+import {
+  mapExpenseCategorySuggestion,
+  mapExpenseClaimDuplicates,
+  mapExpenseClaimRiskScan,
+  type ExpenseCategorySuggestion,
+  type ExpenseClaimDuplicateMatch,
+  type ExpenseClaimRiskScan,
+} from "@/lib/expenses/risk";
 
 export const EXPENSE_MANAGEMENT_MIGRATION =
   "Expense Management is not available yet: the database update 20261107120000 has not been applied.";
@@ -108,6 +116,9 @@ export const EXPENSE_DISPUTES_REBILLING_MIGRATION =
 export const EXPENSE_EXIT_SETTLEMENT_MIGRATION =
   "Expense exit settlement is not available yet: apply database update 20261107145000.";
 
+export const EXPENSE_RISK_MIGRATION =
+  "Expense risk and duplicate checks are not available yet: apply database update 20261107146000.";
+
 export const EXPENSE_TEMPLATE_MIGRATION =
   "Expense claim templates are not available yet: apply database update 20261107130000.";
 
@@ -123,13 +134,21 @@ export type ExpenseReceiptInboxEntry = {
   sizeBytes: number | null;
   attachmentId: string | null;
   matchedClaimId: string | null;
+  ocrStatus: string;
   createdAt: string;
 };
 
 export type ExpenseReceiptInboxResponse = {
   entries: ExpenseReceiptInboxEntry[];
   inboundEmailEnabled: boolean;
+  ocrEnabled: boolean;
   note: string;
+};
+
+export type ExpenseCategory = {
+  id: string;
+  code: string;
+  name: string;
 };
 
 type CountResult = {
@@ -603,20 +622,21 @@ export const saveExpenseClaimTemplate = createServerFn({ method: "POST" })
 function mapReceiptInboxEntry(row: unknown): ExpenseReceiptInboxEntry {
   const r = (row && typeof row === "object" ? row : {}) as Record<string, unknown>;
   return {
-    id: String(r.id ?? ""),
-    fileName: String(r.file_name ?? r.fileName ?? ""),
-    source: String(r.source ?? "upload"),
-    status: String(r.status ?? "unassigned"),
-    contentType: (r.content_type ?? r.contentType ?? null) as string | null,
+    id: String(r["id"] ?? ""),
+    fileName: String(r["file_name"] ?? r["fileName"] ?? ""),
+    source: String(r["source"] ?? "upload"),
+    status: String(r["status"] ?? "unassigned"),
+    contentType: (r["content_type"] ?? r["contentType"] ?? null) as string | null,
     sizeBytes:
-      typeof r.size_bytes === "number"
-        ? r.size_bytes
-        : typeof r.sizeBytes === "number"
-          ? r.sizeBytes
+      typeof r["size_bytes"] === "number"
+        ? r["size_bytes"]
+        : typeof r["sizeBytes"] === "number"
+          ? (r["sizeBytes"] as number)
           : null,
-    attachmentId: (r.attachment_id ?? r.attachmentId ?? null) as string | null,
-    matchedClaimId: (r.matched_claim_id ?? r.matchedClaimId ?? null) as string | null,
-    createdAt: String(r.created_at ?? r.createdAt ?? ""),
+    attachmentId: (r["attachment_id"] ?? r["attachmentId"] ?? null) as string | null,
+    matchedClaimId: (r["matched_claim_id"] ?? r["matchedClaimId"] ?? null) as string | null,
+    ocrStatus: String(r["ocr_status"] ?? r["ocrStatus"] ?? "not_configured"),
+    createdAt: String(r["created_at"] ?? r["createdAt"] ?? ""),
   };
 }
 
@@ -628,6 +648,7 @@ export const listExpenseReceiptInbox = createServerFn({ method: "GET" })
     const raw = await callRpc<{
       entries?: unknown[];
       inbound_email_enabled?: boolean;
+      ocr_enabled?: boolean;
       note?: string;
     }>(
       context.supabase,
@@ -638,6 +659,7 @@ export const listExpenseReceiptInbox = createServerFn({ method: "GET" })
     return {
       entries: (raw.entries ?? []).map(mapReceiptInboxEntry),
       inboundEmailEnabled: Boolean(raw.inbound_email_enabled),
+      ocrEnabled: Boolean(raw.ocr_enabled),
       note:
         raw.note ??
         "Inbound email and OCR are not configured. Upload files here, then match them to a draft claim.",
@@ -1755,4 +1777,107 @@ export const finalizeExpenseExitSettlement = createServerFn({ method: "POST" })
       EXPENSE_EXIT_SETTLEMENT_MIGRATION,
     );
     return mapExpenseExitSettlement(raw);
+  });
+
+export const listExpenseCategories = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string }) => ({
+    companyId: companyIdOf(input),
+  }))
+  .handler(async ({ data, context }): Promise<ExpenseCategory[]> => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    const raw = await callRpc<{ categories?: unknown[] }>(
+      context.supabase,
+      "list_expense_categories",
+      { _company_id: data.companyId },
+      EXPENSE_RISK_MIGRATION,
+    );
+    return (raw.categories ?? []).map((row) => {
+      const r = (row && typeof row === "object" ? row : {}) as Record<string, unknown>;
+      return {
+        id: String(r["id"] ?? ""),
+        code: String(r["code"] ?? ""),
+        name: String(r["name"] ?? ""),
+      };
+    });
+  });
+
+export const suggestExpenseCategory = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; merchantName: string }) => ({
+    companyId: companyIdOf(input),
+    merchantName: input.merchantName,
+  }))
+  .handler(async ({ data, context }): Promise<ExpenseCategorySuggestion> => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "suggest_expense_category",
+      {
+        _company_id: data.companyId,
+        _merchant_name: data.merchantName,
+      },
+      EXPENSE_RISK_MIGRATION,
+    );
+    return mapExpenseCategorySuggestion(raw);
+  });
+
+export const findExpenseClaimDuplicates = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; claimId: string }) => ({
+    companyId: companyIdOf(input),
+    claimId: input.claimId,
+  }))
+  .handler(async ({ data, context }): Promise<ExpenseClaimDuplicateMatch[]> => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "find_expense_claim_duplicates",
+      {
+        _company_id: data.companyId,
+        _claim_id: data.claimId,
+      },
+      EXPENSE_RISK_MIGRATION,
+    );
+    return mapExpenseClaimDuplicates(raw);
+  });
+
+export const scanExpenseClaimRisks = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; claimId: string }) => ({
+    companyId: companyIdOf(input),
+    claimId: input.claimId,
+  }))
+  .handler(async ({ data, context }): Promise<ExpenseClaimRiskScan> => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "scan_expense_claim_risks",
+      {
+        _company_id: data.companyId,
+        _claim_id: data.claimId,
+      },
+      EXPENSE_RISK_MIGRATION,
+    );
+    return mapExpenseClaimRiskScan(raw);
+  });
+
+export const requestExpenseReceiptOcr = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; entryId: string }) => ({
+    companyId: companyIdOf(input),
+    entryId: input.entryId,
+  }))
+  .handler(async ({ data, context }): Promise<ExpenseReceiptInboxEntry> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "expenses.submit");
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "request_expense_receipt_ocr",
+      {
+        _company_id: data.companyId,
+        _entry_id: data.entryId,
+      },
+      EXPENSE_RISK_MIGRATION,
+    );
+    return mapReceiptInboxEntry(raw);
   });

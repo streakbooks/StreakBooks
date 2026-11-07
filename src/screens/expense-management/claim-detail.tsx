@@ -28,16 +28,20 @@ import { listContacts } from "@/lib/contacts/contacts.functions";
 import {
   EXPENSE_DISPUTES_REBILLING_MIGRATION,
   EXPENSE_POSTING_MIGRATION,
+  EXPENSE_RISK_MIGRATION,
+  findExpenseClaimDuplicates,
   getExpenseClaim,
   getExpenseManagementSettings,
   markExpenseClaimRebilled,
   postExpenseClaim,
   prepareExpenseClaimForRebilling,
+  scanExpenseClaimRisks,
 } from "@/lib/expenses/expenses.functions";
 import {
   buildRebillSalesLines,
   canPrepareClaimForRebilling,
 } from "@/lib/expenses/rebilling";
+import { riskScoreBand } from "@/lib/expenses/risk";
 import { saveInvoiceDraft } from "@/lib/sales/sales.functions";
 import type { Permission } from "@/lib/permissions";
 
@@ -64,6 +68,8 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
   const prepareRebill = useServerFn(prepareExpenseClaimForRebilling);
   const markRebilled = useServerFn(markExpenseClaimRebilled);
   const createInvoice = useServerFn(saveInvoiceDraft);
+  const scanRisks = useServerFn(scanExpenseClaimRisks);
+  const findDuplicates = useServerFn(findExpenseClaimDuplicates);
   const [customerContactId, setCustomerContactId] = useState("");
 
   const claimQ = useQuery({
@@ -77,6 +83,21 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
     queryKey: ["expense-management-settings", company?.id],
     queryFn: () => fetchSettings({ data: { companyId: company!.id } }),
     enabled: Boolean(company?.id) && canRebill,
+    retry: false,
+  });
+
+  const riskQ = useQuery({
+    queryKey: ["expense-claim-risks", company?.id, claimId],
+    queryFn: () => scanRisks({ data: { companyId: company!.id, claimId } }),
+    enabled: Boolean(company?.id && claimId),
+    retry: false,
+  });
+
+  const duplicatesQ = useQuery({
+    queryKey: ["expense-claim-duplicates", company?.id, claimId],
+    queryFn: () => findDuplicates({ data: { companyId: company!.id, claimId } }),
+    enabled: Boolean(company?.id && claimId),
+    retry: false,
   });
 
   const contactsQ = useQuery({
@@ -281,6 +302,19 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
         <Badge variant="outline">Posting: {claim.postingStatus}</Badge>
         <Badge variant="outline">Reimbursement: {claim.reimbursementStatus}</Badge>
         <Badge variant="outline">Rebilling: {claim.rebillingStatus}</Badge>
+        {riskQ.data ? (
+          <Badge
+            variant={
+              riskScoreBand(riskQ.data.score) === "elevated"
+                ? "destructive"
+                : riskScoreBand(riskQ.data.score) === "review"
+                  ? "secondary"
+                  : "outline"
+            }
+          >
+            Risk {riskQ.data.score}
+          </Badge>
+        ) : null}
         <Badge variant="outline">
           Total {fromMinorUnits(claim.totalMinor, claim.claimCurrency)}
         </Badge>
@@ -293,6 +327,64 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
             Accrual journal {claim.postedJournalId}. Bank reimbursement is handled in EM-07.
           </AlertDescription>
         </Alert>
+      ) : null}
+
+      {riskQ.isError &&
+      friendlyAuthError(riskQ.error).includes("20261107146000") ? (
+        <Alert className="mb-6">
+          <AlertTitle>Risk checks pending migration</AlertTitle>
+          <AlertDescription>{EXPENSE_RISK_MIGRATION}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      {riskQ.data && riskQ.data.flags.length > 0 ? (
+        <section className="mb-6 space-y-2 rounded-lg border p-4">
+          <h2 className="text-base font-semibold">Risk indicators</h2>
+          <ul className="list-disc space-y-1 pl-5 text-sm">
+            {riskQ.data.flags.map((flag) => (
+              <li key={flag.code}>
+                <span className="font-medium">{flag.severity}</span> — {flag.message}
+              </li>
+            ))}
+          </ul>
+          <p className="text-xs text-muted-foreground">{riskQ.data.ocrNote}</p>
+        </section>
+      ) : null}
+
+      {duplicatesQ.data && duplicatesQ.data.length > 0 ? (
+        <section className="mb-6 space-y-2 rounded-lg border p-4">
+          <h2 className="text-base font-semibold">Possible duplicates</h2>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Claim</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Score</TableHead>
+                <TableHead className="text-right">Total</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {duplicatesQ.data.map((dup) => (
+                <TableRow key={dup.claimId}>
+                  <TableCell>
+                    <Link
+                      className="underline"
+                      to="/expense-management/claims/$claimId"
+                      params={{ claimId: dup.claimId }}
+                    >
+                      {dup.claimNumber}
+                    </Link>
+                  </TableCell>
+                  <TableCell>{dup.approvalStatus}</TableCell>
+                  <TableCell>{dup.score}</TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {fromMinorUnits(dup.totalMinor, dup.claimCurrency)}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </section>
       ) : null}
 
       {claim.description ? (

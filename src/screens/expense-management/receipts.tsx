@@ -43,11 +43,13 @@ import { uploadCompanyDocument } from "@/lib/documents/upload-client";
 import {
   dismissExpenseReceiptInboxEntry,
   EXPENSE_RECEIPT_MIGRATION,
+  EXPENSE_RISK_MIGRATION,
   finalizeExpenseReceiptInboxUpload,
   listExpenseClaims,
   listExpenseReceiptInbox,
   matchExpenseReceiptToClaim,
   registerExpenseReceiptInboxEntry,
+  requestExpenseReceiptOcr,
 } from "@/lib/expenses/expenses.functions";
 import type { Permission } from "@/lib/permissions";
 
@@ -73,6 +75,7 @@ export function ExpenseManagementReceiptsPage() {
   const finalizeUpload = useServerFn(finalizeExpenseReceiptInboxUpload);
   const matchEntry = useServerFn(matchExpenseReceiptToClaim);
   const dismissEntry = useServerFn(dismissExpenseReceiptInboxEntry);
+  const requestOcr = useServerFn(requestExpenseReceiptOcr);
   const registerFile = useServerFn(registerAttachment);
   const downloadAttachment = useServerFn(getAttachmentDownload);
 
@@ -207,6 +210,23 @@ export function ExpenseManagementReceiptsPage() {
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
 
+  const ocr = useMutation({
+    mutationFn: async (entryId: string) => {
+      if (!company) throw new Error("Select a company first.");
+      return requestOcr({ data: { companyId: company.id, entryId } });
+    },
+    onSuccess: () => {
+      invalidate();
+      toast.message("OCR unavailable", {
+        description: "No OCR provider is configured yet. Entry marked unavailable.",
+      });
+    },
+    onError: (error) => {
+      const message = friendlyAuthError(error);
+      toast.error(message.includes("20261107146000") ? EXPENSE_RISK_MIGRATION : message);
+    },
+  });
+
   if (isPending) return <LoadingState />;
   if (!company) {
     return <CompanyEmptyState title="No organisation" description="Select a company first." />;
@@ -296,6 +316,8 @@ export function ExpenseManagementReceiptsPage() {
       <Alert className="mb-6">
         <AlertTitle>
           {inbox.inboundEmailEnabled ? "Inbound email enabled" : "Inbound email not configured"}
+          {" · "}
+          {inbox.ocrEnabled ? "OCR enabled" : "OCR not configured"}
         </AlertTitle>
         <AlertDescription>{inbox.note}</AlertDescription>
       </Alert>
@@ -370,6 +392,7 @@ export function ExpenseManagementReceiptsPage() {
               <TableHead>File</TableHead>
               <TableHead>Source</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>OCR</TableHead>
               <TableHead>Created</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -388,10 +411,22 @@ export function ExpenseManagementReceiptsPage() {
                 <TableCell>
                   <Badge variant="secondary">{entry.status}</Badge>
                 </TableCell>
+                <TableCell>
+                  <Badge variant="outline">{entry.ocrStatus}</Badge>
+                </TableCell>
                 <TableCell>{entry.createdAt.slice(0, 10) || "—"}</TableCell>
                 <TableCell className="text-right">
                   {canSubmit ? (
                     <div className="flex flex-col items-end gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={ocr.isPending}
+                        onClick={() => ocr.mutate(entry.id)}
+                      >
+                        Request OCR
+                      </Button>
                       <Select
                         value={matchClaimByEntry[entry.id] ?? ""}
                         onValueChange={(value) =>

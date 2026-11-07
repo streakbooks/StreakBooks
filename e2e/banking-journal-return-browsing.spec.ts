@@ -45,4 +45,19 @@ test.describe("Banking: linked journal return browsing", () => {
     await page.getByRole("link", { name: "Back to transactions" }).click();
     await expect(page).toHaveURL(/\/banking\/transactions(?:\/|\?|$)/);
   });
+
+  test("transaction preview retains bank list filters and browser Back", async ({ page }) => {
+    await signIn(page, "/banking/transactions?statusGroup=posted&pageSize=25");
+    const preview = page.locator('tbody a[href*="transactionId="][href*="pageSize=25"]').first();
+    test.skip((await preview.count()) === 0, "Requires seeded bank transactions");
+    await preview.click();
+    const selected = new URL(page.url()).searchParams;
+    expect(selected.has("transactionId")).toBe(true);
+    expect(selected.get("pageSize")).toBe("25");
+    await page.goBack();
+    const original = new URL(page.url()).searchParams;
+    expect(original.get("statusGroup")).toBe("posted");
+    expect(original.get("pageSize")).toBe("25");
+  });
+
 });

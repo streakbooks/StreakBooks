@@ -45,7 +45,7 @@ export function TableAppearanceControls({
       {columns.length > 0 && onToggleColumn ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" aria-label="Choose table columns">
+            <Button variant="outline" size="sm" aria-label="Columns">
               <Columns3 className="size-4" aria-hidden />
               Columns
             </Button>

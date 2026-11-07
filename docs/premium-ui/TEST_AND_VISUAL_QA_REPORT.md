@@ -16,6 +16,8 @@
 | Route/screen List/RecordWorkspace adoption | **In progress → largely complete** | PRs #182–#189 + Batch 9 shared shells |
 | `npm run typecheck` | **Not clean repo-wide** | Pre-existing unrelated errors remain |
 | Playwright UI + workspace axe (Batch 19) | **Passed** 74/74 | list/record axe; density label-in-name; Clear name; subnav native-link assertion |
+| Deny-path RBAC unit helpers (Batch 20) | **Passed** (assert-company-access) | Permission/member false + RPC error paths |
+| Label-in-name shared controls (Batch 20) | **Fixed** | Columns/Clear accessible names match visible text |
 | Authenticated staging smoke | **Not run** | Authorized; `E2E_*` credentials unset on workstation |
 | GitHub CI | Not dispatched by instruction | Push may auto-trigger; full auth allows observation |
 

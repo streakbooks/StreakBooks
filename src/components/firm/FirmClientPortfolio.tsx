@@ -506,7 +506,11 @@ export function FirmClientPortfolio({
       <div className="flex flex-wrap items-center gap-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button size="sm" variant="outline" aria-label="Choose visible client columns">
+            <Button
+              size="sm"
+              variant="outline"
+              aria-label={`Columns (${visibleColumns.length + 1})`}
+            >
               <Columns3 className="mr-2 size-4" />
               Columns ({visibleColumns.length + 1})
             </Button>

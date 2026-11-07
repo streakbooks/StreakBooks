@@ -17,6 +17,7 @@ import {
 import { getSalesDocumentConfig } from "@/lib/sales/sales-config.functions";
 import { canVoidInvoice } from "@/lib/sales/allocation-rules";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { decodeInvoiceReturnContext } from "@/lib/sales/invoice-list-navigation";
 import { ProjectTagControl } from "@/components/projects/ProjectTagControl";
 import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
 import { ReasonDialog } from "@/components/sales/ReasonDialog";
@@ -52,6 +53,8 @@ export const Route = createFileRoute("/_authenticated/sales/invoices/$invoiceId/
 
 function InvoiceDetail() {
   const { invoiceId } = Route.useParams();
+  const search = Route.useSearch();
+  const backSearch = decodeInvoiceReturnContext(search.returnContext);
   const { company } = useActiveCompany();
   const navigate = useNavigate();
   const fetchInvoice = useServerFn(getInvoice);
@@ -122,7 +125,7 @@ function InvoiceDetail() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["sales-invoices", companyId] });
       toast.success("Draft deleted");
-      navigate({ to: "/sales/invoices" });
+      navigate({ to: "/sales/invoices", search: backSearch });
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
@@ -132,7 +135,11 @@ function InvoiceDetail() {
     onSuccess: async (r) => {
       await queryClient.invalidateQueries({ queryKey: ["sales-invoices", companyId] });
       toast.success("Copied to a new draft");
-      navigate({ to: "/sales/invoices/$invoiceId/edit", params: { invoiceId: r.id } });
+      navigate({
+        to: "/sales/invoices/$invoiceId/edit",
+        params: { invoiceId: r.id },
+        search: search.returnContext ? { returnContext: search.returnContext } : {},
+      });
     },
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
@@ -194,7 +201,7 @@ function InvoiceDetail() {
           actions={
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" size="sm" asChild>
-                <Link to="/sales/invoices">Back</Link>
+                <Link to="/sales/invoices" search={backSearch}>Back to Invoices</Link>
               </Button>
               <Button variant="outline" size="sm" asChild>
                 <Link
@@ -207,7 +214,11 @@ function InvoiceDetail() {
               {inv.status === "draft" ? (
                 <>
                   <Button size="sm" variant="outline" asChild>
-                    <Link to="/sales/invoices/$invoiceId/edit" params={{ invoiceId }}>
+                    <Link
+                      to="/sales/invoices/$invoiceId/edit"
+                      params={{ invoiceId }}
+                      search={search.returnContext ? { returnContext: search.returnContext } : {}}
+                    >
                       Edit draft
                     </Link>
                   </Button>

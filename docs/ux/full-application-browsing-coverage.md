@@ -37,7 +37,7 @@ The register below was derived from actual repository navigation and routes. The
 | 18 | AI Assistant | `/ai-assistant` | 1 | Not yet verified for premium browsing |
 | 19 | Tax | `/tax` | 1 | Not yet verified for premium browsing |
 | 20 | Settings | `/settings` | 1 | Not yet verified for premium browsing |
-| 21 | Help | `/help` | 1 | Not yet verified for premium browsing |
+| 21 | Help | `/help` | 1 | Partial URL-backed search code committed; not runtime-verified |
 
 **Status meaning:** "Partial browsing code" means some navigation/state improvements are committed; tests of the complete module are not finished. "Not yet verified" does **not** mean the existing module lacks functionality; it means this initiative has not established full coverage or acceptance.
 
@@ -329,6 +329,9 @@ Every batch may require multiple small implementation increments; do not rush a 
 - Progress must be based only on verified batches, with a visual bar at the end of every update. Current **fully verified batches: 0/12**.
 
 ## 8. Current evidence / limitations
+
+- 2026-11-07 Help browsing increment: `9a4181ca3ad6fc4569bd30da440b9d47131c87b3` replaces component-only search state with bounded URL query state for shareable searches, refresh, and native history continuity; `cca5b62160437ef50052286606a4cd358acaea48` records the manifest evidence. Help remains **not fully verified**; no local checks or authenticated browser tests were executed in this run. All 12 acceptance criteria remain open until tested.
+
 
 - Navigation and context preservation code is committed for Sales, Purchases, Contacts, Products & Services, Banking and Reports, including shared navigation inherited in the branch history. Banking covers transaction-to-journal return and transaction previews; Reports covers catalogue, overview, management and saved-report return navigation. Neither module is fully verified.
 - Standalone helper compilations and isolated assertions have been reported, but these do not demonstrate application-wide readiness.

@@ -1,4 +1,3 @@
-import { useRouterState } from "@tanstack/react-router";
 import { parseReportingCentreSearch } from "./centre-search";
 
 export type ReportingCentreContext = ReturnType<typeof parseReportingCentreSearch>;
@@ -41,18 +40,6 @@ export function decodeReportingCentreContext(raw: unknown): ReportingCentreConte
 export function normalizeReportingCentreContext(raw: unknown): string | undefined {
   const decoded = decodeReportingCentreContext(raw);
   return decoded ? encodeReportingCentreContext(decoded) || undefined : undefined;
-}
-
-/** Report links rendered inside any Reports Centre workspace inherit its origin. */
-export function useReportingCentreOrigin(): string | undefined {
-  const search = useRouterState({
-    select: (state) =>
-      state.location.pathname.replace(/\/$/, "") === "/reports"
-        ? (state.location.search as Record<string, unknown>)
-        : null,
-  });
-  if (!search) return undefined;
-  return encodeReportingCentreContext(search) || undefined;
 }
 
 /** Fallback for a report opened directly, without a Reports Centre origin. */

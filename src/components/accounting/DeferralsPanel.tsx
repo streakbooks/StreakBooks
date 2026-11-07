@@ -140,6 +140,10 @@ export function DeferralsPanel({ companyId, currency }: { companyId: string; cur
       <ErrorState
         title="Could not load deferrals"
         description={friendlyAuthError(q.error ?? accounts.error)}
+        onRetry={() => {
+          void q.refetch();
+          void accounts.refetch();
+        }}
       />
     );
   const active = (accounts.data ?? []).filter((a) => a.is_active && a.is_postable);

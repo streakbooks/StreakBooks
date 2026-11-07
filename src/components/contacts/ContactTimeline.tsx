@@ -395,6 +395,7 @@ export function ContactTimeline({
         <ErrorState
           title="Could not load contact activity"
           description={friendlyAuthError(query.error)}
+          onRetry={() => void query.refetch()}
         />
       ) : rows.length === 0 ? (
         <p className="rounded-md border border-dashed p-6 text-sm text-muted-foreground">

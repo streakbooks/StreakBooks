@@ -217,6 +217,10 @@ export function FirmRecurringBillingPanel({
             <ErrorState
               title="Cannot load recurring billing"
               description={friendlyAuthError(engagementsQ.error ?? templatesQ.error)}
+              onRetry={() => {
+                void engagementsQ.refetch();
+                void templatesQ.refetch();
+              }}
             />
           ) : (
             <>

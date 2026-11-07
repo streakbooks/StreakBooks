@@ -18,6 +18,8 @@
 | Playwright UI + workspace axe (Batch 19) | **Passed** 74/74 | list/record axe; density label-in-name; Clear name; subnav native-link assertion |
 | Deny-path RBAC unit helpers (Batch 20) | **Passed** (assert-company-access) | Permission/member false + RPC error paths |
 | Label-in-name shared controls (Batch 20) | **Fixed** | Columns/Clear accessible names match visible text |
+| Error-retry gate + Bills ListWorkspace (Batch 21) | **Passed** | `check:error-retry`; bills.index ListWorkspace + factual insights |
+| Demo + globalSearch isolation units (Batch 21) | **Passed** | Non-demo reseed deny; search membership + company_id scope |
 | Authenticated staging smoke | **Not run** | Authorized; `E2E_*` credentials unset on workstation |
 | GitHub CI | Not dispatched by instruction | Push may auto-trigger; full auth allows observation |
 

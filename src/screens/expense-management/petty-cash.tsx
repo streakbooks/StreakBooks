@@ -219,6 +219,7 @@ export function ExpenseManagementPettyCashPage() {
         <ErrorState
           title="Could not load petty cash floats"
           description={friendlyAuthError(floatsQ.error)}
+          onRetry={() => void floatsQ.refetch()}
         />
       ) : null}
 

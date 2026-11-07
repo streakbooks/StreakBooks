@@ -241,6 +241,7 @@ export function ExpenseManagementCashAdvancesPage() {
         <ErrorState
           title="Could not load cash advances"
           description={friendlyAuthError(advancesQ.error)}
+          onRetry={() => void advancesQ.refetch()}
         />
       ) : null}
 

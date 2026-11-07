@@ -209,6 +209,10 @@ function OrderForm({
       <ErrorState
         title="Could not load order options"
         description={friendlyAuthError(suppliersQ.error ?? accountsQ.error)}
+        onRetry={() => {
+          void suppliersQ.refetch();
+          void accountsQ.refetch();
+        }}
       />
     );
   const locked = mutation.isPending || Boolean(savedId);

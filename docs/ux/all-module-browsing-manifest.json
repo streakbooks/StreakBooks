@@ -289,8 +289,17 @@
         "payroll/salary-structures.tsx",
         "payroll/settings.tsx"
       ],
-      "browsingImplementation": "not_assessed_module_wide",
-      "fullyVerified": false
+      "browsingImplementation": "partial_code_not_runtime_verified",
+      "fullyVerified": false,
+      "currentEvidence": [
+        "src/routes/_authenticated/payroll/reports.tsx — allowlisted reportId URL search; commit da98e6382bfb473dbf7fbe83bc341c70c47e16df",
+        "src/screens/payroll/reports.tsx — selected report uses native history/deep link; commit e163c19d6cbd7f7714c4e9706b0a0e1cace76cb3"
+      ],
+      "remaining": [
+        "Verify report URL selection with authenticated fixtures and Back/Forward/refresh",
+        "Audit all other Payroll subroutes, permissions, reporting, accounting and responsive flows",
+        "Local typecheck, lint, build, unit, browser and browsing coverage guard NOT RUN"
+      ]
     },
     {
       "label": "Reports",

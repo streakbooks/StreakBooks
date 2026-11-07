@@ -25,7 +25,8 @@ import {
   type DocumentRecordHandle,
 } from "@/components/documents/DocumentRecordPanel";
 import { BankLookup } from "@/components/lookup";
-import { PageHeader, LoadingState, EmptyState } from "@/components/common/states";
+import { LoadingState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -147,11 +148,10 @@ export function Transfers({
   if (accountsQ.isPending) return <LoadingState />;
 
   return (
-    <>
-      <PageHeader
-        title="Transfers"
-        description="Moves money between your bank/cash accounts with a single DR/CR journal, so nothing is counted twice. Match the statement lines on both accounts to it afterwards."
-      />
+    <ListWorkspace
+      title="Transfers"
+      description="Moves money between your bank/cash accounts with a single DR/CR journal, so nothing is counted twice. Match the statement lines on both accounts to it afterwards."
+    >
       <div className="grid max-w-md gap-3">
         <div className="space-y-1">
           <Label>From</Label>
@@ -301,6 +301,6 @@ export function Transfers({
           </TableBody>
         </Table>
       )}
-    </>
+    </ListWorkspace>
   );
 }

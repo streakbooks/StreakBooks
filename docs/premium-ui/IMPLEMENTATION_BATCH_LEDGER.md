@@ -2,8 +2,8 @@
 
 | Batch | Wave | Scope | Branch | PR/commit | Routes touched | Status |
 | ----- | ---- | ----- | ------ | --------- | -------------- | ------ |
-| 1 | 0–1 + §20 | ModuleDefinition, workspaces, scaffold, checks, docs | `feature/premium-ui-master-wave0-1-inplace` | pending merge | architecture (all inherit) | in progress |
-| 2 | 2 | Adopt List/Record workspace on high-traffic lists | TBD | — | Banking/Sales/Purchases lists | planned |
+| 1 | 0–1 + §20 | ModuleDefinition, workspaces, scaffold, checks, docs | `feature/premium-ui-master-wave0-1-inplace` | [PR #182](https://github.com/linkbusinessadvisory/LinkBooks/pull/182) → `511a3713` | architecture (all inherit) | merged |
+| 2 | 2 | Adopt ListWorkspace on Banking + Contacts | `feature/premium-ui-batch2-workspaces` | pending | `/banking`, transfers, money-documents, `/contacts` | in progress |
 | 3 | 3 | Core financial finished-screen DoD | TBD | — | Banking, Sales, Purchases, EM, Accounting, Contacts | planned |
 | 4 | 4 | Products, Files, Budgets, Assets, Payroll, Reports, Tax | TBD | — | | planned |
 | 5 | 5 | Accountant, Firm, Advisors, Action Center | TBD | — | | planned |

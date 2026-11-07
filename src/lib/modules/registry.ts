@@ -105,7 +105,8 @@ export const MODULE_REGISTRY: readonly ModuleDefinition[] = [
     viewModes: ["list", "mobile-card"],
     screenRoot: "src/screens/banking",
     experience: DEFAULT_AUTHENTICATED_EXPERIENCE,
-    premiumStatus: "partial",
+    premiumStatus: "in-progress",
+    notes: "Batch 2: ListWorkspace on accounts, transfers, bank documents.",
   },
   {
     id: "sales",
@@ -161,7 +162,8 @@ export const MODULE_REGISTRY: readonly ModuleDefinition[] = [
     viewModes: ["list", "card", "mobile-card"],
     screenRoot: "src/screens/contacts",
     experience: DEFAULT_AUTHENTICATED_EXPERIENCE,
-    premiumStatus: "partial",
+    premiumStatus: "in-progress",
+    notes: "Batch 2: ListWorkspace on contacts directory.",
   },
   {
     id: "products-services",

@@ -61,7 +61,8 @@ import {
 } from "@/lib/contacts/contact-directory-preferences.functions";
 import type { ContactPreferenceKind } from "@/lib/contacts/contact-directory-preferences";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
+import { ListSkeleton, ErrorState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { ContactFollowUpsPanel } from "@/components/contacts/ContactFollowUpsPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -812,42 +813,40 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
   const summary = summaryQ.data;
 
   return (
-    <>
-      <PageHeader
-        title="Contacts"
-        description="One directory for customers and suppliers — shared with sales, purchases and statements."
-        actions={
-          <div className="flex flex-wrap gap-2">
-            <Button size="sm" asChild>
-              <Link to="/contacts/new" search={{ kind: "customer" }}>
-                New contact
-              </Link>
-            </Button>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/contacts/import">
-                <Upload className="mr-1 size-4" /> Import
-              </Link>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={exportM.isPending}
-              onClick={() => exportM.mutate()}
-            >
-              <Download className="mr-1 size-4" /> Export
-            </Button>
-            <Button variant="outline" size="sm" asChild>
-              <SettingsDestinationLink destination={{ to: "/contacts/settings" }}>
-                <Settings2 className="mr-1 size-4" /> Settings
-              </SettingsDestinationLink>
-            </Button>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/contacts/duplicates">Duplicates</Link>
-            </Button>
-          </div>
-        }
-      />
-
+    <ListWorkspace
+      title="Contacts"
+      description="One directory for customers and suppliers — shared with sales, purchases and statements."
+      actions={
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" asChild>
+            <Link to="/contacts/new" search={{ kind: "customer" }}>
+              New contact
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/contacts/import">
+              <Upload className="mr-1 size-4" /> Import
+            </Link>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={exportM.isPending}
+            onClick={() => exportM.mutate()}
+          >
+            <Download className="mr-1 size-4" /> Export
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <SettingsDestinationLink destination={{ to: "/contacts/settings" }}>
+              <Settings2 className="mr-1 size-4" /> Settings
+            </SettingsDestinationLink>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/contacts/duplicates">Duplicates</Link>
+          </Button>
+        </div>
+      }
+    >
       {summary ? (
         <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <Metric label="Active contacts" value={String(summary.activeContactCount)} />
@@ -1593,7 +1592,7 @@ export function ContactsPage({ initialKind = "customer" }: { initialKind?: strin
           ) : null}
         </TabsContent>
       </Tabs>
-    </>
+    </ListWorkspace>
   );
 }
 

@@ -137,18 +137,22 @@ export function ExpenseManagementClaimsPage({
         data: { companyId: company!.id, scope: mode === "claims" ? "all" : "own" },
       }),
     enabled: Boolean(company?.id) && allowed,
+    // Missing RPCs (migrations not applied) should fail once, not retry into a long skeleton.
+    retry: false,
   });
 
   const accountsQ = useQuery({
     queryKey: ["accounts", company?.id, "expense-claims"],
     queryFn: () => fetchAccounts({ data: { companyId: company!.id } }),
     enabled: Boolean(company?.id) && canSubmit && mode === "my-expenses",
+    retry: false,
   });
 
   const templatesQ = useQuery({
     queryKey: ["expense-claim-templates", company?.id],
     queryFn: () => fetchTemplates({ data: { companyId: company!.id } }),
     enabled: Boolean(company?.id) && canSubmit && mode === "my-expenses",
+    retry: false,
   });
 
   const advancesQ = useQuery({
@@ -494,7 +498,18 @@ export function ExpenseManagementClaimsPage({
       </>
     );
   }
-  if (claimsQ.isPending) return <LoadingState />;
+  if (claimsQ.isLoading) {
+    return (
+      <>
+        <PageHeader
+          title={mode === "my-expenses" ? "My Expenses" : "All Claims"}
+          description="Expense Management"
+        />
+        <ExpenseManagementSubnav current={sectionKey} />
+        <LoadingState />
+      </>
+    );
+  }
   if (claimsQ.isError) {
     const message = friendlyAuthError(claimsQ.error);
     return (
@@ -503,8 +518,12 @@ export function ExpenseManagementClaimsPage({
         <ExpenseManagementSubnav current={sectionKey} />
         {message.includes("202611071") ? (
           <Alert>
-            <AlertTitle>Migration required</AlertTitle>
-            <AlertDescription>{EXPENSE_CLAIM_MIGRATION}</AlertDescription>
+            <AlertTitle>Database update required</AlertTitle>
+            <AlertDescription>
+              {EXPENSE_CLAIM_MIGRATION} My Expenses will stay empty until migrations
+              `20261107120000` and `20261107123000` (and later EM slices you need) are applied to
+              this Supabase project.
+            </AlertDescription>
           </Alert>
         ) : (
           <ErrorState

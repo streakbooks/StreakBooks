@@ -58,6 +58,11 @@ The register below was derived from actual repository navigation and routes. The
 - A module marked `fullyVerified: true` must supply exactly 12 nonempty evidence entries, one for each criterion. This is a **structural gate**, not proof that any tests passed.
 - Code commit: `e95f33b95202fc1ebbf129b233096fba47f4f1cf`. Local `npm run check:browsing-coverage`, typecheck, lint, unit and browser tests: **NOT RUN**. All 21 modules remain unverified.
 
+### Supporting-route and cross-cutting verification guard (2026-11-07)
+
+- `scripts/check-browsing-coverage.mjs`: commit `3484d29ad8b9746d42006e063df2d63d8a9aa0f5` adds 12-entry structural evidence requirements for any supporting route or cross-cutting workflow marked fully verified, rejects unknown supporting-route evidence keys, duplicate cross-cutting areas, and malformed acceptance criteria.
+- This does **not** mark any route or workflow verified. Local guard, unit, typecheck, lint, build, browser, security and accounting regression checks: **NOT RUN** (GitHub connector does not execute local scripts).
+
 ## 2. Internal and supporting routes also included
 
 - `src/routes/_authenticated/documents.branding.tsx`

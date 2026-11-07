@@ -44,7 +44,7 @@ import {
   type FirmDirectoryPreferences,
 } from "@/lib/firm/firm-directory-preferences";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -700,9 +700,10 @@ export function FirmClientPortfolio({
                     {visibleColumns.map((column) => (
                       <TableCell key={column} className="max-w-56">
                         {column === "status" ? (
-                          <Badge variant="secondary">
-                            {STATUS_LABELS[profile?.status ?? "active"]}
-                          </Badge>
+                          <StatusBadge
+                            status={profile?.status ?? "active"}
+                            label={STATUS_LABELS[profile?.status ?? "active"]}
+                          />
                         ) : column === "contact" ? (
                           <span className="block truncate">
                             {profile?.primary_contact_name || "—"}

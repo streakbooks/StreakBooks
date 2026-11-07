@@ -62,6 +62,27 @@ if (new Set(declaredRoutes).size !== declaredRoutes.length) {
 }
 compareList(actualRoutes, declaredRoutes, "Authenticated route files");
 
+// Detect stale summary totals as well as missing route entries. These totals are
+// informational only, and must never be interpreted as acceptance-test results.
+const expectedCounts = {
+  sidebarModules: sidebar.length,
+  authenticatedRouteFiles: actualRoutes.length,
+  supportingRouteFiles: manifest.supportingRoutes.length,
+};
+for (const [key, actual] of Object.entries(expectedCounts)) {
+  if (manifest.counts?.[key] !== actual) {
+    throw new Error(`Browsing manifest counts.${key} is ${manifest.counts?.[key]}; expected ${actual}. Update the coverage inventory.`);
+  }
+}
+if (new Set(manifest.acceptanceCriteria).size !== manifest.acceptanceCriteria.length) {
+  throw new Error("Browsing acceptance criteria must be unique");
+}
+for (const module of manifest.modules) {
+  if (module.fullyVerified && (!Array.isArray(module.verificationEvidence) || module.verificationEvidence.length !== 12 || module.verificationEvidence.some((entry) => typeof entry !== "string" || !entry.trim()))) {
+    throw new Error("Fully verified module requires 12 nonempty acceptance evidence entries: " + module.label);
+  }
+}
+
 const missingRequirements = manifest.modules.filter(
   (module) =>
     !module.browsingImplementation ||

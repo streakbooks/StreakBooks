@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AdvisorsPortalSubnav } from "@/components/advisors/AdvisorsPortalSubnav";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import { listAdvisorsPortalTasks } from "@/lib/advisors/portal.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 
@@ -43,7 +43,7 @@ export function AdvisorsPortalTasksPage() {
             <li key={item.id} className="rounded-lg border border-border p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="font-medium">{item.title}</p>
-                <Badge variant="secondary">{item.status}</Badge>
+                <StatusBadge status={item.status} />
               </div>
               <p className="text-sm text-muted-foreground">
                 {item.workspaceTitle} · {item.kind}

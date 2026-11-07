@@ -104,7 +104,7 @@ export function ProductsPage() {
             key={id}
             role="tab"
             to="/products-services"
-            search={{ section: id }}
+            search={(previous) => parseCatalogueSearch({ ...previous, section: id })}
             aria-selected={section === id}
             data-state={section === id ? "active" : "inactive"}
             className={nativeTabLinkClass}

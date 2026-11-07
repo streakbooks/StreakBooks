@@ -170,7 +170,7 @@ export function Pager({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {[25, 50, 100].map((n) => (
+            {[25, 50, 100, 200].map((n) => (
               <SelectItem key={n} value={String(n)}>
                 {n} / page
               </SelectItem>

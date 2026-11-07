@@ -8,7 +8,7 @@ At the **end of every EM phase/slice chat response and final report**, paste thi
 
 ```
 EM progress  ███░░░░░░░░░  3/12 verified (25%)
-Coded surface largely complete · Provider/ops gates remain · Migrations not applied · Not pushed
+Migrations applied on linked project · Overview smoke OK · Full E2E/provider gates remain · Not pushed
 ```
 
 ## Visual progress
@@ -22,12 +22,12 @@ Coded surface largely complete · Provider/ops gates remain · Migrations not ap
 | Area | Status |
 | --- | --- |
 | Code Development | 3 / 12 verified; EM SQL applied on linked project 2026-11-07; overview smoke OK; full E2E still open |
-| Local Testing | Partial (unit + check:ui; no DB/browser) |
+| Local Testing | Unit 97 passed; overview browser smoke OK; full claim E2E open |
 | GitHub Commit | Local commits only; not pushed |
 | GitHub PR / Merge | Pending |
-| Database Migrations | Pending (SQL committed; not applied) |
-| Application Deployment | Pending |
-| Production Readiness | Not Verified |
+| Database Migrations | Applied 2026-11-07 on linked project `ipxflpzfcqwtenodbxwc` (27 files) |
+| Application Deployment | Local Vite only; Vercel not verified this turn |
+| Production Readiness | Not Verified (provider + full E2E open) |
 
 ## Batch checklist
 
@@ -44,7 +44,7 @@ Coded surface largely complete · Provider/ops gates remain · Migrations not ap
 | EM-09 | Corporate cards, disputes, rebilling, exit settlement | In progress — EM-09a–c cards, disputes, rebilling, exit settlement coded; batch not closed |
 | EM-10 | AI OCR, categorisation, duplicates, fraud indicators | In progress — EM-10a rule-based risk/duplicates/category + OCR unavailable stub |
 | EM-11 | Reports, analytics, notifications, migration, exports, audit | In progress — EM-11a+11b coded (reports/CSV/audit + Action Center + legacy import); email/push still out |
-| EM-12 | Integration, security, performance, recovery, UX, release verification | In progress — EM-12a + coded-complete status; browser/CI/migration apply still open |
+| EM-12 | Integration, security, performance, recovery, UX, release verification | In progress — EM-12a; migrations applied; overview smoke OK; CI/full E2E still open |
 
 ## Navigation note
 

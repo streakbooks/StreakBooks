@@ -20,7 +20,9 @@ This includes native browser navigation, discoverable module sections, connected
 | Scroll restoration | `src/router.tsx` has `scrollRestoration: true` | Verify filters, sorting, selections and route transitions across workspaces |
 | Module subnavigation | Shared `ModuleSubnav.tsx` exposes all sections in a scrollable strip; Sales/Purchases/Banking reuse it | Authenticated/mobile validation, keyboard and responsive overflow checks |
 | Purchases list state | Bills list URL search validates tab, query, dates, status, page, sort; bill record links now carry allowlisted return context | Run pure helper tests and seeded authenticated browser journey |
-| Sales invoices list | `src/routes/_authenticated/sales/invoices.index.tsx` now uses validated URL search state; detail, New/Edit and mobile links preserve return context | Run local typecheck, unit tests and authenticated browser journeys; verify saved views and live deep links |
+| Sales invoices list | `src/routes/_authenticated/sales/invoices.index.tsx` uses validated URL search; detail, New/Edit and mobile links preserve origin | Isolated helper assertions passed on exact Git blob; full build and authenticated browser journey still pending |
+| Contacts directory | `src/screens/contacts/index.tsx` carries originating view to a contact; `src/routes/_authenticated/contacts/$contactId.tsx` keeps it across all 7 detail tabs | Directory-view helper passed 18 isolated assertions on exact Git blob; full app/browser validation pending; search/page retention remains to be implemented |
+| Products & Services | `src/screens/products-services.tsx` uses native URL-based section links for Catalogue, Categories and Price Lists; `src/routes/_authenticated/products-services.tsx` validates search | Section helper passed 11 isolated assertions on exact Git blob; E2E browser checks pending; catalogue filters still local state |
 | Reporting and other modules | Existing native navigation audit (`scripts/check-native-navigation.mjs`) covers key sections | Full screen/action inventory and real-browser testing |
 | Accessibility and performance | Shared controls include focus states and route preloading | Measure with realistic datasets and assistive technology checks |
 | Finance/security | Existing accounting services, auth and Supabase RLS are separate | Never bypass posting, period locks, tenant isolation or authorization; regression test them |
@@ -40,6 +42,14 @@ This includes native browser navigation, discoverable module sections, connected
 - `src/routes/_authenticated/sales/invoices.new.tsx`, `src/screens/sales/invoices.new.tsx`, `src/components/sales/SalesDocumentEditor.tsx` and `src/components/sales/InvoiceMobileCards.tsx`: carry list context across new/edit, saving and mobile record links.
 - `src/components/sales/ListKit.tsx`: allow 200-row page sizes already supported by saved views.
 - `e2e/sales-invoice-browsing-context.spec.ts`: three authenticated Sales navigation tests (written; not executed).
+- `src/lib/contacts/contact-view-navigation.ts`: safe allowlist of directory role/view names.
+- `src/screens/contacts/index.tsx`, `src/routes/_authenticated/contacts/index.tsx` and `src/routes/_authenticated/contacts/$contactId.tsx`: preserve directory view when opening a record, switching detail tabs and returning.
+- `src/lib/contacts/contact-view-navigation.test.ts`: four unit-test cases (written; Vitest not run).
+- `e2e/contacts-directory-return-context.spec.ts`: two authenticated browser journeys (written; not executed).
+- `src/lib/products/catalogue-navigation.ts`, `src/routes/_authenticated/products-services.tsx` and `src/screens/products-services.tsx`: validated bookmarkable Catalogue, Categories and Price Lists sections with native links.
+- `src/lib/products/catalogue-navigation.test.ts`: three unit-test cases (written; Vitest not run).
+- `e2e/products-section-browsing.spec.ts`: two authenticated native browser navigation scenarios (written; not executed).
+- **Executed in an isolated Node environment:** 40 assertions for the exact Git blob hashes of the Bills, Sales, and Contacts navigation helpers passed; 11 assertions for the Products section helper passed. This is NOT a full npm/TypeScript/build/Vitest/Playwright run.
 
 ## Required acceptance criteria
 
@@ -64,7 +74,7 @@ This includes native browser navigation, discoverable module sections, connected
 | 4 | Shared forms, tables, search, filters, saved views and context retention | Bills work in progress |
 | 5 | Sales, invoices and receivables navigation/forms | Invoice URL/return-context code committed; tests and remaining flows pending |
 | 6 | Purchases, bills and payables navigation/forms | Bills context implemented; tests pending |
-| 7 | Products, Services, Inventory and Contacts | Pending |
+| 7 | Products, Services, Inventory and Contacts | Contact view return context and Products section deep links committed; remaining workflows/tests pending |
 | 8 | Banking, Accounting and Reports | Pending |
 | 9 | Expense Management, Payroll, Tax, Fixed Assets and Budgets | Pending |
 | 10 | Files, Projects, Accountant, Firm, Advisors, AI, Settings and remaining modules | Pending |
@@ -73,7 +83,7 @@ This includes native browser navigation, discoverable module sections, connected
 
 The denominator is provisional until the full feature inventory is reconciled. **Fully verified coding batches: 0 / 12**; don't increase this without actual checks and acceptance evidence.
 
-**Next:** Execute `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run check:navigation`, `npm.cmd test -- src/lib/sales/invoice-list-navigation.test.ts src/lib/purchases/bills-return-context.test.ts`, and authenticated browser suites in an isolated local worktree. Then fix any failures before considering the browsing-context sub-batch verified. Continue with Products/Contacts and reporting return navigation only after the Sales/Bills local checks.
+**Next:** Execute `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run check:navigation`, `npm.cmd run check:ui`, `npm.cmd test -- src/lib/sales/invoice-list-navigation.test.ts src/lib/purchases/bills-return-context.test.ts src/lib/contacts/contact-view-navigation.test.ts src/lib/products/catalogue-navigation.test.ts`, and authenticated browser suites in an isolated local worktree. Then fix failures before considering any batch verified. Next coding priority: Contacts and Products list search/filter/page URL context, cross-module drill-down and reporting return navigation.
 
 ## Operating boundaries
 
@@ -95,7 +105,7 @@ npm.cmd ci
 npm.cmd run typecheck
 npm.cmd run lint
 npm.cmd run check:navigation
-npm.cmd test -- src/lib/purchases/bills-return-context.test.ts
+npm.cmd test -- src/lib/purchases/bills-return-context.test.ts src/lib/sales/invoice-list-navigation.test.ts src/lib/contacts/contact-view-navigation.test.ts src/lib/products/catalogue-navigation.test.ts
 npm.cmd run build
 ```
 

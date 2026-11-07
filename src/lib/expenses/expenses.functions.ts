@@ -47,6 +47,10 @@ import {
   type BatchReimburseResult,
 } from "@/lib/expenses/reimbursement";
 import {
+  mapExpenseApprovalDelegation,
+  type ExpenseApprovalDelegation,
+} from "@/lib/expenses/delegation";
+import {
   mapExpensePettyCashFloat,
   toExpensePettyCashFloatPayload,
   type ExpensePettyCashFloat,
@@ -115,6 +119,9 @@ export const EXPENSE_REIMBURSEMENT_MIGRATION =
 
 export const EXPENSE_BATCH_REIMBURSE_MIGRATION =
   "Batch expense reimbursement is not available yet: apply database update 20261107149000.";
+
+export const EXPENSE_DELEGATION_MIGRATION =
+  "Expense approval delegation is not available yet: apply database update 20261107150000.";
 
 export const EXPENSE_MILEAGE_MIGRATION =
   "Expense mileage rates are not available yet: apply database update 20261107139000.";
@@ -1045,6 +1052,77 @@ export const batchReimburseExpenseClaims = createServerFn({ method: "POST" })
       EXPENSE_BATCH_REIMBURSE_MIGRATION,
     );
     return mapBatchReimburseResult(raw);
+  });
+
+export const listExpenseApprovalDelegations = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string }) => ({
+    companyId: companyIdOf(input),
+  }))
+  .handler(async ({ data, context }): Promise<ExpenseApprovalDelegation[]> => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    const raw = await callRpc<{ delegations?: unknown[] }>(
+      context.supabase,
+      "list_expense_approval_delegations",
+      { _company_id: data.companyId },
+      EXPENSE_DELEGATION_MIGRATION,
+    );
+    return (raw.delegations ?? []).map(mapExpenseApprovalDelegation);
+  });
+
+export const saveExpenseApprovalDelegation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      toUserId: string;
+      startsOn: string;
+      endsOn: string;
+      note?: string;
+    }) => ({
+      companyId: companyIdOf(input),
+      toUserId: input.toUserId,
+      startsOn: input.startsOn,
+      endsOn: input.endsOn,
+      note: input.note,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<ExpenseApprovalDelegation> => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    if (!data.toUserId) throw new Error("Choose a delegate.");
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "save_expense_approval_delegation",
+      {
+        _company_id: data.companyId,
+        _to_user_id: data.toUserId,
+        _starts_on: data.startsOn,
+        _ends_on: data.endsOn,
+        _note: data.note ?? null,
+      },
+      EXPENSE_DELEGATION_MIGRATION,
+    );
+    return mapExpenseApprovalDelegation(raw);
+  });
+
+export const revokeExpenseApprovalDelegation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; delegationId: string }) => ({
+    companyId: companyIdOf(input),
+    delegationId: input.delegationId,
+  }))
+  .handler(async ({ data, context }): Promise<ExpenseApprovalDelegation> => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "revoke_expense_approval_delegation",
+      {
+        _company_id: data.companyId,
+        _delegation_id: data.delegationId,
+      },
+      EXPENSE_DELEGATION_MIGRATION,
+    );
+    return mapExpenseApprovalDelegation(raw);
   });
 
 export const listExpenseMileageRates = createServerFn({ method: "GET" })

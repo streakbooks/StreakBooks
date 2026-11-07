@@ -8,7 +8,7 @@ At the **end of every EM phase/slice chat response and final report**, paste thi
 
 ```
 EM progress  ███░░░░░░░░░  3/12 verified (25%)
-Coded slices EM-04…EM-12a · Migrations not applied · Not pushed
+Coded slices EM-04…EM-12a + EM-05c · Migrations not applied · Not pushed
 ```
 
 ## Visual progress
@@ -37,7 +37,7 @@ Coded slices EM-04…EM-12a · Migrations not applied · Not pushed
 | EM-02 | Navigation, dashboard, list/Kanban, employee profiles | Verified locally (nav + overview KPIs) |
 | EM-03 | Claims, lines, splitting, allocations, templates, lifecycle | Verified locally (core); Kanban/print/dimension pickers deferred |
 | EM-04 | Receipts, email inbox, file security, mobile capture, offline drafts | In progress — EM-04a/b upload+match+offline queue; inbound email/OCR still pending |
-| EM-05 | Approvals, policies, delegation, escalation, spending requests | In progress — EM-05a/b approvals + spending requests; delegation/escalation pending |
+| EM-05 | Approvals, policies, delegation, escalation, spending requests | In progress — EM-05a/b/c approvals, spending requests, delegation; escalation pending |
 | EM-06 | Accounting, tax, journals, FX, refunds, budgets | In progress — EM-06a employee-paid accrual posting; FX/refunds/budgets pending |
 | EM-07 | Reimbursements, partial/batch payments, bank matching, payroll | In progress — EM-07a/b full + batch bank reimbursement; partial-within-claim / payroll pending |
 | EM-08 | Mileage, travel, per diem, advances, petty cash, settlements | In progress — EM-08a–d + reclaim UI coded; booking integrations pending |

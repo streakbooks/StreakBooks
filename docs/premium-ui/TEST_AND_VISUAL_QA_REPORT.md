@@ -15,8 +15,9 @@
 | `npm run check:navigation` | **Passed** (Batch 1 baseline) | 24 modules native-nav audit |
 | Route/screen List/RecordWorkspace adoption | **In progress → largely complete** | PRs #182–#189 + Batch 9 shared shells |
 | `npm run typecheck` | **Not clean repo-wide** | Pre-existing unrelated errors remain |
-| Playwright visual / staging | Not run | — |
-| GitHub CI | Not dispatched by instruction | Push may auto-trigger |
+| Playwright UI + workspace axe (Batch 19) | **Passed** 74/74 | list/record axe; density label-in-name; Clear name; subnav native-link assertion |
+| Authenticated staging smoke | **Not run** | Authorized; `E2E_*` credentials unset on workstation |
+| GitHub CI | Not dispatched by instruction | Push may auto-trigger; full auth allows observation |
 
 ## Future-module inheritance proof (§20)
 

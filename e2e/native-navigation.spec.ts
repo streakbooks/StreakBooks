@@ -300,7 +300,7 @@ test.describe("deep links in authenticated module workspaces", () => {
     if (await page.getByRole("columnheader", { name: "Due", exact: true }).count()) {
       await expect(page.getByRole("columnheader", { name: "Due", exact: true })).toHaveCount(0);
     }
-    await page.getByRole("button", { name: "Choose row density" }).click();
+    await page.getByRole("button", { name: /row density/i }).click();
     await page.getByRole("menuitemradio", { name: "Compact" }).click();
     await page.reload();
     await page.getByRole("button", { name: "Choose table columns" }).click();
@@ -319,7 +319,7 @@ test.describe("deep links in authenticated module workspaces", () => {
       await page.keyboard.press("Escape");
       await expect(page.getByRole("dialog")).toHaveCount(0);
     }
-    await page.getByRole("button", { name: "Choose row density" }).click();
+    await page.getByRole("button", { name: /row density/i }).click();
     await page.getByRole("menuitem", { name: "Restore table defaults" }).click();
     await page.getByRole("button", { name: "Choose table columns" }).click();
     await expect(page.getByRole("menuitemcheckbox", { name: "Due date" })).toBeChecked();
@@ -340,7 +340,7 @@ test.describe("deep links in authenticated module workspaces", () => {
     await page.keyboard.press("Escape");
     const actionsHeader = page.getByRole("columnheader", { name: "Actions" });
     if ((await actionsHeader.count()) > 0) await expect(actionsHeader).toBeVisible();
-    await page.getByRole("button", { name: "Choose row density" }).click();
+    await page.getByRole("button", { name: /row density/i }).click();
     await page.getByRole("menuitem", { name: "Restore table defaults" }).click();
     await page.getByRole("button", { name: "Choose table columns" }).click();
     await expect(page.getByRole("menuitemcheckbox", { name: "Linked journals" })).toBeChecked();

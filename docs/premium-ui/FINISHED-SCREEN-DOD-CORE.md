@@ -12,9 +12,9 @@ A screen is **not** DONE unless every applicable row is PASS or N/A with reason.
 | ListWorkspace / RecordWorkspace on authenticated surfaces | PASS | Batches #182–#190; `check:modules` PageHeader bypass |
 | Themes / tokens inheritance | PASS | Shared `PageHeader` + `styles.css` tokens |
 | Scaffold / future inheritance | PARTIAL | `scaffold:module` + `check:modules`; live screenshot of probe not retained |
-| Authenticated staging QA | NOT VERIFIED | Not executed |
-| Production authorization | PASS | Granted 2026-11-07 by product owner |
-| Production go-live (Section 18) | BLOCKED | Staging/RBAC/a11y/DoD gates still open |
+| Authenticated staging QA | NOT VERIFIED | Authorized; `E2E_*` staging credentials not configured on workstation |
+| Program / production authorization | PASS | Full authorization granted 2026-11-07 by product owner |
+| Production go-live (Section 18) | BLOCKED | Staging/RBAC/manual a11y/DoD gates still evidence-open |
 
 ## Module matrices
 
@@ -29,7 +29,7 @@ A screen is **not** DONE unless every applicable row is PASS or N/A with reason.
 | e | RBAC/RLS / cross-company | NOT VERIFIED | Relies on pre-existing server auth; not re-proved here |
 | f | Migrations | N/A | No schema from UI chrome |
 | g | Honest empty/error copy | PARTIAL | Spot-checked feeds/CSV honesty preserved |
-| h | Responsive / a11y | PARTIAL | Landmarks added Batch 10; manual SR/zoom NOT VERIFIED |
+| h | Responsive / a11y | PARTIAL | Landmarks Batch 10; fixture axe on list/record Batch 19; manual SR/zoom NOT VERIFIED |
 | i | Tests | PARTIAL | Domain tests exist; chrome unit tests added Batch 10 |
 | j | Originality/license | PASS | No competitor assets |
 | k | Docs | PASS | This matrix + ledger |

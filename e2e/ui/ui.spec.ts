@@ -89,40 +89,41 @@ test("shared appearance and selection controls update the active list", async ({
   await page.getByRole("menuitemcheckbox", { name: "Customer", exact: true }).click();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("columnheader", { name: "Customer", exact: true })).toHaveCount(0);
-  await page.getByRole("button", { name: "Choose row density" }).click();
+  await page.getByRole("button", { name: /row density/i }).click();
   await page.getByRole("menuitemradio", { name: "Compact", exact: true }).click();
   await expect(page.getByRole("status").filter({ hasText: "Spacing: compact" })).toBeVisible();
   await page.getByRole("button", { name: "Select records", exact: true }).click();
   await expect(page.getByRole("region", { name: "Bulk actions", exact: true })).toContainText(
     "2 selected",
   );
-  await page.getByRole("button", { name: "Clear", exact: true }).click();
+  await page.getByRole("button", { name: "Clear selected records", exact: true }).click();
   await expect(page.getByRole("region", { name: "Bulk actions", exact: true })).toHaveCount(0);
 });
 
-test("module overflow preserves native URLs, active context and keyboard access", async ({
+test("module subnav keeps every section as a native link with active context", async ({
   page,
   context,
 }) => {
+  await page.setViewportSize({ width: 420, height: 800 });
   await page.goto("/sales/invoices");
   const nav = page.getByRole("navigation", { name: "Sales sections" });
   await expect(nav.getByRole("link", { name: "Invoices", exact: true })).toHaveAttribute(
     "aria-current",
     "page",
   );
-  await nav.getByRole("button", { name: "More sales sections" }).click();
-  const statements = page.getByRole("menuitem", { name: "Statements", exact: true });
+  const statements = nav.getByRole("link", { name: "Statements", exact: true });
   await expect(statements).toHaveAttribute("href", "/sales/statements");
   const tabReady = context.waitForEvent("page");
   await statements.click({ modifiers: ["Control"] });
   const tab = await tabReady;
   await expect(tab).toHaveURL(/sales\/statements/);
   await tab.close();
-  await page.keyboard.press("Escape");
-  await nav.getByRole("button", { name: "More sales sections" }).click();
-  await page.getByRole("menuitem", { name: "Recurring", exact: true }).click();
+  await nav.getByRole("link", { name: "Recurring", exact: true }).click();
   await expect(page).toHaveURL(/sales\/recurring/);
-  await expect(nav.getByRole("button", { name: "More sales sections: Recurring" })).toBeVisible();
+  await expect(nav.getByRole("link", { name: "Recurring", exact: true })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
 });
 
 test("CSV preview handles quoted commas, escaped quotes and multiline cells", async ({ page }) => {

@@ -61,6 +61,8 @@
   --color-money-out: var(--money-out);
   --color-success-soft: var(--success-soft);
   --color-success-ink: var(--success-ink);
+  --color-complete-soft: var(--complete-soft);
+  --color-complete-ink: var(--complete-ink);
   --color-warning-soft: var(--warning-soft);
   --color-warning-ink: var(--warning-ink);
   --color-info-soft: var(--info-soft);
@@ -131,6 +133,9 @@
   --money-out: oklch(0.5 0.17 25);
   --success-soft: oklch(0.95 0.045 155);
   --success-ink: oklch(0.4 0.1 155);
+  /* Persisted completed/paid/reconciled states use teal, distinct from approval green. */
+  --complete-soft: oklch(0.946 0.052 194);
+  --complete-ink: oklch(0.36 0.092 195);
   --warning-soft: oklch(0.96 0.06 85);
   --warning-ink: oklch(0.42 0.09 65);
   --info-soft: oklch(0.95 0.03 250);
@@ -197,6 +202,8 @@
   --money-out: oklch(0.75 0.14 25);
   --success-soft: oklch(0.3 0.06 155 / 0.55);
   --success-ink: oklch(0.82 0.12 155);
+  --complete-soft: oklch(0.29 0.055 193);
+  --complete-ink: oklch(0.84 0.102 192);
   --warning-soft: oklch(0.34 0.06 80 / 0.55);
   --warning-ink: oklch(0.86 0.12 85);
   --info-soft: oklch(0.32 0.07 250 / 0.55);
@@ -353,6 +360,101 @@
   table tr {
     break-inside: avoid;
   }
+}
+
+/* Signature workspace hierarchy: a restrained 44px brand rule beneath each page title. */
+.lb-page-header::after {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  bottom: -1px;
+  width: 2.75rem;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--primary);
+  opacity: 0.85;
+}
+@media print {
+  .lb-page-header::after { display: none; }
+}
+@media (forced-colors: active) {
+  .lb-page-header::after { background: Highlight; }
+}
+
+/* KPI cards use a discreet palette-aware marker, not a hardcoded module colour. */
+[data-slot="stat-card"]::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: 1.25rem;
+  bottom: 1.25rem;
+  width: 2px;
+  border-radius: 0 999px 999px 0;
+  background: var(--primary);
+  opacity: 0.35;
+  pointer-events: none;
+}
+[data-slot="stat-card"]:focus-within::before {
+  opacity: 0.8;
+}
+@media print {
+  [data-slot="stat-card"]::before { display: none; }
+}
+
+/* Original LinkBooks status system. Semantic states do NOT depend on palette. */
+.lb-status {
+  vertical-align: middle;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.005em;
+}
+.lb-status[data-tone="complete"] {
+  background-color: var(--complete-soft);
+  color: var(--complete-ink);
+}
+.lb-status[data-muted="true"] {
+  opacity: 0.8;
+}
+.lb-status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 1.25rem;
+  font-size: 0.8125rem;
+  font-weight: 550;
+}
+.lb-status-indicator::before {
+  content: "";
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 2px var(--card);
+}
+
+/* Shared data/workspace polish: no per-module colour decisions required. */
+[data-slot="card"] {
+  isolation: isolate;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+[data-slot="card"]:focus-within {
+  border-color: color-mix(in oklab, var(--ring) 25%, var(--border));
+}
+[data-slot="card"] > :where([data-slot="card-header"]) {
+  border-radius: inherit;
+}
+[data-slot="card"] :where(h2, h3) {
+  text-wrap: balance;
+}
+:where(.lb-workspace-heading) {
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="card"] { transition: none; }
+}
+@media (forced-colors: active) {
+  .lb-status, .lb-status-indicator { border: 1px solid CanvasText; }
 }
 
 /* Table density: wrap a table in `data-density="compact"` (see DataTableToolbar). */
@@ -571,6 +673,85 @@
   .lb-nav-link {
     transition: none;
   }
+}
+
+/* LinkBooks visual identity — original paired-leaf ledger mark, drawn entirely in CSS. */
+.lb-brand-mark {
+  position: relative;
+  isolation: isolate;
+  display: inline-block;
+  flex-shrink: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  overflow: hidden;
+  border-radius: 0.7rem;
+  border: 1px solid color-mix(in oklab, var(--sidebar-primary) 35%, transparent);
+  background:
+    radial-gradient(circle at 24% 20%, color-mix(in oklab, var(--sidebar-primary) 31%, transparent), transparent 48%),
+    linear-gradient(140deg, var(--sidebar-accent), var(--sidebar));
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--sidebar-foreground) 12%, transparent),
+    0 3px 8px color-mix(in oklab, var(--sidebar) 45%, transparent);
+}
+.lb-brand-mark-spine {
+  position: absolute;
+  top: 0.48rem;
+  left: calc(50% - 1px);
+  width: 2px;
+  height: 1.26rem;
+  border-radius: 999px;
+  background: var(--sidebar-primary);
+}
+.lb-brand-mark-page {
+  position: absolute;
+  top: 0.57rem;
+  width: 0.62rem;
+  height: 1.15rem;
+  border: 2px solid var(--sidebar-primary);
+  border-top: 0;
+  border-radius: 2px 2px 7px 3px;
+  opacity: 0.95;
+}
+.lb-brand-mark-page-left {
+  left: 0.41rem;
+  transform: skewY(11deg);
+  border-right: 0;
+}
+.lb-brand-mark-page-right {
+  right: 0.41rem;
+  transform: skewY(-11deg);
+  border-left: 0;
+}
+.lb-premium-sidebar {
+  background: linear-gradient(160deg, var(--sidebar-top), var(--sidebar) 43%, var(--sidebar-bottom));
+  box-shadow: 8px 0 28px -24px color-mix(in oklab, var(--sidebar) 80%, transparent);
+}
+.lb-workspace-topbar {
+  backdrop-filter: saturate(1.25) blur(12px);
+  box-shadow: 0 1px 6px color-mix(in oklab, var(--foreground) 4%, transparent);
+}
+.lb-workspace-canvas {
+  background-image: radial-gradient(ellipse at 80% -14%, color-mix(in oklab, var(--primary) 6%, transparent), transparent 50%);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .lb-workspace-topbar { backdrop-filter: none; }
+}
+@media print {
+  .lb-workspace-canvas { background: transparent !important; }
+}
+@media (forced-colors: active) {
+  .lb-brand-mark { border: 2px solid CanvasText; background: Canvas; }
+  .lb-brand-mark-page, .lb-brand-mark-spine { border-color: CanvasText; background-color: CanvasText; }
+}
+
+/* Every built-in palette owns its chart series, not just sidebar and buttons. 
+ * Keep success, money and status colours semantic and independent of this selection.
+ * Custom palettes receive coordinated chart tokens from computeCustomTokens(). */
+:root[data-linkbooks-palette]:not([data-linkbooks-palette="custom"]) {
+  --chart-1: var(--primary);
+  --chart-2: color-mix(in oklab, var(--primary) 50%, #078b94);
+  --chart-3: color-mix(in oklab, var(--primary) 38%, #cb9152);
+  --chart-4: color-mix(in oklab, var(--primary) 36%, #c36473);
+  --chart-5: color-mix(in oklab, var(--primary) 52%, #9b76b8);
 }
 
 /* Optional premium presets; Classic intentionally inherits the original LinkBooks theme. */

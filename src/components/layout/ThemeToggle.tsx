@@ -178,7 +178,7 @@ export function ThemeToggle() {
             <span className="flex-1">
               <span className="block font-semibold">Create your own palette</span>
               <span className="block text-xs text-muted-foreground">
-                Accent, sidebar and canvas colours
+                Primary, accent, sidebar and canvas colours
               </span>
             </span>
             {palette === "custom" ? <Check className="size-4 text-primary" aria-hidden /> : null}
@@ -196,8 +196,8 @@ export function ThemeToggle() {
               <Palette className="size-5 text-primary" /> Personalise LinkBooks
             </DialogTitle>
             <DialogDescription>
-              Choose colours you love. Text contrast adapts automatically; your financial reports
-              and status indicators stay unchanged.
+              Choose an original primary, accent and workspace palette. Text contrast adapts;
+              financial status colours keep their meaning in every theme.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -238,10 +238,16 @@ export function ThemeToggle() {
                     }}
                   >
                     Live colour preview
-                    <span
-                      className="mt-1 block h-2 w-2/3 rounded"
-                      style={{ backgroundColor: customColors.primary }}
-                    />
+                    <div className="mt-2 flex items-center gap-2" aria-hidden="true">
+                      <span
+                        className="h-2 w-1/2 rounded-full"
+                        style={{ backgroundColor: customColors.primary }}
+                      />
+                      <span
+                        className="h-2 w-1/3 rounded-full"
+                        style={{ backgroundColor: customColors.accent }}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -249,7 +255,8 @@ export function ThemeToggle() {
             <div className="grid gap-3 sm:grid-cols-2">
               {(
                 [
-                  { key: "primary", label: "Accent colour", hint: "Buttons and highlights" },
+                  { key: "primary", label: "Primary colour", hint: "Actions and active navigation" },
+                  { key: "accent", label: "Accent colour", hint: "Hover surfaces and chart series" },
                   { key: "sidebar", label: "Sidebar colour", hint: "Navigation background" },
                   {
                     key: "lightBackground",

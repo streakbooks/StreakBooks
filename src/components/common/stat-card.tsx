@@ -1,10 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowDownRight, ArrowUpRight, Minus, type LucideIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StatusBadge as SemanticStatusBadge } from "@/components/common/StatusBadge";
 import { cn } from "@/lib/utils";
-import { statusDisplay } from "@/lib/status-badge";
 
 export type StatTone = "neutral" | "positive" | "negative" | "warning";
 
@@ -62,7 +61,7 @@ export function StatCard({
       <div className="flex items-start justify-between gap-3">
         <span className="text-sm font-medium text-muted-foreground">{label}</span>
         {Icon ? (
-          <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+          <span className="grid size-9 shrink-0 place-items-center rounded-xl border border-primary/15 bg-primary/10 text-primary">
             <Icon className="size-4" aria-hidden />
           </span>
         ) : null}
@@ -72,7 +71,7 @@ export function StatCard({
       ) : (
         <div
           className={cn(
-            "numeric mt-3 break-words text-2xl font-semibold tracking-tight",
+            "numeric mt-3 break-words text-2xl font-semibold tracking-[-0.025em] sm:text-[1.7rem]",
             TONE_CLASS[tone],
           )}
         >
@@ -101,7 +100,7 @@ export function StatCard({
     </CardContent>
   );
   return href ? (
-    <Card className="transition-shadow hover:border-primary/40 hover:shadow-sm">
+    <Card data-slot="stat-card" className="relative overflow-hidden transition-[box-shadow,border-color] hover:border-primary/30 hover:shadow-raised">
       <Link
         to={href as never}
         className="block rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2"
@@ -110,13 +109,13 @@ export function StatCard({
       </Link>
     </Card>
   ) : (
-    <Card>{body}</Card>
+    <Card data-slot="stat-card" className="relative overflow-hidden">{body}</Card>
   );
 }
 
 /**
- * Status chip with consistent colours (draft / awaiting approval / awaiting payment / overdue /
- * paid / void …). Pass the raw status; `label` overrides the wording only (colour is unchanged).
+ * Existing public StatusBadge import remains compatible in every LinkBooks module.
+ * All status visuals now share the original LinkBooks semantic palette and labels.
  */
 export function StatusBadge({
   status,
@@ -127,14 +126,12 @@ export function StatusBadge({
   label?: string;
   className?: string;
 }) {
-  const d = statusDisplay(status);
   return (
-    <Badge
-      variant={d.tone}
-      className={cn("whitespace-nowrap", d.muted && "line-through", className)}
-    >
-      {label ?? d.label}
-    </Badge>
+    <SemanticStatusBadge
+      status={status}
+      label={label}
+      className={cn("whitespace-nowrap", className)}
+    />
   );
 }
 

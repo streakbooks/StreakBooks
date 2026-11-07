@@ -5,6 +5,12 @@
 **Cursor development branch:** `main` (keep isolated)  
 **Status:** In progress; **not** production verified.
 
+## Mandatory all-module scope
+
+**This project is not restricted to Sales, Purchases, Contacts or Products.** The authoritative scope is [Full application coverage](./full-application-browsing-coverage.md), maintained by [the machine-readable module and route manifest](./all-module-browsing-manifest.json). The inventory is based on 21 sidebar modules, 132 authenticated route files including 15 supporting routes, and 11 explicit cross-cutting workflows. Every module, nested workflow, form, action, and future route must be covered and tested. The current implementation status is NOT complete for any module.
+
+Run `npm run check:browsing-coverage` locally to flag routes or sidebar modules missing from the manifest. This is an inventory-only check; it does not verify application functionality. Preserve Cursor's `main` and continue using the feature branch only.
+
 ## Objective
 
 Deliver an original LinkBooks browsing experience comparable in workflow completeness and usability to mature SaaS accounting applications without copying their distinctive visual assets, code, colours, or layouts.
@@ -70,22 +76,24 @@ This includes native browser navigation, discoverable module sections, connected
 9. **Automated checks:** Run local TypeScript, ESLint, unit, source navigation, UI contract, build, authenticated browser, accessibility and relevant accounting regression checks.
 10. **Proof:** Report exact checks and results; written tests are not equivalent to executed tests, and merged code is not equivalent to deployed code.
 
-## Planned 12 development batches
+## Planned 12 development batches — universal module coverage
 
-| Batch | Deliverable | State |
+| Batch | Scope (all subroutes, forms and workflows included) | Status |
 | --- | --- | --- |
-| 1 | PRD, architecture/design inventory and approved original design baseline | Partial audit; not fully verified |
-| 2 | Original shared design system and semantic status colours | Pending application-wide verification |
-| 3 | Shell, module/sub-navigation, native browser interactions | Partial implementation; tests pending |
-| 4 | Shared forms, tables, search, filters, saved views and context retention | Bills work in progress |
-| 5 | Sales, invoices and receivables navigation/forms | Invoice URL/return-context code committed; tests and remaining flows pending |
-| 6 | Purchases, bills and payables navigation/forms | Bills context implemented; tests pending |
-| 7 | Products, Services, Inventory and Contacts | Contacts and Products list state now URL-backed; new unit/E2E tests written; full build/browser verification and remaining workflows pending |
-| 8 | Banking, Accounting and Reports | Pending |
-| 9 | Expense Management, Payroll, Tax, Fixed Assets and Budgets | Pending |
-| 10 | Files, Projects, Accountant, Firm, Advisors, AI, Settings and remaining modules | Pending |
-| 11 | Cross-module accounting, security, performance, accessibility and browser regressions | Pending |
-| 12 | Final gap audit, recovery and production-release verification | Pending |
+| 1 | Complete repository-wide feature/route inventory, PRD/HLD/LLD and design baseline | Route/sidebar inventory recorded; full UX feature audit pending |
+| 2 | Original design system, themes/colour schemes, shared shell/sidebar/context navigation, global search and Create New | Shared navigation partly coded; not fully verified |
+| 3 | Dashboard, Action Center/Notifications, Help, Profile, onboarding, workspace entry and role-sensitive flow | Pending |
+| 4 | All Sales and Purchases submodules, payment/credit/recurring/expense workflows, supplier and customer navigation | Partial invoice/bill browsing code; remaining work pending |
+| 5 | Banking accounts, feeds, cash coding, imports, transfers, rules, reconciliation and related money workflows | Pending |
+| 6 | Contacts, Products/Services and requested inventory scope, Files/Documents, import centre, Projects | Partial Contacts/Products browsing code; remaining work pending |
+| 7 | Accounting, recurring journals, GL/COA/periods, Accountant workflows, Reports centre and report builder | Pending |
+| 8 | Tax, country support, Budgets, Fixed Assets, related accounting/report drilldowns | Pending |
+| 9 | Payroll and complete Expense Claims/Expense Management including approvals, reimbursements and payment integrations | Pending |
+| 10 | Firm, Advisors administration, Advisors customer portal, engagement and billing/document workflows | Pending |
+| 11 | AI Assistant/LinkBooks Signal, Settings, Platform/Superadmin, subscription billing, automation, integrations and localization | Pending |
+| 12 | Every route/module cross-cutting end-to-end browser, security/RLS, accounting, performance, accessibility and release verification | Pending |
+
+**Fully verified development batches: 0 / 12.** Work may be coded in several sub-batches; no full batch is complete until the entire scope is verified. All future modules must be added to the manifest, rather than excluded from these groups.
 
 The denominator is provisional until the full feature inventory is reconciled. **Fully verified coding batches: 0 / 12**; don't increase this without actual checks and acceptance evidence.
 

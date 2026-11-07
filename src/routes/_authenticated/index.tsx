@@ -12,6 +12,7 @@ import {
 import { getDashboardSnapshot } from "@/lib/dashboard/dashboard.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { PageHeader, ErrorState, LoadingState, CardGridSkeleton } from "@/components/common/states";
+import { parseDashboardSearch } from "@/lib/dashboard/attention-navigation";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { GettingStarted, KpiRow } from "@/components/dashboard/DashboardWidgets";
 import { PersonalizedDashboardWidgets } from "@/components/dashboard/PersonalizedDashboardWidgets";
@@ -22,6 +23,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/_authenticated/")({
+  validateSearch: parseDashboardSearch,
   head: () => ({
     meta: [
       { title: "Dashboard — LinkBooks" },

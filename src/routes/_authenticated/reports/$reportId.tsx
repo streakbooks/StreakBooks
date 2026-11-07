@@ -6,6 +6,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { getReportById } from "@/lib/reports/catalog";
 import { parseReportSearch, type ReportSearch } from "@/lib/reports/search";
+import { reportingCentreBackSearch } from "@/lib/reports/centre-return";
 import { getOrganisationConfig } from "@/lib/settings/settings-centre.functions";
 import { applyOrganisationReportDefaults } from "@/lib/settings/report-defaults";
 import { friendlyAuthError } from "@/lib/auth-helpers";
@@ -94,6 +95,8 @@ function ReportPage() {
       )
     : today;
 
+  const backSearch = reportingCentreBackSearch(search.centre, search.from ?? defaultFrom, search.to ?? today);
+
   if (isPending || (company && companyBasis.isPending)) return <LoadingState />;
   if (!company) {
     return (
@@ -123,14 +126,14 @@ function ReportPage() {
           description={`No catalogue entry for “${reportId}”.`}
         />
         <Button asChild variant="outline">
-          <Link to="/reports">Back to Reports Centre</Link>
+          <Link to="/reports" search={backSearch}>Back to Reports Centre</Link>
         </Button>
       </div>
     );
   }
 
   if (report.runner === "link" && report.linkTo) {
-    return <ReportShellFallbackLink report={report} />;
+    return <ReportShellFallbackLink report={report} backSearch={backSearch} />;
   }
 
   if (report.status !== "ready" || report.runner === "none") {
@@ -144,7 +147,7 @@ function ReportPage() {
           </AlertDescription>
         </Alert>
         <Button asChild variant="outline">
-          <Link to="/reports">Back to Reports Centre</Link>
+          <Link to="/reports" search={backSearch}>Back to Reports Centre</Link>
         </Button>
       </div>
     );

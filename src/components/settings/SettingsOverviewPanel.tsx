@@ -86,7 +86,7 @@ export function SettingsOverviewPanel({ companyId }: Props) {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/80 bg-gradient-to-r from-card via-card to-accent/30 px-5 py-4 shadow-xs">
         <div className="min-w-0">
           <p className="truncate font-medium">{d.company?.name ?? "Organisation"}</p>
           <p className="text-xs text-muted-foreground">
@@ -109,13 +109,13 @@ export function SettingsOverviewPanel({ companyId }: Props) {
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Feature setup status">
         {counts.map((item) => (
-          <Card key={item.label} className="shadow-sm">
+          <Card key={item.label} className="group/metric relative overflow-hidden border-border/80 shadow-card">
             <CardContent className="p-4">
               <div className="mb-3 flex items-center justify-between gap-2">
                 <span className="text-xs font-medium text-muted-foreground">{item.label}</span>
                 <item.icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
               </div>
-              <p className="text-2xl font-semibold tabular-nums">{item.value}</p>
+              <p className="text-[1.7rem] font-bold tracking-[-0.03em] tabular-nums">{item.value}</p>
               <p className="mt-1 text-xs text-muted-foreground">{item.hint}</p>
             </CardContent>
           </Card>
@@ -196,7 +196,7 @@ export function SettingsOverviewPanel({ companyId }: Props) {
                 key={shortcut.section}
                 to="/settings"
                 search={{ section: shortcut.section }}
-                className="group flex min-h-16 items-start justify-between gap-2 rounded-lg border p-3 transition-colors hover:border-primary/40 hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="group flex min-h-20 items-start justify-between gap-3 rounded-xl border border-border/80 bg-background p-3.5 transition-[border-color,background-color,box-shadow] hover:border-primary/35 hover:bg-accent/40 hover:shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <span className="min-w-0">
                   <span className="block text-sm font-medium">{shortcut.label}</span>
@@ -223,7 +223,7 @@ export function SettingsOverviewPanel({ companyId }: Props) {
             {d.integrations.map((integration) => (
               <div
                 key={integration.name}
-                className="flex flex-wrap items-start justify-between gap-2 rounded-lg border px-3 py-2"
+                className="flex flex-wrap items-start justify-between gap-2 rounded-xl border border-border/80 bg-muted/20 px-3.5 py-3"
               >
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium">{integration.name}</p>

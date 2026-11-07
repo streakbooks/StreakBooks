@@ -12,6 +12,17 @@ export function integrationStatusLabel(status: IntegrationHealth["status"]): str
     unavailable: "Unavailable",
   }[status];
 }
+/**
+ * Presentation of configuration evidence. Info means configured, NOT connected,
+ * synced, authenticated or successfully delivered.
+ */
+export function integrationStatusTone(
+  status: IntegrationHealth["status"],
+): "info" | "warning" | "neutral" {
+  if (status === "configured") return "info";
+  if (status === "not_configured") return "warning";
+  return "neutral";
+}
 /** Configuration evidence only. Never treat the presence of credentials as a successful delivery. */
 export function buildIntegrationHealth({
   emailConfigured,

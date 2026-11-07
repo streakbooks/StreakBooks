@@ -9,10 +9,24 @@ describe("statusDisplay", () => {
       tone: "warning",
     });
     expect(statusDisplay("authorised")).toMatchObject({ label: "Awaiting payment", tone: "info" });
-    expect(statusDisplay("paid")).toMatchObject({ label: "Paid", tone: "success" });
+    expect(statusDisplay("paid")).toMatchObject({ label: "Paid", tone: "complete" });
     expect(statusDisplay("overdue")).toMatchObject({ label: "Overdue", tone: "danger" });
     expect(statusDisplay("void")).toMatchObject({ label: "Void", muted: true });
   });
+  it("distinguishes approved green, completed teal, pending amber and overdue red", () => {
+    expect(statusDisplay("approved")).toMatchObject({ tone: "success", label: "Approved" });
+    expect(statusDisplay("posted")).toMatchObject({ tone: "success", label: "Posted" });
+    for (const status of ["paid", "completed", "reconciled", "reimbursed"]) {
+      expect(statusDisplay(status).tone).toBe("complete");
+    }
+    expect(statusDisplay("partly_paid").tone).toBe("info");
+    expect(statusDisplay("processing").tone).toBe("info");
+    expect(statusDisplay("pending").tone).toBe("warning");
+    expect(statusDisplay("rejected").tone).toBe("danger");
+    expect(statusDisplay("failed").tone).toBe("danger");
+    expect(statusDisplay("cancelled").muted).toBe(true);
+  });
+
   it("covers bank statement line statuses", () => {
     expect(statusDisplay("uncategorised")).toMatchObject({ label: "For review", tone: "warning" });
     expect(statusDisplay("matched").tone).toBe("info");

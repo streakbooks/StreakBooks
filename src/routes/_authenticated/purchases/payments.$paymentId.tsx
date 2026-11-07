@@ -17,6 +17,7 @@ import { formatHistoryDay } from "@/lib/purchases/bill-history";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
+import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { StatusBadge } from "@/components/common/stat-card";
 import { Button } from "@/components/ui/button";
 import { DocumentActions } from "@/components/documents/DocumentActions";
@@ -166,6 +167,53 @@ function PaymentDocument() {
     <RecordWorkspace
       title={payment.supplier_name ?? "Supplier payment"}
       description={`${formatHistoryDay(payment.payment_date)} · ${fromMinorUnits(BigInt(payment.amount_minor), currency)} ${currency}`}
+      meta={
+        <StatusBadge
+          status={payment.status}
+          label={statusLabel(payment.status)}
+          className="capitalize"
+        />
+      }
+      insights={
+        <WorkspaceInsights
+          title="Related"
+          facts={[
+            { label: "Status", value: statusLabel(payment.status) },
+            {
+              label: "Amount",
+              value: fromMinorUnits(BigInt(payment.amount_minor), currency),
+            },
+            {
+              label: "Unallocated",
+              value: fromMinorUnits(BigInt(payment.unallocated_minor), currency),
+            },
+            { label: "Bills allocated", value: String(payment.allocations.length) },
+          ]}
+          links={[
+            ...(payment.contact_id
+              ? [
+                  {
+                    label: payment.supplier_name ?? "Supplier",
+                    to: "/contacts/$contactId",
+                    params: { contactId: payment.contact_id },
+                    hint: "Open supplier contact",
+                  },
+                ]
+              : []),
+            {
+              label: "Supplier payments",
+              to: "/purchases/payments",
+              hint: "Return to the payment list",
+            },
+            {
+              label: "Bills to pay",
+              to: "/purchases/bills",
+              hint: "Review open supplier bills",
+            },
+          ]}
+          footer="Unallocated cash and bill links come from this payment’s posted allocations."
+        />
+      }
       actions={
         payment.status !== "void" && payment.posted_journal_id && can("purchases.payment") ? (
           <Button

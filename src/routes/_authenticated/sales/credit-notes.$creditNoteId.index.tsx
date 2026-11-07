@@ -20,6 +20,7 @@ import { fromMinorUnits, toMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
+import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { ReasonDialog } from "@/components/sales/ReasonDialog";
 import { bpsToPercentString, money } from "@/components/sales/sales-form-utils";
 import { StatusBadge } from "@/components/common/stat-card";
@@ -226,6 +227,46 @@ function CreditNoteDetail() {
       <RecordWorkspace
         title={`Credit note ${cn.credit_number ?? ""} · ${cn.contacts?.name ?? "Customer"}`}
         description={`${cn.credit_date} · authorising posts DR revenue/tax / CR AR once`}
+        meta={<StatusBadge status={cn.status} label={creditNoteStatusLabel(cn.status)} />}
+        insights={
+          <WorkspaceInsights
+            title="Related"
+            facts={[
+              { label: "Status", value: creditNoteStatusLabel(cn.status) },
+              { label: "Total", value: money(cn.total_minor, cur) },
+              { label: "Applied", value: money(cn.amount_allocated_minor, cur) },
+              ...(live ? [{ label: "Remaining", value: money(remaining, cur) }] : []),
+            ]}
+            links={[
+              ...(cn.contact_id
+                ? [
+                    {
+                      label: cn.contacts?.name ?? "Customer",
+                      to: "/contacts/$contactId",
+                      params: { contactId: cn.contact_id },
+                      hint: "Open contact record",
+                    },
+                  ]
+                : []),
+              ...(cn.source_invoice
+                ? [
+                    {
+                      label: `Invoice ${cn.source_invoice.invoice_number ?? cn.source_invoice.id.slice(0, 8)}`,
+                      to: "/sales/invoices/$invoiceId",
+                      params: { invoiceId: cn.source_invoice.id },
+                      hint: "Source invoice for this credit",
+                    },
+                  ]
+                : []),
+              {
+                label: "All credit notes",
+                to: "/sales/credit-notes",
+                hint: "Return to the credit note list",
+              },
+            ]}
+            footer="Amounts come from this credit note’s ledger fields."
+          />
+        }
         actions={
           <div className="flex flex-wrap gap-2 print:hidden">
             <Button variant="outline" size="sm" asChild>

@@ -7,6 +7,7 @@ import { friendlyAuthError } from "@/lib/auth-helpers";
 import { getJournalDetail } from "@/lib/banking/journal.functions";
 import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
+import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DocumentRecordPanel } from "@/components/documents/DocumentRecordPanel";
@@ -56,6 +57,52 @@ function JournalDetail() {
     <RecordWorkspace
       title={`Journal #${journal.journal_number}`}
       description={`${journal.journal_date} · ${journal.source_type.replace(/_/g, " ")}${journal.memo ? ` · ${journal.memo}` : ""}`}
+      insights={
+        <WorkspaceInsights
+          title="Related"
+          facts={[
+            { label: "Status", value: journal.status },
+            { label: "Source", value: journal.source_type.replace(/_/g, " ") },
+            { label: "Lines", value: String(lines.length) },
+            {
+              label: `Debits (${currency})`,
+              value: fromMinorUnits(debit, currency),
+            },
+            {
+              label: `Credits (${currency})`,
+              value: fromMinorUnits(credit, currency),
+            },
+          ]}
+          links={[
+            {
+              label: "Bank transactions",
+              to: "/banking/transactions",
+              hint: "Return to the transaction list",
+            },
+            ...(journal.reversed_by_journal_id
+              ? [
+                  {
+                    label: "Reversing journal",
+                    to: "/banking/journal/$journalId",
+                    params: { journalId: journal.reversed_by_journal_id },
+                    hint: "Journal that reversed this entry",
+                  },
+                ]
+              : []),
+            ...(journal.reverses_journal_id
+              ? [
+                  {
+                    label: "Original journal",
+                    to: "/banking/journal/$journalId",
+                    params: { journalId: journal.reverses_journal_id },
+                    hint: "Journal this entry reverses",
+                  },
+                ]
+              : []),
+          ]}
+          footer="Debit and credit totals are summed from this journal’s posted lines."
+        />
+      }
       actions={
         <Button size="sm" variant="outline" asChild>
           <Link to="/banking/transactions">Back to transactions</Link>

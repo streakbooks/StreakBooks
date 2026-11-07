@@ -8,6 +8,7 @@ import { money } from "@/components/sales/sales-form-utils";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { StatCard } from "@/components/common/stat-card";
 import { Button } from "@/components/ui/button";
 import {
@@ -56,6 +57,24 @@ function SalesOverview() {
     <ListWorkspace
       title="Sales"
       description="Quotes, invoices, receipts and credit notes post through the shared ledger."
+      insights={
+        <WorkspaceInsights
+          title="Sales shortcuts"
+          facts={
+            overviewQ.data
+              ? [{ label: "Draft invoices", value: String(overviewQ.data.draftCount) }]
+              : undefined
+          }
+          links={[
+            { label: "Invoices", to: "/sales/invoices", hint: "Customer invoices" },
+            { label: "Quotes", to: "/sales/quotes", hint: "Quotes never post to the ledger" },
+            { label: "Receipts", to: "/sales/receipts", hint: "Customer payments" },
+            { label: "Credit notes", to: "/sales/credit-notes", hint: "Credits against invoices" },
+            { label: "Customers", to: "/sales/customers", hint: "Customer directory shortcuts" },
+          ]}
+          footer="Draft counts come from the sales overview query when it loads."
+        />
+      }
       actions={
         <>
           <Button variant="outline" size="sm" asChild>

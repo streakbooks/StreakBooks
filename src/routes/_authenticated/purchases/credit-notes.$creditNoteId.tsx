@@ -23,6 +23,7 @@ import { minorOrZero, parseMinorOrThrow, tryParseMinor } from "@/lib/purchases/m
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
+import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { StatusBadge } from "@/components/common/stat-card";
 import { Button } from "@/components/ui/button";
 import { DocumentActions } from "@/components/documents/DocumentActions";
@@ -281,6 +282,46 @@ function CreditNoteDetail() {
       <RecordWorkspace
         title={`Supplier credit · ${cn.contacts?.name ?? "Supplier"}`}
         description={`${cn.credit_date} · authorising posts DR AP / CR expense+tax once`}
+        meta={<StatusBadge status={cn.status} />}
+        insights={
+          <WorkspaceInsights
+            title="Related"
+            facts={[
+              { label: "Status", value: cn.status.replaceAll("_", " ") },
+              {
+                label: "Total",
+                value: `${fromMinorUnits(cn.total_minor, currency)} ${currency}`,
+              },
+              {
+                label: "Remaining",
+                value: `${fromMinorUnits(remaining, currency)} ${currency}`,
+              },
+            ]}
+            links={[
+              ...(cn.contact_id
+                ? [
+                    {
+                      label: cn.contacts?.name ?? "Supplier",
+                      to: "/contacts/$contactId",
+                      params: { contactId: cn.contact_id },
+                      hint: "Open supplier contact",
+                    },
+                  ]
+                : []),
+              {
+                label: "Supplier credits",
+                to: "/purchases/credit-notes",
+                hint: "Return to the credit note list",
+              },
+              {
+                label: "Bills",
+                to: "/purchases/bills",
+                hint: "Allocate against open supplier bills",
+              },
+            ]}
+            footer="Remaining credit is ledger-backed. Allocate only when authorised."
+          />
+        }
         actions={
           <div className="flex flex-wrap gap-2">
             {isDraft && !editing ? (

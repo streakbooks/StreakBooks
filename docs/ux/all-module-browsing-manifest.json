@@ -190,8 +190,19 @@
       "routeFiles": [
         "files.tsx"
       ],
-      "browsingImplementation": "not_assessed_module_wide",
-      "fullyVerified": false
+      "browsingImplementation": "partial_code_not_runtime_verified",
+      "fullyVerified": false,
+      "currentEvidence": [
+        "src/lib/documents/files-navigation.ts — validated list/search/filter/folder/file/deep-link parameters",
+        "src/routes/_authenticated/files.tsx — native folder/document-review links, URL-backed search/type/sort/view/pagination and preserved preview context",
+        "src/lib/documents/files-navigation.test.ts — 7 unit cases WRITTEN, NOT RUN",
+        "e2e/files-native-browsing.spec.ts — 3 browser scenarios WRITTEN, NOT RUN"
+      ],
+      "remaining": [
+        "Run actual app typecheck, lint, build, Vitest and authenticated Playwright",
+        "Review folder actions, document uploads, previews and selection permissions with seeded data",
+        "Verify folder navigation, large lists, mobile, keyboard and performance on staging"
+      ]
     },
     {
       "label": "Budgets",

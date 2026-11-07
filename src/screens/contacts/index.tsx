@@ -76,6 +76,7 @@ import {
 } from "@/components/ui/table";
 import { TableCard } from "@/components/common/table-card";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
@@ -284,7 +285,21 @@ function ContactDirectoryCell({
       </TableCell>
     );
   }
-  if (column === "kind" || column === "is_active") {
+  if (column === "is_active") {
+    const lifecycleStatus = contact.archived_at
+      ? "archived"
+      : contact.is_active
+        ? "active"
+        : "inactive";
+    return (
+      <TableCell>
+        <ContactRecordLink contactId={contact.id}>
+          <StatusBadge status={lifecycleStatus} />
+        </ContactRecordLink>
+      </TableCell>
+    );
+  }
+  if (column === "kind") {
     return (
       <TableCell>
         <ContactRecordLink contactId={contact.id}>

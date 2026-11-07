@@ -7,7 +7,8 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { listMoneyDocuments, voidMoneyDocument } from "@/lib/create-new/money-documents.functions";
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { PageHeader, LoadingState, EmptyState, ErrorState } from "@/components/common/states";
+import { LoadingState, EmptyState, ErrorState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -84,28 +85,27 @@ function MoneyDocumentsInner() {
   const rows = (docsQ.data ?? []) as unknown as Row[];
 
   return (
-    <>
-      <PageHeader
-        title="Bank documents"
-        description="Sales receipts, refunds, direct receipts, deposits, card payments and bank adjustments. Each one posts a single journal. Voiding posts a reversal and restores any credit it used."
-        actions={
-          <select
-            aria-label="Filter by type"
-            className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-            value={kind}
-            onChange={(e) => setKind(e.target.value)}
-          >
-            {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
+    <ListWorkspace
+      title="Bank documents"
+      description="Sales receipts, refunds, direct receipts, deposits, card payments and bank adjustments. Each one posts a single journal. Voiding posts a reversal and restores any credit it used."
+      actions={
+        <select
+          aria-label="Filter by type"
+          className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+          value={kind}
+          onChange={(e) => setKind(e.target.value)}
+        >
+          {/* lookup-fixed-enum: Short schema or presentation enumeration, not selectable business records. */}
 
-            <option value="">All types</option>
-            {Object.entries(KIND_LABEL).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        }
-      />
+          <option value="">All types</option>
+          {Object.entries(KIND_LABEL).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
+      }
+    >
       {docsQ.isPending ? (
         <LoadingState />
       ) : docsQ.isError ? (
@@ -195,6 +195,6 @@ function MoneyDocumentsInner() {
         </Link>
         .
       </p>
-    </>
+    </ListWorkspace>
   );
 }

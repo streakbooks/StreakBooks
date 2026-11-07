@@ -19,7 +19,8 @@ import { ConfirmButton } from "@/components/banking/ConfirmButton";
 import { BankIntegrityBanner } from "@/components/banking/BankIntegrityBanner";
 import { BankAccountDetailsDialog } from "@/components/banking/BankAccountDetailsDialog";
 import { listBankAccountDetails } from "@/lib/banking/bank-ops.functions";
-import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -139,17 +140,15 @@ function BankingAccounts() {
   const archivedCount = (query.data ?? []).filter((a) => !a.isActive).length;
 
   return (
-    <>
-      <PageHeader
-        title="Bank & cash accounts"
-        description="Link bank/cash accounts to ledger GL codes. Live bank feeds appear only when a provider connection exists."
-        actions={
-          <Button size="sm" asChild>
-            <Link to="/banking/import">Import CSV</Link>
-          </Button>
-        }
-      />
-
+    <ListWorkspace
+      title="Bank & cash accounts"
+      description="Link bank/cash accounts to ledger GL codes. Live bank feeds appear only when a provider connection exists."
+      actions={
+        <Button size="sm" asChild>
+          <Link to="/banking/import">Import CSV</Link>
+        </Button>
+      }
+    >
       <BankIntegrityBanner />
 
       <Alert className="mb-6">
@@ -386,6 +385,6 @@ function BankingAccounts() {
           Add account
         </Button>
       </div>
-    </>
+    </ListWorkspace>
   );
 }

@@ -16,6 +16,7 @@ import { isQuoteConvertible, quoteStatusActions, type QuoteStatus } from "@/lib/
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
+import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { bpsToPercentString, money } from "@/components/sales/sales-form-utils";
 import { StatusBadge } from "@/components/common/stat-card";
 import { Button } from "@/components/ui/button";
@@ -135,6 +136,45 @@ function QuoteDetailPage() {
       <RecordWorkspace
         title={`Quote ${q.quote_number ?? ""} · ${q.contacts?.name ?? "Customer"}`}
         description={`${q.quote_date}${q.expiry_date ? ` · expires ${q.expiry_date}` : ""} · never posts to the ledger`}
+        meta={<StatusBadge status={q.status} />}
+        insights={
+          <WorkspaceInsights
+            title="Related"
+            facts={[
+              { label: "Status", value: q.status.replaceAll("_", " ") },
+              { label: "Total", value: money(q.total_minor, cur) },
+              ...(q.expiry_date ? [{ label: "Expires", value: q.expiry_date }] : []),
+            ]}
+            links={[
+              ...(q.contact_id
+                ? [
+                    {
+                      label: q.contacts?.name ?? "Customer",
+                      to: "/contacts/$contactId",
+                      params: { contactId: q.contact_id },
+                      hint: "Open contact record",
+                    },
+                  ]
+                : []),
+              {
+                label: "All quotes",
+                to: "/sales/quotes",
+                hint: "Return to the quote list",
+              },
+              ...(q.converted_invoice_id
+                ? [
+                    {
+                      label: "Converted invoice",
+                      to: "/sales/invoices/$invoiceId",
+                      params: { invoiceId: q.converted_invoice_id },
+                      hint: "Invoice created from this quote",
+                    },
+                  ]
+                : []),
+            ]}
+            footer="Quotes never post to the ledger. Convert only when the quote is eligible."
+          />
+        }
         actions={
           <div className="flex flex-wrap gap-2 print:hidden">
             <Button variant="outline" size="sm" asChild>

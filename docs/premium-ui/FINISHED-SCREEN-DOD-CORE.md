@@ -59,9 +59,11 @@ A screen is **not** DONE unless every applicable row is PASS or N/A with reason.
 
 **Batch 11 fixture evidence:** UI harness `/sales/invoices` uses `ListWorkspace` (`data-slot="list-workspace"`) with Sales subnav; bill fixture header uses `RecordWorkspace`; Playwright asserts labelled landmarks + h1.
 
+**Batch 13:** Quote, credit note, and receipt details compose `WorkspaceInsights` (ledger/link facts).
+
 ### Purchases (`/purchases` + nested)
 
-Same pattern as Sales — chrome **PASS**, full DoD **IN PROGRESS**.
+Same pattern as Sales — chrome **PASS**, full DoD **IN PROGRESS**. Batch 13 adds Purchases overview + supplier credit/payment insight rails.
 
 ### Contacts (`/contacts`)
 

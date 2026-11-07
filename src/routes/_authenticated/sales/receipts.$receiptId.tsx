@@ -9,6 +9,7 @@ import { getSalesDocumentConfig } from "@/lib/sales/sales-config.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
 import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
+import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { ReasonDialog } from "@/components/sales/ReasonDialog";
 import { money } from "@/components/sales/sales-form-utils";
 import { StatusBadge } from "@/components/common/stat-card";
@@ -116,6 +117,47 @@ function ReceiptDetail() {
       <RecordWorkspace
         title={`Receipt ${receipt.reference ?? receipt.id.slice(0, 8)}`}
         description={receipt.contacts?.name ?? "Customer receipt"}
+        meta={<StatusBadge status={receipt.status} />}
+        insights={
+          <WorkspaceInsights
+            title="Related"
+            facts={[
+              { label: "Status", value: receipt.status.replaceAll("_", " ") },
+              { label: "Amount", value: money(receipt.amount_minor, cur) },
+              {
+                label: "Unallocated",
+                value: isPosted ? money(receipt.unallocated_minor, cur) : "—",
+              },
+              { label: "Allocations", value: String(allocations.length) },
+            ]}
+            links={[
+              ...(receipt.contact_id
+                ? [
+                    {
+                      label: receipt.contacts?.name ?? "Customer",
+                      to: "/contacts/$contactId",
+                      params: { contactId: receipt.contact_id },
+                      hint: "Open contact record",
+                    },
+                  ]
+                : []),
+              {
+                label: "All receipts",
+                to: "/sales/receipts",
+                hint: "Return to the receipt list",
+              },
+              {
+                label: "Record another receipt",
+                to: "/sales/receipts/new",
+                ...(receipt.contact_id
+                  ? { search: { contactId: receipt.contact_id } }
+                  : {}),
+                hint: "Create a new customer receipt",
+              },
+            ]}
+            footer="Unallocated amounts and invoice links come from posted receipt allocations."
+          />
+        }
         actions={
           <div className="flex flex-wrap gap-2">
             <Button size="sm" variant="outline" asChild>

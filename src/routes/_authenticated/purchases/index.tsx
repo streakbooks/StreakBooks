@@ -10,6 +10,7 @@ import {
 import { fromMinorUnits } from "@/lib/accounting/money";
 import { LoadingState, EmptyState, ErrorState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { WorkspaceInsights } from "@/components/workspace/WorkspaceInsights";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -82,6 +83,33 @@ function PurchasesOverview() {
     <ListWorkspace
       title="Purchases"
       description="Your supplier balances, upcoming payments and bills requiring attention."
+      insights={
+        <WorkspaceInsights
+          title="Purchases shortcuts"
+          facts={[
+            {
+              label: "Outstanding",
+              value: display(preferred?.outstandingMinor ?? 0),
+            },
+            {
+              label: "Overdue",
+              value: display(preferred?.overdueMinor ?? 0),
+            },
+          ]}
+          links={[
+            { label: "Bills", to: "/purchases/bills", hint: "Supplier bills workspace" },
+            { label: "Payments", to: "/purchases/payments", hint: "Supplier remittances" },
+            {
+              label: "Credit notes",
+              to: "/purchases/credit-notes",
+              hint: "Supplier credits",
+            },
+            { label: "Expenses", to: "/purchases/expenses", hint: "Expense claims and spends" },
+            { label: "Orders", to: "/purchases/orders", hint: "Purchase orders" },
+          ]}
+          footer="Outstanding and overdue amounts use the organisation base currency summary."
+        />
+      }
       actions={
         <>
           <Button variant="outline" size="sm" asChild>

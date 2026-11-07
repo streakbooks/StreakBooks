@@ -9,7 +9,7 @@
 | Core finished-screen DoD matrices | **Documented IN PROGRESS** | `FINISHED-SCREEN-DOD-CORE.md` — chrome PASS, staging/RBAC NOT VERIFIED |
 | `check:workspace` high-traffic adoption | **Passed** (Batch 11) | Banking/Sales/Purchases/Contacts/Dashboard/Accounting/Action Center + e2e fixture |
 | Playwright UI workspace landmarks | **Passed** (Batch 11–12) | list + record chrome (+ insight complementary) in `e2e/ui/ui.spec.ts` |
-| WorkspaceInsights adoption | **Partial** (Batch 12) | Banking list + sales invoice + contact detail; factual links/balances only |
+| WorkspaceInsights adoption | **Expanded** (Batch 13) | Banking + Sales/Purchases overviews + invoice/quote/credit/receipt/payment/journal/contact; factual links/balances only |
 | `npm run check:ui` | **Passed** | 0 violations across batches |
 | `npm run check:navigation` | **Passed** (Batch 1 baseline) | 24 modules native-nav audit |
 | Route/screen List/RecordWorkspace adoption | **In progress → largely complete** | PRs #182–#189 + Batch 9 shared shells |

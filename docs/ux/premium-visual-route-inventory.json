@@ -32,7 +32,7 @@
       "routeFiles": [
         "_authenticated/index.tsx"
       ],
-      "visualReview": "pending_screen_review",
+      "visualReview": "shared_primitives_only_screen_review_pending",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -67,7 +67,7 @@
         "_authenticated/banking/transactions.tsx",
         "_authenticated/banking/transfers.tsx"
       ],
-      "visualReview": "pending_screen_review",
+      "visualReview": "partial_shared_and_record_status_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -83,7 +83,10 @@
         "forms": false,
         "permissions": false,
         "browser": false
-      }
+      },
+      "changedScreens": [
+        "src/components/common/stat-card.tsx — existing bank transaction status chips now render semantic StatusBadge"
+      ]
     },
     {
       "label": "Sales",
@@ -116,7 +119,7 @@
         "_authenticated/sales/settings.tsx",
         "_authenticated/sales/statements.tsx"
       ],
-      "visualReview": "pending_screen_review",
+      "visualReview": "partial_shared_and_record_status_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -132,7 +135,10 @@
         "forms": false,
         "permissions": false,
         "browser": false
-      }
+      },
+      "changedScreens": [
+        "src/components/common/stat-card.tsx — existing invoice status chips now render semantic StatusBadge"
+      ]
     },
     {
       "label": "Purchases",
@@ -167,7 +173,7 @@
         "_authenticated/purchases/statements.tsx",
         "_authenticated/purchases/suppliers.tsx"
       ],
-      "visualReview": "pending_screen_review",
+      "visualReview": "partial_shared_and_record_status_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -183,7 +189,10 @@
         "forms": false,
         "permissions": false,
         "browser": false
-      }
+      },
+      "changedScreens": [
+        "src/components/common/stat-card.tsx — existing bills status chips now render semantic StatusBadge"
+      ]
     },
     {
       "label": "Expense Management",
@@ -193,7 +202,7 @@
         "_authenticated/expense-management/claims.$claimId.tsx",
         "_authenticated/expense-management/index.tsx"
       ],
-      "visualReview": "pending_screen_review",
+      "visualReview": "partial_shared_and_record_status_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -209,7 +218,12 @@
         "forms": false,
         "permissions": false,
         "browser": false
-      }
+      },
+      "changedScreens": [
+        "src/screens/expense-management/claims.tsx — approval status pills",
+        "src/screens/expense-management/claim-detail.tsx — approval/posting/reimbursement/rebilling statuses",
+        "src/screens/expense-management/reimbursements.tsx — reimbursement lifecycle badges"
+      ]
     },
     {
       "label": "Contacts",
@@ -222,7 +236,7 @@
         "_authenticated/contacts/new.tsx",
         "_authenticated/contacts/settings.tsx"
       ],
-      "visualReview": "pending_screen_review",
+      "visualReview": "shared_primitives_only_screen_review_pending",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -246,7 +260,7 @@
       "routeFiles": [
         "_authenticated/products-services.tsx"
       ],
-      "visualReview": "pending_screen_review",
+      "visualReview": "shared_primitives_only_screen_review_pending",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -270,7 +284,7 @@
       "routeFiles": [
         "_authenticated/accounting.tsx"
       ],
-      "visualReview": "pending_screen_review",
+      "visualReview": "partial_shared_and_record_status_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -286,7 +300,10 @@
         "forms": false,
         "permissions": false,
         "browser": false
-      }
+      },
+      "changedScreens": [
+        "src/components/accounting/JournalsPanel.tsx — posted and reversed status badges"
+      ]
     },
     {
       "label": "Action Center",
@@ -294,7 +311,7 @@
       "routeFiles": [
         "_authenticated/notifications.tsx"
       ],
-      "visualReview": "pending_screen_review",
+      "visualReview": "shared_primitives_only_screen_review_pending",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -318,7 +335,7 @@
       "routeFiles": [
         "_authenticated/files.tsx"
       ],
-      "visualReview": "pending_screen_review",
+      "visualReview": "shared_primitives_only_screen_review_pending",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -343,7 +360,7 @@
         "_authenticated/budgets/$budgetId.tsx",
         "_authenticated/budgets/index.tsx"
       ],
-      "visualReview": "pending_screen_review",
+      "visualReview": "shared_primitives_only_screen_review_pending",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -367,7 +384,7 @@
       "routeFiles": [
         "_authenticated/fixed-assets.tsx"
       ],
-      "visualReview": "pending_screen_review",
+      "visualReview": "shared_primitives_only_screen_review_pending",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -402,7 +419,7 @@
         "_authenticated/payroll/salary-structures.tsx",
         "_authenticated/payroll/settings.tsx"
       ],
-      "visualReview": "pending_screen_review",
+      "visualReview": "partial_shared_and_record_status_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -418,7 +435,11 @@
         "forms": false,
         "permissions": false,
         "browser": false
-      }
+      },
+      "changedScreens": [
+        "src/screens/payroll/overview.tsx — active/inactive readiness and semantic setup colours",
+        "src/screens/payroll/runs.tsx — persisted pay-run lifecycle badges"
+      ]
     },
     {
       "label": "Reports",
@@ -428,7 +449,7 @@
         "_authenticated/reports/builder/$viewId.tsx",
         "_authenticated/reports/index.tsx"
       ],
-      "visualReview": "pending_screen_review",
+      "visualReview": "shared_primitives_only_screen_review_pending",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -452,7 +473,7 @@
       "routeFiles": [
         "_authenticated/accountant.tsx"
       ],
-      "visualReview": "pending_screen_review",
+      "visualReview": "shared_primitives_only_screen_review_pending",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -476,7 +497,7 @@
       "routeFiles": [
         "_authenticated/firm.tsx"
       ],
-      "visualReview": "pending_screen_review",
+      "visualReview": "shared_primitives_only_screen_review_pending",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -512,7 +533,7 @@
         "_authenticated/advisors-admin.tsx",
         "_authenticated/advisors-admin.workspaces.tsx"
       ],
-      "visualReview": "pending_screen_review",
+      "visualReview": "shared_primitives_only_screen_review_pending",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -541,7 +562,7 @@
         "_authenticated/advisors-portal.messages.tsx",
         "_authenticated/advisors-portal.tasks.tsx"
       ],
-      "visualReview": "pending_screen_review",
+      "visualReview": "shared_primitives_only_screen_review_pending",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -565,7 +586,7 @@
       "routeFiles": [
         "_authenticated/ai-assistant.tsx"
       ],
-      "visualReview": "pending_screen_review",
+      "visualReview": "shared_primitives_only_screen_review_pending",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -589,7 +610,7 @@
       "routeFiles": [
         "_authenticated/tax.tsx"
       ],
-      "visualReview": "pending_screen_review",
+      "visualReview": "partial_shared_and_record_status_code_unverified",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -605,7 +626,10 @@
         "forms": false,
         "permissions": false,
         "browser": false
-      }
+      },
+      "changedScreens": [
+        "src/routes/_authenticated/tax.tsx — verification and filing status badges"
+      ]
     },
     {
       "label": "Settings",
@@ -613,7 +637,7 @@
       "routeFiles": [
         "_authenticated/settings.tsx"
       ],
-      "visualReview": "pending_screen_review",
+      "visualReview": "shared_primitives_only_screen_review_pending",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -637,7 +661,7 @@
       "routeFiles": [
         "_authenticated/help.tsx"
       ],
-      "visualReview": "pending_screen_review",
+      "visualReview": "shared_primitives_only_screen_review_pending",
       "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
       "verified": false,
       "checks": {
@@ -738,9 +762,13 @@
   ],
   "verification": {
     "moduleFullyAccepted": 0,
-    "moduleInitialVisualImproved": 0,
+    "moduleInitialVisualImproved": 7,
     "fullBuild": "NOT_RUN",
     "authenticatedBrowser": "NOT_RUN",
-    "deployment": "NOT_VERIFIED"
+    "deployment": "NOT_VERIFIED",
+    "sharedFoundation": "COMMITTED_NOT_BROWSER_VERIFIED",
+    "statusTransitions": "UNVERIFIED",
+    "lightDarkSevenPresets": "NOT_BROWSER_VERIFIED",
+    "beforeAfterScreenshots": "NOT_CAPTURED"
   }
 }

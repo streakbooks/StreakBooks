@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import { ErrorState, LoadingState } from "@/components/common/states";
 import {
   Select,
@@ -72,7 +73,7 @@ function ContactTaskAssignment({
     owner !== (task.assigned_to ?? "unassigned") || reminder !== (task.remind_on ?? "");
 
   return (
-    <div className="grid gap-2 rounded-md border bg-muted/30 p-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+    <div className="grid gap-3 rounded-xl border border-border/80 bg-muted/25 p-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
       <div className="space-y-1">
         <Label>Responsible team member</Label>
         <RecordLookupSelect required value={owner} onValueChange={setOwner}>
@@ -397,21 +398,19 @@ export function ContactTimeline({
           description={friendlyAuthError(query.error)}
         />
       ) : rows.length === 0 ? (
-        <p className="rounded-md border border-dashed p-6 text-sm text-muted-foreground">
+        <p className="rounded-xl border border-dashed border-border/80 bg-muted/20 p-6 text-sm text-muted-foreground">
           No activities match this filter.
         </p>
       ) : (
         <ol className="space-y-3">
           {rows.map((activity) => (
-            <li key={activity.id} className="space-y-2 rounded-md border bg-card p-4">
+            <li key={activity.id} className="space-y-3 rounded-xl border border-border/85 bg-card p-4 shadow-xs transition-colors hover:border-primary/20">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="outline">{KIND_LABELS[activity.kind] ?? activity.kind}</Badge>
                   <span className="font-medium">{activity.title}</span>
                   {activity.kind === "task" ? (
-                    <Badge variant={activity.completed_at ? "neutral" : "secondary"}>
-                      {activity.completed_at ? "Completed" : "Open"}
-                    </Badge>
+                    <StatusBadge status={activity.completed_at ? "completed" : "open"} />
                   ) : null}
                 </div>
                 <time className="text-xs text-muted-foreground" dateTime={activity.occurred_at}>

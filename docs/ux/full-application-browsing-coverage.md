@@ -63,6 +63,11 @@ The register below was derived from actual repository navigation and routes. The
 - `scripts/check-browsing-coverage.mjs`: commit `3484d29ad8b9746d42006e063df2d63d8a9aa0f5` adds 12-entry structural evidence requirements for any supporting route or cross-cutting workflow marked fully verified, rejects unknown supporting-route evidence keys, duplicate cross-cutting areas, and malformed acceptance criteria.
 - This does **not** mark any route or workflow verified. Local guard, unit, typecheck, lint, build, browser, security and accounting regression checks: **NOT RUN** (GitHub connector does not execute local scripts).
 
+### Help Centre search accessibility increment (2026-11-08)
+
+- `src/routes/_authenticated/help.tsx`: search now shows a screen-reader-announced matching article count and a keyboard-accessible Clear search action that preserves the URL-backed search behavior; code commit `0c456a75bbc6405cfaa743726d0e13f294f01408`.
+- This is **partial source evidence only**. No claim of complete Help module acceptance. Local typecheck, lint, build, unit, authenticated browser, accessibility and `check:browsing-coverage`: **NOT RUN**.
+
 ## 2. Internal and supporting routes also included
 
 - `src/routes/_authenticated/documents.branding.tsx`

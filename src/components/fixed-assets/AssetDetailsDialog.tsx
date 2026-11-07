@@ -14,6 +14,7 @@ import { DEPRECIATION_METHODS } from "@/lib/fixed-assets/depreciation";
 import { ErrorState, LoadingState } from "@/components/common/states";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -105,9 +106,7 @@ export function AssetDetailsDialog({
             <div className="space-y-5">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="outline">{asset.asset_number}</Badge>
-                <Badge variant={asset.status === "disposed" ? "secondary" : "outline"}>
-                  {asset.status === "disposed" ? "Disposed" : "Active"}
-                </Badge>
+                <StatusBadge status={asset.status} />
                 {asset.depreciation_method === "none" ? (
                   <Badge variant="secondary">No depreciation</Badge>
                 ) : null}

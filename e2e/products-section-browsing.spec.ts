@@ -46,4 +46,39 @@ test.describe("Products & Services native browsing", () => {
     expect(page.url()).toBe(origin);
     await newTab.close();
   });
+
+  test("catalogue deep links restore filters after refresh and tab switching", async ({ page }) => {
+    await signIn(
+      page,
+      "/products-services?section=catalogue&q=weekly&kind=service&status=active&sort=recent&page=1&pageSize=25",
+    );
+    const search = page.getByRole("textbox", { name: "Search products and services" });
+    await expect(search).toHaveValue("weekly");
+    await expect(page.getByRole("combobox", { name: "Item kind" })).toContainText("Services");
+    await page.reload();
+    await expect(search).toHaveValue("weekly");
+    const categories = page.getByRole("tab", { name: "Categories" });
+    await categories.click();
+    expect(new URL(page.url()).searchParams.get("q")).toBe("weekly");
+    expect(new URL(page.url()).searchParams.get("kind")).toBe("service");
+    await page.getByRole("tab", { name: "Catalogue" }).click();
+    await expect(search).toHaveValue("weekly");
+    await expect(page.getByRole("combobox", { name: "Sort catalogue" })).toContainText(
+      "Newest first",
+    );
+  });
+
+  test("changing catalogue sorting updates a shareable URL and Back restores it", async ({
+    page,
+  }) => {
+    await signIn(page, "/products-services?section=catalogue&sort=name");
+    const sort = page.getByRole("combobox", { name: "Sort catalogue" });
+    await sort.click();
+    await page.getByRole("option", { name: "Name: Z–A" }).click();
+    await expect(page).toHaveURL(/sort=name_desc/);
+    await page.goBack();
+    expect(new URL(page.url()).searchParams.get("sort")).toBe("name");
+    await expect(sort).toContainText("Name: A–Z");
+  });
+
 });

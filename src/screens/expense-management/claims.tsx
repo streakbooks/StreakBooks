@@ -603,7 +603,7 @@ export function ExpenseManagementClaimsPage({
               <TableRow key={claim.id}>
                 <TableCell className="font-medium">
                   <Link
-                    to="/purchases/expense-management/claims/$claimId"
+                    to="/expense-management/claims/$claimId"
                     params={{ claimId: claim.id }}
                     className="underline-offset-2 hover:underline"
                   >

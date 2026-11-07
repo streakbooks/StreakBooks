@@ -258,9 +258,9 @@ export const CREATE_ACTIONS: readonly CreateAction[] = [
     status: "REUSABLE",
     availability: "ready",
     width: "wide",
-    route: "/purchases/expense-management/my-expenses",
-    component: "ExpenseManagementSectionPage",
-    backend: "Expense Management workspace (legacy submit remains on employee-expenses)",
+    route: "/expense-management/my-expenses",
+    component: "ExpenseManagementClaimsPage",
+    backend: "Expense Management module (legacy submit remains on employee-expenses)",
     blocker: null,
   },
   {

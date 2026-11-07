@@ -146,7 +146,7 @@ export const ATTACHMENT_ENTITIES: Record<AttachmentEntityType, EntityInfo> = {
       "expenses.admin",
     ],
     manage: ["expenses.submit", "expenses.admin"],
-    path: (id) => `/purchases/expense-management/claims/${id}`,
+    path: (id) => `/expense-management/claims/${id}`,
   },
   product: {
     label: "Product",

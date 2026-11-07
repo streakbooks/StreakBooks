@@ -53,8 +53,10 @@ export async function loadCreatePanel(id: string): Promise<ComponentType> {
       return m.NewCreditNote;
     }
     case "reimbursement": {
-      const m = await import("@/screens/purchases/employee-expenses");
-      return m.EmployeeExpensesPage;
+      const m = await import("@/screens/expense-management/claims");
+      return function ExpenseClaimPanel() {
+        return <m.ExpenseManagementClaimsPage mode="my-expenses" />;
+      };
     }
     case "bank_transfer": {
       const m = await import("@/screens/banking/transfers");

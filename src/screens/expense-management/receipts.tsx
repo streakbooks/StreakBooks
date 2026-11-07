@@ -120,7 +120,7 @@ export function ExpenseManagementReceiptsPage() {
         description="Unassigned receipt tracking and claim attachment links."
         actions={
           <Button asChild variant="outline" size="sm">
-            <Link to="/purchases/expense-management/my-expenses">Open My Expenses</Link>
+            <Link to="/expense-management/my-expenses">Open My Expenses</Link>
           </Button>
         }
       />

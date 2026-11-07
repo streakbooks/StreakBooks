@@ -1,0 +1,24 @@
+# Expense Management — Navigation acceptance criteria
+
+## Standalone module
+
+- [x] Primary sidebar includes **Expense Management** as its own item (not under Purchases).
+- [x] Base route is `/expense-management`.
+- [x] All 15 approved internal sections are registered and permission-filtered.
+- [x] Active sidebar highlighting follows nested Expense Management URLs.
+- [x] Breadcrumbs resolve Expense Management segments.
+- [x] Create New / Settings Centre / attachments / command palette use standalone paths.
+- [x] Legacy `/purchases/expense-management/*` redirects to `/expense-management/*`.
+- [x] Purchases subnav still exposes bills, spend-money expenses, payments and employee expenses.
+- [x] Purchases subnav does **not** list Expense Management.
+- [x] Expense permissions are catalogued under a dedicated Expense Management access area.
+
+## Accounting integrity (ongoing)
+
+- [ ] No duplicate journals or liability rows when claims move through EM (EM-06/EM-07).
+- [ ] Reimbursements reuse Banking / Payroll posting patterns (EM-07).
+- [ ] Budgets, Tax, Files and Reports integrations verified per later batches.
+
+## Explicitly out of scope for this navigation amendment
+
+Browser E2E, applied migrations, GitHub CI/PR and production verification remain open and must not be marked complete from local code alone.

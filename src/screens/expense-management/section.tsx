@@ -11,9 +11,9 @@ import {
   type ExpenseManagementSectionKey,
 } from "@/lib/expenses/sections";
 import type { Permission } from "@/lib/permissions";
-import { ExpenseManagementClaimsPage } from "@/screens/purchases/expense-management-claims";
-import { ExpenseManagementReceiptsPage } from "@/screens/purchases/expense-management-receipts";
-import { ExpenseManagementSettingsPage } from "@/screens/purchases/expense-management-settings";
+import { ExpenseManagementClaimsPage } from "@/screens/expense-management/claims";
+import { ExpenseManagementReceiptsPage } from "@/screens/expense-management/receipts";
+import { ExpenseManagementSettingsPage } from "@/screens/expense-management/settings";
 
 const LEGACY_LINKS: Partial<
   Record<ExpenseManagementSectionKey, { label: string; to: string }>
@@ -73,10 +73,10 @@ export function ExpenseManagementSectionPage({
     <>
       <PageHeader
         title={section.label}
-        description="Part of the Purchases → Expense Management workspace."
+        description="Part of the Expense Management module."
         actions={
           <Button asChild variant="outline" size="sm">
-            <Link to="/purchases/expense-management">Back to overview</Link>
+            <Link to="/expense-management">Back to overview</Link>
           </Button>
         }
       />

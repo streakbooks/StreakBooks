@@ -121,8 +121,8 @@ export const ACCESS_AREAS: readonly AccessArea[] = [
   },
   {
     id: "purchases",
-    label: "Purchases and expenses",
-    description: "Bills, purchase orders, supplier payments and expense claims.",
+    label: "Purchases",
+    description: "Bills, purchase orders, company spend-money expenses and supplier payments.",
     items: [
       { permission: "purchases.view", label: "View purchases", detail: "Lists and documents." },
       {
@@ -140,6 +140,14 @@ export const ACCESS_AREAS: readonly AccessArea[] = [
         label: "Pay suppliers",
         detail: "Record and batch supplier payments.",
       },
+    ],
+  },
+  {
+    id: "expenses",
+    label: "Expense Management",
+    description:
+      "Standalone employee claims, receipts, approvals, reimbursements and expense controls.",
+    items: [
       {
         permission: "expenses.view",
         label: "View organisation expenses",

@@ -2,7 +2,6 @@ export const PURCHASES_SECTIONS = [
   { to: "/purchases", label: "Overview", exact: true },
   { to: "/purchases/bills", label: "Bills" },
   { to: "/purchases/expenses", label: "Expenses" },
-  { to: "/purchases/expense-management", label: "Expense Management" },
   { to: "/purchases/suppliers", label: "Suppliers" },
   { to: "/purchases/payments", label: "Payments" },
   { to: "/purchases/credit-notes", label: "Credit notes" },

@@ -95,7 +95,7 @@ export function ExpenseManagementOverviewPage() {
     <>
       <PageHeader
         title="Expense Management"
-        description="Organisation workspace for employee and contractor expenses."
+        description="Top-level module for employee and contractor expenses."
         actions={
           <div className="flex flex-wrap gap-2">
             <Button asChild variant="outline" size="sm">
@@ -106,7 +106,7 @@ export function ExpenseManagementOverviewPage() {
             </Button>
             {canManagePolicies ? (
               <Button asChild size="sm">
-                <Link to="/purchases/expense-management/settings">Settings</Link>
+                <Link to="/expense-management/settings">Settings</Link>
               </Button>
             ) : null}
           </div>
@@ -157,25 +157,25 @@ export function ExpenseManagementOverviewPage() {
               ? "Rows in the new expense_claims table"
               : "Unavailable until migration 20261107120000 is applied"
           }
-          to="/purchases/expense-management/claims"
+          to="/expense-management/claims"
         />
         <KpiCard
           label="Pending EM approvals"
           value={kpis.emPendingApproval}
           hint="Submitted or in review"
-          to="/purchases/expense-management/approvals"
+          to="/expense-management/approvals"
         />
         <KpiCard
           label="Approved EM claims"
           value={kpis.emApproved}
           hint="Approved and ready for posting or reimbursement"
-          to="/purchases/expense-management/claims"
+          to="/expense-management/claims"
         />
         <KpiCard
           label="Awaiting reimbursement"
           value={kpis.emAwaitingReimbursement}
           hint="Eligible, awaiting payment, or payment initiated"
-          to="/purchases/expense-management/reimbursements"
+          to="/expense-management/reimbursements"
         />
       </div>
 
@@ -189,7 +189,7 @@ export function ExpenseManagementOverviewPage() {
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
           <Button asChild variant="secondary" size="sm">
-            <Link to="/purchases/expense-management/my-expenses">Open My Expenses</Link>
+            <Link to="/expense-management/my-expenses">Open My Expenses</Link>
           </Button>
           <Button asChild variant="secondary" size="sm">
             <Link to="/purchases/employee-expenses">Submit legacy claim</Link>

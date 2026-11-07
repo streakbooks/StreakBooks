@@ -56,7 +56,7 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
         description={claim.title}
         actions={
           <Button asChild variant="outline" size="sm">
-            <Link to="/purchases/expense-management/my-expenses">Back to My Expenses</Link>
+            <Link to="/expense-management/my-expenses">Back to My Expenses</Link>
           </Button>
         }
       />

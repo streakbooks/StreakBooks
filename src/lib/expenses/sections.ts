@@ -1,4 +1,4 @@
-export const EXPENSE_MANAGEMENT_BASE = "/purchases/expense-management" as const;
+export const EXPENSE_MANAGEMENT_BASE = "/expense-management" as const;
 
 export const EXPENSE_MANAGEMENT_SECTIONS = [
   {

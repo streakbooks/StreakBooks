@@ -9,6 +9,7 @@ const SEGMENT_LABEL: Record<string, string> = {
   "employee-expenses": "Employee expenses",
   "expense-management": "Expense Management",
   "my-expenses": "My Expenses",
+  receipts: "Receipts & Inbox",
   "corporate-cards": "Corporate Cards",
   "cash-advances": "Cash Advances",
   "spending-requests": "Spending Requests",

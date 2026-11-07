@@ -46,6 +46,7 @@ Mileage, travel/per diem, cash advances, petty cash floats, corporate card regis
 3. **Writes are SECURITY DEFINER RPCs** (payroll pattern). Clients get SELECT under RLS; mutations check permissions server-side.
 4. **Permission expansion** adds post/reimburse/policy/card/advance/export/audit/admin keys while preserving `expenses.submit` and `expenses.approve`.
 5. **Accounting integrity first.** No new journal source until EM-06; posting stays conceptual in schema (`posted_journal_id`) without inventing parallel ledgers.
+6. **Standalone navigation (approved).** Expense Management is a top-level sidebar module at `/expense-management`, not nested under Purchases. Purchases retains bills and company spend-money.
 
 ## 4. Requirement → batch map
 

@@ -19,6 +19,7 @@ import {
   PiggyBank,
   Warehouse,
   WalletCards,
+  HandCoins,
   type LucideIcon,
 } from "lucide-react";
 
@@ -73,6 +74,13 @@ export const navItems: NavItem[] = [
     icon: ShoppingCart,
     group: "money",
     description: "Bills, expenses and suppliers",
+  },
+  {
+    label: "Expense Management",
+    to: "/expense-management",
+    icon: HandCoins,
+    group: "money",
+    description: "Employee claims, receipts, approvals and reimbursements",
   },
   {
     label: "Contacts",

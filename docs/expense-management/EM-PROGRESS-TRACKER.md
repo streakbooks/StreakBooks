@@ -37,6 +37,10 @@ Update after every verified batch. The visual percentage counts only **completed
 | EM-11 | Reports, analytics, notifications, migration, exports, audit | Not started |
 | EM-12 | Integration, security, performance, recovery, UX, release verification | Not started |
 
+## Navigation note
+
+Expense Management is a **top-level** sidebar module at `/expense-management` (not under Purchases). See `NAVIGATION-STANDALONE.md`.
+
 ## Coexistence note
 
-Legacy submit/approve remains on `/purchases/employee-expenses`. New multi-line drafts live under Expense Management → My Expenses after migrations are applied.
+Legacy submit/approve remains on `/purchases/employee-expenses`. Purchases spend-money remains on `/purchases/expenses`. New multi-line drafts live under Expense Management → My Expenses after migrations are applied.

@@ -12,7 +12,7 @@ All current and future LinkBooks modules, internal tabs, actions, accessible pop
 Canonical machine-readable route register:
 \`docs/ux/premium-visual-route-inventory.json\`.
 
-At the base revision, the register includes **22 top-level modules, 138 authenticated route files, 174 total route files**, including 51 routes that don't map directly to a top-level sidebar entry. Route counts are NOT screen counts or visual completion percentages. Some nested views exist only inside components. The App Store & Integrations marketplace does not have a distinct route in the audited source; treat it as an explicit product scope gap instead of claiming visual coverage.
+At the base revision, the register includes **22 top-level modules, 138 authenticated route files, 174 total route files**, including 51 routes that don't map directly to a top-level sidebar entry. Route counts are NOT screen counts or visual completion percentages. Some nested views exist only inside components. At the base revision, App Store & Integrations had no distinct route. **The independently advancing `main` branch now contains App Store and Developer modules; the current isolated visual branch has not integrated them.** Treat these as new visual acceptance scope rather than absent product features.
 
 ## Baseline audit
 
@@ -117,6 +117,10 @@ The following are **committed React/CSS changes**, not accepted/screenshots of a
 - `src/components/settings/IntegrationHealthBadge.test.tsx` — four labelled informational badge cases.
 
 **Status:** Code committed, source-level route and file inspections only; full TypeScript, ESLint, Vitest, production build, authenticated Playwright mobile screenshots, tablet/desktop and permissions/regression scenarios **NOT EXECUTED**. Do not count a completed verified batch or claim that automated tests passed.
+
+### Parallel module expansion checked on 7 November 2026
+
+At inspected `main` commit `f1d5381`, the active application had **24 sidebar modules and 179 route files**, versus **22 sidebar modules and 174 route files** on this isolated visual branch. The five added authenticated routes are App Store (index, sections, app details) and Developer (index, sections). This development stream deliberately made **no changes** to those new Cursor-built pages. They must be integrated and reviewed in an isolated worktree, including security and role-specific visual flows, before the overall application can be called complete. Avoid treating the earlier 22/22 initial-code count as current 24/24 acceptance.
 
 ## Next coding increment
 

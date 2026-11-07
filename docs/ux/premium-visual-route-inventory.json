@@ -1,0 +1,746 @@
+{
+  "schemaVersion": 1,
+  "title": "LinkBooks premium visual redesign — route-level acceptance inventory",
+  "repository": "linkbusinessadvisory/LinkBooks",
+  "branch": "feature/linkbooks-premium-visual-redesign",
+  "baseRevision": "48421b1c710f7e4f3dd50e4a496e4fe4c3723ed9",
+  "scopeStatement": "No authenticated, support, public, forms, overlays, workflow screens or future module is excluded. An inventory entry is not a test result.",
+  "counts": {
+    "topLevelModules": 22,
+    "allRouteFiles": 174,
+    "authenticatedRouteFiles": 138,
+    "supportingRouteFiles": 51
+  },
+  "moduleAcceptance": [
+    "layout_hierarchy",
+    "typography_spacing",
+    "sidebar_and_context_navigation",
+    "buttons_forms_feedback",
+    "tables_cards_dashboards",
+    "status_labels_colours",
+    "seven_palettes_and_custom",
+    "light_dark_system",
+    "mobile_tablet_desktop",
+    "keyboard_a11y",
+    "real_data_and_authorisation",
+    "unit_build_browser_regression"
+  ],
+  "modules": [
+    {
+      "label": "Dashboard",
+      "href": "/",
+      "routeFiles": [
+        "_authenticated/index.tsx"
+      ],
+      "visualReview": "pending_screen_review",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      }
+    },
+    {
+      "label": "Banking",
+      "href": "/banking",
+      "routeFiles": [
+        "_authenticated/banking/cash-coding.tsx",
+        "_authenticated/banking/feeds.tsx",
+        "_authenticated/banking/import.tsx",
+        "_authenticated/banking/index.tsx",
+        "_authenticated/banking/journal.$journalId.tsx",
+        "_authenticated/banking/money-documents.tsx",
+        "_authenticated/banking/reconcile.tsx",
+        "_authenticated/banking/reconciliation-report.$sessionId.tsx",
+        "_authenticated/banking/route.tsx",
+        "_authenticated/banking/rules.tsx",
+        "_authenticated/banking/transactions.tsx",
+        "_authenticated/banking/transfers.tsx"
+      ],
+      "visualReview": "pending_screen_review",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      }
+    },
+    {
+      "label": "Sales",
+      "href": "/sales",
+      "routeFiles": [
+        "_authenticated/sales/credit-notes.$creditNoteId.edit.tsx",
+        "_authenticated/sales/credit-notes.$creditNoteId.index.tsx",
+        "_authenticated/sales/credit-notes.$creditNoteId.tsx",
+        "_authenticated/sales/credit-notes.index.tsx",
+        "_authenticated/sales/credit-notes.new.tsx",
+        "_authenticated/sales/customers.tsx",
+        "_authenticated/sales/index.tsx",
+        "_authenticated/sales/invoices.$invoiceId.edit.tsx",
+        "_authenticated/sales/invoices.$invoiceId.index.tsx",
+        "_authenticated/sales/invoices.$invoiceId.tsx",
+        "_authenticated/sales/invoices.index.tsx",
+        "_authenticated/sales/invoices.new.tsx",
+        "_authenticated/sales/orders.tsx",
+        "_authenticated/sales/quotes.$quoteId.edit.tsx",
+        "_authenticated/sales/quotes.$quoteId.index.tsx",
+        "_authenticated/sales/quotes.$quoteId.tsx",
+        "_authenticated/sales/quotes.index.tsx",
+        "_authenticated/sales/quotes.new.tsx",
+        "_authenticated/sales/receipts.$receiptId.tsx",
+        "_authenticated/sales/receipts.index.tsx",
+        "_authenticated/sales/receipts.new.tsx",
+        "_authenticated/sales/recurring.tsx",
+        "_authenticated/sales/reminders.tsx",
+        "_authenticated/sales/route.tsx",
+        "_authenticated/sales/settings.tsx",
+        "_authenticated/sales/statements.tsx"
+      ],
+      "visualReview": "pending_screen_review",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      }
+    },
+    {
+      "label": "Purchases",
+      "href": "/purchases",
+      "routeFiles": [
+        "_authenticated/purchases/bills.$billId.edit.tsx",
+        "_authenticated/purchases/bills.$billId.tsx",
+        "_authenticated/purchases/bills.index.tsx",
+        "_authenticated/purchases/bills.new.tsx",
+        "_authenticated/purchases/credit-notes.$creditNoteId.tsx",
+        "_authenticated/purchases/credit-notes.index.tsx",
+        "_authenticated/purchases/credit-notes.new.tsx",
+        "_authenticated/purchases/employee-expenses.tsx",
+        "_authenticated/purchases/expense-management/$section.tsx",
+        "_authenticated/purchases/expense-management/claims.$claimId.tsx",
+        "_authenticated/purchases/expense-management/index.tsx",
+        "_authenticated/purchases/expenses.$expenseId.tsx",
+        "_authenticated/purchases/expenses.index.tsx",
+        "_authenticated/purchases/expenses.new.tsx",
+        "_authenticated/purchases/index.tsx",
+        "_authenticated/purchases/orders.$orderId.tsx",
+        "_authenticated/purchases/orders.index.tsx",
+        "_authenticated/purchases/orders.new.tsx",
+        "_authenticated/purchases/payments.$paymentId.tsx",
+        "_authenticated/purchases/payments.batch.tsx",
+        "_authenticated/purchases/payments.index.tsx",
+        "_authenticated/purchases/payments.new.tsx",
+        "_authenticated/purchases/portal-inbox.tsx",
+        "_authenticated/purchases/recurring.tsx",
+        "_authenticated/purchases/route.tsx",
+        "_authenticated/purchases/settings.tsx",
+        "_authenticated/purchases/statements.tsx",
+        "_authenticated/purchases/suppliers.tsx"
+      ],
+      "visualReview": "pending_screen_review",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      }
+    },
+    {
+      "label": "Expense Management",
+      "href": "/expense-management",
+      "routeFiles": [
+        "_authenticated/expense-management/$section.tsx",
+        "_authenticated/expense-management/claims.$claimId.tsx",
+        "_authenticated/expense-management/index.tsx"
+      ],
+      "visualReview": "pending_screen_review",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      }
+    },
+    {
+      "label": "Contacts",
+      "href": "/contacts",
+      "routeFiles": [
+        "_authenticated/contacts/$contactId.tsx",
+        "_authenticated/contacts/duplicates.tsx",
+        "_authenticated/contacts/import.tsx",
+        "_authenticated/contacts/index.tsx",
+        "_authenticated/contacts/new.tsx",
+        "_authenticated/contacts/settings.tsx"
+      ],
+      "visualReview": "pending_screen_review",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      }
+    },
+    {
+      "label": "Products & Services",
+      "href": "/products-services",
+      "routeFiles": [
+        "_authenticated/products-services.tsx"
+      ],
+      "visualReview": "pending_screen_review",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      }
+    },
+    {
+      "label": "Accounting",
+      "href": "/accounting",
+      "routeFiles": [
+        "_authenticated/accounting.tsx"
+      ],
+      "visualReview": "pending_screen_review",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      }
+    },
+    {
+      "label": "Action Center",
+      "href": "/notifications",
+      "routeFiles": [
+        "_authenticated/notifications.tsx"
+      ],
+      "visualReview": "pending_screen_review",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      }
+    },
+    {
+      "label": "Files",
+      "href": "/files",
+      "routeFiles": [
+        "_authenticated/files.tsx"
+      ],
+      "visualReview": "pending_screen_review",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      }
+    },
+    {
+      "label": "Budgets",
+      "href": "/budgets",
+      "routeFiles": [
+        "_authenticated/budgets/$budgetId.tsx",
+        "_authenticated/budgets/index.tsx"
+      ],
+      "visualReview": "pending_screen_review",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      }
+    },
+    {
+      "label": "Fixed assets",
+      "href": "/fixed-assets",
+      "routeFiles": [
+        "_authenticated/fixed-assets.tsx"
+      ],
+      "visualReview": "pending_screen_review",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      }
+    },
+    {
+      "label": "Payroll",
+      "href": "/payroll",
+      "routeFiles": [
+        "_authenticated/payroll/employees.$employeeId.tsx",
+        "_authenticated/payroll/employees.index.tsx",
+        "_authenticated/payroll/index.tsx",
+        "_authenticated/payroll/payments.index.tsx",
+        "_authenticated/payroll/payslips.$payslipId.tsx",
+        "_authenticated/payroll/payslips.index.tsx",
+        "_authenticated/payroll/reports.tsx",
+        "_authenticated/payroll/route.tsx",
+        "_authenticated/payroll/runs.$runId.tsx",
+        "_authenticated/payroll/runs.index.tsx",
+        "_authenticated/payroll/salary-structures.tsx",
+        "_authenticated/payroll/settings.tsx"
+      ],
+      "visualReview": "pending_screen_review",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      }
+    },
+    {
+      "label": "Reports",
+      "href": "/reports",
+      "routeFiles": [
+        "_authenticated/reports/$reportId.tsx",
+        "_authenticated/reports/builder/$viewId.tsx",
+        "_authenticated/reports/index.tsx"
+      ],
+      "visualReview": "pending_screen_review",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      }
+    },
+    {
+      "label": "Accountant",
+      "href": "/accountant",
+      "routeFiles": [
+        "_authenticated/accountant.tsx"
+      ],
+      "visualReview": "pending_screen_review",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      }
+    },
+    {
+      "label": "Firm",
+      "href": "/firm",
+      "routeFiles": [
+        "_authenticated/firm.tsx"
+      ],
+      "visualReview": "pending_screen_review",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      }
+    },
+    {
+      "label": "Advisors",
+      "href": "/advisors-admin",
+      "routeFiles": [
+        "_authenticated/advisors-admin.appointments.tsx",
+        "_authenticated/advisors-admin.billing.tsx",
+        "_authenticated/advisors-admin.clients.tsx",
+        "_authenticated/advisors-admin.conversations.tsx",
+        "_authenticated/advisors-admin.documents.tsx",
+        "_authenticated/advisors-admin.engagements.tsx",
+        "_authenticated/advisors-admin.index.tsx",
+        "_authenticated/advisors-admin.inquiries.tsx",
+        "_authenticated/advisors-admin.onboarding.tsx",
+        "_authenticated/advisors-admin.settings.services-pricing.tsx",
+        "_authenticated/advisors-admin.staff.tsx",
+        "_authenticated/advisors-admin.tsx",
+        "_authenticated/advisors-admin.workspaces.tsx"
+      ],
+      "visualReview": "pending_screen_review",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      }
+    },
+    {
+      "label": "Advisors portal",
+      "href": "/advisors-portal",
+      "routeFiles": [
+        "_authenticated/advisors-portal.account.tsx",
+        "_authenticated/advisors-portal.appointments.tsx",
+        "_authenticated/advisors-portal.documents.tsx",
+        "_authenticated/advisors-portal.index.tsx",
+        "_authenticated/advisors-portal.messages.tsx",
+        "_authenticated/advisors-portal.tasks.tsx"
+      ],
+      "visualReview": "pending_screen_review",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      }
+    },
+    {
+      "label": "AI Assistant",
+      "href": "/ai-assistant",
+      "routeFiles": [
+        "_authenticated/ai-assistant.tsx"
+      ],
+      "visualReview": "pending_screen_review",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      }
+    },
+    {
+      "label": "Tax",
+      "href": "/tax",
+      "routeFiles": [
+        "_authenticated/tax.tsx"
+      ],
+      "visualReview": "pending_screen_review",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      }
+    },
+    {
+      "label": "Settings",
+      "href": "/settings",
+      "routeFiles": [
+        "_authenticated/settings.tsx"
+      ],
+      "visualReview": "pending_screen_review",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      }
+    },
+    {
+      "label": "Help",
+      "href": "/help",
+      "routeFiles": [
+        "_authenticated/help.tsx"
+      ],
+      "visualReview": "pending_screen_review",
+      "sharedFoundation": "shared_styles_and_status_layer_applies_where_rendered",
+      "verified": false,
+      "checks": {
+        "desktop": false,
+        "tablet": false,
+        "mobile": false,
+        "light": false,
+        "dark": false,
+        "system": false,
+        "sevenPalettes": false,
+        "customTheme": false,
+        "statuses": false,
+        "forms": false,
+        "permissions": false,
+        "browser": false
+      }
+    }
+  ],
+  "supportingRoutes": [
+    "__root.tsx",
+    "_authenticated/documents.branding.tsx",
+    "_authenticated/documents.print.$kind.$id.tsx",
+    "_authenticated/firm-invite.$token.tsx",
+    "_authenticated/imports.tsx",
+    "_authenticated/invite.$token.tsx",
+    "_authenticated/onboarding.tsx",
+    "_authenticated/platform.automation.tsx",
+    "_authenticated/platform.billing.tsx",
+    "_authenticated/platform.index.tsx",
+    "_authenticated/platform.operations.tsx",
+    "_authenticated/platform.tsx",
+    "_authenticated/profile.tsx",
+    "_authenticated/projects.tsx",
+    "_authenticated/recurring-journals.tsx",
+    "_authenticated/route.tsx",
+    "advisors.tsx",
+    "advisors_.$serviceCode.tsx",
+    "advisors_.agreement.$token.tsx",
+    "advisors_.book.tsx",
+    "advisors_.manage.$manageToken.tsx",
+    "advisors_.portal.invite.$token.tsx",
+    "advisors_.proposal.$token.tsx",
+    "auth.tsx",
+    "auth_.callback.tsx",
+    "auth_.mfa.tsx",
+    "auth_.sso.tsx",
+    "forgot-password.tsx",
+    "portal/app/bank.tsx",
+    "portal/app/bills.tsx",
+    "portal/app/credits.tsx",
+    "portal/app/documents.tsx",
+    "portal/app/index.tsx",
+    "portal/app/invoices.$invoiceId.tsx",
+    "portal/app/invoices.tsx",
+    "portal/app/messages.tsx",
+    "portal/app/orders.tsx",
+    "portal/app/payments.tsx",
+    "portal/app/remittances.tsx",
+    "portal/app/route.tsx",
+    "portal/app/security.tsx",
+    "portal/app/statement.tsx",
+    "portal/index.tsx",
+    "portal/invite.$token.tsx",
+    "portal/login.tsx",
+    "portal/pay.$intentId.tsx",
+    "portal/route.tsx",
+    "pricing.tsx",
+    "pricing_.builder.tsx",
+    "reset-password.tsx",
+    "share.invoice.$token.tsx"
+  ],
+  "crossCuttingGaps": [
+    {
+      "name": "App Store & Integrations marketplace",
+      "status": "No independent marketplace route located in base revision",
+      "requiredAction": "Verify implementation location; add original marketplace route and full visual/functional acceptance when scope exists"
+    },
+    {
+      "name": "LinkBooks Signal",
+      "status": "Internal voice components; no single dedicated route",
+      "requiredAction": "Audit command and voice overlays, focus, contrast, palette behaviour"
+    },
+    {
+      "name": "Expense Claims across Purchases and Expense Management",
+      "status": "Both route groups exist",
+      "requiredAction": "Validate lifecycle badges in both entry points and dialogs; no accounting logic changes"
+    },
+    {
+      "name": "Platform Superadmin, billing and profiles",
+      "status": "Supporting routes without top-level sidebar item",
+      "requiredAction": "Audit permissions and full visual designs"
+    },
+    {
+      "name": "Global Search, Create New and import centre",
+      "status": "Shared popovers, sheets and non-module routes",
+      "requiredAction": "Verify keyboard, responsive, theme, status and real workflows"
+    }
+  ],
+  "verification": {
+    "moduleFullyAccepted": 0,
+    "moduleInitialVisualImproved": 0,
+    "fullBuild": "NOT_RUN",
+    "authenticatedBrowser": "NOT_RUN",
+    "deployment": "NOT_VERIFIED"
+  }
+}

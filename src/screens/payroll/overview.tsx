@@ -8,7 +8,8 @@ import { friendlyAuthError } from "@/lib/auth-helpers";
 import { getPayrollSettingsPage } from "@/lib/payroll/payroll.functions";
 import { PayrollSubnav } from "@/components/payroll/PayrollSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,16 +33,15 @@ export function PayrollOverviewPage() {
   }
   if (!canView) {
     return (
-      <>
-        <PageHeader
-          title="Payroll"
-          description="Basic Global Payroll for international businesses."
-        />
+      <ListWorkspace
+        title="Payroll"
+        description="Basic Global Payroll for international businesses."
+      >
         <EmptyState
           title="No payroll access"
           description="Ask an organisation administrator for the payroll.view permission."
         />
-      </>
+      </ListWorkspace>
     );
   }
   if (page.isPending) return <LoadingState />;
@@ -101,23 +101,21 @@ export function PayrollOverviewPage() {
   const showSetupChecklist = data.available && (!enabled || !setupComplete);
 
   return (
-    <>
-      <PageHeader
-        title="Payroll"
-        description="Basic Global Payroll with manually managed statutory deductions."
-        actions={
-          canEdit && enabled ? (
-            <Button asChild size="sm">
-              <Link to="/payroll/settings">
-                <Settings2 className="mr-2 h-4 w-4" />
-                Payroll settings
-              </Link>
-            </Button>
-          ) : null
-        }
-      />
-      <PayrollSubnav current="overview" />
-
+    <ListWorkspace
+      title="Payroll"
+      description="Basic Global Payroll with manually managed statutory deductions."
+      actions={
+        canEdit && enabled ? (
+          <Button asChild size="sm">
+            <Link to="/payroll/settings">
+              <Settings2 className="mr-2 h-4 w-4" />
+              Payroll settings
+            </Link>
+          </Button>
+        ) : null
+      }
+      subnav={<PayrollSubnav current="overview" />}
+    >
       {!data.available ? (
         <Alert>
           <AlertTriangle className="h-4 w-4" />
@@ -287,6 +285,6 @@ export function PayrollOverviewPage() {
           </Card>
         </div>
       )}
-    </>
+    </ListWorkspace>
   );
 }

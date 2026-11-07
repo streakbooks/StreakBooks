@@ -25,7 +25,8 @@ import {
 } from "@/lib/tax/country-packs";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { AccountLookup } from "@/components/lookup";
-import { PageHeader, LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { LoadingState, ErrorState, EmptyState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -254,19 +255,17 @@ function TaxConfigPage() {
   };
 
   return (
-    <>
-      <PageHeader
-        title="Tax"
-        description={`Tax workspace for ${orgCountry}: registrations, returns, tax rates, codes, country packs and posting accounts.`}
-        actions={
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/reports/$reportId" params={{ reportId: "tax-summary" }}>
-              Tax summary report
-            </Link>
-          </Button>
-        }
-      />
-
+    <ListWorkspace
+      title="Tax"
+      description={`Tax workspace for ${orgCountry}: registrations, returns, tax rates, codes, country packs and posting accounts.`}
+      actions={
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/reports/$reportId" params={{ reportId: "tax-summary" }}>
+            Tax summary report
+          </Link>
+        </Button>
+      }
+    >
       <Alert className="mb-6">
         <AlertTitle>Calculation &amp; reporting, not e-filing</AlertTitle>
         <AlertDescription>
@@ -583,6 +582,6 @@ function TaxConfigPage() {
           <TaxCodesPanel companyId={companyId} accounts={allAccounts} />
         </TabsContent>
       </Tabs>
-    </>
+    </ListWorkspace>
   );
 }

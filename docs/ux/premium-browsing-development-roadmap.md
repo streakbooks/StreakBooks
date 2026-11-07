@@ -29,7 +29,7 @@ This includes native browser navigation, discoverable module sections, connected
 | Sales invoices list | `src/routes/_authenticated/sales/invoices.index.tsx` uses validated URL search; detail, New/Edit and mobile links preserve origin | Isolated helper assertions passed on exact Git blob; full build and authenticated browser journey still pending |
 | Contacts directory | `src/screens/contacts/index.tsx` has URL-backed role, search, sorting and pagination; contact record detail carries validated origin through all 7 tabs | Standalone TypeScript compile and 36 isolated helper assertions passed against exact Git blob; full application/build/authenticated browser checks pending; advanced local filters are not yet URL-backed |
 | Products & Services | `src/screens/products-services.tsx` uses native section links and URL-backed catalogue query, kind, category, status, sorting and pagination; section switching retains catalogue context | Standalone TypeScript compile and 29 isolated helper assertions passed against exact Git blob; full application/build/authenticated browser checks pending |
-| Reporting and other modules | Existing native navigation audit (`scripts/check-native-navigation.mjs`) covers key sections | Full screen/action inventory and real-browser testing |
+| Banking, Reports and other modules | Banking transaction and journal links retain filtered return context; Reports catalogue, saved views and management reports now preserve validated Reports Centre origins. | Full Banking/Reports workflows, remaining modules, authenticated browser and build checks still pending |
 | Accessibility and performance | Shared controls include focus states and route preloading | Measure with realistic datasets and assistive technology checks |
 | Finance/security | Existing accounting services, auth and Supabase RLS are separate | Never bypass posting, period locks, tenant isolation or authorization; regression test them |
 
@@ -63,6 +63,15 @@ This includes native browser navigation, discoverable module sections, connected
 - **Executed on exact Git source copies in an isolated Node + TypeScript 5.8.3 environment:** TypeScript standalone compilation passed for the Products and Contacts navigation helpers; 29 Products and 36 Contacts assertions passed (65 total in this development turn). Checks compare Git blob hashes against GitHub before execution. This is not a full app typecheck or Vitest run.
 - **Executed in an isolated Node environment:** 40 assertions for the exact Git blob hashes of the Bills, Sales, and Contacts navigation helpers passed; 11 assertions for the Products section helper passed. This is NOT a full npm/TypeScript/build/Vitest/Playwright run.
 
+- `src/lib/reports/centre-return.ts` and `src/lib/reports/search.ts`: allowlisted Reports Centre return tokens and report URL parsing.
+- `src/components/reports/ReportShell.tsx`, `ReportCatalogue.tsx`, `ReportDirectory.tsx`, `ReportingHome.tsx`, `ReportLibrary.tsx`, `ManagementWorkspace.tsx`, `ReportFallback.tsx`, `src/routes/_authenticated/reports/`: native return-to-origin links and context propagation.
+- `src/lib/reports/centre-return.test.ts`: nine new unit scenarios; `src/lib/reports/search.test.ts`: two test cases added (NOT RUN).
+- `e2e/reports-centre-return-browsing.spec.ts`: three browser journeys (NOT RUN).
+- `src/lib/banking/transaction-return.ts`, `src/routes/_authenticated/banking/transactions.tsx`, `src/routes/_authenticated/banking/journal.$journalId.tsx`: validated transaction origin through journal/reversals, preserving transaction preview filters.
+- `src/lib/banking/transaction-return.test.ts`: eight new unit scenarios (NOT RUN).
+- `e2e/banking-journal-return-browsing.spec.ts`: three browser journeys (NOT RUN).
+- The current environment cannot clone GitHub directly (`Could not resolve host: github.com`); full app typecheck, lint, build, Vitest and Playwright remain **NOT RUN**. The connected GitHub tools were used to inspect and commit, and source-level consistency was checked.
+
 ## Required acceptance criteria
 
 1. **Modules:** All existing top-level and sub-navigation items resolve to their permitted page, preserve correct active section, and expose native anchors.
@@ -84,9 +93,9 @@ This includes native browser navigation, discoverable module sections, connected
 | 2 | Original design system, themes/colour schemes, shared shell/sidebar/context navigation, global search and Create New | Shared navigation partly coded; not fully verified |
 | 3 | Dashboard, Action Center/Notifications, Help, Profile, onboarding, workspace entry and role-sensitive flow | Pending |
 | 4 | All Sales and Purchases submodules, payment/credit/recurring/expense workflows, supplier and customer navigation | Partial invoice/bill browsing code; remaining work pending |
-| 5 | Banking accounts, feeds, cash coding, imports, transfers, rules, reconciliation and related money workflows | Pending |
+| 5 | Banking accounts, feeds, cash coding, imports, transfers, rules, reconciliation and related money workflows | Transaction/journal browsing improvements committed; remaining submodules and end-to-end tests pending |
 | 6 | Contacts, Products/Services and requested inventory scope, Files/Documents, import centre, Projects | Partial Contacts/Products browsing code; remaining work pending |
-| 7 | Accounting, recurring journals, GL/COA/periods, Accountant workflows, Reports centre and report builder | Pending |
+| 7 | Accounting, recurring journals, GL/COA/periods, Accountant workflows, Reports centre and report builder | Reports Centre return navigation partially implemented; Accounting, report builder and runtime verification pending |
 | 8 | Tax, country support, Budgets, Fixed Assets, related accounting/report drilldowns | Pending |
 | 9 | Payroll and complete Expense Claims/Expense Management including approvals, reimbursements and payment integrations | Pending |
 | 10 | Firm, Advisors administration, Advisors customer portal, engagement and billing/document workflows | Pending |
@@ -97,7 +106,7 @@ This includes native browser navigation, discoverable module sections, connected
 
 The denominator is provisional until the full feature inventory is reconciled. **Fully verified coding batches: 0 / 12**; don't increase this without actual checks and acceptance evidence.
 
-**Next:** Execute `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run check:navigation`, `npm.cmd run check:ui`, `npm.cmd test -- src/lib/sales/invoice-list-navigation.test.ts src/lib/purchases/bills-return-context.test.ts src/lib/contacts/contact-view-navigation.test.ts src/lib/products/catalogue-navigation.test.ts`, and authenticated browser suites in an isolated local worktree. Fix any failures before considering a batch verified. Next coding priorities: URL-backed Contacts advanced filters (including safe IDs and normalisation), contextual reporting drill-down and remaining cross-module return navigation. Browser tests require authenticated fixtures.
+**Next:** Execute `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run check:navigation`, `npm.cmd run check:ui`, `npm.cmd run check:browsing-coverage`, `npm.cmd test -- src/lib/sales/invoice-list-navigation.test.ts src/lib/purchases/bills-return-context.test.ts src/lib/contacts/contact-view-navigation.test.ts src/lib/products/catalogue-navigation.test.ts src/lib/reports/centre-return.test.ts src/lib/banking/transaction-return.test.ts`, and authenticated browser suites in an isolated local worktree. Fix any failures before considering a batch verified. Next coding priorities: Banking reconciliation/import state, Reports saved-library subfilters, Accounting and Dashboard navigation, followed by every remaining module. Browser tests require authenticated fixtures.
 
 ## Operating boundaries
 

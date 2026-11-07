@@ -90,7 +90,14 @@ function ActionCenterPage() {
   );
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<string[]>([]);
-  const [groupByModule, setGroupByModule] = useState(false);
+  const groupByModule = query.group === true;
+  const setGroupByModule = (next: boolean) => {
+    void navigate({
+      to: "/notifications",
+      search: (previous) => parseActionCenterSearch({ ...previous, group: next }),
+      resetScroll: false,
+    });
+  };
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkProgress, setBulkProgress] = useState(0);
   const [bulkTotal, setBulkTotal] = useState(0);
@@ -419,7 +426,7 @@ function ActionCenterPage() {
               variant={groupByModule ? "secondary" : "outline"}
               aria-pressed={groupByModule}
               disabled={bulkBusy}
-              onClick={() => setGroupByModule((current) => !current)}
+              onClick={() => setGroupByModule(!groupByModule)}
             >
               Group page by module
             </Button>

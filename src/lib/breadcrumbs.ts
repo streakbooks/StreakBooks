@@ -7,6 +7,12 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const SEGMENT_LABEL: Record<string, string> = {
   "credit-notes": "Credit notes",
   "employee-expenses": "Employee expenses",
+  "expense-management": "Expense Management",
+  "my-expenses": "My Expenses",
+  "corporate-cards": "Corporate Cards",
+  "cash-advances": "Cash Advances",
+  "spending-requests": "Spending Requests",
+  "petty-cash": "Petty Cash",
   "money-documents": "Money documents",
   "cash-coding": "Cash coding",
   "profit-and-loss": "Profit and loss",

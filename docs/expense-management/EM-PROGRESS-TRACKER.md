@@ -4,17 +4,17 @@ Update after every verified batch. The visual percentage counts only **completed
 
 ## Visual progress
 
-**Development batches coded:** 1 / 12
+**Development batches coded:** 2 / 12
 
-`█░░░░░░░░░░░ 8%`
+`██░░░░░░░░░░ 17%`
 
-**Remaining batches:** 11
+**Remaining batches:** 10
 
 | Area | Status |
 | --- | --- |
-| Code Development | 1 / 12 verified |
-| Local Testing | Partial (unit tests for EM-01; no DB/browser) |
-| GitHub Commit | Pending until local commit recorded |
+| Code Development | 2 / 12 verified |
+| Local Testing | Partial (unit + check:ui; no DB/browser) |
+| GitHub Commit | Local commits only; not pushed |
 | GitHub PR / Merge | Pending |
 | Database Migrations | Pending (SQL committed; not applied) |
 | Application Deployment | Pending |
@@ -25,7 +25,7 @@ Update after every verified batch. The visual percentage counts only **completed
 | Batch | Scope | Status |
 | --- | --- | --- |
 | EM-01 | Audit, architecture, gap analysis, schema foundation, permissions | Verified locally |
-| EM-02 | Navigation, dashboard, list/Kanban, employee profiles | Not started |
+| EM-02 | Navigation, dashboard, list/Kanban, employee profiles | Verified locally (nav + overview KPIs; Kanban deferred to claim lists in EM-03) |
 | EM-03 | Claims, lines, splitting, allocations, templates, lifecycle | Not started |
 | EM-04 | Receipts, email inbox, file security, mobile capture, offline drafts | Not started |
 | EM-05 | Approvals, policies, delegation, escalation, spending requests | Not started |
@@ -39,4 +39,4 @@ Update after every verified batch. The visual percentage counts only **completed
 
 ## Coexistence note
 
-Until EM-03 cutover, live UI continues to use `/purchases/expenses` and `/purchases/employee-expenses` against `purchase_expenses` / `employee_expense_claims`. New `expense_*` tables are additive.
+Until EM-03 cutover, live claim submit/approve remains on `/purchases/employee-expenses`. Spend-money remains on `/purchases/expenses`. The Expense Management workspace is the integrated navigation home.

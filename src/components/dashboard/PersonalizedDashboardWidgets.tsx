@@ -142,10 +142,10 @@ export function PersonalizedDashboardWidgets({
   }
 
   return (
-    <section aria-label="Dashboard widgets" className="space-y-4">
+    <section aria-label="Dashboard widgets" className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold tracking-tight">Your financial workspace</h2>
+          <h2 className="text-lg font-bold tracking-[-0.025em]">Your financial workspace</h2>
           <p className="text-sm text-muted-foreground">
             Arrange the ledger-backed insights that matter most to your work.
           </p>
@@ -169,7 +169,7 @@ export function PersonalizedDashboardWidgets({
               </Button>
             </PopoverTrigger>
             <PopoverContent
-              className="max-h-[min(75vh,650px)] w-[min(340px,calc(100vw-24px))] space-y-4 overflow-y-auto"
+              className="max-h-[min(75vh,650px)] w-[min(360px,calc(100vw-24px))] space-y-4 overflow-y-auto rounded-xl border-border/90 shadow-overlay"
               align="end"
             >
               <div>
@@ -304,7 +304,7 @@ export function PersonalizedDashboardWidgets({
       ) : null}
 
       {current.widgets.length === 0 ? (
-        <div className="rounded-xl border border-dashed p-8 text-center">
+        <div className="rounded-2xl border border-dashed border-primary/30 bg-primary/5 p-8 text-center">
           <p className="font-medium">Your dashboard is clear</p>
           <p className="mt-1 text-sm text-muted-foreground">
             Open Customize to choose panels or restore the default workspace.
@@ -314,7 +314,7 @@ export function PersonalizedDashboardWidgets({
           </Button>
         </div>
       ) : (
-        <div className={cn("grid lg:grid-cols-3", current.compact ? "gap-3" : "gap-6")}>
+        <div className={cn("grid lg:grid-cols-3", current.compact ? "gap-3" : "gap-5")}>
           {current.widgets.map((id, index) => {
             const widget = DASHBOARD_WIDGETS.find((item) => item.id === id);
             if (!widget) return null;

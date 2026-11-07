@@ -56,17 +56,17 @@ function WidgetCard({
   className?: string;
 }) {
   return (
-    <Card className={className}>
-      <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 p-5 pb-3">
+    <Card className={cn("lb-dashboard-widget overflow-hidden border-border/85", className)}>
+      <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 border-b border-border/60 bg-gradient-to-r from-muted/25 to-transparent p-5 pb-3">
         <div className="min-w-0">
-          <CardTitle className="text-sm font-semibold">{title}</CardTitle>
+          <CardTitle className="text-[0.9rem] font-semibold tracking-[-0.01em]">{title}</CardTitle>
           {description ? (
             <CardDescription className="mt-1 text-xs">{description}</CardDescription>
           ) : null}
         </div>
         {action}
       </CardHeader>
-      <CardContent className="p-5 pt-0">{children}</CardContent>
+      <CardContent className="p-5 pt-4">{children}</CardContent>
     </Card>
   );
 }
@@ -126,7 +126,7 @@ export function KpiRow({ data }: { data: DashboardData }) {
   const mixed = (o: ReturnType<typeof owedSummary>) =>
     o.otherCurrencies.length > 0 ? ` · plus ${o.otherCurrencies.join(", ")} (see report)` : "";
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Key financial indicators">
       <StatCard
         label="Cash in bank"
         icon={Wallet}

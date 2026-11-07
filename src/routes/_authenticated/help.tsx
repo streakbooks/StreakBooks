@@ -32,7 +32,7 @@ function Help() {
         description="Step-by-step guides for the things you do most, written for what LinkBooks does today."
       />
 
-      <div className="mb-6 max-w-md space-y-2">
+      <section aria-label="Search LinkBooks help" className="mb-7 max-w-2xl space-y-2 rounded-2xl border border-border/85 bg-gradient-to-r from-card to-accent/30 p-5 shadow-card">
         <Label htmlFor="help-search">Search help</Label>
         <Input
           id="help-search"
@@ -40,7 +40,7 @@ function Help() {
           onChange={(e) => setQ(e.target.value)}
           placeholder="Reconcile, invoice, tax return, shortcut…"
         />
-      </div>
+      </section>
 
       {articles.length === 0 ? (
         <EmptyState title="Nothing matches" description="Try a shorter search term." />
@@ -50,7 +50,7 @@ function Help() {
             <section key={topic} aria-labelledby={`help-${topic}`} className="space-y-3">
               <h2
                 id={`help-${topic}`}
-                className="text-sm font-semibold uppercase tracking-wide text-muted-foreground"
+                className="border-l-[3px] border-primary/75 pl-3 text-sm font-bold uppercase tracking-wide text-foreground"
               >
                 {topic}
               </h2>
@@ -58,9 +58,9 @@ function Help() {
                 {articles
                   .filter((a) => a.topic === topic)
                   .map((a) => (
-                    <Card key={a.id}>
+                    <Card key={a.id} className="group/help border-border/85 shadow-card transition-[border-color,box-shadow] hover:border-primary/25 hover:shadow-sm">
                       <CardHeader>
-                        <CardTitle className="text-base">{a.title}</CardTitle>
+                        <CardTitle className="text-base font-bold tracking-[-0.015em]">{a.title}</CardTitle>
                         <CardDescription>{a.summary}</CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-3">
@@ -83,7 +83,7 @@ function Help() {
         </div>
       )}
 
-      <Card className="mt-8 max-w-3xl">
+      <Card className="mt-8 max-w-4xl border-border/85 shadow-card">
         <CardHeader>
           <CardTitle className="text-base">Glossary</CardTitle>
         </CardHeader>

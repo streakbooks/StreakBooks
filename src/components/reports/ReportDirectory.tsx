@@ -22,17 +22,17 @@ export function ReportDirectory({
   })).filter((section) => section.rows.length > 0);
 
   return (
-    <div className="grid items-start gap-4 lg:grid-cols-2">
+    <div className="grid items-start gap-4 lg:grid-cols-2" aria-label="Report categories">
       {sections.map((section) => (
         <section
           key={section.id}
           aria-labelledby={`directory-${section.id}`}
-          className="min-w-0 overflow-hidden rounded-xl border bg-card shadow-xs"
+          className="lb-report-directory min-w-0 overflow-hidden rounded-xl border border-border/90 bg-card shadow-card"
         >
           <details open className="group">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 border-b bg-muted/30 px-4 py-3 focus-visible:outline-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 border-b border-border/70 bg-muted/35 px-4 py-3.5 outline-none transition-colors hover:bg-accent/50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
               <span className="min-w-0">
-                <span id={`directory-${section.id}`} className="block font-semibold">
+                <span id={`directory-${section.id}`} className="block font-bold tracking-[-0.01em]">
                   {section.label}
                 </span>
                 <span className="block text-xs text-muted-foreground">
@@ -60,7 +60,7 @@ export function ReportDirectory({
                   <Link
                     key={report.id}
                     to={report.linkTo}
-                    className="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/40 focus-visible:outline-2 focus-visible:outline-ring"
+                    className="group/report flex items-start gap-3 px-4 py-3.5 transition-[background-color,box-shadow] hover:bg-accent/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
                   >
                     <FileText
                       className="mt-0.5 size-4 shrink-0 text-muted-foreground"
@@ -83,7 +83,7 @@ export function ReportDirectory({
                     to="/reports/$reportId"
                     params={{ reportId: report.id }}
                     search={{ from, to }}
-                    className="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/40 focus-visible:outline-2 focus-visible:outline-ring"
+                    className="group/report flex items-start gap-3 px-4 py-3.5 transition-[background-color,box-shadow] hover:bg-accent/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
                   >
                     <FileText
                       className="mt-0.5 size-4 shrink-0 text-muted-foreground"

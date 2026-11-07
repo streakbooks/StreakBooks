@@ -35,14 +35,14 @@ export function ReportCatalogue({
   );
   return (
     <section aria-label="Report catalogue" className="space-y-6">
-      <div className="space-y-1">
-        <h2 className="text-xl font-semibold tracking-tight">Browse reports</h2>
+      <div className="space-y-1 border-l-[3px] border-primary/70 pl-4">
+        <h2 className="text-xl font-bold tracking-[-0.025em]">Browse reports</h2>
         <p className="text-sm text-muted-foreground">
           Choose a category or search for a report. Each report opens in its own workspace.
         </p>
       </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="mr-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/70 bg-card p-3 shadow-xs">
+        <span className="mr-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Popular
         </span>
         {QUICK_REPORT_IDS.map((id) => {
@@ -58,7 +58,7 @@ export function ReportCatalogue({
         })}
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+      <div className="flex flex-col gap-4 rounded-xl border border-border/80 bg-muted/25 p-4 sm:flex-row sm:items-end">
         <div className="flex-1 space-y-2">
           <Label htmlFor="report-search">Search reports</Label>
           <Input
@@ -73,7 +73,7 @@ export function ReportCatalogue({
           <Label htmlFor="report-category">Category</Label>
           <select
             id="report-category"
-            className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 pointer-coarse:h-11"
+            className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm shadow-xs transition-[border-color,box-shadow] focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 pointer-coarse:h-11"
             value={category}
             onChange={(e) =>
               onChange({ query, category: e.target.value as ReportCategoryId | "all" })

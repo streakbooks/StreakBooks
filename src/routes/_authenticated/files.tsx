@@ -50,6 +50,15 @@ import { openSignedDownload } from "@/lib/documents/ui";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -123,6 +132,8 @@ function FilesPage() {
     void navigate({ to: "/files", search: (previous) => ({ ...previous, file: id ?? undefined }) });
   const [newFolderName, setNewFolderName] = useState("");
   const [showNewFolder, setShowNewFolder] = useState(false);
+  const [renameFolderOpen, setRenameFolderOpen] = useState(false);
+  const [renameFolderName, setRenameFolderName] = useState("");
 
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
@@ -179,6 +190,7 @@ function FilesPage() {
       parentId: string | null;
     }) => updateFolder({ data: { companyId: companyId!, folderId: id, name, parentId } }),
     onSuccess: async () => {
+      setRenameFolderOpen(false);
       await queryClient.invalidateQueries({ queryKey: ["document-folders", companyId] });
       toast.success("Folder updated");
     },
@@ -542,22 +554,68 @@ function FilesPage() {
         </div>
         {activeFolder && canUpload ? (
           <div className="mt-3 flex gap-2">
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                const name = window.prompt("Rename folder", activeFolder.name);
-                if (name && name.trim() !== activeFolder.name)
-                  renameFolderM.mutate({
-                    id: activeFolder.id,
-                    name,
-                    parentId: activeFolder.parent_id,
-                  });
-              }}
-            >
-              <Pencil className="mr-1 size-4" />
-              Rename
-            </Button>
+            <Dialog open={renameFolderOpen} onOpenChange={setRenameFolderOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  disabled={renameFolderM.isPending}
+                  onClick={() => setRenameFolderName(activeFolder.name)}
+                >
+                  <Pencil className="mr-1 size-4" aria-hidden="true" />
+                  Rename
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <form
+                  className="space-y-4"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    const name = renameFolderName.trim();
+                    if (!name || name === activeFolder.name || renameFolderM.isPending) return;
+                    renameFolderM.mutate({
+                      id: activeFolder.id,
+                      name,
+                      parentId: activeFolder.parent_id,
+                    });
+                  }}
+                >
+                  <DialogHeader>
+                    <DialogTitle>Rename folder</DialogTitle>
+                    <DialogDescription>
+                      Update the name of “{activeFolder.name}”. Files and subfolders remain
+                      attached to the same folder.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-2">
+                    <label htmlFor="files-folder-rename" className="text-sm font-medium">
+                      Folder name
+                    </label>
+                    <Input
+                      id="files-folder-rename"
+                      autoFocus
+                      required
+                      maxLength={120}
+                      value={renameFolderName}
+                      onChange={(event) => setRenameFolderName(event.target.value)}
+                      disabled={renameFolderM.isPending}
+                    />
+                  </div>
+                  <DialogFooter>
+                    <Button type="button" variant="outline" onClick={() => setRenameFolderOpen(false)}
+                      disabled={renameFolderM.isPending}>
+                      Cancel
+                    </Button>
+                    <Button type="submit"
+                      disabled={renameFolderM.isPending || !renameFolderName.trim() ||
+                        renameFolderName.trim() === activeFolder.name}>
+                      {renameFolderM.isPending ? "Saving…" : "Save folder name"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
             <RecordLookupSelect
               value={activeFolder.parent_id ?? "root"}
               onValueChange={(v) =>

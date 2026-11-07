@@ -61,6 +61,7 @@ const CATEGORIES: Record<string, string> = {
   bank_reconciliation: "Bank reconciliation",
   document_request: "Document requests",
   contact_followup: "Contact follow-ups",
+  expense_claim: "Expense claims",
   system: "System",
 };
 const PAGE_SIZE = 20;

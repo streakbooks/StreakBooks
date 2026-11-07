@@ -29,8 +29,15 @@ const CREATE: PaletteAction[] = [
     id: "new-expense",
     group: "Create",
     label: "New expense",
-    keywords: "spend receipt",
+    keywords: "spend receipt company paid",
     href: "/purchases/expenses/new",
+  },
+  {
+    id: "new-expense-claim",
+    group: "Create",
+    label: "New expense claim",
+    keywords: "employee claim reimbursement mileage expense management",
+    href: "/expense-management/my-expenses",
   },
   {
     id: "new-quote",

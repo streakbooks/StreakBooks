@@ -157,8 +157,12 @@ export const categoryMeta: CategoryMeta[] = [
     id: "expenses",
     label: "Employee Expenses & Time",
     description: "Claims, mileage, timesheets and reimbursement posting.",
-    synonyms: ["expenses", "mileage", "timesheet", "per diem"],
-    moduleLinks: [{ label: "Employee expenses", to: "/purchases/employee-expenses" }],
+    synonyms: ["expenses", "mileage", "timesheet", "per diem", "expense management"],
+    moduleLinks: [
+      { label: "Expense Management", to: "/expense-management" },
+      { label: "Expense settings", to: "/expense-management/settings" },
+      { label: "Legacy employee expenses", to: "/purchases/employee-expenses" },
+    ],
     availability: "partial",
   },
   {

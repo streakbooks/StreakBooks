@@ -341,6 +341,8 @@ const REF_TABLES: Record<string, { table: string; column: string }> = {
   purchase_credit_note: { table: "purchase_credit_notes", column: "credit_number" },
   contact: { table: "contacts", column: "name" },
   purchase_expense: { table: "purchase_expenses", column: "payee_name" },
+  expense_claim: { table: "expense_claims", column: "claim_number" },
+  expense_receipt_inbox: { table: "expense_receipt_inbox_entries", column: "file_name" },
   product: { table: "products", column: "name" },
   project: { table: "projects", column: "name" },
 };

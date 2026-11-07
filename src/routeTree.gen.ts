@@ -83,6 +83,8 @@ import { Route as AuthenticatedContactsImportRouteImport } from './routes/_authe
 import { Route as AuthenticatedContactsNewRouteImport } from './routes/_authenticated/contacts/new'
 import { Route as AuthenticatedContactsSettingsRouteImport } from './routes/_authenticated/contacts/settings'
 import { Route as AuthenticatedDocumentsBrandingRouteImport } from './routes/_authenticated/documents.branding'
+import { Route as AuthenticatedExpenseManagementIndexRouteImport } from './routes/_authenticated/expense-management/index'
+import { Route as AuthenticatedExpenseManagementSectionRouteImport } from './routes/_authenticated/expense-management/$section'
 import { Route as AuthenticatedFirmInviteTokenRouteImport } from './routes/_authenticated/firm-invite.$token'
 import { Route as AuthenticatedInviteTokenRouteImport } from './routes/_authenticated/invite.$token'
 import { Route as AuthenticatedPayrollIndexRouteImport } from './routes/_authenticated/payroll/index'
@@ -130,6 +132,7 @@ import { Route as ShareInvoiceTokenRouteImport } from './routes/share.invoice.$t
 import { Route as AuthenticatedAdvisorsAdminSettingsServicesPricingRouteImport } from './routes/_authenticated/advisors-admin.settings.services-pricing'
 import { Route as AuthenticatedBankingJournalJournalIdRouteImport } from './routes/_authenticated/banking/journal.$journalId'
 import { Route as AuthenticatedBankingReconciliationReportSessionIdRouteImport } from './routes/_authenticated/banking/reconciliation-report.$sessionId'
+import { Route as AuthenticatedExpenseManagementClaimsClaimIdRouteImport } from './routes/_authenticated/expense-management/claims.$claimId'
 import { Route as AuthenticatedPayrollEmployeesIndexRouteImport } from './routes/_authenticated/payroll/employees.index'
 import { Route as AuthenticatedPayrollEmployeesEmployeeIdRouteImport } from './routes/_authenticated/payroll/employees.$employeeId'
 import { Route as AuthenticatedPayrollPaymentsIndexRouteImport } from './routes/_authenticated/payroll/payments.index'
@@ -143,6 +146,8 @@ import { Route as AuthenticatedPurchasesBillsNewRouteImport } from './routes/_au
 import { Route as AuthenticatedPurchasesCreditNotesIndexRouteImport } from './routes/_authenticated/purchases/credit-notes.index'
 import { Route as AuthenticatedPurchasesCreditNotesCreditNoteIdRouteImport } from './routes/_authenticated/purchases/credit-notes.$creditNoteId'
 import { Route as AuthenticatedPurchasesCreditNotesNewRouteImport } from './routes/_authenticated/purchases/credit-notes.new'
+import { Route as AuthenticatedPurchasesExpenseManagementIndexRouteImport } from './routes/_authenticated/purchases/expense-management/index'
+import { Route as AuthenticatedPurchasesExpenseManagementSectionRouteImport } from './routes/_authenticated/purchases/expense-management/$section'
 import { Route as AuthenticatedPurchasesExpensesIndexRouteImport } from './routes/_authenticated/purchases/expenses.index'
 import { Route as AuthenticatedPurchasesExpensesExpenseIdRouteImport } from './routes/_authenticated/purchases/expenses.$expenseId'
 import { Route as AuthenticatedPurchasesExpensesNewRouteImport } from './routes/_authenticated/purchases/expenses.new'
@@ -170,6 +175,7 @@ import { Route as AdvisorsPortalInviteTokenRouteImport } from './routes/advisors
 import { Route as PortalAppInvoicesInvoiceIdRouteImport } from './routes/portal/app/invoices.$invoiceId'
 import { Route as AuthenticatedDocumentsPrintKindIdRouteImport } from './routes/_authenticated/documents.print.$kind.$id'
 import { Route as AuthenticatedPurchasesBillsBillIdEditRouteImport } from './routes/_authenticated/purchases/bills.$billId.edit'
+import { Route as AuthenticatedPurchasesExpenseManagementClaimsClaimIdRouteImport } from './routes/_authenticated/purchases/expense-management/claims.$claimId'
 import { Route as AuthenticatedSalesCreditNotesCreditNoteIdIndexRouteImport } from './routes/_authenticated/sales/credit-notes.$creditNoteId.index'
 import { Route as AuthenticatedSalesCreditNotesCreditNoteIdEditRouteImport } from './routes/_authenticated/sales/credit-notes.$creditNoteId.edit'
 import { Route as AuthenticatedSalesInvoicesInvoiceIdIndexRouteImport } from './routes/_authenticated/sales/invoices.$invoiceId.index'
@@ -590,6 +596,18 @@ const AuthenticatedDocumentsBrandingRoute =
     path: '/documents/branding',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedExpenseManagementIndexRoute =
+  AuthenticatedExpenseManagementIndexRouteImport.update({
+    id: '/expense-management/',
+    path: '/expense-management/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedExpenseManagementSectionRoute =
+  AuthenticatedExpenseManagementSectionRouteImport.update({
+    id: '/expense-management/$section',
+    path: '/expense-management/$section',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedFirmInviteTokenRoute =
   AuthenticatedFirmInviteTokenRouteImport.update({
     id: '/firm-invite/$token',
@@ -854,6 +872,12 @@ const AuthenticatedBankingReconciliationReportSessionIdRoute =
     path: '/reconciliation-report/$sessionId',
     getParentRoute: () => AuthenticatedBankingRouteRoute,
   } as any)
+const AuthenticatedExpenseManagementClaimsClaimIdRoute =
+  AuthenticatedExpenseManagementClaimsClaimIdRouteImport.update({
+    id: '/expense-management/claims/$claimId',
+    path: '/expense-management/claims/$claimId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPayrollEmployeesIndexRoute =
   AuthenticatedPayrollEmployeesIndexRouteImport.update({
     id: '/employees/',
@@ -930,6 +954,18 @@ const AuthenticatedPurchasesCreditNotesNewRoute =
   AuthenticatedPurchasesCreditNotesNewRouteImport.update({
     id: '/credit-notes/new',
     path: '/credit-notes/new',
+    getParentRoute: () => AuthenticatedPurchasesRouteRoute,
+  } as any)
+const AuthenticatedPurchasesExpenseManagementIndexRoute =
+  AuthenticatedPurchasesExpenseManagementIndexRouteImport.update({
+    id: '/expense-management/',
+    path: '/expense-management/',
+    getParentRoute: () => AuthenticatedPurchasesRouteRoute,
+  } as any)
+const AuthenticatedPurchasesExpenseManagementSectionRoute =
+  AuthenticatedPurchasesExpenseManagementSectionRouteImport.update({
+    id: '/expense-management/$section',
+    path: '/expense-management/$section',
     getParentRoute: () => AuthenticatedPurchasesRouteRoute,
   } as any)
 const AuthenticatedPurchasesExpensesIndexRoute =
@@ -1094,6 +1130,12 @@ const AuthenticatedPurchasesBillsBillIdEditRoute =
     path: '/edit',
     getParentRoute: () => AuthenticatedPurchasesBillsBillIdRoute,
   } as any)
+const AuthenticatedPurchasesExpenseManagementClaimsClaimIdRoute =
+  AuthenticatedPurchasesExpenseManagementClaimsClaimIdRouteImport.update({
+    id: '/expense-management/claims/$claimId',
+    path: '/expense-management/claims/$claimId',
+    getParentRoute: () => AuthenticatedPurchasesRouteRoute,
+  } as any)
 const AuthenticatedSalesCreditNotesCreditNoteIdIndexRoute =
   AuthenticatedSalesCreditNotesCreditNoteIdIndexRouteImport.update({
     id: '/',
@@ -1200,6 +1242,7 @@ export interface FileRoutesByFullPath {
   '/contacts/new': typeof AuthenticatedContactsNewRoute
   '/contacts/settings': typeof AuthenticatedContactsSettingsRoute
   '/documents/branding': typeof AuthenticatedDocumentsBrandingRoute
+  '/expense-management/$section': typeof AuthenticatedExpenseManagementSectionRoute
   '/firm-invite/$token': typeof AuthenticatedFirmInviteTokenRoute
   '/invite/$token': typeof AuthenticatedInviteTokenRoute
   '/payroll/reports': typeof AuthenticatedPayrollReportsRoute
@@ -1243,6 +1286,7 @@ export interface FileRoutesByFullPath {
   '/banking/': typeof AuthenticatedBankingIndexRoute
   '/budgets/': typeof AuthenticatedBudgetsIndexRoute
   '/contacts/': typeof AuthenticatedContactsIndexRoute
+  '/expense-management/': typeof AuthenticatedExpenseManagementIndexRoute
   '/payroll/': typeof AuthenticatedPayrollIndexRoute
   '/platform/': typeof AuthenticatedPlatformIndexRoute
   '/purchases/': typeof AuthenticatedPurchasesIndexRoute
@@ -1252,6 +1296,7 @@ export interface FileRoutesByFullPath {
   '/advisors-admin/settings/services-pricing': typeof AuthenticatedAdvisorsAdminSettingsServicesPricingRoute
   '/banking/journal/$journalId': typeof AuthenticatedBankingJournalJournalIdRoute
   '/banking/reconciliation-report/$sessionId': typeof AuthenticatedBankingReconciliationReportSessionIdRoute
+  '/expense-management/claims/$claimId': typeof AuthenticatedExpenseManagementClaimsClaimIdRoute
   '/payroll/employees/$employeeId': typeof AuthenticatedPayrollEmployeesEmployeeIdRoute
   '/payroll/payslips/$payslipId': typeof AuthenticatedPayrollPayslipsPayslipIdRoute
   '/payroll/runs/$runId': typeof AuthenticatedPayrollRunsRunIdRoute
@@ -1259,6 +1304,7 @@ export interface FileRoutesByFullPath {
   '/purchases/bills/new': typeof AuthenticatedPurchasesBillsNewRoute
   '/purchases/credit-notes/$creditNoteId': typeof AuthenticatedPurchasesCreditNotesCreditNoteIdRoute
   '/purchases/credit-notes/new': typeof AuthenticatedPurchasesCreditNotesNewRoute
+  '/purchases/expense-management/$section': typeof AuthenticatedPurchasesExpenseManagementSectionRoute
   '/purchases/expenses/$expenseId': typeof AuthenticatedPurchasesExpensesExpenseIdRoute
   '/purchases/expenses/new': typeof AuthenticatedPurchasesExpensesNewRoute
   '/purchases/orders/$orderId': typeof AuthenticatedPurchasesOrdersOrderIdRoute
@@ -1283,6 +1329,7 @@ export interface FileRoutesByFullPath {
   '/payroll/runs/': typeof AuthenticatedPayrollRunsIndexRoute
   '/purchases/bills/': typeof AuthenticatedPurchasesBillsIndexRoute
   '/purchases/credit-notes/': typeof AuthenticatedPurchasesCreditNotesIndexRoute
+  '/purchases/expense-management/': typeof AuthenticatedPurchasesExpenseManagementIndexRoute
   '/purchases/expenses/': typeof AuthenticatedPurchasesExpensesIndexRoute
   '/purchases/orders/': typeof AuthenticatedPurchasesOrdersIndexRoute
   '/purchases/payments/': typeof AuthenticatedPurchasesPaymentsIndexRoute
@@ -1292,6 +1339,7 @@ export interface FileRoutesByFullPath {
   '/sales/receipts/': typeof AuthenticatedSalesReceiptsIndexRoute
   '/documents/print/$kind/$id': typeof AuthenticatedDocumentsPrintKindIdRoute
   '/purchases/bills/$billId/edit': typeof AuthenticatedPurchasesBillsBillIdEditRoute
+  '/purchases/expense-management/claims/$claimId': typeof AuthenticatedPurchasesExpenseManagementClaimsClaimIdRoute
   '/sales/credit-notes/$creditNoteId/edit': typeof AuthenticatedSalesCreditNotesCreditNoteIdEditRoute
   '/sales/invoices/$invoiceId/edit': typeof AuthenticatedSalesInvoicesInvoiceIdEditRoute
   '/sales/quotes/$quoteId/edit': typeof AuthenticatedSalesQuotesQuoteIdEditRoute
@@ -1360,6 +1408,7 @@ export interface FileRoutesByTo {
   '/contacts/new': typeof AuthenticatedContactsNewRoute
   '/contacts/settings': typeof AuthenticatedContactsSettingsRoute
   '/documents/branding': typeof AuthenticatedDocumentsBrandingRoute
+  '/expense-management/$section': typeof AuthenticatedExpenseManagementSectionRoute
   '/firm-invite/$token': typeof AuthenticatedFirmInviteTokenRoute
   '/invite/$token': typeof AuthenticatedInviteTokenRoute
   '/payroll/reports': typeof AuthenticatedPayrollReportsRoute
@@ -1403,6 +1452,7 @@ export interface FileRoutesByTo {
   '/banking': typeof AuthenticatedBankingIndexRoute
   '/budgets': typeof AuthenticatedBudgetsIndexRoute
   '/contacts': typeof AuthenticatedContactsIndexRoute
+  '/expense-management': typeof AuthenticatedExpenseManagementIndexRoute
   '/payroll': typeof AuthenticatedPayrollIndexRoute
   '/platform': typeof AuthenticatedPlatformIndexRoute
   '/purchases': typeof AuthenticatedPurchasesIndexRoute
@@ -1412,6 +1462,7 @@ export interface FileRoutesByTo {
   '/advisors-admin/settings/services-pricing': typeof AuthenticatedAdvisorsAdminSettingsServicesPricingRoute
   '/banking/journal/$journalId': typeof AuthenticatedBankingJournalJournalIdRoute
   '/banking/reconciliation-report/$sessionId': typeof AuthenticatedBankingReconciliationReportSessionIdRoute
+  '/expense-management/claims/$claimId': typeof AuthenticatedExpenseManagementClaimsClaimIdRoute
   '/payroll/employees/$employeeId': typeof AuthenticatedPayrollEmployeesEmployeeIdRoute
   '/payroll/payslips/$payslipId': typeof AuthenticatedPayrollPayslipsPayslipIdRoute
   '/payroll/runs/$runId': typeof AuthenticatedPayrollRunsRunIdRoute
@@ -1419,6 +1470,7 @@ export interface FileRoutesByTo {
   '/purchases/bills/new': typeof AuthenticatedPurchasesBillsNewRoute
   '/purchases/credit-notes/$creditNoteId': typeof AuthenticatedPurchasesCreditNotesCreditNoteIdRoute
   '/purchases/credit-notes/new': typeof AuthenticatedPurchasesCreditNotesNewRoute
+  '/purchases/expense-management/$section': typeof AuthenticatedPurchasesExpenseManagementSectionRoute
   '/purchases/expenses/$expenseId': typeof AuthenticatedPurchasesExpensesExpenseIdRoute
   '/purchases/expenses/new': typeof AuthenticatedPurchasesExpensesNewRoute
   '/purchases/orders/$orderId': typeof AuthenticatedPurchasesOrdersOrderIdRoute
@@ -1440,6 +1492,7 @@ export interface FileRoutesByTo {
   '/payroll/runs': typeof AuthenticatedPayrollRunsIndexRoute
   '/purchases/bills': typeof AuthenticatedPurchasesBillsIndexRoute
   '/purchases/credit-notes': typeof AuthenticatedPurchasesCreditNotesIndexRoute
+  '/purchases/expense-management': typeof AuthenticatedPurchasesExpenseManagementIndexRoute
   '/purchases/expenses': typeof AuthenticatedPurchasesExpensesIndexRoute
   '/purchases/orders': typeof AuthenticatedPurchasesOrdersIndexRoute
   '/purchases/payments': typeof AuthenticatedPurchasesPaymentsIndexRoute
@@ -1449,6 +1502,7 @@ export interface FileRoutesByTo {
   '/sales/receipts': typeof AuthenticatedSalesReceiptsIndexRoute
   '/documents/print/$kind/$id': typeof AuthenticatedDocumentsPrintKindIdRoute
   '/purchases/bills/$billId/edit': typeof AuthenticatedPurchasesBillsBillIdEditRoute
+  '/purchases/expense-management/claims/$claimId': typeof AuthenticatedPurchasesExpenseManagementClaimsClaimIdRoute
   '/sales/credit-notes/$creditNoteId/edit': typeof AuthenticatedSalesCreditNotesCreditNoteIdEditRoute
   '/sales/invoices/$invoiceId/edit': typeof AuthenticatedSalesInvoicesInvoiceIdEditRoute
   '/sales/quotes/$quoteId/edit': typeof AuthenticatedSalesQuotesQuoteIdEditRoute
@@ -1527,6 +1581,7 @@ export interface FileRoutesById {
   '/_authenticated/contacts/new': typeof AuthenticatedContactsNewRoute
   '/_authenticated/contacts/settings': typeof AuthenticatedContactsSettingsRoute
   '/_authenticated/documents/branding': typeof AuthenticatedDocumentsBrandingRoute
+  '/_authenticated/expense-management/$section': typeof AuthenticatedExpenseManagementSectionRoute
   '/_authenticated/firm-invite/$token': typeof AuthenticatedFirmInviteTokenRoute
   '/_authenticated/invite/$token': typeof AuthenticatedInviteTokenRoute
   '/_authenticated/payroll/reports': typeof AuthenticatedPayrollReportsRoute
@@ -1570,6 +1625,7 @@ export interface FileRoutesById {
   '/_authenticated/banking/': typeof AuthenticatedBankingIndexRoute
   '/_authenticated/budgets/': typeof AuthenticatedBudgetsIndexRoute
   '/_authenticated/contacts/': typeof AuthenticatedContactsIndexRoute
+  '/_authenticated/expense-management/': typeof AuthenticatedExpenseManagementIndexRoute
   '/_authenticated/payroll/': typeof AuthenticatedPayrollIndexRoute
   '/_authenticated/platform/': typeof AuthenticatedPlatformIndexRoute
   '/_authenticated/purchases/': typeof AuthenticatedPurchasesIndexRoute
@@ -1579,6 +1635,7 @@ export interface FileRoutesById {
   '/_authenticated/advisors-admin/settings/services-pricing': typeof AuthenticatedAdvisorsAdminSettingsServicesPricingRoute
   '/_authenticated/banking/journal/$journalId': typeof AuthenticatedBankingJournalJournalIdRoute
   '/_authenticated/banking/reconciliation-report/$sessionId': typeof AuthenticatedBankingReconciliationReportSessionIdRoute
+  '/_authenticated/expense-management/claims/$claimId': typeof AuthenticatedExpenseManagementClaimsClaimIdRoute
   '/_authenticated/payroll/employees/$employeeId': typeof AuthenticatedPayrollEmployeesEmployeeIdRoute
   '/_authenticated/payroll/payslips/$payslipId': typeof AuthenticatedPayrollPayslipsPayslipIdRoute
   '/_authenticated/payroll/runs/$runId': typeof AuthenticatedPayrollRunsRunIdRoute
@@ -1586,6 +1643,7 @@ export interface FileRoutesById {
   '/_authenticated/purchases/bills/new': typeof AuthenticatedPurchasesBillsNewRoute
   '/_authenticated/purchases/credit-notes/$creditNoteId': typeof AuthenticatedPurchasesCreditNotesCreditNoteIdRoute
   '/_authenticated/purchases/credit-notes/new': typeof AuthenticatedPurchasesCreditNotesNewRoute
+  '/_authenticated/purchases/expense-management/$section': typeof AuthenticatedPurchasesExpenseManagementSectionRoute
   '/_authenticated/purchases/expenses/$expenseId': typeof AuthenticatedPurchasesExpensesExpenseIdRoute
   '/_authenticated/purchases/expenses/new': typeof AuthenticatedPurchasesExpensesNewRoute
   '/_authenticated/purchases/orders/$orderId': typeof AuthenticatedPurchasesOrdersOrderIdRoute
@@ -1610,6 +1668,7 @@ export interface FileRoutesById {
   '/_authenticated/payroll/runs/': typeof AuthenticatedPayrollRunsIndexRoute
   '/_authenticated/purchases/bills/': typeof AuthenticatedPurchasesBillsIndexRoute
   '/_authenticated/purchases/credit-notes/': typeof AuthenticatedPurchasesCreditNotesIndexRoute
+  '/_authenticated/purchases/expense-management/': typeof AuthenticatedPurchasesExpenseManagementIndexRoute
   '/_authenticated/purchases/expenses/': typeof AuthenticatedPurchasesExpensesIndexRoute
   '/_authenticated/purchases/orders/': typeof AuthenticatedPurchasesOrdersIndexRoute
   '/_authenticated/purchases/payments/': typeof AuthenticatedPurchasesPaymentsIndexRoute
@@ -1619,6 +1678,7 @@ export interface FileRoutesById {
   '/_authenticated/sales/receipts/': typeof AuthenticatedSalesReceiptsIndexRoute
   '/_authenticated/documents/print/$kind/$id': typeof AuthenticatedDocumentsPrintKindIdRoute
   '/_authenticated/purchases/bills/$billId/edit': typeof AuthenticatedPurchasesBillsBillIdEditRoute
+  '/_authenticated/purchases/expense-management/claims/$claimId': typeof AuthenticatedPurchasesExpenseManagementClaimsClaimIdRoute
   '/_authenticated/sales/credit-notes/$creditNoteId/edit': typeof AuthenticatedSalesCreditNotesCreditNoteIdEditRoute
   '/_authenticated/sales/invoices/$invoiceId/edit': typeof AuthenticatedSalesInvoicesInvoiceIdEditRoute
   '/_authenticated/sales/quotes/$quoteId/edit': typeof AuthenticatedSalesQuotesQuoteIdEditRoute
@@ -1697,6 +1757,7 @@ export interface FileRouteTypes {
     | '/contacts/new'
     | '/contacts/settings'
     | '/documents/branding'
+    | '/expense-management/$section'
     | '/firm-invite/$token'
     | '/invite/$token'
     | '/payroll/reports'
@@ -1740,6 +1801,7 @@ export interface FileRouteTypes {
     | '/banking/'
     | '/budgets/'
     | '/contacts/'
+    | '/expense-management/'
     | '/payroll/'
     | '/platform/'
     | '/purchases/'
@@ -1749,6 +1811,7 @@ export interface FileRouteTypes {
     | '/advisors-admin/settings/services-pricing'
     | '/banking/journal/$journalId'
     | '/banking/reconciliation-report/$sessionId'
+    | '/expense-management/claims/$claimId'
     | '/payroll/employees/$employeeId'
     | '/payroll/payslips/$payslipId'
     | '/payroll/runs/$runId'
@@ -1756,6 +1819,7 @@ export interface FileRouteTypes {
     | '/purchases/bills/new'
     | '/purchases/credit-notes/$creditNoteId'
     | '/purchases/credit-notes/new'
+    | '/purchases/expense-management/$section'
     | '/purchases/expenses/$expenseId'
     | '/purchases/expenses/new'
     | '/purchases/orders/$orderId'
@@ -1780,6 +1844,7 @@ export interface FileRouteTypes {
     | '/payroll/runs/'
     | '/purchases/bills/'
     | '/purchases/credit-notes/'
+    | '/purchases/expense-management/'
     | '/purchases/expenses/'
     | '/purchases/orders/'
     | '/purchases/payments/'
@@ -1789,6 +1854,7 @@ export interface FileRouteTypes {
     | '/sales/receipts/'
     | '/documents/print/$kind/$id'
     | '/purchases/bills/$billId/edit'
+    | '/purchases/expense-management/claims/$claimId'
     | '/sales/credit-notes/$creditNoteId/edit'
     | '/sales/invoices/$invoiceId/edit'
     | '/sales/quotes/$quoteId/edit'
@@ -1857,6 +1923,7 @@ export interface FileRouteTypes {
     | '/contacts/new'
     | '/contacts/settings'
     | '/documents/branding'
+    | '/expense-management/$section'
     | '/firm-invite/$token'
     | '/invite/$token'
     | '/payroll/reports'
@@ -1900,6 +1967,7 @@ export interface FileRouteTypes {
     | '/banking'
     | '/budgets'
     | '/contacts'
+    | '/expense-management'
     | '/payroll'
     | '/platform'
     | '/purchases'
@@ -1909,6 +1977,7 @@ export interface FileRouteTypes {
     | '/advisors-admin/settings/services-pricing'
     | '/banking/journal/$journalId'
     | '/banking/reconciliation-report/$sessionId'
+    | '/expense-management/claims/$claimId'
     | '/payroll/employees/$employeeId'
     | '/payroll/payslips/$payslipId'
     | '/payroll/runs/$runId'
@@ -1916,6 +1985,7 @@ export interface FileRouteTypes {
     | '/purchases/bills/new'
     | '/purchases/credit-notes/$creditNoteId'
     | '/purchases/credit-notes/new'
+    | '/purchases/expense-management/$section'
     | '/purchases/expenses/$expenseId'
     | '/purchases/expenses/new'
     | '/purchases/orders/$orderId'
@@ -1937,6 +2007,7 @@ export interface FileRouteTypes {
     | '/payroll/runs'
     | '/purchases/bills'
     | '/purchases/credit-notes'
+    | '/purchases/expense-management'
     | '/purchases/expenses'
     | '/purchases/orders'
     | '/purchases/payments'
@@ -1946,6 +2017,7 @@ export interface FileRouteTypes {
     | '/sales/receipts'
     | '/documents/print/$kind/$id'
     | '/purchases/bills/$billId/edit'
+    | '/purchases/expense-management/claims/$claimId'
     | '/sales/credit-notes/$creditNoteId/edit'
     | '/sales/invoices/$invoiceId/edit'
     | '/sales/quotes/$quoteId/edit'
@@ -2023,6 +2095,7 @@ export interface FileRouteTypes {
     | '/_authenticated/contacts/new'
     | '/_authenticated/contacts/settings'
     | '/_authenticated/documents/branding'
+    | '/_authenticated/expense-management/$section'
     | '/_authenticated/firm-invite/$token'
     | '/_authenticated/invite/$token'
     | '/_authenticated/payroll/reports'
@@ -2066,6 +2139,7 @@ export interface FileRouteTypes {
     | '/_authenticated/banking/'
     | '/_authenticated/budgets/'
     | '/_authenticated/contacts/'
+    | '/_authenticated/expense-management/'
     | '/_authenticated/payroll/'
     | '/_authenticated/platform/'
     | '/_authenticated/purchases/'
@@ -2075,6 +2149,7 @@ export interface FileRouteTypes {
     | '/_authenticated/advisors-admin/settings/services-pricing'
     | '/_authenticated/banking/journal/$journalId'
     | '/_authenticated/banking/reconciliation-report/$sessionId'
+    | '/_authenticated/expense-management/claims/$claimId'
     | '/_authenticated/payroll/employees/$employeeId'
     | '/_authenticated/payroll/payslips/$payslipId'
     | '/_authenticated/payroll/runs/$runId'
@@ -2082,6 +2157,7 @@ export interface FileRouteTypes {
     | '/_authenticated/purchases/bills/new'
     | '/_authenticated/purchases/credit-notes/$creditNoteId'
     | '/_authenticated/purchases/credit-notes/new'
+    | '/_authenticated/purchases/expense-management/$section'
     | '/_authenticated/purchases/expenses/$expenseId'
     | '/_authenticated/purchases/expenses/new'
     | '/_authenticated/purchases/orders/$orderId'
@@ -2106,6 +2182,7 @@ export interface FileRouteTypes {
     | '/_authenticated/payroll/runs/'
     | '/_authenticated/purchases/bills/'
     | '/_authenticated/purchases/credit-notes/'
+    | '/_authenticated/purchases/expense-management/'
     | '/_authenticated/purchases/expenses/'
     | '/_authenticated/purchases/orders/'
     | '/_authenticated/purchases/payments/'
@@ -2115,6 +2192,7 @@ export interface FileRouteTypes {
     | '/_authenticated/sales/receipts/'
     | '/_authenticated/documents/print/$kind/$id'
     | '/_authenticated/purchases/bills/$billId/edit'
+    | '/_authenticated/purchases/expense-management/claims/$claimId'
     | '/_authenticated/sales/credit-notes/$creditNoteId/edit'
     | '/_authenticated/sales/invoices/$invoiceId/edit'
     | '/_authenticated/sales/quotes/$quoteId/edit'
@@ -2664,6 +2742,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDocumentsBrandingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/expense-management/': {
+      id: '/_authenticated/expense-management/'
+      path: '/expense-management'
+      fullPath: '/expense-management/'
+      preLoaderRoute: typeof AuthenticatedExpenseManagementIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/expense-management/$section': {
+      id: '/_authenticated/expense-management/$section'
+      path: '/expense-management/$section'
+      fullPath: '/expense-management/$section'
+      preLoaderRoute: typeof AuthenticatedExpenseManagementSectionRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/firm-invite/$token': {
       id: '/_authenticated/firm-invite/$token'
       path: '/firm-invite/$token'
@@ -2993,6 +3085,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBankingReconciliationReportSessionIdRouteImport
       parentRoute: typeof AuthenticatedBankingRouteRoute
     }
+    '/_authenticated/expense-management/claims/$claimId': {
+      id: '/_authenticated/expense-management/claims/$claimId'
+      path: '/expense-management/claims/$claimId'
+      fullPath: '/expense-management/claims/$claimId'
+      preLoaderRoute: typeof AuthenticatedExpenseManagementClaimsClaimIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/payroll/employees/': {
       id: '/_authenticated/payroll/employees/'
       path: '/employees'
@@ -3082,6 +3181,20 @@ declare module '@tanstack/react-router' {
       path: '/credit-notes/new'
       fullPath: '/purchases/credit-notes/new'
       preLoaderRoute: typeof AuthenticatedPurchasesCreditNotesNewRouteImport
+      parentRoute: typeof AuthenticatedPurchasesRouteRoute
+    }
+    '/_authenticated/purchases/expense-management/': {
+      id: '/_authenticated/purchases/expense-management/'
+      path: '/expense-management'
+      fullPath: '/purchases/expense-management/'
+      preLoaderRoute: typeof AuthenticatedPurchasesExpenseManagementIndexRouteImport
+      parentRoute: typeof AuthenticatedPurchasesRouteRoute
+    }
+    '/_authenticated/purchases/expense-management/$section': {
+      id: '/_authenticated/purchases/expense-management/$section'
+      path: '/expense-management/$section'
+      fullPath: '/purchases/expense-management/$section'
+      preLoaderRoute: typeof AuthenticatedPurchasesExpenseManagementSectionRouteImport
       parentRoute: typeof AuthenticatedPurchasesRouteRoute
     }
     '/_authenticated/purchases/expenses/': {
@@ -3273,6 +3386,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPurchasesBillsBillIdEditRouteImport
       parentRoute: typeof AuthenticatedPurchasesBillsBillIdRoute
     }
+    '/_authenticated/purchases/expense-management/claims/$claimId': {
+      id: '/_authenticated/purchases/expense-management/claims/$claimId'
+      path: '/expense-management/claims/$claimId'
+      fullPath: '/purchases/expense-management/claims/$claimId'
+      preLoaderRoute: typeof AuthenticatedPurchasesExpenseManagementClaimsClaimIdRouteImport
+      parentRoute: typeof AuthenticatedPurchasesRouteRoute
+    }
     '/_authenticated/sales/credit-notes/$creditNoteId/': {
       id: '/_authenticated/sales/credit-notes/$creditNoteId/'
       path: '/'
@@ -3423,6 +3543,7 @@ interface AuthenticatedPurchasesRouteRouteChildren {
   AuthenticatedPurchasesBillsNewRoute: typeof AuthenticatedPurchasesBillsNewRoute
   AuthenticatedPurchasesCreditNotesCreditNoteIdRoute: typeof AuthenticatedPurchasesCreditNotesCreditNoteIdRoute
   AuthenticatedPurchasesCreditNotesNewRoute: typeof AuthenticatedPurchasesCreditNotesNewRoute
+  AuthenticatedPurchasesExpenseManagementSectionRoute: typeof AuthenticatedPurchasesExpenseManagementSectionRoute
   AuthenticatedPurchasesExpensesExpenseIdRoute: typeof AuthenticatedPurchasesExpensesExpenseIdRoute
   AuthenticatedPurchasesExpensesNewRoute: typeof AuthenticatedPurchasesExpensesNewRoute
   AuthenticatedPurchasesOrdersOrderIdRoute: typeof AuthenticatedPurchasesOrdersOrderIdRoute
@@ -3432,9 +3553,11 @@ interface AuthenticatedPurchasesRouteRouteChildren {
   AuthenticatedPurchasesPaymentsNewRoute: typeof AuthenticatedPurchasesPaymentsNewRoute
   AuthenticatedPurchasesBillsIndexRoute: typeof AuthenticatedPurchasesBillsIndexRoute
   AuthenticatedPurchasesCreditNotesIndexRoute: typeof AuthenticatedPurchasesCreditNotesIndexRoute
+  AuthenticatedPurchasesExpenseManagementIndexRoute: typeof AuthenticatedPurchasesExpenseManagementIndexRoute
   AuthenticatedPurchasesExpensesIndexRoute: typeof AuthenticatedPurchasesExpensesIndexRoute
   AuthenticatedPurchasesOrdersIndexRoute: typeof AuthenticatedPurchasesOrdersIndexRoute
   AuthenticatedPurchasesPaymentsIndexRoute: typeof AuthenticatedPurchasesPaymentsIndexRoute
+  AuthenticatedPurchasesExpenseManagementClaimsClaimIdRoute: typeof AuthenticatedPurchasesExpenseManagementClaimsClaimIdRoute
 }
 
 const AuthenticatedPurchasesRouteRouteChildren: AuthenticatedPurchasesRouteRouteChildren =
@@ -3456,6 +3579,8 @@ const AuthenticatedPurchasesRouteRouteChildren: AuthenticatedPurchasesRouteRoute
       AuthenticatedPurchasesCreditNotesCreditNoteIdRoute,
     AuthenticatedPurchasesCreditNotesNewRoute:
       AuthenticatedPurchasesCreditNotesNewRoute,
+    AuthenticatedPurchasesExpenseManagementSectionRoute:
+      AuthenticatedPurchasesExpenseManagementSectionRoute,
     AuthenticatedPurchasesExpensesExpenseIdRoute:
       AuthenticatedPurchasesExpensesExpenseIdRoute,
     AuthenticatedPurchasesExpensesNewRoute:
@@ -3473,12 +3598,16 @@ const AuthenticatedPurchasesRouteRouteChildren: AuthenticatedPurchasesRouteRoute
       AuthenticatedPurchasesBillsIndexRoute,
     AuthenticatedPurchasesCreditNotesIndexRoute:
       AuthenticatedPurchasesCreditNotesIndexRoute,
+    AuthenticatedPurchasesExpenseManagementIndexRoute:
+      AuthenticatedPurchasesExpenseManagementIndexRoute,
     AuthenticatedPurchasesExpensesIndexRoute:
       AuthenticatedPurchasesExpensesIndexRoute,
     AuthenticatedPurchasesOrdersIndexRoute:
       AuthenticatedPurchasesOrdersIndexRoute,
     AuthenticatedPurchasesPaymentsIndexRoute:
       AuthenticatedPurchasesPaymentsIndexRoute,
+    AuthenticatedPurchasesExpenseManagementClaimsClaimIdRoute:
+      AuthenticatedPurchasesExpenseManagementClaimsClaimIdRoute,
   }
 
 const AuthenticatedPurchasesRouteRouteWithChildren =
@@ -3697,13 +3826,16 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedContactsNewRoute: typeof AuthenticatedContactsNewRoute
   AuthenticatedContactsSettingsRoute: typeof AuthenticatedContactsSettingsRoute
   AuthenticatedDocumentsBrandingRoute: typeof AuthenticatedDocumentsBrandingRoute
+  AuthenticatedExpenseManagementSectionRoute: typeof AuthenticatedExpenseManagementSectionRoute
   AuthenticatedFirmInviteTokenRoute: typeof AuthenticatedFirmInviteTokenRoute
   AuthenticatedInviteTokenRoute: typeof AuthenticatedInviteTokenRoute
   AuthenticatedReportsReportIdRoute: typeof AuthenticatedReportsReportIdRoute
   AuthenticatedAdvisorsPortalIndexRoute: typeof AuthenticatedAdvisorsPortalIndexRoute
   AuthenticatedBudgetsIndexRoute: typeof AuthenticatedBudgetsIndexRoute
   AuthenticatedContactsIndexRoute: typeof AuthenticatedContactsIndexRoute
+  AuthenticatedExpenseManagementIndexRoute: typeof AuthenticatedExpenseManagementIndexRoute
   AuthenticatedReportsIndexRoute: typeof AuthenticatedReportsIndexRoute
+  AuthenticatedExpenseManagementClaimsClaimIdRoute: typeof AuthenticatedExpenseManagementClaimsClaimIdRoute
   AuthenticatedReportsBuilderViewIdRoute: typeof AuthenticatedReportsBuilderViewIdRoute
   AuthenticatedDocumentsPrintKindIdRoute: typeof AuthenticatedDocumentsPrintKindIdRoute
 }
@@ -3749,13 +3881,19 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedContactsNewRoute: AuthenticatedContactsNewRoute,
   AuthenticatedContactsSettingsRoute: AuthenticatedContactsSettingsRoute,
   AuthenticatedDocumentsBrandingRoute: AuthenticatedDocumentsBrandingRoute,
+  AuthenticatedExpenseManagementSectionRoute:
+    AuthenticatedExpenseManagementSectionRoute,
   AuthenticatedFirmInviteTokenRoute: AuthenticatedFirmInviteTokenRoute,
   AuthenticatedInviteTokenRoute: AuthenticatedInviteTokenRoute,
   AuthenticatedReportsReportIdRoute: AuthenticatedReportsReportIdRoute,
   AuthenticatedAdvisorsPortalIndexRoute: AuthenticatedAdvisorsPortalIndexRoute,
   AuthenticatedBudgetsIndexRoute: AuthenticatedBudgetsIndexRoute,
   AuthenticatedContactsIndexRoute: AuthenticatedContactsIndexRoute,
+  AuthenticatedExpenseManagementIndexRoute:
+    AuthenticatedExpenseManagementIndexRoute,
   AuthenticatedReportsIndexRoute: AuthenticatedReportsIndexRoute,
+  AuthenticatedExpenseManagementClaimsClaimIdRoute:
+    AuthenticatedExpenseManagementClaimsClaimIdRoute,
   AuthenticatedReportsBuilderViewIdRoute:
     AuthenticatedReportsBuilderViewIdRoute,
   AuthenticatedDocumentsPrintKindIdRoute:

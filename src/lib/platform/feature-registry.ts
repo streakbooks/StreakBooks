@@ -185,8 +185,9 @@ export const FEATURE_REGISTRY: readonly CatalogueFeature[] = [
   },
   {
     key: "expense_claims",
-    name: "Expense claims",
-    description: "Employee expense claims.",
+    name: "Expense Management",
+    description:
+      "Global expense claims, receipts, approvals, reimbursements and related controls.",
     category: "module",
     module: "purchases",
     defaultEnabled: false,

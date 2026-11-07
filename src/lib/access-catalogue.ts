@@ -141,14 +141,59 @@ export const ACCESS_AREAS: readonly AccessArea[] = [
         detail: "Record and batch supplier payments.",
       },
       {
+        permission: "expenses.view",
+        label: "View organisation expenses",
+        detail: "See claims across the company, not only your own.",
+      },
+      {
         permission: "expenses.submit",
         label: "Submit expenses",
-        detail: "File a claim for approval.",
+        detail: "Create, edit and submit your own claims.",
       },
       {
         permission: "expenses.approve",
         label: "Approve expenses",
-        detail: "Accept or return a claim.",
+        detail: "Accept, reject or return a claim.",
+      },
+      {
+        permission: "expenses.post",
+        label: "Post expenses to the ledger",
+        detail: "Create accounting journals for approved claims.",
+      },
+      {
+        permission: "expenses.reimburse",
+        label: "Reimburse expenses",
+        detail: "Record or batch employee reimbursements.",
+      },
+      {
+        permission: "expenses.manage_cards",
+        label: "Manage corporate cards",
+        detail: "Card register, assignment and matching.",
+      },
+      {
+        permission: "expenses.manage_advances",
+        label: "Manage cash advances",
+        detail: "Issue, settle and recover employee advances.",
+      },
+      {
+        permission: "expenses.manage_policies",
+        label: "Manage expense policies",
+        detail: "Categories, rates, settings and spending rules.",
+      },
+      {
+        permission: "expenses.export",
+        label: "Export expense data",
+        detail: "Download claims, reimbursements and reports.",
+      },
+      {
+        permission: "expenses.audit",
+        label: "Audit expense activity",
+        detail: "Read claim history and compliance events.",
+      },
+      {
+        permission: "expenses.admin",
+        label: "Administer expense management",
+        detail: "Full module administration including destructive controls.",
       },
     ],
   },
@@ -266,6 +311,53 @@ export const ACCESS_AREAS: readonly AccessArea[] = [
         detail: "Items used on documents.",
       },
       { permission: "tax.settings", label: "Tax settings", detail: "Tax codes and registration." },
+    ],
+  },
+  {
+    id: "payroll",
+    label: "Payroll",
+    description: "Employees, pay runs, settlements and payroll reports.",
+    items: [
+      {
+        permission: "payroll.view",
+        label: "View payroll",
+        detail: "Open payroll settings, employees and runs.",
+      },
+      {
+        permission: "payroll.settings.edit",
+        label: "Edit payroll settings",
+        detail: "Country, accounts, schedules and components.",
+      },
+      {
+        permission: "payroll.employees.manage",
+        label: "Manage payroll employees",
+        detail: "Create and maintain employee payroll records.",
+      },
+      {
+        permission: "payroll.run.prepare",
+        label: "Prepare pay runs",
+        detail: "Calculate and draft a payroll run.",
+      },
+      {
+        permission: "payroll.run.approve",
+        label: "Approve pay runs",
+        detail: "Approve a prepared payroll run.",
+      },
+      {
+        permission: "payroll.run.post",
+        label: "Post payroll to the ledger",
+        detail: "Create payroll journals.",
+      },
+      {
+        permission: "payroll.pay",
+        label: "Pay employees",
+        detail: "Record or export payroll settlements.",
+      },
+      {
+        permission: "payroll.reports.view",
+        label: "View payroll reports",
+        detail: "Payroll summaries and statutory-style exports.",
+      },
     ],
   },
   {

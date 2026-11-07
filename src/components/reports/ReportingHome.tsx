@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getReportingWorkspace } from "@/lib/reports/ecosystem.functions";
 import { listReportLibrary } from "@/lib/reports/report-views.functions";
 import { parseReportSearch } from "@/lib/reports/search";
+import { useReportingCentreOrigin } from "@/lib/reports/centre-return";
 import { QUICK_REPORT_IDS, getReportById } from "@/lib/reports/catalog";
 import type { ReportingPack } from "@/lib/reports/ecosystem-model";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ export function ReportingHome({
   from: string;
   to: string;
 }) {
+  const centre = useReportingCentreOrigin();
   const list = useServerFn(getReportingWorkspace),
     favourites = useServerFn(listReportLibrary);
   const q = useQuery({
@@ -95,7 +97,7 @@ export function ReportingHome({
                 key={id}
                 to="/reports/$reportId"
                 params={{ reportId: id }}
-                search={{ from, to }}
+                search={{ from, to, centre }}
                 className="rounded border p-4 hover:bg-muted/30"
               >
                 <h4 className="font-semibold">{r.title}</h4>
@@ -140,7 +142,7 @@ export function ReportingHome({
                   key={r.id}
                   to="/reports/$reportId"
                   params={{ reportId: r.report_id }}
-                  search={parseReportSearch(config)}
+                  search={{ ...parseReportSearch(config), centre }}
                   className="rounded border p-3 text-sm hover:bg-muted/30"
                 >
                   ★ {r.name}

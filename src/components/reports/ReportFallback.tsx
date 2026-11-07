@@ -10,7 +10,7 @@ export function ReportShellFallbackLink({
   backSearch,
 }: {
   report: ReportDef;
-  backSearch?: ReportingCentreContext;
+  backSearch: ReportingCentreContext;
 }) {
   if (!report.linkTo) return null;
   return (
@@ -20,7 +20,7 @@ export function ReportShellFallbackLink({
         <Link to={report.linkTo}>Open</Link>
       </Button>
       <Button asChild variant="outline">
-        <Link to="/reports" search={backSearch ?? { tab: "standard" }}>Back to Reports Centre</Link>
+        <Link to="/reports" search={backSearch}>Back to Reports Centre</Link>
       </Button>
     </div>
   );

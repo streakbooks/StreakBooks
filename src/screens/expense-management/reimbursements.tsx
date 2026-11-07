@@ -7,7 +7,7 @@ import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagement
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/common/states";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -424,7 +424,7 @@ export function ExpenseManagementReimbursementsPage() {
                     </Button>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="secondary">{claim.reimbursementStatus}</Badge>
+                    <StatusBadge status={claim.reimbursementStatus} />
                   </TableCell>
                   <TableCell>
                     <div>

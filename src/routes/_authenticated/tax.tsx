@@ -40,6 +40,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/common/StatusBadge";
 
 export const Route = createFileRoute("/_authenticated/tax")({
   validateSearch: (raw: Record<string, unknown>): { tab?: string | undefined } => ({
@@ -540,10 +541,11 @@ function TaxConfigPage() {
                 <li key={p.id} className="rounded-md border p-3">
                   <div className="mb-1 flex flex-wrap items-center gap-2">
                     <strong>{p.label}</strong>
-                    <Badge variant="secondary">
-                      {verificationStatusLabel(p.verificationStatus)}
-                    </Badge>
-                    <Badge variant="outline">Filing: {p.filingStatus}</Badge>
+                    <StatusBadge
+                      status={p.verificationStatus}
+                      label={verificationStatusLabel(p.verificationStatus)}
+                    />
+                    <StatusBadge status={p.filingStatus} label={`Filing: ${p.filingStatus}`} />
                   </div>
                   <p className="text-xs text-muted-foreground">{p.sourceEffectiveNote}</p>
                   <p className="mt-1 text-xs">Limitations: {p.knownLimitations.join("; ")}</p>

@@ -10,6 +10,7 @@ import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/c
 import { ContactLookup } from "@/components/lookup";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -354,10 +355,10 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
       ) : null}
 
       <div className="mb-6 flex flex-wrap gap-2">
-        <Badge variant="secondary">{claim.approvalStatus}</Badge>
-        <Badge variant="outline">Posting: {claim.postingStatus}</Badge>
-        <Badge variant="outline">Reimbursement: {claim.reimbursementStatus}</Badge>
-        <Badge variant="outline">Rebilling: {claim.rebillingStatus}</Badge>
+        <StatusBadge status={claim.approvalStatus} />
+        <StatusBadge status={claim.postingStatus} label={`Posting: ${claim.postingStatus.replace(/[_-]/g, " ")}`} />
+        <StatusBadge status={claim.reimbursementStatus} label={`Reimbursement: ${claim.reimbursementStatus.replace(/[_-]/g, " ")}`} />
+        <StatusBadge status={claim.rebillingStatus} label={`Rebilling: ${claim.rebillingStatus.replace(/[_-]/g, " ")}`} />
         {riskQ.data ? (
           <Badge
             variant={

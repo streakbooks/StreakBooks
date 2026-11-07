@@ -2,7 +2,7 @@ import { StatementBasisSelect } from "./StatementBasisSelect";
 import { useReportActivity } from "@/hooks/use-report-activity";
 import { useCanDo } from "@/hooks/use-can";
 import type { ReactNode } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { ArrowLeft, Download, ChevronDown, SlidersHorizontal } from "lucide-react";
 import { useFormat } from "@/hooks/use-format";
 import { friendlyAuthError } from "@/lib/auth-helpers";
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { sourceLabel, sourceTarget } from "@/lib/reports/links";
 import type { ReportSearch } from "@/lib/reports/search";
+import { reportingCentreBackSearch } from "@/lib/reports/centre-return";
 import type { ReportPresentation } from "@/lib/reports/report-document";
 import { EmptyState, ErrorState, ReportSkeleton } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
@@ -88,14 +89,7 @@ export function ReportShell({
     ctx.search,
   );
   const fmt = useFormat();
-  const navigate = useNavigate();
-  const handleBack = () => {
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      window.history.back();
-      return;
-    }
-    void navigate({ to: "/reports", search: { tab: "standard", from: ctx.from, to: ctx.to } });
-  };
+  const backSearch = reportingCentreBackSearch(ctx.search.centre, ctx.from, ctx.to);
   const canExport = useCanDo("reports.export");
   const explorerActive = Boolean(allowExplorer && getCsv && ctx.search.exploreMode === "grid");
   const explorerData = explorerActive ? (getCsv?.() ?? null) : null;
@@ -145,9 +139,11 @@ export function ReportShell({
   return (
     <div className="report-shell space-y-4">
       <div className="print:hidden">
-        <Button size="sm" variant="ghost" onClick={handleBack}>
-          <ArrowLeft className="mr-2 size-4" aria-hidden="true" />
-          Back
+        <Button size="sm" variant="ghost" asChild>
+          <Link to="/reports" search={backSearch}>
+            <ArrowLeft className="mr-2 size-4" aria-hidden="true" />
+            Back to Reports Centre
+          </Link>
         </Button>
       </div>
       {/* Shared report header: identical on screen, print and PDF */}

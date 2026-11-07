@@ -36,7 +36,7 @@ export const EXPENSE_TEMPLATE_MIGRATION =
   "Expense claim templates are not available yet: apply database update 20261107130000.";
 
 export const EXPENSE_RECEIPT_MIGRATION =
-  "Expense receipt inbox is not available yet: apply database update 20261107133000.";
+  "Expense receipt inbox is not available yet: apply database updates 20261107133000 and 20261107134000.";
 
 export type ExpenseReceiptInboxEntry = {
   id: string;
@@ -45,6 +45,8 @@ export type ExpenseReceiptInboxEntry = {
   status: string;
   contentType: string | null;
   sizeBytes: number | null;
+  attachmentId: string | null;
+  matchedClaimId: string | null;
   createdAt: string;
 };
 
@@ -411,6 +413,8 @@ function mapReceiptInboxEntry(row: unknown): ExpenseReceiptInboxEntry {
         : typeof r.sizeBytes === "number"
           ? r.sizeBytes
           : null,
+    attachmentId: (r.attachment_id ?? r.attachmentId ?? null) as string | null,
+    matchedClaimId: (r.matched_claim_id ?? r.matchedClaimId ?? null) as string | null,
     createdAt: String(r.created_at ?? r.createdAt ?? ""),
   };
 }
@@ -435,7 +439,7 @@ export const listExpenseReceiptInbox = createServerFn({ method: "GET" })
       inboundEmailEnabled: Boolean(raw.inbound_email_enabled),
       note:
         raw.note ??
-        "Inbound email receipt routing is not configured. Upload receipts on a claim detail page.",
+        "Inbound email and OCR are not configured. Upload files here, then match them to a draft claim.",
     };
   });
 
@@ -473,6 +477,74 @@ export const registerExpenseReceiptInboxEntry = createServerFn({ method: "POST" 
           size_bytes: data.sizeBytes ?? null,
           notes: data.notes ?? null,
         },
+      },
+      EXPENSE_RECEIPT_MIGRATION,
+    );
+    return mapReceiptInboxEntry(raw);
+  });
+
+export const finalizeExpenseReceiptInboxUpload = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; entryId: string; attachmentId: string }) => ({
+    companyId: companyIdOf(input),
+    entryId: input.entryId,
+    attachmentId: input.attachmentId,
+  }))
+  .handler(async ({ data, context }): Promise<ExpenseReceiptInboxEntry> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "expenses.submit");
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "finalize_expense_receipt_inbox_upload",
+      {
+        _company_id: data.companyId,
+        _entry_id: data.entryId,
+        _attachment_id: data.attachmentId,
+      },
+      EXPENSE_RECEIPT_MIGRATION,
+    );
+    return mapReceiptInboxEntry(raw);
+  });
+
+export const matchExpenseReceiptToClaim = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { companyId: string; entryId: string; claimId: string; claimLineId?: string }) => ({
+      companyId: companyIdOf(input),
+      entryId: input.entryId,
+      claimId: input.claimId,
+      claimLineId: input.claimLineId,
+    }),
+  )
+  .handler(async ({ data, context }): Promise<ExpenseReceiptInboxEntry> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "expenses.submit");
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "match_expense_receipt_to_claim",
+      {
+        _company_id: data.companyId,
+        _entry_id: data.entryId,
+        _claim_id: data.claimId,
+        _claim_line_id: data.claimLineId ?? null,
+      },
+      EXPENSE_RECEIPT_MIGRATION,
+    );
+    return mapReceiptInboxEntry(raw);
+  });
+
+export const dismissExpenseReceiptInboxEntry = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; entryId: string }) => ({
+    companyId: companyIdOf(input),
+    entryId: input.entryId,
+  }))
+  .handler(async ({ data, context }): Promise<ExpenseReceiptInboxEntry> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "expenses.submit");
+    const raw = await callRpc<unknown>(
+      context.supabase,
+      "dismiss_expense_receipt_inbox_entry",
+      {
+        _company_id: data.companyId,
+        _entry_id: data.entryId,
       },
       EXPENSE_RECEIPT_MIGRATION,
     );

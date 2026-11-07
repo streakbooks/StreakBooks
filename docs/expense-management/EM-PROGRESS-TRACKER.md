@@ -12,7 +12,7 @@ Update after every verified batch. The visual percentage counts only **completed
 
 | Area | Status |
 | --- | --- |
-| Code Development | 3 / 12 verified (+ EM-04a receipts foundation coded) |
+| Code Development | 3 / 12 verified (+ EM-04a/b receipts coded; batch not closed) |
 | Local Testing | Partial (unit + check:ui; no DB/browser) |
 | GitHub Commit | Local commits only; not pushed |
 | GitHub PR / Merge | Pending |
@@ -27,7 +27,7 @@ Update after every verified batch. The visual percentage counts only **completed
 | EM-01 | Audit, architecture, gap analysis, schema foundation, permissions | Verified locally |
 | EM-02 | Navigation, dashboard, list/Kanban, employee profiles | Verified locally (nav + overview KPIs) |
 | EM-03 | Claims, lines, splitting, allocations, templates, lifecycle | Verified locally (core); Kanban/print/dimension pickers deferred |
-| EM-04 | Receipts, email inbox, file security, mobile capture, offline drafts | In progress — EM-04a attachments + inbox foundation; email/OCR/offline pending |
+| EM-04 | Receipts, email inbox, file security, mobile capture, offline drafts | In progress — EM-04a/b upload+match+offline queue; inbound email/OCR still pending |
 | EM-05 | Approvals, policies, delegation, escalation, spending requests | Not started |
 | EM-06 | Accounting, tax, journals, FX, refunds, budgets | Not started |
 | EM-07 | Reimbursements, partial/batch payments, bank matching, payroll | Not started |

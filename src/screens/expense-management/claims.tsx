@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Plus, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ExpenseManagementSubnav } from "@/components/expenses/ExpenseManagementSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
@@ -43,6 +43,13 @@ import {
   submitExpenseClaim,
   withdrawExpenseClaim,
 } from "@/lib/expenses/expenses.functions";
+import {
+  enqueueOfflineExpenseClaimDraft,
+  isBrowserOffline,
+  listOfflineExpenseClaimDrafts,
+  removeOfflineExpenseClaimDraft,
+  type OfflineExpenseClaimDraft,
+} from "@/lib/expenses/offline-claim-queue";
 import type { ExpenseManagementSectionKey } from "@/lib/expenses/sections";
 import { parseMinorOrThrow } from "@/lib/purchases/money-input";
 import type { Permission } from "@/lib/permissions";
@@ -76,6 +83,8 @@ export function ExpenseManagementClaimsPage({
   const [splitAccountA, setSplitAccountA] = useState("");
   const [splitAccountB, setSplitAccountB] = useState("");
   const [templateName, setTemplateName] = useState("");
+  const [offlineDrafts, setOfflineDrafts] = useState<OfflineExpenseClaimDraft[]>([]);
+  const [isOffline, setIsOffline] = useState(false);
 
   const fetchClaims = useServerFn(listExpenseClaims);
   const fetchAccounts = useServerFn(listAccounts);
@@ -88,6 +97,21 @@ export function ExpenseManagementClaimsPage({
   const saveTemplate = useServerFn(saveExpenseClaimTemplate);
 
   const allowed = mode === "my-expenses" ? canSubmit || canViewAll : canViewAll;
+
+  useEffect(() => {
+    if (!company?.id || mode !== "my-expenses") return;
+    const refresh = () => {
+      setIsOffline(isBrowserOffline());
+      setOfflineDrafts(listOfflineExpenseClaimDrafts(company.id));
+    };
+    refresh();
+    window.addEventListener("online", refresh);
+    window.addEventListener("offline", refresh);
+    return () => {
+      window.removeEventListener("online", refresh);
+      window.removeEventListener("offline", refresh);
+    };
+  }, [company?.id, mode]);
 
   const claimsQ = useQuery({
     queryKey: ["expense-claims", company?.id, mode],
@@ -137,27 +161,56 @@ export function ExpenseManagementClaimsPage({
         if (!line.description.trim()) throw new Error("Each line needs a description.");
         if (!line.accountId) throw new Error("Each line needs an expense account.");
       }
+      const draft = {
+        title: title.trim() || "Expense claim",
+        description: description.trim() || undefined,
+        claimDate: today,
+        claimCurrency: currency,
+        paymentSource: "employee_paid" as const,
+        lines: claimLines,
+      };
+      if (isBrowserOffline()) {
+        enqueueOfflineExpenseClaimDraft(company.id, draft);
+        return { offline: true as const };
+      }
       return saveClaim({
         data: {
           companyId: company.id,
-          draft: {
-            title: title.trim() || "Expense claim",
-            description: description.trim() || undefined,
-            claimDate: today,
-            claimCurrency: currency,
-            paymentSource: "employee_paid",
-            lines: claimLines,
-          },
+          draft,
         },
       });
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       setTitle("");
       setDescription("");
       setLines([emptyDraftLine(today)]);
       setTemplateName("");
+      if (company?.id) setOfflineDrafts(listOfflineExpenseClaimDrafts(company.id));
+      if (result && typeof result === "object" && "offline" in result && result.offline) {
+        toast.success("Saved offline. It will sync when you are back online.");
+        return;
+      }
       invalidate();
       toast.success("Draft claim saved.");
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+
+  const syncOffline = useMutation({
+    mutationFn: async () => {
+      if (!company) throw new Error("Select a company first.");
+      if (isBrowserOffline()) throw new Error("Still offline.");
+      const pending = listOfflineExpenseClaimDrafts(company.id);
+      for (const item of pending) {
+        await saveClaim({ data: { companyId: company.id, draft: item.draft } });
+        removeOfflineExpenseClaimDraft(company.id, item.id);
+      }
+      return pending.length;
+    },
+    onSuccess: (count) => {
+      if (company?.id) setOfflineDrafts(listOfflineExpenseClaimDrafts(company.id));
+      invalidate();
+      toast.success(count === 0 ? "No offline drafts to sync." : `Synced ${count} offline draft(s).`);
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
@@ -357,6 +410,28 @@ export function ExpenseManagementClaimsPage({
         >
           <div className="flex flex-wrap items-end justify-between gap-3">
             <h2 className="text-base font-semibold">New multi-line draft</h2>
+            {isOffline ? (
+              <Alert className="mb-2">
+                <AlertTitle>You are offline</AlertTitle>
+                <AlertDescription>
+                  Saving stores this draft on this device until you sync.
+                </AlertDescription>
+              </Alert>
+            ) : null}
+            {offlineDrafts.length > 0 ? (
+              <div className="mb-3 flex flex-wrap items-center gap-2 rounded-md border p-3 text-sm">
+                <span>{offlineDrafts.length} offline draft(s) waiting to sync.</span>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={syncOffline.isPending || isOffline}
+                  onClick={() => syncOffline.mutate()}
+                >
+                  {syncOffline.isPending ? "Syncing…" : "Sync now"}
+                </Button>
+              </div>
+            ) : null}
             {(templatesQ.data?.length ?? 0) > 0 ? (
               <div className="grid gap-1">
                 <Label htmlFor="em-template">Load template</Label>

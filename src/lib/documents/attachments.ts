@@ -22,6 +22,7 @@ export const ATTACHMENT_ENTITY_TYPES = [
   "company",
   "purchase_expense",
   "expense_claim",
+  "expense_receipt_inbox",
   "product",
   "recurring_journal",
   "project",
@@ -147,6 +148,20 @@ export const ATTACHMENT_ENTITIES: Record<AttachmentEntityType, EntityInfo> = {
     ],
     manage: ["expenses.submit", "expenses.admin"],
     path: (id) => `/expense-management/claims/${id}`,
+  },
+  expense_receipt_inbox: {
+    label: "Receipt inbox",
+    table: "expense_receipt_inbox_entries",
+    view: null,
+    viewAny: [
+      "expenses.submit",
+      "expenses.view",
+      "expenses.approve",
+      "expenses.audit",
+      "expenses.admin",
+    ],
+    manage: ["expenses.submit", "expenses.admin"],
+    path: () => `/expense-management/receipts`,
   },
   product: {
     label: "Product",

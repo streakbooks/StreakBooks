@@ -11,9 +11,11 @@
 - Receipts & Inbox tab with honest inbound-email-disabled status.
 - Unit coverage via attachment registry tests.
 
-## Not claimed
+## Not claimed (at EM-04a)
 
 - Receiving or parsing inbound receipt emails.
 - OCR extraction.
 - Camera capture / offline queue.
 - Matching inbox entries to claim lines automatically.
+
+**Follow-up:** EM-04b adds real upload, match/dismiss, mobile capture input and offline draft queue. See `EM-04B-RECEIPTS-MATCH-REPORT.md`. Inbound email and OCR remain open.

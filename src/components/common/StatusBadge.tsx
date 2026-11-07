@@ -38,6 +38,8 @@ const TONE_TEXT: Record<StatusTone, string> = {
 export interface StatusVisualProps extends Omit<React.HTMLAttributes<HTMLSpanElement>, "children"> {
   /** Use the persisted status from the authorised record. Never infer successful transitions. */
   status: string | null | undefined;
+  /** Optional label override; semantic colour still derives only from the real status. */
+  label?: string;
   /** Optional due-date logic is explicitly opt-in and requires an actual ISO current date. */
   dueDate?: string | null;
   today?: string;
@@ -46,7 +48,7 @@ export interface StatusVisualProps extends Omit<React.HTMLAttributes<HTMLSpanEle
 
 /** Shared accessible semantic pill for lists, documents, modals, cards and reports. */
 export const StatusBadge = React.forwardRef<HTMLSpanElement, StatusVisualProps>(
-  ({ status, dueDate, today, showIcon = true, className, ...props }, ref) => {
+  ({ status, label, dueDate, today, showIcon = true, className, ...props }, ref) => {
     const actualStatus =
       status && today && dueDate ? effectiveStatus(status, dueDate, today) : status;
     const display = statusDisplay(actualStatus);
@@ -65,7 +67,7 @@ export const StatusBadge = React.forwardRef<HTMLSpanElement, StatusVisualProps>(
         {...props}
       >
         {showIcon && <Icon className="size-3.5 shrink-0" aria-hidden="true" />}
-        <span>{display.label}</span>
+        <span>{label ?? display.label}</span>
       </span>
     );
   },
@@ -74,7 +76,7 @@ StatusBadge.displayName = "StatusBadge";
 
 /** Dense alternative where cards or tables need a labelled dot, not a pill. */
 export const StatusIndicator = React.forwardRef<HTMLSpanElement, StatusVisualProps>(
-  ({ status, dueDate, today, showIcon = false, className, ...props }, ref) => {
+  ({ status, label, dueDate, today, showIcon = false, className, ...props }, ref) => {
     const actualStatus =
       status && today && dueDate ? effectiveStatus(status, dueDate, today) : status;
     const display = statusDisplay(actualStatus);
@@ -88,7 +90,7 @@ export const StatusIndicator = React.forwardRef<HTMLSpanElement, StatusVisualPro
         {...props}
       >
         {showIcon ? <Icon className="size-3.5 shrink-0" aria-hidden="true" /> : null}
-        <span>{display.label}</span>
+        <span>{label ?? display.label}</span>
       </span>
     );
   },

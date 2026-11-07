@@ -6,6 +6,7 @@ import type { SettingsDestination } from "@/lib/settings/module-navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { activeSubnavIndex } from "@/lib/navigation/subnav-selection";
 
 type Item = {
   to: string;
@@ -30,13 +31,12 @@ export function ModuleSubnav({
   settings: SettingsDestination;
 }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const search = useRouterState({ select: (state) => state.location.search });
   const stripRef = useRef<HTMLDivElement>(null);
   const [edges, setEdges] = useState({ left: false, right: false });
   const sections = items.filter((item) => item.label !== "Settings");
-  const isActive = (item: Item) =>
-    item.exact
-      ? pathname === item.to || pathname === item.to + "/"
-      : pathname === item.to || pathname.startsWith(item.to + "/");
+  const activeIndex = activeSubnavIndex(sections, pathname, search as Record<string, unknown>);
+  const isActive = (item: Item) => sections[activeIndex] === item;
 
   const updateEdges = useCallback(() => {
     const element = stripRef.current;
@@ -76,7 +76,7 @@ export function ModuleSubnav({
       window.cancelAnimationFrame(frame);
       observer?.disconnect();
     };
-  }, [items, pathname, updateEdges]);
+  }, [items, pathname, search, updateEdges]);
 
   const scrollSections = (direction: -1 | 1) => {
     const strip = stripRef.current;

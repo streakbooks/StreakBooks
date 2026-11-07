@@ -32,6 +32,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { StatusBadge } from "@/components/common/StatusBadge";
+import { NotificationPriorityBadge } from "@/components/notifications/NotificationPriorityBadge";
 import {
   Select,
   SelectContent,
@@ -295,10 +297,10 @@ function ActionCenterPage() {
             to="/notifications"
             search={{ view: metric.view }}
             onClick={onViewNavigate}
-            className="rounded-xl border bg-card p-4 transition-colors hover:border-primary/40 hover:bg-muted/30 focus-visible:outline-2 focus-visible:outline-ring"
+            className="group lb-action-metric rounded-xl border border-border/85 bg-card p-4 shadow-card transition-[border-color,background-color,box-shadow] hover:border-primary/30 hover:bg-accent/35 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <span className="text-xs font-medium text-muted-foreground">{metric.label}</span>
-            <span className="mt-2 block text-2xl font-semibold tabular-nums">
+            <span className="mt-2 block text-[1.75rem] font-bold tracking-[-0.03em] tabular-nums">
               {metric.value === undefined ? "—" : metric.value.toLocaleString()}
             </span>
             <span className="mt-1 block text-xs text-muted-foreground">{metric.detail}</span>
@@ -691,21 +693,9 @@ function NotificationRow({
                 n.title
               )}
             </h2>
-            <span
-              className={
-                n.priority === "critical"
-                  ? "rounded bg-destructive/10 px-2 py-0.5 text-[11px] font-semibold uppercase text-destructive"
-                  : n.priority === "high"
-                    ? "rounded bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold uppercase text-amber-700 dark:text-amber-300"
-                    : "rounded bg-muted px-2 py-0.5 text-[11px] font-medium uppercase"
-              }
-            >
-              {n.priority}
-            </span>
-            {n.archived_at && <span className="text-xs text-muted-foreground">Archived</span>}
-            {n.resolved_at && !n.archived_at && (
-              <span className="text-xs text-muted-foreground">Completed</span>
-            )}
+            <NotificationPriorityBadge priority={n.priority} />
+            {n.archived_at ? <StatusBadge status="archived" /> : null}
+            {n.resolved_at && !n.archived_at ? <StatusBadge status="completed" /> : null}
             <span className="text-xs text-muted-foreground">
               {CATEGORIES[n.category] ?? n.category}
             </span>

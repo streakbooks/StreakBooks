@@ -1,6 +1,7 @@
 import { RecordLookupSelect } from "@/components/lookup/RecordLookupSelect";
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { parseFilesListSearch, type FilesListSearch } from "@/lib/documents/files-navigation";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -78,14 +79,7 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/files")({
-  validateSearch: (
-    raw: Record<string, unknown>,
-  ): { folder?: string | undefined; file?: string | undefined } => ({
-    ...(typeof raw["folder"] === "string" && raw["folder"]
-      ? { folder: raw["folder"] as string }
-      : {}),
-    ...(typeof raw["file"] === "string" && raw["file"] ? { file: raw["file"] as string } : {}),
-  }),
+  validateSearch: parseFilesListSearch,
   head: () => ({ meta: [{ title: "Files — LinkBooks" }] }),
   component: FilesPage,
 });
@@ -109,27 +103,42 @@ function FilesPage() {
   const updateFolder = useServerFn(updateDocumentFolder);
   const deleteFolder = useServerFn(deleteDocumentFolder);
   const moveFile = useServerFn(moveDocumentToFolder);
-  const { folder, file } = Route.useSearch();
+  const routeSearch = Route.useSearch();
   const navigate = Route.useNavigate();
-  const folderId = folder ?? null;
-  const selectedFile = file ?? null;
-  const setFolderId = (id: string | null) =>
+  const folderId = routeSearch.folder ?? null;
+  const selectedFile = routeSearch.file ?? null;
+  const search = routeSearch.q ?? "";
+  const type = routeSearch.type ?? "all";
+  const page = routeSearch.page ?? 0;
+  const sort = routeSearch.sort ?? "newest";
+  const view = routeSearch.view ?? "all";
+  const patchFiles = (patch: Partial<FilesListSearch>, replace = false) => {
     void navigate({
       to: "/files",
-      search: (previous) => ({ ...previous, folder: id ?? undefined, file: undefined }),
+      search: (previous) => parseFilesListSearch({ ...previous, ...patch }),
+      replace,
+      resetScroll: false,
     });
+  };
+  const setFolderId = (id: string | null) =>
+    patchFiles({ folder: id ?? undefined, file: undefined, page: 0 });
   const setSelectedFile = (id: string | null) =>
-    void navigate({ to: "/files", search: (previous) => ({ ...previous, file: id ?? undefined }) });
+    patchFiles({ file: id ?? undefined });
+  const setSearch = (value: string) =>
+    patchFiles({ q: value, page: 0 }, true);
+  const setType = (value: string) =>
+    patchFiles({ type: value as FilesListSearch["type"], page: 0 });
+  const setSort = (value: FilesListSearch["sort"]) =>
+    patchFiles({ sort: value, page: 0 });
+  const setView = (value: "all" | "to-file" | "review") =>
+    patchFiles({ view: value, folder: value === "all" ? folderId ?? undefined : undefined, file: undefined, page: 0 });
+  const setPage = (next: number | ((current: number) => number)) =>
+    patchFiles({ page: typeof next === "function" ? next(page) : next });
   const [newFolderName, setNewFolderName] = useState("");
   const [showNewFolder, setShowNewFolder] = useState(false);
 
-  const [search, setSearch] = useState("");
-  const [debounced, setDebounced] = useState("");
-  const [type, setType] = useState("all");
-  const [page, setPage] = useState(0);
+  const [debounced, setDebounced] = useState(search.trim());
   const [error, setError] = useState<string | null>(null);
-  const [sort, setSort] = useState<"newest" | "oldest" | "name" | "largest">("newest");
-  const [view, setView] = useState<"all" | "to-file" | "review">("all");
   const activeView = folderId ? "all" : view;
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkTarget, setBulkTarget] = useState("unfiled");
@@ -140,7 +149,6 @@ function FilesPage() {
   useEffect(() => {
     const t = setTimeout(() => {
       setDebounced(search.trim());
-      setPage(0);
     }, 300);
     return () => clearTimeout(t);
   }, [search]);

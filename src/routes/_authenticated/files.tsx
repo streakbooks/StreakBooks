@@ -134,6 +134,11 @@ function FilesPage() {
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [renameFolderOpen, setRenameFolderOpen] = useState(false);
   const [renameFolderName, setRenameFolderName] = useState("");
+  const [pendingFolderMove, setPendingFolderMove] = useState<{
+    id: string;
+    name: string;
+    parentId: string | null;
+  } | null>(null);
 
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
@@ -191,6 +196,7 @@ function FilesPage() {
     }) => updateFolder({ data: { companyId: companyId!, folderId: id, name, parentId } }),
     onSuccess: async () => {
       setRenameFolderOpen(false);
+      setPendingFolderMove(null);
       await queryClient.invalidateQueries({ queryKey: ["document-folders", companyId] });
       toast.success("Folder updated");
     },
@@ -618,27 +624,66 @@ function FilesPage() {
             </Dialog>
             <RecordLookupSelect
               value={activeFolder.parent_id ?? "root"}
-              onValueChange={(v) =>
-                renameFolderM.mutate({
+              onValueChange={(value) => {
+                const parentId = value === "root" ? null : value;
+                if (parentId === activeFolder.parent_id || renameFolderM.isPending) return;
+                setPendingFolderMove({
                   id: activeFolder.id,
                   name: activeFolder.name,
-                  parentId: v === "root" ? null : v,
-                })
-              }
+                  parentId,
+                });
+              }}
             >
-              <SelectTrigger className="w-48" aria-label="Move current folder to">
+              <SelectTrigger
+                className="w-48"
+                aria-label="Move current folder to"
+                disabled={renameFolderM.isPending}
+              >
                 <FolderInput className="mr-1 size-4" />
                 <SelectValue placeholder="Move folder to" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="root">Root</SelectItem>
-                {possibleParentFolders(folders, activeFolder.id).map((f) => (
-                  <SelectItem key={f.id} value={f.id}>
-                    {f.name}
+                {possibleParentFolders(folders, activeFolder.id).map((folder) => (
+                  <SelectItem key={folder.id} value={folder.id}>
+                    {folder.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </RecordLookupSelect>
+            <AlertDialog
+              open={pendingFolderMove !== null}
+              onOpenChange={(open) => {
+                if (!open && !renameFolderM.isPending) setPendingFolderMove(null);
+              }}
+            >
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Move folder “{pendingFolderMove?.name}”?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This moves the folder and everything inside it to{" "}
+                    {pendingFolderMove?.parentId
+                      ? `“${folders.find((folder) => folder.id === pendingFolderMove?.parentId)?.name ?? "selected folder"}”`
+                      : "the root folder"}.
+                    Existing files remain attached to the same documents.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={renameFolderM.isPending}>
+                    Keep current location
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    disabled={renameFolderM.isPending || !pendingFolderMove}
+                    onClick={() => {
+                      if (!pendingFolderMove) return;
+                      renameFolderM.mutate(pendingFolderMove);
+                    }}
+                  >
+                    Confirm move
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button type="button" size="sm" variant="ghost" disabled={removeFolderM.isPending}>

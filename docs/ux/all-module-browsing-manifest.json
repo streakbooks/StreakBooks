@@ -431,8 +431,15 @@
       "routeFiles": [
         "settings.tsx"
       ],
-      "browsingImplementation": "not_assessed_module_wide",
-      "fullyVerified": false
+      "browsingImplementation": "partial_code_not_runtime_verified",
+      "fullyVerified": false,
+      "currentEvidence": [
+        "src/routes/_authenticated/settings.tsx — bounded allowlisted URL plan slug (1–64 characters) to reject malformed/unbounded billing query inputs; commit 40d15dc87763dd2efcafacbd81048f7d2da90ebf; NOT RUN"
+      ],
+      "remaining": [
+        "Verify plan deep links, billing redirects, Back/Forward, permissions, and valid existing plan identifiers with authenticated fixtures",
+        "Run typecheck, lint, build, unit, browser, RLS and check:browsing-coverage (NOT RUN)"
+      ]
     },
     {
       "label": "Help",

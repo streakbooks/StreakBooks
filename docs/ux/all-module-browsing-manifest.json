@@ -505,6 +505,7 @@
   "supportingRouteEvidence": {
     "profile.tsx": {
       "status": "partial_code_not_runtime_verified",
+      "fullyVerified": false,
       "commit": "001c16139edc99e3c61d1fad19a538b74995ef1c",
       "evidence": [
         "Native profile form submit and Enter key",
@@ -513,6 +514,132 @@
       "remaining": [
         "Password and security settings full acceptance",
         "Browser, role/RLS, accessibility and authenticated tests"
+      ],
+      "tests": "NOT RUN"
+    },
+    "documents.branding.tsx": {
+      "status": "not_assessed_workflow_wide",
+      "fullyVerified": false,
+      "remaining": [
+        "Review native navigation, refresh, Back/Forward, contextual return and form state",
+        "Verify permissions, tenant isolation, accessibility, accounting effects where applicable and authenticated tests"
+      ],
+      "tests": "NOT RUN"
+    },
+    "documents.print.$kind.$id.tsx": {
+      "status": "not_assessed_workflow_wide",
+      "fullyVerified": false,
+      "remaining": [
+        "Review native navigation, refresh, Back/Forward, contextual return and form state",
+        "Verify permissions, tenant isolation, accessibility, accounting effects where applicable and authenticated tests"
+      ],
+      "tests": "NOT RUN"
+    },
+    "firm-invite.$token.tsx": {
+      "status": "not_assessed_workflow_wide",
+      "fullyVerified": false,
+      "remaining": [
+        "Review native navigation, refresh, Back/Forward, contextual return and form state",
+        "Verify permissions, tenant isolation, accessibility, accounting effects where applicable and authenticated tests"
+      ],
+      "tests": "NOT RUN"
+    },
+    "imports.tsx": {
+      "status": "not_assessed_workflow_wide",
+      "fullyVerified": false,
+      "remaining": [
+        "Review native navigation, refresh, Back/Forward, contextual return and form state",
+        "Verify permissions, tenant isolation, accessibility, accounting effects where applicable and authenticated tests"
+      ],
+      "tests": "NOT RUN"
+    },
+    "invite.$token.tsx": {
+      "status": "not_assessed_workflow_wide",
+      "fullyVerified": false,
+      "remaining": [
+        "Review native navigation, refresh, Back/Forward, contextual return and form state",
+        "Verify permissions, tenant isolation, accessibility, accounting effects where applicable and authenticated tests"
+      ],
+      "tests": "NOT RUN"
+    },
+    "onboarding.tsx": {
+      "status": "not_assessed_workflow_wide",
+      "fullyVerified": false,
+      "remaining": [
+        "Review native navigation, refresh, Back/Forward, contextual return and form state",
+        "Verify permissions, tenant isolation, accessibility, accounting effects where applicable and authenticated tests"
+      ],
+      "tests": "NOT RUN"
+    },
+    "platform.automation.tsx": {
+      "status": "not_assessed_workflow_wide",
+      "fullyVerified": false,
+      "remaining": [
+        "Review native navigation, refresh, Back/Forward, contextual return and form state",
+        "Verify permissions, tenant isolation, accessibility, accounting effects where applicable and authenticated tests"
+      ],
+      "tests": "NOT RUN"
+    },
+    "platform.billing.tsx": {
+      "status": "not_assessed_workflow_wide",
+      "fullyVerified": false,
+      "remaining": [
+        "Review native navigation, refresh, Back/Forward, contextual return and form state",
+        "Verify permissions, tenant isolation, accessibility, accounting effects where applicable and authenticated tests"
+      ],
+      "tests": "NOT RUN"
+    },
+    "platform.index.tsx": {
+      "status": "not_assessed_workflow_wide",
+      "fullyVerified": false,
+      "remaining": [
+        "Review native navigation, refresh, Back/Forward, contextual return and form state",
+        "Verify permissions, tenant isolation, accessibility, accounting effects where applicable and authenticated tests"
+      ],
+      "tests": "NOT RUN"
+    },
+    "platform.operations.tsx": {
+      "status": "not_assessed_workflow_wide",
+      "fullyVerified": false,
+      "remaining": [
+        "Review native navigation, refresh, Back/Forward, contextual return and form state",
+        "Verify permissions, tenant isolation, accessibility, accounting effects where applicable and authenticated tests"
+      ],
+      "tests": "NOT RUN"
+    },
+    "platform.tsx": {
+      "status": "not_assessed_workflow_wide",
+      "fullyVerified": false,
+      "remaining": [
+        "Review native navigation, refresh, Back/Forward, contextual return and form state",
+        "Verify permissions, tenant isolation, accessibility, accounting effects where applicable and authenticated tests"
+      ],
+      "tests": "NOT RUN"
+    },
+    "projects.tsx": {
+      "status": "not_assessed_workflow_wide",
+      "fullyVerified": false,
+      "remaining": [
+        "Review native navigation, refresh, Back/Forward, contextual return and form state",
+        "Verify permissions, tenant isolation, accessibility, accounting effects where applicable and authenticated tests"
+      ],
+      "tests": "NOT RUN"
+    },
+    "recurring-journals.tsx": {
+      "status": "not_assessed_workflow_wide",
+      "fullyVerified": false,
+      "remaining": [
+        "Review native navigation, refresh, Back/Forward, contextual return and form state",
+        "Verify permissions, tenant isolation, accessibility, accounting effects where applicable and authenticated tests"
+      ],
+      "tests": "NOT RUN"
+    },
+    "route.tsx": {
+      "status": "not_assessed_workflow_wide",
+      "fullyVerified": false,
+      "remaining": [
+        "Review native navigation, refresh, Back/Forward, contextual return and form state",
+        "Verify permissions, tenant isolation, accessibility, accounting effects where applicable and authenticated tests"
       ],
       "tests": "NOT RUN"
     }

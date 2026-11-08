@@ -36,7 +36,7 @@ The register below was derived from actual repository navigation and routes. The
 | 17 | Advisors portal | `/advisors-portal` | 6 | Not yet verified for premium browsing |
 | 18 | AI Assistant | `/ai-assistant` | 1 | Partial browsing code committed; not runtime-verified |
 | 19 | Tax | `/tax` | 1 | Not yet verified for premium browsing |
-| 20 | Settings | `/settings` | 1 | Not yet verified for premium browsing |
+| 20 | Settings | `/settings` | 1 | Partial URL validation code committed; not runtime-verified |
 | 21 | Help | `/help` | 1 | Partial URL-backed search code committed; not runtime-verified |
 
 **Status meaning:** "Partial browsing code" means some navigation/state improvements are committed; tests of the complete module are not finished. "Not yet verified" does **not** mean the existing module lacks functionality; it means this initiative has not established full coverage or acceptance.
@@ -94,6 +94,11 @@ The register below was derived from actual repository navigation and routes. The
 
 - `src/routes/_authenticated/tax.tsx`: registration and GL mapping form status badges now expose `role="status"` and `aria-live="polite"` for unsaved/saved/view-only state announcements. Source commit `51f34961827bd021c70ffeb6c5c914323c539279`.
 - This is a **partial accessibility source change only**. Screen-reader behavior, permission checks, accounting integrity, TypeScript, lint, build, unit tests, authenticated browser tests and `check:browsing-coverage` are **NOT RUN**. Tax and all 21 modules remain unverified; 0/12 batches fully accepted.
+
+### Settings billing deep-link input validation (2026-11-08)
+
+- `src/routes/_authenticated/settings.tsx`: `plan` search parameter now accepts only bounded 1–64 character alphanumeric/underscore/hyphen identifiers (starting with alphanumeric); rejects malformed or excessively long URL input. Source commit `40d15dc87763dd2efcafacbd81048f7d2da90ebf`.
+- **Partial source evidence only.** Existing billing plan identifiers and deep links require authenticated regression verification. TypeScript, lint, build, unit, browser, billing permissions/RLS and `check:browsing-coverage`: **NOT RUN**. No module or batch marked fully verified.
 
 ## 2. Internal and supporting routes also included
 

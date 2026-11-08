@@ -33,7 +33,7 @@ The register below was derived from actual repository navigation and routes. The
 | 14 | Accountant | `/accountant` | 1 | Partial checklist date URL browsing code committed; not runtime-verified |
 | 15 | Firm | `/firm` | 1 | Partial native-tab browsing code committed; not runtime-verified |
 | 16 | Advisors | `/advisors-admin` | 13 | Not yet verified for premium browsing |
-| 17 | Advisors portal | `/advisors-portal` | 6 | Not yet verified for premium browsing |
+| 17 | Advisors portal | `/advisors-portal` | 6 | Partial task status deep-link browsing code committed; not runtime-verified |
 | 18 | AI Assistant | `/ai-assistant` | 1 | Partial browsing code committed; not runtime-verified |
 | 19 | Tax | `/tax` | 1 | Not yet verified for premium browsing |
 | 20 | Settings | `/settings` | 1 | Partial URL validation code committed; not runtime-verified |
@@ -104,6 +104,12 @@ The register below was derived from actual repository navigation and routes. The
 
 - `src/routes/_authenticated/platform.billing.tsx`: billing query failure now exposes an accessible `role="alert"` message and a native **Retry loading billing** action that refetches the existing permission-gated query without bypassing authorization. Code commit `0d4b281c78f88e2e6209580c8d7b3305a9539539`.
 - Supporting-route manifest entry `platform.billing.tsx` records partial source evidence. **NOT RUN:** local typecheck, lint, unit, build, browsing-coverage guard, authenticated browser, accessibility, billing and RLS regressions. All 21 modules and 15 supporting routes remain unverified; 0/12 batches accepted. No `main` changes or deployment.
+
+### Advisors Portal task status browsing increment (2026-11-08)
+
+- `src/routes/_authenticated/advisors-portal.tasks.tsx`: bounded validated status search parameter, commit `81f87d9e5e81390a03642e02500da62f096892dd`.
+- `src/screens/advisors/portal-tasks.tsx`: native URL-backed status filter links, active filter indication and empty-results feedback, commit `994560db34dddd59dcccd6b48c83184598a35c26`.
+- **Partial source evidence only.** TypeScript, lint, build, unit, authenticated browser, accessibility, `check:browsing-coverage`, security/RLS and accounting regression tests **NOT RUN**. All 21 modules and 15 supporting routes remain unverified; 0/12 batches accepted. No changes to `main` or deployment.
 
 ## 2. Internal and supporting routes also included
 

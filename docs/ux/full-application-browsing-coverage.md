@@ -73,6 +73,12 @@ The register below was derived from actual repository navigation and routes. The
 - `scripts/check-browsing-coverage.mjs` now rejects duplicate top-level sidebar label/path pairs in both `src/lib/nav.ts` and the browsing manifest, and rejects invalid manifest sidebar labels or non-rooted paths. Code commit: `eae7c968a846d7305fd9301300509ea91b9c7520`.
 - Manifest evidence recorded separately; this is structural inventory protection, **not** screen-level implementation or runtime acceptance. Local `check:browsing-coverage`, typecheck, lint, unit, browser, RLS and accounting regression tests: **NOT RUN**. No module or batch is marked fully verified.
 
+### Supporting-route completeness guard (2026-11-08)
+
+- `scripts/check-browsing-coverage.mjs` now requires an explicit nonempty status and boolean `fullyVerified` for **each** supporting route, not merely inclusion in the route inventory. Code commit `cd3f484e93eafb55762d6f9ff0939cafb7cde5c8`.
+- `docs/ux/all-module-browsing-manifest.json` now records all **15 of 15** supporting routes with an explicit pending or partial status, remaining acceptance tasks, and `tests: NOT RUN`; manifest commit `b00e1d065da37b47abd87ccb4a61ebc638ec50a4`.
+- This is **inventory and evidence tracking**, not a completed supporting-route implementation. **0 of 15 supporting routes and 0 of 21 modules fully verified.** Local guard, typecheck, lint, unit, build, authenticated browser, security and accounting regression: **NOT RUN**. No main-branch changes or deployment.
+
 ## 2. Internal and supporting routes also included
 
 - `src/routes/_authenticated/documents.branding.tsx`

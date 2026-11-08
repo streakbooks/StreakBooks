@@ -393,13 +393,15 @@
         "src/screens/advisors/portal-tasks.tsx — native URL-backed status filter links, active state and empty results (commit 994560db34dddd59dcccd6b48c83184598a35c26)",
         "All local tests, authenticated browser, accessibility and coverage guard NOT RUN",
         "src/screens/advisors/portal-tasks.tsx — accessible live task result count and native clear-filter recovery on empty filtered results; commit 30ce8a7f06bbce1781894b7a1dc27251d31d2455; NOT RUN",
-        "src/screens/advisors/portal-tasks.tsx — removed six literal escaped newline sequences from JSX markup introduced in earlier accessibility increment; corrective commit 000324768ece3ffb886da300592a9348241d51f4; compilation and browser tests NOT RUN"
+        "src/screens/advisors/portal-tasks.tsx — removed six literal escaped newline sequences from JSX markup introduced in earlier accessibility increment; corrective commit 000324768ece3ffb886da300592a9348241d51f4; compilation and browser tests NOT RUN",
+        "src/screens/advisors/portal-appointments.tsx — loading/error views retain portal subnavigation, accessible loading/error announcements and appointment result count; code commit 9b944cd1a82e58dcbea191c539ff37d3f36e5b4b; NOT RUN"
       ],
       "remaining": [
         "Verify deep-link refresh, browser Back/Forward, new tab and permission-isolated status filters",
         "Run typecheck, lint, unit tests, browser tests, check:browsing-coverage and accounting/RLS regression",
         "Assess all other Advisors Portal screens and cross-cutting workflows against 12 criteria",
-        "Verify live result announcements and clear-filter recovery with keyboard, screen-reader and authenticated browser fixtures"
+        "Verify live result announcements and clear-filter recovery with keyboard, screen-reader and authenticated browser fixtures",
+        "Verify appointments loading, error retry, count and manage links in authenticated keyboard/browser tests"
       ]
     },
     {

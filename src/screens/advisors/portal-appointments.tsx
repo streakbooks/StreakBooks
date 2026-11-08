@@ -35,11 +35,11 @@ export function AdvisorsPortalAppointmentsPage() {
         />
         <AdvisorsPortalSubnav />
         <div role="alert">
-        <ErrorState
-          title="Appointments unavailable"
-          description={friendlyAuthError(query.error)}
-          onRetry={() => void query.refetch()}
-        />
+          <ErrorState
+            title="Appointments unavailable"
+            description={friendlyAuthError(query.error)}
+            onRetry={() => void query.refetch()}
+          />
         </div>
       </main>
     );

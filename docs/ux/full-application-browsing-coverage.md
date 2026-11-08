@@ -100,6 +100,11 @@ The register below was derived from actual repository navigation and routes. The
 - `src/routes/_authenticated/settings.tsx`: `plan` search parameter now accepts only bounded 1–64 character alphanumeric/underscore/hyphen identifiers (starting with alphanumeric); rejects malformed or excessively long URL input. Source commit `40d15dc87763dd2efcafacbd81048f7d2da90ebf`.
 - **Partial source evidence only.** Existing billing plan identifiers and deep links require authenticated regression verification. TypeScript, lint, build, unit, browser, billing permissions/RLS and `check:browsing-coverage`: **NOT RUN**. No module or batch marked fully verified.
 
+### Platform billing load-error recovery increment (2026-11-08)
+
+- `src/routes/_authenticated/platform.billing.tsx`: billing query failure now exposes an accessible `role="alert"` message and a native **Retry loading billing** action that refetches the existing permission-gated query without bypassing authorization. Code commit `0d4b281c78f88e2e6209580c8d7b3305a9539539`.
+- Supporting-route manifest entry `platform.billing.tsx` records partial source evidence. **NOT RUN:** local typecheck, lint, unit, build, browsing-coverage guard, authenticated browser, accessibility, billing and RLS regressions. All 21 modules and 15 supporting routes remain unverified; 0/12 batches accepted. No `main` changes or deployment.
+
 ## 2. Internal and supporting routes also included
 
 - `src/routes/_authenticated/documents.branding.tsx`

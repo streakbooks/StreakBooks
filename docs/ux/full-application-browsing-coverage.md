@@ -116,6 +116,11 @@ The register below was derived from actual repository navigation and routes. The
 - `src/screens/advisors/portal-tasks.tsx`: adds an accessible live count of filtered versus total tasks and a native **Clear status filter** link for empty filtered results. Code commit `30ce8a7f06bbce1781894b7a1dc27251d31d2455`.
 - **Partial source evidence only**. Local typecheck, lint, unit, build, authenticated browser, screen-reader, security/RLS, accounting regression and `check:browsing-coverage` **NOT RUN**. All 21 modules, 15 supporting routes and 12 batches remain unverified. No `main` modification or deployment.
 
+### Advisors Portal appointments browsing increment (2026-11-09)
+
+- `src/screens/advisors/portal-appointments.tsx`: loading and error states now retain portal subnavigation, loading/error status is announced accessibly, and the appointments result count has a live status. Code commit `9b944cd1a82e58dcbea191c539ff37d3f36e5b4b`.
+- **Partial source evidence only.** TypeScript, lint, build, unit, authenticated browser, accessibility, `check:browsing-coverage`, RLS and accounting regression: **NOT RUN**. Appointments and all other Advisors Portal workflows still require 12-criterion acceptance. **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified.** No `main` changes, CI trigger or deployment.
+
 ## 2. Internal and supporting routes also included
 
 - `src/routes/_authenticated/documents.branding.tsx`

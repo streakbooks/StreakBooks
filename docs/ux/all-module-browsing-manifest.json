@@ -609,13 +609,17 @@
       "tests": "NOT RUN"
     },
     "platform.billing.tsx": {
-      "status": "not_assessed_workflow_wide",
+      "status": "partial_error_recovery_not_runtime_verified",
       "fullyVerified": false,
       "remaining": [
-        "Review native navigation, refresh, Back/Forward, contextual return and form state",
-        "Verify permissions, tenant isolation, accessibility, accounting effects where applicable and authenticated tests"
+        "Verify retry succeeds after transient failure and remains access-controlled",
+        "Verify deep links, back/forward, refresh, all billing forms, plan publish/rollback and data integrity",
+        "Run TypeScript, lint, unit, authenticated browser, accessibility, RLS and billing regression checks"
       ],
-      "tests": "NOT RUN"
+      "tests": "NOT RUN",
+      "currentEvidence": [
+        "src/routes/_authenticated/platform.billing.tsx — accessible billing load failure alert and retry action; commit 0d4b281c78f88e2e6209580c8d7b3305a9539539; NOT RUN"
+      ]
     },
     "platform.index.tsx": {
       "status": "not_assessed_workflow_wide",

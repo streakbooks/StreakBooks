@@ -15,7 +15,17 @@ export function AdvisorsPortalAppointmentsPage() {
     retry: false,
   });
 
-  if (query.isPending) return <LoadingState />;
+  if (query.isPending) {
+    return (
+      <main className="mx-auto max-w-5xl space-y-6 p-6">
+        <PageHeader title="Appointments" description="Loading your consultations." />
+        <AdvisorsPortalSubnav />
+        <div role="status" aria-live="polite">
+          <LoadingState />
+        </div>
+      </main>
+    );
+  }
   if (query.isError) {
     return (
       <main className="mx-auto max-w-5xl space-y-6 p-6">
@@ -23,11 +33,14 @@ export function AdvisorsPortalAppointmentsPage() {
           title="Appointments"
           description="Consultations linked to your Advisors email."
         />
+        <AdvisorsPortalSubnav />
+        <div role="alert">
         <ErrorState
           title="Appointments unavailable"
           description={friendlyAuthError(query.error)}
           onRetry={() => void query.refetch()}
         />
+        </div>
       </main>
     );
   }
@@ -39,6 +52,9 @@ export function AdvisorsPortalAppointmentsPage() {
         description="View and manage consultations. Reminder emails are scheduled automatically."
       />
       <AdvisorsPortalSubnav />
+      <p role="status" aria-live="polite" className="text-sm text-muted-foreground">
+        {query.data.length} {query.data.length === 1 ? "appointment" : "appointments"} found
+      </p>
       {query.data.length === 0 ? (
         <EmptyState
           title="No appointments yet"

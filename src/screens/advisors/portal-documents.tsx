@@ -36,16 +36,25 @@ export function AdvisorsPortalDocumentsPage() {
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
 
-  if (query.isPending) return <LoadingState />;
+  if (query.isPending) return (
+    <main className="mx-auto max-w-5xl space-y-6 p-6">
+      <PageHeader title="Documents" description="Requested files for your delivery periods." />
+      <AdvisorsPortalSubnav />
+      <div role="status" aria-live="polite"><LoadingState /></div>
+    </main>
+  );
   if (query.isError) {
     return (
       <main className="mx-auto max-w-5xl space-y-6 p-6">
         <PageHeader title="Documents" description="Requested files for your delivery periods." />
+        <AdvisorsPortalSubnav />
+        <div role="alert">
         <ErrorState
           title="Documents unavailable"
           description={friendlyAuthError(query.error)}
           onRetry={() => void query.refetch()}
         />
+        </div>
       </main>
     );
   }
@@ -66,8 +75,12 @@ export function AdvisorsPortalDocumentsPage() {
           value={note}
           onChange={(event) => setNote(event.target.value)}
           placeholder="Where the file was uploaded / reference"
+          maxLength={500}
         />
       </div>
+      <p role="status" aria-live="polite" className="text-sm text-muted-foreground">
+        {query.data.length} document {query.data.length === 1 ? "request" : "requests"} found
+      </p>
       {query.data.length === 0 ? (
         <EmptyState
           title="No document requests"

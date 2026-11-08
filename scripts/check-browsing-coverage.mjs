@@ -97,6 +97,20 @@ for (const module of manifest.modules) {
   }
 }
 
+// Every supporting route must have an explicit status entry, not merely appear
+// in the route inventory. This prevents hidden workflows from silently escaping
+// the per-route browsing acceptance review.
+const supportingEvidence = manifest.supportingRouteEvidence;
+if (!supportingEvidence || typeof supportingEvidence !== "object" || Array.isArray(supportingEvidence)) {
+  throw new Error("Supporting-route browsing evidence register is required");
+}
+for (const route of manifest.supportingRoutes) {
+  const entry = supportingEvidence[route];
+  if (!entry || typeof entry.status !== "string" || !entry.status.trim() || typeof entry.fullyVerified !== "boolean") {
+    throw new Error("Supporting route requires explicit status and fullyVerified flag: " + route);
+  }
+}
+
 // Supporting routes and cross-cutting workflows are first-class coverage areas.
 // A verified status cannot be asserted without evidence for every criterion.
 for (const [route, entry] of Object.entries(manifest.supportingRouteEvidence ?? {})) {

@@ -31,7 +31,7 @@ The register below was derived from actual repository navigation and routes. The
 | 12 | Payroll | `/payroll` | 12 | Partial report deep-link code committed; not runtime-verified |
 | 13 | Reports | `/reports` | 3 | Partial browsing code committed; not runtime-verified |
 | 14 | Accountant | `/accountant` | 1 | Not yet verified for premium browsing |
-| 15 | Firm | `/firm` | 1 | Not yet verified for premium browsing |
+| 15 | Firm | `/firm` | 1 | Partial native-tab browsing code committed; not runtime-verified |
 | 16 | Advisors | `/advisors-admin` | 13 | Not yet verified for premium browsing |
 | 17 | Advisors portal | `/advisors-portal` | 6 | Not yet verified for premium browsing |
 | 18 | AI Assistant | `/ai-assistant` | 1 | Partial browsing code committed; not runtime-verified |
@@ -78,6 +78,11 @@ The register below was derived from actual repository navigation and routes. The
 - `scripts/check-browsing-coverage.mjs` now requires an explicit nonempty status and boolean `fullyVerified` for **each** supporting route, not merely inclusion in the route inventory. Code commit `cd3f484e93eafb55762d6f9ff0939cafb7cde5c8`.
 - `docs/ux/all-module-browsing-manifest.json` now records all **15 of 15** supporting routes with an explicit pending or partial status, remaining acceptance tasks, and `tests: NOT RUN`; manifest commit `b00e1d065da37b47abd87ccb4a61ebc638ec50a4`.
 - This is **inventory and evidence tracking**, not a completed supporting-route implementation. **0 of 15 supporting routes and 0 of 21 modules fully verified.** Local guard, typecheck, lint, unit, build, authenticated browser, security and accounting regression: **NOT RUN**. No main-branch changes or deployment.
+
+### Firm workspace native browsing increment (2026-11-08)
+
+- `src/routes/_authenticated/firm.tsx`: all 12 practice tabs now have allowlisted URL search state and native links, preserving browser history, deep links and refresh. Firm selection and business permissions are unchanged. Code commit `81f6c0e8b15e679fe9f541655a430a159cb3af21` plus import cleanup.
+- **Partial source evidence only**; no Firm acceptance criterion is fully verified. Local typecheck, lint, unit, build, `check:browsing-coverage`, authenticated browser, RLS and accounting tests **NOT RUN**. No changes to `main` or deployment.
 
 ## 2. Internal and supporting routes also included
 

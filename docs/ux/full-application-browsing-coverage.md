@@ -111,6 +111,11 @@ The register below was derived from actual repository navigation and routes. The
 - `src/screens/advisors/portal-tasks.tsx`: native URL-backed status filter links, active filter indication and empty-results feedback, commit `994560db34dddd59dcccd6b48c83184598a35c26`.
 - **Partial source evidence only.** TypeScript, lint, build, unit, authenticated browser, accessibility, `check:browsing-coverage`, security/RLS and accounting regression tests **NOT RUN**. All 21 modules and 15 supporting routes remain unverified; 0/12 batches accepted. No changes to `main` or deployment.
 
+### Advisors Portal task filter empty-state and accessibility increment (2026-11-08)
+
+- `src/screens/advisors/portal-tasks.tsx`: adds an accessible live count of filtered versus total tasks and a native **Clear status filter** link for empty filtered results. Code commit `30ce8a7f06bbce1781894b7a1dc27251d31d2455`.
+- **Partial source evidence only**. Local typecheck, lint, unit, build, authenticated browser, screen-reader, security/RLS, accounting regression and `check:browsing-coverage` **NOT RUN**. All 21 modules, 15 supporting routes and 12 batches remain unverified. No `main` modification or deployment.
+
 ## 2. Internal and supporting routes also included
 
 - `src/routes/_authenticated/documents.branding.tsx`

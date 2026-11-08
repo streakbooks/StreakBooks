@@ -327,8 +327,15 @@
       "routeFiles": [
         "accountant.tsx"
       ],
-      "browsingImplementation": "not_assessed_module_wide",
-      "fullyVerified": false
+      "browsingImplementation": "partial_code_not_runtime_verified",
+      "fullyVerified": false,
+      "currentEvidence": [
+        "src/routes/_authenticated/accountant.tsx — validated asOf date query parameter and native URL-backed checklist date selection; commit 4e0feb68bd1b0c32c641776f158beb78d3826b32; NOT RUN"
+      ],
+      "remaining": [
+        "Run typecheck, lint, build, unit and authenticated browser tests of asOf Back/Forward/refresh and invalid dates",
+        "Audit all Accountant tabs, workpapers, journal posting, permissions, tenant isolation, accounting regression and responsive accessibility"
+      ]
     },
     {
       "label": "Firm",

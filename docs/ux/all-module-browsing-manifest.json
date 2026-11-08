@@ -416,8 +416,14 @@
       "routeFiles": [
         "tax.tsx"
       ],
-      "browsingImplementation": "not_assessed_module_wide",
-      "fullyVerified": false
+      "browsingImplementation": "partial_code_not_runtime_verified",
+      "fullyVerified": false,
+      "currentEvidence": [
+        "src/routes/_authenticated/tax.tsx — registration and GL mapping dirty/saved/view-only indicators announce status changes via role=status and aria-live=polite; commit 51f34961827bd021c70ffeb6c5c914323c539279; NOT RUN"
+      ],
+      "remaining": [
+        "Verify tax form status announcements with screen reader, keyboard and authenticated browser tests; check permissions and tax accounting regressions"
+      ]
     },
     {
       "label": "Settings",

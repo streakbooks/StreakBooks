@@ -391,12 +391,14 @@
       "currentEvidence": [
         "src/routes/_authenticated/advisors-portal.tasks.tsx — bounded allowlisted status query search (commit 81f87d9e5e81390a03642e02500da62f096892dd)",
         "src/screens/advisors/portal-tasks.tsx — native URL-backed status filter links, active state and empty results (commit 994560db34dddd59dcccd6b48c83184598a35c26)",
-        "All local tests, authenticated browser, accessibility and coverage guard NOT RUN"
+        "All local tests, authenticated browser, accessibility and coverage guard NOT RUN",
+        "src/screens/advisors/portal-tasks.tsx — accessible live task result count and native clear-filter recovery on empty filtered results; commit 30ce8a7f06bbce1781894b7a1dc27251d31d2455; NOT RUN"
       ],
       "remaining": [
         "Verify deep-link refresh, browser Back/Forward, new tab and permission-isolated status filters",
         "Run typecheck, lint, unit tests, browser tests, check:browsing-coverage and accounting/RLS regression",
-        "Assess all other Advisors Portal screens and cross-cutting workflows against 12 criteria"
+        "Assess all other Advisors Portal screens and cross-cutting workflows against 12 criteria",
+        "Verify live result announcements and clear-filter recovery with keyboard, screen-reader and authenticated browser fixtures"
       ]
     },
     {

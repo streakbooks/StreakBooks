@@ -403,3 +403,8 @@ Every batch may require multiple small implementation increments; do not rush a 
 - The two branches have diverged; integrating into `main` requires a conflict review and explicit testing. No merge is authorized merely by this coverage policy.
 
 **Completion definition:** Every sidebar module, supporting route, internal submodule and requested approved workflow has documented acceptance evidence; unresolved entries remain visible instead of disappearing from the plan.
+
+### Platform billing retry and amount-entry increment (2026-11-08)
+
+- `src/routes/_authenticated/platform.billing.tsx`: loading state announces progress through `role="status"`; retry is disabled while a request is in flight and displays a retrying label; minor-unit amount field now uses required integer numeric input with nonnegative bounds and a safe-integer maximum. Code commit `c82ac912ca2cf55b1801573337544209e78e99ac`.
+- **Partial source evidence only.** Server-side amount validation, permissions, publish/rollback, authenticated browser, screen-reader, TypeScript, lint, unit, build and `check:browsing-coverage`: **NOT RUN**. No module or batch is fully verified; no `main` changes, CI trigger, database mutation or deployment.

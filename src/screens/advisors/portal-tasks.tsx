@@ -53,13 +53,19 @@ export function AdvisorsPortalTasksPage() {
           ))}
         </nav>
       ) : null}
-      <p role="status" aria-live="polite" className="text-sm text-muted-foreground">\n        {visibleTasks.length} of {query.data.length} tasks shown\n      </p>\n      {query.data.length === 0 ? (
+      <p role="status" aria-live="polite" className="text-sm text-muted-foreground">
+        {visibleTasks.length} of {query.data.length} tasks shown
+      </p>
+      {query.data.length === 0 ? (
         <EmptyState
           title="No tasks"
           description="Tasks appear once your advisor opens a delivery period."
         />
       ) : visibleTasks.length === 0 ? (
-        <div className="space-y-3">\n          <EmptyState title="No matching tasks" description="No tasks match this status. Choose All tasks to see the complete list." />\n          <Link to="/advisors-portal/tasks" search={{ status: undefined }} className="inline-flex rounded-md border border-border px-3 py-2 text-sm font-medium hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">Clear status filter</Link>\n        </div>
+        <div className="space-y-3">
+          <EmptyState title="No matching tasks" description="No tasks match this status. Choose All tasks to see the complete list." />
+          <Link to="/advisors-portal/tasks" search={{ status: undefined }} className="inline-flex rounded-md border border-border px-3 py-2 text-sm font-medium hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">Clear status filter</Link>
+        </div>
       ) : (
         <ul className="space-y-3" aria-label={`${visibleTasks.length} matching tasks`}>
           {visibleTasks.map((item) => (

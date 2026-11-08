@@ -89,6 +89,12 @@ The register below was derived from actual repository navigation and routes. The
 - `src/routes/_authenticated/accountant.tsx`: allowlisted calendar-valid `asOf` search parameter, URL-backed checklist date selection and preserved date when changing Accountant tabs; code commit `4e0feb68bd1b0c32c641776f158beb78d3826b32`.
 - Partial source evidence only. Local TypeScript, lint, build, unit, authenticated browser, accessibility, `check:browsing-coverage`, security/RLS and accounting regression tests **NOT RUN**. All Accountant subworkflows and 12 acceptance criteria remain unverified. No `main` modification or deployment.
 
+
+### Tax form status accessibility increment (2026-11-08)
+
+- `src/routes/_authenticated/tax.tsx`: registration and GL mapping form status badges now expose `role="status"` and `aria-live="polite"` for unsaved/saved/view-only state announcements. Source commit `51f34961827bd021c70ffeb6c5c914323c539279`.
+- This is a **partial accessibility source change only**. Screen-reader behavior, permission checks, accounting integrity, TypeScript, lint, build, unit tests, authenticated browser tests and `check:browsing-coverage` are **NOT RUN**. Tax and all 21 modules remain unverified; 0/12 batches fully accepted.
+
 ## 2. Internal and supporting routes also included
 
 - `src/routes/_authenticated/documents.branding.tsx`

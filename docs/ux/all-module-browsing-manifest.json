@@ -336,8 +336,16 @@
       "routeFiles": [
         "firm.tsx"
       ],
-      "browsingImplementation": "not_assessed_module_wide",
-      "fullyVerified": false
+      "browsingImplementation": "partial_code_not_runtime_verified",
+      "fullyVerified": false,
+      "currentEvidence": [
+        "src/routes/_authenticated/firm.tsx — 12 firm workspace tabs now native URL-backed links with allowlisted tab search, Back/Forward and refresh semantics; commits 81f6c0e8b15e679fe9f541655a430a159cb3af21 and subsequent import cleanup; NOT RUN"
+      ],
+      "remaining": [
+        "Authenticated browser tests of all 12 tabs and firm switching",
+        "Role/RLS, accounting and responsive/accessibility regression",
+        "Local typecheck, lint, build, unit tests and browsing guard NOT RUN"
+      ]
     },
     {
       "label": "Advisors",

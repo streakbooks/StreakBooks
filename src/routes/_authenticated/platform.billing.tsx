@@ -47,7 +47,10 @@ function PlatformBillingPage() {
     return (
       <main className="mx-auto max-w-xl space-y-3 p-6">
         <h1 className="text-2xl font-semibold">Platform billing</h1>
-        <p>{query.error instanceof Error ? query.error.message : "Access denied."}</p>
+        <p role="alert">{query.error instanceof Error ? query.error.message : "Access denied."}</p>
+        <Button type="button" variant="outline" onClick={() => void query.refetch()}>
+          Retry loading billing
+        </Button>
       </main>
     );
   }

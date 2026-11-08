@@ -30,7 +30,7 @@ The register below was derived from actual repository navigation and routes. The
 | 11 | Fixed assets | `/fixed-assets` | 1 | Partial browsing code committed; not runtime-verified |
 | 12 | Payroll | `/payroll` | 12 | Partial report deep-link code committed; not runtime-verified |
 | 13 | Reports | `/reports` | 3 | Partial browsing code committed; not runtime-verified |
-| 14 | Accountant | `/accountant` | 1 | Not yet verified for premium browsing |
+| 14 | Accountant | `/accountant` | 1 | Partial checklist date URL browsing code committed; not runtime-verified |
 | 15 | Firm | `/firm` | 1 | Partial native-tab browsing code committed; not runtime-verified |
 | 16 | Advisors | `/advisors-admin` | 13 | Not yet verified for premium browsing |
 | 17 | Advisors portal | `/advisors-portal` | 6 | Not yet verified for premium browsing |
@@ -83,6 +83,11 @@ The register below was derived from actual repository navigation and routes. The
 
 - `src/routes/_authenticated/firm.tsx`: all 12 practice tabs now have allowlisted URL search state and native links, preserving browser history, deep links and refresh. Firm selection and business permissions are unchanged. Code commit `81f6c0e8b15e679fe9f541655a430a159cb3af21` plus import cleanup.
 - **Partial source evidence only**; no Firm acceptance criterion is fully verified. Local typecheck, lint, unit, build, `check:browsing-coverage`, authenticated browser, RLS and accounting tests **NOT RUN**. No changes to `main` or deployment.
+
+### Accountant checklist date browsing increment (2026-11-08)
+
+- `src/routes/_authenticated/accountant.tsx`: allowlisted calendar-valid `asOf` search parameter, URL-backed checklist date selection and preserved date when changing Accountant tabs; code commit `4e0feb68bd1b0c32c641776f158beb78d3826b32`.
+- Partial source evidence only. Local TypeScript, lint, build, unit, authenticated browser, accessibility, `check:browsing-coverage`, security/RLS and accounting regression tests **NOT RUN**. All Accountant subworkflows and 12 acceptance criteria remain unverified. No `main` modification or deployment.
 
 ## 2. Internal and supporting routes also included
 

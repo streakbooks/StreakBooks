@@ -909,7 +909,7 @@ export const listCrmAccountOverlay = createServerFn({ method: "GET" })
         .limit(2000),
       crmClient(context.supabase)
         .from("crm_opportunities")
-        .select("id, contact_id, status, amount_minor")
+        .select("id, contact_id, status, amount_minor, currency_code")
         .eq("company_id", data.companyId)
         .is("archived_at", null)
         .not("contact_id", "is", null)
@@ -939,6 +939,7 @@ export const listCrmAccountOverlay = createServerFn({ method: "GET" })
         contactId: row["contact_id"] == null ? null : String(row["contact_id"]),
         status: String(row["status"] ?? ""),
         amountMinor: Number(row["amount_minor"] ?? 0) || 0,
+        currencyCode: String(row["currency_code"] ?? "UNKNOWN"),
       }),
     );
 

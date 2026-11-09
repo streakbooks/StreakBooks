@@ -459,3 +459,8 @@ Every batch may require multiple small implementation increments; do not rush a 
 
 - `src/screens/advisors/admin-overview.tsx`: preserves `AdvisorsSubnav` during loading and error states, announces loading/errors and provides a labelled metric region plus loaded-state announcement. Source commit `2c6e9ead7f0db6fb9029d63073f60dd4e5aac71f`.
 - **Partial source evidence only**; Advisors administration and all 21 modules remain not fully verified. Local TypeScript, lint, unit, build, authenticated browser, accessibility, `check:browsing-coverage`, RLS and accounting regression: **NOT RUN**. No changes to `main`, no CI trigger, no production migration or deployment. **0/12** accepted batches.
+
+### Advisors Administration inquiries browsing increment (2026-11-09)
+
+- `src/screens/advisors/admin-inquiries.tsx`: retains Advisors subnavigation during loading and both inquiry/staff error states; retries both queries; announces inquiry counts; disables conflicting and no-op actions. Source commit `e286ab54ad3f6402ecc451bc1f10bd5460002093`.
+- Manifest evidence commit `a29ecab3cb91b458d151068fb93c9876b061b231`. **Partial source evidence only**; no claim of runtime behavior or 12-criterion acceptance. Local `check:browsing-coverage`, TypeScript, lint, build, unit, authenticated browser, accessibility, RLS and accounting regression checks **NOT RUN**. **0/21 modules, 0/15 supporting routes and 0/12 batches fully verified**. No `main` changes, CI trigger or deployment.

@@ -34,16 +34,23 @@ export function AdvisorsPortalMessagesPage() {
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
 
-  if (query.isPending) return <LoadingState />;
+  if (query.isPending) return (
+    <main className="mx-auto max-w-5xl space-y-6 p-6">
+      <PageHeader title="Messages" description="Talk with your advisor." />
+      <AdvisorsPortalSubnav />
+      <div role="status" aria-live="polite"><LoadingState /></div>
+    </main>
+  );
   if (query.isError) {
     return (
       <main className="mx-auto max-w-5xl space-y-6 p-6">
         <PageHeader title="Messages" description="Talk with your advisor." />
-        <ErrorState
+        <AdvisorsPortalSubnav />
+        <div role="alert"><ErrorState
           title="Messages unavailable"
           description={friendlyAuthError(query.error)}
           onRetry={() => void query.refetch()}
-        />
+        /></div>
       </main>
     );
   }
@@ -64,12 +71,15 @@ export function AdvisorsPortalMessagesPage() {
           onChange={(event) => setBody(event.target.value)}
           placeholder="Write a message to your advisor"
           rows={4}
+          maxLength={5000}
+          aria-label="Message to your advisor"
           required
         />
-        <Button type="submit" disabled={sendM.isPending || body.trim().length < 1}>
-          Send message
+        <Button type="submit" disabled={sendM.isPending || body.trim().length < 1 || body.length > 5000}>
+          {sendM.isPending ? "Sending…" : "Send message"}
         </Button>
       </form>
+      <p role="status" aria-live="polite" className="text-sm text-muted-foreground">{query.data.length} messages</p>
       {query.data.length === 0 ? (
         <EmptyState title="No messages yet" description="Start the conversation above." />
       ) : (

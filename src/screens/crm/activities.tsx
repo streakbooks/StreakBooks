@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { CrmSubnav } from "@/components/crm/CrmSubnav";
+import { CrmMeetingCalendar } from "@/components/crm/CrmMeetingCalendar";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
@@ -193,6 +194,9 @@ export function CrmActivitiesPage({
 
       {settings.data?.enabled ? (
         <div className="space-y-4">
+          {sectionKey === "calendar" && activities.isSuccess ? (
+            <CrmMeetingCalendar activities={rows} />
+          ) : null}
           {showForm && canManage ? (
             <Card>
               <CardHeader>

@@ -36,6 +36,11 @@ import {
   buildCrmAccountOverlay,
   type CrmAccountOverlayRow,
 } from "@/lib/crm/account-overlay";
+import {
+  buildCrmPersonDirectory,
+  type CrmAccountPerson,
+  type CrmPersonDirectoryRow,
+} from "@/lib/crm/person-directory";
 import { buildOpportunityQuoteLine } from "@/lib/crm/quote-bridge";
 import {
   buildCrmDealInvoiceRow,
@@ -747,6 +752,58 @@ export const listCrmLeadSources = createServerFn({ method: "GET" })
       .order("sort_order", { ascending: true });
     throwIfRelation(error);
     return ((rows as Record<string, unknown>[] | null) ?? []).map(mapCrmLeadSource);
+  });
+
+/**
+ * CRM people directory is a read-only Contacts overlay, not a second CRM
+ * person master. Both queries enforce tenant identity and run through RLS.
+ * Supplier-only people are explicitly excluded from CRM results.
+ */
+export const listCrmContactPeople = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string }) => ({
+    companyId: companyIdOf(input),
+  }))
+  .handler(async ({ data, context }): Promise<CrmPersonDirectoryRow[]> => {
+    await requireCrmView(context.supabase, data.companyId);
+    const { data: customers, error: customerError } = await context.supabase
+      .from("contacts" as never)
+      .select("id, name" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("is_active" as never, true as never)
+      .is("archived_at" as never, null as never)
+      .in("kind" as never, ["customer", "both"] as never)
+      .order("name" as never, { ascending: true })
+      .limit(200);
+    throwIfRelation(customerError as { message: string; code?: string } | null);
+
+    const accounts = ((customers as Array<Record<string, unknown>> | null) ?? []).map((row) => ({
+      id: String(row["id"] ?? ""),
+      name: String(row["name"] ?? ""),
+    }));
+    if (accounts.length === 0) return [];
+
+    const { data: people, error: peopleError } = await context.supabase
+      .from("contact_people" as never)
+      .select("id, contact_id, first_name, last_name, email, phone, job_title, role_label, is_primary" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .in("contact_id" as never, accounts.map((account) => account.id) as never)
+      .order("first_name" as never, { ascending: true })
+      .limit(500);
+    throwIfRelation(peopleError as { message: string; code?: string } | null);
+
+    const typedPeople: CrmAccountPerson[] = ((people as Array<Record<string, unknown>> | null) ?? []).map((row) => ({
+      id: String(row["id"] ?? ""),
+      contactId: String(row["contact_id"] ?? ""),
+      firstName: row["first_name"] == null ? null : String(row["first_name"]),
+      lastName: row["last_name"] == null ? null : String(row["last_name"]),
+      email: row["email"] == null ? null : String(row["email"]),
+      phone: row["phone"] == null ? null : String(row["phone"]),
+      jobTitle: row["job_title"] == null ? null : String(row["job_title"]),
+      roleLabel: row["role_label"] == null ? null : String(row["role_label"]),
+      isPrimary: Boolean(row["is_primary"]),
+    }));
+    return buildCrmPersonDirectory(typedPeople, accounts);
   });
 
 export const listCrmAccountOverlay = createServerFn({ method: "GET" })

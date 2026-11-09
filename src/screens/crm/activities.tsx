@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { CrmSubnav } from "@/components/crm/CrmSubnav";
+import { CrmStatusBadge } from "@/components/crm/CrmStatusBadge";
 import { CrmMeetingCalendar } from "@/components/crm/CrmMeetingCalendar";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
@@ -335,7 +336,7 @@ export function CrmActivitiesPage({
                     <TableRow key={row.id}>
                       <TableCell>{row.subject}</TableCell>
                       <TableCell className="capitalize">{row.kind.replace("_", " ")}</TableCell>
-                      <TableCell className="capitalize">{row.status}</TableCell>
+                      <TableCell><CrmStatusBadge status={row.status} /></TableCell>
                       <TableCell>
                         {row.dueAt ? new Date(row.dueAt).toLocaleString() : "—"}
                       </TableCell>

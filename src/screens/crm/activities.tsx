@@ -32,6 +32,7 @@ import {
   getCrmSettings,
   listCrmActivities,
   listCrmLeads,
+  listCrmOpportunities,
   upsertCrmActivity,
 } from "@/lib/crm/crm.functions";
 import { displayLeadName } from "@/lib/crm/types";
@@ -52,6 +53,7 @@ export function CrmActivitiesPage({
   const fetchSettings = useServerFn(getCrmSettings);
   const fetchActivities = useServerFn(listCrmActivities);
   const fetchLeads = useServerFn(listCrmLeads);
+  const fetchOpportunities = useServerFn(listCrmOpportunities);
   const createActivity = useServerFn(upsertCrmActivity);
   const completeActivity = useServerFn(completeCrmActivity);
 
@@ -59,7 +61,13 @@ export function CrmActivitiesPage({
   const [subject, setSubject] = useState("");
   const [kind, setKind] = useState("task");
   const [leadId, setLeadId] = useState("");
+  const [relatedType, setRelatedType] = useState<"lead" | "opportunity">("lead");
+  const [opportunityId, setOpportunityId] = useState("");
   const [dueAt, setDueAt] = useState("");
+  const activityKind = sectionKey === "tasks" ? "task" : sectionKey === "calendar" ? "meeting" : kind;
+  const dueIsValid = !dueAt || Number.isFinite(new Date(dueAt).getTime());
+  const needsDue = activityKind === "meeting";
+  const relatedId = relatedType === "lead" ? leadId : opportunityId;
 
   const title =
     sectionKey === "tasks"
@@ -91,20 +99,31 @@ export function CrmActivitiesPage({
   const leads = useQuery({
     queryKey: ["crm-leads", company?.id, "activity-form"],
     queryFn: () => fetchLeads({ data: { companyId: company!.id, limit: 100 } }),
-    enabled: Boolean(company?.id) && canManage && showForm,
+    enabled: Boolean(company?.id) && canManage && showForm && relatedType === "lead",
+    retry: false,
+  });
+
+  const opportunities = useQuery({
+    queryKey: ["crm-opportunities", company?.id, "activity-form"],
+    queryFn: () => fetchOpportunities({ data: { companyId: company!.id, limit: 100 } }),
+    enabled: Boolean(company?.id) && canManage && showForm && relatedType === "opportunity",
     retry: false,
   });
 
   const createMutation = useMutation({
     mutationFn: async () => {
       if (!company) throw new Error("No organisation");
-      if (!leadId) throw new Error("Select a lead");
+      if (!relatedId) throw new Error("Link the activity to a lead or opportunity.");
+      if (!dueIsValid || (needsDue && !dueAt)) {
+        throw new Error("Provide a valid meeting date and time.");
+      }
       return createActivity({
         data: {
           companyId: company.id,
-          kind: sectionKey === "calendar" ? "meeting" : kind,
+          kind: activityKind,
           subject,
-          leadId,
+          leadId: relatedType === "lead" ? leadId : null,
+          opportunityId: relatedType === "opportunity" ? opportunityId : null,
           dueAt: dueAt ? new Date(dueAt).toISOString() : null,
         },
       });
@@ -114,6 +133,8 @@ export function CrmActivitiesPage({
       setShowForm(false);
       setSubject("");
       setLeadId("");
+      setOpportunityId("");
+      setRelatedType("lead");
       setDueAt("");
       await queryClient.invalidateQueries({ queryKey: ["crm-activities", company?.id] });
       await queryClient.invalidateQueries({ queryKey: ["crm-dashboard-kpis", company?.id] });
@@ -148,7 +169,7 @@ export function CrmActivitiesPage({
 
   const rows = (activities.data ?? []).filter((row) => {
     if (sectionKey === "calendar") return row.kind === "meeting";
-    if (sectionKey === "tasks") return row.kind === "task" || row.status === "open";
+    if (sectionKey === "tasks") return row.kind === "task";
     return true;
   });
 
@@ -160,7 +181,7 @@ export function CrmActivitiesPage({
       actions={
         canManage && settings.data?.enabled ? (
           <Button type="button" onClick={() => setShowForm((v) => !v)}>
-            {showForm ? "Close form" : "New activity"}
+            {showForm ? "Close form" : sectionKey === "calendar" ? "New meeting" : sectionKey === "tasks" ? "New task" : "New activity"}
           </Button>
         ) : undefined
       }
@@ -175,7 +196,7 @@ export function CrmActivitiesPage({
           {showForm && canManage ? (
             <Card>
               <CardHeader>
-                <CardTitle>New activity</CardTitle>
+                <CardTitle>{sectionKey === "calendar" ? "New meeting" : sectionKey === "tasks" ? "New task" : "New activity"}</CardTitle>
               </CardHeader>
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2 sm:col-span-2">
@@ -186,7 +207,7 @@ export function CrmActivitiesPage({
                     onChange={(e) => setSubject(e.target.value)}
                   />
                 </div>
-                {sectionKey !== "calendar" ? (
+                {sectionKey === "activities" ? (
                   <div className="space-y-2">
                     <Label>Kind</Label>
                     <Select value={kind} onValueChange={setKind}>
@@ -204,6 +225,17 @@ export function CrmActivitiesPage({
                   </div>
                 ) : null}
                 <div className="space-y-2">
+                  <Label>Related to</Label>
+                  <Select value={relatedType} onValueChange={(v) => setRelatedType(v as "lead" | "opportunity")}>
+                    <SelectTrigger aria-label="Related record type"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="lead">Lead</SelectItem>
+                      <SelectItem value="opportunity">Opportunity</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {relatedType === "lead" ? (
+                <div className="space-y-2">
                   <Label>Lead</Label>
                   <Select value={leadId || "__none"} onValueChange={(v) => setLeadId(v === "__none" ? "" : v)}>
                     <SelectTrigger aria-label="Related lead">
@@ -218,23 +250,51 @@ export function CrmActivitiesPage({
                       ))}
                     </SelectContent>
                   </Select>
+                  {leads.isError ? (
+                    <p role="alert" className="text-xs text-destructive">Could not load leads. Retry the form.</p>
+                  ) : null}
                 </div>
+                ) : (
                 <div className="space-y-2">
-                  <Label htmlFor="act-due">Due</Label>
+                  <Label>Opportunity</Label>
+                  <Select value={opportunityId || "__none"} onValueChange={(v) => setOpportunityId(v === "__none" ? "" : v)}>
+                    <SelectTrigger aria-label="Related opportunity"><SelectValue placeholder="Select opportunity" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none">Select opportunity</SelectItem>
+                      {(opportunities.data ?? []).map((opportunity) => (
+                        <SelectItem key={opportunity.id} value={opportunity.id}>
+                          {opportunity.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {opportunities.isError ? (
+                    <p role="alert" className="text-xs text-destructive">Could not load opportunities. Retry the form.</p>
+                  ) : null}
+                </div>
+                )}
+                <div className="space-y-2">
+                  <Label htmlFor="act-due">{activityKind === "meeting" ? "Meeting date and time" : "Due"}</Label>
                   <Input
                     id="act-due"
                     type="datetime-local"
                     value={dueAt}
                     onChange={(e) => setDueAt(e.target.value)}
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Uses your browser's local timezone; external calendar synchronization is not yet enabled.
+                  </p>
+                  {!dueIsValid || (needsDue && !dueAt) ? (
+                    <p role="alert" className="text-xs text-destructive">A valid meeting date and time is required.</p>
+                  ) : null}
                 </div>
                 <div className="sm:col-span-2">
                   <Button
                     type="button"
-                    disabled={createMutation.isPending || !subject.trim() || !leadId}
+                    disabled={createMutation.isPending || !subject.trim() || !relatedId || !dueIsValid || (needsDue && !dueAt) || (relatedType === "lead" ? leads.isLoading || leads.isError : opportunities.isLoading || opportunities.isError)}
                     onClick={() => createMutation.mutate()}
                   >
-                    {createMutation.isPending ? "Saving…" : "Save activity"}
+                    {createMutation.isPending ? "Saving…" : activityKind === "meeting" ? "Save meeting" : activityKind === "task" ? "Save task" : "Save activity"}
                   </Button>
                 </div>
               </CardContent>
@@ -249,7 +309,10 @@ export function CrmActivitiesPage({
              onRetry={() => activities.refetch()}/>
           ) : null}
           {activities.isSuccess && rows.length === 0 ? (
-            <EmptyState title="No activities" description="Schedule a follow-up against a lead." />
+            <EmptyState
+              title={sectionKey === "calendar" ? "No meetings" : sectionKey === "tasks" ? "No open tasks" : "No activities"}
+              description="Create a task, meeting or activity linked to a lead or opportunity."
+            />
           ) : null}
           {rows.length > 0 ? (
             <div className="overflow-x-auto rounded-lg border">

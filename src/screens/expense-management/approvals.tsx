@@ -324,7 +324,7 @@ export function ExpenseManagementApprovalsPage() {
 
   if (delegationProbePending) {
     return (
-      <ListWorkspace title="Approvals" description="Expense Management"
+      <ListWorkspace title="Approvals" description="Expenses"
       subnav={<ExpenseManagementSubnav current="approvals"/>}
     >
       <LoadingState />
@@ -346,7 +346,7 @@ export function ExpenseManagementApprovalsPage() {
   }
   if ((canActAsApprover && queueQ.isLoading) || (canPost && readyToPostQ.isLoading)) {
     return (
-      <ListWorkspace title="Approvals" description="Expense Management"
+      <ListWorkspace title="Approvals" description="Expenses"
       subnav={<ExpenseManagementSubnav current="approvals"/>}
     >
       <LoadingState />

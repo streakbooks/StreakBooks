@@ -8,7 +8,7 @@ const REQUIRED_MODULES = [
   ["Banking", "/banking"],
   ["Sales", "/sales"],
   ["Purchases", "/purchases"],
-  ["Expense Management", "/expense-management"],
+  ["Expenses", "/expense-management"],
   ["Contacts", "/contacts"],
   ["Products & Services", "/products-services"],
   ["Files", "/files"],

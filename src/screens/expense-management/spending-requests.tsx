@@ -179,7 +179,7 @@ export function ExpenseManagementSpendingRequestsPage() {
   }
   if (listQ.isLoading) {
     return (
-      <ListWorkspace title="Spending Requests" description="Expense Management"
+      <ListWorkspace title="Spending Requests" description="Expenses"
       subnav={<ExpenseManagementSubnav current="spending-requests"/>}
     >
       <LoadingState />

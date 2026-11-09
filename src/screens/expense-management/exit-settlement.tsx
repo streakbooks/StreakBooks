@@ -181,7 +181,7 @@ export function ExpenseManagementExitSettlementPage() {
   if (settlementsQ.isError) {
     const message = friendlyAuthError(settlementsQ.error);
     return (
-      <ListWorkspace title="Exit Settlement" description="Expense Management"
+      <ListWorkspace title="Exit Settlement" description="Expenses"
       subnav={<ExpenseManagementSubnav current="exit-settlement"/>}
     >
       {message.includes("20261107145000") ? (

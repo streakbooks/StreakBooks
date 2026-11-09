@@ -140,7 +140,7 @@ export const MODULE_REGISTRY: readonly ModuleDefinition[] = [
   },
   {
     id: "expense-management",
-    label: "Expense Management",
+    label: "Expenses",
     description: "Employee claims, receipts, approvals and reimbursements",
     path: "/expense-management",
     group: "money",

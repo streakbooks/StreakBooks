@@ -19,7 +19,7 @@ export function ExpenseManagementSubnav({
 
   return (
     <nav
-      aria-label="Expense Management sections"
+      aria-label="Expenses sections"
       className="mb-6 flex min-w-0 items-center gap-2 overflow-x-auto overscroll-x-contain border-b border-border pb-3 print:hidden"
     >
       {visible.map((item) => {

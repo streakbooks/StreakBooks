@@ -246,7 +246,7 @@ export function ExpenseManagementReceiptsPage() {
   }
   if (inboxQ.isLoading) {
     return (
-      <ListWorkspace title="Receipts & Inbox" description="Expense Management"
+      <ListWorkspace title="Receipts & Inbox" description="Expenses"
       subnav={<ExpenseManagementSubnav current="receipts"/>}
     >
       <LoadingState />

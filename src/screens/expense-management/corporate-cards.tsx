@@ -275,7 +275,7 @@ export function ExpenseManagementCorporateCardsPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Corporate Cards" description="Expense Management"
+      <ListWorkspace title="Corporate Cards" description="Expenses"
       subnav={<ExpenseManagementSubnav current="corporate-cards"/>}
     >
       <EmptyState

@@ -246,7 +246,7 @@ export function ExpenseManagementClaimDetailPage({ claimId }: { claimId: string 
   }
   if (claimQ.isLoading) {
     return (
-      <RecordWorkspace title="Expense claim" description="Expense Management">
+      <RecordWorkspace title="Expense claim" description="Expenses">
         <ExpenseManagementSubnav current="my-expenses" />
         <LoadingState />
       </RecordWorkspace>

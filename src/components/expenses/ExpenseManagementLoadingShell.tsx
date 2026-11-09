@@ -7,7 +7,7 @@ import type { ExpenseManagementSectionKey } from "@/lib/expenses/sections";
 export function ExpenseManagementLoadingShell({
   title,
   current,
-  description = "Expense Management",
+  description = "Expenses",
 }: {
   title: string;
   current: ExpenseManagementSectionKey;

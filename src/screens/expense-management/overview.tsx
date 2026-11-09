@@ -83,7 +83,7 @@ export function ExpenseManagementOverviewPage() {
   if (!canOpen) {
     return (
       <ListWorkspace
-        title="Expense Management"
+        title="Expenses"
         description="Claims, receipts, approvals and reimbursements."
       >
         <EmptyState
@@ -96,7 +96,7 @@ export function ExpenseManagementOverviewPage() {
   if (overview.isLoading) {
     return (
       <ListWorkspace
-        title="Expense Management"
+        title="Expenses"
         description="Claims, receipts, approvals and reimbursements."
         subnav={<ExpenseManagementSubnav current="overview" />}
       >
@@ -117,7 +117,7 @@ export function ExpenseManagementOverviewPage() {
   if (!overview.data) {
     return (
       <ListWorkspace
-        title="Expense Management"
+        title="Expenses"
         description="Claims, receipts, approvals and reimbursements."
         subnav={<ExpenseManagementSubnav current="overview" />}
       >
@@ -132,7 +132,7 @@ export function ExpenseManagementOverviewPage() {
 
   return (
     <ListWorkspace
-      title="Expense Management"
+      title="Expenses"
       description="Top-level module for employee and contractor expenses."
       actions={
         <div className="flex flex-wrap gap-2">
@@ -224,7 +224,7 @@ export function ExpenseManagementOverviewPage() {
           <CardTitle>Action centre</CardTitle>
           <CardDescription>
             Live counts come from permission-scoped database queries. Advanced workflows arrive in
-            later Expense Management batches.
+            future Expenses updates.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">

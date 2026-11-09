@@ -378,14 +378,16 @@
         "src/screens/advisors/admin-overview.tsx — persistent Advisors subnav during loading/error, accessible loading/error/result announcements and metrics landmark; commit 2c6e9ead7f0db6fb9029d63073f60dd4e5aac71f; tests NOT RUN",
         "src/screens/advisors/admin-inquiries.tsx — persistent subnav during loading and both query failures; retry both inquiries and staff; live result count; disable conflicting/no-op actions; commit e286ab54ad3f6402ecc451bc1f10bd5460002093; tests NOT RUN",
         "2026-11-09 Advisors Administration Conversations: persistent subnav on loading/error, retry list and staff queries, accessible result count, disabled pending assignment and no-op status/note actions, bounded notes (5000); source commit fe8342e70d4291b0674b13f7bd6ab3f62b8d7580. Tests NOT RUN; 12 criteria NOT VERIFIED.",
-        "2026-11-09 Advisors Admin Appointments: persistent subnav and accessible loading/error states; exception end-after-start validation; prevent overlapping mutations and redundant appointment status updates; live appointment count. Source commit 6b19df8929eb66055f9b0f41ce87674f29c932d3. All tests NOT RUN; not fully verified."
+        "2026-11-09 Advisors Admin Appointments: persistent subnav and accessible loading/error states; exception end-after-start validation; prevent overlapping mutations and redundant appointment status updates; live appointment count. Source commit 6b19df8929eb66055f9b0f41ce87674f29c932d3. All tests NOT RUN; not fully verified.",
+        "2026-11-10 Advisors Admin Clients: persistent subnavigation on loading/error, both client/staff query retry, accessible results count, native client form submission and concurrent mutation button guards. Source commit 36ed571b1bd8c41ea9798df9acf192be5b72e33b. TypeScript, lint, unit, browser, RLS, accounting and coverage guard NOT RUN; 12 criteria NOT VERIFIED."
       ],
       "remaining": [
         "Run local check:browsing-coverage, typecheck, lint, build, unit and authenticated browser tests (NOT RUN)",
         "Verify inquiries, staff retrieval errors, concurrent mutations, role/RLS and draft behavior with real fixtures",
         "Complete all Advisors admin routes and 12 acceptance criteria",
         "Verify Conversations list/staff error recovery, selection, mutation concurrency, notes, permissions, Back/Forward and keyboard accessibility; tests NOT RUN",
-        "Test appointment time ranges, status transitions, concurrent mutations, browser navigation, permissions, accessibility and booking settings with authenticated fixtures; NOT RUN"
+        "Test appointment time ranges, status transitions, concurrent mutations, browser navigation, permissions, accessibility and booking settings with authenticated fixtures; NOT RUN",
+        "Verify Clients native form keyboard submission, client/staff error retry, portal invite/unlink, dirty form refresh behavior, RLS and accessibility; tests NOT RUN."
       ]
     },
     {

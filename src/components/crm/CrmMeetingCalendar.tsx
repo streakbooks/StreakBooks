@@ -17,11 +17,15 @@ function localDateKey(date: Date): string {
  * Read-only monthly meeting calendar backed by actual CRM activity records.
  * The calendar never implies Google/Outlook calendar sync or live availability.
  */
-export function CrmMeetingCalendar({ activities }: { activities: CrmActivity[] }) {
-  const [month, setMonth] = useState(() => {
-    const today = new Date();
-    return new Date(today.getFullYear(), today.getMonth(), 1);
-  });
+export function CrmMeetingCalendar({
+  activities,
+  month,
+  onMonthChange,
+}: {
+  activities: CrmActivity[];
+  month: Date;
+  onMonthChange: (next: Date) => void;
+}) {
   const [selectedDay, setSelectedDay] = useState(() => new Date().getDate());
 
   const year = month.getFullYear();
@@ -51,7 +55,7 @@ export function CrmMeetingCalendar({ activities }: { activities: CrmActivity[] }
   const selectedMeetings = byDay.get(selectedKey) ?? [];
 
   const moveMonth = (direction: number) => {
-    setMonth(new Date(year, monthIndex + direction, 1));
+    onMonthChange(new Date(year, monthIndex + direction, 1));
     setSelectedDay(1);
   };
 
@@ -123,7 +127,7 @@ export function CrmMeetingCalendar({ activities }: { activities: CrmActivity[] }
           )}
         </section>
         <p className="text-xs text-muted-foreground">
-          Displays only meetings returned by the CRM activity query (currently up to 100). Full-range calendar pagination is pending.
+          Meetings come from the selected month (up to 500 records). Very large months require additional pagination.
         </p>
       </CardContent>
     </Card>

@@ -395,7 +395,8 @@
         "src/screens/advisors/portal-tasks.tsx — accessible live task result count and native clear-filter recovery on empty filtered results; commit 30ce8a7f06bbce1781894b7a1dc27251d31d2455; NOT RUN",
         "src/screens/advisors/portal-tasks.tsx — removed six literal escaped newline sequences from JSX markup introduced in earlier accessibility increment; corrective commit 000324768ece3ffb886da300592a9348241d51f4; compilation and browser tests NOT RUN",
         "src/screens/advisors/portal-appointments.tsx — loading/error views retain portal subnavigation, accessible loading/error announcements and appointment result count; code commit 9b944cd1a82e58dcbea191c539ff37d3f36e5b4b; NOT RUN",
-        "src/screens/advisors/portal-documents.tsx — persistent portal subnav during loading/errors, accessible loading/error/result announcements and bounded optional note (commit 37b04076b940f7fd309f6e1d97a7c25cdadcc04b); tests NOT RUN"
+        "src/screens/advisors/portal-documents.tsx — persistent portal subnav during loading/errors, accessible loading/error/result announcements and bounded optional note (commit 37b04076b940f7fd309f6e1d97a7c25cdadcc04b); tests NOT RUN",
+        "src/screens/advisors/portal-messages.tsx — persistent portal subnav in loading/error, accessible status/error/count, bounded composer and pending-send feedback; commit 55dea3e002d97383fb16f99aad032112363c02e6; tests NOT RUN"
       ],
       "remaining": [
         "Verify deep-link refresh, browser Back/Forward, new tab and permission-isolated status filters",
@@ -403,7 +404,8 @@
         "Assess all other Advisors Portal screens and cross-cutting workflows against 12 criteria",
         "Verify live result announcements and clear-filter recovery with keyboard, screen-reader and authenticated browser fixtures",
         "Verify appointments loading, error retry, count and manage links in authenticated keyboard/browser tests",
-        "Verify Documents loading/error recovery, note length, permissions and status updates in authenticated browser; NOT RUN"
+        "Verify Documents loading/error recovery, note length, permissions and status updates in authenticated browser; NOT RUN",
+        "Verify Messages send/retry, authorization, 5000-character input, live announcements and keyboard flows in authenticated browser; NOT RUN"
       ]
     },
     {

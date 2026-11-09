@@ -15,6 +15,7 @@ import {
   mapCrmSettings,
 } from "@/lib/crm/mappers";
 import { crmClient } from "@/lib/crm/query";
+import { buildIlikeOr } from "@/lib/purchases/search-terms";
 import type {
   CrmActivity,
   CrmCampaign,
@@ -190,10 +191,22 @@ export const getCrmDashboardKpis = createServerFn({ method: "GET" })
 
 export const listCrmLeads = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; status?: string; limit?: number }) => ({
+  .inputValidator((input: {
+    companyId: string;
+    status?: string;
+    activeOnly?: boolean;
+    q?: string;
+    limit?: number;
+    offset?: number;
+  }) => ({
     companyId: companyIdOf(input),
     status: input.status?.trim() || undefined,
+    activeOnly: input.activeOnly === true,
+    q: (input.q ?? "").trim().slice(0, 120),
     limit: Math.min(Math.max(input.limit ?? 100, 1), 500),
+    offset: Number.isSafeInteger(input.offset) && (input.offset ?? 0) >= 0
+      ? Math.min(input.offset ?? 0, 1000000)
+      : 0,
   }))
   .handler(async ({ data, context }): Promise<CrmLead[]> => {
     await requireCrmView(context.supabase, data.companyId);
@@ -201,10 +214,16 @@ export const listCrmLeads = createServerFn({ method: "GET" })
       .from("crm_leads")
       .select("*")
       .eq("company_id", data.companyId)
-      .is("archived_at", null)
-      .order("updated_at", { ascending: false });
+      .is("archived_at", null);
     if (data.status) q = q.eq("status", data.status);
-    const { data: rows, error } = await q.limit(data.limit);
+    if (data.activeOnly) q = q.not("status", "in", "(converted,disqualified)");
+    const filter = buildIlikeOr(
+      ["lead_number", "first_name", "last_name", "organization_name", "email"], data.q,
+    );
+    if (filter) q = q.or(filter);
+    // Stable ordering allows deterministic page navigation when timestamps are equal.
+    q = q.order("updated_at", { ascending: false }).order("id", { ascending: false });
+    const { data: rows, error } = await q.range(data.offset, data.offset + data.limit - 1);
     throwIfRelation(error);
     return ((rows as Record<string, unknown>[] | null) ?? []).map(mapCrmLead);
   });

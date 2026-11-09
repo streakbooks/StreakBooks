@@ -20,7 +20,7 @@ describe("validateCrmLeadForm", () => {
 
   it("allows organization-only or email-only leads", () => {
     expect(validateCrmLeadForm({ ...draft, firstName: "", lastName: "", email: "", organizationName: "Acme" }).valid).toBe(true);
-    expect(validateCrmLeadForm({ ...draft, firstName: "", lastName: "", organizationName: "Acme", email: "" }).valid).toBe(true);
+    expect(validateCrmLeadForm({ ...draft, firstName: "", lastName: "", organizationName: "", email: "contact@example.com" }).valid).toBe(true);
   });
 
   it("rejects missing identity and malformed emails", () => {

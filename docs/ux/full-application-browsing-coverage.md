@@ -464,3 +464,8 @@ Every batch may require multiple small implementation increments; do not rush a 
 
 - `src/screens/advisors/admin-inquiries.tsx`: retains Advisors subnavigation during loading and both inquiry/staff error states; retries both queries; announces inquiry counts; disables conflicting and no-op actions. Source commit `e286ab54ad3f6402ecc451bc1f10bd5460002093`.
 - Manifest evidence commit `a29ecab3cb91b458d151068fb93c9876b061b231`. **Partial source evidence only**; no claim of runtime behavior or 12-criterion acceptance. Local `check:browsing-coverage`, TypeScript, lint, build, unit, authenticated browser, accessibility, RLS and accounting regression checks **NOT RUN**. **0/21 modules, 0/15 supporting routes and 0/12 batches fully verified**. No `main` changes, CI trigger or deployment.
+
+### Advisors Administration conversations browsing increment (2026-11-09)
+
+- `src/screens/advisors/admin-conversations.tsx`: persistent Advisors subnavigation on loading/error, combined staff/list retry, accessible result count, pending assignment protection, disabled no-op status/notes actions and 5000-character notes bound. Source commit `fe8342e70d4291b0674b13f7bd6ab3f62b8d7580`.
+- **Partial source evidence only**. TypeScript, lint, unit, build, authenticated browser, screen-reader, `check:browsing-coverage`, RLS and accounting regressions **NOT RUN**. **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No changes to `main`, CI trigger, database or deployment.

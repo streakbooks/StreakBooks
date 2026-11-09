@@ -146,10 +146,14 @@ export function AdvisorsAdminEngagementsPage() {
     onSuccess: async (proposal) => {
       toast.success("Proposal sent");
       setReason("");
-      await navigator.clipboard.writeText(
-        `${window.location.origin}${proposalPublicPath(proposal.publicToken)}`,
-      );
-      toast.message("Public proposal link copied");
+      try {
+        await navigator.clipboard.writeText(
+          `${window.location.origin}${proposalPublicPath(proposal.publicToken)}`,
+        );
+        toast.message("Public proposal link copied");
+      } catch {
+        toast.message("Proposal sent. Copy its public link from the proposal details.");
+      }
       await qc.invalidateQueries({ queryKey: ["advisors-engagement", selectedId] });
       await qc.invalidateQueries({ queryKey: ["advisors-engagements"] });
       await qc.invalidateQueries({ queryKey: ["advisors-overview"] });
@@ -165,16 +169,19 @@ export function AdvisorsAdminEngagementsPage() {
     return detail.clientName || detail.clientEmail || detail.title;
   }, [detail]);
 
-  if (listQ.isPending || clientsQ.isPending || staffQ.isPending) return <LoadingState />;
-  if (listQ.isError) {
+  if (listQ.isPending || clientsQ.isPending || staffQ.isPending) {
+    return <main className="mx-auto max-w-6xl space-y-6 p-6"><AdvisorsSubnav /><div role="status" aria-live="polite"><LoadingState /></div></main>;
+  }
+  if (listQ.isError || clientsQ.isError || staffQ.isError) {
     return (
       <main className="mx-auto max-w-6xl space-y-6 p-6">
         <PageHeader title="Engagements" description="Proposals and service delivery engagements." />
-        <ErrorState
+        <AdvisorsSubnav />
+        <div role="alert"><ErrorState
           title="Engagements unavailable"
-          description={friendlyAuthError(listQ.error)}
-          onRetry={() => void listQ.refetch()}
-        />
+          description={friendlyAuthError(listQ.error ?? clientsQ.error ?? staffQ.error)}
+          onRetry={() => { void listQ.refetch(); void clientsQ.refetch(); void staffQ.refetch(); }}
+        /></div>
       </main>
     );
   }
@@ -225,7 +232,8 @@ export function AdvisorsAdminEngagementsPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
-        <section className="space-y-2">
+        <section className="space-y-2" aria-label="Engagement results">
+          <p className="sr-only" role="status" aria-live="polite">{listQ.data.length} engagements found</p>
           {listQ.data.length === 0 ? (
             <EmptyState
               title="No engagements yet"
@@ -367,7 +375,7 @@ export function AdvisorsAdminEngagementsPage() {
             </div>
             <Button
               type="button"
-              disabled={createM.isPending || !form.clientId || !form.title}
+              disabled={createM.isPending || proposalM.isPending || !form.clientId || !form.title.trim() || !Number.isSafeInteger(form.amountMinor) || form.amountMinor < 0}
               onClick={() => createM.mutate()}
             >
               Create engagement
@@ -460,7 +468,7 @@ export function AdvisorsAdminEngagementsPage() {
                   />
                   <Button
                     type="button"
-                    disabled={proposalM.isPending}
+                    disabled={proposalM.isPending || createM.isPending || !Number.isSafeInteger(proposalDraft.amountMinor) || proposalDraft.amountMinor < 0}
                     onClick={() => proposalM.mutate()}
                   >
                     Create and send proposal

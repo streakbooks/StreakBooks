@@ -65,6 +65,7 @@ export function CrmOpportunitiesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const formValidation = validateOpportunityForm(name, amountMajor);
   const [stageId, setStageId] = useState("");
+  const [selectedPipelineId, setSelectedPipelineId] = useState("");
 
   const settings = useQuery({
     queryKey: ["crm-settings", company?.id],
@@ -112,14 +113,20 @@ export function CrmOpportunitiesPage() {
     return list.find((p) => p.isDefault) ?? list[0] ?? null;
   }, [pipelines.data]);
 
+  const selectedPipeline = useMemo(() => {
+    const list = pipelines.data?.pipelines ?? [];
+    return list.find((pipeline) => pipeline.id === selectedPipelineId) ?? defaultPipeline;
+  }, [pipelines.data, defaultPipeline, selectedPipelineId]);
+
   const stages = useMemo(() => {
-    if (!defaultPipeline) return [];
+    if (!selectedPipeline) return [];
     return (pipelines.data?.stages ?? [])
-      .filter((s) => s.pipelineId === defaultPipeline.id && s.isActive)
+      .filter((s) => s.pipelineId === selectedPipeline.id && s.isActive)
       .sort((a, b) => a.sortOrder - b.sortOrder);
-  }, [pipelines.data, defaultPipeline]);
+  }, [pipelines.data, selectedPipeline]);
 
   const filteredOpenDeals = (opps.data ?? []).filter((opp) => {
+    if (!selectedPipeline || opp.pipelineId !== selectedPipeline.id) return false;
     const term = searchTerm.trim().toLocaleLowerCase();
     return !term || [opp.name, opp.opportunityNumber]
       .some((value) => value.toLocaleLowerCase().includes(term));
@@ -131,14 +138,14 @@ export function CrmOpportunitiesPage() {
       const checked = validateOpportunityForm(name, amountMajor);
       if (!checked.valid) throw new Error(checked.message);
       const initialStageId = stageId || stages.find((s) => !s.isWon && !s.isLost)?.id;
-      if (!defaultPipeline || !initialStageId) {
+      if (!selectedPipeline || !initialStageId) {
         throw new Error("Configure at least one active sales pipeline stage before creating an opportunity.");
       }
       return createOpp({
         data: {
           companyId: company.id,
           name,
-          ...(defaultPipeline?.id ? { pipelineId: defaultPipeline.id } : {}),
+          ...(selectedPipeline?.id ? { pipelineId: selectedPipeline.id } : {}),
           ...(initialStageId ? { stageId: initialStageId } : {}),
           contactId: contactId || null,
           amountMinor: checked.amountMinor,
@@ -336,6 +343,19 @@ export function CrmOpportunitiesPage() {
           ) : null}
 
           <div className="flex flex-wrap items-center gap-3">
+            <div className="min-w-40 space-y-1">
+              <Label htmlFor="crm-pipeline-picker">Pipeline</Label>
+              <Select value={selectedPipeline?.id ?? ""} onValueChange={(value) => { setSelectedPipelineId(value); setStageId(""); }}>
+                <SelectTrigger id="crm-pipeline-picker" aria-label="Select CRM pipeline">
+                  <SelectValue placeholder="Choose pipeline" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(pipelines.data?.pipelines ?? []).filter((pipeline) => pipeline.isActive).map((pipeline) => (
+                    <SelectItem value={pipeline.id} key={pipeline.id}>{pipeline.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <Label htmlFor="crm-deal-search" className="sr-only">Search loaded opportunities</Label>
             <Input
               id="crm-deal-search"
@@ -346,7 +366,7 @@ export function CrmOpportunitiesPage() {
               onChange={(event) => setSearchTerm(event.target.value)}
             />
             <p className="text-xs text-muted-foreground" role="status">
-              {filteredOpenDeals.length} of {opps.data?.length ?? 0} loaded open deals. Search only filters loaded records.
+              Showing {filteredOpenDeals.length} deals in the selected pipeline (from up to 200 loaded open records); search is local to loaded records.
             </p>
           </div>
           {opps.isLoading || pipelines.isLoading ? <LoadingState /> : null}
@@ -519,13 +539,13 @@ export function CrmOpportunitiesPage() {
             </div>
           ) : null}
 
-          {(closedOpps.data?.length ?? 0) > 0 ? (
+          {(closedOpps.data?.some((opp) => opp.pipelineId === selectedPipeline?.id) ?? false) ? (
             <Card>
               <CardHeader>
                 <CardTitle>Closed deals</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                {(closedOpps.data ?? []).map((opp) => (
+                {(closedOpps.data ?? []).filter((opp) => opp.pipelineId === selectedPipeline?.id).map((opp) => (
                   <div
                     key={opp.id}
                     className="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm"

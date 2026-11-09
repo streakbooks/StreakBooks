@@ -187,6 +187,30 @@ export type CrmLeadSource = {
   sortOrder: number;
 };
 
+export type CrmCampaignStatus =
+  | "planned"
+  | "active"
+  | "paused"
+  | "completed"
+  | "cancelled";
+
+export type CrmCampaign = {
+  id: string;
+  name: string;
+  code: string | null;
+  status: CrmCampaignStatus;
+  channel: string | null;
+  sourceId: string | null;
+  startsOn: string | null;
+  endsOn: string | null;
+  budgetMinor: number;
+  currencyCode: string;
+  notes: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export function displayLeadName(lead: Pick<
   CrmLead,
   "organizationName" | "firstName" | "lastName" | "email" | "leadNumber"

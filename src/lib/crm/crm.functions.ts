@@ -5,6 +5,7 @@ import { assertUuid } from "@/lib/company-validation";
 import { callRpc, companyIdOf, isMissingRelation } from "@/lib/planning/rpc";
 import {
   mapCrmActivity,
+  mapCrmCampaign,
   mapCrmDashboardKpis,
   mapCrmLead,
   mapCrmLeadSource,
@@ -16,6 +17,8 @@ import {
 import { crmClient } from "@/lib/crm/query";
 import type {
   CrmActivity,
+  CrmCampaign,
+  CrmCampaignStatus,
   CrmDashboardKpis,
   CrmLead,
   CrmLeadDraftInput,
@@ -26,6 +29,7 @@ import type {
   CrmPipelineStage,
   CrmSettings,
 } from "@/lib/crm/types";
+import { CRM_CAMPAIGN_STATUSES, validateCrmCampaignDraft } from "@/lib/crm/campaign-draft";
 import { emptyCrmDashboardKpis } from "@/lib/crm/types";
 import {
   buildCrmAccountOverlay,
@@ -76,6 +80,9 @@ export const CRM_GAP_MIGRATION =
 
 export const CRM_PIPELINE_ADMIN_MIGRATION =
   "CRM pipeline admin needs database update 20261109160000 (upsert pipelines/stages).";
+
+export const CRM_CAMPAIGNS_MIGRATION =
+  "CRM campaigns need database update 20261109170000 (campaign records).";
 
 async function requireCrmView(supabase: unknown, companyId: string) {
   await assertCompanyMember(supabase as never, companyId);
@@ -1382,3 +1389,109 @@ export const listCrmTeamWorkload = createServerFn({ method: "GET" })
       };
     },
   );
+
+export const listCrmCampaigns = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; limit?: number }) => ({
+    companyId: companyIdOf(input),
+    limit: Math.min(Math.max(input.limit ?? 200, 1), 500),
+  }))
+  .handler(async ({ data, context }): Promise<CrmCampaign[]> => {
+    await requireCrmView(context.supabase, data.companyId);
+    const { data: rows, error } = await crmClient(context.supabase)
+      .from("crm_campaigns")
+      .select("*")
+      .eq("company_id", data.companyId)
+      .order("updated_at", { ascending: false })
+      .limit(data.limit);
+    if (error) {
+      if (isMissingRelation(error)) throw new Error(CRM_CAMPAIGNS_MIGRATION);
+      throw new Error(error.message);
+    }
+    return ((rows as Record<string, unknown>[] | null) ?? []).map(mapCrmCampaign);
+  });
+
+export const upsertCrmCampaign = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      id?: string;
+      name: string;
+      code?: string | null;
+      status?: CrmCampaignStatus;
+      channel?: string | null;
+      sourceId?: string | null;
+      startsOn?: string | null;
+      endsOn?: string | null;
+      budgetMinor?: number;
+      currencyCode?: string;
+      notes?: string | null;
+      isActive?: boolean;
+    }) => {
+      const status = (input.status ?? "planned") as CrmCampaignStatus;
+      if (!CRM_CAMPAIGN_STATUSES.includes(status)) throw new Error("Invalid campaign status");
+      const draftError = validateCrmCampaignDraft({
+        name: input.name ?? "",
+        status,
+        budgetMinor: typeof input.budgetMinor === "number" ? input.budgetMinor : 0,
+        currencyCode: input.currencyCode ?? "USD",
+        startsOn: input.startsOn,
+        endsOn: input.endsOn,
+      });
+      if (draftError) throw new Error(draftError);
+      return {
+        companyId: companyIdOf(input),
+        id: input.id ? assertUuid(input.id) : undefined,
+        name: input.name.trim().slice(0, 160),
+        code: input.code?.trim().slice(0, 40) || null,
+        status,
+        channel: input.channel?.trim().slice(0, 80) || null,
+        sourceId: input.sourceId ? assertUuid(input.sourceId) : null,
+        startsOn: input.startsOn || null,
+        endsOn: input.endsOn || null,
+        budgetMinor: Math.max(0, Math.trunc(input.budgetMinor ?? 0)),
+        currencyCode: (input.currencyCode ?? "USD").trim().toUpperCase().slice(0, 3),
+        notes: input.notes?.trim().slice(0, 4000) || null,
+        isActive: input.isActive !== false,
+      };
+    },
+  )
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "crm.campaigns.manage");
+    return callRpc<Record<string, unknown>>(
+      context.supabase,
+      "upsert_crm_campaign",
+      {
+        _company_id: data.companyId,
+        _payload: {
+          id: data.id,
+          name: data.name,
+          code: data.code,
+          status: data.status,
+          channel: data.channel,
+          sourceId: data.sourceId,
+          startsOn: data.startsOn,
+          endsOn: data.endsOn,
+          budgetMinor: data.budgetMinor,
+          currencyCode: data.currencyCode,
+          notes: data.notes,
+          isActive: data.isActive,
+        },
+      },
+      CRM_CAMPAIGNS_MIGRATION,
+    ).then((raw) => mapCrmCampaign({
+      id: (raw as { id?: string }).id,
+      name: (raw as { name?: string }).name,
+      code: (raw as { code?: string | null }).code,
+      status: (raw as { status?: CrmCampaignStatus }).status,
+      channel: (raw as { channel?: string | null }).channel,
+      source_id: (raw as { sourceId?: string | null }).sourceId,
+      starts_on: (raw as { startsOn?: string | null }).startsOn,
+      ends_on: (raw as { endsOn?: string | null }).endsOn,
+      budget_minor: (raw as { budgetMinor?: number }).budgetMinor,
+      currency_code: (raw as { currencyCode?: string }).currencyCode,
+      notes: (raw as { notes?: string | null }).notes,
+      is_active: (raw as { isActive?: boolean }).isActive,
+    }));
+  });

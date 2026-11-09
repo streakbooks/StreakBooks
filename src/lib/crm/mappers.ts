@@ -1,5 +1,7 @@
 import type {
   CrmActivity,
+  CrmCampaign,
+  CrmCampaignStatus,
   CrmDashboardKpis,
   CrmLead,
   CrmLeadSource,
@@ -313,5 +315,41 @@ export function mapCrmLeadSource(raw: SourceRow | Record<string, unknown>): CrmL
     name: String(row.name ?? ""),
     isActive: row.is_active !== false,
     sortOrder: num(row.sort_order, 100),
+  };
+}
+type CampaignRow = {
+  id?: string;
+  name?: string;
+  code?: string | null;
+  status?: CrmCampaignStatus;
+  channel?: string | null;
+  source_id?: string | null;
+  starts_on?: string | null;
+  ends_on?: string | null;
+  budget_minor?: number;
+  currency_code?: string;
+  notes?: string | null;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export function mapCrmCampaign(raw: CampaignRow | Record<string, unknown>): CrmCampaign {
+  const row = raw as CampaignRow;
+  return {
+    id: String(row.id ?? ""),
+    name: String(row.name ?? ""),
+    code: str(row.code),
+    status: (row.status ?? "planned") as CrmCampaignStatus,
+    channel: str(row.channel),
+    sourceId: str(row.source_id),
+    startsOn: str(row.starts_on),
+    endsOn: str(row.ends_on),
+    budgetMinor: num(row.budget_minor),
+    currencyCode: String(row.currency_code ?? "USD"),
+    notes: str(row.notes),
+    isActive: row.is_active !== false,
+    createdAt: String(row.created_at ?? ""),
+    updatedAt: String(row.updated_at ?? ""),
   };
 }

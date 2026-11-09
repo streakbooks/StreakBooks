@@ -176,9 +176,10 @@ export function AdvisorsPortalAccountPage() {
 
       <section className="space-y-3 rounded-lg border border-border p-4">
         <h2 className="text-lg font-medium">Plan change or cancellation</h2>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Service request type">
           <Button
             type="button"
+            aria-pressed={requestKind === "plan_change"}
             variant={requestKind === "plan_change" ? "default" : "outline"}
             size="sm"
             onClick={() => setRequestKind("plan_change")}
@@ -187,6 +188,7 @@ export function AdvisorsPortalAccountPage() {
           </Button>
           <Button
             type="button"
+            aria-pressed={requestKind === "cancellation"}
             variant={requestKind === "cancellation" ? "default" : "outline"}
             size="sm"
             onClick={() => setRequestKind("cancellation")}
@@ -194,7 +196,10 @@ export function AdvisorsPortalAccountPage() {
             Cancellation
           </Button>
         </div>
+        <form className="space-y-3" onSubmit={(event) => { event.preventDefault(); if (!requestM.isPending && requestDetails.trim().length >= 3) requestM.mutate(); }}>
         <Textarea
+          required
+          minLength={3}
           value={requestDetails}
           onChange={(e) => setRequestDetails(e.target.value)}
           rows={4}
@@ -203,11 +208,12 @@ export function AdvisorsPortalAccountPage() {
           placeholder="Tell us what you need"
         />
         <Button
+          type="submit"
           disabled={requestM.isPending || requestDetails.trim().length < 3}
-          onClick={() => requestM.mutate()}
         >
           {requestM.isPending ? "Submitting…" : "Submit request"}
         </Button>
+        </form>
       </section>
 
       <p className="text-xs text-muted-foreground">{homeQuery.data.calendarOAuth.note}</p>

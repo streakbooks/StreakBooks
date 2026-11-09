@@ -372,8 +372,11 @@
         "advisors-admin.tsx",
         "advisors-admin.workspaces.tsx"
       ],
-      "browsingImplementation": "not_assessed_module_wide",
-      "fullyVerified": false
+      "browsingImplementation": "partial_code_not_runtime_verified",
+      "fullyVerified": false,
+      "currentEvidence": [
+        "src/screens/advisors/admin-overview.tsx — persistent Advisors subnav during loading/error, accessible loading/error/result announcements and metrics landmark; commit 2c6e9ead7f0db6fb9029d63073f60dd4e5aac71f; tests NOT RUN"
+      ]
     },
     {
       "label": "Advisors portal",

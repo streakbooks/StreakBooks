@@ -126,6 +126,11 @@ The register below was derived from actual repository navigation and routes. The
 - `src/screens/advisors/portal-documents.tsx`: portal subnavigation retained during loading and error states, accessible status/error and document-count announcements, and bounded optional upload-reference note (500 characters). Source commit `37b04076b940f7fd309f6e1d97a7c25cdadcc04b`.
 - **Partial source evidence only.** Local TypeScript, lint, unit, build, authenticated browser, screen-reader, `check:browsing-coverage`, role/RLS and accounting regressions **NOT RUN**. Existing document marking and permissions require verification. **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified.** No changes to `main`, CI trigger, production database or deployment.
 
+### Advisors Portal messages browsing increment (2026-11-09)
+
+- `src/screens/advisors/portal-messages.tsx`: persistent portal subnavigation during loading/error, accessible status/error and message-count announcements, composer maximum of 5000 characters, and sending-state feedback; code commit `55dea3e002d97383fb16f99aad032112363c02e6`.
+- **Partial source evidence only.** Local typecheck, lint, unit, build, authenticated browser, screen-reader, `check:browsing-coverage`, RLS and accounting regression **NOT RUN**. Message delivery and permissions need runtime verification. **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified.** No `main` changes, CI trigger, production database change or deployment.
+
 ## 2. Internal and supporting routes also included
 
 - `src/routes/_authenticated/documents.branding.tsx`

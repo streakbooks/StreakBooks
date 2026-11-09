@@ -8,9 +8,11 @@ import { CrmActivitiesPage } from "@/screens/crm/activities";
 import { CrmLeadsPage } from "@/screens/crm/leads";
 import { CrmOpportunitiesPage } from "@/screens/crm/opportunities";
 import { CrmPipelinesPage } from "@/screens/crm/pipelines";
+import { CrmAutomationPage } from "@/screens/crm/automation";
 import { CrmCampaignsPage } from "@/screens/crm/campaigns";
 import { CrmCommunicationsPage } from "@/screens/crm/communications";
 import { CrmForecastingPage } from "@/screens/crm/forecasting";
+import { CrmImportsPage } from "@/screens/crm/imports";
 import { CrmQuotesPage } from "@/screens/crm/quotes";
 import { CrmRelationshipsPage } from "@/screens/crm/relationships";
 import { CrmReportsPage } from "@/screens/crm/reports";
@@ -36,6 +38,8 @@ export function CrmSectionPage({ sectionKey }: { sectionKey: CrmSectionKey }) {
   if (sectionKey === "reports") return <CrmReportsPage />;
   if (sectionKey === "communications") return <CrmCommunicationsPage />;
   if (sectionKey === "campaigns") return <CrmCampaignsPage />;
+  if (sectionKey === "automation") return <CrmAutomationPage />;
+  if (sectionKey === "imports") return <CrmImportsPage />;
   if (sectionKey === "settings") return <CrmSettingsPage />;
   if (sectionKey === "activities" || sectionKey === "tasks" || sectionKey === "calendar") {
     return <CrmActivitiesPage sectionKey={sectionKey} />;

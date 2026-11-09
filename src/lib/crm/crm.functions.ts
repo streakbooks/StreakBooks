@@ -41,6 +41,14 @@ import {
   type ForecastReport,
 } from "@/lib/crm/forecast-report";
 import { resolveCrmCommsPolicy, type CrmCommsPolicy } from "@/lib/crm/comms-policy";
+import {
+  resolveCrmAutomationPolicy,
+  type CrmAutomationPolicy,
+} from "@/lib/crm/automation-policy";
+import {
+  resolveCrmImportExportPolicy,
+  type CrmImportExportPolicy,
+} from "@/lib/crm/import-export-policy";
 import { saveSalesDocument } from "@/lib/sales/doc-save";
 import {
   loadCompanyDefaults,
@@ -1228,4 +1236,46 @@ export const getCrmCommsPolicy = createServerFn({ method: "GET" })
     await requireCrmView(context.supabase, data.companyId);
     // Provider wiring is intentionally absent: never claim send is available.
     return resolveCrmCommsPolicy({ providerConfigured: false });
+  });
+
+/** Automation engine gate — flagged off until durable runners exist. */
+export const getCrmAutomationPolicy = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .handler(async ({ data, context }): Promise<CrmAutomationPolicy> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "crm.automation.manage");
+    return resolveCrmAutomationPolicy({ engineEnabled: false });
+  });
+
+/** Import/export gate — permissions alone never unlock unbacked data moves. */
+export const getCrmImportExportPolicy = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .handler(async ({ data, context }): Promise<CrmImportExportPolicy & { hasImportPermission: boolean; hasExportPermission: boolean }> => {
+    await assertCompanyMember(context.supabase, data.companyId);
+    let hasImportPermission = false;
+    let hasExportPermission = false;
+    try {
+      await assertCompanyPermission(context.supabase, data.companyId, "crm.import");
+      hasImportPermission = true;
+    } catch {
+      /* optional */
+    }
+    try {
+      await assertCompanyPermission(context.supabase, data.companyId, "crm.export");
+      hasExportPermission = true;
+    } catch {
+      /* optional */
+    }
+    if (!hasImportPermission && !hasExportPermission) {
+      await assertCompanyPermission(context.supabase, data.companyId, "crm.admin");
+      hasImportPermission = true;
+      hasExportPermission = true;
+    }
+    const policy = resolveCrmImportExportPolicy({
+      backendReady: false,
+      hasImportPermission,
+      hasExportPermission,
+    });
+    return { ...policy, hasImportPermission, hasExportPermission };
   });

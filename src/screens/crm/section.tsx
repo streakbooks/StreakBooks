@@ -17,6 +17,7 @@ import { CrmQuotesPage } from "@/screens/crm/quotes";
 import { CrmRelationshipsPage } from "@/screens/crm/relationships";
 import { CrmReportsPage } from "@/screens/crm/reports";
 import { CrmSettingsPage } from "@/screens/crm/settings";
+import { CrmTeamPage } from "@/screens/crm/team";
 
 const DEFERRED_LINKS: Partial<Record<CrmSectionKey, { href: string; label: string }>> = {
   products: { href: "/products-services", label: "Open Products & Services" },
@@ -40,6 +41,7 @@ export function CrmSectionPage({ sectionKey }: { sectionKey: CrmSectionKey }) {
   if (sectionKey === "campaigns") return <CrmCampaignsPage />;
   if (sectionKey === "automation") return <CrmAutomationPage />;
   if (sectionKey === "imports") return <CrmImportsPage />;
+  if (sectionKey === "team") return <CrmTeamPage />;
   if (sectionKey === "settings") return <CrmSettingsPage />;
   if (sectionKey === "activities" || sectionKey === "tasks" || sectionKey === "calendar") {
     return <CrmActivitiesPage sectionKey={sectionKey} />;

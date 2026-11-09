@@ -30,6 +30,7 @@
 | CRM-S02-08 | Tasks | Open/all/overdue and task-kind filters | Task-only results; due-before timestamp; completed preserved |
 | CRM-S02-09 | Calendar | Queries selected month's meetings; 500-row cap declared | DST/month edge dates and proper month navigation |
 | CRM-S02-10 | Database security read | Existing CRM/Contacts schema and RLS flag/policy presence inspected | True authenticated 2-company RLS tests still pending |
+| CRM-S02-11 | Customer pipeline FX safety | Group open opportunity value by actual currency rather than adding raw minor units | Mixed USD/EUR deals, invalid currency, multi-company views, and all reporting screens |
 
 ## All CRM sections — remaining work register
 
@@ -39,7 +40,7 @@
 | Leads | Partial, upgraded this batch | Full lead list E2E, qualification workflows, bulk actions, anti-spam public lead intake |
 | Opportunities | Partial, upgraded this batch | Editable deal detail, stage history proof, product lines and quote authorization |
 | Pipelines | Partial | Admin permissions and Kanban drag/keyboard E2E |
-| Accounts | Partial | Complete customer 360 view and hierarchy |
+| Accounts | Improved, FX-safe pipeline by currency | Customer 360 view, hierarchy, enterprise aggregation and independent FX conversion policy |
 | CRM Contacts | Improved this batch | Enterprise-scale person search/pagination, person-level history and consent controls |
 | Activities | Improved this batch | Full activity timelines, reminders, reassignment |
 | Tasks & Follow-ups | Improved this batch | Automated SLA escalations, recurring tasks, reminders |
@@ -78,6 +79,11 @@
 - `private.crm_require_permission` verifies `auth.uid()`, `is_company_member(company_id)` and `has_company_permission(company_id, permission)`. This is a guard inspection, **not** a two-company impersonation or adversarial RPC test.
 - Supabase Security Advisor still flags authenticated `SECURITY DEFINER` functions among broader project findings; direct RPC grants require a complete access review. See [Supabase Security Advisor 0029](https://supabase.com/docs/guides/observability/advisors?lint=0029_authenticated_security_definer_function_executable).
 - No SQL permissions, migrations, RLS policies, production data or third-party connectors were changed in this batch.
+
+## Currency correctness boundary
+
+- Customer Accounts pipeline now displays separate original-currency totals. Never add minor-unit amounts of different currencies or label unconverted sums as the company's base currency.
+- Other CRM dashboards and forecasting RPCs still need a full multi-currency/FX snapshot audit; do not interpret their aggregates as verified consolidated accounting values.
 
 ## Critical blockers outside this batch
 

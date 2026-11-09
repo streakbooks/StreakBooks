@@ -100,19 +100,28 @@ export function AdvisorsAdminInquiriesPage() {
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
 
-  if (query.isPending || staffQuery.isPending) return <LoadingState />;
-  if (query.isError) {
+  if (query.isPending || staffQuery.isPending) return (
+    <main className="mx-auto max-w-6xl space-y-6 p-6">
+      <PageHeader title="Inquiries" description="Loading Advisors inquiries and staff." />
+      <AdvisorsSubnav />
+      <div role="status" aria-live="polite"><LoadingState /></div>
+    </main>
+  );
+  if (query.isError || staffQuery.isError) {
     return (
       <main className="mx-auto max-w-6xl space-y-6 p-6">
         <PageHeader
           title="Inquiries"
           description="Leads captured from Advisors chat and handoffs."
         />
-        <ErrorState
-          title="Inquiries unavailable"
-          description={friendlyAuthError(query.error)}
-          onRetry={() => void query.refetch()}
-        />
+        <AdvisorsSubnav />
+        <div role="alert">
+          <ErrorState
+            title="Inquiries unavailable"
+            description={friendlyAuthError(query.isError ? query.error : staffQuery.error)}
+            onRetry={() => { void query.refetch(); void staffQuery.refetch(); }}
+          />
+        </div>
       </main>
     );
   }
@@ -126,6 +135,7 @@ export function AdvisorsAdminInquiriesPage() {
         description="Search, assign and progress Advisors leads. Promote qualified leads into clients."
       />
       <AdvisorsSubnav />
+      <p role="status" aria-live="polite" className="text-sm text-muted-foreground">{query.data.length} inquiries found</p>
 
       <div className="flex flex-wrap items-end gap-3">
         <div className="space-y-1">
@@ -229,6 +239,7 @@ export function AdvisorsAdminInquiriesPage() {
                 <select
                   id="assign-advisor"
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  disabled={updateM.isPending || promoteM.isPending}
                   value={selected.assignedAdvisorId ?? ""}
                   onChange={(event) =>
                     updateM.mutate({
@@ -253,7 +264,7 @@ export function AdvisorsAdminInquiriesPage() {
                     type="button"
                     size="sm"
                     variant={selected.status === next ? "default" : "outline"}
-                    disabled={updateM.isPending}
+                    disabled={updateM.isPending || promoteM.isPending || selected.status === next}
                     onClick={() => updateM.mutate({ inquiryId: selected.id, status: next })}
                   >
                     Mark {next}
@@ -271,7 +282,7 @@ export function AdvisorsAdminInquiriesPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={updateM.isPending}
+                  disabled={updateM.isPending || promoteM.isPending || adminNotes === selected.adminNotes}
                   onClick={() => updateM.mutate({ inquiryId: selected.id, adminNotes })}
                 >
                   Save notes
@@ -279,7 +290,7 @@ export function AdvisorsAdminInquiriesPage() {
               </div>
               <Button
                 type="button"
-                disabled={promoteM.isPending || !selected.email}
+                disabled={promoteM.isPending || updateM.isPending || !selected.email}
                 onClick={() => promoteM.mutate(selected.id)}
               >
                 Promote to client

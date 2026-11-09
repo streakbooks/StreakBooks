@@ -64,8 +64,8 @@ if (!navItemsBlock) failures.push("Could not parse export const navItems from sr
 const navEntries = [
   ...(navItemsBlock?.[1].matchAll(/\{\s*label:\s*"([^"]+)"[\s\S]*?to:\s*"([^"]+)"/g) ?? []),
 ].map((m) => ({ label: m[1], to: m[2] }));
-if (navEntries.length !== 24) {
-  failures.push(`Expected 24 navItems, found ${navEntries.length}`);
+if (navEntries.length !== 25) {
+  failures.push(`Expected 25 navItems, found ${navEntries.length}`);
 }
 if (sidebar.length !== navEntries.length) {
   failures.push(

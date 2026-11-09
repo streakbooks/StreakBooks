@@ -1,0 +1,328 @@
+import { Link } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
+import { CrmSubnav } from "@/components/crm/CrmSubnav";
+import { CompanyEmptyState } from "@/components/common/company-empty";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useActiveCompany } from "@/hooks/use-active-company";
+import { useCan } from "@/hooks/use-can";
+import { friendlyAuthError } from "@/lib/auth-helpers";
+import {
+  getCrmSettings,
+  listCrmLeads,
+  listCrmLeadSources,
+  upsertCrmLead,
+} from "@/lib/crm/crm.functions";
+import { formatCrmMinor } from "@/lib/crm/format";
+import { displayLeadName, type CrmLeadStatus } from "@/lib/crm/types";
+import type { Permission } from "@/lib/permissions";
+import { toast } from "sonner";
+
+export function CrmLeadsPage() {
+  const { company, isPending } = useActiveCompany();
+  const { can } = useCan();
+  const canView = can("crm.view" as Permission) || can("crm.admin" as Permission);
+  const canManage = can("crm.leads.manage" as Permission);
+  const queryClient = useQueryClient();
+  const fetchSettings = useServerFn(getCrmSettings);
+  const fetchLeads = useServerFn(listCrmLeads);
+  const fetchSources = useServerFn(listCrmLeadSources);
+  const createLead = useServerFn(upsertCrmLead);
+
+  const [statusFilter, setStatusFilter] = useState<string>("open");
+  const [showForm, setShowForm] = useState(false);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [organizationName, setOrganizationName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [sourceId, setSourceId] = useState<string>("");
+  const [estimatedMajor, setEstimatedMajor] = useState("");
+
+  const settings = useQuery({
+    queryKey: ["crm-settings", company?.id],
+    queryFn: () => fetchSettings({ data: { companyId: company!.id } }),
+    enabled: Boolean(company?.id) && canView,
+    retry: false,
+  });
+
+  const leads = useQuery({
+    queryKey: ["crm-leads", company?.id, statusFilter],
+    queryFn: () =>
+      fetchLeads({
+        data: {
+          companyId: company!.id,
+          ...(statusFilter === "open" || statusFilter === "all"
+            ? {}
+            : { status: statusFilter }),
+        },
+      }),
+    enabled: Boolean(company?.id) && canView && settings.data?.enabled === true,
+    retry: false,
+  });
+
+  const sources = useQuery({
+    queryKey: ["crm-lead-sources", company?.id],
+    queryFn: () => fetchSources({ data: { companyId: company!.id } }),
+    enabled: Boolean(company?.id) && canView && settings.data?.enabled === true,
+    retry: false,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async () => {
+      if (!company) throw new Error("No organisation");
+      const estimatedValueMinor = Math.max(
+        0,
+        Math.round((Number(estimatedMajor) || 0) * 100),
+      );
+      return createLead({
+        data: {
+          companyId: company.id,
+          status: "new" as CrmLeadStatus,
+          firstName,
+          lastName,
+          organizationName,
+          email,
+          phone,
+          sourceId: sourceId || null,
+          estimatedValueMinor,
+          currencyCode: company.base_currency,
+        },
+      });
+    },
+    onSuccess: async (result) => {
+      toast.success(`Lead ${result.leadNumber} created`);
+      setShowForm(false);
+      setFirstName("");
+      setLastName("");
+      setOrganizationName("");
+      setEmail("");
+      setPhone("");
+      setSourceId("");
+      setEstimatedMajor("");
+      await queryClient.invalidateQueries({ queryKey: ["crm-leads", company?.id] });
+      await queryClient.invalidateQueries({ queryKey: ["crm-dashboard-kpis", company?.id] });
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+
+  if (isPending) return <LoadingState />;
+  if (!company) {
+    return <CompanyEmptyState title="No organisation" description="Select a company first." />;
+  }
+  if (!canView) {
+    return (
+      <ListWorkspace title="Leads" description="Capture and qualify sales leads.">
+        <EmptyState title="No CRM access" description="Ask an administrator for crm.view." />
+      </ListWorkspace>
+    );
+  }
+
+  const rows = (leads.data ?? []).filter((lead) => {
+    if (statusFilter !== "open") return true;
+    return !["converted", "disqualified"].includes(lead.status);
+  });
+
+  return (
+    <ListWorkspace
+      title="Leads"
+      description="Lead capture, qualification and conversion into Contacts."
+      breadcrumbs={[{ label: "CRM", to: "/crm" }, { label: "Leads" }]}
+      actions={
+        canManage && settings.data?.enabled ? (
+          <Button type="button" onClick={() => setShowForm((v) => !v)}>
+            {showForm ? "Close form" : "New lead"}
+          </Button>
+        ) : undefined
+      }
+    >
+      <CrmSubnav current="leads" />
+
+      {settings.isLoading ? <LoadingState /> : null}
+      {settings.data && !settings.data.enabled ? (
+        <EmptyState
+          title="CRM is disabled"
+          description="Enable CRM in settings before creating leads."
+          action={
+            can("crm.admin" as Permission) ? (
+              <Button asChild>
+                <Link to="/crm/$section" params={{ section: "settings" }}>CRM Settings</Link>
+              </Button>
+            ) : undefined
+          }
+        />
+      ) : null}
+
+      {settings.data?.enabled ? (
+        <div className="space-y-4">
+          {showForm && canManage ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>New lead</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="lead-first">First name</Label>
+                  <Input id="lead-first" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lead-last">Last name</Label>
+                  <Input id="lead-last" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="lead-org">Organisation</Label>
+                  <Input
+                    id="lead-org"
+                    value={organizationName}
+                    onChange={(e) => setOrganizationName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lead-email">Email</Label>
+                  <Input
+                    id="lead-email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lead-phone">Phone</Label>
+                  <Input id="lead-phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Source</Label>
+                  <Select value={sourceId || "__none"} onValueChange={(v) => setSourceId(v === "__none" ? "" : v)}>
+                    <SelectTrigger aria-label="Lead source">
+                      <SelectValue placeholder="Select source" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none">No source</SelectItem>
+                      {(sources.data ?? []).map((source) => (
+                        <SelectItem key={source.id} value={source.id}>
+                          {source.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lead-value">Estimated value ({company.base_currency})</Label>
+                  <Input
+                    id="lead-value"
+                    inputMode="decimal"
+                    value={estimatedMajor}
+                    onChange={(e) => setEstimatedMajor(e.target.value)}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <Button
+                    type="button"
+                    disabled={createMutation.isPending}
+                    onClick={() => createMutation.mutate()}
+                  >
+                    {createMutation.isPending ? "Saving…" : "Create lead"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
+
+          <div className="flex flex-wrap items-center gap-3">
+            <Label htmlFor="lead-status-filter" className="sr-only">
+              Status filter
+            </Label>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger id="lead-status-filter" className="w-48" aria-label="Filter leads">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="open">Open leads</SelectItem>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="new">New</SelectItem>
+                <SelectItem value="contacted">Contacted</SelectItem>
+                <SelectItem value="qualified">Qualified</SelectItem>
+                <SelectItem value="nurturing">Nurturing</SelectItem>
+                <SelectItem value="converted">Converted</SelectItem>
+                <SelectItem value="disqualified">Disqualified</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {leads.isLoading ? <LoadingState /> : null}
+          {leads.isError ? (
+            <ErrorState title="Could not load leads" description={friendlyAuthError(leads.error)} onRetry={() => leads.refetch()} />
+          ) : null}
+          {leads.isSuccess && rows.length === 0 ? (
+            <EmptyState
+              title="No leads yet"
+              description="Create a lead to start the CRM lifecycle."
+            />
+          ) : null}
+          {rows.length > 0 ? (
+            <div className="overflow-x-auto rounded-lg border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Number</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead className="text-right">Est. value</TableHead>
+                    <TableHead>Updated</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rows.map((lead) => (
+                    <TableRow key={lead.id}>
+                      <TableCell>
+                        <Link
+                          to="/crm/leads/$leadId"
+                          params={{ leadId: lead.id }}
+                          className="font-medium text-primary underline-offset-4 hover:underline"
+                        >
+                          {lead.leadNumber}
+                        </Link>
+                      </TableCell>
+                      <TableCell>{displayLeadName(lead)}</TableCell>
+                      <TableCell className="capitalize">{lead.status}</TableCell>
+                      <TableCell>{lead.email ?? "—"}</TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {formatCrmMinor(lead.estimatedValueMinor, lead.currencyCode)}
+                      </TableCell>
+                      <TableCell>
+                        {lead.updatedAt ? new Date(lead.updatedAt).toLocaleString() : "—"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </ListWorkspace>
+  );
+}

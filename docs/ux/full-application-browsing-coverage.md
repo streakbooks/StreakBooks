@@ -25,6 +25,12 @@ The register below was derived from actual repository navigation and routes. The
 - `src/screens/advisors/admin-clients.tsx`: persistent Advisors subnavigation during loading and client/staff errors, retry both queries, accessible result count, native client form submission and guards against overlapping client save/invite/unlink actions. Source commit `36ed571b1bd8c41ea9798df9acf192be5b72e33b`.
 - **Partial source evidence only.** Client editing refresh behavior, invite/unlink permissions and all 12 acceptance criteria still require verification. Local `check:browsing-coverage`, TypeScript, lint, build, unit, authenticated browser, accessibility, RLS and accounting regressions **NOT RUN**. **0/21 modules, 0/15 supporting routes, 0/12 batches verified**. No `main` changes, CI trigger, production database change or deployment.
 
+
+### Advisors Administration engagements browsing increment (2026-11-10)
+
+- `src/screens/advisors/admin-engagements.tsx`: preserves Advisors subnavigation on loading/errors, retries all three list dependencies (engagements, clients, staff), announces result count, guards negative/unsafe integer amounts and conflicting create/send button actions, and treats clipboard-copy failure as nonfatal after successful proposal sending. Source commit `538e1a11ad1dac23f977a902f8dde2a9a9f3cb4f`.
+- **Partial source evidence only.** Full engagement lifecycle, draft retention, native navigation, authenticated role/RLS and accounting integrity, accessibility, performance and all 12 acceptance criteria remain pending. `check:browsing-coverage`, TypeScript, lint, unit, build, authenticated browser and security regressions **NOT RUN**. **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No main merge, CI trigger, production database change or deployment.
+
 ## 1. Every top-level module — tracked without exception
 
 | # | Module | Main route | Route files | Premium browsing status |

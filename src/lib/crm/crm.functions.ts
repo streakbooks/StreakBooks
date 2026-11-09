@@ -27,6 +27,10 @@ import type {
   CrmSettings,
 } from "@/lib/crm/types";
 import { emptyCrmDashboardKpis } from "@/lib/crm/types";
+import {
+  buildCrmAccountOverlay,
+  type CrmAccountOverlayRow,
+} from "@/lib/crm/account-overlay";
 
 export const CRM_MIGRATION =
   "CRM is not available yet: the database update 20261109120000 has not been applied.";
@@ -669,3 +673,80 @@ export const listCrmLeadSources = createServerFn({ method: "GET" })
     throwIfRelation(error);
     return ((rows as Record<string, unknown>[] | null) ?? []).map(mapCrmLeadSource);
   });
+
+export const listCrmAccountOverlay = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; q?: string; crmOnly?: boolean; limit?: number }) => ({
+    companyId: companyIdOf(input),
+    q: (input.q ?? "").trim().slice(0, 100),
+    crmOnly: Boolean(input.crmOnly),
+    limit: Math.min(Math.max(input.limit ?? 200, 1), 500),
+  }))
+  .handler(async ({ data, context }): Promise<CrmAccountOverlayRow[]> => {
+    await requireCrmView(context.supabase, data.companyId);
+    // Contacts remain the customer master; CRM only attaches pipeline facts.
+    let contactsQ = context.supabase
+      .from("contacts" as never)
+      .select("id, name, email, phone, kind, is_active" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("is_active" as never, true as never)
+      .is("archived_at" as never, null as never)
+      .in("kind" as never, ["customer", "both"] as never)
+      .order("name" as never, { ascending: true })
+      .limit(data.limit);
+    if (data.q) {
+      const pattern = `%${data.q.replace(/[%_,]/g, "")}%`;
+      contactsQ = contactsQ.or(
+        `name.ilike.${pattern},email.ilike.${pattern},phone.ilike.${pattern}` as never,
+      );
+    }
+    const contactsRes = await contactsQ;
+    throwIfRelation(contactsRes.error as { message: string; code?: string } | null);
+
+    const [leadsRes, oppsRes] = await Promise.all([
+      crmClient(context.supabase)
+        .from("crm_leads")
+        .select("id, contact_id, status")
+        .eq("company_id", data.companyId)
+        .is("archived_at", null)
+        .not("contact_id", "is", null)
+        .limit(2000),
+      crmClient(context.supabase)
+        .from("crm_opportunities")
+        .select("id, contact_id, status, amount_minor")
+        .eq("company_id", data.companyId)
+        .is("archived_at", null)
+        .not("contact_id", "is", null)
+        .limit(2000),
+    ]);
+    throwIfRelation(leadsRes.error);
+    throwIfRelation(oppsRes.error);
+
+    const contacts = ((contactsRes.data as Array<Record<string, unknown>> | null) ?? []).map(
+      (row) => ({
+        id: String(row["id"] ?? ""),
+        name: String(row["name"] ?? ""),
+        email: row["email"] == null ? null : String(row["email"]),
+        phone: row["phone"] == null ? null : String(row["phone"]),
+        kind: String(row["kind"] ?? "customer"),
+        isActive: Boolean(row["is_active"]),
+      }),
+    );
+    const leads = ((leadsRes.data as Array<Record<string, unknown>> | null) ?? []).map((row) => ({
+      id: String(row["id"] ?? ""),
+      contactId: row["contact_id"] == null ? null : String(row["contact_id"]),
+      status: String(row["status"] ?? ""),
+    }));
+    const opportunities = ((oppsRes.data as Array<Record<string, unknown>> | null) ?? []).map(
+      (row) => ({
+        id: String(row["id"] ?? ""),
+        contactId: row["contact_id"] == null ? null : String(row["contact_id"]),
+        status: String(row["status"] ?? ""),
+        amountMinor: Number(row["amount_minor"] ?? 0) || 0,
+      }),
+    );
+
+    const rows = buildCrmAccountOverlay({ contacts, leads, opportunities });
+    return data.crmOnly ? rows.filter((r) => r.hasCrmActivity) : rows;
+  });
+

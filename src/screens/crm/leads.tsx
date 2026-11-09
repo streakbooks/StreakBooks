@@ -6,6 +6,7 @@ import { CrmSubnav } from "@/components/crm/CrmSubnav";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,7 @@ import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import {
+  findCrmDuplicateLeads,
   getCrmSettings,
   listCrmLeads,
   listCrmLeadSources,
@@ -49,6 +51,8 @@ export function CrmLeadsPage() {
   const fetchLeads = useServerFn(listCrmLeads);
   const fetchSources = useServerFn(listCrmLeadSources);
   const createLead = useServerFn(upsertCrmLead);
+  const findDuplicates = useServerFn(findCrmDuplicateLeads);
+  const [ackDuplicates, setAckDuplicates] = useState(false);
 
   const [statusFilter, setStatusFilter] = useState<string>("open");
   const [showForm, setShowForm] = useState(false);
@@ -59,6 +63,26 @@ export function CrmLeadsPage() {
   const [phone, setPhone] = useState("");
   const [sourceId, setSourceId] = useState<string>("");
   const [estimatedMajor, setEstimatedMajor] = useState("");
+
+  const dupQuery = useQuery({
+    queryKey: ["crm-lead-dups", company?.id, email, phone, organizationName],
+    queryFn: () =>
+      findDuplicates({
+        data: {
+          companyId: company!.id,
+          email: email || undefined,
+          phone: phone || undefined,
+          organizationName: organizationName || undefined,
+        },
+      }),
+    enabled:
+      Boolean(company?.id) &&
+      showForm &&
+      canManage &&
+      Boolean(email.trim() || phone.trim() || organizationName.trim()),
+    retry: false,
+  });
+  const dupMatches = dupQuery.data?.matches ?? [];
 
   const settings = useQuery({
     queryKey: ["crm-settings", company?.id],
@@ -151,7 +175,10 @@ export function CrmLeadsPage() {
       breadcrumbs={[{ label: "CRM", to: "/crm" }, { label: "Leads" }]}
       actions={
         canManage && settings.data?.enabled ? (
-          <Button type="button" onClick={() => setShowForm((v) => !v)}>
+          <Button type="button" onClick={() => {
+            setShowForm((v) => !v);
+            setAckDuplicates(false);
+          }}>
             {showForm ? "Close form" : "New lead"}
           </Button>
         ) : undefined
@@ -237,10 +264,38 @@ export function CrmLeadsPage() {
                     placeholder="0.00"
                   />
                 </div>
+                {dupMatches.length > 0 ? (
+                  <div className="sm:col-span-2 space-y-3">
+                    <Alert>
+                      <AlertTitle>Possible duplicate leads</AlertTitle>
+                      <AlertDescription>
+                        <ul className="mt-2 list-disc space-y-1 pl-4">
+                          {dupMatches.slice(0, 5).map((match, idx) => (
+                            <li key={String(match["id"] ?? idx)}>
+                              {String(match["lead_number"] ?? match["leadNumber"] ?? match["id"] ?? "Lead")}
+                              {match["email"] ? ` · ${String(match["email"])}` : ""}
+                              {match["status"] ? ` (${String(match["status"])})` : ""}
+                            </li>
+                          ))}
+                        </ul>
+                        <label className="mt-3 flex items-center gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={ackDuplicates}
+                            onChange={(e) => setAckDuplicates(e.target.checked)}
+                          />
+                          Create anyway — I reviewed these matches
+                        </label>
+                      </AlertDescription>
+                    </Alert>
+                  </div>
+                ) : null}
                 <div className="sm:col-span-2">
                   <Button
                     type="button"
-                    disabled={createMutation.isPending}
+                    disabled={
+                      createMutation.isPending || (dupMatches.length > 0 && !ackDuplicates)
+                    }
                     onClick={() => createMutation.mutate()}
                   >
                     {createMutation.isPending ? "Saving…" : "Create lead"}

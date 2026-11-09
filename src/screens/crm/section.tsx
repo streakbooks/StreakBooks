@@ -3,6 +3,7 @@ import { EmptyState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import { crmSection, type CrmSectionKey } from "@/lib/crm/sections";
+import { CrmAccountsPage } from "@/screens/crm/accounts";
 import { CrmActivitiesPage } from "@/screens/crm/activities";
 import { CrmLeadsPage } from "@/screens/crm/leads";
 import { CrmOpportunitiesPage } from "@/screens/crm/opportunities";
@@ -10,8 +11,6 @@ import { CrmPipelinesPage } from "@/screens/crm/pipelines";
 import { CrmSettingsPage } from "@/screens/crm/settings";
 
 const DEFERRED_LINKS: Partial<Record<CrmSectionKey, { href: string; label: string }>> = {
-  accounts: { href: "/contacts", label: "Open Contacts (customers)" },
-  contacts: { href: "/contacts", label: "Open Contacts directory" },
   quotes: { href: "/sales/quotes", label: "Open Sales quotes" },
   products: { href: "/products-services", label: "Open Products & Services" },
 };
@@ -22,6 +21,8 @@ const DEFERRED_LINKS: Partial<Record<CrmSectionKey, { href: string; label: strin
  */
 export function CrmSectionPage({ sectionKey }: { sectionKey: CrmSectionKey }) {
   if (sectionKey === "leads") return <CrmLeadsPage />;
+  if (sectionKey === "accounts") return <CrmAccountsPage current="accounts" />;
+  if (sectionKey === "contacts") return <CrmAccountsPage current="contacts" />;
   if (sectionKey === "opportunities") return <CrmOpportunitiesPage />;
   if (sectionKey === "pipelines") return <CrmPipelinesPage />;
   if (sectionKey === "settings") return <CrmSettingsPage />;

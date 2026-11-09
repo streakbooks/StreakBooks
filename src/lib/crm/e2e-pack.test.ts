@@ -9,6 +9,7 @@ import { resolveCrmAutomationPolicy } from "@/lib/crm/automation-policy";
 import { resolveCrmImportExportPolicy } from "@/lib/crm/import-export-policy";
 import { buildForecastReport } from "@/lib/crm/forecast-report";
 import { resolveCrmTerritoryPolicy } from "@/lib/crm/territory-policy";
+import { resolveCrmPublicFormsPolicy } from "@/lib/crm/public-forms-policy";
 
 describe("CRM E2E pack contracts", () => {
   it("defines exactly five required acceptance cases", () => {
@@ -21,6 +22,7 @@ describe("CRM E2E pack contracts", () => {
     expect(resolveCrmAutomationPolicy().canRun).toBe(false);
     expect(resolveCrmImportExportPolicy({ hasImportPermission: true }).canImport).toBe(false);
     expect(resolveCrmTerritoryPolicy().canManageTerritories).toBe(false);
+    expect(resolveCrmPublicFormsPolicy().canAcceptSubmissions).toBe(false);
   });
 
   it("weights only open opportunities for stage-move forecast contract", () => {

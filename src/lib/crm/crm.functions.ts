@@ -57,6 +57,10 @@ import {
   buildCrmTeamWorkload,
   type CrmTeamWorkloadRow,
 } from "@/lib/crm/team-workload";
+import {
+  resolveCrmPublicFormsPolicy,
+  type CrmPublicFormsPolicy,
+} from "@/lib/crm/public-forms-policy";
 import { saveSalesDocument } from "@/lib/sales/doc-save";
 import {
   loadCompanyDefaults,
@@ -1294,6 +1298,14 @@ export const getCrmTerritoryPolicy = createServerFn({ method: "GET" })
   .handler(async ({ data, context }): Promise<CrmTerritoryPolicy> => {
     await assertCompanyPermission(context.supabase, data.companyId, "crm.admin");
     return resolveCrmTerritoryPolicy({ backendReady: false });
+  });
+
+export const getCrmPublicFormsPolicy = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .handler(async ({ data, context }): Promise<CrmPublicFormsPolicy> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "crm.admin");
+    return resolveCrmPublicFormsPolicy({ intakeReady: false });
   });
 
 /** Company members with CRM ownership workload (leads/opps). Territories remain gated. */

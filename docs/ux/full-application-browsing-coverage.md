@@ -450,3 +450,7 @@ Every batch may require multiple small implementation increments; do not rush a 
 
 - `src/screens/advisors/portal-account.tsx`: portal subnavigation remains available in account loading/error states; contact edits use a native required-field form with bounded inputs; notifications expose loading/error/empty states and retry; pending actions display feedback. Code commit `ea47a3237801d20804befa34e06c46b6e0a43251`.
 - **Partial source evidence only.** TypeScript, lint, unit, build, authenticated browser, accessibility, `check:browsing-coverage`, RLS and accounting regression **NOT RUN**. All 21 modules, 15 supporting routes and 12 acceptance batches remain unverified. No `main` changes or deployment.
+
+### Advisors Portal Account draft-preservation increment (2026-11-09)
+
+- 2026-11-09 Advisors Portal Account: contactDirty prevents background home refetch overwriting unsaved contact edits; Save disabled until edited; reset after successful refresh; Mark all read only when unread items exist; mutation errors surfaced via toast. Code commits 3bee4ccf011f5571597e5b3f525bcdca4578edfa and 0098ed9375947f09069b7418018f848bf512dceb. Source evidence only; local tests, browser, typecheck, coverage guard NOT RUN; module NOT verified.

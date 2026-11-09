@@ -413,7 +413,15 @@ export function CrmLeadsPage() {
                           {lead.leadNumber}
                         </Link>
                       </TableCell>
-                      <TableCell>{displayLeadName(lead)}</TableCell>
+                      <TableCell>
+                        <Link
+                          to="/crm/leads/$leadId"
+                          params={{ leadId: lead.id }}
+                          className="font-medium text-foreground underline-offset-4 hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                          {displayLeadName(lead)}
+                        </Link>
+                      </TableCell>
                       <TableCell><CrmStatusBadge status={lead.status} /></TableCell>
                       <TableCell>{lead.email ?? "—"}</TableCell>
                       <TableCell className="text-right tabular-nums">

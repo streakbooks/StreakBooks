@@ -70,6 +70,12 @@ export function CrmActivitiesPage({
   const [taskFilter, setTaskFilter] = useState<"open" | "all">("open");
   const [opportunityId, setOpportunityId] = useState("");
   const [dueAt, setDueAt] = useState("");
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const today = new Date();
+    return new Date(today.getFullYear(), today.getMonth(), 1);
+  });
+  const calendarFrom = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1).toISOString();
+  const calendarTo = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1).toISOString();
   const activityKind = sectionKey === "tasks" ? "task" : sectionKey === "calendar" ? "meeting" : kind;
   const dueIsValid = !dueAt || Number.isFinite(new Date(dueAt).getTime());
   const needsDue = activityKind === "meeting";
@@ -90,12 +96,16 @@ export function CrmActivitiesPage({
   });
 
   const activities = useQuery({
-    queryKey: ["crm-activities", company?.id, sectionKey, taskFilter],
+    queryKey: ["crm-activities", company?.id, sectionKey, taskFilter, calendarFrom, calendarTo],
     queryFn: () =>
       fetchActivities({
         data: {
           companyId: company!.id,
           ...(sectionKey === "tasks" && taskFilter === "open" ? { status: "open" } : {}),
+          ...(sectionKey === "tasks" ? { kind: "task" } : {}),
+          ...(sectionKey === "calendar"
+            ? { kind: "meeting", dueFrom: calendarFrom, dueTo: calendarTo, limit: 500 }
+            : {}),
         },
       }),
     enabled: Boolean(company?.id) && canView && settings.data?.enabled === true,
@@ -223,7 +233,7 @@ export function CrmActivitiesPage({
             </div>
           ) : null}
           {sectionKey === "calendar" && activities.isSuccess ? (
-            <CrmMeetingCalendar activities={rows} />
+            <CrmMeetingCalendar activities={rows} month={calendarMonth} onMonthChange={setCalendarMonth} />
           ) : null}
           {showForm && canManage ? (
             <Card>

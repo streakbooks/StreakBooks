@@ -31,6 +31,9 @@ import { emptyCrmDashboardKpis } from "@/lib/crm/types";
 export const CRM_MIGRATION =
   "CRM is not available yet: the database update 20261109120000 has not been applied.";
 
+export const CRM_GAP_MIGRATION =
+  "CRM gap-closure features need database update 20261109130000 (duplicate matching, scoring, reopen).";
+
 async function requireCrmView(supabase: unknown, companyId: string) {
   await assertCompanyMember(supabase as never, companyId);
   await assertCompanyPermission(supabase as never, companyId, "crm.view");
@@ -268,11 +271,13 @@ export const convertCrmLead = createServerFn({ method: "POST" })
       leadId: string;
       createOpportunity?: boolean;
       existingContactId?: string | null;
+      allowCreateDespiteMatch?: boolean;
     }) => ({
       companyId: companyIdOf(input),
       leadId: assertUuid(input.leadId),
       createOpportunity: input.createOpportunity !== false,
       existingContactId: input.existingContactId ? assertUuid(input.existingContactId) : null,
+      allowCreateDespiteMatch: Boolean(input.allowCreateDespiteMatch),
     }),
   )
   .handler(async ({ data, context }) => {
@@ -285,8 +290,121 @@ export const convertCrmLead = createServerFn({ method: "POST" })
         _lead_id: data.leadId,
         _create_opportunity: data.createOpportunity,
         _existing_contact_id: data.existingContactId,
+        _allow_create_despite_match: data.allowCreateDespiteMatch,
       },
-      CRM_MIGRATION,
+      CRM_GAP_MIGRATION,
+    );
+  });
+
+export const findCrmDuplicateLeads = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      email?: string;
+      phone?: string;
+      organizationName?: string;
+      excludeLeadId?: string;
+    }) => ({
+      companyId: companyIdOf(input),
+      email: input.email?.trim() || null,
+      phone: input.phone?.trim() || null,
+      organizationName: input.organizationName?.trim() || null,
+      excludeLeadId: input.excludeLeadId ? assertUuid(input.excludeLeadId) : null,
+    }),
+  )
+  .handler(async ({ data, context }) => {
+    await requireCrmView(context.supabase, data.companyId);
+    return callRpc<{ matches: Array<Record<string, unknown>> }>(
+      context.supabase,
+      "find_crm_duplicate_leads",
+      {
+        _company_id: data.companyId,
+        _email: data.email,
+        _phone: data.phone,
+        _organization_name: data.organizationName,
+        _exclude_lead_id: data.excludeLeadId,
+        _limit: 20,
+      },
+      CRM_GAP_MIGRATION,
+    );
+  });
+
+export const findCrmConversionMatches = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; leadId: string }) => ({
+    companyId: companyIdOf(input),
+    leadId: assertUuid(input.leadId),
+  }))
+  .handler(async ({ data, context }) => {
+    await requireCrmView(context.supabase, data.companyId);
+    return callRpc<{
+      leadId: string;
+      matches: Array<{
+        id: string;
+        name: string;
+        email: string | null;
+        phone: string | null;
+        kind: string;
+        isActive: boolean;
+        score: number;
+      }>;
+    }>(
+      context.supabase,
+      "find_crm_conversion_matches",
+      { _company_id: data.companyId, _lead_id: data.leadId },
+      CRM_GAP_MIGRATION,
+    );
+  });
+
+export const scoreCrmLead = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; leadId: string; persist?: boolean }) => ({
+    companyId: companyIdOf(input),
+    leadId: assertUuid(input.leadId),
+    persist: input.persist !== false,
+  }))
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "crm.leads.manage");
+    return callRpc<{
+      leadId: string;
+      score: number;
+      reasons: Array<{ code: string; points: number; detail: string }>;
+      formula: string;
+    }>(
+      context.supabase,
+      "score_crm_lead",
+      {
+        _company_id: data.companyId,
+        _lead_id: data.leadId,
+        _persist: data.persist,
+      },
+      CRM_GAP_MIGRATION,
+    );
+  });
+
+export const reopenCrmOpportunity = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { companyId: string; opportunityId: string; stageId?: string; note?: string }) => ({
+      companyId: companyIdOf(input),
+      opportunityId: assertUuid(input.opportunityId),
+      stageId: input.stageId ? assertUuid(input.stageId) : null,
+      note: input.note?.trim().slice(0, 400) || undefined,
+    }),
+  )
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "crm.opportunities.manage");
+    return callRpc<{ id: string; status: string; stageId: string; version: number }>(
+      context.supabase,
+      "reopen_crm_opportunity",
+      {
+        _company_id: data.companyId,
+        _opportunity_id: data.opportunityId,
+        _stage_id: data.stageId,
+        _note: data.note ?? null,
+      },
+      CRM_GAP_MIGRATION,
     );
   });
 
@@ -397,16 +515,30 @@ export const upsertCrmOpportunity = createServerFn({ method: "POST" })
 export const setCrmOpportunityStage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (input: { companyId: string; opportunityId: string; stageId: string; note?: string }) => ({
+    (input: {
+      companyId: string;
+      opportunityId: string;
+      stageId: string;
+      note?: string;
+      expectedVersion?: number;
+    }) => ({
       companyId: companyIdOf(input),
       opportunityId: assertUuid(input.opportunityId),
       stageId: assertUuid(input.stageId),
       note: input.note?.trim().slice(0, 400) || undefined,
+      expectedVersion:
+        typeof input.expectedVersion === "number" ? input.expectedVersion : undefined,
     }),
   )
   .handler(async ({ data, context }) => {
     await assertCompanyPermission(context.supabase, data.companyId, "crm.opportunities.manage");
-    return callRpc<{ id: string; stageId: string; status: string; probabilityPct: number }>(
+    return callRpc<{
+      id: string;
+      stageId: string;
+      status: string;
+      probabilityPct: number;
+      version: number;
+    }>(
       context.supabase,
       "set_crm_opportunity_stage",
       {
@@ -414,8 +546,9 @@ export const setCrmOpportunityStage = createServerFn({ method: "POST" })
         _opportunity_id: data.opportunityId,
         _stage_id: data.stageId,
         _note: data.note ?? null,
+        _expected_version: data.expectedVersion ?? null,
       },
-      CRM_MIGRATION,
+      CRM_GAP_MIGRATION,
     );
   });
 

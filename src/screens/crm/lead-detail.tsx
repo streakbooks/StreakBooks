@@ -21,7 +21,9 @@ import { friendlyAuthError } from "@/lib/auth-helpers";
 import {
   assignCrmLead,
   convertCrmLead,
+  findCrmConversionMatches,
   getCrmLead,
+  scoreCrmLead,
   upsertCrmLead,
 } from "@/lib/crm/crm.functions";
 import { formatCrmMinor } from "@/lib/crm/format";
@@ -48,12 +50,28 @@ export function CrmLeadDetailPage({ leadId }: { leadId: string }) {
   const saveLead = useServerFn(upsertCrmLead);
   const assignLead = useServerFn(assignCrmLead);
   const convertLead = useServerFn(convertCrmLead);
+  const fetchMatches = useServerFn(findCrmConversionMatches);
+  const scoreLead = useServerFn(scoreCrmLead);
   const [status, setStatus] = useState<CrmLeadStatus | null>(null);
+  const [selectedContactId, setSelectedContactId] = useState<string>("");
+  const [allowCreateDespiteMatch, setAllowCreateDespiteMatch] = useState(false);
+  const [scoreExplainer, setScoreExplainer] = useState<string | null>(null);
 
   const leadQuery = useQuery({
     queryKey: ["crm-lead", company?.id, leadId],
     queryFn: () => fetchLead({ data: { companyId: company!.id, leadId } }),
     enabled: Boolean(company?.id) && Boolean(leadId),
+    retry: false,
+  });
+
+  const matchesQuery = useQuery({
+    queryKey: ["crm-conversion-matches", company?.id, leadId],
+    queryFn: () => fetchMatches({ data: { companyId: company!.id, leadId } }),
+    enabled:
+      Boolean(company?.id) &&
+      Boolean(leadId) &&
+      canManage &&
+      leadQuery.data?.status !== "converted",
     retry: false,
   });
 
@@ -98,15 +116,35 @@ export function CrmLeadDetailPage({ leadId }: { leadId: string }) {
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
 
+  const scoreMutation = useMutation({
+    mutationFn: async () => {
+      if (!company) throw new Error("No organisation");
+      return scoreLead({ data: { companyId: company.id, leadId, persist: true } });
+    },
+    onSuccess: async (result) => {
+      setScoreExplainer(result.formula);
+      toast.success(`Lead scored ${result.score}/100`);
+      await queryClient.invalidateQueries({ queryKey: ["crm-lead", company?.id, leadId] });
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+
   const convertMutation = useMutation({
     mutationFn: async () => {
       if (!company) throw new Error("No organisation");
+      const matches = matchesQuery.data?.matches ?? [];
+      const existing =
+        selectedContactId ||
+        leadQuery.data?.contactId ||
+        (matches.length === 1 ? matches[0]?.id : null) ||
+        null;
       return convertLead({
         data: {
           companyId: company.id,
           leadId,
           createOpportunity: true,
-          existingContactId: leadQuery.data?.contactId ?? null,
+          existingContactId: existing,
+          allowCreateDespiteMatch: matches.length > 0 ? allowCreateDespiteMatch : false,
         },
       });
     },
@@ -173,6 +211,14 @@ export function CrmLeadDetailPage({ leadId }: { leadId: string }) {
               onClick={() => assignMutation.mutate()}
             >
               Assign to me
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={scoreMutation.isPending}
+              onClick={() => scoreMutation.mutate()}
+            >
+              {scoreMutation.isPending ? "Scoring…" : "Recalculate score"}
             </Button>
             <Button
               type="button"
@@ -270,8 +316,68 @@ export function CrmLeadDetailPage({ leadId }: { leadId: string }) {
             {lead.notes ? (
               <p className="whitespace-pre-wrap text-sm text-muted-foreground">{lead.notes}</p>
             ) : null}
+            <p className="text-sm">
+              <span className="text-muted-foreground">Score:</span>{" "}
+              <span className="font-medium tabular-nums">{lead.score}/100</span>
+            </p>
+            {scoreExplainer ? <p className="text-xs text-muted-foreground">{scoreExplainer}</p> : null}
           </CardContent>
         </Card>
+
+        {!converted && canManage ? (
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Conversion matches</CardTitle>
+              <CardDescription>
+                Reuse the Contacts master. Select a match to prevent duplicate customers.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {matchesQuery.isLoading ? <LoadingState /> : null}
+              {matchesQuery.isError ? (
+                <ErrorState
+                  title="Could not check matches"
+                  description={friendlyAuthError(matchesQuery.error)}
+                  onRetry={() => matchesQuery.refetch()}
+                />
+              ) : null}
+              {(matchesQuery.data?.matches?.length ?? 0) === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No matching contacts found. Conversion creates a new customer when authorised.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  <Label>Use existing contact</Label>
+                  <Select
+                    value={selectedContactId || "__none"}
+                    onValueChange={(v) => setSelectedContactId(v === "__none" ? "" : v)}
+                  >
+                    <SelectTrigger aria-label="Matching contact">
+                      <SelectValue placeholder="Select matching contact" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none">Select contact…</SelectItem>
+                      {(matchesQuery.data?.matches ?? []).map((match) => (
+                        <SelectItem key={match.id} value={match.id}>
+                          {match.name}
+                          {match.email ? ` · ${match.email}` : ""} (score {match.score})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={allowCreateDespiteMatch}
+                      onChange={(e) => setAllowCreateDespiteMatch(e.target.checked)}
+                    />
+                    Create a new contact anyway (explicit override)
+                  </label>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ) : null}
       </div>
     </RecordWorkspace>
   );

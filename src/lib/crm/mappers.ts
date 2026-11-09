@@ -128,6 +128,7 @@ type OpportunityRow = {
   priority?: string;
   notes?: string | null;
   stage_entered_at?: string;
+  version?: number;
   created_at?: string;
   updated_at?: string;
 };
@@ -276,6 +277,7 @@ export function mapCrmOpportunity(raw: OpportunityRow | Record<string, unknown>)
     priority: String(row.priority ?? "normal"),
     notes: str(row.notes),
     stageEnteredAt: String(row.stage_entered_at ?? ""),
+    version: num(row.version, 1),
     createdAt: String(row.created_at ?? ""),
     updatedAt: String(row.updated_at ?? ""),
   };

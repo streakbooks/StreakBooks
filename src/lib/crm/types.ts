@@ -139,6 +139,7 @@ export type CrmOpportunity = {
   priority: string;
   notes: string | null;
   stageEnteredAt: string;
+  version: number;
   createdAt: string;
   updatedAt: string;
 };

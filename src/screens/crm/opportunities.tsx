@@ -32,6 +32,7 @@ import {
   getCrmSettings,
   listCrmOpportunities,
   listCrmPipelines,
+  reopenCrmOpportunity,
   setCrmOpportunityStage,
   upsertCrmOpportunity,
 } from "@/lib/crm/crm.functions";
@@ -51,6 +52,7 @@ export function CrmOpportunitiesPage() {
   const fetchPipelines = useServerFn(listCrmPipelines);
   const createOpp = useServerFn(upsertCrmOpportunity);
   const moveStage = useServerFn(setCrmOpportunityStage);
+  const reopenOpp = useServerFn(reopenCrmOpportunity);
 
   const [view, setView] = useState<"list" | "kanban">("kanban");
   const [showForm, setShowForm] = useState(false);
@@ -73,8 +75,21 @@ export function CrmOpportunitiesPage() {
   });
 
   const opps = useQuery({
-    queryKey: ["crm-opportunities", company?.id],
+    queryKey: ["crm-opportunities", company?.id, "open"],
     queryFn: () => fetchOpps({ data: { companyId: company!.id, status: "open" } }),
+    enabled: Boolean(company?.id) && canView && settings.data?.enabled === true,
+    retry: false,
+  });
+
+  const closedOpps = useQuery({
+    queryKey: ["crm-opportunities", company?.id, "closed"],
+    queryFn: async () => {
+      const [won, lost] = await Promise.all([
+        fetchOpps({ data: { companyId: company!.id, status: "won" } }),
+        fetchOpps({ data: { companyId: company!.id, status: "lost" } }),
+      ]);
+      return [...won, ...lost];
+    },
     enabled: Boolean(company?.id) && canView && settings.data?.enabled === true,
     retry: false,
   });
@@ -119,18 +134,36 @@ export function CrmOpportunitiesPage() {
   });
 
   const moveMutation = useMutation({
-    mutationFn: async (input: { opportunityId: string; nextStageId: string }) => {
+    mutationFn: async (input: {
+      opportunityId: string;
+      nextStageId: string;
+      expectedVersion: number;
+    }) => {
       if (!company) throw new Error("No organisation");
       return moveStage({
         data: {
           companyId: company.id,
           opportunityId: input.opportunityId,
           stageId: input.nextStageId,
+          expectedVersion: input.expectedVersion,
         },
       });
     },
     onSuccess: async () => {
       toast.success("Stage updated");
+      await queryClient.invalidateQueries({ queryKey: ["crm-opportunities", company?.id] });
+      await queryClient.invalidateQueries({ queryKey: ["crm-dashboard-kpis", company?.id] });
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+
+  const reopenMutation = useMutation({
+    mutationFn: async (opportunityId: string) => {
+      if (!company) throw new Error("No organisation");
+      return reopenOpp({ data: { companyId: company.id, opportunityId } });
+    },
+    onSuccess: async () => {
+      toast.success("Opportunity reopened");
       await queryClient.invalidateQueries({ queryKey: ["crm-opportunities", company?.id] });
       await queryClient.invalidateQueries({ queryKey: ["crm-dashboard-kpis", company?.id] });
     },
@@ -335,6 +368,7 @@ export function CrmOpportunitiesPage() {
                                   moveMutation.mutate({
                                     opportunityId: opp.id,
                                     nextStageId: next,
+                                    expectedVersion: opp.version,
                                   });
                                 }}
                                 disabled={moveMutation.isPending}
@@ -362,6 +396,40 @@ export function CrmOpportunitiesPage() {
                 );
               })}
             </div>
+          ) : null}
+
+          {(closedOpps.data?.length ?? 0) > 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Closed deals</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {(closedOpps.data ?? []).map((opp) => (
+                  <div
+                    key={opp.id}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm"
+                  >
+                    <div>
+                      <p className="font-medium">{opp.name}</p>
+                      <p className="text-xs text-muted-foreground capitalize">
+                        {opp.opportunityNumber} · {opp.status}
+                      </p>
+                    </div>
+                    {canManage ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        disabled={reopenMutation.isPending}
+                        onClick={() => reopenMutation.mutate(opp.id)}
+                      >
+                        Reopen
+                      </Button>
+                    ) : null}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
           ) : null}
         </div>
       ) : null}

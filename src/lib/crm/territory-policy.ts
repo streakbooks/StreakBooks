@@ -1,4 +1,4 @@
-/** CRM territories stay fail-closed until assignment-rule backends exist. */
+/** CRM territory management policy. */
 
 export type CrmTerritoryPolicy = {
   canManageTerritories: boolean;
@@ -11,12 +11,13 @@ export function resolveCrmTerritoryPolicy(input?: {
   if (input?.backendReady) {
     return {
       canManageTerritories: true,
-      reason: "Territory assignment rules are available for this organisation.",
+      reason:
+        "Territory records can be created and owned by active members. Automatic lead routing rules are not enabled yet.",
     };
   }
   return {
     canManageTerritories: false,
     reason:
-      "Territories and assignment rules stay disabled until rule storage, ownership reassignment, and audit backends ship. Team workload below uses company members only.",
+      "Territories stay disabled until rule storage ships. Team workload below uses company members only.",
   };
 }

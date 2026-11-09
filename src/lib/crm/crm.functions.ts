@@ -30,6 +30,7 @@ import type {
   CrmSettings,
 } from "@/lib/crm/types";
 import { CRM_CAMPAIGN_STATUSES, validateCrmCampaignDraft } from "@/lib/crm/campaign-draft";
+import { validateCrmTerritoryDraft } from "@/lib/crm/territory-draft";
 import { emptyCrmDashboardKpis } from "@/lib/crm/types";
 import {
   buildCrmAccountOverlay,
@@ -83,6 +84,9 @@ export const CRM_PIPELINE_ADMIN_MIGRATION =
 
 export const CRM_CAMPAIGNS_MIGRATION =
   "CRM campaigns need database update 20261109170000 (campaign records).";
+
+export const CRM_TERRITORIES_MIGRATION =
+  "CRM territories need database update 20261109180000 (territory records).";
 
 async function requireCrmView(supabase: unknown, companyId: string) {
   await assertCompanyMember(supabase as never, companyId);
@@ -1304,7 +1308,7 @@ export const getCrmTerritoryPolicy = createServerFn({ method: "GET" })
   .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
   .handler(async ({ data, context }): Promise<CrmTerritoryPolicy> => {
     await assertCompanyPermission(context.supabase, data.companyId, "crm.admin");
-    return resolveCrmTerritoryPolicy({ backendReady: false });
+    return resolveCrmTerritoryPolicy({ backendReady: true });
   });
 
 export const getCrmPublicFormsPolicy = createServerFn({ method: "GET" })
@@ -1385,7 +1389,7 @@ export const listCrmTeamWorkload = createServerFn({ method: "GET" })
 
       return {
         members,
-        territory: resolveCrmTerritoryPolicy({ backendReady: false }),
+        territory: resolveCrmTerritoryPolicy({ backendReady: true }),
       };
     },
   );
@@ -1494,4 +1498,85 @@ export const upsertCrmCampaign = createServerFn({ method: "POST" })
       notes: (raw as { notes?: string | null }).notes,
       is_active: (raw as { isActive?: boolean }).isActive,
     }));
+  });
+
+export const listCrmTerritories = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .handler(async ({ data, context }): Promise<CrmTerritory[]> => {
+    await requireCrmView(context.supabase, data.companyId);
+    const { data: rows, error } = await crmClient(context.supabase)
+      .from("crm_territories")
+      .select("*")
+      .eq("company_id", data.companyId)
+      .order("sort_order", { ascending: true })
+      .limit(500);
+    if (error) {
+      if (isMissingRelation(error)) throw new Error(CRM_TERRITORIES_MIGRATION);
+      throw new Error(error.message);
+    }
+    return ((rows as Record<string, unknown>[] | null) ?? []).map(mapCrmTerritory);
+  });
+
+export const upsertCrmTerritory = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      id?: string;
+      name: string;
+      code?: string | null;
+      description?: string | null;
+      ownerUserId?: string | null;
+      isActive?: boolean;
+      sortOrder?: number;
+    }) => {
+      const error = validateCrmTerritoryDraft({
+        name: input.name ?? "",
+        sortOrder: typeof input.sortOrder === "number" ? input.sortOrder : 100,
+      });
+      if (error) throw new Error(error);
+      return {
+        companyId: companyIdOf(input),
+        id: input.id ? assertUuid(input.id) : undefined,
+        name: input.name.trim().slice(0, 120),
+        code: input.code?.trim().slice(0, 40) || null,
+        description: input.description?.trim().slice(0, 500) || null,
+        ownerUserId: input.ownerUserId ? assertUuid(input.ownerUserId) : null,
+        isActive: input.isActive !== false,
+        sortOrder:
+          typeof input.sortOrder === "number"
+            ? Math.min(100000, Math.max(0, Math.trunc(input.sortOrder)))
+            : 100,
+      };
+    },
+  )
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "crm.admin");
+    const raw = await callRpc<Record<string, unknown>>(
+      context.supabase,
+      "upsert_crm_territory",
+      {
+        _company_id: data.companyId,
+        _payload: {
+          id: data.id,
+          name: data.name,
+          code: data.code,
+          description: data.description,
+          ownerUserId: data.ownerUserId,
+          isActive: data.isActive,
+          sortOrder: data.sortOrder,
+        },
+      },
+      CRM_TERRITORIES_MIGRATION,
+    );
+    return mapCrmTerritory({
+      id: raw.id as string,
+      name: raw.name as string,
+      code: (raw.code as string | null) ?? null,
+      description: (raw.description as string | null) ?? null,
+      owner_user_id: (raw.ownerUserId as string | null) ?? null,
+      is_active: raw.isActive as boolean,
+      sort_order: raw.sortOrder as number,
+    });
   });

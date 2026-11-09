@@ -353,3 +353,30 @@ export function mapCrmCampaign(raw: CampaignRow | Record<string, unknown>): CrmC
     updatedAt: String(row.updated_at ?? ""),
   };
 }
+
+type TerritoryRow = {
+  id?: string;
+  name?: string;
+  code?: string | null;
+  description?: string | null;
+  owner_user_id?: string | null;
+  is_active?: boolean;
+  sort_order?: number;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export function mapCrmTerritory(raw: TerritoryRow | Record<string, unknown>): CrmTerritory {
+  const row = raw as TerritoryRow;
+  return {
+    id: String(row.id ?? ""),
+    name: String(row.name ?? ""),
+    code: str(row.code),
+    description: str(row.description),
+    ownerUserId: str(row.owner_user_id),
+    isActive: row.is_active !== false,
+    sortOrder: num(row.sort_order, 100),
+    createdAt: String(row.created_at ?? ""),
+    updatedAt: String(row.updated_at ?? ""),
+  };
+}

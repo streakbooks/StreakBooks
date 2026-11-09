@@ -211,6 +211,18 @@ export type CrmCampaign = {
   updatedAt: string;
 };
 
+export type CrmTerritory = {
+  id: string;
+  name: string;
+  code: string | null;
+  description: string | null;
+  ownerUserId: string | null;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export function displayLeadName(lead: Pick<
   CrmLead,
   "organizationName" | "firstName" | "lastName" | "email" | "leadNumber"

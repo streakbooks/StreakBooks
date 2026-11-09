@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { CrmSubnav } from "@/components/crm/CrmSubnav";
@@ -34,6 +34,7 @@ export function CrmQuotesPage() {
   const canBridge =
     can("crm.opportunities.manage" as Permission) && can("sales.draft" as Permission);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const fetchSettings = useServerFn(getCrmSettings);
   const fetchOpps = useServerFn(listCrmOpportunities);
   const createQuote = useServerFn(createCrmOpportunityQuote);
@@ -60,7 +61,7 @@ export function CrmQuotesPage() {
     onSuccess: async (result) => {
       toast.success(result.created ? "Sales quote draft created" : "Opening linked quote");
       await queryClient.invalidateQueries({ queryKey: ["crm-opportunities", company?.id] });
-      window.location.assign(`/sales/quotes/${result.quoteId}`);
+      await navigate({ to: "/sales/quotes/$quoteId", params: { quoteId: result.quoteId } });
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
@@ -92,6 +93,10 @@ export function CrmQuotesPage() {
     >
       <CrmSubnav current="quotes" />
 
+      {settings.isLoading ? <LoadingState /> : null}
+      {settings.isError ? (
+        <ErrorState title="Could not load CRM settings" description={friendlyAuthError(settings.error)} onRetry={() => settings.refetch()} />
+      ) : null}
       {settings.data && !settings.data.enabled ? (
         <EmptyState title="CRM is disabled" description="Enable CRM before bridging quotes." />
       ) : null}

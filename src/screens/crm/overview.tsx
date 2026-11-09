@@ -97,7 +97,7 @@ export function CrmOverviewPage() {
       actions={
         can("crm.leads.manage" as Permission) ? (
           <Button asChild>
-            <Link to="/crm/$section" params={{ section: "leads" }}>New lead</Link>
+            <Link to="/crm/$section" params={{ section: "leads" }}>Manage leads</Link>
           </Button>
         ) : undefined
       }

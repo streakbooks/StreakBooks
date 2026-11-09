@@ -60,9 +60,9 @@ export function AdvisorsPortalAccountPage() {
         },
       }),
     onSuccess: async () => {
-      setContactDirty(false);
       toast.success("Contact details updated");
       await qc.invalidateQueries({ queryKey: ["advisors-portal-home"] });
+      setContactDirty(false);
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });

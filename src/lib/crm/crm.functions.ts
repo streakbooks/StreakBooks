@@ -32,6 +32,10 @@ import {
   type CrmAccountOverlayRow,
 } from "@/lib/crm/account-overlay";
 import { buildOpportunityQuoteLine } from "@/lib/crm/quote-bridge";
+import {
+  buildCrmDealInvoiceRow,
+  type CrmDealInvoiceRow,
+} from "@/lib/crm/payment-visibility";
 import { saveSalesDocument } from "@/lib/sales/doc-save";
 import {
   loadCompanyDefaults,
@@ -1025,4 +1029,116 @@ export const upsertCrmPipelineStage = createServerFn({ method: "POST" })
       },
       CRM_PIPELINE_ADMIN_MIGRATION,
     );
+  });
+
+/**
+ * Read-only Sales invoice status for CRM opportunities that already have a linked quote.
+ * Requires sales.view so CRM never leaks AR without Sales permission.
+ */
+export const listCrmDealInvoices = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; limit?: number }) => ({
+    companyId: companyIdOf(input),
+    limit: Math.min(Math.max(input.limit ?? 100, 1), 300),
+  }))
+  .handler(async ({ data, context }): Promise<CrmDealInvoiceRow[]> => {
+    await requireCrmView(context.supabase, data.companyId);
+    await assertCompanyPermission(context.supabase, data.companyId, "sales.view");
+
+    const oppsRes = await crmClient(context.supabase)
+      .from("crm_opportunities")
+      .select("id, opportunity_number, name, quote_id")
+      .eq("company_id", data.companyId)
+      .not("quote_id", "is", null)
+      .is("archived_at", null)
+      .order("updated_at", { ascending: false })
+      .limit(data.limit);
+    throwIfRelation(oppsRes.error);
+
+    const opps = (oppsRes.data as Array<{
+      id: string;
+      opportunity_number: string;
+      name: string;
+      quote_id: string;
+    }> | null) ?? [];
+    if (opps.length === 0) return [];
+
+    const quoteIds = [...new Set(opps.map((o) => o.quote_id))];
+    const quotesRes = await (context.supabase as any)
+      .from("sales_quotes")
+      .select("id, quote_number, converted_invoice_id")
+      .eq("company_id", data.companyId)
+      .in("id", quoteIds);
+    if (quotesRes.error) throw new Error(quotesRes.error.message);
+    const quotes = new Map<
+      string,
+      { id: string; quote_number: string; converted_invoice_id: string | null }
+    >();
+    for (const q of (quotesRes.data as Array<{
+      id: string;
+      quote_number: string;
+      converted_invoice_id: string | null;
+    }> | null) ?? []) {
+      quotes.set(q.id, q);
+    }
+
+    const invoiceIds = [
+      ...new Set(
+        [...quotes.values()]
+          .map((q) => q.converted_invoice_id)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    ];
+    const invoices = new Map<
+      string,
+      {
+        id: string;
+        invoice_number: string;
+        status: string;
+        currency_code: string;
+        total_minor: number;
+        amount_paid_minor: number;
+        amount_credited_minor: number;
+        due_date: string;
+      }
+    >();
+    if (invoiceIds.length > 0) {
+      const invRes = await (context.supabase as any)
+        .from("sales_invoices")
+        .select(
+          "id, invoice_number, status, currency_code, total_minor, amount_paid_minor, amount_credited_minor, due_date",
+        )
+        .eq("company_id", data.companyId)
+        .in("id", invoiceIds);
+      if (invRes.error) throw new Error(invRes.error.message);
+      for (const inv of (invRes.data as Array<{
+        id: string;
+        invoice_number: string;
+        status: string;
+        currency_code: string;
+        total_minor: number;
+        amount_paid_minor: number;
+        amount_credited_minor: number;
+        due_date: string;
+      }> | null) ?? []) {
+        invoices.set(inv.id, inv);
+      }
+    }
+
+    const today = new Date().toISOString().slice(0, 10);
+    return opps.map((opp) => {
+      const quote = quotes.get(opp.quote_id);
+      const invoice = quote?.converted_invoice_id
+        ? invoices.get(quote.converted_invoice_id) ?? null
+        : null;
+      return buildCrmDealInvoiceRow({
+        opportunityId: opp.id,
+        opportunityNumber: opp.opportunity_number,
+        opportunityName: opp.name,
+        quoteId: opp.quote_id,
+        quoteNumber: quote?.quote_number ?? null,
+        invoice,
+        today,
+      });
+    });
   });

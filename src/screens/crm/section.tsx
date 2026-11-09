@@ -9,6 +9,7 @@ import { CrmLeadsPage } from "@/screens/crm/leads";
 import { CrmOpportunitiesPage } from "@/screens/crm/opportunities";
 import { CrmPipelinesPage } from "@/screens/crm/pipelines";
 import { CrmQuotesPage } from "@/screens/crm/quotes";
+import { CrmRelationshipsPage } from "@/screens/crm/relationships";
 import { CrmSettingsPage } from "@/screens/crm/settings";
 
 const DEFERRED_LINKS: Partial<Record<CrmSectionKey, { href: string; label: string }>> = {
@@ -26,6 +27,7 @@ export function CrmSectionPage({ sectionKey }: { sectionKey: CrmSectionKey }) {
   if (sectionKey === "opportunities") return <CrmOpportunitiesPage />;
   if (sectionKey === "pipelines") return <CrmPipelinesPage />;
   if (sectionKey === "quotes") return <CrmQuotesPage />;
+  if (sectionKey === "relationships") return <CrmRelationshipsPage />;
   if (sectionKey === "settings") return <CrmSettingsPage />;
   if (sectionKey === "activities" || sectionKey === "tasks" || sectionKey === "calendar") {
     return <CrmActivitiesPage sectionKey={sectionKey} />;

@@ -13,6 +13,12 @@ The register below was derived from actual repository navigation and routes. The
 
 **Inventory at source revision:** 21 sidebar entries, 132 authenticated route files (117 associated with sidebar modules and 15 supporting route files). **No fully verified module is yet established in this browsing project.**
 
+
+### Advisors Administration appointments browsing increment (2026-11-09)
+
+- `src/screens/advisors/admin-appointments.tsx`: retains Advisors subnavigation on loading/error, announces loading/errors and appointment counts, validates unavailable-period end after start, prevents overlapping booking/status mutations and redundant status updates. Source commit `6b19df8929eb66055f9b0f41ce87674f29c932d3`.
+- **Partial source evidence only.** `check:browsing-coverage`, TypeScript, lint, build, unit, authenticated browser, accessibility, booking permissions/RLS and accounting regressions **NOT RUN**. 0/21 modules, 0/15 supporting routes, 0/12 batches verified. No main merge, CI trigger, database change or deployment.
+
 ## 1. Every top-level module — tracked without exception
 
 | # | Module | Main route | Route files | Premium browsing status |

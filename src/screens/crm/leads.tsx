@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CrmSubnav } from "@/components/crm/CrmSubnav";
 import { CrmStatusBadge } from "@/components/crm/CrmStatusBadge";
 import { CompanyEmptyState } from "@/components/common/company-empty";
@@ -43,6 +43,8 @@ import { displayLeadName, type CrmLeadStatus } from "@/lib/crm/types";
 import type { Permission } from "@/lib/permissions";
 import { toast } from "sonner";
 
+const LEADS_PAGE_SIZE = 50;
+
 export function CrmLeadsPage() {
   const { company, isPending } = useActiveCompany();
   const { can } = useCan();
@@ -58,6 +60,15 @@ export function CrmLeadsPage() {
 
   const [statusFilter, setStatusFilter] = useState<string>("open");
   const [searchTerm, setSearchTerm] = useState("");
+  const [appliedSearch, setAppliedSearch] = useState("");
+  const [page, setPage] = useState(0);
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      setAppliedSearch(searchTerm.trim());
+      setPage(0);
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [searchTerm]);
   const [showForm, setShowForm] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -101,14 +112,17 @@ export function CrmLeadsPage() {
   });
 
   const leads = useQuery({
-    queryKey: ["crm-leads", company?.id, statusFilter],
+    queryKey: ["crm-leads", company?.id, statusFilter, appliedSearch, page],
     queryFn: () =>
       fetchLeads({
         data: {
           companyId: company!.id,
-          ...(statusFilter === "open" || statusFilter === "all"
-            ? {}
-            : { status: statusFilter }),
+          ...(statusFilter === "open"
+            ? { activeOnly: true }
+            : statusFilter === "all" ? {} : { status: statusFilter }),
+          q: appliedSearch,
+          limit: LEADS_PAGE_SIZE + 1,
+          offset: page * LEADS_PAGE_SIZE,
         },
       }),
     enabled: Boolean(company?.id) && canView && settings.data?.enabled === true,
@@ -176,15 +190,8 @@ export function CrmLeadsPage() {
     );
   }
 
-  const rows = (leads.data ?? []).filter((lead) => {
-    if (statusFilter === "open" && ["converted", "disqualified"].includes(lead.status)) {
-      return false;
-    }
-    const term = searchTerm.trim().toLocaleLowerCase();
-    if (!term) return true;
-    return [lead.leadNumber, displayLeadName(lead), lead.email ?? ""]
-      .some((value) => value.toLocaleLowerCase().includes(term));
-  });
+  const rows = (leads.data ?? []).slice(0, LEADS_PAGE_SIZE);
+  const hasNextPage = (leads.data?.length ?? 0) > LEADS_PAGE_SIZE;
 
   return (
     <ListWorkspace
@@ -348,7 +355,7 @@ export function CrmLeadsPage() {
             <Input
               id="lead-search"
               type="search"
-              placeholder="Search loaded leads by name, email or number"
+              placeholder="Search all leads by name, email or number"
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               className="w-full sm:max-w-sm"
@@ -356,7 +363,7 @@ export function CrmLeadsPage() {
             <Label htmlFor="lead-status-filter" className="sr-only">
               Status filter
             </Label>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select value={statusFilter} onValueChange={(value) => { setStatusFilter(value); setPage(0); }}>
               <SelectTrigger id="lead-status-filter" className="w-48" aria-label="Filter leads">
                 <SelectValue />
               </SelectTrigger>
@@ -375,7 +382,7 @@ export function CrmLeadsPage() {
 
           {leads.isSuccess ? (
             <p className="text-xs text-muted-foreground" role="status">
-              Showing {rows.length} of {leads.data?.length ?? 0} loaded leads. Search filters only loaded records (up to 100); full server-side search and pagination remain pending.
+              Page {page + 1}: showing {rows.length} leads, searched and filtered securely on the server. {hasNextPage ? "More results available." : "No further results."}
             </p>
           ) : null}
           {leads.isLoading ? <LoadingState /> : null}
@@ -384,8 +391,8 @@ export function CrmLeadsPage() {
           ) : null}
           {leads.isSuccess && rows.length === 0 ? (
             <EmptyState
-              title={searchTerm ? "No matching loaded leads" : "No leads in this view"}
-              description={searchTerm ? "Try a different search or status filter." : "Create a lead to start the CRM lifecycle."}
+              title={appliedSearch ? "No matching leads" : "No leads in this view"}
+              description={appliedSearch ? "Try a different search or status filter." : "Create a lead to start the CRM lifecycle."}
             />
           ) : null}
           {rows.length > 0 ? (
@@ -435,6 +442,19 @@ export function CrmLeadsPage() {
                 </TableBody>
               </Table>
             </div>
+          ) : null}
+          {leads.isSuccess && (page > 0 || hasNextPage) ? (
+            <nav aria-label="Lead list pages" className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-muted-foreground">Page {page + 1}</p>
+              <div className="flex gap-2">
+                <Button type="button" variant="secondary" disabled={page === 0 || leads.isFetching} onClick={() => setPage((value) => Math.max(0, value - 1))}>
+                  Previous
+                </Button>
+                <Button type="button" variant="secondary" disabled={!hasNextPage || leads.isFetching} onClick={() => setPage((value) => value + 1)}>
+                  Next
+                </Button>
+              </div>
+            </nav>
           ) : null}
         </div>
       ) : null}

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { CrmSubnav } from "@/components/crm/CrmSubnav";
+import { CrmStatusBadge } from "@/components/crm/CrmStatusBadge";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
@@ -413,7 +414,7 @@ export function CrmLeadsPage() {
                         </Link>
                       </TableCell>
                       <TableCell>{displayLeadName(lead)}</TableCell>
-                      <TableCell className="capitalize">{lead.status}</TableCell>
+                      <TableCell><CrmStatusBadge status={lead.status} /></TableCell>
                       <TableCell>{lead.email ?? "—"}</TableCell>
                       <TableCell className="text-right tabular-nums">
                         {formatCrmMinor(lead.estimatedValueMinor, lead.currencyCode)}

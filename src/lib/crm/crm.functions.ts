@@ -541,10 +541,22 @@ export const listCrmPipelines = createServerFn({ method: "GET" })
 
 export const listCrmOpportunities = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; status?: string; limit?: number }) => ({
+  .inputValidator((input: {
+    companyId: string;
+    status?: string;
+    pipelineId?: string;
+    q?: string;
+    limit?: number;
+    offset?: number;
+  }) => ({
     companyId: companyIdOf(input),
     status: input.status?.trim() || undefined,
+    pipelineId: input.pipelineId ? assertUuid(input.pipelineId) : undefined,
+    q: (input.q ?? "").trim().slice(0, 120),
     limit: Math.min(Math.max(input.limit ?? 200, 1), 500),
+    offset: Number.isSafeInteger(input.offset) && (input.offset ?? 0) >= 0
+      ? Math.min(input.offset ?? 0, 1000000)
+      : 0,
   }))
   .handler(async ({ data, context }): Promise<CrmOpportunity[]> => {
     await requireCrmView(context.supabase, data.companyId);
@@ -552,10 +564,13 @@ export const listCrmOpportunities = createServerFn({ method: "GET" })
       .from("crm_opportunities")
       .select("*")
       .eq("company_id", data.companyId)
-      .is("archived_at", null)
-      .order("updated_at", { ascending: false });
+      .is("archived_at", null);
     if (data.status) q = q.eq("status", data.status);
-    const { data: rows, error } = await q.limit(data.limit);
+    if (data.pipelineId) q = q.eq("pipeline_id", data.pipelineId);
+    const filter = buildIlikeOr(["opportunity_number", "name"], data.q);
+    if (filter) q = q.or(filter);
+    q = q.order("updated_at", { ascending: false }).order("id", { ascending: false });
+    const { data: rows, error } = await q.range(data.offset, data.offset + data.limit - 1);
     throwIfRelation(error);
     return ((rows as Record<string, unknown>[] | null) ?? []).map(mapCrmOpportunity);
   });

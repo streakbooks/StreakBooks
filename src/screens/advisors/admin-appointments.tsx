@@ -122,21 +122,23 @@ export function AdvisorsAdminAppointmentsPage() {
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
 
-  if (query.isPending) return <LoadingState />;
+  if (query.isPending) return <main className="mx-auto max-w-6xl space-y-6 p-6"><PageHeader title="Appointments" description="Advisor calendar and booking controls." /><AdvisorsSubnav /><div role="status" aria-live="polite"><LoadingState /></div></main>;
   if (query.isError) {
     return (
       <main className="mx-auto max-w-5xl space-y-6 p-6">
         <PageHeader title="Appointments" description="Advisor calendar and booking controls." />
-        <ErrorState
+        <AdvisorsSubnav />
+        <div role="alert"><ErrorState
           title="Booking admin unavailable"
           description={friendlyAuthError(query.error)}
           onRetry={() => void query.refetch()}
-        />
+        /></div>
       </main>
     );
   }
 
   const appointments = query.data.appointments as AppointmentRow[];
+  const validExceptionRange = Boolean(exceptionStart && exceptionEnd && Number.isFinite(Date.parse(exceptionStart)) && Number.isFinite(Date.parse(exceptionEnd)) && Date.parse(exceptionEnd) > Date.parse(exceptionStart));
 
   return (
     <main className="mx-auto max-w-6xl space-y-6 p-6">
@@ -199,7 +201,7 @@ export function AdvisorsAdminAppointmentsPage() {
         <div className="sm:col-span-2">
           <Button
             type="button"
-            disabled={saveM.isPending || reason.trim().length < 3}
+            disabled={saveM.isPending || exceptionM.isPending || statusM.isPending || reason.trim().length < 3}
             onClick={() => saveM.mutate()}
           >
             Save availability settings
@@ -237,11 +239,12 @@ export function AdvisorsAdminAppointmentsPage() {
             />
           </div>
         </div>
+        {exceptionStart && exceptionEnd && !validExceptionRange ? <p role="alert" className="text-sm text-destructive">End time must be later than start time.</p> : null}
         <Button
           type="button"
           variant="outline"
           disabled={
-            exceptionM.isPending || reason.trim().length < 3 || !exceptionStart || !exceptionEnd
+            exceptionM.isPending || saveM.isPending || statusM.isPending || reason.trim().length < 3 || !validExceptionRange
           }
           onClick={() => exceptionM.mutate()}
         >
@@ -251,6 +254,7 @@ export function AdvisorsAdminAppointmentsPage() {
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">Upcoming and recent appointments</h2>
+        <p role="status" aria-live="polite" className="sr-only">{appointments.length} appointments loaded</p>
         {appointments.length === 0 ? (
           <p className="text-sm text-muted-foreground">No appointments yet.</p>
         ) : (
@@ -274,6 +278,7 @@ export function AdvisorsAdminAppointmentsPage() {
                     type="button"
                     size="sm"
                     variant="outline"
+                    disabled={statusM.isPending || saveM.isPending || exceptionM.isPending || appointment.status === "completed"}
                     onClick={() => statusM.mutate({ id: appointment.id, status: "completed" })}
                   >
                     Completed
@@ -282,6 +287,7 @@ export function AdvisorsAdminAppointmentsPage() {
                     type="button"
                     size="sm"
                     variant="outline"
+                    disabled={statusM.isPending || saveM.isPending || exceptionM.isPending || appointment.status === "no_show"}
                     onClick={() => statusM.mutate({ id: appointment.id, status: "no_show" })}
                   >
                     No-show
@@ -290,6 +296,7 @@ export function AdvisorsAdminAppointmentsPage() {
                     type="button"
                     size="sm"
                     variant="destructive"
+                    disabled={statusM.isPending || saveM.isPending || exceptionM.isPending || appointment.status === "cancelled"}
                     onClick={() => statusM.mutate({ id: appointment.id, status: "cancelled" })}
                   >
                     Cancel

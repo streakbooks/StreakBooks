@@ -1,29 +1,29 @@
 # CRM development progress
 
 ```
-[###########---] Foundation + quote bridge + pipelines + payment visibility
+[############--] Reports + fail-closed comms + campaigns sources
 ```
 
-**Reconciled:** 2026-11-09 against GitHub main (post #208–#212) + CRM-09 branch and linked Supabase.
+**Reconciled:** 2026-11-09 against GitHub main (post #208–#213) + CRM-11/07 branch and linked Supabase.
 
 ## Verified delivery
 
-- Merged PRs: #208–#212 (foundation through pipeline admin)
-- CRM-09 (this PR): `/crm/relationships` read-only Sales invoice/outstanding for quote-linked deals (`crm.view` + `sales.view`)
+- Merged PRs: #208–#213 (foundation through payment visibility)
+- This branch: CRM-11 forecasting/reports (stage-weighted, labelled ≠ GL); CRM-07 communications fail-closed provider policy; campaigns shows live lead sources with campaign create blocked
 - Supabase applied: `20261109120000`–`20261109160000` on `ipxflpzfcqwtenodbxwc`
-- Demo Company CRM enabled; browser smoke: Overview KPIs + Accounts list
-- Unit tests: CRM suite including payment-visibility — see branch verification
+- Demo Company CRM enabled; browser smoke earlier: Overview KPIs + Accounts list
+- Unit tests: CRM suite including forecast-report + comms-policy
 
 ## Gap closure report
 
 - Requirements reviewed: **96+** (see competitor parity audit canvas)
-- Critical remaining: outbound email, automation, public forms, formal live E2E 5/5, hosted deploy proof
-- High remaining: CRM reports, import/export, advanced stage gates, retention workflows
+- Critical remaining: outbound email provider wiring, automation, public forms, formal live E2E 5/5, hosted deploy proof
+- High remaining: import/export, advanced stage gates, retention workflows, campaign persistence
 - Live E2E pack: **Unverified** (smoke only)
 - Originality: ORIGINALITY-CHECKLIST.md reviewed; legal pending
 
 ## Batches
 
-- Completed / merged: CRM-01, CRM-02, CRM-04, CRM-03 partial, CRM-08, CRM-05
-- Shipping: CRM-09 payment visibility (this branch)
-- Next: formal E2E, CRM-07 email decision, CRM-11 reports
+- Completed / merged: CRM-01, CRM-02, CRM-04, CRM-03 partial, CRM-08, CRM-05, CRM-09
+- Shipping: CRM-11 reports/forecast + CRM-07 fail-closed communications + campaigns sources UI
+- Next: formal E2E, CRM-10 automation (flagged off), CRM-12 import/export

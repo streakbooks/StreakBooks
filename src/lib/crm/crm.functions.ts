@@ -36,6 +36,11 @@ import {
   buildCrmDealInvoiceRow,
   type CrmDealInvoiceRow,
 } from "@/lib/crm/payment-visibility";
+import {
+  buildForecastReport,
+  type ForecastReport,
+} from "@/lib/crm/forecast-report";
+import { resolveCrmCommsPolicy, type CrmCommsPolicy } from "@/lib/crm/comms-policy";
 import { saveSalesDocument } from "@/lib/sales/doc-save";
 import {
   loadCompanyDefaults,
@@ -1141,4 +1146,86 @@ export const listCrmDealInvoices = createServerFn({ method: "GET" })
         today,
       });
     });
+  });
+
+/** Stage-weighted CRM forecast — expectation only; not GL revenue. */
+export const getCrmForecastReport = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; pipelineId?: string }) => ({
+    companyId: companyIdOf(input),
+    pipelineId: input.pipelineId ? assertUuid(input.pipelineId) : undefined,
+  }))
+  .handler(async ({ data, context }): Promise<ForecastReport> => {
+    await requireCrmView(context.supabase, data.companyId);
+
+    const pipelinesRes = await crmClient(context.supabase)
+      .from("crm_pipelines")
+      .select("*")
+      .eq("company_id", data.companyId)
+      .order("sort_order", { ascending: true });
+    throwIfRelation(pipelinesRes.error);
+    const pipelines = ((pipelinesRes.data as Record<string, unknown>[] | null) ?? []).map(
+      mapCrmPipeline,
+    );
+    const pipeline =
+      (data.pipelineId ? pipelines.find((p) => p.id === data.pipelineId) : null) ??
+      pipelines.find((p) => p.isDefault) ??
+      pipelines[0] ??
+      null;
+
+    const stagesRes = await crmClient(context.supabase)
+      .from("crm_pipeline_stages")
+      .select("*")
+      .eq("company_id", data.companyId)
+      .order("sort_order", { ascending: true });
+    throwIfRelation(stagesRes.error);
+    const allStages = ((stagesRes.data as Record<string, unknown>[] | null) ?? []).map(
+      mapCrmPipelineStage,
+    );
+    const stages = pipeline
+      ? allStages.filter((s) => s.pipelineId === pipeline.id)
+      : allStages;
+
+    let oppQ = crmClient(context.supabase)
+      .from("crm_opportunities")
+      .select("*")
+      .eq("company_id", data.companyId)
+      .eq("status", "open")
+      .is("archived_at", null)
+      .order("updated_at", { ascending: false });
+    if (pipeline) oppQ = oppQ.eq("pipeline_id", pipeline.id);
+    const oppsRes = await oppQ.limit(500);
+    throwIfRelation(oppsRes.error);
+    const opportunities = ((oppsRes.data as Record<string, unknown>[] | null) ?? []).map(
+      mapCrmOpportunity,
+    );
+
+    return buildForecastReport({
+      opportunities: opportunities.map((o) => ({
+        id: o.id,
+        stageId: o.stageId,
+        amountMinor: o.amountMinor,
+        probabilityPct: o.probabilityPct,
+        status: o.status,
+      })),
+      stages: stages.map((s) => ({
+        id: s.id,
+        name: s.name,
+        sortOrder: s.sortOrder,
+        probabilityPct: s.probabilityPct,
+        isWon: s.isWon,
+        isLost: s.isLost,
+        isActive: s.isActive,
+      })),
+    });
+  });
+
+/** Honest outbound-comms gate — always fail-closed until a provider is wired. */
+export const getCrmCommsPolicy = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .handler(async ({ data, context }): Promise<CrmCommsPolicy> => {
+    await requireCrmView(context.supabase, data.companyId);
+    // Provider wiring is intentionally absent: never claim send is available.
+    return resolveCrmCommsPolicy({ providerConfigured: false });
   });

@@ -676,6 +676,7 @@ export const listCrmActivities = createServerFn({ method: "GET" })
     companyId: string;
     status?: string;
     kind?: string;
+    q?: string;
     dueFrom?: string;
     dueTo?: string;
     limit?: number;
@@ -692,6 +693,7 @@ export const listCrmActivities = createServerFn({ method: "GET" })
       companyId: companyIdOf(input),
       status: input.status?.trim() || undefined,
       kind: input.kind?.trim() || undefined,
+      q: (input.q ?? "").trim().slice(0, 120),
       dueFrom,
       dueTo,
       limit: Math.min(Math.max(input.limit ?? 100, 1), 500),
@@ -708,6 +710,8 @@ export const listCrmActivities = createServerFn({ method: "GET" })
       .eq("company_id", data.companyId);
     if (data.status) q = q.eq("status", data.status);
     if (data.kind) q = q.eq("kind", data.kind);
+    const subjectFilter = buildIlikeOr(["subject"], data.q);
+    if (subjectFilter) q = q.or(subjectFilter);
     if (data.dueFrom) q = q.gte("due_at", data.dueFrom);
     if (data.dueTo) q = q.lt("due_at", data.dueTo);
     q = q.order("due_at", { ascending: true }).order("id", { ascending: true });

@@ -8,7 +8,7 @@ export function validateOpportunityForm(name: string, amountMajor: string): Oppo
     return { valid: false, amountMinor: null, message: "Opportunity name is required." };
   }
   const raw = amountMajor.trim();
-  if (raw && !^(?:\d+(?:\.\d{1,2})?|\.\d{1,2})$/.test(raw)) {
+  if (raw && !/^(?:\d+(?:\.\d{1,2})?|\.\d{1,2})$/.test(raw)) {
     return {
       valid: false,
       amountMinor: null,

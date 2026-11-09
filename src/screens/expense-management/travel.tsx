@@ -197,7 +197,7 @@ export function ExpenseManagementTravelPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Travel" description="Expense Management"
+      <ListWorkspace title="Travel" description="Expenses"
       subnav={<ExpenseManagementSubnav current="travel"/>}
     >
       <EmptyState

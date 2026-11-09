@@ -398,7 +398,8 @@
         "src/screens/advisors/portal-documents.tsx — persistent portal subnav during loading/errors, accessible loading/error/result announcements and bounded optional note (commit 37b04076b940f7fd309f6e1d97a7c25cdadcc04b); tests NOT RUN",
         "src/screens/advisors/portal-messages.tsx — persistent portal subnav in loading/error, accessible status/error/count, bounded composer and pending-send feedback; commit 55dea3e002d97383fb16f99aad032112363c02e6; tests NOT RUN",
         "src/screens/advisors/portal-account.tsx — retained portal navigation on loading/error, native contact form submit, required bounded inputs, notification loading/error/empty/retry and pending-action feedback; commit ea47a3237801d20804befa34e06c46b6e0a43251; tests NOT RUN",
-        "src/screens/advisors/portal-account.tsx — native service-request form submit, required/minimum-length details and aria-pressed request-kind controls; commit 9864d938dc4384f68ccd827dc69503ecfe6dd72b; tests NOT RUN"
+        "src/screens/advisors/portal-account.tsx — native service-request form submit, required/minimum-length details and aria-pressed request-kind controls; commit 9864d938dc4384f68ccd827dc69503ecfe6dd72b; tests NOT RUN",
+        "2026-11-09 Advisors Portal Account: contactDirty prevents background home refetch overwriting unsaved contact edits; Save disabled until edited; reset after successful refresh; Mark all read only when unread items exist; mutation errors surfaced via toast. Code commits 3bee4ccf011f5571597e5b3f525bcdca4578edfa and 0098ed9375947f09069b7418018f848bf512dceb. Source evidence only; local tests, browser, typecheck, coverage guard NOT RUN; module NOT verified."
       ],
       "remaining": [
         "Verify deep-link refresh, browser Back/Forward, new tab and permission-isolated status filters",
@@ -409,7 +410,8 @@
         "Verify Documents loading/error recovery, note length, permissions and status updates in authenticated browser; NOT RUN",
         "Verify Messages send/retry, authorization, 5000-character input, live announcements and keyboard flows in authenticated browser; NOT RUN",
         "Verify account form submission, notifications retry, role permissions, drafts, keyboard navigation and server validation in authenticated browser; NOT RUN",
-        "Verify service-request keyboard submit, request-kind pressed state, validation and permissions with authenticated browser tests; NOT RUN"
+        "Verify service-request keyboard submit, request-kind pressed state, validation and permissions with authenticated browser tests; NOT RUN",
+        "Test unsaved contact preservation across refetch and successful save, notification errors, tenant/RLS and accessibility with authenticated fixtures"
       ]
     },
     {

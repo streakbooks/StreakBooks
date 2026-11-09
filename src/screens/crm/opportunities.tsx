@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { CrmSubnav } from "@/components/crm/CrmSubnav";
+import { CrmStatusBadge } from "@/components/crm/CrmStatusBadge";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
@@ -427,7 +428,7 @@ export function CrmOpportunitiesPage() {
                       <TableRow key={opp.id}>
                         <TableCell>{opp.opportunityNumber}</TableCell>
                         <TableCell>{opp.name}</TableCell>
-                        <TableCell>{stage?.name ?? opp.stageId.slice(0, 8)}</TableCell>
+                        <TableCell><CrmStatusBadge status={stage?.name ?? "Open"} /></TableCell>
                         <TableCell className="text-right tabular-nums">
                           {formatCrmMinor(opp.amountMinor, opp.currencyCode)}
                         </TableCell>
@@ -568,9 +569,10 @@ export function CrmOpportunitiesPage() {
                   >
                     <div>
                       <p className="font-medium">{opp.name}</p>
-                      <p className="text-xs text-muted-foreground capitalize">
-                        {opp.opportunityNumber} · {opp.status}
-                      </p>
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
+                        <span className="text-xs text-muted-foreground">{opp.opportunityNumber}</span>
+                        <CrmStatusBadge status={opp.status} />
+                      </div>
                     </div>
                     {canManage ? (
                       <Button

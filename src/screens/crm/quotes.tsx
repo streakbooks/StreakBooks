@@ -2,6 +2,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { CrmSubnav } from "@/components/crm/CrmSubnav";
+import { CrmStatusBadge } from "@/components/crm/CrmStatusBadge";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
@@ -144,7 +145,7 @@ export function CrmQuotesPage() {
                         <div className="font-medium">{opp.opportunityNumber}</div>
                         <div className="text-sm text-muted-foreground">{opp.name}</div>
                       </TableCell>
-                      <TableCell className="capitalize">{opp.status}</TableCell>
+                      <TableCell><CrmStatusBadge status={opp.status} /></TableCell>
                       <TableCell className="text-right tabular-nums">
                         {formatCrmMinor(opp.amountMinor, opp.currencyCode)}
                       </TableCell>

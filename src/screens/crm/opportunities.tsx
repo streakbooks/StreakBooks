@@ -246,6 +246,15 @@ export function CrmOpportunitiesPage() {
     >
       <CrmSubnav current="opportunities" />
 
+      {settings.isLoading ? <LoadingState /> : null}
+      {settings.isError ? (
+        <ErrorState
+          title="Could not load CRM settings"
+          description={friendlyAuthError(settings.error)}
+          onRetry={() => settings.refetch()}
+        />
+      ) : null}
+
       {settings.data && !settings.data.enabled ? (
         <EmptyState
           title="CRM is disabled"
@@ -382,6 +391,13 @@ export function CrmOpportunitiesPage() {
               title="Could not load pipeline stages"
               description={friendlyAuthError(pipelines.error)}
               onRetry={() => pipelines.refetch()}
+            />
+          ) : null}
+          {closedOpps.isError ? (
+            <ErrorState
+              title="Could not load closed deals"
+              description={friendlyAuthError(closedOpps.error)}
+              onRetry={() => closedOpps.refetch()}
             />
           ) : null}
 

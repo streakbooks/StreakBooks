@@ -672,20 +672,46 @@ export const setCrmOpportunityStage = createServerFn({ method: "POST" })
 
 export const listCrmActivities = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; status?: string; limit?: number }) => ({
-    companyId: companyIdOf(input),
-    status: input.status?.trim() || undefined,
-    limit: Math.min(Math.max(input.limit ?? 100, 1), 500),
-  }))
+  .inputValidator((input: {
+    companyId: string;
+    status?: string;
+    kind?: string;
+    dueFrom?: string;
+    dueTo?: string;
+    limit?: number;
+    offset?: number;
+  }) => {
+    const dueFrom = input.dueFrom?.trim() || undefined;
+    const dueTo = input.dueTo?.trim() || undefined;
+    if (dueFrom && !Number.isFinite(Date.parse(dueFrom))) throw new Error("Invalid activity start date");
+    if (dueTo && !Number.isFinite(Date.parse(dueTo))) throw new Error("Invalid activity end date");
+    if (dueFrom && dueTo && new Date(dueFrom) >= new Date(dueTo)) {
+      throw new Error("Activity end date must follow start date");
+    }
+    return {
+      companyId: companyIdOf(input),
+      status: input.status?.trim() || undefined,
+      kind: input.kind?.trim() || undefined,
+      dueFrom,
+      dueTo,
+      limit: Math.min(Math.max(input.limit ?? 100, 1), 500),
+      offset: Number.isSafeInteger(input.offset) && (input.offset ?? 0) >= 0
+        ? Math.min(input.offset ?? 0, 1000000)
+        : 0,
+    };
+  })
   .handler(async ({ data, context }): Promise<CrmActivity[]> => {
     await requireCrmView(context.supabase, data.companyId);
     let q = crmClient(context.supabase)
       .from("crm_activities")
       .select("*")
-      .eq("company_id", data.companyId)
-      .order("due_at", { ascending: true });
+      .eq("company_id", data.companyId);
     if (data.status) q = q.eq("status", data.status);
-    const { data: rows, error } = await q.limit(data.limit);
+    if (data.kind) q = q.eq("kind", data.kind);
+    if (data.dueFrom) q = q.gte("due_at", data.dueFrom);
+    if (data.dueTo) q = q.lt("due_at", data.dueTo);
+    q = q.order("due_at", { ascending: true }).order("id", { ascending: true });
+    const { data: rows, error } = await q.range(data.offset, data.offset + data.limit - 1);
     throwIfRelation(error);
     return ((rows as Record<string, unknown>[] | null) ?? []).map(mapCrmActivity);
   });

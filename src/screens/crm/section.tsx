@@ -13,15 +13,14 @@ import { CrmCampaignsPage } from "@/screens/crm/campaigns";
 import { CrmCommunicationsPage } from "@/screens/crm/communications";
 import { CrmForecastingPage } from "@/screens/crm/forecasting";
 import { CrmImportsPage } from "@/screens/crm/imports";
+import { CrmProductsPage } from "@/screens/crm/products";
 import { CrmQuotesPage } from "@/screens/crm/quotes";
 import { CrmRelationshipsPage } from "@/screens/crm/relationships";
 import { CrmReportsPage } from "@/screens/crm/reports";
 import { CrmSettingsPage } from "@/screens/crm/settings";
 import { CrmTeamPage } from "@/screens/crm/team";
 
-const DEFERRED_LINKS: Partial<Record<CrmSectionKey, { href: string; label: string }>> = {
-  products: { href: "/products-services", label: "Open Products & Services" },
-};
+const DEFERRED_LINKS: Partial<Record<CrmSectionKey, { href: string; label: string }>> = {};
 
 /**
  * Dispatches CRM section routes. Fully wired sections render their screens.
@@ -34,6 +33,7 @@ export function CrmSectionPage({ sectionKey }: { sectionKey: CrmSectionKey }) {
   if (sectionKey === "opportunities") return <CrmOpportunitiesPage />;
   if (sectionKey === "pipelines") return <CrmPipelinesPage />;
   if (sectionKey === "quotes") return <CrmQuotesPage />;
+  if (sectionKey === "products") return <CrmProductsPage />;
   if (sectionKey === "relationships") return <CrmRelationshipsPage />;
   if (sectionKey === "forecasting") return <CrmForecastingPage />;
   if (sectionKey === "reports") return <CrmReportsPage />;

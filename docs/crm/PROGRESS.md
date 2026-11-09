@@ -22,5 +22,6 @@
 ## Batches
 
 - Completed through campaigns (#217)
-- Shipping: CRM-12 territory records
+- Merged: CRM-12 territory records (#218)
+- Shipping: CRM products bridge (shared catalogue read-only)
 - Next: live authenticated E2E, email provider when ready

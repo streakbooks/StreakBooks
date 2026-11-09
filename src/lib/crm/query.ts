@@ -5,6 +5,7 @@ export type CrmQueryError = { message: string; code?: string } | null;
 export type CrmFilterBuilder = {
   eq: (column: string, value: string) => CrmFilterBuilder;
   is: (column: string, value: null) => CrmFilterBuilder;
+  not: (column: string, op: string, value: null) => CrmFilterBuilder;
   in: (column: string, values: string[]) => CrmFilterBuilder;
   order: (column: string, opts?: { ascending?: boolean }) => CrmFilterBuilder;
   limit: (n: number) => PromiseLike<{ data: unknown; error: CrmQueryError }>;

@@ -31,6 +31,13 @@ import {
   buildCrmAccountOverlay,
   type CrmAccountOverlayRow,
 } from "@/lib/crm/account-overlay";
+import { buildOpportunityQuoteLine } from "@/lib/crm/quote-bridge";
+import { saveSalesDocument } from "@/lib/sales/doc-save";
+import {
+  loadCompanyDefaults,
+  normaliseCurrencyAndFx,
+  prepareSalesLines,
+} from "@/lib/sales/sales-common";
 
 export const CRM_MIGRATION =
   "CRM is not available yet: the database update 20261109120000 has not been applied.";
@@ -300,6 +307,14 @@ export const convertCrmLead = createServerFn({ method: "POST" })
     );
   });
 
+export type CrmDuplicateLeadMatch = {
+  id: string;
+  leadNumber?: string;
+  lead_number?: string;
+  email?: string | null;
+  status?: string;
+};
+
 export const findCrmDuplicateLeads = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
@@ -309,29 +324,46 @@ export const findCrmDuplicateLeads = createServerFn({ method: "GET" })
       phone?: string;
       organizationName?: string;
       excludeLeadId?: string;
-    }) => ({
-      companyId: companyIdOf(input),
-      email: input.email?.trim() || null,
-      phone: input.phone?.trim() || null,
-      organizationName: input.organizationName?.trim() || null,
-      excludeLeadId: input.excludeLeadId ? assertUuid(input.excludeLeadId) : null,
-    }),
+    }) => {
+      const email = input.email?.trim();
+      const phone = input.phone?.trim();
+      const organizationName = input.organizationName?.trim();
+      return {
+        companyId: companyIdOf(input),
+        ...(email ? { email } : {}),
+        ...(phone ? { phone } : {}),
+        ...(organizationName ? { organizationName } : {}),
+        ...(input.excludeLeadId ? { excludeLeadId: assertUuid(input.excludeLeadId) } : {}),
+      };
+    },
   )
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data, context }): Promise<{ matches: CrmDuplicateLeadMatch[] }> => {
     await requireCrmView(context.supabase, data.companyId);
-    return callRpc<{ matches: Array<Record<string, unknown>> }>(
+    const raw = await callRpc<{ matches?: Array<Record<string, unknown>> } | Array<Record<string, unknown>>>(
       context.supabase,
       "find_crm_duplicate_leads",
       {
         _company_id: data.companyId,
-        _email: data.email,
-        _phone: data.phone,
-        _organization_name: data.organizationName,
-        _exclude_lead_id: data.excludeLeadId,
+        _email: data.email ?? null,
+        _phone: data.phone ?? null,
+        _organization_name: data.organizationName ?? null,
+        _exclude_lead_id: data.excludeLeadId ?? null,
         _limit: 20,
       },
       CRM_GAP_MIGRATION,
     );
+    const list = Array.isArray(raw) ? raw : (raw?.matches ?? []);
+    return {
+      matches: list.map((row) => {
+        const match: CrmDuplicateLeadMatch = { id: String(row["id"] ?? "") };
+        if (row["leadNumber"] != null) match.leadNumber = String(row["leadNumber"]);
+        if (row["lead_number"] != null) match.lead_number = String(row["lead_number"]);
+        if (row["email"] != null) match.email = String(row["email"]);
+        else match.email = null;
+        if (row["status"] != null) match.status = String(row["status"]);
+        return match;
+      }),
+    };
   });
 
 export const findCrmConversionMatches = createServerFn({ method: "GET" })
@@ -750,3 +782,123 @@ export const listCrmAccountOverlay = createServerFn({ method: "GET" })
     return data.crmOnly ? rows.filter((r) => r.hasCrmActivity) : rows;
   });
 
+
+async function resolveCrmQuoteIncomeAccount(
+  supabase: unknown,
+  companyId: string,
+  contactId: string,
+): Promise<string> {
+  const contactRes = await (supabase as any)
+    .from("contacts")
+    .select("default_sales_account_id")
+    .eq("company_id", companyId)
+    .eq("id", contactId)
+    .maybeSingle();
+  if (contactRes.error) throw new Error(contactRes.error.message);
+  const preferred = contactRes.data?.default_sales_account_id as string | null | undefined;
+  if (preferred) return preferred;
+
+  const acctRes = await (supabase as any)
+    .from("accounts")
+    .select("id")
+    .eq("company_id", companyId)
+    .eq("account_type", "income")
+    .eq("is_active", true)
+    .eq("is_postable", true)
+    .is("archived_at", null)
+    .order("code", { ascending: true })
+    .limit(1);
+  if (acctRes.error) throw new Error(acctRes.error.message);
+  const id = (acctRes.data?.[0] as { id?: string } | undefined)?.id;
+  if (!id) {
+    throw new Error(
+      "No active postable income account is available. Set a default sales account on the contact or chart of accounts.",
+    );
+  }
+  return id;
+}
+
+/**
+ * Creates a Sales quote draft from a CRM opportunity and links opportunity.quote_id.
+ * GL posting remains in Sales — this path only drafts a quote.
+ */
+export const createCrmOpportunityQuote = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; opportunityId: string }) => ({
+    companyId: companyIdOf(input),
+    opportunityId: assertUuid(input.opportunityId),
+  }))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await assertCompanyPermission(supabase, data.companyId, "crm.opportunities.manage");
+    await assertCompanyPermission(supabase, data.companyId, "sales.draft");
+
+    const { data: row, error } = await crmClient(supabase)
+      .from("crm_opportunities")
+      .select("*")
+      .eq("company_id", data.companyId)
+      .eq("id", data.opportunityId)
+      .maybeSingle();
+    throwIfRelation(error);
+    if (!row) throw new Error("Opportunity not found");
+    const opp = mapCrmOpportunity(row as Record<string, unknown>);
+    if (opp.quoteId) {
+      return { quoteId: opp.quoteId, created: false as const, opportunityId: opp.id };
+    }
+    if (!opp.contactId) {
+      throw new Error("Link a customer Contact on the opportunity before creating a quote.");
+    }
+    if (opp.amountMinor <= 0) {
+      throw new Error("Set a positive opportunity amount before creating a quote.");
+    }
+
+    const accountId = await resolveCrmQuoteIncomeAccount(supabase, data.companyId, opp.contactId);
+    const defaults = await loadCompanyDefaults(supabase as never, data.companyId);
+    const { currencyCode, fxRateToBase } = normaliseCurrencyAndFx(
+      opp.currencyCode,
+      defaults.baseCurrency,
+      1,
+    );
+    const line = buildOpportunityQuoteLine({
+      opportunityName: opp.name,
+      opportunityNumber: opp.opportunityNumber,
+      amountMinor: opp.amountMinor,
+      accountId,
+    });
+    const lines = await prepareSalesLines(supabase as never, data.companyId, [line], defaults.today);
+    const saved = await saveSalesDocument(supabase as never, {
+      kind: "quote",
+      companyId: data.companyId,
+      userId,
+      contactId: opp.contactId,
+      docDate: defaults.today,
+      memo: `CRM opportunity ${opp.opportunityNumber}`,
+      currencyCode,
+      fxRateToBase,
+      lines,
+    });
+
+    const upd = await (supabase as any)
+      .from("crm_opportunities")
+      .update({ quote_id: saved.id, updated_at: new Date().toISOString(), updated_by: userId })
+      .eq("company_id", data.companyId)
+      .eq("id", opp.id)
+      .is("quote_id", null)
+      .select("id");
+    if (upd.error) throw new Error(upd.error.message);
+    if (!upd.data?.length) {
+      // Concurrent create — return existing link if set
+      const again = await crmClient(supabase)
+        .from("crm_opportunities")
+        .select("quote_id")
+        .eq("company_id", data.companyId)
+        .eq("id", opp.id)
+        .maybeSingle();
+      throwIfRelation(again.error);
+      const existing = (again.data as { quote_id?: string } | null)?.quote_id;
+      if (existing) return { quoteId: existing, created: false as const, opportunityId: opp.id };
+      throw new Error("Could not link the quote to the opportunity. Refresh and try again.");
+    }
+
+    return { quoteId: saved.id, quoteNumber: saved.number, created: true as const, opportunityId: opp.id };
+  });

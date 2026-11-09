@@ -66,15 +66,18 @@ export function CrmLeadsPage() {
 
   const dupQuery = useQuery({
     queryKey: ["crm-lead-dups", company?.id, email, phone, organizationName],
-    queryFn: () =>
-      findDuplicates({
-        data: {
-          companyId: company!.id,
-          email: email || undefined,
-          phone: phone || undefined,
-          organizationName: organizationName || undefined,
-        },
-      }),
+    queryFn: () => {
+      const data: {
+        companyId: string;
+        email?: string;
+        phone?: string;
+        organizationName?: string;
+      } = { companyId: company!.id };
+      if (email.trim()) data.email = email.trim();
+      if (phone.trim()) data.phone = phone.trim();
+      if (organizationName.trim()) data.organizationName = organizationName.trim();
+      return findDuplicates({ data });
+    },
     enabled:
       Boolean(company?.id) &&
       showForm &&
@@ -270,7 +273,7 @@ export function CrmLeadsPage() {
                       <AlertTitle>Possible duplicate leads</AlertTitle>
                       <AlertDescription>
                         <ul className="mt-2 list-disc space-y-1 pl-4">
-                          {dupMatches.slice(0, 5).map((match, idx) => (
+                          {dupMatches.slice(0, 5).map((match: { id: string; lead_number?: string; leadNumber?: string; email?: string | null; status?: string }, idx: number) => (
                             <li key={String(match["id"] ?? idx)}>
                               {String(match["lead_number"] ?? match["leadNumber"] ?? match["id"] ?? "Lead")}
                               {match["email"] ? ` · ${String(match["email"])}` : ""}

@@ -242,7 +242,7 @@ export function ExpenseManagementSettingsPage() {
 
   return (
       <ListWorkspace title="Expense settings"
-        description="Organisation defaults for Expense Management."
+        description="Organisation defaults for Expenses."
         actions={
           canEdit ? (
             <Button
@@ -268,7 +268,7 @@ export function ExpenseManagementSettingsPage() {
       <div className="grid max-w-2xl gap-6">
         <div className="flex items-center justify-between gap-4 rounded-lg border p-4">
           <div>
-            <Label htmlFor="em-enabled">Enable Expense Management</Label>
+            <Label htmlFor="em-enabled">Enable Expenses</Label>
             <p className="text-sm text-muted-foreground">
               Turns on the module for this organisation once workflows are ready.
             </p>
@@ -479,7 +479,7 @@ export function ExpenseManagementSettingsPage() {
             <div>
               <h2 className="text-base font-semibold">Legacy employee claim import</h2>
               <p className="text-sm text-muted-foreground">
-                Copy unmigrated Purchases employee expense claims into Expense Management as
+                Copy unmigrated Purchases employee expense claims into Expenses as
                 drafts. Journals and payments are not re-posted.
               </p>
             </div>

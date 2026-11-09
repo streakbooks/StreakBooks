@@ -172,7 +172,7 @@ export function ExpenseManagementPettyCashPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Petty Cash" description="Expense Management"
+      <ListWorkspace title="Petty Cash" description="Expenses"
       subnav={<ExpenseManagementSubnav current="petty-cash"/>}
     >
       <EmptyState
@@ -209,7 +209,7 @@ export function ExpenseManagementPettyCashPage() {
         <Alert className="mb-6">
           <AlertTitle>Petty cash account not configured</AlertTitle>
           <AlertDescription>
-            Set the petty cash asset account under Expense Management settings before funding
+            Set the petty cash asset account under Expenses settings before funding
             floats. Company-paid claims credit that account when posted.
           </AlertDescription>
         </Alert>

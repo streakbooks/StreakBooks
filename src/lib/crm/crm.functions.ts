@@ -49,6 +49,14 @@ import {
   resolveCrmImportExportPolicy,
   type CrmImportExportPolicy,
 } from "@/lib/crm/import-export-policy";
+import {
+  resolveCrmTerritoryPolicy,
+  type CrmTerritoryPolicy,
+} from "@/lib/crm/territory-policy";
+import {
+  buildCrmTeamWorkload,
+  type CrmTeamWorkloadRow,
+} from "@/lib/crm/team-workload";
 import { saveSalesDocument } from "@/lib/sales/doc-save";
 import {
   loadCompanyDefaults,
@@ -1279,3 +1287,86 @@ export const getCrmImportExportPolicy = createServerFn({ method: "GET" })
     });
     return { ...policy, hasImportPermission, hasExportPermission };
   });
+
+export const getCrmTerritoryPolicy = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .handler(async ({ data, context }): Promise<CrmTerritoryPolicy> => {
+    await assertCompanyPermission(context.supabase, data.companyId, "crm.admin");
+    return resolveCrmTerritoryPolicy({ backendReady: false });
+  });
+
+/** Company members with CRM ownership workload (leads/opps). Territories remain gated. */
+export const listCrmTeamWorkload = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string }) => ({ companyId: companyIdOf(input) }))
+  .handler(
+    async ({
+      data,
+      context,
+    }): Promise<{ members: CrmTeamWorkloadRow[]; territory: CrmTerritoryPolicy }> => {
+      await assertCompanyPermission(context.supabase, data.companyId, "crm.admin");
+      const { supabase, userId } = context;
+
+      const membersRes = await (supabase as any)
+        .from("company_members")
+        .select("user_id, role, status")
+        .eq("company_id", data.companyId)
+        .order("created_at");
+      if (membersRes.error) throw new Error(membersRes.error.message);
+      const memberRows = (membersRes.data as Array<{
+        user_id: string;
+        role: string;
+        status: string;
+      }> | null) ?? [];
+      const ids = memberRows.map((r) => r.user_id);
+      const profilesRes = ids.length
+        ? await (supabase as any).from("profiles").select("id, full_name, email").in("id", ids)
+        : { data: [], error: null };
+      if (profilesRes.error) throw new Error(profilesRes.error.message);
+      const byId = new Map(
+        ((profilesRes.data as Array<{ id: string; full_name: string; email: string }> | null) ?? []).map(
+          (p) => [p.id, p],
+        ),
+      );
+
+      const leadsRes = await crmClient(supabase)
+        .from("crm_leads")
+        .select("owner_user_id")
+        .eq("company_id", data.companyId)
+        .is("archived_at", null)
+        .limit(2000);
+      throwIfRelation(leadsRes.error);
+
+      const oppsRes = await crmClient(supabase)
+        .from("crm_opportunities")
+        .select("owner_user_id")
+        .eq("company_id", data.companyId)
+        .eq("status", "open")
+        .is("archived_at", null)
+        .limit(2000);
+      throwIfRelation(oppsRes.error);
+
+      const members = buildCrmTeamWorkload({
+        members: memberRows.map((r) => ({
+          userId: r.user_id,
+          fullName: byId.get(r.user_id)?.full_name ?? "",
+          email: byId.get(r.user_id)?.email ?? "",
+          role: r.role,
+          status: r.status,
+          isYou: r.user_id === userId,
+        })),
+        leads: ((leadsRes.data as Array<{ owner_user_id: string | null }> | null) ?? []).map((r) => ({
+          ownerUserId: r.owner_user_id,
+        })),
+        opportunities: (
+          (oppsRes.data as Array<{ owner_user_id: string | null }> | null) ?? []
+        ).map((r) => ({ ownerUserId: r.owner_user_id })),
+      });
+
+      return {
+        members,
+        territory: resolveCrmTerritoryPolicy({ backendReady: false }),
+      };
+    },
+  );

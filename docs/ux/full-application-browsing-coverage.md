@@ -439,3 +439,8 @@ Every batch may require multiple small implementation increments; do not rush a 
 
 - Inspected `src/screens/advisors/portal-tasks.tsx` after the task-filter accessibility change and found six literal `\\n` escape sequences embedded in JSX markup, which could break TSX compilation. Replaced them with real line breaks; code commit `000324768ece3ffb886da300592a9348241d51f4`.
 - Manifest records the correction as **partial source evidence only**. TypeScript, lint, unit, build, authenticated browser, screen-reader, `check:browsing-coverage`, role/RLS and accounting regressions: **NOT RUN**. All 21 sidebar modules and 15 supporting routes remain unverified; 0/12 batches accepted. No main-branch modification, CI trigger or deployment.
+
+### Advisors Portal account browsing increment (2026-11-09)
+
+- `src/screens/advisors/portal-account.tsx`: portal subnavigation remains available in account loading/error states; contact edits use a native required-field form with bounded inputs; notifications expose loading/error/empty states and retry; pending actions display feedback. Code commit `ea47a3237801d20804befa34e06c46b6e0a43251`.
+- **Partial source evidence only.** TypeScript, lint, unit, build, authenticated browser, accessibility, `check:browsing-coverage`, RLS and accounting regression **NOT RUN**. All 21 modules, 15 supporting routes and 12 acceptance batches remain unverified. No `main` changes or deployment.

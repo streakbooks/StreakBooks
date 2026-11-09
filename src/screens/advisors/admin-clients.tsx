@@ -153,16 +153,17 @@ export function AdvisorsAdminClientsPage() {
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
 
-  if (query.isPending || staffQuery.isPending) return <LoadingState />;
-  if (query.isError) {
+  if (query.isPending || staffQuery.isPending) return <main className="mx-auto max-w-6xl space-y-6 p-6"><PageHeader title="Clients" description="Advisors customer records." /><AdvisorsSubnav /><div role="status" aria-live="polite"><LoadingState /></div></main>;
+  if (query.isError || staffQuery.isError) {
     return (
       <main className="mx-auto max-w-6xl space-y-6 p-6">
         <PageHeader title="Clients" description="Advisors customer records." />
-        <ErrorState
+        <AdvisorsSubnav />
+        <div role="alert"><ErrorState
           title="Clients unavailable"
-          description={friendlyAuthError(query.error)}
-          onRetry={() => void query.refetch()}
-        />
+          description={friendlyAuthError(query.error ?? staffQuery.error)}
+          onRetry={() => { void query.refetch(); void staffQuery.refetch(); }}
+        /></div>
       </main>
     );
   }
@@ -212,7 +213,8 @@ export function AdvisorsAdminClientsPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <section className="space-y-2">
+        <section className="space-y-2" aria-label="Client results">
+          <p role="status" aria-live="polite" className="text-sm text-muted-foreground">{query.data.length} clients found</p>
           {query.data.length === 0 ? (
             <EmptyState
               title="No clients yet"
@@ -250,7 +252,7 @@ export function AdvisorsAdminClientsPage() {
           )}
         </section>
 
-        <section className="space-y-3 rounded-xl border border-border/70 p-4">
+        <form className="space-y-3 rounded-xl border border-border/70 p-4" onSubmit={(event) => { event.preventDefault(); if (!saveM.isPending && !inviteM.isPending && !unlinkM.isPending) saveM.mutate(); }}>
           <h2 className="font-semibold">{form.id ? "Edit client" : "New client"}</h2>
           <div className="space-y-1">
             <Label htmlFor="client-reason">Change reason</Label>
@@ -365,7 +367,7 @@ export function AdvisorsAdminClientsPage() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button type="button" disabled={saveM.isPending} onClick={() => saveM.mutate()}>
+            <Button type="submit" disabled={saveM.isPending || inviteM.isPending || unlinkM.isPending}>
               {form.id ? "Save client" : "Create client"}
             </Button>
             {form.id ? (
@@ -373,7 +375,7 @@ export function AdvisorsAdminClientsPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={inviteM.isPending || Boolean(selectedLinked)}
+                  disabled={saveM.isPending || inviteM.isPending || unlinkM.isPending || Boolean(selectedLinked)}
                   onClick={() => inviteM.mutate()}
                 >
                   Invite to portal
@@ -381,7 +383,7 @@ export function AdvisorsAdminClientsPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={unlinkM.isPending || !selectedLinked}
+                  disabled={saveM.isPending || inviteM.isPending || unlinkM.isPending || !selectedLinked}
                   onClick={() => unlinkM.mutate()}
                 >
                   Unlink portal
@@ -397,7 +399,7 @@ export function AdvisorsAdminClientsPage() {
               required).
             </p>
           ) : null}
-        </section>
+        </form>
       </div>
     </main>
   );

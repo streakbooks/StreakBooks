@@ -33,7 +33,7 @@ export function validateCrmLeadForm(input: CrmLeadFormInput): CrmLeadFormResult 
   }
 
   const raw = input.estimatedMajor.trim();
-  if (raw && !^(?:\d+(?:\.\d{1,2})?|\.\d{1,2})$/.test(raw)) {
+  if (raw && !/^(?:\d+(?:\.\d{1,2})?|\.\d{1,2})$/.test(raw)) {
     return {
       valid: false,
       estimatedValueMinor: null,

@@ -35,6 +35,10 @@ describe("validateCrmLeadForm", () => {
     },
   );
 
+  it("accepts a leading-decimal amount", () => {
+    expect(validateCrmLeadForm({ ...draft, estimatedMajor: ".50" })).toMatchObject({ valid: true, estimatedValueMinor: 50 });
+  });
+
   it("accepts a blank or zero amount", () => {
     expect(validateCrmLeadForm({ ...draft, estimatedMajor: "" })).toMatchObject({ valid: true, estimatedValueMinor: 0 });
     expect(validateCrmLeadForm({ ...draft, estimatedMajor: "0" })).toMatchObject({ valid: true, estimatedValueMinor: 0 });

@@ -454,3 +454,8 @@ Every batch may require multiple small implementation increments; do not rush a 
 ### Advisors Portal Account draft-preservation increment (2026-11-09)
 
 - 2026-11-09 Advisors Portal Account: contactDirty prevents background home refetch overwriting unsaved contact edits; Save disabled until edited; reset after successful refresh; Mark all read only when unread items exist; mutation errors surfaced via toast. Code commits 3bee4ccf011f5571597e5b3f525bcdca4578edfa and 0098ed9375947f09069b7418018f848bf512dceb. Source evidence only; local tests, browser, typecheck, coverage guard NOT RUN; module NOT verified.
+
+### Advisors administration overview navigation and accessibility increment (2026-11-09)
+
+- `src/screens/advisors/admin-overview.tsx`: preserves `AdvisorsSubnav` during loading and error states, announces loading/errors and provides a labelled metric region plus loaded-state announcement. Source commit `2c6e9ead7f0db6fb9029d63073f60dd4e5aac71f`.
+- **Partial source evidence only**; Advisors administration and all 21 modules remain not fully verified. Local TypeScript, lint, unit, build, authenticated browser, accessibility, `check:browsing-coverage`, RLS and accounting regression: **NOT RUN**. No changes to `main`, no CI trigger, no production migration or deployment. **0/12** accepted batches.

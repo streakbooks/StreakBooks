@@ -218,12 +218,12 @@ export function ExpenseManagementSectionPage({
   const allowed = section.anyOf.some((permission) => can(permission as Permission));
   if (!allowed) {
     return (
-      <ListWorkspace title={section.label} description="Expense Management"
+      <ListWorkspace title={section.label} description="Expenses"
       subnav={<ExpenseManagementSubnav current={sectionKey}/>}
     >
       <EmptyState
           title="No access"
-          description="Your role cannot open this Expense Management section."
+          description="Your role cannot open this Expenses section."
         />
     </ListWorkspace>
     );
@@ -233,7 +233,7 @@ export function ExpenseManagementSectionPage({
 
   return (
       <ListWorkspace title={section.label}
-        description="Part of the Expense Management module."
+        description="Part of the Expenses module."
         actions={
           <Button asChild variant="outline" size="sm">
             <Link to="/expense-management">Back to overview</Link>

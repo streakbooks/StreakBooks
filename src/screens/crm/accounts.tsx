@@ -67,7 +67,6 @@ export function CrmAccountsPage({ current = "accounts" }: { current?: "accounts"
     );
   }
 
-  const currency = company.base_currency || "USD";
   const isPeopleView = current === "contacts";
   const pageTitle = isPeopleView ? "CRM Contacts" : "Accounts";
 
@@ -109,7 +108,7 @@ export function CrmAccountsPage({ current = "accounts" }: { current?: "accounts"
             <AlertTitle>No second customer master</AlertTitle>
             <AlertDescription>
               CRM rows reuse the existing Contacts master (customers). CRM only shows linked leads and open
-              opportunity totals — accounting postings stay in Sales and Banking.
+              opportunity totals by their original currencies — accounting postings stay in Sales and Banking.
             </AlertDescription>
           </Alert>
 
@@ -161,7 +160,7 @@ export function CrmAccountsPage({ current = "accounts" }: { current?: "accounts"
                     <TableHead>Account</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead className="text-right">Open deals</TableHead>
-                    <TableHead className="text-right">Pipeline</TableHead>
+                    <TableHead className="text-right">Pipeline by currency</TableHead>
                     <TableHead className="text-right">Linked leads</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -182,7 +181,15 @@ export function CrmAccountsPage({ current = "accounts" }: { current?: "accounts"
                         {row.openOpportunityCount}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {formatCrmMinor(row.openPipelineValueMinor, currency)}
+                        {row.pipelineByCurrency.length > 0 ? (
+                          <div className="flex flex-col items-end gap-1">
+                            {row.pipelineByCurrency.map((total) => (
+                              <span key={total.currencyCode}>
+                                {formatCrmMinor(total.amountMinor, total.currencyCode)}
+                              </span>
+                            ))}
+                          </div>
+                        ) : "—"}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {row.linkedLeadCount}

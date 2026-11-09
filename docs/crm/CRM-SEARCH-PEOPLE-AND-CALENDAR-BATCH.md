@@ -71,6 +71,14 @@
 
 **Unverified means unverified.** A merged PR changes source code but does not establish production acceptance.
 
+## Live read-only database verification (2026-11-09)
+
+- Confirmed `crm_leads`, `crm_opportunities`, `crm_activities`, `contacts`, and `contact_people` expose the expected columns and have enabled RLS with policies.
+- Verified the SQL definitions of sampled CRM RPCs, including `complete_crm_activity`, `get_crm_settings`, `find_crm_duplicate_leads`, `upsert_crm_activity`, pipeline administration, and stage moves. They call `private.crm_require_permission` either directly or through their authorized overloads.
+- `private.crm_require_permission` verifies `auth.uid()`, `is_company_member(company_id)` and `has_company_permission(company_id, permission)`. This is a guard inspection, **not** a two-company impersonation or adversarial RPC test.
+- Supabase Security Advisor still flags authenticated `SECURITY DEFINER` functions among broader project findings; direct RPC grants require a complete access review. See [Supabase Security Advisor 0029](https://supabase.com/docs/guides/observability/advisors?lint=0029_authenticated_security_definer_function_executable).
+- No SQL permissions, migrations, RLS policies, production data or third-party connectors were changed in this batch.
+
 ## Critical blockers outside this batch
 
 - Secure production outbound email, calendar providers and consent workflows require external OAuth connections and tested refresh/revocation.

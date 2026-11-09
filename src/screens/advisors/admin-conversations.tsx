@@ -78,16 +78,17 @@ export function AdvisorsAdminConversationsPage() {
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
 
-  if (query.isPending || staffQuery.isPending) return <LoadingState />;
-  if (query.isError) {
+  if (query.isPending || staffQuery.isPending) return <main className="mx-auto max-w-6xl space-y-6 p-6"><PageHeader title="Conversations" description="Review Advisors qualification chats." /><AdvisorsSubnav /><div role="status" aria-live="polite"><LoadingState /></div></main>;
+  if (query.isError || staffQuery.isError) {
     return (
       <main className="mx-auto max-w-6xl space-y-6 p-6">
         <PageHeader title="Conversations" description="Review Advisors qualification chats." />
-        <ErrorState
+        <AdvisorsSubnav />
+        <div role="alert"><ErrorState
           title="Conversations unavailable"
-          description={friendlyAuthError(query.error)}
-          onRetry={() => void query.refetch()}
-        />
+          description={friendlyAuthError(query.error ?? staffQuery.error)}
+          onRetry={() => { void query.refetch(); void staffQuery.refetch(); }}
+        /></div>
       </main>
     );
   }
@@ -140,6 +141,7 @@ export function AdvisorsAdminConversationsPage() {
         </div>
       </div>
 
+      <p role="status" aria-live="polite" className="sr-only">{query.data.length} conversations found</p>
       <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
         <section className="space-y-2">
           {query.data.length === 0 ? (
@@ -212,6 +214,7 @@ export function AdvisorsAdminConversationsPage() {
                 <select
                   id="conversation-assign"
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  disabled={updateM.isPending}
                   value={detail.assignedAdvisorId ?? ""}
                   onChange={(event) =>
                     updateM.mutate({
@@ -235,7 +238,7 @@ export function AdvisorsAdminConversationsPage() {
                     type="button"
                     size="sm"
                     variant={detail.status === next ? "default" : "outline"}
-                    disabled={updateM.isPending}
+                    disabled={updateM.isPending || detail.status === next}
                     onClick={() => updateM.mutate({ conversationId: detail.id, status: next })}
                   >
                     Mark {next}
@@ -262,12 +265,13 @@ export function AdvisorsAdminConversationsPage() {
                   id="conversation-notes"
                   value={adminNotes}
                   onChange={(event) => setAdminNotes(event.target.value)}
+                  maxLength={5000}
                   rows={3}
                 />
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={updateM.isPending}
+                  disabled={updateM.isPending || adminNotes === detail.adminNotes}
                   onClick={() => updateM.mutate({ conversationId: detail.id, adminNotes })}
                 >
                   Save notes

@@ -25,7 +25,7 @@
 | UX-06 | Customer selector in opportunity creation using shared Contacts master | Authored | Pending | New customer-linked opportunity can create a Sales quote where authorized |
 | UX-07 | Active pipeline selector for list and Kanban | Authored | Pending | Non-default pipelines are visible, columns and closed deals stay in scope |
 | UX-08 | Opportunity amount validation and error states | Authored | Pending | Invalid / negative values blocked; stale and failed queries visible |
-| UX-09 | Activities linked to either leads or opportunities; task filter corrected | Authored | Pending | Save and reload association; unrelated kinds absent from task view |
+| UX-09 | Activities linked to leads, opportunities or shared Contacts; task status filter corrected | Authored | Pending | Save and reload associations; open/all task filters and unrelated kinds handled |
 | UX-10 | Required meeting time, date checks, month calendar with day drilldown | Authored | Pending | Meeting appears in correct local day; DST/mobile/accessibility |
 | UX-11 | CRM quote navigation stays in-app and preserves browser history | Authored | Pending | Draft/reuse opens correct Sales quote, no duplicate |
 | UX-12 | CRM Contacts route has its own accurate title and scope description | Authored | Pending | Does not falsely imply full person directory exists |
@@ -45,8 +45,8 @@
 | Pipelines | Configuration RPCs and management screen | Signed-in drag/drop, admin-only edit, stage history QA |
 | Accounts | Shared Contacts overlay | Account 360°, hierarchy, CRM attribute edits |
 | CRM Contacts | Shared customer overlay, link to Contacts | True people directory, person-level interactions |
-| Activities | Activity create/complete, this branch links to opportunities | Full contact-level association, paginated timeline, notes |
-| Tasks & Follow-ups | Open task records, create/complete | Recurrence, reminders, SLAs, assignment and overdue escalation |
+| Activities | Activity create/complete, this branch links to opportunities and shared customer Contacts | Full contact-level association, paginated timeline, notes |
+| Tasks & Follow-ups | Open and completed task records, create/complete | Recurrence, reminders, SLAs, assignment and overdue escalation |
 | Calendar & Meetings | Meeting records + this branch adds month view | Full-range pagination, invitations, bidirectional sync, availability |
 | Communications | Provider-off policy | Approved OAuth provider, consent, send/reply, delivery and abuse controls |
 | Quotes & Proposals | Opportunity-to-Sales draft bridge | Complete sales order/quote/invoice/browser E2E, draft edit and approvals |

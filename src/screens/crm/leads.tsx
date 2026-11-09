@@ -37,6 +37,7 @@ import {
   upsertCrmLead,
 } from "@/lib/crm/crm.functions";
 import { formatCrmMinor } from "@/lib/crm/format";
+import { validateCrmLeadForm } from "@/lib/crm/lead-form";
 import { displayLeadName, type CrmLeadStatus } from "@/lib/crm/types";
 import type { Permission } from "@/lib/permissions";
 import { toast } from "sonner";
@@ -55,6 +56,7 @@ export function CrmLeadsPage() {
   const [ackDuplicates, setAckDuplicates] = useState(false);
 
   const [statusFilter, setStatusFilter] = useState<string>("open");
+  const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -63,6 +65,8 @@ export function CrmLeadsPage() {
   const [phone, setPhone] = useState("");
   const [sourceId, setSourceId] = useState<string>("");
   const [estimatedMajor, setEstimatedMajor] = useState("");
+  const validation = validateCrmLeadForm({ firstName, lastName, organizationName, email, estimatedMajor });
+  const duplicateCheckRequired = Boolean(email.trim() || phone.trim() || organizationName.trim());
 
   const dupQuery = useQuery({
     queryKey: ["crm-lead-dups", company?.id, email, phone, organizationName],
@@ -86,6 +90,7 @@ export function CrmLeadsPage() {
     retry: false,
   });
   const dupMatches = dupQuery.data?.matches ?? [];
+  const duplicateCheckReady = !duplicateCheckRequired || (dupQuery.isSuccess && !dupQuery.isFetching);
 
   const settings = useQuery({
     queryKey: ["crm-settings", company?.id],
@@ -119,10 +124,13 @@ export function CrmLeadsPage() {
   const createMutation = useMutation({
     mutationFn: async () => {
       if (!company) throw new Error("No organisation");
-      const estimatedValueMinor = Math.max(
-        0,
-        Math.round((Number(estimatedMajor) || 0) * 100),
-      );
+      const checked = validateCrmLeadForm({ firstName, lastName, organizationName, email, estimatedMajor });
+      if (!checked.valid) throw new Error(checked.message);
+      if (!duplicateCheckReady) throw new Error("Complete the duplicate check before saving.");
+      if (dupMatches.length > 0 && !ackDuplicates) {
+        throw new Error("Review possible duplicate leads before creating a new record.");
+      }
+      const estimatedValueMinor = checked.estimatedValueMinor;
       return createLead({
         data: {
           companyId: company.id,
@@ -148,6 +156,7 @@ export function CrmLeadsPage() {
       setPhone("");
       setSourceId("");
       setEstimatedMajor("");
+      setAckDuplicates(false);
       await queryClient.invalidateQueries({ queryKey: ["crm-leads", company?.id] });
       await queryClient.invalidateQueries({ queryKey: ["crm-dashboard-kpis", company?.id] });
     },
@@ -167,8 +176,13 @@ export function CrmLeadsPage() {
   }
 
   const rows = (leads.data ?? []).filter((lead) => {
-    if (statusFilter !== "open") return true;
-    return !["converted", "disqualified"].includes(lead.status);
+    if (statusFilter === "open" && ["converted", "disqualified"].includes(lead.status)) {
+      return false;
+    }
+    const term = searchTerm.trim().toLocaleLowerCase();
+    if (!term) return true;
+    return [lead.leadNumber, displayLeadName(lead), lead.email ?? ""]
+      .some((value) => value.toLocaleLowerCase().includes(term));
   });
 
   return (
@@ -225,7 +239,7 @@ export function CrmLeadsPage() {
                   <Input
                     id="lead-org"
                     value={organizationName}
-                    onChange={(e) => setOrganizationName(e.target.value)}
+                    onChange={(e) => { setOrganizationName(e.target.value); setAckDuplicates(false); }}
                   />
                 </div>
                 <div className="space-y-2">
@@ -234,12 +248,12 @@ export function CrmLeadsPage() {
                     id="lead-email"
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => { setEmail(e.target.value); setAckDuplicates(false); }}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lead-phone">Phone</Label>
-                  <Input id="lead-phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                  <Input id="lead-phone" value={phone} onChange={(e) => { setPhone(e.target.value); setAckDuplicates(false); }} />
                 </div>
                 <div className="space-y-2">
                   <Label>Source</Label>
@@ -294,10 +308,30 @@ export function CrmLeadsPage() {
                   </div>
                 ) : null}
                 <div className="sm:col-span-2">
+                  {!validation.valid ? (
+                    <p role="alert" className="mb-3 text-sm text-destructive">{validation.message}</p>
+                  ) : null}
+                  {duplicateCheckRequired && !duplicateCheckReady && !dupQuery.isError ? (
+                    <p role="status" className="mb-3 text-sm text-muted-foreground">
+                      Checking possible duplicate leads before saving…
+                    </p>
+                  ) : null}
+                  {dupQuery.isError ? (
+                    <div className="mb-3">
+                      <ErrorState
+                        title="Duplicate check unavailable"
+                        description="Lead creation is paused until duplicate records can be checked."
+                        onRetry={() => dupQuery.refetch()}
+                      />
+                    </div>
+                  ) : null}
                   <Button
                     type="button"
                     disabled={
-                      createMutation.isPending || (dupMatches.length > 0 && !ackDuplicates)
+                      createMutation.isPending ||
+                      !validation.valid ||
+                      !duplicateCheckReady ||
+                      (dupMatches.length > 0 && !ackDuplicates)
                     }
                     onClick={() => createMutation.mutate()}
                   >
@@ -309,6 +343,15 @@ export function CrmLeadsPage() {
           ) : null}
 
           <div className="flex flex-wrap items-center gap-3">
+            <Label htmlFor="lead-search" className="sr-only">Search loaded leads</Label>
+            <Input
+              id="lead-search"
+              type="search"
+              placeholder="Search loaded leads by name, email or number"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              className="w-full sm:max-w-sm"
+            />
             <Label htmlFor="lead-status-filter" className="sr-only">
               Status filter
             </Label>
@@ -329,14 +372,19 @@ export function CrmLeadsPage() {
             </Select>
           </div>
 
+          {leads.isSuccess ? (
+            <p className="text-xs text-muted-foreground" role="status">
+              Showing {rows.length} of {leads.data?.length ?? 0} loaded leads. Search filters only loaded records (up to 100); full server-side search and pagination remain pending.
+            </p>
+          ) : null}
           {leads.isLoading ? <LoadingState /> : null}
           {leads.isError ? (
             <ErrorState title="Could not load leads" description={friendlyAuthError(leads.error)} onRetry={() => leads.refetch()} />
           ) : null}
           {leads.isSuccess && rows.length === 0 ? (
             <EmptyState
-              title="No leads yet"
-              description="Create a lead to start the CRM lifecycle."
+              title={searchTerm ? "No matching loaded leads" : "No leads in this view"}
+              description={searchTerm ? "Try a different search or status filter." : "Create a lead to start the CRM lifecycle."}
             />
           ) : null}
           {rows.length > 0 ? (

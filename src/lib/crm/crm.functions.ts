@@ -45,6 +45,9 @@ export const CRM_MIGRATION =
 export const CRM_GAP_MIGRATION =
   "CRM gap-closure features need database update 20261109130000 (duplicate matching, scoring, reopen).";
 
+export const CRM_PIPELINE_ADMIN_MIGRATION =
+  "CRM pipeline admin needs database update 20261109160000 (upsert pipelines/stages).";
+
 async function requireCrmView(supabase: unknown, companyId: string) {
   await assertCompanyMember(supabase as never, companyId);
   await assertCompanyPermission(supabase as never, companyId, "crm.view");
@@ -901,4 +904,125 @@ export const createCrmOpportunityQuote = createServerFn({ method: "POST" })
     }
 
     return { quoteId: saved.id, quoteNumber: saved.number, created: true as const, opportunityId: opp.id };
+  });
+
+export const upsertCrmPipeline = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      id?: string;
+      name: string;
+      description?: string | null;
+      isDefault?: boolean;
+      isActive?: boolean;
+      sortOrder?: number;
+    }) => {
+      const name = (input.name ?? "").trim();
+      if (!name) throw new Error("Pipeline name is required");
+      return {
+        companyId: companyIdOf(input),
+        id: input.id ? assertUuid(input.id) : undefined,
+        name: name.slice(0, 120),
+        description: input.description?.trim().slice(0, 500) || null,
+        isDefault: Boolean(input.isDefault),
+        isActive: input.isActive !== false,
+        sortOrder:
+          typeof input.sortOrder === "number"
+            ? Math.min(100000, Math.max(0, Math.trunc(input.sortOrder)))
+            : 100,
+      };
+    },
+  )
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "crm.admin");
+    return callRpc<{
+      id: string;
+      name: string;
+      description: string | null;
+      isDefault: boolean;
+      isActive: boolean;
+      sortOrder: number;
+    }>(
+      context.supabase,
+      "upsert_crm_pipeline",
+      {
+        _company_id: data.companyId,
+        _payload: {
+          id: data.id,
+          name: data.name,
+          description: data.description,
+          isDefault: data.isDefault,
+          isActive: data.isActive,
+          sortOrder: data.sortOrder,
+        },
+      },
+      CRM_PIPELINE_ADMIN_MIGRATION,
+    );
+  });
+
+export const upsertCrmPipelineStage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      id?: string;
+      pipelineId: string;
+      name: string;
+      probabilityPct: number;
+      sortOrder?: number;
+      isWon?: boolean;
+      isLost?: boolean;
+      isActive?: boolean;
+    }) => {
+      const name = (input.name ?? "").trim();
+      if (!name) throw new Error("Stage name is required");
+      const isWon = Boolean(input.isWon);
+      const isLost = Boolean(input.isLost);
+      if (isWon && isLost) throw new Error("Stage cannot be both won and lost");
+      return {
+        companyId: companyIdOf(input),
+        id: input.id ? assertUuid(input.id) : undefined,
+        pipelineId: assertUuid(input.pipelineId),
+        name: name.slice(0, 120),
+        probabilityPct: Math.min(100, Math.max(0, Math.trunc(input.probabilityPct))),
+        sortOrder:
+          typeof input.sortOrder === "number"
+            ? Math.min(100000, Math.max(0, Math.trunc(input.sortOrder)))
+            : 100,
+        isWon,
+        isLost,
+        isActive: input.isActive !== false,
+      };
+    },
+  )
+  .handler(async ({ data, context }) => {
+    await assertCompanyPermission(context.supabase, data.companyId, "crm.admin");
+    return callRpc<{
+      id: string;
+      pipelineId: string;
+      name: string;
+      probabilityPct: number;
+      sortOrder: number;
+      isWon: boolean;
+      isLost: boolean;
+      isActive: boolean;
+    }>(
+      context.supabase,
+      "upsert_crm_pipeline_stage",
+      {
+        _company_id: data.companyId,
+        _payload: {
+          id: data.id,
+          pipelineId: data.pipelineId,
+          name: data.name,
+          probabilityPct: data.probabilityPct,
+          sortOrder: data.sortOrder,
+          isWon: data.isWon,
+          isLost: data.isLost,
+          isActive: data.isActive,
+        },
+      },
+      CRM_PIPELINE_ADMIN_MIGRATION,
+    );
   });

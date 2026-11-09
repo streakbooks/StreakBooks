@@ -337,6 +337,32 @@ export function CrmOpportunitiesPage() {
                     key={stage.id}
                     aria-label={`${stage.name} stage`}
                     className="w-72 shrink-0 rounded-xl border bg-muted/30 p-3"
+                    onDragOver={(event) => {
+                      if (!canManage) return;
+                      event.preventDefault();
+                      event.dataTransfer.dropEffect = "move";
+                    }}
+                    onDrop={(event) => {
+                      if (!canManage) return;
+                      event.preventDefault();
+                      const raw = event.dataTransfer.getData("application/x-crm-opportunity");
+                      if (!raw) return;
+                      try {
+                        const payload = JSON.parse(raw) as {
+                          opportunityId: string;
+                          expectedVersion: number;
+                          fromStageId: string;
+                        };
+                        if (payload.fromStageId === stage.id) return;
+                        moveMutation.mutate({
+                          opportunityId: payload.opportunityId,
+                          nextStageId: stage.id,
+                          expectedVersion: payload.expectedVersion,
+                        });
+                      } catch {
+                        /* ignore malformed drag payload */
+                      }
+                    }}
                   >
                     <header className="mb-3 flex items-baseline justify-between gap-2">
                       <h2 className="text-sm font-semibold">{stage.name}</h2>
@@ -348,9 +374,23 @@ export function CrmOpportunitiesPage() {
                       {column.map((opp) => (
                         <article
                           key={opp.id}
+                          draggable={canManage}
+                          onDragStart={(event) => {
+                            if (!canManage) return;
+                            event.dataTransfer.setData(
+                              "application/x-crm-opportunity",
+                              JSON.stringify({
+                                opportunityId: opp.id,
+                                expectedVersion: opp.version,
+                                fromStageId: opp.stageId,
+                              }),
+                            );
+                            event.dataTransfer.effectAllowed = "move";
+                          }}
                           className={cn(
                             "rounded-lg border bg-background p-3 shadow-sm",
                             "focus-within:ring-2 focus-within:ring-ring",
+                            canManage ? "cursor-grab active:cursor-grabbing" : null,
                           )}
                         >
                           <p className="font-medium">{opp.name}</p>
@@ -360,7 +400,7 @@ export function CrmOpportunitiesPage() {
                           </p>
                           {canManage ? (
                             <Label className="mt-3 block space-y-1 text-xs">
-                              <span className="text-muted-foreground">Move to</span>
+                              <span className="text-muted-foreground">Move to (keyboard)</span>
                               <Select
                                 value={opp.stageId}
                                 onValueChange={(next) => {
@@ -389,7 +429,7 @@ export function CrmOpportunitiesPage() {
                         </article>
                       ))}
                       {column.length === 0 ? (
-                        <p className="px-1 text-xs text-muted-foreground">No deals</p>
+                        <p className="px-1 text-xs text-muted-foreground">Drop deals here</p>
                       ) : null}
                     </div>
                   </section>

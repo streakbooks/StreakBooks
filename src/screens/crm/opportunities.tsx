@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CrmSubnav } from "@/components/crm/CrmSubnav";
 import { CrmStatusBadge } from "@/components/crm/CrmStatusBadge";
 import { CompanyEmptyState } from "@/components/common/company-empty";
@@ -44,6 +44,8 @@ import type { Permission } from "@/lib/permissions";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
+const OPPORTUNITY_PAGE_SIZE = 50;
+
 export function CrmOpportunitiesPage() {
   const { company, isPending } = useActiveCompany();
   const { can } = useCan();
@@ -64,6 +66,15 @@ export function CrmOpportunitiesPage() {
   const [amountMajor, setAmountMajor] = useState("");
   const [contactId, setContactId] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [appliedSearch, setAppliedSearch] = useState("");
+  const [page, setPage] = useState(0);
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      setAppliedSearch(searchTerm.trim());
+      setPage(0);
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [searchTerm]);
   const formValidation = validateOpportunityForm(name, amountMajor);
   const [stageId, setStageId] = useState("");
   const [selectedPipelineId, setSelectedPipelineId] = useState("");
@@ -82,23 +93,38 @@ export function CrmOpportunitiesPage() {
     retry: false,
   });
 
+  const activePipelines = (pipelines.data?.pipelines ?? []).filter((pipeline) => pipeline.isActive);
+  const effectivePipelineId =
+    activePipelines.find((pipeline) => pipeline.id === selectedPipelineId)?.id ??
+    activePipelines.find((pipeline) => pipeline.isDefault)?.id ??
+    activePipelines[0]?.id;
+
   const opps = useQuery({
-    queryKey: ["crm-opportunities", company?.id, "open"],
-    queryFn: () => fetchOpps({ data: { companyId: company!.id, status: "open" } }),
-    enabled: Boolean(company?.id) && canView && settings.data?.enabled === true,
+    queryKey: ["crm-opportunities", company?.id, "open", effectivePipelineId, appliedSearch, page],
+    queryFn: () => fetchOpps({
+      data: {
+        companyId: company!.id,
+        status: "open",
+        pipelineId: effectivePipelineId,
+        q: appliedSearch,
+        limit: OPPORTUNITY_PAGE_SIZE + 1,
+        offset: page * OPPORTUNITY_PAGE_SIZE,
+      },
+    }),
+    enabled: Boolean(company?.id) && canView && settings.data?.enabled === true && Boolean(effectivePipelineId),
     retry: false,
   });
 
   const closedOpps = useQuery({
-    queryKey: ["crm-opportunities", company?.id, "closed"],
+    queryKey: ["crm-opportunities", company?.id, "closed", effectivePipelineId],
     queryFn: async () => {
       const [won, lost] = await Promise.all([
-        fetchOpps({ data: { companyId: company!.id, status: "won" } }),
-        fetchOpps({ data: { companyId: company!.id, status: "lost" } }),
+        fetchOpps({ data: { companyId: company!.id, status: "won", pipelineId: effectivePipelineId } }),
+        fetchOpps({ data: { companyId: company!.id, status: "lost", pipelineId: effectivePipelineId } }),
       ]);
       return [...won, ...lost];
     },
-    enabled: Boolean(company?.id) && canView && settings.data?.enabled === true,
+    enabled: Boolean(company?.id) && canView && settings.data?.enabled === true && Boolean(effectivePipelineId),
     retry: false,
   });
 
@@ -110,7 +136,7 @@ export function CrmOpportunitiesPage() {
   });
 
   const defaultPipeline = useMemo(() => {
-    const list = pipelines.data?.pipelines ?? [];
+    const list = (pipelines.data?.pipelines ?? []).filter((pipeline) => pipeline.isActive);
     return list.find((p) => p.isDefault) ?? list[0] ?? null;
   }, [pipelines.data]);
 
@@ -126,12 +152,8 @@ export function CrmOpportunitiesPage() {
       .sort((a, b) => a.sortOrder - b.sortOrder);
   }, [pipelines.data, selectedPipeline]);
 
-  const filteredOpenDeals = (opps.data ?? []).filter((opp) => {
-    if (!selectedPipeline || opp.pipelineId !== selectedPipeline.id) return false;
-    const term = searchTerm.trim().toLocaleLowerCase();
-    return !term || [opp.name, opp.opportunityNumber]
-      .some((value) => value.toLocaleLowerCase().includes(term));
-  });
+  const filteredOpenDeals = (opps.data ?? []).slice(0, OPPORTUNITY_PAGE_SIZE);
+  const hasNextPage = (opps.data?.length ?? 0) > OPPORTUNITY_PAGE_SIZE;
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -342,7 +364,7 @@ export function CrmOpportunitiesPage() {
                   ) : null}
                   <Button
                     type="button"
-                    disabled={createMutation.isPending || !formValidation.valid || !defaultPipeline || pipelines.isLoading || pipelines.isError}
+                    disabled={createMutation.isPending || !formValidation.valid || !selectedPipeline || pipelines.isLoading || pipelines.isError}
                     onClick={() => createMutation.mutate()}
                   >
                     {createMutation.isPending ? "Saving…" : "Create opportunity"}
@@ -355,7 +377,7 @@ export function CrmOpportunitiesPage() {
           <div className="flex flex-wrap items-center gap-3">
             <div className="min-w-40 space-y-1">
               <Label htmlFor="crm-pipeline-picker">Pipeline</Label>
-              <Select value={selectedPipeline?.id ?? ""} onValueChange={(value) => { setSelectedPipelineId(value); setStageId(""); }}>
+              <Select value={selectedPipeline?.id ?? ""} onValueChange={(value) => { setSelectedPipelineId(value); setStageId(""); setPage(0); }}>
                 <SelectTrigger id="crm-pipeline-picker" aria-label="Select CRM pipeline">
                   <SelectValue placeholder="Choose pipeline" />
                 </SelectTrigger>
@@ -370,13 +392,13 @@ export function CrmOpportunitiesPage() {
             <Input
               id="crm-deal-search"
               type="search"
-              placeholder="Search loaded deals by name or number"
+              placeholder="Search all deals by name or number"
               className="w-full sm:max-w-sm"
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
             />
             <p className="text-xs text-muted-foreground" role="status">
-              Showing {filteredOpenDeals.length} deals in the selected pipeline (from up to 200 loaded open records); search is local to loaded records.
+              Showing {filteredOpenDeals.length} deals on page {page + 1}. Pipeline and search filters run on the server.
             </p>
           </div>
           {opps.isLoading || pipelines.isLoading ? <LoadingState /> : null}
@@ -554,6 +576,16 @@ export function CrmOpportunitiesPage() {
                 );
               })}
             </div>
+          ) : null}
+
+          {opps.isSuccess && (page > 0 || hasNextPage) ? (
+            <nav aria-label="Opportunity pages" className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-muted-foreground">Page {page + 1} · {filteredOpenDeals.length} deals</p>
+              <div className="flex gap-2">
+                <Button type="button" variant="secondary" disabled={page === 0 || opps.isFetching} onClick={() => setPage((value) => Math.max(0, value - 1))}>Previous</Button>
+                <Button type="button" variant="secondary" disabled={!hasNextPage || opps.isFetching} onClick={() => setPage((value) => value + 1)}>Next</Button>
+              </div>
+            </nav>
           ) : null}
 
           {(closedOpps.data?.some((opp) => opp.pipelineId === selectedPipeline?.id) ?? false) ? (

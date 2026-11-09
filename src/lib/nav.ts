@@ -78,7 +78,7 @@ export const navItems: NavItem[] = [
     description: "Bills, expenses and suppliers",
   },
   {
-    label: "Expense Management",
+    label: "Expenses",
     to: "/expense-management",
     icon: HandCoins,
     group: "money",

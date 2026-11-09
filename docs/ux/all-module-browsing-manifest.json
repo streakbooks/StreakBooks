@@ -375,7 +375,13 @@
       "browsingImplementation": "partial_code_not_runtime_verified",
       "fullyVerified": false,
       "currentEvidence": [
-        "src/screens/advisors/admin-overview.tsx — persistent Advisors subnav during loading/error, accessible loading/error/result announcements and metrics landmark; commit 2c6e9ead7f0db6fb9029d63073f60dd4e5aac71f; tests NOT RUN"
+        "src/screens/advisors/admin-overview.tsx — persistent Advisors subnav during loading/error, accessible loading/error/result announcements and metrics landmark; commit 2c6e9ead7f0db6fb9029d63073f60dd4e5aac71f; tests NOT RUN",
+        "src/screens/advisors/admin-inquiries.tsx — persistent subnav during loading and both query failures; retry both inquiries and staff; live result count; disable conflicting/no-op actions; commit e286ab54ad3f6402ecc451bc1f10bd5460002093; tests NOT RUN"
+      ],
+      "remaining": [
+        "Run local check:browsing-coverage, typecheck, lint, build, unit and authenticated browser tests (NOT RUN)",
+        "Verify inquiries, staff retrieval errors, concurrent mutations, role/RLS and draft behavior with real fixtures",
+        "Complete all Advisors admin routes and 12 acceptance criteria"
       ]
     },
     {

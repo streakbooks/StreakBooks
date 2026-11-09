@@ -131,6 +131,12 @@ The register below was derived from actual repository navigation and routes. The
 - `src/screens/advisors/portal-messages.tsx`: persistent portal subnavigation during loading/error, accessible status/error and message-count announcements, composer maximum of 5000 characters, and sending-state feedback; code commit `55dea3e002d97383fb16f99aad032112363c02e6`.
 - **Partial source evidence only.** Local typecheck, lint, unit, build, authenticated browser, screen-reader, `check:browsing-coverage`, RLS and accounting regression **NOT RUN**. Message delivery and permissions need runtime verification. **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified.** No `main` changes, CI trigger, production database change or deployment.
 
+
+### Advisors Portal service-request form browsing increment (2026-11-09)
+
+- `src/screens/advisors/portal-account.tsx`: service request uses a native submit form with required, minimum-length details; request-kind toggle buttons expose `aria-pressed` and an accessible group label. Source commit `9864d938dc4384f68ccd827dc69503ecfe6dd72b`.
+- **Partial source evidence only**. TypeScript, lint, build, unit, authenticated browser, accessibility, `check:browsing-coverage`, RLS and accounting regression **NOT RUN**. **0/21 modules, 0/15 supporting routes and 0/12 batches fully verified**. No changes to `main`, CI trigger or deployment.
+
 ## 2. Internal and supporting routes also included
 
 - `src/routes/_authenticated/documents.branding.tsx`

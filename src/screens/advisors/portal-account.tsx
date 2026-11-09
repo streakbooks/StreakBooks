@@ -89,16 +89,17 @@ export function AdvisorsPortalAccountPage() {
     },
   });
 
-  if (homeQuery.isPending) return <LoadingState />;
+  if (homeQuery.isPending) return <main className="mx-auto max-w-5xl space-y-6 p-6"><PageHeader title="Account" description="Contact details and service requests." /><AdvisorsPortalSubnav /><div role="status" aria-live="polite"><LoadingState /></div></main>;
   if (homeQuery.isError) {
     return (
       <main className="mx-auto max-w-5xl space-y-6 p-6">
         <PageHeader title="Account" description="Contact details and service requests." />
-        <ErrorState
+        <AdvisorsPortalSubnav />
+        <div role="alert"><ErrorState
           title="Account unavailable"
           description={friendlyAuthError(homeQuery.error)}
           onRetry={() => void homeQuery.refetch()}
-        />
+        /></div>
       </main>
     );
   }
@@ -118,27 +119,31 @@ export function AdvisorsPortalAccountPage() {
         <p className="text-sm text-muted-foreground">
           Sign-in email stays {client.email}. Ask your advisor if you need that changed.
         </p>
+        <form id="portal-contact-form" className="space-y-3" onSubmit={(event) => { event.preventDefault(); if (!saveM.isPending && name.trim() && businessName.trim()) saveM.mutate(); }}>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1">
             <Label htmlFor="portal-name">Name</Label>
-            <Input id="portal-name" value={name} onChange={(e) => setName(e.target.value)} />
+            <Input id="portal-name" required maxLength={200} value={name} onChange={(e) => setName(e.target.value)} />
           </div>
           <div className="space-y-1">
             <Label htmlFor="portal-business">Business</Label>
             <Input
               id="portal-business"
+              required
+              maxLength={200}
               value={businessName}
               onChange={(e) => setBusinessName(e.target.value)}
             />
           </div>
           <div className="space-y-1">
             <Label htmlFor="portal-phone">Phone</Label>
-            <Input id="portal-phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            <Input id="portal-phone" type="tel" maxLength={50} value={phone} onChange={(e) => setPhone(e.target.value)} />
           </div>
         </div>
-        <Button disabled={saveM.isPending} onClick={() => saveM.mutate()}>
-          Save contact
+        <Button type="submit" disabled={saveM.isPending || !name.trim() || !businessName.trim()}>
+          {saveM.isPending ? "Saving…" : "Save contact"}
         </Button>
+        </form>
       </section>
 
       <section className="space-y-3 rounded-lg border border-border p-4">
@@ -147,12 +152,15 @@ export function AdvisorsPortalAccountPage() {
           <Button
             variant="outline"
             size="sm"
-            disabled={readM.isPending}
+            disabled={readM.isPending || !notesQuery.isSuccess || notesQuery.data.length === 0}
             onClick={() => readM.mutate()}
           >
             Mark all read
           </Button>
         </div>
+        {notesQuery.isPending ? <p role="status" aria-live="polite" className="text-sm text-muted-foreground">Loading notifications…</p> : null}
+        {notesQuery.isError ? <div role="alert" className="space-y-2"><p className="text-sm text-destructive">{friendlyAuthError(notesQuery.error)}</p><Button type="button" variant="outline" size="sm" onClick={() => void notesQuery.refetch()}>Retry notifications</Button></div> : null}
+        {notesQuery.isSuccess && notesQuery.data.length === 0 ? <p className="text-sm text-muted-foreground">No notifications yet.</p> : null}
         <ul className="space-y-2">
           {(notesQuery.data ?? []).map((item) => (
             <li key={item.id} className="rounded-md border border-border p-3 text-sm">
@@ -190,13 +198,15 @@ export function AdvisorsPortalAccountPage() {
           value={requestDetails}
           onChange={(e) => setRequestDetails(e.target.value)}
           rows={4}
+          maxLength={5000}
+          aria-label="Service request details"
           placeholder="Tell us what you need"
         />
         <Button
           disabled={requestM.isPending || requestDetails.trim().length < 3}
           onClick={() => requestM.mutate()}
         >
-          Submit request
+          {requestM.isPending ? "Submitting…" : "Submit request"}
         </Button>
       </section>
 

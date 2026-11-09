@@ -19,6 +19,12 @@ The register below was derived from actual repository navigation and routes. The
 - `src/screens/advisors/admin-appointments.tsx`: retains Advisors subnavigation on loading/error, announces loading/errors and appointment counts, validates unavailable-period end after start, prevents overlapping booking/status mutations and redundant status updates. Source commit `6b19df8929eb66055f9b0f41ce87674f29c932d3`.
 - **Partial source evidence only.** `check:browsing-coverage`, TypeScript, lint, build, unit, authenticated browser, accessibility, booking permissions/RLS and accounting regressions **NOT RUN**. 0/21 modules, 0/15 supporting routes, 0/12 batches verified. No main merge, CI trigger, database change or deployment.
 
+
+### Advisors Administration clients browsing increment (2026-11-10)
+
+- `src/screens/advisors/admin-clients.tsx`: persistent Advisors subnavigation during loading and client/staff errors, retry both queries, accessible result count, native client form submission and guards against overlapping client save/invite/unlink actions. Source commit `36ed571b1bd8c41ea9798df9acf192be5b72e33b`.
+- **Partial source evidence only.** Client editing refresh behavior, invite/unlink permissions and all 12 acceptance criteria still require verification. Local `check:browsing-coverage`, TypeScript, lint, build, unit, authenticated browser, accessibility, RLS and accounting regressions **NOT RUN**. **0/21 modules, 0/15 supporting routes, 0/12 batches verified**. No `main` changes, CI trigger, production database change or deployment.
+
 ## 1. Every top-level module — tracked without exception
 
 | # | Module | Main route | Route files | Premium browsing status |

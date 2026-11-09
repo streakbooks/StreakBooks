@@ -28,6 +28,7 @@ export function AdvisorsPortalAccountPage() {
   const [name, setName] = useState("");
   const [businessName, setBusinessName] = useState("");
   const [phone, setPhone] = useState("");
+  const [contactDirty, setContactDirty] = useState(false);
   const [requestKind, setRequestKind] = useState<"plan_change" | "cancellation">("plan_change");
   const [requestDetails, setRequestDetails] = useState("");
 
@@ -43,11 +44,11 @@ export function AdvisorsPortalAccountPage() {
   });
 
   useEffect(() => {
-    if (!homeQuery.data) return;
+    if (!homeQuery.data || contactDirty) return;
     setName(homeQuery.data.client.name);
     setBusinessName(homeQuery.data.client.businessName);
     setPhone(homeQuery.data.client.phone ?? "");
-  }, [homeQuery.data]);
+  }, [homeQuery.data, contactDirty]);
 
   const saveM = useMutation({
     mutationFn: () =>
@@ -59,6 +60,7 @@ export function AdvisorsPortalAccountPage() {
         },
       }),
     onSuccess: async () => {
+      setContactDirty(false);
       toast.success("Contact details updated");
       await qc.invalidateQueries({ queryKey: ["advisors-portal-home"] });
     },
@@ -87,6 +89,7 @@ export function AdvisorsPortalAccountPage() {
       await qc.invalidateQueries({ queryKey: ["advisors-portal-notifications"] });
       await qc.invalidateQueries({ queryKey: ["advisors-portal-home"] });
     },
+    onError: (error) => toast.error(friendlyAuthError(error)),
   });
 
   if (homeQuery.isPending) return <main className="mx-auto max-w-5xl space-y-6 p-6"><PageHeader title="Account" description="Contact details and service requests." /><AdvisorsPortalSubnav /><div role="status" aria-live="polite"><LoadingState /></div></main>;
@@ -123,7 +126,7 @@ export function AdvisorsPortalAccountPage() {
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1">
             <Label htmlFor="portal-name">Name</Label>
-            <Input id="portal-name" required maxLength={200} value={name} onChange={(e) => setName(e.target.value)} />
+            <Input id="portal-name" required maxLength={200} value={name} onChange={(e) => { setName(e.target.value); setContactDirty(true); }} />
           </div>
           <div className="space-y-1">
             <Label htmlFor="portal-business">Business</Label>
@@ -132,15 +135,15 @@ export function AdvisorsPortalAccountPage() {
               required
               maxLength={200}
               value={businessName}
-              onChange={(e) => setBusinessName(e.target.value)}
+              onChange={(e) => { setBusinessName(e.target.value); setContactDirty(true); }}
             />
           </div>
           <div className="space-y-1">
             <Label htmlFor="portal-phone">Phone</Label>
-            <Input id="portal-phone" type="tel" maxLength={50} value={phone} onChange={(e) => setPhone(e.target.value)} />
+            <Input id="portal-phone" type="tel" maxLength={50} value={phone} onChange={(e) => { setPhone(e.target.value); setContactDirty(true); }} />
           </div>
         </div>
-        <Button type="submit" disabled={saveM.isPending || !name.trim() || !businessName.trim()}>
+        <Button type="submit" disabled={saveM.isPending || !contactDirty || !name.trim() || !businessName.trim()}>
           {saveM.isPending ? "Saving…" : "Save contact"}
         </Button>
         </form>
@@ -152,10 +155,10 @@ export function AdvisorsPortalAccountPage() {
           <Button
             variant="outline"
             size="sm"
-            disabled={readM.isPending || !notesQuery.isSuccess || notesQuery.data.length === 0}
+            disabled={readM.isPending || !notesQuery.isSuccess || !notesQuery.data.some((item) => !item.readAt)}
             onClick={() => readM.mutate()}
           >
-            Mark all read
+            {readM.isPending ? "Marking read…" : "Mark all read"}
           </Button>
         </div>
         {notesQuery.isPending ? <p role="status" aria-live="polite" className="text-sm text-muted-foreground">Loading notifications…</p> : null}

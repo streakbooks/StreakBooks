@@ -30,6 +30,7 @@ import { useCan } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
 import {
   getCrmSettings,
+  listCrmAccountOverlay,
   listCrmOpportunities,
   listCrmPipelines,
   reopenCrmOpportunity,
@@ -37,6 +38,7 @@ import {
   upsertCrmOpportunity,
 } from "@/lib/crm/crm.functions";
 import { formatCrmMinor } from "@/lib/crm/format";
+import { validateOpportunityForm } from "@/lib/crm/opportunity-form";
 import type { Permission } from "@/lib/permissions";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -50,6 +52,7 @@ export function CrmOpportunitiesPage() {
   const fetchSettings = useServerFn(getCrmSettings);
   const fetchOpps = useServerFn(listCrmOpportunities);
   const fetchPipelines = useServerFn(listCrmPipelines);
+  const fetchAccounts = useServerFn(listCrmAccountOverlay);
   const createOpp = useServerFn(upsertCrmOpportunity);
   const moveStage = useServerFn(setCrmOpportunityStage);
   const reopenOpp = useServerFn(reopenCrmOpportunity);
@@ -58,6 +61,9 @@ export function CrmOpportunitiesPage() {
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
   const [amountMajor, setAmountMajor] = useState("");
+  const [contactId, setContactId] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const formValidation = validateOpportunityForm(name, amountMajor);
   const [stageId, setStageId] = useState("");
 
   const settings = useQuery({
@@ -94,6 +100,13 @@ export function CrmOpportunitiesPage() {
     retry: false,
   });
 
+  const accounts = useQuery({
+    queryKey: ["crm-account-options", company?.id],
+    queryFn: () => fetchAccounts({ data: { companyId: company!.id, limit: 200 } }),
+    enabled: Boolean(company?.id) && canManage && showForm && settings.data?.enabled === true,
+    retry: false,
+  });
+
   const defaultPipeline = useMemo(() => {
     const list = pipelines.data?.pipelines ?? [];
     return list.find((p) => p.isDefault) ?? list[0] ?? null;
@@ -106,17 +119,29 @@ export function CrmOpportunitiesPage() {
       .sort((a, b) => a.sortOrder - b.sortOrder);
   }, [pipelines.data, defaultPipeline]);
 
+  const filteredOpenDeals = (opps.data ?? []).filter((opp) => {
+    const term = searchTerm.trim().toLocaleLowerCase();
+    return !term || [opp.name, opp.opportunityNumber]
+      .some((value) => value.toLocaleLowerCase().includes(term));
+  });
+
   const createMutation = useMutation({
     mutationFn: async () => {
       if (!company) throw new Error("No organisation");
+      const checked = validateOpportunityForm(name, amountMajor);
+      if (!checked.valid) throw new Error(checked.message);
       const initialStageId = stageId || stages.find((s) => !s.isWon && !s.isLost)?.id;
+      if (!defaultPipeline || !initialStageId) {
+        throw new Error("Configure at least one active sales pipeline stage before creating an opportunity.");
+      }
       return createOpp({
         data: {
           companyId: company.id,
           name,
           ...(defaultPipeline?.id ? { pipelineId: defaultPipeline.id } : {}),
           ...(initialStageId ? { stageId: initialStageId } : {}),
-          amountMinor: Math.max(0, Math.round((Number(amountMajor) || 0) * 100)),
+          contactId: contactId || null,
+          amountMinor: checked.amountMinor,
           currencyCode: company.base_currency,
         },
       });
@@ -126,6 +151,7 @@ export function CrmOpportunitiesPage() {
       setShowForm(false);
       setName("");
       setAmountMajor("");
+      setContactId("");
       setStageId("");
       await queryClient.invalidateQueries({ queryKey: ["crm-opportunities", company?.id] });
       await queryClient.invalidateQueries({ queryKey: ["crm-dashboard-kpis", company?.id] });
@@ -249,6 +275,30 @@ export function CrmOpportunitiesPage() {
                   />
                 </div>
                 <div className="space-y-2">
+                  <Label>Customer / Account</Label>
+                  <Select value={contactId || "__none"} onValueChange={(value) => setContactId(value === "__none" ? "" : value)}>
+                    <SelectTrigger aria-label="Customer linked to opportunity">
+                      <SelectValue placeholder="Link existing customer" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none">No customer linked</SelectItem>
+                      {(accounts.data ?? []).map((account) => (
+                        <SelectItem key={account.contactId} value={account.contactId}>
+                          {account.name}{account.email ? ` · ${account.email}` : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Reuses the shared Contacts master. A linked customer and positive value are needed before creating a Sales quote.
+                  </p>
+                  {accounts.isError ? (
+                    <p role="alert" className="text-xs text-destructive">
+                      Customer list unavailable. An unlinked deal can be saved, but quote creation will remain blocked.
+                    </p>
+                  ) : null}
+                </div>
+                <div className="space-y-2">
                   <Label>Stage</Label>
                   <Select value={stageId || "__default"} onValueChange={(v) => setStageId(v === "__default" ? "" : v)}>
                     <SelectTrigger aria-label="Opportunity stage">
@@ -266,10 +316,16 @@ export function CrmOpportunitiesPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="sm:col-span-2">
+                <div className="sm:col-span-2 space-y-2">
+                  {!formValidation.valid ? (
+                    <p className="text-sm text-destructive" role="alert">{formValidation.message}</p>
+                  ) : null}
+                  {pipelines.isError ? (
+                    <p role="alert" className="text-sm text-destructive">Could not load pipelines. Retry before creating a deal.</p>
+                  ) : null}
                   <Button
                     type="button"
-                    disabled={createMutation.isPending || !name.trim()}
+                    disabled={createMutation.isPending || !formValidation.valid || !defaultPipeline || pipelines.isLoading || pipelines.isError}
                     onClick={() => createMutation.mutate()}
                   >
                     {createMutation.isPending ? "Saving…" : "Create opportunity"}
@@ -279,19 +335,44 @@ export function CrmOpportunitiesPage() {
             </Card>
           ) : null}
 
+          <div className="flex flex-wrap items-center gap-3">
+            <Label htmlFor="crm-deal-search" className="sr-only">Search loaded opportunities</Label>
+            <Input
+              id="crm-deal-search"
+              type="search"
+              placeholder="Search loaded deals by name or number"
+              className="w-full sm:max-w-sm"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+            />
+            <p className="text-xs text-muted-foreground" role="status">
+              {filteredOpenDeals.length} of {opps.data?.length ?? 0} loaded open deals. Search only filters loaded records.
+            </p>
+          </div>
           {opps.isLoading || pipelines.isLoading ? <LoadingState /> : null}
           {opps.isError ? (
             <ErrorState
               title="Could not load opportunities"
               description={friendlyAuthError(opps.error)}
-             onRetry={() => opps.refetch()}/>
+              onRetry={() => opps.refetch()}
+            />
+          ) : null}
+          {pipelines.isError ? (
+            <ErrorState
+              title="Could not load pipeline stages"
+              description={friendlyAuthError(pipelines.error)}
+              onRetry={() => pipelines.refetch()}
+            />
           ) : null}
 
-          {opps.isSuccess && (opps.data?.length ?? 0) === 0 ? (
-            <EmptyState title="No open opportunities" description="Create a deal or convert a lead." />
+          {opps.isSuccess && filteredOpenDeals.length === 0 ? (
+            <EmptyState
+              title={searchTerm ? "No matching loaded opportunities" : "No open opportunities"}
+              description={searchTerm ? "Try another search term." : "Create a deal or convert a lead."}
+            />
           ) : null}
 
-          {view === "list" && (opps.data?.length ?? 0) > 0 ? (
+          {view === "list" && filteredOpenDeals.length > 0 ? (
             <div className="overflow-x-auto rounded-lg border">
               <Table>
                 <TableHeader>
@@ -304,7 +385,7 @@ export function CrmOpportunitiesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(opps.data ?? []).map((opp) => {
+                  {filteredOpenDeals.map((opp) => {
                     const stage = stages.find((s) => s.id === opp.stageId);
                     return (
                       <TableRow key={opp.id}>
@@ -331,7 +412,7 @@ export function CrmOpportunitiesPage() {
           {view === "kanban" && stages.length > 0 ? (
             <div className="flex gap-3 overflow-x-auto pb-2">
               {stages.map((stage) => {
-                const column = (opps.data ?? []).filter((opp) => opp.stageId === stage.id);
+                const column = filteredOpenDeals.filter((opp) => opp.stageId === stage.id);
                 return (
                   <section
                     key={stage.id}

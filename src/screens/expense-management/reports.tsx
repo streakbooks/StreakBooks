@@ -127,7 +127,7 @@ export function ExpenseManagementReportsPage() {
   if (reportQ.isError) {
     const message = friendlyAuthError(reportQ.error);
     return (
-      <ListWorkspace title="Reports" description="Expense Management"
+      <ListWorkspace title="Reports" description="Expenses"
       subnav={<ExpenseManagementSubnav current="reports"/>}
     >
       {message.includes("20261107147000") ? (

@@ -88,7 +88,7 @@ export function ExpenseManagementBudgetsPage() {
   }
   if (claimsQ.isError) {
     return (
-      <ListWorkspace title="Budgets" description="Expense Management"
+      <ListWorkspace title="Budgets" description="Expenses"
       subnav={<ExpenseManagementSubnav current="budgets"/>}
     >
       <ErrorState

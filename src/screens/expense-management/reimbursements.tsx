@@ -273,7 +273,7 @@ export function ExpenseManagementReimbursementsPage() {
   }
   if (claimsQ.isLoading || banksQ.isLoading) {
     return (
-      <ListWorkspace title="Reimbursements" description="Expense Management"
+      <ListWorkspace title="Reimbursements" description="Expenses"
       subnav={<ExpenseManagementSubnav current="reimbursements"/>}
     >
       <LoadingState />

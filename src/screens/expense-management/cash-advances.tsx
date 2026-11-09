@@ -193,7 +193,7 @@ export function ExpenseManagementCashAdvancesPage() {
   }
   if (!canView) {
     return (
-      <ListWorkspace title="Cash Advances" description="Expense Management"
+      <ListWorkspace title="Cash Advances" description="Expenses"
       subnav={<ExpenseManagementSubnav current="cash-advances"/>}
     >
       <EmptyState
@@ -231,7 +231,7 @@ export function ExpenseManagementCashAdvancesPage() {
         <Alert className="mb-6">
           <AlertTitle>Advance account not configured</AlertTitle>
           <AlertDescription>
-            Set the employee advance account under Expense Management settings before issuing
+            Set the employee advance account under Expenses settings before issuing
             advances. Settlement posts credit that asset when cash-advance claims are posted.
           </AlertDescription>
         </Alert>

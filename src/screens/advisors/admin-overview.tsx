@@ -27,16 +27,19 @@ export function AdvisorsAdminOverviewPage() {
     retry: false,
   });
 
-  if (query.isPending) return <LoadingState />;
+  if (query.isPending) return <main className="mx-auto max-w-6xl space-y-6 p-6"><PageHeader title="Advisors overview" description="Inquiry and delivery console." /><AdvisorsSubnav /><div role="status" aria-live="polite" aria-label="Loading Advisors overview"><LoadingState /></div></main>;
   if (query.isError) {
     return (
       <main className="mx-auto max-w-6xl space-y-6 p-6">
         <PageHeader title="Advisors overview" description="Inquiry and delivery console." />
+        <AdvisorsSubnav />
+        <div role="alert">
         <ErrorState
           title="Overview unavailable"
           description={friendlyAuthError(query.error)}
           onRetry={() => void query.refetch()}
         />
+        </div>
       </main>
     );
   }
@@ -51,7 +54,8 @@ export function AdvisorsAdminOverviewPage() {
       />
       <AdvisorsSubnav />
 
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <p role="status" aria-live="polite" className="text-sm text-muted-foreground">Advisors overview loaded. Select a metric to open its workspace.</p>
+      <section aria-label="Advisors activity metrics" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Metric label="New inquiries" value={data.newInquiries} to="/advisors-admin/inquiries" />
         <Metric
           label="Open conversations"

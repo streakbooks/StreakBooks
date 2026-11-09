@@ -5,10 +5,14 @@ export type CrmQueryError = { message: string; code?: string } | null;
 export type CrmFilterBuilder = {
   eq: (column: string, value: string) => CrmFilterBuilder;
   is: (column: string, value: null) => CrmFilterBuilder;
-  not: (column: string, op: string, value: null) => CrmFilterBuilder;
+  not: (column: string, op: string, value: string | null) => CrmFilterBuilder;
+  or: (filters: string) => CrmFilterBuilder;
+  gte: (column: string, value: string) => CrmFilterBuilder;
+  lt: (column: string, value: string) => CrmFilterBuilder;
   in: (column: string, values: string[]) => CrmFilterBuilder;
   order: (column: string, opts?: { ascending?: boolean }) => CrmFilterBuilder;
   limit: (n: number) => PromiseLike<{ data: unknown; error: CrmQueryError }>;
+  range: (from: number, to: number) => PromiseLike<{ data: unknown; error: CrmQueryError }>;
   maybeSingle: () => PromiseLike<{ data: unknown; error: CrmQueryError }>;
   single: () => PromiseLike<{ data: unknown; error: CrmQueryError }>;
   then: PromiseLike<{ data: unknown; error: CrmQueryError }>["then"];

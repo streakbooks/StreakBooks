@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CrmSubnav } from "@/components/crm/CrmSubnav";
 import { CrmStatusBadge } from "@/components/crm/CrmStatusBadge";
 import { CrmMeetingCalendar } from "@/components/crm/CrmMeetingCalendar";
@@ -43,6 +43,8 @@ import type { Permission } from "@/lib/permissions";
 import type { CrmSectionKey } from "@/lib/crm/sections";
 import { toast } from "sonner";
 
+const ACTIVITY_PAGE_SIZE = 50;
+
 export function CrmActivitiesPage({
   sectionKey = "activities",
 }: {
@@ -67,9 +69,26 @@ export function CrmActivitiesPage({
   const [leadId, setLeadId] = useState("");
   const [relatedType, setRelatedType] = useState<"lead" | "opportunity" | "contact">("lead");
   const [contactId, setContactId] = useState("");
-  const [taskFilter, setTaskFilter] = useState<"open" | "all">("open");
+  const [taskFilter, setTaskFilter] = useState<"open" | "all" | "overdue">("open");
+  const [overdueAsOf, setOverdueAsOf] = useState(() => new Date().toISOString());
+  const [searchTerm, setSearchTerm] = useState("");
+  const [appliedSearch, setAppliedSearch] = useState("");
+  const [page, setPage] = useState(0);
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      setAppliedSearch(searchTerm.trim());
+      setPage(0);
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [searchTerm]);
   const [opportunityId, setOpportunityId] = useState("");
   const [dueAt, setDueAt] = useState("");
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const today = new Date();
+    return new Date(today.getFullYear(), today.getMonth(), 1);
+  });
+  const calendarFrom = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1).toISOString();
+  const calendarTo = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1).toISOString();
   const activityKind = sectionKey === "tasks" ? "task" : sectionKey === "calendar" ? "meeting" : kind;
   const dueIsValid = !dueAt || Number.isFinite(new Date(dueAt).getTime());
   const needsDue = activityKind === "meeting";
@@ -90,12 +109,17 @@ export function CrmActivitiesPage({
   });
 
   const activities = useQuery({
-    queryKey: ["crm-activities", company?.id, sectionKey, taskFilter],
+    queryKey: ["crm-activities", company?.id, sectionKey, taskFilter, overdueAsOf, appliedSearch, page, calendarFrom, calendarTo],
     queryFn: () =>
       fetchActivities({
         data: {
           companyId: company!.id,
-          ...(sectionKey === "tasks" && taskFilter === "open" ? { status: "open" } : {}),
+          ...(sectionKey === "tasks" && taskFilter !== "all" ? { status: "open" } : {}),
+          ...(sectionKey === "tasks" && taskFilter === "overdue" ? { dueTo: overdueAsOf } : {}),
+          ...(sectionKey === "tasks" ? { kind: "task" } : {}),
+          ...(sectionKey === "calendar"
+            ? { kind: "meeting", dueFrom: calendarFrom, dueTo: calendarTo, limit: 500 }
+            : { q: appliedSearch, limit: ACTIVITY_PAGE_SIZE + 1, offset: page * ACTIVITY_PAGE_SIZE }),
         },
       }),
     enabled: Boolean(company?.id) && canView && settings.data?.enabled === true,
@@ -182,11 +206,15 @@ export function CrmActivitiesPage({
     );
   }
 
-  const rows = (activities.data ?? []).filter((row) => {
+  const rows = (sectionKey === "calendar"
+    ? activities.data ?? []
+    : (activities.data ?? []).slice(0, ACTIVITY_PAGE_SIZE)
+  ).filter((row) => {
     if (sectionKey === "calendar") return row.kind === "meeting";
     if (sectionKey === "tasks") return row.kind === "task";
     return true;
   });
+  const hasNextPage = sectionKey !== "calendar" && (activities.data?.length ?? 0) > ACTIVITY_PAGE_SIZE;
 
   return (
     <ListWorkspace
@@ -208,22 +236,43 @@ export function CrmActivitiesPage({
 
       {settings.data?.enabled ? (
         <div className="space-y-4">
+          {sectionKey !== "calendar" ? (
+            <div className="flex flex-wrap items-center gap-3">
+              <Label htmlFor="crm-activity-search" className="sr-only">Search activities</Label>
+              <Input
+                id="crm-activity-search"
+                type="search"
+                placeholder="Search activities by subject"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                className="w-full sm:max-w-sm"
+              />
+              <span role="status" className="text-xs text-muted-foreground">
+                Page {page + 1} · {rows.length} matching records
+              </span>
+            </div>
+          ) : null}
           {sectionKey === "tasks" ? (
             <div className="flex flex-wrap items-center gap-3">
               <Label htmlFor="crm-task-filter">Task status</Label>
-              <Select value={taskFilter} onValueChange={(value) => setTaskFilter(value as "open" | "all")}>
+              <Select value={taskFilter} onValueChange={(value) => {
+                setTaskFilter(value as "open" | "all" | "overdue");
+                setPage(0);
+                if (value === "overdue") setOverdueAsOf(new Date().toISOString());
+              }}>
                 <SelectTrigger id="crm-task-filter" className="w-48" aria-label="Filter task status">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="open">Open tasks</SelectItem>
                   <SelectItem value="all">All tasks</SelectItem>
+                  <SelectItem value="overdue">Overdue tasks</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           ) : null}
           {sectionKey === "calendar" && activities.isSuccess ? (
-            <CrmMeetingCalendar activities={rows} />
+            <CrmMeetingCalendar activities={rows} month={calendarMonth} onMonthChange={setCalendarMonth} />
           ) : null}
           {showForm && canManage ? (
             <Card>
@@ -406,6 +455,15 @@ export function CrmActivitiesPage({
                 </TableBody>
               </Table>
             </div>
+          ) : null}
+          {activities.isSuccess && sectionKey !== "calendar" && (page > 0 || hasNextPage) ? (
+            <nav aria-label="Activity list pages" className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-muted-foreground">Page {page + 1}</p>
+              <div className="flex gap-2">
+                <Button type="button" variant="secondary" disabled={page === 0 || activities.isFetching} onClick={() => setPage((value) => Math.max(0, value - 1))}>Previous</Button>
+                <Button type="button" variant="secondary" disabled={!hasNextPage || activities.isFetching} onClick={() => setPage((value) => value + 1)}>Next</Button>
+              </div>
+            </nav>
           ) : null}
         </div>
       ) : null}

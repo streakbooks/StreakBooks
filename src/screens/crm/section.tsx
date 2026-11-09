@@ -4,6 +4,7 @@ import { ListWorkspace } from "@/components/workspace/ListWorkspace";
 import { Button } from "@/components/ui/button";
 import { crmSection, type CrmSectionKey } from "@/lib/crm/sections";
 import { CrmAccountsPage } from "@/screens/crm/accounts";
+import { CrmContactsPage } from "@/screens/crm/contacts";
 import { CrmActivitiesPage } from "@/screens/crm/activities";
 import { CrmLeadsPage } from "@/screens/crm/leads";
 import { CrmOpportunitiesPage } from "@/screens/crm/opportunities";
@@ -29,7 +30,7 @@ const DEFERRED_LINKS: Partial<Record<CrmSectionKey, { href: string; label: strin
 export function CrmSectionPage({ sectionKey }: { sectionKey: CrmSectionKey }) {
   if (sectionKey === "leads") return <CrmLeadsPage />;
   if (sectionKey === "accounts") return <CrmAccountsPage current="accounts" />;
-  if (sectionKey === "contacts") return <CrmAccountsPage current="contacts" />;
+  if (sectionKey === "contacts") return <CrmContactsPage />;
   if (sectionKey === "opportunities") return <CrmOpportunitiesPage />;
   if (sectionKey === "pipelines") return <CrmPipelinesPage />;
   if (sectionKey === "quotes") return <CrmQuotesPage />;

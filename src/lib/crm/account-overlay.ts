@@ -18,6 +18,12 @@ export type CrmAccountOpportunitySeed = {
   contactId: string | null;
   status: string;
   amountMinor: number;
+  currencyCode: string;
+};
+
+export type CrmAccountCurrencyTotal = {
+  currencyCode: string;
+  amountMinor: number;
 };
 
 export type CrmAccountOverlayRow = {
@@ -27,29 +33,40 @@ export type CrmAccountOverlayRow = {
   phone: string | null;
   kind: string;
   openOpportunityCount: number;
-  openPipelineValueMinor: number;
+  /** Intentionally do not add amounts across currencies without a validated FX rate. */
+  pipelineByCurrency: CrmAccountCurrencyTotal[];
   linkedLeadCount: number;
   hasCrmActivity: boolean;
 };
 
 /**
- * Builds a CRM Accounts overlay from the Contacts master plus CRM facts.
- * Does not invent customers — contacts without CRM links are still listed
- * so sales can attach opportunities without a second master record.
+ * Derives an RLS-authorized CRM overlay from the existing Contacts master.
+ * Pipeline amounts are grouped by currency rather than falsely converted
+ * to the company's base currency.
  */
 export function buildCrmAccountOverlay(input: {
   contacts: CrmAccountContactSeed[];
   leads: CrmAccountLeadSeed[];
   opportunities: CrmAccountOpportunitySeed[];
 }): CrmAccountOverlayRow[] {
-  const openOppByContact = new Map<string, { count: number; amountMinor: number }>();
+  const openOppByContact = new Map<string, {
+    count: number;
+    currencyTotals: Map<string, number>;
+  }>();
+
   for (const opp of input.opportunities) {
     if (!opp.contactId || opp.status !== "open") continue;
-    const prev = openOppByContact.get(opp.contactId) ?? { count: 0, amountMinor: 0 };
-    openOppByContact.set(opp.contactId, {
-      count: prev.count + 1,
-      amountMinor: prev.amountMinor + Math.max(0, opp.amountMinor),
-    });
+    const previous = openOppByContact.get(opp.contactId) ?? {
+      count: 0,
+      currencyTotals: new Map<string, number>(),
+    };
+    const currencyCode = opp.currencyCode.trim().toUpperCase() || "UNKNOWN";
+    previous.count += 1;
+    previous.currencyTotals.set(
+      currencyCode,
+      (previous.currencyTotals.get(currencyCode) ?? 0) + Math.max(0, opp.amountMinor),
+    );
+    openOppByContact.set(opp.contactId, previous);
   }
 
   const leadCountByContact = new Map<string, number>();
@@ -59,7 +76,7 @@ export function buildCrmAccountOverlay(input: {
   }
 
   return input.contacts.map((contact) => {
-    const opps = openOppByContact.get(contact.id) ?? { count: 0, amountMinor: 0 };
+    const opps = openOppByContact.get(contact.id);
     const linkedLeadCount = leadCountByContact.get(contact.id) ?? 0;
     return {
       contactId: contact.id,
@@ -67,10 +84,12 @@ export function buildCrmAccountOverlay(input: {
       email: contact.email,
       phone: contact.phone,
       kind: contact.kind,
-      openOpportunityCount: opps.count,
-      openPipelineValueMinor: opps.amountMinor,
+      openOpportunityCount: opps?.count ?? 0,
+      pipelineByCurrency: [...(opps?.currencyTotals ?? new Map<string, number>())]
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([currencyCode, amountMinor]) => ({ currencyCode, amountMinor })),
       linkedLeadCount,
-      hasCrmActivity: opps.count > 0 || linkedLeadCount > 0,
+      hasCrmActivity: (opps?.count ?? 0) > 0 || linkedLeadCount > 0,
     };
   });
 }

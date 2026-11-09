@@ -15,6 +15,7 @@ import {
   mapCrmSettings,
 } from "@/lib/crm/mappers";
 import { crmClient } from "@/lib/crm/query";
+import { buildIlikeOr } from "@/lib/purchases/search-terms";
 import type {
   CrmActivity,
   CrmCampaign,
@@ -190,10 +191,22 @@ export const getCrmDashboardKpis = createServerFn({ method: "GET" })
 
 export const listCrmLeads = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; status?: string; limit?: number }) => ({
+  .inputValidator((input: {
+    companyId: string;
+    status?: string;
+    activeOnly?: boolean;
+    q?: string;
+    limit?: number;
+    offset?: number;
+  }) => ({
     companyId: companyIdOf(input),
     status: input.status?.trim() || undefined,
+    activeOnly: input.activeOnly === true,
+    q: (input.q ?? "").trim().slice(0, 120),
     limit: Math.min(Math.max(input.limit ?? 100, 1), 500),
+    offset: Number.isSafeInteger(input.offset) && (input.offset ?? 0) >= 0
+      ? Math.min(input.offset ?? 0, 1000000)
+      : 0,
   }))
   .handler(async ({ data, context }): Promise<CrmLead[]> => {
     await requireCrmView(context.supabase, data.companyId);
@@ -201,10 +214,16 @@ export const listCrmLeads = createServerFn({ method: "GET" })
       .from("crm_leads")
       .select("*")
       .eq("company_id", data.companyId)
-      .is("archived_at", null)
-      .order("updated_at", { ascending: false });
+      .is("archived_at", null);
     if (data.status) q = q.eq("status", data.status);
-    const { data: rows, error } = await q.limit(data.limit);
+    if (data.activeOnly) q = q.not("status", "in", "(converted,disqualified)");
+    const filter = buildIlikeOr(
+      ["lead_number", "first_name", "last_name", "organization_name", "email"], data.q,
+    );
+    if (filter) q = q.or(filter);
+    // Stable ordering allows deterministic page navigation when timestamps are equal.
+    q = q.order("updated_at", { ascending: false }).order("id", { ascending: false });
+    const { data: rows, error } = await q.range(data.offset, data.offset + data.limit - 1);
     throwIfRelation(error);
     return ((rows as Record<string, unknown>[] | null) ?? []).map(mapCrmLead);
   });
@@ -522,10 +541,22 @@ export const listCrmPipelines = createServerFn({ method: "GET" })
 
 export const listCrmOpportunities = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; status?: string; limit?: number }) => ({
+  .inputValidator((input: {
+    companyId: string;
+    status?: string;
+    pipelineId?: string;
+    q?: string;
+    limit?: number;
+    offset?: number;
+  }) => ({
     companyId: companyIdOf(input),
     status: input.status?.trim() || undefined,
+    pipelineId: input.pipelineId ? assertUuid(input.pipelineId) : undefined,
+    q: (input.q ?? "").trim().slice(0, 120),
     limit: Math.min(Math.max(input.limit ?? 200, 1), 500),
+    offset: Number.isSafeInteger(input.offset) && (input.offset ?? 0) >= 0
+      ? Math.min(input.offset ?? 0, 1000000)
+      : 0,
   }))
   .handler(async ({ data, context }): Promise<CrmOpportunity[]> => {
     await requireCrmView(context.supabase, data.companyId);
@@ -533,10 +564,13 @@ export const listCrmOpportunities = createServerFn({ method: "GET" })
       .from("crm_opportunities")
       .select("*")
       .eq("company_id", data.companyId)
-      .is("archived_at", null)
-      .order("updated_at", { ascending: false });
+      .is("archived_at", null);
     if (data.status) q = q.eq("status", data.status);
-    const { data: rows, error } = await q.limit(data.limit);
+    if (data.pipelineId) q = q.eq("pipeline_id", data.pipelineId);
+    const filter = buildIlikeOr(["opportunity_number", "name"], data.q);
+    if (filter) q = q.or(filter);
+    q = q.order("updated_at", { ascending: false }).order("id", { ascending: false });
+    const { data: rows, error } = await q.range(data.offset, data.offset + data.limit - 1);
     throwIfRelation(error);
     return ((rows as Record<string, unknown>[] | null) ?? []).map(mapCrmOpportunity);
   });
@@ -638,20 +672,50 @@ export const setCrmOpportunityStage = createServerFn({ method: "POST" })
 
 export const listCrmActivities = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { companyId: string; status?: string; limit?: number }) => ({
-    companyId: companyIdOf(input),
-    status: input.status?.trim() || undefined,
-    limit: Math.min(Math.max(input.limit ?? 100, 1), 500),
-  }))
+  .inputValidator((input: {
+    companyId: string;
+    status?: string;
+    kind?: string;
+    q?: string;
+    dueFrom?: string;
+    dueTo?: string;
+    limit?: number;
+    offset?: number;
+  }) => {
+    const dueFrom = input.dueFrom?.trim() || undefined;
+    const dueTo = input.dueTo?.trim() || undefined;
+    if (dueFrom && !Number.isFinite(Date.parse(dueFrom))) throw new Error("Invalid activity start date");
+    if (dueTo && !Number.isFinite(Date.parse(dueTo))) throw new Error("Invalid activity end date");
+    if (dueFrom && dueTo && new Date(dueFrom) >= new Date(dueTo)) {
+      throw new Error("Activity end date must follow start date");
+    }
+    return {
+      companyId: companyIdOf(input),
+      status: input.status?.trim() || undefined,
+      kind: input.kind?.trim() || undefined,
+      q: (input.q ?? "").trim().slice(0, 120),
+      dueFrom,
+      dueTo,
+      limit: Math.min(Math.max(input.limit ?? 100, 1), 500),
+      offset: Number.isSafeInteger(input.offset) && (input.offset ?? 0) >= 0
+        ? Math.min(input.offset ?? 0, 1000000)
+        : 0,
+    };
+  })
   .handler(async ({ data, context }): Promise<CrmActivity[]> => {
     await requireCrmView(context.supabase, data.companyId);
     let q = crmClient(context.supabase)
       .from("crm_activities")
       .select("*")
-      .eq("company_id", data.companyId)
-      .order("due_at", { ascending: true });
+      .eq("company_id", data.companyId);
     if (data.status) q = q.eq("status", data.status);
-    const { data: rows, error } = await q.limit(data.limit);
+    if (data.kind) q = q.eq("kind", data.kind);
+    const subjectFilter = buildIlikeOr(["subject"], data.q);
+    if (subjectFilter) q = q.or(subjectFilter);
+    if (data.dueFrom) q = q.gte("due_at", data.dueFrom);
+    if (data.dueTo) q = q.lt("due_at", data.dueTo);
+    q = q.order("due_at", { ascending: true }).order("id", { ascending: true });
+    const { data: rows, error } = await q.range(data.offset, data.offset + data.limit - 1);
     throwIfRelation(error);
     return ((rows as Record<string, unknown>[] | null) ?? []).map(mapCrmActivity);
   });
@@ -845,7 +909,7 @@ export const listCrmAccountOverlay = createServerFn({ method: "GET" })
         .limit(2000),
       crmClient(context.supabase)
         .from("crm_opportunities")
-        .select("id, contact_id, status, amount_minor")
+        .select("id, contact_id, status, amount_minor, currency_code")
         .eq("company_id", data.companyId)
         .is("archived_at", null)
         .not("contact_id", "is", null)
@@ -875,6 +939,7 @@ export const listCrmAccountOverlay = createServerFn({ method: "GET" })
         contactId: row["contact_id"] == null ? null : String(row["contact_id"]),
         status: String(row["status"] ?? ""),
         amountMinor: Number(row["amount_minor"] ?? 0) || 0,
+        currencyCode: String(row["currency_code"] ?? "UNKNOWN"),
       }),
     );
 

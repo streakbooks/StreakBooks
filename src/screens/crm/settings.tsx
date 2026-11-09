@@ -13,7 +13,11 @@ import { Switch } from "@/components/ui/switch";
 import { useActiveCompany } from "@/hooks/use-active-company";
 import { useCan } from "@/hooks/use-can";
 import { friendlyAuthError } from "@/lib/auth-helpers";
-import { getCrmSettings, upsertCrmSettings } from "@/lib/crm/crm.functions";
+import {
+  getCrmPublicFormsPolicy,
+  getCrmSettings,
+  upsertCrmSettings,
+} from "@/lib/crm/crm.functions";
 import type { Permission } from "@/lib/permissions";
 import { toast } from "sonner";
 
@@ -23,11 +27,19 @@ export function CrmSettingsPage() {
   const canAdmin = can("crm.admin" as Permission);
   const queryClient = useQueryClient();
   const fetchSettings = useServerFn(getCrmSettings);
+  const fetchPublicForms = useServerFn(getCrmPublicFormsPolicy);
   const saveSettings = useServerFn(upsertCrmSettings);
 
   const settings = useQuery({
     queryKey: ["crm-settings", company?.id],
     queryFn: () => fetchSettings({ data: { companyId: company!.id } }),
+    enabled: Boolean(company?.id) && canAdmin,
+    retry: false,
+  });
+
+  const publicForms = useQuery({
+    queryKey: ["crm-public-forms-policy", company?.id],
+    queryFn: () => fetchPublicForms({ data: { companyId: company!.id } }),
     enabled: Boolean(company?.id) && canAdmin,
     retry: false,
   });
@@ -106,62 +118,87 @@ export function CrmSettingsPage() {
         <ErrorState title="Could not load settings" description={friendlyAuthError(settings.error)} onRetry={() => settings.refetch()} />
       ) : null}
       {current ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Module</CardTitle>
-            <CardDescription>
-              Enabling CRM seeds a default Sales pipeline and lead sources. It does not change
-              Contacts or post accounting journals.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <Label htmlFor="crm-enabled">Enable CRM</Label>
-                <p className="text-sm text-muted-foreground">
-                  Required before creating leads or opportunities.
-                </p>
-              </div>
-              <Switch
-                id="crm-enabled"
-                checked={enabledValue}
-                onCheckedChange={setEnabled}
-                aria-label="Enable CRM"
-              />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="lead-prefix">Lead number prefix</Label>
-                <Input
-                  id="lead-prefix"
-                  value={leadPrefixValue}
-                  onChange={(e) => setLeadPrefix(e.target.value)}
-                  maxLength={12}
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Module</CardTitle>
+              <CardDescription>
+                Enabling CRM seeds a default Sales pipeline and lead sources. It does not change
+                Contacts or post accounting journals.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <Label htmlFor="crm-enabled">Enable CRM</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Required before creating leads or opportunities.
+                  </p>
+                </div>
+                <Switch
+                  id="crm-enabled"
+                  checked={enabledValue}
+                  onCheckedChange={setEnabled}
+                  aria-label="Enable CRM"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="opp-prefix">Opportunity number prefix</Label>
-                <Input
-                  id="opp-prefix"
-                  value={oppPrefixValue}
-                  onChange={(e) => setOppPrefix(e.target.value)}
-                  maxLength={12}
-                />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="lead-prefix">Lead number prefix</Label>
+                  <Input
+                    id="lead-prefix"
+                    value={leadPrefixValue}
+                    onChange={(e) => setLeadPrefix(e.target.value)}
+                    maxLength={12}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="opp-prefix">Opportunity number prefix</Label>
+                  <Input
+                    id="opp-prefix"
+                    value={oppPrefixValue}
+                    onChange={(e) => setOppPrefix(e.target.value)}
+                    maxLength={12}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="stale-days">Stale deal days</Label>
+                  <Input
+                    id="stale-days"
+                    type="number"
+                    min={1}
+                    max={3650}
+                    value={staleValue}
+                    onChange={(e) => setStaleDays(Number(e.target.value) || 30)}
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="stale-days">Stale deal days</Label>
-                <Input
-                  id="stale-days"
-                  type="number"
-                  min={1}
-                  max={3650}
-                  value={staleValue}
-                  onChange={(e) => setStaleDays(Number(e.target.value) || 30)}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Public lead forms</CardTitle>
+              <CardDescription>
+                {publicForms.data?.reason ??
+                  "Anonymous public capture stays blocked until spam-protected intake exists."}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                type="button"
+                disabled={!publicForms.data?.canPublishForms}
+                title={
+                  publicForms.data?.canPublishForms
+                    ? undefined
+                    : "Blocked until public intake backends exist"
+                }
+              >
+                Publish public form
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       ) : null}
     </ListWorkspace>
   );

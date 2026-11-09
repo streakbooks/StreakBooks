@@ -16,13 +16,13 @@
 ## Gap closure report
 
 - Requirements reviewed: **96+**
-- Critical remaining: outbound email provider wiring, automation runners, public forms, **live** E2E 5/5 browser proof, hosted deploy proof
-- High remaining: campaign persistence, import mapping backends, territory rule storage
+- Critical remaining: outbound email provider wiring, automation runners, **live** E2E 5/5 browser proof, hosted deploy proof
+- High remaining: campaign persistence, import mapping backends, territory rule storage, public form intake
 - Live E2E pack: **Contract automated**; live authenticated proof still unverified
 - Originality: ORIGINALITY-CHECKLIST.md reviewed; legal pending
 
 ## Batches
 
-- Completed on main: CRM-01–05, CRM-07 fail-closed, CRM-08–11, CRM-10/12 gates
-- Shipping: CRM-12 team workload + E2E pack contracts
-- Next: live authenticated E2E execution, email provider when App Store-ready, public lead forms
+- Completed on main: CRM-01–05, CRM-07 fail-closed, CRM-08–11, CRM-10/12 gates, CRM-12 team/E2E pack
+- Shipping: public lead forms fail-closed gate on CRM Settings
+- Next: live authenticated E2E execution, email provider when App Store-ready, spam-protected intake

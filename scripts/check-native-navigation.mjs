@@ -117,6 +117,10 @@ const EXPECTED_TOP_LEVEL = new Map([
     "/expense-management"
   ],
   [
+    "CRM",
+    "/crm"
+  ],
+  [
     "Contacts",
     "/contacts"
   ],

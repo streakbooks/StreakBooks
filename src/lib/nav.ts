@@ -22,6 +22,7 @@ import {
   HandCoins,
   Store,
   Code2,
+  ContactRound,
   type LucideIcon,
 } from "lucide-react";
 
@@ -83,6 +84,13 @@ export const navItems: NavItem[] = [
     icon: HandCoins,
     group: "money",
     description: "Employee claims, receipts, approvals and reimbursements",
+  },
+  {
+    label: "CRM",
+    to: "/crm",
+    icon: ContactRound,
+    group: "records",
+    description: "Leads, pipelines and customer relationships",
   },
   {
     label: "Contacts",

@@ -1,0 +1,278 @@
+import { Link, useNavigate, useRouteContext } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
+import { CompanyEmptyState } from "@/components/common/company-empty";
+import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
+import { RecordWorkspace } from "@/components/workspace/RecordWorkspace";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useActiveCompany } from "@/hooks/use-active-company";
+import { useCan } from "@/hooks/use-can";
+import { friendlyAuthError } from "@/lib/auth-helpers";
+import {
+  assignCrmLead,
+  convertCrmLead,
+  getCrmLead,
+  upsertCrmLead,
+} from "@/lib/crm/crm.functions";
+import { formatCrmMinor } from "@/lib/crm/format";
+import { displayLeadName, type CrmLeadStatus } from "@/lib/crm/types";
+import type { Permission } from "@/lib/permissions";
+import { toast } from "sonner";
+
+const STATUS_OPTIONS: CrmLeadStatus[] = [
+  "new",
+  "contacted",
+  "qualified",
+  "nurturing",
+  "disqualified",
+];
+
+export function CrmLeadDetailPage({ leadId }: { leadId: string }) {
+  const { company, isPending } = useActiveCompany();
+  const { can } = useCan();
+  const { user } = useRouteContext({ from: "/_authenticated" });
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const canManage = can("crm.leads.manage" as Permission);
+  const fetchLead = useServerFn(getCrmLead);
+  const saveLead = useServerFn(upsertCrmLead);
+  const assignLead = useServerFn(assignCrmLead);
+  const convertLead = useServerFn(convertCrmLead);
+  const [status, setStatus] = useState<CrmLeadStatus | null>(null);
+
+  const leadQuery = useQuery({
+    queryKey: ["crm-lead", company?.id, leadId],
+    queryFn: () => fetchLead({ data: { companyId: company!.id, leadId } }),
+    enabled: Boolean(company?.id) && Boolean(leadId),
+    retry: false,
+  });
+
+  const statusMutation = useMutation({
+    mutationFn: async (next: CrmLeadStatus) => {
+      if (!company || !leadQuery.data) throw new Error("Lead not loaded");
+      return saveLead({
+        data: {
+          companyId: company.id,
+          id: leadQuery.data.id,
+          status: next,
+          ...(leadQuery.data.firstName ? { firstName: leadQuery.data.firstName } : {}),
+          ...(leadQuery.data.lastName ? { lastName: leadQuery.data.lastName } : {}),
+          ...(leadQuery.data.organizationName
+            ? { organizationName: leadQuery.data.organizationName }
+            : {}),
+          ...(leadQuery.data.email ? { email: leadQuery.data.email } : {}),
+        },
+      });
+    },
+    onSuccess: async () => {
+      toast.success("Lead status updated");
+      await queryClient.invalidateQueries({ queryKey: ["crm-lead", company?.id, leadId] });
+      await queryClient.invalidateQueries({ queryKey: ["crm-leads", company?.id] });
+      await queryClient.invalidateQueries({ queryKey: ["crm-dashboard-kpis", company?.id] });
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+
+  const assignMutation = useMutation({
+    mutationFn: async () => {
+      if (!company || !user?.id) throw new Error("Missing user");
+      return assignLead({
+        data: { companyId: company.id, leadId, ownerUserId: user.id },
+      });
+    },
+    onSuccess: async () => {
+      toast.success("Lead assigned to you");
+      await queryClient.invalidateQueries({ queryKey: ["crm-lead", company?.id, leadId] });
+      await queryClient.invalidateQueries({ queryKey: ["crm-dashboard-kpis", company?.id] });
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+
+  const convertMutation = useMutation({
+    mutationFn: async () => {
+      if (!company) throw new Error("No organisation");
+      return convertLead({
+        data: {
+          companyId: company.id,
+          leadId,
+          createOpportunity: true,
+          existingContactId: leadQuery.data?.contactId ?? null,
+        },
+      });
+    },
+    onSuccess: async (result) => {
+      toast.success("Lead converted to customer");
+      await queryClient.invalidateQueries({ queryKey: ["crm-lead", company?.id, leadId] });
+      await queryClient.invalidateQueries({ queryKey: ["crm-leads", company?.id] });
+      await queryClient.invalidateQueries({ queryKey: ["crm-opportunities", company?.id] });
+      await queryClient.invalidateQueries({ queryKey: ["crm-dashboard-kpis", company?.id] });
+      if (result.opportunityId) {
+        await navigate({ to: "/crm/$section", params: { section: "opportunities" } });
+      }
+    },
+    onError: (error) => toast.error(friendlyAuthError(error)),
+  });
+
+  if (isPending) return <LoadingState />;
+  if (!company) {
+    return <CompanyEmptyState title="No organisation" description="Select a company first." />;
+  }
+
+  if (leadQuery.isLoading) {
+    return (
+      <RecordWorkspace title="Lead" description="Loading lead…">
+        <LoadingState />
+      </RecordWorkspace>
+    );
+  }
+  if (leadQuery.isError) {
+    return (
+      <RecordWorkspace title="Lead" description="Lead detail">
+        <ErrorState title="Could not load lead" description={friendlyAuthError(leadQuery.error)} onRetry={() => leadQuery.refetch()} />
+      </RecordWorkspace>
+    );
+  }
+  const lead = leadQuery.data;
+  if (!lead) {
+    return (
+      <RecordWorkspace title="Lead" description="Lead detail">
+        <EmptyState title="Lead not found" description="It may have been removed." />
+      </RecordWorkspace>
+    );
+  }
+
+  const statusValue = status ?? lead.status;
+  const converted = lead.status === "converted";
+
+  return (
+    <RecordWorkspace
+      title={displayLeadName(lead)}
+      description={`${lead.leadNumber} · ${lead.status}`}
+      breadcrumbs={[
+        { label: "CRM", to: "/crm" },
+        { label: "Leads", to: "/crm/leads" },
+        { label: lead.leadNumber },
+      ]}
+      actions={
+        canManage && !converted ? (
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={assignMutation.isPending}
+              onClick={() => assignMutation.mutate()}
+            >
+              Assign to me
+            </Button>
+            <Button
+              type="button"
+              disabled={convertMutation.isPending || lead.status === "disqualified"}
+              onClick={() => convertMutation.mutate()}
+            >
+              {convertMutation.isPending ? "Converting…" : "Convert to customer"}
+            </Button>
+          </div>
+        ) : undefined
+      }
+    >
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Details</CardTitle>
+            <CardDescription>Identity and commercial estimate</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <p>
+              <span className="text-muted-foreground">Organisation:</span>{" "}
+              {lead.organizationName ?? "—"}
+            </p>
+            <p>
+              <span className="text-muted-foreground">Person:</span>{" "}
+              {[lead.firstName, lead.lastName].filter(Boolean).join(" ") || "—"}
+            </p>
+            <p>
+              <span className="text-muted-foreground">Email:</span> {lead.email ?? "—"}
+            </p>
+            <p>
+              <span className="text-muted-foreground">Phone:</span> {lead.phone ?? "—"}
+            </p>
+            <p>
+              <span className="text-muted-foreground">Estimated value:</span>{" "}
+              {formatCrmMinor(lead.estimatedValueMinor, lead.currencyCode)}
+            </p>
+            <p>
+              <span className="text-muted-foreground">Owner:</span>{" "}
+              {lead.ownerUserId ? lead.ownerUserId.slice(0, 8) + "…" : "Unassigned"}
+            </p>
+            {lead.contactId ? (
+              <p>
+                <span className="text-muted-foreground">Contact:</span>{" "}
+                <Link
+                  to="/contacts/$contactId"
+                  params={{ contactId: lead.contactId }}
+                  className="text-primary underline-offset-4 hover:underline"
+                >
+                  Open contact
+                </Link>
+              </p>
+            ) : null}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Lifecycle</CardTitle>
+            <CardDescription>Stage changes are audited on the server</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {converted ? (
+              <p className="text-sm">
+                Converted {lead.convertedAt ? new Date(lead.convertedAt).toLocaleString() : ""}.
+                Duplicate conversion is blocked.
+              </p>
+            ) : canManage ? (
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select
+                  value={statusValue}
+                  onValueChange={(value) => {
+                    const next = value as CrmLeadStatus;
+                    setStatus(next);
+                    statusMutation.mutate(next);
+                  }}
+                  disabled={statusMutation.isPending}
+                >
+                  <SelectTrigger aria-label="Lead status">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUS_OPTIONS.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <p className="capitalize text-sm">{lead.status}</p>
+            )}
+            {lead.notes ? (
+              <p className="whitespace-pre-wrap text-sm text-muted-foreground">{lead.notes}</p>
+            ) : null}
+          </CardContent>
+        </Card>
+      </div>
+    </RecordWorkspace>
+  );
+}

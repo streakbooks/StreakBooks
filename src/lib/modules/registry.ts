@@ -2,6 +2,7 @@ import { navItems } from "@/lib/nav";
 import { SALES_SECTIONS, PURCHASES_SECTIONS } from "@/lib/document-sections";
 import { EXPENSE_MANAGEMENT_SECTIONS } from "@/lib/expenses/sections";
 import { APP_STORE_SECTIONS, DEVELOPER_PORTAL_SECTIONS } from "@/lib/app-store/sections";
+import { CRM_SUBNAV } from "@/lib/crm/sections";
 import {
   DEFAULT_AUTHENTICATED_EXPERIENCE,
   DEFAULT_PUBLIC_EXPERIENCE,
@@ -152,6 +153,21 @@ export const MODULE_REGISTRY: readonly ModuleDefinition[] = [
     experience: DEFAULT_AUTHENTICATED_EXPERIENCE,
     premiumStatus: "in-progress",
     notes: "Batch 4: ListWorkspace on EM overview.",
+  },
+  {
+    id: "crm",
+    label: "CRM",
+    description: "Leads, pipelines and customer relationships",
+    path: "/crm",
+    group: "records",
+    inSidebar: true,
+    pageKind: "dashboard",
+    subnav: CRM_SUBNAV,
+    viewModes: ["list", "kanban", "calendar", "mobile-card"],
+    screenRoot: "src/screens/crm",
+    experience: DEFAULT_AUTHENTICATED_EXPERIENCE,
+    premiumStatus: "in-progress",
+    notes: "CRM-02 foundation: navigation, settings, leads, opportunities, dashboard KPIs.",
   },
   {
     id: "contacts",

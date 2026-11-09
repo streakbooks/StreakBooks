@@ -84,6 +84,8 @@ import { Route as AuthenticatedContactsDuplicatesRouteImport } from './routes/_a
 import { Route as AuthenticatedContactsImportRouteImport } from './routes/_authenticated/contacts/import'
 import { Route as AuthenticatedContactsNewRouteImport } from './routes/_authenticated/contacts/new'
 import { Route as AuthenticatedContactsSettingsRouteImport } from './routes/_authenticated/contacts/settings'
+import { Route as AuthenticatedCrmIndexRouteImport } from './routes/_authenticated/crm/index'
+import { Route as AuthenticatedCrmSectionRouteImport } from './routes/_authenticated/crm/$section'
 import { Route as AuthenticatedDeveloperIndexRouteImport } from './routes/_authenticated/developer/index'
 import { Route as AuthenticatedDeveloperSectionRouteImport } from './routes/_authenticated/developer/$section'
 import { Route as AuthenticatedDocumentsBrandingRouteImport } from './routes/_authenticated/documents.branding'
@@ -137,6 +139,7 @@ import { Route as AuthenticatedAdvisorsAdminSettingsServicesPricingRouteImport }
 import { Route as AuthenticatedAppStoreAppsAppCodeRouteImport } from './routes/_authenticated/app-store/apps.$appCode'
 import { Route as AuthenticatedBankingJournalJournalIdRouteImport } from './routes/_authenticated/banking/journal.$journalId'
 import { Route as AuthenticatedBankingReconciliationReportSessionIdRouteImport } from './routes/_authenticated/banking/reconciliation-report.$sessionId'
+import { Route as AuthenticatedCrmLeadsLeadIdRouteImport } from './routes/_authenticated/crm/leads.$leadId'
 import { Route as AuthenticatedExpenseManagementClaimsClaimIdRouteImport } from './routes/_authenticated/expense-management/claims.$claimId'
 import { Route as AuthenticatedPayrollEmployeesIndexRouteImport } from './routes/_authenticated/payroll/employees.index'
 import { Route as AuthenticatedPayrollEmployeesEmployeeIdRouteImport } from './routes/_authenticated/payroll/employees.$employeeId'
@@ -607,6 +610,16 @@ const AuthenticatedContactsSettingsRoute =
     path: '/contacts/settings',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCrmIndexRoute = AuthenticatedCrmIndexRouteImport.update({
+  id: '/crm/',
+  path: '/crm/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCrmSectionRoute = AuthenticatedCrmSectionRouteImport.update({
+  id: '/crm/$section',
+  path: '/crm/$section',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDeveloperIndexRoute =
   AuthenticatedDeveloperIndexRouteImport.update({
     id: '/developer/',
@@ -906,6 +919,12 @@ const AuthenticatedBankingReconciliationReportSessionIdRoute =
     id: '/reconciliation-report/$sessionId',
     path: '/reconciliation-report/$sessionId',
     getParentRoute: () => AuthenticatedBankingRouteRoute,
+  } as any)
+const AuthenticatedCrmLeadsLeadIdRoute =
+  AuthenticatedCrmLeadsLeadIdRouteImport.update({
+    id: '/crm/leads/$leadId',
+    path: '/crm/leads/$leadId',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedExpenseManagementClaimsClaimIdRoute =
   AuthenticatedExpenseManagementClaimsClaimIdRouteImport.update({
@@ -1277,6 +1296,7 @@ export interface FileRoutesByFullPath {
   '/contacts/import': typeof AuthenticatedContactsImportRoute
   '/contacts/new': typeof AuthenticatedContactsNewRoute
   '/contacts/settings': typeof AuthenticatedContactsSettingsRoute
+  '/crm/$section': typeof AuthenticatedCrmSectionRoute
   '/developer/$section': typeof AuthenticatedDeveloperSectionRoute
   '/documents/branding': typeof AuthenticatedDocumentsBrandingRoute
   '/expense-management/$section': typeof AuthenticatedExpenseManagementSectionRoute
@@ -1324,6 +1344,7 @@ export interface FileRoutesByFullPath {
   '/banking/': typeof AuthenticatedBankingIndexRoute
   '/budgets/': typeof AuthenticatedBudgetsIndexRoute
   '/contacts/': typeof AuthenticatedContactsIndexRoute
+  '/crm/': typeof AuthenticatedCrmIndexRoute
   '/developer/': typeof AuthenticatedDeveloperIndexRoute
   '/expense-management/': typeof AuthenticatedExpenseManagementIndexRoute
   '/payroll/': typeof AuthenticatedPayrollIndexRoute
@@ -1336,6 +1357,7 @@ export interface FileRoutesByFullPath {
   '/app-store/apps/$appCode': typeof AuthenticatedAppStoreAppsAppCodeRoute
   '/banking/journal/$journalId': typeof AuthenticatedBankingJournalJournalIdRoute
   '/banking/reconciliation-report/$sessionId': typeof AuthenticatedBankingReconciliationReportSessionIdRoute
+  '/crm/leads/$leadId': typeof AuthenticatedCrmLeadsLeadIdRoute
   '/expense-management/claims/$claimId': typeof AuthenticatedExpenseManagementClaimsClaimIdRoute
   '/payroll/employees/$employeeId': typeof AuthenticatedPayrollEmployeesEmployeeIdRoute
   '/payroll/payslips/$payslipId': typeof AuthenticatedPayrollPayslipsPayslipIdRoute
@@ -1448,6 +1470,7 @@ export interface FileRoutesByTo {
   '/contacts/import': typeof AuthenticatedContactsImportRoute
   '/contacts/new': typeof AuthenticatedContactsNewRoute
   '/contacts/settings': typeof AuthenticatedContactsSettingsRoute
+  '/crm/$section': typeof AuthenticatedCrmSectionRoute
   '/developer/$section': typeof AuthenticatedDeveloperSectionRoute
   '/documents/branding': typeof AuthenticatedDocumentsBrandingRoute
   '/expense-management/$section': typeof AuthenticatedExpenseManagementSectionRoute
@@ -1495,6 +1518,7 @@ export interface FileRoutesByTo {
   '/banking': typeof AuthenticatedBankingIndexRoute
   '/budgets': typeof AuthenticatedBudgetsIndexRoute
   '/contacts': typeof AuthenticatedContactsIndexRoute
+  '/crm': typeof AuthenticatedCrmIndexRoute
   '/developer': typeof AuthenticatedDeveloperIndexRoute
   '/expense-management': typeof AuthenticatedExpenseManagementIndexRoute
   '/payroll': typeof AuthenticatedPayrollIndexRoute
@@ -1507,6 +1531,7 @@ export interface FileRoutesByTo {
   '/app-store/apps/$appCode': typeof AuthenticatedAppStoreAppsAppCodeRoute
   '/banking/journal/$journalId': typeof AuthenticatedBankingJournalJournalIdRoute
   '/banking/reconciliation-report/$sessionId': typeof AuthenticatedBankingReconciliationReportSessionIdRoute
+  '/crm/leads/$leadId': typeof AuthenticatedCrmLeadsLeadIdRoute
   '/expense-management/claims/$claimId': typeof AuthenticatedExpenseManagementClaimsClaimIdRoute
   '/payroll/employees/$employeeId': typeof AuthenticatedPayrollEmployeesEmployeeIdRoute
   '/payroll/payslips/$payslipId': typeof AuthenticatedPayrollPayslipsPayslipIdRoute
@@ -1626,6 +1651,7 @@ export interface FileRoutesById {
   '/_authenticated/contacts/import': typeof AuthenticatedContactsImportRoute
   '/_authenticated/contacts/new': typeof AuthenticatedContactsNewRoute
   '/_authenticated/contacts/settings': typeof AuthenticatedContactsSettingsRoute
+  '/_authenticated/crm/$section': typeof AuthenticatedCrmSectionRoute
   '/_authenticated/developer/$section': typeof AuthenticatedDeveloperSectionRoute
   '/_authenticated/documents/branding': typeof AuthenticatedDocumentsBrandingRoute
   '/_authenticated/expense-management/$section': typeof AuthenticatedExpenseManagementSectionRoute
@@ -1673,6 +1699,7 @@ export interface FileRoutesById {
   '/_authenticated/banking/': typeof AuthenticatedBankingIndexRoute
   '/_authenticated/budgets/': typeof AuthenticatedBudgetsIndexRoute
   '/_authenticated/contacts/': typeof AuthenticatedContactsIndexRoute
+  '/_authenticated/crm/': typeof AuthenticatedCrmIndexRoute
   '/_authenticated/developer/': typeof AuthenticatedDeveloperIndexRoute
   '/_authenticated/expense-management/': typeof AuthenticatedExpenseManagementIndexRoute
   '/_authenticated/payroll/': typeof AuthenticatedPayrollIndexRoute
@@ -1685,6 +1712,7 @@ export interface FileRoutesById {
   '/_authenticated/app-store/apps/$appCode': typeof AuthenticatedAppStoreAppsAppCodeRoute
   '/_authenticated/banking/journal/$journalId': typeof AuthenticatedBankingJournalJournalIdRoute
   '/_authenticated/banking/reconciliation-report/$sessionId': typeof AuthenticatedBankingReconciliationReportSessionIdRoute
+  '/_authenticated/crm/leads/$leadId': typeof AuthenticatedCrmLeadsLeadIdRoute
   '/_authenticated/expense-management/claims/$claimId': typeof AuthenticatedExpenseManagementClaimsClaimIdRoute
   '/_authenticated/payroll/employees/$employeeId': typeof AuthenticatedPayrollEmployeesEmployeeIdRoute
   '/_authenticated/payroll/payslips/$payslipId': typeof AuthenticatedPayrollPayslipsPayslipIdRoute
@@ -1807,6 +1835,7 @@ export interface FileRouteTypes {
     | '/contacts/import'
     | '/contacts/new'
     | '/contacts/settings'
+    | '/crm/$section'
     | '/developer/$section'
     | '/documents/branding'
     | '/expense-management/$section'
@@ -1854,6 +1883,7 @@ export interface FileRouteTypes {
     | '/banking/'
     | '/budgets/'
     | '/contacts/'
+    | '/crm/'
     | '/developer/'
     | '/expense-management/'
     | '/payroll/'
@@ -1866,6 +1896,7 @@ export interface FileRouteTypes {
     | '/app-store/apps/$appCode'
     | '/banking/journal/$journalId'
     | '/banking/reconciliation-report/$sessionId'
+    | '/crm/leads/$leadId'
     | '/expense-management/claims/$claimId'
     | '/payroll/employees/$employeeId'
     | '/payroll/payslips/$payslipId'
@@ -1978,6 +2009,7 @@ export interface FileRouteTypes {
     | '/contacts/import'
     | '/contacts/new'
     | '/contacts/settings'
+    | '/crm/$section'
     | '/developer/$section'
     | '/documents/branding'
     | '/expense-management/$section'
@@ -2025,6 +2057,7 @@ export interface FileRouteTypes {
     | '/banking'
     | '/budgets'
     | '/contacts'
+    | '/crm'
     | '/developer'
     | '/expense-management'
     | '/payroll'
@@ -2037,6 +2070,7 @@ export interface FileRouteTypes {
     | '/app-store/apps/$appCode'
     | '/banking/journal/$journalId'
     | '/banking/reconciliation-report/$sessionId'
+    | '/crm/leads/$leadId'
     | '/expense-management/claims/$claimId'
     | '/payroll/employees/$employeeId'
     | '/payroll/payslips/$payslipId'
@@ -2155,6 +2189,7 @@ export interface FileRouteTypes {
     | '/_authenticated/contacts/import'
     | '/_authenticated/contacts/new'
     | '/_authenticated/contacts/settings'
+    | '/_authenticated/crm/$section'
     | '/_authenticated/developer/$section'
     | '/_authenticated/documents/branding'
     | '/_authenticated/expense-management/$section'
@@ -2202,6 +2237,7 @@ export interface FileRouteTypes {
     | '/_authenticated/banking/'
     | '/_authenticated/budgets/'
     | '/_authenticated/contacts/'
+    | '/_authenticated/crm/'
     | '/_authenticated/developer/'
     | '/_authenticated/expense-management/'
     | '/_authenticated/payroll/'
@@ -2214,6 +2250,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app-store/apps/$appCode'
     | '/_authenticated/banking/journal/$journalId'
     | '/_authenticated/banking/reconciliation-report/$sessionId'
+    | '/_authenticated/crm/leads/$leadId'
     | '/_authenticated/expense-management/claims/$claimId'
     | '/_authenticated/payroll/employees/$employeeId'
     | '/_authenticated/payroll/payslips/$payslipId'
@@ -2814,6 +2851,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedContactsSettingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/crm/': {
+      id: '/_authenticated/crm/'
+      path: '/crm'
+      fullPath: '/crm/'
+      preLoaderRoute: typeof AuthenticatedCrmIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/crm/$section': {
+      id: '/_authenticated/crm/$section'
+      path: '/crm/$section'
+      fullPath: '/crm/$section'
+      preLoaderRoute: typeof AuthenticatedCrmSectionRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/developer/': {
       id: '/_authenticated/developer/'
       path: '/developer'
@@ -3184,6 +3235,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/banking/reconciliation-report/$sessionId'
       preLoaderRoute: typeof AuthenticatedBankingReconciliationReportSessionIdRouteImport
       parentRoute: typeof AuthenticatedBankingRouteRoute
+    }
+    '/_authenticated/crm/leads/$leadId': {
+      id: '/_authenticated/crm/leads/$leadId'
+      path: '/crm/leads/$leadId'
+      fullPath: '/crm/leads/$leadId'
+      preLoaderRoute: typeof AuthenticatedCrmLeadsLeadIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/expense-management/claims/$claimId': {
       id: '/_authenticated/expense-management/claims/$claimId'
@@ -3926,6 +3984,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedContactsImportRoute: typeof AuthenticatedContactsImportRoute
   AuthenticatedContactsNewRoute: typeof AuthenticatedContactsNewRoute
   AuthenticatedContactsSettingsRoute: typeof AuthenticatedContactsSettingsRoute
+  AuthenticatedCrmSectionRoute: typeof AuthenticatedCrmSectionRoute
   AuthenticatedDeveloperSectionRoute: typeof AuthenticatedDeveloperSectionRoute
   AuthenticatedDocumentsBrandingRoute: typeof AuthenticatedDocumentsBrandingRoute
   AuthenticatedExpenseManagementSectionRoute: typeof AuthenticatedExpenseManagementSectionRoute
@@ -3936,10 +3995,12 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppStoreIndexRoute: typeof AuthenticatedAppStoreIndexRoute
   AuthenticatedBudgetsIndexRoute: typeof AuthenticatedBudgetsIndexRoute
   AuthenticatedContactsIndexRoute: typeof AuthenticatedContactsIndexRoute
+  AuthenticatedCrmIndexRoute: typeof AuthenticatedCrmIndexRoute
   AuthenticatedDeveloperIndexRoute: typeof AuthenticatedDeveloperIndexRoute
   AuthenticatedExpenseManagementIndexRoute: typeof AuthenticatedExpenseManagementIndexRoute
   AuthenticatedReportsIndexRoute: typeof AuthenticatedReportsIndexRoute
   AuthenticatedAppStoreAppsAppCodeRoute: typeof AuthenticatedAppStoreAppsAppCodeRoute
+  AuthenticatedCrmLeadsLeadIdRoute: typeof AuthenticatedCrmLeadsLeadIdRoute
   AuthenticatedExpenseManagementClaimsClaimIdRoute: typeof AuthenticatedExpenseManagementClaimsClaimIdRoute
   AuthenticatedReportsBuilderViewIdRoute: typeof AuthenticatedReportsBuilderViewIdRoute
   AuthenticatedDocumentsPrintKindIdRoute: typeof AuthenticatedDocumentsPrintKindIdRoute
@@ -3986,6 +4047,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedContactsImportRoute: AuthenticatedContactsImportRoute,
   AuthenticatedContactsNewRoute: AuthenticatedContactsNewRoute,
   AuthenticatedContactsSettingsRoute: AuthenticatedContactsSettingsRoute,
+  AuthenticatedCrmSectionRoute: AuthenticatedCrmSectionRoute,
   AuthenticatedDeveloperSectionRoute: AuthenticatedDeveloperSectionRoute,
   AuthenticatedDocumentsBrandingRoute: AuthenticatedDocumentsBrandingRoute,
   AuthenticatedExpenseManagementSectionRoute:
@@ -3997,11 +4059,13 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppStoreIndexRoute: AuthenticatedAppStoreIndexRoute,
   AuthenticatedBudgetsIndexRoute: AuthenticatedBudgetsIndexRoute,
   AuthenticatedContactsIndexRoute: AuthenticatedContactsIndexRoute,
+  AuthenticatedCrmIndexRoute: AuthenticatedCrmIndexRoute,
   AuthenticatedDeveloperIndexRoute: AuthenticatedDeveloperIndexRoute,
   AuthenticatedExpenseManagementIndexRoute:
     AuthenticatedExpenseManagementIndexRoute,
   AuthenticatedReportsIndexRoute: AuthenticatedReportsIndexRoute,
   AuthenticatedAppStoreAppsAppCodeRoute: AuthenticatedAppStoreAppsAppCodeRoute,
+  AuthenticatedCrmLeadsLeadIdRoute: AuthenticatedCrmLeadsLeadIdRoute,
   AuthenticatedExpenseManagementClaimsClaimIdRoute:
     AuthenticatedExpenseManagementClaimsClaimIdRoute,
   AuthenticatedReportsBuilderViewIdRoute:

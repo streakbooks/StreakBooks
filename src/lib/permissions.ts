@@ -81,6 +81,16 @@ export const PERMISSIONS = [
   "developer.partner_manage",
   "developer.view_analytics",
   "developer.view_usage",
+  "crm.view",
+  "crm.leads.manage",
+  "crm.opportunities.manage",
+  "crm.activities.manage",
+  "crm.campaigns.manage",
+  "crm.automation.manage",
+  "crm.reports.view",
+  "crm.export",
+  "crm.import",
+  "crm.admin",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -161,6 +171,16 @@ export const ROLE_PERMISSION_MATRIX: Record<CompanyRole, readonly Permission[]> 
     "developer.partner_manage",
     "developer.view_analytics",
     "developer.view_usage",
+    "crm.view",
+    "crm.leads.manage",
+    "crm.opportunities.manage",
+    "crm.activities.manage",
+    "crm.campaigns.manage",
+    "crm.automation.manage",
+    "crm.reports.view",
+    "crm.export",
+    "crm.import",
+    "crm.admin",
   ],
   accountant: [
     "company.view",
@@ -219,6 +239,12 @@ export const ROLE_PERMISSION_MATRIX: Record<CompanyRole, readonly Permission[]> 
     "appstore.view_sync",
     "appstore.resolve_exceptions",
     "appstore.advise",
+    "crm.view",
+    "crm.leads.manage",
+    "crm.opportunities.manage",
+    "crm.activities.manage",
+    "crm.reports.view",
+    "crm.export",
   ],
   bookkeeper: [
     "company.view",
@@ -260,6 +286,7 @@ export const ROLE_PERMISSION_MATRIX: Record<CompanyRole, readonly Permission[]> 
     "appstore.view",
     "appstore.request_install",
     "appstore.view_sync",
+    "crm.view",
   ],
   staff: [
     "company.view",
@@ -277,6 +304,10 @@ export const ROLE_PERMISSION_MATRIX: Record<CompanyRole, readonly Permission[]> 
     "payroll.view",
     "appstore.view",
     "appstore.request_install",
+    "crm.view",
+    "crm.leads.manage",
+    "crm.opportunities.manage",
+    "crm.activities.manage",
   ],
   read_only: [
     "company.view",
@@ -294,6 +325,8 @@ export const ROLE_PERMISSION_MATRIX: Record<CompanyRole, readonly Permission[]> 
     "payroll.view",
     "payroll.reports.view",
     "appstore.view",
+    "crm.view",
+    "crm.reports.view",
   ],
 };
 

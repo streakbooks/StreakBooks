@@ -323,7 +323,9 @@ export function AdvisorsServicesPricingPage() {
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
 
-  if (query.isPending) return <LoadingState />;
+  const mutationPending = saveM.isPending || publishM.isPending || restoreM.isPending;
+
+  if (query.isPending) return <main className="mx-auto max-w-6xl space-y-6 p-6"><AdvisorsSubnav /><div role="status" aria-live="polite"><LoadingState /></div></main>;
   if (query.isError) {
     return (
       <main className="mx-auto max-w-5xl space-y-6 p-6">
@@ -331,11 +333,12 @@ export function AdvisorsServicesPricingPage() {
           title="Services & Pricing"
           description="Manage LinkBooks Advisors plans without a code deployment."
         />
-        <ErrorState
+        <AdvisorsSubnav />
+        <div role="alert"><ErrorState
           title="Advisors admin unavailable"
           description={friendlyAuthError(query.error)}
           onRetry={() => void query.refetch()}
-        />
+        /></div>
       </main>
     );
   }
@@ -349,7 +352,7 @@ export function AdvisorsServicesPricingPage() {
         description="Save draft, preview, publish and restore Advisors catalogue versions. Publishing does not change existing subscriptions or invoices."
       />
       <AdvisorsSubnav />
-      <p className="text-sm text-muted-foreground" role="status">
+      <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
         Signed in as {query.data.role}. Live catalogue is what visitors see on `/advisors`.
       </p>
 
@@ -361,7 +364,8 @@ export function AdvisorsServicesPricingPage() {
             value={reason}
             onChange={(event) => setReason(event.target.value)}
             placeholder="Why are you changing pricing or copy?"
-            disabled={!canEdit}
+            maxLength={5000}
+            disabled={!canEdit || mutationPending}
           />
         </div>
         <div className="space-y-1">
@@ -370,7 +374,8 @@ export function AdvisorsServicesPricingPage() {
             id="advisors-label"
             value={label}
             onChange={(event) => setLabel(event.target.value)}
-            disabled={!canEdit}
+            maxLength={200}
+            disabled={!canEdit || mutationPending}
           />
         </div>
         <div className="flex flex-wrap items-end gap-2">
@@ -378,7 +383,7 @@ export function AdvisorsServicesPricingPage() {
             type="button"
             variant="outline"
             disabled={
-              !canEdit || saveM.isPending || reason.trim().length < 3 || validation.length > 0
+              !canEdit || mutationPending || reason.trim().length < 3 || validation.length > 0
             }
             onClick={() => saveM.mutate()}
           >
@@ -386,7 +391,7 @@ export function AdvisorsServicesPricingPage() {
           </Button>
           <Button
             type="button"
-            disabled={!canEdit || publishM.isPending || reason.trim().length < 3}
+            disabled={!canEdit || mutationPending || reason.trim().length < 3 || validation.length > 0}
             onClick={() => {
               if (
                 window.confirm(
@@ -422,6 +427,8 @@ export function AdvisorsServicesPricingPage() {
             type="button"
             size="sm"
             variant={service.code === activeService?.code ? "default" : "outline"}
+            aria-pressed={service.code === activeService?.code}
+            disabled={mutationPending}
             onClick={() => setSelectedService(service.code)}
           >
             {service.name}
@@ -631,7 +638,7 @@ export function AdvisorsServicesPricingPage() {
                     type="button"
                     size="sm"
                     variant="outline"
-                    disabled={restoreM.isPending}
+                    disabled={mutationPending}
                     onClick={() => restoreM.mutate(version.id)}
                   >
                     Restore to draft

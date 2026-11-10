@@ -383,7 +383,8 @@
         "2026-11-10 Advisors Admin Engagements: persistent subnav on loading/error, retry engagements/clients/staff query failures, accessible results count, safe nonnegative integer amount guards, conflicting mutation button guards, and clipboard-failure recovery after successful proposal send. Source commit 538e1a11ad1dac23f977a902f8dde2a9a9f3cb4f. All tests NOT RUN; 12 criteria NOT VERIFIED.",
         "2026-11-10 Advisors Admin Billing: persistent subnav and accessible loading/error/count feedback; selected engagement changes reset company input; company linking receives explicit company ID (avoids stale React state); shared pending guard blocks overlapping billing operations. Source commit 9efa94330c66e826e9ae34292b992bbbf56d7498. Tests NOT RUN; 12 criteria NOT VERIFIED.",
         "2026-11-10 Advisors Admin Documents: persistent Advisors subnav in loading/error, accessible loading/error/result feedback, bounded reason input (5000). Source commit 5c33632c523413913a54f9eeed61d9eed0237d48. Local checks and authenticated tests NOT RUN; 12 criteria NOT VERIFIED.",
-        "2026-11-10 Advisors Admin Workspaces: persistent subnav on loading/error, retry list and candidate failures, accessible count, bounded notes/reason, disabled conflicting and no-op mutations, selection aria-pressed. Source commit cd4d752dcf3c0b9e061c11a5fe3411a9a1dbcedd. Tests NOT RUN; all 12 criteria NOT VERIFIED."
+        "2026-11-10 Advisors Admin Workspaces: persistent subnav on loading/error, retry list and candidate failures, accessible count, bounded notes/reason, disabled conflicting and no-op mutations, selection aria-pressed. Source commit cd4d752dcf3c0b9e061c11a5fe3411a9a1dbcedd. Tests NOT RUN; all 12 criteria NOT VERIFIED.",
+        "2026-11-10 Advisors Admin Staff: persistent subnav during loading/error; accessible loading/error/results and selection; native Enter-key form submit; required name/timezone, bounded reason/name/timezone; save and selection mutation guards. Source commit 4300c0a5c93223a5a785ae80221bdef0033770d9. Tests NOT RUN; all 12 criteria NOT VERIFIED."
       ],
       "remaining": [
         "Run local check:browsing-coverage, typecheck, lint, build, unit and authenticated browser tests (NOT RUN)",
@@ -394,7 +395,8 @@
         "Verify Clients native form keyboard submission, client/staff error retry, portal invite/unlink, dirty form refresh behavior, RLS and accessibility; tests NOT RUN.",
         "Verify Engagements create/send proposal, clipboard failure, query retries, tenant permissions, responsive/keyboard behavior and history using authenticated fixtures; tests NOT RUN.",
         "Verify Billing company-link selection, checkout, subscription sync, manual marking, authorization, error states and concurrent actions with authenticated fixtures; all tests NOT RUN.",
-        "Verify Workspaces list/candidate/detail failures, period creation, task and document transitions, note submission, tenant/RLS, accessibility and browser history with authenticated tests; NOT RUN."
+        "Verify Workspaces list/candidate/detail failures, period creation, task and document transitions, note submission, tenant/RLS, accessibility and browser history with authenticated tests; NOT RUN.",
+        "Verify Staff form validation, native keyboard submission, list selection, change reasons, permissions, refresh, accessibility and concurrent mutations; tests NOT RUN."
       ]
     },
     {

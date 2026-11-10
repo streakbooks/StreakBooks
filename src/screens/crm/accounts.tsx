@@ -67,13 +67,16 @@ export function CrmAccountsPage({ current = "accounts" }: { current?: "accounts"
     );
   }
 
-  const currency = company.base_currency || "USD";
+  const isPeopleView = current === "contacts";
+  const pageTitle = isPeopleView ? "CRM Contacts" : "Accounts";
 
   return (
     <ListWorkspace
-      title="Accounts"
-      description="Contacts remain the customer master. This view attaches open pipeline facts without duplicating records."
-      breadcrumbs={[{ label: "CRM", to: "/crm" }, { label: "Accounts" }]}
+      title={pageTitle}
+      description={isPeopleView
+        ? "Customer contacts with linked pipeline activity. The full people directory remains in Contacts."
+        : "Contacts remain the customer master. This view attaches open pipeline facts without duplicating records."}
+      breadcrumbs={[{ label: "CRM", to: "/crm" }, { label: pageTitle }]}
       actions={
         <Button asChild variant="secondary">
           <Link to="/contacts">Open Contacts</Link>
@@ -104,14 +107,14 @@ export function CrmAccountsPage({ current = "accounts" }: { current?: "accounts"
           <Alert>
             <AlertTitle>No second customer master</AlertTitle>
             <AlertDescription>
-              Account rows come from Contacts (customers). CRM only shows linked leads and open
-              opportunity totals — accounting postings stay in Sales and Banking.
+              CRM rows reuse the existing Contacts master (customers). CRM only shows linked leads and open
+              opportunity totals by their original currencies — accounting postings stay in Sales and Banking.
             </AlertDescription>
           </Alert>
 
           <div className="flex flex-wrap items-end gap-3">
             <div className="space-y-2">
-              <Label htmlFor="crm-account-search">Search accounts</Label>
+              <Label htmlFor="crm-account-search">{isPeopleView ? "Search customer contacts" : "Search accounts"}</Label>
               <Input
                 id="crm-account-search"
                 value={q}
@@ -140,7 +143,7 @@ export function CrmAccountsPage({ current = "accounts" }: { current?: "accounts"
           ) : null}
           {accounts.isSuccess && accounts.data.length === 0 ? (
             <EmptyState
-              title="No matching accounts"
+              title={isPeopleView ? "No matching CRM contacts" : "No matching accounts"}
               description="Create or activate a customer in Contacts, then convert a lead or open an opportunity."
               action={
                 <Button asChild>
@@ -157,7 +160,7 @@ export function CrmAccountsPage({ current = "accounts" }: { current?: "accounts"
                     <TableHead>Account</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead className="text-right">Open deals</TableHead>
-                    <TableHead className="text-right">Pipeline</TableHead>
+                    <TableHead className="text-right">Pipeline by currency</TableHead>
                     <TableHead className="text-right">Linked leads</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -178,7 +181,15 @@ export function CrmAccountsPage({ current = "accounts" }: { current?: "accounts"
                         {row.openOpportunityCount}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {formatCrmMinor(row.openPipelineValueMinor, currency)}
+                        {row.pipelineByCurrency.length > 0 ? (
+                          <div className="flex flex-col items-end gap-1">
+                            {row.pipelineByCurrency.map((total) => (
+                              <span key={total.currencyCode}>
+                                {formatCrmMinor(total.amountMinor, total.currencyCode)}
+                              </span>
+                            ))}
+                          </div>
+                        ) : "—"}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {row.linkedLeadCount}

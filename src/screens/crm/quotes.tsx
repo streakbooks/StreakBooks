@@ -1,7 +1,8 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { CrmSubnav } from "@/components/crm/CrmSubnav";
+import { CrmStatusBadge } from "@/components/crm/CrmStatusBadge";
 import { CompanyEmptyState } from "@/components/common/company-empty";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/states";
 import { ListWorkspace } from "@/components/workspace/ListWorkspace";
@@ -34,6 +35,7 @@ export function CrmQuotesPage() {
   const canBridge =
     can("crm.opportunities.manage" as Permission) && can("sales.draft" as Permission);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const fetchSettings = useServerFn(getCrmSettings);
   const fetchOpps = useServerFn(listCrmOpportunities);
   const createQuote = useServerFn(createCrmOpportunityQuote);
@@ -60,7 +62,7 @@ export function CrmQuotesPage() {
     onSuccess: async (result) => {
       toast.success(result.created ? "Sales quote draft created" : "Opening linked quote");
       await queryClient.invalidateQueries({ queryKey: ["crm-opportunities", company?.id] });
-      window.location.assign(`/sales/quotes/${result.quoteId}`);
+      await navigate({ to: "/sales/quotes/$quoteId", params: { quoteId: result.quoteId } });
     },
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
@@ -92,6 +94,10 @@ export function CrmQuotesPage() {
     >
       <CrmSubnav current="quotes" />
 
+      {settings.isLoading ? <LoadingState /> : null}
+      {settings.isError ? (
+        <ErrorState title="Could not load CRM settings" description={friendlyAuthError(settings.error)} onRetry={() => settings.refetch()} />
+      ) : null}
       {settings.data && !settings.data.enabled ? (
         <EmptyState title="CRM is disabled" description="Enable CRM before bridging quotes." />
       ) : null}
@@ -139,7 +145,7 @@ export function CrmQuotesPage() {
                         <div className="font-medium">{opp.opportunityNumber}</div>
                         <div className="text-sm text-muted-foreground">{opp.name}</div>
                       </TableCell>
-                      <TableCell className="capitalize">{opp.status}</TableCell>
+                      <TableCell><CrmStatusBadge status={opp.status} /></TableCell>
                       <TableCell className="text-right tabular-nums">
                         {formatCrmMinor(opp.amountMinor, opp.currencyCode)}
                       </TableCell>

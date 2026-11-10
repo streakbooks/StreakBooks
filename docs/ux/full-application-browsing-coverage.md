@@ -60,6 +60,12 @@ The register below was derived from actual repository navigation and routes. The
 - `src/screens/advisors/admin-onboarding.tsx`: persistent Advisors subnavigation on loading/error, accessible loading/error and engagement-count announcements, selected engagement `aria-pressed`, 5,000-character reason limit, disabled conflicting selection/input and redundant task status mutations. Source commit `2098634b9d3b7eccc1dbb6cbc0400e746d1846db`.
 - **Partial source evidence only.** Task lifecycle, permissions/RLS, native history and refresh, responsive/accessibility and accounting integrity remain unverified. `check:browsing-coverage`, typecheck, lint, unit, build, authenticated browser, security and accounting regressions **NOT RUN**. **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No main merge, manual CI trigger, production database changes or deployment.
 
+
+### Advisors Administration Services & Pricing browsing increment (2026-11-10)
+
+- `src/screens/advisors/settings-services-pricing.tsx`: retains Advisors subnavigation in loading/error states, adds accessible status/error feedback and selected-service state, bounds change reason (5,000) and draft label (200), and blocks conflicting save/publish/restore operations; publish also respects draft validation. Source commit `381effd6b5b12bc8587ba6ed7ea40bc34c485816`.
+- **Partial source evidence only.** Local `check:browsing-coverage`, TypeScript, lint, unit, build, authenticated browser, accessibility, role/RLS and accounting regressions **NOT RUN**. **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No main merge, CI trigger, production database change or deployment.
+
 ## 1. Every top-level module — tracked without exception
 
 | # | Module | Main route | Route files | Premium browsing status |

@@ -324,7 +324,7 @@ export function AdvisorsServicesPricingPage() {
   });
 
   const mutationPending = saveM.isPending || publishM.isPending || restoreM.isPending;
-  const normalizedNewPlanCode = newPlanCode.trim().toLowerCase().replace(/\\s+/g, "_");
+  const normalizedNewPlanCode = newPlanCode.trim().toLowerCase().replace(/\s+/g, "_");
   const newPlanCodeValid = /^[a-z][a-z0-9_]{0,63}$/.test(normalizedNewPlanCode);
   const newPlanCodeExists = draft.services.some((service) =>
     service.plans.some((plan) => plan.code === normalizedNewPlanCode),

@@ -328,7 +328,7 @@ export function AdvisorsServicesPricingPage() {
   const normalizedNewPlanCode = normalizeAdvisorPlanCode(newPlanCode);
   const newPlanCodeValid = canAddAdvisorPlanCode(newPlanCode, []);
   const newPlanCodeExists = draft.services.some((service) =>
-    service.plans.some((plan) => plan.code.toLowerCase() === normalizedNewPlanCode),
+    service.plans.some((plan) => normalizeAdvisorPlanCode(plan.code) === normalizedNewPlanCode),
   );
 
   if (query.isPending) return <main className="mx-auto max-w-6xl space-y-6 p-6"><AdvisorsSubnav /><div role="status" aria-live="polite"><LoadingState /></div></main>;

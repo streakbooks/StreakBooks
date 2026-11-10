@@ -42,6 +42,12 @@ The register below was derived from actual repository navigation and routes. The
 - `src/screens/advisors/admin-documents.tsx`: preserves Advisors subnavigation during loading and errors, adds accessible loading/error/results announcements, and bounds change-reason input to 5,000 characters. Source commit `5c33632c523413913a54f9eeed61d9eed0237d48`.
 - **Partial source evidence only.** Document request lifecycle, native navigation, role/RLS, accessibility, and all 12 acceptance criteria remain pending. Local `check:browsing-coverage`, TypeScript, lint, unit, build, authenticated browser, security and accounting regression tests **NOT RUN**. **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified.** No main merge, CI trigger, database change or deployment.
 
+
+### Advisors Administration workspaces browsing increment (2026-11-10)
+
+- `src/screens/advisors/admin-workspaces.tsx`: keeps Advisors subnavigation during loading/error, retries both list and candidate queries, announces workspace count, bounds reason and note inputs to 5,000 characters, prevents conflicting button mutations and redundant task status actions, and exposes selected workspace/period state to assistive technology. Source commit `cd4d752dcf3c0b9e061c11a5fe3411a9a1dbcedd`.
+- **Partial source evidence only.** Workspaces lifecycle, selection refresh/back-forward, role/RLS, accessibility, accounting integrity and all 12 criteria remain unverified. Local `check:browsing-coverage`, typecheck, lint, build, unit, authenticated browser, security and accounting regression tests **NOT RUN**. **0/21 modules, 0/15 supporting routes, 0/12 batches verified.** No `main` changes, CI trigger, production database change or deployment.
+
 ## 1. Every top-level module — tracked without exception
 
 | # | Module | Main route | Route files | Premium browsing status |

@@ -66,6 +66,11 @@ The register below was derived from actual repository navigation and routes. The
 - `src/screens/advisors/settings-services-pricing.tsx`: retains Advisors subnavigation in loading/error states, adds accessible status/error feedback and selected-service state, bounds change reason (5,000) and draft label (200), and blocks conflicting save/publish/restore operations; publish also respects draft validation. Source commit `381effd6b5b12bc8587ba6ed7ea40bc34c485816`.
 - **Partial source evidence only.** Local `check:browsing-coverage`, TypeScript, lint, unit, build, authenticated browser, accessibility, role/RLS and accounting regressions **NOT RUN**. **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No main merge, CI trigger, production database change or deployment.
 
+### Advisors Services & Pricing plan-code safety increment (2026-11-10)
+
+- `src/screens/advisors/settings-services-pricing.tsx`: validates normalized new-plan codes (1–64 characters, initial letter, remaining letters/digits/underscore), blocks duplicate plan codes across the catalogue, prevents Add plan while catalogue mutations are pending, and supplies accessible validation hints. Source commit `8fb6d122651a070f323d4d4c77ebf19f480c1b20`.
+- **Partial source evidence only.** Verify duplicate prevention, valid/invalid code behavior, draft retention, accessible feedback, role/MFA controls and save/publish workflow with authenticated fixtures. Local `check:browsing-coverage`, TypeScript, lint, unit, build, browser, security/RLS and accounting regressions **NOT RUN**. **0/21 modules, 0/15 supporting routes and 0/12 batches fully verified.** No `main` change, manual CI trigger, production database change or deployment.
+
 ## 1. Every top-level module — tracked without exception
 
 | # | Module | Main route | Route files | Premium browsing status |

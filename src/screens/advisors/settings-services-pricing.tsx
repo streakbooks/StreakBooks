@@ -324,6 +324,11 @@ export function AdvisorsServicesPricingPage() {
   });
 
   const mutationPending = saveM.isPending || publishM.isPending || restoreM.isPending;
+  const normalizedNewPlanCode = newPlanCode.trim().toLowerCase().replace(/\\s+/g, "_");
+  const newPlanCodeValid = /^[a-z][a-z0-9_]{0,63}$/.test(normalizedNewPlanCode);
+  const newPlanCodeExists = draft.services.some((service) =>
+    service.plans.some((plan) => plan.code === normalizedNewPlanCode),
+  );
 
   if (query.isPending) return <main className="mx-auto max-w-6xl space-y-6 p-6"><AdvisorsSubnav /><div role="status" aria-live="polite"><LoadingState /></div></main>;
   if (query.isError) {
@@ -550,7 +555,10 @@ export function AdvisorsServicesPricingPage() {
                 <Input
                   id="new-plan-code"
                   value={newPlanCode}
-                  disabled={!canEdit}
+                  disabled={!canEdit || mutationPending}
+                  maxLength={64}
+                  aria-invalid={newPlanCode.length > 0 && (!newPlanCodeValid || newPlanCodeExists)}
+                  aria-describedby="new-plan-code-hint"
                   placeholder="e.g. premium_books"
                   onChange={(event) => setNewPlanCode(event.target.value)}
                 />
@@ -592,6 +600,11 @@ export function AdvisorsServicesPricingPage() {
               >
                 Add plan
               </Button>
+              <p id="new-plan-code-hint" className="w-full text-xs text-muted-foreground" role="status">
+                {newPlanCodeExists
+                  ? "This plan code already exists. Choose a unique code."
+                  : "Use up to 64 letters, numbers or underscores; start with a letter."}
+              </p>
             </div>
             {activeService.plans.map((plan) => (
               <PlanEditor

@@ -538,3 +538,8 @@ Every batch may require multiple small implementation increments; do not rush a 
 
 - `src/screens/advisors/settings-services-pricing.tsx`: corrected the whitespace replacement regex from a literal backslash-s matcher to the actual whitespace matcher, so spaces/tabs in a new plan code normalize to underscores before existing validation and duplicate checks. Source commit `d9b321a381c7afb7ada0c1a0b44b39ec53a923c0`.
 - **Source inspection only.** Local inventory guard, TypeScript, lint, unit, browser, accessibility, security and accounting regressions **NOT RUN**. Baseline remains 21 sidebar modules, 132 authenticated routes (15 supporting), 0 fully verified modules and 0/12 verified batches. No main merge, CI trigger, database change or deployment.
+
+### Advisors plan-code regression coverage increment (2026-11-10)
+
+- `src/lib/advisors/plan-code.ts` extracts normalization and uniqueness/format validation; `src/lib/advisors/plan-code.test.ts` adds four Vitest cases for whitespace, invalid codes, valid codes and case-insensitive duplicates. `src/screens/advisors/settings-services-pricing.tsx` uses the helper. Commits `14ac653105b1f46c67f85ffe5d24c503403149d1`, `0c0fb4247e167d4d131683ada27be4154e7c0449`, `c7ffd57f227290bc08b0d68dab877c3298f5c8cc`.
+- **Tests WRITTEN, NOT RUN.** Local coverage guard, typecheck, lint, build, Vitest, browser, role/RLS and accounting regression NOT RUN. **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No main merge, CI, database change or deployment.

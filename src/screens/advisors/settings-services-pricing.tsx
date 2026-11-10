@@ -566,9 +566,10 @@ export function AdvisorsServicesPricingPage() {
               <Button
                 type="button"
                 variant="outline"
-                disabled={!canEdit || !newPlanCode.trim()}
+                disabled={!canEdit || mutationPending || !newPlanCodeValid || newPlanCodeExists}
                 onClick={() => {
-                  const code = newPlanCode.trim().toLowerCase().replace(/\s+/g, "_");
+                  if (!canEdit || mutationPending || !newPlanCodeValid || newPlanCodeExists) return;
+                  const code = normalizedNewPlanCode;
                   setDraft((current) =>
                     upsertPlanInPayload(current, activeService.code, {
                       code: code as AdvisorAdminPlan["code"],

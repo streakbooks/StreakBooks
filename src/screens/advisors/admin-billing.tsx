@@ -60,12 +60,12 @@ export function AdvisorsAdminBillingPage() {
   };
 
   const linkM = useMutation({
-    mutationFn: () => {
+    mutationFn: (targetCompanyId: string) => {
       if (!selected) throw new Error("Select an engagement first");
       return linkCompany({
         data: {
           clientId: selected.clientId,
-          companyId,
+          companyId: targetCompanyId,
           reason: reason || "Linked Advisors client to billing company",
         },
       });
@@ -162,16 +162,19 @@ export function AdvisorsAdminBillingPage() {
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
 
-  if (query.isPending) return <LoadingState />;
+  const busy = linkM.isPending || prepareM.isPending || checkoutM.isPending || syncM.isPending || manualM.isPending;
+
+  if (query.isPending) return <main className="mx-auto max-w-6xl space-y-6 p-6"><PageHeader title="Billing" description="Advisors subscriptions via LinkBooks billing." /><AdvisorsSubnav /><div role="status" aria-live="polite"><LoadingState /></div></main>;
   if (query.isError) {
     return (
       <main className="mx-auto max-w-6xl space-y-6 p-6">
         <PageHeader title="Billing" description="Advisors subscriptions via LinkBooks billing." />
-        <ErrorState
+        <AdvisorsSubnav />
+        <div role="alert"><ErrorState
           title="Advisors billing unavailable"
           description={friendlyAuthError(query.error)}
           onRetry={() => void query.refetch()}
-        />
+        /></div>
       </main>
     );
   }
@@ -218,6 +221,7 @@ export function AdvisorsAdminBillingPage() {
         </div>
       </section>
 
+      <p role="status" aria-live="polite" className="sr-only">{board.eligibleEngagements.length} eligible engagements and {board.subscriptions.length} subscriptions</p>
       <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
         <section className="space-y-2">
           <h2 className="font-semibold">Eligible engagements</h2>
@@ -233,12 +237,15 @@ export function AdvisorsAdminBillingPage() {
                 type="button"
                 onClick={() => {
                   setSelectedEngagementId(engagement.id);
+                  setCompanyId(engagement.companyId || "");
                   setBilling((prev) => ({
                     ...prev,
                     email: engagement.clientEmail || prev.email,
                     company: engagement.clientName || prev.company,
                   }));
                 }}
+                aria-pressed={selectedEngagementId === engagement.id}
+                disabled={busy}
                 className={`w-full rounded-xl border p-4 text-left transition ${
                   selectedEngagementId === engagement.id
                     ? "border-primary bg-primary/5"
@@ -291,17 +298,14 @@ export function AdvisorsAdminBillingPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={linkM.isPending || !(companyId || selected.companyId)}
-                  onClick={() => {
-                    if (!companyId && selected.companyId) setCompanyId(selected.companyId);
-                    linkM.mutate();
-                  }}
+                  disabled={busy || !(companyId.trim() || selected.companyId)}
+                  onClick={() => linkM.mutate(companyId.trim() || selected.companyId || "")}
                 >
                   Link client to company
                 </Button>
               </div>
 
-              <Button type="button" disabled={prepareM.isPending} onClick={() => prepareM.mutate()}>
+              <Button type="button" disabled={busy} onClick={() => prepareM.mutate()}>
                 Prepare subscription (no charge)
               </Button>
 
@@ -375,7 +379,7 @@ export function AdvisorsAdminBillingPage() {
                   <div className="flex flex-wrap gap-2">
                     <Button
                       type="button"
-                      disabled={checkoutM.isPending}
+                      disabled={busy}
                       onClick={() => checkoutM.mutate()}
                     >
                       Open provider checkout
@@ -383,7 +387,7 @@ export function AdvisorsAdminBillingPage() {
                     <Button
                       type="button"
                       variant="outline"
-                      disabled={syncM.isPending}
+                      disabled={busy}
                       onClick={() => syncM.mutate(selectedSub.id)}
                     >
                       Sync status
@@ -391,7 +395,7 @@ export function AdvisorsAdminBillingPage() {
                     <Button
                       type="button"
                       variant="outline"
-                      disabled={manualM.isPending}
+                      disabled={busy}
                       onClick={() =>
                         manualM.mutate({ subscriptionId: selectedSub.id, active: true })
                       }

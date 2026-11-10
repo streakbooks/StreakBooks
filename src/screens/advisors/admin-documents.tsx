@@ -59,16 +59,23 @@ export function AdvisorsAdminDocumentsPage() {
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
 
-  if (query.isPending) return <LoadingState />;
+  if (query.isPending) return (
+    <main className="mx-auto max-w-6xl space-y-6 p-6">
+      <PageHeader title="Documents" description="Advisors delivery document requests." />
+      <AdvisorsSubnav />
+      <div role="status" aria-live="polite"><LoadingState /></div>
+    </main>
+  );
   if (query.isError) {
     return (
       <main className="mx-auto max-w-6xl space-y-6 p-6">
         <PageHeader title="Documents" description="Advisors delivery document requests." />
-        <ErrorState
+        <AdvisorsSubnav />
+        <div role="alert"><ErrorState
           title="Document requests unavailable"
           description={friendlyAuthError(query.error)}
           onRetry={() => void query.refetch()}
-        />
+        /></div>
       </main>
     );
   }
@@ -103,12 +110,14 @@ export function AdvisorsAdminDocumentsPage() {
             id="doc-reason"
             value={reason}
             onChange={(event) => setReason(event.target.value)}
+            maxLength={5000}
             placeholder="Why are you updating this request?"
           />
         </div>
       </div>
 
-      <section className="space-y-2">
+      <section className="space-y-2" aria-label="Document requests">
+        <p className="sr-only" role="status" aria-live="polite">{query.data.length} document requests found</p>
         {query.data.length === 0 ? (
           <EmptyState
             title="No document requests"

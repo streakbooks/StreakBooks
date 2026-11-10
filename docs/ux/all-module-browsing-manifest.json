@@ -389,7 +389,8 @@
         "2026-11-10 Advisors Services & Pricing: loading/error states retain Advisors subnavigation and announce status; bounded reason/label inputs, selected service aria-pressed, shared mutation guard for save/publish/restore and publish validation. Source commit 381effd6b5b12bc8587ba6ed7ea40bc34c485816. Tests NOT RUN; all 12 criteria NOT VERIFIED.",
         "2026-11-10 Services & Pricing add-plan input: normalize and validate new plan codes, prevent duplicate codes across catalogue, block add during mutations and provide accessible validation hint. Source commit 8fb6d122651a070f323d4d4c77ebf19f480c1b20. Typecheck, lint, unit, build, coverage guard, authenticated browser, role/RLS and accounting tests NOT RUN; 12 criteria NOT VERIFIED.",
         "2026-11-10 Add plan action now disables on invalid/duplicate normalized codes and pending mutation, and rechecks guards inside handler. Source commit 0134f29b3b54c178e766115a8b814c7ba5cd7cea. Source-only review; all tests NOT RUN; full acceptance pending.",
-        "src/screens/advisors/settings-services-pricing.tsx — corrected new-plan-code whitespace normalization before validation and duplicate detection; source commit d9b321a381c7afb7ada0c1a0b44b39ec53a923c0; runtime tests NOT RUN"
+        "src/screens/advisors/settings-services-pricing.tsx — corrected new-plan-code whitespace normalization before validation and duplicate detection; source commit d9b321a381c7afb7ada0c1a0b44b39ec53a923c0; runtime tests NOT RUN",
+        "src/lib/advisors/plan-code.ts and plan-code.test.ts — normalized validation and 4 Vitest cases WRITTEN, NOT RUN; integrated in settings-services-pricing.tsx; commits 14ac653, 0c0fb424, c7ffd57"
       ],
       "remaining": [
         "Run local check:browsing-coverage, typecheck, lint, build, unit and authenticated browser tests (NOT RUN)",

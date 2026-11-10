@@ -9,7 +9,13 @@ export const Route = createFileRoute("/_authenticated/settings")({
     search: Record<string, unknown>,
   ): { section: string; plan?: string; interval?: "month" | "year" } => {
     const raw = search["section"];
-    // Bound URL-controlled plan identifiers before passing them to billing UI.\n    // Keep valid plan slugs intact so existing deep links continue to work.\n    const plan =\n      typeof search["plan"] === "string" &&\n      /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/.test(search["plan"])\n        ? search["plan"]\n        : undefined;
+    // Bound URL-controlled plan identifiers before passing them to billing UI.
+    // Keep valid plan slugs intact so existing deep links continue to work.
+    const plan =
+      typeof search["plan"] === "string" &&
+      /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/.test(search["plan"])
+        ? search["plan"]
+        : undefined;
     const interval =
       search["interval"] === "month" || search["interval"] === "year"
         ? search["interval"]

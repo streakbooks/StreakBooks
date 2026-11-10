@@ -172,16 +172,17 @@ export function AdvisorsAdminWorkspacesPage() {
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
 
-  if (listQ.isPending || candidatesQ.isPending) return <LoadingState />;
-  if (listQ.isError) {
+  if (listQ.isPending || candidatesQ.isPending) return <main className="mx-auto max-w-6xl space-y-6 p-6"><PageHeader title="Workspaces" description="Advisors delivery workspaces." /><AdvisorsSubnav /><div role="status" aria-live="polite"><LoadingState /></div></main>;
+  if (listQ.isError || candidatesQ.isError) {
     return (
       <main className="mx-auto max-w-6xl space-y-6 p-6">
         <PageHeader title="Workspaces" description="Advisors delivery workspaces." />
-        <ErrorState
+        <AdvisorsSubnav />
+        <div role="alert"><ErrorState
           title="Workspaces unavailable"
-          description={friendlyAuthError(listQ.error)}
-          onRetry={() => void listQ.refetch()}
-        />
+          description={friendlyAuthError(listQ.error ?? candidatesQ.error)}
+          onRetry={() => { void listQ.refetch(); void candidatesQ.refetch(); }}
+        /></div>
       </main>
     );
   }
@@ -193,6 +194,7 @@ export function AdvisorsAdminWorkspacesPage() {
         description="Bookkeeping months and coaching sessions with delivery tasks, document requests and advisor notes. No ledger posting."
       />
       <AdvisorsSubnav />
+      <p role="status" aria-live="polite" className="sr-only">{listQ.data.length} delivery workspaces found</p>
 
       <div className="space-y-1">
         <Label htmlFor="workspace-reason">Change reason</Label>
@@ -201,6 +203,7 @@ export function AdvisorsAdminWorkspacesPage() {
           value={reason}
           onChange={(event) => setReason(event.target.value)}
           placeholder="Why are you changing delivery work?"
+          maxLength={5000}
           className="max-w-xl"
         />
       </div>
@@ -215,7 +218,7 @@ export function AdvisorsAdminWorkspacesPage() {
                 type="button"
                 variant="outline"
                 size="sm"
-                disabled={createM.isPending}
+                disabled={createM.isPending || periodM.isPending || taskM.isPending || docM.isPending || noteM.isPending}
                 onClick={() => createM.mutate(candidate.id)}
               >
                 {candidate.title} ({candidate.serviceCode})
@@ -237,6 +240,7 @@ export function AdvisorsAdminWorkspacesPage() {
               <button
                 key={workspace.id}
                 type="button"
+                aria-pressed={selectedId === workspace.id}
                 onClick={() => {
                   setSelectedId(workspace.id);
                   setSelectedPeriodId(null);
@@ -298,7 +302,7 @@ export function AdvisorsAdminWorkspacesPage() {
                     placeholder={detail.kind === "coaching" ? "Session title" : "Nov 2026"}
                   />
                 </div>
-                <Button type="button" disabled={periodM.isPending} onClick={() => periodM.mutate()}>
+                <Button type="button" disabled={createM.isPending || periodM.isPending || taskM.isPending || docM.isPending || noteM.isPending} onClick={() => periodM.mutate()}>
                   Open period
                 </Button>
               </div>
@@ -315,6 +319,7 @@ export function AdvisorsAdminWorkspacesPage() {
                           ? "default"
                           : "outline"
                       }
+                      aria-pressed={(selectedPeriodId || detail.periods[0]?.id) === period.id}
                       onClick={() => setSelectedPeriodId(period.id)}
                     >
                       {period.label} ({period.status})
@@ -346,7 +351,7 @@ export function AdvisorsAdminWorkspacesPage() {
                             type="button"
                             size="sm"
                             variant={task.status === next ? "default" : "outline"}
-                            disabled={taskM.isPending}
+                            disabled={task.status === next || createM.isPending || periodM.isPending || taskM.isPending || docM.isPending || noteM.isPending}
                             onClick={() => taskM.mutate({ taskId: task.id, status: next })}
                           >
                             {next}
@@ -379,7 +384,7 @@ export function AdvisorsAdminWorkspacesPage() {
                             type="button"
                             size="sm"
                             variant="outline"
-                            disabled={docM.isPending}
+                            disabled={createM.isPending || periodM.isPending || taskM.isPending || docM.isPending || noteM.isPending}
                             onClick={() => docM.mutate({ id: request.id, status: "received" })}
                           >
                             Mark received
@@ -405,6 +410,8 @@ export function AdvisorsAdminWorkspacesPage() {
               <div className="space-y-2">
                 <h3 className="text-sm font-medium">Advisor notes</h3>
                 <Textarea
+                  aria-label="Internal delivery note"
+                  maxLength={5000}
                   value={noteBody}
                   onChange={(event) => setNoteBody(event.target.value)}
                   placeholder="Internal delivery note"
@@ -413,7 +420,7 @@ export function AdvisorsAdminWorkspacesPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={noteM.isPending || !noteBody.trim()}
+                  disabled={createM.isPending || periodM.isPending || taskM.isPending || docM.isPending || noteM.isPending || !noteBody.trim()}
                   onClick={() => noteM.mutate()}
                 >
                   Add note

@@ -77,6 +77,14 @@ The register below was derived from actual repository navigation and routes. The
 - `src/screens/advisors/settings-services-pricing.tsx`: corrected Add plan button disabled state to enforce the existing normalized format and global duplicate checks, and added the same checks inside the click handler to prevent invalid or duplicate upserts. Source commit `0134f29b3b54c178e766115a8b814c7ba5cd7cea`.
 - **Source inspection only; tests NOT RUN.** This closes a mismatch between displayed validation and the actionable button, not the full Services & Pricing workflow. All 21 modules, 15 supporting routes, and 12 batches remain unverified. No CI, main merge, database change or deployment.
 
+
+### Advisors canonical plan-code duplicate handling (2026-11-11)
+
+- `src/lib/advisors/plan-code.ts`: duplicate detection now compares normalized legacy catalogue identifiers, including case and whitespace; commit `6435066e72839d35c018970f454a1a9fd71185a9`.
+- `src/lib/advisors/plan-code.test.ts`: added canonical duplicate and 64-character boundary test cases; commit `f7f3e32d676649630815f27e9641b01d95dbd7e7`.
+- `src/screens/advisors/settings-services-pricing.tsx`: duplicate feedback now uses the same normalization; commit `6fb5c743d65ae6653c6e948599714bd77bdf793a`.
+- **Partial source evidence only.** Vitest, TypeScript, lint, build, authenticated browser, accessibility, security/RLS, accounting regression and `check:browsing-coverage` **NOT RUN**. **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified.** No main merge, CI trigger, production database change or deployment.
+
 ## 1. Every top-level module — tracked without exception
 
 | # | Module | Main route | Route files | Premium browsing status |

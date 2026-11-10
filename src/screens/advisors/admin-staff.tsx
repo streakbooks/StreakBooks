@@ -56,16 +56,17 @@ export function AdvisorsAdminStaffPage() {
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
 
-  if (query.isPending) return <LoadingState />;
+  if (query.isPending) return <main className="mx-auto max-w-6xl space-y-6 p-6"><PageHeader title="Advisors" description="Staff who deliver Advisors services." /><AdvisorsSubnav /><div role="status" aria-live="polite"><LoadingState /></div></main>;
   if (query.isError) {
     return (
       <main className="mx-auto max-w-6xl space-y-6 p-6">
         <PageHeader title="Advisors" description="Staff who deliver Advisors services." />
-        <ErrorState
+        <AdvisorsSubnav />
+        <div role="alert"><ErrorState
           title="Advisor directory unavailable"
           description={friendlyAuthError(query.error)}
           onRetry={() => void query.refetch()}
-        />
+        /></div>
       </main>
     );
   }
@@ -78,6 +79,7 @@ export function AdvisorsAdminStaffPage() {
       />
       <AdvisorsSubnav />
 
+      <p role="status" aria-live="polite" className="sr-only">{query.data.length} advisors found</p>
       <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <section className="space-y-2">
           {query.data.length === 0 ? (
@@ -90,6 +92,8 @@ export function AdvisorsAdminStaffPage() {
               <button
                 key={member.id}
                 type="button"
+                aria-pressed={form.id === member.id}
+                disabled={saveM.isPending}
                 onClick={() =>
                   setForm({
                     id: member.id,
@@ -124,14 +128,16 @@ export function AdvisorsAdminStaffPage() {
         <section className="space-y-3 rounded-xl border border-border/70 p-4">
           <div className="flex items-center justify-between gap-3">
             <h2 className="font-semibold">{form.id ? "Edit advisor" : "New advisor"}</h2>
-            <Button type="button" variant="outline" size="sm" onClick={() => setForm(emptyForm)}>
+            <Button type="button" variant="outline" size="sm" onClick={() => { setForm(emptyForm); setReason(""); }} disabled={saveM.isPending}>
               Clear
             </Button>
           </div>
+          <form className="space-y-3" onSubmit={(event) => { event.preventDefault(); if (!saveM.isPending && form.displayName.trim() && form.timezone.trim()) saveM.mutate(); }}>
           <div className="space-y-1">
             <Label htmlFor="staff-reason">Change reason</Label>
             <Input
               id="staff-reason"
+              maxLength={5000}
               value={reason}
               onChange={(event) => setReason(event.target.value)}
               placeholder="Why are you saving this advisor?"
@@ -141,6 +147,8 @@ export function AdvisorsAdminStaffPage() {
             <Label htmlFor="staff-name">Display name</Label>
             <Input
               id="staff-name"
+              required
+              maxLength={200}
               value={form.displayName}
               onChange={(event) =>
                 setForm((prev) => ({ ...prev, displayName: event.target.value }))
@@ -160,6 +168,8 @@ export function AdvisorsAdminStaffPage() {
             <Label htmlFor="staff-timezone">Timezone</Label>
             <Input
               id="staff-timezone"
+              required
+              maxLength={100}
               value={form.timezone}
               onChange={(event) => setForm((prev) => ({ ...prev, timezone: event.target.value }))}
               placeholder="Europe/London"
@@ -173,9 +183,10 @@ export function AdvisorsAdminStaffPage() {
               onCheckedChange={(checked) => setForm((prev) => ({ ...prev, isActive: checked }))}
             />
           </div>
-          <Button type="button" disabled={saveM.isPending} onClick={() => saveM.mutate()}>
+          <Button type="submit" disabled={saveM.isPending || !form.displayName.trim() || !form.timezone.trim()}>
             {form.id ? "Save advisor" : "Create advisor"}
           </Button>
+          </form>
         </section>
       </div>
     </main>

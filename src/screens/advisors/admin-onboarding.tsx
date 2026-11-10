@@ -49,16 +49,19 @@ export function AdvisorsAdminOnboardingPage() {
     onError: (error) => toast.error(friendlyAuthError(error)),
   });
 
-  if (query.isPending) return <LoadingState />;
+  if (query.isPending) return <main className="mx-auto max-w-6xl space-y-6 p-6"><AdvisorsSubnav /><div role="status" aria-live="polite"><LoadingState /></div></main>;
   if (query.isError) {
     return (
       <main className="mx-auto max-w-6xl space-y-6 p-6">
         <PageHeader title="Onboarding" description="Track Advisors customer onboarding tasks." />
+        <AdvisorsSubnav />
+        <div role="alert">
         <ErrorState
           title="Onboarding unavailable"
           description={friendlyAuthError(query.error)}
           onRetry={() => void query.refetch()}
         />
+        </div>
       </main>
     );
   }
@@ -78,10 +81,13 @@ export function AdvisorsAdminOnboardingPage() {
           value={reason}
           onChange={(event) => setReason(event.target.value)}
           placeholder="Why are you updating this task?"
+          maxLength={5000}
+          disabled={updateM.isPending}
           className="max-w-xl"
         />
       </div>
 
+      <p role="status" aria-live="polite" className="sr-only">{query.data.length} onboarding engagements found</p>
       <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
         <section className="space-y-2">
           {query.data.length === 0 ? (
@@ -95,6 +101,8 @@ export function AdvisorsAdminOnboardingPage() {
                 key={item.id}
                 type="button"
                 onClick={() => setSelectedId(item.id)}
+                aria-pressed={selected?.id === item.id}
+                disabled={updateM.isPending}
                 className={`w-full rounded-xl border p-4 text-left transition ${
                   selected?.id === item.id
                     ? "border-primary bg-primary/5"
@@ -155,7 +163,7 @@ export function AdvisorsAdminOnboardingPage() {
                           type="button"
                           size="sm"
                           variant={task.status === next ? "default" : "outline"}
-                          disabled={updateM.isPending}
+                          disabled={updateM.isPending || task.status === next}
                           onClick={() => updateM.mutate({ taskId: task.id, status: next })}
                         >
                           {next}

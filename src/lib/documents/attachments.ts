@@ -34,6 +34,7 @@ export const ATTACHMENT_ENTITY_TYPES = [
   "money_deposit",
   "money_card_payment",
   "money_adjustment",
+  "payroll_employee",
 ] as const;
 export type AttachmentEntityType = (typeof ATTACHMENT_ENTITY_TYPES)[number];
 
@@ -248,6 +249,14 @@ export const ATTACHMENT_ENTITIES: Record<AttachmentEntityType, EntityInfo> = {
     view: "banking.view",
     manage: ["banking.categorise"],
     path: () => `/banking/money-documents`,
+  },
+  payroll_employee: {
+    label: "Employee (HR)",
+    table: "payroll_employees",
+    viewAny: ["hr.view", "hr.employees.manage", "payroll.employees.manage", "payroll.view"],
+    view: null,
+    manage: ["hr.employees.manage", "payroll.employees.manage"],
+    path: (id) => `/hr/employees/${id}`,
   },
 };
 

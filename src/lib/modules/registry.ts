@@ -3,6 +3,7 @@ import { SALES_SECTIONS, PURCHASES_SECTIONS } from "@/lib/document-sections";
 import { EXPENSE_MANAGEMENT_SECTIONS } from "@/lib/expenses/sections";
 import { APP_STORE_SECTIONS, DEVELOPER_PORTAL_SECTIONS } from "@/lib/app-store/sections";
 import { CRM_SUBNAV } from "@/lib/crm/sections";
+import { HR_SUBNAV } from "@/lib/hr/sections";
 import {
   DEFAULT_AUTHENTICATED_EXPERIENCE,
   DEFAULT_PUBLIC_EXPERIENCE,
@@ -168,6 +169,22 @@ export const MODULE_REGISTRY: readonly ModuleDefinition[] = [
     experience: DEFAULT_AUTHENTICATED_EXPERIENCE,
     premiumStatus: "in-progress",
     notes: "CRM-02 foundation: navigation, settings, leads, opportunities, dashboard KPIs.",
+  },
+  {
+    id: "hr",
+    label: "HR",
+    description: "Workforce, leave, attendance and employee lifecycle",
+    path: "/hr",
+    group: "records",
+    inSidebar: true,
+    pageKind: "dashboard",
+    subnav: HR_SUBNAV,
+    viewModes: ["list", "calendar", "mobile-card"],
+    screenRoot: "src/screens/hr",
+    experience: DEFAULT_AUTHENTICATED_EXPERIENCE,
+    premiumStatus: "in-progress",
+    notes:
+      "HR-01/02 foundation: shared payroll_employees identity, org units, directory, settings. Not production-ready.",
   },
   {
     id: "contacts",

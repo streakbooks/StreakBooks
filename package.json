@@ -35,7 +35,7 @@
     "test:billing:postgres": "node scripts/test-billing-postgres.mjs",
     "check:ui": "node scripts/check-ui-contracts.mjs",
     "audit:ui": "node scripts/check-ui-contracts.mjs --write-audit",
-    "check:modules": "node scripts/check-module-contracts.mjs && node scripts/check-workspace-adoption.mjs && node scripts/check-empty-state-honesty.mjs && node scripts/check-error-state-retry.mjs",
+    "check:modules": "node scripts/check-module-permissions.mjs && node scripts/check-module-contracts.mjs && node scripts/check-workspace-adoption.mjs && node scripts/check-empty-state-honesty.mjs && node scripts/check-error-state-retry.mjs",
     "scaffold:module": "node scripts/scaffold-module.mjs",
     "check:workspace": "node scripts/check-workspace-adoption.mjs",
     "check:empty": "node scripts/check-empty-state-honesty.mjs",

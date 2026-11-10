@@ -29,7 +29,7 @@ export async function uploadCompanyDocument(input: {
   entityId: string;
   register: RegisterFn;
   folderId?: string | null;
-}): Promise<{ id: string }> {
+}): Promise<{ id: string; storagePath: string }> {
   const { file } = input;
   const check = validateUpload({
     fileName: file.name,
@@ -63,7 +63,7 @@ export async function uploadCompanyDocument(input: {
     throw new Error(error.message);
   }
   try {
-    return await input.register({
+    const registered = await input.register({
       data: {
         companyId: input.companyId,
         entityType: input.entityType,
@@ -74,6 +74,7 @@ export async function uploadCompanyDocument(input: {
         folderId: input.folderId ?? null,
       },
     });
+    return { id: registered.id, storagePath };
   } catch (e) {
     // The server removes the object on most failures; try again in case it could not.
     await supabase.storage.from(COMPANY_DOCUMENTS_BUCKET).remove([storagePath]);

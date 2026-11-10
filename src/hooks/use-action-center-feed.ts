@@ -73,6 +73,11 @@ export function useActionCenterFeed(
           { _company_id: companyId } as never,
         );
         if (followupError) throw followupError;
+        const { error: hrError } = await supabase.rpc(
+          "refresh_my_hr_notifications" as never,
+          { _company_id: companyId } as never,
+        );
+        if (hrError) throw hrError;
       }
 
       let query = supabase

@@ -322,6 +322,165 @@ export const ACCESS_AREAS: readonly AccessArea[] = [
     ],
   },
   {
+    id: "crm",
+    label: "CRM",
+    description: "Leads, opportunities, campaigns and sales pipeline workflows.",
+    items: [
+      {
+        permission: "crm.view",
+        label: "View CRM",
+        detail: "Open CRM dashboards, leads and opportunities.",
+      },
+      {
+        permission: "crm.leads.manage",
+        label: "Manage leads",
+        detail: "Create and update leads.",
+      },
+      {
+        permission: "crm.opportunities.manage",
+        label: "Manage opportunities",
+        detail: "Create and update opportunities and stages.",
+      },
+      {
+        permission: "crm.activities.manage",
+        label: "Manage CRM activities",
+        detail: "Log calls, meetings and tasks.",
+      },
+      {
+        permission: "crm.campaigns.manage",
+        label: "Manage campaigns",
+        detail: "Create and track marketing campaigns.",
+      },
+      {
+        permission: "crm.automation.manage",
+        label: "Manage CRM automation",
+        detail: "Configure CRM workflow automations.",
+      },
+      {
+        permission: "crm.reports.view",
+        label: "View CRM reports",
+        detail: "Pipeline and conversion analytics.",
+      },
+      {
+        permission: "crm.export",
+        label: "Export CRM data",
+        detail: "Export leads and opportunities.",
+      },
+      {
+        permission: "crm.import",
+        label: "Import CRM data",
+        detail: "Bulk import CRM records.",
+      },
+      {
+        permission: "crm.admin",
+        label: "CRM administration",
+        detail: "Configure CRM settings and pipelines.",
+      },
+    ],
+  },
+  {
+    id: "hr",
+    label: "HR Management",
+    description: "Workforce directory, organisation, leave, attendance and lifecycle workflows.",
+    items: [
+      {
+        permission: "hr.view",
+        label: "View HR",
+        detail: "Open HR overview, directory and organisation structure.",
+      },
+      {
+        permission: "hr.employees.manage",
+        label: "Manage employees",
+        detail: "Maintain HR profiles linked to the shared workforce identity.",
+      },
+      {
+        permission: "hr.employees.sensitive",
+        label: "Sensitive employee fields",
+        detail: "View compensation references and other restricted HR fields.",
+      },
+      {
+        permission: "hr.organization.manage",
+        label: "Manage organisation",
+        detail: "Locations, branches, departments and designations.",
+      },
+      {
+        permission: "hr.recruitment.manage",
+        label: "Manage recruitment",
+        detail: "Requisitions, applications, interviews and offers.",
+      },
+      {
+        permission: "hr.onboarding.manage",
+        label: "Manage onboarding",
+        detail: "Onboarding templates, cases and task checklists.",
+      },
+      {
+        permission: "hr.attendance.manage",
+        label: "Manage attendance",
+        detail: "Attendance logs, corrections and shift templates.",
+      },
+      {
+        permission: "hr.leave.manage",
+        label: "Manage leave",
+        detail: "Leave types, balances, holidays and admin requests.",
+      },
+      {
+        permission: "hr.leave.approve",
+        label: "Approve leave",
+        detail: "Approve or reject submitted leave requests.",
+      },
+      {
+        permission: "hr.performance.manage",
+        label: "Manage performance",
+        detail: "Goals, reviews and performance workflows.",
+      },
+      {
+        permission: "hr.cases.manage",
+        label: "Manage HR cases",
+        detail: "Employee relations and disciplinary cases.",
+      },
+      {
+        permission: "hr.approvals.manage",
+        label: "Manage HR approvals",
+        detail: "Configure and oversee multilevel HR approvals.",
+      },
+      {
+        permission: "hr.settings.edit",
+        label: "Edit HR settings",
+        detail: "Enable HR and configure organisation defaults.",
+      },
+      {
+        permission: "hr.audit.view",
+        label: "View HR audit trail",
+        detail: "Inspect sensitive HR change history.",
+      },
+      {
+        permission: "hr.self_service",
+        label: "Employee self-service",
+        detail: "Access personal HR requests when linked to an employee profile.",
+      },
+      {
+        permission: "hr.manager",
+        label: "Manager workspace",
+        detail: "Approve team requests and view team exceptions.",
+      },
+      {
+        permission: "hr.reports.view",
+        label: "View HR reports",
+        detail: "Workforce analytics and operational HR reports.",
+      },
+      {
+        permission: "hr.export",
+        label: "Export HR data",
+        detail: "Export workforce and leave reports.",
+      },
+      {
+        permission: "hr.import",
+        label: "Import HR data",
+        detail: "Bulk import workforce structures and balances.",
+      },
+    ],
+  },
+  {
     id: "payroll",
     label: "Payroll",
     description: "Employees, pay runs, settlements and payroll reports.",

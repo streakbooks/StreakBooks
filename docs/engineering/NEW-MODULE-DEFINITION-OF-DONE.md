@@ -9,6 +9,10 @@ All newly added routes/modules are subject to the LinkBooks premium design and f
 | c | State variants: loading, empty, error, forbidden, offline/partial as applicable | |
 | d | Real action/back-end contract: no dummy posting/pay/approve controls | |
 | e | RBAC/RLS and cross-company isolation verified (deny paths included) | |
+| e1 | Permission namespace registered in `src/lib/permissions.ts` + owner/admin matrix | |
+| e2 | `role_permissions` seeded in a versioned Supabase migration (`ON CONFLICT DO NOTHING`) | |
+| e3 | Access catalogue entries for every new permission key | |
+| e4 | `npm run check:modules` passes (`check-module-permissions` + contracts) | |
 | f | Migration/rollback documented when schema changes | |
 | g | Loading/errors/empty copy is honest | |
 | h | Responsive + accessibility (keyboard, focus, labels, contrast, targets) | |

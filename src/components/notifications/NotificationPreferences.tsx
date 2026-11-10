@@ -36,6 +36,12 @@ const OPTIONS = [
     detail:
       "Approvals waiting for you, and decisions or reimbursements on your own claims. In-app only.",
   },
+  {
+    id: "hr_alert",
+    title: "HR alerts",
+    detail:
+      "Leave/attendance approvals, expiring documents, and Payroll handoffs from HR. In-app only.",
+  },
 ] as const;
 
 type Category = (typeof OPTIONS)[number]["id"];

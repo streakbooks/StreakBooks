@@ -386,7 +386,8 @@
         "2026-11-10 Advisors Admin Workspaces: persistent subnav on loading/error, retry list and candidate failures, accessible count, bounded notes/reason, disabled conflicting and no-op mutations, selection aria-pressed. Source commit cd4d752dcf3c0b9e061c11a5fe3411a9a1dbcedd. Tests NOT RUN; all 12 criteria NOT VERIFIED.",
         "2026-11-10 Advisors Admin Staff: persistent subnav during loading/error; accessible loading/error/results and selection; native Enter-key form submit; required name/timezone, bounded reason/name/timezone; save and selection mutation guards. Source commit 4300c0a5c93223a5a785ae80221bdef0033770d9. Tests NOT RUN; all 12 criteria NOT VERIFIED.",
         "2026-11-10 Advisors Admin Onboarding: persistent subnav on loading/error, accessible loading/error/result counts and selection, bounded change reason, disabled conflicting/no-op task actions. Source commit 2098634b9d3b7eccc1dbb6cbc0400e746d1846db. All local tests NOT RUN; full acceptance pending.",
-        "2026-11-10 Advisors Services & Pricing: loading/error states retain Advisors subnavigation and announce status; bounded reason/label inputs, selected service aria-pressed, shared mutation guard for save/publish/restore and publish validation. Source commit 381effd6b5b12bc8587ba6ed7ea40bc34c485816. Tests NOT RUN; all 12 criteria NOT VERIFIED."
+        "2026-11-10 Advisors Services & Pricing: loading/error states retain Advisors subnavigation and announce status; bounded reason/label inputs, selected service aria-pressed, shared mutation guard for save/publish/restore and publish validation. Source commit 381effd6b5b12bc8587ba6ed7ea40bc34c485816. Tests NOT RUN; all 12 criteria NOT VERIFIED.",
+        "2026-11-10 Services & Pricing add-plan input: normalize and validate new plan codes, prevent duplicate codes across catalogue, block add during mutations and provide accessible validation hint. Source commit 8fb6d122651a070f323d4d4c77ebf19f480c1b20. Typecheck, lint, unit, build, coverage guard, authenticated browser, role/RLS and accounting tests NOT RUN; 12 criteria NOT VERIFIED."
       ],
       "remaining": [
         "Run local check:browsing-coverage, typecheck, lint, build, unit and authenticated browser tests (NOT RUN)",
@@ -399,7 +400,8 @@
         "Verify Billing company-link selection, checkout, subscription sync, manual marking, authorization, error states and concurrent actions with authenticated fixtures; all tests NOT RUN.",
         "Verify Workspaces list/candidate/detail failures, period creation, task and document transitions, note submission, tenant/RLS, accessibility and browser history with authenticated tests; NOT RUN.",
         "Verify Staff form validation, native keyboard submission, list selection, change reasons, permissions, refresh, accessibility and concurrent mutations; tests NOT RUN.",
-        "Verify Services & Pricing save/publish/restore, draft retention, validation, tenant/role/MFA authorization, keyboard and screen-reader behavior; local tests NOT RUN."
+        "Verify Services & Pricing save/publish/restore, draft retention, validation, tenant/role/MFA authorization, keyboard and screen-reader behavior; local tests NOT RUN.",
+        "Verify add-plan code normalization, duplicate prevention across services, validation and accessible feedback in authenticated browser; NOT RUN."
       ]
     },
     {

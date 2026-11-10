@@ -85,6 +85,11 @@ The register below was derived from actual repository navigation and routes. The
 - `src/screens/advisors/settings-services-pricing.tsx`: duplicate feedback now uses the same normalization; commit `6fb5c743d65ae6653c6e948599714bd77bdf793a`.
 - **Partial source evidence only.** Vitest, TypeScript, lint, build, authenticated browser, accessibility, security/RLS, accounting regression and `check:browsing-coverage` **NOT RUN**. **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified.** No main merge, CI trigger, production database change or deployment.
 
+### Settings plan query parsing correction (2026-11-11)
+
+- `src/routes/_authenticated/settings.tsx`: replaced literal escaped newline characters embedded in a comment with actual line breaks, restoring the `plan` query declaration and its bounded slug validation; code commit `811d02c244afc5652d955ddbe857c7d57355201c`.
+- **Source-level fix only.** TypeScript, lint, unit, build, authenticated browser, accessibility, RLS/accounting regressions and `check:browsing-coverage` **NOT RUN**. Settings is not fully verified; **0/21 modules, 0/15 supporting routes, 0/12 batches** verified. No `main` changes, CI, production database changes or deployment.
+
 ## 1. Every top-level module — tracked without exception
 
 | # | Module | Main route | Route files | Premium browsing status |

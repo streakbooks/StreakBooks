@@ -48,6 +48,12 @@ The register below was derived from actual repository navigation and routes. The
 - `src/screens/advisors/admin-workspaces.tsx`: keeps Advisors subnavigation during loading/error, retries both list and candidate queries, announces workspace count, bounds reason and note inputs to 5,000 characters, prevents conflicting button mutations and redundant task status actions, and exposes selected workspace/period state to assistive technology. Source commit `cd4d752dcf3c0b9e061c11a5fe3411a9a1dbcedd`.
 - **Partial source evidence only.** Workspaces lifecycle, selection refresh/back-forward, role/RLS, accessibility, accounting integrity and all 12 criteria remain unverified. Local `check:browsing-coverage`, typecheck, lint, build, unit, authenticated browser, security and accounting regression tests **NOT RUN**. **0/21 modules, 0/15 supporting routes, 0/12 batches verified.** No `main` changes, CI trigger, production database change or deployment.
 
+
+### Advisors Administration staff browsing increment (2026-11-10)
+
+- `src/screens/advisors/admin-staff.tsx`: persistent Advisors subnavigation on loading and error, accessible loading/error/count and selected member state, native form submission via Enter, required name/timezone, bounded reason/name/timezone inputs, and disabled conflicting selection/save actions. Source commit `4300c0a5c93223a5a785ae80221bdef0033770d9`.
+- **Partial source evidence only.** `check:browsing-coverage`, TypeScript, lint, build, unit, authenticated browser, accessibility, role/RLS and accounting regressions **NOT RUN**. **0/21 modules, 0/15 supporting routes, 0/12 batches verified**. No main changes, CI trigger, production database changes or deployment.
+
 ## 1. Every top-level module — tracked without exception
 
 | # | Module | Main route | Route files | Premium browsing status |

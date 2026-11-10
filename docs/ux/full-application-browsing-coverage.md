@@ -54,6 +54,12 @@ The register below was derived from actual repository navigation and routes. The
 - `src/screens/advisors/admin-staff.tsx`: persistent Advisors subnavigation on loading and error, accessible loading/error/count and selected member state, native form submission via Enter, required name/timezone, bounded reason/name/timezone inputs, and disabled conflicting selection/save actions. Source commit `4300c0a5c93223a5a785ae80221bdef0033770d9`.
 - **Partial source evidence only.** `check:browsing-coverage`, TypeScript, lint, build, unit, authenticated browser, accessibility, role/RLS and accounting regressions **NOT RUN**. **0/21 modules, 0/15 supporting routes, 0/12 batches verified**. No main changes, CI trigger, production database changes or deployment.
 
+
+### Advisors Administration onboarding browsing increment (2026-11-10)
+
+- `src/screens/advisors/admin-onboarding.tsx`: persistent Advisors subnavigation on loading/error, accessible loading/error and engagement-count announcements, selected engagement `aria-pressed`, 5,000-character reason limit, disabled conflicting selection/input and redundant task status mutations. Source commit `2098634b9d3b7eccc1dbb6cbc0400e746d1846db`.
+- **Partial source evidence only.** Task lifecycle, permissions/RLS, native history and refresh, responsive/accessibility and accounting integrity remain unverified. `check:browsing-coverage`, typecheck, lint, unit, build, authenticated browser, security and accounting regressions **NOT RUN**. **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No main merge, manual CI trigger, production database changes or deployment.
+
 ## 1. Every top-level module — tracked without exception
 
 | # | Module | Main route | Route files | Premium browsing status |

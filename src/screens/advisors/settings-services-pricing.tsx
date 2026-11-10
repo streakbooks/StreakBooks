@@ -27,6 +27,7 @@ import {
   saveAdvisorsCatalogueDraft,
 } from "@/lib/advisors/admin.functions";
 import { friendlyAuthError } from "@/lib/auth-helpers";
+import { canAddAdvisorPlanCode, normalizeAdvisorPlanCode } from "@/lib/advisors/plan-code";
 
 function clonePayload(payload: AdvisorCataloguePayload): AdvisorCataloguePayload {
   return structuredClone(payload);
@@ -324,10 +325,10 @@ export function AdvisorsServicesPricingPage() {
   });
 
   const mutationPending = saveM.isPending || publishM.isPending || restoreM.isPending;
-  const normalizedNewPlanCode = newPlanCode.trim().toLowerCase().replace(/\s+/g, "_");
-  const newPlanCodeValid = /^[a-z][a-z0-9_]{0,63}$/.test(normalizedNewPlanCode);
+  const normalizedNewPlanCode = normalizeAdvisorPlanCode(newPlanCode);
+  const newPlanCodeValid = canAddAdvisorPlanCode(newPlanCode, []);
   const newPlanCodeExists = draft.services.some((service) =>
-    service.plans.some((plan) => plan.code === normalizedNewPlanCode),
+    service.plans.some((plan) => plan.code.toLowerCase() === normalizedNewPlanCode),
   );
 
   if (query.isPending) return <main className="mx-auto max-w-6xl space-y-6 p-6"><AdvisorsSubnav /><div role="status" aria-live="polite"><LoadingState /></div></main>;

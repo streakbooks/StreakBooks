@@ -15,7 +15,15 @@ describe("Advisors plan-code validation", () => {
     expect(canAddAdvisorPlanCode(" Premium Plan ", [])).toBe(true);
     expect(canAddAdvisorPlanCode("a", [])).toBe(true);
   });
+  it("rejects non-ASCII punctuation and overlength normalized codes", () => {
+    expect(canAddAdvisorPlanCode("plan/plus", [])).toBe(false);
+    expect(canAddAdvisorPlanCode("équipe", [])).toBe(false);
+    expect(canAddAdvisorPlanCode("a".repeat(64), [])).toBe(true);
+    expect(canAddAdvisorPlanCode("a".repeat(65), [])).toBe(false);
+  });
   it("rejects duplicate codes regardless of case", () => {
     expect(canAddAdvisorPlanCode("Premium Plan", ["PREMIUM_PLAN"])).toBe(false);
+    expect(canAddAdvisorPlanCode("Premium Plan", ["  Premium   Plan  "])).toBe(false);
+    expect(canAddAdvisorPlanCode("Premium Plan", ["other", "premium\tplan"])).toBe(false);
   });
 });

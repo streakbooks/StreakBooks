@@ -533,3 +533,8 @@ Every batch may require multiple small implementation increments; do not rush a 
 
 - `src/screens/advisors/admin-conversations.tsx`: persistent Advisors subnavigation on loading/error, combined staff/list retry, accessible result count, pending assignment protection, disabled no-op status/notes actions and 5000-character notes bound. Source commit `fe8342e70d4291b0674b13f7bd6ab3f62b8d7580`.
 - **Partial source evidence only**. TypeScript, lint, unit, build, authenticated browser, screen-reader, `check:browsing-coverage`, RLS and accounting regressions **NOT RUN**. **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No changes to `main`, CI trigger, database or deployment.
+
+### Advisors plan-code whitespace normalization correction (2026-11-10)
+
+- `src/screens/advisors/settings-services-pricing.tsx`: corrected the whitespace replacement regex from a literal backslash-s matcher to the actual whitespace matcher, so spaces/tabs in a new plan code normalize to underscores before existing validation and duplicate checks. Source commit `d9b321a381c7afb7ada0c1a0b44b39ec53a923c0`.
+- **Source inspection only.** Local inventory guard, TypeScript, lint, unit, browser, accessibility, security and accounting regressions **NOT RUN**. Baseline remains 21 sidebar modules, 132 authenticated routes (15 supporting), 0 fully verified modules and 0/12 verified batches. No main merge, CI trigger, database change or deployment.

@@ -71,6 +71,12 @@ The register below was derived from actual repository navigation and routes. The
 - `src/screens/advisors/settings-services-pricing.tsx`: validates normalized new-plan codes (1–64 characters, initial letter, remaining letters/digits/underscore), blocks duplicate plan codes across the catalogue, prevents Add plan while catalogue mutations are pending, and supplies accessible validation hints. Source commit `8fb6d122651a070f323d4d4c77ebf19f480c1b20`.
 - **Partial source evidence only.** Verify duplicate prevention, valid/invalid code behavior, draft retention, accessible feedback, role/MFA controls and save/publish workflow with authenticated fixtures. Local `check:browsing-coverage`, TypeScript, lint, unit, build, browser, security/RLS and accounting regressions **NOT RUN**. **0/21 modules, 0/15 supporting routes and 0/12 batches fully verified.** No `main` change, manual CI trigger, production database change or deployment.
 
+
+### Advisors plan-code enforcement follow-up (2026-11-10)
+
+- `src/screens/advisors/settings-services-pricing.tsx`: corrected Add plan button disabled state to enforce the existing normalized format and global duplicate checks, and added the same checks inside the click handler to prevent invalid or duplicate upserts. Source commit `0134f29b3b54c178e766115a8b814c7ba5cd7cea`.
+- **Source inspection only; tests NOT RUN.** This closes a mismatch between displayed validation and the actionable button, not the full Services & Pricing workflow. All 21 modules, 15 supporting routes, and 12 batches remain unverified. No CI, main merge, database change or deployment.
+
 ## 1. Every top-level module — tracked without exception
 
 | # | Module | Main route | Route files | Premium browsing status |

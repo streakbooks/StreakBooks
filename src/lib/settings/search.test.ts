@@ -16,6 +16,31 @@ describe("Settings billing deep-link parsing", () => {
     expect(parseSettingsSearch({ plan: "a" }).plan).toBe("a");
     expect(parseSettingsSearch({ plan: "a".repeat(64) }).plan).toBe("a".repeat(64));
   });
+  it("retains allowlisted nested settings panel history across refresh", () => {
+    expect(parseSettingsSearch({
+      section: "banking",
+      settingsPanel: "bank-rules",
+      settingsTrail: ["category:banking"],
+    })).toMatchObject({
+      section: "banking",
+      settingsPanel: "bank-rules",
+      settingsTrail: ["category:banking"],
+    });
+  });
+  it("rejects untrusted panel IDs and invalid nested trails", () => {
+    expect(parseSettingsSearch({
+      settingsPanel: "../../admin",
+      settingsTrail: ["category:banking"],
+    })).not.toHaveProperty("settingsPanel");
+    expect(parseSettingsSearch({
+      settingsPanel: "bank-rules",
+      settingsTrail: ["../../admin"],
+    })).toMatchObject({ settingsPanel: "bank-rules" });
+    expect(parseSettingsSearch({
+      settingsPanel: "bank-rules",
+      settingsTrail: ["../../admin"],
+    })).not.toHaveProperty("settingsTrail");
+  });
   it("rejects unsupported intervals without dropping valid plan", () => {
     expect(parseSettingsSearch({ plan: "pro", interval: "weekly" })).toMatchObject({ plan: "pro" });
     expect(parseSettingsSearch({ plan: "pro", interval: "weekly" })).not.toHaveProperty("interval");

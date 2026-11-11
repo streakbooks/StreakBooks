@@ -42,6 +42,12 @@
 - `src/lib/settings/panels.test.ts`: added duplicate-ancestor refresh/open/close regression, commit `fd148c5e2fa4c21d4bc3d125a1a163a1b3cef0b9`. **WRITTEN, NOT RUN**.
 - **Partial source evidence only.** Baseline 21 sidebar modules, 132 authenticated route files (15 supporting); **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. `check:browsing-coverage`, TypeScript, lint, unit, build, authenticated browser, accessibility, security/RLS and accounting regressions **NOT RUN**. No main merge, GitHub CI trigger, production database change or deployment.
 
+### Application-wide route inventory guard hardening (2026-11-11)
+
+- `scripts/check-browsing-coverage.mjs` now rejects module entries with empty route lists, invalid route names or duplicate paths within the same module, and rejects malformed supporting route lists. Source commit `72c1aceb7b792f78c86bd5354625deda8b825fdd`.
+- `docs/ux/all-module-browsing-manifest.json` records this inventory guard evidence (commit `02f0b1e41ebde9b0c0446b362b81829b01944048`). This is **future-module inventory protection**, not proof of functional completeness.
+- **NOT RUN:** local `npm run check:browsing-coverage`, TypeScript, lint, unit, build, authenticated browser, accessibility, security/RLS and accounting regressions. Documented baseline remains **21 sidebar modules, 132 authenticated routes, 15 supporting routes**; **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No main changes, CI trigger, database change or deployment.
+
 ## Policy: no module, route, screen or functional workflow may be omitted
 
 The website-like browsing initiative applies to **every** existing and future LinkBooks sidebar module, submenu, internal tab, list, detail, drawer, modal, form, workflow, report, permission-sensitive action, connected record and support page. All 12 agreed premium-browsing requirements apply to each area, not only Sales/Purchases/Contacts/Products.

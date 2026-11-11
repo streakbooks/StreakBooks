@@ -89,6 +89,24 @@ if (!Array.isArray(manifest.supportingRoutes) ||
   throw new Error("Supporting route inventory must contain valid route paths");
 }
 
+// Require canonical relative route paths, not merely a .ts/.tsx suffix.
+function isCanonicalRoutePath(route) {
+  return typeof route === "string" &&
+    route.split("/").every((segment) =>
+      segment.length > 0 && segment !== "." && segment !== ".." &&
+      /^[A-Za-z0-9_$.-]+$/.test(segment)
+    ) &&
+    /\\.tsx?$/.test(route) && !route.includes("\\\\");
+}
+for (const route of [
+  ...manifest.modules.flatMap((module) => module.routeFiles),
+  ...manifest.supportingRoutes,
+]) {
+  if (!isCanonicalRoutePath(route)) {
+    throw new Error("Noncanonical authenticated route inventory path: " + String(route));
+  }
+}
+
 const actualRoutes = listRoutes(join(root, "src/routes/_authenticated"));
 const declaredRoutes = [
   ...manifest.modules.flatMap((module) => module.routeFiles),

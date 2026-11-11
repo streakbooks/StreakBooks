@@ -109,6 +109,15 @@ describe("in-place settings routing", () => {
       settingsTrail: ["category:banking"],
     });
   });
+  it("sanitizes self-referential Settings history on deep-link refresh", () => {
+    expect(validateSettingsPanelSearch({
+      settingsPanel: "bank-rules",
+      settingsTrail: ["category:banking", "bank-rules"],
+    })).toEqual({ settingsPanel: "bank-rules", settingsTrail: ["category:banking"] });
+    expect(validateSettingsPanelSearch({
+      settingsPanel: "bank-rules", settingsTrail: ["bank-rules"],
+    })).toEqual({ settingsPanel: "bank-rules" });
+  });
   it("resolves shared settings to panels and leaves transactional routes alone", () => {
     expect(panelForDestination({ to: "/contacts/settings", panel: "supplier-defaults" })).toBe(
       "supplier-defaults",

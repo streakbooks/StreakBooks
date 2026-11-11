@@ -36,6 +36,12 @@
 - `src/lib/settings/panels.test.ts`: regression for mixed and self-only trails (commit `a022701f4677d4b782dba24919ff84c6d56540e8`). **WRITTEN, NOT RUN**.
 - Partial source evidence only. Baseline: 21 modules, 132 authenticated routes, 15 supporting. **0/21 modules, 0/15 supporting routes, 0/12 batches verified**. TypeScript, lint, unit, build, browser, accessibility, RLS, accounting and `check:browsing-coverage` **NOT RUN**. No CI, main merge, database change or deployment.
 
+### Settings Centre repeated-ancestor URL safety (2026-11-11)
+
+- `src/lib/settings/panels.ts`: repeated ancestor identifiers in malformed Settings URL trails are deduplicated, retaining the last occurrence before opening, closing or validating a panel. Source commit `d36f437b5ae1c42da4b64d7f750268993cb061fa`.
+- `src/lib/settings/panels.test.ts`: added duplicate-ancestor refresh/open/close regression, commit `fd148c5e2fa4c21d4bc3d125a1a163a1b3cef0b9`. **WRITTEN, NOT RUN**.
+- **Partial source evidence only.** Baseline 21 sidebar modules, 132 authenticated route files (15 supporting); **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. `check:browsing-coverage`, TypeScript, lint, unit, build, authenticated browser, accessibility, security/RLS and accounting regressions **NOT RUN**. No main merge, GitHub CI trigger, production database change or deployment.
+
 ## Policy: no module, route, screen or functional workflow may be omitted
 
 The website-like browsing initiative applies to **every** existing and future LinkBooks sidebar module, submenu, internal tab, list, detail, drawer, modal, form, workflow, report, permission-sensitive action, connected record and support page. All 12 agreed premium-browsing requirements apply to each area, not only Sales/Purchases/Contacts/Products.

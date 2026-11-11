@@ -67,6 +67,12 @@ export function panelLabel(panel: SettingsPanelId, owner?: string): string {
 }
 export function closeSettingsPanel(search: Record<string, unknown>): Record<string, unknown> {
   const next = { ...search };
+  // An invalid or absent current panel must not resurrect an old panel from a stale trail.
+  if (!parseSettingsPanel(search["settingsPanel"])) {
+    delete next["settingsPanel"];
+    delete next["settingsTrail"];
+    return next;
+  }
   const trail = [...settingsPanelTrail(search["settingsTrail"])];
   const previous = trail.pop();
   if (previous) next["settingsPanel"] = previous;

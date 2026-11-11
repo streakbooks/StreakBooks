@@ -59,6 +59,12 @@
 - `scripts/check-browsing-coverage.mjs`: reject empty/dot route segments and unsupported characters in module and supporting route paths, including query/fragment suffixes.
 - **Source-level only.** Local guard, TypeScript, lint, unit, build, authenticated browser, accessibility, security/RLS and accounting checks **NOT RUN**. Baseline: 21 modules, 132 authenticated routes, 15 supporting. **0/12 batches verified.** No main changes, CI trigger, database changes or deployment.
 
+
+### Canonical route guard regex correction (2026-11-12)
+
+- `scripts/check-browsing-coverage.mjs`: corrected over-escaped `.ts`/`.tsx` extension regex and backslash rejection in `isCanonicalRoutePath`. The previous extension regex could reject legitimate route filenames. Code commit `fd0f55e6656dd762ffce21939a5faa6e40a0b637`.
+- **Source-level correction only.** Inventory guard, TypeScript, lint, unit, build, authenticated browser, accessibility, RLS and accounting checks **NOT RUN**. Documented baseline 21 sidebar modules, 132 authenticated routes, 15 supporting routes; **0/21 modules, 0/15 supporting routes, 0/12 batches verified**. No `main` changes, CI trigger, database change or deployment.
+
 ## Policy: no module, route, screen or functional workflow may be omitted
 
 The website-like browsing initiative applies to **every** existing and future LinkBooks sidebar module, submenu, internal tab, list, detail, drawer, modal, form, workflow, report, permission-sensitive action, connected record and support page. All 12 agreed premium-browsing requirements apply to each area, not only Sales/Purchases/Contacts/Products.

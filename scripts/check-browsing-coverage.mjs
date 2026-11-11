@@ -63,6 +63,24 @@ compareList(
   "Top-level sidebar modules",
 );
 
+// Each module must own at least one unique authenticated route. A duplicate
+// module route would otherwise be hidden by the global inventory comparison.
+for (const module of manifest.modules) {
+  if (!Array.isArray(module.routeFiles) || module.routeFiles.length === 0) {
+    throw new Error("Browsing module requires at least one route: " + module.label);
+  }
+  if (module.routeFiles.some((route) => typeof route !== "string" || !route.trim())) {
+    throw new Error("Browsing module contains an invalid route: " + module.label);
+  }
+  if (new Set(module.routeFiles).size !== module.routeFiles.length) {
+    throw new Error("Browsing module contains duplicate routes: " + module.label);
+  }
+}
+if (!Array.isArray(manifest.supportingRoutes) ||
+    manifest.supportingRoutes.some((route) => typeof route !== "string" || !route.trim())) {
+  throw new Error("Supporting route inventory must contain valid route paths");
+}
+
 const actualRoutes = listRoutes(join(root, "src/routes/_authenticated"));
 const declaredRoutes = [
   ...manifest.modules.flatMap((module) => module.routeFiles),

@@ -90,6 +90,13 @@ The register below was derived from actual repository navigation and routes. The
 - `src/routes/_authenticated/settings.tsx`: replaced literal escaped newline characters embedded in a comment with actual line breaks, restoring the `plan` query declaration and its bounded slug validation; code commit `811d02c244afc5652d955ddbe857c7d57355201c`.
 - **Source-level fix only.** TypeScript, lint, unit, build, authenticated browser, accessibility, RLS/accounting regressions and `check:browsing-coverage` **NOT RUN**. Settings is not fully verified; **0/21 modules, 0/15 supporting routes, 0/12 batches** verified. No `main` changes, CI, production database changes or deployment.
 
+### Settings billing deep-link regression foundation (2026-11-11)
+
+- `src/lib/settings/search.ts`: extracted bounded plan and interval URL parser; commit `cd13c92348544a2ea5f0e860fa2a2e96323696a4`.
+- `src/routes/_authenticated/settings.tsx`: reuses shared parser rather than inline validation; commit `a5082578d1c31fe204827b013188ad369b672a0e`.
+- `src/lib/settings/search.test.ts`: four Vitest regression cases for valid, invalid, boundary-length and unsupported billing deep-link parameters; commit `98be42647cf43df8481115a452cac3e1d0075b21`.
+- **Partial code evidence only.** Unit tests WRITTEN, **NOT RUN**. TypeScript, lint, build, authenticated Back/Forward/refresh/new-tab, accessibility, role/RLS/accounting and `check:browsing-coverage` **NOT RUN**. **0/21 modules, 0/15 supporting routes and 0/12 batches fully verified.** No main merge, CI trigger, production database change or deployment.
+
 ## 1. Every top-level module — tracked without exception
 
 | # | Module | Main route | Route files | Premium browsing status |

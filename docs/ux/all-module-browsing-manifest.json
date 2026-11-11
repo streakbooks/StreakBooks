@@ -498,14 +498,17 @@
         "src/routes/_authenticated/settings.tsx — uses shared search validator; commit a5082578d1c31fe204827b013188ad369b672a0e",
         "src/lib/settings/search.test.ts — 4 Vitest cases WRITTEN, NOT RUN; commit 98be42647cf43df8481115a452cac3e1d0075b21",
         "src/lib/settings/search.ts — allowlisted nested settingsPanel/settingsTrail retained by route search parser; code commit 1989cd9f8db700a83f1fc38039338626981f430f",
-        "src/lib/settings/search.test.ts — nested panel refresh and invalid-trail regression tests WRITTEN, NOT RUN; commit 12cc76cdb059073ad8efc2ed45f5a98080b5bfc3"
+        "src/lib/settings/search.test.ts — nested panel refresh and invalid-trail regression tests WRITTEN, NOT RUN; commit 12cc76cdb059073ad8efc2ed45f5a98080b5bfc3",
+        "2026-11-11: src/lib/settings/panels.ts — closeSettingsPanel discards stale settingsTrail when active settingsPanel is absent/invalid; commit 2da207915047859ab9936e8266ef61ba75274611; source change NOT runtime verified.",
+        "src/lib/settings/panels.test.ts — regression case for absent/invalid panel, preserved valid parent trail and unrelated search state; commit a6faffc99c4d0cbab447370e01fcc3fdf39b5301; WRITTEN, NOT RUN."
       ],
       "remaining": [
         "Verify plan deep links, billing redirects, Back/Forward, permissions, and valid existing plan identifiers with authenticated fixtures",
         "Run typecheck, lint, build, unit, browser, RLS and check:browsing-coverage (NOT RUN)",
         "Verify Settings plan query parsing compiles and correctly accepts/rejects slugs; all 12 criteria remain unverified.",
         "Run Settings search Vitest, TypeScript, lint, build, inventory guard and authenticated browser deep-link/back-forward/refresh tests; NOT RUN",
-        "Verify billing permissions, RLS, accounting, responsive and accessibility criteria"
+        "Verify billing permissions, RLS, accounting, responsive and accessibility criteria",
+        "Execute nested-panel close regression and authenticated browser refresh/back-forward checks; verify no stale trail resurrection, permissions and accessibility."
       ]
     },
     {

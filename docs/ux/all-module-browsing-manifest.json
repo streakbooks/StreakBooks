@@ -496,7 +496,9 @@
         "2026-11-11: src/routes/_authenticated/settings.tsx — removed literal escaped newline sequences that commented out plan validation declaration; restored bounded plan query parsing. Commit 811d02c244afc5652d955ddbe857c7d57355201c; tests NOT RUN.",
         "src/lib/settings/search.ts — bounded plan/interval search parser; commit cd13c92348544a2ea5f0e860fa2a2e96323696a4",
         "src/routes/_authenticated/settings.tsx — uses shared search validator; commit a5082578d1c31fe204827b013188ad369b672a0e",
-        "src/lib/settings/search.test.ts — 4 Vitest cases WRITTEN, NOT RUN; commit 98be42647cf43df8481115a452cac3e1d0075b21"
+        "src/lib/settings/search.test.ts — 4 Vitest cases WRITTEN, NOT RUN; commit 98be42647cf43df8481115a452cac3e1d0075b21",
+        "src/lib/settings/search.ts — allowlisted nested settingsPanel/settingsTrail retained by route search parser; code commit 1989cd9f8db700a83f1fc38039338626981f430f",
+        "src/lib/settings/search.test.ts — nested panel refresh and invalid-trail regression tests WRITTEN, NOT RUN; commit 12cc76cdb059073ad8efc2ed45f5a98080b5bfc3"
       ],
       "remaining": [
         "Verify plan deep links, billing redirects, Back/Forward, permissions, and valid existing plan identifiers with authenticated fixtures",

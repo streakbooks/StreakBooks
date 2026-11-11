@@ -6,6 +6,12 @@
 **Source audited:** `src/lib/nav.ts` and the authenticated route tree at `8935c7bd180d94d8539f75460f8542dffd648b5b`.
 
 
+### Settings Centre malformed-trail opening safety (2026-11-11)
+
+- `src/lib/settings/panels.ts`: `openSettingsPanel` now removes entries equal to the active panel from a malformed incoming trail, preventing cyclic navigation state from persisting when opening a child or reopening the current panel. Commit `7bba8e459a3757e9af3dd01e3996f077e2e1adaa`.
+- `src/lib/settings/panels.test.ts`: regression added for child opening, close-to-parent and same-panel normalization; commit `15661c2eb08f07a5661753294a298d73fc5adf67`. **WRITTEN, NOT RUN.**
+- **Partial source evidence only:** 21 sidebar modules, 132 authenticated route files and 15 supporting routes remain baseline inventory. Local inventory guard, typecheck, lint, unit, build, browser, accessibility, RLS and accounting checks **NOT RUN**. **0/21 modules, 0/15 supporting routes, 0/12 batches verified.** No main merge, CI trigger, database change or deployment.
+
 ### Settings Centre malformed-trail self-return safety (2026-11-11)
 
 - `src/lib/settings/panels.ts`: closing a panel excludes any malformed trail entries equal to the active panel, preventing a deep link from returning to itself. Source commit `03c0fe7d5c0a93bb5e0558b434890ade0a06291f`.

@@ -493,12 +493,17 @@
       "fullyVerified": false,
       "currentEvidence": [
         "src/routes/_authenticated/settings.tsx — bounded allowlisted URL plan slug (1–64 characters) to reject malformed/unbounded billing query inputs; commit 40d15dc87763dd2efcafacbd81048f7d2da90ebf; NOT RUN",
-        "2026-11-11: src/routes/_authenticated/settings.tsx — removed literal escaped newline sequences that commented out plan validation declaration; restored bounded plan query parsing. Commit 811d02c244afc5652d955ddbe857c7d57355201c; tests NOT RUN."
+        "2026-11-11: src/routes/_authenticated/settings.tsx — removed literal escaped newline sequences that commented out plan validation declaration; restored bounded plan query parsing. Commit 811d02c244afc5652d955ddbe857c7d57355201c; tests NOT RUN.",
+        "src/lib/settings/search.ts — bounded plan/interval search parser; commit cd13c92348544a2ea5f0e860fa2a2e96323696a4",
+        "src/routes/_authenticated/settings.tsx — uses shared search validator; commit a5082578d1c31fe204827b013188ad369b672a0e",
+        "src/lib/settings/search.test.ts — 4 Vitest cases WRITTEN, NOT RUN; commit 98be42647cf43df8481115a452cac3e1d0075b21"
       ],
       "remaining": [
         "Verify plan deep links, billing redirects, Back/Forward, permissions, and valid existing plan identifiers with authenticated fixtures",
         "Run typecheck, lint, build, unit, browser, RLS and check:browsing-coverage (NOT RUN)",
-        "Verify Settings plan query parsing compiles and correctly accepts/rejects slugs; all 12 criteria remain unverified."
+        "Verify Settings plan query parsing compiles and correctly accepts/rejects slugs; all 12 criteria remain unverified.",
+        "Run Settings search Vitest, TypeScript, lint, build, inventory guard and authenticated browser deep-link/back-forward/refresh tests; NOT RUN",
+        "Verify billing permissions, RLS, accounting, responsive and accessibility criteria"
       ]
     },
     {

@@ -54,8 +54,16 @@ for (const [name, entries] of [["Source navigation", parsedSidebar], ["Browsing 
     throw new Error(name + " contains duplicate top-level sidebar entries");
   }
 }
-if (sidebar.some(({ label, href }) => typeof label !== "string" || !label.trim() || typeof href !== "string" || !href.startsWith("/"))) {
+if (sidebar.some(({ label, href }) => typeof label !== "string" || !label.trim() || typeof href !== "string" || !/^\/(?:[a-z0-9-]+(?:\/[a-z0-9-]+)*)?$/.test(href))) {
   throw new Error("Browsing manifest contains invalid top-level sidebar entries");
+}
+// A shared destination under different sidebar labels can conceal an omitted
+// workspace. Require explicit unique navigation targets, not just unique pairs.
+for (const [name, entries] of [["Source navigation", parsedSidebar], ["Browsing manifest", sidebar]]) {
+  const targets = entries.map((entry) => entry.href);
+  if (new Set(targets).size !== targets.length) {
+    throw new Error(name + " contains duplicate sidebar destinations");
+  }
 }
 compareList(
   parsedSidebar.map((m) => m.label + " | " + m.href),
@@ -69,7 +77,7 @@ for (const module of manifest.modules) {
   if (!Array.isArray(module.routeFiles) || module.routeFiles.length === 0) {
     throw new Error("Browsing module requires at least one route: " + module.label);
   }
-  if (module.routeFiles.some((route) => typeof route !== "string" || !route.trim())) {
+  if (module.routeFiles.some((route) => typeof route !== "string" || !/^(?!\/)(?!.*(?:^|\/)\.\.?\/)[^\\\\]+\.tsx?$/.test(route))) {
     throw new Error("Browsing module contains an invalid route: " + module.label);
   }
   if (new Set(module.routeFiles).size !== module.routeFiles.length) {
@@ -77,7 +85,7 @@ for (const module of manifest.modules) {
   }
 }
 if (!Array.isArray(manifest.supportingRoutes) ||
-    manifest.supportingRoutes.some((route) => typeof route !== "string" || !route.trim())) {
+    manifest.supportingRoutes.some((route) => typeof route !== "string" || !/^(?!\/)(?!.*(?:^|\/)\.\.?\/)[^\\\\]+\.tsx?$/.test(route))) {
   throw new Error("Supporting route inventory must contain valid route paths");
 }
 

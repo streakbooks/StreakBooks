@@ -6,6 +6,12 @@
 **Source audited:** `src/lib/nav.ts` and the authenticated route tree at `8935c7bd180d94d8539f75460f8542dffd648b5b`.
 
 
+### Settings Centre malformed-trail self-return safety (2026-11-11)
+
+- `src/lib/settings/panels.ts`: closing a panel excludes any malformed trail entries equal to the active panel, preventing a deep link from returning to itself. Source commit `03c0fe7d5c0a93bb5e0558b434890ade0a06291f`.
+- `src/lib/settings/panels.test.ts`: regression for self-referential trails with and without a valid parent; commit `aaa976bf74e37653e569d68f4dddf721b386b0bd`. **WRITTEN, NOT RUN.**
+- **Partial evidence only:** baseline 21 sidebar modules, 132 authenticated route files, 15 supporting routes. Local `check:browsing-coverage`, TypeScript, lint, unit, build, authenticated browser, accessibility, RLS and accounting checks **NOT RUN**. **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified.** No main changes, CI trigger, production database changes or deployment.
+
 ### Settings Centre orphaned-trail opening safety (2026-11-11)
 
 - `src/lib/settings/panels.ts`: opening a Settings panel from a URL with a missing or invalid active panel now discards orphaned `settingsTrail` history instead of carrying stale parent state into the newly opened panel. Existing valid nested navigation remains intact. Source commits `a73fea4f3339c54fde32e26079c49fb3fd0b526c`, `57ac43d520f5b105772554f4f508f5eaa848682e`.

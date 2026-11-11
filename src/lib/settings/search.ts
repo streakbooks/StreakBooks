@@ -1,10 +1,13 @@
 import { resolveSettingsCategory } from "./registry";
+import { validateSettingsPanelSearch, type SettingsPanelId } from "./panels";
 
 /** Normalize untrusted deep-link parameters without changing valid billing links. */
 export function parseSettingsSearch(search: Record<string, unknown>): {
   section: string;
   plan?: string;
   interval?: "month" | "year";
+  settingsPanel?: SettingsPanelId;
+  settingsTrail?: SettingsPanelId[];
 } {
   const candidate = search["plan"];
   const plan =
@@ -20,5 +23,6 @@ export function parseSettingsSearch(search: Record<string, unknown>): {
     section: resolveSettingsCategory(search["section"]),
     ...(plan ? { plan } : {}),
     ...(interval ? { interval } : {}),
+    ...validateSettingsPanelSearch(search),
   };
 }

@@ -70,6 +70,22 @@ describe("in-place settings routing", () => {
     expect(openSettingsPanel(child, "bank-rules")).toEqual(child);
     expect(closeSettingsPanel(child)).toEqual(parent);
   });
+  it("never returns to the current panel from a malformed deep-link trail", () => {
+    const malformed = {
+      section: "banking",
+      settingsPanel: "bank-rules",
+      settingsTrail: ["category:banking", "bank-rules"],
+    };
+    expect(closeSettingsPanel(malformed)).toEqual({
+      section: "banking",
+      settingsPanel: "category:banking",
+    });
+    expect(closeSettingsPanel({
+      section: "banking",
+      settingsPanel: "bank-rules",
+      settingsTrail: ["bank-rules"],
+    })).toEqual({ section: "banking" });
+  });
   it("resolves shared settings to panels and leaves transactional routes alone", () => {
     expect(panelForDestination({ to: "/contacts/settings", panel: "supplier-defaults" })).toBe(
       "supplier-defaults",

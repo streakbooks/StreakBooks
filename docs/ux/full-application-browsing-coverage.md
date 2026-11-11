@@ -5,6 +5,13 @@
 **ChatGPT-only development branch:** `feature/chatgpt-premium-browsing-20261107`  
 **Source audited:** `src/lib/nav.ts` and the authenticated route tree at `8935c7bd180d94d8539f75460f8542dffd648b5b`.
 
+
+### Settings Centre stale nested-panel return safety (2026-11-11)
+
+- `src/lib/settings/panels.ts`: closing an absent or untrusted current panel now removes stale `settingsPanel` and `settingsTrail` query state instead of resurrecting a previous panel; unrelated filters remain unchanged. Source commit `2da207915047859ab9936e8266ef61ba75274611`.
+- `src/lib/settings/panels.test.ts`: new regression case checks missing/invalid panel cleanup and valid nested return; test commit `a6faffc99c4d0cbab447370e01fcc3fdf39b5301`. **WRITTEN, NOT RUN.**
+- **Partial source evidence only:** 21 sidebar modules and 132 authenticated route files (15 supporting) remain the documented inventory baseline, not freshly counted. `check:browsing-coverage`, typecheck, lint, build, unit, authenticated browser, accessibility, RLS and accounting checks **NOT RUN**. **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified.** No `main` changes, CI trigger, production database changes or deployment.
+
 ## Policy: no module, route, screen or functional workflow may be omitted
 
 The website-like browsing initiative applies to **every** existing and future LinkBooks sidebar module, submenu, internal tab, list, detail, drawer, modal, form, workflow, report, permission-sensitive action, connected record and support page. All 12 agreed premium-browsing requirements apply to each area, not only Sales/Purchases/Contacts/Products.

@@ -54,6 +54,11 @@
 - `docs/ux/all-module-browsing-manifest.json`: inventory evidence updated, commit `2e17c6d60f1721a35fa07e931932b49edece04c7`.
 - **Source-level inventory protection only; NOT RUN:** local guard, TypeScript, lint, unit, build, browser, accessibility, role/RLS and accounting checks. Baseline 21 sidebar modules, 132 authenticated routes, 15 supporting routes; **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No main changes, manual CI, production database changes or deployment.
 
+### Canonical route path guard (2026-11-12)
+
+- `scripts/check-browsing-coverage.mjs`: reject empty/dot route segments and unsupported characters in module and supporting route paths, including query/fragment suffixes.
+- **Source-level only.** Local guard, TypeScript, lint, unit, build, authenticated browser, accessibility, security/RLS and accounting checks **NOT RUN**. Baseline: 21 modules, 132 authenticated routes, 15 supporting. **0/12 batches verified.** No main changes, CI trigger, database changes or deployment.
+
 ## Policy: no module, route, screen or functional workflow may be omitted
 
 The website-like browsing initiative applies to **every** existing and future LinkBooks sidebar module, submenu, internal tab, list, detail, drawer, modal, form, workflow, report, permission-sensitive action, connected record and support page. All 12 agreed premium-browsing requirements apply to each area, not only Sales/Purchases/Contacts/Products.

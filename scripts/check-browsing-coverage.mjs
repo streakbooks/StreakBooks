@@ -96,7 +96,7 @@ function isCanonicalRoutePath(route) {
       segment.length > 0 && segment !== "." && segment !== ".." &&
       /^[A-Za-z0-9_$.-]+$/.test(segment)
     ) &&
-    /\\.tsx?$/.test(route) && !route.includes("\\\\");
+    /\.tsx?$/.test(route) && !route.includes("\\");
 }
 for (const route of [
   ...manifest.modules.flatMap((module) => module.routeFiles),

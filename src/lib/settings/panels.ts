@@ -93,7 +93,9 @@ export function openSettingsPanel(
   panel: SettingsPanelId,
 ): Record<string, unknown> {
   const previous = parseSettingsPanel(search["settingsPanel"]);
-  let trail = settingsPanelTrail(search["settingsTrail"]);
+  // A missing/invalid current panel cannot own a navigation trail.
+  // Also discard orphaned trails when reopening the same panel directly.
+  let trail = previous ? settingsPanelTrail(search["settingsTrail"]) : [];
   if (previous && previous !== panel) {
     const existing = trail.indexOf(panel);
     trail = existing >= 0 ? trail.slice(0, existing) : [...trail, previous].slice(-8);

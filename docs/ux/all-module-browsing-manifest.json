@@ -774,9 +774,11 @@
       "Reject unknown supporting evidence keys, duplicate cross-cutting areas and malformed acceptance criteria",
       "Reject duplicate sidebar label/path pairs in either source navigation or manifest, and invalid manifest labels/paths",
       "Reject empty module route lists, malformed route paths and duplicate paths within individual modules; reject malformed supporting-route inventory paths",
-      "Reject duplicate sidebar destinations and malformed sidebar URLs, traversal or absolute authenticated route entries"
+      "Reject duplicate sidebar destinations and malformed sidebar URLs, traversal or absolute authenticated route entries",
+      "Reject noncanonical route path segments including empty/dot segments and query or fragment suffixes; added 2026-11-12; NOT RUN"
     ],
     "execution": "NOT RUN",
-    "note": "Structural guard only; no route, module or workflow accepted"
+    "note": "Structural guard only; no route, module or workflow accepted",
+    "status": "source_updated_not_runtime_verified"
   }
 }

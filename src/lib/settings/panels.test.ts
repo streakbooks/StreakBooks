@@ -118,6 +118,27 @@ describe("in-place settings routing", () => {
       settingsPanel: "bank-rules", settingsTrail: ["bank-rules"],
     })).toEqual({ settingsPanel: "bank-rules" });
   });
+  it("removes duplicate ancestors from malformed refreshable and interactive trails", () => {
+    const malformed = {
+      section: "banking",
+      settingsPanel: "bank-rules",
+      settingsTrail: ["category:banking", "branding", "category:banking"] as string[],
+    };
+    expect(validateSettingsPanelSearch(malformed)).toEqual({
+      settingsPanel: "bank-rules",
+      settingsTrail: ["branding", "category:banking"],
+    });
+    expect(closeSettingsPanel(malformed)).toEqual({
+      section: "banking",
+      settingsPanel: "category:banking",
+      settingsTrail: ["branding"],
+    });
+    expect(openSettingsPanel(malformed, "bank-feeds")).toEqual({
+      section: "banking",
+      settingsPanel: "bank-feeds",
+      settingsTrail: ["branding", "category:banking", "bank-rules"],
+    });
+  });
   it("resolves shared settings to panels and leaves transactional routes alone", () => {
     expect(panelForDestination({ to: "/contacts/settings", panel: "supplier-defaults" })).toBe(
       "supplier-defaults",

@@ -57,6 +57,19 @@ describe("in-place settings routing", () => {
       section: "banking", settingsPanel: "category:banking", status: "draft",
     });
   });
+  it("drops orphaned trails when opening a panel from an invalid or missing current panel", () => {
+    const orphaned = { section: "banking", status: "draft", settingsTrail: ["category:banking"] };
+    expect(openSettingsPanel(orphaned, "bank-rules")).toEqual({
+      section: "banking", status: "draft", settingsPanel: "bank-rules",
+    });
+    expect(openSettingsPanel({ ...orphaned, settingsPanel: "../../admin" }, "bank-rules")).toEqual({
+      section: "banking", status: "draft", settingsPanel: "bank-rules",
+    });
+    const parent = openSettingsPanel({}, "category:banking");
+    const child = openSettingsPanel(parent, "bank-rules");
+    expect(openSettingsPanel(child, "bank-rules")).toEqual(child);
+    expect(closeSettingsPanel(child)).toEqual(parent);
+  });
   it("resolves shared settings to panels and leaves transactional routes alone", () => {
     expect(panelForDestination({ to: "/contacts/settings", panel: "supplier-defaults" })).toBe(
       "supplier-defaults",

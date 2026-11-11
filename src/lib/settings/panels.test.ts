@@ -47,6 +47,16 @@ describe("in-place settings routing", () => {
     ).toEqual({ settingsPanel: "bank-rules" });
     expect(validateSettingsPanelSearch({ settingsPanel: "unknown" })).toEqual({});
   });
+  it("does not resurrect stale nested panels when the active panel is absent or untrusted", () => {
+    const stale = { section: "banking", settingsTrail: ["category:banking"], status: "draft" };
+    expect(closeSettingsPanel(stale)).toEqual({ section: "banking", status: "draft" });
+    expect(closeSettingsPanel({ ...stale, settingsPanel: "../../admin" })).toEqual({
+      section: "banking", status: "draft",
+    });
+    expect(closeSettingsPanel({ ...stale, settingsPanel: "bank-rules" })).toEqual({
+      section: "banking", settingsPanel: "category:banking", status: "draft",
+    });
+  });
   it("resolves shared settings to panels and leaves transactional routes alone", () => {
     expect(panelForDestination({ to: "/contacts/settings", panel: "supplier-defaults" })).toBe(
       "supplier-defaults",

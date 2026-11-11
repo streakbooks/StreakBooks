@@ -24,7 +24,8 @@ export function validateSettingsPanelSearch(search: Record<string, unknown>): {
   settingsTrail?: SettingsPanelId[];
 } {
   const panel = parseSettingsPanel(search["settingsPanel"]);
-  const trail = settingsPanelTrail(search["settingsTrail"]);
+  // Do not persist malformed self-references in refreshable Settings URLs.
+  const trail = settingsPanelTrail(search["settingsTrail"]).filter((id) => id !== panel);
   return panel ? { settingsPanel: panel, ...(trail.length ? { settingsTrail: trail } : {}) } : {};
 }
 export function panelForDestination(destination: SettingsDestination): SettingsPanelId | undefined {

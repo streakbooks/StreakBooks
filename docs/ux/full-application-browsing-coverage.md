@@ -48,6 +48,12 @@
 - `docs/ux/all-module-browsing-manifest.json` records this inventory guard evidence (commit `02f0b1e41ebde9b0c0446b362b81829b01944048`). This is **future-module inventory protection**, not proof of functional completeness.
 - **NOT RUN:** local `npm run check:browsing-coverage`, TypeScript, lint, unit, build, authenticated browser, accessibility, security/RLS and accounting regressions. Documented baseline remains **21 sidebar modules, 132 authenticated routes, 15 supporting routes**; **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No main changes, CI trigger, database change or deployment.
 
+### Application-wide inventory destination/path safety (2026-11-11)
+
+- `scripts/check-browsing-coverage.mjs`: added checks for duplicate sidebar destinations, malformed sidebar URLs, and invalid/traversal/absolute authenticated route inventory paths. Source commit `64eeaa134b708ea6331b99ec87e9fe6bee3ac30a`.
+- `docs/ux/all-module-browsing-manifest.json`: inventory evidence updated, commit `2e17c6d60f1721a35fa07e931932b49edece04c7`.
+- **Source-level inventory protection only; NOT RUN:** local guard, TypeScript, lint, unit, build, browser, accessibility, role/RLS and accounting checks. Baseline 21 sidebar modules, 132 authenticated routes, 15 supporting routes; **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No main changes, manual CI, production database changes or deployment.
+
 ## Policy: no module, route, screen or functional workflow may be omitted
 
 The website-like browsing initiative applies to **every** existing and future LinkBooks sidebar module, submenu, internal tab, list, detail, drawer, modal, form, workflow, report, permission-sensitive action, connected record and support page. All 12 agreed premium-browsing requirements apply to each area, not only Sales/Purchases/Contacts/Products.

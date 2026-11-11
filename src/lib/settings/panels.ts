@@ -73,7 +73,9 @@ export function closeSettingsPanel(search: Record<string, unknown>): Record<stri
     delete next["settingsTrail"];
     return next;
   }
-  const trail = [...settingsPanelTrail(search["settingsTrail"])];
+  // Malformed deep links must not return to the panel being closed.
+  const current = parseSettingsPanel(search["settingsPanel"]);
+  const trail = settingsPanelTrail(search["settingsTrail"]).filter((id) => id !== current);
   const previous = trail.pop();
   if (previous) next["settingsPanel"] = previous;
   else delete next["settingsPanel"];

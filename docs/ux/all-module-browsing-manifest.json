@@ -763,7 +763,7 @@
   },
   "inventoryGuardEvidence": {
     "source": "scripts/check-browsing-coverage.mjs",
-    "commit": "64eeaa134b708ea6331b99ec87e9fe6bee3ac30a",
+    "commit": "fd0f55e6656dd762ffce21939a5faa6e40a0b637",
     "checks": [
       "Sidebar/module and route inventory uniqueness and exact presence",
       "Manifest count summaries equal current source inventory",
@@ -775,7 +775,8 @@
       "Reject duplicate sidebar label/path pairs in either source navigation or manifest, and invalid manifest labels/paths",
       "Reject empty module route lists, malformed route paths and duplicate paths within individual modules; reject malformed supporting-route inventory paths",
       "Reject duplicate sidebar destinations and malformed sidebar URLs, traversal or absolute authenticated route entries",
-      "Reject noncanonical route path segments including empty/dot segments and query or fragment suffixes; added 2026-11-12; NOT RUN"
+      "Reject noncanonical route path segments including empty/dot segments and query or fragment suffixes; added 2026-11-12; NOT RUN",
+      "Correct route-extension regex to match literal .ts/.tsx suffix and reject actual backslashes; fd0f55e6656dd762ffce21939a5faa6e40a0b637; NOT RUN"
     ],
     "execution": "NOT RUN",
     "note": "Structural guard only; no route, module or workflow accepted",

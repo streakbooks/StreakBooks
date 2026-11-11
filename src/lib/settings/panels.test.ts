@@ -86,6 +86,29 @@ describe("in-place settings routing", () => {
       settingsTrail: ["bank-rules"],
     })).toEqual({ section: "banking" });
   });
+  it("removes self-referential trail entries before opening another panel", () => {
+    const malformed = {
+      section: "banking",
+      settingsPanel: "bank-rules",
+      settingsTrail: ["category:banking", "bank-rules"] as string[],
+    };
+    const opened = openSettingsPanel(malformed, "bank-feeds");
+    expect(opened).toEqual({
+      section: "banking",
+      settingsPanel: "bank-feeds",
+      settingsTrail: ["category:banking", "bank-rules"],
+    });
+    expect(closeSettingsPanel(opened)).toEqual({
+      section: "banking",
+      settingsPanel: "bank-rules",
+      settingsTrail: ["category:banking"],
+    });
+    expect(openSettingsPanel(malformed, "bank-rules")).toEqual({
+      section: "banking",
+      settingsPanel: "bank-rules",
+      settingsTrail: ["category:banking"],
+    });
+  });
   it("resolves shared settings to panels and leaves transactional routes alone", () => {
     expect(panelForDestination({ to: "/contacts/settings", panel: "supplier-defaults" })).toBe(
       "supplier-defaults",

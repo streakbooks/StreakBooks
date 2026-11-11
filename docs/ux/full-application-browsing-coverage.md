@@ -6,6 +6,12 @@
 **Source audited:** `src/lib/nav.ts` and the authenticated route tree at `8935c7bd180d94d8539f75460f8542dffd648b5b`.
 
 
+### Settings Centre orphaned-trail opening safety (2026-11-11)
+
+- `src/lib/settings/panels.ts`: opening a Settings panel from a URL with a missing or invalid active panel now discards orphaned `settingsTrail` history instead of carrying stale parent state into the newly opened panel. Existing valid nested navigation remains intact. Source commits `a73fea4f3339c54fde32e26079c49fb3fd0b526c`, `57ac43d520f5b105772554f4f508f5eaa848682e`.
+- `src/lib/settings/panels.test.ts`: regression coverage for orphaned history, invalid current panel, valid nested return and reopening the current panel; commit `a6279104cb16a4cf00d72d2c2573412358228a7e`. **WRITTEN, NOT RUN.**
+- **Partial source evidence only:** 21 sidebar modules, 132 authenticated route files and 15 supporting routes remain documented baseline counts. Local `check:browsing-coverage`, TypeScript, lint, build, unit, browser, accessibility, RLS and accounting tests **NOT RUN**. **0/21 modules, 0/15 supporting routes and 0/12 batches fully verified.** No main changes, CI trigger, database change or deployment.
+
 ### Settings Centre stale nested-panel return safety (2026-11-11)
 
 - `src/lib/settings/panels.ts`: closing an absent or untrusted current panel now removes stale `settingsPanel` and `settingsTrail` query state instead of resurrecting a previous panel; unrelated filters remain unchanged. Source commit `2da207915047859ab9936e8266ef61ba75274611`.

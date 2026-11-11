@@ -30,6 +30,12 @@
 - `src/lib/settings/panels.test.ts`: new regression case checks missing/invalid panel cleanup and valid nested return; test commit `a6faffc99c4d0cbab447370e01fcc3fdf39b5301`. **WRITTEN, NOT RUN.**
 - **Partial source evidence only:** 21 sidebar modules and 132 authenticated route files (15 supporting) remain the documented inventory baseline, not freshly counted. `check:browsing-coverage`, typecheck, lint, build, unit, authenticated browser, accessibility, RLS and accounting checks **NOT RUN**. **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified.** No `main` changes, CI trigger, production database changes or deployment.
 
+### Settings Centre refreshable URL trail sanitation (2026-11-11)
+
+- `src/lib/settings/panels.ts`: URL search validation now removes current-panel self-references from a supplied Settings navigation trail (commit `02ea38eb469bded1b856395229dc8c86003ccfe5`).
+- `src/lib/settings/panels.test.ts`: regression for mixed and self-only trails (commit `a022701f4677d4b782dba24919ff84c6d56540e8`). **WRITTEN, NOT RUN**.
+- Partial source evidence only. Baseline: 21 modules, 132 authenticated routes, 15 supporting. **0/21 modules, 0/15 supporting routes, 0/12 batches verified**. TypeScript, lint, unit, build, browser, accessibility, RLS, accounting and `check:browsing-coverage` **NOT RUN**. No CI, main merge, database change or deployment.
+
 ## Policy: no module, route, screen or functional workflow may be omitted
 
 The website-like browsing initiative applies to **every** existing and future LinkBooks sidebar module, submenu, internal tab, list, detail, drawer, modal, form, workflow, report, permission-sensitive action, connected record and support page. All 12 agreed premium-browsing requirements apply to each area, not only Sales/Purchases/Contacts/Products.

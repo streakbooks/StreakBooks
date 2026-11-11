@@ -563,3 +563,9 @@ Every batch may require multiple small implementation increments; do not rush a 
 
 - `src/lib/advisors/plan-code.ts` extracts normalization and uniqueness/format validation; `src/lib/advisors/plan-code.test.ts` adds four Vitest cases for whitespace, invalid codes, valid codes and case-insensitive duplicates. `src/screens/advisors/settings-services-pricing.tsx` uses the helper. Commits `14ac653105b1f46c67f85ffe5d24c503403149d1`, `0c0fb4247e167d4d131683ada27be4154e7c0449`, `c7ffd57f227290bc08b0d68dab877c3298f5c8cc`.
 - **Tests WRITTEN, NOT RUN.** Local coverage guard, typecheck, lint, build, Vitest, browser, role/RLS and accounting regression NOT RUN. **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No main merge, CI, database change or deployment.
+
+### Settings nested panel refresh navigation fix (2026-11-11)
+
+- `src/lib/settings/search.ts`: the route search parser previously discarded allowlisted `settingsPanel` and `settingsTrail` parameters, breaking refresh and deep links for nested in-place Settings panels. The parser now reuses `validateSettingsPanelSearch` to preserve valid panel/trail state without accepting arbitrary values. Commit `1989cd9f8db700a83f1fc38039338626981f430f`.
+- `src/lib/settings/search.test.ts`: two new regression cases for nested refresh state and malicious/invalid panel history; commit `12cc76cdb059073ad8efc2ed45f5a98080b5bfc3`.
+- **Partial source evidence only:** tests, typecheck, lint, build, `check:browsing-coverage`, authenticated browser, accessibility, RLS and accounting regressions **NOT RUN**. **0/21 modules, 0/15 supporting routes, 0/12 batches verified.** No `main` merge, CI, database change or deployment.

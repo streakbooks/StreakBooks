@@ -506,7 +506,9 @@
         "2026-11-11: src/lib/settings/panels.ts — malformed settingsTrail entries equal to the active panel are excluded on close to avoid self-return; commit 03c0fe7d5c0a93bb5e0558b434890ade0a06291f; runtime NOT RUN.",
         "src/lib/settings/panels.test.ts — malformed trail self-return regression written; commit aaa976bf74e37653e569d68f4dddf721b386b0bd; NOT RUN.",
         "2026-11-11: src/lib/settings/panels.ts — openSettingsPanel removes self-referential active-panel entries from malformed trails; commit 7bba8e459a3757e9af3dd01e3996f077e2e1adaa; runtime NOT RUN.",
-        "src/lib/settings/panels.test.ts — malformed-trail open/same-panel/close regression added; commit 15661c2eb08f07a5661753294a298d73fc5adf67; WRITTEN, NOT RUN."
+        "src/lib/settings/panels.test.ts — malformed-trail open/same-panel/close regression added; commit 15661c2eb08f07a5661753294a298d73fc5adf67; WRITTEN, NOT RUN.",
+        "2026-11-11: src/lib/settings/panels.ts — validateSettingsPanelSearch filters active-panel self-references from refreshable trails; commit 02ea38eb469bded1b856395229dc8c86003ccfe5; NOT RUN.",
+        "src/lib/settings/panels.test.ts — two deep-link sanitation assertions added; commit a022701f4677d4b782dba24919ff84c6d56540e8; WRITTEN, NOT RUN."
       ],
       "remaining": [
         "Verify plan deep links, billing redirects, Back/Forward, permissions, and valid existing plan identifiers with authenticated fixtures",
@@ -516,7 +518,8 @@
         "Verify billing permissions, RLS, accounting, responsive and accessibility criteria",
         "Execute nested-panel close regression and authenticated browser refresh/back-forward checks; verify no stale trail resurrection, permissions and accessibility.",
         "Run orphaned-trail open regression, authenticated nested-panel refresh/back-forward and inventory guard; all checks NOT RUN.",
-        "Run new malformed-trail test, authenticated nested panel navigation, check:browsing-coverage, accessibility and role checks; NOT RUN."
+        "Run new malformed-trail test, authenticated nested panel navigation, check:browsing-coverage, accessibility and role checks; NOT RUN.",
+        "Execute Settings trail sanitation Vitest, browser refresh/history tests and full 12-criterion acceptance; NOT RUN."
       ]
     },
     {

@@ -504,7 +504,9 @@
         "2026-11-11: src/lib/settings/panels.ts — openSettingsPanel discards orphaned settingsTrail when active settingsPanel is missing/invalid; commits a73fea4f3339c54fde32e26079c49fb3fd0b526c and 57ac43d520f5b105772554f4f508f5eaa848682e; NOT RUN.",
         "src/lib/settings/panels.test.ts — orphaned-trail open, valid nested return, same-panel idempotency regression WRITTEN, NOT RUN; commit a6279104cb16a4cf00d72d2c2573412358228a7e.",
         "2026-11-11: src/lib/settings/panels.ts — malformed settingsTrail entries equal to the active panel are excluded on close to avoid self-return; commit 03c0fe7d5c0a93bb5e0558b434890ade0a06291f; runtime NOT RUN.",
-        "src/lib/settings/panels.test.ts — malformed trail self-return regression written; commit aaa976bf74e37653e569d68f4dddf721b386b0bd; NOT RUN."
+        "src/lib/settings/panels.test.ts — malformed trail self-return regression written; commit aaa976bf74e37653e569d68f4dddf721b386b0bd; NOT RUN.",
+        "2026-11-11: src/lib/settings/panels.ts — openSettingsPanel removes self-referential active-panel entries from malformed trails; commit 7bba8e459a3757e9af3dd01e3996f077e2e1adaa; runtime NOT RUN.",
+        "src/lib/settings/panels.test.ts — malformed-trail open/same-panel/close regression added; commit 15661c2eb08f07a5661753294a298d73fc5adf67; WRITTEN, NOT RUN."
       ],
       "remaining": [
         "Verify plan deep links, billing redirects, Back/Forward, permissions, and valid existing plan identifiers with authenticated fixtures",
@@ -513,7 +515,8 @@
         "Run Settings search Vitest, TypeScript, lint, build, inventory guard and authenticated browser deep-link/back-forward/refresh tests; NOT RUN",
         "Verify billing permissions, RLS, accounting, responsive and accessibility criteria",
         "Execute nested-panel close regression and authenticated browser refresh/back-forward checks; verify no stale trail resurrection, permissions and accessibility.",
-        "Run orphaned-trail open regression, authenticated nested-panel refresh/back-forward and inventory guard; all checks NOT RUN."
+        "Run orphaned-trail open regression, authenticated nested-panel refresh/back-forward and inventory guard; all checks NOT RUN.",
+        "Run new malformed-trail test, authenticated nested panel navigation, check:browsing-coverage, accessibility and role checks; NOT RUN."
       ]
     },
     {

@@ -128,7 +128,7 @@ function hasExecutableAcceptanceEvidence(entry) {
     entry.verificationEvidence.length === 12 &&
     entry.verificationEvidence.every((value) =>
       typeof value === "string" && value.trim().length > 0 &&
-      !/\\b(?:NOT RUN|PENDING|TODO|TBD|UNVERIFIED|NOT VERIFIED|NOT TESTED)\\b/i.test(value)
+      !/\b(?:NOT RUN|PENDING|TODO|TBD|UNVERIFIED|NOT VERIFIED|NOT TESTED)\b/i.test(value)
     );
 }
 

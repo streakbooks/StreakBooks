@@ -66,6 +66,17 @@ describe("Bank transaction to journal browsing context", () => {
     expect(decodeBankTransactionReturnContext(null)).toEqual({});
   });
 
+  it("rejects impossible calendar dates without losing valid return filters", () => {
+    expect(parseBankTransactionReturnSearch({
+      status: "matched", dateFrom: "2026-02-29", dateTo: "2026-04-31",
+    })).toEqual({ status: "matched" });
+    expect(parseBankTransactionReturnSearch({
+      dateFrom: "2024-02-29", dateTo: "2026-12-31",
+    })).toEqual({ dateFrom: "2024-02-29", dateTo: "2026-12-31" });
+    expect(decodeBankTransactionReturnContext("dateFrom=2026-13-01&dateTo=2026-02-30&page=2"))
+      .toEqual({ page: 2 });
+  });
+
   it("accepts all defined status groups and directions", () => {
     for (const statusGroup of ["unreconciled", "posted", "all"]) {
       expect(parseBankTransactionReturnSearch({ statusGroup }).statusGroup).toBe(statusGroup);

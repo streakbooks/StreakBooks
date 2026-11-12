@@ -1,5 +1,12 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Payroll runs URL-backed list state (2026-11-13)
+
+- `src/routes/_authenticated/payroll/runs.index.tsx`: validate allowlisted status, search term and sort in route search; commit `a8d51491862ca32e1e59d1577cde4130cb53c1e0`.
+- `src/screens/payroll/runs.tsx`: replace ephemeral list filters with native URL-backed state, retaining deep-link/refresh and navigable list context; commit `e1aa93cc72ec729562bc35843458d45d4b91d5d7`.
+- **Source changes only, NOT RUN:** local coverage guard, TypeScript, lint, unit, build, authenticated browser, accessibility, payroll permissions/RLS and accounting regressions. No deployment, production database changes, manual CI or main branch changes. Baseline inventory remains 21 sidebar modules, 132 authenticated routes (15 supporting); **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**.
+
+
 ### Banking canonical return page values (2026-11-13)
 
 - `src/lib/banking/transaction-return.ts`: reject padded and noncanonical decimal page strings (such as `002`, `01`, whitespace and exponent forms) while retaining canonical zero and positive integer pages and unrelated filters. Code commit `94cf4b6d4951731776850aad0a9f6d3e985d5c7d`.

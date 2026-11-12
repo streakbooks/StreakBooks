@@ -74,7 +74,12 @@
         "src/routes/_authenticated/banking/transactions.tsx — linked journal and preview context",
         "src/routes/_authenticated/banking/journal.$journalId.tsx — restored back links and reversal context",
         "src/lib/banking/transaction-return.test.ts — 8 unit test cases written but NOT RUN",
-        "e2e/banking-journal-return-browsing.spec.ts — 3 browser tests written but NOT RUN"
+        "e2e/banking-journal-return-browsing.spec.ts — 3 browser tests written but NOT RUN",
+        "src/lib/banking/transaction-return.ts — calendar-valid banking journal return date filters; commit 6fe3d4736d20d751a27536d05c98fbdbd8db53e7",
+        "src/lib/banking/transaction-return.test.ts — impossible-date and leap-year regression WRITTEN, NOT RUN; commit 88c76798980a62f2f87f509f7fb6f5982d1857f8"
+      ],
+      "remaining": [
+        "Run date-validation unit regression and authenticated banking return-navigation browser tests; verify date range semantics"
       ]
     },
     {

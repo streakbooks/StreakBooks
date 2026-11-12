@@ -46,7 +46,7 @@ export function parseBankTransactionReturnSearch(
       if (date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day) out[key] = value;
     }
   }
-  if (input["direction"] === "in" || input["direction"] === "out") {
+  // An inverted range must not silently restore a misleading transaction list.\n  // Keep the valid start date and discard the conflicting end date.\n  if (out.dateFrom && out.dateTo && out.dateFrom > out.dateTo) {\n    delete out.dateTo;\n  }\n  if (input["direction"] === "in" || input["direction"] === "out") {
     out.direction = input["direction"];
   }
   const page = input["page"];

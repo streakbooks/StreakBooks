@@ -72,6 +72,13 @@
 - `scripts/browsing-route-path.test.mjs`: new executable `node:test` cases for valid .ts/.tsx nested paths and invalid absolute, traversal, empty-segment, Windows backslash, query/fragment, unsupported extension and nonstring paths (commit `9758c02cd1bc5be0be527b920341bdcf5c2dc22c`). Run locally: `node --test scripts/browsing-route-path.test.mjs` and `npm run check:browsing-coverage`. **Both NOT RUN.**
 - Source evidence only. Baseline 21 sidebar modules, 132 authenticated routes and 15 supporting routes; **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. Typecheck, lint, build, unit suite, authenticated browser, accessibility, security/RLS and accounting regression **NOT RUN**. No `main` changes, manual GitHub Actions, database changes or deployment.
 
+### Shared route validator consolidation (2026-11-12)
+
+- `scripts/check-browsing-coverage.mjs`: removed two overlapping legacy path regular expressions and the duplicate validation loop. Module and supporting-route entries now use the same `isCanonicalRoutePath` predicate. Commit `a7daacb3b2fa80712fbc9f0125396c540bb937f7`.
+- `scripts/lib/browsing-route-path.mjs`: rejects intermediate directory segments ending in `.ts` or `.tsx`, preventing a file-shaped segment from being treated as a directory. Commit `6e670088afd1dfbb23f6c89896f64d22ac5a51c5`.
+- `scripts/browsing-route-path.test.mjs`: expanded edge-case tests for payroll, reports, Advisors portal, malformed separators, query/hash suffixes and file-shaped directories. Commit `dae6d6caa430049076dfcd55cfa9c35d345803a0`. **WRITTEN, NOT RUN**.
+- **Scope:** structural inventory validation only, not browsing acceptance. Documented baseline remains 21 sidebar modules, 132 authenticated route files, 15 supporting routes; **0/21 modules, 0/15 supporting routes and 0/12 batches fully verified**. Local `node --test scripts/browsing-route-path.test.mjs`, `npm run check:browsing-coverage`, TypeScript, lint, build, browser, accessibility, RLS and accounting checks **NOT RUN**. No `main` changes, GitHub Actions, production database changes or deployment.
+
 ## Policy: no module, route, screen or functional workflow may be omitted
 
 The website-like browsing initiative applies to **every** existing and future LinkBooks sidebar module, submenu, internal tab, list, detail, drawer, modal, form, workflow, report, permission-sensitive action, connected record and support page. All 12 agreed premium-browsing requirements apply to each area, not only Sales/Purchases/Contacts/Products.

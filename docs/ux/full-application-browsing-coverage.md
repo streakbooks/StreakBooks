@@ -79,6 +79,12 @@
 - `scripts/browsing-route-path.test.mjs`: expanded edge-case tests for payroll, reports, Advisors portal, malformed separators, query/hash suffixes and file-shaped directories. Commit `dae6d6caa430049076dfcd55cfa9c35d345803a0`. **WRITTEN, NOT RUN**.
 - **Scope:** structural inventory validation only, not browsing acceptance. Documented baseline remains 21 sidebar modules, 132 authenticated route files, 15 supporting routes; **0/21 modules, 0/15 supporting routes and 0/12 batches fully verified**. Local `node --test scripts/browsing-route-path.test.mjs`, `npm run check:browsing-coverage`, TypeScript, lint, build, browser, accessibility, RLS and accounting checks **NOT RUN**. No `main` changes, GitHub Actions, production database changes or deployment.
 
+### Platform/Superadmin active navigation route-boundary fix (2026-11-12)
+
+- `src/routes/_authenticated/platform.tsx`: Operations and Automation active states now match their exact route or a slash-delimited child route, not unrelated path prefixes (commit `13c85f124a85adba217701401f5a1efbc7ce83a5`). This preserves native links and existing permission gates; source-level fix only.
+- `docs/ux/all-module-browsing-manifest.json`: platform supporting-route and cross-cutting evidence updated. **NOT RUN:** TypeScript, lint, unit, build, authenticated browser Back/Forward/deep-link/refresh, accessibility, role/RLS, accounting regression and `check:browsing-coverage`.
+- **Coverage:** documented baseline 21 sidebar modules, 132 authenticated route files including 15 supporting; 0/21 modules, 0/15 supporting routes, **0/12 fully verified batches**. No GitHub Actions, main merge, production database changes or deployment.
+
 ## Policy: no module, route, screen or functional workflow may be omitted
 
 The website-like browsing initiative applies to **every** existing and future LinkBooks sidebar module, submenu, internal tab, list, detail, drawer, modal, form, workflow, report, permission-sensitive action, connected record and support page. All 12 agreed premium-browsing requirements apply to each area, not only Sales/Purchases/Contacts/Products.

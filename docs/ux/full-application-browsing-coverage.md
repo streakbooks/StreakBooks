@@ -1,5 +1,12 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Banking return-context canonical page sizes (2026-11-12)
+
+- `src/lib/banking/transaction-return.ts`: only canonical page-size numbers or exact decimal strings (25, 50, 100, 200) survive deep-link return context. Reject padded, whitespace, hexadecimal and exponent variants without discarding valid unrelated filters. Commit `caa3252be5c0a1cb72fa76e765e47786bb712d83`.
+- `src/lib/banking/transaction-return.test.ts`: regression cases added for malformed and valid page sizes. Commit `8816f43bc2d9b048832369399f09c1b36f4f2a3f`. **WRITTEN, NOT RUN**.
+- Partial Banking source evidence only. Baseline **21 sidebar modules, 132 authenticated routes (15 supporting)**; **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. Local coverage guard, unit suite, TypeScript, lint, build, authenticated browser, accessibility, RLS and accounting regression **NOT RUN**. No main changes, manual CI, production database changes or deployment.
+
+
 ### Banking early-year date validation correction (2026-11-12)
 
 - `src/lib/banking/transaction-return.ts`: use `setUTCFullYear` rather than `Date.UTC(year, ...)` to prevent JavaScript's special 1900 offset for years 0000–0099 from rejecting otherwise valid dates. Commit `e841554843d40cfeeaae375c0319b40d490e1564`.

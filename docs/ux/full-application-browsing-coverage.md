@@ -1,5 +1,12 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Banking inverted return-date range protection (2026-11-12)
+
+- `src/lib/banking/transaction-return.ts`: when both dates are individually valid but `dateFrom` exceeds `dateTo`, discard the conflicting end date while retaining the start date and unrelated allowlisted filters. Source commits `20867f773f4185e74f3541aa18c1488aa15e3631` and `fdf36e81fc9e092d4ec9fedb8f79b7109307d182`.
+- `src/lib/banking/transaction-return.test.ts`: added inverted-range encode/decode and same-day regressions, commit `d04269840e2e59671254dd9870353eb0546812de`. **WRITTEN, NOT RUN**.
+- **Partial Banking source evidence only.** Local inventory guard, TypeScript, lint, unit, build, authenticated browser, accessibility, RLS and accounting regressions **NOT RUN**. Documented baseline 21 sidebar modules, 132 authenticated routes including 15 supporting; **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No main changes, manually triggered CI, production database changes or deployment.
+
+
 ### Banking return-filter calendar validity (2026-11-12)
 
 - `src/lib/banking/transaction-return.ts`: banking journal return context now rejects impossible calendar dates while preserving other allowlisted filters; code commit `6fe3d4736d20d751a27536d05c98fbdbd8db53e7`.

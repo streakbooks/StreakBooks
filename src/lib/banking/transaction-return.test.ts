@@ -77,6 +77,23 @@ describe("Bank transaction to journal browsing context", () => {
       .toEqual({ page: 2 });
   });
 
+  it("drops an inverted dateTo while preserving start date and unrelated filters", () => {
+    const original = { dateFrom: "2026-12-31", dateTo: "2026-01-01", status: "matched", page: 3 };
+    const expected = { dateFrom: "2026-12-31", status: "matched", page: 3 };
+    expect(parseBankTransactionReturnSearch(original)).toEqual(expected);
+    expect(decodeBankTransactionReturnContext(encodeBankTransactionReturnContext(original)))
+      .toEqual(expected);
+    expect(decodeBankTransactionReturnContext(
+      "dateFrom=2026-12-31&dateTo=2026-01-01&status=matched&page=3",
+    )).toEqual(expected);
+  });
+
+  it("preserves equal start and end dates for single-day banking views", () => {
+    expect(parseBankTransactionReturnSearch({
+      dateFrom: "2026-11-12", dateTo: "2026-11-12",
+    })).toEqual({ dateFrom: "2026-11-12", dateTo: "2026-11-12" });
+  });
+
   it("accepts all defined status groups and directions", () => {
     for (const statusGroup of ["unreconciled", "posted", "all"]) {
       expect(parseBankTransactionReturnSearch({ statusGroup }).statusGroup).toBe(statusGroup);

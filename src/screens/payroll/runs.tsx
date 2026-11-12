@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Plus } from "lucide-react";
@@ -70,14 +70,18 @@ export function PayrollRunsPage() {
   const canPrepare = useCanDo("payroll.run.prepare");
   const fmt = useFormat();
   const navigate = useNavigate();
+  const listSearch = useSearch({ from: "/_authenticated/payroll/runs/" });
+  const statusFilter = listSearch.status;
+  const runSearch = listSearch.q;
+  const runSort = listSearch.sort;
+  const updateListSearch = (patch: Partial<typeof listSearch>) => {
+    navigate({ to: "/payroll/runs", search: (previous) => ({ ...previous, ...patch }), replace: true });
+  };
   const queryClient = useQueryClient();
   const fetchList = useServerFn(listPayrollRuns);
   const fetchSettings = useServerFn(getPayrollSettingsPage);
   const createRun = useServerFn(createPayrollRun);
 
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [runSearch, setRunSearch] = useState("");
-  const [runSort, setRunSort] = useState<"payment-newest" | "payment-oldest" | "period-newest">("payment-newest");
   const [createOpen, setCreateOpen] = useState(false);
   const [scheduleId, setScheduleId] = useState("");
   const [periodStart, setPeriodStart] = useState("");
@@ -196,8 +200,7 @@ export function PayrollRunsPage() {
     );
   const hasListFilters = statusFilter !== "all" || runSearch.trim() !== "";
   const clearListFilters = () => {
-    setStatusFilter("all");
-    setRunSearch("");
+    updateListSearch({ status: "all", q: "" });
   };
   const invalidPeriod = Boolean(periodStart && periodEnd && periodEnd < periodStart);
   const overlappingRun =
@@ -241,7 +244,7 @@ export function PayrollRunsPage() {
             <Label htmlFor="run-status-filter" className="sr-only">
               Filter by status
             </Label>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select value={statusFilter} onValueChange={(status) => updateListSearch({ status })}>
               <SelectTrigger id="run-status-filter" className="w-[180px]">
                 <SelectValue placeholder="All statuses" />
               </SelectTrigger>
@@ -256,14 +259,14 @@ export function PayrollRunsPage() {
             </Select>
             <Input
               value={runSearch}
-              onChange={(event) => setRunSearch(event.target.value)}
+              onChange={(event) => updateListSearch({ q: event.target.value.slice(0, 120) })}
               placeholder="Search run, schedule or period…"
               aria-label="Search payroll runs"
               className="w-full sm:w-64"
             />
             <Select
               value={runSort}
-              onValueChange={(value) => setRunSort(value as typeof runSort)}
+              onValueChange={(value) => updateListSearch({ sort: value as typeof runSort })}
             >
               <SelectTrigger className="w-[190px]" aria-label="Sort payroll runs">
                 <SelectValue />

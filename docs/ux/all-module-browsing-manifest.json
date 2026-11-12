@@ -783,6 +783,13 @@
     ],
     "execution": "NOT RUN",
     "note": "Shared canonical validator consolidated across all route categories; regression tests expanded, NOT RUN. Structural inventory protection only; no route or module fully accepted.",
-    "status": "source_updated_not_runtime_verified"
+    "status": "source_updated_not_runtime_verified",
+    "verifiedEvidencePlaceholderGuard": {
+      "commit": "0022999d1699c2a30b02a6cd7f895735274cb3da",
+      "file": "scripts/check-browsing-coverage.mjs",
+      "scope": "All modules, supporting routes and cross-cutting workflows claiming fullyVerified",
+      "status": "code_committed_tests_not_run",
+      "note": "Rejects obvious placeholder evidence; does not establish actual runtime verification"
+    }
   }
 }

@@ -776,10 +776,11 @@
       "Reject empty module route lists, malformed route paths and duplicate paths within individual modules; reject malformed supporting-route inventory paths",
       "Reject duplicate sidebar destinations and malformed sidebar URLs, traversal or absolute authenticated route entries",
       "Reject noncanonical route path segments including empty/dot segments and query or fragment suffixes; added 2026-11-12; NOT RUN",
-      "Correct route-extension regex to match literal .ts/.tsx suffix and reject actual backslashes; fd0f55e6656dd762ffce21939a5faa6e40a0b637; NOT RUN"
+      "Correct route-extension regex to match literal .ts/.tsx suffix and reject actual backslashes; fd0f55e6656dd762ffce21939a5faa6e40a0b637; NOT RUN",
+      "2026-11-12: extracted canonical route validation into scripts/lib/browsing-route-path.mjs and added scripts/browsing-route-path.test.mjs with valid, traversal, backslash, extension, suffix and nonstring cases; commits 93e2b46, 500dae5, 9758c02; tests NOT RUN"
     ],
     "execution": "NOT RUN",
-    "note": "Structural guard only; no route, module or workflow accepted",
+    "note": "Structural inventory guard only. Standalone node --test scripts/browsing-route-path.test.mjs written but NOT RUN; no module or route accepted.",
     "status": "source_updated_not_runtime_verified"
   }
 }

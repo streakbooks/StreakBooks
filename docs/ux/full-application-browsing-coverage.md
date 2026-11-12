@@ -85,6 +85,12 @@
 - `docs/ux/all-module-browsing-manifest.json`: platform supporting-route and cross-cutting evidence updated. **NOT RUN:** TypeScript, lint, unit, build, authenticated browser Back/Forward/deep-link/refresh, accessibility, role/RLS, accounting regression and `check:browsing-coverage`.
 - **Coverage:** documented baseline 21 sidebar modules, 132 authenticated route files including 15 supporting; 0/21 modules, 0/15 supporting routes, **0/12 fully verified batches**. No GitHub Actions, main merge, production database changes or deployment.
 
+### Platform/Superadmin selected-workspace visual state (2026-11-12)
+
+- `src/routes/_authenticated/platform.tsx`: Operations and Automation links now apply the same visible active background and font weight as other Platform navigation entries, using the already boundary-safe route selectors; native links, route destinations and permission checks unchanged. Code commit `e0d58d088e87b76d52316cb8adabf2f0d4f83486`.
+- `docs/ux/all-module-browsing-manifest.json`: platform supporting-route and cross-cutting evidence updated. **Source review only; NOT RUN:** local coverage guard, TypeScript, lint, unit, build, authenticated browser Back/Forward/deep-link/refresh, keyboard/screen reader, RLS and accounting regressions.
+- Documented baseline: **21 sidebar modules, 132 authenticated route files including 15 supporting**. **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified.** No changes to main, GitHub Actions, production database or deployment.
+
 ## Policy: no module, route, screen or functional workflow may be omitted
 
 The website-like browsing initiative applies to **every** existing and future LinkBooks sidebar module, submenu, internal tab, list, detail, drawer, modal, form, workflow, report, permission-sensitive action, connected record and support page. All 12 agreed premium-browsing requirements apply to each area, not only Sales/Purchases/Contacts/Products.

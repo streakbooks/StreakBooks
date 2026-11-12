@@ -1,5 +1,12 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Banking return-filter calendar validity (2026-11-12)
+
+- `src/lib/banking/transaction-return.ts`: banking journal return context now rejects impossible calendar dates while preserving other allowlisted filters; code commit `6fe3d4736d20d751a27536d05c98fbdbd8db53e7`.
+- `src/lib/banking/transaction-return.test.ts`: regression for invalid dates, leap day and valid remaining filters; test commit `88c76798980a62f2f87f509f7fb6f5982d1857f8`. **WRITTEN, NOT RUN**.
+- Banking remains **partially implemented, NOT fully verified**. Inventory baseline 21 sidebar modules, 132 authenticated route files, 15 supporting routes; **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. Local inventory guard, typecheck, lint, unit, build, browser, accessibility, RLS and accounting regression **NOT RUN**. No main changes, GitHub Actions, production database changes or deployment.
+
+
 ### Acceptance-evidence placeholder regex correction (2026-11-12)
 
 - `scripts/check-browsing-coverage.mjs`: fixed escaped `\\b` tokens in the acceptance-evidence regex so JavaScript uses actual word boundaries and rejects placeholder evidence for modules, supporting routes and cross-cutting workflows marked `fullyVerified`. Code commit `4a51f36bf707fdd00dabc5fa220f10a6ad3e7569`; manifest evidence commit `f497cefc8853f6f8175d6731ef35487b7e179888`.

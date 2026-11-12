@@ -1,5 +1,11 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Verified-evidence placeholder protection (2026-11-12)
+
+- `scripts/check-browsing-coverage.mjs`: all 12 acceptance-evidence entries for any fully verified module, supporting route or cross-cutting workflow must be nonempty and cannot contain `NOT RUN`, `PENDING`, `TODO`, `TBD`, `UNVERIFIED`, `NOT VERIFIED` or `NOT TESTED`. Source commit `0022999d1699c2a30b02a6cd7f895735274cb3da`.
+- **Code committed, local guard and tests NOT RUN.** This only rejects obvious placeholder claims; it does not authenticate evidence or establish runtime acceptance. Documented baseline: 21 sidebar modules, 132 authenticated routes, 15 supporting; **0/21 modules, 0/15 supporting routes, 0/12 batches verified**. No main changes, GitHub Actions, production database changes or deployment.
+
+
 **This is the master coverage scope, not an assertion of implementation completion.**  
 **Authoritative repository:** `linkbusinessadvisory/LinkBooks`  
 **ChatGPT-only development branch:** `feature/chatgpt-premium-browsing-20261107`  

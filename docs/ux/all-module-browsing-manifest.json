@@ -589,7 +589,7 @@
     },
     {
       "area": "Platform Superadmin and subscription billing",
-      "evidence": "platform.* routes, Settings and Advisors billing",
+      "evidence": "platform.* routes, Settings and Advisors billing; 2026-11-12 platform.tsx exact-or-child pathname matching for Operations/Automation active navigation (commit 13c85f124a85adba217701401f5a1efbc7ce83a5; tests NOT RUN)",
       "status": "Role gating, payments and operations unverified"
     },
     {
@@ -731,7 +731,8 @@
         "Review native navigation, refresh, Back/Forward, contextual return and form state",
         "Verify permissions, tenant isolation, accessibility, accounting effects where applicable and authenticated tests"
       ],
-      "tests": "NOT RUN"
+      "tests": "NOT RUN",
+      "evidence": "2026-11-12 active navigation route boundary fix 13c85f124a85adba217701401f5a1efbc7ce83a5; NOT RUN"
     },
     "projects.tsx": {
       "status": "not_assessed_workflow_wide",

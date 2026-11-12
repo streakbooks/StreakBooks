@@ -65,6 +65,13 @@
 - `scripts/check-browsing-coverage.mjs`: corrected over-escaped `.ts`/`.tsx` extension regex and backslash rejection in `isCanonicalRoutePath`. The previous extension regex could reject legitimate route filenames. Code commit `fd0f55e6656dd762ffce21939a5faa6e40a0b637`.
 - **Source-level correction only.** Inventory guard, TypeScript, lint, unit, build, authenticated browser, accessibility, RLS and accounting checks **NOT RUN**. Documented baseline 21 sidebar modules, 132 authenticated routes, 15 supporting routes; **0/21 modules, 0/15 supporting routes, 0/12 batches verified**. No `main` changes, CI trigger, database change or deployment.
 
+### Executable canonical route-path regression coverage (2026-11-12)
+
+- `scripts/lib/browsing-route-path.mjs`: extracted `isCanonicalRoutePath` from the inventory guard without changing intended validation semantics (commit `93e2b46a02b0de97d34ba60a4a8a19f9b8b44595`).
+- `scripts/check-browsing-coverage.mjs`: imports the shared validator (commit `500dae50b06c22873dca7a911aca89b333acc0f8`).
+- `scripts/browsing-route-path.test.mjs`: new executable `node:test` cases for valid .ts/.tsx nested paths and invalid absolute, traversal, empty-segment, Windows backslash, query/fragment, unsupported extension and nonstring paths (commit `9758c02cd1bc5be0be527b920341bdcf5c2dc22c`). Run locally: `node --test scripts/browsing-route-path.test.mjs` and `npm run check:browsing-coverage`. **Both NOT RUN.**
+- Source evidence only. Baseline 21 sidebar modules, 132 authenticated routes and 15 supporting routes; **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. Typecheck, lint, build, unit suite, authenticated browser, accessibility, security/RLS and accounting regression **NOT RUN**. No `main` changes, manual GitHub Actions, database changes or deployment.
+
 ## Policy: no module, route, screen or functional workflow may be omitted
 
 The website-like browsing initiative applies to **every** existing and future LinkBooks sidebar module, submenu, internal tab, list, detail, drawer, modal, form, workflow, report, permission-sensitive action, connected record and support page. All 12 agreed premium-browsing requirements apply to each area, not only Sales/Purchases/Contacts/Products.

@@ -9,6 +9,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
+import { isCanonicalRoutePath } from "./lib/browsing-route-path.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const manifest = JSON.parse(
@@ -90,14 +91,7 @@ if (!Array.isArray(manifest.supportingRoutes) ||
 }
 
 // Require canonical relative route paths, not merely a .ts/.tsx suffix.
-function isCanonicalRoutePath(route) {
-  return typeof route === "string" &&
-    route.split("/").every((segment) =>
-      segment.length > 0 && segment !== "." && segment !== ".." &&
-      /^[A-Za-z0-9_$.-]+$/.test(segment)
-    ) &&
-    /\.tsx?$/.test(route) && !route.includes("\\");
-}
+
 for (const route of [
   ...manifest.modules.flatMap((module) => module.routeFiles),
   ...manifest.supportingRoutes,

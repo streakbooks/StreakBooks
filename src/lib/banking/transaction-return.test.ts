@@ -77,6 +77,15 @@ describe("Bank transaction to journal browsing context", () => {
       .toEqual({ page: 2 });
   });
 
+  it("preserves valid early-year dates without the Date.UTC 1900 offset", () => {
+    expect(parseBankTransactionReturnSearch({
+      dateFrom: "0099-12-31", dateTo: "0100-01-01", status: "matched",
+    })).toEqual({ dateFrom: "0099-12-31", dateTo: "0100-01-01", status: "matched" });
+    expect(parseBankTransactionReturnSearch({
+      dateFrom: "0000-02-29", dateTo: "0001-02-29", page: 1,
+    })).toEqual({ dateFrom: "0000-02-29", page: 1 });
+  });
+
   it("drops an inverted dateTo while preserving start date and unrelated filters", () => {
     const original = { dateFrom: "2026-12-31", dateTo: "2026-01-01", status: "matched", page: 3 };
     const expected = { dateFrom: "2026-12-31", status: "matched", page: 3 };

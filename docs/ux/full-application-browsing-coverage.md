@@ -1,5 +1,12 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Banking canonical return page values (2026-11-13)
+
+- `src/lib/banking/transaction-return.ts`: reject padded and noncanonical decimal page strings (such as `002`, `01`, whitespace and exponent forms) while retaining canonical zero and positive integer pages and unrelated filters. Code commit `94cf4b6d4951731776850aad0a9f6d3e985d5c7d`.
+- `src/lib/banking/transaction-return.test.ts`: added regression cases for malformed and valid page strings and decoded return contexts. Test commit `97cc65b8f70bfeae565841127dfefb53e47d6be1`. **WRITTEN, NOT RUN**.
+- **Partial Banking source evidence only.** Baseline inventory remains 21 sidebar modules, 132 authenticated route files (15 supporting); **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. Local browsing guard, unit, typecheck, lint, build, authenticated browser, accessibility, RLS and accounting regressions **NOT RUN**. No main changes, manual CI, production database changes or deployment.
+
+
 ### Banking return-context canonical page sizes (2026-11-12)
 
 - `src/lib/banking/transaction-return.ts`: only canonical page-size numbers or exact decimal strings (25, 50, 100, 200) survive deep-link return context. Reject padded, whitespace, hexadecimal and exponent variants without discarding valid unrelated filters. Commit `caa3252be5c0a1cb72fa76e765e47786bb712d83`.

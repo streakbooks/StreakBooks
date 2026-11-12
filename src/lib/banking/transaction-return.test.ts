@@ -59,6 +59,18 @@ describe("Bank transaction to journal browsing context", () => {
     expect(parseBankTransactionReturnSearch({ page: -1, pageSize: 500 })).toEqual({});
   });
 
+  it("rejects noncanonical page sizes without losing other list filters", () => {
+    for (const pageSize of ["025", "25 ", " 50", "1e2", "100.0", "+200", "0x32"]) {
+      expect(parseBankTransactionReturnSearch({ pageSize, status: "matched" }))
+        .toEqual({ status: "matched" });
+    }
+    for (const pageSize of [25, 50, 100, 200, "25", "50", "100", "200"]) {
+      expect(parseBankTransactionReturnSearch({ pageSize }).pageSize).toBe(Number(pageSize));
+    }
+    expect(decodeBankTransactionReturnContext("pageSize=025&status=matched"))
+      .toEqual({ status: "matched" });
+  });
+
   it("rejects malformed dates and unsupported input types", () => {
     expect(parseBankTransactionReturnSearch({
       dateFrom: "yesterday", dateTo: "2026-10-31T00:00:00Z", q: ["test"],

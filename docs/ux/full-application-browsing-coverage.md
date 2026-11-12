@@ -1,5 +1,11 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Acceptance-evidence placeholder regex correction (2026-11-12)
+
+- `scripts/check-browsing-coverage.mjs`: fixed escaped `\\b` tokens in the acceptance-evidence regex so JavaScript uses actual word boundaries and rejects placeholder evidence for modules, supporting routes and cross-cutting workflows marked `fullyVerified`. Code commit `4a51f36bf707fdd00dabc5fa220f10a6ad3e7569`; manifest evidence commit `f497cefc8853f6f8175d6731ef35487b7e179888`.
+- **Code committed; local tests and inventory guard NOT RUN.** This is a documentation-integrity correction, not functional browsing acceptance. Baseline 21 sidebar modules, 132 authenticated routes, 15 supporting; **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. TypeScript, lint, build, browser, accessibility, RLS and accounting checks NOT RUN. No main changes, manual CI, production database changes or deployment.
+
+
 ### Verified-evidence placeholder protection (2026-11-12)
 
 - `scripts/check-browsing-coverage.mjs`: all 12 acceptance-evidence entries for any fully verified module, supporting route or cross-cutting workflow must be nonempty and cannot contain `NOT RUN`, `PENDING`, `TODO`, `TBD`, `UNVERIFIED`, `NOT VERIFIED` or `NOT TESTED`. Source commit `0022999d1699c2a30b02a6cd7f895735274cb3da`.

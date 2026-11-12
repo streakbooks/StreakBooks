@@ -589,7 +589,7 @@
     },
     {
       "area": "Platform Superadmin and subscription billing",
-      "evidence": "platform.* routes, Settings and Advisors billing; 2026-11-12 platform.tsx exact-or-child pathname matching for Operations/Automation active navigation (commit 13c85f124a85adba217701401f5a1efbc7ce83a5; tests NOT RUN)",
+      "evidence": "platform.* routes, Settings and Advisors billing; 2026-11-12 platform.tsx exact-or-child pathname matching for Operations/Automation active navigation (commit 13c85f124a85adba217701401f5a1efbc7ce83a5; tests NOT RUN); 2026-11-12 active workspace visual styling e0d58d088e87b76d52316cb8adabf2f0d4f83486 (NOT RUN)",
       "status": "Role gating, payments and operations unverified"
     },
     {
@@ -732,7 +732,7 @@
         "Verify permissions, tenant isolation, accessibility, accounting effects where applicable and authenticated tests"
       ],
       "tests": "NOT RUN",
-      "evidence": "2026-11-12 active navigation route boundary fix 13c85f124a85adba217701401f5a1efbc7ce83a5; NOT RUN"
+      "evidence": "2026-11-12 active navigation route boundary fix 13c85f124a85adba217701401f5a1efbc7ce83a5; NOT RUN; 2026-11-12 operations and automation nav now visibly highlights selected workspace via existing route-boundary booleans (commit e0d58d088e87b76d52316cb8adabf2f0d4f83486; NOT RUN)"
     },
     "projects.tsx": {
       "status": "not_assessed_workflow_wide",

@@ -95,7 +95,7 @@ function PlatformLayout() {
                     : "releases",
               }}
               aria-current={inOperations ? "page" : undefined}
-              className="whitespace-nowrap rounded-md px-3 py-2 text-sm hover:bg-sidebar-accent/60"
+              className={`whitespace-nowrap rounded-md px-3 py-2 text-sm ${inOperations ? "bg-sidebar-accent font-semibold text-sidebar-accent-foreground" : "hover:bg-sidebar-accent/60"}`}
             >
               Operations workspace
             </Link>
@@ -113,7 +113,7 @@ function PlatformLayout() {
                   : "rules",
               }}
               aria-current={inAutomation ? "page" : undefined}
-              className="whitespace-nowrap rounded-md px-3 py-2 text-sm hover:bg-sidebar-accent/60"
+              className={`whitespace-nowrap rounded-md px-3 py-2 text-sm ${inAutomation ? "bg-sidebar-accent font-semibold text-sidebar-accent-foreground" : "hover:bg-sidebar-accent/60"}`}
             >
               Jobs and alerts
             </Link>

@@ -1,5 +1,12 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Banking early-year date validation correction (2026-11-12)
+
+- `src/lib/banking/transaction-return.ts`: use `setUTCFullYear` rather than `Date.UTC(year, ...)` to prevent JavaScript's special 1900 offset for years 0000–0099 from rejecting otherwise valid dates. Commit `e841554843d40cfeeaae375c0319b40d490e1564`.
+- `src/lib/banking/transaction-return.test.ts`: added leap-year and century-boundary cases. Commit `440dd8c1b0051a21d46d2e2ef83044276bbbd2b6`. **WRITTEN, NOT RUN**.
+- Partial Banking source evidence only. **0/21 modules, 0/15 supporting routes, 0/12 batches verified.** Baseline 132 authenticated route files; guard, typecheck, lint, unit, build, authenticated browser, accessibility, RLS and accounting checks **NOT RUN**. No main changes, CI trigger, production database changes or deployment.
+
+
 ### Banking inverted return-date range protection (2026-11-12)
 
 - `src/lib/banking/transaction-return.ts`: when both dates are individually valid but `dateFrom` exceeds `dateTo`, discard the conflicting end date while retaining the start date and unrelated allowlisted filters. Source commits `20867f773f4185e74f3541aa18c1488aa15e3631` and `fdf36e81fc9e092d4ec9fedb8f79b7109307d182`.

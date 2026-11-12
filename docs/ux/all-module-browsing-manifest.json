@@ -82,7 +82,9 @@
         "src/lib/banking/transaction-return.ts — Date.UTC year 0–99 normalization corrected using setUTCFullYear; commit e841554843d40cfeeaae375c0319b40d490e1564; source only, NOT RUN",
         "src/lib/banking/transaction-return.test.ts — early-year leap and century-boundary regressions added; commit 440dd8c1b0051a21d46d2e2ef83044276bbbd2b6; WRITTEN, NOT RUN",
         "src/lib/banking/transaction-return.ts — canonical pageSize validation rejects padded, whitespace, exponent and hex strings; commit caa3252be5c0a1cb72fa76e765e47786bb712d83; source only",
-        "src/lib/banking/transaction-return.test.ts — pageSize regression cases; commit 8816f43bc2d9b048832369399f09c1b36f4f2a3f; WRITTEN, NOT RUN"
+        "src/lib/banking/transaction-return.test.ts — pageSize regression cases; commit 8816f43bc2d9b048832369399f09c1b36f4f2a3f; WRITTEN, NOT RUN",
+        "src/lib/banking/transaction-return.ts — reject padded and noncanonical page query values; commit 94cf4b6d4951731776850aad0a9f6d3e985d5c7d; source only",
+        "src/lib/banking/transaction-return.test.ts — canonical page regression; commit 97cc65b8f70bfeae565841127dfefb53e47d6be1; WRITTEN, NOT RUN"
       ],
       "remaining": [
         "Run date-validation unit regression and authenticated banking return-navigation browser tests; verify date range semantics",

@@ -76,10 +76,13 @@
         "src/lib/banking/transaction-return.test.ts — 8 unit test cases written but NOT RUN",
         "e2e/banking-journal-return-browsing.spec.ts — 3 browser tests written but NOT RUN",
         "src/lib/banking/transaction-return.ts — calendar-valid banking journal return date filters; commit 6fe3d4736d20d751a27536d05c98fbdbd8db53e7",
-        "src/lib/banking/transaction-return.test.ts — impossible-date and leap-year regression WRITTEN, NOT RUN; commit 88c76798980a62f2f87f509f7fb6f5982d1857f8"
+        "src/lib/banking/transaction-return.test.ts — impossible-date and leap-year regression WRITTEN, NOT RUN; commit 88c76798980a62f2f87f509f7fb6f5982d1857f8",
+        "src/lib/banking/transaction-return.ts — inverted date ranges discard dateTo while preserving valid dateFrom and other filters; commits 20867f773f4185e74f3541aa18c1488aa15e3631, fdf36e81fc9e092d4ec9fedb8f79b7109307d182",
+        "src/lib/banking/transaction-return.test.ts — inverted-range and same-day regression tests; commit d04269840e2e59671254dd9870353eb0546812de; WRITTEN, NOT RUN"
       ],
       "remaining": [
-        "Run date-validation unit regression and authenticated banking return-navigation browser tests; verify date range semantics"
+        "Run date-validation unit regression and authenticated banking return-navigation browser tests; verify date range semantics",
+        "Verify inverted date range UI behavior and single-day transaction views with authenticated browser fixtures; local tests NOT RUN"
       ]
     },
     {

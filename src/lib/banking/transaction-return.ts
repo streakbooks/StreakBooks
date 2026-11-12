@@ -62,8 +62,10 @@ export function parseBankTransactionReturnSearch(
     (typeof page === "string" && /^\d{1,7}$/.test(page))
   ) out.page = Math.min(Number(page), 1_000_000);
   const pageSize = input["pageSize"];
-  if ((typeof pageSize === "number" || typeof pageSize === "string") &&
-      SIZES.has(Number(pageSize))) {
+  // Accept only canonical page-size values. Number() alone also accepts padded,
+  // whitespace and exponential strings, which should not survive a deep link.
+  if ((typeof pageSize === "number" && Number.isInteger(pageSize) && SIZES.has(pageSize)) ||
+      (typeof pageSize === "string" && /^(25|50|100|200)$/.test(pageSize))) {
     out.pageSize = Number(pageSize) as BankTransactionReturnSearch["pageSize"];
   }
   return out;

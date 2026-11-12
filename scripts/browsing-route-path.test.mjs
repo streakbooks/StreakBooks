@@ -20,3 +20,26 @@ test("rejects unsafe, noncanonical and non-route paths", () => {
     null, 42, {},
   ]) assert.equal(isCanonicalRoutePath(path), false, String(path));
 });
+
+test("validates route naming boundaries consistently for module and supporting inventories", () => {
+  for (const path of [
+    "payroll/runs.$runId.tsx",
+    "reports/builder/$viewId.tsx",
+    "advisors-portal.messages.tsx",
+    "_authenticated.tsx",
+    "settings/index.ts",
+  ]) assert.equal(isCanonicalRoutePath(path), true, path);
+
+  for (const path of [
+    "payroll//runs.$runId.tsx",
+    "reports/builder/../../secrets.tsx",
+    "route.tsx\\n",
+    "route.tsx\\r",
+    "route.tsx?return=%2Fsettings",
+    "route.tsx#section",
+    "route.tsx\\\\extra",
+    "route.tsx/child.tsx",
+    " route.tsx",
+    "route.tsx ",
+  ]) assert.equal(isCanonicalRoutePath(path), false, path);
+});

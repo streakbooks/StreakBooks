@@ -59,7 +59,7 @@ export function parseBankTransactionReturnSearch(
   const page = input["page"];
   if (
     (typeof page === "number" && Number.isSafeInteger(page) && page >= 0) ||
-    (typeof page === "string" && /^\d{1,7}$/.test(page))
+    (typeof page === "string" && /^(0|[1-9]\d{0,6})$/.test(page))
   ) out.page = Math.min(Number(page), 1_000_000);
   const pageSize = input["pageSize"];
   // Accept only canonical page-size values. Number() alone also accepts padded,

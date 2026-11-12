@@ -59,6 +59,19 @@ describe("Bank transaction to journal browsing context", () => {
     expect(parseBankTransactionReturnSearch({ page: -1, pageSize: 500 })).toEqual({});
   });
 
+  it("rejects noncanonical page numbers without losing other return filters", () => {
+    for (const page of ["00", "002", "01", " 2", "2 ", "+2", "2.0", "2e1", "0x10", "-1"]) {
+      expect(parseBankTransactionReturnSearch({ page, status: "matched" }))
+        .toEqual({ status: "matched" });
+    }
+    for (const page of ["0", "1", "20", "9999999", 0, 1, 20]) {
+      expect(parseBankTransactionReturnSearch({ page }).page)
+        .toBe(Math.min(Number(page), 1_000_000));
+    }
+    expect(decodeBankTransactionReturnContext("page=002&status=matched"))
+      .toEqual({ status: "matched" });
+  });
+
   it("rejects noncanonical page sizes without losing other list filters", () => {
     for (const pageSize of ["025", "25 ", " 50", "1e2", "100.0", "+200", "0x32"]) {
       expect(parseBankTransactionReturnSearch({ pageSize, status: "matched" }))

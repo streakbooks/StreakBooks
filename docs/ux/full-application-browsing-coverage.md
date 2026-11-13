@@ -1,5 +1,12 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Payroll navigation shell for company and permission states (2026-11-13)
+
+- `src/screens/payroll/run-detail.tsx`: retain Payroll subnavigation and native **All runs** return link during company selection loading, missing company, and denied `payroll.view` permission. Existing permission checks and payroll accounting mutations remain unchanged. Source commit `0e6c01d7b3c78da30583a9c228deb8cdfdf13c39`.
+- Manifest source evidence updated in commit `688b24e61e6b0f5dbdda7be83c3c47cba359d24e`.
+- **SOURCE ONLY; NOT RUN:** local browsing coverage guard, typecheck, lint, unit tests, build, authenticated browser/accessibility, role/RLS and accounting regressions. Documented baseline: 21 sidebar modules, 132 authenticated routes (15 supporting). **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified.** No main changes, manually triggered CI, production database changes or deployment.
+
+
 ### Payroll journal navigation callback permission guard (2026-11-13)
 
 - `src/screens/payroll/run-detail.tsx`: the tab-change callback now refuses navigation to `journals` without `accounting.view`, complementing the disabled tab and permission-gated query; source commit `b8645067d7b4c8fa75b6b8f3416f61193868a5d4`.

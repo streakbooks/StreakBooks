@@ -111,6 +111,7 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
   const { tab } = useSearch({ from: "/_authenticated/payroll/runs/$runId" });
   const setTab = (nextTab: string) => {
     if (nextTab !== "employees" && nextTab !== "journals" && nextTab !== "payments") return;
+    if (nextTab === "journals" && !canAccountingView) return;
     navigate({
       to: "/payroll/runs/$runId",
       params: { runId },

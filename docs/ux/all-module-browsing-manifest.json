@@ -317,7 +317,8 @@
         "src/screens/payroll/run-detail.tsx — URL-backed detail tab navigation for Back/Forward/deep link/refresh, commit 2d3e0bf24ca9bcb1638dd12e831bfe8a76f3c85d; SOURCE ONLY, NOT RUN",
         "src/screens/payroll/run-detail.tsx — loading and error states retain PayrollSubnav and All runs native return link; source commit d7946c0d4c736b06c7bbcda296bbe4379feecb70; NOT RUN",
         "src/screens/payroll/run-detail.tsx — Journal entries tab disabled when accounting.view is missing; direct URL retains explicit access-required empty state; commit 0fc4a2f1411fc63a227ee54b034ca9f9a80caf50; SOURCE ONLY, NOT RUN",
-        "src/screens/payroll/run-detail.tsx — reject journal-tab navigation callback when accounting.view is absent (defense in depth); commit b8645067d7b4c8fa75b6b8f3416f61193868a5d4; SOURCE ONLY, NOT RUN"
+        "src/screens/payroll/run-detail.tsx — reject journal-tab navigation callback when accounting.view is absent (defense in depth); commit b8645067d7b4c8fa75b6b8f3416f61193868a5d4; SOURCE ONLY, NOT RUN",
+        "src/screens/payroll/run-detail.tsx — retain Payroll subnavigation and native All runs link during company loading, no-company and payroll.view denial; source commit 0e6c01d7b3c78da30583a9c228deb8cdfdf13c39; NOT RUN"
       ],
       "remaining": [
         "Verify report URL selection with authenticated fixtures and Back/Forward/refresh",
@@ -328,7 +329,8 @@
         "Run Payroll run-detail authenticated browser tab navigation, role-gated journals and payment history tests; typecheck, lint, unit, build and coverage guard NOT RUN",
         "Verify run-detail loading/error keyboard navigation, retry, and return link with authenticated fixtures; NOT RUN",
         "Verify keyboard focus, disabled journal tab and direct journals deep-link permission denial with authenticated restricted-role fixture; NOT RUN",
-        "Test programmatic/keyboard journal tab attempts under restricted role and direct URL denial; NOT RUN"
+        "Test programmatic/keyboard journal tab attempts under restricted role and direct URL denial; NOT RUN",
+        "Verify no-company, pending-company and payroll.view-denied navigation with authenticated fixtures; NOT RUN"
       ]
     },
     {

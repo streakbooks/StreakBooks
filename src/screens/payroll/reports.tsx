@@ -116,7 +116,7 @@ export function PayrollReportsPage() {
           payScheduleId: payScheduleId === "all" ? null : payScheduleId,
         },
       }),
-    enabled: Boolean(company?.id && canView && catalogQ.isSuccess && catalogQ.data.available),
+    enabled: Boolean(company?.id && canView && catalogQ.isSuccess && catalogQ.data.available && dateFrom && dateTo && dateFrom <= dateTo),
   });
 
   const departments = useMemo(() => {
@@ -131,6 +131,7 @@ export function PayrollReportsPage() {
   const reportData = reportQ.data;
   const result = reportData && reportData.available && reportData.result ? reportData.result : null;
   const currency = company?.base_currency ?? "GBP";
+  const invalidPeriod = !dateFrom || !dateTo || dateFrom > dateTo;
 
   const exportCsv = () => {
     if (!result || !company) return;
@@ -335,7 +336,12 @@ export function PayrollReportsPage() {
             </TableCard>
           </div>
 
-          {reportQ.isPending ? (
+          {invalidPeriod ? (
+            <Alert role="alert">
+              <AlertTitle>Check the reporting period</AlertTitle>
+              <AlertDescription>Choose both dates and make sure the start date is not after the end date.</AlertDescription>
+            </Alert>
+          ) : reportQ.isPending ? (
             <LoadingState />
           ) : reportQ.isError ? (
             <ErrorState

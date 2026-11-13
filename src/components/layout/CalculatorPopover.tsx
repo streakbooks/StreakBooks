@@ -104,7 +104,7 @@ export function CalculatorPopover() {
         align="end"
         sideOffset={12}
         aria-label="Calculator"
-        className="w-[340px] max-w-[calc(100vw-24px)] overflow-hidden rounded-2xl p-0 shadow-2xl"
+        className="w-[340px] max-w-[calc(100vw-24px)] rounded-2xl p-0 shadow-2xl"
         onOpenAutoFocus={(event) => {
           event.preventDefault();
           input.current?.focus();

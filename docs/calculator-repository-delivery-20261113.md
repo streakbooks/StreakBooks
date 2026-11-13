@@ -34,6 +34,23 @@ the authoritative main has substantially newer and divergent implementation.
 - Changed-file ESLint: passed, 0 errors and 0 warnings.
 - UI, native navigation and module contract checks: passed.
 - Production build: passed after installing this repository's locked dependencies.
-- Full TypeScript validation: pending at time of this note.
+- Full TypeScript validation: failed with 107 diagnostics across 37 files, all
+  unchanged from authoritative main `a2a8a79e`; zero diagnostics in the four
+  calculator implementation files. The check required a 6144 MB Node heap
+  after hitting the default memory limit.
 - No migrations required. No deployment, authenticated staging or production
   verification performed. Main is unchanged until this PR is merged.
+
+## Manual review
+
+Preserve local changes with `git stash push --include-untracked` before switching
+to `feat/header-calculator`. Keep that stash saved while reviewing. Install locked
+dependencies with `npm.cmd ci`, start with `npm.cmd run dev`, then open
+`http://localhost:8080` and click the calculator icon beside Signal.
+
+Check `200+10%` returns `220`, `(1250+250)*1.2` returns `1800`, copying, history
+reuse, divide-by-zero, Escape and reopening. Review desktop, tablet and mobile
+(including landscape), keyboard focus, and light/dark themes. The isolated browser
+scenario covered mobile portrait and landscape scrolling; authenticated in-app
+review and production verification remain unexecuted. No financial mutations
+are needed.

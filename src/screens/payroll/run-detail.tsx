@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -107,7 +107,16 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
   const canAccountingView = useCanDo("accounting.view");
   const fmt = useFormat();
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState("employees");
+  const navigate = useNavigate();
+  const { tab } = useSearch({ from: "/_authenticated/payroll/runs/$runId" });
+  const setTab = (nextTab: string) => {
+    if (nextTab !== "employees" && nextTab !== "journals" && nextTab !== "payments") return;
+    navigate({
+      to: "/payroll/runs/$runId",
+      params: { runId },
+      search: { tab: nextTab },
+    });
+  };
   const fetchPage = useServerFn(getPayrollRunPage);
   const fetchJournals = useServerFn(listPayrollRunJournals);
   const calcRun = useServerFn(calculatePayrollRunFn);

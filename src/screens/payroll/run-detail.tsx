@@ -297,15 +297,25 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
     onError: (e) => toast.error(friendlyAuthError(e)),
   });
 
-  if (isPending) return <LoadingState />;
-  if (!company) {
-    return <CompanyEmptyState title="No organisation" description="Select a company first." />;
-  }
-  if (!canView) {
+  if (isPending || !company || !canView) {
     return (
       <>
-        <PageHeader title="Payroll run" />
-        <EmptyState title="No payroll access" description="Ask for payroll.view permission." />
+        <PageHeader
+          title="Payroll run"
+          actions={
+            <Button asChild variant="outline" size="sm">
+              <Link to="/payroll/runs">All runs</Link>
+            </Button>
+          }
+        />
+        <PayrollSubnav current="runs" />
+        {isPending ? (
+          <LoadingState />
+        ) : !company ? (
+          <CompanyEmptyState title="No organisation" description="Select a company first." />
+        ) : (
+          <EmptyState title="No payroll access" description="Ask for payroll.view permission." />
+        )}
       </>
     );
   }

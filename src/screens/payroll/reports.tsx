@@ -169,14 +169,20 @@ export function PayrollReportsPage() {
     downloadCsv(csvFilename(result.title, dateTo), csv);
   };
 
-  if (isPending) return <LoadingState />;
+  const navigationShell = (
+    <>
+      <PageHeader title="Payroll reports" description="Operational payroll reporting." />
+      <PayrollSubnav current="reports" />
+    </>
+  );
+  if (isPending) return <>{navigationShell}<LoadingState /></>;
   if (!company) {
-    return <CompanyEmptyState title="No organisation" description="Select a company first." />;
+    return <>{navigationShell}<CompanyEmptyState title="No organisation" description="Select a company first." /></>;
   }
   if (!canView) {
     return (
       <>
-        <PageHeader title="Payroll reports" description="Operational payroll reporting." />
+        {navigationShell}
         <EmptyState
           title="No payroll report access"
           description="Ask an organisation administrator for the payroll.reports.view permission."
@@ -184,9 +190,10 @@ export function PayrollReportsPage() {
       </>
     );
   }
-  if (catalogQ.isPending) return <LoadingState />;
+  if (catalogQ.isPending) return <>{navigationShell}<LoadingState /></>;
   if (catalogQ.isError) {
     return (
+      {navigationShell}
       <ErrorState
         title="Could not load payroll reports"
         description={friendlyAuthError(catalogQ.error)}

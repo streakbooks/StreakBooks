@@ -108,14 +108,15 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
   const fmt = useFormat();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const { tab } = useSearch({ from: "/_authenticated/payroll/runs/$runId" });
+  const { tab, returnStatus, returnQ, returnSort } = useSearch({ from: "/_authenticated/payroll/runs/$runId" });
+  const listReturnSearch = { status: returnStatus, q: returnQ, sort: returnSort };
   const setTab = (nextTab: string) => {
     if (nextTab !== "employees" && nextTab !== "journals" && nextTab !== "payments") return;
     if (nextTab === "journals" && !canAccountingView) return;
     navigate({
       to: "/payroll/runs/$runId",
       params: { runId },
-      search: { tab: nextTab },
+      search: { tab: nextTab, returnStatus, returnQ, returnSort },
     });
   };
   const fetchPage = useServerFn(getPayrollRunPage);
@@ -304,7 +305,7 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
           title="Payroll run"
           actions={
             <Button asChild variant="outline" size="sm">
-              <Link to="/payroll/runs">All runs</Link>
+              <Link to="/payroll/runs" search={listReturnSearch}>All runs</Link>
             </Button>
           }
         />
@@ -322,7 +323,7 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
   if (pageQ.isPending || pageQ.isError) {
     return (
       <>
-        <PageHeader title="Payroll run" actions={<Button asChild variant="outline" size="sm"><Link to="/payroll/runs">All runs</Link></Button>} />
+        <PageHeader title="Payroll run" actions={<Button asChild variant="outline" size="sm"><Link to="/payroll/runs" search={listReturnSearch}>All runs</Link></Button>} />
         <PayrollSubnav current="runs" />
         {pageQ.isPending ? (
           <LoadingState />
@@ -397,7 +398,7 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
         actions={
           <div className="flex flex-wrap gap-2">
             <Button asChild variant="outline" size="sm">
-              <Link to="/payroll/runs">All runs</Link>
+              <Link to="/payroll/runs" search={listReturnSearch}>All runs</Link>
             </Button>
             {run.status !== "draft" && run.status !== "void" ? (
               <Button asChild variant="outline" size="sm">
@@ -624,7 +625,7 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
                 <Link
                   to="/payroll/runs/$runId"
                   params={{ runId }}
-                  search={{ tab: "employees" }}
+                  search={{ tab: "employees", returnStatus, returnQ, returnSort }}
                 >
                   Return to employees
                 </Link>

@@ -615,10 +615,21 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
 
         <TabsContent value="journals" className="mt-4">
           {!canAccountingView ? (
-            <EmptyState
-              title="Accounting access required"
-              description="Journal entries require accounting.view."
-            />
+            <div className="space-y-3">
+              <EmptyState
+                title="Accounting access required"
+                description="Journal entries require accounting.view."
+              />
+              <Button asChild variant="outline" size="sm">
+                <Link
+                  to="/payroll/runs/$runId"
+                  params={{ runId }}
+                  search={{ tab: "employees" }}
+                >
+                  Return to employees
+                </Link>
+              </Button>
+            </div>
           ) : !run.accrual_journal_id ? (
             <EmptyState
               title="Not posted yet"

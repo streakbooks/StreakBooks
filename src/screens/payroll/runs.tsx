@@ -74,8 +74,8 @@ export function PayrollRunsPage() {
   const statusFilter = listSearch.status;
   const runSearch = listSearch.q;
   const runSort = listSearch.sort;
-  const updateListSearch = (patch: Partial<typeof listSearch>) => {
-    navigate({ to: "/payroll/runs", search: (previous) => ({ ...previous, ...patch }), replace: true });
+  const updateListSearch = (patch: Partial<typeof listSearch>, replace = false) => {
+    navigate({ to: "/payroll/runs", search: (previous) => ({ ...previous, ...patch }), replace });
   };
   const queryClient = useQueryClient();
   const fetchList = useServerFn(listPayrollRuns);
@@ -259,7 +259,7 @@ export function PayrollRunsPage() {
             </Select>
             <Input
               value={runSearch}
-              onChange={(event) => updateListSearch({ q: event.target.value.slice(0, 120) })}
+              onChange={(event) => updateListSearch({ q: event.target.value.slice(0, 120) }, true)}
               placeholder="Search run, schedule or period…"
               aria-label="Search payroll runs"
               className="w-full sm:w-64"

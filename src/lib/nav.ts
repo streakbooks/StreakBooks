@@ -23,6 +23,7 @@ import {
   Store,
   Code2,
   ContactRound,
+  IdCard,
   type LucideIcon,
 } from "lucide-react";
 
@@ -140,6 +141,13 @@ export const navItems: NavItem[] = [
     icon: Warehouse,
     group: "accounting",
     description: "Asset register and depreciation",
+  },
+  {
+    label: "HR",
+    to: "/hr",
+    icon: IdCard,
+    group: "records",
+    description: "Workforce, leave, attendance and employee lifecycle",
   },
   {
     label: "Payroll",

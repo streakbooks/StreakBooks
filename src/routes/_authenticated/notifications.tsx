@@ -63,6 +63,7 @@ const CATEGORIES: Record<string, string> = {
   document_request: "Document requests",
   contact_followup: "Contact follow-ups",
   expense_claim: "Expense claims",
+  hr_alert: "HR alerts",
   system: "System",
 };
 const PAGE_SIZE = 20;
@@ -72,6 +73,8 @@ const MODULE_DESTINATIONS: Record<string, string> = {
   bank_reconciliation: "/banking/reconcile",
   document_request: "/files",
   contact_followup: "/contacts",
+  expense_claim: "/expenses",
+  hr_alert: "/hr",
 };
 
 function ActionCenterPage() {

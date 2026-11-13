@@ -122,7 +122,7 @@ export function PayrollRunsPage() {
       toast.success(`Payroll run ${run.run_number} created`);
       setCreateOpen(false);
       queryClient.invalidateQueries({ queryKey: ["payroll-runs"] });
-      navigate({ to: "/payroll/runs/$runId", params: { runId: run.id } });
+      navigate({ to: "/payroll/runs/$runId", params: { runId: run.id }, search: { tab: "employees", returnStatus: statusFilter, returnQ: runSearch, returnSort: runSort } });
     },
     onError: (err) => toast.error(friendlyAuthError(err)),
   });
@@ -331,6 +331,7 @@ export function PayrollRunsPage() {
                         <Link
                           to="/payroll/runs/$runId"
                           params={{ runId: run.id }}
+                          search={{ tab: "employees", returnStatus: statusFilter, returnQ: runSearch, returnSort: runSort }}
                           className="font-medium text-primary hover:underline"
                         >
                           {run.run_number}

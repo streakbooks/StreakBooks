@@ -193,12 +193,14 @@ export function PayrollReportsPage() {
   if (catalogQ.isPending) return <>{navigationShell}<LoadingState /></>;
   if (catalogQ.isError) {
     return (
-      {navigationShell}
-      <ErrorState
+      <>
+        {navigationShell}
+        <ErrorState
         title="Could not load payroll reports"
         description={friendlyAuthError(catalogQ.error)}
         onRetry={() => catalogQ.refetch()}
       />
+      </>
     );
   }
 

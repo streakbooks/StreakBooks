@@ -308,14 +308,21 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
       </>
     );
   }
-  if (pageQ.isPending) return <LoadingState />;
-  if (pageQ.isError) {
+  if (pageQ.isPending || pageQ.isError) {
     return (
-      <ErrorState
-        title="Could not load run"
-        description={friendlyAuthError(pageQ.error)}
-        onRetry={() => pageQ.refetch()}
-      />
+      <>
+        <PageHeader title="Payroll run" actions={<Button asChild variant="outline" size="sm"><Link to="/payroll/runs">All runs</Link></Button>} />
+        <PayrollSubnav current="runs" />
+        {pageQ.isPending ? (
+          <LoadingState />
+        ) : (
+          <ErrorState
+            title="Could not load run"
+            description={friendlyAuthError(pageQ.error)}
+            onRetry={() => pageQ.refetch()}
+          />
+        )}
+      </>
     );
   }
 

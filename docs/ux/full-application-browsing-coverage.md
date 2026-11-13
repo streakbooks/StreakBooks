@@ -1,5 +1,11 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Payroll Reports catalog-error JSX correction (2026-11-14)
+
+- `src/screens/payroll/reports.tsx`: repaired invalid JSX in catalog-error return by wrapping persistent Payroll navigation and retryable ErrorState in a fragment; source commit `50cf2ed7876763a745d1ddf8c558683ab1cda2d5`.
+- `docs/ux/all-module-browsing-manifest.json`: recorded evidence and pending verification; commit `8a54578aa2112836599dc3cf56a89d656c183274`.
+- **SOURCE REVIEW ONLY; NOT RUN:** local `check:browsing-coverage`, typecheck, lint, unit tests, build, authenticated browser, accessibility, RLS and accounting regression. Baseline remains 21 sidebar modules, 132 authenticated routes (15 supporting); **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No changes to main, manually triggered CI, production database or deployment.
+
 ### Payroll Reports navigation during loading and errors (2026-11-13)
 
 - `src/screens/payroll/reports.tsx`: keep Payroll Reports page header and PayrollSubnav visible during company loading/missing company, denied `payroll.reports.view`, catalog loading and catalog error. Existing report execution, exports, query gates and retry behavior remain unchanged. Source commit `65f1768ddf73394ee2038dad2803ef3c3fa97e84`.

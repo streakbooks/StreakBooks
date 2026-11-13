@@ -311,13 +311,15 @@
         "src/routes/_authenticated/payroll/reports.tsx — allowlisted reportId URL search; commit da98e6382bfb473dbf7fbe83bc341c70c47e16df",
         "src/screens/payroll/reports.tsx — selected report uses native history/deep link; commit e163c19d6cbd7f7714c4e9706b0a0e1cace76cb3",
         "src/routes/_authenticated/payroll/runs.index.tsx — validated status/q/sort route search; commit a8d51491862ca32e1e59d1577cde4130cb53c1e0; source only, NOT RUN",
-        "src/screens/payroll/runs.tsx — native URL-backed status/search/sort preserving refresh and browser history state; commit e1aa93cc72ec729562bc35843458d45d4b91d5d7; source only, NOT RUN"
+        "src/screens/payroll/runs.tsx — native URL-backed status/search/sort preserving refresh and browser history state; commit e1aa93cc72ec729562bc35843458d45d4b91d5d7; source only, NOT RUN",
+        "src/screens/payroll/runs.tsx — status/sort/clear now push browser history entries; typing search uses replace to avoid per-keystroke history; commit 9847bd3a355ef8c55cae7eb0afbd1580454d592c; SOURCE ONLY, NOT RUN"
       ],
       "remaining": [
         "Verify report URL selection with authenticated fixtures and Back/Forward/refresh",
         "Audit all other Payroll subroutes, permissions, reporting, accounting and responsive flows",
         "Local typecheck, lint, build, unit, browser and browsing coverage guard NOT RUN",
-        "Execute Payroll runs URL-state browser, typecheck, unit, permissions and accounting tests; NOT RUN"
+        "Execute Payroll runs URL-state browser, typecheck, unit, permissions and accounting tests; NOT RUN",
+        "Verify Payroll Runs filter/sort Back/Forward and search typing history in authenticated browser; NOT RUN"
       ]
     },
     {

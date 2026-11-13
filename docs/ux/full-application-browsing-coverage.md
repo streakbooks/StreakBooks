@@ -1,5 +1,13 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Payroll Runs contextual return navigation (2026-11-13)
+
+- `src/routes/_authenticated/payroll/runs.$runId.tsx`: allowlisted and bounded returnStatus, returnQ and returnSort query context (commit `8b448ab309c1f1f84c7b9e79fff91a4ee7dc4143`).
+- `src/screens/payroll/run-detail.tsx`: All runs links in normal/loading/error/permission states restore the originating list filters and sort; detail tab changes and restricted-tab recovery retain context (commit `1ce735a01eb989a9d58c23ffdc86d6207a12d7cb`).
+- `src/screens/payroll/runs.tsx`: existing-run and newly-created-run navigation carry the originating list context (commit `0aa684332009760c53b4d7121406c9db689ed166`).
+- **SOURCE ONLY, NOT RUN:** local coverage guard, TypeScript, lint, unit, build, authenticated browser Back/Forward/deep-link/refresh, accessibility, payroll RLS/accounting regression. Baseline 21 sidebar modules, 132 authenticated routes (15 supporting); **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No main changes, manual CI, production database changes or deployment.
+
+
 ### Restricted Payroll journal deep-link recovery (2026-11-13)
 
 - `src/screens/payroll/run-detail.tsx`: unauthorized `?tab=journals` deep links now display a native **Return to employees** link targeting the same run and an allowed tab. The journal query remains gated by `accounting.view`; no payroll or accounting mutations changed. Source commit `ba60dd042b2f7a6fe6a50f94beb3d3eb8d9b4492`.

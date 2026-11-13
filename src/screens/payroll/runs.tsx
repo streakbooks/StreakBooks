@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -145,35 +145,43 @@ export function PayrollRunsPage() {
     setPaymentDate(suggested.paymentDate);
   }, [createOpen, scheduleId, settingsQ.data, listQ.data, userEditedDates]);
 
-  if (isPending) return <LoadingState />;
+  // Keep native Payroll navigation available during loading, errors and access-denied states.
+  const renderRunState = (content: ReactNode) => (
+    <>
+      <PageHeader title="Payroll runs" description="Prepare and approve pay runs." />
+      <PayrollSubnav current="runs" />
+      {content}
+    </>
+  );
+
+  if (isPending) return renderRunState(<LoadingState />);
   if (!company) {
-    return <CompanyEmptyState title="No organisation" description="Select a company first." />;
-  }
-  if (!canView) {
-    return (
-      <>
-        <PageHeader title="Payroll runs" description="Prepare and approve pay runs." />
-        <EmptyState title="No payroll access" description="Ask for payroll.view permission." />
-      </>
+    return renderRunState(
+      <CompanyEmptyState title="No organisation" description="Select a company first." />,
     );
   }
-  if (settingsQ.isPending || listQ.isPending) return <LoadingState />;
+  if (!canView) {
+    return renderRunState(
+      <EmptyState title="No payroll access" description="Ask for payroll.view permission." />,
+    );
+  }
+  if (settingsQ.isPending || listQ.isPending) return renderRunState(<LoadingState />);
   if (settingsQ.isError) {
-    return (
+    return renderRunState(
       <ErrorState
         title="Could not load payroll"
         description={friendlyAuthError(settingsQ.error)}
         onRetry={() => settingsQ.refetch()}
-      />
+      />,
     );
   }
   if (listQ.isError) {
-    return (
+    return renderRunState(
       <ErrorState
         title="Could not load runs"
         description={friendlyAuthError(listQ.error)}
         onRetry={() => listQ.refetch()}
-      />
+      />,
     );
   }
 

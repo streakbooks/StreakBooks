@@ -1,5 +1,11 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Payroll run-detail URL-backed tabs (2026-11-13)
+
+- `src/routes/_authenticated/payroll/runs.$runId.tsx`: validate detail tab to `employees`, `journals`, or `payments`; commit `5d87318737c19686c9f1783091ea624499a7fbff`.
+- `src/screens/payroll/run-detail.tsx`: replace ephemeral tab state with native URL navigation for Back/Forward, deep links and refresh; commit `2d3e0bf24ca9bcb1638dd12e831bfe8a76f3c85d`. Journal data loading remains permission-gated.
+- **SOURCE ONLY, NOT RUN:** local `check:browsing-coverage`, TypeScript, lint, unit, build, authenticated browser, accessibility, payroll RLS/accounting regressions. Baseline 21 sidebar modules, 132 authenticated routes (15 supporting); **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No main changes, manual CI, production database changes or deployment.
+
 ### Payroll Runs browser history correction (2026-11-13)
 
 - `src/screens/payroll/runs.tsx`: status, sort and clear-filter navigation now push history entries so Back/Forward can restore prior selections; search keystrokes continue replacing history to avoid excessive entries. Source commit `9847bd3a355ef8c55cae7eb0afbd1580454d592c`.

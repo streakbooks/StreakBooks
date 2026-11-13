@@ -319,7 +319,8 @@
         "src/screens/payroll/run-detail.tsx — Journal entries tab disabled when accounting.view is missing; direct URL retains explicit access-required empty state; commit 0fc4a2f1411fc63a227ee54b034ca9f9a80caf50; SOURCE ONLY, NOT RUN",
         "src/screens/payroll/run-detail.tsx — reject journal-tab navigation callback when accounting.view is absent (defense in depth); commit b8645067d7b4c8fa75b6b8f3416f61193868a5d4; SOURCE ONLY, NOT RUN",
         "src/screens/payroll/run-detail.tsx — retain Payroll subnavigation and native All runs link during company loading, no-company and payroll.view denial; source commit 0e6c01d7b3c78da30583a9c228deb8cdfdf13c39; NOT RUN",
-        "src/screens/payroll/run-detail.tsx — unauthorized journals deep links now offer a native Return to employees link; source commit ba60dd042b2f7a6fe6a50f94beb3d3eb8d9b4492; SOURCE ONLY, NOT RUN"
+        "src/screens/payroll/run-detail.tsx — unauthorized journals deep links now offer a native Return to employees link; source commit ba60dd042b2f7a6fe6a50f94beb3d3eb8d9b4492; SOURCE ONLY, NOT RUN",
+        "2026-11-13: Payroll Runs detail links/new-run navigation carry validated returnStatus/returnQ/returnSort; detail All runs and restricted-tab recovery preserve list context across tab changes. Source commits 8b448ab, 1ce735a, 0aa6843. SOURCE ONLY, NOT RUN."
       ],
       "remaining": [
         "Verify report URL selection with authenticated fixtures and Back/Forward/refresh",
@@ -332,7 +333,8 @@
         "Verify keyboard focus, disabled journal tab and direct journals deep-link permission denial with authenticated restricted-role fixture; NOT RUN",
         "Test programmatic/keyboard journal tab attempts under restricted role and direct URL denial; NOT RUN",
         "Verify no-company, pending-company and payroll.view-denied navigation with authenticated fixtures; NOT RUN",
-        "Verify restricted-role journals deep-link recovery link using keyboard, Back/Forward and refresh; authenticated browser tests NOT RUN"
+        "Verify restricted-role journals deep-link recovery link using keyboard, Back/Forward and refresh; authenticated browser tests NOT RUN",
+        "Execute authenticated Payroll Runs -> detail -> All runs round-trip for filtered/sorted/search state, refresh, Back/Forward and malformed return parameters; NOT RUN."
       ]
     },
     {

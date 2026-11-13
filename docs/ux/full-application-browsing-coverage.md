@@ -1,5 +1,11 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Payroll Reports navigation during loading and errors (2026-11-13)
+
+- `src/screens/payroll/reports.tsx`: keep Payroll Reports page header and PayrollSubnav visible during company loading/missing company, denied `payroll.reports.view`, catalog loading and catalog error. Existing report execution, exports, query gates and retry behavior remain unchanged. Source commit `65f1768ddf73394ee2038dad2803ef3c3fa97e84`.
+- `docs/ux/all-module-browsing-manifest.json`: source evidence and pending authenticated navigation checks updated in commit `0a2b511f21abc3e7bfbd3df62a79564da6333ddf`.
+- **SOURCE ONLY, NOT RUN:** local `check:browsing-coverage`, typecheck, lint, unit, build, authenticated browser, accessibility, RLS and accounting regressions. Baseline remains 21 sidebar modules, 132 authenticated route files (15 supporting); **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No main changes, manual CI, production database changes or deployment.
+
 ### Payroll Runs navigation during loading, company selection and errors (2026-11-13)
 
 - `src/screens/payroll/runs.tsx`: preserve the Payroll Runs page header and PayrollSubnav during company loading/missing company, denied `payroll.view`, payroll settings/list loading, and settings/list query failures. Retry handlers and permission gates remain intact. Source commit `6dbb46a7770cae6c7bd7950acac98251c4318a63`.

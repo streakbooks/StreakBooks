@@ -1,5 +1,12 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Payroll journal-tab permission-aware navigation (2026-11-13)
+
+- `src/screens/payroll/run-detail.tsx`: disable the Journal entries tab when `accounting.view` is absent; a directly loaded `?tab=journals` URL continues to show an explicit access-required state without fetching journals. Code commit `0fc4a2f1411fc63a227ee54b034ca9f9a80caf50`.
+- `docs/ux/all-module-browsing-manifest.json`: Payroll source evidence and remaining restricted-role keyboard/deep-link verification updated; commit `b1445e286da692ed0010d25cc85217f0975839a2`.
+- **SOURCE ONLY, NOT RUN:** local browsing guard, TypeScript, lint, unit, build, authenticated browser, accessibility, security/RLS and accounting regression. Baseline 21 sidebar modules, 132 authenticated route files (15 supporting); **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No changes to `main`, manual CI, production database or deployment.
+
+
 ### Payroll run-detail navigation during loading and errors (2026-11-13)
 
 - `src/screens/payroll/run-detail.tsx`: retain Payroll subnavigation and a native **All runs** return link while run detail data is loading or has failed; retry remains available. Source commit `d7946c0d4c736b06c7bbcda296bbe4379feecb70`.

@@ -1,5 +1,12 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Payroll run-detail navigation during loading and errors (2026-11-13)
+
+- `src/screens/payroll/run-detail.tsx`: retain Payroll subnavigation and a native **All runs** return link while run detail data is loading or has failed; retry remains available. Source commit `d7946c0d4c736b06c7bbcda296bbe4379feecb70`.
+- `docs/ux/all-module-browsing-manifest.json`: Payroll partial evidence and pending authenticated loading/error navigation checks updated; commit `4e7ceeb630d1746fac5e9379152559a660895b94`.
+- **SOURCE ONLY, NOT RUN:** coverage inventory guard, TypeScript, lint, unit, build, authenticated browser, accessibility, permissions/RLS, accounting regression. Baseline **21 sidebar modules, 132 authenticated route files (15 supporting)**; **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No `main` changes, manual CI, production database changes or deployment.
+
+
 ### Payroll run-detail URL-backed tabs (2026-11-13)
 
 - `src/routes/_authenticated/payroll/runs.$runId.tsx`: validate detail tab to `employees`, `journals`, or `payments`; commit `5d87318737c19686c9f1783091ea624499a7fbff`.

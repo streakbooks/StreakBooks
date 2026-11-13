@@ -1,5 +1,12 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Restricted Payroll journal deep-link recovery (2026-11-13)
+
+- `src/screens/payroll/run-detail.tsx`: unauthorized `?tab=journals` deep links now display a native **Return to employees** link targeting the same run and an allowed tab. The journal query remains gated by `accounting.view`; no payroll or accounting mutations changed. Source commit `ba60dd042b2f7a6fe6a50f94beb3d3eb8d9b4492`.
+- `docs/ux/all-module-browsing-manifest.json`: source evidence and restricted-role browser verification gap updated in commit `62fa68aba401a3582135744062bea2c9a2249cea`.
+- **SOURCE ONLY, NOT RUN:** local browsing coverage guard, TypeScript, lint, unit tests, build, authenticated browser/keyboard/accessibility, permissions/RLS and accounting regression. Baseline **21 sidebar modules, 132 authenticated route files (15 supporting)**; **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No `main` changes, manual CI, production database changes or deployment.
+
+
 ### Payroll navigation shell for company and permission states (2026-11-13)
 
 - `src/screens/payroll/run-detail.tsx`: retain Payroll subnavigation and native **All runs** return link during company selection loading, missing company, and denied `payroll.view` permission. Existing permission checks and payroll accounting mutations remain unchanged. Source commit `0e6c01d7b3c78da30583a9c228deb8cdfdf13c39`.

@@ -1,5 +1,11 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Payroll Reports invalid-period query guard (2026-11-14)
+
+- `src/screens/payroll/reports.tsx`: suppress report execution when either date is empty or the start date exceeds the end date, and show an accessible explanatory alert. Source commits `27263616b7e2aba1f826090ca1e78ff513543fca` and `464571cd7e05524d0ff9d423ec3f34b1318e6d5d`.
+- `docs/ux/all-module-browsing-manifest.json`: record partial source evidence and pending date-validation verification, commit `b11705ebcde4afb0a24ae09b09a4981a1cd6b2a8`.
+- **NOT RUN:** local `check:browsing-coverage`, typecheck, lint, unit, build, authenticated browser, accessibility, role/RLS and accounting regression. Baseline 21 sidebar modules, 132 authenticated route files (15 supporting); **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No main changes, manually triggered CI, production database changes or deployment.
+
 ### Payroll Reports catalog-error JSX correction (2026-11-14)
 
 - `src/screens/payroll/reports.tsx`: repaired invalid JSX in catalog-error return by wrapping persistent Payroll navigation and retryable ErrorState in a fragment; source commit `50cf2ed7876763a745d1ddf8c558683ab1cda2d5`.

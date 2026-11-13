@@ -534,7 +534,7 @@ export function PayrollRunDetailPage({ runId }: { runId: string }) {
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
           <TabsTrigger value="employees">Employees</TabsTrigger>
-          <TabsTrigger value="journals">Journal entries</TabsTrigger>
+          <TabsTrigger value="journals" disabled={!canAccountingView} title={!canAccountingView ? "Requires accounting.view permission" : undefined}>Journal entries</TabsTrigger>
           <TabsTrigger value="payments">Payment history</TabsTrigger>
         </TabsList>
 

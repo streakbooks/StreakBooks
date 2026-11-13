@@ -86,6 +86,7 @@ export function PayrollReportsPage() {
   const [employeeId, setEmployeeId] = useState<string>("all");
   const [department, setDepartment] = useState("");
   const [payScheduleId, setPayScheduleId] = useState<string>("all");
+  const invalidPeriod = !dateFrom || !dateTo || dateFrom > dateTo;
 
   const catalogQ = useQuery({
     queryKey: ["payroll-reports-catalog", company?.id],
@@ -131,7 +132,6 @@ export function PayrollReportsPage() {
   const reportData = reportQ.data;
   const result = reportData && reportData.available && reportData.result ? reportData.result : null;
   const currency = company?.base_currency ?? "GBP";
-  const invalidPeriod = !dateFrom || !dateTo || dateFrom > dateTo;
 
   const exportCsv = () => {
     if (!result || !company) return;

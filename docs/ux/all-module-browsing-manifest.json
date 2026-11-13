@@ -322,7 +322,8 @@
         "src/screens/payroll/run-detail.tsx — unauthorized journals deep links now offer a native Return to employees link; source commit ba60dd042b2f7a6fe6a50f94beb3d3eb8d9b4492; SOURCE ONLY, NOT RUN",
         "2026-11-13: Payroll Runs detail links/new-run navigation carry validated returnStatus/returnQ/returnSort; detail All runs and restricted-tab recovery preserve list context across tab changes. Source commits 8b448ab, 1ce735a, 0aa6843. SOURCE ONLY, NOT RUN.",
         "src/screens/payroll/runs.tsx — loading, no-company, permission-denied, settings/list loading and query-error states retain PageHeader and PayrollSubnav; source commit 6dbb46a7770cae6c7bd7950acac98251c4318a63; NOT RUN",
-        "src/screens/payroll/reports.tsx — preserve PayrollSubnav and page header during company loading/missing company, payroll.reports.view denial and catalog loading/error; source commit 65f1768ddf73394ee2038dad2803ef3c3fa97e84; NOT RUN"
+        "src/screens/payroll/reports.tsx — preserve PayrollSubnav and page header during company loading/missing company, payroll.reports.view denial and catalog loading/error; source commit 65f1768ddf73394ee2038dad2803ef3c3fa97e84; NOT RUN",
+        "2026-11-14: src/screens/payroll/reports.tsx — fixed invalid JSX in catalog-error return by wrapping navigation shell and ErrorState in a fragment; source commit 50cf2ed7876763a745d1ddf8c558683ab1cda2d5; static review only, NOT RUN"
       ],
       "remaining": [
         "Verify report URL selection with authenticated fixtures and Back/Forward/refresh",
@@ -338,7 +339,8 @@
         "Verify restricted-role journals deep-link recovery link using keyboard, Back/Forward and refresh; authenticated browser tests NOT RUN",
         "Execute authenticated Payroll Runs -> detail -> All runs round-trip for filtered/sorted/search state, refresh, Back/Forward and malformed return parameters; NOT RUN.",
         "Verify Payroll Runs subnavigation across loading, no-company, denied payroll.view and both query-error states with authenticated browser/keyboard tests; NOT RUN",
-        "Verify Payroll Reports loading, missing-company, denied permission, catalog-loading and catalog-error navigation in authenticated browser; NOT RUN"
+        "Verify Payroll Reports loading, missing-company, denied permission, catalog-loading and catalog-error navigation in authenticated browser; NOT RUN",
+        "Run TypeScript/build and verify Payroll Reports catalog-error retry and persistent navigation after JSX correction; NOT RUN"
       ]
     },
     {

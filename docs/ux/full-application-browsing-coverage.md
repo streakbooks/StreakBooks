@@ -1,5 +1,11 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Payroll Runs navigation during loading, company selection and errors (2026-11-13)
+
+- `src/screens/payroll/runs.tsx`: preserve the Payroll Runs page header and PayrollSubnav during company loading/missing company, denied `payroll.view`, payroll settings/list loading, and settings/list query failures. Retry handlers and permission gates remain intact. Source commit `6dbb46a7770cae6c7bd7950acac98251c4318a63`.
+- `docs/ux/all-module-browsing-manifest.json`: Payroll source evidence and authenticated state-verification gap recorded; commit `90c71d792e32cab78a3c4219d78348160f8782b0`.
+- **SOURCE ONLY, NOT RUN:** local `check:browsing-coverage`, typecheck, lint, unit, build, authenticated browser, accessibility, RLS and accounting regression. Baseline remains 21 sidebar modules, 132 authenticated route files (15 supporting); **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No main changes, manual CI, production database changes or deployment.
+
 ### Payroll Runs contextual return navigation (2026-11-13)
 
 - `src/routes/_authenticated/payroll/runs.$runId.tsx`: allowlisted and bounded returnStatus, returnQ and returnSort query context (commit `8b448ab309c1f1f84c7b9e79fff91a4ee7dc4143`).

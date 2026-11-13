@@ -1,5 +1,11 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Payroll Runs browser history correction (2026-11-13)
+
+- `src/screens/payroll/runs.tsx`: status, sort and clear-filter navigation now push history entries so Back/Forward can restore prior selections; search keystrokes continue replacing history to avoid excessive entries. Source commit `9847bd3a355ef8c55cae7eb0afbd1580454d592c`.
+- Coverage manifest updated in commit `296cb9de4377963e48c42f4a1f52357514f7b8de`. **SOURCE ONLY, NOT RUN:** local coverage guard, typecheck, lint, unit, build, authenticated browser, accessibility, RLS and payroll/accounting regression. Baseline 21 modules, 132 authenticated routes (15 supporting); **0/21 modules, 0/15 supporting routes, 0/12 batches verified**. No main changes, manual CI, production database changes or deployment.
+
+
 ### Payroll runs URL-backed list state (2026-11-13)
 
 - `src/routes/_authenticated/payroll/runs.index.tsx`: validate allowlisted status, search term and sort in route search; commit `a8d51491862ca32e1e59d1577cde4130cb53c1e0`.

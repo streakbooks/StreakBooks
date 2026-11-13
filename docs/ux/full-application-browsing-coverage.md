@@ -1,5 +1,12 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Payroll journal navigation callback permission guard (2026-11-13)
+
+- `src/screens/payroll/run-detail.tsx`: the tab-change callback now refuses navigation to `journals` without `accounting.view`, complementing the disabled tab and permission-gated query; source commit `b8645067d7b4c8fa75b6b8f3416f61193868a5d4`.
+- Coverage manifest evidence updated in commit `8fea2fb56bebd3b1681586194e130a52a12fa189`.
+- **SOURCE ONLY; NOT RUN:** local coverage guard, typecheck, lint, unit, build, authenticated restricted-role browser, accessibility, security/RLS and accounting regressions. Documented baseline: 21 sidebar modules, 132 authenticated route files (15 supporting). **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified.** No main changes, manual CI, production database changes or deployment.
+
+
 ### Payroll journal-tab permission-aware navigation (2026-11-13)
 
 - `src/screens/payroll/run-detail.tsx`: disable the Journal entries tab when `accounting.view` is absent; a directly loaded `?tab=journals` URL continues to show an explicit access-required state without fetching journals. Code commit `0fc4a2f1411fc63a227ee54b034ca9f9a80caf50`.

@@ -326,7 +326,8 @@
         "2026-11-14: src/screens/payroll/reports.tsx — fixed invalid JSX in catalog-error return by wrapping navigation shell and ErrorState in a fragment; source commit 50cf2ed7876763a745d1ddf8c558683ab1cda2d5; static review only, NOT RUN",
         "2026-11-14: src/screens/payroll/reports.tsx — incomplete/inverted date periods now show an accessible alert and suppress report query execution; commits 27263616b7e2aba1f826090ca1e78ff513543fca and 464571cd7e05524d0ff9d423ec3f34b1318e6d5d. Source-only; tests NOT RUN.",
         "2026-11-14: src/screens/payroll/reports.tsx — invalid date inputs expose aria-invalid and aria-describedby pointing to the visible reporting-period alert; source commit 7d2901b03860a71dd847d2b0913f50be71e32d15. SOURCE ONLY, NOT RUN.",
-        "2026-11-14: src/screens/payroll/reports.tsx — hide CSV/Print actions while report dates are invalid or the query is fetching; exportCsv also rejects invalid/fetching state, preventing stale report exports; code commit 9916bfd5a9f77e670153027aecc9e919c373ab20. SOURCE ONLY; tests NOT RUN."
+        "2026-11-14: src/screens/payroll/reports.tsx — hide CSV/Print actions while report dates are invalid or the query is fetching; exportCsv also rejects invalid/fetching state, preventing stale report exports; code commit 9916bfd5a9f77e670153027aecc9e919c373ab20. SOURCE ONLY; tests NOT RUN.",
+        "src/screens/payroll/reports.tsx — CSV and Print/PDF actions now require reportQ.isSuccess for the current query, in addition to valid dates and not fetching; source commit b0e85d5c7567bfdd0eb7f3effa81ac2ea33ed6ad; NOT RUN"
       ],
       "remaining": [
         "Verify report URL selection with authenticated fixtures and Back/Forward/refresh",
@@ -346,7 +347,8 @@
         "Run TypeScript/build and verify Payroll Reports catalog-error retry and persistent navigation after JSX correction; NOT RUN",
         "Verify report date guard with valid, empty, and inverted periods; authenticated UI, TypeScript/build and accounting regressions NOT RUN.",
         "Verify screen-reader error announcement, input associations, keyboard correction and successful report rerun with authenticated browser; NOT RUN.",
-        "Verify CSV/Print visibility and export handler during invalid dates, report switching, and refetch transitions using authenticated browser; TypeScript/build and accounting regressions NOT RUN."
+        "Verify CSV/Print visibility and export handler during invalid dates, report switching, and refetch transitions using authenticated browser; TypeScript/build and accounting regressions NOT RUN.",
+        "Verify Payroll Reports exports are unavailable after query errors, invalid dates and refetch transitions in authenticated browser; NOT RUN"
       ]
     },
     {

@@ -1,4 +1,10 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Payroll Reports stale-export guard (2026-11-14)
+
+- `src/screens/payroll/reports.tsx`: suppress CSV and Print/PDF actions while reporting dates are invalid or the report query is fetching; `exportCsv` also guards against stale exports during these states. Code commit `9916bfd5a9f77e670153027aecc9e919c373ab20`.
+- `docs/ux/all-module-browsing-manifest.json`: Payroll evidence and pending authenticated export/refetch verification recorded in commit `0fad1c5e846909e24e21d5f162ba917de13b0e03`.
+- **SOURCE ONLY, NOT RUN:** local `check:browsing-coverage`, TypeScript, lint, unit, build, authenticated browser/accessibility, role/RLS and accounting regression. Baseline remains 21 sidebar modules, 132 authenticated routes (15 supporting); **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No `main` changes, manual CI, production database changes or deployment.
+
 
 ### Payroll Reports invalid-date accessibility association (2026-11-14)
 

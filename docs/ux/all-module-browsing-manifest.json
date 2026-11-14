@@ -330,7 +330,8 @@
         "src/screens/payroll/reports.tsx — CSV and Print/PDF actions now require reportQ.isSuccess for the current query, in addition to valid dates and not fetching; source commit b0e85d5c7567bfdd0eb7f3effa81ac2ea33ed6ad; NOT RUN",
         "src/screens/payroll/reports.tsx — loading state now replaces prior report table while refetching; source commit 9699586683f3279826225b788a3d03846de4078f; NOT RUN",
         "2026-11-14: src/screens/payroll/reports.tsx — default reporting period now uses local calendar date rather than UTC ISO date, avoiding off-by-one day at timezone boundaries; source commit 02a4de883e4705b0fe4e972bcaa5bde1c13a817d; SOURCE ONLY, NOT RUN.",
-        "2026-11-14: src/screens/payroll/reports.tsx — reporting-period accessibility now marks only the missing or chronologically offending date input invalid, while associating that input with the existing alert; source commit fd3c5aedf7d5e8ed6001bf3a4d7b25e1c8c36869; SOURCE ONLY, NOT RUN."
+        "2026-11-14: src/screens/payroll/reports.tsx — reporting-period accessibility now marks only the missing or chronologically offending date input invalid, while associating that input with the existing alert; source commit fd3c5aedf7d5e8ed6001bf3a4d7b25e1c8c36869; SOURCE ONLY, NOT RUN.",
+        "src/screens/payroll/reports.tsx — successful report response without usable result now renders explicit recovery empty state; commit ed73876159d059c83af6ce69517fefc16da86cfc; SOURCE ONLY, NOT RUN"
       ],
       "remaining": [
         "Verify report URL selection with authenticated fixtures and Back/Forward/refresh",
@@ -354,7 +355,8 @@
         "Verify Payroll Reports exports are unavailable after query errors, invalid dates and refetch transitions in authenticated browser; NOT RUN",
         "Verify report table is not visible during refetch and reappears on success; error recovery and export controls in authenticated browser; NOT RUN",
         "Verify Payroll Reports initial date defaults near UTC/local midnight in positive and negative timezone offsets; typecheck, unit, browser and accounting regression NOT RUN.",
-        "Verify screen-reader/keyboard announcement and per-field aria-invalid for missing start, missing end and reversed date range; NOT RUN."
+        "Verify screen-reader/keyboard announcement and per-field aria-invalid for missing start, missing end and reversed date range; NOT RUN.",
+        "Verify Payroll Reports success-without-result fallback with authenticated fixtures and screen reader; NOT RUN"
       ]
     },
     {

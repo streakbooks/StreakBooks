@@ -1,5 +1,11 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Payroll Reports unavailable-result recovery (2026-11-14)
+
+- `src/screens/payroll/reports.tsx`: successful report responses without a usable result now show a descriptive empty state rather than a blank content area; source commit `ed73876159d059c83af6ce69517fefc16da86cfc`.
+- `docs/ux/all-module-browsing-manifest.json`: Payroll partial source evidence and pending authenticated empty-state verification recorded in commit `f63a87ff5840e99ea9f1bb59a915d658544ba1b6`.
+- **SOURCE ONLY; NOT RUN:** local `check:browsing-coverage`, TypeScript, lint, unit tests, build, authenticated browser/accessibility, role/RLS and accounting regression. Documented baseline: 21 sidebar modules, 132 authenticated route files (15 supporting); **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No changes to main, manual CI, production database or deployment.
+
 ### Payroll Reports precise invalid-field accessibility (2026-11-14)
 
 - `src/screens/payroll/reports.tsx`: date validation now flags only the missing or chronologically offending start/end field via `aria-invalid`, preserving the existing alert association for the affected input. Source commit `fd3c5aedf7d5e8ed6001bf3a4d7b25e1c8c36869`.

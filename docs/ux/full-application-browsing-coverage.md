@@ -1,4 +1,10 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Payroll Reports local-calendar date defaults (2026-11-14)
+
+- `src/screens/payroll/reports.tsx`: initialize the reporting period from the user's local calendar date instead of UTC `toISOString()`, avoiding an incorrect default day around timezone boundaries. Code commit `02a4de883e4705b0fe4e972bcaa5bde1c13a817d`.
+- `docs/ux/all-module-browsing-manifest.json`: record Payroll partial source evidence and pending timezone-boundary verification; commit `870937a67bdc1263b07d67e765d18e3a05a60f48`.
+- **SOURCE ONLY; NOT RUN:** local `check:browsing-coverage`, TypeScript, lint, unit, build, authenticated browser/accessibility, security/RLS and accounting regression. Baseline remains 21 sidebar modules and 132 authenticated route files (15 supporting); **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No main changes, manual CI, production database change or deployment.
+
 ### Payroll Reports refetch display safety (2026-11-14)
 
 - `src/screens/payroll/reports.tsx`: while the current report query is fetching, show the loading state instead of the previous report table, preventing stale on-screen results during filter/report transitions. Source commit `9699586683f3279826225b788a3d03846de4078f`.

@@ -1,5 +1,11 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Payroll Reports invalid-date accessibility association (2026-11-14)
+
+- `src/screens/payroll/reports.tsx`: associate invalid reporting-period date inputs with the visible alert using `aria-invalid`, `aria-describedby`, and a stable alert ID. Code commit `7d2901b03860a71dd847d2b0913f50be71e32d15`.
+- `docs/ux/all-module-browsing-manifest.json`: Payroll evidence and screen-reader/keyboard verification gap updated in commit `c37e83e8cc3e8af1e789f3b441eee67a407bb3a8`.
+- **SOURCE ONLY; NOT RUN:** local `check:browsing-coverage`, TypeScript, lint, unit, build, authenticated browser, accessibility, permissions/RLS and accounting regression. Baseline remains 21 sidebar modules, 132 authenticated routes (15 supporting); **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No `main` changes, manual CI, production database changes or deployment.
+
 ### Payroll Reports invalid-period query guard (2026-11-14)
 
 - `src/screens/payroll/reports.tsx`: suppress report execution when either date is empty or the start date exceeds the end date, and show an accessible explanatory alert. Source commits `27263616b7e2aba1f826090ca1e78ff513543fca` and `464571cd7e05524d0ff9d423ec3f34b1318e6d5d`.

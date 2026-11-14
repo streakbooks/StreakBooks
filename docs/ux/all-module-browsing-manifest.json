@@ -328,7 +328,8 @@
         "2026-11-14: src/screens/payroll/reports.tsx — invalid date inputs expose aria-invalid and aria-describedby pointing to the visible reporting-period alert; source commit 7d2901b03860a71dd847d2b0913f50be71e32d15. SOURCE ONLY, NOT RUN.",
         "2026-11-14: src/screens/payroll/reports.tsx — hide CSV/Print actions while report dates are invalid or the query is fetching; exportCsv also rejects invalid/fetching state, preventing stale report exports; code commit 9916bfd5a9f77e670153027aecc9e919c373ab20. SOURCE ONLY; tests NOT RUN.",
         "src/screens/payroll/reports.tsx — CSV and Print/PDF actions now require reportQ.isSuccess for the current query, in addition to valid dates and not fetching; source commit b0e85d5c7567bfdd0eb7f3effa81ac2ea33ed6ad; NOT RUN",
-        "src/screens/payroll/reports.tsx — loading state now replaces prior report table while refetching; source commit 9699586683f3279826225b788a3d03846de4078f; NOT RUN"
+        "src/screens/payroll/reports.tsx — loading state now replaces prior report table while refetching; source commit 9699586683f3279826225b788a3d03846de4078f; NOT RUN",
+        "2026-11-14: src/screens/payroll/reports.tsx — default reporting period now uses local calendar date rather than UTC ISO date, avoiding off-by-one day at timezone boundaries; source commit 02a4de883e4705b0fe4e972bcaa5bde1c13a817d; SOURCE ONLY, NOT RUN."
       ],
       "remaining": [
         "Verify report URL selection with authenticated fixtures and Back/Forward/refresh",
@@ -350,7 +351,8 @@
         "Verify screen-reader error announcement, input associations, keyboard correction and successful report rerun with authenticated browser; NOT RUN.",
         "Verify CSV/Print visibility and export handler during invalid dates, report switching, and refetch transitions using authenticated browser; TypeScript/build and accounting regressions NOT RUN.",
         "Verify Payroll Reports exports are unavailable after query errors, invalid dates and refetch transitions in authenticated browser; NOT RUN",
-        "Verify report table is not visible during refetch and reappears on success; error recovery and export controls in authenticated browser; NOT RUN"
+        "Verify report table is not visible during refetch and reappears on success; error recovery and export controls in authenticated browser; NOT RUN",
+        "Verify Payroll Reports initial date defaults near UTC/local midnight in positive and negative timezone offsets; typecheck, unit, browser and accounting regression NOT RUN."
       ]
     },
     {

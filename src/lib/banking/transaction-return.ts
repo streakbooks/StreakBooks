@@ -84,5 +84,15 @@ export function encodeBankTransactionReturnContext(input: Record<string, unknown
 
 export function decodeBankTransactionReturnContext(raw: unknown): BankTransactionReturnSearch {
   if (typeof raw !== "string" || !raw || raw.length > MAX_LENGTH) return {};
-  return parseBankTransactionReturnSearch(Object.fromEntries(new URLSearchParams(raw)));
+  const params = new URLSearchParams(raw);
+  // Duplicate allowlisted keys are ambiguous (URLSearchParams otherwise keeps the
+  // last value). Reject that key rather than restoring attacker-controlled state.
+  const values: Record<string, unknown> = {};
+  const duplicates = new Set<string>();
+  for (const [key, value] of params) {
+    if (Object.prototype.hasOwnProperty.call(values, key)) duplicates.add(key);
+    else values[key] = value;
+  }
+  for (const key of duplicates) delete values[key];
+  return parseBankTransactionReturnSearch(values);
 }

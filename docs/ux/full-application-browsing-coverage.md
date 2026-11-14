@@ -1,4 +1,11 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Banking return-search control-character safety (2026-11-14)
+
+- `src/lib/banking/transaction-return.ts`: reject ASCII control characters in journal return-context search terms while retaining valid independent filters and normal Unicode search text. Source commit `8ad00b643a73c049c0548d0ee514461144f9d651`.
+- `src/lib/banking/transaction-return.test.ts`: added control-character decoding and Unicode preservation regressions; commit `acc6012104af63d61f166ea90e27b195d57ee46e`. **WRITTEN, NOT RUN.**
+- `docs/ux/all-module-browsing-manifest.json`: Banking evidence updated; commit `1298dd42c046672cfc49dfcfa37718f16fe8510b`.
+- **SOURCE ONLY, NOT RUN:** local browsing inventory guard, TypeScript, lint, unit, build, authenticated browser/accessibility, security/RLS and accounting regression. Documented baseline: 21 sidebar modules, 132 authenticated routes (15 supporting); **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No main changes, manual CI, production database changes or deployment.
+
 ### Banking duplicate return-context parameter safety (2026-11-14)
 
 - `src/lib/banking/transaction-return.ts`: duplicate query keys are now rejected individually rather than applying last-value-wins decoding, preserving independent valid filters. Source commit `a07f3161a1a54c2f191b4ba7c565798647fcec25`.

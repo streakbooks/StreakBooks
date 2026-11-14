@@ -1,4 +1,11 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Banking duplicate return-context parameter safety (2026-11-14)
+
+- `src/lib/banking/transaction-return.ts`: duplicate query keys are now rejected individually rather than applying last-value-wins decoding, preserving independent valid filters. Source commit `a07f3161a1a54c2f191b4ba7c565798647fcec25`.
+- `src/lib/banking/transaction-return.test.ts`: three regression scenarios cover conflicting, identical and date duplicate keys; commit `4cb2a5ab4cc9e08b2921131e1407b8f7b05c0897`. **WRITTEN, NOT RUN.**
+- `docs/ux/all-module-browsing-manifest.json`: Banking partial evidence and remaining verification recorded in commit `da1832121a50fc96a5e6cb18354ddd39a68ae364`.
+- **SOURCE ONLY; NOT RUN:** local `check:browsing-coverage`, TypeScript, lint, unit, build, authenticated browser/accessibility, security/RLS and accounting regression. Baseline remains 21 sidebar modules and 132 authenticated routes (15 supporting); **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No main changes, manual CI, production database changes or deployment.
+
 ### Payroll Reports zero-row export action consistency (2026-11-14)
 
 - `src/screens/payroll/reports.tsx`: hide CSV and Print/PDF actions when a successful report has zero rows, matching the existing no-rows EmptyState and avoiding printing an empty report. Source commit `222e27bfbacc3e7cf92bbf2f19004d1fc4a92594`.

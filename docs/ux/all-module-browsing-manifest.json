@@ -86,14 +86,17 @@
         "src/lib/banking/transaction-return.ts — reject padded and noncanonical page query values; commit 94cf4b6d4951731776850aad0a9f6d3e985d5c7d; source only",
         "src/lib/banking/transaction-return.test.ts — canonical page regression; commit 97cc65b8f70bfeae565841127dfefb53e47d6be1; WRITTEN, NOT RUN",
         "src/lib/banking/transaction-return.ts — duplicate URL return-context keys rejected rather than last-value-wins; commit a07f3161a1a54c2f191b4ba7c565798647fcec25; SOURCE ONLY, NOT RUN",
-        "src/lib/banking/transaction-return.test.ts — duplicate-key regression cases added; commit 4cb2a5ab4cc9e08b2921131e1407b8f7b05c0897; WRITTEN, NOT RUN"
+        "src/lib/banking/transaction-return.test.ts — duplicate-key regression cases added; commit 4cb2a5ab4cc9e08b2921131e1407b8f7b05c0897; WRITTEN, NOT RUN",
+        "2026-11-14: src/lib/banking/transaction-return.ts rejects ASCII control characters in return search text, preserving valid independent filters; commit 8ad00b643a73c049c0548d0ee514461144f9d651; SOURCE ONLY, NOT RUN.",
+        "2026-11-14: src/lib/banking/transaction-return.test.ts adds control-character and Unicode regression cases; commit acc6012104af63d61f166ea90e27b195d57ee46e; WRITTEN, NOT RUN."
       ],
       "remaining": [
         "Run date-validation unit regression and authenticated banking return-navigation browser tests; verify date range semantics",
         "Verify inverted date range UI behavior and single-day transaction views with authenticated browser fixtures; local tests NOT RUN",
         "Execute early-year calendar date regression and all banking navigation tests; NOT RUN",
         "Execute canonical pageSize regression, banking browser navigation and all 12 acceptance checks; NOT RUN",
-        "Run duplicate-key banking return-context unit and authenticated browser tests; coverage guard/typecheck/lint/build NOT RUN"
+        "Run duplicate-key banking return-context unit and authenticated browser tests; coverage guard/typecheck/lint/build NOT RUN",
+        "Run control-character return search unit tests and authenticated Banking journal return navigation; guard/typecheck/build NOT RUN."
       ]
     },
     {

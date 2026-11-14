@@ -134,7 +134,7 @@ export function PayrollReportsPage() {
   const currency = company?.base_currency ?? "GBP";
 
   const exportCsv = () => {
-    if (!result || !company) return;
+    if (!result || !company || invalidPeriod || reportQ.isFetching) return;
     const headers = result.columns.map((c) => c.label);
     const rows = result.rows.map((row) =>
       result.columns.map((col) => {
@@ -214,7 +214,7 @@ export function PayrollReportsPage() {
         title="Payroll reports"
         description="Approved and posted payroll runs with filters by period, employee, department and schedule."
         actions={
-          result ? (
+          result && !invalidPeriod && !reportQ.isFetching ? (
             <div className="flex flex-wrap gap-2 print:hidden">
               <Button
                 size="sm"

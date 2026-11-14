@@ -37,6 +37,18 @@ describe("Bank transaction to journal browsing context", () => {
     )).toEqual({ status: "matched" });
   });
 
+  it("rejects duplicate return keys without losing independent filters", () => {
+    expect(decodeBankTransactionReturnContext(
+      "status=matched&status=excluded&page=2&q=bank",
+    )).toEqual({ page: 2, q: "bank" });
+    expect(decodeBankTransactionReturnContext(
+      "dateFrom=2026-01-01&dateFrom=2026-02-01&dateTo=2026-03-01",
+    )).toEqual({ dateTo: "2026-03-01" });
+    expect(decodeBankTransactionReturnContext(
+      "page=2&page=2&status=reconciled",
+    )).toEqual({ status: "reconciled" });
+  });
+
   it("rejects unknown statuses and unsafe IDs", () => {
     expect(parseBankTransactionReturnSearch({
       status: "admin",

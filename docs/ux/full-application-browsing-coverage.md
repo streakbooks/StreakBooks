@@ -1,4 +1,11 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Banking return-search actual control-character validation (2026-11-15)
+
+- `src/lib/banking/transaction-return.ts`: repaired escaped literal regex and comment, so real ASCII controls are rejected; commit `8baa1f86e039df8831d48893f723fafc19ceb561`.
+- `src/lib/banking/transaction-return.test.ts`: corrected inputs to exercise real newline, carriage return, tab, NUL and DEL rather than backslash-letter strings; commit `58b3db43bbb3425db1f252e7d1a854820f84f59d`. **WRITTEN, NOT RUN.**
+- `docs/ux/all-module-browsing-manifest.json`: Banking evidence updated in commit `2818deb1c22d90421c6fef2263cbbae210bdcb64`.
+- **SOURCE REVIEW ONLY; NOT RUN:** local coverage guard, TypeScript, lint, unit, build, authenticated browser/accessibility, RLS/accounting regression. Baseline 21 sidebar modules, 132 authenticated routes (15 supporting); **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No changes to main, manually triggered CI, production database or deployment.
+
 ### Banking return-search control-character safety (2026-11-14)
 
 - `src/lib/banking/transaction-return.ts`: reject ASCII control characters in journal return-context search terms while retaining valid independent filters and normal Unicode search text. Source commit `8ad00b643a73c049c0548d0ee514461144f9d651`.

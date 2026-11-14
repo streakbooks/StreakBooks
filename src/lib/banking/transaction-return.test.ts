@@ -61,6 +61,19 @@ describe("Bank transaction to journal browsing context", () => {
       .toEqual({ q: "Café bank fees & charges" });
   });
 
+  it("rejects bidi spoofing controls while preserving ordinary multilingual searches", () => {
+    for (const q of ["bank\u202efees", "bank\u202afees", "bank\u2066fees", "bank\u2069fees"]) {
+      expect(parseBankTransactionReturnSearch({ q, status: "matched" }))
+        .toEqual({ status: "matched" });
+      expect(decodeBankTransactionReturnContext(
+        "q=" + encodeURIComponent(q) + "&status=matched",
+      )).toEqual({ status: "matched" });
+    }
+    expect(decodeBankTransactionReturnContext(
+      encodeBankTransactionReturnContext({ q: "बैंक शुल्क Café", page: 2 }),
+    )).toEqual({ q: "बैंक शुल्क Café", page: 2 });
+  });
+
   it("rejects unknown statuses and unsafe IDs", () => {
     expect(parseBankTransactionReturnSearch({
       status: "admin",

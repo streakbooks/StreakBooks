@@ -89,6 +89,8 @@ export function PayrollReportsPage() {
   const [department, setDepartment] = useState("");
   const [payScheduleId, setPayScheduleId] = useState<string>("all");
   const invalidPeriod = !dateFrom || !dateTo || dateFrom > dateTo;
+  const invalidFrom = !dateFrom || Boolean(dateTo && dateFrom > dateTo);
+  const invalidTo = !dateTo || Boolean(dateFrom && dateFrom > dateTo);
 
   const catalogQ = useQuery({
     queryKey: ["payroll-reports-catalog", company?.id],
@@ -270,8 +272,8 @@ export function PayrollReportsPage() {
                   <Input
                     id="payroll-report-from"
                     type="date"
-                    aria-invalid={invalidPeriod}
-                    aria-describedby={invalidPeriod ? "payroll-report-period-error" : undefined}
+                    aria-invalid={invalidFrom}
+                    aria-describedby={invalidFrom ? "payroll-report-period-error" : undefined}
                     value={dateFrom}
                     onChange={(e) => setDateFrom(e.target.value)}
                   />
@@ -281,8 +283,8 @@ export function PayrollReportsPage() {
                   <Input
                     id="payroll-report-to"
                     type="date"
-                    aria-invalid={invalidPeriod}
-                    aria-describedby={invalidPeriod ? "payroll-report-period-error" : undefined}
+                    aria-invalid={invalidTo}
+                    aria-describedby={invalidTo ? "payroll-report-period-error" : undefined}
                     value={dateTo}
                     onChange={(e) => setDateTo(e.target.value)}
                   />

@@ -218,7 +218,7 @@ export function PayrollReportsPage() {
         title="Payroll reports"
         description="Approved and posted payroll runs with filters by period, employee, department and schedule."
         actions={
-          result && !invalidPeriod && reportQ.isSuccess && !reportQ.isFetching ? (
+          result && result.rows.length > 0 && !invalidPeriod && reportQ.isSuccess && !reportQ.isFetching ? (
             <div className="flex flex-wrap gap-2 print:hidden">
               <Button
                 size="sm"

@@ -1,4 +1,11 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+
+### Payroll Reports precise invalid-field accessibility (2026-11-14)
+
+- `src/screens/payroll/reports.tsx`: date validation now flags only the missing or chronologically offending start/end field via `aria-invalid`, preserving the existing alert association for the affected input. Source commit `fd3c5aedf7d5e8ed6001bf3a4d7b25e1c8c36869`.
+- `docs/ux/all-module-browsing-manifest.json`: record partial Payroll evidence and outstanding screen-reader/keyboard verification; commit `40ce300e21a9b0512e6feb006d5be344adee4189`.
+- **SOURCE ONLY; NOT RUN:** local `check:browsing-coverage`, TypeScript, lint, unit, build, authenticated browser/accessibility, security/RLS and accounting regression. Documented baseline 21 sidebar modules and 132 authenticated routes (15 supporting); **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No changes to main, manual CI, production database or deployment.
+
 ### Payroll Reports local-calendar date defaults (2026-11-14)
 
 - `src/screens/payroll/reports.tsx`: initialize the reporting period from the user's local calendar date instead of UTC `toISOString()`, avoiding an incorrect default day around timezone boundaries. Code commit `02a4de883e4705b0fe4e972bcaa5bde1c13a817d`.

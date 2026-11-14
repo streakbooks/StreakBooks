@@ -50,7 +50,7 @@ describe("Bank transaction to journal browsing context", () => {
   });
 
   it("rejects control characters in returned search terms without losing filters", () => {
-    for (const q of ["bank\\nfees", "bank\\rfees", "bank\\tfees", "bank\\u0000fees", "bank\\u007ffees"]) {
+    for (const q of ["bank\nfees", "bank\rfees", "bank\tfees", "bank\u0000fees", "bank\u007ffees"]) {
       expect(parseBankTransactionReturnSearch({ q, status: "matched" }))
         .toEqual({ status: "matched" });
       expect(decodeBankTransactionReturnContext(

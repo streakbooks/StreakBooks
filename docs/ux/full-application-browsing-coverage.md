@@ -1,4 +1,10 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Payroll Reports refetch display safety (2026-11-14)
+
+- `src/screens/payroll/reports.tsx`: while the current report query is fetching, show the loading state instead of the previous report table, preventing stale on-screen results during filter/report transitions. Source commit `9699586683f3279826225b788a3d03846de4078f`.
+- `docs/ux/all-module-browsing-manifest.json`: Payroll partial source evidence and remaining authenticated refetch/error verification recorded in commit `8c9b0ef4b2be4020689eb68767ad26a42840b5d8`.
+- **SOURCE ONLY; NOT RUN:** local `check:browsing-coverage`, TypeScript, lint, unit, build, authenticated browser/accessibility, security/RLS and accounting regression. Baseline 21 sidebar modules, 132 authenticated route files (15 supporting); **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No changes to main, manual CI, production database or deployment.
+
 ### Payroll Reports successful-query export gate (2026-11-14)
 
 - `src/screens/payroll/reports.tsx`: CSV and Print/PDF actions now require a successful current report query as well as valid dates and no in-flight fetch. CSV handler independently checks success. Source commit `b0e85d5c7567bfdd0eb7f3effa81ac2ea33ed6ad`.

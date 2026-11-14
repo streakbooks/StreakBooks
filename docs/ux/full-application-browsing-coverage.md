@@ -1,4 +1,10 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Payroll Reports zero-row export action consistency (2026-11-14)
+
+- `src/screens/payroll/reports.tsx`: hide CSV and Print/PDF actions when a successful report has zero rows, matching the existing no-rows EmptyState and avoiding printing an empty report. Source commit `222e27bfbacc3e7cf92bbf2f19004d1fc4a92594`.
+- `docs/ux/all-module-browsing-manifest.json`: Payroll partial source evidence and pending authenticated empty/nonempty export checks recorded in commit `b437e4b2cf295d471ffb3f2c3ec4acf1fb45567c`.
+- **SOURCE ONLY; NOT RUN:** local `check:browsing-coverage`, TypeScript, lint, unit, build, authenticated browser/accessibility, RLS and accounting regression. Baseline remains 21 sidebar modules, 132 authenticated route files (15 supporting); **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No main changes, manual CI, production database changes or deployment.
+
 
 ### Payroll Reports unavailable-result recovery (2026-11-14)
 

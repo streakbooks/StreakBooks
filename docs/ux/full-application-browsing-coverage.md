@@ -1,4 +1,10 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Payroll Reports successful-query export gate (2026-11-14)
+
+- `src/screens/payroll/reports.tsx`: CSV and Print/PDF actions now require a successful current report query as well as valid dates and no in-flight fetch. CSV handler independently checks success. Source commit `b0e85d5c7567bfdd0eb7f3effa81ac2ea33ed6ad`.
+- `docs/ux/all-module-browsing-manifest.json`: Payroll evidence and pending error/refetch verification updated in commit `6fd7f4ecb7b66fe60715631cb31f0813c294e234`.
+- **SOURCE ONLY; NOT RUN:** local `check:browsing-coverage`, TypeScript, lint, unit, build, authenticated browser/accessibility, security/RLS and accounting regression. Baseline 21 sidebar modules, 132 authenticated route files (15 supporting); **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No main changes, manual CI, production database changes or deployment.
+
 ### Payroll Reports stale-export guard (2026-11-14)
 
 - `src/screens/payroll/reports.tsx`: suppress CSV and Print/PDF actions while reporting dates are invalid or the report query is fetching; `exportCsv` also guards against stale exports during these states. Code commit `9916bfd5a9f77e670153027aecc9e919c373ab20`.

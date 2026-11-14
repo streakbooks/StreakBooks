@@ -1,4 +1,10 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Banking return-search bidi spoofing protection (2026-11-15)
+
+- `src/lib/banking/transaction-return.ts`: reject Unicode bidirectional formatting controls U+202A–U+202E and U+2066–U+2069 in restored search text; preserve legitimate multilingual searches. Commit `0db1dd22c4ad156925dd8545ee4b4f62cf5e5148`.
+- `src/lib/banking/transaction-return.test.ts`: added bidi and multilingual regression cases; commit `d4f4e121f0e1530cccee504de08cf53fc24817c3`. **WRITTEN, NOT RUN.**
+- **NOT RUN:** local browsing inventory guard, TypeScript, lint, unit tests, build, authenticated browser/accessibility, RLS/accounting regression. Baseline 21 sidebar modules, 132 authenticated routes (15 supporting); **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No main changes, manual CI, production database changes or deployment.
+
 ### Banking return-search actual control-character validation (2026-11-15)
 
 - `src/lib/banking/transaction-return.ts`: repaired escaped literal regex and comment, so real ASCII controls are rejected; commit `8baa1f86e039df8831d48893f723fafc19ceb561`.

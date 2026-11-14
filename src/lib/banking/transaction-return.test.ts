@@ -49,6 +49,18 @@ describe("Bank transaction to journal browsing context", () => {
     )).toEqual({ status: "reconciled" });
   });
 
+  it("rejects control characters in returned search terms without losing filters", () => {
+    for (const q of ["bank\\nfees", "bank\\rfees", "bank\\tfees", "bank\\u0000fees", "bank\\u007ffees"]) {
+      expect(parseBankTransactionReturnSearch({ q, status: "matched" }))
+        .toEqual({ status: "matched" });
+      expect(decodeBankTransactionReturnContext(
+        "q=" + encodeURIComponent(q) + "&status=matched",
+      )).toEqual({ status: "matched" });
+    }
+    expect(parseBankTransactionReturnSearch({ q: "Café bank fees & charges" }))
+      .toEqual({ q: "Café bank fees & charges" });
+  });
+
   it("rejects unknown statuses and unsafe IDs", () => {
     expect(parseBankTransactionReturnSearch({
       status: "admin",

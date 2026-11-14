@@ -78,7 +78,9 @@ export function PayrollReportsPage() {
   const fetchCatalog = useServerFn(getPayrollReportsCatalog);
   const fetchReport = useServerFn(runPayrollReportServer);
 
-  const today = new Date().toISOString().slice(0, 10);
+  // Use the user’s local calendar date, not UTC (which can be tomorrow or yesterday locally).
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   const reportId = useSearch({ from: "/_authenticated/payroll/reports" }).reportId ?? "payroll_summary";
   const navigate = useNavigate();
   const [dateFrom, setDateFrom] = useState(`${today.slice(0, 4)}-01-01`);

@@ -37,7 +37,9 @@ export function parseBankTransactionReturnSearch(
   const account = input["bankAccountId"];
   if (typeof account === "string" && UUID.test(account)) out.bankAccountId = account;
   const q = input["q"];
-  // Reject control characters that can corrupt the visible search field or logs.\n  // Keep ordinary spaces and Unicode text intact for legitimate bank searches.\n  if (typeof q === "string" && q.length > 0 && q.length <= 120 && !/[\\u0000-\\u001f\\u007f]/.test(q)) out.q = q;
+  // Reject control characters that can corrupt the visible search field or logs.
+  // Keep ordinary spaces and Unicode text intact for legitimate bank searches.
+  if (typeof q === "string" && q.length > 0 && q.length <= 120 && !/[\u0000-\u001f\u007f]/.test(q)) out.q = q;
   for (const key of ["dateFrom", "dateTo"] as const) {
     const value = input[key];
     if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) { 

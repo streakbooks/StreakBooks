@@ -367,6 +367,11 @@ export function PayrollReportsPage() {
               currency={currency}
               fmt={fmt}
             />
+          ) : reportQ.isSuccess ? (
+            <EmptyState
+              title="Report results unavailable"
+              description="This report did not return a usable result. Try another report or reporting period."
+            />
           ) : null}
         </div>
       )}

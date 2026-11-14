@@ -345,7 +345,7 @@ export function PayrollReportsPage() {
               <AlertTitle>Check the reporting period</AlertTitle>
               <AlertDescription>Choose both dates and make sure the start date is not after the end date.</AlertDescription>
             </Alert>
-          ) : reportQ.isPending ? (
+          ) : reportQ.isPending || reportQ.isFetching ? (
             <LoadingState />
           ) : reportQ.isError ? (
             <ErrorState

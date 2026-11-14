@@ -268,6 +268,8 @@ export function PayrollReportsPage() {
                   <Input
                     id="payroll-report-from"
                     type="date"
+                    aria-invalid={invalidPeriod}
+                    aria-describedby={invalidPeriod ? "payroll-report-period-error" : undefined}
                     value={dateFrom}
                     onChange={(e) => setDateFrom(e.target.value)}
                   />
@@ -277,6 +279,8 @@ export function PayrollReportsPage() {
                   <Input
                     id="payroll-report-to"
                     type="date"
+                    aria-invalid={invalidPeriod}
+                    aria-describedby={invalidPeriod ? "payroll-report-period-error" : undefined}
                     value={dateTo}
                     onChange={(e) => setDateTo(e.target.value)}
                   />
@@ -337,7 +341,7 @@ export function PayrollReportsPage() {
           </div>
 
           {invalidPeriod ? (
-            <Alert role="alert">
+            <Alert id="payroll-report-period-error" role="alert">
               <AlertTitle>Check the reporting period</AlertTitle>
               <AlertDescription>Choose both dates and make sure the start date is not after the end date.</AlertDescription>
             </Alert>

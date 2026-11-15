@@ -215,7 +215,9 @@
         "2026-11-15: src/lib/accounting/journal-browsing.test.ts adds malformed URL, multilingual and date-range regressions; commit a9ea6ea2cea1d275f1e20abc75153979aabc6a8e; WRITTEN, NOT RUN.",
         "2026-11-15: journal-browsing.test.ts corrected to supply actual JS escaped newline, carriage return, tab, NUL, DEL, U+202E and U+2066 rather than literal backslash sequences; commit 9a155248bfc75bf8e4ebe89bf0b0ee8917cbc22a; WRITTEN, NOT RUN.",
         "2026-11-15: journal-browsing.ts rejects C1 control range U+007F–U+009F and directional marks U+061C/U+200E/U+200F, alongside existing bidi controls; commit 631aba15ef3f92a9ed405d5e5007b66633419e79; SOURCE ONLY, NOT RUN.",
-        "2026-11-15: journal-browsing.test.ts adds C1/directional-control regression inputs; commit 62b4193045c77fa37d2a78fd41311c2b355b32bd; WRITTEN, NOT RUN."
+        "2026-11-15: journal-browsing.test.ts adds C1/directional-control regression inputs; commit 62b4193045c77fa37d2a78fd41311c2b355b32bd; WRITTEN, NOT RUN.",
+        "2026-11-15: journal-browsing.ts rejects U+2028/U+2029 Unicode line/paragraph separators in journal search; source commit 7d18587be5e659b68ba2040294b17df362c5bc2e; SOURCE REVIEW ONLY, NOT RUN.",
+        "2026-11-15: journal-browsing.test.ts adds U+2028/U+2029 regression cases; commit e341cd07b629f002ed87f619083d7a34dd796641; WRITTEN, NOT RUN."
       ],
       "remaining": [
         "Journal source permission and tenant tests, list/expanded-detail integration and filters tested with fixtures",
@@ -223,7 +225,8 @@
         "Run full TypeScript, Vitest, build, browser and accounting reconciliation tests",
         "Run journal browsing Vitest regressions, coverage inventory guard, typecheck, lint, build, authenticated browser and accounting/RLS checks; NOT RUN.",
         "Execute corrected actual-control-character journal filter tests; NOT RUN. Confirm all 12 criteria with authenticated fixtures before marking complete.",
-        "Execute C1 and directional-control regression tests plus complete authenticated navigation, RLS, accounting integrity, accessibility and inventory guard; NOT RUN."
+        "Execute C1 and directional-control regression tests plus complete authenticated navigation, RLS, accounting integrity, accessibility and inventory guard; NOT RUN.",
+        "Run Unicode separator journal URL regression and full local inventory guard, TypeScript, Vitest, build, authenticated browser, accessibility, RLS and accounting integrity; NOT RUN."
       ]
     },
     {

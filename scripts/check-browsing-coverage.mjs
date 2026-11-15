@@ -167,7 +167,7 @@ for (const [route, entry] of Object.entries(manifest.supportingRouteEvidence ?? 
 if (!Array.isArray(manifest.crossCutting) || manifest.crossCutting.some((entry) => !entry || typeof entry.area !== "string" || !entry.area.trim() || typeof entry.status !== "string" || !entry.status.trim() || typeof entry.fullyVerified !== "boolean")) {
   throw new Error("Cross-cutting browsing areas require a name, status and explicit fullyVerified boolean");
 }
-if (new Set(manifest.crossCutting.map((entry) => entry.area)).size !== manifest.crossCutting.length) {
+if (new Set(manifest.crossCutting.map((entry) => entry.area.trim())).size !== manifest.crossCutting.length) {
   throw new Error("Duplicate cross-cutting browsing areas");
 }
 for (const entry of manifest.crossCutting) {

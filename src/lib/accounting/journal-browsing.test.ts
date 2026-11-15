@@ -114,6 +114,10 @@ describe("Accounting journal workspace browsing", () => {
       .toEqual({ journalQ: "Rent & utilities", journalPage: 2 });
     expect(parseJournalBrowseSearch({ journalQ: "  बहीखाता Café  " }))
       .toEqual({ journalQ: "बहीखाता Café" });
+    expect(parseJournalBrowseSearch({ journalQ: `  ${"x".repeat(120)}  `, journalPage: 2 }))
+      .toEqual({ journalQ: "x".repeat(120), journalPage: 2 });
+    expect(parseJournalBrowseSearch({ journalQ: `  ${"x".repeat(121)}  `, journalPage: 2 }))
+      .toEqual({ journalPage: 2 });
   });
 
   it("supports empty/default direct-link states", () => {

@@ -1,4 +1,10 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Normalized sidebar identity inventory guard (2026-11-16)
+
+- `scripts/check-browsing-coverage.mjs`: normalize top-level sidebar labels by trimming, collapsing whitespace and case folding before uniqueness checks for both source navigation and manifest. This detects visually duplicate module names even if their destination paths differ. Source commit `0a428fe46feb3ba826972bc466c7a5a3839fda0c`.
+- `docs/ux/all-module-browsing-manifest.json`: inventory guard evidence updated in commit `3aa08b22c59df56bb25ae76629207ac73c2d48ad`.
+- **SOURCE REVIEW ONLY; NOT RUN:** inventory guard, TypeScript, lint, unit tests, build, authenticated browser/accessibility, RLS and accounting regression. Documented baseline remains 21 sidebar modules, 132 authenticated routes (15 supporting), 11 cross-cutting areas; 0/21 modules, 0/15 supporting routes and 0/12 batches fully verified. No changes to main, manually triggered CI, production database or deployment.
+
 ### Cross-cutting workflow identity guard (2026-11-16)
 
 - `scripts/check-browsing-coverage.mjs`: compare trimmed cross-cutting workflow names for uniqueness, preventing whitespace-equivalent entries from bypassing the duplicate-name guard. Source commit `7cd6db1c13b48d5011b0c210ada9877b680f5e0f`.

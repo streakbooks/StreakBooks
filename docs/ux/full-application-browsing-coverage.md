@@ -1,4 +1,10 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Cross-cutting workflow verification-status inventory guard (2026-11-15)
+
+- `scripts/check-browsing-coverage.mjs`: require an explicit boolean `fullyVerified` for each cross-cutting workflow rather than silently interpreting a missing flag as unverified; commit `205ea4e38049f9b6f8e0b715155d5102db225709`.
+- `docs/ux/all-module-browsing-manifest.json`: 11 existing cross-cutting workflows explicitly set to `fullyVerified: false`; commit `93af3f75047f4d986228d0885865124221a91db2`.
+- **SOURCE REVIEW ONLY; NOT RUN:** local inventory guard, TypeScript, lint, unit tests, build, authenticated browser/accessibility, security/RLS and accounting regression. Baseline remains 21 sidebar modules, 132 authenticated routes (15 supporting); **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No changes to `main`, manually triggered CI, production database or deployment.
+
 ### Banking invisible-control return-search parity (2026-11-15)
 
 - `src/lib/banking/transaction-return.ts`: reject C1 controls, U+061C, U+200E/U+200F and U+2028/U+2029 in return-context search while preserving independent filters; commit `559664cec0286b057fc6cbbecd1f2eb5d515463e`.

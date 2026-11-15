@@ -92,7 +92,9 @@
         "2026-11-15: fixed literal escaped control-character regex and comment in src/lib/banking/transaction-return.ts; commit 8baa1f86e039df8831d48893f723fafc19ceb561; SOURCE REVIEW ONLY, NOT RUN.",
         "2026-11-15: tests now supply actual newline, carriage return, tab, NUL and DEL via JS escapes; commit 58b3db43bbb3425db1f252e7d1a854820f84f59d; WRITTEN, NOT RUN.",
         "2026-11-15: src/lib/banking/transaction-return.ts rejects Unicode bidi override/isolate controls in return search; commit 0db1dd22c4ad156925dd8545ee4b4f62cf5e5148; SOURCE ONLY, NOT RUN.",
-        "2026-11-15: src/lib/banking/transaction-return.test.ts adds bidi spoofing and multilingual search regressions; commit d4f4e121f0e1530cccee504de08cf53fc24817c3; WRITTEN, NOT RUN."
+        "2026-11-15: src/lib/banking/transaction-return.test.ts adds bidi spoofing and multilingual search regressions; commit d4f4e121f0e1530cccee504de08cf53fc24817c3; WRITTEN, NOT RUN.",
+        "2026-11-15: src/lib/banking/transaction-return.ts rejects C1, directional marks and Unicode separators in return search; commit 559664cec0286b057fc6cbbecd1f2eb5d515463e; SOURCE ONLY, NOT RUN.",
+        "2026-11-15: src/lib/banking/transaction-return.test.ts adds seven codepoint regression cases preserving page and multilingual text; commit 9a0b40686c7c9f06b2a42cbe8e1f0f6fdca53c69; WRITTEN, NOT RUN."
       ],
       "remaining": [
         "Run date-validation unit regression and authenticated banking return-navigation browser tests; verify date range semantics",
@@ -102,7 +104,8 @@
         "Run duplicate-key banking return-context unit and authenticated browser tests; coverage guard/typecheck/lint/build NOT RUN",
         "Run control-character return search unit tests and authenticated Banking journal return navigation; guard/typecheck/build NOT RUN.",
         "Execute corrected control-character unit regressions and authenticated browser tests; typecheck/lint/build/coverage guard NOT RUN.",
-        "Run bidi-control regression tests, inventory guard, typecheck, lint, build and authenticated banking browser tests; NOT RUN."
+        "Run bidi-control regression tests, inventory guard, typecheck, lint, build and authenticated banking browser tests; NOT RUN.",
+        "Run new Banking C1/directional/separator regression and authenticated journal return tests; coverage guard, typecheck, lint, build NOT RUN."
       ]
     },
     {

@@ -1,4 +1,10 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Accounting journal actual control-character regression correction (2026-11-15)
+
+- `src/lib/accounting/journal-browsing.test.ts`: corrected the test inputs to use actual JavaScript escaped newline, carriage return, tab, NUL, DEL, U+202E and U+2066 characters instead of literal backslash sequences. Commit `9a155248bfc75bf8e4ebe89bf0b0ee8917cbc22a`. **WRITTEN, NOT RUN.**
+- `docs/ux/all-module-browsing-manifest.json`: Accounting partial evidence and remaining verification updated, commit `a31952b16af03d4426455f1ae2f2df4b172132d2`.
+- **NOT RUN:** local `check:browsing-coverage`, TypeScript, lint, Vitest, build, authenticated browser/accessibility, RLS/accounting regression. Baseline 21 sidebar modules, 132 authenticated route files (15 supporting); **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No `main` changes, manual CI, production database changes or deployment.
+
 ### Accounting journal deep-link filter validation (2026-11-15)
 
 - `src/lib/accounting/journal-browsing.ts`: reject noncanonical journal page/page-size strings, ASCII controls and bidi spoofing controls in journal search, and inverted date windows while retaining independent valid filters. Commit `1ce8ad4cb78dc2ae78a40f48424a0df2c08f7f47`.

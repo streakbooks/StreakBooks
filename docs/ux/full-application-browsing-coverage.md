@@ -1,4 +1,10 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Accounting journal C1 and directional-control search safety (2026-11-15)
+
+- `src/lib/accounting/journal-browsing.ts`: reject C1 control range U+007F–U+009F and invisible direction marks U+061C/U+200E/U+200F in journal search URLs; source commit `631aba15ef3f92a9ed405d5e5007b66633419e79`.
+- `src/lib/accounting/journal-browsing.test.ts`: regression cases for C1 and directional marks, commit `62b4193045c77fa37d2a78fd41311c2b355b32bd`. **WRITTEN, NOT RUN.**
+- **NOT RUN:** local `check:browsing-coverage`, typecheck, lint, unit tests, build, authenticated browser/accessibility, RLS/accounting regression. Baseline 21 sidebar modules, 132 authenticated routes (15 supporting); **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No `main` changes, manual CI, production database change or deployment.
+
 ### Accounting journal actual control-character regression correction (2026-11-15)
 
 - `src/lib/accounting/journal-browsing.test.ts`: corrected the test inputs to use actual JavaScript escaped newline, carriage return, tab, NUL, DEL, U+202E and U+2066 characters instead of literal backslash sequences. Commit `9a155248bfc75bf8e4ebe89bf0b0ee8917cbc22a`. **WRITTEN, NOT RUN.**

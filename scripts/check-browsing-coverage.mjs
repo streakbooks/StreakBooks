@@ -65,6 +65,13 @@ for (const [name, entries] of [["Source navigation", parsedSidebar], ["Browsing 
   if (new Set(targets).size !== targets.length) {
     throw new Error(name + " contains duplicate sidebar destinations");
   }
+  // Distinct URLs cannot justify duplicate visible module labels. Normalize
+  // whitespace and case so a future navigation addition cannot hide in the
+  // inventory under a visually identical label.
+  const labels = entries.map((entry) => entry.label.trim().replace(/\\s+/g, " ").toLocaleLowerCase("en"));
+  if (new Set(labels).size !== labels.length) {
+    throw new Error(name + " contains duplicate normalized sidebar labels");
+  }
 }
 compareList(
   parsedSidebar.map((m) => m.label + " | " + m.href),

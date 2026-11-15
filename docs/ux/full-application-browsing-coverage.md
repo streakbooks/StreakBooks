@@ -1,4 +1,10 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Browsing inventory validation hardening (2026-11-15)
+
+- `scripts/check-browsing-coverage.mjs`: trim acceptance-criterion identifiers before checking uniqueness, require `fullyVerified === true` for module evidence checks, and reject empty/nonstring `browsingImplementation` statuses. Commit `7a272e9904637fa3f443670566f562eaca02164b`.
+- `docs/ux/all-module-browsing-manifest.json`: source evidence updated in commit `7f5ef7a97d2e7fc065ff573edc29fd149440d590`.
+- **SOURCE REVIEW ONLY, NOT RUN:** inventory guard, TypeScript, lint, unit tests, build, authenticated browser/accessibility, RLS and accounting regressions. Baseline remains 21 sidebar modules, 132 authenticated route files (15 supporting); **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No `main` changes, manual CI, production database changes or deployment.
+
 ### Acceptance evidence integrity guard (2026-11-15)
 
 - `scripts/check-browsing-coverage.mjs`: fully verified modules, supporting routes and cross-cutting workflows must provide 12 distinct nonempty acceptance evidence strings; source-only and placeholder/unexecuted evidence is rejected. Commits `a11bebd445720d3a25118328d1bc225cd3a335f6` and `6729e87a3190a3756fb1030f132d1d9140e6d094`.

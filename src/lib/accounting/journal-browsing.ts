@@ -32,9 +32,16 @@ export function parseJournalBrowseSearch(raw: Record<string, unknown>): JournalB
   if (isReportDate(raw["journalFrom"])) result.journalFrom = raw["journalFrom"];
   if (isReportDate(raw["journalTo"])) result.journalTo = raw["journalTo"];
 
-  // Keep a valid start date, but never restore an inverted date window.\n  if (result.journalFrom && result.journalTo && result.journalFrom > result.journalTo) {\n    delete result.journalTo;\n  }\n\n  const pageSize = raw["journalPageSize"];
+  // Keep a valid start date, but never restore an inverted date window.
+  if (result.journalFrom && result.journalTo && result.journalFrom > result.journalTo) {
+    delete result.journalTo;
+  }
+
+  const pageSize = raw["journalPageSize"];
   if ((typeof pageSize === "number" || typeof pageSize === "string") &&
-      ((typeof pageSize === "number" && Number.isInteger(pageSize)) ||\n       (typeof pageSize === "string" && /^(50|100|200)$/.test(pageSize))) &&\n      PAGE_SIZES.has(Number(pageSize))) {
+      ((typeof pageSize === "number" && Number.isInteger(pageSize)) ||
+       (typeof pageSize === "string" && /^(50|100|200)$/.test(pageSize))) &&
+      PAGE_SIZES.has(Number(pageSize))) {
     result.journalPageSize = Number(pageSize) as JournalBrowseSearch["journalPageSize"];
   }
 

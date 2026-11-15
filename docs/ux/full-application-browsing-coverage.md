@@ -1,4 +1,11 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Accounting journal URL search whitespace normalization (2026-11-15)
+
+- `src/lib/accounting/journal-browsing.ts`: ignore whitespace-only journal search deep links and trim surrounding whitespace, preserving independent filters and existing control-character validation; commit `456342ad6033d46b38991c91722fbfb3bb8ec816`.
+- `src/lib/accounting/journal-browsing.test.ts`: added blank-only, padded and multilingual search cases; commit `64d74924e36baf0b96e7f2e8525643e0fdcfe821`. **WRITTEN, NOT RUN.**
+- Coverage manifest evidence updated. **NOT RUN:** local `check:browsing-coverage`, typecheck, lint, Vitest, build, authenticated browser/accessibility, RLS/accounting regression. Baseline 21 sidebar modules, 132 authenticated routes (15 supporting); **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No changes to main, manual CI, production database or deployment.
+
+
 ### Accounting journal Unicode separator deep-link protection (2026-11-15)
 
 - `src/lib/accounting/journal-browsing.ts`: reject U+2028 line and U+2029 paragraph separators in URL-restored journal search while retaining multilingual text; commit `7d18587be5e659b68ba2040294b17df362c5bc2e`.

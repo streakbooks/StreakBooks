@@ -1,4 +1,10 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Banking invisible-control return-search parity (2026-11-15)
+
+- `src/lib/banking/transaction-return.ts`: reject C1 controls, U+061C, U+200E/U+200F and U+2028/U+2029 in return-context search while preserving independent filters; commit `559664cec0286b057fc6cbbecd1f2eb5d515463e`.
+- `src/lib/banking/transaction-return.test.ts`: seven codepoint regression cases for parser and URL decoder, plus multilingual preservation; commit `9a0b40686c7c9f06b2a42cbe8e1f0f6fdca53c69`. **WRITTEN, NOT RUN.**
+- Manifest Banking evidence updated. **NOT RUN:** local `check:browsing-coverage`, typecheck, lint, Vitest, build, authenticated browser/accessibility, RLS/accounting regression. Baseline 21 sidebar modules, 132 authenticated routes (15 supporting); **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No main changes, manual CI, production database operations or deployment.
+
 ### Accounting journal normalized-search length boundary (2026-11-15)
 
 - `src/lib/accounting/journal-browsing.ts`: enforce the 120-character limit on trimmed effective journal search text rather than padded URL input; commit `6ef3b57b043033d72cc4f67925daca1d8cfe984c`.

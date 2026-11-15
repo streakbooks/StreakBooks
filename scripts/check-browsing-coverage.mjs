@@ -118,7 +118,7 @@ for (const [key, actual] of Object.entries(expectedCounts)) {
 if (!Array.isArray(manifest.acceptanceCriteria) || manifest.acceptanceCriteria.length !== 12 || manifest.acceptanceCriteria.some((criterion) => typeof criterion !== "string" || !criterion.trim())) {
   throw new Error("Exactly 12 nonempty browsing acceptance criteria are required");
 }
-if (new Set(manifest.acceptanceCriteria).size !== manifest.acceptanceCriteria.length) {
+if (new Set(manifest.acceptanceCriteria.map((criterion) => criterion.trim())).size !== manifest.acceptanceCriteria.length) {
   throw new Error("Browsing acceptance criteria must be unique");
 }
 // A checked-off criterion cannot be backed by placeholder or unexecuted evidence.
@@ -135,7 +135,7 @@ function hasExecutableAcceptanceEvidence(entry) {
 }
 
 for (const module of manifest.modules) {
-  if (module.fullyVerified && !hasExecutableAcceptanceEvidence(module)) {
+  if (module.fullyVerified === true && !hasExecutableAcceptanceEvidence(module)) {
     throw new Error("Fully verified module requires 12 nonempty acceptance evidence entries: " + module.label);
   }
 }
@@ -178,7 +178,7 @@ for (const entry of manifest.crossCutting) {
 
 const missingRequirements = manifest.modules.filter(
   (module) =>
-    !module.browsingImplementation ||
+    typeof module.browsingImplementation !== "string" || !module.browsingImplementation.trim() ||
     typeof module.fullyVerified !== "boolean" ||
     !Array.isArray(module.routeFiles),
 );

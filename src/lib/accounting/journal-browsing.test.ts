@@ -76,6 +76,33 @@ describe("Accounting journal workspace browsing", () => {
     });
   });
 
+  it("rejects ambiguous numeric and control-character journal filters", () => {
+    for (const journalPage of ["00", "02", " 2", "2 ", "+2", "2e1", "0x10"]) {
+      expect(parseJournalBrowseSearch({ journalPage, journalSource: "manual" }))
+        .toEqual({ journalSource: "manual" });
+    }
+    for (const journalPageSize of ["050", " 50", "50 ", "1e2", "100.0", "+200"]) {
+      expect(parseJournalBrowseSearch({ journalPageSize, journalSource: "manual" }))
+        .toEqual({ journalSource: "manual" });
+    }
+    for (const journalQ of ["audit\\nentries", "audit\\u0000entries", "audit\\u202eentries"]) {
+      expect(parseJournalBrowseSearch({ journalQ, journalPage: 2 }))
+        .toEqual({ journalPage: 2 });
+    }
+    expect(parseJournalBrowseSearch({ journalQ: "बहीखाता Café" }))
+      .toEqual({ journalQ: "बहीखाता Café" });
+  });
+
+  it("discards inverted journal end dates but preserves independent filters", () => {
+    expect(parseJournalBrowseSearch({
+      journalFrom: "2026-12-31", journalTo: "2026-01-01",
+      journalSource: "manual", journalPage: "3",
+    })).toEqual({ journalFrom: "2026-12-31", journalSource: "manual", journalPage: 3 });
+    expect(parseJournalBrowseSearch({
+      journalFrom: "2026-01-01", journalTo: "2026-01-01",
+    })).toEqual({ journalFrom: "2026-01-01", journalTo: "2026-01-01" });
+  });
+
   it("supports empty/default direct-link states", () => {
     expect(parseJournalBrowseSearch({})).toEqual({});
     expect(parseJournalBrowseSearch({

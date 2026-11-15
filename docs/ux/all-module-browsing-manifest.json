@@ -868,6 +868,8 @@
     }
   },
   "inventoryGuardEvidence": {
+    "latestSourceCommit": "7a272e9904637fa3f443670566f562eaca02164b",
+    "latestSourceChange": "Trim acceptance identifiers before uniqueness comparison, require explicit true for module verification, and reject empty implementation-status strings; source reviewed, execution NOT RUN.",
     "source": "scripts/check-browsing-coverage.mjs",
     "commit": "fd0f55e6656dd762ffce21939a5faa6e40a0b637",
     "checks": [

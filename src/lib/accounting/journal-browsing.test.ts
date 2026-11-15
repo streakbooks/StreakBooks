@@ -89,6 +89,10 @@ describe("Accounting journal workspace browsing", () => {
       expect(parseJournalBrowseSearch({ journalQ, journalPage: 2 }))
         .toEqual({ journalPage: 2 });
     }
+    for (const codePoint of [0x0085, 0x009f, 0x061c, 0x200e, 0x200f]) {
+      expect(parseJournalBrowseSearch({ journalQ: `audit${String.fromCodePoint(codePoint)}entries`, journalPage: 2 }))
+        .toEqual({ journalPage: 2 });
+    }
     expect(parseJournalBrowseSearch({ journalQ: "बहीखाता Café" }))
       .toEqual({ journalQ: "बहीखाता Café" });
   });

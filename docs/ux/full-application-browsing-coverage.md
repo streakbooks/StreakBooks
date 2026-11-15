@@ -1,4 +1,10 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Accounting journal deep-link filter validation (2026-11-15)
+
+- `src/lib/accounting/journal-browsing.ts`: reject noncanonical journal page/page-size strings, ASCII controls and bidi spoofing controls in journal search, and inverted date windows while retaining independent valid filters. Commit `1ce8ad4cb78dc2ae78a40f48424a0df2c08f7f47`.
+- `src/lib/accounting/journal-browsing.test.ts`: malformed numeric filters, multilingual search and inverted/same-day date regressions. Commit `a9ea6ea2cea1d275f1e20abc75153979aabc6a8e`. **WRITTEN, NOT RUN.**
+- **NOT RUN:** local browsing coverage guard, TypeScript, lint, Vitest, build, authenticated browser/accessibility, RLS/accounting regression. Baseline 21 sidebar modules, 132 authenticated routes (15 supporting); **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No main changes, manual CI, production database change or deployment.
+
 ### Banking return-search bidi spoofing protection (2026-11-15)
 
 - `src/lib/banking/transaction-return.ts`: reject Unicode bidirectional formatting controls U+202A–U+202E and U+2066–U+2069 in restored search text; preserve legitimate multilingual searches. Commit `0db1dd22c4ad156925dd8545ee4b4f62cf5e5148`.

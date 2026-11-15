@@ -1,4 +1,9 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Cross-cutting workflow identity guard (2026-11-16)
+
+- `scripts/check-browsing-coverage.mjs`: compare trimmed cross-cutting workflow names for uniqueness, preventing whitespace-equivalent entries from bypassing the duplicate-name guard. Source commit `7cd6db1c13b48d5011b0c210ada9877b680f5e0f`.
+- **SOURCE REVIEW ONLY; NOT RUN:** inventory guard, TypeScript, lint, unit tests, build, authenticated browser/accessibility, RLS and accounting regression. No acceptance criteria were marked complete. Documented baseline remains 21 sidebar modules, 132 authenticated route files (15 supporting), and 0/12 fully verified batches. No main changes, manually triggered CI, production database operations or deployment.
+
 ### Browsing inventory validation hardening (2026-11-15)
 
 - `scripts/check-browsing-coverage.mjs`: trim acceptance-criterion identifiers before checking uniqueness, require `fullyVerified === true` for module evidence checks, and reject empty/nonstring `browsingImplementation` statuses. Commit `7a272e9904637fa3f443670566f562eaca02164b`.

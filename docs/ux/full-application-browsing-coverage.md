@@ -1,4 +1,10 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Acceptance evidence integrity guard (2026-11-15)
+
+- `scripts/check-browsing-coverage.mjs`: fully verified modules, supporting routes and cross-cutting workflows must provide 12 distinct nonempty acceptance evidence strings; source-only and placeholder/unexecuted evidence is rejected. Commits `a11bebd445720d3a25118328d1bc225cd3a335f6` and `6729e87a3190a3756fb1030f132d1d9140e6d094`.
+- `docs/ux/all-module-browsing-manifest.json`: recorded this guard under cross-cutting evidence; commit `41c669f51c0326474016096bf86c427f77ce9adf`.
+- **NOT RUN:** local inventory guard, typecheck, lint, Vitest, build, authenticated browser, accessibility, RLS and accounting regression. Inventory remains a documented baseline of 21 sidebar modules, 132 authenticated routes (15 supporting); 0/21 modules and 0/12 batches fully verified. No main changes, manual CI, production DB changes or deployment.
+
 ### Cross-cutting workflow verification-status inventory guard (2026-11-15)
 
 - `scripts/check-browsing-coverage.mjs`: require an explicit boolean `fullyVerified` for each cross-cutting workflow rather than silently interpreting a missing flag as unverified; commit `205ea4e38049f9b6f8e0b715155d5102db225709`.

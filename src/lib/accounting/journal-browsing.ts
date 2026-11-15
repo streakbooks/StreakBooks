@@ -24,7 +24,7 @@ const PAGE_SIZES = new Set([50, 100, 200]);
 export function parseJournalBrowseSearch(raw: Record<string, unknown>): JournalBrowseSearch {
   const result: JournalBrowseSearch = {};
   const q = raw["journalQ"];
-  if (typeof q === "string" && q.length > 0 && q.length <= 120 && !/[\u0000-\u001f\u007f-\u009f\u061c\u200e-\u200f\u202a-\u202e\u2066-\u2069]/.test(q)) result.journalQ = q;
+  if (typeof q === "string" && q.length > 0 && q.length <= 120 && !/[\u0000-\u001f\u007f-\u009f\u061c\u200e-\u200f\u2028-\u202e\u2066-\u2069]/.test(q)) result.journalQ = q;
   const source = raw["journalSource"];
   if (typeof source === "string" && Object.prototype.hasOwnProperty.call(
     JOURNAL_SOURCE_LABELS, source,

@@ -74,6 +74,19 @@ describe("Bank transaction to journal browsing context", () => {
     )).toEqual({ q: "बैंक शुल्क Café", page: 2 });
   });
 
+
+  it("rejects C1, directional marks and Unicode separators in return searches", () => {
+    for (const codepoint of [0x0085, 0x009f, 0x061c, 0x200e, 0x200f, 0x2028, 0x2029]) {
+      const q = "bank" + String.fromCodePoint(codepoint) + "fees";
+      expect(parseBankTransactionReturnSearch({ q, page: 2 })).toEqual({ page: 2 });
+      expect(decodeBankTransactionReturnContext(
+        "q=" + encodeURIComponent(q) + "&page=2",
+      )).toEqual({ page: 2 });
+    }
+    expect(parseBankTransactionReturnSearch({ q: "बैंक शुल्क Café", page: 2 }))
+      .toEqual({ q: "बैंक शुल्क Café", page: 2 });
+  });
+
   it("rejects unknown statuses and unsafe IDs", () => {
     expect(parseBankTransactionReturnSearch({
       status: "admin",

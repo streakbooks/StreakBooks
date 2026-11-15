@@ -651,57 +651,68 @@
     {
       "area": "Expense Management and Employee Claims",
       "evidence": "Purchases employee expenses route; requested separate standalone module",
-      "status": "Navigation/product scope reconciliation required"
+      "status": "Navigation/product scope reconciliation required",
+      "fullyVerified": false
     },
     {
       "area": "Smart Action Center",
       "evidence": "Action Center sidebar maps to /notifications",
-      "status": "Full approvals, alerts and actions unverified"
+      "status": "Full approvals, alerts and actions unverified",
+      "fullyVerified": false
     },
     {
       "area": "LinkBooks Signal / voice commands",
       "evidence": "Voice components and form adapters are internal, not standalone sidebar items",
-      "status": "Full command and keyboard accessibility coverage pending"
+      "status": "Full command and keyboard accessibility coverage pending",
+      "fullyVerified": false
     },
     {
       "area": "Files and Documents",
       "evidence": "Files sidebar and supporting document printing/branding routes",
-      "status": "Folder/inbox/attachments/print workflows unverified"
+      "status": "Folder/inbox/attachments/print workflows unverified",
+      "fullyVerified": false
     },
     {
       "area": "Import Centre and Migration",
       "evidence": "imports.tsx and Contacts/Purchases/Banking import routes",
-      "status": "All import types and errors unverified"
+      "status": "All import types and errors unverified",
+      "fullyVerified": false
     },
     {
       "area": "Recurring journals and schedules",
       "evidence": "recurring-journals.tsx, Sales/Purchases recurring",
-      "status": "Creation, scheduling, posting and notifications unverified"
+      "status": "Creation, scheduling, posting and notifications unverified",
+      "fullyVerified": false
     },
     {
       "area": "Platform Superadmin and subscription billing",
       "evidence": "platform.* routes, Settings and Advisors billing; 2026-11-12 platform.tsx exact-or-child pathname matching for Operations/Automation active navigation (commit 13c85f124a85adba217701401f5a1efbc7ce83a5; tests NOT RUN); 2026-11-12 active workspace visual styling e0d58d088e87b76d52316cb8adabf2f0d4f83486 (NOT RUN)",
-      "status": "Role gating, payments and operations unverified"
+      "status": "Role gating, payments and operations unverified",
+      "fullyVerified": false
     },
     {
       "area": "Customer/supplier portals and invite/onboarding",
       "evidence": "advisors-portal.*, invite and firm-invite routes",
-      "status": "Auth, handoff, back navigation and tenant tests pending"
+      "status": "Auth, handoff, back navigation and tenant tests pending",
+      "fullyVerified": false
     },
     {
       "area": "Global search and universal Create New",
       "evidence": "AppShell global search and creation entry points",
-      "status": "Search context, exact amount, permissions and every destination unverified"
+      "status": "Search context, exact amount, permissions and every destination unverified",
+      "fullyVerified": false
     },
     {
       "area": "AI Assistant integrations and external automation",
       "evidence": "AI Assistant and platform automation routes",
-      "status": "Permissions, approvals, integration error cases and UX unverified"
+      "status": "Permissions, approvals, integration error cases and UX unverified",
+      "fullyVerified": false
     },
     {
       "area": "Regional tax, currencies and localization",
       "evidence": "Tax, Settings, accounting surfaces",
-      "status": "Country-gated flows and currency/timezone formatting unverified"
+      "status": "Country-gated flows and currency/timezone formatting unverified",
+      "fullyVerified": false
     }
   ],
   "supportingRouteEvidence": {

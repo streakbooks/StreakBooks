@@ -217,7 +217,9 @@
         "2026-11-15: journal-browsing.ts rejects C1 control range U+007F–U+009F and directional marks U+061C/U+200E/U+200F, alongside existing bidi controls; commit 631aba15ef3f92a9ed405d5e5007b66633419e79; SOURCE ONLY, NOT RUN.",
         "2026-11-15: journal-browsing.test.ts adds C1/directional-control regression inputs; commit 62b4193045c77fa37d2a78fd41311c2b355b32bd; WRITTEN, NOT RUN.",
         "2026-11-15: journal-browsing.ts rejects U+2028/U+2029 Unicode line/paragraph separators in journal search; source commit 7d18587be5e659b68ba2040294b17df362c5bc2e; SOURCE REVIEW ONLY, NOT RUN.",
-        "2026-11-15: journal-browsing.test.ts adds U+2028/U+2029 regression cases; commit e341cd07b629f002ed87f619083d7a34dd796641; WRITTEN, NOT RUN."
+        "2026-11-15: journal-browsing.test.ts adds U+2028/U+2029 regression cases; commit e341cd07b629f002ed87f619083d7a34dd796641; WRITTEN, NOT RUN.",
+        "2026-11-15: journal-browsing.ts trims surrounding URL search whitespace and omits whitespace-only searches; commit 456342ad6033d46b38991c91722fbfb3bb8ec816; SOURCE ONLY, NOT RUN.",
+        "2026-11-15: journal-browsing.test.ts adds blank/padded/multilingual search regression cases; commit 64d74924e36baf0b96e7f2e8525643e0fdcfe821; WRITTEN, NOT RUN."
       ],
       "remaining": [
         "Journal source permission and tenant tests, list/expanded-detail integration and filters tested with fixtures",

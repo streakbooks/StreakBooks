@@ -124,12 +124,14 @@ if (new Set(manifest.acceptanceCriteria).size !== manifest.acceptanceCriteria.le
 // A checked-off criterion cannot be backed by placeholder or unexecuted evidence.
 // This is a documentation integrity check, not a substitute for executing tests.
 function hasExecutableAcceptanceEvidence(entry) {
-  return Array.isArray(entry.verificationEvidence) &&
-    entry.verificationEvidence.length === 12 &&
-    entry.verificationEvidence.every((value) =>
-      typeof value === "string" && value.trim().length > 0 &&
-      !/\b(?:NOT RUN|PENDING|TODO|TBD|UNVERIFIED|NOT VERIFIED|NOT TESTED)\b/i.test(value)
-    );
+  if (!Array.isArray(entry.verificationEvidence) || entry.verificationEvidence.length !== 12) {
+    return false;
+  }
+  const evidence = entry.verificationEvidence;
+  return evidence.every((value) =>
+    typeof value === "string" && value.trim().length > 0 &&
+    !/\b(?:NOT RUN|PENDING|TODO|TBD|UNVERIFIED|NOT VERIFIED|NOT TESTED|SOURCE ONLY|SOURCE REVIEW ONLY|PLACEHOLDER)\b/i.test(value)
+  ) && new Set(evidence.map((value) => value.trim())).size === 12;
 }
 
 for (const module of manifest.modules) {

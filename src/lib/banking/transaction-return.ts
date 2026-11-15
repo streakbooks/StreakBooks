@@ -37,10 +37,10 @@ export function parseBankTransactionReturnSearch(
   const account = input["bankAccountId"];
   if (typeof account === "string" && UUID.test(account)) out.bankAccountId = account;
   const q = input["q"];
-  // Reject ASCII controls and Unicode bidirectional overrides/isolates that can
+  // Reject ASCII controls and Unicode directional formatting, line separators and C1 controls that can
   // visually spoof the search field or logs; preserve ordinary Unicode text.
   // Keep ordinary spaces and Unicode text intact for legitimate bank searches.
-  if (typeof q === "string" && q.length > 0 && q.length <= 120 && !/[\u0000-\u001f\u007f\u202a-\u202e\u2066-\u2069]/.test(q)) out.q = q;
+  if (typeof q === "string" && q.length > 0 && q.length <= 120 && !/[\u0000-\u001f\u007f-\u009f\u061c\u200e-\u200f\u2028-\u202e\u2066-\u2069]/.test(q)) out.q = q;
   for (const key of ["dateFrom", "dateTo"] as const) {
     const value = input[key];
     if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) { 

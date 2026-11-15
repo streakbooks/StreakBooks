@@ -24,7 +24,7 @@ const PAGE_SIZES = new Set([50, 100, 200]);
 export function parseJournalBrowseSearch(raw: Record<string, unknown>): JournalBrowseSearch {
   const result: JournalBrowseSearch = {};
   const q = raw["journalQ"];
-  if (typeof q === "string" && q.length > 0 && q.length <= 120) result.journalQ = q;
+  if (typeof q === "string" && q.length > 0 && q.length <= 120 && !/[\u0000-\u001f\u007f\u202a-\u202e\u2066-\u2069]/.test(q)) result.journalQ = q;
   const source = raw["journalSource"];
   if (typeof source === "string" && Object.prototype.hasOwnProperty.call(
     JOURNAL_SOURCE_LABELS, source,
@@ -32,15 +32,15 @@ export function parseJournalBrowseSearch(raw: Record<string, unknown>): JournalB
   if (isReportDate(raw["journalFrom"])) result.journalFrom = raw["journalFrom"];
   if (isReportDate(raw["journalTo"])) result.journalTo = raw["journalTo"];
 
-  const pageSize = raw["journalPageSize"];
+  // Keep a valid start date, but never restore an inverted date window.\n  if (result.journalFrom && result.journalTo && result.journalFrom > result.journalTo) {\n    delete result.journalTo;\n  }\n\n  const pageSize = raw["journalPageSize"];
   if ((typeof pageSize === "number" || typeof pageSize === "string") &&
-      PAGE_SIZES.has(Number(pageSize))) {
+      ((typeof pageSize === "number" && Number.isInteger(pageSize)) ||\n       (typeof pageSize === "string" && /^(50|100|200)$/.test(pageSize))) &&\n      PAGE_SIZES.has(Number(pageSize))) {
     result.journalPageSize = Number(pageSize) as JournalBrowseSearch["journalPageSize"];
   }
 
   const page = raw["journalPage"];
   if ((typeof page === "number" && Number.isSafeInteger(page) && page >= 0) ||
-      (typeof page === "string" && /^\d{1,7}$/.test(page))) {
+      (typeof page === "string" && /^(0|[1-9]\d{0,6})$/.test(page))) {
     result.journalPage = Math.min(Number(page), 1_000_000);
   }
 

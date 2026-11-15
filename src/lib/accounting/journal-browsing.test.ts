@@ -85,7 +85,7 @@ describe("Accounting journal workspace browsing", () => {
       expect(parseJournalBrowseSearch({ journalPageSize, journalSource: "manual" }))
         .toEqual({ journalSource: "manual" });
     }
-    for (const journalQ of ["audit\\nentries", "audit\\u0000entries", "audit\\u202eentries"]) {
+    for (const journalQ of ["audit\nentries", "audit\rentries", "audit\tentries", "audit\u0000entries", "audit\u007fentries", "audit\u202eentries", "audit\u2066entries"]) {
       expect(parseJournalBrowseSearch({ journalQ, journalPage: 2 }))
         .toEqual({ journalPage: 2 });
     }

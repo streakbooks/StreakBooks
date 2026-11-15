@@ -1,4 +1,10 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Accounting journal Unicode separator deep-link protection (2026-11-15)
+
+- `src/lib/accounting/journal-browsing.ts`: reject U+2028 line and U+2029 paragraph separators in URL-restored journal search while retaining multilingual text; commit `7d18587be5e659b68ba2040294b17df362c5bc2e`.
+- `src/lib/accounting/journal-browsing.test.ts`: added both Unicode separator regressions; commit `e341cd07b629f002ed87f619083d7a34dd796641`. **WRITTEN, NOT RUN.**
+- **NOT RUN:** local `check:browsing-coverage`, TypeScript, lint, Vitest, build, authenticated browser/accessibility, RLS/accounting regression. Baseline 21 sidebar modules, 132 authenticated routes (15 supporting); **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No changes to main, manual CI, production database or deployment.
+
 ### Accounting journal C1 and directional-control search safety (2026-11-15)
 
 - `src/lib/accounting/journal-browsing.ts`: reject C1 control range U+007F–U+009F and invisible direction marks U+061C/U+200E/U+200F in journal search URLs; source commit `631aba15ef3f92a9ed405d5e5007b66633419e79`.

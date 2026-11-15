@@ -1,4 +1,10 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Accounting journal normalized-search length boundary (2026-11-15)
+
+- `src/lib/accounting/journal-browsing.ts`: enforce the 120-character limit on trimmed effective journal search text rather than padded URL input; commit `6ef3b57b043033d72cc4f67925daca1d8cfe984c`.
+- `src/lib/accounting/journal-browsing.test.ts`: added 120/121-character padded-search boundary regressions; commit `3b64e467ed38f091f325727d3e2b97ce2d687a77`. **WRITTEN, NOT RUN.**
+- Manifest Accounting evidence updated. **NOT RUN:** local `check:browsing-coverage`, TypeScript, lint, Vitest, build, authenticated browser/accessibility, RLS/accounting regression. Baseline 21 sidebar modules, 132 authenticated routes (15 supporting); **0/21 modules, 0/15 supporting routes, 0/12 batches fully verified**. No main changes, manual CI, production database operations or deployment.
+
 ### Accounting journal URL search whitespace normalization (2026-11-15)
 
 - `src/lib/accounting/journal-browsing.ts`: ignore whitespace-only journal search deep links and trim surrounding whitespace, preserving independent filters and existing control-character validation; commit `456342ad6033d46b38991c91722fbfb3bb8ec816`.

@@ -107,6 +107,15 @@ describe("Accounting journal workspace browsing", () => {
     })).toEqual({ journalFrom: "2026-01-01", journalTo: "2026-01-01" });
   });
 
+  it("normalizes whitespace-only and padded journal searches without changing other filters", () => {
+    expect(parseJournalBrowseSearch({ journalQ: "   ", journalPage: 2 }))
+      .toEqual({ journalPage: 2 });
+    expect(parseJournalBrowseSearch({ journalQ: "  Rent & utilities  ", journalPage: 2 }))
+      .toEqual({ journalQ: "Rent & utilities", journalPage: 2 });
+    expect(parseJournalBrowseSearch({ journalQ: "  बहीखाता Café  " }))
+      .toEqual({ journalQ: "बहीखाता Café" });
+  });
+
   it("supports empty/default direct-link states", () => {
     expect(parseJournalBrowseSearch({})).toEqual({});
     expect(parseJournalBrowseSearch({

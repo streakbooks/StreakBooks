@@ -652,7 +652,10 @@
       "area": "Expense Management and Employee Claims",
       "evidence": "Purchases employee expenses route; requested separate standalone module",
       "status": "Navigation/product scope reconciliation required",
-      "fullyVerified": false
+      "fullyVerified": false,
+      "currentEvidence": [
+        "2026-11-15: scripts/check-browsing-coverage.mjs rejects repeated or SOURCE ONLY verification evidence for any fully verified module, supporting route or cross-cutting workflow; commit a11bebd445720d3a25118328d1bc225cd3a335f6; SOURCE REVIEW ONLY, guard NOT RUN."
+      ]
     },
     {
       "area": "Smart Action Center",

@@ -76,7 +76,7 @@ describe("Fixed Assets native browsing state", () => {
   });
 
   it("rejects invisible and bidirectional search controls while preserving Unicode", () => {
-    for (const character of ["\\n", "\\t", "\\u0000", "\\u0085", "\\u061c", "\\u200f", "\\u2028", "\\u202e", "\\u2066"]) {
+    for (const character of ["\n", "\t", "\u0000", "\u0085", "\u061c", "\u200f", "\u2028", "\u202e", "\u2066"]) {
       expect(parseFixedAssetRegisterSearch({ q: "asset" + character, status: "disposed" }))
         .toEqual({ status: "disposed" });
     }

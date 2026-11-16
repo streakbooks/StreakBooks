@@ -1,4 +1,10 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Verified-status consistency guard (2026-11-16)
+
+- `scripts/check-browsing-coverage.mjs`: fully verified modules, supporting routes and cross-cutting workflows now reject contradictory `partial`, `pending`, `unverified`, `not verified`, `not tested`, `not run`, or `incomplete` statuses (including underscore-separated statuses). The guard also reports fully verified supporting-route and cross-cutting counts. Source commit `bfaafee985002414c23b77e541591eda3b43e2cf`.
+- `docs/ux/all-module-browsing-manifest.json`: recorded source evidence; commit `3edb835b7b0914edf5f444040eeed842cbca089d`.
+- **NOT RUN:** inventory guard, TypeScript, lint, unit tests, build, authenticated browser/accessibility, RLS/accounting regression. Baseline remains 21 sidebar modules, 132 authenticated routes (15 supporting), 11 cross-cutting workflows; 0/21 modules, 0/15 supporting routes and 0/12 batches fully verified. No `main` changes, manual CI, production DB changes or deployment.
+
 ### Cross-cutting identity normalization parity (2026-11-16)
 
 - `scripts/check-browsing-coverage.mjs`: cross-cutting workflow names now use trimmed, collapsed-whitespace and case-folded identity comparison, preventing duplicate coverage records disguised by casing or tabs. Source commit `116b586f7d7c9965d43e07a1d0141420639422ab`.

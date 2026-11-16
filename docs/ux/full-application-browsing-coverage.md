@@ -1,4 +1,12 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Payroll runs search deep-link normalization (2026-11-17)
+
+- `src/lib/payroll/run-search.ts`: trim padded Payroll Runs search, omit blank-only values, enforce 120-character effective length and reject invisible/control formatting characters; commit `c1b5a7f435389cf76e9a6ca394f0aa06a5c2a6ae`. SOURCE ONLY.
+- `src/routes/_authenticated/payroll/runs.index.tsx`: apply validated search in native URL route while retaining status and sort validation; commit `541e60cdfc9e3bb9d0b6f4ccfab13969a69c1605`. SOURCE ONLY.
+- `src/lib/payroll/run-search.test.ts`: add four regression cases for padded, blank, length, unsafe and multilingual search; commit `f6ab24aa9bbc44b883dd207ab8cc2bdae23ee72e`. WRITTEN, NOT RUN.
+- `docs/ux/all-module-browsing-manifest.json`: Payroll evidence and remaining checks updated; commit `5c9dfa58730890dde0ee146c9396c9c97e20c901`.
+- **NOT RUN:** local inventory guard, TypeScript, lint, Vitest, build, authenticated browser, accessibility, RLS/accounting regression. Documented baseline 21 sidebar modules, 132 authenticated route files (15 supporting), 11 cross-cutting workflows. Fully verified 0/21 modules, 0/15 supporting routes, 0/12 batches. No main, manually triggered CI, production database or deployment changes.
+
 ### Fixed Assets zero-width search deep-link validation (2026-11-16)
 
 - `src/lib/fixed-assets/register-navigation.ts`: reject U+200B–U+200D and U+2061–U+2064 invisible search characters; commit `b0be75bea78a08976c05d7b28da60c7d6f0e4b3b`. SOURCE ONLY.

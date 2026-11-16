@@ -1,4 +1,11 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Fixed Assets zero-width search deep-link validation (2026-11-16)
+
+- `src/lib/fixed-assets/register-navigation.ts`: reject U+200B–U+200D and U+2061–U+2064 invisible search characters; commit `b0be75bea78a08976c05d7b28da60c7d6f0e4b3b`. SOURCE ONLY.
+- `src/lib/fixed-assets/register-navigation.test.ts`: extend invisible-character regression while retaining independent sort; commit `261b3f810f3f31abf13f5805c6cf2b3dd09935fb`. WRITTEN, NOT RUN.
+- `docs/ux/all-module-browsing-manifest.json`: source and outstanding verification evidence updated; commit `ca52c2da375d76b5930a98cfeb16b28f9fea44b6`.
+- **NOT RUN:** inventory guard, typecheck, lint, Vitest, build, authenticated browser, accessibility, RLS/accounting regression. Baseline 21 sidebar modules, 132 authenticated route files (15 supporting), 11 cross-cutting workflows; fully verified 0/21 modules, 0/15 supporting routes, 0/12 batches. No main, manual CI, production DB or deployment changes.
+
 ### Fixed Assets invisible-search character regression (2026-11-16)
 
 - `src/lib/fixed-assets/register-navigation.ts`: reject U+2060 word joiner and U+FEFF BOM from URL-restored register search while retaining independent filters; commit `09e48d48df1e113486a32828adda59d7a73ebb04`. SOURCE ONLY.

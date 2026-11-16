@@ -1,4 +1,10 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Cross-cutting identity normalization parity (2026-11-16)
+
+- `scripts/check-browsing-coverage.mjs`: cross-cutting workflow names now use trimmed, collapsed-whitespace and case-folded identity comparison, preventing duplicate coverage records disguised by casing or tabs. Source commit `116b586f7d7c9965d43e07a1d0141420639422ab`.
+- `docs/ux/all-module-browsing-manifest.json`: recorded source-only evidence in commit `f8d753b81e2fa6b679318bd77ab35abdce61b7ac`.
+- **NOT RUN:** inventory guard, TypeScript, lint, unit tests, build, authenticated browser/accessibility, RLS/accounting regressions. Documented baseline 21 modules, 132 authenticated routes (15 supporting), 11 cross-cutting areas; 0/21 modules, 0/15 supporting routes, 0/12 batches fully verified. No changes to main, manual CI, production database or deployment.
+
 ### Sidebar whitespace normalization correction (2026-11-16)
 
 - `scripts/check-browsing-coverage.mjs`: fixed the normalized sidebar label guard from matching literal `\\s` text to matching actual whitespace (`\s`), so labels differing by repeated spaces, tabs or newlines are treated as duplicates. Source commit `b29a78ee88b5b41fc7fca5458ca4ce2edc38f369`.

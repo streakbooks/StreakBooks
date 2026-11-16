@@ -869,7 +869,7 @@
   },
   "inventoryGuardEvidence": {
     "latestSourceCommit": "116b586f7d7c9965d43e07a1d0141420639422ab",
-    "latestSourceChange": "Cross-cutting workflow identity comparison now trims, collapses whitespace and case-folds, matching sidebar uniqueness behavior. Source review only; guard NOT RUN.",
+    "latestSourceChange": "Reject contradictory verified statuses for modules, supporting routes and cross-cutting workflows, and report category totals; source bfaafee985002414c23b77e541591eda3b43e2cf. NOT RUN.",
     "source": "scripts/check-browsing-coverage.mjs",
     "commit": "fd0f55e6656dd762ffce21939a5faa6e40a0b637",
     "checks": [
@@ -891,7 +891,8 @@
       "2026-11-16: cross-cutting workflow names compared after trim for duplicate detection; source commit 7cd6db1; NOT RUN",
       "2026-11-16: reject duplicate normalized sidebar labels across source navigation and manifest; commit 0a428fe46feb3ba826972bc466c7a5a3839fda0c; NOT RUN",
       "2026-11-16: corrected whitespace-normalization regex in sidebar identity guard; b29a78ee88b5b41fc7fca5458ca4ce2edc38f369; NOT RUN",
-      "2026-11-16: reject case/whitespace-equivalent cross-cutting workflow names; source commit 116b586f7d7c9965d43e07a1d0141420639422ab; NOT RUN"
+      "2026-11-16: reject case/whitespace-equivalent cross-cutting workflow names; source commit 116b586f7d7c9965d43e07a1d0141420639422ab; NOT RUN",
+      "2026-11-16: fullyVerified entries cannot retain contradictory partial/pending/unverified status; output explicitly counts verified supporting routes and cross-cutting workflows; source bfaafee985002414c23b77e541591eda3b43e2cf; NOT RUN"
     ],
     "execution": "NOT RUN",
     "note": "Shared canonical validator consolidated across all route categories; regression tests expanded, NOT RUN. Structural inventory protection only; no route or module fully accepted.",

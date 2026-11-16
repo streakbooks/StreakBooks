@@ -1,4 +1,11 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Fixed Assets register deep-link search validation (2026-11-16)
+
+- `src/lib/fixed-assets/register-navigation.ts`: trim effective search, omit blank-only queries, enforce 120-character normalized length, reject control and bidi formatting characters while retaining other filters; commit `e838e82f7728d0cb5eb66b763b11eca69fd04915`. SOURCE ONLY.
+- `src/lib/fixed-assets/register-navigation.test.ts`: add padded/boundary, multilingual and unsafe-control regression cases; commit `0c3f20dbefc6f3472605751c5e8533ce06a618a0`. WRITTEN, NOT RUN.
+- `docs/ux/all-module-browsing-manifest.json`: record partial evidence and outstanding acceptance work; commit `1c1169654ca71030933ba02d4a2164a582817408`.
+- **NOT RUN:** local `check:browsing-coverage`, TypeScript, lint, Vitest, build, authenticated browser, accessibility, RLS and accounting regressions. Documented baseline remains 21 modules, 132 authenticated route files (15 supporting), 11 cross-cutting workflows. Fully verified: 0/21 modules, 0/15 supporting routes, 0/12 batches. No main changes, manual CI, production DB changes or deployment.
+
 ### Budgets native return-search validation (2026-11-16)
 
 - `src/lib/budgets/budget-navigation.ts`: normalize padded search terms, enforce 100-character effective limit, reject invisible control characters and ambiguous duplicate `q` parameters; commit `2b8bacae83268f2cea80987f30daffc860b4f0be`. Source change only.

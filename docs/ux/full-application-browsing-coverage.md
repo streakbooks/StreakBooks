@@ -1,4 +1,10 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Fixed Assets Unicode regression input correction (2026-11-16)
+
+- `src/lib/fixed-assets/register-navigation.test.ts`: replace literal backslash text with actual JavaScript escaped control codepoints in the search-safety regression; commit `4a7cd1a03be1c50dacc613f81ed3551992b93898`. Previous test inputs did not exercise the unsafe-character branch. **WRITTEN, NOT RUN.**
+- Manifest Fixed assets evidence updated in commit `417afe98630354c8308c90d3079d4616e11cd169`. No acceptance criterion marked verified.
+- **NOT RUN:** local `check:browsing-coverage`, TypeScript, lint, Vitest, build, authenticated browser, accessibility, RLS/accounting regression. Documented baseline: 21 modules, 132 authenticated routes (15 supporting), 11 cross-cutting workflows. Fully verified 0/21 modules, 0/15 supporting routes, 0/12 batches. No main, CI, production DB or deployment changes.
+
 ### Fixed Assets register deep-link search validation (2026-11-16)
 
 - `src/lib/fixed-assets/register-navigation.ts`: trim effective search, omit blank-only queries, enforce 120-character normalized length, reject control and bidi formatting characters while retaining other filters; commit `e838e82f7728d0cb5eb66b763b11eca69fd04915`. SOURCE ONLY.

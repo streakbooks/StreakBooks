@@ -141,7 +141,14 @@ function hasExecutableAcceptanceEvidence(entry) {
   ) && new Set(evidence.map((value) => value.trim())).size === 12;
 }
 
+function hasContradictoryVerifiedStatus(status) {
+  return typeof status === "string" && /\b(?:partial|pending|unverified|not verified|not tested|not run|incomplete)\b/i.test(status.replace(/_/g, " "));
+}
+
 for (const module of manifest.modules) {
+  if (module.fullyVerified === true && hasContradictoryVerifiedStatus(module.browsingImplementation)) {
+    throw new Error("Fully verified module has contradictory implementation status: " + module.label);
+  }
   if (module.fullyVerified === true && !hasExecutableAcceptanceEvidence(module)) {
     throw new Error("Fully verified module requires 12 nonempty acceptance evidence entries: " + module.label);
   }
@@ -167,6 +174,9 @@ for (const [route, entry] of Object.entries(manifest.supportingRouteEvidence ?? 
   if (!manifest.supportingRoutes.includes(route)) {
     throw new Error("Supporting-route evidence refers to an unknown route: " + route);
   }
+  if (entry.fullyVerified === true && hasContradictoryVerifiedStatus(entry.status)) {
+    throw new Error("Verified supporting route has contradictory status: " + route);
+  }
   if (entry.fullyVerified === true && !hasExecutableAcceptanceEvidence(entry)) {
     throw new Error("Verified supporting route requires 12 nonempty acceptance evidence entries: " + route);
   }
@@ -180,6 +190,9 @@ if (new Set(manifest.crossCutting.map((entry) => entry.area.trim().replace(/\s+/
   throw new Error("Duplicate cross-cutting browsing areas");
 }
 for (const entry of manifest.crossCutting) {
+  if (entry.fullyVerified === true && hasContradictoryVerifiedStatus(entry.status)) {
+    throw new Error("Verified cross-cutting workflow has contradictory status: " + entry.area);
+  }
   if (entry.fullyVerified === true && !hasExecutableAcceptanceEvidence(entry)) {
     throw new Error("Verified cross-cutting workflow requires 12 nonempty acceptance evidence entries: " + entry.area);
   }
@@ -216,4 +229,6 @@ console.log(
   "Fully verified modules: " + (manifest.modules.length - awaiting.length) +
   ". Not yet fully verified: " + awaiting.length + ".",
 );
+console.log("Fully verified supporting routes: " + Object.values(supportingEvidence).filter((entry) => entry.fullyVerified).length + "/" + manifest.supportingRoutes.length + ".");
+console.log("Fully verified cross-cutting workflows: " + manifest.crossCutting.filter((entry) => entry.fullyVerified).length + "/" + manifest.crossCutting.length + ".");
 console.log("Inventory coverage verified; runtime functionality NOT established by this check.");

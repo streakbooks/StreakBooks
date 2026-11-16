@@ -63,6 +63,27 @@ describe("Fixed Assets native browsing state", () => {
     })).toEqual({ tab: "depreciation", q: "car", typeId, sort: "name" });
   });
 
+
+  it("normalizes padded searches without losing independent register filters", () => {
+    expect(parseFixedAssetRegisterSearch({ q: "  Equipment  ", status: "active" }))
+      .toEqual({ q: "Equipment", status: "active" });
+    expect(parseFixedAssetRegisterSearch({ q: "   ", sort: "name" }))
+      .toEqual({ sort: "name" });
+    expect(parseFixedAssetRegisterSearch({ q: "  " + "x".repeat(120) + "  " }))
+      .toEqual({ q: "x".repeat(120) });
+    expect(parseFixedAssetRegisterSearch({ q: "x".repeat(121), tab: "register" }))
+      .toEqual({ tab: "register" });
+  });
+
+  it("rejects invisible and bidirectional search controls while preserving Unicode", () => {
+    for (const character of ["\\n", "\\t", "\\u0000", "\\u0085", "\\u061c", "\\u200f", "\\u2028", "\\u202e", "\\u2066"]) {
+      expect(parseFixedAssetRegisterSearch({ q: "asset" + character, status: "disposed" }))
+        .toEqual({ status: "disposed" });
+    }
+    expect(parseFixedAssetRegisterSearch({ q: "  उपकरण 🧾  " }))
+      .toEqual({ q: "उपकरण 🧾" });
+  });
+
   it("drops cleared values without carrying stale filters forward", () => {
     expect(parseFixedAssetRegisterSearch({
       q: "", typeId: "", accountId: "", status: "all", desc: false,

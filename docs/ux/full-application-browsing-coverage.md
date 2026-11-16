@@ -1,4 +1,10 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Hyphenated verification-status integrity (2026-11-16)
+
+- `scripts/check-browsing-coverage.mjs`: normalize hyphens and underscores before checking contradictory `fullyVerified` status strings, so `not-run`, `not-tested` and `not-verified` cannot evade the existing guard. Source commit `292c7514e33e5bda265b5a4f5b0eb30aa22e34c8`.
+- `docs/ux/all-module-browsing-manifest.json`: inventory guard evidence updated; commit `3b64cb2a9c97f12e8bf1390204379dc04d6fd5f8`.
+- **SOURCE REVIEW ONLY; NOT RUN:** local `check:browsing-coverage`, typecheck, lint, unit tests, build, authenticated browser/accessibility, RLS and accounting regression. Baseline remains 21 sidebar modules, 132 authenticated routes (15 supporting), 11 cross-cutting workflows; 0/21 modules, 0/15 supporting routes and 0/12 batches fully verified. No changes to `main`, manual CI, production DB or deployment.
+
 ### Verified-status consistency guard (2026-11-16)
 
 - `scripts/check-browsing-coverage.mjs`: fully verified modules, supporting routes and cross-cutting workflows now reject contradictory `partial`, `pending`, `unverified`, `not verified`, `not tested`, `not run`, or `incomplete` statuses (including underscore-separated statuses). The guard also reports fully verified supporting-route and cross-cutting counts. Source commit `bfaafee985002414c23b77e541591eda3b43e2cf`.

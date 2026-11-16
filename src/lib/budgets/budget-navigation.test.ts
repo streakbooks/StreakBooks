@@ -38,4 +38,22 @@ describe("Budgets list browsing and return navigation", () => {
       companyId: "other-organisation",
     })).toEqual({ q: "budget" });
   });
+  it("normalizes padded searches and applies the effective length limit", () => {
+    expect(parseBudgetListSearch({ q: "  FY 2026  " })).toEqual({ q: "FY 2026" });
+    expect(parseBudgetListSearch({ q: "   " })).toEqual({});
+    expect(parseBudgetListSearch({ q: "  " + "x".repeat(100) + "  " })).toEqual({ q: "x".repeat(100) });
+    expect(parseBudgetListSearch({ q: "  " + "x".repeat(101) + "  " })).toEqual({});
+    expect(decodeBudgetListReturnContext("q=++FY+2026++")).toEqual({ q: "FY 2026" });
+  });
+
+  it("rejects ambiguous duplicate search keys and invisible control characters", () => {
+    expect(decodeBudgetListReturnContext("q=first&q=second")).toEqual({});
+    expect(decodeBudgetListReturnContext("q=first&q=first")).toEqual({});
+    for (const control of ["\\n", "\\u007f", "\\u061c", "\\u200e", "\\u202e", "\\u2066", "\\u2028"]) {
+      expect(parseBudgetListSearch({ q: "FY" + control + "2026" })).toEqual({});
+      expect(decodeBudgetListReturnContext("q=" + encodeURIComponent("FY" + control + "2026"))).toEqual({});
+    }
+    expect(parseBudgetListSearch({ q: "बजट 2026" })).toEqual({ q: "बजट 2026" });
+  });
+
 });

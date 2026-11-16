@@ -76,11 +76,11 @@ export function PayrollRunsPage() {
   // Keep uncommitted whitespace while typing; URL normalization happens on commit.
   const [searchDraft, setSearchDraft] = useState(runSearch);
   useEffect(() => { setSearchDraft(runSearch); }, [runSearch]);
-  const commitSearch = () => updateListSearch({ q: searchDraft }, true);
   const runSort = listSearch.sort;
   const updateListSearch = (patch: Partial<typeof listSearch>, replace = false) => {
     navigate({ to: "/payroll/runs", search: (previous) => ({ ...previous, ...patch }), replace });
   };
+  const commitSearch = () => updateListSearch({ q: searchDraft }, true);
   const queryClient = useQueryClient();
   const fetchList = useServerFn(listPayrollRuns);
   const fetchSettings = useServerFn(getPayrollSettingsPage);

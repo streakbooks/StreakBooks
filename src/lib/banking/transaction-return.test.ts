@@ -87,6 +87,20 @@ describe("Bank transaction to journal browsing context", () => {
       .toEqual({ q: "बैंक शुल्क Café", page: 2 });
   });
 
+  it("normalizes padded banking search and ignores blank-only deep links", () => {
+    expect(parseBankTransactionReturnSearch({ q: "   ", page: 2 })).toEqual({ page: 2 });
+    expect(parseBankTransactionReturnSearch({ q: "  बैंक शुल्क Café  ", status: "matched" }))
+      .toEqual({ q: "बैंक शुल्क Café", status: "matched" });
+    expect(decodeBankTransactionReturnContext("q=%20%20bank%20fees%20%20&page=2"))
+      .toEqual({ q: "bank fees", page: 2 });
+    expect(parseBankTransactionReturnSearch({ q: "  " + "x".repeat(120) + "  " }).q)
+      .toBe("x".repeat(120));
+    expect(parseBankTransactionReturnSearch({ q: "  " + "x".repeat(121) + "  ", page: 2 }))
+      .toEqual({ page: 2 });
+    expect(parseBankTransactionReturnSearch({ q: "bank\nfees", page: 2 }))
+      .toEqual({ q: "bank\nfees", page: 2 });
+  });
+
   it("rejects unknown statuses and unsafe IDs", () => {
     expect(parseBankTransactionReturnSearch({
       status: "admin",

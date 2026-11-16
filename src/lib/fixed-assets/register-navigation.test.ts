@@ -80,6 +80,10 @@ describe("Fixed Assets native browsing state", () => {
       expect(parseFixedAssetRegisterSearch({ q: "asset" + character, status: "disposed" }))
         .toEqual({ status: "disposed" });
     }
+    for (const character of ["\u2060", "\ufeff"]) {
+      expect(parseFixedAssetRegisterSearch({ q: "asset" + character, sort: "cost" }))
+        .toEqual({ sort: "cost" });
+    }
     expect(parseFixedAssetRegisterSearch({ q: "  उपकरण 🧾  " }))
       .toEqual({ q: "उपकरण 🧾" });
   });

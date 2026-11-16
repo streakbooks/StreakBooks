@@ -73,6 +73,10 @@ export function PayrollRunsPage() {
   const listSearch = useSearch({ from: "/_authenticated/payroll/runs/" });
   const statusFilter = listSearch.status;
   const runSearch = listSearch.q;
+  // Keep uncommitted whitespace while typing; URL normalization happens on commit.
+  const [searchDraft, setSearchDraft] = useState(runSearch);
+  useEffect(() => { setSearchDraft(runSearch); }, [runSearch]);
+  const commitSearch = () => updateListSearch({ q: searchDraft }, true);
   const runSort = listSearch.sort;
   const updateListSearch = (patch: Partial<typeof listSearch>, replace = false) => {
     navigate({ to: "/payroll/runs", search: (previous) => ({ ...previous, ...patch }), replace });
@@ -122,7 +126,7 @@ export function PayrollRunsPage() {
       toast.success(`Payroll run ${run.run_number} created`);
       setCreateOpen(false);
       queryClient.invalidateQueries({ queryKey: ["payroll-runs"] });
-      navigate({ to: "/payroll/runs/$runId", params: { runId: run.id }, search: { tab: "employees", returnStatus: statusFilter, returnQ: runSearch, returnSort: runSort } });
+      navigate({ to: "/payroll/runs/$runId", params: { runId: run.id }, search: { tab: "employees", returnStatus: statusFilter, returnQ: searchDraft.trim(), returnSort: runSort } });
     },
     onError: (err) => toast.error(friendlyAuthError(err)),
   });
@@ -191,7 +195,7 @@ export function PayrollRunsPage() {
   const scheduleName = (id: string) =>
     settings.schedules.find((s) => s.id === id)?.name ?? "Unknown schedule";
   // Status/search filters must never hide periods from the next-run suggestion.
-  const searchTerm = runSearch.trim().toLocaleLowerCase();
+  const searchTerm = searchDraft.trim().toLocaleLowerCase();
   const matchingRuns = list.runs
     .filter((run) => statusFilter === "all" || run.status === statusFilter)
     .filter((run) =>
@@ -206,8 +210,9 @@ export function PayrollRunsPage() {
           ? a.payment_date.localeCompare(b.payment_date)
           : b.payment_date.localeCompare(a.payment_date),
     );
-  const hasListFilters = statusFilter !== "all" || runSearch.trim() !== "";
+  const hasListFilters = statusFilter !== "all" || searchDraft.trim() !== "";
   const clearListFilters = () => {
+    setSearchDraft("");
     updateListSearch({ status: "all", q: "" });
   };
   const invalidPeriod = Boolean(periodStart && periodEnd && periodEnd < periodStart);
@@ -266,8 +271,11 @@ export function PayrollRunsPage() {
               </SelectContent>
             </Select>
             <Input
-              value={runSearch}
-              onChange={(event) => updateListSearch({ q: event.target.value.slice(0, 120) }, true)}
+              value={searchDraft}
+              maxLength={120}
+              onChange={(event) => setSearchDraft(event.target.value)}
+              onBlur={commitSearch}
+              onKeyDown={(event) => { if (event.key === "Enter") commitSearch(); }}
               placeholder="Search run, schedule or period…"
               aria-label="Search payroll runs"
               className="w-full sm:w-64"

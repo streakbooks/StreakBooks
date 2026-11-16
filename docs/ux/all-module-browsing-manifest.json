@@ -382,7 +382,8 @@
         "src/screens/payroll/reports.tsx — successful report response without usable result now renders explicit recovery empty state; commit ed73876159d059c83af6ce69517fefc16da86cfc; SOURCE ONLY, NOT RUN",
         "2026-11-14: src/screens/payroll/reports.tsx — suppress CSV and Print/PDF actions for successful reports with zero rows; source commit 222e27bfbacc3e7cf92bbf2f19004d1fc4a92594; SOURCE ONLY, NOT RUN.",
         "2026-11-17: src/lib/payroll/run-search.ts and src/routes/_authenticated/payroll/runs.index.tsx normalize padded URL search, reject unsafe formatting characters and enforce 120-character effective limit; commits c1b5a7f435389cf76e9a6ca394f0aa06a5c2a6ae and 541e60cdfc9e3bb9d0b6f4ccfab13969a69c1605; SOURCE ONLY, NOT RUN.",
-        "2026-11-17: src/lib/payroll/run-search.test.ts covers whitespace, length boundaries, Unicode controls and multilingual text; commit f6ab24aa9bbc44b883dd207ab8cc2bdae23ee72e; WRITTEN, NOT RUN."
+        "2026-11-17: src/lib/payroll/run-search.test.ts covers whitespace, length boundaries, Unicode controls and multilingual text; commit f6ab24aa9bbc44b883dd207ab8cc2bdae23ee72e; WRITTEN, NOT RUN.",
+        "2026-11-17: src/screens/payroll/runs.tsx retains whitespace while composing multiword searches, filters immediately using draft, commits URL search on blur/Enter, and carries draft query to run detail; commits 6f85aacd65470997eb2ea080d0555f7f737dd51b and 73083cca511b12f9b7a7d1842de338137b431a22. SOURCE ONLY; NOT RUN."
       ],
       "remaining": [
         "Verify report URL selection with authenticated fixtures and Back/Forward/refresh",
@@ -409,7 +410,8 @@
         "Verify screen-reader/keyboard announcement and per-field aria-invalid for missing start, missing end and reversed date range; NOT RUN.",
         "Verify Payroll Reports success-without-result fallback with authenticated fixtures and screen reader; NOT RUN",
         "Verify empty-row report actions are absent and populated report exports remain available in authenticated browser; NOT RUN.",
-        "Execute Payroll runs URL-search regression, local browsing guard, typecheck, lint, build, authenticated browser, permission/RLS and accounting regression; NOT RUN."
+        "Execute Payroll runs URL-search regression, local browsing guard, typecheck, lint, build, authenticated browser, permission/RLS and accounting regression; NOT RUN.",
+        "Verify Payroll Runs draft search, URL commit, browser Back/Forward and detail-return context with authenticated browser; TypeScript, lint, unit, build and accounting/RLS tests NOT RUN."
       ]
     },
     {

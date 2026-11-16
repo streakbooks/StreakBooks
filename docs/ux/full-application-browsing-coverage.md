@@ -1,4 +1,11 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Budgets native return-search validation (2026-11-16)
+
+- `src/lib/budgets/budget-navigation.ts`: normalize padded search terms, enforce 100-character effective limit, reject invisible control characters and ambiguous duplicate `q` parameters; commit `2b8bacae83268f2cea80987f30daffc860b4f0be`. Source change only.
+- `src/lib/budgets/budget-navigation.test.ts`: add padded/blank/boundary, duplicate query and Unicode-control regression cases; commit `3dbec6f7ac768733e9f35af81e33a0067a2803e4`. **WRITTEN, NOT RUN.**
+- `docs/ux/all-module-browsing-manifest.json`: update Budgets partial evidence and remaining checks; commit `493f429af2332b90208f8b5f0d9d9d70f5daeb91`.
+- **NOT RUN:** local inventory guard, TypeScript, lint, Vitest, build, authenticated browser, accessibility, RLS/accounting regressions. Baseline 21 modules, 132 authenticated routes (15 supporting), 11 cross-cutting workflows. 0/21 modules, 0/15 supporting routes, 0/12 batches fully verified. No changes to main, manually triggered CI, production DB or deployment.
+
 ### Banking return-search whitespace normalization (2026-11-16)
 
 - `src/lib/banking/transaction-return.ts`: trim padded return-context search, omit blank-only search and enforce the 120-character limit on effective text while retaining independent filters; commit `03b84b29149114818dbf0f957d750a1223b8a9f9`.

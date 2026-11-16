@@ -1,4 +1,11 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Banking return-search whitespace normalization (2026-11-16)
+
+- `src/lib/banking/transaction-return.ts`: trim padded return-context search, omit blank-only search and enforce the 120-character limit on effective text while retaining independent filters; commit `03b84b29149114818dbf0f957d750a1223b8a9f9`.
+- `src/lib/banking/transaction-return.test.ts`: add blank, padded multilingual, URL decoding and 120/121-character regressions; commit `d4bda144e93a6ba0d34495d185c0921f086bd120`. **WRITTEN, NOT RUN.**
+- `docs/ux/all-module-browsing-manifest.json`: Banking source evidence and remaining acceptance work updated; commit `013e3b875ff2433d4789da2a2c8f72cf9848c803`.
+- **NOT RUN:** inventory guard, typecheck, lint, Vitest, build, authenticated browser, accessibility, RLS/accounting regressions. Documented baseline 21 modules, 132 authenticated routes (15 supporting), 11 cross-cutting workflows; 0/21 modules, 0/15 supporting routes, 0/12 batches fully verified. No changes to main, manually triggered CI, production database or deployment.
+
 ### Hyphenated verification-status integrity (2026-11-16)
 
 - `scripts/check-browsing-coverage.mjs`: normalize hyphens and underscores before checking contradictory `fullyVerified` status strings, so `not-run`, `not-tested` and `not-verified` cannot evade the existing guard. Source commit `292c7514e33e5bda265b5a4f5b0eb30aa22e34c8`.

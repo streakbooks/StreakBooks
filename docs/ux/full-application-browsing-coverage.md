@@ -1,4 +1,10 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Sidebar whitespace normalization correction (2026-11-16)
+
+- `scripts/check-browsing-coverage.mjs`: fixed the normalized sidebar label guard from matching literal `\\s` text to matching actual whitespace (`\s`), so labels differing by repeated spaces, tabs or newlines are treated as duplicates. Source commit `b29a78ee88b5b41fc7fca5458ca4ce2edc38f369`.
+- `docs/ux/all-module-browsing-manifest.json`: updated inventory guard evidence; commit `8d83d4f2f38ccf3337ad2dfeae881033ca2d158b`.
+- **SOURCE REVIEW ONLY; NOT RUN:** `check:browsing-coverage`, typecheck, lint, unit tests, build, authenticated browser/accessibility, RLS/accounting regressions. Baseline 21 sidebar modules, 132 authenticated route files (15 supporting), 11 cross-cutting areas; 0/21 modules, 0/15 supporting routes, 0/12 batches fully verified. No main branch changes, manually triggered CI, production DB operations or deployment.
+
 ### Normalized sidebar identity inventory guard (2026-11-16)
 
 - `scripts/check-browsing-coverage.mjs`: normalize top-level sidebar labels by trimming, collapsing whitespace and case folding before uniqueness checks for both source navigation and manifest. This detects visually duplicate module names even if their destination paths differ. Source commit `0a428fe46feb3ba826972bc466c7a5a3839fda0c`.

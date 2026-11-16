@@ -1,4 +1,10 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Payroll Runs multiword search composition (2026-11-17)
+
+- `src/screens/payroll/runs.tsx`: retain a local search draft while the user types, so spaces in multiword queries are not removed by the route's normalized URL validator on each keystroke. Apply draft filtering immediately, commit normalized search to URL on blur/Enter, and preserve the draft search in detail return links. Commits `6f85aacd65470997eb2ea080d0555f7f737dd51b` and `73083cca511b12f9b7a7d1842de338137b431a22`. **SOURCE ONLY, NOT RUN.**
+- `docs/ux/all-module-browsing-manifest.json`: Payroll evidence and remaining acceptance verification updated. No module marked fully verified.
+- **NOT RUN:** `check:browsing-coverage`, TypeScript, lint, Vitest, build, authenticated browser Back/Forward/refresh/new-tab, accessibility, security/RLS and accounting regressions. Baseline 21 sidebar modules, 132 authenticated route files (15 supporting), 11 registered cross-cutting workflows. Fully verified 0/21 modules, 0/15 supporting routes, 0/12 batches. No changes to `main`, manual CI, production database or deployment.
+
 ### Payroll runs search deep-link normalization (2026-11-17)
 
 - `src/lib/payroll/run-search.ts`: trim padded Payroll Runs search, omit blank-only values, enforce 120-character effective length and reject invisible/control formatting characters; commit `c1b5a7f435389cf76e9a6ca394f0aa06a5c2a6ae`. SOURCE ONLY.

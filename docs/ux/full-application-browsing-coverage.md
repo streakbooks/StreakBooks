@@ -1,4 +1,10 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Fixed Assets invisible-search character regression (2026-11-16)
+
+- `src/lib/fixed-assets/register-navigation.ts`: reject U+2060 word joiner and U+FEFF BOM from URL-restored register search while retaining independent filters; commit `09e48d48df1e113486a32828adda59d7a73ebb04`. SOURCE ONLY.
+- `src/lib/fixed-assets/register-navigation.test.ts`: regression checks both characters and independent sort retention; commit `f9503cbaddff6de086d103543e00f13958e60684`. WRITTEN, NOT RUN.
+- Manifest evidence updated in commit `44497c944c3792646427023ff1e6bd6c5bdfcab5`. Inventory guard, TypeScript, lint, Vitest, build, authenticated browser, accessibility, RLS/accounting regression **NOT RUN**. Baseline 21 modules, 132 authenticated routes (15 supporting), 11 cross-cutting workflows. Verified 0/21 modules, 0/15 supporting routes, 0/12 batches. No main, manual CI, production DB or deployment changes.
+
 ### Fixed Assets Unicode regression input correction (2026-11-16)
 
 - `src/lib/fixed-assets/register-navigation.test.ts`: replace literal backslash text with actual JavaScript escaped control codepoints in the search-safety regression; commit `4a7cd1a03be1c50dacc613f81ed3551992b93898`. Previous test inputs did not exercise the unsafe-character branch. **WRITTEN, NOT RUN.**

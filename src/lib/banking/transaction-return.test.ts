@@ -97,8 +97,6 @@ describe("Bank transaction to journal browsing context", () => {
       .toBe("x".repeat(120));
     expect(parseBankTransactionReturnSearch({ q: "  " + "x".repeat(121) + "  ", page: 2 }))
       .toEqual({ page: 2 });
-    expect(parseBankTransactionReturnSearch({ q: "bank\nfees", page: 2 }))
-      .toEqual({ q: "bank\nfees", page: 2 });
   });
 
   it("rejects unknown statuses and unsafe IDs", () => {

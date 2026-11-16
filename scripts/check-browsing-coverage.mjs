@@ -142,7 +142,7 @@ function hasExecutableAcceptanceEvidence(entry) {
 }
 
 function hasContradictoryVerifiedStatus(status) {
-  return typeof status === "string" && /\b(?:partial|pending|unverified|not verified|not tested|not run|incomplete)\b/i.test(status.replace(/_/g, " "));
+  return typeof status === "string" && /\b(?:partial|pending|unverified|not verified|not tested|not run|incomplete)\b/i.test(status.replace(/[_-]+/g, " "));
 }
 
 for (const module of manifest.modules) {

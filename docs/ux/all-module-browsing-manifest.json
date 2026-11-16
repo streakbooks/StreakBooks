@@ -319,13 +319,15 @@
         "src/lib/fixed-assets/register-navigation.test.ts — written, NOT RUN",
         "e2e/fixed-assets-native-browsing.spec.ts — written, NOT RUN",
         "2026-11-16: register-navigation.ts trims effective q, rejects control/bidi characters and limits normalized search to 120; source commit e838e82f7728d0cb5eb66b763b11eca69fd04915; SOURCE ONLY, NOT RUN.",
-        "2026-11-16: register-navigation.test.ts covers blank/padded/boundary/Unicode-control searches; commit 0c3f20dbefc6f3472605751c5e8533ce06a618a0; WRITTEN, NOT RUN."
+        "2026-11-16: register-navigation.test.ts covers blank/padded/boundary/Unicode-control searches; commit 0c3f20dbefc6f3472605751c5e8533ce06a618a0; WRITTEN, NOT RUN.",
+        "2026-11-16: src/lib/fixed-assets/register-navigation.test.ts corrected to use actual JS escaped control codepoints rather than literal backslash sequences; commit 4a7cd1a03be1c50dacc613f81ed3551992b93898; WRITTEN, NOT RUN."
       ],
       "remaining": [
         "Run app typecheck, lint, unit, browser and authenticated seeded-workspace tests",
         "Verify all module subroutes and forms, permissions, data operations and browser Back/Forward",
         "Verify responsive/mobile, accessibility, integration and deployment readiness",
-        "Execute new Fixed Assets search regressions, coverage inventory guard, typecheck, lint, build, authenticated browser, accessibility and RLS/accounting integrity checks; NOT RUN."
+        "Execute new Fixed Assets search regressions, coverage inventory guard, typecheck, lint, build, authenticated browser, accessibility and RLS/accounting integrity checks; NOT RUN.",
+        "Execute corrected Fixed Assets Unicode control-character unit regression and authenticated browsing checks; NOT RUN."
       ]
     },
     {

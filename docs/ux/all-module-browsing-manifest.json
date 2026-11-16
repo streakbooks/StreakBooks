@@ -294,12 +294,15 @@
         "src/routes/_authenticated/budgets/index.tsx — committed implementation",
         "src/routes/_authenticated/budgets/$budgetId.tsx — committed implementation",
         "src/lib/budgets/budget-navigation.test.ts — written, NOT RUN",
-        "e2e/budgets-return-browsing.spec.ts — written, NOT RUN"
+        "e2e/budgets-return-browsing.spec.ts — written, NOT RUN",
+        "2026-11-16: Budgets return search trims whitespace, rejects invisible controls and duplicate q keys; source commit 2b8bacae83268f2cea80987f30daffc860b4f0be; SOURCE ONLY, NOT RUN.",
+        "2026-11-16: Budget list parser and decoder regression cases added; commit 3dbec6f7ac768733e9f35af81e33a0067a2803e4; WRITTEN, NOT RUN."
       ],
       "remaining": [
         "Run app typecheck, lint, unit, browser and authenticated seeded-workspace tests",
         "Verify all module subroutes and forms, permissions, data operations and browser Back/Forward",
-        "Verify responsive/mobile, accessibility, integration and deployment readiness"
+        "Verify responsive/mobile, accessibility, integration and deployment readiness",
+        "Run new Budgets return-search unit tests, local browsing coverage guard, typecheck, lint, build, authenticated navigation and accounting/RLS regression; NOT RUN."
       ]
     },
     {

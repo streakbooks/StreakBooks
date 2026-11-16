@@ -322,7 +322,9 @@
         "2026-11-16: register-navigation.test.ts covers blank/padded/boundary/Unicode-control searches; commit 0c3f20dbefc6f3472605751c5e8533ce06a618a0; WRITTEN, NOT RUN.",
         "2026-11-16: src/lib/fixed-assets/register-navigation.test.ts corrected to use actual JS escaped control codepoints rather than literal backslash sequences; commit 4a7cd1a03be1c50dacc613f81ed3551992b93898; WRITTEN, NOT RUN.",
         "2026-11-16: src/lib/fixed-assets/register-navigation.ts rejects invisible U+2060 and U+FEFF search characters; commit 09e48d48df1e113486a32828adda59d7a73ebb04; SOURCE ONLY, NOT RUN.",
-        "2026-11-16: src/lib/fixed-assets/register-navigation.test.ts adds invisible-character regression retaining independent sort; commit f9503cbaddff6de086d103543e00f13958e60684; WRITTEN, NOT RUN."
+        "2026-11-16: src/lib/fixed-assets/register-navigation.test.ts adds invisible-character regression retaining independent sort; commit f9503cbaddff6de086d103543e00f13958e60684; WRITTEN, NOT RUN.",
+        "2026-11-16: Fixed Assets URL search rejects zero-width U+200B–U+200D and invisible U+2061–U+2064; source commit b0be75bea78a08976c05d7b28da60c7d6f0e4b3b; SOURCE ONLY, NOT RUN.",
+        "2026-11-16: Fixed Assets URL parser regression expanded to zero-width/invisible formatting controls; commit 261b3f810f3f31abf13f5805c6cf2b3dd09935fb; WRITTEN, NOT RUN."
       ],
       "remaining": [
         "Run app typecheck, lint, unit, browser and authenticated seeded-workspace tests",
@@ -330,7 +332,8 @@
         "Verify responsive/mobile, accessibility, integration and deployment readiness",
         "Execute new Fixed Assets search regressions, coverage inventory guard, typecheck, lint, build, authenticated browser, accessibility and RLS/accounting integrity checks; NOT RUN.",
         "Execute corrected Fixed Assets Unicode control-character unit regression and authenticated browsing checks; NOT RUN.",
-        "Run invisible-character regression, authenticated Fixed Assets browser, inventory guard, typecheck, lint, build, RLS and accounting tests; NOT RUN."
+        "Run invisible-character regression, authenticated Fixed Assets browser, inventory guard, typecheck, lint, build, RLS and accounting tests; NOT RUN.",
+        "Run Fixed Assets zero-width search regression and authenticated navigation; inventory guard, typecheck, lint, build, accessibility, security/RLS and accounting checks NOT RUN."
       ]
     },
     {

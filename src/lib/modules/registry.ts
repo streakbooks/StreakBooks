@@ -268,6 +268,20 @@ export const MODULE_REGISTRY: readonly ModuleDefinition[] = [
     notes: "Batch 4: ListWorkspace on budgets list.",
   },
   {
+    id: "projects",
+    label: "Projects",
+    description: "Job costing and project profitability",
+    path: "/projects",
+    group: "accounting",
+    inSidebar: false,
+    pageKind: "list",
+    screenRoot: "src/routes/_authenticated/projects.tsx",
+    experience: DEFAULT_AUTHENTICATED_EXPERIENCE,
+    premiumStatus: "partial",
+    notes:
+      "Reachable from Create New and Imports. Timesheets remain Missing. Kept out of sidebar until navigation IA decision.",
+  },
+  {
     id: "fixed-assets",
     label: "Fixed assets",
     description: "Asset register and depreciation",

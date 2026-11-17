@@ -70,3 +70,15 @@ No competitor code, SQL, CSS, templates, icons, imagery, translations or layouts
 | PR #31 cash reporting pagination | Bounded report pages with continuous opening/running balances | Other agent's original LinkBooks cash recognition and paging implementation, separate from this FX work. |
 
 These milestones add no competitor source, report artwork, UI templates, brand assets, fonts or third-party translations.
+
+## Originality-first policy (mandatory from 2026-11-17)
+
+LinkBooks remains an independently developed product. Competitors are references for functionality and workflow completeness only. Do not copy proprietary source, layouts, illustrations, logos, branding or documentation. Prefer independent implementation over Odoo (or other) open-source reuse; review any proposed dependency license before merge. See [IP_AND_DEPENDENCY_COMPLIANCE.md](./IP_AND_DEPENDENCY_COMPLIANCE.md).
+
+## Historical Aged Payables (as-at), 17 November 2026
+
+| Feature | Public concept only | Independent LinkBooks work |
+|---|---|---|
+| Aged Payables as at a past date | Public aged-payables / supplier ageing capabilities in Xero, QBO, Odoo documentation | Original `src/lib/purchases/ap-asat.ts` maths and `ap-reports.functions.ts` loader, aligned to LinkBooks AR as-at contracts; Reports UI reuses existing LinkBooks report shell. No competitor source, CSS, templates or artwork. |
+
+No new npm dependencies. Deleted allocations reconstruct only from LinkBooks `cash_allocation_history` (post-install). Pre-archive deletions remain unrestorable by design honesty.

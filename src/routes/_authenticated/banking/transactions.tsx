@@ -1115,7 +1115,30 @@ function BankTransactions() {
                         <TableCell colSpan={tableColumnCount} className="bg-muted/10">
                           {open.mode === "code" ? (
                             <div className="space-y-2">
-                              {suggestQ.data && suggestQ.data.suggestions.length > 0 ? (
+                              {suggestQ.data?.historyCoverage.limited ? (
+                                <p role="status" className="text-xs text-muted-foreground">
+                                  History coverage is limited to 100 preferences. Other
+                                  classifications may exist; review the account before coding.
+                                </p>
+                              ) : null}
+                              {suggestQ.isError ? (
+                                <Alert variant="destructive">
+                                  <AlertDescription>
+                                    Coding suggestions could not be loaded.
+                                    <Button
+                                      variant="link"
+                                      size="sm"
+                                      onClick={() => void suggestQ.refetch()}
+                                    >
+                                      Retry
+                                    </Button>
+                                  </AlertDescription>
+                                </Alert>
+                              ) : suggestQ.isPending ? (
+                                <p role="status" className="text-xs text-muted-foreground">
+                                  Loading coding suggestions…
+                                </p>
+                              ) : suggestQ.data && suggestQ.data.suggestions.length > 0 ? (
                                 <div className="flex flex-wrap items-center gap-1 text-xs">
                                   <span className="text-muted-foreground">Suggested:</span>
                                   {suggestQ.data.suggestions.slice(0, 4).map((s) => (
@@ -1135,7 +1158,8 @@ function BankTransactions() {
                                     >
                                       {[s.accountCode, s.accountName].filter(Boolean).join(" ") ||
                                         "Account"}{" "}
-                                      · {Math.round(s.confidence * 100)}%
+                                      · {s.matchStrength}
+                                      {s.conflictingHistory ? " · conflicting history: review" : ""}
                                     </Button>
                                   ))}
                                 </div>

@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Updated** | 2026-11-17 |
-| **Baseline commit** | `526724d1` (GitHub `main` after #244 supplier credit-limit) |
+| **Baseline commit** | `150b78b3` (GitHub `main` after #245 tracker refresh; #244 on `526724d1`) |
 | **Programme** | Complete module coverage & zero-gap execution (originality-first) |
 | **Authoritative repo** | https://github.com/linkbusinessadvisory/LinkBooks |
 
@@ -50,6 +50,7 @@ Independent LinkBooks product. Competitors are functional references only. See [
 | [#225](https://github.com/linkbusinessadvisory/LinkBooks/pull/225) Coding Memory | **Draft, rebased** (`1f695a50`) | Local unit 27/27; keep draft; migration not applied |
 | [#227](https://github.com/linkbusinessadvisory/LinkBooks/pull/227) Large release gates | Draft / conflict risk | Prefer #237 for CI; rebase/close remainder later |
 | [#238](https://github.com/linkbusinessadvisory/LinkBooks/pull/238) POS draft | Unrelated draft | Do not overwrite |
+| Copy supplier credit note | **In PR** | Parity with copy-bill; draft only; no allocations copied |
 | Actions hosted runners / minutes | **Blocked** | Org billing API 404/403; 0 self-hosted runners; jobs `steps=[]` |
 
 ## CI investigation (evidence)

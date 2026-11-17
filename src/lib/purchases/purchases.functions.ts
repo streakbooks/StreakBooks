@@ -3108,6 +3108,143 @@ export const saveAndAuthoriseCreditNote = createServerFn({ method: "POST" })
     }
   });
 
+/** Copy a supplier credit note into a NEW draft dated today (no allocations). */
+export const copyCreditNote = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string; creditNoteId: string }) => ({
+    companyId: assertUuid(input.companyId),
+    creditNoteId: assertUuid(input.creditNoteId, "credit note"),
+  }))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await assertCompanyPermission(supabase, data.companyId, "purchases.draft");
+    const { data: row, error } = await supabase
+      .from("purchase_credit_notes" as never)
+      .select(
+        "contact_id, memo, currency_code, fx_rate_to_base, purchase_credit_note_lines(*)" as never,
+      )
+      .eq("id" as never, data.creditNoteId as never)
+      .eq("company_id" as never, data.companyId as never)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("Credit note not found");
+
+    const src = row as {
+      contact_id: string;
+      memo: string | null;
+      currency_code: string;
+      fx_rate_to_base?: number | null;
+      purchase_credit_note_lines: Array<{
+        description: string;
+        account_id: string | null;
+        net_minor: number;
+        tax_minor?: number | null;
+        line_no?: number | null;
+      }>;
+    };
+
+    const { mapCreditNoteLinesForCopy } = await import("@/lib/purchases/copy-credit-note");
+    const mapped = mapCreditNoteLinesForCopy(src.purchase_credit_note_lines ?? []);
+    if (!mapped.length) throw new Error("Credit note has no lines to copy");
+    const lines = normaliseCreditLines(mapped);
+
+    for (const accountId of new Set(lines.map((l) => l.accountId))) {
+      await requireAccountInCompany(supabase, data.companyId, accountId);
+    }
+
+    const currencyCode = String(src.currency_code || "").toUpperCase();
+    if (!/^[A-Z]{3}$/.test(currencyCode)) throw new Error("Currency code required");
+
+    const subtotal = lines.reduce((s, l) => s + l.netMinor, 0);
+    const tax = lines.reduce((s, l) => s + l.taxMinor, 0);
+    const total = subtotal + tax;
+    if (total <= 0) throw new Error("Credit total must be greater than zero");
+
+    const { data: supplier, error: supplierErr } = await supabase
+      .from("contacts" as never)
+      .select("id" as never)
+      .eq("company_id" as never, data.companyId as never)
+      .eq("id" as never, src.contact_id as never)
+      .maybeSingle();
+    if (supplierErr) throw new Error(supplierErr.message);
+    if (!supplier) throw new Error("Supplier not found in this organisation");
+
+    const today = new Date().toISOString().slice(0, 10);
+    const fxRaw = src.fx_rate_to_base == null ? null : Number(src.fx_rate_to_base);
+    const fxRateToBase =
+      fxRaw != null && Number.isFinite(fxRaw) && fxRaw > 0 && fxRaw !== 1 ? fxRaw : null;
+
+    const { allocateDocumentNumber } = await import("@/lib/settings/document-numbering");
+    const creditNumber = await allocateDocumentNumber(
+      supabase as never,
+      data.companyId,
+      "purchase_credit_note",
+    );
+
+    const { data: cn, error: insertErr } = await supabase
+      .from("purchase_credit_notes" as never)
+      .insert({
+        company_id: data.companyId,
+        contact_id: src.contact_id,
+        credit_number: creditNumber,
+        credit_date: today,
+        currency_code: currencyCode,
+        memo: src.memo,
+        subtotal_minor: subtotal,
+        tax_minor: tax,
+        total_minor: total,
+        status: "draft",
+        created_by: userId,
+        ...(fxRateToBase != null ? { fx_rate_to_base: fxRateToBase } : {}),
+      } as never)
+      .select("id")
+      .single();
+    if (insertErr) {
+      if (fxRateToBase != null && /fx_rate_to_base|schema cache/i.test(insertErr.message)) {
+        throw new Error(
+          "Foreign-currency credit notes need a database update that has not been applied yet.",
+        );
+      }
+      throw new Error(insertErr.message);
+    }
+    const creditId = (cn as { id: string }).id;
+    const { error: lineErr } = await supabase.from("purchase_credit_note_lines" as never).insert(
+      lines.map((l, i) => ({
+        company_id: data.companyId,
+        credit_note_id: creditId,
+        line_no: i + 1,
+        description: l.description,
+        account_id: l.accountId,
+        net_minor: l.netMinor,
+        tax_minor: l.taxMinor,
+      })) as never,
+    );
+    if (lineErr) {
+      await supabase
+        .from("purchase_credit_notes" as never)
+        .delete()
+        .eq("company_id" as never, data.companyId as never)
+        .eq("id" as never, creditId as never)
+        .eq("status" as never, "draft" as never);
+      throw new Error(`Could not save credit note lines: ${lineErr.message}`);
+    }
+
+    await recordBillAudit(
+      supabase,
+      data.companyId,
+      "credit_note.draft.copy",
+      creditId,
+      {
+        source_credit_note_id: data.creditNoteId,
+        credit_number: creditNumber,
+        total_minor: total,
+        line_count: lines.length,
+      },
+      "purchase_credit_note",
+    );
+    return { id: creditId };
+  });
+
 export const authoriseCreditNote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(

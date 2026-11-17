@@ -452,7 +452,9 @@ export const completeReconciliation = createServerFn({ method: "POST" })
       data.companyId,
       ledgerRows.map((r) => r.id),
     );
-    const outstandingCount = ledgerRows.filter((r) => !linked.has(r.id) && !cleared.has(r.id)).length;
+    const outstandingCount = ledgerRows.filter(
+      (r) => !linked.has(r.id) && !cleared.has(r.id),
+    ).length;
     assertLedgerOnlyReviewable(outstandingCount);
 
     const r = await callRpc<{

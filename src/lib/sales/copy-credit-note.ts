@@ -17,9 +17,7 @@ export type StoredSalesCreditLineForCopy = {
 };
 
 export function mapSalesCreditLinesForCopy(lines: StoredSalesCreditLineForCopy[]) {
-  const ordered = [...lines].sort(
-    (a, b) => Number(a.line_order ?? 0) - Number(b.line_order ?? 0),
-  );
+  const ordered = [...lines].sort((a, b) => Number(a.line_order ?? 0) - Number(b.line_order ?? 0));
   return ordered.map((l, i) => {
     if (!l.account_id) {
       throw new Error(`Cannot copy credit line ${i + 1} without an income/liability account`);

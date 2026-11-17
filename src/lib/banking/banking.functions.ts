@@ -525,7 +525,9 @@ export const createTransfer = createServerFn({ method: "POST" })
     if (data.matchBankTransactionId) {
       const txn = await loadBankTxn(supabase, data.companyId, data.matchBankTransactionId);
       if (txn.status !== "uncategorised") {
-        throw new Error("Only an uncategorised statement line can be auto-matched to a new transfer");
+        throw new Error(
+          "Only an uncategorised statement line can be auto-matched to a new transfer",
+        );
       }
       matchSide = resolveTransferMatchSide({
         statementBankAccountId: txn.bank_account_id,
@@ -542,7 +544,11 @@ export const createTransfer = createServerFn({ method: "POST" })
         return { ...posted, matched: false as const, matchError: null as string | null };
       }
       try {
-        const sideAccount = await loadBankAccount(supabase, data.companyId, matchSide.bankAccountId);
+        const sideAccount = await loadBankAccount(
+          supabase,
+          data.companyId,
+          matchSide.bankAccountId,
+        );
         const { data: lines, error: lineErr } = await supabase
           .from("journal_lines" as never)
           .select("id, debit_minor, credit_minor" as never)
@@ -557,7 +563,8 @@ export const createTransfer = createServerFn({ method: "POST" })
             credit_minor: number;
           }>
         ).filter(
-          (l) => Number(l.debit_minor) - Number(l.credit_minor) === matchSide.expectedLineAmountMinor,
+          (l) =>
+            Number(l.debit_minor) - Number(l.credit_minor) === matchSide.expectedLineAmountMinor,
         );
         if (matches.length !== 1) {
           throw new Error(

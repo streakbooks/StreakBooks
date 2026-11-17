@@ -44,7 +44,9 @@ export function resolveTransferMatchSide(input: {
       throw new Error("Destination-account statement line must be a money-in amount");
     }
     if (stmt !== toAmt) {
-      throw new Error("Statement amount does not match the transfer amount arriving at this account");
+      throw new Error(
+        "Statement amount does not match the transfer amount arriving at this account",
+      );
     }
     return {
       bankAccountId: input.toBankAccountId,

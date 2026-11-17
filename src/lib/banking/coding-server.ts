@@ -14,7 +14,6 @@ import {
 import { chunk } from "@/lib/banking/fetch-all";
 import { isMissingSchema, recordAudit } from "@/lib/banking/rpc";
 import {
-  bumpCodingHistory,
   linkPostedJournalToBankTxn,
   loadBankAccount,
   loadBankTxn,
@@ -246,15 +245,7 @@ export async function codeBankTransactionOnce(
       console.error("bank contact update failed", error.message);
   }
 
-  // Coding history for suggestions: credit the largest split's account.
-  const largest = [...args.splits].sort((a, b) => b.amountMinor - a.amountMinor)[0]!;
-  await bumpCodingHistory(supabase, {
-    companyId: args.companyId,
-    description: txn.description,
-    amountMinor: txn.amount_minor,
-    offsetAccountId: largest.accountId,
-  }).catch((e: unknown) => console.error("coding history failed", e));
-
+  // Approved memory is captured atomically by the reconciliation-link database trigger.
   await recordAudit(supabase, {
     companyId: args.companyId,
     action: "bank_transaction.coded",

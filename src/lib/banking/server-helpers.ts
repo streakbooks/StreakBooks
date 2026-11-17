@@ -5,7 +5,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { fetchAllPages, chunk } from "@/lib/banking/fetch-all";
 import { codingIdempotencyKey } from "@/lib/banking/coding";
 import { isMissingRpc, tryRpc } from "@/lib/banking/rpc";
-import { directionFromAmount, normalizePayee } from "@/lib/banking/suggestions";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyClient = SupabaseClient<any>;
@@ -140,57 +139,6 @@ export async function linkPostedJournalToBankTxn(
     .eq("company_id" as never, args.companyId as never);
   if (uErr) throw new Error(uErr.message);
   return { linkId };
-}
-
-/** times_used + 1 (BK-15). Falls back to read-modify-write only when the RPC is not installed yet. */
-export async function bumpCodingHistory(
-  supabase: AnyClient,
-  args: {
-    companyId: string;
-    description: string | null;
-    amountMinor: number;
-    offsetAccountId: string;
-  },
-): Promise<void> {
-  const payee = normalizePayee(args.description);
-  if (!payee) return;
-  const direction = directionFromAmount(args.amountMinor);
-  const res = await tryRpc<null>(supabase, "bump_bank_coding_history", {
-    _company_id: args.companyId,
-    _payee_normalized: payee,
-    _description_sample: args.description,
-    _offset_account_id: args.offsetAccountId,
-    _direction: direction,
-  });
-  if (res.available) return;
-
-  const { data: existing } = await supabase
-    .from("bank_coding_history" as never)
-    .select("id, times_used" as never)
-    .eq("company_id" as never, args.companyId as never)
-    .eq("payee_normalized" as never, payee as never)
-    .eq("offset_account_id" as never, args.offsetAccountId as never)
-    .eq("direction" as never, direction as never)
-    .maybeSingle();
-  if (existing) {
-    await supabase
-      .from("bank_coding_history" as never)
-      .update({
-        times_used: ((existing as unknown as { times_used: number }).times_used ?? 0) + 1,
-        last_used_at: new Date().toISOString(),
-        description_sample: args.description,
-      } as never)
-      .eq("id" as never, (existing as unknown as { id: string }).id as never);
-  } else {
-    await supabase.from("bank_coding_history" as never).insert({
-      company_id: args.companyId,
-      payee_normalized: payee,
-      description_sample: args.description,
-      offset_account_id: args.offsetAccountId,
-      direction,
-      times_used: 1,
-    } as never);
-  }
 }
 
 /** Ledger balance of an account as of a date: SQL SUM() RPC, with a paged fallback (BK-04). */

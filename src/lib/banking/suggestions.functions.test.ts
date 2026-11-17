@@ -24,10 +24,23 @@ import { suggestBankCoding } from "./banking.functions";
 
 const calls: Array<[string, string, ...unknown[]]> = [];
 let failingTable = "";
+let memoryMissing = false;
 const companyId = "00000000-0000-4000-8000-000000000001";
 const context = {
   userId: "user",
   supabase: {
+    rpc: async (fn: string, args: Record<string, unknown>) => {
+      calls.push([fn, "rpc", args]);
+      return {
+        data: [],
+        error:
+          failingTable === "memory"
+            ? { message: "Unavailable evidence" }
+            : memoryMissing
+              ? { code: "PGRST202", message: "RPC not installed" }
+              : null,
+      };
+    },
     from(table: string) {
       calls.push([table, "from"]);
       const q = Object.fromEntries(
@@ -66,6 +79,7 @@ const invoke = () =>
 beforeEach(() => {
   calls.length = 0;
   failingTable = "";
+  memoryMissing = false;
   vi.mocked(assertCompanyPermission).mockReset();
 });
 describe("suggestion evidence boundary (mocked server handler)", () => {
@@ -79,7 +93,7 @@ describe("suggestion evidence boundary (mocked server handler)", () => {
       "banking.view",
     );
   });
-  it.each(["bank_transactions", "bank_coding_history", "bank_rules"])(
+  it.each(["bank_transactions", "memory", "bank_rules"])(
     "fails visibly when %s cannot load",
     async (table) => {
       failingTable = table;
@@ -88,15 +102,30 @@ describe("suggestion evidence boundary (mocked server handler)", () => {
   );
   it("scopes all sources and eligible accounts to the requested company", async () => {
     await expect(invoke()).resolves.toMatchObject({ suggestions: [] });
-    for (const table of ["bank_transactions", "bank_coding_history", "bank_rules"]) {
+    for (const table of ["bank_transactions", "bank_rules"]) {
       expect(calls).toContainEqual([table, "eq", "company_id", companyId]);
     }
-    for (const table of ["bank_coding_history", "bank_rules"]) {
+    expect(calls).toContainEqual([
+      "get_bank_coding_memory",
+      "rpc",
+      { _company_id: companyId, _bank_transaction_id: "txn" },
+    ]);
+    expect(calls.some(([table]) => table === "bank_coding_history")).toBe(false);
+    for (const table of ["bank_rules"]) {
       expect(calls).toContainEqual([table, "eq", "accounts.company_id", companyId]);
       expect(calls).toContainEqual([table, "eq", "accounts.is_active", true]);
       expect(calls).toContainEqual([table, "eq", "accounts.is_postable", true]);
       expect(calls).toContainEqual([table, "eq", "accounts.is_control", false]);
       expect(calls).toContainEqual([table, "is", "accounts.archived_at", null]);
     }
+  });
+  it("exposes a missing migration without falling back to unverified legacy history", async () => {
+    memoryMissing = true;
+    await expect(invoke()).resolves.toMatchObject({
+      memoryAvailable: false,
+      memoryPreferences: [],
+      suggestions: [],
+    });
+    expect(calls.some(([table]) => table === "bank_coding_history")).toBe(false);
   });
 });

@@ -823,20 +823,15 @@ export const suggestBankCoding = createServerFn({ method: "GET" })
       status: string;
     };
 
-    const { data: history, error: historyError } = await context.supabase
-      .from("bank_coding_history" as never)
-      .select(
-        "payee_normalized, offset_account_id, direction, times_used, accounts!inner(code, name)" as never,
-      )
-      .eq("company_id" as never, data.companyId as never)
-      .eq("direction" as never, directionFromAmount(t.amount_minor) as never)
-      .eq("accounts.company_id" as never, data.companyId as never)
-      .eq("accounts.is_active" as never, true as never)
-      .eq("accounts.is_postable" as never, true as never)
-      .eq("accounts.is_control" as never, false as never)
-      .is("accounts.archived_at" as never, null as never)
-      .order("times_used" as never, { ascending: false })
-      .limit(101);
+    const memory = await tryRpc<Array<import("./memory").MemoryPreference>>(
+      context.supabase,
+      "get_bank_coding_memory",
+      {
+        _company_id: data.companyId,
+        _bank_transaction_id: data.bankTransactionId,
+      },
+    );
+    const history = memory.available ? memory.data : [];
     const { data: rules, error: rulesError } = await context.supabase
       .from("bank_rules" as never)
       .select(
@@ -850,7 +845,6 @@ export const suggestBankCoding = createServerFn({ method: "GET" })
       .eq("accounts.is_control" as never, false as never)
       .is("accounts.archived_at" as never, null as never);
 
-    if (historyError) throw new Error(historyError.message);
     if (rulesError) throw new Error(rulesError.message);
 
     const suggestions = rankCodingSuggestions({
@@ -859,24 +853,7 @@ export const suggestBankCoding = createServerFn({ method: "GET" })
       reference: t.reference,
       payee: t.payee,
       amountMinor: t.amount_minor,
-      history: (
-        (history ?? []) as Array<{
-          payee_normalized: string;
-          offset_account_id: string;
-          direction: "in" | "out";
-          times_used: number;
-          accounts: { code: string; name: string } | null;
-        }>
-      )
-        .slice(0, 100)
-        .map((h) => ({
-          payee_normalized: h.payee_normalized,
-          offset_account_id: h.offset_account_id,
-          direction: h.direction,
-          times_used: h.times_used,
-          account_code: h.accounts?.code ?? null,
-          account_name: h.accounts?.name ?? null,
-        })),
+      history: history.slice(0, 100).filter((h) => h.enabled),
       rules: (
         (rules ?? []) as Array<{
           id: string;
@@ -918,6 +895,8 @@ export const suggestBankCoding = createServerFn({ method: "GET" })
     return {
       status: t.status,
       payeeNormalized: normalizePayee(t.description),
+      memoryAvailable: memory.available,
+      memoryPreferences: history.slice(0, 100),
       historyCoverage: {
         checked: Math.min((history ?? []).length, 100),
         limited: (history ?? []).length > 100,

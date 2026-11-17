@@ -1,3 +1,4 @@
+import { CodingMemoryPanel } from "@/components/banking/CodingMemoryPanel";
 import { QueryErrorState } from "@/components/common/QueryErrorState";
 import { ProjectTagControl } from "@/components/projects/ProjectTagControl";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
@@ -1115,9 +1116,26 @@ function BankTransactions() {
                         <TableCell colSpan={tableColumnCount} className="bg-muted/10">
                           {open.mode === "code" ? (
                             <div className="space-y-2">
+                              {suggestQ.data ? (
+                                <CodingMemoryPanel
+                                  key={`${companyId}:${t.id}`}
+                                  companyId={companyId!}
+                                  transactionId={t.id}
+                                  preferences={suggestQ.data.memoryPreferences}
+                                  suggestions={suggestQ.data.suggestions}
+                                  available={suggestQ.data.memoryAvailable}
+                                  onSelect={(accountId) =>
+                                    setExpanded({
+                                      id: t.id,
+                                      mode: "code",
+                                      initialAccountId: accountId,
+                                    })
+                                  }
+                                />
+                              ) : null}
                               {suggestQ.data?.historyCoverage.limited ? (
                                 <p role="status" className="text-xs text-muted-foreground">
-                                  History coverage is limited to 100 preferences. Other
+                                  History coverage is limited to 100 matching preferences. Other
                                   classifications may exist; review the account before coding.
                                 </p>
                               ) : null}
@@ -1138,32 +1156,38 @@ function BankTransactions() {
                                 <p role="status" className="text-xs text-muted-foreground">
                                   Loading coding suggestions…
                                 </p>
-                              ) : suggestQ.data && suggestQ.data.suggestions.length > 0 ? (
+                              ) : suggestQ.data &&
+                                suggestQ.data.suggestions.some((s) => s.source === "rule") ? (
                                 <div className="flex flex-wrap items-center gap-1 text-xs">
-                                  <span className="text-muted-foreground">Suggested:</span>
-                                  {suggestQ.data.suggestions.slice(0, 4).map((s) => (
-                                    <Button
-                                      key={`${s.offsetAccountId}-${s.reason}`}
-                                      size="sm"
-                                      variant="outline"
-                                      className="h-6 px-2 text-xs"
-                                      title={s.reason}
-                                      onClick={() =>
-                                        setExpanded({
-                                          id: t.id,
-                                          mode: "code",
-                                          initialAccountId: s.offsetAccountId,
-                                        })
-                                      }
-                                    >
-                                      {[s.accountCode, s.accountName].filter(Boolean).join(" ") ||
-                                        "Account"}{" "}
-                                      · {s.matchStrength}
-                                      {s.conflictingHistory ? " · conflicting history: review" : ""}
-                                    </Button>
-                                  ))}
+                                  <span className="text-muted-foreground">Bank rules:</span>
+                                  {suggestQ.data.suggestions
+                                    .filter((s) => s.source === "rule")
+                                    .slice(0, 4)
+                                    .map((s) => (
+                                      <Button
+                                        key={`${s.offsetAccountId}-${s.reason}`}
+                                        size="sm"
+                                        variant="outline"
+                                        className="h-6 px-2 text-xs"
+                                        title={s.reason}
+                                        onClick={() =>
+                                          setExpanded({
+                                            id: t.id,
+                                            mode: "code",
+                                            initialAccountId: s.offsetAccountId,
+                                          })
+                                        }
+                                      >
+                                        {[s.accountCode, s.accountName].filter(Boolean).join(" ") ||
+                                          "Account"}{" "}
+                                        · {s.matchStrength}
+                                        {s.conflictingHistory
+                                          ? " · conflicting history: review"
+                                          : ""}
+                                      </Button>
+                                    ))}
                                 </div>
-                              ) : suggestQ.data ? (
+                              ) : suggestQ.data && suggestQ.data.suggestions.length === 0 ? (
                                 <Alert>
                                   <AlertDescription>
                                     {suggestQ.data.externalResearchNote}

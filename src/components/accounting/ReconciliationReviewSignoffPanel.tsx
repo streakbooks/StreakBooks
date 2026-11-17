@@ -1,3 +1,4 @@
+import type { Json } from "@/integrations/supabase/types";
 import { hasAsciiControlCharacters } from "@/lib/text-validation";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
@@ -18,6 +19,13 @@ import { Label } from "@/components/ui/label";
 
 const validEvidenceUrl = (url: string): boolean =>
   /^https:\/\/[^\s]+$/.test(url) && !hasAsciiControlCharacters(url) && url.length <= 500;
+
+// Historical snapshots may predate the current object shape. Render scalars only.
+function historyField(state: Json, key: string, fallback: string): string {
+  if (state === null || typeof state !== "object" || Array.isArray(state)) return fallback;
+  const value = state[key];
+  return typeof value === "string" || typeof value === "number" ? String(value) : fallback;
+}
 
 /** All review acknowledgements are distinct from remediation verification.
  * This panel does not post journals, clear findings or mark a case "resolved".
@@ -216,11 +224,11 @@ export function ReconciliationReviewSignoffPanel({
                 <p className="break-all text-muted-foreground">Actor: {event.actor_id}</p>
                 <p className="whitespace-pre-wrap break-words">{event.note || "(No note)"}</p>
                 <p className="text-muted-foreground">
-                  Version: {String(event.new_state["version"] ?? "?")}
+                  Version: {historyField(event.new_state, "version", "?")}
                   {" · "}
-                  {String(event.old_state?.["status"] ?? "new")}
+                  {historyField(event.old_state, "status", "new")}
                   {" → "}
-                  {String(event.new_state["status"] ?? "?")}
+                  {historyField(event.new_state, "status", "?")}
                 </p>
               </div>
             ))}

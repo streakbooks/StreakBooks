@@ -179,7 +179,7 @@ Competitor columns cite **public product capabilities** only. No competitor sour
 | **Missing/incomplete** | Opening balance existed but voids excluded; not shared with AR statement engine; no BBF line |
 | **Priority** | P0 |
 | **Development status** | Implemented on `feature/supplier-statement-opening-20261117` |
-| **PR reference** | Pending |
+| **PR reference** | https://github.com/linkbusinessadvisory/LinkBooks/pull/235 |
 | **Originality** | Reuses LinkBooks AR `buildCustomerStatement` with supplier nouns; no competitor code |
 | **Release verification** | Open — unit tests; void_date columns improve void honesty when #233/#234 applied |
 

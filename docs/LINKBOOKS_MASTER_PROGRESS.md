@@ -44,7 +44,7 @@ LinkBooks is built as an **independent original product**. Competitors (Odoo, Xe
 | B4 — Partial bill-from-received | **PR open** | https://github.com/linkbusinessadvisory/LinkBooks/pull/232 — stacked on #231; migrations not applied live |
 | B5 — Purchase bill void_date | **PR open** | https://github.com/linkbusinessadvisory/LinkBooks/pull/233 — from main; migration not applied live |
 | B6 — Supplier credit void_date | **PR open** | https://github.com/linkbusinessadvisory/LinkBooks/pull/234 — from main; migration not applied live |
-| B7 — Supplier statement opening balance | **In progress** | Branch `feature/supplier-statement-opening-20261117`; reuses AR statement engine (P-24) |
+| B7 — Supplier statement opening balance | **PR open** | https://github.com/linkbusinessadvisory/LinkBooks/pull/235 @ `783b9977` — from main; statement tests 11/11 |
 
 ### B1 typecheck remediation (2026-11-17)
 

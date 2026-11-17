@@ -48,6 +48,7 @@ import {
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ContactTimeline } from "@/components/contacts/ContactTimeline";
+import { RecordDiscussButton } from "@/components/messaging/RecordDiscussButton";
 
 export const Route = createFileRoute("/_authenticated/contacts/$contactId")({
   validateSearch: (search: Record<string, unknown>): { tab?: string } => ({
@@ -454,6 +455,13 @@ function ContactDetail() {
       }
       actions={
         <div className="flex flex-wrap gap-2">
+          <RecordDiscussButton
+            companyId={companyId ?? null}
+            recordType="contact"
+            recordId={contactId}
+            title={`Contact ${String(c.name)}`}
+            label="Discuss"
+          />
           {isCustomer ? (
             <Button variant="outline" size="sm" asChild>
               <Link to="/sales/invoices/new">New invoice</Link>

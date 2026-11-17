@@ -27,6 +27,7 @@ import { StatusBadge } from "@/components/common/stat-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DocumentActions } from "@/components/documents/DocumentActions";
+import { RecordDiscussButton } from "@/components/messaging/RecordDiscussButton";
 import { DocumentRecordPanel } from "@/components/documents/DocumentRecordPanel";
 import {
   AlertDialog,
@@ -251,6 +252,13 @@ function InvoiceDetail() {
               <Button variant="outline" size="sm" asChild>
                 <Link to="/sales/invoices">Back</Link>
               </Button>
+              <RecordDiscussButton
+                companyId={company?.id ?? null}
+                recordType="sales_invoice"
+                recordId={invoiceId}
+                title={inv.invoice_number ? `Invoice ${inv.invoice_number}` : "Invoice discussion"}
+                label="Discuss"
+              />
               <Button variant="outline" size="sm" asChild>
                 <Link
                   to="/documents/print/$kind/$id"

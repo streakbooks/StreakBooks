@@ -33,6 +33,7 @@ import { CompanySwitcher } from "@/components/layout/CompanySwitcher";
 import { GlobalSearch } from "@/components/layout/GlobalSearch";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { NotificationBell } from "@/components/layout/NotificationBell";
+import { MessagesBell } from "@/components/messaging/MessagesBell";
 import { CreateNewMenu } from "@/components/create-new/CreateNewMenu";
 import { AppLauncher } from "@/components/app-store/AppLauncher";
 import { VoiceAssistant } from "@/components/ai-voice/VoiceAssistant";
@@ -595,6 +596,7 @@ function AppShellLayout({ children }: { children: ReactNode }) {
 
           <VoiceAssistant />
           <AppLauncher />
+          <MessagesBell companyId={company?.id ?? null} />
           <NotificationBell companyId={company?.id ?? null} userId={user.id} />
           <CreateNewMenu />
           <ThemeToggle />

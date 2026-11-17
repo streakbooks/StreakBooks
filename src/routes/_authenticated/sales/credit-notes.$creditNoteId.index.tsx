@@ -27,6 +27,7 @@ import { StatusBadge } from "@/components/common/stat-card";
 import { Button } from "@/components/ui/button";
 import { DocumentActions } from "@/components/documents/DocumentActions";
 import { DocumentRecordPanel } from "@/components/documents/DocumentRecordPanel";
+import { RecordDiscussButton } from "@/components/messaging/RecordDiscussButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -272,6 +273,13 @@ function CreditNoteDetail() {
             <Button variant="outline" size="sm" asChild>
               <Link to="/sales/credit-notes">Back</Link>
             </Button>
+            <RecordDiscussButton
+              companyId={company?.id ?? null}
+              recordType="sales_credit_note"
+              recordId={creditNoteId}
+              title={cn.credit_note_number ? `Credit note ${cn.credit_note_number}` : "Credit note discussion"}
+              label="Discuss"
+            />
             {cn.status === "draft" ? (
               <>
                 <Button variant="outline" size="sm" asChild>

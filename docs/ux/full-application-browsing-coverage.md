@@ -1,5 +1,11 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
 
+### Payroll payment refresh accessibility announcement (2026-11-18)
+
+- `src/screens/payroll/payments.tsx`: add a polite screen-reader status message during payment-detail refetch, while retaining the dialog and existing refresh action. Source commit `0eb60648d7479a6f27a144942761e46817aeca68`. **SOURCE ONLY; NOT RUN.** No settlement, reversal, or accounting code changed.
+- `docs/ux/all-module-browsing-manifest.json`: record Payroll partial evidence and outstanding screen-reader verification in commit `facc843380b930a082012458e0336861da4a91f5`.
+- **NOT RUN:** inventory guard, TypeScript, lint, unit/integration tests, build, authenticated browser and screen-reader accessibility, RLS/accounting regressions. Documented baseline 21 sidebar modules, 132 authenticated routes (15 supporting), 11 cross-cutting workflows. Fully verified 0/21 modules, 0/15 supporting routes, 0/12 batches. No changes to main, manual CI, production database or deployment.
+
 ### Payroll payment detail in-dialog refresh (2026-11-18)
 
 - `src/screens/payroll/payments.tsx`: loaded payment details dialog now exposes a keyboard-focusable **Refresh details** control using the existing payment detail query refetch, disabled while fetching. Retains dialog context and does not change settlement, reversal or journal code. Source commit `918f1cab1384b6bf9eecded2b31ddb7c3ace420f`. **SOURCE ONLY; NOT RUN.**

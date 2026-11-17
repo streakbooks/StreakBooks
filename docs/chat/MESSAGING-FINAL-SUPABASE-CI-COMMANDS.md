@@ -6,6 +6,8 @@ Linked project: `ipxflpzfcqwtenodbxwc` (linkbook / production).
 
 ## Applied 2026-11-17 (`20261117120000`–`20261117210000`)
 
+Hardening follow-up: also apply `20261117220000_messaging_realtime_and_external_lock.sql`.
+
 ```powershell
 cd D:\MyApp\LinkBooks
 $env:SUPABASE_YES = "1"

@@ -123,46 +123,67 @@ export function MessagingSettingsPanel({ companyId }: { companyId: string | null
               label: "Allow group create",
               checked: Boolean(settings.data?.allow_group_create),
               key: "allowGroupCreate" as const,
+              external: false,
             },
             {
               id: "allow-files",
               label: "Allow file share",
               checked: Boolean(settings.data?.allow_file_share),
               key: "allowFileShare" as const,
+              external: false,
             },
             {
               id: "allow-customer",
               label: "Customer portal messaging",
               checked: Boolean(settings.data?.allow_customer),
               key: "allowCustomer" as const,
+              external: true,
             },
             {
               id: "allow-vendor",
               label: "Vendor portal messaging",
               checked: Boolean(settings.data?.allow_vendor),
               key: "allowVendor" as const,
+              external: true,
             },
             {
               id: "allow-ai",
               label: "AI assist (opt-in)",
               checked: Boolean(settings.data?.allow_ai_assist),
               key: "allowAiAssist" as const,
+              external: false,
             },
           ] as const
-        ).map((flag) => (
-          <div key={flag.id} className="flex items-center justify-between gap-4">
-            <Label htmlFor={flag.id}>{flag.label}</Label>
-            <Switch
-              id={flag.id}
-              checked={flag.checked}
-              disabled={!canManage || busy || !enabled}
-              onCheckedChange={(value) => flagsMutation.mutate({ [flag.key]: value })}
-            />
-          </div>
-        ))}
+        ).map((flag) => {
+          const lockedExternal =
+            flag.external && settings.data?.external_portals_unlockable !== true;
+          return (
+            <div key={flag.id} className="flex items-center justify-between gap-4">
+              <Label htmlFor={flag.id}>{flag.label}</Label>
+              <Switch
+                id={flag.id}
+                checked={flag.checked}
+                disabled={!canManage || busy || !enabled || lockedExternal}
+                onCheckedChange={(value) => {
+                  if (
+                    flag.external &&
+                    value &&
+                    !confirm(
+                      "Enable portal messaging only after cross-customer/vendor isolation E2E passes. Continue?",
+                    )
+                  ) {
+                    return;
+                  }
+                  flagsMutation.mutate({ [flag.key]: value });
+                }}
+              />
+            </div>
+          );
+        })}
         <p className="text-xs text-muted-foreground">
-          Customer/vendor messaging stays off until RLS and portal isolation are verified on
-          staging.
+          Customer/vendor messaging stays locked until{" "}
+          <code className="rounded bg-muted px-1">MESSAGING_EXTERNAL_PORTALS_ENABLED=1</code>{" "}
+          after portal isolation E2E. Internal messaging is unaffected.
         </p>
       </div>
 

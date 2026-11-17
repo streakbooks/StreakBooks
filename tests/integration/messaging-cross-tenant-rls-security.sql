@@ -92,5 +92,38 @@ BEGIN
     RAISE EXCEPTION 'messaging_digest claim kind missing from communication_send_claims';
   END IF;
 
+  -- Core tables must have RLS enabled.
+  IF EXISTS (
+    SELECT 1
+    FROM pg_class c
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname = 'public'
+      AND c.relname IN (
+        'messaging_conversations',
+        'messaging_messages',
+        'messaging_conversation_members',
+        'messaging_settings',
+        'messaging_attachments',
+        'messaging_outbox_events'
+      )
+      AND c.relrowsecurity IS NOT TRUE
+  ) THEN
+    RAISE EXCEPTION 'One or more messaging tables are missing RLS';
+  END IF;
+
+  -- External portal flags must stay fail-closed by default in production.
+  IF EXISTS (
+    SELECT 1 FROM public.messaging_settings
+    WHERE allow_customer IS TRUE OR allow_vendor IS TRUE
+  ) THEN
+    RAISE EXCEPTION 'Customer/vendor portal messaging flags are enabled; production requires fail-closed until isolation E2E';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM storage.buckets WHERE id = 'messaging-attachments'
+  ) THEN
+    RAISE EXCEPTION 'messaging-attachments storage bucket missing';
+  END IF;
+
   RAISE NOTICE 'messaging security structural checks passed';
 END $$;

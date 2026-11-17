@@ -15,5 +15,6 @@ Ordered apply list for staging/production (additive only).
 | `20261117190000_messaging_report_message.sql` | Message reporting |
 | `20261117200000_messaging_rename_remove_member.sql` | Rename + remove member |
 | `20261117210000_messaging_create_channel.sql` | Internal channels |
+| `20261117220000_messaging_realtime_and_external_lock.sql` | Outbox realtime publication + force-close external flags |
 
-Do not apply until the target project is confirmed as authorised isolated staging (or production with separate authorisation).
+Apply with `db query --remote --yes -f` + `migration repair` (never blind `db push`). See `MESSAGING-FINAL-SUPABASE-CI-COMMANDS.md`.

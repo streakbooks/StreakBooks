@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Updated** | 2026-11-17 |
-| **Baseline commit** | `69736680` (GitHub `main` after #243 copy-bill) |
+| **Baseline commit** | `526724d1` (GitHub `main` after #244 supplier credit-limit) |
 | **Programme** | Complete module coverage & zero-gap execution (originality-first) |
 | **Authoritative repo** | https://github.com/linkbusinessadvisory/LinkBooks |
 
@@ -41,6 +41,7 @@ Independent LinkBooks product. Competitors are functional references only. See [
 | #242 | Sales credit-limit authorise gate | `40ce7965` |
 | #237 | Restore executable `quality.yml` | `9fa6ac2b` |
 | #243 | Copy bill (purchases) | `69736680` |
+| #244 | Supplier credit-limit authorise gate | `526724d1` |
 
 ## Open / in progress
 
@@ -49,7 +50,6 @@ Independent LinkBooks product. Competitors are functional references only. See [
 | [#225](https://github.com/linkbusinessadvisory/LinkBooks/pull/225) Coding Memory | **Draft, rebased** (`1f695a50`) | Local unit 27/27; keep draft; migration not applied |
 | [#227](https://github.com/linkbusinessadvisory/LinkBooks/pull/227) Large release gates | Draft / conflict risk | Prefer #237 for CI; rebase/close remainder later |
 | [#238](https://github.com/linkbusinessadvisory/LinkBooks/pull/238) POS draft | Unrelated draft | Do not overwrite |
-| Supplier credit-limit (purchases) | **In PR** | Mirror of #242 for bill authorise; fail-closed + ack |
 | Actions hosted runners / minutes | **Blocked** | Org billing API 404/403; 0 self-hosted runners; jobs `steps=[]` |
 
 ## CI investigation (evidence)
@@ -72,8 +72,8 @@ Independent LinkBooks product. Competitors are functional references only. See [
 
 ## Next executable steps
 
-1. Review/merge supplier credit-limit PR after local gates; do not claim production-ready.
-2. Keep #225 draft until Coding Memory migration isolated-tested.
-3. Org admin: restore Actions minutes/spending so quality gates execute.
-4. Apply purchase/coding-memory migrations only with explicit authorization.
-5. Next P0/P1 after supplier credit-limit: banking recon depth (without duplicating #225/#238).
+1. Keep #225 draft until Coding Memory migration isolated-tested; do not claim production-ready.
+2. Org admin: restore Actions minutes/spending so quality gates execute.
+3. Apply purchase/coding-memory migrations only with explicit authorization.
+4. Next P0/P1: banking recon depth (without duplicating #225/#238).
+5. Authenticated staging lifecycle for sales/purchases credit-limit + copy-bill (not yet run).

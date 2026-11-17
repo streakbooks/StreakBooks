@@ -68,6 +68,8 @@ export function NewCreditNote({ initialBillId }: { initialBillId?: string | unde
   const [billId, setBillId] = useState(initialBillId ?? "");
   const [fxRate, setFxRate] = useState("");
   const [billCurrency, setBillCurrency] = useState<string | null>(null);
+  /** Kept after a failed authorise so Save & authorise updates THIS draft, never a second number. */
+  const [savedCreditNoteId, setSavedCreditNoteId] = useState<string | null>(null);
 
   const suppliersQ = useQuery({
     queryKey: ["suppliers", companyId],
@@ -195,6 +197,7 @@ export function NewCreditNote({ initialBillId }: { initialBillId?: string | unde
       save({
         data: {
           companyId: companyId!,
+          ...(savedCreditNoteId ? { creditNoteId: savedCreditNoteId } : {}),
           contactId,
           creditDate,
           currencyCode: currency,
@@ -213,6 +216,7 @@ export function NewCreditNote({ initialBillId }: { initialBillId?: string | unde
         },
       }),
     onSuccess: async (r) => {
+      setSavedCreditNoteId(r.id);
       try {
         await recordRef.current?.flush(r.id);
       } catch (e) {

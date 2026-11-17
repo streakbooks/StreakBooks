@@ -1694,6 +1694,54 @@ export const saveBillDraft = createServerFn({ method: "POST" })
   .inputValidator(parseBillDraftInput)
   .handler(async ({ data, context }) => saveBillDraftCore(data, context));
 
+/**
+ * Save and authorise in ONE call (AP parity with AR-11). The draft is saved first; if authorising
+ * then fails the draft id is returned with the error so the browser opens that draft instead of
+ * creating a second one on the next click.
+ */
+export const saveAndAuthoriseBill = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: Parameters<typeof parseBillDraftInput>[0] & { acknowledgeCreditLimit?: boolean }) => ({
+      ...parseBillDraftInput(input),
+      acknowledgeCreditLimit: Boolean(input.acknowledgeCreditLimit),
+    }),
+  )
+  .handler(async ({ data, context }) => {
+    const { acknowledgeCreditLimit, ...draft } = data;
+    const saved = await saveBillDraftCore(draft, context);
+    try {
+      const res = await authoriseBillInternal(
+        context.supabase,
+        context.userId,
+        draft.companyId,
+        saved.id,
+        acknowledgeCreditLimit,
+      );
+      return {
+        id: saved.id,
+        journalId: res.journalId,
+        authoriseError: null as string | null,
+        statusHint: null as "posted_unauthorised" | null,
+      };
+    } catch (e) {
+      if (e instanceof JournalPostedUnlinkedError) {
+        return {
+          id: saved.id,
+          journalId: e.journalId,
+          authoriseError: e.message,
+          statusHint: e.statusHint,
+        };
+      }
+      return {
+        id: saved.id,
+        journalId: null as string | null,
+        authoriseError: e instanceof Error ? e.message : "Could not authorise the bill",
+        statusHint: null as "posted_unauthorised" | null,
+      };
+    }
+  });
+
 /** Copy a bill into a NEW draft dated today with the supplier's payment terms. */
 export const copyBill = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -3086,6 +3134,8 @@ export const saveAndAuthoriseCreditNote = createServerFn({ method: "POST" })
   .inputValidator(
     (input: {
       companyId: string;
+      /** When set, updates this draft instead of allocating a new credit number. */
+      creditNoteId?: string;
       contactId: string;
       creditDate: string;
       currencyCode: string;
@@ -3105,6 +3155,9 @@ export const saveAndAuthoriseCreditNote = createServerFn({ method: "POST" })
       return {
         fxRateToBase: fx !== null && fx !== 1 ? fx : null,
         companyId: assertUuid(input.companyId),
+        creditNoteId: input.creditNoteId
+          ? assertUuid(input.creditNoteId, "credit note")
+          : null,
         contactId: assertUuid(input.contactId, "supplier"),
         creditDate: input.creditDate,
         currencyCode: (input.currencyCode ?? "").toUpperCase(),
@@ -3146,42 +3199,22 @@ export const saveAndAuthoriseCreditNote = createServerFn({ method: "POST" })
     if (supplierErr) throw new Error(supplierErr.message);
     if (!supplier) throw new Error("Supplier not found in this organisation");
 
-    const { allocateDocumentNumber } = await import("@/lib/settings/document-numbering");
-    const creditNumber = await allocateDocumentNumber(
-      supabase as never,
-      data.companyId,
-      "purchase_credit_note",
-    );
+    let creditId: string;
+    let creditNumberLabel = "draft";
 
-    const { data: cn, error } = await supabase
-      .from("purchase_credit_notes" as never)
-      .insert({
-        company_id: data.companyId,
-        contact_id: data.contactId,
-        credit_number: creditNumber,
-        credit_date: data.creditDate,
-        currency_code: data.currencyCode,
-        memo: data.memo,
-        subtotal_minor: subtotal,
-        tax_minor: tax,
-        total_minor: total,
-        status: "draft",
-        created_by: userId,
-        ...(data.fxRateToBase != null ? { fx_rate_to_base: data.fxRateToBase } : {}),
-      } as never)
-      .select("id")
-      .single();
-    if (error) {
-      if (data.fxRateToBase != null && /fx_rate_to_base|schema cache/i.test(error.message)) {
-        throw new Error(
-          "Foreign-currency credit notes need a database update that has not been applied yet.",
-        );
+    if (data.creditNoteId) {
+      const existing = await loadCreditNote(supabase, data.companyId, data.creditNoteId);
+      if (existing.status !== "draft") {
+        throw new Error("Only draft credit notes can be updated from this form");
       }
-      throw new Error(error.message);
-    }
-    const creditId = (cn as { id: string }).id;
-    const { error: lineErr } = await supabase.from("purchase_credit_note_lines" as never).insert(
-      data.lines.map((l, i) => ({
+      creditId = existing.id;
+      creditNumberLabel = existing.credit_number ?? creditId.slice(0, 8);
+      const priorLines = existing.purchase_credit_note_lines.map((l) => ({
+        company_id: data.companyId,
+        credit_note_id: creditId,
+        ...l,
+      }));
+      const newLines = data.lines.map((l, i) => ({
         company_id: data.companyId,
         credit_note_id: creditId,
         line_no: i + 1,
@@ -3189,16 +3222,93 @@ export const saveAndAuthoriseCreditNote = createServerFn({ method: "POST" })
         account_id: l.accountId,
         net_minor: l.netMinor,
         tax_minor: l.taxMinor,
-      })) as never,
-    );
-    if (lineErr) {
-      await supabase
-        .from("purchase_credit_notes" as never)
+      }));
+      const { error: delErr } = await supabase
+        .from("purchase_credit_note_lines" as never)
         .delete()
+        .eq("company_id" as never, data.companyId as never)
+        .eq("credit_note_id" as never, creditId as never);
+      if (delErr) throw new Error(delErr.message);
+      const { error: insErr } = await supabase
+        .from("purchase_credit_note_lines" as never)
+        .insert(newLines as never);
+      if (insErr) {
+        await supabase.from("purchase_credit_note_lines" as never).insert(priorLines as never);
+        throw new Error(`Could not save credit note lines: ${insErr.message}`);
+      }
+      const { error: upErr } = await supabase
+        .from("purchase_credit_notes" as never)
+        .update({
+          contact_id: data.contactId,
+          credit_date: data.creditDate,
+          currency_code: data.currencyCode,
+          memo: data.memo,
+          subtotal_minor: subtotal,
+          tax_minor: tax,
+          total_minor: total,
+          updated_at: new Date().toISOString(),
+          ...(data.fxRateToBase != null ? { fx_rate_to_base: data.fxRateToBase } : {}),
+        } as never)
         .eq("company_id" as never, data.companyId as never)
         .eq("id" as never, creditId as never)
         .eq("status" as never, "draft" as never);
-      throw new Error(`Could not save credit note lines: ${lineErr.message}`);
+      if (upErr) throw new Error(upErr.message);
+    } else {
+      const { allocateDocumentNumber } = await import("@/lib/settings/document-numbering");
+      const creditNumber = await allocateDocumentNumber(
+        supabase as never,
+        data.companyId,
+        "purchase_credit_note",
+      );
+      creditNumberLabel = creditNumber;
+
+      const { data: cn, error } = await supabase
+        .from("purchase_credit_notes" as never)
+        .insert({
+          company_id: data.companyId,
+          contact_id: data.contactId,
+          credit_number: creditNumber,
+          credit_date: data.creditDate,
+          currency_code: data.currencyCode,
+          memo: data.memo,
+          subtotal_minor: subtotal,
+          tax_minor: tax,
+          total_minor: total,
+          status: "draft",
+          created_by: userId,
+          ...(data.fxRateToBase != null ? { fx_rate_to_base: data.fxRateToBase } : {}),
+        } as never)
+        .select("id")
+        .single();
+      if (error) {
+        if (data.fxRateToBase != null && /fx_rate_to_base|schema cache/i.test(error.message)) {
+          throw new Error(
+            "Foreign-currency credit notes need a database update that has not been applied yet.",
+          );
+        }
+        throw new Error(error.message);
+      }
+      creditId = (cn as { id: string }).id;
+      const { error: lineErr } = await supabase.from("purchase_credit_note_lines" as never).insert(
+        data.lines.map((l, i) => ({
+          company_id: data.companyId,
+          credit_note_id: creditId,
+          line_no: i + 1,
+          description: l.description,
+          account_id: l.accountId,
+          net_minor: l.netMinor,
+          tax_minor: l.taxMinor,
+        })) as never,
+      );
+      if (lineErr) {
+        await supabase
+          .from("purchase_credit_notes" as never)
+          .delete()
+          .eq("company_id" as never, data.companyId as never)
+          .eq("id" as never, creditId as never)
+          .eq("status" as never, "draft" as never);
+        throw new Error(`Could not save credit note lines: ${lineErr.message}`);
+      }
     }
 
     if (!data.authorise)
@@ -3238,7 +3348,7 @@ export const saveAndAuthoriseCreditNote = createServerFn({ method: "POST" })
         id: creditId,
         journalId: null as string | null,
         allocationError: null as string | null,
-        authoriseError: `The credit note was saved as draft ${creditNumber} but could not be authorised: ${(authoriseError as Error).message}`,
+        authoriseError: `The credit note was saved as draft ${creditNumberLabel} but could not be authorised: ${(authoriseError as Error).message}`,
         statusHint: null as "posted_unauthorised" | null,
       };
     }

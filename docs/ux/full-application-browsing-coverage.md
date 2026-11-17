@@ -1,4 +1,10 @@
 # LinkBooks — Complete All-Module Premium Browsing Coverage
+### Payroll Runs native schedule and period links (2026-11-17)
+
+- `src/screens/payroll/runs.tsx`: schedule and period table cells now provide keyboard-focusable native links to run detail, preserving current status, validated search draft and sort return context. Source commit `06fc1e49c6adbb6d8062247445c94da904de79cb`. **SOURCE REVIEW ONLY, NOT RUN.**
+- `docs/ux/all-module-browsing-manifest.json`: Payroll evidence updated in commit `d9fef54585f7c454b78fe7fba304c7d4b7a6fce3`. Other cells, subroutes and all 12 criteria remain pending.
+- **NOT RUN:** local `check:browsing-coverage`, TypeScript, lint, unit, build, authenticated browser, accessibility, RLS/accounting regressions. Baseline 21 sidebar modules, 132 authenticated routes (15 supporting), 11 cross-cutting workflows. Verified 0/21 modules, 0/15 supporting routes, 0/12 batches. No `main`, manual CI, production DB or deployment changes.
+
 ### Payroll Runs draft-to-detail return context (2026-11-17)
 
 - `src/screens/payroll/runs.tsx`: use the validated current `searchDraft` instead of potentially stale URL `runSearch` when constructing existing-run detail links; also validate the newly created run return context. Commit `86324ceb768058c7f80357f5ce6b134b31f5245a`. **SOURCE REVIEW ONLY, NOT RUN.**
